@@ -32,6 +32,7 @@ public class StdoutExporter: SpanExporter {
             print("ParentSpanId: \(span.parentSpanId?.hexString ?? "no Parent")")
             print("Start: \(span.startEpochNanos)")
             print("Duration: \(span.endEpochNanos - span.startEpochNanos)")
+            print("Attributes: \(span.attributes)")
             print("------------------\n")
         }
         return .success
