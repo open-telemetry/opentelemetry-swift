@@ -29,7 +29,7 @@ public final class SpanContext: Equatable, CustomStringConvertible {
     public private(set) var traceFlags: TraceFlags
 
     /// The traceState associated with this SpanContext
-    public let traceState: TraceState
+    public var traceState: TraceState
 
     /// The traceState associated with this SpanContext
     public let isRemote: Bool
