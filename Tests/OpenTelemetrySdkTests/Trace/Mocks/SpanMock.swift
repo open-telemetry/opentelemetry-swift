@@ -66,11 +66,5 @@ class SpanMock: Span {
     func addEvent<E>(event: E, timestamp: Int) where E: Event {
     }
 
-    func end() {
-    }
-
-    func end(endOptions: EndSpanOptions) {
-    }
-
     var description: String = "SpanMock"
 }

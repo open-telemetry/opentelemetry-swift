@@ -187,14 +187,13 @@ class SpanBuilderSdkTest: XCTestCase {
 
     func testNoParent() {
         let parent = tracerSdk.spanBuilder(spanName: spanName).startSpan()
-        var scope = tracerSdk.withSpan(parent)
+        tracerSdk.withSpan(parent)
         let span = tracerSdk.spanBuilder(spanName: spanName).setNoParent().startSpan()
         XCTAssertNotEqual(span.context.traceId, parent.context.traceId)
         let spanNoParent = tracerSdk.spanBuilder(spanName: spanName).setNoParent().setParent(parent).setNoParent().startSpan()
         XCTAssertNotEqual(span.context.traceId, parent.context.traceId)
         spanNoParent.end()
         span.end()
-        scope.close()
         parent.end()
     }
 
@@ -221,12 +220,11 @@ class SpanBuilderSdkTest: XCTestCase {
 
     func testParentCurrentSpan() {
         let parent = tracerSdk.spanBuilder(spanName: spanName).startSpan()
-        var scope = tracerSdk.withSpan(parent)
+        tracerSdk.withSpan(parent)
         let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
         XCTAssertEqual(span.context.traceId, parent.context.traceId)
         XCTAssertEqual(span.parentSpanId, parent.context.spanId)
         span.end()
-        scope.close()
         parent.end()
     }
 
@@ -247,10 +245,9 @@ class SpanBuilderSdkTest: XCTestCase {
 
     func testParentCurrentSpan_timestampConverter() {
         let parent = tracerSdk.spanBuilder(spanName: spanName).startSpan()
-        var scope = tracerSdk.withSpan(parent)
+        tracerSdk.withSpan(parent)
         let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
         XCTAssert(span.clock === (parent as! RecordEventsReadableSpan).clock)
-        scope.close()
         parent.end()
     }
 }

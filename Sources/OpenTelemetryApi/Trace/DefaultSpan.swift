@@ -96,9 +96,4 @@ public class DefaultSpan: Span {
     public func addLink(link: Link) {
     }
 
-    public func end() {
-    }
-
-    public func end(endOptions: EndSpanOptions) {
-    }
 }
