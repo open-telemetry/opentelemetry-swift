@@ -31,7 +31,8 @@ public class StdoutExporter: SpanExporter {
             print("TraceState: \(span.traceState)")
             print("ParentSpanId: \(span.parentSpanId?.hexString ?? "no Parent")")
             print("Start: \(span.startEpochNanos)")
-            print("Duration: \(span.endEpochNanos - span.startEpochNanos)")
+            print("Duration: \(span.endEpochNanos - span.startEpochNanos) nanoseconds")
+            print("Attributes: \(span.attributes)")
             print("------------------\n")
         }
         return .success
