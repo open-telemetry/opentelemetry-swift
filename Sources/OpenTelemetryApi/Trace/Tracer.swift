@@ -35,5 +35,5 @@ public protocol Tracer: AnyObject {
 
     /// Associates the span with the current context.
     /// - Parameter span: Span to associate with the current context.
-    func withSpan(_ span: Span) -> Scope
+    @discardableResult func withSpan(_ span: Span) -> Scope
 }

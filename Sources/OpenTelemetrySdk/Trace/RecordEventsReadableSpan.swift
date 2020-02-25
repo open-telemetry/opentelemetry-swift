@@ -273,6 +273,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
         endEpochNanos = timestamp
         hasEnded = true
         spanProcessor.onEnd(span: self)
+        context.scope?.close()
     }
 
     public func addChild() {

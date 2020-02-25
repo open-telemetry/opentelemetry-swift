@@ -40,6 +40,9 @@ public final class SpanContext: Equatable, CustomStringConvertible {
                                             traceFlags: TraceFlags(),
                                             traceState: TraceState(), isRemote: false)
 
+    /// If the Span has its own Scope, if exist should be closed on span end
+    public var scope: Scope?
+
     private init(traceId: TraceId, spanId: SpanId, traceFlags: TraceFlags, traceState: TraceState, isRemote: Bool) {
         self.traceId = traceId
         self.spanId = spanId

@@ -128,6 +128,16 @@ public enum SpanAttributeConstants: String {
 }
 
 extension Span {
+    public func end() {
+        context.scope?.close()
+    }
+
+    public func end(endOptions: EndSpanOptions) {
+        end()
+    }
+}
+
+extension Span {
     public func setAttribute(key: String, value: String?) {
         return setAttribute(key: key, value: AttributeValue.string(value))
     }
