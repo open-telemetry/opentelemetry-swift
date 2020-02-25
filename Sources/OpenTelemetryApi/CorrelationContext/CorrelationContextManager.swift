@@ -32,8 +32,8 @@ public protocol CorrelationContextManager: AnyObject {
     /// Enters the scope of code where the given CorrelationContext is in the current context
     /// (replacing the previous CorrelationContext) and returns an object that represents that
     /// scope. The scope is exited when the returned object is closed.
-    /// - Parameter distContext: the CorrelationContext to be set as the current context.
-    func withContext(distContext: CorrelationContext) -> Scope
+    /// - Parameter correlationContext: the CorrelationContext to be set as the current context.
+    func withContext(correlationContext: CorrelationContext) -> Scope
 
     /// Returns the BinaryFormat for this implementation.
     func getBinaryFormat() -> BinaryFormattable

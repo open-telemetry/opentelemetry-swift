@@ -18,7 +18,7 @@ import OpenTelemetryApi
 import XCTest
 
 class CorrelationContextManagerSdkTests: XCTestCase {
-    let distContext = CorrelationContextMock()
+    let correlationContext = CorrelationContextMock()
     let contextManager = CorrelationContextManagerSdk()
 
     func testGetCurrentContext_DefaultContext() {
@@ -27,20 +27,20 @@ class CorrelationContextManagerSdkTests: XCTestCase {
 
     func testWithCorrelationContext() {
         XCTAssertTrue(contextManager.getCurrentContext() === EmptyCorrelationContext.instance)
-        var wtm = contextManager.withContext(distContext: distContext)
-        XCTAssertTrue(contextManager.getCurrentContext() === distContext)
+        var wtm = contextManager.withContext(correlationContext: correlationContext)
+        XCTAssertTrue(contextManager.getCurrentContext() === correlationContext)
         wtm.close()
         XCTAssertTrue(contextManager.getCurrentContext() === EmptyCorrelationContext.instance)
     }
 
     func testWithCorrelationContextUsingWrap() {
         let expec = expectation(description: "testWithCorrelationContextUsingWrap")
-        var wtm = contextManager.withContext(distContext: distContext)
-        XCTAssertTrue(contextManager.getCurrentContext() === distContext)
+        var wtm = contextManager.withContext(correlationContext: correlationContext)
+        XCTAssertTrue(contextManager.getCurrentContext() === correlationContext)
         let semaphore = DispatchSemaphore(value: 0)
         DispatchQueue.global().async {
             semaphore.wait()
-            XCTAssertTrue(self.contextManager.getCurrentContext() === self.distContext)
+            XCTAssertTrue(self.contextManager.getCurrentContext() === self.correlationContext)
             expec.fulfill()
         }
         wtm.close()

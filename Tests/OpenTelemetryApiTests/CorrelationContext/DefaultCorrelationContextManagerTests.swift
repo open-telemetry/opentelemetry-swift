@@ -35,7 +35,7 @@ class TestCorrelationContext: CorrelationContext {
 
 class DefaultCorrelationContextManagerTests: XCTestCase {
     let defaultCorrelationContextManager = DefaultCorrelationContextManager.instance
-    let distContext = TestCorrelationContext()
+    let correlationContext = TestCorrelationContext()
 
     func testBuilderMethod() {
         let builder = defaultCorrelationContextManager.contextBuilder()
@@ -47,27 +47,27 @@ class DefaultCorrelationContextManagerTests: XCTestCase {
     }
 
     func testGetCurrentContext_ContextSetToNil() {
-        let distContext = defaultCorrelationContextManager.getCurrentContext()
-        XCTAssertNotNil(distContext)
-        XCTAssertEqual(distContext.getEntries().count, 0)
+        let correlationContext = defaultCorrelationContextManager.getCurrentContext()
+        XCTAssertNotNil(correlationContext)
+        XCTAssertEqual(correlationContext.getEntries().count, 0)
     }
 
     func testWithContext() {
         XCTAssertTrue(defaultCorrelationContextManager.getCurrentContext() === EmptyCorrelationContext.instance)
-        var wtm = defaultCorrelationContextManager.withContext(distContext: distContext)
-        XCTAssertTrue(defaultCorrelationContextManager.getCurrentContext() === distContext)
+        var wtm = defaultCorrelationContextManager.withContext(correlationContext: correlationContext)
+        XCTAssertTrue(defaultCorrelationContextManager.getCurrentContext() === correlationContext)
         wtm.close()
         XCTAssertTrue(defaultCorrelationContextManager.getCurrentContext() === EmptyCorrelationContext.instance)
     }
 
     func testWithContextUsingWrap() {
         let expec = expectation(description: "testWithContextUsingWrap")
-        var wtm = defaultCorrelationContextManager.withContext(distContext: distContext)
-        XCTAssertTrue(defaultCorrelationContextManager.getCurrentContext() === distContext)
+        var wtm = defaultCorrelationContextManager.withContext(correlationContext: correlationContext)
+        XCTAssertTrue(defaultCorrelationContextManager.getCurrentContext() === correlationContext)
         let semaphore = DispatchSemaphore(value: 0)
         DispatchQueue.global().async {
             semaphore.wait()
-            XCTAssertTrue(self.defaultCorrelationContextManager.getCurrentContext() === self.distContext)
+            XCTAssertTrue(self.defaultCorrelationContextManager.getCurrentContext() === self.correlationContext)
             expec.fulfill()
         }
         wtm.close()
