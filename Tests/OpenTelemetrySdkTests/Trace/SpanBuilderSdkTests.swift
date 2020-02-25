@@ -250,4 +250,18 @@ class SpanBuilderSdkTest: XCTestCase {
         XCTAssert(span.clock === (parent as! RecordEventsReadableSpan).clock)
         parent.end()
     }
+    
+    func testSpanRestorationInContext() {
+        XCTAssertNil(tracerSdk.currentSpan)
+        let parent = tracerSdk.spanBuilder(spanName: spanName).startSpan()
+        tracerSdk.withSpan(parent)
+        XCTAssertEqual(parent.context, tracerSdk.currentSpan?.context)
+        let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
+        tracerSdk.withSpan(span)
+        XCTAssertEqual(span.context, tracerSdk.currentSpan?.context)
+        span.end()
+        XCTAssertEqual(parent.context, tracerSdk.currentSpan?.context)
+        parent.end()
+        XCTAssertNil(tracerSdk.currentSpan)
+    }
 }
