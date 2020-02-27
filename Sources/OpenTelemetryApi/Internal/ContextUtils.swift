@@ -22,7 +22,7 @@ import os.activity
 public struct ContextUtils {
     struct ContextEntry {
         var span: Span?
-        var distContext: CorrelationContext?
+        var correlationContext: CorrelationContext?
     }
 
     static let RTLD_DEFAULT = UnsafeMutableRawPointer(bitPattern: -2)
@@ -33,14 +33,26 @@ public struct ContextUtils {
 
     /// Returns the Span from the current context
     public static func getCurrentSpan() -> Span? {
-        let activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, nil)
-        return contextMap[activityIdent]?.span
+        // We should try to traverse all hierarchy to locate the Span, but I could not find a way, just direct parent
+        var parentIdent: os_activity_id_t = 0
+        let activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, &parentIdent)
+        var returnSpan = contextMap[activityIdent]?.span
+        if returnSpan == nil {
+            returnSpan = contextMap[parentIdent]?.span
+        }
+        return returnSpan
     }
 
     /// Returns the CorrelationContext from the current context
     public static func getCurrentCorrelationContext() -> CorrelationContext? {
-        let activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, nil)
-        return contextMap[activityIdent]?.distContext
+        // We should try to traverse all hierarchy to locate the CorrelationContext, but I could not find a way, just direct parent
+        var parentIdent: os_activity_id_t = 0
+        let activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, &parentIdent)
+        var returnContext = contextMap[activityIdent]?.correlationContext
+        if returnContext == nil {
+            returnContext = contextMap[parentIdent]?.correlationContext
+        }
+        return returnContext
     }
 
     /// Returns a new Scope encapsulating the provided Span added to the current context
@@ -50,24 +62,40 @@ public struct ContextUtils {
     }
 
     /// Returns a new Scope encapsulating the provided Correlation Context added to the current context
-    /// - Parameter distContext: the Correlation Context to be added to the current contex
-    public static func withCorrelationContext(_ distContext: CorrelationContext) -> Scope {
-        return CorrelationContextInScope(distContext: distContext)
+    /// - Parameter correlationContext: the Correlation Context to be added to the current contex
+    public static func withCorrelationContext(_ correlationContext: CorrelationContext) -> Scope {
+        return CorrelationContextInScope(correlationContext: correlationContext)
     }
 
     static func setContext(activityId: os_activity_id_t, forSpan span: Span) {
         if contextMap[activityId] != nil {
             contextMap[activityId]!.span = span
         } else {
-            contextMap[activityId] = ContextEntry(span: span, distContext: getCurrentCorrelationContext())
+            contextMap[activityId] = ContextEntry(span: span, correlationContext: getCurrentCorrelationContext())
+        }
+    }
+    
+    static func removeContextForSpan(activityId: os_activity_id_t) {
+        if let correlationContext = contextMap[activityId]?.correlationContext  {
+            contextMap[activityId] = ContextEntry(span: nil, correlationContext: correlationContext)
+        } else {
+            contextMap[activityId] = nil
         }
     }
 
-    static func setContext(activityId: os_activity_id_t, forCorrelationContext distContext: CorrelationContext) {
+    static func setContext(activityId: os_activity_id_t, forCorrelationContext correlationContext: CorrelationContext) {
         if contextMap[activityId] != nil {
-            contextMap[activityId]!.distContext = distContext
+            contextMap[activityId]!.correlationContext = correlationContext
         } else {
-            contextMap[activityId] = ContextEntry(span: getCurrentSpan(), distContext: distContext)
+            contextMap[activityId] = ContextEntry(span: getCurrentSpan(), correlationContext: correlationContext)
+        }
+    }
+    
+    static func removeContextForCorrelationContext(activityId: os_activity_id_t) {
+        if let span = contextMap[activityId]?.span  {
+            contextMap[activityId] = ContextEntry(span: span, correlationContext: nil)
+        } else {
+            contextMap[activityId] = nil
         }
     }
 }

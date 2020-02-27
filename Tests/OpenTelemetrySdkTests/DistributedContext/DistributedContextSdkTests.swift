@@ -37,36 +37,36 @@ class CorrelationContextSdkTests: XCTestCase {
     }
 
     func testGetEntries_empty() {
-        let distContext = CorrelationContextSdk.contextBuilder().build()
-        XCTAssertEqual(distContext.getEntries().count, 0)
+        let correlationContext = CorrelationContextSdk.contextBuilder().build()
+        XCTAssertEqual(correlationContext.getEntries().count, 0)
     }
 
     func testGetEntries_nonEmpty() {
-        let distContext = CorrelationContextTestUtil.listToCorrelationContext(entries: [t1, t2])
-        XCTAssertEqual(distContext.getEntries().sorted(), [t1, t2].sorted())
+        let correlationContext = CorrelationContextTestUtil.listToCorrelationContext(entries: [t1, t2])
+        XCTAssertEqual(correlationContext.getEntries().sorted(), [t1, t2].sorted())
     }
 
     func testGetEntries_chain() {
         let t1alt = Entry(key: k1, value: v2, entryMetadata: tmd)
         let parent = CorrelationContextTestUtil.listToCorrelationContext(entries: [t1, t2])
-        let distContext = CorrelationContextSdk.contextBuilder().setParent(parent).put(key: t1alt.key, value: t1alt.value, metadata: t1alt.metadata).build()
-        XCTAssertEqual(distContext.getEntries().sorted(), [t1alt, t2].sorted())
+        let correlationContext = CorrelationContextSdk.contextBuilder().setParent(parent).put(key: t1alt.key, value: t1alt.value, metadata: t1alt.metadata).build()
+        XCTAssertEqual(correlationContext.getEntries().sorted(), [t1alt, t2].sorted())
     }
 
     func testPut_newKey() {
-        let distContext = CorrelationContextTestUtil.listToCorrelationContext(entries: [t1])
-        XCTAssertEqual(contextManager.contextBuilder().setParent(distContext).put(key: k2, value: v2, metadata: tmd).build().getEntries().sorted(), [t1, t2].sorted())
+        let correlationContext = CorrelationContextTestUtil.listToCorrelationContext(entries: [t1])
+        XCTAssertEqual(contextManager.contextBuilder().setParent(correlationContext).put(key: k2, value: v2, metadata: tmd).build().getEntries().sorted(), [t1, t2].sorted())
     }
 
     func testPut_existingKey() {
-        let distContext = CorrelationContextTestUtil.listToCorrelationContext(entries: [t1])
-        XCTAssertEqual(contextManager.contextBuilder().setParent(distContext).put(key: k1, value: v2, metadata: tmd).build().getEntries(), [Entry(key: k1, value: v2, entryMetadata: tmd)])
+        let correlationContext = CorrelationContextTestUtil.listToCorrelationContext(entries: [t1])
+        XCTAssertEqual(contextManager.contextBuilder().setParent(correlationContext).put(key: k1, value: v2, metadata: tmd).build().getEntries(), [Entry(key: k1, value: v2, entryMetadata: tmd)])
     }
 
     func testPetParent_setNoParent() {
         let parent = CorrelationContextTestUtil.listToCorrelationContext(entries: [t1])
-        let distContext = contextManager.contextBuilder().setParent(parent).setNoParent().build()
-        XCTAssertEqual(distContext.getEntries().count, 0)
+        let correlationContext = contextManager.contextBuilder().setParent(parent).setNoParent().build()
+        XCTAssertEqual(correlationContext.getEntries().count, 0)
     }
 
     func testRemove_existingKey() {
@@ -84,8 +84,8 @@ class CorrelationContextSdkTests: XCTestCase {
     }
 
     func testRemove_keyFromParent() {
-        let distContext = CorrelationContextTestUtil.listToCorrelationContext(entries: [t1, t2])
-        XCTAssertEqual(contextManager.contextBuilder().setParent(distContext).remove(key: k1).build().getEntries(), [t2])
+        let correlationContext = CorrelationContextTestUtil.listToCorrelationContext(entries: [t1, t2])
+        XCTAssertEqual(contextManager.contextBuilder().setParent(correlationContext).remove(key: k1).build().getEntries(), [t2])
     }
 
     func testEquals() {

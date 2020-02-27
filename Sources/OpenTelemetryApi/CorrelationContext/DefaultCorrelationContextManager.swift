@@ -33,8 +33,8 @@ public class DefaultCorrelationContextManager: CorrelationContextManager {
         ContextUtils.getCurrentCorrelationContext() ?? EmptyCorrelationContext.instance
     }
 
-    public func withContext(distContext: CorrelationContext) -> Scope {
-        return ContextUtils.withCorrelationContext(distContext)
+    public func withContext(correlationContext: CorrelationContext) -> Scope {
+        return ContextUtils.withCorrelationContext(correlationContext)
     }
 
     public func getBinaryFormat() -> BinaryFormattable {

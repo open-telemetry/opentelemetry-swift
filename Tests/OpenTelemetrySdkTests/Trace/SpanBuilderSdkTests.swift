@@ -17,6 +17,16 @@ import OpenTelemetryApi
 @testable import OpenTelemetrySdk
 import XCTest
 
+import os.activity
+// Bridging Obj-C variabled defined as c-macroses. See `activity.h` header.
+private let OS_ACTIVITY_CURRENT = unsafeBitCast(dlsym(UnsafeMutableRawPointer(bitPattern: -2), "_os_activity_current"),
+                                                to: os_activity_t.self)
+@_silgen_name("_os_activity_create") private func _os_activity_create(_ dso: UnsafeRawPointer?,
+                                                                      _ description: UnsafePointer<Int8>,
+                                                                      _ parent: Unmanaged<AnyObject>?,
+                                                                      _ flags: os_activity_flag_t) -> AnyObject!
+private let dso = UnsafeMutableRawPointer(mutating: #dsohandle)
+
 class SpanBuilderSdkTest: XCTestCase {
     let spanName = "span_name"
     let sampledSpanContext = SpanContext.create(traceId: TraceId(idHi: 1000, idLo: 1000),
@@ -250,7 +260,7 @@ class SpanBuilderSdkTest: XCTestCase {
         XCTAssert(span.clock === (parent as! RecordEventsReadableSpan).clock)
         parent.end()
     }
-    
+
     func testSpanRestorationInContext() {
         XCTAssertNil(tracerSdk.currentSpan)
         let parent = tracerSdk.spanBuilder(spanName: spanName).startSpan()
@@ -262,6 +272,62 @@ class SpanBuilderSdkTest: XCTestCase {
         span.end()
         XCTAssertEqual(parent.context, tracerSdk.currentSpan?.context)
         parent.end()
+        XCTAssertNil(tracerSdk.currentSpan)
+    }
+
+    func testSpanRestorationInContextWithExtraActivities() {
+        var activity1State = os_activity_scope_state_s()
+        let activity1 = _os_activity_create(dso, "Activity-1", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
+        os_activity_scope_enter(activity1, &activity1State)
+
+        XCTAssertNil(tracerSdk.currentSpan)
+        let parent = tracerSdk.spanBuilder(spanName: spanName).startSpan()
+        tracerSdk.withSpan(parent)
+
+        var activity2State = os_activity_scope_state_s()
+        let activity2 = _os_activity_create(dso, "Activity-2", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
+        os_activity_scope_enter(activity2, &activity2State)
+
+        XCTAssertEqual(parent.context, tracerSdk.currentSpan?.context)
+        let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
+        tracerSdk.withSpan(span)
+
+        var activity3State = os_activity_scope_state_s()
+        let activity3 = _os_activity_create(dso, "Activity-3", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
+        os_activity_scope_enter(activity3, &activity3State)
+
+        XCTAssertEqual(span.context, tracerSdk.currentSpan?.context)
+        os_activity_scope_leave(&activity3State)
+        span.end()
+        os_activity_scope_leave(&activity2State)
+        XCTAssertEqual(parent.context, tracerSdk.currentSpan?.context)
+        parent.end()
+        os_activity_scope_leave(&activity1State)
+        XCTAssertNil(tracerSdk.currentSpan)
+    }
+
+    func testSpanRestorationInContextWithExtraActivitiesBlocks() {
+        let activity1 = _os_activity_create(dso, "Activity-1", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
+        os_activity_apply(activity1) {
+            XCTAssertNil(tracerSdk.currentSpan)
+            let parent = tracerSdk.spanBuilder(spanName: spanName).startSpan()
+            tracerSdk.withSpan(parent)
+
+            let activity2 = _os_activity_create(dso, "Activity-2", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
+            os_activity_apply(activity2) {
+                XCTAssertEqual(parent.context, tracerSdk.currentSpan?.context)
+                let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
+                tracerSdk.withSpan(span)
+
+                let activity3 = _os_activity_create(dso, "Activity-3", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
+                os_activity_apply(activity3) {
+                    XCTAssertEqual(span.context, tracerSdk.currentSpan?.context)
+                }
+                span.end()
+            }
+            XCTAssertEqual(parent.context, tracerSdk.currentSpan?.context)
+            parent.end()
+        }
         XCTAssertNil(tracerSdk.currentSpan)
     }
 }
