@@ -18,32 +18,38 @@ import OpenTelemetrySdk
 import OpenTelemetryApi
 
 public class StdoutExporter: SpanExporter {
-    public init() {
+    let isDebug: Bool
+    
+    public init(isDebug: Bool = false) {
+        self.isDebug = isDebug
     }
 
     public func export(spans: [SpanData]) -> SpanExporterResultCode {
         let jsonEncoder = JSONEncoder()
         for span in spans {
-            do {
-                let jsonData = try jsonEncoder.encode(SpanExporterData(span: span))
-                if let json = String(data: jsonData, encoding: .utf8) {
-                    print(json)
+            if (isDebug) {
+                print("__________________")
+                print("Span \(span.name):")
+                print("TraceId: \(span.traceId.hexString)")
+                print("SpanId: \(span.spanId.hexString)")
+                print("Span kind: \(span.kind.rawValue)")
+                print("TraceFlags: \(span.traceFlags)")
+                print("TraceState: \(span.traceState)")
+                print("ParentSpanId: \(span.parentSpanId?.hexString ?? "no Parent")")
+                print("Start: \(span.startEpochNanos)")
+                print("Duration: \(span.endEpochNanos - span.startEpochNanos) nanoseconds")
+                print("Attributes: \(span.attributes)")
+                print("------------------\n")
+            } else {
+                do {
+                    let jsonData = try jsonEncoder.encode(SpanExporterData(span: span))
+                    if let json = String(data: jsonData, encoding: .utf8) {
+                        print(json)
+                    }
+                } catch {
+                    return .failedRetryable
                 }
-            } catch {
-                return .failedRetryable
             }
-            print("__________________")
-            print("Span \(span.name):")
-            print("TraceId: \(span.traceId.hexString)")
-            print("SpanId: \(span.spanId.hexString)")
-            print("Span kind: \(span.kind.rawValue)")
-            print("TraceFlags: \(span.traceFlags)")
-            print("TraceState: \(span.traceState)")
-            print("ParentSpanId: \(span.parentSpanId?.hexString ?? "no Parent")")
-            print("Start: \(span.startEpochNanos)")
-            print("Duration: \(span.endEpochNanos - span.startEpochNanos) nanoseconds")
-            print("Attributes: \(span.attributes)")
-            print("------------------\n")
         }
         return .success
     }
