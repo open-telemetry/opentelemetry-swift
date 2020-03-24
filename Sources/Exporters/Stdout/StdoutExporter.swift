@@ -15,13 +15,23 @@
 
 import Foundation
 import OpenTelemetrySdk
+import OpenTelemetryApi
 
 public class StdoutExporter: SpanExporter {
     public init() {
     }
 
     public func export(spans: [SpanData]) -> SpanExporterResultCode {
+        let jsonEncoder = JSONEncoder()
         for span in spans {
+            do {
+                let jsonData = try jsonEncoder.encode(SpanExporterData(span: span))
+                if let json = String(data: jsonData, encoding: .utf8) {
+                    print(json)
+                }
+            } catch {
+                return .failedRetryable
+            }
             print("__________________")
             print("Span \(span.name):")
             print("TraceId: \(span.traceId.hexString)")
@@ -39,5 +49,31 @@ public class StdoutExporter: SpanExporter {
     }
 
     public func shutdown() {
+    }
+}
+
+fileprivate struct SpanExporterData: Encodable {
+    private let span: String
+    private let traceId: String
+    private let spanId: String
+    private let spanKind: String
+    private let traceFlags: TraceFlags
+    private let traceState: TraceState
+    private let parentSpanId: String
+    private let start: Int
+    private let duration: Int
+    private let attributes: [String: AttributeValue]
+    
+    init(span: SpanData) {
+        self.span = span.name
+        self.traceId = span.traceId.hexString
+        self.spanId = span.spanId.hexString
+        self.spanKind = span.kind.rawValue
+        self.traceFlags = span.traceFlags
+        self.traceState = span.traceState
+        self.parentSpanId = span.parentSpanId?.hexString ?? SpanId.invalid.hexString
+        self.start = span.startEpochNanos
+        self.duration = span.endEpochNanos - span.startEpochNanos
+        self.attributes = span.attributes
     }
 }
