@@ -89,7 +89,7 @@ public struct TraceState: Equatable {
     }
 
     /// Immutable key-value pair for TraceState
-    public struct Entry: Equatable {
+    public struct Entry: Equatable, Encodable {
         /// The key of the Entry
         public private(set) var key: String
 
@@ -108,5 +108,16 @@ public struct TraceState: Equatable {
             }
             return nil
         }
+    }
+}
+
+extension TraceState: Encodable {
+    enum CodingKeys: String, CodingKey {
+        case entries = "entries"
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(entries, forKey: .entries)
     }
 }

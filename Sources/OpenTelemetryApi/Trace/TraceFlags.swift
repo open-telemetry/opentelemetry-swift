@@ -99,3 +99,14 @@ public struct TraceFlags: Equatable, CustomStringConvertible {
         "TraceFlags{sampled=\(sampled)}"
     }
 }
+
+extension TraceFlags: Encodable {
+    enum CodingKeys: String, CodingKey {
+        case sampled = "sampled"
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(sampled, forKey: .sampled)
+    }
+}
