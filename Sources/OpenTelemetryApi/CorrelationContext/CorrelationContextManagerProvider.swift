@@ -14,14 +14,7 @@
 //
 
 import Foundation
-import OpenTelemetryApi
 
-class LoggingTracerRegistry: TracerRegistry {
-    override func get(instrumentationName: String, instrumentationVersion: String?) -> Tracer {
-        Logger.log("TracerFactory.get(\(instrumentationName), \(instrumentationVersion ?? ""))")
-        var labels = [String: String]()
-        labels["instrumentationName"] = instrumentationName
-        labels["instrumentationVersion"] = instrumentationVersion
-        return LoggingTracer()
-    }
+public protocol CorrelationContextManagerProvider {
+    func create() -> CorrelationContextManager
 }

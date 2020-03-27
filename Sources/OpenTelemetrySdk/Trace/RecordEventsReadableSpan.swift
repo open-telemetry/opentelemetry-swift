@@ -40,6 +40,10 @@ public class RecordEventsReadableSpan: ReadableSpan {
     public private(set) var links = [Link]()
     /// Number of links recorded.
     public private(set) var totalRecordedLinks: Int
+    /// Max number of attibutes per span.
+    public private(set) var maxNumberOfAttributes: Int
+    /// Max number of attributes per event.
+    public private(set) var maxNumberOfAttributesPerEvent: Int
 
     /// The kind of the span.
     public private(set) var kind: SpanKind
@@ -56,10 +60,10 @@ public class RecordEventsReadableSpan: ReadableSpan {
     private var attributes: AttributesWithCapacity
     /// List of recorded events.
     public private(set) var events: ArrayWithCapacity<TimedEvent>
+    /// Number of attributes recorded.
+    public private(set) var totalAttributeCount: Int = 0
     /// Number of events recorded.
     public private(set) var totalRecordedEvents = 0
-    /// The number of children.
-    public private(set) var numberOfChildren: Int = 0
     /// The status of the span.
     public var status: Status? = Status.ok {
         didSet {
@@ -107,6 +111,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
         self.startEpochNanos = (startEpochNanos == 0 ? clock.now : startEpochNanos)
         self.attributes = attributes
         events = ArrayWithCapacity<TimedEvent>(capacity: traceConfig.maxNumberOfEvents)
+        maxNumberOfAttributes = traceConfig.maxNumberOfAttributes
+        maxNumberOfAttributesPerEvent = traceConfig.maxNumberOfAttributesPerEvent
     }
 
     /// Creates and starts a span with the given configuration.
@@ -167,7 +173,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
                         name: name,
                         kind: kind,
                         startEpochNanos: startEpochNanos,
-                        attributes: attributes.dictionary,
+                        attributes: attributes.attributes,
                         timedEvents: adaptTimedEvents(),
                         links: adaptLinks(),
                         status: status,
@@ -175,7 +181,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
                         hasRemoteParent: hasRemoteParent,
                         hasEnded: hasEnded,
                         totalRecordedEvents: totalRecordedEvents,
-                        totalRecordedLinks: totalRecordedLinks)
+                        totalRecordedLinks: totalRecordedLinks,
+                        totalAttributeCount: totalAttributeCount)
     }
 
     private func adaptTimedEvents() -> [SpanData.TimedEvent] {
@@ -195,32 +202,16 @@ public class RecordEventsReadableSpan: ReadableSpan {
         return result
     }
 
-    public func setAttribute(key: String, value: String) {
-        if value.isEmpty {
-            return
-        }
-        setAttribute(key: key, value: AttributeValue.string(value))
-    }
-
-    public func setAttribute(key: String, value: Int) {
-        setAttribute(key: key, value: AttributeValue.int(value))
-    }
-
-    public func setAttribute(key: String, value: Double) {
-        setAttribute(key: key, value: AttributeValue.double(value))
-    }
-
-    public func setAttribute(key: String, value: Bool) {
-        setAttribute(key: key, value: AttributeValue.bool(value))
-    }
-
-    public func setAttribute(key: String, value: AttributeValue) {
-        if case let .string(string) = value,
-            string?.isEmpty ?? true {
-            return
-        }
-
+    public func setAttribute(key: String, value: AttributeValue?) {
         if hasEnded {
+            return
+        }
+        if case let .string(string) = value, string.isEmpty {
+            return
+        }
+
+        totalAttributeCount += 1
+        if attributes[key] == nil && totalAttributeCount > maxNumberOfAttributes {
             return
         }
         attributes[key] = value
@@ -235,11 +226,15 @@ public class RecordEventsReadableSpan: ReadableSpan {
     }
 
     public func addEvent(name: String, attributes: [String: AttributeValue]) {
-        addTimedEvent(timedEvent: TimedEvent(nanotime: clock.now, name: name, attributes: attributes))
+        var limitedAttributes = AttributesWithCapacity(capacity: maxNumberOfAttributesPerEvent)
+        limitedAttributes.updateValues(attributes: attributes)
+        addTimedEvent(timedEvent: TimedEvent(nanotime: clock.now, name: name, attributes: limitedAttributes.attributes))
     }
 
     public func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Int) {
-        addTimedEvent(timedEvent: TimedEvent(nanotime: timestamp, name: name, attributes: attributes))
+        var limitedAttributes = AttributesWithCapacity(capacity: maxNumberOfAttributesPerEvent)
+        limitedAttributes.updateValues(attributes: attributes)
+        addTimedEvent(timedEvent: TimedEvent(nanotime: timestamp, name: name, attributes: limitedAttributes.attributes))
     }
 
     public func addEvent<E>(event: E) where E: Event {
@@ -276,13 +271,6 @@ public class RecordEventsReadableSpan: ReadableSpan {
         context.scope?.close()
     }
 
-    public func addChild() {
-        if hasEnded {
-            return
-        }
-        numberOfChildren += 1
-    }
-
     private func getStatusWithDefault() -> Status {
         return status ?? Status.ok
     }
@@ -294,10 +282,6 @@ public class RecordEventsReadableSpan: ReadableSpan {
     /// For testing purposes
     internal func getDroppedLinksCount() -> Int {
         return totalRecordedLinks - links.count
-    }
-
-    internal func getNumberOfChildren() -> Int {
-        return numberOfChildren
     }
 
     internal func getTotalRecordedEvents() -> Int {

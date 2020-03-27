@@ -14,16 +14,17 @@
 //
 
 import Foundation
+import OpenTelemetryApi
 
 /// Provides a framework for detection of resource information from the environment variable "OC_RESOURCE_LABELS".
 public struct EnvVarResource {
-    private static let otelResourceLabelsEnv = "OTEL_RESOURCE_LABELS"
+    private static let otelResourceAttributesEnv = "OTEL_RESOURCE_ATTRIBUTES_ENV"
     private static let labelListSplitter = Character(",")
     private static let labelKeyValueSplitter = Character("=")
 
     ///  This resource information is loaded from the OC_RESOURCE_LABELS
     ///  environment variable.
-    public static let resource = Resource(labels: parseResourceLabels(rawEnvLabels: ProcessInfo.processInfo.environment[otelResourceLabelsEnv]))
+    public static let resource = Resource(attributes: parseResourceAttributes(rawEnvAttributes: ProcessInfo.processInfo.environment[otelResourceAttributesEnv]))
 
     private init() {}
 
@@ -33,10 +34,10 @@ public struct EnvVarResource {
     /// quoted or unquoted in general. If a value contains whitespaces, =, or " characters, it must
     /// always be quoted.
     /// - Parameter rawEnvLabels: the comma-separated list of labels
-    private static func parseResourceLabels(rawEnvLabels: String?) -> [String: String] {
-        guard let rawEnvLabels = rawEnvLabels else { return [String: String]() }
+    private static func parseResourceAttributes(rawEnvAttributes: String?) -> [String: AttributeValue] {
+        guard let rawEnvLabels = rawEnvAttributes else { return [String: AttributeValue]() }
 
-        var labels = [String: String]()
+        var labels = [String: AttributeValue]()
 
         rawEnvLabels.split(separator: labelListSplitter).forEach {
             let split = $0.split(separator: labelKeyValueSplitter)
@@ -44,7 +45,7 @@ public struct EnvVarResource {
                 return
             }
             let key = split[0].trimmingCharacters(in: .whitespaces)
-            let value = split[1].trimmingCharacters(in: CharacterSet(charactersIn: "^\"|\"$"))
+            let value = AttributeValue.string(split[1].trimmingCharacters(in: CharacterSet(charactersIn: "^\"|\"$")))
             labels[key] = value
         }
         return labels

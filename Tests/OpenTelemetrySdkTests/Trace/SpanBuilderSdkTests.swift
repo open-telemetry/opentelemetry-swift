@@ -33,7 +33,7 @@ class SpanBuilderSdkTest: XCTestCase {
                                                 spanId: SpanId(id: 3000),
                                                 traceFlags: TraceFlags().settingIsSampled(true),
                                                 traceState: TraceState())
-    var tracerSdkFactory = TracerSdkRegistry()
+    var tracerSdkFactory = TracerSdkProvider()
     var tracerSdk: Tracer!
 
     override func setUp() {
@@ -91,15 +91,22 @@ class SpanBuilderSdkTest: XCTestCase {
         span.end()
     }
 
-    func testSetAttribute_nilStringValue() {
+    func testSetAttribute_nilAttributeValue() {
         let spanBuilder = tracerSdk.spanBuilder(spanName: spanName)
         spanBuilder.setAttribute(key: "emptyString", value: "")
-        spanBuilder.setAttribute(key: "nilStringAttributeValue", value: AttributeValue.string(nil))
+        spanBuilder.setAttribute(key: "nilAttributeValue", value: nil)
         spanBuilder.setAttribute(key: "emptyStringAttributeValue", value: AttributeValue.string(""))
-
+        spanBuilder.setAttribute(key: "longAttribute", value: 0)
+        spanBuilder.setAttribute(key: "boolAttribute", value: false)
+        spanBuilder.setAttribute(key: "doubleAttribute", value: 0.12345)
         let span = spanBuilder.startSpan() as! RecordEventsReadableSpan
-        XCTAssertTrue(span.toSpanData().attributes.isEmpty)
-        span.end()
+        XCTAssertEqual(span.toSpanData().attributes.count, 5)
+        span.setAttribute(key: "emptyString", value: nil)
+        span.setAttribute(key: "emptyStringAttributeValue", value: nil)
+        span.setAttribute(key: "longAttribute", value: nil)
+        span.setAttribute(key: "boolAttribute", value: nil)
+        span.setAttribute(key: "doubleAttribute", value: nil)
+        XCTAssertEqual(span.toSpanData().attributes.count, 0)
     }
 
     func testDroppingAttributes() {
@@ -154,6 +161,8 @@ class SpanBuilderSdkTest: XCTestCase {
                               traceId: TraceId,
                               spanId: SpanId,
                               name: String,
+                              kind: SpanKind,
+                              attributes: [String:AttributeValue],
                               parentLinks: [Link]) -> Decision {
                 return decision
             }

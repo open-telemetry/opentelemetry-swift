@@ -18,6 +18,12 @@ import Foundation
 /// SpanProcessor is the interface TracerSdk uses to allow synchronous hooks for when a Span
 /// is started or when a Span is ended.
 public protocol SpanProcessor {
+    /// Is true if this  SpanProcessor requires start events.
+    var isStartRequired: Bool { get }
+
+    /// Returns true if this  SpanProcessor requires end events.
+    var isEndRequired: Bool { get }
+
     /// Called when a Span is started, if the Span.isRecording is true.
     /// This method is called synchronously on the execution thread, should not throw or block the
     /// execution thread.
@@ -31,5 +37,10 @@ public protocol SpanProcessor {
     mutating func onEnd(span: ReadableSpan)
 
     /// Called when TracerSdk.shutdown() is called.
+    /// Implementations must ensure that all span events are processed before returning
     mutating func shutdown()
+
+    /// Processes all span events that have not yet been processed.
+    /// This method is executed synchronously on the calling thread
+    func forceFlush()
 }

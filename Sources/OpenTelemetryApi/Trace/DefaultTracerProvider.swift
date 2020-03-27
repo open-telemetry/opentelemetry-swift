@@ -13,19 +13,12 @@
 // limitations under the License.
 //
 
-@testable import OpenTelemetrySdk
-import XCTest
+import Foundation
 
-class NoopSpanProcessorTest: XCTestCase {
-    let readableSpan = ReadableSpanMock()
+public class DefaultTracerProvider: TracerProvider {
+    public static let instance = DefaultTracerProvider()
 
-    func testNoCrash() {
-        let noopSpanProcessor = NoopSpanProcessor()
-        noopSpanProcessor.onStart(span: readableSpan)
-        XCTAssertFalse(noopSpanProcessor.isStartRequired)
-        noopSpanProcessor.onEnd(span: readableSpan)
-        XCTAssertFalse(noopSpanProcessor.isEndRequired)
-        noopSpanProcessor.forceFlush()
-        noopSpanProcessor.shutdown()
+    public override func get(instrumentationName: String, instrumentationVersion: String?) -> Tracer {
+        return DefaultTracer.instance
     }
 }

@@ -202,7 +202,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
         let span = createTestRootSpan()
         span.setAttribute(key: "StringKey", value: "StringVal")
         span.setAttribute(key: "EmptyStringkey", value: "")
-        span.setAttribute(key: "NilStringAttributeValue", value: AttributeValue.string(nil))
+        span.setAttribute(key: "NilAttributeValue", value: nil)
         span.setAttribute(key: "EmptyStringAttributeValue", value: AttributeValue.string(""))
         span.setAttribute(key: "LongKey", value: 1000)
         span.setAttribute(key: "DoubleKey", value: 10.0)
@@ -225,23 +225,17 @@ class RecordEventsReadableSpanTest: XCTestCase {
     func testDroppingAttributes() {
         let maxNumberOfAttributes = 8
         let traceConfig = TraceConfig().settingMaxNumberOfAttributes(maxNumberOfAttributes)
-        let span = createTestSpan(config: traceConfig) //
+        let span = createTestSpan(config: traceConfig)
         for i in 0 ..< 2 * maxNumberOfAttributes {
             span.setAttribute(key: "MyStringAttributeKey\(i)", value: AttributeValue.int(i))
         }
         var spanData = span.toSpanData()
-        XCTAssertEqual(spanData.attributes.count, maxNumberOfAttributes) //
-        for i in 0 ..< maxNumberOfAttributes {
-            let expectedValue = AttributeValue.int(i + maxNumberOfAttributes)
-            XCTAssertEqual(spanData.attributes["MyStringAttributeKey\(i + maxNumberOfAttributes)"], expectedValue)
-        }
+        XCTAssertEqual(spanData.attributes.count, maxNumberOfAttributes)
+        XCTAssertEqual(spanData.totalAttributeCount, 2 * maxNumberOfAttributes)
         span.end()
         spanData = span.toSpanData()
-        XCTAssertEqual(spanData.attributes.count, maxNumberOfAttributes) //
-        for i in 0 ..< maxNumberOfAttributes {
-            let expectedValue = AttributeValue.int(i + maxNumberOfAttributes)
-            XCTAssertEqual(spanData.attributes["MyStringAttributeKey\(i + maxNumberOfAttributes)"], expectedValue)
-        }
+        XCTAssertEqual(spanData.attributes.count, maxNumberOfAttributes)
+        XCTAssertEqual(spanData.totalAttributeCount, 2 * maxNumberOfAttributes)
     }
 
     func testDroppingAndAddingAttributes() {
@@ -252,13 +246,11 @@ class RecordEventsReadableSpanTest: XCTestCase {
             span.setAttribute(key: "MyStringAttributeKey\(i)", value: AttributeValue.int(i))
         }
         var spanData = span.toSpanData()
-        XCTAssertEqual(spanData.attributes.count, maxNumberOfAttributes) //
-        for i in 0 ..< maxNumberOfAttributes {
-            let expectedValue = AttributeValue.int(i + maxNumberOfAttributes)
-            XCTAssertEqual(spanData.attributes["MyStringAttributeKey\(i + maxNumberOfAttributes)"], expectedValue)
-        } //
+        XCTAssertEqual(spanData.attributes.count, maxNumberOfAttributes)
+        XCTAssertEqual(spanData.totalAttributeCount, 2 * maxNumberOfAttributes)
         for i in 0 ..< maxNumberOfAttributes / 2 {
-            span.setAttribute(key: "MyStringAttributeKey\(i)", value: AttributeValue.int(i))
+            let val = i + maxNumberOfAttributes * 3 / 2;
+            span.setAttribute(key: "MyStringAttributeKey\(i)", value: AttributeValue.int(val))
         }
         spanData = span.toSpanData()
         XCTAssertEqual(spanData.attributes.count, maxNumberOfAttributes)
@@ -266,10 +258,10 @@ class RecordEventsReadableSpanTest: XCTestCase {
         for i in 0 ..< maxNumberOfAttributes / 2 {
             let val = i + maxNumberOfAttributes * 3 / 2
             let expectedValue = AttributeValue.int(val)
-            XCTAssertEqual(spanData.attributes["MyStringAttributeKey\(val)"], expectedValue)
+            XCTAssertEqual(spanData.attributes["MyStringAttributeKey\(i)"], expectedValue)
         }
         // Test that we have the newest re-added initial entries.
-        for i in 0 ..< maxNumberOfAttributes / 2 {
+        for i in maxNumberOfAttributes / 2 ..< maxNumberOfAttributes {
             let expectedValue = AttributeValue.int(i)
             XCTAssertEqual(spanData.attributes["MyStringAttributeKey\(i)"], expectedValue)
         }
@@ -313,9 +305,9 @@ class RecordEventsReadableSpanTest: XCTestCase {
         let traceConfig = TraceConfig()
         let spanProcessor = NoopSpanProcessor()
         let clock = TestClock()
-        var labels = [String: String]()
-        labels["foo"] = "bar"
-        let resource = Resource(labels: labels)
+        var attribute = [String: AttributeValue]()
+        attribute["foo"] = AttributeValue.string("bar")
+        let resource = Resource(attributes: attributes)
         let attributes = TestUtils.generateRandomAttributes()
         var attributesWithCapacity = AttributesWithCapacity(capacity: 32)
         attributesWithCapacity.updateValues(attributes: attributes)
@@ -375,7 +367,6 @@ class RecordEventsReadableSpanTest: XCTestCase {
                                 hasRemoteParent: false,
                                 hasEnded: true,
                                 totalRecordedEvents: 2,
-                                numberOfChildren: 0,
                                 totalRecordedLinks: links.count)
 
         let result = readableSpan.toSpanData()
@@ -429,7 +420,6 @@ class RecordEventsReadableSpanTest: XCTestCase {
         testClock.advanceMillis(millisPerSecond)
         span.addEvent(name: "event2", attributes: [String: AttributeValue]())
         testClock.advanceMillis(millisPerSecond)
-        span.addChild()
         span.name = spanNewName
         span.status = status
     }

@@ -42,31 +42,7 @@ public protocol Span: AnyObject, CustomStringConvertible {
     /// - Parameters:
     ///   - key: Key of the attribute.
     ///   - value: Attribute value.
-    func setAttribute(key: String, value: String?)
-
-    /// Puts a new attribute to the span.
-    /// - Parameters:
-    ///   - key: Key of the attribute.
-    ///   - value: Attribute value.
-    func setAttribute(key: String, value: Int)
-
-    /// Puts a new attribute to the span.
-    /// - Parameters:
-    ///   - key: Key of the attribute.
-    ///   - value: Attribute value.
-    func setAttribute(key: String, value: Double)
-
-    /// Puts a new attribute to the span.
-    /// - Parameters:
-    ///   - key: Key of the attribute.
-    ///   - value: Attribute value.
-    func setAttribute(key: String, value: Bool)
-
-    /// Puts a new attribute to the span.
-    /// - Parameters:
-    ///   - key: Key of the attribute.
-    ///   - value: Attribute value.
-    func setAttribute(key: String, value: AttributeValue)
+    func setAttribute(key: String, value: AttributeValue?)
 
     /// Adds an event to the Span
     /// - Parameter name: the name of the event.
@@ -138,7 +114,8 @@ extension Span {
 }
 
 extension Span {
-    public func setAttribute(key: String, value: String?) {
+    public func setAttribute(key: String, value: String) {
+        guard !value.isEmpty else { return }
         return setAttribute(key: key, value: AttributeValue.string(value))
     }
 

@@ -19,6 +19,7 @@ import XCTest
 
 class ProbabilitySamplerTest: XCTestCase {
     let spanName = "MySpanName"
+    let spanKind = SpanKind.internal
     let numSamplesTries = 1000
     let idsGenerator: IdsGenerator = RandomIdsGenerator()
     var traceId: TraceId!
@@ -39,11 +40,25 @@ class ProbabilitySamplerTest: XCTestCase {
     }
 
     func testAlwaysOnSampler_AlwaysReturnTrue() {
-        XCTAssertTrue(Samplers.alwaysOn.shouldSample(parentContext: sampledSpanContext, traceId: traceId, spanId: spanId, name: spanName, parentLinks: [Link]()).isSampled)
+        XCTAssertTrue(Samplers.alwaysOn.shouldSample(parentContext: sampledSpanContext,
+                                                     traceId: traceId,
+                                                     spanId: spanId,
+                                                     name: spanName,
+                                                     kind: spanKind,
+                                                     attributes: [String: AttributeValue](),
+                                                     parentLinks: [Link]())
+                .isSampled)
     }
 
     func testAlwaysOffSampler_AlwaysReturnFalse() {
-        XCTAssertFalse(Samplers.alwaysOff.shouldSample(parentContext: sampledSpanContext, traceId: traceId, spanId: spanId, name: spanName, parentLinks: [Link]()).isSampled)
+        XCTAssertFalse(Samplers.alwaysOff.shouldSample(parentContext: sampledSpanContext,
+                                                       traceId: traceId,
+                                                       spanId: spanId,
+                                                       name: spanName,
+                                                       kind: spanKind,
+                                                       attributes: [String: AttributeValue](),
+                                                       parentLinks: [Link]())
+                .isSampled)
     }
 
     func testProbabilitySampler_AlwaysSample() {
@@ -78,7 +93,13 @@ class ProbabilitySamplerTest: XCTestCase {
     private func assertSamplerSamplesWithProbability(sampler: Sampler, parent: SpanContext, parentLinks: [Link], probability: Double) {
         var count = 0 // Count of spans with sampling enabled
         for _ in 0 ..< numSamplesTries {
-            if sampler.shouldSample(parentContext: parent, traceId: TraceId.random(), spanId: SpanId.random(), name: spanName, parentLinks: parentLinks).isSampled {
+            if sampler.shouldSample(parentContext: parent,
+                                    traceId: TraceId.random(),
+                                    spanId: SpanId.random(),
+                                    name: spanName,
+                                    kind: spanKind,
+                                    attributes: [String: AttributeValue](),
+                                    parentLinks: parentLinks).isSampled {
                 count += 1
             }
         }
@@ -120,13 +141,25 @@ class ProbabilitySamplerTest: XCTestCase {
         // is not less than probability * Long.MAX_VALUE;
         let notSampledtraceId = TraceId(fromBytes: [0x8F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0])
 
-        let decision1 = defaultProbability.shouldSample(parentContext: nil, traceId: notSampledtraceId, spanId: SpanId.random(), name: spanName, parentLinks: [Link]())
+        let decision1 = defaultProbability.shouldSample(parentContext: nil,
+                                                        traceId: notSampledtraceId,
+                                                        spanId: SpanId.random(),
+                                                        name: spanName,
+                                                        kind: spanKind,
+                                                        attributes: [String: AttributeValue](),
+                                                        parentLinks: [Link]())
         XCTAssertFalse(decision1.isSampled)
         XCTAssertEqual(decision1.attributes.count, 0)
         // This traceId will be sampled by the ProbabilitySampler because the first 8 bytes as long
         // is less than probability * Long.MAX_VALUE;
         let sampledtraceId = TraceId(fromBytes: [0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0])
-        let decision2 = defaultProbability.shouldSample(parentContext: nil, traceId: sampledtraceId, spanId: SpanId.random(), name: spanName, parentLinks: [Link]())
+        let decision2 = defaultProbability.shouldSample(parentContext: nil,
+                                                        traceId: sampledtraceId,
+                                                        spanId: SpanId.random(),
+                                                        name: spanName,
+                                                        kind: spanKind,
+                                                        attributes: [String: AttributeValue](),
+                                                        parentLinks: [Link]())
         XCTAssertTrue(decision2.isSampled)
         XCTAssertEqual(decision2.attributes.count, 0)
     }

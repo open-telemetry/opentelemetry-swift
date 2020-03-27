@@ -91,13 +91,15 @@ public struct SpanData: Equatable {
     /// number recorded was greater than the configured maximum value. See TraceConfig.maxNumberOfEvents
     public private(set) var totalRecordedEvents: Int = 0
 
-    /// The total number of child spans that were created for this span.
-    public private(set) var numberOfChildren: Int = 0
-
     /// The total number of  links that were recorded on this span. This number
     /// may be larger than the number of links that are attached to this span, if the total number
     /// recorded was greater than the configured maximum value. See TraceConfig.maxNumberOfLinks
     public private(set) var totalRecordedLinks: Int = 0
+
+    /// The total number of attributes that were recorded on this span. This number may be larger than
+    /// the number of attributes that are attached to this span, if the total number recorded was
+    /// greater than the configured maximum value. See TraceConfig.maxNumberOfAttributes
+    public private(set) var totalAttributeCount: Int = 0
 
     public static func == (lhs: SpanData, rhs: SpanData) -> Bool {
         return lhs.traceId == rhs.traceId &&
@@ -117,8 +119,8 @@ public struct SpanData: Equatable {
             lhs.links == rhs.links &&
             lhs.hasEnded == rhs.hasEnded &&
             lhs.totalRecordedEvents == rhs.totalRecordedEvents &&
-            lhs.numberOfChildren == rhs.numberOfChildren &&
-            lhs.totalRecordedLinks == rhs.totalRecordedLinks
+            lhs.totalRecordedLinks == rhs.totalRecordedLinks &&
+            lhs.totalAttributeCount == rhs.totalAttributeCount
     }
 
     public mutating func settingName(_ name: String) -> SpanData {
@@ -206,13 +208,15 @@ public struct SpanData: Equatable {
         return self
     }
 
-    public mutating func settingNumberOfChildren(_ numberOfChildren: Int) -> SpanData {
-        self.numberOfChildren = numberOfChildren
-        return self
-    }
-
     public mutating func settingTotalRecordedLinks(_ totalRecordedLinks: Int) -> SpanData {
         self.totalRecordedLinks = totalRecordedLinks
         return self
     }
+    
+    public mutating func settingTotalAttributeCount(_ totalAttributeCount: Int) -> SpanData {
+        self.totalAttributeCount = totalAttributeCount
+        return self
+    }
+
+
 }

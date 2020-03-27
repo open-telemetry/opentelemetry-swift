@@ -23,7 +23,7 @@ class LoggingTracer: Tracer {
     }
 
     var binaryFormat: BinaryFormattable = BinaryTraceContextFormat()
-    var textFormat: TextFormattable = HttpTraceContextFormat()
+    var textFormat: HTTPTextFormattable = HttpTraceContextFormat()
 
     func spanBuilder(spanName: String) -> SpanBuilder {
         return LoggingSpanBuilder(tracer: self, spanName: spanName)

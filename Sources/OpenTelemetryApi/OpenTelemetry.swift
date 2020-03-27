@@ -22,22 +22,25 @@ public struct OpenTelemetry {
     public static var instance = OpenTelemetry()
 
     /// Registered TracerFactory or default via DefaultTracerFactory.instance.
-    public private(set) var tracerRegistry: TracerRegistry
+    public private(set) var tracerProvider: TracerProvider
 
 //    /// Registered MeterFactory or default via DefaultMeterFactory.instance.
-//    public private(set)  var meter: MeterRegistry
+//    public private(set)  var meter: MeterProvider
 
     /// registered manager or default via  DefaultCorrelationContextManager.instance.
     public private(set) var contextManager: CorrelationContextManager
 
+    /// registered manager or default via  DefaultCorrelationContextManager.instance.
+    public private(set) var propagators: ContextPropagators = DefaultContextPropagators(textPropagators: [HttpTraceContextFormat()])
+
     private init() {
-        tracerRegistry = DefaultTracerRegistry.instance
+        tracerProvider = DefaultTracerProvider.instance
 //        meter = DefaultMeterFactory.instance;
         contextManager = DefaultCorrelationContextManager.instance
     }
 
-    public static func registerTracerRegistry(tracerRegistry: TracerRegistry) {
-        instance.tracerRegistry = tracerRegistry
+    public static func registerTracerProvider(tracerProvider: TracerProvider) {
+        instance.tracerProvider = tracerProvider
     }
 
     public static func registerCorrelationContextManager(correlationContextManager: CorrelationContextManager) {

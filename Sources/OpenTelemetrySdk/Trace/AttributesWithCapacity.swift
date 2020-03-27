@@ -16,16 +16,16 @@
 import Foundation
 import OpenTelemetryApi
 
-// A dixtionary implementation with a fixed capacity that drops events when the dictionary gets full. Eviction
+// A dictionary implementation with a fixed capacity that drops events when the dictionary gets full. Eviction
 // is based on the access order.
 public struct AttributesWithCapacity {
-    var dictionary: [String: AttributeValue]
+    var attributes: [String: AttributeValue]
     var keys: [String]
     private var capacity: Int
     private var recordedAttributes: Int
 
     init(capacity: Int) {
-        dictionary = [String: AttributeValue]()
+        attributes = [String: AttributeValue]()
         keys = [String]()
         recordedAttributes = 0
         self.capacity = capacity
@@ -33,7 +33,7 @@ public struct AttributesWithCapacity {
 
     subscript(key: String) -> AttributeValue? {
         get {
-            dictionary[key]
+            attributes[key]
         }
         set {
             if newValue == nil {
@@ -45,7 +45,7 @@ public struct AttributesWithCapacity {
     }
 
     @discardableResult mutating func updateValue(value: AttributeValue, forKey key: String) -> AttributeValue? {
-        let oldValue = dictionary.updateValue(value, forKey: key)
+        let oldValue = attributes.updateValue(value, forKey: key)
         if oldValue == nil {
             recordedAttributes += 1
             keys.append(key)
@@ -53,9 +53,9 @@ public struct AttributesWithCapacity {
             keys.remove(at: keys.firstIndex(of: key)!)
             keys.append(key)
         }
-        if dictionary.count > capacity {
+        if attributes.count > capacity {
             let key = keys.removeFirst()
-            dictionary[key] = nil
+            attributes[key] = nil
         }
         return oldValue
     }
@@ -76,38 +76,38 @@ public struct AttributesWithCapacity {
         keys = keys.filter {
             $0 != key
         }
-        dictionary.removeValue(forKey: key)
+        attributes.removeValue(forKey: key)
     }
 
     mutating func removeAll(keepCapacity: Int) {
         keys = []
-        dictionary = Dictionary<String, AttributeValue>(minimumCapacity: keepCapacity)
+        attributes = Dictionary<String, AttributeValue>(minimumCapacity: keepCapacity)
     }
 
     var count: Int {
-        dictionary.count
+        attributes.count
     }
 
     var numberOfDroppedAttributes: Int {
-        recordedAttributes - dictionary.count
+        recordedAttributes - attributes.count
     }
 
     var values: Array<AttributeValue> {
-        keys.map { dictionary[$0]! }
+        keys.map { attributes[$0]! }
     }
 
     static func == (lhs: AttributesWithCapacity, rhs: AttributesWithCapacity) -> Bool {
-        lhs.keys == rhs.keys && lhs.dictionary == rhs.dictionary
+        lhs.keys == rhs.keys && lhs.attributes == rhs.attributes
     }
 
     static func != (lhs: AttributesWithCapacity, rhs: AttributesWithCapacity) -> Bool {
-        lhs.keys != rhs.keys || lhs.dictionary != rhs.dictionary
+        lhs.keys != rhs.keys || lhs.attributes != rhs.attributes
     }
 }
 
 extension AttributesWithCapacity: Sequence {
     public func makeIterator() -> AttributesWithCapacityIterator {
-        AttributesWithCapacityIterator(sequence: dictionary, keys: keys, current: 0)
+        AttributesWithCapacityIterator(sequence: attributes, keys: keys, current: 0)
     }
 }
 
