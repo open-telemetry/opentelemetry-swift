@@ -1,0 +1,17 @@
+name: Scope Testing
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: macOS-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Testing for macOS
+      uses: undefinedlabs/scope-for-swift-action@v1
+      with:
+        dsn: ${{ secrets.SCOPE_DSN }}
+        platform: macos
+        codePath: true
