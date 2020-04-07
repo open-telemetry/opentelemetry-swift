@@ -30,6 +30,8 @@ public protocol Sampler: AnyObject, CustomStringConvertible {
                       traceId: TraceId,
                       spanId: SpanId,
                       name: String,
+                      kind: SpanKind,
+                      attributes: [String:AttributeValue],
                       parentLinks: [Link]) -> Decision
 }
 

@@ -67,7 +67,7 @@ public class DefaultSpanBuilder: SpanBuilder {
         return self
     }
 
-    public func setAttribute(key: String, value: AttributeValue) -> Self {
+    public func setAttribute(key: String, value: AttributeValue?) -> Self {
         return self
     }
 }

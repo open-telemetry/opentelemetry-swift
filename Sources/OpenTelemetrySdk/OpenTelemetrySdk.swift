@@ -16,15 +16,15 @@
 import Foundation
 import OpenTelemetryApi
 
-/// This class provides a static global accessor for SDK telemetry objects TracerSdkRegistry,
+/// This class provides a static global accessor for SDK telemetry objects TracerSdkProvider,
 /// MeterSdkFactory CorrelationContextManagerSdk.
 /// This is a convenience class getting and casting the telemetry objects from OpenTelemetry.
 public struct OpenTelemetrySDK {
     public static var instance = OpenTelemetrySDK()
 
     /// TracerFactory returned by OpenTelemetry.getTracerFactory().
-    public var tracerFactory: TracerSdkRegistry {
-        return OpenTelemetry.instance.tracerRegistry as! TracerSdkRegistry
+    public var tracerFactory: TracerSdkProvider {
+        return OpenTelemetry.instance.tracerProvider as! TracerSdkProvider
     }
 
 //    /// Meter returned by OpenTelemetry.getMeter().
@@ -38,7 +38,7 @@ public struct OpenTelemetrySDK {
     }
 
     private init() {
-        OpenTelemetry.registerTracerRegistry(tracerRegistry: TracerSdkRegistry())
+        OpenTelemetry.registerTracerProvider(tracerProvider: TracerSdkProvider())
         OpenTelemetry.registerCorrelationContextManager(correlationContextManager: CorrelationContextManagerSdk())
     }
 }

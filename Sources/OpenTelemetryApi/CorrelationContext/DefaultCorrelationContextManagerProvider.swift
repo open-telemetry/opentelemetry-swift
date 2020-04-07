@@ -13,19 +13,13 @@
 // limitations under the License.
 //
 
-@testable import OpenTelemetrySdk
-import XCTest
+import Foundation
 
-class NoopSpanProcessorTest: XCTestCase {
-    let readableSpan = ReadableSpanMock()
+/// No-op implementations of CorrelationContextManager.
+public class DefaultCorrelationContextManagerProvider: CorrelationContextManagerProvider {
+    public static var instance = DefaultCorrelationContextManagerProvider()
 
-    func testNoCrash() {
-        let noopSpanProcessor = NoopSpanProcessor()
-        noopSpanProcessor.onStart(span: readableSpan)
-        XCTAssertFalse(noopSpanProcessor.isStartRequired)
-        noopSpanProcessor.onEnd(span: readableSpan)
-        XCTAssertFalse(noopSpanProcessor.isEndRequired)
-        noopSpanProcessor.forceFlush()
-        noopSpanProcessor.shutdown()
+    public func create() -> CorrelationContextManager {
+        return DefaultCorrelationContextManager.instance
     }
 }

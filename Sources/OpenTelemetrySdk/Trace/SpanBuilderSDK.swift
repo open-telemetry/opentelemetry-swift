@@ -101,9 +101,9 @@ public class SpanBuilderSdk: SpanBuilder {
         return self
     }
 
-    public func setAttribute(key: String, value: AttributeValue) -> Self {
-        if case let .string(string) = value,
-            string?.isEmpty ?? true {
+    public func setAttribute(key: String, value: AttributeValue?) -> Self {
+        guard let value = value else {
+            attributes.removeValueForKey(key: key)
             return self
         }
         attributes.updateValue(value: value, forKey: key)
@@ -138,6 +138,8 @@ public class SpanBuilderSdk: SpanBuilder {
                                                                 traceId: traceId,
                                                                 spanId: spanId,
                                                                 name: spanName,
+                                                                kind: spanKind,
+                                                                attributes: attributes.attributes,
                                                                 parentLinks: links)
 
         let spanContext = SpanContext.create(traceId: traceId,
@@ -169,7 +171,6 @@ public class SpanBuilderSdk: SpanBuilder {
 
     private static func getClock(parent: Span?, clock: Clock) -> Clock {
         if let parentRecordEventSpan = parent as? RecordEventsReadableSpan {
-            parentRecordEventSpan.addChild()
             return parentRecordEventSpan.clock
         } else {
             return MonotonicClock(clock: clock)

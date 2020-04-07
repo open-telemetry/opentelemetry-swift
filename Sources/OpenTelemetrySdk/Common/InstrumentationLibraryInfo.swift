@@ -16,7 +16,7 @@
 import Foundation
 
 /// Holds information about the instrumentation library specified when creating an instance of
-/// TracerSdk using TracerSdkRegistry.
+/// TracerSdk using TracerSdkProvider.
 public struct InstrumentationLibraryInfo: Hashable {
     public private(set) var name: String = ""
     public private(set) var version: String?

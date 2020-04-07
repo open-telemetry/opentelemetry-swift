@@ -24,7 +24,7 @@ class TracerSdkTests: XCTestCase {
     var instrumentationLibraryInfo: InstrumentationLibraryInfo!
     var span = SpanMock()
     var spanProcessor = SpanProcessorMock()
-    var tracerSdkFactory = TracerSdkRegistry()
+    var tracerSdkFactory = TracerSdkProvider()
     var tracer: TracerSdk!
 
     override func setUp() {

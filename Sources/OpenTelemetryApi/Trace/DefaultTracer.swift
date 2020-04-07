@@ -18,8 +18,6 @@ import Foundation
 /// No-op implementation of the Tracer
 public class DefaultTracer: Tracer {
     public static var instance = DefaultTracer()
-    public var binaryFormat: BinaryFormattable = BinaryTraceContextFormat()
-    public var textFormat: TextFormattable = HttpTraceContextFormat()
 
     private init() {}
 

@@ -74,9 +74,9 @@ public struct ContextUtils {
             contextMap[activityId] = ContextEntry(span: span, correlationContext: getCurrentCorrelationContext())
         }
     }
-    
+
     static func removeContextForSpan(activityId: os_activity_id_t) {
-        if let correlationContext = contextMap[activityId]?.correlationContext  {
+        if let correlationContext = contextMap[activityId]?.correlationContext {
             contextMap[activityId] = ContextEntry(span: nil, correlationContext: correlationContext)
         } else {
             contextMap[activityId] = nil
@@ -90,9 +90,9 @@ public struct ContextUtils {
             contextMap[activityId] = ContextEntry(span: getCurrentSpan(), correlationContext: correlationContext)
         }
     }
-    
+
     static func removeContextForCorrelationContext(activityId: os_activity_id_t) {
-        if let span = contextMap[activityId]?.span  {
+        if let span = contextMap[activityId]?.span {
             contextMap[activityId] = ContextEntry(span: span, correlationContext: nil)
         } else {
             contextMap[activityId] = nil

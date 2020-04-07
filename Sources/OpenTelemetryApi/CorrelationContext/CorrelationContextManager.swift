@@ -34,10 +34,4 @@ public protocol CorrelationContextManager: AnyObject {
     /// scope. The scope is exited when the returned object is closed.
     /// - Parameter correlationContext: the CorrelationContext to be set as the current context.
     func withContext(correlationContext: CorrelationContext) -> Scope
-
-    /// Returns the BinaryFormat for this implementation.
-    func getBinaryFormat() -> BinaryFormattable
-
-    /// Returns the HttpTextFormat for this implementation.
-    func getHttpTextFormat() -> TextFormattable
 }

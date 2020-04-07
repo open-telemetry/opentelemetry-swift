@@ -41,11 +41,11 @@ struct TestUtils {
                         hasEnded: true)
     }
 
-    static func startSpanWithSampler(tracerSdkFactory: TracerSdkRegistry, tracer: Tracer, spanName: String, sampler: Sampler) -> SpanBuilder {
+    static func startSpanWithSampler(tracerSdkFactory: TracerSdkProvider, tracer: Tracer, spanName: String, sampler: Sampler) -> SpanBuilder {
         return startSpanWithSampler(tracerSdkFactory: tracerSdkFactory, tracer: tracer, spanName: spanName, sampler: sampler, attributes: [String: AttributeValue]())
     }
 
-    static func startSpanWithSampler(tracerSdkFactory: TracerSdkRegistry, tracer: Tracer, spanName: String, sampler: Sampler, attributes: [String: AttributeValue]) -> SpanBuilder {
+    static func startSpanWithSampler(tracerSdkFactory: TracerSdkProvider, tracer: Tracer, spanName: String, sampler: Sampler, attributes: [String: AttributeValue]) -> SpanBuilder {
         let originalConfig = tracerSdkFactory.getActiveTraceConfig()
         tracerSdkFactory.updateActiveTraceConfig(originalConfig.settingSampler(sampler))
         defer { tracerSdkFactory.updateActiveTraceConfig(originalConfig) }

@@ -22,20 +22,20 @@ public struct Resource: Equatable {
     private static let maxLength = 255
 
     /// A dictionary of labels that describe the resource.
-    public var labels: [String: String]
+    public var attributes: [String: AttributeValue]
 
     ///  Returns an empty Resource.
     public init() {
-        self.init(labels: [String: String]())
+        self.init(attributes: [String: AttributeValue]())
     }
 
     /// Returns a Resource.
     /// - Parameter labels: a dictionary of labels that describe the resource.
-    public init(labels: [String: String]) {
-        if Resource.checkLabels(labels: labels) {
-            self.labels = labels
+    public init(attributes: [String: AttributeValue]) {
+        if Resource.checkAttributes(attributes: attributes) {
+            self.attributes = attributes
         } else {
-            self.labels = [String: String]()
+            self.attributes = [String: AttributeValue]()
         }
     }
 
@@ -43,20 +43,20 @@ public struct Resource: Equatable {
     /// In case of a collision, current Resource takes precedence.
     /// - Parameter other: the Resource that will be merged with this
     public mutating func merge(other: Resource) {
-        labels.merge(other.labels) { current, _ in current }
+        attributes.merge(other.attributes) { current, _ in current }
     }
 
     /// Returns a new, merged Resource by merging the current Resource with the other Resource.
     /// In case of a collision, current Resource takes precedence.
     /// - Parameter other: the Resource that will be merged with this
     public func merging(other: Resource) -> Resource {
-        let labelsCopy = labels.merging(other.labels) { current, _ in current }
-        return Resource(labels: labelsCopy)
+        let labelsCopy = attributes.merging(other.attributes) { current, _ in current }
+        return Resource(attributes: labelsCopy)
     }
 
-    private static func checkLabels(labels: [String: String]) -> Bool {
-        for entry in labels {
-            if !isValidAndNotEmpty(name: entry.key) || !isValid(name: entry.value) {
+    private static func checkAttributes(attributes: [String: AttributeValue]) -> Bool {
+        for entry in attributes {
+            if !isValidAndNotEmpty(name: entry.key) {
                 return false
             }
         }

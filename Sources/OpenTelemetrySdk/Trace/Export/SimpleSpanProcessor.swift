@@ -22,6 +22,9 @@ public struct SimpleSpanProcessor: SpanProcessor {
     private var spanExporter: SpanExporter
     private var sampled: Bool = true
 
+    public let isStartRequired = false
+    public let isEndRequired = true
+    
     public func onStart(span: ReadableSpan) {
     }
 
@@ -35,6 +38,9 @@ public struct SimpleSpanProcessor: SpanProcessor {
 
     public mutating func shutdown() {
         spanExporter.shutdown()
+    }
+
+    public func forceFlush() {
     }
 
     /// Returns a new SimpleSpansProcessor that converts spans to proto and forwards them to

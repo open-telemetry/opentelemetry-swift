@@ -18,9 +18,9 @@ import OpenTelemetryApi
 
 Logger.printHeader()
 
-OpenTelemetry.registerTracerRegistry(tracerRegistry: LoggingTracerRegistry())
+OpenTelemetry.registerTracerProvider(tracerProvider: LoggingTracerProvider())
 
-var tracer = OpenTelemetry.instance.tracerRegistry.get(instrumentationName: "ConsoleApp", instrumentationVersion: "semver:1.0.0")
+var tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "ConsoleApp", instrumentationVersion: "semver:1.0.0")
 
 let scope = tracer.withSpan(tracer.spanBuilder(spanName: "Main (span1)").startSpan())
 let semaphore = DispatchSemaphore(value: 0)

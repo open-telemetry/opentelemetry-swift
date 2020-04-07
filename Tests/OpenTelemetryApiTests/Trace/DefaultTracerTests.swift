@@ -46,14 +46,6 @@ final class DefaultTracerTests: XCTestCase {
         XCTAssert(defaultTracer.spanBuilder(spanName: spanName).startSpan() is DefaultSpan)
     }
 
-    func testDefaultHttpTextFormat() {
-        XCTAssert(defaultTracer.textFormat is HttpTraceContextFormat)
-    }
-
-    func testDefaultBinarytFormat() {
-        XCTAssert(defaultTracer.binaryFormat is BinaryTraceContextFormat)
-    }
-
     func testTestInProcessContext() {
         let span = defaultTracer.spanBuilder(spanName: spanName).startSpan()
         var scope = defaultTracer.withSpan(span)

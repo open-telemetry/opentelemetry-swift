@@ -72,7 +72,7 @@ public class DefaultSpan: Span {
     public func updateName(name: String) {
     }
 
-    public func setAttribute(key: String, value: AttributeValue) {
+    public func setAttribute(key: String, value: AttributeValue?) {
     }
 
     public func addEvent(name: String) {
