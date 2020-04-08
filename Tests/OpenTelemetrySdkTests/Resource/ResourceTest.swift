@@ -13,46 +13,47 @@
 // limitations under the License.
 //
 
+import OpenTelemetryApi
 @testable import OpenTelemetrySdk
 import XCTest
 
 class ResourceTest: XCTestCase {
-    var defaultResource = Resource(labels: [String: String]())
+    var defaultResource = Resource(attributes: [String: AttributeValue]())
     var resource1: Resource!
     var resource2: Resource!
 
     override func setUp() {
-        let labelMap1 = ["a": "1", "b": "2"]
-        let labelMap2 = ["a": "1", "b": "3", "c": "4"]
-        resource1 = Resource(labels: labelMap1)
-        resource2 = Resource(labels: labelMap2)
+        let labelMap1 = ["a": AttributeValue.string("1"), "b": AttributeValue.string("2")]
+        let labelMap2 = ["a": AttributeValue.string("1"), "b": AttributeValue.string("3"), "c": AttributeValue.string("4")]
+        resource1 = Resource(attributes: labelMap1)
+        resource2 = Resource(attributes: labelMap2)
     }
 
     func testCreate() {
-        let labelMap = ["a": "1", "b": "2"]
-        let resource = Resource(labels: labelMap)
-        XCTAssertEqual(resource.labels.count, 2)
-        XCTAssertEqual(resource.labels, labelMap)
-        let resource1 = Resource(labels: [String: String]())
-        XCTAssertEqual(resource1.labels.count, 0)
+        let labelMap = ["a": AttributeValue.string("1"), "b": AttributeValue.string("2")]
+        let resource = Resource(attributes: labelMap)
+        XCTAssertEqual(resource.attributes.count, 2)
+        XCTAssertEqual(resource.attributes, labelMap)
+        let resource1 = Resource(attributes: [String: AttributeValue]())
+        XCTAssertEqual(resource1.attributes.count, 0)
     }
 
     func testResourceEquals() {
-        let labelMap1 = ["a": "1", "b": "2"]
-        let labelMap2 = ["a": "1", "b": "3", "c": "4"]
-        XCTAssertEqual(Resource(labels: labelMap1), Resource(labels: labelMap1))
-        XCTAssertNotEqual(Resource(labels: labelMap1), Resource(labels: labelMap2))
+        let labelMap1 = ["a": AttributeValue.string("1"), "b": AttributeValue.string("2")]
+        let labelMap2 = ["a": AttributeValue.string("1"), "b": AttributeValue.string("3"), "c": AttributeValue.string("4")]
+        XCTAssertEqual(Resource(attributes: labelMap1), Resource(attributes: labelMap1))
+        XCTAssertNotEqual(Resource(attributes: labelMap1), Resource(attributes: labelMap2))
     }
 
     func testMergeResources() {
-        let expectedLabelMap = ["a": "1", "b": "2", "c": "4"]
+        let expectedLabelMap = ["a": AttributeValue.string("1"), "b": AttributeValue.string("2"), "c": AttributeValue.string("4")]
         let resource = defaultResource.merging(other: resource1).merging(other: resource2)
-        XCTAssertEqual(resource.labels, expectedLabelMap)
+        XCTAssertEqual(resource.attributes, expectedLabelMap)
     }
 
     func testMergeResources_Resource1() {
-        let expectedLabelMap = ["a": "1", "b": "2"]
+        let expectedLabelMap = ["a": AttributeValue.string("1"), "b": AttributeValue.string("2")]
         let resource = defaultResource.merging(other: resource1)
-        XCTAssertEqual(resource.labels, expectedLabelMap)
+        XCTAssertEqual(resource.attributes, expectedLabelMap)
     }
 }

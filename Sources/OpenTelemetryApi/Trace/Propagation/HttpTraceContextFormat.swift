@@ -19,7 +19,7 @@ import Foundation
  * Implementation of the TraceContext propagation protocol. See
  * https://github.com/w3c/trace-context
  */
-public struct HttpTraceContextFormat: TextFormattable {
+public struct HttpTraceContextFormat: HTTPTextFormattable {
     private static let versionLength = "00".count
     private static let versionPrefixIdLength = "00-".count
     private static let traceIdLength = "0af7651916cd43dd8448eb211c80319c".count
@@ -37,6 +37,7 @@ public struct HttpTraceContextFormat: TextFormattable {
     public var fields: Set<String> = [traceState, traceparent]
 
     public func inject<S>(spanContext: SpanContext, carrier: inout [String: String], setter: S) where S: Setter {
+        guard spanContext.isValid else { return }
         var traceparent = "00-\(spanContext.traceId.hexString)-\(spanContext.spanId.hexString)"
 
         traceparent += spanContext.traceFlags.sampled ? "-01" : "-00"
@@ -49,17 +50,17 @@ public struct HttpTraceContextFormat: TextFormattable {
         }
     }
 
-    public func extract<G>(carrier: [String: String], getter: G) -> SpanContext where G: Getter {
+    public func extract<G>(spanContext: SpanContext?, carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
         guard let traceparentCollection = getter.get(carrier: carrier,
                                                      key: HttpTraceContextFormat.traceparent),
             traceparentCollection.count <= 1 else {
             // multiple traceparent are not allowed
-            return SpanContext.invalid
+            return nil
         }
         let traceparent = traceparentCollection.first
 
         guard let extractedTraceParent = extractTraceparent(traceparent: traceparent) else {
-            return SpanContext.invalid
+            return nil
         }
 
         let traceStateCollection = getter.get(carrier: carrier, key: HttpTraceContextFormat.traceState)

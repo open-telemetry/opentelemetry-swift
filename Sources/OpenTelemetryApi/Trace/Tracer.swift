@@ -23,12 +23,6 @@ public protocol Tracer: AnyObject {
     /// Gets the current Span from the current Context.
     var currentSpan: Span? { get }
 
-    /// Gets the BinaryFormat for this implementation.
-    var binaryFormat: BinaryFormattable { get }
-
-    /// Gets the ITextFormat for this implementation.
-    var textFormat: TextFormattable { get }
-
     /// Returns a SpanBuilder to create and start a new Span
     /// - Parameter spanName: The name of the returned Span.
     func spanBuilder(spanName: String) -> SpanBuilder

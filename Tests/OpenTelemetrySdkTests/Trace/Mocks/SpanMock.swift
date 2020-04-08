@@ -33,19 +33,7 @@ class SpanMock: Span {
     func updateName(name: String) {
     }
 
-    func setAttribute(key: String, value: String) {
-    }
-
-    func setAttribute(key: String, value: Int) {
-    }
-
-    func setAttribute(key: String, value: Double) {
-    }
-
-    func setAttribute(key: String, value: Bool) {
-    }
-
-    func setAttribute(key: String, value: AttributeValue) {
+    func setAttribute(key: String, value: AttributeValue?) {
     }
 
     func addEvent(name: String) {

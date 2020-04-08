@@ -103,8 +103,8 @@ public protocol SpanBuilder: class {
     /// contained a mapping for the key, the old value is replaced by the specified value.
     /// - Parameters:
     ///   - key: the key for this attribute
-    ///   - value: the value for this attribute
-    @discardableResult func setAttribute(key: String, value: AttributeValue) -> Self
+    ///   - value: the value for this attribute, pass nil to remove previous value
+    @discardableResult func setAttribute(key: String, value: AttributeValue?) -> Self
 
     /// Sets the Span.Kind for the newly created Span. If not called, the
     /// implementation will provide a default value Span.Kind#INTERNAL.

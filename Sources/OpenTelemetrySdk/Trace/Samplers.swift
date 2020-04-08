@@ -38,6 +38,8 @@ class AlwaysOnSampler: Sampler {
                       traceId: TraceId,
                       spanId: SpanId,
                       name: String,
+                      kind: SpanKind,
+                      attributes: [String:AttributeValue],
                       parentLinks: [Link]) -> Decision {
         return Samplers.alwaysOnDecision
     }
@@ -52,6 +54,8 @@ class AlwaysOffSampler: Sampler {
                       traceId: TraceId,
                       spanId: SpanId,
                       name: String,
+                      kind: SpanKind,
+                      attributes: [String:AttributeValue],
                       parentLinks: [Link]) -> Decision {
         return Samplers.alwaysOffDecision
     }
@@ -85,6 +89,8 @@ class Probability: Sampler {
                       traceId: TraceId,
                       spanId: SpanId,
                       name: String,
+                      kind: SpanKind,
+                      attributes: [String:AttributeValue],
                       parentLinks: [Link]) -> Decision {
         /// If the parent is sampled keep the sampling decision.
         if parentContext?.traceFlags.sampled ?? false {

@@ -16,6 +16,9 @@
 import Foundation
 
 public struct NoopSpanProcessor: SpanProcessor {
+    public let isStartRequired = false
+    public let isEndRequired = false
+
     public func onStart(span: ReadableSpan) {
     }
 
@@ -23,5 +26,8 @@ public struct NoopSpanProcessor: SpanProcessor {
     }
 
     public func shutdown() {
+    }
+
+    public func forceFlush() {
     }
 }

@@ -29,12 +29,4 @@ public class CorrelationContextManagerSdk: CorrelationContextManager {
     public func withContext(correlationContext: CorrelationContext) -> Scope {
         return ContextUtils.withCorrelationContext(correlationContext)
     }
-
-    public func getBinaryFormat() -> BinaryFormattable {
-        return BinaryTraceContextFormat()
-    }
-
-    public func getHttpTextFormat() -> TextFormattable {
-        return HttpTraceContextFormat()
-    }
 }

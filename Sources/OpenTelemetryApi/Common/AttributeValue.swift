@@ -17,7 +17,7 @@ import Foundation
 
 /// An enum that represents all the possible values for an attribute.
 public enum AttributeValue: Equatable, CustomStringConvertible {
-    case string(String?)
+    case string(String)
     case bool(Bool)
     case int(Int)
     case double(Double)
@@ -25,7 +25,7 @@ public enum AttributeValue: Equatable, CustomStringConvertible {
     public var description: String {
         switch self {
         case let .string(value):
-            return value ?? ""
+            return value
         case let .bool(value):
             return value ? "true" : "false"
         case let .int(value):
@@ -38,9 +38,9 @@ public enum AttributeValue: Equatable, CustomStringConvertible {
 
 extension AttributeValue: Encodable {
     enum CodingKeys: String, CodingKey {
-        case description = "description"
+        case description
     }
-    
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(description, forKey: .description)

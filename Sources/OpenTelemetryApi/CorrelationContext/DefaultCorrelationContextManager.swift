@@ -20,8 +20,6 @@ public class DefaultCorrelationContextManager: CorrelationContextManager {
     ///  Returns a CorrelationContextManager singleton that is the default implementation for
     ///  CorrelationContextManager.
     static var instance = DefaultCorrelationContextManager()
-    static var binaryFormat = BinaryTraceContextFormat()
-    static var httpTextFormat = HttpTraceContextFormat()
 
     private init() {}
 
@@ -35,13 +33,5 @@ public class DefaultCorrelationContextManager: CorrelationContextManager {
 
     public func withContext(correlationContext: CorrelationContext) -> Scope {
         return ContextUtils.withCorrelationContext(correlationContext)
-    }
-
-    public func getBinaryFormat() -> BinaryFormattable {
-        return DefaultCorrelationContextManager.binaryFormat
-    }
-
-    public func getHttpTextFormat() -> TextFormattable {
-        return DefaultCorrelationContextManager.httpTextFormat
     }
 }

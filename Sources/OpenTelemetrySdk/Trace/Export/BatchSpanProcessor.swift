@@ -35,6 +35,9 @@ public struct BatchSpanProcessor: SpanProcessor {
         worker.start()
         self.sampled = sampled
     }
+    
+    public let isStartRequired = false
+    public let isEndRequired = true
 
     public func onStart(span: ReadableSpan) {
     }
@@ -48,7 +51,11 @@ public struct BatchSpanProcessor: SpanProcessor {
 
     public func shutdown() {
         worker.cancel()
-        worker.flush()
+        worker.shutdown()
+    }
+
+    public func forceFlush() {
+        worker.forceFlush()
     }
 }
 
@@ -105,7 +112,12 @@ private class BatchWorker: Thread {
         } while true
     }
 
-    func flush() {
+    func shutdown() {
+        forceFlush()
+        spanExporter.shutdown()
+    }
+
+    public func forceFlush() {
         var spansCopy: [ReadableSpan]
         cond.lock()
         spansCopy = spanList

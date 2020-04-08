@@ -17,11 +17,11 @@ import Foundation
 import OpenTelemetryApi
 
 /// This class is not intended to be used in application code and it is used only by OpenTelemetry.
-public class TracerSdkRegistry: TracerRegistry {
-    private var tracerRegistry = [InstrumentationLibraryInfo: TracerSdk]()
+public class TracerSdkProvider: TracerProvider {
+    private var tracerProvider = [InstrumentationLibraryInfo: TracerSdk]()
     private var sharedState: TracerSharedState
 
-    /// Returns a new TracerSdkRegistry with default Clock, IdsGenerator and Resource.
+    /// Returns a new TracerSdkProvider with default Clock, IdsGenerator and Resource.
     public convenience override init() {
         self.init(clock: MillisClock(), idsGenerator: RandomIdsGenerator(), resource: EnvVarResource.resource)
     }
@@ -33,18 +33,18 @@ public class TracerSdkRegistry: TracerRegistry {
 
     public override func get(instrumentationName: String, instrumentationVersion: String? = nil) -> Tracer {
         let instrumentationLibraryInfo = InstrumentationLibraryInfo(name: instrumentationName, version: instrumentationVersion ?? "")
-        if let tracer = tracerRegistry[instrumentationLibraryInfo] {
+        if let tracer = tracerProvider[instrumentationLibraryInfo] {
             return tracer
         } else {
             // Re-check if the value was added since the previous check, this can happen if multiple
             // threads try to access the same named tracer during the same time. This way we ensure that
             // we create only one TracerSdk per name.
-            if let tracer = tracerRegistry[instrumentationLibraryInfo] {
+            if let tracer = tracerProvider[instrumentationLibraryInfo] {
                 // A different thread already added the named Tracer, just reuse.
                 return tracer
             }
             let tracer = TracerSdk(sharedState: sharedState, instrumentationLibraryInfo: instrumentationLibraryInfo)
-            tracerRegistry[instrumentationLibraryInfo] = tracer
+            tracerProvider[instrumentationLibraryInfo] = tracer
             return tracer
         }
     }

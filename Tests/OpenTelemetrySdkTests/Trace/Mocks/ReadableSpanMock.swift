@@ -37,7 +37,7 @@ class ReadableSpanMock: ReadableSpan {
                                                 spanId: context.spanId,
                                                 traceFlags: context.traceFlags,
                                                 traceState: TraceState(),
-                                                resource: Resource(labels: [String: String]()),
+                                                resource: Resource(attributes: [String: AttributeValue]()),
                                                 instrumentationLibraryInfo: InstrumentationLibraryInfo(),
                                                 name: "ReadableSpanMock",
                                                 kind: .client,
@@ -57,19 +57,7 @@ class ReadableSpanMock: ReadableSpan {
     func updateName(name: String) {
     }
 
-    func setAttribute(key: String, value: String) {
-    }
-
-    func setAttribute(key: String, value: Int) {
-    }
-
-    func setAttribute(key: String, value: Double) {
-    }
-
-    func setAttribute(key: String, value: Bool) {
-    }
-
-    func setAttribute(key: String, value: AttributeValue) {
+    func setAttribute(key: String, value: AttributeValue?) {
     }
 
     func addEvent(name: String) {

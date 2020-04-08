@@ -15,10 +15,14 @@
 
 import Foundation
 
-public class DefaultTracerRegistry: TracerRegistry {
-    public static let instance = DefaultTracerRegistry()
-
-    public override func get(instrumentationName: String, instrumentationVersion: String?) -> Tracer {
+/// A factory for creating named Tracers.
+open class TracerProvider {
+    public init() {}
+    /// Gets or creates a named tracer instance.
+    /// - Parameters:
+    ///   - instrumentationName: the name of the instrumentation library, not the name of the instrumented library
+    ///   - instrumentationVersion:  The version of the instrumentation library (e.g., "semver:1.0.0"). Optional
+    open func get(instrumentationName: String, instrumentationVersion: String?) -> Tracer {
         return DefaultTracer.instance
     }
 }

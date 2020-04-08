@@ -15,7 +15,7 @@
 
 import Foundation
 
-public protocol TextFormattable {
+public protocol HTTPTextFormattable {
     /// Gets the list of headers used by propagator.
     var fields: Set<String> { get }
 
@@ -30,7 +30,7 @@ public protocol TextFormattable {
     /// - Parameters:
     ///   - carrier: Object to extract context from. Instance of this object will be passed to the getter.
     ///   - getter: Function that will return string value of a key with the specified name.
-    func extract<G: Getter>(carrier: [String: String], getter: G) -> SpanContext
+    @discardableResult func extract<G: Getter>(spanContext: SpanContext?, carrier: [String: String], getter: G) -> SpanContext?
 }
 
 public protocol Setter {
