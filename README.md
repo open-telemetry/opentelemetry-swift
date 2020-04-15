@@ -1,5 +1,5 @@
 
-[![Scope](https://app.scope.dev/api/badge/0082aef7-194e-44f9-9d56-563b3f9b15f3/default)](https://app.scope.dev/external/v1/inspect/5390f43e-a866-4a10-8ffa-f50785aaa035/0082aef7-194e-44f9-9d56-563b3f9b15f3/default)
+[![Scope](https://app.scope.dev/api/badge/aac7d72a-28e3-4c66-ac04-ad816166cd41/default)](https://app.scope.dev/external/v1/inspect/54b1fab6-1a7f-4d03-9fb4-26fafd169131/aac7d72a-28e3-4c66-ac04-ad816166cd41/default)
 
 # opentelemetry-swift
 
