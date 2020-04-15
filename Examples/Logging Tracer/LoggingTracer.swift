@@ -87,7 +87,7 @@ class LoggingTracer: Tracer {
             return self
         }
 
-        func setAttribute(key: String, value: AttributeValue) -> Self {
+        func setAttribute(key: String, value: AttributeValue?) -> Self {
             return self
         }
     }

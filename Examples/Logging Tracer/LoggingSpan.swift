@@ -17,6 +17,7 @@ import Foundation
 import OpenTelemetryApi
 
 class LoggingSpan: Span {
+    
     var name: String
     var kind: SpanKind
     var context: SpanContext = SpanContext.invalid
@@ -53,8 +54,8 @@ class LoggingSpan: Span {
         Logger.log("Span.setAttribute(key: \(key), value: \(value))")
     }
 
-    public func setAttribute(key: String, value: AttributeValue) {
-        Logger.log("Span.setAttribute(key: \(key), value: \(value))")
+    public func setAttribute(key: String, value: AttributeValue?) {
+        Logger.log("Span.setAttribute(key: \(key), value: \(String(describing: value)))")
     }
 
     public func setAttribute(keyValuePair: (String, AttributeValue)) {

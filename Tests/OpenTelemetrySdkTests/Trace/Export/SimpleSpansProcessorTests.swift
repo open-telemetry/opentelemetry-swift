@@ -85,7 +85,7 @@ class SimpleSpansProcessorTests: XCTestCase {
 //        let exported = waitingSpanExporter.waitForExport()
 //        // Need to check this because otherwise the variable span1 is unused, other option is to not
 //        // have a span1 variable.
-        XCTAssertEqual(exported, [(span as! ReadableSpan).toSpanData()])
+//        XCTAssertEqual(exported, [(span as! ReadableSpan).toSpanData()])
     }
 
     func testTracerSdk_NotSampled_RecordingEventsSpan() {
