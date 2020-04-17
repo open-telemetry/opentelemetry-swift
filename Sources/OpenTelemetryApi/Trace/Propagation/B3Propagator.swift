@@ -1,12 +1,24 @@
+// Copyright 2020, OpenTelemetry Authors
 //
-//  B3Propagator.swift
-//  
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//  Created by Ziyuan Zhao on 2020/4/17.
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 //
 
 import Foundation
 
+/**
+ * Implementation of the B3 propagation protocol. See
+ * https://github.com/openzipkin/b3-propagation
+ */
 public class B3Propagator: HTTPTextFormattable {
     public static let traceIdHeader = "X-B3-TraceId"
     public static let spanIdHeader = "X-B3-SpanId"
@@ -25,10 +37,14 @@ public class B3Propagator: HTTPTextFormattable {
     
     private var singleHeader: Bool
     
+    /// Creates a new instance of B3Propagator. Default to use multiple headers.
     init() {
         self.singleHeader = false
     }
     
+    /// Creates a new instance of B3Propagator
+    /// - Parameters:
+    ///     - singleHeader: whether to use single or multiple headers
     init(_ singleHeader: Bool) {
         self.singleHeader = singleHeader
     }
@@ -64,6 +80,8 @@ public class B3Propagator: HTTPTextFormattable {
         
         let parts: [String] = value[0].split(separator: "-").map{String($0)}
         
+        //  must have between 2 and 4 hyphen delimited parts:
+        //  traceId-spanId-sampled-parentSpanId (last two are optional)
         if (parts.count < 2 || parts.count > 4) {
             print("Invalid combined header '\(B3Propagator.combinedHeader)'. Returning INVALID span Context")
             return SpanContext.invalid
