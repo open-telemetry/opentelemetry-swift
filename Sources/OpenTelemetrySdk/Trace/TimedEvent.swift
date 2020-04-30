@@ -18,7 +18,7 @@ import OpenTelemetryApi
 
 /// Timed event.
 public struct TimedEvent: Equatable {
-    public private(set) var epochNanos: Int
+    public private(set) var epochNanos: Int64
     public private(set) var name: String
     public private(set) var attributes: [String: AttributeValue]
 
@@ -27,7 +27,7 @@ public struct TimedEvent: Equatable {
     ///   - nanotime: epoch timestamp in nanos.
     ///   - name: the name of this TimedEvent.
     ///   - attributes: the attributes of this TimedEvent. Empty by default.
-    public init(nanotime: Int, name: String, attributes: [String: AttributeValue] = [String: AttributeValue]()) {
+    public init(nanotime: Int64, name: String, attributes: [String: AttributeValue] = [String: AttributeValue]()) {
         epochNanos = nanotime
         self.name = name
         self.attributes = attributes
@@ -37,7 +37,7 @@ public struct TimedEvent: Equatable {
     /// - Parameters:
     ///   - nanotime: epoch timestamp in nanos.
     ///   - event: the event.
-    public init(nanotime: Int, event: Event) {
+    public init(nanotime: Int64, event: Event) {
         self.init(nanotime: nanotime, name: event.name, attributes: event.attributes)
     }
 }
