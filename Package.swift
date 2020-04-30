@@ -11,9 +11,13 @@ let package = Package(
                 .watchOS(.v3)],
     products: [
         .library( name: "OpenTelemetryApi", type: .dynamic, targets: ["OpenTelemetryApi"]),
+        .library( name: "libOpenTelemetryApi", type: .static, targets: ["OpenTelemetryApi"]),
         .library( name: "OpenTelemetrySdk", type: .dynamic, targets: ["OpenTelemetrySdk"]),
+        .library( name: "libOpenTelemetrySdk", type: .static, targets: ["OpenTelemetrySdk"]),
         .library( name: "JaegerExporter", type: .dynamic, targets: ["JaegerExporter"]),
+        .library( name: "libJaegerExporter", type: .static, targets: ["JaegerExporter"]),
         .library( name: "StdoutExporter", type: .dynamic, targets: ["StdoutExporter"]),
+        .library( name: "libStdoutExporter", type: .static, targets: ["StdoutExporter"]),
         .executable(name: "simpleExporter", targets: ["SimpleExporter"]),
         .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
     ],
