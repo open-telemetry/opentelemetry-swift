@@ -18,11 +18,11 @@ import OpenTelemetryApi
 
 /// A mutable Clock that allows the time to be set for testing.
 class TestClock: Clock {
-    var currentEpochNanos: Int
+    var currentEpochNanos: Int64
 
     /// Creates a clock with the given time.
     /// - Parameter nanos: the initial time in nanos since epoch.
-    init(nanos: Int) {
+    init(nanos: Int64) {
         currentEpochNanos = nanos
     }
 
@@ -33,27 +33,27 @@ class TestClock: Clock {
 
     ///  Sets the time.
     /// - Parameter nanos: the new time.
-    func setTime(nanos: Int) {
+    func setTime(nanos: Int64) {
         currentEpochNanos = nanos
     }
 
     /// Advances the time by millis and mutates this instance.
     /// - Parameter millis: the increase in time.
-    func advanceMillis(_ millis: Int) {
+    func advanceMillis(_ millis: Int64) {
         currentEpochNanos += millis * 1000000
     }
 
     /// Advances the time by nanos and mutates this instance.
     /// - Parameter nanos: the increase in time
-    func advanceNanos(_ nanos: Int) {
+    func advanceNanos(_ nanos: Int64) {
         currentEpochNanos += nanos
     }
 
-    var now: Int {
+    var now: Int64 {
         return currentEpochNanos
     }
 
-    var nanoTime: Int {
+    var nanoTime: Int64 {
         return currentEpochNanos
     }
 }

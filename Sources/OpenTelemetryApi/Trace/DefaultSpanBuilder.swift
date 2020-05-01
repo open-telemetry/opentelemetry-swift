@@ -63,7 +63,7 @@ public class DefaultSpanBuilder: SpanBuilder {
         return self
     }
 
-    @discardableResult public func setStartTimestamp(startTimestamp: Int) -> Self {
+    @discardableResult public func setStartTimestamp(startTimestamp: Int64) -> Self {
         return self
     }
 

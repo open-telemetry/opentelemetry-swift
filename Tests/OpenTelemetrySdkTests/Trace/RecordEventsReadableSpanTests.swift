@@ -30,15 +30,15 @@ class RecordEventsReadableSpanTest: XCTestCase {
 
     let spanName = "MySpanName"
     let spanNewName = "NewName"
-    let nanosPerSecond = 1000000000
-    let millisPerSecond = 1000
+    let nanosPerSecond: Int64 = 1000000000
+    let millisPerSecond: Int64 = 1000
     let idsGenerator: IdsGenerator = RandomIdsGenerator()
     var traceId: TraceId!
     var spanId: SpanId!
     var parentSpanId: SpanId!
     let expectedHasRemoteParent = true
     var spanContext: SpanContext!
-    let startEpochNanos: Int = 1000123789654
+    let startEpochNanos: Int64 = 1000123789654
     var testClock: TestClock!
     let resource = Resource()
     let instrumentationLibraryInfo = InstrumentationLibraryInfo(name: "theName", version: nil)
@@ -279,7 +279,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
         var spanData = span.toSpanData()
         XCTAssertEqual(spanData.timedEvents.count, maxNumberOfEvents) //
         for i in 0 ..< maxNumberOfEvents {
-            let expectedEvent = SpanData.TimedEvent(epochNanos: startEpochNanos + Int(maxNumberOfEvents + i) * nanosPerSecond,
+            let expectedEvent = SpanData.TimedEvent(epochNanos: startEpochNanos + Int64(maxNumberOfEvents + i) * nanosPerSecond,
                                                     name: "event2",
                                                     attributes: [String: AttributeValue]())
             XCTAssertEqual(spanData.timedEvents[i], expectedEvent)
@@ -289,7 +289,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
         spanData = span.toSpanData()
         XCTAssertEqual(spanData.timedEvents.count, maxNumberOfEvents)
         for i in 0 ..< maxNumberOfEvents {
-            let expectedEvent = SpanData.TimedEvent(epochNanos: startEpochNanos + Int(maxNumberOfEvents + i) * nanosPerSecond,
+            let expectedEvent = SpanData.TimedEvent(epochNanos: startEpochNanos + Int64(maxNumberOfEvents + i) * nanosPerSecond,
                                                     name: "event2",
                                                     attributes: [String: AttributeValue]())
             XCTAssertEqual(spanData.timedEvents[i], expectedEvent)
@@ -428,8 +428,8 @@ class RecordEventsReadableSpanTest: XCTestCase {
                                 attributes: [String: AttributeValue],
                                 timedEvents: [SpanData.TimedEvent],
                                 links: [Link], spanName: String,
-                                startEpochNanos: Int,
-                                endEpochNanos: Int,
+                                startEpochNanos: Int64,
+                                endEpochNanos: Int64,
                                 status: Status,
                                 hasEnded: Bool) {
         XCTAssertEqual(spanData.traceId, traceId)

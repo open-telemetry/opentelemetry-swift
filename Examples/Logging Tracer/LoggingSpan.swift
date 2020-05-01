@@ -67,7 +67,7 @@ class LoggingSpan: Span {
         Logger.log("Span.addEvent(\(name))")
     }
 
-    public func addEvent(name: String, timestamp: Int) {
+    public func addEvent(name: String, timestamp: Int64) {
         Logger.log("Span.addEvent(\(name) timestamp:\(timestamp))")
     }
 
@@ -75,7 +75,7 @@ class LoggingSpan: Span {
         Logger.log("Span.addEvent(\(name), attributes:\(attributes) )")
     }
 
-    public func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Int) {
+    public func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Int64) {
         Logger.log("Span.addEvent(\(name), attributes:\(attributes), timestamp:\(timestamp))")
     }
 
@@ -83,7 +83,7 @@ class LoggingSpan: Span {
         Logger.log("Span.addEvent(\(event))")
     }
 
-    public func addEvent<E>(event: E, timestamp: Int) where E: Event {
+    public func addEvent<E>(event: E, timestamp: Int64) where E: Event {
         Logger.log("Span.addEvent(\(event), timestamp:\(timestamp))")
     }
 

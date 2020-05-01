@@ -19,7 +19,7 @@ import OpenTelemetryApi
 
 class ReadableSpanMock: ReadableSpan {
     var hasEnded: Bool = false
-    var latencyNanos: Int = 0
+    var latencyNanos: Int64 = 0
 
     var kind: SpanKind {
         return .client
@@ -69,13 +69,13 @@ class ReadableSpanMock: ReadableSpan {
     func addEvent<E>(event: E) where E: Event {
     }
 
-    func addEvent(name: String, timestamp: Int) {
+    func addEvent(name: String, timestamp: Int64) {
     }
 
-    func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Int) {
+    func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Int64) {
     }
 
-    func addEvent<E>(event: E, timestamp: Int) where E: Event {
+    func addEvent<E>(event: E, timestamp: Int64) where E: Event {
     }
     
     var description: String = "ReadableSpanMock"
