@@ -83,6 +83,9 @@ public class RecordEventsReadableSpan: ReadableSpan {
     /// True if the span is ended.
     public private(set) var hasEnded: Bool = false
 
+    let eventsSyncQueue = DispatchQueue(label: "org.opentelemetry.RecordEventsReadableSpan.eventQueue")
+    let attributesSyncQueue = DispatchQueue(label: "org.opentelemetry.RecordEventsReadableSpan.attributesQueue")
+
     private init(context: SpanContext,
                  name: String,
                  instrumentationLibraryInfo: InstrumentationLibraryInfo,
@@ -196,7 +199,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
 
     private func adaptLinks() -> [SpanData.Link] {
         var result = [SpanData.Link]()
-        links.forEach {
+        let linksRef = links
+        linksRef.forEach {
             result.append(SpanData.Link(context: $0.context, attributes: $0.attributes))
         }
         return result
@@ -210,11 +214,13 @@ public class RecordEventsReadableSpan: ReadableSpan {
             return
         }
 
-        totalAttributeCount += 1
-        if attributes[key] == nil && totalAttributeCount > maxNumberOfAttributes {
-            return
+        attributesSyncQueue.sync {
+            totalAttributeCount += 1
+            if attributes[key] == nil && totalAttributeCount > maxNumberOfAttributes {
+                return
+            }
+            attributes[key] = value
         }
-        attributes[key] = value
     }
 
     public func addEvent(name: String) {
@@ -249,8 +255,10 @@ public class RecordEventsReadableSpan: ReadableSpan {
         if hasEnded {
             return
         }
-        events.append(timedEvent)
-        totalRecordedEvents += 1
+        eventsSyncQueue.sync {
+            events.append(timedEvent)
+            totalRecordedEvents += 1
+        }
     }
 
     public func end() {

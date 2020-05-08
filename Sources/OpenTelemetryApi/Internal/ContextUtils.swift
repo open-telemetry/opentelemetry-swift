@@ -30,16 +30,20 @@ public struct ContextUtils {
     static let OS_ACTIVITY_CURRENT = unsafeBitCast(sym, to: os_activity_t.self)
 
     static var contextMap = [os_activity_id_t: ContextEntry]()
+    static let rlock = NSRecursiveLock()
 
     /// Returns the Span from the current context
     public static func getCurrentSpan() -> Span? {
         // We should try to traverse all hierarchy to locate the Span, but I could not find a way, just direct parent
         var parentIdent: os_activity_id_t = 0
         let activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, &parentIdent)
-        var returnSpan = contextMap[activityIdent]?.span
+        var returnSpan: Span?
+        rlock.lock()
+        returnSpan = contextMap[activityIdent]?.span
         if returnSpan == nil {
             returnSpan = contextMap[parentIdent]?.span
         }
+        rlock.unlock()
         return returnSpan
     }
 
@@ -48,10 +52,13 @@ public struct ContextUtils {
         // We should try to traverse all hierarchy to locate the CorrelationContext, but I could not find a way, just direct parent
         var parentIdent: os_activity_id_t = 0
         let activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, &parentIdent)
-        var returnContext = contextMap[activityIdent]?.correlationContext
+        var returnContext: CorrelationContext?
+        rlock.lock()
+        returnContext = contextMap[activityIdent]?.correlationContext
         if returnContext == nil {
             returnContext = contextMap[parentIdent]?.correlationContext
         }
+        rlock.unlock()
         return returnContext
     }
 
@@ -68,34 +75,42 @@ public struct ContextUtils {
     }
 
     static func setContext(activityId: os_activity_id_t, forSpan span: Span) {
+        rlock.lock()
         if contextMap[activityId] != nil {
             contextMap[activityId]!.span = span
         } else {
             contextMap[activityId] = ContextEntry(span: span, correlationContext: getCurrentCorrelationContext())
         }
+        rlock.unlock()
     }
 
     static func removeContextForSpan(activityId: os_activity_id_t) {
+        rlock.lock()
         if let correlationContext = contextMap[activityId]?.correlationContext {
             contextMap[activityId] = ContextEntry(span: nil, correlationContext: correlationContext)
         } else {
             contextMap[activityId] = nil
         }
+        rlock.unlock()
     }
 
     static func setContext(activityId: os_activity_id_t, forCorrelationContext correlationContext: CorrelationContext) {
+        rlock.lock()
         if contextMap[activityId] != nil {
             contextMap[activityId]!.correlationContext = correlationContext
         } else {
             contextMap[activityId] = ContextEntry(span: getCurrentSpan(), correlationContext: correlationContext)
         }
+        rlock.unlock()
     }
 
     static func removeContextForCorrelationContext(activityId: os_activity_id_t) {
+        rlock.lock()
         if let span = contextMap[activityId]?.span {
             contextMap[activityId] = ContextEntry(span: span, correlationContext: nil)
         } else {
             contextMap[activityId] = nil
         }
+        rlock.unlock()
     }
 }
