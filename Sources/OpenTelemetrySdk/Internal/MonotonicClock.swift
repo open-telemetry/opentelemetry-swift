@@ -22,8 +22,8 @@ import OpenTelemetryApi
 /// it is not recommended to use only one instance for a very long period of time.
 public class MonotonicClock: Clock {
     let clock: Clock
-    let epochNanos: Int
-    let initialNanoTime: Int
+    let epochNanos: Int64
+    let initialNanoTime: Int64
 
     public init(clock: Clock) {
         self.clock = clock
@@ -31,12 +31,12 @@ public class MonotonicClock: Clock {
         initialNanoTime = clock.nanoTime
     }
 
-    public var now: Int {
+    public var now: Int64 {
         let deltaNanos = clock.nanoTime - initialNanoTime
         return epochNanos + deltaNanos
     }
 
-    public var nanoTime: Int {
+    public var nanoTime: Int64 {
         return clock.nanoTime
     }
 }

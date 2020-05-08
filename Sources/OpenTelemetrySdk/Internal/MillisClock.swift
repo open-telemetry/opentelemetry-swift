@@ -22,11 +22,11 @@ public class MillisClock: Clock {
     public init() {
     }
 
-    public var now: Int {
-        return Int(Date().timeIntervalSince1970 * 1000000000)
+    public var now: Int64 {
+        return Int64(Date().timeIntervalSince1970 * 1000000000)
     }
 
-    public var nanoTime: Int {
-        return Int(Date().timeIntervalSince1970 * 1000000000)
+    public var nanoTime: Int64 {
+        return Int64(Date().timeIntervalSince1970 * 1000000000)
     }
 }
