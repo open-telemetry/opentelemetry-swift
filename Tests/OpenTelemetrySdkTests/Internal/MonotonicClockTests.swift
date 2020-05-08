@@ -17,7 +17,7 @@
 import XCTest
 
 class MonotonicClockTests: XCTestCase {
-    let epochNanos: Int = 1234000005678
+    let epochNanos: Int64 = 1234000005678
     var testClock: TestClock!
 
     override func setUp() {

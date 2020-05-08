@@ -116,7 +116,7 @@ public protocol SpanBuilder: class {
     /// Use this method to specify an explicit start timestamp. If not called, the implementation
     /// will use the timestamp value at #startSpan() time, which should be the default case.
     /// - Parameter startTimestamp: the explicit start timestamp of the newly created Span in nanos since epoch.
-    @discardableResult func setStartTimestamp(startTimestamp: Int) -> Self
+    @discardableResult func setStartTimestamp(startTimestamp: Int64) -> Self
 
     /// Starts a new Span.
     ///

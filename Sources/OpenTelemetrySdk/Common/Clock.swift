@@ -19,11 +19,11 @@ import OpenTelemetryApi
 /// Interface for getting the current time.
 public protocol Clock: AnyObject {
     /// Obtains the current epoch timestamp in nanos from this clock.
-    var now: Int { get }
+    var now: Int64 { get }
 
     /// Returns a time measurement with nanosecond precision that can only be used to calculate elapsed
     /// time.
-    var nanoTime: Int { get }
+    var nanoTime: Int64 { get }
 }
 
 public func == (lhs: Clock, rhs: Clock) -> Bool {

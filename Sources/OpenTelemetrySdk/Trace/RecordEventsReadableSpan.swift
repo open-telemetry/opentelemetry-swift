@@ -55,7 +55,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
     /// instrumentation library of the named tracer which created this span
     public private(set) var instrumentationLibraryInfo: InstrumentationLibraryInfo
     /// The resource associated with this span.
-    public private(set) var startEpochNanos: Int
+    public private(set) var startEpochNanos: Int64
     /// Set of recorded attributes. DO NOT CALL any other method that changes the ordering of events.
     private var attributes: AttributesWithCapacity
     /// List of recorded events.
@@ -74,12 +74,12 @@ public class RecordEventsReadableSpan: ReadableSpan {
     }
 
     /// Returns the latency of the {@code Span} in nanos. If still active then returns now() - start time.
-    public var latencyNanos: Int {
+    public var latencyNanos: Int64 {
         return (hasEnded ? endEpochNanos! : clock.now) - startEpochNanos
     }
 
     /// The end time of the span.
-    public private(set) var endEpochNanos: Int?
+    public private(set) var endEpochNanos: Int64?
     /// True if the span is ended.
     public private(set) var hasEnded: Bool = false
 
@@ -99,7 +99,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
                  attributes: AttributesWithCapacity,
                  links: [Link],
                  totalRecordedLinks: Int,
-                 startEpochNanos: Int) {
+                 startEpochNanos: Int64) {
         self.context = context
         self.name = name
         self.instrumentationLibraryInfo = instrumentationLibraryInfo
@@ -147,7 +147,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
                                  attributes: AttributesWithCapacity,
                                  links: [Link],
                                  totalRecordedLinks: Int,
-                                 startEpochNanos: Int) -> RecordEventsReadableSpan {
+                                 startEpochNanos: Int64) -> RecordEventsReadableSpan {
         let span = RecordEventsReadableSpan(context: context,
                                             name: name,
                                             instrumentationLibraryInfo: instrumentationLibraryInfo,
@@ -227,7 +227,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
         addTimedEvent(timedEvent: TimedEvent(nanotime: clock.now, name: name))
     }
 
-    public func addEvent(name: String, timestamp: Int) {
+    public func addEvent(name: String, timestamp: Int64) {
         addTimedEvent(timedEvent: TimedEvent(nanotime: timestamp, name: name))
     }
 
@@ -237,7 +237,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
         addTimedEvent(timedEvent: TimedEvent(nanotime: clock.now, name: name, attributes: limitedAttributes.attributes))
     }
 
-    public func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Int) {
+    public func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Int64) {
         var limitedAttributes = AttributesWithCapacity(capacity: maxNumberOfAttributesPerEvent)
         limitedAttributes.updateValues(attributes: attributes)
         addTimedEvent(timedEvent: TimedEvent(nanotime: timestamp, name: name, attributes: limitedAttributes.attributes))
@@ -247,7 +247,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
         addTimedEvent(timedEvent: TimedEvent(nanotime: clock.now, event: event))
     }
 
-    public func addEvent<E>(event: E, timestamp: Int) where E: Event {
+    public func addEvent<E>(event: E, timestamp: Int64) where E: Event {
         addTimedEvent(timedEvent: TimedEvent(nanotime: timestamp, event: event))
     }
 
@@ -269,7 +269,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
         endInternal(timestamp: endOptions.timestamp == 0 ? clock.now : endOptions.timestamp)
     }
 
-    private func endInternal(timestamp: Int) {
+    private func endInternal(timestamp: Int64) {
         if hasEnded {
             return
         }

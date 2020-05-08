@@ -19,7 +19,7 @@ import OpenTelemetryApi
 /// representation of all data collected by the Span.
 public struct SpanData: Equatable {
     public struct TimedEvent: Event, Equatable {
-        public var epochNanos: Int
+        public var epochNanos: Int64
         public var name: String
         public var attributes: [String: AttributeValue]
     }
@@ -63,7 +63,7 @@ public struct SpanData: Equatable {
     public private(set) var kind: SpanKind
 
     /// The start epoch timestamp in nanos of this Span.
-    public private(set) var startEpochNanos: Int
+    public private(set) var startEpochNanos: Int64
 
     /// The attributes recorded for this Span.
     public private(set) var attributes = [String: AttributeValue]()
@@ -78,7 +78,7 @@ public struct SpanData: Equatable {
     public private(set) var status: Status?
 
     /// The end epoch timestamp in nanos of this Span
-    public private(set) var endEpochNanos: Int
+    public private(set) var endEpochNanos: Int64
 
     /// True if the parent is on a different process, false if this is a root span.
     public private(set) var hasRemoteParent: Bool = false
@@ -153,12 +153,12 @@ public struct SpanData: Equatable {
         return self
     }
 
-    public mutating func settingStartEpochNanos(_ nanos: Int) -> SpanData {
+    public mutating func settingStartEpochNanos(_ nanos: Int64) -> SpanData {
         startEpochNanos = nanos
         return self
     }
 
-    public mutating func settingEndEpochNanos(_ nanos: Int) -> SpanData {
+    public mutating func settingEndEpochNanos(_ nanos: Int64) -> SpanData {
         endEpochNanos = nanos
         return self
     }
