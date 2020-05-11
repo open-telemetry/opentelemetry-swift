@@ -205,6 +205,7 @@ class BatchSpansProcessorTests: XCTestCase {
 }
 
 class BlockingSpanExporter: SpanExporter {
+    
     let cond = NSCondition()
 
     enum State {
@@ -233,6 +234,10 @@ class BlockingSpanExporter: SpanExporter {
             cond.wait()
         }
         cond.unlock()
+    }
+    
+    func flush() -> SpanExporterResultCode {
+        return .success
     }
 
     func shutdown() {
@@ -275,6 +280,10 @@ class WaitingSpanExporter: SpanExporter {
         spanDataList.append(contentsOf: spans)
         cond.unlock()
         cond.broadcast()
+        return .success
+    }
+    
+    func flush() -> SpanExporterResultCode {
         return .success
     }
 

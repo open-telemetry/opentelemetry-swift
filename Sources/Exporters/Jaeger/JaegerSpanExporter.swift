@@ -32,7 +32,11 @@ public class JaegerSpanExporter: SpanExporter {
         let batch = Batch(process: process, spans: spanList)
         let sender = Sender(host: collectorAddress)
         let success = sender.sendBatch(batch: batch)
-        return success ? SpanExporterResultCode.success : SpanExporterResultCode.failedRetryable
+        return success ? SpanExporterResultCode.success : SpanExporterResultCode.failure
+    }
+
+    public func flush() -> SpanExporterResultCode {
+        return .success
     }
 
     public func shutdown() {
