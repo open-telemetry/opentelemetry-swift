@@ -210,8 +210,11 @@ public class RecordEventsReadableSpan: ReadableSpan {
         if hasEnded {
             return
         }
-        if case let .string(string) = value, string.isEmpty {
-            return
+
+        if value == nil {
+            attributesSyncQueue.sync {
+                attributes.removeValueForKey(key: key)
+            }
         }
 
         attributesSyncQueue.sync {

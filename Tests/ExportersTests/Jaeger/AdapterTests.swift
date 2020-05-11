@@ -131,12 +131,20 @@ class AdapterTests: XCTestCase {
         let valueD = AttributeValue.double(1.0)
         let valueI = AttributeValue.int(2)
         let valueS = AttributeValue.string("foobar")
+        let valueArrayB = AttributeValue.boolArray([true, false])
+        let valueArrayD = AttributeValue.doubleArray([1.2, 4.5])
+        let valueArrayI = AttributeValue.intArray([12345, 67890])
+        let valueArrayS = AttributeValue.stringArray(["foobar", "barfoo"])
 
         // test
         let kvB = Adapter.toJaegerTag(key: "valueB", attrib: valueB)
         let kvD = Adapter.toJaegerTag(key: "valueD", attrib: valueD)
         let kvI = Adapter.toJaegerTag(key: "valueI", attrib: valueI)
         let kvS = Adapter.toJaegerTag(key: "valueS", attrib: valueS)
+        let kvArrayB = Adapter.toJaegerTag(key: "valueArrayB", attrib: valueArrayB)
+        let kvArrayD = Adapter.toJaegerTag(key: "valueArrayD", attrib: valueArrayD)
+        let kvArrayI = Adapter.toJaegerTag(key: "valueArrayI", attrib: valueArrayI)
+        let kvArrayS = Adapter.toJaegerTag(key: "valueArrayS", attrib: valueArrayS)
 
         // verify
         XCTAssertTrue(kvB.vBool ?? false)
@@ -147,6 +155,14 @@ class AdapterTests: XCTestCase {
         XCTAssertEqual(TagType.long, kvI.vType)
         XCTAssertEqual("foobar", kvS.vStr)
         XCTAssertEqual(TagType.string, kvS.vType)
+        XCTAssertEqual("[true,false]", kvArrayB.vStr)
+        XCTAssertEqual(TagType.string, kvArrayB.vType)
+        XCTAssertEqual("[1.2,4.5]", kvArrayD.vStr)
+        XCTAssertEqual(TagType.string, kvArrayD.vType)
+        XCTAssertEqual("[12345,67890]", kvArrayI.vStr)
+        XCTAssertEqual(TagType.string, kvArrayI.vType)
+        XCTAssertEqual("[\"foobar\",\"barfoo\"]", kvArrayS.vStr)
+        XCTAssertEqual(TagType.string, kvArrayS.vType)
     }
 
     func testSpanRefs() {
@@ -192,6 +208,30 @@ class AdapterTests: XCTestCase {
                             hasRemoteParent: false)
 
         XCTAssertNotNil(Adapter.toJaeger(span: span))
+    }
+
+    func testSpanError() {
+        let attributes = ["error.type": AttributeValue.string(self.name),
+                          "error.message": AttributeValue.string("server error")]
+        let startMs = Int64(Date().timeIntervalSince1970 * 1000)
+        let endMs = startMs + 900
+
+        var span = SpanData(traceId: TraceId(fromHexString: AdapterTests.traceId),
+                            spanId: SpanId(fromHexString: AdapterTests.spanId),
+                            name: "GET /api/endpoint",
+                            kind: .server,
+                            startEpochNanos: startMs * 1000,
+                            endEpochNanos: endMs * 1000)
+        span.settingHasEnded(true)
+        span.settingStatus(.unknown)
+        span.settingAttributes(attributes)
+
+        let jaegerSpan = Adapter.toJaeger(span: span)
+        let errorType = getTag(tagsList: jaegerSpan.tags, key: "error.type")
+        XCTAssertEqual(self.name, errorType?.vStr)
+        let error = getTag(tagsList: jaegerSpan.tags, key: "error")
+        XCTAssertNotNil(error)
+        XCTAssertEqual(true, error?.vBool)
     }
 
     private func getTimedEvent() -> SpanData.TimedEvent {

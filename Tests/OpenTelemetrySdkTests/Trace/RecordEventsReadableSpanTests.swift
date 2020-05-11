@@ -207,9 +207,41 @@ class RecordEventsReadableSpanTest: XCTestCase {
         span.setAttribute(key: "LongKey", value: 1000)
         span.setAttribute(key: "DoubleKey", value: 10.0)
         span.setAttribute(key: "BooleanKey", value: false)
+        span.setAttribute(key: "ArrayStringKey", value: AttributeValue.stringArray(["StringVal", "", "StringVal2"]))
+        span.setAttribute(key: "ArrayLongKey", value: AttributeValue.intArray([1, 2, 3, 4, 5]))
+        span.setAttribute(key: "ArrayDoubleKey", value: AttributeValue.doubleArray([0.1, 2.3, 4.5, 6.7, 8.9]))
+        span.setAttribute(key: "ArrayBoolKey", value: AttributeValue.boolArray([true, false, false, true]))
+        span.setAttribute(key: "EmptyArrayStringKey", value: AttributeValue.stringArray([String]()))
+        span.setAttribute(key: "EmptyArrayLongKey", value: AttributeValue.intArray([Int]()))
+        span.setAttribute(key: "EmptyArrayDoubleKey", value: AttributeValue.doubleArray([Double]()))
+        span.setAttribute(key: "EmptyArrayBooleanKey", value: AttributeValue.boolArray([Bool]()))
         span.end()
         let spanData = span.toSpanData()
-        XCTAssertEqual(spanData.attributes.count, 4)
+        XCTAssertEqual(spanData.attributes.count, 14)
+        XCTAssert({
+            if case let AttributeValue.stringArray(array) = spanData.attributes["ArrayStringKey"]! {
+                return array.count == 3
+            }
+            return false
+        }())
+        XCTAssert({
+            if case let AttributeValue.intArray(array) = spanData.attributes["ArrayLongKey"]! {
+                return array.count == 5
+            }
+            return false
+        }())
+        XCTAssert({
+            if case let AttributeValue.doubleArray(array) = spanData.attributes["ArrayDoubleKey"]! {
+                return array.count == 5
+            }
+            return false
+        }())
+        XCTAssert({
+            if case let AttributeValue.boolArray(array) = spanData.attributes["ArrayBoolKey"]! {
+                return array.count == 4
+            }
+            return false
+        }())
     }
 
     func testAddEvent() {
@@ -249,7 +281,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
         XCTAssertEqual(spanData.attributes.count, maxNumberOfAttributes)
         XCTAssertEqual(spanData.totalAttributeCount, 2 * maxNumberOfAttributes)
         for i in 0 ..< maxNumberOfAttributes / 2 {
-            let val = i + maxNumberOfAttributes * 3 / 2;
+            let val = i + maxNumberOfAttributes * 3 / 2
             span.setAttribute(key: "MyStringAttributeKey\(i)", value: AttributeValue.int(val))
         }
         spanData = span.toSpanData()

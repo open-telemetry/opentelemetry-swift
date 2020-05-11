@@ -91,6 +91,16 @@ class SpanBuilderSdkTest: XCTestCase {
         span.end()
     }
 
+    func testSetAttribute_emptyArrayAttributeValue() {
+        let spanBuilder = tracerSdk.spanBuilder(spanName: spanName)
+        spanBuilder.setAttribute(key: "stringArrayAttribute", value: AttributeValue.stringArray([String]()))
+        spanBuilder.setAttribute(key: "boolArrayAttribute", value: AttributeValue.boolArray([Bool]()))
+        spanBuilder.setAttribute(key: "longArrayAttribute", value: AttributeValue.intArray([Int]()))
+        spanBuilder.setAttribute(key: "doubleArrayAttribute", value: AttributeValue.doubleArray([Double]()))
+        let span = spanBuilder.startSpan() as! RecordEventsReadableSpan
+        XCTAssertEqual(span.toSpanData().attributes.count, 4)
+    }
+
     func testSetAttribute_nilAttributeValue() {
         let spanBuilder = tracerSdk.spanBuilder(spanName: spanName)
         spanBuilder.setAttribute(key: "emptyString", value: "")
@@ -162,7 +172,7 @@ class SpanBuilderSdkTest: XCTestCase {
                               spanId: SpanId,
                               name: String,
                               kind: SpanKind,
-                              attributes: [String:AttributeValue],
+                              attributes: [String: AttributeValue],
                               parentLinks: [Link]) -> Decision {
                 return decision
             }
