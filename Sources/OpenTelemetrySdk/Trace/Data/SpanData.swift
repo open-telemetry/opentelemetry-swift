@@ -25,8 +25,8 @@ public struct SpanData: Equatable {
     }
 
     public class Link: OpenTelemetryApi.Link {
-        public var context: SpanContext
-        public var attributes: [String: AttributeValue]
+        public let context: SpanContext
+        public let attributes: [String: AttributeValue]
 
         init(context: SpanContext, attributes: [String: AttributeValue] = [String: AttributeValue]()) {
             self.context = context
@@ -212,11 +212,9 @@ public struct SpanData: Equatable {
         self.totalRecordedLinks = totalRecordedLinks
         return self
     }
-    
+
     public mutating func settingTotalAttributeCount(_ totalAttributeCount: Int) -> SpanData {
         self.totalAttributeCount = totalAttributeCount
         return self
     }
-
-
 }
