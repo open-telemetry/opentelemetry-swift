@@ -123,97 +123,97 @@ public struct SpanData: Equatable {
             lhs.totalAttributeCount == rhs.totalAttributeCount
     }
 
-    public mutating func settingName(_ name: String) -> SpanData {
+    @discardableResult public mutating func settingName(_ name: String) -> SpanData {
         self.name = name
         return self
     }
 
-    public mutating func settingTraceId(_ traceId: TraceId) -> SpanData {
+    @discardableResult public mutating func settingTraceId(_ traceId: TraceId) -> SpanData {
         self.traceId = traceId
         return self
     }
 
-    public mutating func settingSpanId(_ spanId: SpanId) -> SpanData {
+    @discardableResult public mutating func settingSpanId(_ spanId: SpanId) -> SpanData {
         self.spanId = spanId
         return self
     }
 
-    public mutating func settingTraceFlags(_ traceFlags: TraceFlags) -> SpanData {
+    @discardableResult public mutating func settingTraceFlags(_ traceFlags: TraceFlags) -> SpanData {
         self.traceFlags = traceFlags
         return self
     }
 
-    public mutating func settingTraceState(_ traceState: TraceState) -> SpanData {
+    @discardableResult public mutating func settingTraceState(_ traceState: TraceState) -> SpanData {
         self.traceState = traceState
         return self
     }
 
-    public mutating func settingAttributes(_ attributes: [String: AttributeValue]) -> SpanData {
+    @discardableResult public mutating func settingAttributes(_ attributes: [String: AttributeValue]) -> SpanData {
         self.attributes = attributes
         return self
     }
 
-    public mutating func settingStartEpochNanos(_ nanos: Int64) -> SpanData {
+    @discardableResult public mutating func settingStartEpochNanos(_ nanos: Int64) -> SpanData {
         startEpochNanos = nanos
         return self
     }
 
-    public mutating func settingEndEpochNanos(_ nanos: Int64) -> SpanData {
+    @discardableResult public mutating func settingEndEpochNanos(_ nanos: Int64) -> SpanData {
         endEpochNanos = nanos
         return self
     }
 
-    public mutating func settingKind(_ kind: SpanKind) -> SpanData {
+    @discardableResult public mutating func settingKind(_ kind: SpanKind) -> SpanData {
         self.kind = kind
         return self
     }
 
-    public mutating func settingLinks(_ links: [Link]) -> SpanData {
+    @discardableResult public mutating func settingLinks(_ links: [Link]) -> SpanData {
         self.links = links
         return self
     }
 
-    public mutating func settingParentSpanId(_ parentSpanId: SpanId) -> SpanData {
+    @discardableResult public mutating func settingParentSpanId(_ parentSpanId: SpanId) -> SpanData {
         self.parentSpanId = parentSpanId
         return self
     }
 
-    public mutating func settingResource(_ resource: Resource) -> SpanData {
+    @discardableResult public mutating func settingResource(_ resource: Resource) -> SpanData {
         self.resource = resource
         return self
     }
 
-    public mutating func settingStatus(_ status: Status) -> SpanData {
+    @discardableResult public mutating func settingStatus(_ status: Status) -> SpanData {
         self.status = status
         return self
     }
 
-    public mutating func settingTimedEvents(_ timedEvents: [TimedEvent]) -> SpanData {
+    @discardableResult public mutating func settingTimedEvents(_ timedEvents: [TimedEvent]) -> SpanData {
         self.timedEvents = timedEvents
         return self
     }
 
-    public mutating func settingHasRemoteParent(_ hasRemoteParent: Bool) -> SpanData {
+    @discardableResult public mutating func settingHasRemoteParent(_ hasRemoteParent: Bool) -> SpanData {
         self.hasRemoteParent = hasRemoteParent
         return self
     }
 
-    public mutating func settingHasEnded(_ hasEnded: Bool) -> SpanData {
+    @discardableResult public mutating func settingHasEnded(_ hasEnded: Bool) -> SpanData {
         self.hasEnded = hasEnded
         return self
     }
 
-    public mutating func settingTotalRecordedEvents(_ totalRecordedEvents: Int) -> SpanData {
+    @discardableResult public mutating func settingTotalRecordedEvents(_ totalRecordedEvents: Int) -> SpanData {
         self.totalRecordedEvents = totalRecordedEvents
         return self
     }
 
-    public mutating func settingTotalRecordedLinks(_ totalRecordedLinks: Int) -> SpanData {
+    @discardableResult public mutating func settingTotalRecordedLinks(_ totalRecordedLinks: Int) -> SpanData {
         self.totalRecordedLinks = totalRecordedLinks
         return self
     }
 
-    public mutating func settingTotalAttributeCount(_ totalAttributeCount: Int) -> SpanData {
+    @discardableResult public mutating func settingTotalAttributeCount(_ totalAttributeCount: Int) -> SpanData {
         self.totalAttributeCount = totalAttributeCount
         return self
     }

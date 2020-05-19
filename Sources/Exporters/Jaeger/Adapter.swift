@@ -19,6 +19,7 @@ import OpenTelemetrySdk
 import Thrift
 
 final class Adapter {
+    static let keyError = "error"
     static let keyLogMessage = "message"
     static let keySpanKind = "span.kind"
     static let keySpanStatusMessage = "span.status.message"
@@ -76,6 +77,10 @@ final class Adapter {
         tags.append(Tag(key: Adapter.keySpanStatusMessage, vType: .string, vStr: span.status?.statusDescription ?? "", vDouble: nil, vBool: nil, vLong: nil, vBinary: nil))
         tags.append(Tag(key: Adapter.keySpanStatusCode, vType: .long, vStr: nil, vDouble: nil, vBool: nil, vLong: Int64(span.status?.canonicalCode.rawValue ?? 0), vBinary: nil))
 
+        if span.status != .ok {
+            tags.append(Tag(key: keyError, vType: .bool, vStr: nil, vDouble: nil, vBool: true, vLong: nil, vBinary: nil))
+        }
+
         return Span(traceIdLow: traceIdLow, traceIdHigh: traceIdHigh, spanId: spanId, parentSpanId: parentSpanId, operationName: operationName, references: references, flags: 0, startTime: startTime, duration: duration, tags: tags, logs: logs)
     }
 
@@ -109,6 +114,18 @@ final class Adapter {
         case let .double(value):
             vType = .double
             vDouble = value
+        case .stringArray(let value):
+            vType = .string
+            vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
+        case .boolArray(let value):
+            vType = .string
+            vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
+        case .intArray(let value):
+            vType = .string
+            vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
+        case .doubleArray(let value):
+            vType = .string
+            vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
         }
         return Tag(key: key, vType: vType, vStr: vStr, vDouble: vDouble, vBool: vBool, vLong: vLong, vBinary: nil)
     }

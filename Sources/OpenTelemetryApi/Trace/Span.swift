@@ -115,7 +115,6 @@ extension Span {
 
 extension Span {
     public func setAttribute(key: String, value: String) {
-        guard !value.isEmpty else { return }
         return setAttribute(key: key, value: AttributeValue.string(value))
     }
 
