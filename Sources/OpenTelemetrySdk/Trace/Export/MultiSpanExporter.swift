@@ -34,6 +34,14 @@ public class MultiSpanExporter: SpanExporter {
         return currentResultCode
     }
 
+    public func flush() -> SpanExporterResultCode {
+        var currentResultCode = SpanExporterResultCode.success
+        for exporter in spanExporters {
+            currentResultCode.mergeResultCode(newResultCode: exporter.flush())
+        }
+        return currentResultCode
+    }
+
     public func shutdown() {
         for exporter in spanExporters {
             exporter.shutdown()

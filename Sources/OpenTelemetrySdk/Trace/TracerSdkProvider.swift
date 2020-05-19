@@ -78,4 +78,9 @@ public class TracerSdkProvider: TracerProvider {
         }
         sharedState.stop()
     }
+
+    ///Requests the active span processor to process all span events that have not yet been processed.
+    public func forceFlush() {
+        sharedState.activeSpanProcessor.forceFlush()
+    }
 }

@@ -47,10 +47,14 @@ public class StdoutExporter: SpanExporter {
                         print(json)
                     }
                 } catch {
-                    return .failedRetryable
+                    return .failure
                 }
             }
         }
+        return .success
+    }
+    
+    public func flush() -> SpanExporterResultCode {
         return .success
     }
 
