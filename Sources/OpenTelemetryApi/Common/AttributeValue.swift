@@ -21,6 +21,10 @@ public enum AttributeValue: Equatable, CustomStringConvertible {
     case bool(Bool)
     case int(Int)
     case double(Double)
+    case stringArray([String])
+    case boolArray([Bool])
+    case intArray([Int])
+    case doubleArray([Double])
 
     public var description: String {
         switch self {
@@ -32,6 +36,14 @@ public enum AttributeValue: Equatable, CustomStringConvertible {
             return String(value)
         case let .double(value):
             return String(value)
+        case let .stringArray(value):
+            return value.description
+        case let .boolArray(value):
+            return value.description
+        case let .intArray(value):
+            return value.description
+        case let .doubleArray(value):
+            return value.description
         }
     }
 }
