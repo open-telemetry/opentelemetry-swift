@@ -28,6 +28,7 @@ public class CounterSumAggregator<T: SignedNumeric>: Aggregator {
 
     func checkpoint() {
         lock.withLockVoid {
+            pointCheck = sum
             sum = 0
         }
     }

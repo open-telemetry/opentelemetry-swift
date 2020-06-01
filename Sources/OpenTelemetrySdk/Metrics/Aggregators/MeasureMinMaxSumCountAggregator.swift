@@ -25,21 +25,24 @@ public class MeasureMinMaxSumCountAggregator<T: SignedNumeric & Comparable>: Agg
         lock.withLockVoid {
             self.summary.count += 1
             self.summary.sum += value
-            self.summary.max = max(self.summary.max, value)
-            self.summary.min = min(self.summary.min, value)
+            self.summary.max = (self.summary.max != nil) ? max(self.summary.max, value) : value
+            self.summary.min = (self.summary.min != nil) ? min(self.summary.min, value) : value
         }
     }
 
     func checkpoint() {
-        summary = Summary<T>()
+        lock.withLockVoid {
+            pointCheck = summary
+            summary = Summary<T>()
+        }
     }
 
     func toMetricData() -> MetricData {
         return SummaryData<T>(timestamp: Date(),
                               count: pointCheck.count,
                               sum: pointCheck.sum,
-                              min: pointCheck.min,
-                              max: pointCheck.max)
+                              min: pointCheck.min ?? 0,
+                              max: pointCheck.max ?? 0)
     }
 
     func getAggregationType() -> AggregationType {
@@ -54,33 +57,10 @@ public class MeasureMinMaxSumCountAggregator<T: SignedNumeric & Comparable>: Agg
 private struct Summary<T> where T: SignedNumeric {
     var sum: T
     var count: Int
-    var min: T
-    var max: T
-}
-
-extension Summary where T: FloatingPoint {
+    var min: T!
+    var max: T!
     init() {
         sum = 0
         count = 0
-        min = T.greatestFiniteMagnitude
-        max = -T.greatestFiniteMagnitude
-    }
-}
-
-extension Summary where T == Int {
-    init() {
-        sum = 0
-        count = 0
-        min = Int.max
-        max = -Int.max
-    }
-}
-
-extension Summary {
-    init() {
-        sum = 0
-        count = 0
-        min = 0
-        max = 0
     }
 }
