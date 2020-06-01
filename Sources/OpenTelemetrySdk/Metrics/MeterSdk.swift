@@ -16,7 +16,7 @@
 import Foundation
 import OpenTelemetryApi
 
-struct MeterSdk: Meter {
+class MeterSdk: Meter {
     fileprivate let collectLock = Lock()
     let meterName: String
     var metricProcessor: MetricProcessor
@@ -30,7 +30,12 @@ struct MeterSdk: Meter {
 
     var labelSet = LabelSet()
 
-    mutating func collect() {
+    init(meterName: String, metricProcessor: MetricProcessor) {
+        self.meterName = meterName
+        self.metricProcessor = metricProcessor
+    }
+
+    func collect() {
         collectLock.withLock {
             var boundInstrumentsToRemove = [LabelSet]()
 
@@ -148,7 +153,7 @@ struct MeterSdk: Meter {
                 }
                 metricProcessor.process(metric: metric)
             }
-            
+
             doubleObservers.forEach { observer in
                 let metricName = observer.key
                 let observerInstrument = observer.value
@@ -169,7 +174,7 @@ struct MeterSdk: Meter {
         }
     }
 
-    mutating func createIntCounter(name: String, monotonic: Bool) -> AnyCounterMetric<Int> {
+    func createIntCounter(name: String, monotonic: Bool) -> AnyCounterMetric<Int> {
         var counter = intCounters[name]
         if counter == nil {
             counter = CounterMetricSdk<Int>(name: name)
@@ -178,7 +183,7 @@ struct MeterSdk: Meter {
         return AnyCounterMetric<Int>(counter!)
     }
 
-    mutating func createDoubleCounter(name: String, monotonic: Bool) -> AnyCounterMetric<Double> {
+    func createDoubleCounter(name: String, monotonic: Bool) -> AnyCounterMetric<Double> {
         var counter = doubleCounters[name]
         if counter == nil {
             counter = CounterMetricSdk<Double>(name: name)
@@ -187,7 +192,7 @@ struct MeterSdk: Meter {
         return AnyCounterMetric<Double>(counter!)
     }
 
-    mutating func createIntMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Int> {
+    func createIntMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Int> {
         var measure = intMeasures[name]
         if measure == nil {
             measure = MeasureMetricSdk<Int>(name: name)
@@ -196,7 +201,7 @@ struct MeterSdk: Meter {
         return AnyMeasureMetric<Int>(measure!)
     }
 
-    mutating func createDoubleMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Double> {
+    func createDoubleMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Double> {
         var measure = doubleMeasures[name]
         if measure == nil {
             measure = MeasureMetricSdk<Double>(name: name)
@@ -205,7 +210,7 @@ struct MeterSdk: Meter {
         return AnyMeasureMetric<Double>(measure!)
     }
 
-    mutating func createIntObserver(name: String, absolute: Bool, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric {
+    func createIntObserver(name: String, absolute: Bool, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric {
         var observer = intObservers[name]
         if observer == nil {
             observer = IntObserverMetricSdk(metricName: name, callback: callback)
@@ -214,7 +219,7 @@ struct MeterSdk: Meter {
         return observer!
     }
 
-    mutating func createDoubleObserver(name: String, absolute: Bool, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric {
+    func createDoubleObserver(name: String, absolute: Bool, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric {
         var observer = doubleObservers[name]
         if observer == nil {
             observer = DoubleObserverMetricSdk(metricName: name, callback: callback)

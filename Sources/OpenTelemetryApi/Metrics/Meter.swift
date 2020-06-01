@@ -15,38 +15,38 @@
 
 import Foundation
 
-public protocol Meter {
-    mutating func createIntCounter(name: String, monotonic: Bool) -> AnyCounterMetric<Int>
-    mutating func createDoubleCounter(name: String, monotonic: Bool) -> AnyCounterMetric<Double>
-    mutating func createIntMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Int>
-    mutating func createDoubleMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Double>
-    mutating func createIntObserver(name: String, absolute: Bool, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric
-    mutating func createDoubleObserver(name: String, absolute: Bool, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric
+public protocol Meter: AnyObject {
+    func createIntCounter(name: String, monotonic: Bool) -> AnyCounterMetric<Int>
+    func createDoubleCounter(name: String, monotonic: Bool) -> AnyCounterMetric<Double>
+    func createIntMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Int>
+    func createDoubleMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Double>
+    func createIntObserver(name: String, absolute: Bool, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric
+    func createDoubleObserver(name: String, absolute: Bool, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric
     var labelSet: LabelSet { get }
 }
 
 extension Meter {
-    mutating func createIntCounter(name: String) -> AnyCounterMetric<Int> {
+    func createIntCounter(name: String) -> AnyCounterMetric<Int> {
         return createIntCounter(name: name, monotonic: true)
     }
 
-    mutating func createDoubleCounter(name: String) -> AnyCounterMetric<Double> {
+    func createDoubleCounter(name: String) -> AnyCounterMetric<Double> {
         return createDoubleCounter(name: name, monotonic: true)
     }
 
-    mutating func createIntMeasure(name: String) -> AnyMeasureMetric<Int> {
+    func createIntMeasure(name: String) -> AnyMeasureMetric<Int> {
         return createIntMeasure(name: name, absolute: true)
     }
 
-    mutating func createDoubleMeasure(name: String) -> AnyMeasureMetric<Double> {
+    func createDoubleMeasure(name: String) -> AnyMeasureMetric<Double> {
         return createDoubleMeasure(name: name, absolute: true)
     }
 
-    mutating func createIntObserver(name: String, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric {
+    func createIntObserver(name: String, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric {
         return createIntObserver(name: name, absolute: true, callback: callback)
     }
 
-    mutating func createDoubleObserver(name: String, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric {
+    func createDoubleObserver(name: String, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric {
         return createDoubleObserver(name: name, absolute: true, callback: callback)
     }
 }
