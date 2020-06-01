@@ -1,4 +1,4 @@
-// swift-tools-version:5.0
+// swift-tools-version:5.2
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -22,7 +22,7 @@ let package = Package(
         .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
     ],
     dependencies: [
-        .package(url:  "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1") // Need custom fork because of SPM
+        .package(name:"Thrift", url:  "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1") // Need custom fork because of SPM
     ],
     targets: [
         .target(  name: "OpenTelemetryApi", dependencies: []),
