@@ -15,6 +15,7 @@
 
 import Foundation
 
+/// Basic aggregator which calculates a Sum from individual measurements.
 public class CounterSumAggregator<T: SignedNumeric>: Aggregator {
     var sum: T = 0
     var pointCheck: T = 0

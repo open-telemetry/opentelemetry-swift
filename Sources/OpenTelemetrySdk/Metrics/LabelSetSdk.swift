@@ -16,6 +16,7 @@
 import Foundation
 import OpenTelemetryApi
 
+/// LabelSet implementation.
 class LabelSetSdk: LabelSet {
     internal var labelSetEncoded: String
 

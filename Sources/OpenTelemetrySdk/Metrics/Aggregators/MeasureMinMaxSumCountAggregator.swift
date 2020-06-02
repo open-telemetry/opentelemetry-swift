@@ -15,6 +15,7 @@
 
 import Foundation
 
+/// Aggregator which calculates summary (Min,Max,Sum,Count) from measures.
 public class MeasureMinMaxSumCountAggregator<T: SignedNumeric & Comparable>: Aggregator {
     fileprivate var summary = Summary<T>()
     fileprivate var pointCheck = Summary<T>()

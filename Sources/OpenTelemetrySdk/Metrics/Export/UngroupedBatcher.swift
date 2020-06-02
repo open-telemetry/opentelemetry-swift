@@ -15,6 +15,7 @@
 
 import Foundation
 
+/// Batcher which retains all dimensions/labels.
 public struct UngroupedBatcher: MetricProcessor {
     var metrics = [Metric]()
 

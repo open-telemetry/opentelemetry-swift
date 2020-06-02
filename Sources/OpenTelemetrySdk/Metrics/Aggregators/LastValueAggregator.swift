@@ -15,6 +15,7 @@
 
 import Foundation
 
+/// Simple aggregator that only keeps the last value.
 public class LastValueAggregator<T: SignedNumeric>: Aggregator {
     var value: T = 0
     var pointCheck: T = 0
