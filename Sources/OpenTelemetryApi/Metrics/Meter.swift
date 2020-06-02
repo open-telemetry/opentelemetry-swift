@@ -15,13 +15,56 @@
 
 import Foundation
 
+/// Main interface to obtain metric instruments.
 public protocol Meter: AnyObject {
+    /// Creates Int counter with given name.
+    /// - Parameters:
+    ///   - name: The name of the counter.
+    ///   - monotonic: indicates if only positive values are expected.
+    /// - Returns:The counter instance.
     func createIntCounter(name: String, monotonic: Bool) -> AnyCounterMetric<Int>
+
+    /// Creates double counter with given name.
+    /// - Parameters:
+    ///   - name: indicates if only positive values are expected.
+    ///   - monotonic: The name of the counter.
+    /// - Returns:The counter instance.
     func createDoubleCounter(name: String, monotonic: Bool) -> AnyCounterMetric<Double>
+
+    /// Creates Int Measure with given name.
+    /// - Parameters:
+    ///   - name: The name of the measure.
+    ///   - absolute: indicates if only positive values are expected.
+    /// - Returns:The measure instance.
     func createIntMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Int>
+
+    /// Creates double Measure with given name.
+    /// - Parameters:
+    ///   - name: The name of the measure.
+    ///   - absolute: indicates if only positive values are expected.
+    /// - Returns:The measure instance.
     func createDoubleMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Double>
+
+    /// Creates Int Observer with given name.
+    /// - Parameters:
+    ///   - name: The name of the observer.
+    ///   - callback: The callback to be called to observe metric value.
+    ///   - absolute: indicates if only positive values are expected.
+    /// - Returns:The observer instance.
     func createIntObserver(name: String, absolute: Bool, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric
+
+    /// Creates Double Observer with given name.
+    /// - Parameters:
+    ///   - name: The name of the observer.
+    ///   - callback: The callback to be called to observe metric value.
+    ///   - absolute: indicates if only positive values are expected.
+    /// - Returns:The observer instance.
     func createDoubleObserver(name: String, absolute: Bool, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric
+
+    /// Constructs or retrieves the LabelSet from the given dictionary.
+    /// - Parameters:
+    ///   - labels: dictionary with  key-value pairs.
+    /// - Returns:The LabelSet with given label key value pairs.
     func getLabelSet(labels: [String: String]) -> LabelSet
 }
 

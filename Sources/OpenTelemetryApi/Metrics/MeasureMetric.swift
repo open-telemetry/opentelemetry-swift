@@ -15,17 +15,36 @@
 
 import Foundation
 
+/// Measure instrument.
 public protocol MeasureMetric {
     associatedtype T
+    /// Gets the bound measure metric with given labelset.
+    /// - Parameters:
+    ///   - labelset: The labelset from which bound instrument should be constructed.
+    /// - Returns: The bound measure metric.
+
     func bind(labelset: LabelSet) -> BoundMeasureMetric<T>
+
+    /// Gets the bound measure metric with given labelset.
+    /// - Parameters:
+    ///   - labels: The labels or dimensions associated with this value.
+    /// - Returns: The bound measure metric.
     func bind(labels: [String: String]) -> BoundMeasureMetric<T>
 }
 
 public extension MeasureMetric {
+    /// Records a measure.
+    /// - Parameters:
+    ///   - value: value to record.
+    ///   - labelset: The labelset associated with this value.
     func record(value: T, labelset: LabelSet) {
         bind(labelset: labelset).record(value: value)
     }
 
+    /// Records a measure.
+    /// - Parameters:
+    ///   - value: value to record.
+    ///   - labels: The labels or dimensions associated with this value.
     func record(value: T, labels: [String: String]) {
         bind(labels: labels).record(value: value)
     }

@@ -15,12 +15,32 @@
 
 import Foundation
 
+/// Counter instrument.
 public protocol CounterMetric {
     associatedtype T
 
+    /// Adds or Increments the counter.
+    /// - Parameters:
+    ///   - value: value by which the counter should be incremented.
+    ///   - labelset: The labelset associated with this value.
     func add(value: T, labelset: LabelSet)
+
+    /// Adds or Increments the counter.
+    /// - Parameters:
+    ///   - value: value by which the counter should be incremented.
+    ///   - labels: The labels or dimensions associated with this value.
     func add(value: T, labels: [String: String])
+
+    /// Gets the bound counter metric with given labelset.
+    /// - Parameters:
+    ///   - labelset: The labelset associated with this value.
+    /// - Returns: The bound counter metric.
     func bind(labelset: LabelSet) -> BoundCounterMetric<T>
+
+    /// Gets the bound counter metric with given labels.
+    /// - Parameters:
+    ///   - labels: The labels or dimensions associated with this value.
+    /// - Returns: The bound counter metric.
     func bind(labels: [String: String]) -> BoundCounterMetric<T>
 }
 

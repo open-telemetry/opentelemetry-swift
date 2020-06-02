@@ -15,8 +15,12 @@
 
 import Foundation
 
+/// Normalized name value pairs of metric labels.
 open class LabelSet: Hashable {
     public private(set) var labels: [String: String]
+
+    /// Empty LabelSet.
+    public static var empty = LabelSet()
 
     private init() {
         labels = [String: String]()
@@ -25,8 +29,6 @@ open class LabelSet: Hashable {
     public required init(labels: [String: String]) {
         self.labels = labels
     }
-
-    public static var empty = LabelSet()
 
     public static func == (lhs: LabelSet, rhs: LabelSet) -> Bool {
         return lhs.labels == rhs.labels

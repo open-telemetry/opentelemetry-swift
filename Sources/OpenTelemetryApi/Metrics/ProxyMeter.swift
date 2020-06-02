@@ -14,6 +14,8 @@
 //
 
 import Foundation
+
+/// Proxy Meter which act as a No-Op Meter, until real meter is provided.
 class ProxyMeter: Meter {
     private var realMeter: Meter?
 
