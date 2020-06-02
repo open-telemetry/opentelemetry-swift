@@ -15,12 +15,12 @@
 
 import Foundation
 
-public protocol IntObserverMetric {
-    mutating func observe(value: Int, labelset: LabelSet)
-    mutating func observe(value: Int, labels: [String: String])
+public protocol IntObserverMetric: AnyObject {
+    func observe(value: Int, labelset: LabelSet)
+    func observe(value: Int, labels: [String: String])
 }
 
-struct NoopIntObserverMetric: IntObserverMetric {
+class NoopIntObserverMetric: IntObserverMetric {
     func observe(value: Int, labelset: LabelSet) {
     }
 

@@ -17,7 +17,9 @@ import Foundation
 class ProxyMeter: Meter {
     private var realMeter: Meter?
 
-    var labelSet: LabelSet { return realMeter?.labelSet ?? LabelSet() }
+    func getLabelSet(labels: [String: String]) -> LabelSet {
+        return realMeter?.getLabelSet(labels: labels) ?? LabelSet.empty
+    }
 
     func createIntCounter(name: String, monotonic: Bool) -> AnyCounterMetric<Int> {
         return realMeter?.createIntCounter(name: name, monotonic: monotonic) ?? AnyCounterMetric<Int>(NoopCounterMetric<Int>())

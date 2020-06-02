@@ -15,14 +15,24 @@
 
 import Foundation
 
-public struct LabelSet: Hashable {
-    public var labels: [String: String]
+open class LabelSet: Hashable {
+    public private(set) var labels: [String: String]
 
-    public init() {
-        self.labels = [String: String] ()
+    private init() {
+        labels = [String: String]()
     }
-    
-    public init(labels: [String: String] ) {
+
+    public required init(labels: [String: String]) {
         self.labels = labels
+    }
+
+    public static var empty = LabelSet()
+
+    public static func == (lhs: LabelSet, rhs: LabelSet) -> Bool {
+        return lhs.labels == rhs.labels
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(labels)
     }
 }

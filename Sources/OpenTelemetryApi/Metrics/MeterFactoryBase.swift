@@ -19,8 +19,8 @@ open class MeterFactoryBase {
     static var defaultFactory = MeterFactoryBase()
     static var proxyMeter = ProxyMeter()
     static var initialized = false
-    
-    public init(){}
+
+    public init() {}
 
     static func setDefault(meterFactory: MeterFactoryBase) {
         guard !initialized else {
@@ -31,10 +31,10 @@ open class MeterFactoryBase {
         initialized = true
     }
 
-    func getMeter( name: String, version: String? = nil) -> Meter {
+    open func getMeter(name: String, version: String? = nil) -> Meter {
         return MeterFactoryBase.initialized ? MeterFactoryBase.defaultFactory.getMeter(name: name, version: version) : MeterFactoryBase.proxyMeter
     }
-    
+
     internal func reset() {
         MeterFactoryBase.defaultFactory = MeterFactoryBase()
         MeterFactoryBase.proxyMeter = ProxyMeter()

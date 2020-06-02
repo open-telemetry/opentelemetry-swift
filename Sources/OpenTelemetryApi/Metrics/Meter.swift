@@ -22,10 +22,10 @@ public protocol Meter: AnyObject {
     func createDoubleMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Double>
     func createIntObserver(name: String, absolute: Bool, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric
     func createDoubleObserver(name: String, absolute: Bool, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric
-    var labelSet: LabelSet { get }
+    func getLabelSet(labels: [String: String]) -> LabelSet
 }
 
-extension Meter {
+public extension Meter {
     func createIntCounter(name: String) -> AnyCounterMetric<Int> {
         return createIntCounter(name: name, monotonic: true)
     }

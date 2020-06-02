@@ -18,18 +18,14 @@ import OpenTelemetryApi
 
 internal class BoundMeasureMetricSdk<T: SignedNumeric & Comparable>: BoundMeasureMetricSdkBase<T> {
     private var measureAggregator = MeasureMinMaxSumCountAggregator<T>()
-    
+
     override init() {
         super.init()
     }
 
-    override func record(inContext: SpanContext, value: T) {
+    override func record(value: T) {
         measureAggregator.update(value: value)
     }
-
-//    override func record(inContext: DistributedContext, value: T) {
-//        measureAggregator.update(value: value)
-//    }
 
     override func getAggregator() -> AnyAggregator<T> {
         return AnyAggregator<T>(measureAggregator)

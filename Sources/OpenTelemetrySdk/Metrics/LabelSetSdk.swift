@@ -14,11 +14,28 @@
 //
 
 import Foundation
+import OpenTelemetryApi
 
-open class BoundCounterMetric<T> {
-    public init() {}
+class LabelSetSdk: LabelSet {
+    internal var labelSetEncoded: String
 
-    open func add(value: T) {
-        fatalError()
+    required init(labels: [String: String]) {
+        labelSetEncoded = LabelSetSdk.getLabelSetEncoded(labels: labels)
+        super.init(labels: labels)
+    }
+
+    private static func getLabelSetEncoded(labels: [String: String]) -> String {
+        var output = ""
+        var isFirstLabel = true
+
+        labels.map { "\($0)=\($1)" }.sorted().forEach {
+            if !isFirstLabel {
+                output += ","
+            }
+            output += $0
+            isFirstLabel = false
+        }
+
+        return output
     }
 }

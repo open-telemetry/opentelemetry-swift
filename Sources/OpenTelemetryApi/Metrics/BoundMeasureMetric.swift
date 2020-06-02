@@ -16,11 +16,9 @@
 import Foundation
 
 open class BoundMeasureMetric<T> {
-    
     public init() {
     }
-    
-    open func record(inContext: SpanContext, value: T) {
+
+    open func record(value: T) {
     }
-//    func  record(inContext: DistributedContext, value: T)
 }

@@ -15,15 +15,15 @@
 
 import Foundation
 
-public protocol DoubleObserverMetric {
-    mutating func observe(value: Double, labelset: LabelSet)
-    mutating func observe(value: Double, labels: [String: String])
+public protocol DoubleObserverMetric: AnyObject {
+    func observe(value: Double, labelset: LabelSet)
+    func observe(value: Double, labels: [String: String])
 }
 
-struct NoopDoubleObserverMetric: DoubleObserverMetric {
+class NoopDoubleObserverMetric: DoubleObserverMetric {
     func observe(value: Double, labelset: LabelSet) {
     }
-    
-    func observe(value: Double, labels: [String : String]) {
+
+    func observe(value: Double, labels: [String: String]) {
     }
 }

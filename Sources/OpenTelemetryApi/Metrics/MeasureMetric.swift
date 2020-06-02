@@ -17,34 +17,27 @@ import Foundation
 
 public protocol MeasureMetric {
     associatedtype T
-
-    func record(inContext: SpanContext, value: T, labelset: LabelSet)
-    func record(inContext: SpanContext, value: T, labels: [String: String])
-//    func record(inContext: DistributedContext,  value: T,  labelset: LabelSet)
-//    func record(inContext: DistributedContext,  value: T, labels: [String: String])
     func bind(labelset: LabelSet) -> BoundMeasureMetric<T>
     func bind(labels: [String: String]) -> BoundMeasureMetric<T>
 }
 
+public extension MeasureMetric {
+    func record(value: T, labelset: LabelSet) {
+        bind(labelset: labelset).record(value: value)
+    }
+
+    func record(value: T, labels: [String: String]) {
+        bind(labels: labels).record(value: value)
+    }
+}
+
 public struct AnyMeasureMetric<T>: MeasureMetric {
-    private let _recordLabelSet: (SpanContext, T, LabelSet) -> Void
-    private let _recordLabels: (SpanContext, T, [String: String]) -> Void
     private let _bindLabelSet: (LabelSet) -> BoundMeasureMetric<T>
     private let _bindLabels: ([String: String]) -> BoundMeasureMetric<T>
 
     public init<U: MeasureMetric>(_ measurable: U) where U.T == T {
-        _recordLabelSet = measurable.record(inContext:value:labelset:)
-        _recordLabels = measurable.record
         _bindLabelSet = measurable.bind(labelset:)
         _bindLabels = measurable.bind(labels:)
-    }
-
-    public func record(inContext: SpanContext, value: T, labelset: LabelSet) {
-        _recordLabelSet(inContext, value, labelset)
-    }
-
-    public func record(inContext: SpanContext, value: T, labels: [String: String]) {
-        _recordLabels(inContext, value, labels)
     }
 
     public func bind(labelset: LabelSet) -> BoundMeasureMetric<T> {
@@ -57,12 +50,6 @@ public struct AnyMeasureMetric<T>: MeasureMetric {
 }
 
 struct NoopMeasureMetric<T>: MeasureMetric {
-    func record(inContext: SpanContext, value: T, labelset: LabelSet) {
-    }
-
-    func record(inContext: SpanContext, value: T, labels: [String: String]) {
-    }
-
     func bind(labelset: LabelSet) -> BoundMeasureMetric<T> {
         BoundMeasureMetric<T>()
     }

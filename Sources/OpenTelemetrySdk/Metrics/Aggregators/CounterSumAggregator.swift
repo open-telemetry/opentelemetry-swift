@@ -17,7 +17,7 @@ import Foundation
 
 public class CounterSumAggregator<T: SignedNumeric>: Aggregator {
     var sum: T = 0
-    var pointCheck: T = 0 
+    var pointCheck: T = 0
     private let lock = Lock()
 
     func update(value: T) {

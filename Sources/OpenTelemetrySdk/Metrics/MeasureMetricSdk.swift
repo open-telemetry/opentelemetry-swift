@@ -15,7 +15,7 @@
 
 import Foundation
 import OpenTelemetryApi
- 
+
 internal class MeasureMetricSdk<T: SignedNumeric & Comparable>: MeasureMetric {
     public private(set) var boundInstruments = [LabelSet: BoundMeasureMetricSdkBase<T>]()
     let metricName: String
@@ -35,14 +35,6 @@ internal class MeasureMetricSdk<T: SignedNumeric & Comparable>: MeasureMetric {
 
     func bind(labels: [String: String]) -> BoundMeasureMetric<T> {
         return bind(labelset: LabelSet(labels: labels))
-    }
-
-    func record(inContext: SpanContext, value: T, labelset: LabelSet) {
-        fatalError()
-    }
-
-    func record(inContext: SpanContext, value: T, labels: [String: String]) {
-        fatalError()
     }
 
     func createMetric() -> BoundMeasureMetricSdkBase<T> {

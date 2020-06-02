@@ -22,13 +22,13 @@ class PushMetricController {
 
     let pushMetricQueue = DispatchQueue(label: "org.opentelemetry.PushMetricController.pushMetricQueue")
 
-    init(meters: [MeterRegistryKey: MeterSdk], metricProcessor: MetricProcessor, metricExporter: MetricExporter, pushInterval: TimeInterval, shouldCancel:@escaping  () -> Bool) {
+    init(meters: [MeterRegistryKey: MeterSdk], metricProcessor: MetricProcessor, metricExporter: MetricExporter, pushInterval: TimeInterval, shouldCancel: (() -> Bool)? = nil) {
         self.meters = meters
         self.metricProcessor = metricProcessor
         self.metricExporter = metricExporter
         self.pushInterval = pushInterval
         pushMetricQueue.asyncAfter(deadline: .now() + pushInterval) {
-            while !shouldCancel() {
+            while !(shouldCancel?() ?? false) {
                 let start = DispatchTime.now()
                 for index in meters.values.indices {
                     self.meters.values[index].collect()

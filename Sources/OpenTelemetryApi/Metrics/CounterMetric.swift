@@ -18,35 +18,33 @@ import Foundation
 public protocol CounterMetric {
     associatedtype T
 
-    func add(inContext: SpanContext, value: T, labelset: LabelSet)
-    func add(inContext: SpanContext, value: T, labels: [String: String])
-//    func add(inContext: DistributedContext,  value: T,  labelset: LabelSet)
-//    func add(inContext: DistributedContext,  value: T, labels: [String: String])
+    func add(value: T, labelset: LabelSet)
+    func add(value: T, labels: [String: String])
     func bind(labelset: LabelSet) -> BoundCounterMetric<T>
     func bind(labels: [String: String]) -> BoundCounterMetric<T>
 }
 
 public struct AnyCounterMetric<T>: CounterMetric {
     let internalCounter: Any
-    private let _addLabelSet: (SpanContext, T, LabelSet) -> Void
-    private let _addLabels: (SpanContext, T, [String: String]) -> Void
+    private let _addLabelSet: (T, LabelSet) -> Void
+    private let _addLabels: (T, [String: String]) -> Void
     private let _bindLabelSet: (LabelSet) -> BoundCounterMetric<T>
     private let _bindLabels: ([String: String]) -> BoundCounterMetric<T>
 
     public init<U: CounterMetric>(_ countable: U) where U.T == T {
         internalCounter = countable
-        _addLabelSet = countable.add(inContext:value:labelset:)
-        _addLabels = countable.add(inContext:value:labels:)
+        _addLabelSet = countable.add(value:labelset:)
+        _addLabels = countable.add(value:labels:)
         _bindLabelSet = countable.bind(labelset:)
         _bindLabels = countable.bind(labels:)
     }
 
-    public func add(inContext: SpanContext, value: T, labelset: LabelSet) {
-        _addLabelSet(inContext, value, labelset)
+    public func add(value: T, labelset: LabelSet) {
+        _addLabelSet(value, labelset)
     }
 
-    public func add(inContext: SpanContext, value: T, labels: [String: String]) {
-        _addLabels(inContext, value, labels)
+    public func add(value: T, labels: [String: String]) {
+        _addLabels(value, labels)
     }
 
     public func bind(labelset: LabelSet) -> BoundCounterMetric<T> {
@@ -59,10 +57,10 @@ public struct AnyCounterMetric<T>: CounterMetric {
 }
 
 struct NoopCounterMetric<T>: CounterMetric {
-    func add(inContext: SpanContext, value: T, labelset: LabelSet) {
+    func add(value: T, labelset: LabelSet) {
     }
 
-    func add(inContext: SpanContext, value: T, labels: [String: String]) {
+    func add(value: T, labels: [String: String]) {
     }
 
     func bind(labelset: LabelSet) -> BoundCounterMetric<T> {

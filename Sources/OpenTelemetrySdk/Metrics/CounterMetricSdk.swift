@@ -21,12 +21,12 @@ class CounterMetricSdk<T: SignedNumeric>: CounterMetricSdkBase<T> {
         super.init(name: name)
     }
 
-    override func add(inContext: SpanContext, value: T, labelset: LabelSet) {
-        bind(labelset: labelset, isShortLived: true).add(inContext: inContext, value: value)
+    override func add(value: T, labelset: LabelSet) {
+        bind(labelset: labelset, isShortLived: true).add(value: value)
     }
 
-    override func add(inContext: SpanContext, value: T, labels: [String: String]) {
-        bind(labelset: LabelSet(labels: labels), isShortLived: true).add(inContext: inContext, value: value)
+    override func add(value: T, labels: [String: String]) {
+        bind(labelset: LabelSetSdk(labels: labels), isShortLived: true).add(value: value)
     }
 
     override func createMetric(recordStatus: RecordStatus) -> BoundCounterMetricSdkBase<T> {

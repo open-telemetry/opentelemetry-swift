@@ -13,12 +13,20 @@
 // limitations under the License.
 //
 
-import Foundation
+@testable import OpenTelemetrySdk
+import XCTest
 
-open class BoundCounterMetric<T> {
-    public init() {}
+class TestMetricExporter: MetricExporter {
+    var metrics = [Metric]()
+    let onExport: () -> Void
 
-    open func add(value: T) {
-        fatalError()
+    init(onExport: @escaping () -> Void) {
+        self.onExport = onExport
+    }
+
+    func export(metrics: [Metric], shouldCancel: (() -> Bool)? = nil) -> MetricExporterResultCode {
+        onExport()
+        self.metrics.append(contentsOf: metrics)
+        return .success
     }
 }

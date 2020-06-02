@@ -25,11 +25,11 @@ class CounterMetricSdkBase<T>: CounterMetric {
         metricName = name
     }
 
-    func add(inContext: SpanContext, value: T, labelset: LabelSet) {
+    func add(value: T, labelset: LabelSet) {
         fatalError()
     }
 
-    func add(inContext: SpanContext, value: T, labels: [String: String]) {
+    func add(value: T, labels: [String: String]) {
         fatalError()
     }
 

@@ -25,7 +25,7 @@ public struct Metric {
     init(metricNamespace: String, metricName: String, desc: String, type: AggregationType) {
         self.metricNamespace = metricNamespace
         self.metricName = metricName
-        self.metricDescription = desc
-        self.aggregationType = type
+        metricDescription = desc
+        aggregationType = type
     }
 }

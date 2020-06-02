@@ -13,12 +13,18 @@
 // limitations under the License.
 //
 
-import Foundation
+@testable import OpenTelemetrySdk
+import XCTest
 
-open class BoundCounterMetric<T> {
-    public init() {}
+class TestMeter: MeterSdk {
+    let collectAction: () -> Void
 
-    open func add(value: T) {
-        fatalError()
+    init(meterName: String, metricProcessor: MetricProcessor, collectAction: @escaping () -> Void) {
+        self.collectAction = collectAction
+        super.init(meterName: meterName, metricProcessor: metricProcessor)
+    }
+
+    override func collect() {
+        collectAction()
     }
 }

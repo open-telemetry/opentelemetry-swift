@@ -16,7 +16,6 @@
 import Foundation
 import OpenTelemetryApi
 
-
 class BoundCounterMetricSdk<T: SignedNumeric>: BoundCounterMetricSdkBase<T> {
     private var sumAggregator = CounterSumAggregator<T>()
 
@@ -24,13 +23,9 @@ class BoundCounterMetricSdk<T: SignedNumeric>: BoundCounterMetricSdkBase<T> {
         super.init(recordStatus: recordStatus)
     }
 
-    override func add(inContext: SpanContext, value: T) {
+    override func add(value: T) {
         sumAggregator.update(value: value)
     }
-
-//    override func add(inContext: DistributedContext, value: T) {
-//      sumAggregator.update(value: value)
-//    }
 
     override func getAggregator() -> AnyAggregator<T> {
         return AnyAggregator<T>(sumAggregator)

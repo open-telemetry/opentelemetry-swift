@@ -27,7 +27,7 @@ final class MeterFactoryBaseTests: XCTestCase {
         let otherMeter = MeterFactoryBase.defaultFactory.getMeter(name: "named meter")
         XCTAssert(otherMeter is ProxyMeter)
         XCTAssert(defaultMeter === otherMeter)
-        
+
         let counter = defaultMeter.createDoubleCounter(name: "ctr")
         XCTAssert(counter.internalCounter is NoopCounterMetric<Double>)
     }
@@ -39,10 +39,10 @@ final class MeterFactoryBaseTests: XCTestCase {
 
         let defaultMeter = MeterFactoryBase.defaultFactory.getMeter(name: "")
         XCTAssert(defaultMeter is TestNoopMeter)
-        
+
         let otherMeter = MeterFactoryBase.defaultFactory.getMeter(name: "named meter")
         XCTAssert(defaultMeter !== otherMeter)
-        
+
         let counter = defaultMeter.createIntCounter(name: "ctr")
         XCTAssert(counter.internalCounter is NoopCounterMetric<Int>)
     }
@@ -78,8 +78,6 @@ class TestMeter: MeterFactoryBase {
 }
 
 class TestNoopMeter: Meter {
-    var labelSet = LabelSet()
-
     func createIntCounter(name: String, monotonic: Bool) -> AnyCounterMetric<Int> {
         return AnyCounterMetric<Int>(NoopCounterMetric<Int>())
     }
@@ -102,5 +100,9 @@ class TestNoopMeter: Meter {
 
     func createDoubleObserver(name: String, absolute: Bool, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric {
         return NoopDoubleObserverMetric()
+    }
+
+    func getLabelSet(labels: [String: String]) -> LabelSet {
+        return LabelSet.empty
     }
 }

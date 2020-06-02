@@ -22,11 +22,11 @@ public enum MetricExporterResultCode {
 }
 
 public protocol MetricExporter {
-    func export(metrics: [Metric], shouldCancel: () -> Bool) -> MetricExporterResultCode
+    func export(metrics: [Metric], shouldCancel: (() -> Bool)?) -> MetricExporterResultCode
 }
 
 struct NoopMetricExporter: MetricExporter {
-    func export(metrics: [Metric], shouldCancel: () -> Bool) -> MetricExporterResultCode {
+    func export(metrics: [Metric], shouldCancel: (() -> Bool)?) -> MetricExporterResultCode {
         return .success
     }
 }

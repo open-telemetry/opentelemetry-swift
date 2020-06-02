@@ -16,16 +16,21 @@
 import Foundation
 import OpenTelemetryApi
 
-struct IntObserverMetricSdk: IntObserverMetric {
+class IntObserverMetricSdk: IntObserverMetric {
     public private(set) var observerHandles = [LabelSet: IntObserverMetricHandleSdk]()
     let metricName: String
     var callback: (IntObserverMetric) -> Void
 
-    mutating func observe(value: Int, labels: [String: String]) {
+    init(metricName: String, callback: @escaping (IntObserverMetric) -> Void) {
+        self.metricName = metricName
+        self.callback = callback
+    }
+
+    func observe(value: Int, labels: [String: String]) {
         observe(value: value, labelset: LabelSet(labels: labels))
     }
 
-    mutating func observe(value: Int, labelset: LabelSet) {
+    func observe(value: Int, labelset: LabelSet) {
         var boundInstrument = observerHandles[labelset]
         if boundInstrument == nil {
             boundInstrument = IntObserverMetricHandleSdk()

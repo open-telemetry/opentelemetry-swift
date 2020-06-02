@@ -28,11 +28,13 @@ class MeterSdk: Meter {
     var intObservers = [String: IntObserverMetricSdk]()
     var doubleObservers = [String: DoubleObserverMetricSdk]()
 
-    var labelSet = LabelSet()
-
     init(meterName: String, metricProcessor: MetricProcessor) {
         self.meterName = meterName
         self.metricProcessor = metricProcessor
+    }
+
+    func getLabelSet(labels: [String: String]) -> LabelSet {
+        return LabelSetSdk(labels: labels)
     }
 
     func collect() {

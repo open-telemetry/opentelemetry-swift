@@ -32,7 +32,7 @@ public class MeterFactory: MeterFactoryBase {
         metricExporter = meterBuilder.metricExporter ?? NoopMetricExporter()
 
         defaultMeter = MeterSdk(meterName: "", metricProcessor: metricProcessor)
-        meterRegistry[MeterRegistryKey(name: "", version: "")] = defaultMeter
+        meterRegistry[MeterRegistryKey(name: "")] = defaultMeter
 
         let defaultPushInterval = self.defaultPushInterval
         pushMetricController = PushMetricController(
@@ -53,7 +53,7 @@ public class MeterFactory: MeterFactoryBase {
         return MeterFactory(meterBuilder: builder)
     }
 
-    public func getMeter(name: String, version: String? = nil) -> Meter {
+    public override func getMeter(name: String, version: String? = nil) -> Meter {
         if name.isEmpty {
             return defaultMeter
         }
