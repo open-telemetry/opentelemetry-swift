@@ -16,15 +16,15 @@
 @testable import OpenTelemetryApi
 import XCTest
 
-final class MeterFactoryBaseTests: XCTestCase {
+final class DefaultMeterProviderTests: XCTestCase {
     override func setUp() {
-        MeterFactoryBase.defaultFactory.reset()
+        DefaultMeterProvider.reset()
     }
 
     func testDefault() {
-        let defaultMeter = MeterFactoryBase.defaultFactory.getMeter(name: "")
+        let defaultMeter =   DefaultMeterProvider.instance.get(instrumentationName: "", instrumentationVersion: nil)
         XCTAssert(defaultMeter is ProxyMeter)
-        let otherMeter = MeterFactoryBase.defaultFactory.getMeter(name: "named meter")
+        let otherMeter =   DefaultMeterProvider.instance.get(instrumentationName: "named meter", instrumentationVersion: nil)
         XCTAssert(otherMeter is ProxyMeter)
         XCTAssert(defaultMeter === otherMeter)
 
@@ -34,13 +34,13 @@ final class MeterFactoryBaseTests: XCTestCase {
 
     func testSetDefault() {
         let factory = TestMeter()
-        MeterFactoryBase.setDefault(meterFactory: factory)
-        XCTAssert(MeterFactoryBase.initialized)
+        DefaultMeterProvider.setDefault(meterFactory: factory)
+        XCTAssert(DefaultMeterProvider.initialized)
 
-        let defaultMeter = MeterFactoryBase.defaultFactory.getMeter(name: "")
+        let defaultMeter =   DefaultMeterProvider.instance.get(instrumentationName: "", instrumentationVersion: nil)
         XCTAssert(defaultMeter is TestNoopMeter)
 
-        let otherMeter = MeterFactoryBase.defaultFactory.getMeter(name: "named meter")
+        let otherMeter =   DefaultMeterProvider.instance.get(instrumentationName: "named meter", instrumentationVersion: nil)
         XCTAssert(defaultMeter !== otherMeter)
 
         let counter = defaultMeter.createIntCounter(name: "ctr")
@@ -49,30 +49,30 @@ final class MeterFactoryBaseTests: XCTestCase {
 
     func testSetDefaultTwice() {
         let factory = TestMeter()
-        MeterFactoryBase.setDefault(meterFactory: factory)
+        DefaultMeterProvider.setDefault(meterFactory: factory)
 
         let factory2 = TestMeter()
-        MeterFactoryBase.setDefault(meterFactory: factory2)
+        DefaultMeterProvider.setDefault(meterFactory: factory2)
 
-        XCTAssert(MeterFactoryBase.defaultFactory === factory)
+        XCTAssert(DefaultMeterProvider.instance === factory)
     }
 
     func testUpdateDefault_CachedTracer() {
-        let defaultMeter = MeterFactoryBase.defaultFactory.getMeter(name: "")
+        let defaultMeter =   DefaultMeterProvider.instance.get(instrumentationName: "", instrumentationVersion: nil)
         let noOpCounter = defaultMeter.createDoubleCounter(name: "ctr")
         XCTAssert(noOpCounter.internalCounter is NoopCounterMetric<Double>)
 
-        MeterFactoryBase.setDefault(meterFactory: TestMeter())
+        DefaultMeterProvider.setDefault(meterFactory: TestMeter())
         let counter = defaultMeter.createDoubleCounter(name: "ctr")
         XCTAssert(counter.internalCounter is NoopCounterMetric<Double>)
 
-        let newdefaultMeter = MeterFactoryBase.defaultFactory.getMeter(name: "")
+        let newdefaultMeter =   DefaultMeterProvider.instance.get(instrumentationName: "", instrumentationVersion: nil)
         XCTAssert(defaultMeter !== newdefaultMeter)
     }
 }
 
-class TestMeter: MeterFactoryBase {
-    override func getMeter(name: String, version: String? = nil) -> Meter {
+class TestMeter: MeterProvider {
+    func get(instrumentationName: String, instrumentationVersion: String?) -> Meter {
         return TestNoopMeter()
     }
 }

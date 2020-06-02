@@ -15,8 +15,6 @@
 
 import Foundation
 
-public struct MeterBuilder {
-    public private(set) var metricProcessor: MetricProcessor?
-    public private(set) var metricExporter: MetricExporter?
-    public private(set) var metricPushInterval: TimeInterval?
+public protocol MeterProvider: AnyObject {
+    func get(instrumentationName: String, instrumentationVersion: String?) -> Meter
 }

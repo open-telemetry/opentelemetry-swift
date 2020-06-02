@@ -16,7 +16,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public class MeterFactory: MeterFactoryBase {
+public class MeterSdkProvider: MeterProvider {
     fileprivate let lock = Lock()
 
     var meterRegistry = [MeterRegistryKey: MeterSdk]()
@@ -27,9 +27,13 @@ public class MeterFactory: MeterFactoryBase {
     let defaultPushInterval: TimeInterval = 60
     var defaultMeter: MeterSdk
 
-    init(meterBuilder: MeterBuilder) {
-        metricProcessor = meterBuilder.metricProcessor ?? NoopMetricProcessor()
-        metricExporter = meterBuilder.metricExporter ?? NoopMetricExporter()
+    convenience init() {
+        self.init(meterSharedState: MeterSharedState())
+    }
+    
+    init(meterSharedState: MeterSharedState) {
+        metricProcessor = meterSharedState.metricProcessor ?? NoopMetricProcessor()
+        metricExporter = meterSharedState.metricExporter ?? NoopMetricExporter()
 
         defaultMeter = MeterSdk(meterName: "", metricProcessor: metricProcessor)
         meterRegistry[MeterRegistryKey(name: "")] = defaultMeter
@@ -39,22 +43,20 @@ public class MeterFactory: MeterFactoryBase {
             meters: meterRegistry,
             metricProcessor: metricProcessor,
             metricExporter: metricExporter,
-            pushInterval: meterBuilder.metricPushInterval ?? defaultPushInterval) {
+            pushInterval: meterSharedState.metricPushInterval ?? defaultPushInterval) {
             false
         }
-
-        super.init()
     }
 
-    public static func create(configure: (MeterBuilder) -> Void) -> MeterFactory {
-        let builder = MeterBuilder()
+    public static func create(configure: (MeterSharedState) -> Void) -> MeterSdkProvider {
+        let builder = MeterSharedState()
         configure(builder)
 
-        return MeterFactory(meterBuilder: builder)
+        return MeterSdkProvider(meterSharedState: builder)
     }
 
-    public override func getMeter(name: String, version: String? = nil) -> Meter {
-        if name.isEmpty {
+    public func get(instrumentationName: String, instrumentationVersion: String? = nil) -> Meter {
+        if instrumentationName.isEmpty {
             return defaultMeter
         }
 
@@ -62,10 +64,10 @@ public class MeterFactory: MeterFactoryBase {
         defer {
             lock.unlock()
         }
-        let key = MeterRegistryKey(name: name, version: version)
+        let key = MeterRegistryKey(name: instrumentationName, version: instrumentationVersion)
         var meter: MeterSdk! = meterRegistry[key]
         if meter == nil {
-            meter = MeterSdk(meterName: name, metricProcessor: metricProcessor)
+            meter = MeterSdk(meterName: instrumentationName, metricProcessor: metricProcessor)
             defaultMeter = meter!
             meterRegistry[key] = meter!
         }

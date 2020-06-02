@@ -20,8 +20,8 @@ import XCTest
 final class MetricsTests: XCTestCase {
     func testCounterSendsAggregateToRegisteredProcessor() {
         let testProcessor = TestMetricProcessor()
-        let meterBuilder = MeterBuilder(metricProcessor: testProcessor)
-        let meter = MeterFactory(meterBuilder: meterBuilder).getMeter(name: "library1") as! MeterSdk
+        let meterSharedState = MeterSharedState(metricProcessor: testProcessor)
+        let meter = MeterSdkProvider(meterSharedState: meterSharedState).get(instrumentationName: "library1") as! MeterSdk
         let testCounter = meter.createIntCounter(name: "testCounter")
 
         let labels1 = ["dim1": "value1"]
@@ -63,8 +63,8 @@ final class MetricsTests: XCTestCase {
 
     func testMeasureSendsAggregateToRegisteredProcessor() {
         let testProcessor = TestMetricProcessor()
-        let meterBuilder = MeterBuilder(metricProcessor: testProcessor)
-        let meter = MeterFactory(meterBuilder: meterBuilder).getMeter(name: "library1") as! MeterSdk
+        let meterSharedState = MeterSharedState(metricProcessor: testProcessor)
+        let meter = MeterSdkProvider(meterSharedState: meterSharedState).get(instrumentationName: "library1") as! MeterSdk
         let testMeasure = meter.createIntMeasure(name: "testMeasure")
 
         let labels1 = ["dim1": "value1"]
@@ -103,8 +103,8 @@ final class MetricsTests: XCTestCase {
 
     func testIntObserverSendsAggregateToRegisteredProcessor() {
         let testProcessor = TestMetricProcessor()
-        let meterBuilder = MeterBuilder(metricProcessor: testProcessor)
-        let meter = MeterFactory(meterBuilder: meterBuilder).getMeter(name: "library1") as! MeterSdk
+        let meterSharedState = MeterSharedState(metricProcessor: testProcessor)
+        let meter = MeterSdkProvider(meterSharedState: meterSharedState).get(instrumentationName: "library1") as! MeterSdk
         _ = meter.createIntObserver(name: "testObserver", callback: callbackInt)
 
         meter.collect()
@@ -141,8 +141,8 @@ final class MetricsTests: XCTestCase {
 
     func testDoubleObserverSendsAggregateToRegisteredProcessor() {
         let testProcessor = TestMetricProcessor()
-        let meterBuilder = MeterBuilder(metricProcessor: testProcessor)
-        let meter = MeterFactory(meterBuilder: meterBuilder).getMeter(name: "library1") as! MeterSdk
+        let meterSharedState = MeterSharedState(metricProcessor: testProcessor)
+        let meter = MeterSdkProvider(meterSharedState: meterSharedState).get(instrumentationName: "library1") as! MeterSdk
         _ = meter.createDoubleObserver(name: "testObserver", callback: callbackDouble)
 
         meter.collect()

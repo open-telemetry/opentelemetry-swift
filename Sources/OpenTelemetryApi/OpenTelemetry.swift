@@ -21,11 +21,11 @@ import Foundation
 public struct OpenTelemetry {
     public static var instance = OpenTelemetry()
 
-    /// Registered TracerFactory or default via DefaultTracerFactory.instance.
+    /// Registered tracerProvider or default via DefaultTracerProvider.instance.
     public private(set) var tracerProvider: TracerProvider
 
-//    /// Registered MeterFactory or default via DefaultMeterFactory.instance.
-//    public private(set)  var meter: MeterProvider
+    /// Registered MeterProvider or default via DefaultMeterProvider.instance.
+    public private(set) var meterProvider: MeterProvider
 
     /// registered manager or default via  DefaultCorrelationContextManager.instance.
     public private(set) var contextManager: CorrelationContextManager
@@ -35,12 +35,16 @@ public struct OpenTelemetry {
 
     private init() {
         tracerProvider = DefaultTracerProvider.instance
-//        meter = DefaultMeterFactory.instance;
+        meterProvider = DefaultMeterProvider.instance
         contextManager = DefaultCorrelationContextManager.instance
     }
 
     public static func registerTracerProvider(tracerProvider: TracerProvider) {
         instance.tracerProvider = tracerProvider
+    }
+
+    public static func registerMeterProvider(meterProvider: MeterProvider) {
+        instance.meterProvider = meterProvider
     }
 
     public static func registerCorrelationContextManager(correlationContextManager: CorrelationContextManager) {

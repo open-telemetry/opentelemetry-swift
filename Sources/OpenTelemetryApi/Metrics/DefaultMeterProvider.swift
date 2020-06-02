@@ -15,29 +15,30 @@
 
 import Foundation
 
-open class MeterFactoryBase {
-    static var defaultFactory = MeterFactoryBase()
+class DefaultMeterProvider: MeterProvider {
+    static var instance: MeterProvider = DefaultMeterProvider()
+
     static var proxyMeter = ProxyMeter()
     static var initialized = false
 
     public init() {}
 
-    static func setDefault(meterFactory: MeterFactoryBase) {
+    static func setDefault(meterFactory: MeterProvider) {
         guard !initialized else {
             return
         }
-        defaultFactory = meterFactory
-        proxyMeter.updateMeter(realMeter: meterFactory.getMeter(name: ""))
+        instance = meterFactory
+        proxyMeter.updateMeter(realMeter: meterFactory.get(instrumentationName: "", instrumentationVersion: nil))
         initialized = true
     }
 
-    open func getMeter(name: String, version: String? = nil) -> Meter {
-        return MeterFactoryBase.initialized ? MeterFactoryBase.defaultFactory.getMeter(name: name, version: version) : MeterFactoryBase.proxyMeter
+    func get(instrumentationName: String, instrumentationVersion: String? = nil) -> Meter {
+        return DefaultMeterProvider.initialized ? DefaultMeterProvider.instance.get(instrumentationName: instrumentationName, instrumentationVersion: instrumentationVersion) : DefaultMeterProvider.proxyMeter
     }
 
-    internal func reset() {
-        MeterFactoryBase.defaultFactory = MeterFactoryBase()
-        MeterFactoryBase.proxyMeter = ProxyMeter()
-        MeterFactoryBase.initialized = false
+    internal static func reset() {
+        DefaultMeterProvider.instance = DefaultMeterProvider()
+        DefaultMeterProvider.proxyMeter = ProxyMeter()
+        DefaultMeterProvider.initialized = false
     }
 }
