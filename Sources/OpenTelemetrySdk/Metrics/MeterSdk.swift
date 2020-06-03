@@ -38,7 +38,7 @@ class MeterSdk: Meter {
     }
 
     func collect() {
-        collectLock.withLock {
+        collectLock.withLockVoid {
             var boundInstrumentsToRemove = [LabelSet]()
 
             intCounters.forEach { counter in
@@ -47,24 +47,25 @@ class MeterSdk: Meter {
 
                 var metric = Metric(metricNamespace: meterName, metricName: metricName, desc: meterName + metricName, type: AggregationType.intSum)
 
-                counterInstrument.boundInstruments.forEach { handle in
-                    let labelSet = handle.key
-                    let aggregator = handle.value.getAggregator()
+                counterInstrument.boundInstruments.forEach { boundInstrument in
+                    let labelSet = boundInstrument.key
+                    let aggregator = boundInstrument.value.getAggregator()
                     aggregator.checkpoint()
 
                     var metricData = aggregator.toMetricData()
                     metricData.labels = labelSet.labels
                     metric.data.append(metricData)
-
-                    switch handle.value.status {
-                    case .updatePending:
-                        handle.value.status = .noPendingUpdate
-                    case .noPendingUpdate:
-                        handle.value.status = .candidateForRemoval
-                    case .candidateForRemoval:
-                        boundInstrumentsToRemove.append(labelSet)
-                    case .bound:
-                        break
+                    boundInstrument.value.statusLock.withLockVoid {
+                        switch boundInstrument.value.status {
+                        case .updatePending:
+                            boundInstrument.value.status = .noPendingUpdate
+                        case .noPendingUpdate:
+                            boundInstrument.value.status = .candidateForRemoval
+                        case .candidateForRemoval:
+                            boundInstrumentsToRemove.append(labelSet)
+                        case .bound:
+                            break
+                        }
                     }
                 }
 
@@ -90,15 +91,17 @@ class MeterSdk: Meter {
                     metricData.labels = labelSet.labels
                     metric.data.append(metricData)
 
-                    switch boundInstrument.value.status {
-                    case .updatePending:
-                        boundInstrument.value.status = .noPendingUpdate
-                    case .noPendingUpdate:
-                        boundInstrument.value.status = .candidateForRemoval
-                    case .candidateForRemoval:
-                        boundInstrumentsToRemove.append(labelSet)
-                    case .bound:
-                        break
+                    boundInstrument.value.statusLock.withLockVoid {
+                        switch boundInstrument.value.status {
+                        case .updatePending:
+                            boundInstrument.value.status = .noPendingUpdate
+                        case .noPendingUpdate:
+                            boundInstrument.value.status = .candidateForRemoval
+                        case .candidateForRemoval:
+                            boundInstrumentsToRemove.append(labelSet)
+                        case .bound:
+                            break
+                        }
                     }
                 }
 

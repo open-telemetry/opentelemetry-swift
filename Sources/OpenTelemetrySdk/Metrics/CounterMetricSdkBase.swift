@@ -52,20 +52,22 @@ class CounterMetricSdkBase<T>: CounterMetric {
             }
         }
 
-        switch boundInstrument!.status {
-        case .noPendingUpdate:
-            boundInstrument!.status = .updatePending
-            break
-        case .candidateForRemoval:
-            bindUnbindLock.withLockVoid {
+        boundInstrument!.statusLock.withLockVoid {
+            switch boundInstrument!.status {
+            case .noPendingUpdate:
                 boundInstrument!.status = .updatePending
+                break
+            case .candidateForRemoval:
+                bindUnbindLock.withLockVoid {
+                    boundInstrument!.status = .updatePending
 
-                if boundInstruments[labelset] == nil {
-                    boundInstruments[labelset] = boundInstrument!
+                    if boundInstruments[labelset] == nil {
+                        boundInstruments[labelset] = boundInstrument!
+                    }
                 }
+            case .bound, .updatePending:
+                break
             }
-        case .bound, .updatePending:
-            break
         }
 
         return boundInstrument!
@@ -73,9 +75,12 @@ class CounterMetricSdkBase<T>: CounterMetric {
 
     internal func unBind(labelSet: LabelSet) {
         bindUnbindLock.withLockVoid {
-            if let boundInstrument = boundInstruments[labelSet],
-                boundInstrument.status == .candidateForRemoval {
-                boundInstruments[labelSet] = nil
+            if let boundInstrument = boundInstruments[labelSet] {
+                boundInstrument.statusLock.withLockVoid {
+                    if boundInstrument.status == .candidateForRemoval {
+                        boundInstruments[labelSet] = nil
+                    }
+                }
             }
         }
     }

@@ -17,6 +17,8 @@
 import XCTest
 
 final class PushControllerTests: XCTestCase {
+    fileprivate let lock = Lock()
+
     func testPushControllerCollectsAllMeters() {
         let controllerPushIntervalInSec = 0.025
         let collectionCountExpectedMin = 3
@@ -24,7 +26,9 @@ final class PushControllerTests: XCTestCase {
 
         var exportCalledCount = 0
         let testExporter = TestMetricExporter(onExport: {
-            exportCalledCount += 1
+            self.lock.withLockVoid {
+                exportCalledCount += 1
+            }
         })
         let testProcessor = TestMetricProcessor()
 
@@ -33,12 +37,16 @@ final class PushControllerTests: XCTestCase {
         var meter2CollectCount = 0
         var meters = [MeterRegistryKey: MeterSdk]()
         let testMeter1 = TestMeter(meterName: "meter1", metricProcessor: testProcessor) {
-            meter1CollectCount += 1
+            self.lock.withLockVoid {
+                meter1CollectCount += 1
+            }
         }
         meters[MeterRegistryKey(name: "meter1")] = testMeter1
 
         let testMeter2 = TestMeter(meterName: "meter2", metricProcessor: testProcessor) {
-            meter2CollectCount += 1
+            self.lock.withLockVoid {
+                meter2CollectCount += 1
+            }
         }
         meters[MeterRegistryKey(name: "meter2")] = testMeter2
 
@@ -51,14 +59,29 @@ final class PushControllerTests: XCTestCase {
         validateMeterCollect(meterCollectCount: &meter2CollectCount, expectedMeterCollectCount: collectionCountExpectedMin, meterName: "meter2", timeout: maxWaitInSec)
 
         // Export must be called same no: of times as Collect.
-        XCTAssertTrue(exportCalledCount >= collectionCountExpectedMin)
+        lock.withLockVoid {
+            XCTAssertTrue(exportCalledCount >= collectionCountExpectedMin)
+        }
     }
 
-    func validateMeterCollect( meterCollectCount: inout Int, expectedMeterCollectCount: Int, meterName: String, timeout: TimeInterval) {
+    func validateMeterCollect(meterCollectCount: inout Int, expectedMeterCollectCount: Int, meterName: String, timeout: TimeInterval) {
         // Sleep in short intervals, so the actual test duration is not always the max wait time.
         let start = DispatchTime.now()
 
-        while meterCollectCount < expectedMeterCollectCount {
+        var wait = true
+        lock.withLockVoid {
+            if meterCollectCount >= expectedMeterCollectCount {
+                wait = false
+            }
+        }
+
+        while wait {
+            lock.withLockVoid {
+                if meterCollectCount >= expectedMeterCollectCount {
+                    wait = false
+                }
+            }
+
             let elapsed = Double(DispatchTime.now().uptimeNanoseconds - start.uptimeNanoseconds) / 1000000000
             if elapsed <= timeout {
                 usleep(1000000)
@@ -67,6 +90,8 @@ final class PushControllerTests: XCTestCase {
             }
         }
 
-        XCTAssertGreaterThanOrEqual(meterCollectCount, expectedMeterCollectCount)
+        lock.withLockVoid {
+            XCTAssertGreaterThanOrEqual(meterCollectCount, expectedMeterCollectCount)
+        }
     }
 }
