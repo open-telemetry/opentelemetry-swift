@@ -15,11 +15,10 @@
 
 import Foundation
 
-/// A factory for creating named Tracers.
-public protocol TracerProvider {
-    /// Gets or creates a named tracer instance.
+/// Handle to the metrics observer
+public protocol DoubleObserverMetricHandle {
+    /// Observes the given value.
     /// - Parameters:
-    ///   - instrumentationName: the name of the instrumentation library, not the name of the instrumented library
-    ///   - instrumentationVersion:  The version of the instrumentation library (e.g., "semver:1.0.0"). Optional
-    func get(instrumentationName: String, instrumentationVersion: String?) -> Tracer
+    ///   - value: value by which the observer handle should be Recorded.
+    func observe(value: Double)
 }

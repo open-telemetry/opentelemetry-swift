@@ -15,11 +15,26 @@
 
 import Foundation
 
-/// A factory for creating named Tracers.
-public protocol TracerProvider {
-    /// Gets or creates a named tracer instance.
-    /// - Parameters:
-    ///   - instrumentationName: the name of the instrumentation library, not the name of the instrumented library
-    ///   - instrumentationVersion:  The version of the instrumentation library (e.g., "semver:1.0.0"). Optional
-    func get(instrumentationName: String, instrumentationVersion: String?) -> Tracer
+/// Normalized name value pairs of metric labels.
+open class LabelSet: Hashable {
+    public private(set) var labels: [String: String]
+
+    /// Empty LabelSet.
+    public static var empty = LabelSet()
+
+    private init() {
+        labels = [String: String]()
+    }
+
+    public required init(labels: [String: String]) {
+        self.labels = labels
+    }
+
+    public static func == (lhs: LabelSet, rhs: LabelSet) -> Bool {
+        return lhs.labels == rhs.labels
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(labels)
+    }
 }

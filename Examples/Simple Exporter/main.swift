@@ -26,7 +26,7 @@ let instrumentationLibraryVersion = "semver:0.1.0"
 var instrumentationLibraryInfo = InstrumentationLibraryInfo(name: instrumentationLibraryName, version: instrumentationLibraryVersion)
 
 var tracer: TracerSdk
-tracer = OpenTelemetrySDK.instance.tracerFactory.get(instrumentationName: instrumentationLibraryName, instrumentationVersion: instrumentationLibraryVersion) as! TracerSdk
+tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: instrumentationLibraryName, instrumentationVersion: instrumentationLibraryVersion) as! TracerSdk
 
 func simpleSpan() {
     let span = tracer.spanBuilder(spanName: "SimpleSpan").setSpanKind(spanKind: .client).startSpan()
@@ -58,7 +58,7 @@ let stdoutExporter = StdoutExporter()
 let spanExporter = MultiSpanExporter(spanExporters: [jaegerExporter, stdoutExporter])
 
 let spanProcessor = SimpleSpanProcessor(spanExporter: spanExporter)
-OpenTelemetrySDK.instance.tracerFactory.addSpanProcessor(spanProcessor)
+OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(spanProcessor)
 
 simpleSpan()
 sleep(1)

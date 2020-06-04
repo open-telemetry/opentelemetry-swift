@@ -22,16 +22,15 @@ public class TracerSdkProvider: TracerProvider {
     private var sharedState: TracerSharedState
 
     /// Returns a new TracerSdkProvider with default Clock, IdsGenerator and Resource.
-    public convenience override init() {
+    public convenience init() {
         self.init(clock: MillisClock(), idsGenerator: RandomIdsGenerator(), resource: EnvVarResource.resource)
     }
 
     init(clock: Clock, idsGenerator: IdsGenerator, resource: Resource) {
         sharedState = TracerSharedState(clock: clock, idsGenerator: idsGenerator, resource: resource)
-        super.init()
     }
 
-    public override func get(instrumentationName: String, instrumentationVersion: String? = nil) -> Tracer {
+    public func get(instrumentationName: String, instrumentationVersion: String? = nil) -> Tracer {
         let instrumentationLibraryInfo = InstrumentationLibraryInfo(name: instrumentationName, version: instrumentationVersion ?? "")
         if let tracer = tracerProvider[instrumentationLibraryInfo] {
             return tracer

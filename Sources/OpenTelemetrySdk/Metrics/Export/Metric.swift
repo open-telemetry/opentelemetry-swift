@@ -15,11 +15,17 @@
 
 import Foundation
 
-/// A factory for creating named Tracers.
-public protocol TracerProvider {
-    /// Gets or creates a named tracer instance.
-    /// - Parameters:
-    ///   - instrumentationName: the name of the instrumentation library, not the name of the instrumented library
-    ///   - instrumentationVersion:  The version of the instrumentation library (e.g., "semver:1.0.0"). Optional
-    func get(instrumentationName: String, instrumentationVersion: String?) -> Tracer
+public struct Metric {
+    public private(set) var metricNamespace: String
+    public private(set) var metricName: String
+    public private(set) var metricDescription: String
+    public private(set) var aggregationType: AggregationType
+    public internal(set) var data = [MetricData]()
+
+    init(metricNamespace: String, metricName: String, desc: String, type: AggregationType) {
+        self.metricNamespace = metricNamespace
+        self.metricName = metricName
+        metricDescription = desc
+        aggregationType = type
+    }
 }

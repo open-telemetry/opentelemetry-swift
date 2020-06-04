@@ -15,11 +15,13 @@
 
 import Foundation
 
-/// A factory for creating named Tracers.
-public protocol TracerProvider {
-    /// Gets or creates a named tracer instance.
+/// Creates Meters for an instrumentation library.
+/// Libraries should use this class as follows to obtain Meter instance.
+public protocol MeterProvider: AnyObject {
+    /// Returns a Meter for a given name and version.
     /// - Parameters:
-    ///   - instrumentationName: the name of the instrumentation library, not the name of the instrumented library
-    ///   - instrumentationVersion:  The version of the instrumentation library (e.g., "semver:1.0.0"). Optional
-    func get(instrumentationName: String, instrumentationVersion: String?) -> Tracer
+    ///   - instrumentationName: Name of the instrumentation library.
+    ///   - instrumentationVersion: Version of the instrumentation library (optional).
+    /// - Returns: Meter for the given name and version information.
+    func get(instrumentationName: String, instrumentationVersion: String?) -> Meter
 }

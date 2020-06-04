@@ -15,11 +15,14 @@
 
 import Foundation
 
-/// A factory for creating named Tracers.
-public protocol TracerProvider {
-    /// Gets or creates a named tracer instance.
+/// Bound counter metric
+open class BoundCounterMetric<T> {
+    public init() {}
+
+    /// Adds the given value to the bound counter metric.
     /// - Parameters:
-    ///   - instrumentationName: the name of the instrumentation library, not the name of the instrumented library
-    ///   - instrumentationVersion:  The version of the instrumentation library (e.g., "semver:1.0.0"). Optional
-    func get(instrumentationName: String, instrumentationVersion: String?) -> Tracer
+    ///   - value: value by which the bound counter metric should be added
+    open func add(value: T) {
+        fatalError()
+    }
 }

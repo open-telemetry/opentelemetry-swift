@@ -13,13 +13,18 @@
 // limitations under the License.
 //
 
-import Foundation
+@testable import OpenTelemetrySdk
+import XCTest
 
-/// A factory for creating named Tracers.
-public protocol TracerProvider {
-    /// Gets or creates a named tracer instance.
-    /// - Parameters:
-    ///   - instrumentationName: the name of the instrumentation library, not the name of the instrumented library
-    ///   - instrumentationVersion:  The version of the instrumentation library (e.g., "semver:1.0.0"). Optional
-    func get(instrumentationName: String, instrumentationVersion: String?) -> Tracer
+class TestMeter: MeterSdk {
+    let collectAction: () -> Void
+
+    init(meterName: String, metricProcessor: MetricProcessor, collectAction: @escaping () -> Void) {
+        self.collectAction = collectAction
+        super.init(meterName: meterName, metricProcessor: metricProcessor)
+    }
+
+    override func collect() {
+        collectAction()
+    }
 }

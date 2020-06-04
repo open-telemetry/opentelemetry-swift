@@ -22,23 +22,21 @@ import OpenTelemetryApi
 public struct OpenTelemetrySDK {
     public static var instance = OpenTelemetrySDK()
 
-    /// TracerFactory returned by OpenTelemetry.getTracerFactory().
-    public var tracerFactory: TracerSdkProvider {
+    public var tracerProvider: TracerSdkProvider {
         return OpenTelemetry.instance.tracerProvider as! TracerSdkProvider
     }
 
-//    /// Meter returned by OpenTelemetry.getMeter().
-//    public var meter: MeterSdkFactory  {
-//            return OpenTelemetry.instance.meterFactory as! MeterSdkFactory//
-//    }
+    public var meter: MeterSdkProvider {
+        return OpenTelemetry.instance.meterProvider as! MeterSdkProvider
+    }
 
-    /// Context manager returned by OpenTelemetry.getCorrelationContextManager().
     public var correlationContextManager: CorrelationContextManagerSdk {
         return OpenTelemetry.instance.contextManager as! CorrelationContextManagerSdk
     }
 
     private init() {
         OpenTelemetry.registerTracerProvider(tracerProvider: TracerSdkProvider())
+        OpenTelemetry.registerMeterProvider(meterProvider: MeterSdkProvider())
         OpenTelemetry.registerCorrelationContextManager(correlationContextManager: CorrelationContextManagerSdk())
     }
 }

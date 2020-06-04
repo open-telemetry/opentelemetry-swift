@@ -16,7 +16,7 @@
 import Foundation
 import os.activity
 
-/// Helper class to get the current Span and current distributedContext
+/// Helper class to get the current Span and current CorrelationContext
 /// Users must interact with the current Context via the public APIs in Tracer and avoid
 /// accessing this class directly.
 public struct ContextUtils {

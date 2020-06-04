@@ -14,12 +14,18 @@
 //
 
 import Foundation
+import OpenTelemetryApi
 
-/// A factory for creating named Tracers.
-public protocol TracerProvider {
-    /// Gets or creates a named tracer instance.
-    /// - Parameters:
-    ///   - instrumentationName: the name of the instrumentation library, not the name of the instrumented library
-    ///   - instrumentationVersion:  The version of the instrumentation library (e.g., "semver:1.0.0"). Optional
-    func get(instrumentationName: String, instrumentationVersion: String?) -> Tracer
+class BoundCounterMetricSdkBase<T>: BoundCounterMetric<T> {
+    internal var status: RecordStatus
+    internal let statusLock = Lock()
+
+    init(recordStatus: RecordStatus) {
+        status = recordStatus
+        super.init()
+    }
+
+    func getAggregator() -> AnyAggregator<T> {
+        fatalError()
+    }
 }

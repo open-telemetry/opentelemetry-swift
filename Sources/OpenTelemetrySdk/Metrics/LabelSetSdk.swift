@@ -16,12 +16,27 @@
 import Foundation
 import OpenTelemetryApi
 
-class LoggingTracerProvider: TracerProvider {
-    func get(instrumentationName: String, instrumentationVersion: String?) -> Tracer {
-        Logger.log("TracerFactory.get(\(instrumentationName), \(instrumentationVersion ?? ""))")
-        var labels = [String: String]()
-        labels["instrumentationName"] = instrumentationName
-        labels["instrumentationVersion"] = instrumentationVersion
-        return LoggingTracer()
+/// LabelSet implementation.
+class LabelSetSdk: LabelSet {
+    internal var labelSetEncoded: String
+
+    required init(labels: [String: String]) {
+        labelSetEncoded = LabelSetSdk.getLabelSetEncoded(labels: labels)
+        super.init(labels: labels)
+    }
+
+    private static func getLabelSetEncoded(labels: [String: String]) -> String {
+        var output = ""
+        var isFirstLabel = true
+
+        labels.map { "\($0)=\($1)" }.sorted().forEach {
+            if !isFirstLabel {
+                output += ","
+            }
+            output += $0
+            isFirstLabel = false
+        }
+
+        return output
     }
 }

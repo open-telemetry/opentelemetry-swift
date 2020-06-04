@@ -18,7 +18,7 @@ import Foundation
 public class DefaultTracerProvider: TracerProvider {
     public static let instance = DefaultTracerProvider()
 
-    public override func get(instrumentationName: String, instrumentationVersion: String?) -> Tracer {
+    public func get(instrumentationName: String, instrumentationVersion: String? = nil) -> Tracer {
         return DefaultTracer.instance
     }
 }
