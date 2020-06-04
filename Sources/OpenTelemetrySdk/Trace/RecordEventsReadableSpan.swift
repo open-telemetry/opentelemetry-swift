@@ -27,7 +27,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
             }
         }
     }
-
+    // The config used when constructing this Span.
+    public private(set) var traceConfig: TraceConfig
     /// Contains the identifiers associated with this Span.
     public private(set) var context: SpanContext
     /// The parent SpanId of this span. Invalid if this is a root span.
@@ -105,6 +106,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
         self.instrumentationLibraryInfo = instrumentationLibraryInfo
         self.parentSpanId = parentSpanId
         self.hasRemoteParent = hasRemoteParent
+        self.traceConfig = traceConfig
         self.links = links
         self.totalRecordedLinks = totalRecordedLinks
         self.kind = kind

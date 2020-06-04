@@ -169,7 +169,6 @@ class SpanBuilderSdkTest: XCTestCase {
             var decision: Decision
             func shouldSample(parentContext: SpanContext?,
                               traceId: TraceId,
-                              spanId: SpanId,
                               name: String,
                               kind: SpanKind,
                               attributes: [String: AttributeValue],

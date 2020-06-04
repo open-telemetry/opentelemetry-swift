@@ -136,7 +136,6 @@ public class SpanBuilderSdk: SpanBuilder {
 
         let samplingDecision = traceConfig.sampler.shouldSample(parentContext: parentContext,
                                                                 traceId: traceId,
-                                                                spanId: spanId,
                                                                 name: spanName,
                                                                 kind: spanKind,
                                                                 attributes: attributes.attributes,

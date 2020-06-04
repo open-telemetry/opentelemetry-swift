@@ -36,7 +36,6 @@ public struct Samplers {
 class AlwaysOnSampler: Sampler {
     func shouldSample(parentContext: SpanContext?,
                       traceId: TraceId,
-                      spanId: SpanId,
                       name: String,
                       kind: SpanKind,
                       attributes: [String:AttributeValue],
@@ -52,7 +51,6 @@ class AlwaysOnSampler: Sampler {
 class AlwaysOffSampler: Sampler {
     func shouldSample(parentContext: SpanContext?,
                       traceId: TraceId,
-                      spanId: SpanId,
                       name: String,
                       kind: SpanKind,
                       attributes: [String:AttributeValue],
@@ -87,7 +85,6 @@ class Probability: Sampler {
 
     func shouldSample(parentContext: SpanContext?,
                       traceId: TraceId,
-                      spanId: SpanId,
                       name: String,
                       kind: SpanKind,
                       attributes: [String:AttributeValue],
