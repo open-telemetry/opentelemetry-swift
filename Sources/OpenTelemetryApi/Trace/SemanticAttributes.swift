@@ -46,7 +46,6 @@ public enum SemanticAttributes: String {
     // MARK: HTTP attributes
 
     /// HTTP request method. E.g. "GET".
-
     case httpMethod = "http.method"
     /// Full HTTP request URL in the form scheme://host[:port]/path?query[#fragment].
     case httpURL = "http.url"
@@ -107,6 +106,7 @@ public enum SemanticAttributes: String {
 
     // MARK: Database client attributes
 
+    /// Database type. For any SQL database, "sql". For others, the lower-case database category.
     case dbType = "db.type"
     /// Database instance name.
     case dbInstance = "db.instance"
