@@ -91,18 +91,6 @@ public protocol Span: AnyObject, CustomStringConvertible {
     func end(endOptions: EndSpanOptions)
 }
 
-public enum SpanAttributeConstants: String {
-    case httpMethodKey = "http.method"
-    case httpStatusCodeKey = "http.status_code"
-    case httpUserAgentKey = "http.user_agent"
-    case httpPathKey = "http.path"
-    case httpHostKey = "http.host"
-    case httpUrlKey = "http.url"
-    case httpRequestSizeKey = "http.request.size"
-    case httpResponseSizeKey = "http.response.size"
-    case httpRouteKey = "http.route"
-}
-
 extension Span {
     public func end() {
         context.scope?.close()
@@ -129,75 +117,35 @@ extension Span {
     public func setAttribute(key: String, value: Bool) {
         return setAttribute(key: key, value: AttributeValue.bool(value))
     }
+    
+    public func setAttribute(key: SemanticAttributes, value: String) {
+        return setAttribute(key: key.rawValue, value: AttributeValue.string(value))
+    }
+
+    public func setAttribute(key: SemanticAttributes, value: Int) {
+        return setAttribute(key: key.rawValue, value: AttributeValue.int(value))
+    }
+
+    public func setAttribute(key: SemanticAttributes, value: Double) {
+        return setAttribute(key: key.rawValue, value: AttributeValue.double(value))
+    }
+
+    public func setAttribute(key: SemanticAttributes, value: Bool) {
+        return setAttribute(key: key.rawValue, value: AttributeValue.bool(value))
+    }
 }
 
 extension Span {
-    /// Helper methods according to https://github.com/open-telemetry/OpenTelemetry-specs/blob/4954074adf815f437534457331178194f6847ff9/trace/HTTP.md.
-
-    /// Helper method that populates span properties from http method
-    /// - Parameter method: Http method.
-    public func putHttpMethodAttribute(method: String) {
-        setAttribute(key: SpanAttributeConstants.httpMethodKey.rawValue, value: method)
-    }
-
-    /// Helper method that populates span properties from http status code
-    /// - Parameter statusCode: Http status code.
-    public func putHttpStatusCodeAttribute(statusCode: Int) {
-        setAttribute(key: SpanAttributeConstants.httpStatusCodeKey.rawValue, value: statusCode)
-    }
-
-    /// Helper method that populates span properties from http user agent
-    /// - Parameter userAgent: Http user agent.
-    public func putHttpUserAgentAttribute(userAgent: String) {
-        if userAgent != " " {
-            setAttribute(key: SpanAttributeConstants.httpUserAgentKey.rawValue, value: userAgent)
-        }
-    }
-
     /// Helper method that populates span properties from host and port
     /// - Parameters:
     ///   - hostName: Hostr name.
     ///   - port: Port number.
     public func putHttpHostAttribute(string hostName: String, int port: Int) {
         if port == 80 || port == 443 {
-            setAttribute(key: SpanAttributeConstants.httpHostKey.rawValue, value: hostName)
+            setAttribute(key: .httpHost, value: hostName)
         } else {
-            setAttribute(key: SpanAttributeConstants.httpHostKey.rawValue, value: "\(hostName):\(port)")
+            setAttribute(key: .httpHost, value: "\(hostName):\(port)")
         }
-    }
-
-    /// Helper method that populates span properties from route
-    /// - Parameter route: Route used to resolve url to controller.
-    public func putHttpRouteAttribute(route: String) {
-        if !route.isEmpty {
-            setAttribute(key: SpanAttributeConstants.httpRouteKey.rawValue, value: route)
-        }
-    }
-
-    /// Helper method that populates span properties from url
-    /// - Parameter rawUrl: string representing the URL
-    public func putHttpRawUrlAttribute(rawUrl: String) {
-        if !rawUrl.isEmpty {
-            setAttribute(key: SpanAttributeConstants.httpUrlKey.rawValue, value: rawUrl)
-        }
-    }
-
-    /// Helper method that populates span properties from url path according
-    /// - Parameter path: Url path.
-    public func putHttpPathAttribute(path: String) {
-        setAttribute(key: SpanAttributeConstants.httpPathKey.rawValue, value: path)
-    }
-
-    /// Helper method that populates span properties from size
-    /// - Parameter size: Response size.
-    public func putHttpResponseSizeAttribute(size: Int) {
-        setAttribute(key: SpanAttributeConstants.httpResponseSizeKey.rawValue, value: size)
-    }
-
-    /// Helper method that populates span properties from request size
-    /// - Parameter size: Request size.
-    public func putHttpRequestSizeAttribute(size: Int) {
-        setAttribute(key: SpanAttributeConstants.httpRequestSizeKey.rawValue, value: size)
     }
 
     /// Helper method that populates span properties from http status code
@@ -205,7 +153,7 @@ extension Span {
     ///   - statusCode: Http status code.
     ///   - reasonPhrase: Http reason phrase.
     public func putHttpStatusCode(statusCode: Int, reasonPhrase: String) {
-        putHttpStatusCodeAttribute(statusCode: statusCode)
+        setAttribute(key: .httpStatusCode, value: statusCode)
         var newStatus: Status = .ok
         switch statusCode {
         case 200 ..< 400:
