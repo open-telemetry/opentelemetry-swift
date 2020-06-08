@@ -99,6 +99,17 @@ public struct TraceConfig: Equatable {
         return traceConfig
     }
 
+    // Sets the global sampler probability
+    public func settingSamplerProbability(samplerProbability: Double) -> Self {
+        if samplerProbability >= 1 {
+            return settingSampler(Samplers.alwaysOn)
+        } else if samplerProbability <= 0 {
+            return settingSampler(Samplers.alwaysOff)
+        } else {
+            return settingSampler(Samplers.probability(probability: samplerProbability))
+        }
+    }
+
     public static func == (lhs: TraceConfig, rhs: TraceConfig) -> Bool {
         return lhs.sampler === rhs.sampler &&
             lhs.maxNumberOfAttributes == rhs.maxNumberOfAttributes &&

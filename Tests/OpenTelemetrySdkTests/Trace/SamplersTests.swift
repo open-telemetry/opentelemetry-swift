@@ -42,7 +42,6 @@ class ProbabilitySamplerTest: XCTestCase {
     func testAlwaysOnSampler_AlwaysReturnTrue() {
         XCTAssertTrue(Samplers.alwaysOn.shouldSample(parentContext: sampledSpanContext,
                                                      traceId: traceId,
-                                                     spanId: spanId,
                                                      name: spanName,
                                                      kind: spanKind,
                                                      attributes: [String: AttributeValue](),
@@ -53,7 +52,6 @@ class ProbabilitySamplerTest: XCTestCase {
     func testAlwaysOffSampler_AlwaysReturnFalse() {
         XCTAssertFalse(Samplers.alwaysOff.shouldSample(parentContext: sampledSpanContext,
                                                        traceId: traceId,
-                                                       spanId: spanId,
                                                        name: spanName,
                                                        kind: spanKind,
                                                        attributes: [String: AttributeValue](),
@@ -95,7 +93,6 @@ class ProbabilitySamplerTest: XCTestCase {
         for _ in 0 ..< numSamplesTries {
             if sampler.shouldSample(parentContext: parent,
                                     traceId: TraceId.random(),
-                                    spanId: SpanId.random(),
                                     name: spanName,
                                     kind: spanKind,
                                     attributes: [String: AttributeValue](),
@@ -143,7 +140,6 @@ class ProbabilitySamplerTest: XCTestCase {
 
         let decision1 = defaultProbability.shouldSample(parentContext: nil,
                                                         traceId: notSampledtraceId,
-                                                        spanId: SpanId.random(),
                                                         name: spanName,
                                                         kind: spanKind,
                                                         attributes: [String: AttributeValue](),
@@ -155,7 +151,6 @@ class ProbabilitySamplerTest: XCTestCase {
         let sampledtraceId = TraceId(fromBytes: [0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0])
         let decision2 = defaultProbability.shouldSample(parentContext: nil,
                                                         traceId: sampledtraceId,
-                                                        spanId: SpanId.random(),
                                                         name: spanName,
                                                         kind: spanKind,
                                                         attributes: [String: AttributeValue](),

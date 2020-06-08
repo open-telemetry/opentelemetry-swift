@@ -23,12 +23,10 @@ public protocol Sampler: AnyObject, CustomStringConvertible {
     ///   - parentContext: the parent span's SpanContext. nil if this is a root span
     ///   - traceId: the TraceId for the new Span. This will be identical to that in
     ///     the parentContext, unless this is a root span.
-    ///   - spanId: the SpanId for the new Span.
     ///   - name: he name of the new Span.
     ///   - parentLinks: the parentLinks associated with the new Span.
     func shouldSample(parentContext: SpanContext?,
                       traceId: TraceId,
-                      spanId: SpanId,
                       name: String,
                       kind: SpanKind,
                       attributes: [String:AttributeValue],
