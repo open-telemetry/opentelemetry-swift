@@ -18,20 +18,21 @@ class PushMetricController {
     public private(set) var pushInterval: TimeInterval
     var metricExporter: MetricExporter
     var metricProcessor: MetricProcessor
-    var meters: [MeterRegistryKey: MeterSdk]
+    var meterProvider: MeterSdkProvider
 
     let pushMetricQueue = DispatchQueue(label: "org.opentelemetry.PushMetricController.pushMetricQueue")
 
-    init(meters: [MeterRegistryKey: MeterSdk], metricProcessor: MetricProcessor, metricExporter: MetricExporter, pushInterval: TimeInterval, shouldCancel: (() -> Bool)? = nil) {
-        self.meters = meters
+    init( meterProvider:MeterSdkProvider, metricProcessor: MetricProcessor, metricExporter: MetricExporter, pushInterval: TimeInterval, shouldCancel: (() -> Bool)? = nil) {
+        self.meterProvider = meterProvider
         self.metricProcessor = metricProcessor
         self.metricExporter = metricExporter
         self.pushInterval = pushInterval
         pushMetricQueue.asyncAfter(deadline: .now() + pushInterval) {
             while !(shouldCancel?() ?? false) {
                 let start = DispatchTime.now()
-                for index in meters.values.indices {
-                    self.meters.values[index].collect()
+                let values = self.meterProvider.getMeters().values
+                for index in values.indices {
+                    values[index].collect()
                 }
 
                 let metricToExport = self.metricProcessor.finishCollectionCycle()
