@@ -16,6 +16,7 @@ jobs:
         dsn: ${{ secrets.SCOPE_DSN }}
         platform: macos
         codePath: true
+        agentVersion: 0.6.2
     - name: Testing for macOS (only run on pull_request)
       if: github.event_name == 'pull_request'
       uses: undefinedlabs/scope-for-swift-action@v1
@@ -23,3 +24,4 @@ jobs:
         dsn: https://d6756ad6b68e4df7a3cd93693139ad35@app.scope.dev
         platform: macos
         codePath: true
+        agentVersion: 0.6.2
