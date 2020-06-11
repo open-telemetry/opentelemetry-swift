@@ -9,14 +9,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Testing for macOS (push)
+    - name: Testing for macOS (only on push)
       if: github.event_name == 'push'
       uses: undefinedlabs/scope-for-swift-action@v1
       with:
         dsn: ${{ secrets.SCOPE_DSN }}
         platform: macos
         codePath: true
-    - name: Testing for macOS (pull)
+    - name: Testing for macOS (only run on pull_request)
       if: github.event_name == 'pull_request'
       uses: undefinedlabs/scope-for-swift-action@v1
       with:
