@@ -9,15 +9,17 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set push SCOPE_DSN
+    - name: Testing for macOS (push)
       if: github.event_name == 'push'
-      run: echo '::set-env name=SCOPE_DSN::${{ secrets.SCOPE_DSN }}'
-    - name: Set pull_request SCOPE_DSN
-      if: github.event_name == 'pull_request'
-      run: echo '::set-env name=SCOPE_DSN::https://d6756ad6b68e4df7a3cd93693139ad35@app.scope.dev'
-    - name: Testing for macOS
       uses: undefinedlabs/scope-for-swift-action@v1
       with:
-        dsn: ${{ SCOPE_DSN }}
+        dsn: ${{ secrets.SCOPE_DSN }}
+        platform: macos
+        codePath: true
+    - name: Testing for macOS (pull)
+      if: github.event_name == 'pull_request'
+      uses: undefinedlabs/scope-for-swift-action@v1
+      with:
+        dsn: https://d6756ad6b68e4df7a3cd93693139ad35@app.scope.dev
         platform: macos
         codePath: true
