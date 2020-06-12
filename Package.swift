@@ -14,6 +14,8 @@ let package = Package(
         .library( name: "libOpenTelemetryApi", type: .static, targets: ["OpenTelemetryApi"]),
         .library( name: "OpenTelemetrySdk", type: .dynamic, targets: ["OpenTelemetrySdk"]),
         .library( name: "libOpenTelemetrySdk", type: .static, targets: ["OpenTelemetrySdk"]),
+        .library( name: "OpenTracingShim", type: .dynamic, targets: ["OpenTracingShim"]),
+        .library( name: "libOpenTracingShim", type: .static, targets: ["OpenTracingShim"]),
         .library( name: "JaegerExporter", type: .dynamic, targets: ["JaegerExporter"]),
         .library( name: "libJaegerExporter", type: .static, targets: ["JaegerExporter"]),
         .library( name: "StdoutExporter", type: .dynamic, targets: ["StdoutExporter"]),
@@ -25,6 +27,7 @@ let package = Package(
         .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
     ],
     dependencies: [
+        .package(url:  "https://github.com/undefinedlabs/opentracing-objc", .branch("spm-support")), // Need custom fork because of SPM
         .package(url:  "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1"), // Need custom fork because of SPM
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
     ],
@@ -32,6 +35,7 @@ let package = Package(
         .target(  name: "OpenTelemetryApi", dependencies: []),
         .testTarget( name: "OpenTelemetryApiTests", dependencies: ["OpenTelemetryApi"], path: "Tests/OpenTelemetryApiTests"),
         .target(  name: "OpenTelemetrySdk", dependencies: ["OpenTelemetryApi"]),
+        .target(  name: "OpenTracingShim", dependencies: ["OpenTelemetryApi", "Opentracing"]),
         .testTarget( name: "OpenTelemetrySdkTests", dependencies: ["OpenTelemetryApi", "OpenTelemetrySdk"], path: "Tests/OpenTelemetrySdkTests"),
         .target(  name: "JaegerExporter", dependencies: ["OpenTelemetrySdk", "Thrift"], path: "Sources/Exporters/Jaeger"),
         .testTarget(  name: "JaegerExporterTests", dependencies: ["JaegerExporter"], path: "Tests/ExportersTests/Jaeger"),
