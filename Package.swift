@@ -40,5 +40,6 @@ let package = Package(
         .testTarget(  name: "PrometheusExporterTests", dependencies: ["PrometheusExporter"], path: "Tests/ExportersTests/Prometheus"),
         .target(  name: "LoggingTracer", dependencies: ["OpenTelemetryApi"], path: "Examples/Logging Tracer"),
         .target(  name: "SimpleExporter", dependencies: ["OpenTelemetrySdk", "JaegerExporter", "StdoutExporter"], path: "Examples/Simple Exporter"),
+        .target(  name: "PrometheusSample", dependencies: ["OpenTelemetrySdk", "PrometheusExporter"], path: "Examples/Prometheus Sample"),
     ]
 )

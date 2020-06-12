@@ -23,7 +23,7 @@ public class PrometheusExporterHttpServer {
     private var port: Int
     var exporter: PrometheusExporter
 
-    init(exporter: PrometheusExporter) {
+    public init(exporter: PrometheusExporter) {
         self.exporter = exporter
 
         let url = URL(string: exporter.options.url)
@@ -31,7 +31,7 @@ public class PrometheusExporterHttpServer {
         port = url?.port ?? 9184
     }
 
-    func start() throws {
+    public func start() throws {
         do {
             let channel = try serverBootstrap.bind(host: host, port: port).wait()
             print("Listening on \(String(describing: channel.localAddress))...")
@@ -41,7 +41,7 @@ public class PrometheusExporterHttpServer {
         }
     }
 
-    func stop() {
+    public func stop() {
         do {
             try group.syncShutdownGracefully()
         } catch let error {
@@ -60,7 +60,7 @@ public class PrometheusExporterHttpServer {
             // Set the handlers that are appled to the accepted Channels
             .childChannelInitializer { channel in
                 // Ensure we don't read faster than we can write by adding the BackPressureHandler into the pipeline.
-                return channel.pipeline.configureHTTPServerPipeline(withErrorHandling: true).flatMap {
+                channel.pipeline.configureHTTPServerPipeline(withErrorHandling: true).flatMap {
                     channel.pipeline.addHandler(PrometheusHTTPHandler(exporter: self.exporter))
                 }
             }
