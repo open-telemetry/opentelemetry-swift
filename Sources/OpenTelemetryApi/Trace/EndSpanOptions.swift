@@ -19,9 +19,9 @@ import Foundation
 /// overriding the endTimestamp.
 public struct EndSpanOptions {
     /// The end timestamp
-    public init(timestamp: Int64 ) {
+    public init(timestamp: Int64 = 0 ) {
         self.timestamp = timestamp
     }
     
-    public private(set) var timestamp: Int64 = 0
+    public private(set) var timestamp: Int64
 }
