@@ -35,7 +35,7 @@ let package = Package(
         .target(  name: "OpenTelemetryApi", dependencies: []),
         .testTarget( name: "OpenTelemetryApiTests", dependencies: ["OpenTelemetryApi"], path: "Tests/OpenTelemetryApiTests"),
         .target(  name: "OpenTelemetrySdk", dependencies: ["OpenTelemetryApi"]),
-        .target(  name: "OpenTracingShim", dependencies: ["OpenTelemetryApi", "Opentracing"]),
+        .target(  name: "OpenTracingShim", dependencies: ["OpenTelemetryApi", "libOpentracing"]),
         .testTarget( name: "OpenTelemetrySdkTests", dependencies: ["OpenTelemetryApi", "OpenTelemetrySdk"], path: "Tests/OpenTelemetrySdkTests"),
         .target(  name: "JaegerExporter", dependencies: ["OpenTelemetrySdk", "Thrift"], path: "Sources/Exporters/Jaeger"),
         .testTarget(  name: "JaegerExporterTests", dependencies: ["JaegerExporter"], path: "Tests/ExportersTests/Jaeger"),

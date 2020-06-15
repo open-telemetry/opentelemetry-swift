@@ -25,11 +25,11 @@ extension BaseShimProtocol {
         return telemetryInfo.tracer
     }
 
-    var contextManager: SpanContextShimTable {
+    var spanContextTable: SpanContextShimTable {
         return telemetryInfo.spanContextTable
     }
 
-    var spanContextTable: CorrelationContextManager {
+    var contextManager: CorrelationContextManager {
         return telemetryInfo.contextManager
     }
 

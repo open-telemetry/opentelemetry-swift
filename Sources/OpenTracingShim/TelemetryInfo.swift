@@ -19,8 +19,15 @@ import OpenTelemetryApi
 struct TelemetryInfo {
     var tracer: Tracer
     var contextManager: CorrelationContextManager
-    var emptyCorrelationContext: CorrelationContext
     var propagators: ContextPropagators
-    var spanContextTable: SpanContextShimTable   
-}
+    var emptyCorrelationContext: CorrelationContext
+    var spanContextTable: SpanContextShimTable
 
+    init(tracer: Tracer, contextManager: CorrelationContextManager, propagators: ContextPropagators) {
+        self.tracer = tracer
+        self.contextManager = contextManager
+        self.propagators = propagators
+        emptyCorrelationContext = contextManager.contextBuilder().build()
+        spanContextTable = SpanContextShimTable()
+    }
+}

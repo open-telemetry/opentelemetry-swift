@@ -17,7 +17,40 @@ import Foundation
 import OpenTelemetryApi
 import Opentracing
 
-class SpanContextShim: SpanContext, BaseShimProtocol  {
+public class SpanContextShim: OTSpanContext, BaseShimProtocol {
+    static let defaultEntryMetadata = EntryMetadata(entryTtl: .unlimitedPropagation)
+
     var telemetryInfo: TelemetryInfo
-    
+    public private(set) var context: SpanContext
+    public private(set) var correlationContext: CorrelationContext
+
+    init(telemetryInfo: TelemetryInfo, context: SpanContext, correlationContext: CorrelationContext) {
+        self.telemetryInfo = telemetryInfo
+        self.context = context
+        self.correlationContext = correlationContext
+    }
+
+    convenience init(spanShim: SpanShim) {
+        self.init(telemetryInfo: spanShim.telemetryInfo, context: spanShim.span.context, correlationContext: spanShim.telemetryInfo.emptyCorrelationContext)
+    }
+
+    convenience init(telemetryInfo: TelemetryInfo, context: SpanContext) {
+        self.init(telemetryInfo: telemetryInfo, context: context, correlationContext: telemetryInfo.emptyCorrelationContext)
+    }
+
+    func newWith(key: String, value: String) -> SpanContextShim {
+        let contextBuilder = contextManager.contextBuilder().setParent(correlationContext)
+        contextBuilder.put(key: EntryKey(name: key)!, value: EntryValue(string: value)!, metadata: SpanContextShim.defaultEntryMetadata)
+
+        return SpanContextShim(telemetryInfo: telemetryInfo, context: context, correlationContext: contextBuilder.build())
+    }
+
+    func getBaggageItem(key: String) -> String? {
+        guard let key = EntryKey(name: key) else { return nil }
+        let value = correlationContext.getEntryValue(key: key)
+        return value?.string
+    }
+
+    public func forEachBaggageItem(_ callback: @escaping (String, String) -> Bool) {
+    }
 }
