@@ -102,6 +102,16 @@ extension Span {
 }
 
 extension Span {
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(context.spanId)
+    }
+
+    public static func == (lhs: Span, rhs: Span) -> Bool {
+        return lhs.context.spanId == rhs.context.spanId
+    }
+}
+
+extension Span {
     public func setAttribute(key: String, value: String) {
         return setAttribute(key: key, value: AttributeValue.string(value))
     }
@@ -117,7 +127,7 @@ extension Span {
     public func setAttribute(key: String, value: Bool) {
         return setAttribute(key: key, value: AttributeValue.bool(value))
     }
-    
+
     public func setAttribute(key: SemanticAttributes, value: String) {
         return setAttribute(key: key.rawValue, value: AttributeValue.string(value))
     }
