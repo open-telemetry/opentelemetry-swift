@@ -27,6 +27,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
             }
         }
     }
+
     // The config used when constructing this Span.
     public private(set) var traceConfig: TraceConfig
     /// Contains the identifiers associated with this Span.
@@ -84,8 +85,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
     /// True if the span is ended.
     public private(set) var hasEnded: Bool = false
 
-    let eventsSyncQueue = DispatchQueue(label: "org.opentelemetry.RecordEventsReadableSpan.eventQueue")
-    let attributesSyncQueue = DispatchQueue(label: "org.opentelemetry.RecordEventsReadableSpan.attributesQueue")
+    private let eventsSyncLock = Lock()
+    private let attributesSyncLock = Lock()
 
     private init(context: SpanContext,
                  name: String,
@@ -213,13 +214,10 @@ public class RecordEventsReadableSpan: ReadableSpan {
             return
         }
 
-        if value == nil {
-            attributesSyncQueue.sync {
+        attributesSyncLock.withLockVoid {
+            if value == nil {
                 attributes.removeValueForKey(key: key)
             }
-        }
-
-        attributesSyncQueue.sync {
             totalAttributeCount += 1
             if attributes[key] == nil && totalAttributeCount > maxNumberOfAttributes {
                 return
@@ -260,7 +258,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
         if hasEnded {
             return
         }
-        eventsSyncQueue.sync {
+        eventsSyncLock.withLockVoid {
             events.append(timedEvent)
             totalRecordedEvents += 1
         }

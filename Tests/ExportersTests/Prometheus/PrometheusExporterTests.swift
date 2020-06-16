@@ -109,6 +109,6 @@ class PrometheusExporterTests: XCTestCase {
         // Min is 5
         XCTAssert(responseText.contains("testMeasure{dim1=\"value1\",quantile=\"0\"} 5") || responseText.contains("testMeasure{quantile=\"0\",dim1=\"value1\"} 5"))
         // Max is 500
-        XCTAssert(responseText.contains("testMeasure{dim1=\"value1\",quantile=\"1\"} 500") || responseText.contains("testMeasure{quantile=\"1\", dim1=\"value1\",} 500"))
+        XCTAssert(responseText.contains("testMeasure{dim1=\"value1\",quantile=\"1\"} 500") || responseText.contains("testMeasure{quantile=\"1\",dim1=\"value1\"} 500"))
     }
 }
