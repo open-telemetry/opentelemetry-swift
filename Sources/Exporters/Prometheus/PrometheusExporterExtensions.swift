@@ -28,6 +28,8 @@ public struct PrometheusExporterExtensions {
     static func writeMetricsCollection(exporter: PrometheusExporter) -> String {
         var output = ""
         let metrics = exporter.getAndClearMetrics()
+        let now = String(Int64((Date().timeIntervalSince1970 * 1000.0).rounded()))
+
         metrics.forEach { metric in
             let prometheusMetric = PrometheusMetric(name: metric.name, description: metric.description)
             metric.data.forEach { metricData in
@@ -35,24 +37,24 @@ public struct PrometheusExporterExtensions {
                 switch metric.aggregationType {
                 case .doubleSum:
                     let sum = metricData as! SumData<Double>
-                    output += PrometheusExporterExtensions.writeSum(prometheusMetric: prometheusMetric, labels: labels, doubleValue: sum.sum)
+                    output += PrometheusExporterExtensions.writeSum(prometheusMetric: prometheusMetric, timeStamp: now, labels: labels, doubleValue: sum.sum)
                 case .intSum:
                     let sum = metricData as! SumData<Int>
-                    output += PrometheusExporterExtensions.writeSum(prometheusMetric: prometheusMetric, labels: labels, doubleValue: Double(sum.sum))
+                    output += PrometheusExporterExtensions.writeSum(prometheusMetric: prometheusMetric, timeStamp: now, labels: labels, doubleValue: Double(sum.sum))
                 case .doubleSummary:
                     let summary = metricData as! SummaryData<Double>
                     let count = summary.count
                     let sum = summary.sum
                     let min = summary.min
                     let max = summary.max
-                    output += PrometheusExporterExtensions.writeSummary(prometheusMetric: prometheusMetric, labels: labels, metricName: metric.name, sum: sum, count: count, min: min, max: max)
+                    output += PrometheusExporterExtensions.writeSummary(prometheusMetric: prometheusMetric, timeStamp: now, labels: labels, metricName: metric.name, sum: sum, count: count, min: min, max: max)
                 case .intSummary:
                     let summary = metricData as! SummaryData<Int>
                     let count = summary.count
                     let sum = summary.sum
                     let min = summary.min
                     let max = summary.max
-                    output += PrometheusExporterExtensions.writeSummary(prometheusMetric: prometheusMetric, labels: labels, metricName: metric.name, sum: Double(sum), count: count, min: Double(min), max: Double(max))
+                    output += PrometheusExporterExtensions.writeSummary(prometheusMetric: prometheusMetric, timeStamp: now, labels: labels, metricName: metric.name, sum: Double(sum), count: count, min: Double(min), max: Double(max))
                 }
             }
         }
@@ -60,15 +62,15 @@ public struct PrometheusExporterExtensions {
         return output
     }
 
-    private static func writeSum(prometheusMetric: PrometheusMetric, labels: [String: String], doubleValue: Double) -> String {
+    private static func writeSum(prometheusMetric: PrometheusMetric, timeStamp: String, labels: [String: String], doubleValue: Double) -> String {
         var prometheusMetric = prometheusMetric
         prometheusMetric.type = prometheusCounterType
         let metricValue = PrometheusValue(labels: labels, value: doubleValue)
         prometheusMetric.values.append(metricValue)
-        return prometheusMetric.write()
+        return prometheusMetric.write(timeStamp: timeStamp)
     }
 
-    private static func writeSummary(prometheusMetric: PrometheusMetric, labels: [String: String], metricName: String, sum: Double, count: Int, min: Double, max: Double) -> String {
+    private static func writeSummary(prometheusMetric: PrometheusMetric, timeStamp: String, labels: [String: String], metricName: String, sum: Double, count: Int, min: Double, max: Double) -> String {
         var prometheusMetric = prometheusMetric
         prometheusMetric.type = prometheusSummaryType
         labels.forEach {
@@ -83,6 +85,6 @@ public struct PrometheusExporterExtensions {
                                                                     prometheusSummaryQuantileLabelName: prometheusSummaryQuantileLabelValueForMax],
                                                            value: max))
         }
-        return prometheusMetric.write()
+        return prometheusMetric.write(timeStamp: timeStamp)
     }
 }

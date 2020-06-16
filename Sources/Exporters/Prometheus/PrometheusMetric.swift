@@ -28,19 +28,18 @@ struct PrometheusMetric {
     var description: String
     var type: String = ""
 
-    func write() -> String {
-        
+    func write(timeStamp: String) -> String {
         var output = ""
-        
+
         let name = PrometheusMetric.getSafeMetricName(name: self.name)
-        
+
         if !description.isEmpty {
             output += "# HELP "
             output += name
             output += PrometheusMetric.getSafeMetricDescription(description: description)
             output += "\n"
         }
-        
+
         if !type.isEmpty {
             output += "# TYPE "
             output += name
@@ -48,27 +47,24 @@ struct PrometheusMetric {
             output += type
             output += "\n"
         }
-        
-        let now = String(Int64((Date().timeIntervalSince1970 * 1000.0).rounded()))
-        
+
         values.forEach { value in
             output += value.name ?? name
-            
+
             if value.labels.count > 0 {
                 output += "{"
-                output += value.labels.map{"\(PrometheusMetric.getSafeLabelName(name:$0))=\"\(PrometheusMetric.getSafeLabelValue(value:$1))\""}.joined(separator: ",")
+                output += value.labels.map { "\(PrometheusMetric.getSafeLabelName(name: $0))=\"\(PrometheusMetric.getSafeLabelValue(value: $1))\"" }.joined(separator: ",")
                 output += "}"
             }
-            
+
             output += " "
             output += String(value.value)
             output += " "
 
-            output += now
+            output += timeStamp
             output += "\n"
         }
-        
-        
+
         return output
     }
 
