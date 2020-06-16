@@ -42,8 +42,8 @@ final class MetricsTests: XCTestCase {
         XCTAssertEqual(testProcessor.metrics.count, 1)
         let metric = testProcessor.metrics[0]
 
-        XCTAssertEqual("testCounter", metric.metricName)
-        XCTAssertEqual("library1", metric.metricNamespace)
+        XCTAssertEqual("testCounter", metric.name)
+        XCTAssertEqual("library1", metric.namespace)
 
         // 3 time series, as 3 unique label sets.
         XCTAssertEqual(3, metric.data.count)
@@ -80,8 +80,8 @@ final class MetricsTests: XCTestCase {
 
         XCTAssertEqual(testProcessor.metrics.count, 1)
         let metric = testProcessor.metrics[0]
-        XCTAssertEqual("testMeasure", metric.metricName)
-        XCTAssertEqual("library1", metric.metricNamespace)
+        XCTAssertEqual("testMeasure", metric.name)
+        XCTAssertEqual("library1", metric.namespace)
 
         // 2 time series, as 2 unique label sets.
         XCTAssertEqual(2, metric.data.count)
@@ -111,8 +111,8 @@ final class MetricsTests: XCTestCase {
 
         XCTAssertEqual(testProcessor.metrics.count, 1)
         let metric = testProcessor.metrics[0]
-        XCTAssertEqual("testObserver", metric.metricName)
-        XCTAssertEqual("library1", metric.metricNamespace)
+        XCTAssertEqual("testObserver", metric.name)
+        XCTAssertEqual("library1", metric.namespace)
 
         // 2 time series, as 2 unique label sets.
         XCTAssertEqual(2, metric.data.count)
@@ -149,8 +149,8 @@ final class MetricsTests: XCTestCase {
 
         XCTAssertEqual(testProcessor.metrics.count, 1)
         let metric = testProcessor.metrics[0]
-        XCTAssertEqual("testObserver", metric.metricName)
-        XCTAssertEqual("library1", metric.metricNamespace)
+        XCTAssertEqual("testObserver", metric.name)
+        XCTAssertEqual("library1", metric.namespace)
 
         // 2 time series, as 2 unique label sets.
         XCTAssertEqual(2, metric.data.count)

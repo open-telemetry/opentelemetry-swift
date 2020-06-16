@@ -32,27 +32,28 @@ final class PushControllerTests: XCTestCase {
         })
         let testProcessor = TestMetricProcessor()
 
+        let meterProvider = MeterSdkProvider(meterSharedState: MeterSharedState(metricProcessor: testProcessor))
+
         // Setup 2 meters whose Collect will increment the collect count.
         var meter1CollectCount = 0
         var meter2CollectCount = 0
-        var meters = [MeterRegistryKey: MeterSdk]()
         let testMeter1 = TestMeter(meterName: "meter1", metricProcessor: testProcessor) {
             self.lock.withLockVoid {
                 meter1CollectCount += 1
             }
         }
-        meters[MeterRegistryKey(name: "meter1")] = testMeter1
+        meterProvider.meterRegistry[MeterRegistryKey(name: "meter1")] = testMeter1
 
         let testMeter2 = TestMeter(meterName: "meter2", metricProcessor: testProcessor) {
             self.lock.withLockVoid {
                 meter2CollectCount += 1
             }
         }
-        meters[MeterRegistryKey(name: "meter2")] = testMeter2
+        meterProvider.meterRegistry[MeterRegistryKey(name: "meter2")] = testMeter2
 
         let pushInterval = controllerPushIntervalInSec
 
-        _ = PushMetricController(meters: meters, metricProcessor: testProcessor, metricExporter: testExporter, pushInterval: pushInterval)
+        _ = PushMetricController(meterProvider: meterProvider, metricProcessor: testProcessor, metricExporter: testExporter, pushInterval: pushInterval)
 
         // Validate that collect is called on Meter1, Meter2.
         validateMeterCollect(meterCollectCount: &meter1CollectCount, expectedMeterCollectCount: collectionCountExpectedMin, meterName: "meter1", timeout: maxWaitInSec)

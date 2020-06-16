@@ -17,11 +17,15 @@ import Foundation
 
 public struct MeterSharedState {
     /// Configures metric processor. (aka batcher).
-    
     public private(set) var metricProcessor: MetricProcessor?
     /// Configures Metric Exporter.
     public private(set) var metricExporter: MetricExporter?
-    
     /// Sets the push interval.
     public private(set) var metricPushInterval: TimeInterval?
+
+    public init(metricProcessor: MetricProcessor? = nil, metricExporter: MetricExporter? = nil, metricPushInterval: TimeInterval? = nil) {
+        self.metricProcessor = metricProcessor
+        self.metricExporter = metricExporter
+        self.metricPushInterval = metricPushInterval
+    }
 }

@@ -17,30 +17,29 @@ import Foundation
 import OpenTelemetryApi
 
 public class MeterSdkProvider: MeterProvider {
-    fileprivate let lock = Lock()
+    private let lock = Lock()
+    private let defaultPushInterval: TimeInterval = 60
 
     var meterRegistry = [MeterRegistryKey: MeterSdk]()
 
     let metricProcessor: MetricProcessor
     let metricExporter: MetricExporter
-    let pushMetricController: PushMetricController
-    let defaultPushInterval: TimeInterval = 60
+    var pushMetricController: PushMetricController!
     var defaultMeter: MeterSdk
 
-    convenience init() {
+    public convenience init() {
         self.init(meterSharedState: MeterSharedState())
     }
-    
-    init(meterSharedState: MeterSharedState) {
+
+    public init(meterSharedState: MeterSharedState) {
         metricProcessor = meterSharedState.metricProcessor ?? NoopMetricProcessor()
         metricExporter = meterSharedState.metricExporter ?? NoopMetricExporter()
 
         defaultMeter = MeterSdk(meterName: "", metricProcessor: metricProcessor)
-        meterRegistry[MeterRegistryKey(name: "")] = defaultMeter
 
         let defaultPushInterval = self.defaultPushInterval
         pushMetricController = PushMetricController(
-            meters: meterRegistry,
+            meterProvider: self,
             metricProcessor: metricProcessor,
             metricExporter: metricExporter,
             pushInterval: meterSharedState.metricPushInterval ?? defaultPushInterval) {
@@ -68,10 +67,17 @@ public class MeterSdkProvider: MeterProvider {
         var meter: MeterSdk! = meterRegistry[key]
         if meter == nil {
             meter = MeterSdk(meterName: instrumentationName, metricProcessor: metricProcessor)
-            defaultMeter = meter!
             meterRegistry[key] = meter!
         }
         return meter!
+    }
+
+    func getMeters() -> [MeterRegistryKey: MeterSdk] {
+        lock.lock()
+        defer {
+            lock.unlock()
+        }
+        return meterRegistry
     }
 
     private static func createLibraryResourceLabels(name: String, version: String) -> [String: String] {

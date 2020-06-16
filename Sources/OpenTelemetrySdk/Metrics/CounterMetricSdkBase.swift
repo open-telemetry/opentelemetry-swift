@@ -42,9 +42,10 @@ class CounterMetricSdkBase<T>: CounterMetric {
     }
 
     internal func bind(labelset: LabelSet, isShortLived: Bool) -> BoundCounterMetric<T> {
-        var boundInstrument = boundInstruments[labelset]
-
+        var boundInstrument: BoundCounterMetricSdkBase<T>?
         bindUnbindLock.withLockVoid {
+            boundInstrument = boundInstruments[labelset]
+
             if boundInstrument == nil {
                 let status = isShortLived ? RecordStatus.updatePending : RecordStatus.bound
                 boundInstrument = createMetric(recordStatus: status)

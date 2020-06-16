@@ -16,17 +16,21 @@
 import Foundation
 
 /// Batcher which retains all dimensions/labels.
-public struct UngroupedBatcher: MetricProcessor {
-    var metrics = [Metric]()
+public class UngroupedBatcher: MetricProcessor {
+    public init(){
+        print("Init")
+    }
+    
+    private var metrics = [Metric]()
 
-    public mutating func finishCollectionCycle() -> [Metric] {
+    public func finishCollectionCycle() -> [Metric] {
         defer {
             self.metrics = [Metric]()
         }
         return metrics
     }
 
-    public mutating func process(metric: Metric) {
+    public func process(metric: Metric) {
         metrics.append(metric)
     }
 }

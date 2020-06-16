@@ -45,7 +45,7 @@ class MeterSdk: Meter {
                 let metricName = counter.key
                 let counterInstrument = counter.value
 
-                var metric = Metric(metricNamespace: meterName, metricName: metricName, desc: meterName + metricName, type: AggregationType.intSum)
+                var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.intSum)
 
                 counterInstrument.boundInstruments.forEach { boundInstrument in
                     let labelSet = boundInstrument.key
@@ -80,7 +80,7 @@ class MeterSdk: Meter {
                 let metricName = counter.key
                 let counterInstrument = counter.value
 
-                var metric = Metric(metricNamespace: meterName, metricName: metricName, desc: meterName + metricName, type: AggregationType.doubleSum)
+                var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.doubleSum)
 
                 counterInstrument.boundInstruments.forEach { boundInstrument in
                     let labelSet = boundInstrument.key
@@ -115,7 +115,7 @@ class MeterSdk: Meter {
             intMeasures.forEach { measure in
                 let metricName = measure.key
                 let measureInstrument = measure.value
-                var metric = Metric(metricNamespace: meterName, metricName: metricName, desc: meterName + metricName, type: AggregationType.intSummary)
+                var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.intSummary)
                 measureInstrument.boundInstruments.forEach { boundInstrument in
                     let labelSet = boundInstrument.key
                     let aggregator = boundInstrument.value.getAggregator()
@@ -130,7 +130,7 @@ class MeterSdk: Meter {
             doubleMeasures.forEach { measure in
                 let metricName = measure.key
                 let measureInstrument = measure.value
-                var metric = Metric(metricNamespace: meterName, metricName: metricName, desc: meterName + metricName, type: AggregationType.doubleSummary)
+                var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.doubleSummary)
                 measureInstrument.boundInstruments.forEach { boundInstrument in
                     let labelSet = boundInstrument.key
                     let aggregator = boundInstrument.value.getAggregator()
@@ -145,7 +145,7 @@ class MeterSdk: Meter {
             intObservers.forEach { observer in
                 let metricName = observer.key
                 let observerInstrument = observer.value
-                var metric = Metric(metricNamespace: meterName, metricName: metricName, desc: meterName + metricName, type: AggregationType.intSum)
+                var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.intSum)
                 observerInstrument.invokeCallback()
 
                 observerInstrument.observerHandles.forEach { handle in
@@ -162,7 +162,7 @@ class MeterSdk: Meter {
             doubleObservers.forEach { observer in
                 let metricName = observer.key
                 let observerInstrument = observer.value
-                var metric = Metric(metricNamespace: meterName, metricName: metricName, desc: meterName + metricName, type: AggregationType.doubleSum)
+                var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.doubleSum)
                 observerInstrument.invokeCallback()
 
                 observerInstrument.observerHandles.forEach { handle in
@@ -183,7 +183,9 @@ class MeterSdk: Meter {
         var counter = intCounters[name]
         if counter == nil {
             counter = CounterMetricSdk<Int>(name: name)
-            intCounters[name] = counter!
+            collectLock.withLockVoid {
+                intCounters[name] = counter!
+            }
         }
         return AnyCounterMetric<Int>(counter!)
     }
@@ -192,7 +194,9 @@ class MeterSdk: Meter {
         var counter = doubleCounters[name]
         if counter == nil {
             counter = CounterMetricSdk<Double>(name: name)
-            doubleCounters[name] = counter!
+            collectLock.withLockVoid {
+                doubleCounters[name] = counter!
+            }
         }
         return AnyCounterMetric<Double>(counter!)
     }
@@ -201,7 +205,9 @@ class MeterSdk: Meter {
         var measure = intMeasures[name]
         if measure == nil {
             measure = MeasureMetricSdk<Int>(name: name)
-            intMeasures[name] = measure!
+            collectLock.withLockVoid {
+                intMeasures[name] = measure!
+            }
         }
         return AnyMeasureMetric<Int>(measure!)
     }
@@ -210,7 +216,9 @@ class MeterSdk: Meter {
         var measure = doubleMeasures[name]
         if measure == nil {
             measure = MeasureMetricSdk<Double>(name: name)
-            doubleMeasures[name] = measure
+            collectLock.withLockVoid {
+                doubleMeasures[name] = measure
+            }
         }
         return AnyMeasureMetric<Double>(measure!)
     }
@@ -219,7 +227,9 @@ class MeterSdk: Meter {
         var observer = intObservers[name]
         if observer == nil {
             observer = IntObserverMetricSdk(metricName: name, callback: callback)
-            intObservers[name] = observer!
+            collectLock.withLockVoid {
+                intObservers[name] = observer!
+            }
         }
         return observer!
     }
@@ -228,7 +238,9 @@ class MeterSdk: Meter {
         var observer = doubleObservers[name]
         if observer == nil {
             observer = DoubleObserverMetricSdk(metricName: name, callback: callback)
-            doubleObservers[name] = observer!
+            collectLock.withLockVoid {
+                doubleObservers[name] = observer!
+            }
         }
         return observer!
     }
