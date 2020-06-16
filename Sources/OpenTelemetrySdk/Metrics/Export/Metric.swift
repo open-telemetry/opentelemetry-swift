@@ -16,16 +16,16 @@
 import Foundation
 
 public struct Metric {
-    public private(set) var metricNamespace: String
-    public private(set) var metricName: String
-    public private(set) var metricDescription: String
+    public private(set) var namespace: String
+    public private(set) var name: String
+    public private(set) var description: String
     public private(set) var aggregationType: AggregationType
     public internal(set) var data = [MetricData]()
 
-    init(metricNamespace: String, metricName: String, desc: String, type: AggregationType) {
-        self.metricNamespace = metricNamespace
-        self.metricName = metricName
-        metricDescription = desc
+    init(namespace: String, name: String, desc: String, type: AggregationType) {
+        self.namespace = namespace
+        self.name = name
+        description = desc
         aggregationType = type
     }
 }
