@@ -52,5 +52,17 @@ public class SpanContextShim: OTSpanContext, BaseShimProtocol {
     }
 
     public func forEachBaggageItem(_ callback: @escaping (String, String) -> Bool) {
+        let entries = correlationContext.getEntries()
+        entries.forEach {
+            if !callback($0.key.name, $0.value.string) {
+                return
+            }
+        }
+    }
+}
+
+extension SpanContextShim: Equatable {
+    public static func == (lhs: SpanContextShim, rhs: SpanContextShim) -> Bool {
+        return lhs.context == rhs.context && lhs.correlationContext == rhs.correlationContext
     }
 }

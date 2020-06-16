@@ -15,6 +15,7 @@
 
 import Foundation
 import OpenTelemetryApi
+import OpenTelemetrySdk
 import Opentracing
 
 public class TraceShim {
@@ -27,9 +28,15 @@ public class TraceShim {
     }
 
     static func createTracerShim() -> OTTracer {
-        return TracerShim(telemetryInfo: TelemetryInfo(tracer: TraceShim.getTracer(tracerProvider: OpenTelemetry.instance.tracerProvider),
-                                                       contextManager: OpenTelemetry.instance.contextManager,
-                                                       propagators: OpenTelemetry.instance.propagators))
+        return TracerShim(telemetryInfo: TelemetryInfo(tracer: TraceShim.getTracer(tracerProvider: OpenTelemetrySDK.instance.tracerProvider),
+                                                       contextManager: OpenTelemetrySDK.instance.contextManager,
+                                                       propagators: OpenTelemetrySDK.instance.propagators))
+    }
+
+    static func createTracerShim(tracerProvider: TracerProvider, contextManager: CorrelationContextManager) -> OTTracer {
+        return TracerShim(telemetryInfo: TelemetryInfo(tracer: TraceShim.getTracer(tracerProvider: tracerProvider),
+                                                       contextManager: contextManager,
+                                                       propagators: OpenTelemetrySDK.instance.propagators))
     }
 
     private static func getTracer(tracerProvider: TracerProvider) -> Tracer {

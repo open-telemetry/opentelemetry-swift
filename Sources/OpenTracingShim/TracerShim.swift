@@ -18,8 +18,8 @@ import OpenTelemetryApi
 import Opentracing
 
 public class TracerShim: OTTracer, BaseShimProtocol {
-    static let OTReferenceChildOf = "child_of"
-    static let OTReferenceFollowsFrom = "follows_from"
+    public static let OTReferenceChildOf = "child_of"
+    public static let OTReferenceFollowsFrom = "follows_from"
 
     enum InjectError: Error {
         case injectError
@@ -51,9 +51,11 @@ public class TracerShim: OTTracer, BaseShimProtocol {
     }
 
     public func startSpan(_ operationName: String, childOf parent: OTSpanContext?, tags: [AnyHashable: Any]?, startTime: Date?) -> OTSpan {
+        var correlationContext: CorrelationContext?
         let builder = tracer.spanBuilder(spanName: operationName)
         if let parent = parent as? SpanContextShim {
             builder.setParent(parent.context)
+            correlationContext = parent.correlationContext
         }
 
         if let tags = tags as? [String: NSObject] {
@@ -67,7 +69,13 @@ public class TracerShim: OTTracer, BaseShimProtocol {
             builder.setStartTimestamp(startTimestamp: Int64(startTime.timeIntervalSince1970))
         }
 
-        return SpanShim(telemetryInfo: telemetryInfo, span: builder.startSpan())
+        let span = builder.startSpan()
+        tracer.withSpan(span)
+        let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
+        if correlationContext != nil && !(correlationContext! == telemetryInfo.emptyCorrelationContext) {
+            spanContextTable.create(spanShim: spanShim, distContext: correlationContext!)
+        }
+        return spanShim
     }
 
     public func startSpan(_ operationName: String, references: [Any]?, tags: [AnyHashable: Any]?, startTime: Date?) -> OTSpan {

@@ -49,7 +49,7 @@ public class SpanContextShimTable {
         return create(spanShim: spanShim, distContext: spanShim.telemetryInfo.emptyCorrelationContext)
     }
 
-    public func create(spanShim: SpanShim, distContext: CorrelationContext) -> SpanContextShim {
+    @discardableResult public func create(spanShim: SpanShim, distContext: CorrelationContext) -> SpanContextShim {
         lock.withWriterLock {
             var contextShim = shimsMap[spanShim.span.context]
             if contextShim != nil {
