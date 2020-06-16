@@ -19,7 +19,7 @@ import OpenTelemetrySdk
 import XCTest
 
 class PrometheusExporterTests: XCTestCase {
-    let metricPushIntervalSec = 0.1
+    let metricPushIntervalSec = 0.05
     let waitDuration = 0.1 + 0.1
 
     func testMetricsHttpServerAsync() {
@@ -40,7 +40,7 @@ class PrometheusExporterTests: XCTestCase {
         }
 
         collectMetrics(simpleProcessor: simpleProcessor, exporter: promExporter)
-        usleep(useconds_t(waitDuration * 10 * 1000000))
+        usleep(useconds_t(waitDuration * 1000000))
         let url = URL(string: "http://localhost:9184/metrics/")!
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
             if error == nil, let data = data, let response = response as? HTTPURLResponse {
