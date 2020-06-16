@@ -18,7 +18,7 @@ import Foundation
 /// A class that represents a span context. A span context contains the state that must propagate to
 /// child Spans and across process boundaries. It contains the identifiers race_id and span_id
 /// associated with the Span and a set of options.
-public final class SpanContext: Equatable, CustomStringConvertible {
+public final class SpanContext: Equatable, CustomStringConvertible, Hashable {
     /// The trace identifier associated with this SpanContext
     public private(set) var traceId: TraceId
 
@@ -98,5 +98,9 @@ public final class SpanContext: Equatable, CustomStringConvertible {
 
     public var description: String {
         return "SpanContext{traceId=\(traceId), spanId=\(spanId), traceFlags=\(traceFlags)}, isRemote=\(isRemote)"
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(spanId)
     }
 }

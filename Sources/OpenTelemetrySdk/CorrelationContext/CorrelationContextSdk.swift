@@ -60,6 +60,9 @@ public class CorrelationContextSdkBuilder: CorrelationContextBuilder {
     var noImplicitParent: Bool = false
     var entries = [EntryKey: Entry?]()
 
+    public init() {
+    }
+
     @discardableResult public func setParent(_ parent: CorrelationContext) -> Self {
         self.parent = parent
         return self

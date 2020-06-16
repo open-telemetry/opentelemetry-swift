@@ -14,14 +14,15 @@
 //
 
 import Foundation
+import Opentracing
 
-/// A struct that enables overriding the default values used when ending a Span. Allows
-/// overriding the endTimestamp.
-public struct EndSpanOptions {
-    /// The end timestamp
-    public init(timestamp: Int64 = 0 ) {
-        self.timestamp = timestamp
+struct TestUtils {
+    static func contextBaggageToDictionary(context: OTSpanContext) -> [String: String] {
+        var dictionary = [String: String]()
+        context.forEachBaggageItem { (key, value) -> Bool in
+            dictionary[key] = value
+            return true
+        }
+        return dictionary
     }
-    
-    public private(set) var timestamp: Int64
 }

@@ -16,20 +16,24 @@
 import Foundation
 import OpenTelemetryApi
 
-/// CorrelationContextManagerSdk is SDK implementation of CorrelationContextManager.
-public class CorrelationContextManagerSdk: CorrelationContextManager {
-    public init() {
+protocol BaseShimProtocol {
+    var telemetryInfo: TelemetryInfo { get }
+}
+
+extension BaseShimProtocol {
+    var tracer: Tracer {
+        return telemetryInfo.tracer
     }
 
-    public func contextBuilder() -> CorrelationContextBuilder {
-        return CorrelationContextSdkBuilder()
+    var spanContextTable: SpanContextShimTable {
+        return telemetryInfo.spanContextTable
     }
 
-    public func getCurrentContext() -> CorrelationContext {
-        return ContextUtils.getCurrentCorrelationContext() ?? EmptyCorrelationContext.instance
+    var contextManager: CorrelationContextManager {
+        return telemetryInfo.contextManager
     }
 
-    public func withContext(correlationContext: CorrelationContext) -> Scope {
-        return ContextUtils.withCorrelationContext(correlationContext)
+    var propagators: ContextPropagators {
+        return telemetryInfo.propagators
     }
 }
