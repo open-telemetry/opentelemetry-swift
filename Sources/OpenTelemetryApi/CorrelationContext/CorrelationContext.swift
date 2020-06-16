@@ -31,3 +31,8 @@ public protocol CorrelationContext: AnyObject {
     /// - Parameter key: entry key to return the value for.
     func getEntryValue(key: EntryKey) -> EntryValue?
 }
+
+public func == (lhs: CorrelationContext, rhs: CorrelationContext) -> Bool {
+    guard type(of: lhs) == type(of: rhs) else { return false }
+    return lhs.getEntries() == rhs.getEntries()
+}

@@ -18,6 +18,9 @@ import OpenTelemetryApi
 
 /// CorrelationContextManagerSdk is SDK implementation of CorrelationContextManager.
 public class CorrelationContextManagerSdk: CorrelationContextManager {
+    public init() {
+    }
+
     public func contextBuilder() -> CorrelationContextBuilder {
         return CorrelationContextSdkBuilder()
     }

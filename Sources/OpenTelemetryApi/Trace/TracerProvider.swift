@@ -23,3 +23,9 @@ public protocol TracerProvider {
     ///   - instrumentationVersion:  The version of the instrumentation library (e.g., "semver:1.0.0"). Optional
     func get(instrumentationName: String, instrumentationVersion: String?) -> Tracer
 }
+
+extension TracerProvider {
+    func get(instrumentationName: String) -> Tracer {
+        return get(instrumentationName: instrumentationName, instrumentationVersion: nil)
+    }
+}

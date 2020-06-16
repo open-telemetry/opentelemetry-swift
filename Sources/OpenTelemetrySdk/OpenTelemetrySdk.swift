@@ -26,12 +26,16 @@ public struct OpenTelemetrySDK {
         return OpenTelemetry.instance.tracerProvider as! TracerSdkProvider
     }
 
-    public var meter: MeterSdkProvider {
+    public var meterProvider: MeterSdkProvider {
         return OpenTelemetry.instance.meterProvider as! MeterSdkProvider
     }
 
-    public var correlationContextManager: CorrelationContextManagerSdk {
+    public var contextManager: CorrelationContextManagerSdk {
         return OpenTelemetry.instance.contextManager as! CorrelationContextManagerSdk
+    }
+
+    public var propagators: ContextPropagators {
+        return OpenTelemetry.instance.propagators
     }
 
     private init() {
