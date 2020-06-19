@@ -234,11 +234,11 @@ class AdapterTests: XCTestCase {
         XCTAssertEqual(true, error?.vBool)
     }
 
-    private func getTimedEvent() -> SpanData.TimedEvent {
+    private func getTimedEvent() -> TimedEvent {
         let epochNanos = Int64(Date().timeIntervalSince1970 * 1000000)
         let valueS = AttributeValue.string("bar")
         let attributes = ["foo": valueS]
-        return SpanData.TimedEvent(epochNanos: epochNanos, name: "the log message", attributes: attributes)
+        return TimedEvent(name: "the log message", epochNanos: epochNanos, attributes: attributes)
     }
 
     private func getSpanData(startMs: Int64, endMs: Int64) -> SpanData {

@@ -60,11 +60,11 @@ final class Adapter {
         logs.append(contentsOf: toJaegerLogs(timedEvents: span.timedEvents))
         references.append(contentsOf: toSpanRefs(links: span.links))
 
-        if span.parentSpanId != nil {
+        if span.parentSpanId.isValid {
             let parentTraceIdHigh = traceIdHigh
             let parentTraceIdLow = traceIdLow
 
-            let spanHex = span.parentSpanId!.hexString
+            let spanHex = span.parentSpanId.hexString
             parentSpanId = Int64(spanHex, radix: 16) ?? 0
 
             let refType = SpanRefType.child_of
@@ -130,7 +130,7 @@ final class Adapter {
         return Tag(key: key, vType: vType, vStr: vStr, vDouble: vDouble, vBool: vBool, vLong: vLong, vBinary: nil)
     }
 
-    static func toJaegerLogs(timedEvents: [SpanData.TimedEvent]) -> [Log] {
+    static func toJaegerLogs(timedEvents: [TimedEvent]) -> [Log] {
         var logs = [Log]()
         logs.reserveCapacity(timedEvents.count)
 
@@ -140,7 +140,7 @@ final class Adapter {
         return logs
     }
 
-    static func toJaegerLog(timedEvent: SpanData.TimedEvent) -> Log {
+    static func toJaegerLog(timedEvent: TimedEvent) -> Log {
         let timestamp = Int64(timedEvent.epochNanos * 1000)
 
         var tags = TList<Tag>()

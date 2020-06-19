@@ -46,6 +46,29 @@ public enum AttributeValue: Equatable, CustomStringConvertible {
             return value.description
         }
     }
+
+    public init?(_ value: Any) {
+        switch value {
+        case let val as String:
+            self = .string(val)
+        case let val as Bool:
+            self = .bool(val)
+        case let val as Int:
+            self = .int(val)
+        case let val as Double:
+            self = .double(val)
+        case let val as [String]:
+            self = .stringArray(val)
+        case let val as [Bool]:
+            self = .boolArray(val)
+        case let val as [Int]:
+            self = .intArray(val)
+        case let val as [Double]:
+            self = .doubleArray(val)
+        default:
+            return nil
+        }
+    }
 }
 
 extension AttributeValue: Encodable {

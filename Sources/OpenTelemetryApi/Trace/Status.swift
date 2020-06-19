@@ -158,7 +158,7 @@ public struct Status: Equatable {
     }
 
     /// True if this Status is OK, i.e., not an error.
-    var isOk: Bool {
+    public var isOk: Bool {
         return CanonicalCode.ok == canonicalCode
     }
 }

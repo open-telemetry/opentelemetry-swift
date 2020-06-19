@@ -173,7 +173,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
                         spanId: context.spanId,
                         traceFlags: context.traceFlags,
                         traceState: context.traceState,
-                        parentSpanId: parentSpanId,
+                        parentSpanId: parentSpanId ?? SpanId.invalid,
                         resource: resource,
                         instrumentationLibraryInfo: instrumentationLibraryInfo,
                         name: name,
@@ -191,11 +191,11 @@ public class RecordEventsReadableSpan: ReadableSpan {
                         totalAttributeCount: totalAttributeCount)
     }
 
-    private func adaptTimedEvents() -> [SpanData.TimedEvent] {
+    private func adaptTimedEvents() -> [TimedEvent] {
         let sourceEvents = events
-        var result = [SpanData.TimedEvent]()
+        var result = [TimedEvent]()
         sourceEvents.forEach {
-            result.append(SpanData.TimedEvent(epochNanos: $0.epochNanos, name: $0.name, attributes: $0.attributes))
+            result.append(TimedEvent(name: $0.name, epochNanos: $0.epochNanos, attributes: $0.attributes))
         }
         return result
     }
@@ -227,31 +227,31 @@ public class RecordEventsReadableSpan: ReadableSpan {
     }
 
     public func addEvent(name: String) {
-        addTimedEvent(timedEvent: TimedEvent(nanotime: clock.now, name: name))
+        addTimedEvent(timedEvent: TimedEvent(name: name, epochNanos: clock.now))
     }
 
     public func addEvent(name: String, timestamp: Int64) {
-        addTimedEvent(timedEvent: TimedEvent(nanotime: timestamp, name: name))
+        addTimedEvent(timedEvent: TimedEvent(name: name, epochNanos: timestamp))
     }
 
     public func addEvent(name: String, attributes: [String: AttributeValue]) {
         var limitedAttributes = AttributesWithCapacity(capacity: maxNumberOfAttributesPerEvent)
         limitedAttributes.updateValues(attributes: attributes)
-        addTimedEvent(timedEvent: TimedEvent(nanotime: clock.now, name: name, attributes: limitedAttributes.attributes))
+        addTimedEvent(timedEvent: TimedEvent(name: name, epochNanos: clock.now, attributes: limitedAttributes.attributes))
     }
 
     public func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Int64) {
         var limitedAttributes = AttributesWithCapacity(capacity: maxNumberOfAttributesPerEvent)
         limitedAttributes.updateValues(attributes: attributes)
-        addTimedEvent(timedEvent: TimedEvent(nanotime: timestamp, name: name, attributes: limitedAttributes.attributes))
+        addTimedEvent(timedEvent: TimedEvent(name: name, epochNanos: timestamp, attributes: limitedAttributes.attributes))
     }
 
     public func addEvent<E>(event: E) where E: Event {
-        addTimedEvent(timedEvent: TimedEvent(nanotime: clock.now, event: event))
+        addTimedEvent(timedEvent: TimedEvent(epochNanos: clock.now, event: event))
     }
 
     public func addEvent<E>(event: E, timestamp: Int64) where E: Event {
-        addTimedEvent(timedEvent: TimedEvent(nanotime: timestamp, event: event))
+        addTimedEvent(timedEvent: TimedEvent(epochNanos: timestamp, event: event))
     }
 
     private func addTimedEvent(timedEvent: TimedEvent) {
