@@ -54,16 +54,15 @@ struct ZipkinConversionExtension {
 
         var localEndpoint = defaultLocalEndpoint
 
-        var serviceName = attributeEnumerationState.serviceName
-
-        if serviceName != nil, !serviceName!.isEmpty {
-            if let serviceNamespace = attributeEnumerationState.serviceNamespace, !serviceNamespace.isEmpty {
-                serviceName = serviceNamespace + "." + serviceName!
+        if let serviceName = attributeEnumerationState.serviceName, !serviceName.isEmpty {
+            if localEndpointCache[serviceName] == nil {
+                localEndpoint = defaultLocalEndpoint.clone(serviceName: serviceName)
+                localEndpointCache[serviceName] = localEndpoint
             }
-            if localEndpointCache[serviceName!] == nil {
-                localEndpoint = defaultLocalEndpoint.clone(serviceName: serviceName!)
-                localEndpointCache[serviceName!] = localEndpoint
-            }
+        }
+        
+        if let serviceNamespace = attributeEnumerationState.serviceNamespace, !serviceNamespace.isEmpty {
+            attributeEnumerationState.tags["service.namespace"] = serviceNamespace
         }
 
         var remoteEndpoint: ZipkinEndpoint?
@@ -113,8 +112,10 @@ struct ZipkinConversionExtension {
         }
     }
 
-    private static func toSpanKind(otelSpan: SpanData) -> String {
+    private static func toSpanKind(otelSpan: SpanData) -> String? {
         switch otelSpan.kind {
+        case .client:
+            return "CLIENT"
         case .server:
             return "SERVER"
         case .producer:
@@ -122,7 +123,7 @@ struct ZipkinConversionExtension {
         case .consumer:
             return "CONSUMER"
         default:
-            return "CLIENT"
+            return nil
         }
     }
 
