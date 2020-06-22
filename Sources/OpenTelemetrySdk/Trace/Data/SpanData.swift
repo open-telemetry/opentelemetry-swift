@@ -18,11 +18,6 @@ import OpenTelemetryApi
 
 /// representation of all data collected by the Span.
 public struct SpanData: Equatable {
-    public struct TimedEvent: Event, Equatable {
-        public var epochNanos: Int64
-        public var name: String
-        public var attributes: [String: AttributeValue]
-    }
 
     public class Link: OpenTelemetryApi.Link {
         public let context: SpanContext
@@ -48,7 +43,7 @@ public struct SpanData: Equatable {
 
     /// The parent SpanId. If the  Span is a root Span, the SpanId
     /// returned will be nil.
-    public private(set) var parentSpanId: SpanId? = SpanId.invalid
+    public private(set) var parentSpanId: SpanId = SpanId.invalid
 
     /// The resource of this Span.
     public private(set) var resource: Resource = Resource()
@@ -86,7 +81,7 @@ public struct SpanData: Equatable {
     /// True if the span has already been ended, false if not.
     public private(set) var hasEnded: Bool = false
 
-    /// The total number of {@link SpanData.TimedEvent} events that were recorded on this span. This
+    /// The total number of {@link TimedEvent} events that were recorded on this span. This
     /// number may be larger than the number of events that are attached to this span, if the total
     /// number recorded was greater than the configured maximum value. See TraceConfig.maxNumberOfEvents
     public private(set) var totalRecordedEvents: Int = 0

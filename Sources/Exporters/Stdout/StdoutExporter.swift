@@ -35,7 +35,7 @@ public class StdoutExporter: SpanExporter {
                 print("Span kind: \(span.kind.rawValue)")
                 print("TraceFlags: \(span.traceFlags)")
                 print("TraceState: \(span.traceState)")
-                print("ParentSpanId: \(span.parentSpanId?.hexString ?? "no Parent")")
+                print("ParentSpanId: \(span.parentSpanId.hexString)")
                 print("Start: \(span.startEpochNanos)")
                 print("Duration: \(span.endEpochNanos - span.startEpochNanos) nanoseconds")
                 print("Attributes: \(span.attributes)")
@@ -81,7 +81,7 @@ fileprivate struct SpanExporterData: Encodable {
         self.spanKind = span.kind.rawValue
         self.traceFlags = span.traceFlags
         self.traceState = span.traceState
-        self.parentSpanId = span.parentSpanId?.hexString ?? SpanId.invalid.hexString
+        self.parentSpanId = span.parentSpanId.hexString
         self.start = span.startEpochNanos
         self.duration = span.endEpochNanos - span.startEpochNanos
         self.attributes = span.attributes
