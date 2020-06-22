@@ -24,7 +24,8 @@ let package = Package(
         .library( name: "libStdoutExporter", type: .static, targets: ["StdoutExporter"]),
         .library( name: "PrometheusExporter", type: .dynamic, targets: ["PrometheusExporter"]),
         .library( name: "libPrometheusExporter", type: .static, targets: ["PrometheusExporter"]),
-
+        .library( name: "OpenTelemetryProtocolExporter", type: .dynamic, targets: ["OpenTelemetryProtocolExporter"]),
+        .library( name: "libOpenTelemetryProtocolExporter", type: .static, targets: ["OpenTelemetryProtocolExporter"]),
         .executable(name: "simpleExporter", targets: ["SimpleExporter"]),
         .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
     ],
@@ -32,6 +33,8 @@ let package = Package(
         .package(url:  "https://github.com/undefinedlabs/opentracing-objc", .branch("spm-support")), // Need custom fork because of SPM
         .package(url:  "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1"), // Need custom fork because of SPM
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
+        .package(url: "https://github.com/grpc/grpc-swift.git", from: "1.0.0-alpha.12"),
+        .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.6.0")
     ],
     targets: [
         .target(  name: "OpenTelemetryApi", dependencies: []),
@@ -47,6 +50,7 @@ let package = Package(
         .target(  name: "StdoutExporter", dependencies: ["OpenTelemetrySdk"], path: "Sources/Exporters/Stdout"),
         .target(  name: "PrometheusExporter", dependencies: ["OpenTelemetrySdk", "NIO", "NIOHTTP1"], path: "Sources/Exporters/Prometheus"),
         .testTarget(  name: "PrometheusExporterTests", dependencies: ["PrometheusExporter"], path: "Tests/ExportersTests/Prometheus"),
+        .target(  name: "OpenTelemetryProtocolExporter", dependencies: ["OpenTelemetrySdk", "GRPC"], path: "Sources/Exporters/OpenTelemetryProtocol"),
         .target(  name: "LoggingTracer", dependencies: ["OpenTelemetryApi"], path: "Examples/Logging Tracer"),
         .target(  name: "SimpleExporter", dependencies: ["OpenTelemetrySdk", "JaegerExporter", "StdoutExporter"], path: "Examples/Simple Exporter"),
         .target(  name: "PrometheusSample", dependencies: ["OpenTelemetrySdk", "PrometheusExporter"], path: "Examples/Prometheus Sample"),
