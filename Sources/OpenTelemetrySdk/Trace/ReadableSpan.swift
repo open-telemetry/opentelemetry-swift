@@ -32,5 +32,5 @@ public protocol ReadableSpan: Span {
     var hasEnded: Bool { get }
 
     /// Returns the latecy of the {@code Span} in nanos. If still active then returns now() - start time.
-    var latencyNanos: Int64 { get }
+    var latencyNanos: UInt64 { get }
 }

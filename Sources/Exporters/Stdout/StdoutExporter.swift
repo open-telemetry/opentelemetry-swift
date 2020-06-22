@@ -70,8 +70,8 @@ fileprivate struct SpanExporterData: Encodable {
     private let traceFlags: TraceFlags
     private let traceState: TraceState
     private let parentSpanId: String
-    private let start: Int64
-    private let duration: Int64
+    private let start: UInt64
+    private let duration: UInt64
     private let attributes: [String: AttributeValue]
     
     init(span: SpanData) {

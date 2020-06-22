@@ -66,7 +66,7 @@ public class TracerShim: OTTracer, BaseShimProtocol {
         }
 
         if let startTime = startTime {
-            builder.setStartTimestamp(startTimestamp: Int64(startTime.timeIntervalSince1970))
+            builder.setStartTimestamp(startTimestamp: UInt64(startTime.timeIntervalSince1970))
         }
 
         let span = builder.startSpan()

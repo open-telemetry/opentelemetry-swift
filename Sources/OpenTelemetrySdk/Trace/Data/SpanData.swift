@@ -43,7 +43,7 @@ public struct SpanData: Equatable {
 
     /// The parent SpanId. If the  Span is a root Span, the SpanId
     /// returned will be nil.
-    public private(set) var parentSpanId: SpanId = SpanId.invalid
+    public private(set) var parentSpanId: SpanId?
 
     /// The resource of this Span.
     public private(set) var resource: Resource = Resource()
@@ -58,7 +58,7 @@ public struct SpanData: Equatable {
     public private(set) var kind: SpanKind
 
     /// The start epoch timestamp in nanos of this Span.
-    public private(set) var startEpochNanos: Int64
+    public private(set) var startEpochNanos: UInt64
 
     /// The attributes recorded for this Span.
     public private(set) var attributes = [String: AttributeValue]()
@@ -73,7 +73,7 @@ public struct SpanData: Equatable {
     public private(set) var status: Status?
 
     /// The end epoch timestamp in nanos of this Span
-    public private(set) var endEpochNanos: Int64
+    public private(set) var endEpochNanos: UInt64
 
     /// True if the parent is on a different process, false if this is a root span.
     public private(set) var hasRemoteParent: Bool = false
@@ -148,12 +148,12 @@ public struct SpanData: Equatable {
         return self
     }
 
-    @discardableResult public mutating func settingStartEpochNanos(_ nanos: Int64) -> SpanData {
+    @discardableResult public mutating func settingStartEpochNanos(_ nanos: UInt64) -> SpanData {
         startEpochNanos = nanos
         return self
     }
 
-    @discardableResult public mutating func settingEndEpochNanos(_ nanos: Int64) -> SpanData {
+    @discardableResult public mutating func settingEndEpochNanos(_ nanos: UInt64) -> SpanData {
         endEpochNanos = nanos
         return self
     }

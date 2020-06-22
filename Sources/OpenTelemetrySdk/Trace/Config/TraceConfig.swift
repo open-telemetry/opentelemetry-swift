@@ -63,44 +63,44 @@ public struct TraceConfig: Equatable {
     public init() {
     }
 
-    public func settingSampler(_ sampler: Sampler) -> Self {
+    @discardableResult public func settingSampler(_ sampler: Sampler) -> Self {
         var traceConfig = self
         traceConfig.sampler = sampler
         return traceConfig
     }
 
-    public func settingMaxNumberOfAttributes(_ number: Int) -> Self {
+    @discardableResult public func settingMaxNumberOfAttributes(_ number: Int) -> Self {
         var traceConfig = self
         traceConfig.maxNumberOfAttributes = number
         return traceConfig
     }
 
-    public func settingMaxNumberOfEvents(_ number: Int) -> Self {
+    @discardableResult public func settingMaxNumberOfEvents(_ number: Int) -> Self {
         var traceConfig = self
         traceConfig.maxNumberOfEvents = number
         return traceConfig
     }
 
-    public func settingMaxNumberOfLinks(_ number: Int) -> Self {
+    @discardableResult public func settingMaxNumberOfLinks(_ number: Int) -> Self {
         var traceConfig = self
         traceConfig.maxNumberOfLinks = number
         return traceConfig
     }
 
-    public func settingMaxNumberOfAttributesPerEvent(_ number: Int) -> Self {
+    @discardableResult public func settingMaxNumberOfAttributesPerEvent(_ number: Int) -> Self {
         var traceConfig = self
         traceConfig.maxNumberOfAttributesPerEvent = number
         return traceConfig
     }
 
-    public func settingMaxNumberOfAttributesPerLink(_ number: Int) -> Self {
+    @discardableResult public func settingMaxNumberOfAttributesPerLink(_ number: Int) -> Self {
         var traceConfig = self
         traceConfig.maxNumberOfAttributesPerLink = number
         return traceConfig
     }
 
     // Sets the global sampler probability
-    public func settingSamplerProbability(samplerProbability: Double) -> Self {
+    @discardableResult public func settingSamplerProbability(samplerProbability: Double) -> Self {
         if samplerProbability >= 1 {
             return settingSampler(Samplers.alwaysOn)
         } else if samplerProbability <= 0 {

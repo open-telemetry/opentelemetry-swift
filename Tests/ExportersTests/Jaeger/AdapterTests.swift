@@ -30,8 +30,8 @@ class AdapterTests: XCTestCase {
 
     func testProtoSpans() {
         let duration = 900 // ms
-        let startMs = Int64(Date().timeIntervalSince1970 * 1000)
-        let endMs = startMs + Int64(duration)
+        let startMs = UInt64(Date().timeIntervalSince1970 * 1000)
+        let endMs = startMs + UInt64(duration)
 
         let span = getSpanData(startMs: startMs, endMs: endMs)
         let spans = [span]
@@ -44,8 +44,8 @@ class AdapterTests: XCTestCase {
 
     func testProtoSpan() {
         let duration = 900 // ms
-        let startMs = Int64(Date().timeIntervalSince1970 * 1000)
-        let endMs = startMs + Int64(duration)
+        let startMs = UInt64(Date().timeIntervalSince1970 * 1000)
+        let endMs = startMs + UInt64(duration)
 
         let span = getSpanData(startMs: startMs, endMs: endMs)
 
@@ -55,7 +55,7 @@ class AdapterTests: XCTestCase {
         XCTAssertEqual(span.traceId.hexString, String(format: "%016llx", jaegerSpan.traceIdHigh) + String(format: "%016llx", jaegerSpan.traceIdLow))
         XCTAssertEqual(span.spanId.hexString, String(format: "%016llx", jaegerSpan.spanId))
         XCTAssertEqual("GET /api/endpoint", jaegerSpan.operationName)
-        XCTAssertEqual(startMs, jaegerSpan.startTime)
+        XCTAssertEqual(Int64(startMs), jaegerSpan.startTime)
         XCTAssertEqual(duration, Int(jaegerSpan.duration))
 
         XCTAssertEqual(jaegerSpan.tags?.count, 4)
@@ -191,7 +191,7 @@ class AdapterTests: XCTestCase {
     }
 
     func testStatusNotOk() {
-        let startMs = Int64(Date().timeIntervalSince1970 * 1000)
+        let startMs = UInt64(Date().timeIntervalSince1970 * 1000)
         let endMs = startMs + 900
 
         let span = SpanData(traceId: TraceId(fromHexString: AdapterTests.traceId),
@@ -213,7 +213,7 @@ class AdapterTests: XCTestCase {
     func testSpanError() {
         let attributes = ["error.type": AttributeValue.string(self.name),
                           "error.message": AttributeValue.string("server error")]
-        let startMs = Int64(Date().timeIntervalSince1970 * 1000)
+        let startMs = UInt64(Date().timeIntervalSince1970 * 1000)
         let endMs = startMs + 900
 
         var span = SpanData(traceId: TraceId(fromHexString: AdapterTests.traceId),
@@ -235,13 +235,13 @@ class AdapterTests: XCTestCase {
     }
 
     private func getTimedEvent() -> TimedEvent {
-        let epochNanos = Int64(Date().timeIntervalSince1970 * 1000000)
+        let epochNanos = UInt64(Date().timeIntervalSince1970 * 1000000)
         let valueS = AttributeValue.string("bar")
         let attributes = ["foo": valueS]
         return TimedEvent(name: "the log message", epochNanos: epochNanos, attributes: attributes)
     }
 
-    private func getSpanData(startMs: Int64, endMs: Int64) -> SpanData {
+    private func getSpanData(startMs: UInt64, endMs: UInt64) -> SpanData {
         let valueB = AttributeValue.bool(true)
         let attributes = ["valueB": valueB]
 
