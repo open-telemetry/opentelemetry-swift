@@ -101,7 +101,7 @@ struct SpanAdapter {
         }
     }
 
-    static func toProtoSpanEvent(event: SpanData.TimedEvent) -> Opentelemetry_Proto_Trace_V1_Span.Event {
+    static func toProtoSpanEvent(event: TimedEvent) -> Opentelemetry_Proto_Trace_V1_Span.Event {
         var protoEvent = Opentelemetry_Proto_Trace_V1_Span.Event()
         protoEvent.name = event.name
         protoEvent.timeUnixNano = event.epochNanos
