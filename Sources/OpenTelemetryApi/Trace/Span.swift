@@ -169,19 +169,19 @@ extension Span {
         case 200 ..< 400:
             newStatus = .ok
         case 400:
-            newStatus = .invalid_argument
+            newStatus = .invalidArgument
         case 403:
-            newStatus = .permission_denied
+            newStatus = .permissionDenied
         case 404:
-            newStatus = .not_found
+            newStatus = .notFound
         case 429:
-            newStatus = .resource_exhausted
+            newStatus = .resourceExhausted
         case 501:
             newStatus = .unimplemented
         case 503:
             newStatus = .unavailable
         case 504:
-            newStatus = .deadline_exceeded
+            newStatus = .deadlineExceeded
         default:
             newStatus = .unknown
         }

@@ -31,9 +31,9 @@ public class ZipkinTraceExporter: SpanExporter {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        
+
         do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: encodeSpans(spans:spans), options: [])
+            request.httpBody = try JSONSerialization.data(withJSONObject: encodeSpans(spans: spans), options: [])
         } catch {
             return .failure
         }
@@ -64,14 +64,17 @@ public class ZipkinTraceExporter: SpanExporter {
     }
 
     func encodeSpans(spans: [SpanData]) -> [Any] {
-        
         return spans.map { ZipkinConversionExtension.toZipkinSpan(otelSpan: $0, defaultLocalEndpoint: localEndPoint) }
     }
-    
+
     static func getLocalZipkinEndpoint(name: String? = nil) -> ZipkinEndpoint {
-        let hostname = name ?? Host.current().localizedName ?? ""
-        let ipv4 = Host.current().addresses.first { NetworkUtils.isValidIpv4Address($0) }
-        let ipv6 = Host.current().addresses.first { NetworkUtils.isValidIpv6Address($0) }
-        return ZipkinEndpoint(serviceName: hostname, ipv4: ipv4, ipv5: ipv6, port: nil)
+        let hostname = name ?? ProcessInfo.processInfo.hostName
+        #if os(OSX)
+            let ipv4 = Host.current().addresses.first { NetworkUtils.isValidIpv4Address($0) }
+            let ipv6 = Host.current().addresses.first { NetworkUtils.isValidIpv6Address($0) }
+            return ZipkinEndpoint(serviceName: hostname, ipv4: ipv4, ipv5: ipv6, port: nil)
+        #else
+            return ZipkinEndpoint(serviceName: hostname)
+        #endif
     }
 }

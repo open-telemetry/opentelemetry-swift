@@ -16,6 +16,6 @@
 import Foundation
 
 struct ZipkinAnnotation {
-    var timestamp: Int64
+    var timestamp: UInt64
     var value: String
 }

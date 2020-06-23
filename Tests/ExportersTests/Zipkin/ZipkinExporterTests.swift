@@ -44,7 +44,7 @@ class ZipkinExporterTests: XCTestCase {
 
         let exporterOutputArray = spans.map { ZipkinConversionExtension.toZipkinSpan(otelSpan: $0, defaultLocalEndpoint: ZipkinTraceExporter.getLocalZipkinEndpoint(name: "Open Telemetry Exporter")) }.map { $0.write() }
 
-        let expectedOutputString = #"{"traceId":"e8ea7e9ac72de94e91fabc613f9686b2","name":"Name","parentId":"\#(span.parentSpanId.hexString)","id":"\#(span.spanId.hexString)","kind":"CLIENT","timestamp":\#(timestamp),"duration":60000000,"localEndpoint":{"serviceName":"Open Telemetry Exporter"\#(ipInformation)},"annotations":[{"timestamp":\#(timestamp),"value":"Event1"},{"timestamp":\#(timestamp),"value":"Event2"}],"tags":{"stringKey":"value","longKey":"1","longKey2":"1","doubleKey":"1.0","doubleKey2":"1.0","boolKey":"true","ot.status_code":"Ok"}}"#
+        let expectedOutputString = #"{"traceId":"e8ea7e9ac72de94e91fabc613f9686b2","name":"Name","parentId":"\#(span.parentSpanId!.hexString)","id":"\#(span.spanId.hexString)","kind":"CLIENT","timestamp":\#(timestamp),"duration":60000000,"localEndpoint":{"serviceName":"Open Telemetry Exporter"\#(ipInformation)},"annotations":[{"timestamp":\#(timestamp),"value":"Event1"},{"timestamp":\#(timestamp),"value":"Event2"}],"tags":{"stringKey":"value","longKey":"1","longKey2":"1","doubleKey":"1.0","doubleKey2":"1.0","boolKey":"true","ot.status_code":"Ok"}}"#
         let expectedData = expectedOutputString.data(using: .utf8)!
         let expectedOutputObject = try? JSONSerialization.jsonObject(with: expectedData)
         let expectedOutput = expectedOutputObject as! NSDictionary
@@ -70,7 +70,7 @@ func compareDictionaries(dict1: NSDictionary, dict2: NSDictionary) {
         } else {
             let object1 = dict1[key] as! NSObject
             let object2 = dict2[key] as! NSObject
-            let equal = object1.isEqual(to: object2)
+            let equal = object1.isEqual(object2)
             if !equal {
                 print(" Element error, key: \(key) differs: \(object1.description) VS  \(object2.description)")
             }
@@ -83,7 +83,7 @@ func compareArrays(array1: [Any], array2: [Any]) {
     let set1 = NSSet(array: array1)
     let set2 = NSSet(array: array2)
 
-    let equal = set1.isEqual(to: set2)
+    let equal = set1.isEqual(to: set2 as! Set<AnyHashable>)
     if !equal {
         print(" Element error, \(array1) and \(array2) differs")
     }

@@ -60,11 +60,12 @@ final class Adapter {
         logs.append(contentsOf: toJaegerLogs(timedEvents: span.timedEvents))
         references.append(contentsOf: toSpanRefs(links: span.links))
 
-        if span.parentSpanId.isValid {
+        if let parentId = span.parentSpanId,
+            parentId.isValid {
             let parentTraceIdHigh = traceIdHigh
             let parentTraceIdLow = traceIdLow
 
-            let spanHex = span.parentSpanId.hexString
+            let spanHex = parentId.hexString
             parentSpanId = Int64(spanHex, radix: 16) ?? 0
 
             let refType = SpanRefType.child_of
@@ -114,16 +115,16 @@ final class Adapter {
         case let .double(value):
             vType = .double
             vDouble = value
-        case .stringArray(let value):
+        case let .stringArray(value):
             vType = .string
             vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
-        case .boolArray(let value):
+        case let .boolArray(value):
             vType = .string
             vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
-        case .intArray(let value):
+        case let .intArray(value):
             vType = .string
             vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
-        case .doubleArray(let value):
+        case let .doubleArray(value):
             vType = .string
             vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
         }
