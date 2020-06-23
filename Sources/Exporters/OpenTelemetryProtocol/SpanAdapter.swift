@@ -16,6 +16,7 @@
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
+
 struct SpanAdapter {
     static func toProtoResourceSpans(spanDataList: [SpanData]) -> [Opentelemetry_Proto_Trace_V1_ResourceSpans] {
         let resourceAndLibraryMap = groupByResourceAndLibrary(spanDataList: spanDataList)
@@ -72,16 +73,16 @@ struct SpanAdapter {
         spanData.attributes.forEach {
             protoSpan.attributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
         }
-        protoSpan.droppedAttributesCount = UInt32(spanData.attributes.count - spanData.attributes.capacity)
+        protoSpan.droppedAttributesCount = UInt32(spanData.totalAttributeCount - spanData.attributes.count)
         spanData.timedEvents.forEach {
             protoSpan.events.append(toProtoSpanEvent(event: $0))
         }
-        protoSpan.droppedEventsCount = UInt32(spanData.timedEvents.count - spanData.timedEvents.capacity)
+        protoSpan.droppedEventsCount = UInt32(spanData.totalRecordedEvents - spanData.timedEvents.count )
 
         spanData.links.forEach {
             protoSpan.links.append(toProtoSpanLink(link: $0))
         }
-        protoSpan.droppedLinksCount = UInt32(spanData.links.count - spanData.links.capacity)
+        protoSpan.droppedLinksCount = UInt32(spanData.totalRecordedLinks - spanData.links.count )
         protoSpan.status = toStatusProto(status: spanData.status)
         return protoSpan
     }
@@ -108,7 +109,6 @@ struct SpanAdapter {
         event.attributes.forEach {
             protoEvent.attributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
         }
-        protoEvent.droppedAttributesCount = UInt32(event.attributes.count - event.attributes.capacity)
         return protoEvent
     }
 
@@ -119,7 +119,6 @@ struct SpanAdapter {
         link.attributes.forEach {
             protoLink.attributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
         }
-        protoLink.droppedAttributesCount = UInt32(link.attributes.count - link.attributes.capacity)
 
         return protoLink
     }
