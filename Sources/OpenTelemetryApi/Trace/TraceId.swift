@@ -127,17 +127,24 @@ public struct TraceId: Comparable, Hashable, CustomStringConvertible, Equatable 
     ///   - hex: the lowercase base16 representation.
     ///   - offset: the offset in the buffer where the representation of the TraceId begins.
     public init(fromHexString hex: String, withOffset offset: Int = 0) {
-        let firstIndex = hex.index(hex.startIndex, offsetBy: offset)
-        let secondIndex = hex.index(firstIndex, offsetBy: 16)
-        let thirdIndex = hex.index(secondIndex, offsetBy: 16)
-
-        guard hex.count >= 32 + offset,
-            let idHi = UInt64(hex[firstIndex ..< secondIndex], radix: 16),
-            let idLo = UInt64(hex[secondIndex ..< thirdIndex], radix: 16) else {
-            self.init()
-            return
+        if hex.count >= 32 + offset {
+            let firstIndex = hex.index(hex.startIndex, offsetBy: offset)
+            let secondIndex = hex.index(firstIndex, offsetBy: 16)
+            let thirdIndex = hex.index(secondIndex, offsetBy: 16)
+            if let idHi = UInt64(hex[firstIndex ..< secondIndex], radix: 16),
+                let idLo = UInt64(hex[secondIndex ..< thirdIndex], radix: 16) {
+                self.init(idHi: idHi, idLo: idLo)
+                return
+            }
+        } else if hex.count >= 32 + offset {
+            let firstIndex = hex.index(hex.startIndex, offsetBy: offset)
+            let secondIndex = hex.index(firstIndex, offsetBy: 16)
+            if let idLo = UInt64(hex[firstIndex ..< secondIndex], radix: 16) {
+                self.init(idHi: 0, idLo: idLo)
+                return
+            }
         }
-        self.init(idHi: idHi, idLo: idLo)
+        self.init()
     }
 
     /// Returns whether the TraceId is valid. A valid trace identifier is a 16-byte array with
