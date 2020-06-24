@@ -131,7 +131,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
         spanDoWork(span: span, status: nil)
         span.end()
         let spanData = span.toSpanData()
-        XCTAssertEqual(spanData.parentSpanId, SpanId.invalid)
+        XCTAssertEqual(spanData.parentSpanId, nil)
     }
 
     func testToSpanData_WithInitialAttributes() {

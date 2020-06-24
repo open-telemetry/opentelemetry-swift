@@ -173,7 +173,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
                         spanId: context.spanId,
                         traceFlags: context.traceFlags,
                         traceState: context.traceState,
-                        parentSpanId: parentSpanId ?? SpanId.invalid,
+                        parentSpanId: parentSpanId,
                         resource: resource,
                         instrumentationLibraryInfo: instrumentationLibraryInfo,
                         name: name,
