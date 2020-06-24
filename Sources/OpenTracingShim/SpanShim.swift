@@ -84,7 +84,7 @@ public class SpanShim: OTSpan, BaseShimProtocol {
     }
 
     public func log(_ fields: [String: NSObject], timestamp: Date?) {
-        span.addEvent(name: SpanShim.getEventNameFrom(fields: fields), attributes: SpanShim.convertToAttributes(fields: fields), timestamp: UInt64(timestamp?.timeIntervalSince1970 ?? Date().timeIntervalSince1970))
+        span.addEvent(name: SpanShim.getEventNameFrom(fields: fields), attributes: SpanShim.convertToAttributes(fields: fields), timestamp: timestamp ?? Date())
     }
 
     public func logEvent(_ eventName: String) {
@@ -101,9 +101,9 @@ public class SpanShim: OTSpan, BaseShimProtocol {
 
     public func log(_ eventName: String, timestamp: Date?, payload: NSObject?) {
         if let object = payload {
-            span.addEvent(name: eventName, attributes: SpanShim.convertToAttributes(fields: [eventName: object]), timestamp: UInt64(timestamp?.timeIntervalSince1970 ?? Date().timeIntervalSince1970))
+            span.addEvent(name: eventName, attributes: SpanShim.convertToAttributes(fields: [eventName: object]), timestamp:timestamp ?? Date())
         } else {
-            span.addEvent(name: eventName, timestamp: UInt64(timestamp?.timeIntervalSince1970 ?? Date().timeIntervalSince1970))
+            span.addEvent(name: eventName, timestamp: timestamp ?? Date())
         }
     }
 

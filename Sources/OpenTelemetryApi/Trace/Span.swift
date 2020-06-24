@@ -54,7 +54,7 @@ public protocol Span: AnyObject, CustomStringConvertible {
     /// - Parameters:
     ///   - name: the name of the even
     ///   - timestamp: the explicit event timestamp in nanos since epoch
-    func addEvent(name: String, timestamp: UInt64)
+    func addEvent(name: String, timestamp: Date)
 
     /// Adds a single Event with the attributes to the Span.
     /// - Parameters:
@@ -69,7 +69,7 @@ public protocol Span: AnyObject, CustomStringConvertible {
     ///   - name: the name of the even
     ///   - attributes: Dictionary of attributes name/value pairs associated with the Event
     ///   - timestamp: the explicit event timestamp in nanos since epoch
-    func addEvent(name: String, attributes: [String: AttributeValue], timestamp: UInt64)
+    func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Date)
 
     ///  Adds an Event object to the Span.
     /// - Parameter event: Event to add to the span.
@@ -81,7 +81,7 @@ public protocol Span: AnyObject, CustomStringConvertible {
     /// - Parameters:
     ///   event: Event to add to the span.
     ///   - timestamp: the explicit event timestamp in nanos since epoch
-    func addEvent<E: Event>(event: E, timestamp: UInt64)
+    func addEvent<E: Event>(event: E, timestamp: Date)
 
     /// End the span.
     func end()

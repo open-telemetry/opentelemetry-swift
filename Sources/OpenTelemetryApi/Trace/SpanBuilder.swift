@@ -13,6 +13,8 @@
 // limitations under the License.
 //
 
+import Foundation
+
 public protocol SpanBuilder: class {
     /// Sets the parent Span to use. If not set, the value of Tracer.getCurrentSpan()
     /// at startSpan() time will be used as parent.
@@ -116,7 +118,7 @@ public protocol SpanBuilder: class {
     /// Use this method to specify an explicit start timestamp. If not called, the implementation
     /// will use the timestamp value at #startSpan() time, which should be the default case.
     /// - Parameter startTimestamp: the explicit start timestamp of the newly created Span in nanos since epoch.
-    @discardableResult func setStartTimestamp(startTimestamp: UInt64) -> Self
+    @discardableResult func setStartEpochNano(epochNano: UInt64) -> Self
 
     /// Starts a new Span.
     ///
@@ -127,19 +129,24 @@ public protocol SpanBuilder: class {
 }
 
 extension SpanBuilder {
-    public func setAttribute(key: String, value: String) -> Self {
+    @discardableResult  public func setAttribute(key: String, value: String) -> Self {
         return setAttribute(key: key, value: AttributeValue.string(value))
     }
 
-    public func setAttribute(key: String, value: Int) -> Self {
+    @discardableResult public func setAttribute(key: String, value: Int) -> Self {
         return setAttribute(key: key, value: AttributeValue.int(value))
     }
 
-    public func setAttribute(key: String, value: Double) -> Self {
+    @discardableResult public func setAttribute(key: String, value: Double) -> Self {
         return setAttribute(key: key, value: AttributeValue.double(value))
     }
 
-    public func setAttribute(key: String, value: Bool) -> Self {
+    @discardableResult public func setAttribute(key: String, value: Bool) -> Self {
         return setAttribute(key: key, value: AttributeValue.bool(value))
     }
+    
+    @discardableResult public func setStartTimestamp(timestamp: Date) -> Self {
+        return setStartEpochNano(epochNano: UInt64(timestamp.timeIntervalSince1970) )
+    }
+
 }
