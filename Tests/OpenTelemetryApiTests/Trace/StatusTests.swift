@@ -25,7 +25,7 @@ final class StatusTests: XCTestCase {
 
     func testCreateStatus_WithDescription() {
         let status = Status.unknown.withDescription(description: "This is an error.")
-        XCTAssertEqual(status.canonicalCode, Status.CanonicalCode.unknown)
+        XCTAssertEqual(status.canonicalCode, Status.CanonicalCode.unknownError)
         XCTAssertEqual(status.statusDescription, "This is an error.")
         XCTAssertFalse(status.isOk)
     }

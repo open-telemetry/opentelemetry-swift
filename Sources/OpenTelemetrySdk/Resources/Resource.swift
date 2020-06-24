@@ -18,7 +18,7 @@ import OpenTelemetryApi
 
 /// Resource represents a resource, which capture identifying information about the entities
 /// for which signals (stats or traces) are reported.
-public struct Resource: Equatable {
+public struct Resource: Equatable, Hashable {
     private static let maxLength = 255
 
     /// A dictionary of labels that describe the resource.

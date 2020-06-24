@@ -54,7 +54,7 @@ public protocol Span: AnyObject, CustomStringConvertible {
     /// - Parameters:
     ///   - name: the name of the even
     ///   - timestamp: the explicit event timestamp in nanos since epoch
-    func addEvent(name: String, timestamp: Int64)
+    func addEvent(name: String, timestamp: UInt64)
 
     /// Adds a single Event with the attributes to the Span.
     /// - Parameters:
@@ -69,7 +69,7 @@ public protocol Span: AnyObject, CustomStringConvertible {
     ///   - name: the name of the even
     ///   - attributes: Dictionary of attributes name/value pairs associated with the Event
     ///   - timestamp: the explicit event timestamp in nanos since epoch
-    func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Int64)
+    func addEvent(name: String, attributes: [String: AttributeValue], timestamp: UInt64)
 
     ///  Adds an Event object to the Span.
     /// - Parameter event: Event to add to the span.
@@ -81,7 +81,7 @@ public protocol Span: AnyObject, CustomStringConvertible {
     /// - Parameters:
     ///   event: Event to add to the span.
     ///   - timestamp: the explicit event timestamp in nanos since epoch
-    func addEvent<E: Event>(event: E, timestamp: Int64)
+    func addEvent<E: Event>(event: E, timestamp: UInt64)
 
     /// End the span.
     func end()
@@ -169,19 +169,19 @@ extension Span {
         case 200 ..< 400:
             newStatus = .ok
         case 400:
-            newStatus = .invalid_argument
+            newStatus = .invalidArgument
         case 403:
-            newStatus = .permission_denied
+            newStatus = .permissionDenied
         case 404:
-            newStatus = .not_found
+            newStatus = .notFound
         case 429:
-            newStatus = .resource_exhausted
+            newStatus = .resourceExhausted
         case 501:
             newStatus = .unimplemented
         case 503:
             newStatus = .unavailable
         case 504:
-            newStatus = .deadline_exceeded
+            newStatus = .deadlineExceeded
         default:
             newStatus = .unknown
         }

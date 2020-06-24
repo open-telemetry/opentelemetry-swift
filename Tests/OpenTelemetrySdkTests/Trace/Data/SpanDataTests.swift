@@ -18,12 +18,12 @@ import OpenTelemetryApi
 import XCTest
 
 class SpanDataTests: XCTestCase {
-    let startEpochNanos: Int64 = 3000000000000 + 200
-    let endEpochNanos: Int64 = 3001000000000 + 255
+    let startEpochNanos: UInt64 = 3000000000000 + 200
+    let endEpochNanos: UInt64 = 3001000000000 + 255
 
     func testdefaultValues() {
         let spanData = createBasicSpan()
-        XCTAssertFalse(spanData.parentSpanId.isValid)
+        XCTAssertFalse(spanData.parentSpanId?.isValid ?? false)
         XCTAssertEqual(spanData.attributes, [String: AttributeValue]())
         XCTAssertEqual(spanData.timedEvents, [TimedEvent]())
         XCTAssertEqual(spanData.links.count, 0)

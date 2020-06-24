@@ -83,7 +83,7 @@ class LoggingTracer: Tracer {
             return self
         }
 
-        func setStartTimestamp(startTimestamp: Int64) -> Self {
+        func setStartTimestamp(startTimestamp: UInt64) -> Self {
             return self
         }
 

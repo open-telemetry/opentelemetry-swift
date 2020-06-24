@@ -44,7 +44,7 @@ public class SpanBuilderSdk: SpanBuilder {
     private var totalNumberOfLinksAdded: Int = 0
     private var parentType: ParentType = .currentSpan
 
-    private var startEpochNanos: Int64 = 0
+    private var startEpochNanos: UInt64 = 0
 
     public init(spanName: String,
                 instrumentationLibraryInfo: InstrumentationLibraryInfo,
@@ -115,7 +115,7 @@ public class SpanBuilderSdk: SpanBuilder {
         return self
     }
 
-    public func setStartTimestamp(startTimestamp: Int64) -> Self {
+    public func setStartTimestamp(startTimestamp: UInt64) -> Self {
         startEpochNanos = startTimestamp
         return self
     }

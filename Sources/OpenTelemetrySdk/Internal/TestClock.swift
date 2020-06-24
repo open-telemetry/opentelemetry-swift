@@ -22,8 +22,8 @@ class TestClock: Clock {
 
     /// Creates a clock with the given time.
     /// - Parameter nanos: the initial time in nanos since epoch.
-    init(nanos: Int64) {
-        currentEpochNanos = nanos
+    init(nanos: UInt64) {
+        currentEpochNanos = Int64(nanos)
     }
 
     /// Creates a clock initialized to a constant non-zero time
@@ -39,8 +39,8 @@ class TestClock: Clock {
 
     /// Advances the time by millis and mutates this instance.
     /// - Parameter millis: the increase in time.
-    func advanceMillis(_ millis: Int64) {
-        currentEpochNanos += millis * 1000000
+    func advanceMillis(_ millis: UInt64) {
+        currentEpochNanos += Int64(millis) * 1000000
     }
 
     /// Advances the time by nanos and mutates this instance.
@@ -49,11 +49,11 @@ class TestClock: Clock {
         currentEpochNanos += nanos
     }
 
-    var now: Int64 {
-        return currentEpochNanos
+    var now: UInt64 {
+        return UInt64(currentEpochNanos)
     }
 
-    var nanoTime: Int64 {
-        return currentEpochNanos
+    var nanoTime: UInt64 {
+        return UInt64(currentEpochNanos)
     }
 }

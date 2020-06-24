@@ -21,8 +21,8 @@ struct ZipkinSpan {
     var id: String
     var kind: String?
     var name: String
-    var timestamp: Int64?
-    var duration: Int64?
+    var timestamp: UInt64?
+    var duration: UInt64?
     var localEndpoint: ZipkinEndpoint?
     var remoteEndpoint: ZipkinEndpoint?
     var annotations: [ZipkinAnnotation]
@@ -30,7 +30,7 @@ struct ZipkinSpan {
     var debug: Bool?
     var shared: Bool?
 
-    init(traceId: String, parentId: String?, id: String, kind: String?, name: String, timestamp: Int64?, duration: Int64?, localEndpoint: ZipkinEndpoint, remoteEndpoint: ZipkinEndpoint?, annotations: [ZipkinAnnotation], tags: [String: String], debug: Bool?, shared: Bool?) {
+    init(traceId: String, parentId: String?, id: String, kind: String?, name: String, timestamp: UInt64?, duration: UInt64?, localEndpoint: ZipkinEndpoint, remoteEndpoint: ZipkinEndpoint?, annotations: [ZipkinAnnotation], tags: [String: String], debug: Bool?, shared: Bool?) {
 
         self.traceId = traceId
         self.parentId = parentId

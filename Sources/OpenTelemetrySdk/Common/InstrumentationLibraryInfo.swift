@@ -29,7 +29,7 @@ public struct InstrumentationLibraryInfo: Hashable {
     ///  - Parameters:
     ///    - name: name of the instrumentation library
     ///    - version: version of the instrumentation library (e.g., "semver:1.0.0"), might be nil
-    public init(name: String, version: String?) {
+    public init(name: String, version: String? = nil) {
         self.name = name
         self.version = version
     }

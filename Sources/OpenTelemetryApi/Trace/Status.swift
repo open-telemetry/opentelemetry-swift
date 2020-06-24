@@ -31,28 +31,28 @@ public struct Status: Equatable {
         /// from another address space belongs to an error-space that is not known in this address space.
         /// Also errors raised by APIs that do not return enough error information may be converted to
         ///this error.
-        case unknown = 2
+        case unknownError = 2
         /// Client specified an invalid argument. Note that this differs from FAILED_PRECONDITION.
         /// INVALID_ARGUMENT indicates arguments that are problematic regardless of the state of the
         /// system  = e.g., a malformed file name).
-        case invalid_argument = 3
+        case invalidArgument = 3
         /// Deadline expired before operation could complete. For operations that change the state of the
         /// system, this error may be returned even if the operation has completed successfully. For
         /// example, a successful response from a server could have been delayed long enough for the
         /// deadline to expire.
-        case deadline_exceeded = 4
+        case deadlineExceeded = 4
         /// Some requested entity (e.g., file or directory) was not found.
-        case not_found = 5
+        case notFound = 5
         /// Some entity that we attempted to create (e.g., file or directory) already exists.
-        case already_exists = 6
+        case alreadyExists = 6
         /// The caller does not have permission to execute the specified operation. PERMISSION_DENIED
         /// must not be used for rejections caused by exhausting some resource (use RESOURCE_EXHAUSTED
         /// instead for those errors). PERMISSION_DENIED must not be used if the caller cannot be
         /// identified (use UNAUTHENTICATED instead for those errors).
-        case permission_denied = 7
+        case permissionDenied = 7
         /// Some resource has been exhausted, perhaps a per-user quota, or perhaps the entire file system
         /// is out of space.
-        case resource_exhausted = 8
+        case resourceExhausted = 8
         /// Operation was rejected because the system is not in a state required for the operation's
         /// execution. For example, directory to be deleted may be non-empty, an rmdir operation is
         /// applied to a non-directory, etc.
@@ -63,7 +63,7 @@ public struct Status: Equatable {
         ///the system state has been explicitly fixed. E.g., if an "rmdir" fails because the directory
         /// is non-empty, FAILED_PRECONDITION should be returned since the client should not retry unless
         ///they have first fixed up the directory by deleting files from it.
-        case failed_precondition = 9
+        case failedPrecondition = 9
         /// The operation was aborted, typically due to a concurrency issue like sequencer check
         /// failures, transaction aborts, etc.
         /// See litmus test above for deciding between FAILED_PRECONDITION, ABORTED, and UNAVAILABLE.
@@ -77,18 +77,18 @@ public struct Status: Equatable {
         /// using OUT_OF_RANGE (the more specific error) when it applies so that callers who are
         /// iterating through a space can easily look for an OUT_OF_RANGE error to detect when they are
         /// done.
-        case out_of_range = 11
+        case outOfRange = 11
         /// Operation is not implemented or not supported/enabled in this service.
         case unimplemented = 12
         /// Internal errors. Means some invariants expected by underlying system has been broken. If you
         /// see one of these errors, something is very broken.
-        case `internal` = 13
+        case internalError = 13
         /// The service is currently unavailable. This is a most likely a transient condition and may be
         /// corrected by retrying with a backoff.
         /// See litmus test above for deciding between FAILED_PRECONDITION, ABORTED, and UNAVAILABLE.
         case unavailable = 14
         /// Unrecoverable data loss or corruption.
-        case data_loss = 15
+        case dataLoss = 15
         /// The request does not have valid authentication credentials for the operation.
         case unauthenticated = 16
         /// Returns the numerical value of the code.
@@ -106,38 +106,38 @@ public struct Status: Equatable {
     /// The operation was cancelled (typically by the caller).
     public static let cancelled = Status(canonicalCode: CanonicalCode.cancelled)
     /// Unknown error. See CanonicalCode.unknown.
-    public static let unknown = Status(canonicalCode: CanonicalCode.unknown)
+    public static let unknown = Status(canonicalCode: CanonicalCode.unknownError)
     /// Client specified an invalid argument. See CanonicalCode.invalid_argument.
-    public static let invalid_argument = Status(canonicalCode: CanonicalCode.invalid_argument)
+    public static let invalidArgument = Status(canonicalCode: CanonicalCode.invalidArgument)
     /// Deadline expired before operation could complete. See CanonicalCode.deadline_exceeded.
-    public static let deadline_exceeded = Status(canonicalCode: CanonicalCode.deadline_exceeded)
+    public static let deadlineExceeded = Status(canonicalCode: CanonicalCode.deadlineExceeded)
     /// Some requested entity (e.g., file or directory) was not found.
-    public static let not_found = Status(canonicalCode: CanonicalCode.not_found)
+    public static let notFound = Status(canonicalCode: CanonicalCode.notFound)
     /// Some entity that we attempted to create (e.g., file or directory) already exists.
-    public static let already_exists = Status(canonicalCode: CanonicalCode.already_exists)
+    public static let alreadyExists = Status(canonicalCode: CanonicalCode.alreadyExists)
     /// The caller does not have permission to execute the specified operation. See CanonicalCode.permission_denied
-    public static let permission_denied = Status(canonicalCode: CanonicalCode.permission_denied)
+    public static let permissionDenied = Status(canonicalCode: CanonicalCode.permissionDenied)
     /// The request does not have valid authentication credentials for the operation.
     public static let unauthenticated = Status(canonicalCode: CanonicalCode.unauthenticated)
     /// Some resource has been exhausted, perhaps a per-user quota, or perhaps the entire file system
     /// is out of space.
-    public static let resource_exhausted = Status(canonicalCode: CanonicalCode.resource_exhausted)
+    public static let resourceExhausted = Status(canonicalCode: CanonicalCode.resourceExhausted)
     /// Operation was rejected because the system is not in a state required for the operation's
     /// execution. See CanonicalCode.failed_precondition.
-    public static let failed_precondition = Status(canonicalCode: CanonicalCode.failed_precondition)
+    public static let failedPrecondition = Status(canonicalCode: CanonicalCode.failedPrecondition)
     /// The operation was aborted, typically due to a concurrency issue like sequencer check failures,
     ///transaction aborts, etc. See CanonicalCode.aborted.
     public static let aborted = Status(canonicalCode: CanonicalCode.aborted)
     /// Operation was attempted past the valid range. See CanonicalCode.out_of_range.
-    public static let out_of_range = Status(canonicalCode: CanonicalCode.out_of_range)
+    public static let outOfRange = Status(canonicalCode: CanonicalCode.outOfRange)
     /// Operation is not implemented or not supported/enabled in this service.
     public static let unimplemented = Status(canonicalCode: CanonicalCode.unimplemented)
     /// Internal errors. See CanonicalCode.internal.
-    public static let `internal` = Status(canonicalCode: CanonicalCode.internal)
+    public static let internalError = Status(canonicalCode: CanonicalCode.internalError)
     /// The service is currently unavailable. See CanonicalCode.unavailable.
     public static let unavailable = Status(canonicalCode: CanonicalCode.unavailable)
     /// Unrecoverable data loss or corruption.
-    public static let data_loss = Status(canonicalCode: CanonicalCode.data_loss)
+    public static let dataLoss = Status(canonicalCode: CanonicalCode.dataLoss)
     // The canonical code of this message.
     public private(set) var canonicalCode: CanonicalCode
     // An additional error message.

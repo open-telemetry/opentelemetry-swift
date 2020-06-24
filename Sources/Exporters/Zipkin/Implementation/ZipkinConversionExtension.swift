@@ -40,7 +40,7 @@ struct ZipkinConversionExtension {
     }
 
     static func toZipkinSpan(otelSpan: SpanData, defaultLocalEndpoint: ZipkinEndpoint, useShortTraceIds: Bool = false) -> ZipkinSpan {
-        let parentId = otelSpan.parentSpanId.hexString
+        let parentId = otelSpan.parentSpanId?.hexString ?? SpanId.invalid.hexString
 
         var attributeEnumerationState = AttributeEnumerationState()
 
