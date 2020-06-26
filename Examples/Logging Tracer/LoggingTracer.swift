@@ -83,7 +83,7 @@ class LoggingTracer: Tracer {
             return self
         }
 
-        func setStartTimestamp(startTimestamp: UInt64) -> Self {
+        func setStartEpochNano(epochNano: UInt64) -> Self {
             return self
         }
 

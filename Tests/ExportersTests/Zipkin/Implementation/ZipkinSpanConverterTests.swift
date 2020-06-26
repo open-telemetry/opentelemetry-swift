@@ -63,8 +63,8 @@ class ZipkinSpanConverterTests: XCTestCase {
             attributes[$0.key] = AttributeValue($0.value)
         }
 
-        let events: [TimedEvent] = [TimedEvent(name: "Event1", epochNanos: UInt64(eventTimestamp.timeIntervalSince1970), attributes: ["key": AttributeValue.string("value")]),
-                                    TimedEvent(name: "Event2", epochNanos: UInt64(eventTimestamp.timeIntervalSince1970), attributes: ["key": AttributeValue.string("value")])]
+        let events: [TimedEvent] = [TimedEvent(name: "Event1", timestamp: eventTimestamp, attributes: ["key": AttributeValue.string("value")]),
+                                    TimedEvent(name: "Event2", timestamp: eventTimestamp, attributes: ["key": AttributeValue.string("value")])]
 
 //        let linkedSpanId = SpanId(fromHexString: "888915b6286b9c41")
 
