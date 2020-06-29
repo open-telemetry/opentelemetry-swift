@@ -37,11 +37,9 @@ or
 
 Currently Tracing, metrics and Correlation Context and  API's and SDK are implemented, also OpenTracing shims, for compatibility with existing Opentracing code.
 
-Implemented a Jaeger Exporter and a simple stdout exporter for traces;
+Implemented a simple stdout, Jaeger, Zipkin  and OpenTelemetry collector for traces;
 
 Implemented a Prometheus exporter for metrics.
-
-**Still missing:** Zipkin exporter and OpenTelemetry collector exporter
 
 ## Examples
 
