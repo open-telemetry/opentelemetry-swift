@@ -44,7 +44,7 @@ class SpanBuilderTests: XCTestCase {
         spanBuilder.setAttribute(key: "key", value: 0.12345)
         spanBuilder.setAttribute(key: "key", value: true)
         spanBuilder.setAttribute(key: "key", value: AttributeValue.string("value"))
-        spanBuilder.setStartTimestamp(startTimestamp: 12345)
+        spanBuilder.setStartEpochNano(epochNano: 12345)
         XCTAssert(spanBuilder.startSpan() is DefaultSpan)
     }
 }
