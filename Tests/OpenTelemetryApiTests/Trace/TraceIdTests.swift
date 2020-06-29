@@ -19,13 +19,17 @@ import XCTest
 final class TraceIdTests: XCTestCase {
     let firstBytes: [UInt8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, UInt8(ascii: "a")]
     let secondBytes: [UInt8] = [0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, UInt8(ascii: "A")]
+    let shortBytes: [UInt8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, UInt8(ascii: "b")]
+
 
     var first: TraceId!
     var second: TraceId!
+    var short: TraceId!
 
     override func setUp() {
         first = TraceId(fromBytes: firstBytes)
         second = TraceId(fromBytes: secondBytes)
+        short = TraceId(fromBytes: shortBytes)
     }
 
     func testInvalidTraceId() {
@@ -36,6 +40,7 @@ final class TraceIdTests: XCTestCase {
         XCTAssertFalse(TraceId.invalid.isValid)
         XCTAssertTrue(first.isValid)
         XCTAssertTrue(second.isValid)
+        XCTAssertTrue(short.isValid)
     }
 
     func testGetLowerLong() {
@@ -47,18 +52,22 @@ final class TraceIdTests: XCTestCase {
         XCTAssertEqual(TraceId(fromHexString: "00000000000000000000000000000000"), TraceId.invalid)
         XCTAssertEqual(TraceId(fromHexString: "00000000000000000000000000000061"), first)
         XCTAssertEqual(TraceId(fromHexString: "ff000000000000000000000000000041"), second)
+        XCTAssertEqual(TraceId(fromHexString: "0000000000000062"), short)
     }
 
     func testFromHexString_WithOffset() {
         XCTAssertEqual(TraceId(fromHexString: "XX00000000000000000000000000000000CC", withOffset: 2), TraceId.invalid)
         XCTAssertEqual(TraceId(fromHexString: "YY00000000000000000000000000000061AA", withOffset: 2), first)
         XCTAssertEqual(TraceId(fromHexString: "ZZff000000000000000000000000000041BB", withOffset: 2), second)
+        XCTAssertEqual(TraceId(fromHexString: "ZZ0000000000000062AA", withOffset: 2), short)
+
     }
 
     func testToHexString() {
         XCTAssertEqual(TraceId.invalid.hexString, "00000000000000000000000000000000")
         XCTAssertEqual(first.hexString, "00000000000000000000000000000061")
         XCTAssertEqual(second.hexString, "ff000000000000000000000000000041")
+        XCTAssertEqual(short.hexString, "00000000000000000000000000000062")
     }
 
     func testTraceId_CompareTo() {
@@ -73,16 +82,25 @@ final class TraceIdTests: XCTestCase {
         XCTAssertNotEqual(TraceId.invalid, TraceId(fromBytes: firstBytes))
         XCTAssertNotEqual(TraceId.invalid, second)
         XCTAssertNotEqual(TraceId.invalid, TraceId(fromBytes: secondBytes))
+        XCTAssertNotEqual(TraceId.invalid, short)
+        XCTAssertNotEqual(TraceId.invalid, TraceId(fromBytes: shortBytes))
         XCTAssertEqual(first, TraceId(fromBytes: firstBytes))
         XCTAssertNotEqual(first, second)
         XCTAssertNotEqual(first, TraceId(fromBytes: secondBytes))
+        XCTAssertNotEqual(first, short)
+        XCTAssertNotEqual(first, TraceId(fromBytes: shortBytes))
         XCTAssertEqual(second, TraceId(fromBytes: secondBytes))
+        XCTAssertNotEqual(second, short)
+        XCTAssertNotEqual(second, TraceId(fromBytes: shortBytes))
+        XCTAssertEqual(short, TraceId(fromBytes: shortBytes))
     }
 
     func testTraceId_ToString() {
         XCTAssertTrue(TraceId.invalid.description.contains("00000000000000000000000000000000"))
         XCTAssertTrue(first.description.contains("00000000000000000000000000000061"))
         XCTAssertTrue(second.description.contains("ff000000000000000000000000000041"))
+        XCTAssertTrue(short.description.contains("0000000000000062"))
+
     }
 
     static var allTests = [

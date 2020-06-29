@@ -136,7 +136,7 @@ public struct TraceId: Comparable, Hashable, CustomStringConvertible, Equatable 
                 self.init(idHi: idHi, idLo: idLo)
                 return
             }
-        } else if hex.count >= 32 + offset {
+        } else if hex.count >= 16 + offset {
             let firstIndex = hex.index(hex.startIndex, offsetBy: offset)
             let secondIndex = hex.index(firstIndex, offsetBy: 16)
             if let idLo = UInt64(hex[firstIndex ..< secondIndex], radix: 16) {
