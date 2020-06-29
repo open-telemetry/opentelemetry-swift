@@ -45,13 +45,13 @@ class SpanMock: Span {
     func addEvent<E>(event: E) where E: Event {
     }
 
-    func addEvent(name: String, timestamp: UInt64) {
+    func addEvent(name: String, timestamp: Date) {
     }
 
-    func addEvent(name: String, attributes: [String: AttributeValue], timestamp: UInt64) {
+    func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Date) {
     }
 
-    func addEvent<E>(event: E, timestamp: UInt64) where E: Event {
+    func addEvent<E>(event: E, timestamp: Date) where E: Event {
     }
 
     var description: String = "SpanMock"

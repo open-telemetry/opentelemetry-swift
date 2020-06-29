@@ -63,7 +63,7 @@ public class DefaultSpanBuilder: SpanBuilder {
         return self
     }
 
-    @discardableResult public func setStartTimestamp(startTimestamp: UInt64) -> Self {
+    @discardableResult public func setStartEpochNano(epochNano: UInt64) -> Self {
         return self
     }
 
