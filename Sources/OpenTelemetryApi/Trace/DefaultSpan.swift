@@ -78,19 +78,19 @@ public class DefaultSpan: Span {
     public func addEvent(name: String) {
     }
 
-    public func addEvent(name: String, timestamp: UInt64) {
+    public func addEvent(name: String, timestamp: Date) {
     }
 
     public func addEvent(name: String, attributes: [String: AttributeValue]) {
     }
 
-    public func addEvent(name: String, attributes: [String: AttributeValue], timestamp: UInt64) {
+    public func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Date) {
     }
 
     public func addEvent<E>(event: E) where E: Event {
     }
 
-    public func addEvent<E>(event: E, timestamp: UInt64) where E: Event {
+    public func addEvent<E>(event: E, timestamp: Date) where E: Event {
     }
 
     public func addLink(link: Link) {
