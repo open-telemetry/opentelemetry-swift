@@ -16,8 +16,20 @@
 import Foundation
 
 public struct ZipkinTraceExporterOptions {
-    var endpoint: String = "http://localhost:9411/api/v2/spans"
-    var timeoutSeconds: TimeInterval = 10.0
-    var serviceName: String = "Open Telemetry Exporter"
-    var useShortTraceIds: Bool = false
+    let endpoint: String
+    let timeoutSeconds: TimeInterval
+    let serviceName: String
+    let useShortTraceIds: Bool
+
+    public init(endpoint: String = "http://localhost:9411/api/v2/spans",
+                serviceName: String = "Open Telemetry Exporter",
+                timeoutSeconds: TimeInterval = 10.0,
+                useShortTraceIds: Bool = false) {
+
+        self.endpoint = endpoint
+        self.serviceName = serviceName
+        self.timeoutSeconds = timeoutSeconds
+        self.useShortTraceIds = useShortTraceIds
+    }
 }
+
