@@ -32,8 +32,9 @@ public class ZipkinTraceExporter: SpanExporter {
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
 
+        let spans = encodeSpans(spans: spans)
         do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: encodeSpans(spans: spans), options: [])
+            request.httpBody = try JSONEncoder().encode(spans)
         } catch {
             return .failure
         }
@@ -63,7 +64,7 @@ public class ZipkinTraceExporter: SpanExporter {
     public func shutdown() {
     }
 
-    func encodeSpans(spans: [SpanData]) -> [Any] {
+    func encodeSpans(spans: [SpanData]) -> [ZipkinSpan] {
         return spans.map { ZipkinConversionExtension.toZipkinSpan(otelSpan: $0, defaultLocalEndpoint: localEndPoint) }
     }
 

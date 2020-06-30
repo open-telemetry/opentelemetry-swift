@@ -17,6 +17,7 @@ import Foundation
 import JaegerExporter
 import OpenTelemetrySdk
 import StdoutExporter
+import ZipkinExporter
 
 let sampleKey = "sampleKey"
 let sampleValue = "sampleValue"
@@ -55,7 +56,10 @@ let jaegerCollectorAdress = "localhost"
 let jaegerExporter = JaegerSpanExporter(serviceName: "SimpleExporter", collectorAddress: jaegerCollectorAdress)
 let stdoutExporter = StdoutExporter()
 
-let spanExporter = MultiSpanExporter(spanExporters: [jaegerExporter, stdoutExporter])
+//let zipkinExporterOptions = ZipkinTraceExporterOptions()
+//let zipkinExporter = ZipkinTraceExporter(options: zipkinExporterOptions)
+
+let spanExporter = MultiSpanExporter(spanExporters: [jaegerExporter, stdoutExporter/*, zipkinExporter*/])
 
 let spanProcessor = SimpleSpanProcessor(spanExporter: spanExporter)
 OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(spanProcessor)

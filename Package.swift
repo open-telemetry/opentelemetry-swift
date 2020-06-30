@@ -53,7 +53,7 @@ let package = Package(
         .target(  name: "OpenTelemetryProtocolExporter", dependencies: ["OpenTelemetrySdk", "GRPC"], path: "Sources/Exporters/OpenTelemetryProtocol"),
         .testTarget(  name: "OpenTelemetryProtocolExporterTests", dependencies: ["OpenTelemetryProtocolExporter"], path: "Tests/ExportersTests/OpenTelemetryProtocol"),
         .target(  name: "LoggingTracer", dependencies: ["OpenTelemetryApi"], path: "Examples/Logging Tracer"),
-        .target(  name: "SimpleExporter", dependencies: ["OpenTelemetrySdk", "JaegerExporter", "StdoutExporter"], path: "Examples/Simple Exporter"),
+        .target(  name: "SimpleExporter", dependencies: ["OpenTelemetrySdk", "JaegerExporter", "StdoutExporter", "ZipkinExporter"], path: "Examples/Simple Exporter"),
         .target(  name: "PrometheusSample", dependencies: ["OpenTelemetrySdk", "PrometheusExporter"], path: "Examples/Prometheus Sample"),
     ]
 )

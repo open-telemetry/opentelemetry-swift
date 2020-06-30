@@ -15,7 +15,7 @@
 
 import Foundation
 
-class ZipkinEndpoint {
+class ZipkinEndpoint: Encodable {
     var serviceName: String
     var ipv4: String?
     var ipv6: String?
