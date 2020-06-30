@@ -70,8 +70,8 @@ public class ZipkinTraceExporter: SpanExporter {
     static func getLocalZipkinEndpoint(name: String? = nil) -> ZipkinEndpoint {
         let hostname = name ?? ProcessInfo.processInfo.hostName
         #if os(OSX)
-            let ipv4 = Host.current().addresses.first { NetworkUtils.isValidIpv4Address($0) }
-            let ipv6 = Host.current().addresses.first { NetworkUtils.isValidIpv6Address($0) }
+        let ipv4 = Host.current().addresses.filter{ NetworkUtils.isValidIpv4Address($0) }.sorted().first
+            let ipv6 = Host.current().addresses.filter { NetworkUtils.isValidIpv6Address($0) }.sorted().first
             return ZipkinEndpoint(serviceName: hostname, ipv4: ipv4, ipv5: ipv6, port: nil)
         #else
             return ZipkinEndpoint(serviceName: hostname)
