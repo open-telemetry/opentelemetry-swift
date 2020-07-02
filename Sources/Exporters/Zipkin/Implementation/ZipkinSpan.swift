@@ -15,7 +15,7 @@
 
 import Foundation
 
-struct ZipkinSpan {
+struct ZipkinSpan: Encodable {
     var traceId: String
     var parentId: String?
     var id: String

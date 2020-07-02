@@ -15,7 +15,7 @@
 
 import Foundation
 
-struct ZipkinAnnotation {
+struct ZipkinAnnotation: Encodable {
     var timestamp: UInt64
     var value: String
 }
