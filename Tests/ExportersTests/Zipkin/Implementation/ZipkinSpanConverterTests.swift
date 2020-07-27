@@ -68,7 +68,7 @@ class ZipkinSpanConverterTests: XCTestCase {
 
 //        let linkedSpanId = SpanId(fromHexString: "888915b6286b9c41")
 
-        return SpanData(traceId: traceId, spanId: spanId, parentSpanId: parentSpanId, name: "Name", kind: .client, startEpochNanos: UInt64(startTimestamp.timeIntervalSince1970), attributes: attributes, timedEvents: events, status: Status.ok, endEpochNanos: UInt64(endTimestamp.timeIntervalSince1970)
+        return SpanData(traceId: traceId, spanId: spanId, parentSpanId: parentSpanId, name: "Name", kind: .client, startEpochNanos: UInt64(startTimestamp.timeIntervalSince1970) * 1000000000, attributes: attributes, timedEvents: events, status: Status.ok, endEpochNanos: UInt64(endTimestamp.timeIntervalSince1970) * 1000000000
         )
     }
 }
