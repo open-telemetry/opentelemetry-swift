@@ -1,0 +1,88 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "grpc-swift",
+        "repositoryURL": "https://github.com/grpc/grpc-swift.git",
+        "state": {
+          "branch": null,
+          "revision": "399cfe1cfec19d8dc37dcd945a389e6eaae3ea43",
+          "version": "1.0.0-alpha.14"
+        }
+      },
+      {
+        "package": "Opentracing",
+        "repositoryURL": "https://github.com/undefinedlabs/opentracing-objc",
+        "state": {
+          "branch": "spm-support",
+          "revision": "c3a60aa19668e48f647c2e9d9ce7e364f69bc496",
+          "version": null
+        }
+      },
+      {
+        "package": "swift-log",
+        "repositoryURL": "https://github.com/apple/swift-log.git",
+        "state": {
+          "branch": null,
+          "revision": "74d7b91ceebc85daf387ebb206003f78813f71aa",
+          "version": "1.2.0"
+        }
+      },
+      {
+        "package": "swift-nio",
+        "repositoryURL": "https://github.com/apple/swift-nio.git",
+        "state": {
+          "branch": null,
+          "revision": "120acb15c39aa3217e9888e515de160378fbcc1e",
+          "version": "2.18.0"
+        }
+      },
+      {
+        "package": "swift-nio-http2",
+        "repositoryURL": "https://github.com/apple/swift-nio-http2.git",
+        "state": {
+          "branch": null,
+          "revision": "c5d10f4165128c3d0cc0e3c0f0a8ef55947a73a6",
+          "version": "1.12.2"
+        }
+      },
+      {
+        "package": "swift-nio-ssl",
+        "repositoryURL": "https://github.com/apple/swift-nio-ssl.git",
+        "state": {
+          "branch": null,
+          "revision": "f0b118d9af6c4e78bc4f3f4fbb464020172b0bf4",
+          "version": "2.7.5"
+        }
+      },
+      {
+        "package": "swift-nio-transport-services",
+        "repositoryURL": "https://github.com/apple/swift-nio-transport-services.git",
+        "state": {
+          "branch": null,
+          "revision": "2ac8fde712c1b1a147ecb7065824a40d2c09d0cb",
+          "version": "1.6.0"
+        }
+      },
+      {
+        "package": "SwiftProtobuf",
+        "repositoryURL": "https://github.com/apple/swift-protobuf.git",
+        "state": {
+          "branch": null,
+          "revision": "7f36441e3372665b1b414f8ac93b5905cc42a405",
+          "version": "1.9.0"
+        }
+      },
+      {
+        "package": "Thrift",
+        "repositoryURL": "https://github.com/undefinedlabs/Thrift-Swift",
+        "state": {
+          "branch": null,
+          "revision": "18ff09e6b30e589ed38f90a1af23e193b8ecef8e",
+          "version": "1.1.2"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
