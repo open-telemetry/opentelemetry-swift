@@ -91,7 +91,7 @@ struct ZipkinConversionExtension {
                           kind: ZipkinConversionExtension.toSpanKind(otelSpan: otelSpan),
                           name: otelSpan.name,
                           timestamp: otelSpan.startEpochNanos / 1000,
-                          duration: ( otelSpan.endEpochNanos - otelSpan.startEpochNanos) / 1000,
+                          duration: (otelSpan.endEpochNanos - otelSpan.startEpochNanos) / 1000,
                           localEndpoint: localEndpoint,
                           remoteEndpoint: remoteEndpoint,
                           annotations: annotations,
