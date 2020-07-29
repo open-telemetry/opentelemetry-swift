@@ -17,7 +17,7 @@ import Foundation
 import OpenTelemetrySdk
 
 public class ZipkinTraceExporter: SpanExporter {
-    public private(set) var options: ZipkinTraceExporterOptions
+    public var options: ZipkinTraceExporterOptions
     var localEndPoint: ZipkinEndpoint
 
     public init(options: ZipkinTraceExporterOptions) {
@@ -31,6 +31,9 @@ public class ZipkinTraceExporter: SpanExporter {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        options.additionalHeaders.forEach {
+            request.addValue($0.value, forHTTPHeaderField: $0.key)
+        }
 
         let spans = encodeSpans(spans: spans)
         do {
