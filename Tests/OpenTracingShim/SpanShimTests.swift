@@ -94,9 +94,11 @@ class SpanShimTests: XCTestCase {
         parentSpan.finish()
     }
 
-    func testParentNullCOntextShim() {
+    func testParentNullContextShim() {
         let parentSpan = tracerShim.startSpan(spanName)
         let childSpan = tracerShim.startSpan(spanName, childOf: parentSpan.context()) as! SpanShim
         XCTAssertEqual(TestUtils.contextBaggageToDictionary(context: childSpan.context()).count, 0)
+        childSpan.finish()
+        parentSpan.finish()
     }
 }
