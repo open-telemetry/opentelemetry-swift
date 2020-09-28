@@ -106,7 +106,7 @@ struct ZipkinConversionExtension {
 
     private static func EncodeTraceId(traceId: TraceId, useShortTraceIds: Bool) -> String {
         if useShortTraceIds {
-            return String(format: "%016llx", traceId.lowerLong)
+            return String(format: "%016llx", traceId.rawLowerLong)
         } else {
             return traceId.hexString
         }

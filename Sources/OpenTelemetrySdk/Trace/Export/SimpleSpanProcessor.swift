@@ -36,7 +36,7 @@ public struct SimpleSpanProcessor: SpanProcessor {
         spanExporter.export(spans: [span])
     }
 
-    public mutating func shutdown() {
+    public func shutdown() {
         spanExporter.shutdown()
     }
 
