@@ -43,9 +43,14 @@ final class TraceIdTests: XCTestCase {
         XCTAssertTrue(short.isValid)
     }
 
+    func testGetHigherLong() {
+        XCTAssertEqual(first.rawHigherLong, 0)
+        XCTAssertEqual(second.rawHigherLong, 0xFF00000000000000)
+    }
+
     func testGetLowerLong() {
-        XCTAssertEqual(first.lowerLong, 0)
-        XCTAssertEqual(second.lowerLong, 0xFF00000000000000)
+        XCTAssertEqual(first.rawLowerLong, 0x61)
+        XCTAssertEqual(second.rawLowerLong, 0x41)
     }
 
     func testFromHexString() {

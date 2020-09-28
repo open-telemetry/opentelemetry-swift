@@ -136,7 +136,7 @@ class ProbabilitySamplerTest: XCTestCase {
         let defaultProbability = Probability(probability: 0.0001)
         // This traceId will not be sampled by the ProbabilitySampler because the first 8 bytes as long
         // is not less than probability * Long.MAX_VALUE;
-        let notSampledtraceId = TraceId(fromBytes: [0x8F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0])
+        let notSampledtraceId = TraceId(fromBytes: [0, 0, 0, 0, 0, 0, 0, 0, 0x8F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF])
 
         let decision1 = defaultProbability.shouldSample(parentContext: nil,
                                                         traceId: notSampledtraceId,

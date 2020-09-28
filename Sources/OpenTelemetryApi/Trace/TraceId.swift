@@ -160,8 +160,14 @@ public struct TraceId: Comparable, Hashable, CustomStringConvertible, Equatable 
 
     /// Returns the lower 8 bytes of the trace-id as a long value, assuming little-endian order. This
     /// is used in ProbabilitySampler.
-    public var lowerLong: UInt64 {
+    public var rawHigherLong: UInt64 {
         return idHi
+    }
+
+    /// Returns the lower 8 bytes of the trace-id as a long value, assuming little-endian order. This
+    /// is used in ProbabilitySampler.
+    public var rawLowerLong: UInt64 {
+        return idLo
     }
 
     public var description: String {

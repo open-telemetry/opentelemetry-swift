@@ -107,7 +107,7 @@ class Probability: Sampler {
         /// while allowing for a (very) small chance of *not* sampling if the id == Long.MAX_VALUE.
         /// This is considered a reasonable tradeoff for the simplicity/performance requirements (this
         /// code is executed in-line for every Span creation).
-        if traceId.lowerLong < idUpperBound {
+        if traceId.rawLowerLong < idUpperBound {
             return Samplers.alwaysOnDecision
         } else {
             return Samplers.alwaysOffDecision

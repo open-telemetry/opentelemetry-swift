@@ -126,9 +126,14 @@ public struct SpanId: Equatable, Comparable, Hashable, CustomStringConvertible {
         self.init(id: id)
     }
 
-    ///  Returns the lowercase base16 encoding of this SpanId.
+    ///  Returns the base16 encoding of this SpanId.
     public var hexString: String {
         return String(format: "%016llx", id)
+    }
+
+    ///  Returns the raw id value of this SpanId.
+    public var rawValue: UInt64 {
+        return id
     }
 
     /// Returns whether the span identifier is valid. A valid span identifier is an 8-byte array with
