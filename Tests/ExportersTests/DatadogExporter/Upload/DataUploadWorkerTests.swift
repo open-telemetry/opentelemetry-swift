@@ -167,12 +167,12 @@ class DataUploadWorkerTests: XCTestCase {
                 queue: uploaderQueue,
                 fileReader: reader,
                 dataUploader: dataUploader,
-                uploadCondition: { Thread.sleep(forTimeInterval: 0.1); return true },
+                uploadCondition: { Thread.sleep(forTimeInterval: 0.5); return true },
                 delay: mockDelay,
                 featureName: .mockAny()
             )
         ]) {
-            self.wait(for: [expectation], timeout: (mockDelay.current + 0.2) * 1.5)
+            self.wait(for: [expectation], timeout: (mockDelay.current + 0.6) * 1.5)
         }
     }
 

@@ -50,7 +50,7 @@ internal class UploadURLProvider {
 
     var url: URL {
         var urlComponents = URLComponents(url: urlWithClientToken, resolvingAgainstBaseURL: false)
-        if #available(OSX 10.13, *) {
+        if #available(macOS 10.13, iOS 11.0, tvOS 11.0, *) {
             urlComponents?.percentEncodedQueryItems = queryItemProviders.map { $0.value() }
         } else {
             urlComponents?.queryItems = queryItemProviders.map { $0.value() }
