@@ -17,18 +17,24 @@ import Foundation
 import NIO
 import NIOHTTP1
 
-public class PrometheusExporterHttpServer {
+typealias GenericCallback = () -> ()
+
+struct HttpTestServerConfig {
+    var tracesReceivedCallback: GenericCallback?
+    var logsReceivedCallback: GenericCallback?
+}
+
+internal class HttpTestServer {
     private let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
     private var host: String
     private var port: Int
-    var exporter: PrometheusExporter
 
-    public init(exporter: PrometheusExporter) {
-        self.exporter = exporter
+    var config: HttpTestServerConfig?
 
-        let url = URL(string: exporter.options.url)
+    public init(url: URL?, config: HttpTestServerConfig?) {
         host = url?.host ?? "localhost"
-        port = url?.port ?? 9184
+        port = url?.port ?? 33333
+        self.config = config
     }
 
     public func start() throws {
@@ -36,7 +42,7 @@ public class PrometheusExporterHttpServer {
             let channel = try serverBootstrap.bind(host: host, port: port).wait()
             print("Listening on \(String(describing: channel.localAddress))...")
             try channel.closeFuture.wait()
-        } catch let error {
+        } catch {
             throw error
         }
     }
@@ -44,7 +50,7 @@ public class PrometheusExporterHttpServer {
     public func stop() {
         do {
             try group.syncShutdownGracefully()
-        } catch let error {
+        } catch {
             print("Error shutting down \(error.localizedDescription)")
             exit(0)
         }
@@ -58,10 +64,10 @@ public class PrometheusExporterHttpServer {
             .serverChannelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
 
             // Set the handlers that are appled to the accepted Channels
-            .childChannelInitializer { channel in
+            .childChannelInitializer { [weak self] channel in
                 // Ensure we don't read faster than we can write by adding the BackPressureHandler into the pipeline.
                 channel.pipeline.configureHTTPServerPipeline(withErrorHandling: true).flatMap {
-                    channel.pipeline.addHandler(PrometheusHTTPHandler(exporter: self.exporter))
+                    channel.pipeline.addHandler(TestHTTPHandler(config: self?.config))
                 }
             }
 
@@ -70,45 +76,54 @@ public class PrometheusExporterHttpServer {
             .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 1)
     }
 
-    private final class PrometheusHTTPHandler: ChannelInboundHandler {
+    private final class TestHTTPHandler: ChannelInboundHandler {
         public typealias InboundIn = HTTPServerRequestPart
         public typealias OutboundOut = HTTPServerResponsePart
 
-        var exporter: PrometheusExporter
+        var config: HttpTestServerConfig?
 
-        init(exporter: PrometheusExporter) {
-            self.exporter = exporter
+        init(config: HttpTestServerConfig?) {
+            self.config = config
         }
 
         public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
             let reqPart = unwrapInboundIn(data)
 
             switch reqPart {
-            case let .head(request):
+                case let .head(request):
 
-                if request.uri.unicodeScalars.starts(with: "/metrics".unicodeScalars) {
-                    let channel = context.channel
+                    if request.uri.unicodeScalars.starts(with: "/logs".unicodeScalars) {
+                        let channel = context.channel
 
-                    let head = HTTPResponseHead(version: request.version,
-                                                status: .ok)
-                    let part = HTTPServerResponsePart.head(head)
-                    _ = channel.write(part)
+                        let head = HTTPResponseHead(version: request.version,
+                                                    status: .ok)
+                        let part = HTTPServerResponsePart.head(head)
+                        _ = channel.write(part)
 
-                    let metrics = PrometheusExporterExtensions.writeMetricsCollection(exporter: exporter)
-                    var buffer = channel.allocator.buffer(capacity: metrics.count)
-                    buffer.writeString(metrics)
-                    let bodypart = HTTPServerResponsePart.body(.byteBuffer(buffer))
-                    _ = channel.write(bodypart)
+                        config?.logsReceivedCallback?()
 
-                    let endpart = HTTPServerResponsePart.end(nil)
-                    _ = channel.writeAndFlush(endpart).flatMap {
-                        channel.close()
+                        let endpart = HTTPServerResponsePart.end(nil)
+                        _ = channel.writeAndFlush(endpart).flatMap {
+                            channel.close()
+                        }
+                    } else if request.uri.unicodeScalars.starts(with: "/traces".unicodeScalars) {
+                        let channel = context.channel
+
+                        let head = HTTPResponseHead(version: request.version,
+                                                    status: .ok)
+                        let part = HTTPServerResponsePart.head(head)
+                        _ = channel.write(part)
+
+                        config?.tracesReceivedCallback?()
+
+                        let endpart = HTTPServerResponsePart.end(nil)
+                        _ = channel.writeAndFlush(endpart).flatMap {
+                            channel.close()
+                        }
                     }
-                }
-
-            case .body:
-                break
-            case .end: break
+                case .body:
+                    break
+                case .end: break
             }
         }
 
