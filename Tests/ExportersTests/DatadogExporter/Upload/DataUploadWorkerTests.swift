@@ -167,7 +167,7 @@ class DataUploadWorkerTests: XCTestCase {
                 queue: uploaderQueue,
                 fileReader: reader,
                 dataUploader: dataUploader,
-                uploadCondition: { true },
+                uploadCondition: { Thread.sleep(forTimeInterval: 0.01); return true },
                 delay: mockDelay,
                 featureName: .mockAny()
             )
@@ -183,15 +183,23 @@ struct MockDelay: Delay {
     enum Command {
         case increase, decrease
     }
-
     let callback: (Command) -> Void
+    // NOTE: RUMM-737 private only doesn't compile due to "private initializer is inaccessible", probably a bug in Swift
+    private(set) var didReceiveCommand = false
 
     var current: TimeInterval { 0.0 }
-    func decrease() {
+    mutating func decrease() {
+        if didReceiveCommand {
+            return
+        }
+        didReceiveCommand = true
         callback(.decrease)
     }
-
-    func increase() {
+    mutating func increase() {
+        if didReceiveCommand {
+            return
+        }
+        didReceiveCommand = true
         callback(.increase)
     }
 }
