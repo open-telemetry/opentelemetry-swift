@@ -121,8 +121,8 @@ class FileWriterTests: XCTestCase {
             var foo = "bar"
         }
 
-        // Write 500 of `Foo`s and interrupt writes randomly
-        (0..<500).forEach { _ in
+        // Write 300 of `Foo`s and interrupt writes randomly
+        (0..<300).forEach { _ in
             writer.write(value: Foo())
             randomlyInterruptIO(for: try? temporaryDirectory.files().first)
         }
@@ -137,9 +137,9 @@ class FileWriterTests: XCTestCase {
 
         // Assert that data written is not malformed
         let writtenData = try jsonDecoder.decode([Foo].self, from: "[".utf8Data + fileData + "]".utf8Data)
-        // Assert that some, but not all `Foo`s were skipped
+        // Assert that some (including all) `Foo`s were written
         XCTAssertGreaterThan(writtenData.count, 0)
-        XCTAssertLessThan(writtenData.count, 500)
+        XCTAssertLessThanOrEqual(writtenData.count, 300)
     }
 
     private func waitForWritesCompletion(on queue: DispatchQueue, thenFulfill expectation: XCTestExpectation) {

@@ -41,29 +41,28 @@ private class ServerMockProtocol: URLProtocol {
     }
 
     override func startLoading() {
-        guard let serverMock = ServerMock.activeInstance else {
-            preconditionFailure("Request was started while no `ServerMock` instance is active.")
-        }
-
-        if let response = serverMock.mockedResponse {
+        if let response = ServerMock.activeInstance?.mockedResponse  {
             client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         }
-        if let data = serverMock.mockedData {
+        if let data = ServerMock.activeInstance?.mockedData {
             client?.urlProtocol(self, didLoad: data)
         }
-        if let error = serverMock.mockedError {
+        if let error = ServerMock.activeInstance?.mockedError {
             client?.urlProtocol(self, didFailWithError: error)
         }
 
         client?.urlProtocolDidFinishLoading(self)
 
         DispatchQueue.main.async {
-            serverMock.record(newRequest: self.request)
+            ServerMock.activeInstance?.record(newRequest: self.request)
         }
     }
 
     override func stopLoading() {
-        precondition(ServerMock.activeInstance != nil, "Request was stopped while no `ServerMock` instance is active.")
+        if ServerMock.activeInstance != nil {
+            // This may happen when testing requests which deliver completion on the `URLSessionDelegate`.
+            print("⚠️ Request was stopped while no `ServerMock` instance is active.")
+        }
     }
 }
 
