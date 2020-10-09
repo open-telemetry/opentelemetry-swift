@@ -88,7 +88,11 @@ internal class LogsExporter {
     func exportLogs(fromSpan span: SpanData) {
         span.timedEvents.forEach {
             let log = DDLog(timedEvent: $0, span: span, configuration: configuration)
-            logsStorage.writer.write(value: log)
+            if configuration.performancePreset.synchronousWrite {
+                logsStorage.writer.writeSync(value: log)
+            } else {
+                logsStorage.writer.write(value: log)
+            }
         }
     }
 }

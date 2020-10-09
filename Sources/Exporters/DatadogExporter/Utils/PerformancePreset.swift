@@ -69,6 +69,7 @@ public struct PerformancePreset: Equatable, StoragePerformancePreset, UploadPerf
     let maxFileAgeForRead: TimeInterval
     let maxObjectsInFile: Int
     let maxObjectSize: UInt64
+    let synchronousWrite: Bool
 
     // MARK: - UploadPerformancePreset
 
@@ -94,6 +95,7 @@ public struct PerformancePreset: Equatable, StoragePerformancePreset, UploadPerf
         maxFileAgeForRead: 18 * 60 * 60, // 18h
         maxObjectsInFile: 500,
         maxObjectSize: 256 * 1_024, // 256KB
+        synchronousWrite: false,
 
         // upload
         initialUploadDelay: 5, // postpone to not impact app launch time
@@ -114,6 +116,7 @@ public struct PerformancePreset: Equatable, StoragePerformancePreset, UploadPerf
         maxFileAgeForRead: `default`.maxFileAgeForRead,
         maxObjectsInFile: `default`.maxObjectsInFile,
         maxObjectSize: `default`.maxObjectSize,
+        synchronousWrite: true,
 
         // upload
         initialUploadDelay: 0.5, // send quick to have a chance for upload in short-lived app extensions

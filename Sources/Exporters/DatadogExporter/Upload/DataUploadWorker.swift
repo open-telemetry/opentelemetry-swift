@@ -25,7 +25,7 @@ internal class DataUploadWorker: DataUploadWorkerType {
     /// Queue to execute uploads.
     private let queue: DispatchQueue
     /// File reader providing data to upload.
-    private let fileReader: FileReaderType
+    private let fileReader: FileReader
     /// Data uploader sending data to server.
     private let dataUploader: DataUploader
     /// Variable system conditions determining if upload should be performed.
@@ -43,7 +43,7 @@ internal class DataUploadWorker: DataUploadWorkerType {
 
     init(
         queue: DispatchQueue,
-        fileReader: FileReaderType,
+        fileReader: FileReader,
         dataUploader: DataUploader,
         uploadCondition: @escaping () -> Bool,
         delay: Delay,

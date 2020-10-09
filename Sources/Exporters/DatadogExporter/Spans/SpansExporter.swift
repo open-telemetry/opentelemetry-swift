@@ -78,6 +78,10 @@ internal class SpansExporter {
 
     func exportSpan(span: SpanData) {
         let envelope = SpanEnvelope(span: DDSpan(spanData: span, configuration: configuration), environment: configuration.environment)
-        tracesStorage.writer.write(value: envelope)
+        if configuration.performancePreset.synchronousWrite {
+            tracesStorage.writer.writeSync(value: envelope)
+        } else {
+            tracesStorage.writer.write(value: envelope)
+        }
     }
 }

@@ -21,18 +21,15 @@ internal struct FeaturesCommonDependencies {
     let httpClient: HTTPClient
     let device: Device
     let dateProvider: DateProvider
-//    let userInfoProvider: UserInfoProvider
-//    let networkConnectionInfoProvider: NetworkConnectionInfoProviderType
-//    let carrierInfoProvider: CarrierInfoProviderType
 }
 
 internal struct FeatureStorage {
     /// Writes data to files.
-    let writer: FileWriterType
+    let writer: FileWriter
     /// Reads data from files.
-    let reader: FileReaderType
+    let reader: FileReader
 
-    init(writer: FileWriterType, reader: FileReaderType) {
+    init(writer: FileWriter, reader: FileReader) {
         self.writer = writer
         self.reader = reader
     }
