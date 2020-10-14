@@ -87,19 +87,15 @@ internal class DataUploadWorker: DataUploadWorkerType {
     }
 
     internal func flush() -> SpanExporterResultCode {
-        var resultCode: SpanExporterResultCode = .success
-        queue.sync {
-            let nextBatch = self.fileReader.readNextBatch()
-            if let batch = nextBatch {
-                let uploadStatus = self.dataUploader.upload(data: batch.data)
+        let success = queue.sync {
+            self.fileReader.onRemainingBatches {
+                let uploadStatus = self.dataUploader.upload(data: $0.data)
                 let shouldBeAccepted = self.acceptableUploadStatuses.contains(uploadStatus)
                 if shouldBeAccepted {
-                    self.fileReader.markBatchAsRead(batch)
-                } else {
-                    resultCode = .failure
+                    self.fileReader.synchronizedMarkBatchAsRead($0)
                 }
             }
         }
-        return resultCode
+        return success ? .success : .failure
     }
 }

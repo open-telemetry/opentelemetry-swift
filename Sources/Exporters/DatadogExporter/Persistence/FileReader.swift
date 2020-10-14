@@ -62,6 +62,21 @@ internal final class FileReader {
         return nil
     }
 
+    func onRemainingBatches(process: (Batch)->()) -> Bool {
+        queue.sync {
+            do {
+                try orchestrator.getAllFiles(excludingFilesNamed: Set(filesRead.map { $0.name }))?.forEach {
+                    let fileData = try $0.read()
+                    let batchData = dataFormat.prefixData + fileData + dataFormat.suffixData
+                    process(Batch(data: batchData, file: $0))
+                }
+            } catch {
+                return false
+            }
+            return true
+        }
+    }
+
     // MARK: - Accepting batches
 
     func markBatchAsRead(_ batch: Batch) {
@@ -70,7 +85,7 @@ internal final class FileReader {
         }
     }
 
-    private func synchronizedMarkBatchAsRead(_ batch: Batch) {
+    func synchronizedMarkBatchAsRead(_ batch: Batch) {
         orchestrator.delete(readableFile: batch.file)
         filesRead.append(batch.file)
     }

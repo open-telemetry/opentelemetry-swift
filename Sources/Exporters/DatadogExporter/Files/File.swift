@@ -24,7 +24,7 @@ internal protocol WritableFile {
     func size() throws -> UInt64
 
     /// Synchronously appends given data at the end of this file.
-    func append(data: Data) throws
+    func append(data: Data, synchronized: Bool ) throws
 }
 
 /// Provides convenient interface for reading contents and metadata of the file.
@@ -51,7 +51,7 @@ internal struct File: WritableFile, ReadableFile {
     }
 
     /// Appends given data at the end of this file.
-    func append(data: Data) throws {
+    func append(data: Data, synchronized: Bool = false) throws {
         let fileHandle = try FileHandle(forWritingTo: url)
 
         // NOTE: RUMM-669
@@ -72,7 +72,12 @@ internal struct File: WritableFile, ReadableFile {
           This is fixed in iOS 14/Xcode 12
          */
         if #available(OSX 10.15, iOS 13.4, watchOS 6.0, tvOS 13.0, *) {
-            defer { try? fileHandle.close() }
+            defer {
+                try? fileHandle.close()
+                if synchronized {
+                    try? fileHandle.synchronize()
+                }
+            }
             try fileHandle.seekToEnd()
             try fileHandle.write(contentsOf: data)
         } else {

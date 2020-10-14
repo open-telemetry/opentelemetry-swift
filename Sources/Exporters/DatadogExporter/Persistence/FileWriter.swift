@@ -45,20 +45,20 @@ internal final class FileWriter {
 
     func writeSync<T: Encodable>(value: T) {
         queue.sync { [weak self] in
-            self?.synchronizedWrite(value: value)
+            self?.synchronizedWrite(value: value, syncOnEnd: true)
         }
     }
 
-    private func synchronizedWrite<T: Encodable>(value: T) {
+    private func synchronizedWrite<T: Encodable>(value: T, syncOnEnd: Bool = false) {
         do {
             let data = try jsonEncoder.encode(value)
             let file = try orchestrator.getWritableFile(writeSize: UInt64(data.count))
 
             if try file.size() == 0 {
-                try file.append(data: data)
+                try file.append(data: data, synchronized: syncOnEnd)
             } else {
                 let atomicData = dataFormat.separatorData + data
-                try file.append(data: atomicData)
+                try file.append(data: atomicData, synchronized: syncOnEnd)
             }
         } catch {
             print("🔥 Failed to write file: \(error)")

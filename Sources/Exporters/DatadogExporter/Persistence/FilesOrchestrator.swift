@@ -113,6 +113,16 @@ internal class FilesOrchestrator {
         }
     }
 
+    func getAllFiles(excludingFilesNamed excludedFileNames: Set<String> = []) -> [ReadableFile]? {
+        do {
+            return try directory.files()
+                .filter({ excludedFileNames.contains($0.name) == false })
+        } catch {
+            print("🔥 Failed to obtain readable files: \(error)")
+            return nil
+        }
+    }
+
     func delete(readableFile: ReadableFile) {
         do {
             try readableFile.delete()

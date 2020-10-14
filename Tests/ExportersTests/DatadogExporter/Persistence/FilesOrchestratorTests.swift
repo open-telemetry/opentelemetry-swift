@@ -83,7 +83,7 @@ class FilesOrchestratorTests: XCTestCase {
         )
 
         let file1 = try orchestrator.getWritableFile(writeSize: performance.maxObjectSize)
-        try chunkedData.forEach { chunk in try file1.append(data: chunk) }
+        try chunkedData.forEach { chunk in try file1.append(data: chunk, synchronized: false) }
         let file2 = try orchestrator.getWritableFile(writeSize: 1)
 
         XCTAssertNotEqual(file1.name, file2.name)
@@ -144,15 +144,15 @@ class FilesOrchestratorTests: XCTestCase {
 
         // write 1MB to first file (1MB of directory size in total)
         let file1 = try orchestrator.getWritableFile(writeSize: oneMB)
-        try file1.append(data: .mock(ofSize: oneMB))
+        try file1.append(data: .mock(ofSize: oneMB), synchronized: false)
 
         // write 1MB to second file (2MB of directory size in total)
         let file2 = try orchestrator.getWritableFile(writeSize: oneMB)
-        try file2.append(data: .mock(ofSize: oneMB))
+        try file2.append(data: .mock(ofSize: oneMB), synchronized: true)
 
         // write 1MB to third file (3MB of directory size in total)
         let file3 = try orchestrator.getWritableFile(writeSize: oneMB + 1) // +1 byte to exceed the limit
-        try file3.append(data: .mock(ofSize: oneMB + 1))
+        try file3.append(data: .mock(ofSize: oneMB + 1), synchronized: false)
 
         XCTAssertEqual(try temporaryDirectory.files().count, 3)
 
@@ -161,7 +161,7 @@ class FilesOrchestratorTests: XCTestCase {
         let file4 = try orchestrator.getWritableFile(writeSize: oneMB)
         XCTAssertEqual(try temporaryDirectory.files().count, 3)
         XCTAssertNil(try? temporaryDirectory.file(named: file1.name))
-        try file4.append(data: .mock(ofSize: oneMB + 1))
+        try file4.append(data: .mock(ofSize: oneMB + 1), synchronized: true)
 
         _ = try orchestrator.getWritableFile(writeSize: oneMB)
         XCTAssertEqual(try temporaryDirectory.files().count, 3)
