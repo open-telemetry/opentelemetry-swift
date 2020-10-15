@@ -35,17 +35,17 @@ or
 
 ## Current status
 
-Currently Tracing, metrics and Correlation Context and  API's and SDK are implemented, also OpenTracing shims, for compatibility with existing Opentracing code.
+Currently Tracing, Metrics and Correlation Context API's and SDK are implemented, also OpenTracing shims, for compatibility with existing Opentracing code.
 
-Implemented a simple stdout, Jaeger, Zipkin  and OpenTelemetry collector for traces;
+Implemented traces exporters: simple stdout, Jaeger, Zipkin, Datadog and OpenTelemetry collector
 
-Implemented a Prometheus exporter for metrics.
+Implemented metrics exporters: Prometheus
 
 ## Examples
 
 The package includes some example projects with basic functionality:
 
 - `Logging Tracer` -  Simple api implementation of a Tracer that logs every api call
-- `Simple Exporter` - Shows the Jaeger an Stdout exporters in action using a MultiSpanExporter
+- `Simple Exporter` - Shows the Jaeger an Stdout exporters in action using a MultiSpanExporter. Can be easily modified for other exporters
 - `Prometheus Sample` - Shows the Prometheus exporter reporting metrics to a Prometheus instance
 
