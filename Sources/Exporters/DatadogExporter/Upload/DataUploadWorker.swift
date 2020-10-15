@@ -86,6 +86,8 @@ internal class DataUploadWorker: DataUploadWorkerType {
         }
     }
 
+    /// This method  gets remaining files at once, and uploads them
+    /// It assures that periodic uploader cannot read or upload the files while the flush is being processed
     internal func flush() -> SpanExporterResultCode {
         let success = queue.sync {
             self.fileReader.onRemainingBatches {

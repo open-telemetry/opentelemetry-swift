@@ -62,7 +62,9 @@ internal final class FileReader {
         return nil
     }
 
-    func onRemainingBatches(process: (Batch)->()) -> Bool {
+    /// This method  gets remaining files at once, and process each file after with the block passed.
+    /// Being on a queue assures that no other previous batches are uploaded while these are being handled
+    internal func onRemainingBatches(process: (Batch)->()) -> Bool {
         queue.sync {
             do {
                 try orchestrator.getAllFiles(excludingFilesNamed: Set(filesRead.map { $0.name }))?.forEach {
