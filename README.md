@@ -1,6 +1,4 @@
 
-[![Scope](https://app.scope.dev/api/badge/aac7d72a-28e3-4c66-ac04-ad816166cd41/default)](https://app.scope.dev/external/v1/inspect/54b1fab6-1a7f-4d03-9fb4-26fafd169131/aac7d72a-28e3-4c66-ac04-ad816166cd41/default)
-
 # opentelemetry-swift
 
 A swift [OpenTelemetry](https://opentelemetry.io/) client
