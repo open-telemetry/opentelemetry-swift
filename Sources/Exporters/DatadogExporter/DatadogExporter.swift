@@ -40,11 +40,12 @@ public class DatadogExporter: SpanExporter {
     }
 
     public func flush() -> SpanExporterResultCode {
-        if let writer = spansExporter.tracesStorage.writer as? FileWriter {
-            writer.queue.sync {}
-        }
+        spansExporter.tracesStorage.writer.queue.sync {}
+        logsExporter.logsStorage.writer.queue.sync {}
+
         _ = logsExporter.logsUpload.uploader.flush()
-        return spansExporter.tracesUpload.uploader.flush()
+        _ = spansExporter.tracesUpload.uploader.flush()
+        return .success
     }
 
     public func shutdown() {
