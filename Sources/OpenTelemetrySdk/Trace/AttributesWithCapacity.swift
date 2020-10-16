@@ -24,14 +24,14 @@ public struct AttributesWithCapacity {
     private var capacity: Int
     private var recordedAttributes: Int
 
-    init(capacity: Int) {
+    public init(capacity: Int) {
         attributes = [String: AttributeValue]()
         keys = [String]()
         recordedAttributes = 0
         self.capacity = capacity
     }
 
-    subscript(key: String) -> AttributeValue? {
+    public subscript(key: String) -> AttributeValue? {
         get {
             attributes[key]
         }
@@ -44,7 +44,7 @@ public struct AttributesWithCapacity {
         }
     }
 
-    @discardableResult mutating func updateValue(value: AttributeValue, forKey key: String) -> AttributeValue? {
+    @discardableResult public mutating func updateValue(value: AttributeValue, forKey key: String) -> AttributeValue? {
         let oldValue = attributes.updateValue(value, forKey: key)
         if oldValue == nil {
             recordedAttributes += 1
@@ -60,39 +60,39 @@ public struct AttributesWithCapacity {
         return oldValue
     }
 
-    mutating func updateValues(attributes: [String: AttributeValue]) {
+    public mutating func updateValues(attributes: [String: AttributeValue]) {
         _ = attributes.keys.map {
             updateValue(value: attributes[$0]!, forKey: $0)
         }
     }
 
-    mutating func updateValues(attributes: AttributesWithCapacity) {
+    public mutating func updateValues(attributes: AttributesWithCapacity) {
         _ = attributes.keys.map {
             updateValue(value: attributes[$0]!, forKey: $0)
         }
     }
 
-    mutating func removeValueForKey(key: String) {
+    public mutating func removeValueForKey(key: String) {
         keys = keys.filter {
             $0 != key
         }
         attributes.removeValue(forKey: key)
     }
 
-    mutating func removeAll(keepCapacity: Int) {
+    public mutating func removeAll(keepCapacity: Int) {
         keys = []
         attributes = Dictionary<String, AttributeValue>(minimumCapacity: keepCapacity)
     }
 
-    var count: Int {
+    public var count: Int {
         attributes.count
     }
 
-    var numberOfDroppedAttributes: Int {
+    public var numberOfDroppedAttributes: Int {
         recordedAttributes - attributes.count
     }
 
-    var values: Array<AttributeValue> {
+    public var values: Array<AttributeValue> {
         keys.map { attributes[$0]! }
     }
 
