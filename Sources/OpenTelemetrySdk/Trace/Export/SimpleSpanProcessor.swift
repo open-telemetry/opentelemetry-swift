@@ -41,7 +41,7 @@ public struct SimpleSpanProcessor: SpanProcessor {
     }
 
     public func forceFlush() {
-        spanExporter.flush()
+        _ = spanExporter.flush()
     }
 
     /// Returns a new SimpleSpansProcessor that converts spans to proto and forwards them to
