@@ -62,7 +62,7 @@ internal struct DDSpan: Encodable {
     let resource: String
     let startTime: UInt64
     let duration: UInt64
-    let isError: Bool
+    let error: Bool
     let errorMessage: String?
     let errorType: String?
     let errorStack: String?
@@ -78,6 +78,10 @@ internal struct DDSpan: Encodable {
 
     /// Custom tags, received from user
     let tags: [String: String]
+
+    static let errorTagKeys: Set<String> = [
+        "error.message", "error.type", "error.stack",
+    ]
 
     func encode(to encoder: Encoder) throws {
         try SpanEncoder().encode(self, to: encoder)
@@ -100,17 +104,17 @@ internal struct DDSpan: Encodable {
         self.duration = spanData.endEpochNanos - spanData.startEpochNanos
 
         if spanData.attributes["error"] != nil {
-            self.isError = true
-            self.errorMessage = spanData.attributes["error.msg"]?.description
+            self.error = true
+            self.errorMessage = spanData.attributes["error.message"]?.description
             self.errorType = spanData.attributes["error.type"]?.description
             self.errorStack = spanData.attributes["error.stack"]?.description
         } else if !(spanData.status?.isOk ?? false) {
-            self.isError = true
+            self.error = true
             self.errorMessage = spanData.status?.description ?? "error"
             self.errorType = spanData.status?.description ?? "error"
             self.errorStack = nil
         } else {
-            self.isError = false
+            self.error = false
             self.errorMessage = nil
             self.errorType = nil
             self.errorStack = nil
@@ -121,7 +125,11 @@ internal struct DDSpan: Encodable {
 
         self.tracerVersion = "1.0" // spanData.tracerVersion
         self.applicationVersion = "0.0.1" // spanData.applicationVersion
-        self.tags = spanData.attributes.mapValues { $0.description }
+        self.tags = spanData.attributes.filter {
+            !DDSpan.errorTagKeys.contains($0.key)
+        }.mapValues {
+            $0.description
+        }
     }
 }
 
@@ -140,7 +148,10 @@ internal struct SpanEncoder {
         case type
         case start
         case duration
-        case isError = "error"
+        case error
+        case errorMessage = "meta.error.message"
+        case errorType = "meta.error.type"
+        case errorStack = "meta.error.stack"
 
         // MARK: - Metrics
 
@@ -179,8 +190,14 @@ internal struct SpanEncoder {
         try container.encode(span.startTime, forKey: .start)
         try container.encode(span.duration, forKey: .duration)
 
-        let isError = span.isError ? 1 : 0
-        try container.encode(isError, forKey: .isError)
+        if span.error {
+            try container.encode(1, forKey: .error)
+            try container.encode(span.errorMessage, forKey: .errorMessage)
+            try container.encode(span.errorType, forKey: .errorType)
+            try container.encode(span.errorStack, forKey: .errorStack)
+        } else {
+            try container.encode(0, forKey: .error)
+        }
 
         try encodeDefaultMetrics(span, to: &container)
         try encodeDefaultMeta(span, to: &container)
