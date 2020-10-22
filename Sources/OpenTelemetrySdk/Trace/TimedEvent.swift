@@ -17,7 +17,7 @@ import Foundation
 import OpenTelemetryApi
 
 /// Timed event.
-public struct TimedEvent: Equatable {
+public struct TimedEvent: Equatable, Event {
     public private(set) var epochNanos: UInt64
     public private(set) var name: String
     public private(set) var attributes: [String: AttributeValue]
