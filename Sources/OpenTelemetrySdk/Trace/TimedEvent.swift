@@ -47,7 +47,7 @@ public struct TimedEvent: Equatable {
     ///   - name: the name of this TimedEvent.
     ///   - attributes: the attributes of this TimedEvent. Empty by default.
     public init(name: String, timestamp: Date, attributes: [String: AttributeValue] = [String: AttributeValue]()) {
-        epochNanos = UInt64(timestamp.timeIntervalSince1970) * 1000000000
+        epochNanos = UInt64(timestamp.timeIntervalSince1970 * 1000000000)
         self.name = name
         self.attributes = attributes
     }
@@ -57,6 +57,6 @@ public struct TimedEvent: Equatable {
     ///   - timestamp: timestamp in Date format.
     ///   - event: the event.
     public init(timestamp: Date, event: Event) {
-        self.init(name: event.name, epochNanos: UInt64(timestamp.timeIntervalSince1970) * 1000000000, attributes: event.attributes)
+        self.init(name: event.name, epochNanos: UInt64(timestamp.timeIntervalSince1970 * 1000000000), attributes: event.attributes)
     }
 }
