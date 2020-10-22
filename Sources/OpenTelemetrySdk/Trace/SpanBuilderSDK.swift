@@ -121,7 +121,7 @@ public class SpanBuilderSdk: SpanBuilder {
     }
     
     public func setStartTimestamp(timestamp: Date) -> Self {
-        return setStartEpochNano(epochNano: UInt64(timestamp.timeIntervalSince1970) )
+        return setStartEpochNano(epochNano: UInt64(timestamp.timeIntervalSince1970 * 1000000000) )
     }
 
     public func startSpan() -> Span {
