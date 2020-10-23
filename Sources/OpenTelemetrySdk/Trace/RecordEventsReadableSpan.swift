@@ -250,6 +250,10 @@ public class RecordEventsReadableSpan: ReadableSpan {
         addTimedEvent(timedEvent: TimedEvent(epochNanos: clock.now, event: event))
     }
 
+    public func addEvent(event: TimedEvent){
+        addTimedEvent(timedEvent: event)
+    }
+
     public func addEvent<E>(event: E, timestamp: Date) where E: Event {
         addTimedEvent(timedEvent: TimedEvent(timestamp: timestamp, event: event))
     }

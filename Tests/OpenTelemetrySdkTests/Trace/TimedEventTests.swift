@@ -49,4 +49,12 @@ class TimedEventTests: XCTestCase {
         XCTAssertEqual(event.name, TimedEventTests.eventName2)
         XCTAssertEqual(event.attributes, TimedEventTests.attributes2)
     }
+
+    func testRawTimedEventWithDate() {
+        let dateForEvent = Date()
+        let event = TimedEvent(name: TimedEventTests.eventName, timestamp: dateForEvent)
+        XCTAssertEqual(event.epochNanos, UInt64(dateForEvent.timeIntervalSince1970 * 1000000000))
+        XCTAssertEqual(event.name, TimedEventTests.eventName)
+        XCTAssertEqual(event.attributes.count, 0)
+    }
 }

@@ -45,7 +45,7 @@ class ZipkinSpanConverterTests: XCTestCase {
     }
 
     public static func createTestSpan(setAttributes: Bool = true, additionalAttributes: [String: Any]? = nil, addEvents: Bool = true, addLinks: Bool = true) -> SpanData {
-        let startTimestamp = Date()
+        let startTimestamp = Date(timeIntervalSince1970: Double(Int(Date().timeIntervalSince1970))) // Round for comparison
         let endTimestamp = startTimestamp.addingTimeInterval(60)
         let eventTimestamp = startTimestamp
         let traceId = TraceId(fromHexString: "e8ea7e9ac72de94e91fabc613f9686b2")
@@ -68,7 +68,7 @@ class ZipkinSpanConverterTests: XCTestCase {
 
 //        let linkedSpanId = SpanId(fromHexString: "888915b6286b9c41")
 
-        return SpanData(traceId: traceId, spanId: spanId, parentSpanId: parentSpanId, name: "Name", kind: .client, startEpochNanos: UInt64(startTimestamp.timeIntervalSince1970) * 1000000000, attributes: attributes, timedEvents: events, status: Status.ok, endEpochNanos: UInt64(endTimestamp.timeIntervalSince1970) * 1000000000
+        return SpanData(traceId: traceId, spanId: spanId, parentSpanId: parentSpanId, name: "Name", kind: .client, startEpochNanos: UInt64(startTimestamp.timeIntervalSince1970 * 1000000000), attributes: attributes, timedEvents: events, status: Status.ok, endEpochNanos: UInt64(endTimestamp.timeIntervalSince1970 * 1000000000)
         )
     }
 }

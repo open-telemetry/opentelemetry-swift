@@ -121,7 +121,7 @@ public class SpanShim: OTSpan, BaseShimProtocol {
     }
 
     public func finish(withTime finishTime: Date?) {
-        span.end(endOptions: EndSpanOptions(timestamp: UInt64(finishTime?.timeIntervalSince1970 ?? Date().timeIntervalSince1970)))
+        span.end(endOptions: EndSpanOptions(timestamp: UInt64((finishTime?.timeIntervalSince1970 ?? Date().timeIntervalSince1970)) * 1000000000))
     }
 
     static func getEventNameFrom(fields: [String: NSObject]) -> String {
