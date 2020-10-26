@@ -17,23 +17,11 @@
 import XCTest
 
 class DataUploadURLProviderTests: XCTestCase {
-    let platform: String = {
-        #if os(iOS)
-        return "ios"
-        #elseif os(tvOS)
-        return "tvos"
-        #elseif os(watchOS)
-        return "watchos"
-        #else
-        return "macos"
-        #endif
-    }()
-
     func testDDSourceQueryItem() {
         let item: UploadURLProvider.QueryItemProvider = .ddsource()
 
         XCTAssertEqual(item.value().name, "ddsource")
-        XCTAssertEqual(item.value().value, platform)
+        XCTAssertEqual(item.value().value, "ios")
     }
 
     func testBatchTimeQueryItem() {
@@ -63,9 +51,9 @@ class DataUploadURLProviderTests: XCTestCase {
             queryItemProviders: [.ddsource(), .batchTime(using: dateProvider)]
         )
 
-        XCTAssertEqual(urlProvider.url, URL(string: "https://api.example.com/v1/endpoint/abc?ddsource=\(platform)&batch_time=1576404000000"))
+        XCTAssertEqual(urlProvider.url, URL(string: "https://api.example.com/v1/endpoint/abc?ddsource=ios&batch_time=1576404000000"))
         dateProvider.advance(bySeconds: 9.999)
-        XCTAssertEqual(urlProvider.url, URL(string: "https://api.example.com/v1/endpoint/abc?ddsource=\(platform)&batch_time=1576404009999"))
+        XCTAssertEqual(urlProvider.url, URL(string: "https://api.example.com/v1/endpoint/abc?ddsource=ios&batch_time=1576404009999"))
     }
 }
 
