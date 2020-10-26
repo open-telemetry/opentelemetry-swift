@@ -18,15 +18,7 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 
 internal struct Constants {
-    #if os(iOS)
     static let ddsource = "ios"
-    #elseif os(tvOS)
-    static let ddsource = "tvos"
-    #elseif os(watchOS)
-    static let ddsource = "watchos"
-    #else
-    static let ddsource = "macos"
-    #endif
 }
 
 /// `SpanEnvelope` allows encoding multiple spans sharing the same `traceID` to a single payload.
@@ -103,21 +95,16 @@ internal struct DDSpan: Encodable {
         self.startTime = spanData.startEpochNanos
         self.duration = spanData.endEpochNanos - spanData.startEpochNanos
 
-        if spanData.attributes["error"] != nil {
-            self.error = true
-            self.errorMessage = spanData.attributes["error.message"]?.description
-            self.errorType = spanData.attributes["error.type"]?.description
-            self.errorStack = spanData.attributes["error.stack"]?.description
-        } else if !(spanData.status?.isOk ?? false) {
-            self.error = true
-            self.errorMessage = spanData.status?.description ?? "error"
-            self.errorType = spanData.status?.description ?? "error"
-            self.errorStack = nil
-        } else {
+        if spanData.status?.isOk ?? true {
             self.error = false
             self.errorMessage = nil
             self.errorType = nil
             self.errorStack = nil
+        } else {
+            self.error = true
+            self.errorType = spanData.attributes["error.type"]?.description ?? spanData.status?.description
+            self.errorMessage = spanData.attributes["error.message"]?.description
+            self.errorStack = spanData.attributes["error.stack"]?.description
         }
 
         let spanType = spanData.attributes["type"] ?? spanData.attributes["db.type"]

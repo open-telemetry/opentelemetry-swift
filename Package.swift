@@ -63,5 +63,6 @@ let package = Package(
         .target(  name: "LoggingTracer", dependencies: ["OpenTelemetryApi"], path: "Examples/Logging Tracer"),
         .target(  name: "SimpleExporter", dependencies: ["OpenTelemetrySdk", "JaegerExporter", "StdoutExporter", "ZipkinExporter"], path: "Examples/Simple Exporter"),
         .target(  name: "PrometheusSample", dependencies: ["OpenTelemetrySdk", "PrometheusExporter"], path: "Examples/Prometheus Sample"),
+        .target(  name: "DatadogSample", dependencies: ["DatadogExporter"], path: "Examples/Datadog Sample"),
     ]
 )
