@@ -41,7 +41,7 @@ internal class LogsExporter {
 
         let filesOrchestrator = FilesOrchestrator(
             directory: try Directory(withSubdirectoryPath: logsDirectory),
-            performance: configuration.performancePreset,
+             performance: configuration.performancePreset,
             dateProvider: SystemDateProvider()
         )
 
@@ -64,6 +64,7 @@ internal class LogsExporter {
         let urlProvider = UploadURLProvider(
             urlWithClientToken: try configuration.endpoint.logsUrlWithClientToken(clientToken: configuration.clientToken),
             queryItemProviders: [
+                .ddsource(),
                 .batchTime(using: SystemDateProvider())
             ]
         )
