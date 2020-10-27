@@ -82,8 +82,18 @@ public class RecordEventsReadableSpan: ReadableSpan {
 
     /// The end time of the span.
     public private(set) var endEpochNanos: UInt64?
+
+    private let endSyncLock = Lock()
+    private var endedPrivate = false
     /// True if the span is ended.
-    public private(set) var hasEnded: Bool = false
+    public private(set) var hasEnded: Bool {
+        get {
+            endSyncLock.withLock{ return self.endedPrivate }
+        }
+        set(newValue) {
+            endSyncLock.withLockVoid {self.endedPrivate = newValue}
+        }
+    }
 
     private let eventsSyncLock = Lock()
     private let attributesSyncLock = Lock()
@@ -192,10 +202,11 @@ public class RecordEventsReadableSpan: ReadableSpan {
     }
 
     private func adaptTimedEvents() -> [TimedEvent] {
-        let sourceEvents = events
         var result = [TimedEvent]()
-        sourceEvents.forEach {
-            result.append(TimedEvent(name: $0.name, epochNanos: $0.epochNanos, attributes: $0.attributes))
+        eventsSyncLock.withLockVoid {
+            events.forEach {
+                result.append(TimedEvent(name: $0.name, epochNanos: $0.epochNanos, attributes: $0.attributes))
+            }
         }
         return result
     }
@@ -219,7 +230,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
                 attributes.removeValueForKey(key: key)
             }
             totalAttributeCount += 1
-            if attributes[key] == nil && totalAttributeCount > maxNumberOfAttributes {
+            if attributes[key] == nil, totalAttributeCount > maxNumberOfAttributes {
                 return
             }
             attributes[key] = value
@@ -250,7 +261,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
         addTimedEvent(timedEvent: TimedEvent(epochNanos: clock.now, event: event))
     }
 
-    public func addEvent(event: TimedEvent){
+    public func addEvent(event: TimedEvent) {
         addTimedEvent(timedEvent: event)
     }
 
@@ -280,8 +291,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
         if hasEnded {
             return
         }
-        endEpochNanos = timestamp
         hasEnded = true
+        endEpochNanos = timestamp
         spanProcessor.onEnd(span: self)
         context.scope?.close()
     }
