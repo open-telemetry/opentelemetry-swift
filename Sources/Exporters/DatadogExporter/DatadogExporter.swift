@@ -33,8 +33,12 @@ public class DatadogExporter: SpanExporter {
 
     public func export(spans: [SpanData]) -> SpanExporterResultCode {
         spans.forEach {
-            spansExporter.exportSpan(span: $0)
-            logsExporter.exportLogs(fromSpan: $0)
+            if $0.traceFlags.sampled || configuration.exportUnsampledSpans {
+                spansExporter.exportSpan(span: $0)
+            }
+            if $0.traceFlags.sampled || configuration.exportUnsampledLogs {
+                logsExporter.exportLogs(fromSpan: $0)
+            }
         }
         return .success
     }

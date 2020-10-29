@@ -32,8 +32,13 @@ public struct ExporterConfiguration {
     var uploadCondition: () -> Bool
     /// Performance preset for reporting
     var performancePreset: PerformancePreset = .default
+    /// Option to export spans that have TraceFlag off, true by default
+    var exportUnsampledSpans: Bool = true
+    /// Option to export logs from spans that have TraceFlag off, true by default
+    var exportUnsampledLogs: Bool = true
 
-    public init(serviceName: String, resource: String, applicationName: String, applicationVersion: String, environment: String, clientToken: String, endpoint: Endpoint, uploadCondition: @escaping () -> Bool, performancePreset: PerformancePreset = .default) {
+
+    public init(serviceName: String, resource: String, applicationName: String, applicationVersion: String, environment: String, clientToken: String, endpoint: Endpoint, uploadCondition: @escaping () -> Bool, performancePreset: PerformancePreset = .default, exportUnsampledSpans: Bool = true, exportUnsampledLogs: Bool = true ) {
         self.serviceName = serviceName
         self.resource = resource
         self.applicationName = applicationName
@@ -43,5 +48,7 @@ public struct ExporterConfiguration {
         self.endpoint = endpoint
         self.uploadCondition = uploadCondition
         self.performancePreset = performancePreset
+        self.exportUnsampledSpans = exportUnsampledSpans
+        self.exportUnsampledLogs = exportUnsampledLogs
     }
 }
