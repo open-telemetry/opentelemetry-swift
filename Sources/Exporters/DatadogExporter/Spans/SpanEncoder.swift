@@ -69,7 +69,7 @@ internal struct DDSpan: Encodable {
 //    let userInfo: UserInfo
 
     /// Custom tags, received from user
-    let tags: [String: String]
+    let tags: [String: AttributeValue]
 
     static let errorTagKeys: Set<String> = [
         "error.message", "error.type", "error.stack",
@@ -114,9 +114,7 @@ internal struct DDSpan: Encodable {
         self.applicationVersion = "0.0.1" // spanData.applicationVersion
         self.tags = spanData.attributes.filter {
             !DDSpan.errorTagKeys.contains($0.key)
-        }.mapValues {
-            $0.description
-        }
+        }.mapValues { $0 }
     }
 }
 
@@ -190,7 +188,7 @@ internal struct SpanEncoder {
         try encodeDefaultMeta(span, to: &container)
 
         var customAttributesContainer = encoder.container(keyedBy: DynamicCodingKey.self)
-        try encodeCustomMeta(span, to: &customAttributesContainer)
+        try encodeCustomAttributes(span, to: &customAttributesContainer)
     }
 
     /// Encodes default `metrics.*` attributes
@@ -211,11 +209,25 @@ internal struct SpanEncoder {
     }
 
     /// Encodes `meta.*` attributes coming from user
-    private func encodeCustomMeta(_ span: DDSpan, to container: inout KeyedEncodingContainer<DynamicCodingKey>) throws {
+    private func encodeCustomAttributes(_ span: DDSpan, to container: inout KeyedEncodingContainer<DynamicCodingKey>) throws {
         // NOTE: RUMM-299 only string values are supported for `meta.*` attributes
         try span.tags.forEach {
-            let metaKey = "meta.\($0.key)"
-            try container.encode($0.value, forKey: DynamicCodingKey(metaKey))
+            switch $0.value {
+                case .int(let intValue):
+                    let metricsKey = "metrics.\($0.key)"
+                    try container.encode(intValue, forKey: DynamicCodingKey(metricsKey))
+                case .double(let doubleValue):
+                    let metricsKey = "metrics.\($0.key)"
+                    try container.encode(doubleValue, forKey: DynamicCodingKey(metricsKey))
+                case .string(let stringValue):
+                    let metaKey = "meta.\($0.key)"
+                    try container.encode(stringValue, forKey: DynamicCodingKey(metaKey))
+                case .bool(let boolValue):
+                    let metaKey = "meta.\($0.key)"
+                    try container.encode(boolValue, forKey: DynamicCodingKey(metaKey))
+                default:
+                    break
+            }
         }
     }
 }
