@@ -17,6 +17,8 @@ import Foundation
 import OpenTelemetryApi
 
 public struct RandomIdsGenerator: IdsGenerator {
+    public init() {}
+
     public func generateSpanId() -> SpanId {
         var id: UInt64
         repeat {

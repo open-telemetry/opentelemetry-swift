@@ -27,7 +27,7 @@ public struct BatchSpanProcessor: SpanProcessor {
     var sampled: Bool
     fileprivate var worker: BatchWorker
 
-    init(spanExporter: SpanExporter, sampled: Bool = true, scheduleDelay: TimeInterval = 5, maxQueueSize: Int = 2048, maxExportBatchSize: Int = 512) {
+    public init(spanExporter: SpanExporter, sampled: Bool = true, scheduleDelay: TimeInterval = 5, maxQueueSize: Int = 2048, maxExportBatchSize: Int = 512) {
         worker = BatchWorker(spanExporter: spanExporter,
                              scheduleDelay: scheduleDelay,
                              maxQueueSize: maxQueueSize,
@@ -35,15 +35,14 @@ public struct BatchSpanProcessor: SpanProcessor {
         worker.start()
         self.sampled = sampled
     }
-    
+
     public let isStartRequired = false
     public let isEndRequired = true
 
-    public func onStart(span: ReadableSpan) {
-    }
+    public func onStart(span: ReadableSpan) {}
 
     public func onEnd(span: ReadableSpan) {
-        if sampled && !span.context.traceFlags.sampled {
+        if sampled, !span.context.traceFlags.sampled {
             return
         }
         worker.addSpan(span: span)

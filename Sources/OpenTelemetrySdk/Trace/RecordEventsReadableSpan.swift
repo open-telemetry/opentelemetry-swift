@@ -33,7 +33,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
     /// Contains the identifiers associated with this Span.
     public private(set) var context: SpanContext
     /// The parent SpanId of this span. Invalid if this is a root span.
-    private(set) var parentSpanId: SpanId?
+    public private(set) var parentSpanId: SpanId?
     /// True if the parent is on a different process.
     public private(set) var hasRemoteParent: Bool
     /// /Handler called when the span starts and ends.
@@ -219,7 +219,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
                 attributes.removeValueForKey(key: key)
             }
             totalAttributeCount += 1
-            if attributes[key] == nil && totalAttributeCount > maxNumberOfAttributes {
+            if attributes[key] == nil, totalAttributeCount > maxNumberOfAttributes {
                 return
             }
             attributes[key] = value
@@ -250,7 +250,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
         addTimedEvent(timedEvent: TimedEvent(epochNanos: clock.now, event: event))
     }
 
-    public func addEvent(event: TimedEvent){
+    public func addEvent(event: TimedEvent) {
         addTimedEvent(timedEvent: event)
     }
 

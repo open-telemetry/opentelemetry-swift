@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-@testable import OpenTelemetrySdk
+import OpenTelemetrySdk
 import XCTest
 
 class MultiSpanProcessorTest: XCTestCase {
@@ -89,12 +89,12 @@ class MultiSpanProcessorTest: XCTestCase {
     func testTwoSpanProcessorDifferentRequirements() {
         spanProcessor1.isEndRequired = false
         spanProcessor2.isStartRequired = false
-        
+
         let multiSpanProcessor = MultiSpanProcessor(spanProcessors: [spanProcessor1, spanProcessor2])
 
         XCTAssertTrue(multiSpanProcessor.isStartRequired)
         XCTAssertTrue(multiSpanProcessor.isEndRequired)
-        
+
         multiSpanProcessor.onStart(span: readableSpan)
         XCTAssert(spanProcessor1.onStartCalledSpan === readableSpan)
         XCTAssertFalse(spanProcessor2.onStartCalled)

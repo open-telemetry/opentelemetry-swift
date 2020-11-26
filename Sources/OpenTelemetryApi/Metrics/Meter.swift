@@ -16,7 +16,7 @@
 import Foundation
 
 /// Main interface to obtain metric instruments.
-public protocol Meter: AnyObject {
+public protocol Meter {
     /// Creates Int counter with given name.
     /// - Parameters:
     ///   - name: The name of the counter.

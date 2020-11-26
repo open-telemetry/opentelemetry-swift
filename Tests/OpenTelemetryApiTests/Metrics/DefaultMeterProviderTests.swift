@@ -22,11 +22,11 @@ final class DefaultMeterProviderTests: XCTestCase {
     }
 
     func testDefault() {
-        let defaultMeter =   DefaultMeterProvider.instance.get(instrumentationName: "", instrumentationVersion: nil)
+        let defaultMeter = DefaultMeterProvider.instance.get(instrumentationName: "", instrumentationVersion: nil)
         XCTAssert(defaultMeter is ProxyMeter)
-        let otherMeter =   DefaultMeterProvider.instance.get(instrumentationName: "named meter", instrumentationVersion: nil)
+        let otherMeter = DefaultMeterProvider.instance.get(instrumentationName: "named meter", instrumentationVersion: nil)
         XCTAssert(otherMeter is ProxyMeter)
-        XCTAssert(defaultMeter === otherMeter)
+        XCTAssert(defaultMeter is ProxyMeter)
 
         let counter = defaultMeter.createDoubleCounter(name: "ctr")
         XCTAssert(counter.internalCounter is NoopCounterMetric<Double>)
@@ -37,11 +37,11 @@ final class DefaultMeterProviderTests: XCTestCase {
         DefaultMeterProvider.setDefault(meterFactory: factory)
         XCTAssert(DefaultMeterProvider.initialized)
 
-        let defaultMeter =   DefaultMeterProvider.instance.get(instrumentationName: "", instrumentationVersion: nil)
+        let defaultMeter = DefaultMeterProvider.instance.get(instrumentationName: "", instrumentationVersion: nil)
         XCTAssert(defaultMeter is TestNoopMeter)
 
-        let otherMeter =   DefaultMeterProvider.instance.get(instrumentationName: "named meter", instrumentationVersion: nil)
-        XCTAssert(defaultMeter !== otherMeter)
+        let otherMeter = DefaultMeterProvider.instance.get(instrumentationName: "named meter", instrumentationVersion: nil)
+        XCTAssert(otherMeter is TestNoopMeter)
 
         let counter = defaultMeter.createIntCounter(name: "ctr")
         XCTAssert(counter.internalCounter is NoopCounterMetric<Int>)
@@ -58,16 +58,13 @@ final class DefaultMeterProviderTests: XCTestCase {
     }
 
     func testUpdateDefault_CachedTracer() {
-        let defaultMeter =   DefaultMeterProvider.instance.get(instrumentationName: "", instrumentationVersion: nil)
+        let defaultMeter = DefaultMeterProvider.instance.get(instrumentationName: "", instrumentationVersion: nil)
         let noOpCounter = defaultMeter.createDoubleCounter(name: "ctr")
         XCTAssert(noOpCounter.internalCounter is NoopCounterMetric<Double>)
 
         DefaultMeterProvider.setDefault(meterFactory: TestMeter())
         let counter = defaultMeter.createDoubleCounter(name: "ctr")
         XCTAssert(counter.internalCounter is NoopCounterMetric<Double>)
-
-        let newdefaultMeter =   DefaultMeterProvider.instance.get(instrumentationName: "", instrumentationVersion: nil)
-        XCTAssert(defaultMeter !== newdefaultMeter)
     }
 }
 

@@ -13,11 +13,11 @@
 // limitations under the License.
 //
 
-@testable import OpenTelemetryApi
+import OpenTelemetryApi
 import XCTest
 
-fileprivate let key = EntryKey(name: "key")!
-fileprivate let value = EntryValue(string: "value")!
+private let key = EntryKey(name: "key")!
+private let value = EntryValue(string: "value")!
 
 class TestCorrelationContext: CorrelationContext {
     static func contextBuilder() -> CorrelationContextBuilder {

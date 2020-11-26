@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-@testable import OpenTelemetryApi
+import OpenTelemetryApi
 import XCTest
 
 final class TraceFlagsTests: XCTestCase {

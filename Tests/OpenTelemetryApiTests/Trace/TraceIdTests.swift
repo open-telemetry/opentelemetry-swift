@@ -13,14 +13,13 @@
 // limitations under the License.
 //
 
-@testable import OpenTelemetryApi
+import OpenTelemetryApi
 import XCTest
 
 final class TraceIdTests: XCTestCase {
     let firstBytes: [UInt8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, UInt8(ascii: "a")]
     let secondBytes: [UInt8] = [0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, UInt8(ascii: "A")]
     let shortBytes: [UInt8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, UInt8(ascii: "b")]
-
 
     var first: TraceId!
     var second: TraceId!
@@ -65,7 +64,6 @@ final class TraceIdTests: XCTestCase {
         XCTAssertEqual(TraceId(fromHexString: "YY00000000000000000000000000000061AA", withOffset: 2), first)
         XCTAssertEqual(TraceId(fromHexString: "ZZff000000000000000000000000000041BB", withOffset: 2), second)
         XCTAssertEqual(TraceId(fromHexString: "ZZ0000000000000062AA", withOffset: 2), short)
-
     }
 
     func testToHexString() {
@@ -105,7 +103,6 @@ final class TraceIdTests: XCTestCase {
         XCTAssertTrue(first.description.contains("00000000000000000000000000000061"))
         XCTAssertTrue(second.description.contains("ff000000000000000000000000000041"))
         XCTAssertTrue(short.description.contains("0000000000000062"))
-
     }
 
     static var allTests = [

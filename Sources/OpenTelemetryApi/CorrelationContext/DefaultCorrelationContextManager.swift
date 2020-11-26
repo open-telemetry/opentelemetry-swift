@@ -19,7 +19,7 @@ import Foundation
 public class DefaultCorrelationContextManager: CorrelationContextManager {
     ///  Returns a CorrelationContextManager singleton that is the default implementation for
     ///  CorrelationContextManager.
-    static var instance = DefaultCorrelationContextManager()
+    public static var instance = DefaultCorrelationContextManager()
 
     private init() {}
 

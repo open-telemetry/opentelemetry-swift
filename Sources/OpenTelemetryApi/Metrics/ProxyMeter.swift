@@ -16,38 +16,38 @@
 import Foundation
 
 /// Proxy Meter which act as a No-Op Meter, until real meter is provided.
-class ProxyMeter: Meter {
+public struct ProxyMeter: Meter {
     private var realMeter: Meter?
 
-    func getLabelSet(labels: [String: String]) -> LabelSet {
+    public func getLabelSet(labels: [String: String]) -> LabelSet {
         return realMeter?.getLabelSet(labels: labels) ?? LabelSet.empty
     }
 
-    func createIntCounter(name: String, monotonic: Bool) -> AnyCounterMetric<Int> {
+    public func createIntCounter(name: String, monotonic: Bool) -> AnyCounterMetric<Int> {
         return realMeter?.createIntCounter(name: name, monotonic: monotonic) ?? AnyCounterMetric<Int>(NoopCounterMetric<Int>())
     }
 
-    func createDoubleCounter(name: String, monotonic: Bool) -> AnyCounterMetric<Double> {
+    public func createDoubleCounter(name: String, monotonic: Bool) -> AnyCounterMetric<Double> {
         return realMeter?.createDoubleCounter(name: name, monotonic: monotonic) ?? AnyCounterMetric<Double>(NoopCounterMetric<Double>())
     }
 
-    func createIntMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Int> {
+    public func createIntMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Int> {
         return realMeter?.createIntMeasure(name: name, absolute: absolute) ?? AnyMeasureMetric<Int>(NoopMeasureMetric<Int>())
     }
 
-    func createDoubleMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Double> {
+    public func createDoubleMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Double> {
         return realMeter?.createDoubleMeasure(name: name, absolute: absolute) ?? AnyMeasureMetric<Double>(NoopMeasureMetric<Double>())
     }
 
-    func createIntObserver(name: String, absolute: Bool, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric {
+    public func createIntObserver(name: String, absolute: Bool, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric {
         return realMeter?.createIntObserver(name: name, absolute: absolute, callback: callback) ?? NoopIntObserverMetric()
     }
 
-    func createDoubleObserver(name: String, absolute: Bool, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric {
+    public func createDoubleObserver(name: String, absolute: Bool, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric {
         return realMeter?.createDoubleObserver(name: name, absolute: absolute, callback: callback) ?? NoopDoubleObserverMetric()
     }
 
-    func updateMeter(realMeter: Meter) {
+    mutating func updateMeter(realMeter: Meter) {
         guard self.realMeter == nil else {
             return
         }

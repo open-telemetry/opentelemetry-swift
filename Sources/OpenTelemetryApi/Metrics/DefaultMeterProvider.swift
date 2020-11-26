@@ -15,15 +15,15 @@
 
 import Foundation
 
-class DefaultMeterProvider: MeterProvider {
-    static var instance: MeterProvider = DefaultMeterProvider()
+public class DefaultMeterProvider: MeterProvider {
+    public static var instance: MeterProvider = DefaultMeterProvider()
 
     static var proxyMeter = ProxyMeter()
     static var initialized = false
 
-    public init() {}
+    init() {}
 
-    static func setDefault(meterFactory: MeterProvider) {
+    public static func setDefault(meterFactory: MeterProvider) {
         guard !initialized else {
             return
         }
@@ -32,7 +32,7 @@ class DefaultMeterProvider: MeterProvider {
         initialized = true
     }
 
-    func get(instrumentationName: String, instrumentationVersion: String? = nil) -> Meter {
+    public func get(instrumentationName: String, instrumentationVersion: String? = nil) -> Meter {
         return DefaultMeterProvider.initialized ? DefaultMeterProvider.instance.get(instrumentationName: instrumentationName, instrumentationVersion: instrumentationVersion) : DefaultMeterProvider.proxyMeter
     }
 

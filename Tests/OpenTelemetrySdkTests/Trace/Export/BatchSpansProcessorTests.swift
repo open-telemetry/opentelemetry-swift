@@ -14,7 +14,7 @@
 //
 
 import OpenTelemetryApi
-@testable import OpenTelemetrySdk
+import OpenTelemetrySdk
 import XCTest
 
 class BatchSpansProcessorTests: XCTestCase {
@@ -205,7 +205,6 @@ class BatchSpansProcessorTests: XCTestCase {
 }
 
 class BlockingSpanExporter: SpanExporter {
-    
     let cond = NSCondition()
 
     enum State {
@@ -235,13 +234,12 @@ class BlockingSpanExporter: SpanExporter {
         }
         cond.unlock()
     }
-    
+
     func flush() -> SpanExporterResultCode {
         return .success
     }
 
-    func shutdown() {
-    }
+    func shutdown() {}
 
     fileprivate func unblock() {
         cond.lock()
@@ -269,10 +267,10 @@ class WaitingSpanExporter: SpanExporter {
         while spanDataList.count < numberToWaitFor {
             cond.wait()
         }
-            ret = spanDataList
-            spanDataList.removeAll()
+        ret = spanDataList
+        spanDataList.removeAll()
 
-            return ret
+        return ret
     }
 
     func export(spans: [SpanData]) -> SpanExporterResultCode {
@@ -282,7 +280,7 @@ class WaitingSpanExporter: SpanExporter {
         cond.broadcast()
         return .success
     }
-    
+
     func flush() -> SpanExporterResultCode {
         return .success
     }

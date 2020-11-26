@@ -26,13 +26,12 @@ import Foundation
 public struct TraceState: Equatable {
     private static let maxKeyValuePairs = 32
 
-    private(set) var entries = [Entry]()
+    public private(set) var entries = [Entry]()
 
     /// Returns the default with no entries.
-    public init() {
-    }
+    public init() {}
 
-    init?(entries: [Entry]) {
+    public init?(entries: [Entry]) {
         guard entries.count <= TraceState.maxKeyValuePairs else { return nil }
 
         self.entries = entries
@@ -100,8 +99,8 @@ public struct TraceState: Equatable {
         /// - Parameters:
         ///   - key: the Entry's key.
         ///   - value: the Entry's value.
-        init?(key: String, value: String) {
-            if TraceStateUtils.validateKey(key: key) && TraceStateUtils.validateValue(value: value) {
+        public init?(key: String, value: String) {
+            if TraceStateUtils.validateKey(key: key), TraceStateUtils.validateValue(value: value) {
                 self.key = key
                 self.value = value
                 return
@@ -113,9 +112,9 @@ public struct TraceState: Equatable {
 
 extension TraceState: Encodable {
     enum CodingKeys: String, CodingKey {
-        case entries = "entries"
+        case entries
     }
-    
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(entries, forKey: .entries)

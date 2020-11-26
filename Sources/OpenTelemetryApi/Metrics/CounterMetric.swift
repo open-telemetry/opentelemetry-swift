@@ -76,18 +76,18 @@ public struct AnyCounterMetric<T>: CounterMetric {
     }
 }
 
-struct NoopCounterMetric<T>: CounterMetric {
-    func add(value: T, labelset: LabelSet) {
-    }
+public struct NoopCounterMetric<T>: CounterMetric {
+    public init() {}
 
-    func add(value: T, labels: [String: String]) {
-    }
+    public func add(value: T, labelset: LabelSet) {}
 
-    func bind(labelset: LabelSet) -> BoundCounterMetric<T> {
+    public func add(value: T, labels: [String: String]) {}
+
+    public func bind(labelset: LabelSet) -> BoundCounterMetric<T> {
         return BoundCounterMetric<T>()
     }
 
-    func bind(labels: [String: String]) -> BoundCounterMetric<T> {
+    public func bind(labels: [String: String]) -> BoundCounterMetric<T> {
         return BoundCounterMetric<T>()
     }
 }

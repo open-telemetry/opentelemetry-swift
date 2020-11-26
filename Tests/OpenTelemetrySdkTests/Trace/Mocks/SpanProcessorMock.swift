@@ -14,7 +14,7 @@
 //
 
 import Foundation
-@testable import OpenTelemetrySdk
+import OpenTelemetrySdk
 
 class SpanProcessorMock: SpanProcessor {
     var onStartCalledTimes = 0
