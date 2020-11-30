@@ -38,7 +38,7 @@ public enum EntryTtl: Equatable {
 }
 
 public struct EntryMetadata: Equatable {
-    var entryTtl: EntryTtl
+    public var entryTtl: EntryTtl
 
     public init(entryTtl: EntryTtl) {
         self.entryTtl = entryTtl

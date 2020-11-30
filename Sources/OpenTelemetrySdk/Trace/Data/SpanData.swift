@@ -18,12 +18,11 @@ import OpenTelemetryApi
 
 /// representation of all data collected by the Span.
 public struct SpanData: Equatable {
-
     public class Link: OpenTelemetryApi.Link {
         public let context: SpanContext
         public let attributes: [String: AttributeValue]
 
-        init(context: SpanContext, attributes: [String: AttributeValue] = [String: AttributeValue]()) {
+        public init(context: SpanContext, attributes: [String: AttributeValue] = [String: AttributeValue]()) {
             self.context = context
             self.attributes = attributes
         }

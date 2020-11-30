@@ -16,7 +16,7 @@
 import Foundation
 
 /// Observer instrument for Double values.
-public protocol DoubleObserverMetric: AnyObject {
+public protocol DoubleObserverMetric {
     /// Observes a value.
     /// - Parameters:
     ///   - value: value to observe.
@@ -31,10 +31,10 @@ public protocol DoubleObserverMetric: AnyObject {
     func observe(value: Double, labels: [String: String])
 }
 
-class NoopDoubleObserverMetric: DoubleObserverMetric {
-    func observe(value: Double, labelset: LabelSet) {
-    }
+public struct NoopDoubleObserverMetric: DoubleObserverMetric {
+    public init() {}
 
-    func observe(value: Double, labels: [String: String]) {
-    }
+    public func observe(value: Double, labelset: LabelSet) {}
+
+    public func observe(value: Double, labels: [String: String]) {}
 }

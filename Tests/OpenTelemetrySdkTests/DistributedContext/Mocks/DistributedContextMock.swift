@@ -15,7 +15,7 @@
 
 import Foundation
 import OpenTelemetryApi
-@testable import OpenTelemetrySdk
+import OpenTelemetrySdk
 
 class CorrelationContextMock: CorrelationContext {
     static func contextBuilder() -> CorrelationContextBuilder {

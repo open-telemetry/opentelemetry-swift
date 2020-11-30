@@ -16,18 +16,16 @@
 import Foundation
 
 public struct NoopSpanProcessor: SpanProcessor {
+    public init() {}
+
     public let isStartRequired = false
     public let isEndRequired = false
 
-    public func onStart(span: ReadableSpan) {
-    }
+    public func onStart(span: ReadableSpan) {}
 
-    public func onEnd(span: ReadableSpan) {
-    }
+    public func onEnd(span: ReadableSpan) {}
 
-    public func shutdown() {
-    }
+    public func shutdown() {}
 
-    public func forceFlush() {
-    }
+    public func forceFlush() {}
 }

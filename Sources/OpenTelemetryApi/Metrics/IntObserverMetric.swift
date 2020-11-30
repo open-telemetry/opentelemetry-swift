@@ -16,7 +16,7 @@
 import Foundation
 
 /// Observer instrument for Int values.
-public protocol IntObserverMetric: AnyObject {
+public protocol IntObserverMetric {
     /// Observes a value.
     /// - Parameters:
     ///   - value: value to observe.
@@ -31,10 +31,10 @@ public protocol IntObserverMetric: AnyObject {
     func observe(value: Int, labels: [String: String])
 }
 
-class NoopIntObserverMetric: IntObserverMetric {
-    func observe(value: Int, labelset: LabelSet) {
-    }
+public struct NoopIntObserverMetric: IntObserverMetric {
+    public init() {}
 
-    func observe(value: Int, labels: [String: String]) {
-    }
+    public func observe(value: Int, labelset: LabelSet) {}
+
+    public func observe(value: Int, labels: [String: String]) {}
 }

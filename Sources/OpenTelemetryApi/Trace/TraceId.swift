@@ -23,8 +23,8 @@ public struct TraceId: Comparable, Hashable, CustomStringConvertible, Equatable 
     public static let invalid = TraceId()
 
     // The internal representation of the TraceId.
-    var idHi: UInt64 = invalidId
-    var idLo: UInt64 = invalidId
+    public private(set) var idHi: UInt64 = invalidId
+    public private(set) var idLo: UInt64 = invalidId
 
     /// Constructs a TraceId whose representation is specified by two long values representing
     /// the lower and higher parts.
@@ -42,8 +42,7 @@ public struct TraceId: Comparable, Hashable, CustomStringConvertible, Equatable 
     }
 
     /// Returns an invalid TraceId. All bytes are '\0'.
-    public init() {
-    }
+    public init() {}
 
     /// Generates a new random TraceId.
     public static func random() -> TraceId {
@@ -70,7 +69,7 @@ public struct TraceId: Comparable, Hashable, CustomStringConvertible, Equatable 
 
     /// Returns a TraceId whose representation is copied from the src beginning at the offset.
     /// - Parameter data: the byte array from where the representation of the TraceId is copied.
-    public init(fromBytes bytes: Array<UInt8>) {
+    public init(fromBytes bytes: [UInt8]) {
         self.init(fromData: Data(bytes))
     }
 
@@ -103,7 +102,7 @@ public struct TraceId: Comparable, Hashable, CustomStringConvertible, Equatable 
     /// - Parameters:
     ///   - dest: the destination buffer.
     ///   - destOffset: the starting offset in the destination buffer.
-    public func copyBytesTo(dest: inout Array<UInt8>, destOffset: Int) {
+    public func copyBytesTo(dest: inout [UInt8], destOffset: Int) {
         dest.replaceSubrange(destOffset ..< destOffset + MemoryLayout<UInt64>.size,
                              with: withUnsafeBytes(of: idHi.bigEndian) { Array($0) })
         dest.replaceSubrange(destOffset + MemoryLayout<UInt64>.size ..< destOffset + MemoryLayout<UInt64>.size * 2,
@@ -177,7 +176,7 @@ public struct TraceId: Comparable, Hashable, CustomStringConvertible, Equatable 
     public static func < (lhs: TraceId, rhs: TraceId) -> Bool {
         if lhs.idHi < rhs.idHi {
             return true
-        } else if lhs.idHi == rhs.idHi && lhs.idLo < rhs.idLo {
+        } else if lhs.idHi == rhs.idHi, lhs.idLo < rhs.idLo {
             return true
         } else {
             return false

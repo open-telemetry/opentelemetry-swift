@@ -33,7 +33,7 @@ public struct TraceFlags: Equatable, CustomStringConvertible {
     private var options: UInt8 = 0
 
     /// Returns the one byte representation of the TraceFlags.
-    var byte: UInt8 {
+    public var byte: UInt8 {
         return options
     }
 
@@ -43,8 +43,7 @@ public struct TraceFlags: Equatable, CustomStringConvertible {
     }
 
     /// Creates the default TraceFlags
-    public init() {
-    }
+    public init() {}
 
     /// Creates a new TraceFlags with the given options.
     /// - Parameter fromByte: the byte representation of the TraceFlags.
@@ -102,9 +101,9 @@ public struct TraceFlags: Equatable, CustomStringConvertible {
 
 extension TraceFlags: Encodable {
     enum CodingKeys: String, CodingKey {
-        case sampled = "sampled"
+        case sampled
     }
-    
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(sampled, forKey: .sampled)

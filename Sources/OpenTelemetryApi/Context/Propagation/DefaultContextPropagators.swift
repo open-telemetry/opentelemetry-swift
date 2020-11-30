@@ -21,11 +21,11 @@ import Foundation
 public struct DefaultContextPropagators: ContextPropagators {
     public var httpTextFormat: HTTPTextFormattable
 
-    init() {
+    public init() {
         httpTextFormat = NoopHttpTextFormat()
     }
 
-    init(textPropagators: [HTTPTextFormattable]) {
+    public init(textPropagators: [HTTPTextFormattable]) {
         httpTextFormat = MultiHttpTextFormat(textPropagators: textPropagators)
     }
 
@@ -76,8 +76,7 @@ public struct DefaultContextPropagators: ContextPropagators {
     struct NoopHttpTextFormat: HTTPTextFormattable {
         public var fields = Set<String>()
 
-        public func inject<S>(spanContext: SpanContext, carrier: inout [String: String], setter: S) where S: Setter {
-        }
+        public func inject<S>(spanContext: SpanContext, carrier: inout [String: String], setter: S) where S: Setter {}
 
         public func extract<G>(spanContext: SpanContext?, carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
             return spanContext

@@ -15,7 +15,7 @@
 
 import Foundation
 import OpenTelemetryApi
-@testable import OpenTelemetrySdk
+import OpenTelemetrySdk
 
 class SpanMock: Span {
     var name: String = ""
@@ -30,29 +30,21 @@ class SpanMock: Span {
 
     var status: Status?
 
-    func updateName(name: String) {
-    }
+    func updateName(name: String) {}
 
-    func setAttribute(key: String, value: AttributeValue?) {
-    }
+    func setAttribute(key: String, value: AttributeValue?) {}
 
-    func addEvent(name: String) {
-    }
+    func addEvent(name: String) {}
 
-    func addEvent(name: String, attributes: [String: AttributeValue]) {
-    }
+    func addEvent(name: String, attributes: [String: AttributeValue]) {}
 
-    func addEvent<E>(event: E) where E: Event {
-    }
+    func addEvent<E>(event: E) where E: Event {}
 
-    func addEvent(name: String, timestamp: Date) {
-    }
+    func addEvent(name: String, timestamp: Date) {}
 
-    func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Date) {
-    }
+    func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Date) {}
 
-    func addEvent<E>(event: E, timestamp: Date) where E: Event {
-    }
+    func addEvent<E>(event: E, timestamp: Date) where E: Event {}
 
     var description: String = "SpanMock"
 }

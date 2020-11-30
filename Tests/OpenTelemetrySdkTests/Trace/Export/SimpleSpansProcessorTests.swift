@@ -14,7 +14,7 @@
 //
 
 import OpenTelemetryApi
-@testable import OpenTelemetrySdk
+import OpenTelemetrySdk
 import XCTest
 
 class SimpleSpansProcessorTests: XCTestCase {

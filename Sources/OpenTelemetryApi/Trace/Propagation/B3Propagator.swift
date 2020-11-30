@@ -38,20 +38,20 @@ public class B3Propagator: HTTPTextFormattable {
     private var singleHeader: Bool
     
     /// Creates a new instance of B3Propagator. Default to use multiple headers.
-    init() {
+    public init() {
         self.singleHeader = false
     }
     
     /// Creates a new instance of B3Propagator
     /// - Parameters:
     ///     - singleHeader: whether to use single or multiple headers
-    init(_ singleHeader: Bool) {
+    public init(_ singleHeader: Bool) {
         self.singleHeader = singleHeader
     }
     
-    public func inject<S>(spanContext: SpanContext, carrier: inout [String : String], setter: S) where S : Setter {
+    public func inject<S>(spanContext: SpanContext, carrier: inout [String: String], setter: S) where S: Setter {
         let sampled = spanContext.traceFlags.sampled ? B3Propagator.trueInt : B3Propagator.falseInt
-        if (singleHeader) {
+        if singleHeader {
             setter.set(carrier: &carrier, key: B3Propagator.combinedHeader, value: "\(spanContext.traceId.hexString)\(B3Propagator.combinedHeaderDelimiter)\(spanContext.spanId.hexString)\(B3Propagator.combinedHeaderDelimiter)\(sampled)")
         } else {
             setter.set(carrier: &carrier, key: B3Propagator.traceIdHeader, value: spanContext.traceId.hexString)
@@ -60,10 +60,10 @@ public class B3Propagator: HTTPTextFormattable {
         }
     }
     
-    public func extract<G>(spanContext: SpanContext?, carrier: [String : String], getter: G) -> SpanContext? where G : Getter {
+    public func extract<G>(spanContext: SpanContext?, carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
         var spanContext: SpanContext?
         
-        if (singleHeader) {
+        if singleHeader {
             spanContext = getSpanContextFromSingleHeader(carrier: carrier, getter: getter)
         } else {
             spanContext = getSpanContextFromMultipleHeaders(carrier: carrier, getter: getter)
@@ -72,29 +72,29 @@ public class B3Propagator: HTTPTextFormattable {
         return spanContext
     }
     
-    private func getSpanContextFromSingleHeader<G>(carrier: [String: String], getter: G) -> SpanContext? where G : Getter {
+    private func getSpanContextFromSingleHeader<G>(carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
         guard let value = getter.get(carrier: carrier, key: B3Propagator.combinedHeader), value.count >= 1 else {
             print("Missing or empty combined header: \(B3Propagator.combinedHeader). Returning INVALID span context.")
             return SpanContext.invalid
         }
         
-        let parts: [String] = value[0].split(separator: "-").map{String($0)}
+        let parts: [String] = value[0].split(separator: "-").map { String($0) }
         
         //  must have between 2 and 4 hyphen delimited parts:
         //  traceId-spanId-sampled-parentSpanId (last two are optional)
-        if (parts.count < 2 || parts.count > 4) {
+        if parts.count < 2 || parts.count > 4 {
             print("Invalid combined header '\(B3Propagator.combinedHeader)'. Returning INVALID span Context")
             return SpanContext.invalid
         }
         
         let traceId = parts[0]
-        if (!isTraceIdValid(traceId)) {
+        if !isTraceIdValid(traceId) {
             print("Invalid TraceId in B3 header: \(B3Propagator.combinedHeader). Returning INVALID span context.")
             return SpanContext.invalid
         }
         
         let spanId = parts[1]
-        if (!isSpanIdValid(spanId)) {
+        if !isSpanIdValid(spanId) {
             print("Invalid SpanId in B3 header: \(B3Propagator.combinedHeader). Returning INVALID span context.")
             return SpanContext.invalid
         }
@@ -104,7 +104,7 @@ public class B3Propagator: HTTPTextFormattable {
         return buildSpanContext(traceId: traceId, spanId: spanId, sampled: sampled)
     }
     
-    private func getSpanContextFromMultipleHeaders<G>(carrier: [String: String], getter: G) -> SpanContext? where G : Getter {
+    private func getSpanContextFromMultipleHeaders<G>(carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
         guard let traceIdCollection = getter.get(carrier: carrier, key: B3Propagator.traceIdHeader), traceIdCollection.count >= 1, isTraceIdValid(traceIdCollection[0]) else {
             print("Invalid TraceId in B3 header: \(B3Propagator.combinedHeader). Returning INVALID span context.")
             return SpanContext.invalid
