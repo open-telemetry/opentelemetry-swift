@@ -34,7 +34,7 @@ let package = Package(
         .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
     ],
     dependencies: [
-        .package(url:  "https://github.com/undefinedlabs/opentracing-objc", .branch("spm-support")), // Need custom fork because of SPM
+        .package(url:  "https://github.com/undefinedlabs/opentracing-objc",  from: "0.5.2"), // Need custom fork because of SPM
         .package(url:  "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1"), // Need custom fork because of SPM
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
         .package(url: "https://github.com/grpc/grpc-swift.git", from: "1.0.0-alpha.12"),
