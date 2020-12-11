@@ -68,9 +68,9 @@ class DirectoryTests: XCTestCase {
         defer { directory.delete() }
         _ = try directory.createFile(named: "abcd")
 
-        let file = try directory.file(named: "abcd")
-        XCTAssertEqual(file.url, directory.url.appendingPathComponent("abcd"))
-        XCTAssertTrue(fileManager.fileExists(atPath: file.url.path))
+        let file = directory.file(named: "abcd")
+        XCTAssertEqual(file?.url, directory.url.appendingPathComponent("abcd"))
+        XCTAssertTrue(fileManager.fileExists(atPath: file!.url.path))
     }
 
     func testItRetrievesAllFiles() throws {

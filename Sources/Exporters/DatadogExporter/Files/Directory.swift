@@ -38,12 +38,13 @@ internal struct Directory {
     }
 
     /// Returns file with given name.
-    func file(named fileName: String) throws -> File {
+    func file(named fileName: String) -> File? {
         let fileURL = url.appendingPathComponent(fileName, isDirectory: false)
-        guard FileManager.default.fileExists(atPath: fileURL.path) else {
-            throw ExporterError(description: "File does not exist at path: \(fileURL.path)")
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            return File(url: fileURL)
+        } else {
+            return nil
         }
-        return File(url: fileURL)
     }
 
     /// Returns all files of this directory.
