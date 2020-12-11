@@ -14,9 +14,9 @@
         "package": "Opentracing",
         "repositoryURL": "https://github.com/undefinedlabs/opentracing-objc",
         "state": {
-          "branch": "spm-support",
-          "revision": "c3a60aa19668e48f647c2e9d9ce7e364f69bc496",
-          "version": null
+          "branch": null,
+          "revision": "18c1a35ca966236cee0c5a714a51a73ff33384c1",
+          "version": "0.5.2"
         }
       },
       {
