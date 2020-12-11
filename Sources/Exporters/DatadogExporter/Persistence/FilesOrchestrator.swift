@@ -68,7 +68,9 @@ internal class FilesOrchestrator {
     private func reuseLastWritableFileIfPossible(writeSize: UInt64) -> WritableFile? {
         if let lastFileName = lastWritableFileName {
             do {
-                let lastFile = try directory.file(named: lastFileName)
+                guard let lastFile = directory.file(named: lastFileName) else {
+                    return nil
+                }
                 let lastFileCreationDate = fileCreationDateFrom(fileName: lastFile.name)
                 let lastFileAge = dateProvider.currentDate().timeIntervalSince(lastFileCreationDate)
 
@@ -83,7 +85,6 @@ internal class FilesOrchestrator {
                 print("🔥 Failed to read previously used writable file: \(error)")
             }
         }
-
         return nil
     }
 

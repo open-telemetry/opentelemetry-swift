@@ -46,7 +46,7 @@ class FilesOrchestratorTests: XCTestCase {
         _ = try orchestrator.getWritableFile(writeSize: 1)
 
         XCTAssertEqual(try temporaryDirectory.files().count, 1)
-        XCTAssertNotNil(try temporaryDirectory.file(named: dateProvider.currentDate().toFileName))
+        XCTAssertNotNil(temporaryDirectory.file(named: dateProvider.currentDate().toFileName))
     }
 
     func testGivenDefaultWriteConditions_whenUsedNextTime_itReusesWritableFile() throws {
@@ -160,12 +160,12 @@ class FilesOrchestratorTests: XCTestCase {
         // Asking for the next file should purge the oldest one.
         let file4 = try orchestrator.getWritableFile(writeSize: oneMB)
         XCTAssertEqual(try temporaryDirectory.files().count, 3)
-        XCTAssertNil(try? temporaryDirectory.file(named: file1.name))
+        XCTAssertNil(temporaryDirectory.file(named: file1.name))
         try file4.append(data: .mock(ofSize: oneMB + 1), synchronized: true)
 
         _ = try orchestrator.getWritableFile(writeSize: oneMB)
         XCTAssertEqual(try temporaryDirectory.files().count, 3)
-        XCTAssertNil(try? temporaryDirectory.file(named: file2.name))
+        XCTAssertNil(temporaryDirectory.file(named: file2.name))
     }
 
     // MARK: - Readable file tests
@@ -203,13 +203,13 @@ class FilesOrchestratorTests: XCTestCase {
 
         dateProvider.advance(bySeconds: 1 + performance.minFileAgeForRead)
         XCTAssertEqual(orchestrator.getReadableFile()?.name, fileNames[0])
-        try temporaryDirectory.file(named: fileNames[0]).delete()
+        try temporaryDirectory.file(named: fileNames[0])?.delete()
         XCTAssertEqual(orchestrator.getReadableFile()?.name, fileNames[1])
-        try temporaryDirectory.file(named: fileNames[1]).delete()
+        try temporaryDirectory.file(named: fileNames[1])?.delete()
         XCTAssertEqual(orchestrator.getReadableFile()?.name, fileNames[2])
-        try temporaryDirectory.file(named: fileNames[2]).delete()
+        try temporaryDirectory.file(named: fileNames[2])?.delete()
         XCTAssertEqual(orchestrator.getReadableFile()?.name, fileNames[3])
-        try temporaryDirectory.file(named: fileNames[3]).delete()
+        try temporaryDirectory.file(named: fileNames[3])?.delete()
         XCTAssertNil(orchestrator.getReadableFile())
     }
 

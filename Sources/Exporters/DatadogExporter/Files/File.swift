@@ -73,10 +73,10 @@ internal struct File: WritableFile, ReadableFile {
          */
         if #available(OSX 10.15.4, iOS 13.4, watchOS 6.0, tvOS 13.4, *) {
             defer {
-                try? fileHandle.close()
                 if synchronized {
                     try? fileHandle.synchronize()
                 }
+                try? fileHandle.close()
             }
             try fileHandle.seekToEnd()
             try fileHandle.write(contentsOf: data)
