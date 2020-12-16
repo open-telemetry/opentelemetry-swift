@@ -25,14 +25,14 @@ public class Propagation: BaseShimProtocol {
 
     public func injectTextFormat(contextShim: SpanContextShim, carrier: NSMutableDictionary) {
         var newEntries = [String: String]()
-        propagators.httpTextFormat.inject(spanContext: contextShim.context, carrier: &newEntries, setter: TextMapSetter())
+        propagators.textMapPropagator.inject(spanContext: contextShim.context, carrier: &newEntries, setter: TextMapSetter())
         carrier.addEntries(from: newEntries)
     }
 
     public func extractTextFormat(carrier: [String: String]) -> SpanContextShim? {
         guard let currentCorrelationContext = ContextUtils.getCurrentCorrelationContext() else { return nil }
         let currentContext = ContextUtils.getCurrentSpan()?.context
-        let context = propagators.httpTextFormat.extract(spanContext: currentContext, carrier: carrier, getter: TextMapGetter())
+        let context = propagators.textMapPropagator.extract(spanContext: currentContext, carrier: carrier, getter: TextMapGetter())
         if !(context?.isValid ?? false) {
             return nil
         }

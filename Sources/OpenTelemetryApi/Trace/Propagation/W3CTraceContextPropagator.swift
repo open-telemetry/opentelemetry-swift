@@ -19,40 +19,48 @@ import Foundation
  * Implementation of the TraceContext propagation protocol. See
  * https://github.com/w3c/trace-context
  */
-public struct HttpTraceContextFormat: HTTPTextFormattable {
-    private static let versionLength = "00".count
-    private static let versionPrefixIdLength = "00-".count
-    private static let traceIdLength = "0af7651916cd43dd8448eb211c80319c".count
-    private static let versionAndTraceIdLength = "00-0af7651916cd43dd8448eb211c80319c-".count
-    private static let spanIdLength = "00f067aa0ba902b7".count
-    private static let versionAndTraceIdAndSpanIdLength = "00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-".count
-    private static let optionsLength = "00".count
-    private static let traceparentLengthV0 = "00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-00".count
+public struct W3CTraceContextPropagator: TextMapPropagator {
+    private static let version = "00"
+    private static let delimiter: Character = "-"
+    private static let versionLength = 2
+    private static let delimiterLength = 1
+    private static let versionPrefixIdLength = versionLength + delimiterLength
+    private static let traceIdLength = 2 * TraceId.size
+    private static let versionAndTraceIdLength = versionLength + delimiterLength + traceIdLength + delimiterLength
+    private static let spanIdLength = 2 * SpanId.size
+    private static let versionAndTraceIdAndSpanIdLength =  versionAndTraceIdLength + spanIdLength + delimiterLength
+    private static let optionsLength = 2
+    private static let traceparentLengthV0 = versionAndTraceIdAndSpanIdLength + optionsLength
 
     static let traceparent = "traceparent"
     static let traceState = "traceState"
 
     public init() {}
 
-    public var fields: Set<String> = [traceState, traceparent]
+    public let fields: Set<String> = [traceState, traceparent]
 
     public func inject<S>(spanContext: SpanContext, carrier: inout [String: String], setter: S) where S: Setter {
         guard spanContext.isValid else { return }
-        var traceparent = "00-\(spanContext.traceId.hexString)-\(spanContext.spanId.hexString)"
+        var traceparent = W3CTraceContextPropagator.version +
+            String(W3CTraceContextPropagator.delimiter) +
+            spanContext.traceId.hexString +
+            String(W3CTraceContextPropagator.delimiter) +
+            spanContext.spanId.hexString +
+            String(W3CTraceContextPropagator.delimiter)
 
-        traceparent += spanContext.traceFlags.sampled ? "-01" : "-00"
+        traceparent += spanContext.traceFlags.sampled ? "01" : "00"
 
-        setter.set(carrier: &carrier, key: HttpTraceContextFormat.traceparent, value: traceparent)
+        setter.set(carrier: &carrier, key: W3CTraceContextPropagator.traceparent, value: traceparent)
 
         let traceStateStr = TraceStateUtils.getString(traceState: spanContext.traceState)
         if !traceStateStr.isEmpty {
-            setter.set(carrier: &carrier, key: HttpTraceContextFormat.traceState, value: traceStateStr)
+            setter.set(carrier: &carrier, key: W3CTraceContextPropagator.traceState, value: traceStateStr)
         }
     }
 
     public func extract<G>(spanContext: SpanContext?, carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
         guard let traceparentCollection = getter.get(carrier: carrier,
-                                                     key: HttpTraceContextFormat.traceparent),
+                                                     key: W3CTraceContextPropagator.traceparent),
             traceparentCollection.count <= 1 else {
             // multiple traceparent are not allowed
             return nil
@@ -63,7 +71,7 @@ public struct HttpTraceContextFormat: HTTPTextFormattable {
             return nil
         }
 
-        let traceStateCollection = getter.get(carrier: carrier, key: HttpTraceContextFormat.traceState)
+        let traceStateCollection = getter.get(carrier: carrier, key: W3CTraceContextPropagator.traceState)
 
         let traceState = extractTraceState(traceStatecollection: traceStateCollection)
 
@@ -81,14 +89,14 @@ public struct HttpTraceContextFormat: HTTPTextFormattable {
 
         guard let traceparent = traceparent,
             !traceparent.isEmpty,
-            traceparent.count >= HttpTraceContextFormat.traceparentLengthV0 else {
+            traceparent.count >= W3CTraceContextPropagator.traceparentLengthV0 else {
             return nil
         }
 
         let traceparentArray = Array(traceparent)
 
         // if version does not end with delimiter
-        if traceparentArray[HttpTraceContextFormat.versionPrefixIdLength - 1] != "-" {
+        if traceparentArray[W3CTraceContextPropagator.versionPrefixIdLength - 1] != W3CTraceContextPropagator.delimiter {
             return nil
         }
 
@@ -105,27 +113,27 @@ public struct HttpTraceContextFormat: HTTPTextFormattable {
             bestAttempt = true
         }
 
-        if traceparentArray[HttpTraceContextFormat.versionAndTraceIdLength - 1] != "-" {
+        if traceparentArray[W3CTraceContextPropagator.versionAndTraceIdLength - 1] != W3CTraceContextPropagator.delimiter {
             return nil
         }
 
-        traceId = TraceId(fromHexString: String(traceparentArray[HttpTraceContextFormat.versionPrefixIdLength ... (HttpTraceContextFormat.versionPrefixIdLength + HttpTraceContextFormat.traceIdLength)]))
+        traceId = TraceId(fromHexString: String(traceparentArray[W3CTraceContextPropagator.versionPrefixIdLength ... (W3CTraceContextPropagator.versionPrefixIdLength + W3CTraceContextPropagator.traceIdLength)]))
         if !traceId.isValid {
             return nil
         }
 
-        if traceparentArray[HttpTraceContextFormat.versionAndTraceIdAndSpanIdLength - 1] != "-" {
+        if traceparentArray[W3CTraceContextPropagator.versionAndTraceIdAndSpanIdLength - 1] != W3CTraceContextPropagator.delimiter {
             return nil
         }
 
-        spanId = SpanId(fromHexString: String(traceparentArray[HttpTraceContextFormat.versionAndTraceIdLength ... (HttpTraceContextFormat.versionAndTraceIdLength + HttpTraceContextFormat.spanIdLength)]))
+        spanId = SpanId(fromHexString: String(traceparentArray[W3CTraceContextPropagator.versionAndTraceIdLength ... (W3CTraceContextPropagator.versionAndTraceIdLength + W3CTraceContextPropagator.spanIdLength)]))
 
         if !spanId.isValid {
             return nil
         }
 
         // let options0 = UInt8(String(traceparentArray[TraceContextFormat.versionAndTraceIdAndSpanIdLength]), radix: 16)!
-        guard let options1 = UInt8(String(traceparentArray[HttpTraceContextFormat.versionAndTraceIdAndSpanIdLength + 1]), radix: 16) else {
+        guard let options1 = UInt8(String(traceparentArray[W3CTraceContextPropagator.versionAndTraceIdAndSpanIdLength + 1]), radix: 16) else {
             return nil
         }
 
@@ -133,12 +141,12 @@ public struct HttpTraceContextFormat: HTTPTextFormattable {
             traceOptions.setIsSampled(true)
         }
 
-        if !bestAttempt && (traceparent.count != (HttpTraceContextFormat.versionAndTraceIdAndSpanIdLength + HttpTraceContextFormat.optionsLength)) {
+        if !bestAttempt && (traceparent.count != (W3CTraceContextPropagator.versionAndTraceIdAndSpanIdLength + W3CTraceContextPropagator.optionsLength)) {
             return nil
         }
 
         if bestAttempt {
-            if traceparent.count > HttpTraceContextFormat.traceparentLengthV0 && traceparentArray[HttpTraceContextFormat.traceparentLengthV0] != "-" {
+            if traceparent.count > W3CTraceContextPropagator.traceparentLengthV0 && traceparentArray[W3CTraceContextPropagator.traceparentLengthV0] != W3CTraceContextPropagator.delimiter {
                 return nil
             }
         }

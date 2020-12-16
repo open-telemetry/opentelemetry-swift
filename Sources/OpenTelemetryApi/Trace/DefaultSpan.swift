@@ -19,11 +19,14 @@ import Foundation
 /// implementation is available. All operations are no-op except context propagation.
 /// Used also to stop tracing, see Tracer.withSpan()
 public class DefaultSpan: Span {
+    
     public var name: String = ""
 
     public var kind: SpanKind
 
     public var context: SpanContext
+
+    public var scope: Scope?
 
     /// Returns a DefaultSpan with an invalid SpanContext.
     public convenience init() {
@@ -53,7 +56,7 @@ public class DefaultSpan: Span {
                            kind: .client)
     }
 
-    public var isRecordingEvents: Bool {
+    public var isRecording: Bool {
         return false
     }
 
@@ -61,39 +64,22 @@ public class DefaultSpan: Span {
         get {
             return Status.ok
         }
-        set {
-        }
+        set {}
     }
 
     public var description: String {
         return "DefaultSpan"
     }
 
-    public func updateName(name: String) {
-    }
+    public func updateName(name: String) {}
 
-    public func setAttribute(key: String, value: AttributeValue?) {
-    }
+    public func setAttribute(key: String, value: AttributeValue?) {}
 
-    public func addEvent(name: String) {
-    }
+    public func addEvent(name: String) {}
 
-    public func addEvent(name: String, timestamp: Date) {
-    }
+    public func addEvent(name: String, timestamp: Date) {}
 
-    public func addEvent(name: String, attributes: [String: AttributeValue]) {
-    }
+    public func addEvent(name: String, attributes: [String: AttributeValue]) {}
 
-    public func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Date) {
-    }
-
-    public func addEvent<E>(event: E) where E: Event {
-    }
-
-    public func addEvent<E>(event: E, timestamp: Date) where E: Event {
-    }
-
-    public func addLink(link: Link) {
-    }
-
+    public func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Date) {}
 }

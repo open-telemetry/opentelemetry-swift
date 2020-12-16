@@ -31,7 +31,7 @@ public struct OpenTelemetry {
     public private(set) var contextManager: CorrelationContextManager
 
     /// registered manager or default via  DefaultCorrelationContextManager.instance.
-    public private(set) var propagators: ContextPropagators = DefaultContextPropagators(textPropagators: [HttpTraceContextFormat()])
+    public private(set) var propagators: ContextPropagators = DefaultContextPropagators(textPropagators: [W3CTraceContextPropagator()])
 
     private init() {
         tracerProvider = DefaultTracerProvider.instance

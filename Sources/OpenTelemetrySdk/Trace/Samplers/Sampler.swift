@@ -30,7 +30,7 @@ public protocol Sampler: AnyObject, CustomStringConvertible {
                       name: String,
                       kind: SpanKind,
                       attributes: [String:AttributeValue],
-                      parentLinks: [Link]) -> Decision
+                      parentLinks: [SpanData.Link]) -> Decision
 }
 
 /// Sampling decision returned by Sampler.shouldSample(SpanContext, TraceId, SpanId, String, Array).

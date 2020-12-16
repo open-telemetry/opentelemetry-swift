@@ -18,16 +18,6 @@ import OpenTelemetryApi
 import XCTest
 
 class RecordEventsReadableSpanTest: XCTestCase {
-    class TestEvent: Event {
-        var name: String {
-            return "event3"
-        }
-
-        var attributes: [String: AttributeValue] {
-            return [String: AttributeValue]()
-        }
-    }
-
     let spanName = "MySpanName"
     let spanNewName = "NewName"
     let nanosPerSecond: UInt64 = 1000000000
@@ -66,11 +56,11 @@ class RecordEventsReadableSpanTest: XCTestCase {
         span.end()
         // Check that adding trace events or update fields after Span#end() does not throw any thrown
         // and are ignored.
-        spanDoWork(span: span, status: .cancelled)
+        spanDoWork(span: span, status: .error)
         let spanData = span.toSpanData()
         verifySpanData(spanData: spanData,
                        attributes: [String: AttributeValue](),
-                       timedEvents: [TimedEvent](),
+                       events: [SpanData.Event](),
                        links: [link],
                        spanName: spanName,
                        startEpochNanos: startEpochNanos,
@@ -93,10 +83,10 @@ class RecordEventsReadableSpanTest: XCTestCase {
         XCTAssertFalse(span.hasEnded)
         spanDoWork(span: span, status: nil)
         let spanData = span.toSpanData()
-        let timedEvent = TimedEvent(name: "event2", epochNanos: startEpochNanos + nanosPerSecond, attributes: [String: AttributeValue]())
+        let event = SpanData.Event(name: "event2", epochNanos: startEpochNanos + nanosPerSecond, attributes: [String: AttributeValue]())
         verifySpanData(spanData: spanData,
                        attributes: expectedAttributes,
-                       timedEvents: [timedEvent],
+                       events: [event],
                        links: [link],
                        spanName: spanNewName,
                        startEpochNanos: startEpochNanos,
@@ -110,19 +100,19 @@ class RecordEventsReadableSpanTest: XCTestCase {
 
     func testToSpanData_EndedSpan() {
         let span = createTestSpan(kind: .internal)
-        spanDoWork(span: span, status: .cancelled)
+        spanDoWork(span: span, status: .ok)
         span.end()
         XCTAssertEqual(spanProcessor.onEndCalledTimes, 1)
         let spanData = span.toSpanData()
-        let timedEvent = TimedEvent(name: "event2", epochNanos: startEpochNanos + nanosPerSecond, attributes: [String: AttributeValue]())
+        let event = SpanData.Event(name: "event2", epochNanos: startEpochNanos + nanosPerSecond, attributes: [String: AttributeValue]())
         verifySpanData(spanData: spanData,
                        attributes: expectedAttributes,
-                       timedEvents: [timedEvent],
+                       events: [event],
                        links: [link],
                        spanName: spanNewName,
                        startEpochNanos: startEpochNanos,
                        endEpochNanos: testClock.now,
-                       status: .cancelled,
+                       status: .ok,
                        hasEnded: true)
     }
 
@@ -145,10 +135,10 @@ class RecordEventsReadableSpanTest: XCTestCase {
         let span = createTestSpan(kind: .consumer)
         testClock.advanceMillis(millisPerSecond)
         XCTAssertEqual(span.toSpanData().status, Status.ok)
-        span.status = .cancelled
-        XCTAssertEqual(span.toSpanData().status, Status.cancelled)
+        span.status = .error
+        XCTAssertEqual(span.toSpanData().status, Status.error)
         span.end()
-        XCTAssertEqual(span.toSpanData().status, Status.cancelled)
+        XCTAssertEqual(span.toSpanData().status, Status.error)
     }
 
     func testGetSpanKind() {
@@ -248,10 +238,9 @@ class RecordEventsReadableSpanTest: XCTestCase {
         let span = createTestRootSpan()
         span.addEvent(name: "event1")
         span.addEvent(name: "event2", attributes: attributes)
-        span.addEvent(event: TestEvent())
         span.end()
         let spanData = span.toSpanData()
-        XCTAssertEqual(spanData.timedEvents.count, 3)
+        XCTAssertEqual(spanData.events.count, 2)
     }
 
     func testDroppingAttributes() {
@@ -309,20 +298,20 @@ class RecordEventsReadableSpanTest: XCTestCase {
             testClock.advanceMillis(millisPerSecond)
         }
         var spanData = span.toSpanData()
-        XCTAssertEqual(spanData.timedEvents.count, maxNumberOfEvents) //
+        XCTAssertEqual(spanData.events.count, maxNumberOfEvents) //
         for i in 0 ..< maxNumberOfEvents {
-            let expectedEvent = TimedEvent(name: "event2", epochNanos: startEpochNanos + UInt64(maxNumberOfEvents + i) * nanosPerSecond,
+            let expectedEvent = SpanData.Event(name: "event2", epochNanos: startEpochNanos + UInt64(maxNumberOfEvents + i) * nanosPerSecond,
                                                     attributes: [String: AttributeValue]())
-            XCTAssertEqual(spanData.timedEvents[i], expectedEvent)
+            XCTAssertEqual(spanData.events[i], expectedEvent)
             XCTAssertEqual(spanData.totalRecordedEvents, 2 * maxNumberOfEvents)
         }
         span.end()
         spanData = span.toSpanData()
-        XCTAssertEqual(spanData.timedEvents.count, maxNumberOfEvents)
+        XCTAssertEqual(spanData.events.count, maxNumberOfEvents)
         for i in 0 ..< maxNumberOfEvents {
-            let expectedEvent = TimedEvent(name: "event2", epochNanos: startEpochNanos + UInt64(maxNumberOfEvents + i) * nanosPerSecond,
+            let expectedEvent = SpanData.Event(name: "event2", epochNanos: startEpochNanos + UInt64(maxNumberOfEvents + i) * nanosPerSecond,
                                                     attributes: [String: AttributeValue]())
-            XCTAssertEqual(spanData.timedEvents[i], expectedEvent)
+            XCTAssertEqual(spanData.events[i], expectedEvent)
         }
     }
 
@@ -339,7 +328,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
         attribute["foo"] = AttributeValue.string("bar")
         let resource = Resource(attributes: attributes)
         let attributes = TestUtils.generateRandomAttributes()
-        var attributesWithCapacity = AttributesWithCapacity(capacity: 32)
+        var attributesWithCapacity = AttributesDictionay(capacity: 32)
         attributesWithCapacity.updateValues(attributes: attributes)
 
         let event1Attributes = TestUtils.generateRandomAttributes()
@@ -376,9 +365,9 @@ class RecordEventsReadableSpanTest: XCTestCase {
         clock.advanceMillis(100)
         readableSpan.end()
         let endEpochNanos = clock.now
-        let timedEvent1 = TimedEvent(name: "event1", epochNanos: firstEventTimeNanos, attributes: event1Attributes)
-        let timedEvent2 = TimedEvent(name: "event2", epochNanos: secondEventTimeNanos, attributes: event2Attributes)
-        let timedEvents = [timedEvent1, timedEvent2]
+        let event1 = SpanData.Event(name: "event1", epochNanos: firstEventTimeNanos, attributes: event1Attributes)
+        let event2 = SpanData.Event(name: "event2", epochNanos: secondEventTimeNanos, attributes: event2Attributes)
+        let events = [event1, event2]
         let expected = SpanData(traceId: traceId,
                                 spanId: spanId,
                                 traceFlags: TraceFlags(),
@@ -390,7 +379,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
                                 kind: kind,
                                 startEpochNanos: startEpochNanos,
                                 attributes: attributes,
-                                timedEvents: timedEvents,
+                                events: events,
                                 links: links,
                                 status: .ok,
                                 endEpochNanos: endEpochNanos,
@@ -420,7 +409,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
     }
 
     private func createTestSpan(kind: SpanKind, config: TraceConfig, parentSpanId: SpanId?, attributes: [String: AttributeValue]) -> RecordEventsReadableSpan {
-        var attributesWithCapacity = AttributesWithCapacity(capacity: config.maxNumberOfAttributes)
+        var attributesWithCapacity = AttributesDictionay(capacity: config.maxNumberOfAttributes)
         attributesWithCapacity.updateValues(attributes: attributes)
 
         let span = RecordEventsReadableSpan.startSpan(context: spanContext,
@@ -456,8 +445,8 @@ class RecordEventsReadableSpanTest: XCTestCase {
 
     private func verifySpanData(spanData: SpanData,
                                 attributes: [String: AttributeValue],
-                                timedEvents: [TimedEvent],
-                                links: [Link], spanName: String,
+                                events: [SpanData.Event],
+                                links: [SpanData.Link], spanName: String,
                                 startEpochNanos: UInt64,
                                 endEpochNanos: UInt64,
                                 status: Status,
@@ -471,11 +460,11 @@ class RecordEventsReadableSpanTest: XCTestCase {
         XCTAssertEqual(spanData.instrumentationLibraryInfo, instrumentationLibraryInfo)
         XCTAssertEqual(spanData.name, spanName)
         XCTAssertEqual(spanData.attributes, attributes)
-        XCTAssertEqual(spanData.timedEvents, timedEvents)
+        XCTAssertEqual(spanData.events, events)
         XCTAssert(spanData.links == links)
         XCTAssertEqual(spanData.startEpochNanos, startEpochNanos)
         XCTAssertEqual(spanData.endEpochNanos, endEpochNanos)
-        XCTAssertEqual(spanData.status?.canonicalCode, status.canonicalCode)
+        XCTAssertEqual(spanData.status?.statusCode, status.statusCode)
         XCTAssertEqual(spanData.hasEnded, hasEnded)
     }
 }

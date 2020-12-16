@@ -26,9 +26,11 @@ class SpanMock: Span {
 
     var context: SpanContext = SpanContext.create(traceId: TraceId.random(), spanId: SpanId.random(), traceFlags: TraceFlags(), traceState: TraceState())
 
-    var isRecordingEvents: Bool = false
+    var isRecording: Bool = false
 
     var status: Status?
+
+    var scope: Scope?
 
     func updateName(name: String) {}
 
@@ -38,13 +40,9 @@ class SpanMock: Span {
 
     func addEvent(name: String, attributes: [String: AttributeValue]) {}
 
-    func addEvent<E>(event: E) where E: Event {}
-
     func addEvent(name: String, timestamp: Date) {}
 
     func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Date) {}
-
-    func addEvent<E>(event: E, timestamp: Date) where E: Event {}
 
     var description: String = "SpanMock"
 }

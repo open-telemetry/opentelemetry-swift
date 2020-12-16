@@ -83,7 +83,7 @@ final class PushControllerTests: XCTestCase {
                 }
             }
 
-            let elapsed = Double(DispatchTime.now().uptimeNanoseconds - start.uptimeNanoseconds) / 1000000000
+            let elapsed = TimeInterval.fromNanoseconds(DispatchTime.now().uptimeNanoseconds - start.uptimeNanoseconds)
             if elapsed <= timeout {
                 usleep(1000000)
             } else {

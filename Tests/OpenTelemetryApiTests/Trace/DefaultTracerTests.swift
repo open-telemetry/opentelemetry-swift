@@ -30,16 +30,16 @@ final class DefaultTracerTests: XCTestCase {
     }
 
     func testDefaultGetCurrentSpan() {
-        XCTAssert(defaultTracer.currentSpan is DefaultSpan?)
+        XCTAssert(defaultTracer.activeSpan is DefaultSpan?)
     }
 
     func testGetCurrentSpan_WithSpan() {
-        XCTAssert(defaultTracer.currentSpan == nil)
-        var ws = defaultTracer.withSpan(DefaultSpan.random())
-        XCTAssert(defaultTracer.currentSpan != nil)
-        XCTAssert(defaultTracer.currentSpan is DefaultSpan)
+        XCTAssert(defaultTracer.activeSpan == nil)
+        var ws = defaultTracer.setActive(DefaultSpan.random())
+        XCTAssert(defaultTracer.activeSpan != nil)
+        XCTAssert(defaultTracer.activeSpan is DefaultSpan)
         ws.close()
-        XCTAssert(defaultTracer.currentSpan == nil)
+        XCTAssert(defaultTracer.activeSpan == nil)
     }
 
     func testDefaultSpanBuilderWithName() {
@@ -48,19 +48,19 @@ final class DefaultTracerTests: XCTestCase {
 
     func testTestInProcessContext() {
         let span = defaultTracer.spanBuilder(spanName: spanName).startSpan()
-        var scope = defaultTracer.withSpan(span)
-        XCTAssert(defaultTracer.currentSpan === span)
+        var scope = defaultTracer.setActive(span)
+        XCTAssert(defaultTracer.activeSpan === span)
 
         let secondSpan = defaultTracer.spanBuilder(spanName: spanName).startSpan()
-        var secondScope = defaultTracer.withSpan(secondSpan)
+        var secondScope = defaultTracer.setActive(secondSpan)
 
-        XCTAssert(defaultTracer.currentSpan === secondSpan)
+        XCTAssert(defaultTracer.activeSpan === secondSpan)
 
         secondScope.close()
-        XCTAssert(defaultTracer.currentSpan === span)
+        XCTAssert(defaultTracer.activeSpan === span)
 
         scope.close()
-        XCTAssert(defaultTracer.currentSpan == nil)
+        XCTAssert(defaultTracer.activeSpan == nil)
     }
 
     func testTestSpanContextPropagationExplicitParent() {
@@ -77,7 +77,7 @@ final class DefaultTracerTests: XCTestCase {
 
     func testTestSpanContextPropagationCurrentSpan() {
         let parent = DefaultSpan(context: spanContext)
-        var scope = defaultTracer.withSpan(parent)
+        var scope = defaultTracer.setActive(parent)
         let span = defaultTracer.spanBuilder(spanName: spanName).startSpan()
         XCTAssert(span.context === spanContext)
         scope.close()

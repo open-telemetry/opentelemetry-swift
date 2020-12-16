@@ -39,7 +39,7 @@ class AlwaysOnSampler: Sampler {
                       name: String,
                       kind: SpanKind,
                       attributes: [String:AttributeValue],
-                      parentLinks: [Link]) -> Decision {
+                      parentLinks: [SpanData.Link]) -> Decision {
         return Samplers.alwaysOnDecision
     }
 
@@ -54,7 +54,7 @@ class AlwaysOffSampler: Sampler {
                       name: String,
                       kind: SpanKind,
                       attributes: [String:AttributeValue],
-                      parentLinks: [Link]) -> Decision {
+                      parentLinks: [SpanData.Link]) -> Decision {
         return Samplers.alwaysOffDecision
     }
 
@@ -88,7 +88,7 @@ class Probability: Sampler {
                       name: String,
                       kind: SpanKind,
                       attributes: [String:AttributeValue],
-                      parentLinks: [Link]) -> Decision {
+                      parentLinks: [SpanData.Link]) -> Decision {
         /// If the parent is sampled keep the sampling decision.
         if parentContext?.traceFlags.sampled ?? false {
             return Samplers.alwaysOnDecision
@@ -116,6 +116,59 @@ class Probability: Sampler {
 
     var description: String {
         return String(format: "ProbabilitySampler{%.6f}", probability)
+    }
+}
+
+/// A Sampler that uses the sampled flag of the parent Span, if present. If the span has no parent,
+/// this Sampler will use the "root" sampler that it is built with.
+class ParentBasedSampler: Sampler {
+
+    private let root: Sampler
+    private let remoteParentSampled: Sampler
+    private let remoteParentNotSampled: Sampler
+    private let localParentSampled: Sampler
+    private let localParentNotSampled: Sampler
+
+    internal init(root: Sampler,
+                  remoteParentSampled: Sampler?,
+                  remoteParentNotSampled: Sampler?,
+                  localParentSampled: Sampler?,
+                  localParentNotSampled: Sampler?) {
+        self.root = root
+        self.remoteParentSampled = remoteParentSampled ?? Samplers.alwaysOn
+        self.remoteParentNotSampled = remoteParentNotSampled  ?? Samplers.alwaysOff
+        self.localParentSampled = localParentSampled ?? Samplers.alwaysOn
+        self.localParentNotSampled = localParentNotSampled  ?? Samplers.alwaysOff
+    }
+
+    /// If a parent is set, always follows the same sampling decision as the parent.
+    /// Otherwise, uses the delegateSampler provided at initialization to make a decision.
+    func shouldSample(parentContext: SpanContext?,
+                      traceId: TraceId,
+                      name: String,
+                      kind: SpanKind,
+                      attributes: [String:AttributeValue],
+                      parentLinks: [SpanData.Link]) -> Decision {
+        guard let parentSpanContext = parentContext, parentSpanContext.isValid else {
+            return root.shouldSample( parentContext: parentContext, traceId: traceId, name: name, kind: kind, attributes: attributes, parentLinks: parentLinks);
+        }
+
+        if (parentSpanContext.isRemote) {
+            return parentSpanContext.isSampled
+                ? remoteParentSampled.shouldSample(
+                    parentContext: parentContext, traceId: traceId, name: name, kind: kind, attributes: attributes, parentLinks: parentLinks)
+                : remoteParentNotSampled.shouldSample(
+                    parentContext: parentContext, traceId: traceId, name: name, kind: kind, attributes: attributes, parentLinks: parentLinks);
+        }
+        return parentSpanContext.isSampled
+            ? localParentSampled.shouldSample(
+                parentContext: parentContext, traceId: traceId, name: name, kind: kind, attributes: attributes, parentLinks: parentLinks)
+            : localParentNotSampled.shouldSample(
+                parentContext: parentContext, traceId: traceId, name: name, kind: kind, attributes: attributes, parentLinks: parentLinks);
+    }
+
+    var description: String {
+        return "ParentBasedSampler{root:\(root), remoteParentSampled:\(remoteParentSampled) remoteParentNotSampled:\(remoteParentNotSampled) localParentSampled:\(localParentSampled) localParentNotSampled:\(localParentNotSampled)}"
     }
 }
 

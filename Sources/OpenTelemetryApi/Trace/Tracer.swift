@@ -20,8 +20,8 @@ import Foundation
 /// offers APIs to facilitate both usages.
 /// The automatic context propagation is done using os.activity
 public protocol Tracer: AnyObject {
-    /// Gets the current Span from the current Context.
-    var currentSpan: Span? { get }
+    /// Gets the active Span from the current Context.
+    var activeSpan: Span? { get }
 
     /// Returns a SpanBuilder to create and start a new Span
     /// - Parameter spanName: The name of the returned Span.
@@ -29,5 +29,5 @@ public protocol Tracer: AnyObject {
 
     /// Associates the span with the current context.
     /// - Parameter span: Span to associate with the current context.
-    @discardableResult func withSpan(_ span: Span) -> Scope
+    @discardableResult func setActive(_ span: Span) -> Scope
 }

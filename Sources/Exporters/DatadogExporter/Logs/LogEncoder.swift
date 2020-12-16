@@ -71,8 +71,8 @@ internal struct DDLog: Encodable {
         self.tags = tags
     }
 
-    internal init(timedEvent: TimedEvent, span: SpanData, configuration: ExporterConfiguration) {
-        var attributes = timedEvent.attributes
+    internal init(event: SpanData.Event, span: SpanData, configuration: ExporterConfiguration) {
+        var attributes = event.attributes
 
         // set tracing attributes
         let internalAttributes = [
@@ -80,8 +80,8 @@ internal struct DDLog: Encodable {
             TracingAttributes.spanID: "\(span.spanId.rawValue)"
         ]
 
-        self.date = Date(timeIntervalSince1970: Double(timedEvent.epochNanos) / 1_000_000_000)
-        self.status = Status(rawValue: timedEvent.attributes["status"]?.description ?? "info") ?? .info
+        self.date = Date(timeIntervalSince1970: TimeInterval.fromNanoseconds(event.epochNanos))
+        self.status = Status(rawValue: event.attributes["status"]?.description ?? "info") ?? .info
         self.message = attributes.removeValue(forKey: "message")?.description ?? "Span event"
         self.serviceName = configuration.serviceName
         self.environment = configuration.environment
@@ -90,7 +90,7 @@ internal struct DDLog: Encodable {
         self.threadName = attributes.removeValue(forKey: "threadName")?.description ?? "unkown"
         self.applicationVersion = configuration.applicationVersion
 
-        self.attributes = LogAttributes(userAttributes: timedEvent.attributes, internalAttributes: internalAttributes)
+        self.attributes = LogAttributes(userAttributes: event.attributes, internalAttributes: internalAttributes)
         self.tags = nil // tags
     }
 }

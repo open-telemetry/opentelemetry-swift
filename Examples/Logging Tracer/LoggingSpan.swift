@@ -17,12 +17,13 @@ import Foundation
 import OpenTelemetryApi
 
 class LoggingSpan: Span {
-    
     var name: String
     var kind: SpanKind
     var context: SpanContext = SpanContext.invalid
-    var isRecordingEvents: Bool = true
+    var isRecording: Bool = true
     var status: Status?
+    var scope: Scope?
+
 
     public init(name: String, kind: SpanKind) {
         self.name = name
@@ -79,23 +80,11 @@ class LoggingSpan: Span {
         Logger.log("Span.addEvent(\(name), attributes:\(attributes), timestamp:\(timestamp))")
     }
 
-    public func addEvent<E>(event: E) where E: Event {
-        Logger.log("Span.addEvent(\(event))")
-    }
-
-    public func addEvent<E>(event: E, timestamp: Date) where E: Event {
-        Logger.log("Span.addEvent(\(event), timestamp:\(timestamp))")
-    }
-
-    public func addLink(link: Link) {
-        Logger.log("Span.addLink(\(link))")
-    }
-
     public func end() {
         Logger.log("Span.End, Name: \(name)")
     }
 
-    public func end(endOptions: EndSpanOptions) {
-        Logger.log("Span.End, Name: \(name), timestamp:\(endOptions.timestamp)) }")
+    public func end(timestamp: UInt64) {
+        Logger.log("Span.End, Name: \(name), timestamp:\(timestamp)) }")
     }
 }

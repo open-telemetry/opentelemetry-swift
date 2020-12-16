@@ -25,6 +25,10 @@ public struct SpanId: Equatable, Comparable, Hashable, CustomStringConvertible {
     // The internal representation of the SpanId.
     var id: UInt64 = invalidId
 
+    public static func getSize() -> Int {
+        return size;
+    }
+
     /// Constructs a SpanId whose representation is specified by a long value.
     /// There is no restriction on the specified value, other than the already established validity
     /// rules applying to SpanId. Specifying 0 for this value will effectively make the new

@@ -71,7 +71,7 @@ public protocol SpanBuilder: class {
     /// operations, where a single batch handler processes multiple requests from different traces or
     ///the same trace.
     /// - Parameter link: the Link to be added.
-    @discardableResult func addLink(_ link: Link) -> Self
+//    @discardableResult func addLink(_ link: Link) -> Self
 
     /// Sets an attribute to the newly created {@code Span}. If {@code Span.Builder} previously
     /// contained a mapping for the key, the old value is replaced by the specified value.
@@ -106,7 +106,7 @@ public protocol SpanBuilder: class {
     /// - Parameters:
     ///   - key: the key for this attribute
     ///   - value: the value for this attribute, pass nil to remove previous value
-    @discardableResult func setAttribute(key: String, value: AttributeValue?) -> Self
+    @discardableResult func setAttribute(key: String, value: AttributeValue) -> Self
 
     /// Sets the Span.Kind for the newly created Span. If not called, the
     /// implementation will provide a default value Span.Kind#INTERNAL.
@@ -118,7 +118,7 @@ public protocol SpanBuilder: class {
     /// Use this method to specify an explicit start timestamp. If not called, the implementation
     /// will use the timestamp value at #startSpan() time, which should be the default case.
     /// - Parameter startTimestamp: the explicit start timestamp of the newly created Span in nanos since epoch.
-    @discardableResult func setStartEpochNano(epochNano: UInt64) -> Self
+    @discardableResult func setStartTimestamp(timestamp: UInt64) -> Self
 
     /// Starts a new Span.
     ///
@@ -146,7 +146,7 @@ extension SpanBuilder {
     }
     
     @discardableResult public func setStartTimestamp(timestamp: Date) -> Self {
-        return setStartEpochNano(epochNano: UInt64(timestamp.timeIntervalSince1970 * 1000000000) )
+        return setStartTimestamp(timestamp: UInt64(timestamp.timeIntervalSince1970.toNanoseconds) )
     }
 
 }

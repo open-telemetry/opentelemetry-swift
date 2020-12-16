@@ -15,7 +15,7 @@
 
 import Foundation
 
-public protocol HTTPTextFormattable {
+public protocol TextMapPropagator {
     /// Gets the list of headers used by propagator.
     var fields: Set<String> { get }
 

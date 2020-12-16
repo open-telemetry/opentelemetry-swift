@@ -38,7 +38,7 @@ class PushMetricController {
                 let metricToExport = self.metricProcessor.finishCollectionCycle()
 
                 _ = metricExporter.export(metrics: metricToExport, shouldCancel: shouldCancel)
-                let timeInterval = Double(DispatchTime.now().uptimeNanoseconds - start.uptimeNanoseconds) / 1000000000
+                let timeInterval = TimeInterval.fromNanoseconds(DispatchTime.now().uptimeNanoseconds - start.uptimeNanoseconds)
                 let remainingWait = pushInterval - timeInterval
                 if remainingWait > 0 {
                     usleep(UInt32(remainingWait * 1000000))

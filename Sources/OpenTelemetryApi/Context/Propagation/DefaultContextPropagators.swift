@@ -19,39 +19,39 @@ import Foundation
 /// All the registered propagators are stored internally as a simple list, and are invoked
 /// synchronically upon injection and extraction.
 public struct DefaultContextPropagators: ContextPropagators {
-    public var httpTextFormat: HTTPTextFormattable
+    public var textMapPropagator: TextMapPropagator
 
     public init() {
-        httpTextFormat = NoopHttpTextFormat()
+        textMapPropagator = NoopTextMapPropagator()
     }
 
-    public init(textPropagators: [HTTPTextFormattable]) {
-        httpTextFormat = MultiHttpTextFormat(textPropagators: textPropagators)
+    public init(textPropagators: [TextMapPropagator]) {
+        textMapPropagator = MultiTextMapPropagator(textPropagators: textPropagators)
     }
 
-    public mutating func addHttpTextFormat(textFormat: HTTPTextFormattable) {
-        if httpTextFormat is NoopHttpTextFormat {
-            httpTextFormat = textFormat
-        } else if var multiFormat = httpTextFormat as? MultiHttpTextFormat {
+    public mutating func addTextMapPropagator(textFormat: TextMapPropagator) {
+        if textMapPropagator is NoopTextMapPropagator {
+            textMapPropagator = textFormat
+        } else if var multiFormat = textMapPropagator as? MultiTextMapPropagator {
             multiFormat.textPropagators.append(textFormat)
         } else {
-            httpTextFormat = MultiHttpTextFormat(textPropagators: [httpTextFormat])
-            if var multiFormat = httpTextFormat as? MultiHttpTextFormat {
+            textMapPropagator = MultiTextMapPropagator(textPropagators: [textMapPropagator])
+            if var multiFormat = textMapPropagator as? MultiTextMapPropagator {
                 multiFormat.textPropagators.append(textFormat)
             }
         }
     }
 
-    struct MultiHttpTextFormat: HTTPTextFormattable {
+    struct MultiTextMapPropagator: TextMapPropagator {
         public var fields: Set<String>
-        var textPropagators = [HTTPTextFormattable]()
+        var textPropagators = [TextMapPropagator]()
 
-        init(textPropagators: [HTTPTextFormattable]) {
+        init(textPropagators: [TextMapPropagator]) {
             self.textPropagators = textPropagators
-            fields = MultiHttpTextFormat.getAllFields(textPropagators: self.textPropagators)
+            fields = MultiTextMapPropagator.getAllFields(textPropagators: self.textPropagators)
         }
 
-        private static func getAllFields(textPropagators: [HTTPTextFormattable]) -> Set<String> {
+        private static func getAllFields(textPropagators: [TextMapPropagator]) -> Set<String> {
             var fields = Set<String>()
             textPropagators.forEach {
                 fields.formUnion($0.fields)
@@ -73,7 +73,7 @@ public struct DefaultContextPropagators: ContextPropagators {
         }
     }
 
-    struct NoopHttpTextFormat: HTTPTextFormattable {
+    struct NoopTextMapPropagator: TextMapPropagator {
         public var fields = Set<String>()
 
         public func inject<S>(spanContext: SpanContext, carrier: inout [String: String], setter: S) where S: Setter {}

@@ -83,7 +83,7 @@ class LogsExporterTests: XCTestCase {
                         name: "spanName",
                         kind: .server,
                         startEpochNanos: 3000000000000 + 200,
-                        timedEvents: [TimedEvent(name: "event", timestamp: Date())],
+                        events: [SpanData.Event(name: "event", timestamp: Date())],
                         endEpochNanos: 3001000000000 + 255,
                         hasRemoteParent: false)
     }

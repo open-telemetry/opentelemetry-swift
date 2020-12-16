@@ -50,7 +50,7 @@ public class SpanShim: OTSpan, BaseShimProtocol {
     public func setTag(_ key: String, value: String) {
         if key == SpanShim.OpenTracingErrorTag {
             let error = Bool(value) ?? false
-            span.status = error ? Status.unknown : .ok
+            span.status = error ? .error : .ok
         } else {
             span.setAttribute(key: key, value: value)
         }
@@ -73,7 +73,7 @@ public class SpanShim: OTSpan, BaseShimProtocol {
 
     public func setTag(_ key: String, boolValue value: Bool) {
         if key == SpanShim.OpenTracingErrorTag {
-            span.status = value ? Status.unknown : .ok
+            span.status = value ? .error : .ok
         } else {
             span.setAttribute(key: key, value: value)
         }
@@ -121,7 +121,7 @@ public class SpanShim: OTSpan, BaseShimProtocol {
     }
 
     public func finish(withTime finishTime: Date?) {
-        span.end(endOptions: EndSpanOptions(timestamp: UInt64((finishTime?.timeIntervalSince1970 ?? Date().timeIntervalSince1970)) * 1000000000))
+        span.end(timestamp: UInt64(finishTime?.timeIntervalSince1970.toNanoseconds ?? Date().timeIntervalSince1970.toNanoseconds))
     }
 
     static func getEventNameFrom(fields: [String: NSObject]) -> String {

@@ -27,7 +27,7 @@ public class DefaultSpanBuilder: SpanBuilder {
 
     @discardableResult public func startSpan() -> Span {
         if spanContext == nil && !isRootSpan {
-            spanContext = tracer.currentSpan?.context
+            spanContext = tracer.activeSpan?.context
         }
         return spanContext != nil && spanContext != SpanContext.invalid ? DefaultSpan(context: spanContext!, kind: .client) : DefaultSpan.random()
     }
@@ -55,19 +55,15 @@ public class DefaultSpanBuilder: SpanBuilder {
         return self
     }
 
-    @discardableResult public func addLink(_ link: Link) -> Self {
-        return self
-    }
-
     @discardableResult public func setSpanKind(spanKind: SpanKind) -> Self {
         return self
     }
 
-    @discardableResult public func setStartEpochNano(epochNano: UInt64) -> Self {
+    @discardableResult public func setStartTimestamp(timestamp: UInt64) -> Self {
         return self
     }
 
-    public func setAttribute(key: String, value: AttributeValue?) -> Self {
+    public func setAttribute(key: String, value: AttributeValue) -> Self {
         return self
     }
 }
