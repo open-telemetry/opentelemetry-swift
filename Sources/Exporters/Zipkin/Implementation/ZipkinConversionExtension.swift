@@ -77,13 +77,13 @@ struct ZipkinConversionExtension {
         let status = otelSpan.status
 
         if status?.isOk ?? false {
-            attributeEnumerationState.tags[statusCode] = "\(status!.canonicalCode)".capitalized
+            attributeEnumerationState.tags[statusCode] = "\(status!.statusCode)".capitalized
             if status?.statusDescription != nil {
                 attributeEnumerationState.tags[statusDescription] = status!.description
             }
         }
 
-        let annotations = otelSpan.timedEvents.map { processEvents(event: $0) }
+        let annotations = otelSpan.events.map { processEvents(event: $0) }
 
         return ZipkinSpan(traceId: ZipkinConversionExtension.EncodeTraceId(traceId: otelSpan.traceId, useShortTraceIds: useShortTraceIds),
                           parentId: parentId,
@@ -127,7 +127,7 @@ struct ZipkinConversionExtension {
         }
     }
 
-    private static func processEvents(event: TimedEvent) -> ZipkinAnnotation {
+    private static func processEvents(event: SpanData.Event) -> ZipkinAnnotation {
         return ZipkinAnnotation(timestamp: event.epochNanos / 1000, value: event.name)
     }
 

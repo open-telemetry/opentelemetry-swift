@@ -39,8 +39,8 @@ public class SpanBuilderSdk: SpanBuilder {
     private var parent: Span?
     private var remoteParent: SpanContext?
     private var spanKind = SpanKind.internal
-    private var attributes: AttributesWithCapacity
-    private var links = [Link]()
+    private var attributes: AttributesDictionay
+    private var links = [SpanData.Link]()
     private var totalNumberOfLinksAdded: Int = 0
     private var parentType: ParentType = .currentSpan
 
@@ -57,42 +57,42 @@ public class SpanBuilderSdk: SpanBuilder {
         self.instrumentationLibraryInfo = instrumentationLibraryInfo
         self.spanProcessor = spanProcessor
         self.traceConfig = traceConfig
-        attributes = AttributesWithCapacity(capacity: traceConfig.maxNumberOfAttributes)
+        attributes = AttributesDictionay(capacity: traceConfig.maxNumberOfAttributes)
         self.resource = resource
         self.idsGenerator = idsGenerator
         self.clock = clock
     }
 
-    public func setParent(_ parent: Span) -> Self {
+    @discardableResult public func setParent(_ parent: Span) -> Self {
         self.parent = parent
         remoteParent = nil
         parentType = .explicitParent
         return self
     }
 
-    public func setParent(_ parent: SpanContext) -> Self {
+    @discardableResult public func setParent(_ parent: SpanContext) -> Self {
         remoteParent = parent
         self.parent = nil
         parentType = .explicitRemoteParent
         return self
     }
 
-    public func setNoParent() -> Self {
+    @discardableResult public func setNoParent() -> Self {
         parentType = .noParent
         remoteParent = nil
         parent = nil
         return self
     }
 
-    public func addLink(spanContext: SpanContext) -> Self {
+    @discardableResult public func addLink(spanContext: SpanContext) -> Self {
         return addLink(SpanData.Link(context: spanContext))
     }
 
-    public func addLink(spanContext: SpanContext, attributes: [String: AttributeValue]) -> Self {
+    @discardableResult public func addLink(spanContext: SpanContext, attributes: [String: AttributeValue]) -> Self {
         return addLink(SpanData.Link(context: spanContext, attributes: attributes))
     }
 
-    public func addLink(_ link: Link) -> Self {
+    @discardableResult public func addLink(_ link: SpanData.Link) -> Self {
         totalNumberOfLinksAdded += 1
         if links.count >= traceConfig.maxNumberOfLinks {
             return self
@@ -101,27 +101,19 @@ public class SpanBuilderSdk: SpanBuilder {
         return self
     }
 
-    public func setAttribute(key: String, value: AttributeValue?) -> Self {
-        guard let value = value else {
-            attributes.removeValueForKey(key: key)
-            return self
-        }
+    @discardableResult public func setAttribute(key: String, value: AttributeValue) -> Self {
         attributes.updateValue(value: value, forKey: key)
         return self
     }
 
-    public func setSpanKind(spanKind: SpanKind) -> Self {
+    @discardableResult public func setSpanKind(spanKind: SpanKind) -> Self {
         self.spanKind = spanKind
         return self
     }
 
-    public func setStartEpochNano(epochNano: UInt64) -> Self {
-        startEpochNanos = epochNano
+    @discardableResult public func setStartTimestamp(timestamp: UInt64) -> Self {
+        startEpochNanos = timestamp
         return self
-    }
-    
-    public func setStartTimestamp(timestamp: Date) -> Self {
-        return setStartEpochNano(epochNano: UInt64(timestamp.timeIntervalSince1970 * 1000000000) )
     }
 
     public func startSpan() -> Span {

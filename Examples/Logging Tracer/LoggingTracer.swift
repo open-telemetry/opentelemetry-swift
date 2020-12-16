@@ -18,18 +18,18 @@ import OpenTelemetryApi
 
 class LoggingTracer: Tracer {
     let tracerName = "LoggingTracer"
-    public var currentSpan: Span? {
+    public var activeSpan: Span? {
         return ContextUtils.getCurrentSpan()
     }
 
     var binaryFormat: BinaryFormattable = BinaryTraceContextFormat()
-    var textFormat: HTTPTextFormattable = HttpTraceContextFormat()
+    var textFormat: TextMapPropagator = W3CTraceContextPropagator()
 
     func spanBuilder(spanName: String) -> SpanBuilder {
         return LoggingSpanBuilder(tracer: self, spanName: spanName)
     }
 
-    func withSpan(_ span: Span) -> Scope {
+    @discardableResult func setActive(_ span: Span) -> Scope {
         Logger.log("\(tracerName).WithSpan")
         return ContextUtils.withSpan(span)
     }
@@ -47,7 +47,7 @@ class LoggingTracer: Tracer {
 
         func startSpan() -> Span {
             if spanContext == nil && !isRootSpan {
-                spanContext = tracer.currentSpan?.context
+                spanContext = tracer.activeSpan?.context
             }
             return spanContext != nil && spanContext != SpanContext.invalid ? LoggingSpan(name: name, kind: .client) : DefaultSpan.random()
         }
@@ -74,20 +74,16 @@ class LoggingTracer: Tracer {
         func addLink(spanContext: SpanContext, attributes: [String: AttributeValue]) -> Self {
             return self
         }
-
-        func addLink(_ link: Link) -> Self {
-            return self
-        }
-
+        
         func setSpanKind(spanKind: SpanKind) -> Self {
             return self
         }
 
-        func setStartEpochNano(epochNano: UInt64) -> Self {
+        func setStartTimestamp(timestamp: UInt64) -> Self {
             return self
         }
 
-        func setAttribute(key: String, value: AttributeValue?) -> Self {
+        func setAttribute(key: String, value: AttributeValue) -> Self {
             return self
         }
     }

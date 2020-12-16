@@ -18,16 +18,6 @@ import OpenTelemetryApi
 
 /// representation of all data collected by the Span.
 public struct SpanData: Equatable {
-    public class Link: OpenTelemetryApi.Link {
-        public let context: SpanContext
-        public let attributes: [String: AttributeValue]
-
-        public init(context: SpanContext, attributes: [String: AttributeValue] = [String: AttributeValue]()) {
-            self.context = context
-            self.attributes = attributes
-        }
-    }
-
     /// The trace id for this span.
     public private(set) var traceId: TraceId
 
@@ -63,7 +53,7 @@ public struct SpanData: Equatable {
     public private(set) var attributes = [String: AttributeValue]()
 
     /// The timed events recorded for this Span.
-    public private(set) var timedEvents = [TimedEvent]()
+    public private(set) var events = [Event]()
 
     /// The links recorded for this Span.
     public private(set) var links = [Link]()
@@ -109,7 +99,7 @@ public struct SpanData: Equatable {
             lhs.hasRemoteParent == rhs.hasRemoteParent &&
             lhs.resource == rhs.resource &&
             lhs.attributes == rhs.attributes &&
-            lhs.timedEvents == rhs.timedEvents &&
+            lhs.events == rhs.events &&
             lhs.links == rhs.links &&
             lhs.hasEnded == rhs.hasEnded &&
             lhs.totalRecordedEvents == rhs.totalRecordedEvents &&
@@ -182,8 +172,8 @@ public struct SpanData: Equatable {
         return self
     }
 
-    @discardableResult public mutating func settingTimedEvents(_ timedEvents: [TimedEvent]) -> SpanData {
-        self.timedEvents = timedEvents
+    @discardableResult public mutating func settingTimedEvents(_ events: [Event]) -> SpanData {
+        self.events = events
         return self
     }
 
@@ -211,4 +201,72 @@ public struct SpanData: Equatable {
         self.totalAttributeCount = totalAttributeCount
         return self
     }
+}
+
+public extension SpanData {
+    /// Timed event.
+    struct Event: Equatable {
+        public private(set) var epochNanos: UInt64
+        public private(set) var name: String
+        public private(set) var attributes: [String: AttributeValue]
+
+        /// Creates an Event with the given time, name and empty attributes.
+        /// - Parameters:
+        ///   - nanotime: epoch timestamp in nanos.
+        ///   - name: the name of this Event.
+        ///   - attributes: the attributes of this Event. Empty by default.
+        public init(name: String, epochNanos: UInt64, attributes: [String: AttributeValue] = [String: AttributeValue]()) {
+            self.epochNanos = epochNanos
+            self.name = name
+            self.attributes = attributes
+        }
+
+        /// Creates an Event with the given time and event.
+        /// - Parameters:
+        ///   - nanotime: epoch timestamp in nanos.
+        ///   - event: the event.
+        public init(epochNanos: UInt64, event: Event) {
+            self.init(name: event.name, epochNanos: epochNanos, attributes: event.attributes)
+        }
+
+        /// Creates an Event with the given time, name and empty attributes.
+        /// - Parameters:
+        ///   - timestamp: timestamp in Date format.
+        ///   - name: the name of this Event.
+        ///   - attributes: the attributes of this Event. Empty by default.
+        public init(name: String, timestamp: Date, attributes: [String: AttributeValue] = [String: AttributeValue]()) {
+            epochNanos = UInt64(timestamp.timeIntervalSince1970.toNanoseconds)
+            self.name = name
+            self.attributes = attributes
+        }
+
+        /// Creates an Event with the given time and event.
+        /// - Parameters:
+        ///   - timestamp: timestamp in Date format.
+        ///   - event: the event.
+        public init(timestamp: Date, event: Event) {
+            self.init(name: event.name, epochNanos: UInt64(timestamp.timeIntervalSince1970.toNanoseconds), attributes: event.attributes)
+        }
+    }
+
+}
+
+public extension SpanData {
+    struct Link {
+        public let context: SpanContext
+        public let attributes: [String: AttributeValue]
+
+        public init(context: SpanContext, attributes: [String: AttributeValue] = [String: AttributeValue]()) {
+            self.context = context
+            self.attributes = attributes
+        }
+    }
+}
+
+public func == (lhs: SpanData.Link, rhs: SpanData.Link) -> Bool {
+    return lhs.context == rhs.context && lhs.attributes == rhs.attributes
+}
+
+public func == (lhs: [SpanData.Link], rhs: [SpanData.Link]) -> Bool {
+    return lhs.elementsEqual(rhs) { $0.context == $1.context && $0.attributes == $1.attributes }
 }

@@ -25,7 +25,7 @@ class SpanDataTests: XCTestCase {
         let spanData = createBasicSpan()
         XCTAssertFalse(spanData.parentSpanId?.isValid ?? false)
         XCTAssertEqual(spanData.attributes, [String: AttributeValue]())
-        XCTAssertEqual(spanData.timedEvents, [TimedEvent]())
+        XCTAssertEqual(spanData.events, [SpanData.Event]())
         XCTAssertEqual(spanData.links.count, 0)
         XCTAssertEqual(InstrumentationLibraryInfo(), spanData.instrumentationLibraryInfo)
         XCTAssertFalse(spanData.hasRemoteParent)

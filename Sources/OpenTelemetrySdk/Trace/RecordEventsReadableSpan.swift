@@ -18,7 +18,7 @@ import OpenTelemetryApi
 
 /// Implementation for the Span class that records trace events.
 public class RecordEventsReadableSpan: ReadableSpan {
-    public var isRecordingEvents = true
+    public var isRecording = true
     /// The displayed name of the span.
     public var name: String {
         didSet {
@@ -39,7 +39,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
     /// /Handler called when the span starts and ends.
     public private(set) var spanProcessor: SpanProcessor
     /// List of recorded links to parent and child spans.
-    public private(set) var links = [Link]()
+    public private(set) var links = [SpanData.Link]()
     /// Number of links recorded.
     public private(set) var totalRecordedLinks: Int
     /// Max number of attibutes per span.
@@ -59,9 +59,9 @@ public class RecordEventsReadableSpan: ReadableSpan {
     /// The resource associated with this span.
     public private(set) var startEpochNanos: UInt64
     /// Set of recorded attributes. DO NOT CALL any other method that changes the ordering of events.
-    private var attributes: AttributesWithCapacity
+    private var attributes: AttributesDictionay
     /// List of recorded events.
-    public private(set) var events: ArrayWithCapacity<TimedEvent>
+    public private(set) var events: ArrayWithCapacity<SpanData.Event>
     /// Number of attributes recorded.
     public private(set) var totalAttributeCount: Int = 0
     /// Number of events recorded.
@@ -74,6 +74,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
             }
         }
     }
+    /// The scope where the span is associated
+    public var scope: Scope?
 
     /// Returns the latency of the {@code Span} in nanos. If still active then returns now() - start time.
     public var latencyNanos: UInt64 {
@@ -98,8 +100,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
                  spanProcessor: SpanProcessor,
                  clock: Clock,
                  resource: Resource,
-                 attributes: AttributesWithCapacity,
-                 links: [Link],
+                 attributes: AttributesDictionay,
+                 links: [SpanData.Link],
                  totalRecordedLinks: Int,
                  startEpochNanos: UInt64) {
         self.context = context
@@ -116,7 +118,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
         self.resource = resource
         self.startEpochNanos = (startEpochNanos == 0 ? clock.now : startEpochNanos)
         self.attributes = attributes
-        events = ArrayWithCapacity<TimedEvent>(capacity: traceConfig.maxNumberOfEvents)
+        events = ArrayWithCapacity<SpanData.Event>(capacity: traceConfig.maxNumberOfEvents)
         maxNumberOfAttributes = traceConfig.maxNumberOfAttributes
         maxNumberOfAttributesPerEvent = traceConfig.maxNumberOfAttributesPerEvent
     }
@@ -147,8 +149,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
                                  spanProcessor: SpanProcessor,
                                  clock: Clock,
                                  resource: Resource,
-                                 attributes: AttributesWithCapacity,
-                                 links: [Link],
+                                 attributes: AttributesDictionay,
+                                 links: [SpanData.Link],
                                  totalRecordedLinks: Int,
                                  startEpochNanos: UInt64) -> RecordEventsReadableSpan {
         let span = RecordEventsReadableSpan(context: context,
@@ -180,7 +182,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
                         kind: kind,
                         startEpochNanos: startEpochNanos,
                         attributes: attributes.attributes,
-                        timedEvents: adaptTimedEvents(),
+                        events: adaptEvents(),
                         links: adaptLinks(),
                         status: status,
                         endEpochNanos: endEpochNanos ?? clock.now,
@@ -191,11 +193,11 @@ public class RecordEventsReadableSpan: ReadableSpan {
                         totalAttributeCount: totalAttributeCount)
     }
 
-    private func adaptTimedEvents() -> [TimedEvent] {
+    private func adaptEvents() -> [SpanData.Event] {
         let sourceEvents = events
-        var result = [TimedEvent]()
+        var result = [SpanData.Event]()
         sourceEvents.forEach {
-            result.append(TimedEvent(name: $0.name, epochNanos: $0.epochNanos, attributes: $0.attributes))
+            result.append(SpanData.Event(name: $0.name, epochNanos: $0.epochNanos, attributes: $0.attributes))
         }
         return result
     }
@@ -227,43 +229,31 @@ public class RecordEventsReadableSpan: ReadableSpan {
     }
 
     public func addEvent(name: String) {
-        addTimedEvent(timedEvent: TimedEvent(name: name, epochNanos: clock.now))
+        addEvent(event: SpanData.Event(name: name, epochNanos: clock.now))
     }
 
     public func addEvent(name: String, timestamp: Date) {
-        addTimedEvent(timedEvent: TimedEvent(name: name, timestamp: timestamp))
+        addEvent(event: SpanData.Event(name: name, timestamp: timestamp))
     }
 
     public func addEvent(name: String, attributes: [String: AttributeValue]) {
-        var limitedAttributes = AttributesWithCapacity(capacity: maxNumberOfAttributesPerEvent)
+        var limitedAttributes = AttributesDictionay(capacity: maxNumberOfAttributesPerEvent)
         limitedAttributes.updateValues(attributes: attributes)
-        addTimedEvent(timedEvent: TimedEvent(name: name, epochNanos: clock.now, attributes: limitedAttributes.attributes))
+        addEvent(event: SpanData.Event(name: name, epochNanos: clock.now, attributes: limitedAttributes.attributes))
     }
 
     public func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Date) {
-        var limitedAttributes = AttributesWithCapacity(capacity: maxNumberOfAttributesPerEvent)
+        var limitedAttributes = AttributesDictionay(capacity: maxNumberOfAttributesPerEvent)
         limitedAttributes.updateValues(attributes: attributes)
-        addTimedEvent(timedEvent: TimedEvent(name: name, timestamp: timestamp, attributes: limitedAttributes.attributes))
+        addEvent(event: SpanData.Event(name: name, timestamp: timestamp, attributes: limitedAttributes.attributes))
     }
 
-    public func addEvent<E>(event: E) where E: Event {
-        addTimedEvent(timedEvent: TimedEvent(epochNanos: clock.now, event: event))
-    }
-
-    public func addEvent(event: TimedEvent) {
-        addTimedEvent(timedEvent: event)
-    }
-
-    public func addEvent<E>(event: E, timestamp: Date) where E: Event {
-        addTimedEvent(timedEvent: TimedEvent(timestamp: timestamp, event: event))
-    }
-
-    private func addTimedEvent(timedEvent: TimedEvent) {
+    private func addEvent(event: SpanData.Event) {
         if hasEnded {
             return
         }
         eventsSyncLock.withLockVoid {
-            events.append(timedEvent)
+            events.append(event)
             totalRecordedEvents += 1
         }
     }
@@ -272,8 +262,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
         endInternal(timestamp: clock.now)
     }
 
-    public func end(endOptions: EndSpanOptions) {
-        endInternal(timestamp: endOptions.timestamp == 0 ? clock.now : endOptions.timestamp)
+    public func end(timestamp: UInt64) {
+        endInternal(timestamp: timestamp == 0 ? clock.now : timestamp)
     }
 
     private func endInternal(timestamp: UInt64) {
@@ -283,7 +273,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
         endEpochNanos = timestamp
         hasEnded = true
         spanProcessor.onEnd(span: self)
-        context.scope?.close()
+        isRecording = false
+        scope?.close()
     }
 
     private func getStatusWithDefault() -> Status {

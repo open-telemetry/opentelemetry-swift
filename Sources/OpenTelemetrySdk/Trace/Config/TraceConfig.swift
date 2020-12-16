@@ -25,21 +25,21 @@ public struct TraceConfig: Equatable {
     public private(set) var sampler: Sampler = Samplers.alwaysOn
 
     /// The global default max number of attributes perSpan.
-    public private(set) var maxNumberOfAttributes: Int = 32 {
+    public private(set) var maxNumberOfAttributes: Int = 1000 {
         didSet {
             maxNumberOfAttributes < 0 ? maxNumberOfAttributes = 0 : Void()
         }
     }
 
     ///  the global default max number of Events per Span.
-    public private(set) var maxNumberOfEvents: Int = 128 {
+    public private(set) var maxNumberOfEvents: Int = 1000 {
         didSet {
             maxNumberOfEvents < 0 ? maxNumberOfEvents = 0 : Void()
         }
     }
 
     /// the global default max number of Link entries per Span.
-    public private(set) var maxNumberOfLinks: Int = 32 {
+    public private(set) var maxNumberOfLinks: Int = 1000 {
         didSet {
             maxNumberOfLinks < 0 ? maxNumberOfLinks = 0 : Void()
         }

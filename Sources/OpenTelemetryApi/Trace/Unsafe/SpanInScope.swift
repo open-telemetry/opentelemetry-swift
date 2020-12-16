@@ -38,7 +38,7 @@ class SpanInScope: Scope {
         currentActivityId = os_activity_get_identifier(activity, nil)
         os_activity_scope_enter(activity, &currentActivityState)
         ContextUtils.setContext(activityId: currentActivityId, forSpan: span)
-        span.context.scope = self
+        span.scope = self
     }
 
     func close() {

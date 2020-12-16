@@ -40,9 +40,6 @@ public final class SpanContext: Equatable, CustomStringConvertible, Hashable {
                                             traceFlags: TraceFlags(),
                                             traceState: TraceState(), isRemote: false)
 
-    /// If the Span has its own Scope, if exist should be closed on span end
-    public var scope: Scope?
-
     private init(traceId: TraceId, spanId: SpanId, traceFlags: TraceFlags, traceState: TraceState, isRemote: Bool) {
         self.traceId = traceId
         self.spanId = spanId
@@ -86,9 +83,13 @@ public final class SpanContext: Equatable, CustomStringConvertible, Hashable {
                            isRemote: true)
     }
 
-    /// Returns true if this SpanContext} is valid.
+    /// Returns true if this SpanContext is valid.
     public var isValid: Bool {
         return traceId.isValid && spanId.isValid
+    }
+
+    public var isSampled: Bool {
+        return traceFlags.sampled
     }
 
     public static func == (lhs: SpanContext, rhs: SpanContext) -> Bool {

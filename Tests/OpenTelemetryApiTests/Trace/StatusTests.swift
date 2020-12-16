@@ -18,25 +18,25 @@ import XCTest
 
 final class StatusTests: XCTestCase {
     func testStatus_Ok() {
-        XCTAssertEqual(Status.ok.canonicalCode, Status.CanonicalCode.ok)
+        XCTAssertEqual(Status.ok.statusCode, Status.StatusCode.ok)
         XCTAssertNil(Status.ok.statusDescription)
         XCTAssertTrue(Status.ok.isOk)
     }
 
     func testCreateStatus_WithDescription() {
-        let status = Status.unknown.withDescription(description: "This is an error.")
-        XCTAssertEqual(status.canonicalCode, Status.CanonicalCode.unknownError)
+        let status = Status.unset.withDescription(description: "This is an error.")
+        XCTAssertEqual(status.statusCode, Status.StatusCode.unset)
         XCTAssertEqual(status.statusDescription, "This is an error.")
         XCTAssertFalse(status.isOk)
     }
 
     func testStatus_EqualsAndHashCode() {
         XCTAssertEqual(Status.ok, Status.ok.withDescription(description: nil))
-        XCTAssertNotEqual(Status.ok, Status.cancelled.withDescription(description: "ThisIsAnError"))
-        XCTAssertNotEqual(Status.ok, Status.unknown.withDescription(description: "ThisIsAnError"))
-        XCTAssertNotEqual(Status.ok.withDescription(description: nil), Status.cancelled.withDescription(description: "ThisIsAnError"))
-        XCTAssertNotEqual(Status.ok.withDescription(description: nil), Status.unknown.withDescription(description: "ThisIsAnError"))
-        XCTAssertEqual(Status.cancelled.withDescription(description: "ThisIsAnError"), Status.cancelled.withDescription(description: "ThisIsAnError"))
-        XCTAssertNotEqual(Status.cancelled.withDescription(description: "ThisIsAnError"), Status.unknown.withDescription(description: "ThisIsAnError"))
+        XCTAssertNotEqual(Status.ok, Status.unset.withDescription(description: "ThisIsAnError"))
+        XCTAssertNotEqual(Status.ok, Status.error.withDescription(description: "ThisIsAnError"))
+        XCTAssertNotEqual(Status.ok.withDescription(description: nil), Status.error.withDescription(description: "ThisIsAnError"))
+        XCTAssertNotEqual(Status.ok.withDescription(description: nil), Status.unset.withDescription(description: "ThisIsAnError"))
+        XCTAssertEqual(Status.error.withDescription(description: "ThisIsAnError"), Status.error.withDescription(description: "ThisIsAnError"))
+        XCTAssertNotEqual(Status.error.withDescription(description: "ThisIsAnError"), Status.unset.withDescription(description: "ThisIsAnError"))
     }
 }

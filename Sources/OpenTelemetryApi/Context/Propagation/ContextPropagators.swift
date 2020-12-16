@@ -16,5 +16,5 @@
 import Foundation
 
 public protocol ContextPropagators {
-    var httpTextFormat: HTTPTextFormattable { get }
+    var textMapPropagator: TextMapPropagator { get }
 }

@@ -27,7 +27,7 @@ public protocol Span: AnyObject, CustomStringConvertible {
     var context: SpanContext { get }
 
     /// Indicates whether this span will be recorded.
-    var isRecordingEvents: Bool { get }
+    var isRecording: Bool { get }
 
     /// The status of the span execution.
     var status: Status? { get set }
@@ -37,6 +37,9 @@ public protocol Span: AnyObject, CustomStringConvertible {
     /// Upon this update, any sampling behavior based on Span name will depend on the
     /// implementation.
     var name: String { get set }
+
+    /// If the Span has its own Scope, if exist should be closed on span end
+    var scope: Scope? { get set }
 
     /// Puts a new attribute to the span.
     /// - Parameters:
@@ -71,32 +74,20 @@ public protocol Span: AnyObject, CustomStringConvertible {
     ///   - timestamp: the explicit event timestamp in nanos since epoch
     func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Date)
 
-    ///  Adds an Event object to the Span.
-    /// - Parameter event: Event to add to the span.
-    func addEvent<E: Event>(event: E)
-
-    /// Adds an event to the Span
-    /// Use this method to specify an explicit event timestamp. If not called, the implementation
-    /// will use the current timestamp value, which should be the default case.
-    /// - Parameters:
-    ///   event: Event to add to the span.
-    ///   - timestamp: the explicit event timestamp in nanos since epoch
-    func addEvent<E: Event>(event: E, timestamp: Date)
-
     /// End the span.
     func end()
 
     /// End the span.
     /// - Parameter endOptions: The explicit EndSpanOptions for this span
-    func end(endOptions: EndSpanOptions)
+    func end(timestamp: UInt64)
 }
 
 extension Span {
     public func end() {
-        context.scope?.close()
+        scope?.close()
     }
 
-    public func end(endOptions: EndSpanOptions) {
+    public func end(timestamp: UInt64) {
         end()
     }
 }
@@ -168,22 +159,10 @@ extension Span {
         switch statusCode {
         case 200 ..< 400:
             newStatus = .ok
-        case 400:
-            newStatus = .invalidArgument
-        case 403:
-            newStatus = .permissionDenied
-        case 404:
-            newStatus = .notFound
-        case 429:
-            newStatus = .resourceExhausted
-        case 501:
-            newStatus = .unimplemented
-        case 503:
-            newStatus = .unavailable
-        case 504:
-            newStatus = .deadlineExceeded
+        case 400 ..< 600:
+            newStatus = .error
         default:
-            newStatus = .unknown
+            newStatus = .unset
         }
         status = newStatus.withDescription(description: reasonPhrase)
     }

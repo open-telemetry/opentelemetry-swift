@@ -23,10 +23,10 @@ public class MillisClock: Clock {
     }
 
     public var now: UInt64 {
-        return UInt64(Date().timeIntervalSince1970 * 1000000000)
+        return UInt64(Date().timeIntervalSince1970.toNanoseconds)
     }
 
     public var nanoTime: UInt64 {
-        return UInt64(Date().timeIntervalSince1970 * 1000000000)
+        return UInt64(Date().timeIntervalSince1970.toNanoseconds)
     }
 }

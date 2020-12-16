@@ -18,7 +18,7 @@ import OpenTelemetryApi
 
 // A dictionary implementation with a fixed capacity that drops events when the dictionary gets full. Eviction
 // is based on the access order.
-public struct AttributesWithCapacity {
+public struct AttributesDictionay {
     var attributes: [String: AttributeValue]
     var keys: [String]
     private var capacity: Int
@@ -66,7 +66,7 @@ public struct AttributesWithCapacity {
         }
     }
 
-    public mutating func updateValues(attributes: AttributesWithCapacity) {
+    public mutating func updateValues(attributes: AttributesDictionay) {
         _ = attributes.keys.map {
             updateValue(value: attributes[$0]!, forKey: $0)
         }
@@ -96,16 +96,16 @@ public struct AttributesWithCapacity {
         keys.map { attributes[$0]! }
     }
 
-    static func == (lhs: AttributesWithCapacity, rhs: AttributesWithCapacity) -> Bool {
+    static func == (lhs: AttributesDictionay, rhs: AttributesDictionay) -> Bool {
         lhs.keys == rhs.keys && lhs.attributes == rhs.attributes
     }
 
-    static func != (lhs: AttributesWithCapacity, rhs: AttributesWithCapacity) -> Bool {
+    static func != (lhs: AttributesDictionay, rhs: AttributesDictionay) -> Bool {
         lhs.keys != rhs.keys || lhs.attributes != rhs.attributes
     }
 }
 
-extension AttributesWithCapacity: Sequence {
+extension AttributesDictionay: Sequence {
     public func makeIterator() -> AttributesWithCapacityIterator {
         AttributesWithCapacityIterator(sequence: attributes, keys: keys, current: 0)
     }

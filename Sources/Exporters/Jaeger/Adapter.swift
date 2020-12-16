@@ -57,7 +57,7 @@ final class Adapter {
         var parentSpanId: Int64 = 0
 
         tags.append(contentsOf: toJaegerTags(attributes: span.attributes))
-        logs.append(contentsOf: toJaegerLogs(timedEvents: span.timedEvents))
+        logs.append(contentsOf: toJaegerLogs(events: span.events))
         references.append(contentsOf: toSpanRefs(links: span.links))
 
         if let parentId = span.parentSpanId,
@@ -76,7 +76,7 @@ final class Adapter {
 
         tags.append(Tag(key: Adapter.keySpanKind, vType: .string, vStr: span.kind.rawValue.uppercased(), vDouble: nil, vBool: nil, vLong: nil, vBinary: nil))
         tags.append(Tag(key: Adapter.keySpanStatusMessage, vType: .string, vStr: span.status?.statusDescription ?? "", vDouble: nil, vBool: nil, vLong: nil, vBinary: nil))
-        tags.append(Tag(key: Adapter.keySpanStatusCode, vType: .long, vStr: nil, vDouble: nil, vBool: nil, vLong: Int64(span.status?.canonicalCode.rawValue ?? 0), vBinary: nil))
+        tags.append(Tag(key: Adapter.keySpanStatusCode, vType: .long, vStr: nil, vDouble: nil, vBool: nil, vLong: Int64(span.status?.statusCode.rawValue ?? 0), vBinary: nil))
 
         if span.status != .ok {
             tags.append(Tag(key: keyError, vType: .bool, vStr: nil, vDouble: nil, vBool: true, vLong: nil, vBinary: nil))
@@ -131,26 +131,26 @@ final class Adapter {
         return Tag(key: key, vType: vType, vStr: vStr, vDouble: vDouble, vBool: vBool, vLong: vLong, vBinary: nil)
     }
 
-    static func toJaegerLogs(timedEvents: [TimedEvent]) -> [Log] {
+    static func toJaegerLogs(events: [SpanData.Event]) -> [Log] {
         var logs = [Log]()
-        logs.reserveCapacity(timedEvents.count)
+        logs.reserveCapacity(events.count)
 
-        timedEvents.forEach {
-            logs.append(toJaegerLog(timedEvent: $0))
+        events.forEach {
+            logs.append(toJaegerLog(event: $0))
         }
         return logs
     }
 
-    static func toJaegerLog(timedEvent: TimedEvent) -> Log {
-        let timestamp = Int64(timedEvent.epochNanos * 1000)
+    static func toJaegerLog(event: SpanData.Event) -> Log {
+        let timestamp = Int64(event.epochNanos * 1000)
 
         var tags = TList<Tag>()
-        tags.append(Tag(key: Adapter.keyLogMessage, vType: .string, vStr: timedEvent.name, vDouble: nil, vBool: nil, vLong: nil, vBinary: nil))
-        tags.append(contentsOf: toJaegerTags(attributes: timedEvent.attributes))
+        tags.append(Tag(key: Adapter.keyLogMessage, vType: .string, vStr: event.name, vDouble: nil, vBool: nil, vLong: nil, vBinary: nil))
+        tags.append(contentsOf: toJaegerTags(attributes: event.attributes))
         return Log(timestamp: timestamp, fields: tags)
     }
 
-    static func toSpanRefs(links: [Link]) -> [SpanRef] {
+    static func toSpanRefs(links: [SpanData.Link]) -> [SpanRef] {
         var spanRefs = [SpanRef]()
         spanRefs.reserveCapacity(links.count)
         links.forEach {
@@ -159,7 +159,7 @@ final class Adapter {
         return spanRefs
     }
 
-    static func toSpanRef(link: Link) -> SpanRef {
+    static func toSpanRef(link: SpanData.Link) -> SpanRef {
         let traceHex = link.context.traceId.hexString
         let secondIndex = traceHex.index(traceHex.startIndex, offsetBy: 16)
         let traceIdHigh = Int64(traceHex[traceHex.startIndex ..< secondIndex], radix: 16) ?? 0

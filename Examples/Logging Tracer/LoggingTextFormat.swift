@@ -16,7 +16,7 @@
 import Foundation
 import OpenTelemetryApi
 
-class LoggingTextFormat: HTTPTextFormattable {
+class LoggingTextFormat: TextMapPropagator {
     
     var fields = Set<String>()
 

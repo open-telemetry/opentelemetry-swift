@@ -38,17 +38,10 @@ func simpleSpan() {
 func childSpan() {
     let span = tracer.spanBuilder(spanName: "parentSpan").setSpanKind(spanKind: .client).startSpan()
     span.setAttribute(key: sampleKey, value: sampleValue)
-    do {
-        var scope = tracer.withSpan(span)
-        let childSpan = tracer.spanBuilder(spanName: "childSpan").setSpanKind(spanKind: .client).startSpan()
-        do {
-            var childScope = tracer.withSpan(childSpan)
-            childSpan.setAttribute(key: sampleKey, value: sampleValue)
-            childScope.close()
-        }
-        childSpan.end()
-        scope.close()
-    }
+    tracer.setActive(span)
+    let childSpan = tracer.spanBuilder(spanName: "childSpan").setSpanKind(spanKind: .client).startSpan()
+    childSpan.setAttribute(key: sampleKey, value: sampleValue)
+    childSpan.end()
     span.end()
 }
 

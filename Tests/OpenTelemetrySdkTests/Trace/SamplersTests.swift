@@ -45,7 +45,7 @@ class ProbabilitySamplerTest: XCTestCase {
                                                      name: spanName,
                                                      kind: spanKind,
                                                      attributes: [String: AttributeValue](),
-                                                     parentLinks: [Link]())
+                                                     parentLinks: [SpanData.Link]())
                 .isSampled)
     }
 
@@ -55,7 +55,7 @@ class ProbabilitySamplerTest: XCTestCase {
                                                        name: spanName,
                                                        kind: spanKind,
                                                        attributes: [String: AttributeValue](),
-                                                       parentLinks: [Link]())
+                                                       parentLinks: [SpanData.Link]())
                 .isSampled)
     }
 
@@ -88,7 +88,7 @@ class ProbabilitySamplerTest: XCTestCase {
     }
 
     // Applies the given sampler to NUM_SAMPLE_TRIES random traceId/spanId pairs.
-    private func assertSamplerSamplesWithProbability(sampler: Sampler, parent: SpanContext, parentLinks: [Link], probability: Double) {
+    private func assertSamplerSamplesWithProbability(sampler: Sampler, parent: SpanContext, parentLinks: [SpanData.Link], probability: Double) {
         var count = 0 // Count of spans with sampling enabled
         for _ in 0 ..< numSamplesTries {
             if sampler.shouldSample(parentContext: parent,
@@ -107,20 +107,20 @@ class ProbabilitySamplerTest: XCTestCase {
 
     func testProbabilitySampler_DifferentProbabilities_NotSampledParent() {
         let fiftyPercentSample = Probability(probability: 0.5)
-        assertSamplerSamplesWithProbability(sampler: fiftyPercentSample, parent: notSampledSpanContext, parentLinks: [Link](), probability: 0.5)
+        assertSamplerSamplesWithProbability(sampler: fiftyPercentSample, parent: notSampledSpanContext, parentLinks: [SpanData.Link](), probability: 0.5)
         let twentyPercentSample = Probability(probability: 0.2)
-        assertSamplerSamplesWithProbability(sampler: twentyPercentSample, parent: notSampledSpanContext, parentLinks: [Link](), probability: 0.2)
+        assertSamplerSamplesWithProbability(sampler: twentyPercentSample, parent: notSampledSpanContext, parentLinks: [SpanData.Link](), probability: 0.2)
         let twoThirdsSample = Probability(probability: 2.0 / 3.0)
-        assertSamplerSamplesWithProbability(sampler: twoThirdsSample, parent: notSampledSpanContext, parentLinks: [Link](), probability: 2.0 / 3.0)
+        assertSamplerSamplesWithProbability(sampler: twoThirdsSample, parent: notSampledSpanContext, parentLinks: [SpanData.Link](), probability: 2.0 / 3.0)
     }
 
     func testProbabilitySampler_DifferentProbabilities_SampledParent() {
         let fiftyPercentSample = Probability(probability: 0.5)
-        assertSamplerSamplesWithProbability(sampler: fiftyPercentSample, parent: sampledSpanContext, parentLinks: [Link](), probability: 1.0)
+        assertSamplerSamplesWithProbability(sampler: fiftyPercentSample, parent: sampledSpanContext, parentLinks: [SpanData.Link](), probability: 1.0)
         let twentyPercentSample = Probability(probability: 0.2)
-        assertSamplerSamplesWithProbability(sampler: twentyPercentSample, parent: sampledSpanContext, parentLinks: [Link](), probability: 1.0)
+        assertSamplerSamplesWithProbability(sampler: twentyPercentSample, parent: sampledSpanContext, parentLinks: [SpanData.Link](), probability: 1.0)
         let twoThirdsSample = Probability(probability: 2.0 / 3.0)
-        assertSamplerSamplesWithProbability(sampler: twoThirdsSample, parent: sampledSpanContext, parentLinks: [Link](), probability: 1.0)
+        assertSamplerSamplesWithProbability(sampler: twoThirdsSample, parent: sampledSpanContext, parentLinks: [SpanData.Link](), probability: 1.0)
     }
 
     func testProbabilitySampler_DifferentProbabilities_SampledParentLink() {
@@ -143,7 +143,7 @@ class ProbabilitySamplerTest: XCTestCase {
                                                         name: spanName,
                                                         kind: spanKind,
                                                         attributes: [String: AttributeValue](),
-                                                        parentLinks: [Link]())
+                                                        parentLinks: [SpanData.Link]())
         XCTAssertFalse(decision1.isSampled)
         XCTAssertEqual(decision1.attributes.count, 0)
         // This traceId will be sampled by the ProbabilitySampler because the first 8 bytes as long
@@ -154,7 +154,7 @@ class ProbabilitySamplerTest: XCTestCase {
                                                         name: spanName,
                                                         kind: spanKind,
                                                         attributes: [String: AttributeValue](),
-                                                        parentLinks: [Link]())
+                                                        parentLinks: [SpanData.Link]())
         XCTAssertTrue(decision2.isSampled)
         XCTAssertEqual(decision2.attributes.count, 0)
     }

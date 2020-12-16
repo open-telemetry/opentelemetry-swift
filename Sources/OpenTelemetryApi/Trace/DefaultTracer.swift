@@ -21,11 +21,11 @@ public class DefaultTracer: Tracer {
 
     private init() {}
 
-    public var currentSpan: Span? {
+    public var activeSpan: Span? {
         return ContextUtils.getCurrentSpan()
     }
 
-    public func withSpan(_ span: Span) -> Scope {
+    @discardableResult public func setActive(_ span: Span) -> Scope {
         return SpanInScope(span: span)
     }
 

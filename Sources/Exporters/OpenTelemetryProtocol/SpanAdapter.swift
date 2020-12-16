@@ -74,10 +74,10 @@ struct SpanAdapter {
             protoSpan.attributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
         }
         protoSpan.droppedAttributesCount = UInt32(spanData.totalAttributeCount - spanData.attributes.count)
-        spanData.timedEvents.forEach {
+        spanData.events.forEach {
             protoSpan.events.append(toProtoSpanEvent(event: $0))
         }
-        protoSpan.droppedEventsCount = UInt32(spanData.totalRecordedEvents - spanData.timedEvents.count )
+        protoSpan.droppedEventsCount = UInt32(spanData.totalRecordedEvents - spanData.events.count )
 
         spanData.links.forEach {
             protoSpan.links.append(toProtoSpanLink(link: $0))
@@ -102,7 +102,7 @@ struct SpanAdapter {
         }
     }
 
-    static func toProtoSpanEvent(event: TimedEvent) -> Opentelemetry_Proto_Trace_V1_Span.Event {
+    static func toProtoSpanEvent(event: SpanData.Event) -> Opentelemetry_Proto_Trace_V1_Span.Event {
         var protoEvent = Opentelemetry_Proto_Trace_V1_Span.Event()
         protoEvent.name = event.name
         protoEvent.timeUnixNano = event.epochNanos
@@ -112,7 +112,7 @@ struct SpanAdapter {
         return protoEvent
     }
 
-    static func toProtoSpanLink(link: Link) -> Opentelemetry_Proto_Trace_V1_Span.Link {
+    static func toProtoSpanLink(link: SpanData.Link) -> Opentelemetry_Proto_Trace_V1_Span.Link {
         var protoLink = Opentelemetry_Proto_Trace_V1_Span.Link()
         protoLink.traceID = TraceProtoUtils.toProtoTraceId(traceId: link.context.traceId)
         protoLink.spanID = TraceProtoUtils.toProtoSpanId(spanId: link.context.spanId)
@@ -125,7 +125,7 @@ struct SpanAdapter {
 
     static func toStatusProto(status: Status?) -> Opentelemetry_Proto_Trace_V1_Status {
         var statusProto = Opentelemetry_Proto_Trace_V1_Status()
-        statusProto.code = Opentelemetry_Proto_Trace_V1_Status.StatusCode(rawValue: status?.canonicalCode.rawValue ?? 0) ?? .ok
+        statusProto.code = Opentelemetry_Proto_Trace_V1_Status.StatusCode(rawValue: status?.statusCode.rawValue ?? 0) ?? .ok
         if let desc = status?.statusDescription {
             statusProto.message = desc
         }

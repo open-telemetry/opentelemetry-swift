@@ -20,9 +20,9 @@ import XCTest
 class TraceConfigTests: XCTestCase {
     func testDefaultTraceConfig() {
         XCTAssertTrue(TraceConfig().sampler === Samplers.alwaysOn)
-        XCTAssertEqual(TraceConfig().maxNumberOfAttributes, 32)
-        XCTAssertEqual(TraceConfig().maxNumberOfEvents, 128)
-        XCTAssertEqual(TraceConfig().maxNumberOfLinks, 32)
+        XCTAssertEqual(TraceConfig().maxNumberOfAttributes, 1000)
+        XCTAssertEqual(TraceConfig().maxNumberOfEvents, 1000)
+        XCTAssertEqual(TraceConfig().maxNumberOfLinks, 1000)
         XCTAssertEqual(TraceConfig().maxNumberOfAttributesPerEvent, 32)
         XCTAssertEqual(TraceConfig().maxNumberOfAttributesPerLink, 32)
     }

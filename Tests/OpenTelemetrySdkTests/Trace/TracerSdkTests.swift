@@ -33,15 +33,15 @@ class TracerSdkTests: XCTestCase {
     }
 
     func testDefaultGetCurrentSpan() {
-        XCTAssertNil(tracer.currentSpan)
+        XCTAssertNil(tracer.activeSpan)
     }
 
     func testDefaultSpanBuilder() {
         XCTAssertTrue(tracer.spanBuilder(spanName: spanName) is SpanBuilderSdk)
     }
 
-    func testDefaultHttpTextFormat() {
-        XCTAssertTrue(tracer.textFormat is HttpTraceContextFormat)
+    func testDefaultTextMapPropagator() {
+        XCTAssertTrue(tracer.textFormat is W3CTraceContextPropagator)
     }
 
     func testDefaultBinaryFormat() {
@@ -49,7 +49,7 @@ class TracerSdkTests: XCTestCase {
     }
 
     func testGetCurrentSpan() {
-        XCTAssertNil(tracer.currentSpan)
+        XCTAssertNil(tracer.activeSpan)
         // Make sure context is detached even if test fails.
         // TODO: Check context bahaviour
 //        let origContext = ContextUtils.withSpan(span)
@@ -58,11 +58,11 @@ class TracerSdkTests: XCTestCase {
     }
 
     func testGetCurrentSpan_WithSpan() {
-        XCTAssertNil(tracer.currentSpan)
-        var ws = tracer.withSpan(span)
-        XCTAssertTrue(tracer.currentSpan === span)
+        XCTAssertNil(tracer.activeSpan)
+        var ws = tracer.setActive(span)
+        XCTAssertTrue(tracer.activeSpan === span)
         ws.close()
-        XCTAssertNil(tracer.currentSpan)
+        XCTAssertNil(tracer.activeSpan)
     }
 
     func testGetInstrumentationLibraryInfo() {

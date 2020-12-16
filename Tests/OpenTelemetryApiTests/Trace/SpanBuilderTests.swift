@@ -17,15 +17,6 @@ import OpenTelemetryApi
 import XCTest
 
 class SpanBuilderTests: XCTestCase {
-    class TestLink: Link {
-        var context: SpanContext {
-            return DefaultSpan.random().context
-        }
-
-        var attributes: [String: AttributeValue] {
-            return [String: AttributeValue]()
-        }
-    }
 
     let tracer = DefaultTracer.instance
 
@@ -38,13 +29,12 @@ class SpanBuilderTests: XCTestCase {
         spanBuilder.addLink(spanContext: DefaultSpan.random().context)
         spanBuilder.addLink(spanContext: DefaultSpan.random().context, attributes: [String: AttributeValue]())
         spanBuilder.addLink(spanContext: DefaultSpan.random().context, attributes: [String: AttributeValue]())
-        spanBuilder.addLink(TestLink())
         spanBuilder.setAttribute(key: "key", value: "value")
         spanBuilder.setAttribute(key: "key", value: 12345)
         spanBuilder.setAttribute(key: "key", value: 0.12345)
         spanBuilder.setAttribute(key: "key", value: true)
         spanBuilder.setAttribute(key: "key", value: AttributeValue.string("value"))
-        spanBuilder.setStartEpochNano(epochNano: 12345)
+        spanBuilder.setStartTimestamp(timestamp: 12345)
         XCTAssert(spanBuilder.startSpan() is DefaultSpan)
     }
 }

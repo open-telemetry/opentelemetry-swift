@@ -86,10 +86,10 @@ class AdapterTests: XCTestCase {
 
     func testJaegerLogs() {
         // prepare
-        let timedEvent = getTimedEvent()
+        let event = getTimedEvent()
 
         // test
-        let logs = Adapter.toJaegerLogs(timedEvents: [timedEvent])
+        let logs = Adapter.toJaegerLogs(events: [event])
 
         // verify
         XCTAssertEqual(logs.count, 1)
@@ -97,10 +97,10 @@ class AdapterTests: XCTestCase {
 
     func testJaegerLog() {
         // prepare
-        let timedEvent = getTimedEvent()
+        let event = getTimedEvent()
 
         // test
-        let log = Adapter.toJaegerLog(timedEvent: timedEvent)
+        let log = Adapter.toJaegerLog(event: event)
 
         // verify
         XCTAssertEqual(log.fields.count, 2)
@@ -203,7 +203,7 @@ class AdapterTests: XCTestCase {
                             name: "GET /api/endpoint",
                             kind: .server,
                             startEpochNanos: startMs * 1000,
-                            status: Status.cancelled,
+                            status: Status.error,
                             endEpochNanos: endMs * 1000,
                             hasRemoteParent: false)
 
@@ -223,7 +223,7 @@ class AdapterTests: XCTestCase {
                             startEpochNanos: startMs * 1000,
                             endEpochNanos: endMs * 1000)
         span.settingHasEnded(true)
-        span.settingStatus(.unknown)
+        span.settingStatus(.error)
         span.settingAttributes(attributes)
 
         let jaegerSpan = Adapter.toJaeger(span: span)
@@ -234,11 +234,11 @@ class AdapterTests: XCTestCase {
         XCTAssertEqual(true, error?.vBool)
     }
 
-    private func getTimedEvent() -> TimedEvent {
+    private func getTimedEvent() -> SpanData.Event {
         let epochNanos = UInt64(Date().timeIntervalSince1970 * 1000000)
         let valueS = AttributeValue.string("bar")
         let attributes = ["foo": valueS]
-        return TimedEvent(name: "the log message", epochNanos: epochNanos, attributes: attributes)
+        return SpanData.Event(name: "the log message", epochNanos: epochNanos, attributes: attributes)
     }
 
     private func getSpanData(startMs: UInt64, endMs: UInt64) -> SpanData {
@@ -258,7 +258,7 @@ class AdapterTests: XCTestCase {
                         kind: .server,
                         startEpochNanos: startMs * 1000,
                         attributes: attributes,
-                        timedEvents: [getTimedEvent()],
+                        events: [getTimedEvent()],
                         links: [link],
                         status: Status.ok,
                         endEpochNanos: endMs * 1000,
