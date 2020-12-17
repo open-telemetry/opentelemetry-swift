@@ -83,7 +83,7 @@ struct SpanAdapter {
             protoSpan.links.append(toProtoSpanLink(link: $0))
         }
         protoSpan.droppedLinksCount = UInt32(spanData.totalRecordedLinks - spanData.links.count )
-        protoSpan.status = toStatusProto(status: spanData.status)
+        protoSpan.status = toStatusProto(status: spanData.status ?? .unset)
         return protoSpan
     }
 
