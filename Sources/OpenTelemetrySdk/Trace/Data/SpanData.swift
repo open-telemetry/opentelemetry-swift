@@ -59,7 +59,7 @@ public struct SpanData: Equatable {
     public private(set) var links = [Link]()
 
     /// The Status.
-    public private(set) var status: Status?
+    public private(set) var status: Status = .unset
 
     /// The end epoch timestamp in nanos of this Span
     public private(set) var endEpochNanos: UInt64
@@ -172,7 +172,7 @@ public struct SpanData: Equatable {
         return self
     }
 
-    @discardableResult public mutating func settingTimedEvents(_ events: [Event]) -> SpanData {
+    @discardableResult public mutating func settingEvents(_ events: [Event]) -> SpanData {
         self.events = events
         return self
     }

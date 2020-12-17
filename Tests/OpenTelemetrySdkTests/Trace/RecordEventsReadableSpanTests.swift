@@ -65,7 +65,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
                        spanName: spanName,
                        startEpochNanos: startEpochNanos,
                        endEpochNanos: startEpochNanos,
-                       status: .ok,
+                       status: .unset,
                        hasEnded: true)
     }
 
@@ -81,7 +81,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
     func testToSpanData_ActiveSpan() {
         let span = createTestSpan(kind: .internal)
         XCTAssertFalse(span.hasEnded)
-        spanDoWork(span: span, status: nil)
+        spanDoWork(span: span, status: .ok)
         let spanData = span.toSpanData()
         let event = SpanData.Event(name: "event2", epochNanos: startEpochNanos + nanosPerSecond, attributes: [String: AttributeValue]())
         verifySpanData(spanData: spanData,
@@ -118,7 +118,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
 
     func testToSpanData_RootSpan() {
         let span = createTestRootSpan()
-        spanDoWork(span: span, status: nil)
+        spanDoWork(span: span, status: .unset)
         span.end()
         let spanData = span.toSpanData()
         XCTAssertEqual(spanData.parentSpanId, nil)
@@ -134,10 +134,13 @@ class RecordEventsReadableSpanTest: XCTestCase {
     func testSetStatus() {
         let span = createTestSpan(kind: .consumer)
         testClock.advanceMillis(millisPerSecond)
+        XCTAssertEqual(span.toSpanData().status, Status.unset)
+        span.status = .ok
         XCTAssertEqual(span.toSpanData().status, Status.ok)
         span.status = .error
         XCTAssertEqual(span.toSpanData().status, Status.error)
         span.end()
+        span.status = .ok
         XCTAssertEqual(span.toSpanData().status, Status.error)
     }
 
@@ -381,7 +384,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
                                 attributes: attributes,
                                 events: events,
                                 links: links,
-                                status: .ok,
+                                status: .unset,
                                 endEpochNanos: endEpochNanos,
                                 hasRemoteParent: false,
                                 hasEnded: true,
@@ -430,7 +433,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
         return span
     }
 
-    private func spanDoWork(span: RecordEventsReadableSpan, status: Status?) {
+    private func spanDoWork(span: RecordEventsReadableSpan, status: Status) {
         span.setAttribute(key: "MySingleStringAttributeKey", value: AttributeValue.string("MySingleStringAttributeValue"))
 
         for attribute in attributes {
@@ -464,7 +467,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
         XCTAssert(spanData.links == links)
         XCTAssertEqual(spanData.startEpochNanos, startEpochNanos)
         XCTAssertEqual(spanData.endEpochNanos, endEpochNanos)
-        XCTAssertEqual(spanData.status?.statusCode, status.statusCode)
+        XCTAssertEqual(spanData.status.statusCode, status.statusCode)
         XCTAssertEqual(spanData.hasEnded, hasEnded)
     }
 }

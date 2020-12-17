@@ -52,7 +52,7 @@ class ReadableSpanMock: ReadableSpan {
 
     var isRecording: Bool = false
 
-    var status: Status?
+    var status: Status = .unset
 
     var scope: Scope?
 

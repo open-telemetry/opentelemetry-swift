@@ -21,7 +21,7 @@ class LoggingSpan: Span {
     var kind: SpanKind
     var context: SpanContext = SpanContext.invalid
     var isRecording: Bool = true
-    var status: Status?
+    var status: Status = .unset
     var scope: Scope?
 
 
