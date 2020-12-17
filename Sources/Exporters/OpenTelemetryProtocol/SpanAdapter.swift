@@ -119,14 +119,20 @@ struct SpanAdapter {
         link.attributes.forEach {
             protoLink.attributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
         }
-
         return protoLink
     }
 
-    static func toStatusProto(status: Status?) -> Opentelemetry_Proto_Trace_V1_Status {
+    static func toStatusProto(status: Status) -> Opentelemetry_Proto_Trace_V1_Status {
         var statusProto = Opentelemetry_Proto_Trace_V1_Status()
-        statusProto.code = Opentelemetry_Proto_Trace_V1_Status.StatusCode(rawValue: status?.statusCode.rawValue ?? 0) ?? .ok
-        if let desc = status?.statusDescription {
+        switch status.statusCode {
+            case .ok:
+                statusProto.code = .ok
+            case .unset:
+                statusProto.code = .unset
+            case .error:
+                statusProto.code = .error
+        }
+        if let desc = status.statusDescription {
             statusProto.message = desc
         }
         return statusProto
