@@ -38,7 +38,7 @@ class SpanAdapterTests: XCTestCase {
         testData.settingHasEnded(false)
         testData.settingAttributes(["key": AttributeValue.bool(true)])
         testData.settingTotalAttributeCount(2)
-        testData.settingTimedEvents([SpanData.Event(name: "my_event", epochNanos: 12347)])
+        testData.settingEvents([SpanData.Event(name: "my_event", epochNanos: 12347)])
         testData.settingTotalRecordedEvents(3)
         testData.settingLinks([SpanData.Link(context: spanContext)])
         testData.settingTotalRecordedLinks(2)

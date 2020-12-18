@@ -76,10 +76,10 @@ struct ZipkinConversionExtension {
 
         let status = otelSpan.status
 
-        if status?.isOk ?? false {
-            attributeEnumerationState.tags[statusCode] = "\(status!.statusCode)".capitalized
-            if status?.statusDescription != nil {
-                attributeEnumerationState.tags[statusDescription] = status!.description
+        if status.isOk {
+            attributeEnumerationState.tags[statusCode] = "\(status.statusCode)".capitalized
+            if status.statusDescription != nil {
+                attributeEnumerationState.tags[statusDescription] = status.statusDescription
             }
         }
 

@@ -67,9 +67,9 @@ public class RecordEventsReadableSpan: ReadableSpan {
     /// Number of events recorded.
     public private(set) var totalRecordedEvents = 0
     /// The status of the span.
-    public var status: Status? = Status.ok {
+    public var status: Status = Status.unset {
         didSet {
-            if hasEnded || status == nil {
+            if hasEnded {
                 status = oldValue
             }
         }
@@ -275,10 +275,6 @@ public class RecordEventsReadableSpan: ReadableSpan {
         spanProcessor.onEnd(span: self)
         isRecording = false
         scope?.close()
-    }
-
-    private func getStatusWithDefault() -> Status {
-        return status ?? Status.ok
     }
 
     public var description: String {

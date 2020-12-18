@@ -95,14 +95,14 @@ internal struct DDSpan: Encodable {
         self.startTime = spanData.startEpochNanos
         self.duration = spanData.endEpochNanos - spanData.startEpochNanos
 
-        if spanData.status?.isOk ?? true {
+        if spanData.status.isOk {
             self.error = false
             self.errorMessage = nil
             self.errorType = nil
             self.errorStack = nil
         } else {
             self.error = true
-            self.errorType = spanData.attributes["error.type"]?.description ?? spanData.status?.description
+            self.errorType = spanData.attributes["error.type"]?.description ?? spanData.status.description
             self.errorMessage = spanData.attributes["error.message"]?.description
             self.errorStack = spanData.attributes["error.stack"]?.description
         }

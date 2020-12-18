@@ -60,7 +60,7 @@ public class DefaultSpan: Span {
         return false
     }
 
-    public var status: Status? {
+    public var status: Status {
         get {
             return Status.ok
         }
