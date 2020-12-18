@@ -30,7 +30,7 @@ public protocol Span: AnyObject, CustomStringConvertible {
     var isRecording: Bool { get }
 
     /// The status of the span execution.
-    var status: Status? { get set }
+    var status: Status { get set }
 
     /// The name of the Span.
     /// If changed, this will override the name provided via StartSpan method overload.
