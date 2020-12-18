@@ -54,12 +54,12 @@ public struct Opentelemetry_Proto_Trace_V1_TraceConfig {
     set {_uniqueStorage()._sampler = .constantSampler(newValue)}
   }
 
-  public var probabilitySampler: Opentelemetry_Proto_Trace_V1_ProbabilitySampler {
+  public var traceIDRatioBased: Opentelemetry_Proto_Trace_V1_TraceIdRatioBased {
     get {
-      if case .probabilitySampler(let v)? = _storage._sampler {return v}
-      return Opentelemetry_Proto_Trace_V1_ProbabilitySampler()
+      if case .traceIDRatioBased(let v)? = _storage._sampler {return v}
+      return Opentelemetry_Proto_Trace_V1_TraceIdRatioBased()
     }
-    set {_uniqueStorage()._sampler = .probabilitySampler(newValue)}
+    set {_uniqueStorage()._sampler = .traceIDRatioBased(newValue)}
   }
 
   public var rateLimitingSampler: Opentelemetry_Proto_Trace_V1_RateLimitingSampler {
@@ -105,14 +105,14 @@ public struct Opentelemetry_Proto_Trace_V1_TraceConfig {
   /// The global default sampler used to make decisions on span sampling.
   public enum OneOf_Sampler: Equatable {
     case constantSampler(Opentelemetry_Proto_Trace_V1_ConstantSampler)
-    case probabilitySampler(Opentelemetry_Proto_Trace_V1_ProbabilitySampler)
+    case traceIDRatioBased(Opentelemetry_Proto_Trace_V1_TraceIdRatioBased)
     case rateLimitingSampler(Opentelemetry_Proto_Trace_V1_RateLimitingSampler)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Opentelemetry_Proto_Trace_V1_TraceConfig.OneOf_Sampler, rhs: Opentelemetry_Proto_Trace_V1_TraceConfig.OneOf_Sampler) -> Bool {
       switch (lhs, rhs) {
       case (.constantSampler(let l), .constantSampler(let r)): return l == r
-      case (.probabilitySampler(let l), .probabilitySampler(let r)): return l == r
+      case (.traceIDRatioBased(let l), .traceIDRatioBased(let r)): return l == r
       case (.rateLimitingSampler(let l), .rateLimitingSampler(let r)): return l == r
       default: return false
       }
@@ -186,15 +186,15 @@ extension Opentelemetry_Proto_Trace_V1_ConstantSampler.ConstantDecision: CaseIte
 
 #endif  // swift(>=4.2)
 
-/// Sampler that tries to uniformly sample traces with a given probability.
-/// The probability of sampling a trace is equal to that of the specified probability.
-public struct Opentelemetry_Proto_Trace_V1_ProbabilitySampler {
+/// Sampler that tries to uniformly sample traces with a given ratio.
+/// The ratio of sampling a trace is equal to that of the specified ratio.
+public struct Opentelemetry_Proto_Trace_V1_TraceIdRatioBased {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  /// The desired probability of sampling. Must be within [0.0, 1.0].
-  public var samplingProbability: Double = 0
+  /// The desired ratio of sampling. Must be within [0.0, 1.0].
+  public var samplingRatio: Double = 0
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -223,7 +223,7 @@ extension Opentelemetry_Proto_Trace_V1_TraceConfig: SwiftProtobuf.Message, Swift
   public static let protoMessageName: String = _protobuf_package + ".TraceConfig"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "constant_sampler"),
-    2: .standard(proto: "probability_sampler"),
+    2: .standard(proto: "trace_id_ratio_based"),
     3: .standard(proto: "rate_limiting_sampler"),
     4: .standard(proto: "max_number_of_attributes"),
     5: .standard(proto: "max_number_of_timed_events"),
@@ -275,13 +275,13 @@ extension Opentelemetry_Proto_Trace_V1_TraceConfig: SwiftProtobuf.Message, Swift
           try decoder.decodeSingularMessageField(value: &v)
           if let v = v {_storage._sampler = .constantSampler(v)}
         case 2:
-          var v: Opentelemetry_Proto_Trace_V1_ProbabilitySampler?
+          var v: Opentelemetry_Proto_Trace_V1_TraceIdRatioBased?
           if let current = _storage._sampler {
             try decoder.handleConflictingOneOf()
-            if case .probabilitySampler(let m) = current {v = m}
+            if case .traceIDRatioBased(let m) = current {v = m}
           }
           try decoder.decodeSingularMessageField(value: &v)
-          if let v = v {_storage._sampler = .probabilitySampler(v)}
+          if let v = v {_storage._sampler = .traceIDRatioBased(v)}
         case 3:
           var v: Opentelemetry_Proto_Trace_V1_RateLimitingSampler?
           if let current = _storage._sampler {
@@ -306,7 +306,7 @@ extension Opentelemetry_Proto_Trace_V1_TraceConfig: SwiftProtobuf.Message, Swift
       switch _storage._sampler {
       case .constantSampler(let v)?:
         try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-      case .probabilitySampler(let v)?:
+      case .traceIDRatioBased(let v)?:
         try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
       case .rateLimitingSampler(let v)?:
         try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
@@ -388,30 +388,30 @@ extension Opentelemetry_Proto_Trace_V1_ConstantSampler.ConstantDecision: SwiftPr
   ]
 }
 
-extension Opentelemetry_Proto_Trace_V1_ProbabilitySampler: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ProbabilitySampler"
+extension Opentelemetry_Proto_Trace_V1_TraceIdRatioBased: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".TraceIdRatioBased"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "samplingProbability"),
+    1: .same(proto: "samplingRatio"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
-      case 1: try decoder.decodeSingularDoubleField(value: &self.samplingProbability)
+      case 1: try decoder.decodeSingularDoubleField(value: &self.samplingRatio)
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if self.samplingProbability != 0 {
-      try visitor.visitSingularDoubleField(value: self.samplingProbability, fieldNumber: 1)
+    if self.samplingRatio != 0 {
+      try visitor.visitSingularDoubleField(value: self.samplingRatio, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Opentelemetry_Proto_Trace_V1_ProbabilitySampler, rhs: Opentelemetry_Proto_Trace_V1_ProbabilitySampler) -> Bool {
-    if lhs.samplingProbability != rhs.samplingProbability {return false}
+  public static func ==(lhs: Opentelemetry_Proto_Trace_V1_TraceIdRatioBased, rhs: Opentelemetry_Proto_Trace_V1_TraceIdRatioBased) -> Bool {
+    if lhs.samplingRatio != rhs.samplingRatio {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

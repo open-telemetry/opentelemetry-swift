@@ -33,6 +33,116 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
+/// AggregationTemporality defines how a metric aggregator reports aggregated
+/// values. It describes how those values relate to the time interval over
+/// which they are aggregated.
+public enum Opentelemetry_Proto_Metrics_V1_AggregationTemporality: SwiftProtobuf.Enum {
+  public typealias RawValue = Int
+
+  /// UNSPECIFIED is the default AggregationTemporality, it MUST not be used.
+  case unspecified // = 0
+
+  /// DELTA is an AggregationTemporality for a metric aggregator which reports
+  /// changes since last report time. Successive metrics contain aggregation of
+  /// values from continuous and non-overlapping intervals.
+  ///
+  /// The values for a DELTA metric are based only on the time interval
+  /// associated with one measurement cycle. There is no dependency on
+  /// previous measurements like is the case for CUMULATIVE metrics.
+  ///
+  /// For example, consider a system measuring the number of requests that
+  /// it receives and reports the sum of these requests every second as a
+  /// DELTA metric:
+  ///
+  ///   1. The system starts receiving at time=t_0.
+  ///   2. A request is received, the system measures 1 request.
+  ///   3. A request is received, the system measures 1 request.
+  ///   4. A request is received, the system measures 1 request.
+  ///   5. The 1 second collection cycle ends. A metric is exported for the
+  ///      number of requests received over the interval of time t_0 to
+  ///      t_0+1 with a value of 3.
+  ///   6. A request is received, the system measures 1 request.
+  ///   7. A request is received, the system measures 1 request.
+  ///   8. The 1 second collection cycle ends. A metric is exported for the
+  ///      number of requests received over the interval of time t_0+1 to
+  ///      t_0+2 with a value of 2.
+  case delta // = 1
+
+  /// CUMULATIVE is an AggregationTemporality for a metic aggregator which
+  /// reports changes since a fixed start time. This means that current values
+  /// of a CUMULATIVE metric depend on all previous measurements since the
+  /// start time. Because of this, the sender is required to retain this state
+  /// in some form. If this state is lost or invalidated, the CUMULATIVE metric
+  /// values MUST be reset and a new fixed start time following the last
+  /// reported measurement time sent MUST be used.
+  ///
+  /// For example, consider a system measuring the number of requests that
+  /// it receives and reports the sum of these requests every second as a
+  /// CUMULATIVE metric:
+  ///
+  ///   1. The system starts receiving at time=t_0.
+  ///   2. A request is received, the system measures 1 request.
+  ///   3. A request is received, the system measures 1 request.
+  ///   4. A request is received, the system measures 1 request.
+  ///   5. The 1 second collection cycle ends. A metric is exported for the
+  ///      number of requests received over the interval of time t_0 to
+  ///      t_0+1 with a value of 3.
+  ///   6. A request is received, the system measures 1 request.
+  ///   7. A request is received, the system measures 1 request.
+  ///   8. The 1 second collection cycle ends. A metric is exported for the
+  ///      number of requests received over the interval of time t_0 to
+  ///      t_0+2 with a value of 5.
+  ///   9. The system experiences a fault and loses state.
+  ///   10. The system recovers and resumes receiving at time=t_1.
+  ///   11. A request is received, the system measures 1 request.
+  ///   12. The 1 second collection cycle ends. A metric is exported for the
+  ///      number of requests received over the interval of time t_1 to
+  ///      t_0+1 with a value of 1.
+  ///
+  /// Note: Even though, when reporting changes since last report time, using 
+  /// CUMULATIVE is valid, it is not recommended. This may cause problems for
+  /// systems that do not use start_time to determine when the aggregation
+  /// value was reset (e.g. Prometheus).
+  case cumulative // = 2
+  case UNRECOGNIZED(Int)
+
+  public init() {
+    self = .unspecified
+  }
+
+  public init?(rawValue: Int) {
+    switch rawValue {
+    case 0: self = .unspecified
+    case 1: self = .delta
+    case 2: self = .cumulative
+    default: self = .UNRECOGNIZED(rawValue)
+    }
+  }
+
+  public var rawValue: Int {
+    switch self {
+    case .unspecified: return 0
+    case .delta: return 1
+    case .cumulative: return 2
+    case .UNRECOGNIZED(let i): return i
+    }
+  }
+
+}
+
+#if swift(>=4.2)
+
+extension Opentelemetry_Proto_Metrics_V1_AggregationTemporality: CaseIterable {
+  // The compiler won't synthesize support with the UNRECOGNIZED case.
+  public static var allCases: [Opentelemetry_Proto_Metrics_V1_AggregationTemporality] = [
+    .unspecified,
+    .delta,
+    .cumulative,
+  ]
+}
+
+#endif  // swift(>=4.2)
+
 /// A collection of InstrumentationLibraryMetrics from a Resource.
 public struct Opentelemetry_Proto_Metrics_V1_ResourceMetrics {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -95,331 +205,326 @@ public struct Opentelemetry_Proto_Metrics_V1_InstrumentationLibraryMetrics {
 
 /// Defines a Metric which has one or more timeseries.
 ///
-/// The data model and relation between entities is shown in the diagram below.
+/// The data model and relation between entities is shown in the
+/// diagram below. Here, "DataPoint" is the term used to refer to any
+/// one of the specific data point value types, and "points" is the term used
+/// to refer to any one of the lists of points contained in the Metric.
 ///
-/// - Metric is composed of a MetricDescriptor and a list of data points.
-/// - MetricDescriptor contains a list of label keys (shown horizontally).
-/// - Data is a list of DataPoints (shown vertically).
-/// - DataPoint contains a list of label values and a value.
+/// - Metric is composed of a metadata and data.
+/// - Metadata part contains a name, description, unit.
+/// - Data is one of the possible types (Gauge, Sum, Histogram, etc.).
+/// - DataPoint contains timestamps, labels, and one of the possible value type
+///   fields.
 ///
 ///     Metric
-///  +----------+         +------------------------+
-///  |descriptor|-------->| MetricDescriptor       |
-///  |          |         |+-----+-----+   +-----+ |
-///  |          |         ||label|label|...|label| |
-///  |      data|--+      ||key1 |key2 |   |keyN | |
-///  +----------+  |      |+-----+-----+   +-----+ |
-///                |      +------------------------+
-///                |
-///                |      +---------------------------+
-///                |      |DataPoint 1                |
-///                v      |+------+------+   +------+ |
-///             +-----+   ||label |label |...|label | |
-///             |  1  |-->||value1|value2|...|valueN| |
-///             +-----+   |+------+------+   +------+ |
-///             |  .  |   |+-----+                    |
-///             |  .  |   ||value|                    |
-///             |  .  |   |+-----+                    |
-///             |  .  |   +---------------------------+
-///             |  .  |                   .
-///             |  .  |                   .
-///             |  .  |                   .
-///             |  .  |   +---------------------------+
-///             |  .  |   |DataPoint M                |
-///             +-----+   |+------+------+   +------+ |
-///             |  M  |-->||label |label |...|label | |
-///             +-----+   ||value1|value2|...|valueN| |
-///                       |+------+------+   +------+ |
-///                       |+-----+                    |
-///                       ||value|                    |
-///                       |+-----+                    |
-///                       +---------------------------+
+///  +------------+
+///  |name        |
+///  |description |
+///  |unit        |     +---------------------------+
+///  |data        |---> |Gauge, Sum, Histogram, ... |
+///  +------------+     +---------------------------+ 
 ///
-///-----------------------------------------------------------------------
-/// DataPoint is a value of specific type corresponding to a given moment in
-/// time. Each DataPoint is timestamped.
+///    Data [One of Gauge, Sum, Histogram, ...]
+///  +-----------+
+///  |...        |  // Metadata about the Data.
+///  |points     |--+
+///  +-----------+  |
+///                 |      +---------------------------+
+///                 |      |DataPoint 1                |
+///                 v      |+------+------+   +------+ |
+///              +-----+   ||label |label |...|label | |
+///              |  1  |-->||value1|value2|...|valueN| |
+///              +-----+   |+------+------+   +------+ |
+///              |  .  |   |+-----+                    |
+///              |  .  |   ||value|                    |
+///              |  .  |   |+-----+                    |
+///              |  .  |   +---------------------------+
+///              |  .  |                   .
+///              |  .  |                   .
+///              |  .  |                   .
+///              |  .  |   +---------------------------+
+///              |  .  |   |DataPoint M                |
+///              +-----+   |+------+------+   +------+ |
+///              |  M  |-->||label |label |...|label | |
+///              +-----+   ||value1|value2|...|valueN| |
+///                        |+------+------+   +------+ |
+///                        |+-----+                    |
+///                        ||value|                    |
+///                        |+-----+                    |
+///                        +---------------------------+
 ///
-/// DataPoint is strongly typed: each DataPoint type has a specific Protobuf message
-/// depending on the value type of the metric and thus there are currently 4 DataPoint
-/// messages, which correspond to the types of metric values.
+/// All DataPoint types have three common fields:
+/// - Labels zero or more key-value pairs associated with the data point.
+/// - StartTimeUnixNano MUST be set to the start of the interval when the data's
+///   type includes an AggregationTemporality. This field is not set otherwise.
+/// - TimeUnixNano MUST be set to:
+///   - the moment when an aggregation is reported (independent of the
+///     aggregation temporality).
+///   - the instantaneous time of the event.
 public struct Opentelemetry_Proto_Metrics_V1_Metric {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  /// metric_descriptor describes the Metric.
-  public var metricDescriptor: Opentelemetry_Proto_Metrics_V1_MetricDescriptor {
-    get {return _storage._metricDescriptor ?? Opentelemetry_Proto_Metrics_V1_MetricDescriptor()}
-    set {_uniqueStorage()._metricDescriptor = newValue}
-  }
-  /// Returns true if `metricDescriptor` has been explicitly set.
-  public var hasMetricDescriptor: Bool {return _storage._metricDescriptor != nil}
-  /// Clears the value of `metricDescriptor`. Subsequent reads from it will return its default value.
-  public mutating func clearMetricDescriptor() {_uniqueStorage()._metricDescriptor = nil}
-
-  /// Data is a list of one or more DataPoints for a single metric. Only one of the
-  /// following fields is used for the data, depending on the type of the metric defined
-  /// by MetricDescriptor.type field.
-  public var int64DataPoints: [Opentelemetry_Proto_Metrics_V1_Int64DataPoint] {
-    get {return _storage._int64DataPoints}
-    set {_uniqueStorage()._int64DataPoints = newValue}
+  /// name of the metric, including its DNS name prefix. It must be unique.
+  public var name: String {
+    get {return _storage._name}
+    set {_uniqueStorage()._name = newValue}
   }
 
-  public var doubleDataPoints: [Opentelemetry_Proto_Metrics_V1_DoubleDataPoint] {
-    get {return _storage._doubleDataPoints}
-    set {_uniqueStorage()._doubleDataPoints = newValue}
+  /// description of the metric, which can be used in documentation.
+  public var description_p: String {
+    get {return _storage._description_p}
+    set {_uniqueStorage()._description_p = newValue}
   }
 
-  public var histogramDataPoints: [Opentelemetry_Proto_Metrics_V1_HistogramDataPoint] {
-    get {return _storage._histogramDataPoints}
-    set {_uniqueStorage()._histogramDataPoints = newValue}
+  /// unit in which the metric value is reported. Follows the format
+  /// described by http://unitsofmeasure.org/ucum.html.
+  public var unit: String {
+    get {return _storage._unit}
+    set {_uniqueStorage()._unit = newValue}
   }
 
-  public var summaryDataPoints: [Opentelemetry_Proto_Metrics_V1_SummaryDataPoint] {
-    get {return _storage._summaryDataPoints}
-    set {_uniqueStorage()._summaryDataPoints = newValue}
+  /// Data determines the aggregation type (if any) of the metric, what is the
+  /// reported value type for the data points, as well as the relatationship to
+  /// the time interval over which they are reported.
+  ///
+  /// TODO: Update table after the decision on:
+  /// https://github.com/open-telemetry/opentelemetry-specification/issues/731.
+  /// By default, metrics recording using the OpenTelemetry API are exported as
+  /// (the table does not include MeasurementValueType to avoid extra rows):
+  ///
+  ///   Instrument         Type
+  ///   ----------------------------------------------
+  ///   Counter            Sum(aggregation_temporality=delta;is_monotonic=true)
+  ///   UpDownCounter      Sum(aggregation_temporality=delta;is_monotonic=false)
+  ///   ValueRecorder      TBD
+  ///   SumObserver        Sum(aggregation_temporality=cumulative;is_monotonic=true)
+  ///   UpDownSumObserver  Sum(aggregation_temporality=cumulative;is_monotonic=false)
+  ///   ValueObserver      Gauge()
+  public var data: OneOf_Data? {
+    get {return _storage._data}
+    set {_uniqueStorage()._data = newValue}
+  }
+
+  public var intGauge: Opentelemetry_Proto_Metrics_V1_IntGauge {
+    get {
+      if case .intGauge(let v)? = _storage._data {return v}
+      return Opentelemetry_Proto_Metrics_V1_IntGauge()
+    }
+    set {_uniqueStorage()._data = .intGauge(newValue)}
+  }
+
+  public var doubleGauge: Opentelemetry_Proto_Metrics_V1_DoubleGauge {
+    get {
+      if case .doubleGauge(let v)? = _storage._data {return v}
+      return Opentelemetry_Proto_Metrics_V1_DoubleGauge()
+    }
+    set {_uniqueStorage()._data = .doubleGauge(newValue)}
+  }
+
+  public var intSum: Opentelemetry_Proto_Metrics_V1_IntSum {
+    get {
+      if case .intSum(let v)? = _storage._data {return v}
+      return Opentelemetry_Proto_Metrics_V1_IntSum()
+    }
+    set {_uniqueStorage()._data = .intSum(newValue)}
+  }
+
+  public var doubleSum: Opentelemetry_Proto_Metrics_V1_DoubleSum {
+    get {
+      if case .doubleSum(let v)? = _storage._data {return v}
+      return Opentelemetry_Proto_Metrics_V1_DoubleSum()
+    }
+    set {_uniqueStorage()._data = .doubleSum(newValue)}
+  }
+
+  public var intHistogram: Opentelemetry_Proto_Metrics_V1_IntHistogram {
+    get {
+      if case .intHistogram(let v)? = _storage._data {return v}
+      return Opentelemetry_Proto_Metrics_V1_IntHistogram()
+    }
+    set {_uniqueStorage()._data = .intHistogram(newValue)}
+  }
+
+  public var doubleHistogram: Opentelemetry_Proto_Metrics_V1_DoubleHistogram {
+    get {
+      if case .doubleHistogram(let v)? = _storage._data {return v}
+      return Opentelemetry_Proto_Metrics_V1_DoubleHistogram()
+    }
+    set {_uniqueStorage()._data = .doubleHistogram(newValue)}
   }
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  /// Data determines the aggregation type (if any) of the metric, what is the
+  /// reported value type for the data points, as well as the relatationship to
+  /// the time interval over which they are reported.
+  ///
+  /// TODO: Update table after the decision on:
+  /// https://github.com/open-telemetry/opentelemetry-specification/issues/731.
+  /// By default, metrics recording using the OpenTelemetry API are exported as
+  /// (the table does not include MeasurementValueType to avoid extra rows):
+  ///
+  ///   Instrument         Type
+  ///   ----------------------------------------------
+  ///   Counter            Sum(aggregation_temporality=delta;is_monotonic=true)
+  ///   UpDownCounter      Sum(aggregation_temporality=delta;is_monotonic=false)
+  ///   ValueRecorder      TBD
+  ///   SumObserver        Sum(aggregation_temporality=cumulative;is_monotonic=true)
+  ///   UpDownSumObserver  Sum(aggregation_temporality=cumulative;is_monotonic=false)
+  ///   ValueObserver      Gauge()
+  public enum OneOf_Data: Equatable {
+    case intGauge(Opentelemetry_Proto_Metrics_V1_IntGauge)
+    case doubleGauge(Opentelemetry_Proto_Metrics_V1_DoubleGauge)
+    case intSum(Opentelemetry_Proto_Metrics_V1_IntSum)
+    case doubleSum(Opentelemetry_Proto_Metrics_V1_DoubleSum)
+    case intHistogram(Opentelemetry_Proto_Metrics_V1_IntHistogram)
+    case doubleHistogram(Opentelemetry_Proto_Metrics_V1_DoubleHistogram)
+
+  #if !swift(>=4.1)
+    public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_Metric.OneOf_Data, rhs: Opentelemetry_Proto_Metrics_V1_Metric.OneOf_Data) -> Bool {
+      switch (lhs, rhs) {
+      case (.intGauge(let l), .intGauge(let r)): return l == r
+      case (.doubleGauge(let l), .doubleGauge(let r)): return l == r
+      case (.intSum(let l), .intSum(let r)): return l == r
+      case (.doubleSum(let l), .doubleSum(let r)): return l == r
+      case (.intHistogram(let l), .intHistogram(let r)): return l == r
+      case (.doubleHistogram(let l), .doubleHistogram(let r)): return l == r
+      default: return false
+      }
+    }
+  #endif
+  }
 
   public init() {}
 
   fileprivate var _storage = _StorageClass.defaultInstance
 }
 
-/// Defines a metric type and its schema.
-public struct Opentelemetry_Proto_Metrics_V1_MetricDescriptor {
+/// Gauge represents the type of a int scalar metric that always exports the
+/// "current value" for every data point. It should be used for an "unknown"
+/// aggregation.
+/// 
+/// A Gauge does not support different aggregation temporalities. Given the
+/// aggregation is unknown, points cannot be combined using the same
+/// aggregation, regardless of aggregation temporalities. Therefore,
+/// AggregationTemporality is not included. Consequently, this also means
+/// "StartTimeUnixNano" is ignored for all data points.
+public struct Opentelemetry_Proto_Metrics_V1_IntGauge {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  /// name of the metric, including its DNS name prefix. It must be unique.
-  public var name: String = String()
-
-  /// description of the metric, which can be used in documentation.
-  public var description_p: String = String()
-
-  /// unit in which the metric value is reported. Follows the format
-  /// described by http://unitsofmeasure.org/ucum.html.
-  public var unit: String = String()
-
-  /// type is the type of values this metric has.
-  public var type: Opentelemetry_Proto_Metrics_V1_MetricDescriptor.TypeEnum = .invalidType
-
-  /// temporality is the Temporality of values this metric has.
-  public var temporality: Opentelemetry_Proto_Metrics_V1_MetricDescriptor.Temporality = .invalidTemporality
+  public var dataPoints: [Opentelemetry_Proto_Metrics_V1_IntDataPoint] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
-
-  /// Type is the type of values a metric has.
-  public enum TypeEnum: SwiftProtobuf.Enum {
-    public typealias RawValue = Int
-
-    /// INVALID_TYPE is the default Type, it MUST not be used.
-    case invalidType // = 0
-
-    /// INT64 values are signed 64-bit integers.
-    ///
-    /// A Metric of this Type MUST store its values as Int64DataPoint.
-    case int64 // = 1
-
-    /// MONOTONIC_INT64 values are monotonically increasing signed 64-bit
-    /// integers.
-    ///
-    /// A Metric of this Type MUST store its values as Int64DataPoint.
-    case monotonicInt64 // = 2
-
-    /// DOUBLE values are double-precision floating-point numbers.
-    ///
-    /// A Metric of this Type MUST store its values as DoubleDataPoint.
-    case double // = 3
-
-    /// MONOTONIC_DOUBLE values are monotonically increasing double-precision
-    /// floating-point numbers.
-    ///
-    /// A Metric of this Type MUST store its values as DoubleDataPoint.
-    case monotonicDouble // = 4
-
-    /// Histogram measurement.
-    /// Corresponding values are stored in HistogramDataPoint.
-    case histogram // = 5
-
-    /// Summary value. Some frameworks implemented Histograms as a summary of observations
-    /// (usually things like request durations and response sizes). While it
-    /// also provides a total count of observations and a sum of all observed
-    /// values, it calculates configurable percentiles over a sliding time
-    /// window.
-    /// Corresponding values are stored in SummaryDataPoint.
-    case summary // = 6
-    case UNRECOGNIZED(Int)
-
-    public init() {
-      self = .invalidType
-    }
-
-    public init?(rawValue: Int) {
-      switch rawValue {
-      case 0: self = .invalidType
-      case 1: self = .int64
-      case 2: self = .monotonicInt64
-      case 3: self = .double
-      case 4: self = .monotonicDouble
-      case 5: self = .histogram
-      case 6: self = .summary
-      default: self = .UNRECOGNIZED(rawValue)
-      }
-    }
-
-    public var rawValue: Int {
-      switch self {
-      case .invalidType: return 0
-      case .int64: return 1
-      case .monotonicInt64: return 2
-      case .double: return 3
-      case .monotonicDouble: return 4
-      case .histogram: return 5
-      case .summary: return 6
-      case .UNRECOGNIZED(let i): return i
-      }
-    }
-
-  }
-
-  /// Temporality is the temporal quality values of a metric have. It
-  /// describes how those values relate to the time interval over which they
-  /// are reported.
-  public enum Temporality: SwiftProtobuf.Enum {
-    public typealias RawValue = Int
-
-    /// INVALID_TEMPORALITY is the default Temporality, it MUST not be
-    /// used.
-    case invalidTemporality // = 0
-
-    /// INSTANTANEOUS is a metric whose values are measured at a particular
-    /// instant. The values are not aggregated over any time interval and are
-    /// unique per timestamp. As such, these metrics are not expected to have
-    /// an associated start time.
-    case instantaneous // = 1
-
-    /// DELTA is a metric whose values are the aggregation of measurements
-    /// made over a time interval. Successive metrics contain aggregation of
-    /// values from continuous and non-overlapping intervals.
-    ///
-    /// The values for a DELTA metric are based only on the time interval
-    /// associated with one measurement cycle. There is no dependency on
-    /// previous measurements like is the case for CUMULATIVE metrics.
-    ///
-    /// For example, consider a system measuring the number of requests that
-    /// it receives and reports the sum of these requests every second as a
-    /// DELTA metric:
-    ///
-    ///   1. The system starts receiving at time=t_0.
-    ///   2. A request is received, the system measures 1 request.
-    ///   3. A request is received, the system measures 1 request.
-    ///   4. A request is received, the system measures 1 request.
-    ///   5. The 1 second collection cycle ends. A metric is exported for the
-    ///      number of requests received over the interval of time t_0 to
-    ///      t_0+1 with a value of 3.
-    ///   6. A request is received, the system measures 1 request.
-    ///   7. A request is received, the system measures 1 request.
-    ///   8. The 1 second collection cycle ends. A metric is exported for the
-    ///      number of requests received over the interval of time t_0+1 to
-    ///      t_0+2 with a value of 2.
-    case delta // = 2
-
-    /// CUMULATIVE is a metric whose values are the aggregation of
-    /// successively made measurements from a fixed start time until the last
-    /// reported measurement. This means that current values of a CUMULATIVE
-    /// metric depend on all previous measurements since the start time.
-    /// Because of this, the sender is required to retain this state in some
-    /// form. If this state is lost or invalidated, the CUMULATIVE metric
-    /// values MUST be reset and a new fixed start time following the last
-    /// reported measurement time sent MUST be used.
-    ///
-    /// For example, consider a system measuring the number of requests that
-    /// it receives and reports the sum of these requests every second as a
-    /// CUMULATIVE metric:
-    ///
-    ///   1. The system starts receiving at time=t_0.
-    ///   2. A request is received, the system measures 1 request.
-    ///   3. A request is received, the system measures 1 request.
-    ///   4. A request is received, the system measures 1 request.
-    ///   5. The 1 second collection cycle ends. A metric is exported for the
-    ///      number of requests received over the interval of time t_0 to
-    ///      t_0+1 with a value of 3.
-    ///   6. A request is received, the system measures 1 request.
-    ///   7. A request is received, the system measures 1 request.
-    ///   8. The 1 second collection cycle ends. A metric is exported for the
-    ///      number of requests received over the interval of time t_0 to
-    ///      t_0+2 with a value of 5.
-    ///   9. The system experiences a fault and loses state.
-    ///   10. The system recovers and resumes receiving at time=t_1.
-    ///   11. A request is received, the system measures 1 request.
-    ///   12. The 1 second collection cycle ends. A metric is exported for the
-    ///      number of requests received over the interval of time t_1 to
-    ///      t_0+1 with a value of 1.
-    case cumulative // = 3
-    case UNRECOGNIZED(Int)
-
-    public init() {
-      self = .invalidTemporality
-    }
-
-    public init?(rawValue: Int) {
-      switch rawValue {
-      case 0: self = .invalidTemporality
-      case 1: self = .instantaneous
-      case 2: self = .delta
-      case 3: self = .cumulative
-      default: self = .UNRECOGNIZED(rawValue)
-      }
-    }
-
-    public var rawValue: Int {
-      switch self {
-      case .invalidTemporality: return 0
-      case .instantaneous: return 1
-      case .delta: return 2
-      case .cumulative: return 3
-      case .UNRECOGNIZED(let i): return i
-      }
-    }
-
-  }
 
   public init() {}
 }
 
-#if swift(>=4.2)
+/// Gauge represents the type of a double scalar metric that always exports the
+/// "current value" for every data point. It should be used for an "unknown"
+/// aggregation.
+/// 
+/// A Gauge does not support different aggregation temporalities. Given the
+/// aggregation is unknown, points cannot be combined using the same
+/// aggregation, regardless of aggregation temporalities. Therefore,
+/// AggregationTemporality is not included. Consequently, this also means
+/// "StartTimeUnixNano" is ignored for all data points.
+public struct Opentelemetry_Proto_Metrics_V1_DoubleGauge {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
 
-extension Opentelemetry_Proto_Metrics_V1_MetricDescriptor.TypeEnum: CaseIterable {
-  // The compiler won't synthesize support with the UNRECOGNIZED case.
-  public static var allCases: [Opentelemetry_Proto_Metrics_V1_MetricDescriptor.TypeEnum] = [
-    .invalidType,
-    .int64,
-    .monotonicInt64,
-    .double,
-    .monotonicDouble,
-    .histogram,
-    .summary,
-  ]
+  public var dataPoints: [Opentelemetry_Proto_Metrics_V1_DoubleDataPoint] = []
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
 }
 
-extension Opentelemetry_Proto_Metrics_V1_MetricDescriptor.Temporality: CaseIterable {
-  // The compiler won't synthesize support with the UNRECOGNIZED case.
-  public static var allCases: [Opentelemetry_Proto_Metrics_V1_MetricDescriptor.Temporality] = [
-    .invalidTemporality,
-    .instantaneous,
-    .delta,
-    .cumulative,
-  ]
+/// Sum represents the type of a numeric int scalar metric that is calculated as
+/// a sum of all reported measurements over a time interval.
+public struct Opentelemetry_Proto_Metrics_V1_IntSum {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var dataPoints: [Opentelemetry_Proto_Metrics_V1_IntDataPoint] = []
+
+  /// aggregation_temporality describes if the aggregator reports delta changes
+  /// since last report time, or cumulative changes since a fixed start time.
+  public var aggregationTemporality: Opentelemetry_Proto_Metrics_V1_AggregationTemporality = .unspecified
+
+  /// If "true" means that the sum is monotonic.
+  public var isMonotonic: Bool = false
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
 }
 
-#endif  // swift(>=4.2)
+/// Sum represents the type of a numeric double scalar metric that is calculated
+/// as a sum of all reported measurements over a time interval.
+public struct Opentelemetry_Proto_Metrics_V1_DoubleSum {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
 
-/// Int64DataPoint is a single data point in a timeseries that describes the time-varying
-/// values of a int64 metric.
-public struct Opentelemetry_Proto_Metrics_V1_Int64DataPoint {
+  public var dataPoints: [Opentelemetry_Proto_Metrics_V1_DoubleDataPoint] = []
+
+  /// aggregation_temporality describes if the aggregator reports delta changes
+  /// since last report time, or cumulative changes since a fixed start time.
+  public var aggregationTemporality: Opentelemetry_Proto_Metrics_V1_AggregationTemporality = .unspecified
+
+  /// If "true" means that the sum is monotonic.
+  public var isMonotonic: Bool = false
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// Represents the type of a metric that is calculated by aggregating as a
+/// Histogram of all reported int measurements over a time interval.
+public struct Opentelemetry_Proto_Metrics_V1_IntHistogram {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var dataPoints: [Opentelemetry_Proto_Metrics_V1_IntHistogramDataPoint] = []
+
+  /// aggregation_temporality describes if the aggregator reports delta changes
+  /// since last report time, or cumulative changes since a fixed start time.
+  public var aggregationTemporality: Opentelemetry_Proto_Metrics_V1_AggregationTemporality = .unspecified
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// Represents the type of a metric that is calculated by aggregating as a
+/// Histogram of all reported double measurements over a time interval.
+public struct Opentelemetry_Proto_Metrics_V1_DoubleHistogram {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var dataPoints: [Opentelemetry_Proto_Metrics_V1_DoubleHistogramDataPoint] = []
+
+  /// aggregation_temporality describes if the aggregator reports delta changes
+  /// since last report time, or cumulative changes since a fixed start time.
+  public var aggregationTemporality: Opentelemetry_Proto_Metrics_V1_AggregationTemporality = .unspecified
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// IntDataPoint is a single data point in a timeseries that describes the
+/// time-varying values of a int64 metric.
+public struct Opentelemetry_Proto_Metrics_V1_IntDataPoint {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -427,31 +532,40 @@ public struct Opentelemetry_Proto_Metrics_V1_Int64DataPoint {
   /// The set of labels that uniquely identify this timeseries.
   public var labels: [Opentelemetry_Proto_Common_V1_StringKeyValue] = []
 
-  /// start_time_unix_nano is the time when the cumulative value was reset to zero.
-  /// This is used for Counter type only. For Gauge the value is not specified and
-  /// defaults to 0.
+  /// start_time_unix_nano is the last time when the aggregation value was reset
+  /// to "zero". For some metric types this is ignored, see data types for more
+  /// details.
   ///
-  /// The cumulative value is over the time interval (start_time_unix_nano, time_unix_nano].
-  /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January 1970.
+  /// The aggregation value is over the time interval (start_time_unix_nano,
+  /// time_unix_nano].
+  /// 
+  /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
+  /// 1970.
   ///
-  /// Value of 0 indicates that the timestamp is unspecified. In that case the timestamp
-  /// may be decided by the backend.
+  /// Value of 0 indicates that the timestamp is unspecified. In that case the
+  /// timestamp may be decided by the backend.
   public var startTimeUnixNano: UInt64 = 0
 
-  /// time_unix_nano is the moment when this value was recorded.
-  /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January 1970.
+  /// time_unix_nano is the moment when this aggregation value was reported.
+  /// 
+  /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
+  /// 1970.
   public var timeUnixNano: UInt64 = 0
 
   /// value itself.
   public var value: Int64 = 0
+
+  /// (Optional) List of exemplars collected from
+  /// measurements that were used to form the data point
+  public var exemplars: [Opentelemetry_Proto_Metrics_V1_IntExemplar] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 }
 
-/// DoubleDataPoint is a single data point in a timeseries that describes the time-varying
-/// value of a double metric.
+/// DoubleDataPoint is a single data point in a timeseries that describes the
+/// time-varying value of a double metric.
 public struct Opentelemetry_Proto_Metrics_V1_DoubleDataPoint {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -460,33 +574,43 @@ public struct Opentelemetry_Proto_Metrics_V1_DoubleDataPoint {
   /// The set of labels that uniquely identify this timeseries.
   public var labels: [Opentelemetry_Proto_Common_V1_StringKeyValue] = []
 
-  /// start_time_unix_nano is the time when the cumulative value was reset to zero.
-  /// This is used for Counter type only. For Gauge the value is not specified and
-  /// defaults to 0.
+  /// start_time_unix_nano is the last time when the aggregation value was reset
+  /// to "zero". For some metric types this is ignored, see data types for more
+  /// details.
   ///
-  /// The cumulative value is over the time interval (start_time_unix_nano, time_unix_nano].
-  /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January 1970.
+  /// The aggregation value is over the time interval (start_time_unix_nano,
+  /// time_unix_nano].
+  /// 
+  /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
+  /// 1970.
   ///
-  /// Value of 0 indicates that the timestamp is unspecified. In that case the timestamp
-  /// may be decided by the backend.
+  /// Value of 0 indicates that the timestamp is unspecified. In that case the
+  /// timestamp may be decided by the backend.
   public var startTimeUnixNano: UInt64 = 0
 
-  /// time_unix_nano is the moment when this value was recorded.
-  /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January 1970.
+  /// time_unix_nano is the moment when this aggregation value was reported.
+  /// 
+  /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
+  /// 1970.
   public var timeUnixNano: UInt64 = 0
 
   /// value itself.
   public var value: Double = 0
+
+  /// (Optional) List of exemplars collected from
+  /// measurements that were used to form the data point
+  public var exemplars: [Opentelemetry_Proto_Metrics_V1_DoubleExemplar] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 }
 
-/// HistogramDataPoint is a single data point in a timeseries that describes the time-varying
-/// values of a Histogram. A Histogram contains summary statistics for a population of values,
-/// it may optionally contain the distribution of those values across a set of buckets.
-public struct Opentelemetry_Proto_Metrics_V1_HistogramDataPoint {
+/// IntHistogramDataPoint is a single data point in a timeseries that describes
+/// the time-varying values of a Histogram of int values. A Histogram contains
+/// summary statistics for a population of values, it may optionally contain
+/// the distribution of those values across a set of buckets.
+public struct Opentelemetry_Proto_Metrics_V1_IntHistogramDataPoint {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -494,40 +618,44 @@ public struct Opentelemetry_Proto_Metrics_V1_HistogramDataPoint {
   /// The set of labels that uniquely identify this timeseries.
   public var labels: [Opentelemetry_Proto_Common_V1_StringKeyValue] = []
 
-  /// start_time_unix_nano is the time when the cumulative value was reset to zero.
+  /// start_time_unix_nano is the last time when the aggregation value was reset
+  /// to "zero". For some metric types this is ignored, see data types for more
+  /// details.
   ///
-  /// The cumulative value is over the time interval (start_time_unix_nano, time_unix_nano].
-  /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January 1970.
+  /// The aggregation value is over the time interval (start_time_unix_nano,
+  /// time_unix_nano].
+  /// 
+  /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
+  /// 1970.
   ///
-  /// Value of 0 indicates that the timestamp is unspecified. In that case the timestamp
-  /// may be decided by the backend.
-  /// Note: this field is always unspecified and ignored if MetricDescriptor.type==GAUGE_HISTOGRAM.
+  /// Value of 0 indicates that the timestamp is unspecified. In that case the
+  /// timestamp may be decided by the backend.
   public var startTimeUnixNano: UInt64 = 0
 
-  /// time_unix_nano is the moment when this value was recorded.
-  /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January 1970.
+  /// time_unix_nano is the moment when this aggregation value was reported.
+  /// 
+  /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
+  /// 1970.
   public var timeUnixNano: UInt64 = 0
 
-  /// count is the number of values in the population. Must be non-negative. This value
-  /// must be equal to the sum of the "count" fields in buckets if a histogram is provided.
+  /// count is the number of values in the population. Must be non-negative. This
+  /// value must be equal to the sum of the "count" fields in buckets if a
+  /// histogram is provided.
   public var count: UInt64 = 0
 
   /// sum of the values in the population. If count is zero then this field
-  /// must be zero. This value must be equal to the sum of the "sum" fields in buckets if
-  /// a histogram is provided.
-  public var sum: Double = 0
+  /// must be zero. This value must be equal to the sum of the "sum" fields in
+  /// buckets if a histogram is provided.
+  public var sum: Int64 = 0
 
-  /// buckets is an optional field contains the values of histogram for each bucket.
+  /// bucket_counts is an optional field contains the count values of histogram
+  /// for each bucket.
   ///
-  /// The sum of the values in the buckets "count" field must equal the value in the count field.
+  /// The sum of the bucket_counts must equal the value in the count field.
   ///
-  /// The number of elements in buckets array must be by one greater than the
-  /// number of elements in bucket_bounds array.
-  ///
-  /// Note: if HistogramDataPoint.bucket_options defines bucket bounds then this field
-  /// must also be present and number of elements in this field must be equal to the
-  /// number of buckets defined by bucket_options.
-  public var buckets: [Opentelemetry_Proto_Metrics_V1_HistogramDataPoint.Bucket] = []
+  /// The number of elements in bucket_counts array must be by one greater than
+  /// the number of elements in explicit_bounds array.
+  public var bucketCounts: [UInt64] = []
 
   /// explicit_bounds specifies buckets with explicitly defined bounds for values.
   /// The bucket boundaries are described by "bounds" field.
@@ -535,80 +663,30 @@ public struct Opentelemetry_Proto_Metrics_V1_HistogramDataPoint {
   /// This defines size(bounds) + 1 (= N) buckets. The boundaries for bucket
   /// at index i are:
   ///
-  /// [0, bounds[i]) for i == 0
+  /// (-infinity, bounds[i]) for i == 0
   /// [bounds[i-1], bounds[i]) for 0 < i < N-1
   /// [bounds[i], +infinity) for i == N-1
-  /// The values in bounds array must be strictly increasing and > 0.
+  /// The values in bounds array must be strictly increasing.
   ///
-  /// Note: only [a, b) intervals are currently supported for each bucket. If we decides
-  /// to also support (a, b] intervals we should add support for these by defining a boolean
-  /// value which decides what type of intervals to use.
+  /// Note: only [a, b) intervals are currently supported for each bucket except the first one.
+  /// If we decide to also support (a, b] intervals we should add support for these by defining
+  /// a boolean value which decides what type of intervals to use.
   public var explicitBounds: [Double] = []
 
+  /// (Optional) List of exemplars collected from
+  /// measurements that were used to form the data point
+  public var exemplars: [Opentelemetry_Proto_Metrics_V1_IntExemplar] = []
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
-
-  /// Bucket contains values for a bucket.
-  public struct Bucket {
-    // SwiftProtobuf.Message conformance is added in an extension below. See the
-    // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
-    // methods supported on all messages.
-
-    /// The number of values in each bucket of the histogram, as described by
-    /// bucket_options.
-    public var count: UInt64 {
-      get {return _storage._count}
-      set {_uniqueStorage()._count = newValue}
-    }
-
-    /// exemplar is an optional representative value of the bucket.
-    public var exemplar: Opentelemetry_Proto_Metrics_V1_HistogramDataPoint.Bucket.Exemplar {
-      get {return _storage._exemplar ?? Opentelemetry_Proto_Metrics_V1_HistogramDataPoint.Bucket.Exemplar()}
-      set {_uniqueStorage()._exemplar = newValue}
-    }
-    /// Returns true if `exemplar` has been explicitly set.
-    public var hasExemplar: Bool {return _storage._exemplar != nil}
-    /// Clears the value of `exemplar`. Subsequent reads from it will return its default value.
-    public mutating func clearExemplar() {_uniqueStorage()._exemplar = nil}
-
-    public var unknownFields = SwiftProtobuf.UnknownStorage()
-
-    /// Exemplars are example points that may be used to annotate aggregated
-    /// Histogram values. They are metadata that gives information about a
-    /// particular value added to a Histogram bucket.
-    public struct Exemplar {
-      // SwiftProtobuf.Message conformance is added in an extension below. See the
-      // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
-      // methods supported on all messages.
-
-      /// Value of the exemplar point. It determines which bucket the exemplar belongs to.
-      /// If bucket_options define bounds for this bucket then this value must be within
-      /// the defined bounds.
-      public var value: Double = 0
-
-      /// time_unix_nano is the moment when this exemplar was recorded.
-      /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January 1970.
-      public var timeUnixNano: UInt64 = 0
-
-      /// exemplar_attachments are contextual information about the example value.
-      /// Keys in this list must be unique.
-      public var attachments: [Opentelemetry_Proto_Common_V1_StringKeyValue] = []
-
-      public var unknownFields = SwiftProtobuf.UnknownStorage()
-
-      public init() {}
-    }
-
-    public init() {}
-
-    fileprivate var _storage = _StorageClass.defaultInstance
-  }
 
   public init() {}
 }
 
-/// SummaryDataPoint is a single data point in a timeseries that describes the time-varying
-/// values of a Summary metric.
-public struct Opentelemetry_Proto_Metrics_V1_SummaryDataPoint {
+/// HistogramDataPoint is a single data point in a timeseries that describes the
+/// time-varying values of a Histogram of double values. A Histogram contains
+/// summary statistics for a population of values, it may optionally contain the
+/// distribution of those values across a set of buckets.
+public struct Opentelemetry_Proto_Metrics_V1_DoubleHistogramDataPoint {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -616,57 +694,142 @@ public struct Opentelemetry_Proto_Metrics_V1_SummaryDataPoint {
   /// The set of labels that uniquely identify this timeseries.
   public var labels: [Opentelemetry_Proto_Common_V1_StringKeyValue] = []
 
-  /// start_time_unix_nano is the time when the cumulative value was reset to zero.
+  /// start_time_unix_nano is the last time when the aggregation value was reset
+  /// to "zero". For some metric types this is ignored, see data types for more
+  /// details.
   ///
-  /// The cumulative value is over the time interval (start_time_unix_nano, time_unix_nano].
-  /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January 1970.
+  /// The aggregation value is over the time interval (start_time_unix_nano,
+  /// time_unix_nano].
+  /// 
+  /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
+  /// 1970.
   ///
-  /// Value of 0 indicates that the timestamp is unspecified. In that case the timestamp
-  /// may be decided by the backend.
+  /// Value of 0 indicates that the timestamp is unspecified. In that case the
+  /// timestamp may be decided by the backend.
   public var startTimeUnixNano: UInt64 = 0
 
-  /// time_unix_nano is the moment when this value was recorded.
-  /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January 1970.
+  /// time_unix_nano is the moment when this aggregation value was reported.
+  /// 
+  /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
+  /// 1970.
   public var timeUnixNano: UInt64 = 0
 
-  /// The total number of recorded values since start_time. Optional since
-  /// some systems don't expose this.
+  /// count is the number of values in the population. Must be non-negative. This
+  /// value must be equal to the sum of the "count" fields in buckets if a
+  /// histogram is provided.
   public var count: UInt64 = 0
 
-  /// The total sum of recorded values since start_time. Optional since some
-  /// systems don't expose this. If count is zero then this field must be zero.
+  /// sum of the values in the population. If count is zero then this field
+  /// must be zero. This value must be equal to the sum of the "sum" fields in
+  /// buckets if a histogram is provided.
   public var sum: Double = 0
 
-  /// A list of values at different percentiles of the distribution calculated
-  /// from the current snapshot. The percentiles must be strictly increasing.
-  public var percentileValues: [Opentelemetry_Proto_Metrics_V1_SummaryDataPoint.ValueAtPercentile] = []
+  /// bucket_counts is an optional field contains the count values of histogram
+  /// for each bucket.
+  ///
+  /// The sum of the bucket_counts must equal the value in the count field.
+  ///
+  /// The number of elements in bucket_counts array must be by one greater than
+  /// the number of elements in explicit_bounds array.
+  public var bucketCounts: [UInt64] = []
+
+  /// explicit_bounds specifies buckets with explicitly defined bounds for values.
+  /// The bucket boundaries are described by "bounds" field.
+  ///
+  /// This defines size(bounds) + 1 (= N) buckets. The boundaries for bucket
+  /// at index i are:
+  ///
+  /// (-infinity, bounds[i]) for i == 0
+  /// [bounds[i-1], bounds[i]) for 0 < i < N-1
+  /// [bounds[i], +infinity) for i == N-1
+  /// The values in bounds array must be strictly increasing.
+  ///
+  /// Note: only [a, b) intervals are currently supported for each bucket except the first one.
+  /// If we decide to also support (a, b] intervals we should add support for these by defining
+  /// a boolean value which decides what type of intervals to use.
+  public var explicitBounds: [Double] = []
+
+  /// (Optional) List of exemplars collected from
+  /// measurements that were used to form the data point
+  public var exemplars: [Opentelemetry_Proto_Metrics_V1_DoubleExemplar] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  /// Represents the value at a given percentile of a distribution.
+  public init() {}
+}
+
+/// A representation of an exemplar, which is a sample input int measurement.
+/// Exemplars also hold information about the environment when the measurement
+/// was recorded, for example the span and trace ID of the active span when the
+/// exemplar was recorded.
+public struct Opentelemetry_Proto_Metrics_V1_IntExemplar {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// The set of labels that were filtered out by the aggregator, but recorded
+  /// alongside the original measurement. Only labels that were filtered out
+  /// by the aggregator should be included
+  public var filteredLabels: [Opentelemetry_Proto_Common_V1_StringKeyValue] = []
+
+  /// time_unix_nano is the exact time when this exemplar was recorded
   ///
-  /// To record Min and Max values following conventions are used:
-  /// - The 100th percentile is equivalent to the maximum value observed.
-  /// - The 0th percentile is equivalent to the minimum value observed.
+  /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
+  /// 1970.
+  public var timeUnixNano: UInt64 = 0
+
+  /// Numerical int value of the measurement that was recorded.
+  public var value: Int64 = 0
+
+  /// (Optional) Span ID of the exemplar trace.
+  /// span_id may be missing if the measurement is not recorded inside a trace
+  /// or if the trace is not sampled.
+  public var spanID: Data = SwiftProtobuf.Internal.emptyData
+
+  /// (Optional) Trace ID of the exemplar trace.
+  /// trace_id may be missing if the measurement is not recorded inside a trace
+  /// or if the trace is not sampled.
+  public var traceID: Data = SwiftProtobuf.Internal.emptyData
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// A representation of an exemplar, which is a sample input double measurement.
+/// Exemplars also hold information about the environment when the measurement
+/// was recorded, for example the span and trace ID of the active span when the
+/// exemplar was recorded.
+public struct Opentelemetry_Proto_Metrics_V1_DoubleExemplar {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// The set of labels that were filtered out by the aggregator, but recorded
+  /// alongside the original measurement. Only labels that were filtered out
+  /// by the aggregator should be included
+  public var filteredLabels: [Opentelemetry_Proto_Common_V1_StringKeyValue] = []
+
+  /// time_unix_nano is the exact time when this exemplar was recorded
   ///
-  /// See the following issue for more context:
-  /// https://github.com/open-telemetry/opentelemetry-proto/issues/125
-  public struct ValueAtPercentile {
-    // SwiftProtobuf.Message conformance is added in an extension below. See the
-    // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
-    // methods supported on all messages.
+  /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
+  /// 1970.
+  public var timeUnixNano: UInt64 = 0
 
-    /// The percentile of a distribution. Must be in the interval
-    /// [0.0, 100.0].
-    public var percentile: Double = 0
+  /// Numerical double value of the measurement that was recorded.
+  public var value: Double = 0
 
-    /// The value at the given percentile of a distribution.
-    public var value: Double = 0
+  /// (Optional) Span ID of the exemplar trace.
+  /// span_id may be missing if the measurement is not recorded inside a trace
+  /// or if the trace is not sampled.
+  public var spanID: Data = SwiftProtobuf.Internal.emptyData
 
-    public var unknownFields = SwiftProtobuf.UnknownStorage()
+  /// (Optional) Trace ID of the exemplar trace.
+  /// trace_id may be missing if the measurement is not recorded inside a trace
+  /// or if the trace is not sampled.
+  public var traceID: Data = SwiftProtobuf.Internal.emptyData
 
-    public init() {}
-  }
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 }
@@ -674,6 +837,14 @@ public struct Opentelemetry_Proto_Metrics_V1_SummaryDataPoint {
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
 fileprivate let _protobuf_package = "opentelemetry.proto.metrics.v1"
+
+extension Opentelemetry_Proto_Metrics_V1_AggregationTemporality: SwiftProtobuf._ProtoNameProviding {
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    0: .same(proto: "AGGREGATION_TEMPORALITY_UNSPECIFIED"),
+    1: .same(proto: "AGGREGATION_TEMPORALITY_DELTA"),
+    2: .same(proto: "AGGREGATION_TEMPORALITY_CUMULATIVE"),
+  ]
+}
 
 extension Opentelemetry_Proto_Metrics_V1_ResourceMetrics: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ResourceMetrics"
@@ -816,30 +987,32 @@ extension Opentelemetry_Proto_Metrics_V1_InstrumentationLibraryMetrics: SwiftPro
 extension Opentelemetry_Proto_Metrics_V1_Metric: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Metric"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "metric_descriptor"),
-    2: .standard(proto: "int64_data_points"),
-    3: .standard(proto: "double_data_points"),
-    4: .standard(proto: "histogram_data_points"),
-    5: .standard(proto: "summary_data_points"),
+    1: .same(proto: "name"),
+    2: .same(proto: "description"),
+    3: .same(proto: "unit"),
+    4: .standard(proto: "int_gauge"),
+    5: .standard(proto: "double_gauge"),
+    6: .standard(proto: "int_sum"),
+    7: .standard(proto: "double_sum"),
+    8: .standard(proto: "int_histogram"),
+    9: .standard(proto: "double_histogram"),
   ]
 
   fileprivate class _StorageClass {
-    var _metricDescriptor: Opentelemetry_Proto_Metrics_V1_MetricDescriptor? = nil
-    var _int64DataPoints: [Opentelemetry_Proto_Metrics_V1_Int64DataPoint] = []
-    var _doubleDataPoints: [Opentelemetry_Proto_Metrics_V1_DoubleDataPoint] = []
-    var _histogramDataPoints: [Opentelemetry_Proto_Metrics_V1_HistogramDataPoint] = []
-    var _summaryDataPoints: [Opentelemetry_Proto_Metrics_V1_SummaryDataPoint] = []
+    var _name: String = String()
+    var _description_p: String = String()
+    var _unit: String = String()
+    var _data: Opentelemetry_Proto_Metrics_V1_Metric.OneOf_Data?
 
     static let defaultInstance = _StorageClass()
 
     private init() {}
 
     init(copying source: _StorageClass) {
-      _metricDescriptor = source._metricDescriptor
-      _int64DataPoints = source._int64DataPoints
-      _doubleDataPoints = source._doubleDataPoints
-      _histogramDataPoints = source._histogramDataPoints
-      _summaryDataPoints = source._summaryDataPoints
+      _name = source._name
+      _description_p = source._description_p
+      _unit = source._unit
+      _data = source._data
     }
   }
 
@@ -855,11 +1028,57 @@ extension Opentelemetry_Proto_Metrics_V1_Metric: SwiftProtobuf.Message, SwiftPro
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       while let fieldNumber = try decoder.nextFieldNumber() {
         switch fieldNumber {
-        case 1: try decoder.decodeSingularMessageField(value: &_storage._metricDescriptor)
-        case 2: try decoder.decodeRepeatedMessageField(value: &_storage._int64DataPoints)
-        case 3: try decoder.decodeRepeatedMessageField(value: &_storage._doubleDataPoints)
-        case 4: try decoder.decodeRepeatedMessageField(value: &_storage._histogramDataPoints)
-        case 5: try decoder.decodeRepeatedMessageField(value: &_storage._summaryDataPoints)
+        case 1: try decoder.decodeSingularStringField(value: &_storage._name)
+        case 2: try decoder.decodeSingularStringField(value: &_storage._description_p)
+        case 3: try decoder.decodeSingularStringField(value: &_storage._unit)
+        case 4:
+          var v: Opentelemetry_Proto_Metrics_V1_IntGauge?
+          if let current = _storage._data {
+            try decoder.handleConflictingOneOf()
+            if case .intGauge(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {_storage._data = .intGauge(v)}
+        case 5:
+          var v: Opentelemetry_Proto_Metrics_V1_DoubleGauge?
+          if let current = _storage._data {
+            try decoder.handleConflictingOneOf()
+            if case .doubleGauge(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {_storage._data = .doubleGauge(v)}
+        case 6:
+          var v: Opentelemetry_Proto_Metrics_V1_IntSum?
+          if let current = _storage._data {
+            try decoder.handleConflictingOneOf()
+            if case .intSum(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {_storage._data = .intSum(v)}
+        case 7:
+          var v: Opentelemetry_Proto_Metrics_V1_DoubleSum?
+          if let current = _storage._data {
+            try decoder.handleConflictingOneOf()
+            if case .doubleSum(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {_storage._data = .doubleSum(v)}
+        case 8:
+          var v: Opentelemetry_Proto_Metrics_V1_IntHistogram?
+          if let current = _storage._data {
+            try decoder.handleConflictingOneOf()
+            if case .intHistogram(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {_storage._data = .intHistogram(v)}
+        case 9:
+          var v: Opentelemetry_Proto_Metrics_V1_DoubleHistogram?
+          if let current = _storage._data {
+            try decoder.handleConflictingOneOf()
+            if case .doubleHistogram(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {_storage._data = .doubleHistogram(v)}
         default: break
         }
       }
@@ -868,20 +1087,29 @@ extension Opentelemetry_Proto_Metrics_V1_Metric: SwiftProtobuf.Message, SwiftPro
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
-      if let v = _storage._metricDescriptor {
-        try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+      if !_storage._name.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._name, fieldNumber: 1)
       }
-      if !_storage._int64DataPoints.isEmpty {
-        try visitor.visitRepeatedMessageField(value: _storage._int64DataPoints, fieldNumber: 2)
+      if !_storage._description_p.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._description_p, fieldNumber: 2)
       }
-      if !_storage._doubleDataPoints.isEmpty {
-        try visitor.visitRepeatedMessageField(value: _storage._doubleDataPoints, fieldNumber: 3)
+      if !_storage._unit.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._unit, fieldNumber: 3)
       }
-      if !_storage._histogramDataPoints.isEmpty {
-        try visitor.visitRepeatedMessageField(value: _storage._histogramDataPoints, fieldNumber: 4)
-      }
-      if !_storage._summaryDataPoints.isEmpty {
-        try visitor.visitRepeatedMessageField(value: _storage._summaryDataPoints, fieldNumber: 5)
+      switch _storage._data {
+      case .intGauge(let v)?:
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+      case .doubleGauge(let v)?:
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
+      case .intSum(let v)?:
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
+      case .doubleSum(let v)?:
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 7)
+      case .intHistogram(let v)?:
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
+      case .doubleHistogram(let v)?:
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 9)
+      case nil: break
       }
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -892,11 +1120,10 @@ extension Opentelemetry_Proto_Metrics_V1_Metric: SwiftProtobuf.Message, SwiftPro
       let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
         let _storage = _args.0
         let rhs_storage = _args.1
-        if _storage._metricDescriptor != rhs_storage._metricDescriptor {return false}
-        if _storage._int64DataPoints != rhs_storage._int64DataPoints {return false}
-        if _storage._doubleDataPoints != rhs_storage._doubleDataPoints {return false}
-        if _storage._histogramDataPoints != rhs_storage._histogramDataPoints {return false}
-        if _storage._summaryDataPoints != rhs_storage._summaryDataPoints {return false}
+        if _storage._name != rhs_storage._name {return false}
+        if _storage._description_p != rhs_storage._description_p {return false}
+        if _storage._unit != rhs_storage._unit {return false}
+        if _storage._data != rhs_storage._data {return false}
         return true
       }
       if !storagesAreEqual {return false}
@@ -906,87 +1133,224 @@ extension Opentelemetry_Proto_Metrics_V1_Metric: SwiftProtobuf.Message, SwiftPro
   }
 }
 
-extension Opentelemetry_Proto_Metrics_V1_MetricDescriptor: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".MetricDescriptor"
+extension Opentelemetry_Proto_Metrics_V1_IntGauge: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".IntGauge"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "name"),
-    2: .same(proto: "description"),
-    3: .same(proto: "unit"),
-    4: .same(proto: "type"),
-    5: .same(proto: "temporality"),
+    1: .standard(proto: "data_points"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
-      case 1: try decoder.decodeSingularStringField(value: &self.name)
-      case 2: try decoder.decodeSingularStringField(value: &self.description_p)
-      case 3: try decoder.decodeSingularStringField(value: &self.unit)
-      case 4: try decoder.decodeSingularEnumField(value: &self.type)
-      case 5: try decoder.decodeSingularEnumField(value: &self.temporality)
+      case 1: try decoder.decodeRepeatedMessageField(value: &self.dataPoints)
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if !self.name.isEmpty {
-      try visitor.visitSingularStringField(value: self.name, fieldNumber: 1)
-    }
-    if !self.description_p.isEmpty {
-      try visitor.visitSingularStringField(value: self.description_p, fieldNumber: 2)
-    }
-    if !self.unit.isEmpty {
-      try visitor.visitSingularStringField(value: self.unit, fieldNumber: 3)
-    }
-    if self.type != .invalidType {
-      try visitor.visitSingularEnumField(value: self.type, fieldNumber: 4)
-    }
-    if self.temporality != .invalidTemporality {
-      try visitor.visitSingularEnumField(value: self.temporality, fieldNumber: 5)
+    if !self.dataPoints.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.dataPoints, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_MetricDescriptor, rhs: Opentelemetry_Proto_Metrics_V1_MetricDescriptor) -> Bool {
-    if lhs.name != rhs.name {return false}
-    if lhs.description_p != rhs.description_p {return false}
-    if lhs.unit != rhs.unit {return false}
-    if lhs.type != rhs.type {return false}
-    if lhs.temporality != rhs.temporality {return false}
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_IntGauge, rhs: Opentelemetry_Proto_Metrics_V1_IntGauge) -> Bool {
+    if lhs.dataPoints != rhs.dataPoints {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension Opentelemetry_Proto_Metrics_V1_MetricDescriptor.TypeEnum: SwiftProtobuf._ProtoNameProviding {
+extension Opentelemetry_Proto_Metrics_V1_DoubleGauge: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DoubleGauge"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "INVALID_TYPE"),
-    1: .same(proto: "INT64"),
-    2: .same(proto: "MONOTONIC_INT64"),
-    3: .same(proto: "DOUBLE"),
-    4: .same(proto: "MONOTONIC_DOUBLE"),
-    5: .same(proto: "HISTOGRAM"),
-    6: .same(proto: "SUMMARY"),
+    1: .standard(proto: "data_points"),
   ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try decoder.decodeRepeatedMessageField(value: &self.dataPoints)
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.dataPoints.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.dataPoints, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_DoubleGauge, rhs: Opentelemetry_Proto_Metrics_V1_DoubleGauge) -> Bool {
+    if lhs.dataPoints != rhs.dataPoints {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
 }
 
-extension Opentelemetry_Proto_Metrics_V1_MetricDescriptor.Temporality: SwiftProtobuf._ProtoNameProviding {
+extension Opentelemetry_Proto_Metrics_V1_IntSum: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".IntSum"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "INVALID_TEMPORALITY"),
-    1: .same(proto: "INSTANTANEOUS"),
-    2: .same(proto: "DELTA"),
-    3: .same(proto: "CUMULATIVE"),
+    1: .standard(proto: "data_points"),
+    2: .standard(proto: "aggregation_temporality"),
+    3: .standard(proto: "is_monotonic"),
   ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try decoder.decodeRepeatedMessageField(value: &self.dataPoints)
+      case 2: try decoder.decodeSingularEnumField(value: &self.aggregationTemporality)
+      case 3: try decoder.decodeSingularBoolField(value: &self.isMonotonic)
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.dataPoints.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.dataPoints, fieldNumber: 1)
+    }
+    if self.aggregationTemporality != .unspecified {
+      try visitor.visitSingularEnumField(value: self.aggregationTemporality, fieldNumber: 2)
+    }
+    if self.isMonotonic != false {
+      try visitor.visitSingularBoolField(value: self.isMonotonic, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_IntSum, rhs: Opentelemetry_Proto_Metrics_V1_IntSum) -> Bool {
+    if lhs.dataPoints != rhs.dataPoints {return false}
+    if lhs.aggregationTemporality != rhs.aggregationTemporality {return false}
+    if lhs.isMonotonic != rhs.isMonotonic {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
 }
 
-extension Opentelemetry_Proto_Metrics_V1_Int64DataPoint: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".Int64DataPoint"
+extension Opentelemetry_Proto_Metrics_V1_DoubleSum: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DoubleSum"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "data_points"),
+    2: .standard(proto: "aggregation_temporality"),
+    3: .standard(proto: "is_monotonic"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try decoder.decodeRepeatedMessageField(value: &self.dataPoints)
+      case 2: try decoder.decodeSingularEnumField(value: &self.aggregationTemporality)
+      case 3: try decoder.decodeSingularBoolField(value: &self.isMonotonic)
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.dataPoints.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.dataPoints, fieldNumber: 1)
+    }
+    if self.aggregationTemporality != .unspecified {
+      try visitor.visitSingularEnumField(value: self.aggregationTemporality, fieldNumber: 2)
+    }
+    if self.isMonotonic != false {
+      try visitor.visitSingularBoolField(value: self.isMonotonic, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_DoubleSum, rhs: Opentelemetry_Proto_Metrics_V1_DoubleSum) -> Bool {
+    if lhs.dataPoints != rhs.dataPoints {return false}
+    if lhs.aggregationTemporality != rhs.aggregationTemporality {return false}
+    if lhs.isMonotonic != rhs.isMonotonic {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Opentelemetry_Proto_Metrics_V1_IntHistogram: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".IntHistogram"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "data_points"),
+    2: .standard(proto: "aggregation_temporality"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try decoder.decodeRepeatedMessageField(value: &self.dataPoints)
+      case 2: try decoder.decodeSingularEnumField(value: &self.aggregationTemporality)
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.dataPoints.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.dataPoints, fieldNumber: 1)
+    }
+    if self.aggregationTemporality != .unspecified {
+      try visitor.visitSingularEnumField(value: self.aggregationTemporality, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_IntHistogram, rhs: Opentelemetry_Proto_Metrics_V1_IntHistogram) -> Bool {
+    if lhs.dataPoints != rhs.dataPoints {return false}
+    if lhs.aggregationTemporality != rhs.aggregationTemporality {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Opentelemetry_Proto_Metrics_V1_DoubleHistogram: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DoubleHistogram"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "data_points"),
+    2: .standard(proto: "aggregation_temporality"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try decoder.decodeRepeatedMessageField(value: &self.dataPoints)
+      case 2: try decoder.decodeSingularEnumField(value: &self.aggregationTemporality)
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.dataPoints.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.dataPoints, fieldNumber: 1)
+    }
+    if self.aggregationTemporality != .unspecified {
+      try visitor.visitSingularEnumField(value: self.aggregationTemporality, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_DoubleHistogram, rhs: Opentelemetry_Proto_Metrics_V1_DoubleHistogram) -> Bool {
+    if lhs.dataPoints != rhs.dataPoints {return false}
+    if lhs.aggregationTemporality != rhs.aggregationTemporality {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Opentelemetry_Proto_Metrics_V1_IntDataPoint: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".IntDataPoint"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "labels"),
     2: .standard(proto: "start_time_unix_nano"),
     3: .standard(proto: "time_unix_nano"),
     4: .same(proto: "value"),
+    5: .same(proto: "exemplars"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -995,7 +1359,8 @@ extension Opentelemetry_Proto_Metrics_V1_Int64DataPoint: SwiftProtobuf.Message, 
       case 1: try decoder.decodeRepeatedMessageField(value: &self.labels)
       case 2: try decoder.decodeSingularFixed64Field(value: &self.startTimeUnixNano)
       case 3: try decoder.decodeSingularFixed64Field(value: &self.timeUnixNano)
-      case 4: try decoder.decodeSingularInt64Field(value: &self.value)
+      case 4: try decoder.decodeSingularSFixed64Field(value: &self.value)
+      case 5: try decoder.decodeRepeatedMessageField(value: &self.exemplars)
       default: break
       }
     }
@@ -1012,16 +1377,20 @@ extension Opentelemetry_Proto_Metrics_V1_Int64DataPoint: SwiftProtobuf.Message, 
       try visitor.visitSingularFixed64Field(value: self.timeUnixNano, fieldNumber: 3)
     }
     if self.value != 0 {
-      try visitor.visitSingularInt64Field(value: self.value, fieldNumber: 4)
+      try visitor.visitSingularSFixed64Field(value: self.value, fieldNumber: 4)
+    }
+    if !self.exemplars.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.exemplars, fieldNumber: 5)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_Int64DataPoint, rhs: Opentelemetry_Proto_Metrics_V1_Int64DataPoint) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_IntDataPoint, rhs: Opentelemetry_Proto_Metrics_V1_IntDataPoint) -> Bool {
     if lhs.labels != rhs.labels {return false}
     if lhs.startTimeUnixNano != rhs.startTimeUnixNano {return false}
     if lhs.timeUnixNano != rhs.timeUnixNano {return false}
     if lhs.value != rhs.value {return false}
+    if lhs.exemplars != rhs.exemplars {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -1034,6 +1403,7 @@ extension Opentelemetry_Proto_Metrics_V1_DoubleDataPoint: SwiftProtobuf.Message,
     2: .standard(proto: "start_time_unix_nano"),
     3: .standard(proto: "time_unix_nano"),
     4: .same(proto: "value"),
+    5: .same(proto: "exemplars"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -1043,6 +1413,7 @@ extension Opentelemetry_Proto_Metrics_V1_DoubleDataPoint: SwiftProtobuf.Message,
       case 2: try decoder.decodeSingularFixed64Field(value: &self.startTimeUnixNano)
       case 3: try decoder.decodeSingularFixed64Field(value: &self.timeUnixNano)
       case 4: try decoder.decodeSingularDoubleField(value: &self.value)
+      case 5: try decoder.decodeRepeatedMessageField(value: &self.exemplars)
       default: break
       }
     }
@@ -1061,6 +1432,9 @@ extension Opentelemetry_Proto_Metrics_V1_DoubleDataPoint: SwiftProtobuf.Message,
     if self.value != 0 {
       try visitor.visitSingularDoubleField(value: self.value, fieldNumber: 4)
     }
+    if !self.exemplars.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.exemplars, fieldNumber: 5)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -1069,21 +1443,23 @@ extension Opentelemetry_Proto_Metrics_V1_DoubleDataPoint: SwiftProtobuf.Message,
     if lhs.startTimeUnixNano != rhs.startTimeUnixNano {return false}
     if lhs.timeUnixNano != rhs.timeUnixNano {return false}
     if lhs.value != rhs.value {return false}
+    if lhs.exemplars != rhs.exemplars {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension Opentelemetry_Proto_Metrics_V1_HistogramDataPoint: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".HistogramDataPoint"
+extension Opentelemetry_Proto_Metrics_V1_IntHistogramDataPoint: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".IntHistogramDataPoint"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "labels"),
     2: .standard(proto: "start_time_unix_nano"),
     3: .standard(proto: "time_unix_nano"),
     4: .same(proto: "count"),
     5: .same(proto: "sum"),
-    6: .same(proto: "buckets"),
+    6: .standard(proto: "bucket_counts"),
     7: .standard(proto: "explicit_bounds"),
+    8: .same(proto: "exemplars"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -1092,10 +1468,11 @@ extension Opentelemetry_Proto_Metrics_V1_HistogramDataPoint: SwiftProtobuf.Messa
       case 1: try decoder.decodeRepeatedMessageField(value: &self.labels)
       case 2: try decoder.decodeSingularFixed64Field(value: &self.startTimeUnixNano)
       case 3: try decoder.decodeSingularFixed64Field(value: &self.timeUnixNano)
-      case 4: try decoder.decodeSingularUInt64Field(value: &self.count)
-      case 5: try decoder.decodeSingularDoubleField(value: &self.sum)
-      case 6: try decoder.decodeRepeatedMessageField(value: &self.buckets)
+      case 4: try decoder.decodeSingularFixed64Field(value: &self.count)
+      case 5: try decoder.decodeSingularSFixed64Field(value: &self.sum)
+      case 6: try decoder.decodeRepeatedFixed64Field(value: &self.bucketCounts)
       case 7: try decoder.decodeRepeatedDoubleField(value: &self.explicitBounds)
+      case 8: try decoder.decodeRepeatedMessageField(value: &self.exemplars)
       default: break
       }
     }
@@ -1112,152 +1489,48 @@ extension Opentelemetry_Proto_Metrics_V1_HistogramDataPoint: SwiftProtobuf.Messa
       try visitor.visitSingularFixed64Field(value: self.timeUnixNano, fieldNumber: 3)
     }
     if self.count != 0 {
-      try visitor.visitSingularUInt64Field(value: self.count, fieldNumber: 4)
+      try visitor.visitSingularFixed64Field(value: self.count, fieldNumber: 4)
     }
     if self.sum != 0 {
-      try visitor.visitSingularDoubleField(value: self.sum, fieldNumber: 5)
+      try visitor.visitSingularSFixed64Field(value: self.sum, fieldNumber: 5)
     }
-    if !self.buckets.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.buckets, fieldNumber: 6)
+    if !self.bucketCounts.isEmpty {
+      try visitor.visitPackedFixed64Field(value: self.bucketCounts, fieldNumber: 6)
     }
     if !self.explicitBounds.isEmpty {
       try visitor.visitPackedDoubleField(value: self.explicitBounds, fieldNumber: 7)
     }
+    if !self.exemplars.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.exemplars, fieldNumber: 8)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_HistogramDataPoint, rhs: Opentelemetry_Proto_Metrics_V1_HistogramDataPoint) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_IntHistogramDataPoint, rhs: Opentelemetry_Proto_Metrics_V1_IntHistogramDataPoint) -> Bool {
     if lhs.labels != rhs.labels {return false}
     if lhs.startTimeUnixNano != rhs.startTimeUnixNano {return false}
     if lhs.timeUnixNano != rhs.timeUnixNano {return false}
     if lhs.count != rhs.count {return false}
     if lhs.sum != rhs.sum {return false}
-    if lhs.buckets != rhs.buckets {return false}
+    if lhs.bucketCounts != rhs.bucketCounts {return false}
     if lhs.explicitBounds != rhs.explicitBounds {return false}
+    if lhs.exemplars != rhs.exemplars {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension Opentelemetry_Proto_Metrics_V1_HistogramDataPoint.Bucket: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = Opentelemetry_Proto_Metrics_V1_HistogramDataPoint.protoMessageName + ".Bucket"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "count"),
-    2: .same(proto: "exemplar"),
-  ]
-
-  fileprivate class _StorageClass {
-    var _count: UInt64 = 0
-    var _exemplar: Opentelemetry_Proto_Metrics_V1_HistogramDataPoint.Bucket.Exemplar? = nil
-
-    static let defaultInstance = _StorageClass()
-
-    private init() {}
-
-    init(copying source: _StorageClass) {
-      _count = source._count
-      _exemplar = source._exemplar
-    }
-  }
-
-  fileprivate mutating func _uniqueStorage() -> _StorageClass {
-    if !isKnownUniquelyReferenced(&_storage) {
-      _storage = _StorageClass(copying: _storage)
-    }
-    return _storage
-  }
-
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    _ = _uniqueStorage()
-    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
-      while let fieldNumber = try decoder.nextFieldNumber() {
-        switch fieldNumber {
-        case 1: try decoder.decodeSingularUInt64Field(value: &_storage._count)
-        case 2: try decoder.decodeSingularMessageField(value: &_storage._exemplar)
-        default: break
-        }
-      }
-    }
-  }
-
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
-      if _storage._count != 0 {
-        try visitor.visitSingularUInt64Field(value: _storage._count, fieldNumber: 1)
-      }
-      if let v = _storage._exemplar {
-        try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-      }
-    }
-    try unknownFields.traverse(visitor: &visitor)
-  }
-
-  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_HistogramDataPoint.Bucket, rhs: Opentelemetry_Proto_Metrics_V1_HistogramDataPoint.Bucket) -> Bool {
-    if lhs._storage !== rhs._storage {
-      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
-        let _storage = _args.0
-        let rhs_storage = _args.1
-        if _storage._count != rhs_storage._count {return false}
-        if _storage._exemplar != rhs_storage._exemplar {return false}
-        return true
-      }
-      if !storagesAreEqual {return false}
-    }
-    if lhs.unknownFields != rhs.unknownFields {return false}
-    return true
-  }
-}
-
-extension Opentelemetry_Proto_Metrics_V1_HistogramDataPoint.Bucket.Exemplar: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = Opentelemetry_Proto_Metrics_V1_HistogramDataPoint.Bucket.protoMessageName + ".Exemplar"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "value"),
-    2: .standard(proto: "time_unix_nano"),
-    3: .same(proto: "attachments"),
-  ]
-
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      switch fieldNumber {
-      case 1: try decoder.decodeSingularDoubleField(value: &self.value)
-      case 2: try decoder.decodeSingularFixed64Field(value: &self.timeUnixNano)
-      case 3: try decoder.decodeRepeatedMessageField(value: &self.attachments)
-      default: break
-      }
-    }
-  }
-
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if self.value != 0 {
-      try visitor.visitSingularDoubleField(value: self.value, fieldNumber: 1)
-    }
-    if self.timeUnixNano != 0 {
-      try visitor.visitSingularFixed64Field(value: self.timeUnixNano, fieldNumber: 2)
-    }
-    if !self.attachments.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.attachments, fieldNumber: 3)
-    }
-    try unknownFields.traverse(visitor: &visitor)
-  }
-
-  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_HistogramDataPoint.Bucket.Exemplar, rhs: Opentelemetry_Proto_Metrics_V1_HistogramDataPoint.Bucket.Exemplar) -> Bool {
-    if lhs.value != rhs.value {return false}
-    if lhs.timeUnixNano != rhs.timeUnixNano {return false}
-    if lhs.attachments != rhs.attachments {return false}
-    if lhs.unknownFields != rhs.unknownFields {return false}
-    return true
-  }
-}
-
-extension Opentelemetry_Proto_Metrics_V1_SummaryDataPoint: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".SummaryDataPoint"
+extension Opentelemetry_Proto_Metrics_V1_DoubleHistogramDataPoint: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DoubleHistogramDataPoint"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "labels"),
     2: .standard(proto: "start_time_unix_nano"),
     3: .standard(proto: "time_unix_nano"),
     4: .same(proto: "count"),
     5: .same(proto: "sum"),
-    6: .standard(proto: "percentile_values"),
+    6: .standard(proto: "bucket_counts"),
+    7: .standard(proto: "explicit_bounds"),
+    8: .same(proto: "exemplars"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -1266,9 +1539,11 @@ extension Opentelemetry_Proto_Metrics_V1_SummaryDataPoint: SwiftProtobuf.Message
       case 1: try decoder.decodeRepeatedMessageField(value: &self.labels)
       case 2: try decoder.decodeSingularFixed64Field(value: &self.startTimeUnixNano)
       case 3: try decoder.decodeSingularFixed64Field(value: &self.timeUnixNano)
-      case 4: try decoder.decodeSingularUInt64Field(value: &self.count)
+      case 4: try decoder.decodeSingularFixed64Field(value: &self.count)
       case 5: try decoder.decodeSingularDoubleField(value: &self.sum)
-      case 6: try decoder.decodeRepeatedMessageField(value: &self.percentileValues)
+      case 6: try decoder.decodeRepeatedFixed64Field(value: &self.bucketCounts)
+      case 7: try decoder.decodeRepeatedDoubleField(value: &self.explicitBounds)
+      case 8: try decoder.decodeRepeatedMessageField(value: &self.exemplars)
       default: break
       }
     }
@@ -1285,59 +1560,138 @@ extension Opentelemetry_Proto_Metrics_V1_SummaryDataPoint: SwiftProtobuf.Message
       try visitor.visitSingularFixed64Field(value: self.timeUnixNano, fieldNumber: 3)
     }
     if self.count != 0 {
-      try visitor.visitSingularUInt64Field(value: self.count, fieldNumber: 4)
+      try visitor.visitSingularFixed64Field(value: self.count, fieldNumber: 4)
     }
     if self.sum != 0 {
       try visitor.visitSingularDoubleField(value: self.sum, fieldNumber: 5)
     }
-    if !self.percentileValues.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.percentileValues, fieldNumber: 6)
+    if !self.bucketCounts.isEmpty {
+      try visitor.visitPackedFixed64Field(value: self.bucketCounts, fieldNumber: 6)
+    }
+    if !self.explicitBounds.isEmpty {
+      try visitor.visitPackedDoubleField(value: self.explicitBounds, fieldNumber: 7)
+    }
+    if !self.exemplars.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.exemplars, fieldNumber: 8)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_SummaryDataPoint, rhs: Opentelemetry_Proto_Metrics_V1_SummaryDataPoint) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_DoubleHistogramDataPoint, rhs: Opentelemetry_Proto_Metrics_V1_DoubleHistogramDataPoint) -> Bool {
     if lhs.labels != rhs.labels {return false}
     if lhs.startTimeUnixNano != rhs.startTimeUnixNano {return false}
     if lhs.timeUnixNano != rhs.timeUnixNano {return false}
     if lhs.count != rhs.count {return false}
     if lhs.sum != rhs.sum {return false}
-    if lhs.percentileValues != rhs.percentileValues {return false}
+    if lhs.bucketCounts != rhs.bucketCounts {return false}
+    if lhs.explicitBounds != rhs.explicitBounds {return false}
+    if lhs.exemplars != rhs.exemplars {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension Opentelemetry_Proto_Metrics_V1_SummaryDataPoint.ValueAtPercentile: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = Opentelemetry_Proto_Metrics_V1_SummaryDataPoint.protoMessageName + ".ValueAtPercentile"
+extension Opentelemetry_Proto_Metrics_V1_IntExemplar: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".IntExemplar"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "percentile"),
-    2: .same(proto: "value"),
+    1: .standard(proto: "filtered_labels"),
+    2: .standard(proto: "time_unix_nano"),
+    3: .same(proto: "value"),
+    4: .standard(proto: "span_id"),
+    5: .standard(proto: "trace_id"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
-      case 1: try decoder.decodeSingularDoubleField(value: &self.percentile)
-      case 2: try decoder.decodeSingularDoubleField(value: &self.value)
+      case 1: try decoder.decodeRepeatedMessageField(value: &self.filteredLabels)
+      case 2: try decoder.decodeSingularFixed64Field(value: &self.timeUnixNano)
+      case 3: try decoder.decodeSingularSFixed64Field(value: &self.value)
+      case 4: try decoder.decodeSingularBytesField(value: &self.spanID)
+      case 5: try decoder.decodeSingularBytesField(value: &self.traceID)
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if self.percentile != 0 {
-      try visitor.visitSingularDoubleField(value: self.percentile, fieldNumber: 1)
+    if !self.filteredLabels.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.filteredLabels, fieldNumber: 1)
+    }
+    if self.timeUnixNano != 0 {
+      try visitor.visitSingularFixed64Field(value: self.timeUnixNano, fieldNumber: 2)
     }
     if self.value != 0 {
-      try visitor.visitSingularDoubleField(value: self.value, fieldNumber: 2)
+      try visitor.visitSingularSFixed64Field(value: self.value, fieldNumber: 3)
+    }
+    if !self.spanID.isEmpty {
+      try visitor.visitSingularBytesField(value: self.spanID, fieldNumber: 4)
+    }
+    if !self.traceID.isEmpty {
+      try visitor.visitSingularBytesField(value: self.traceID, fieldNumber: 5)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_SummaryDataPoint.ValueAtPercentile, rhs: Opentelemetry_Proto_Metrics_V1_SummaryDataPoint.ValueAtPercentile) -> Bool {
-    if lhs.percentile != rhs.percentile {return false}
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_IntExemplar, rhs: Opentelemetry_Proto_Metrics_V1_IntExemplar) -> Bool {
+    if lhs.filteredLabels != rhs.filteredLabels {return false}
+    if lhs.timeUnixNano != rhs.timeUnixNano {return false}
     if lhs.value != rhs.value {return false}
+    if lhs.spanID != rhs.spanID {return false}
+    if lhs.traceID != rhs.traceID {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Opentelemetry_Proto_Metrics_V1_DoubleExemplar: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DoubleExemplar"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "filtered_labels"),
+    2: .standard(proto: "time_unix_nano"),
+    3: .same(proto: "value"),
+    4: .standard(proto: "span_id"),
+    5: .standard(proto: "trace_id"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try decoder.decodeRepeatedMessageField(value: &self.filteredLabels)
+      case 2: try decoder.decodeSingularFixed64Field(value: &self.timeUnixNano)
+      case 3: try decoder.decodeSingularDoubleField(value: &self.value)
+      case 4: try decoder.decodeSingularBytesField(value: &self.spanID)
+      case 5: try decoder.decodeSingularBytesField(value: &self.traceID)
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.filteredLabels.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.filteredLabels, fieldNumber: 1)
+    }
+    if self.timeUnixNano != 0 {
+      try visitor.visitSingularFixed64Field(value: self.timeUnixNano, fieldNumber: 2)
+    }
+    if self.value != 0 {
+      try visitor.visitSingularDoubleField(value: self.value, fieldNumber: 3)
+    }
+    if !self.spanID.isEmpty {
+      try visitor.visitSingularBytesField(value: self.spanID, fieldNumber: 4)
+    }
+    if !self.traceID.isEmpty {
+      try visitor.visitSingularBytesField(value: self.traceID, fieldNumber: 5)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_DoubleExemplar, rhs: Opentelemetry_Proto_Metrics_V1_DoubleExemplar) -> Bool {
+    if lhs.filteredLabels != rhs.filteredLabels {return false}
+    if lhs.timeUnixNano != rhs.timeUnixNano {return false}
+    if lhs.value != rhs.value {return false}
+    if lhs.spanID != rhs.spanID {return false}
+    if lhs.traceID != rhs.traceID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

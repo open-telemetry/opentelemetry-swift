@@ -244,9 +244,8 @@ public struct Opentelemetry_Proto_Trace_V1_Span {
     set {_uniqueStorage()._droppedLinksCount = newValue}
   }
 
-  /// An optional final status for this span. Semantically when Status
-  /// wasn't set it is means span ended without errors and assume
-  /// Status.Ok (code = 0).
+  /// An optional final status for this span. Semantically when Status isn't set, it means
+  /// span's status code is unset, i.e. assume STATUS_CODE_UNSET (code = 0).
   public var status: Opentelemetry_Proto_Trace_V1_Status {
     get {return _storage._status ?? Opentelemetry_Proto_Trace_V1_Status()}
     set {_uniqueStorage()._status = newValue}
@@ -405,18 +404,23 @@ public struct Opentelemetry_Proto_Trace_V1_Status {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  /// The status code. This is optional field. It is safe to assume 0 (OK)
-  /// when not set.
-  public var code: Opentelemetry_Proto_Trace_V1_Status.StatusCode = .ok
+  /// The deprecated status code. This is an optional field.
+  ///
+  /// This field is deprecated and is replaced by the `code` field below. See backward
+  /// compatibility notes below. According to our stability guarantees this field
+  /// will be removed in 12 months, on Oct 22, 2021. All usage of old senders and
+  /// receivers that do not understand the `code` field MUST be phased out by then.
+  public var deprecatedCode: Opentelemetry_Proto_Trace_V1_Status.DeprecatedStatusCode = .ok
 
   /// A developer-facing human readable error message.
   public var message: String = String()
 
+  /// The status code.
+  public var code: Opentelemetry_Proto_Trace_V1_Status.StatusCode = .unset
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  /// StatusCode mirrors the codes defined at
-  /// https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/api-tracing.md#statuscanonicalcode
-  public enum StatusCode: SwiftProtobuf.Enum {
+  public enum DeprecatedStatusCode: SwiftProtobuf.Enum {
     public typealias RawValue = Int
     case ok // = 0
     case cancelled // = 1
@@ -489,14 +493,54 @@ public struct Opentelemetry_Proto_Trace_V1_Status {
 
   }
 
+  /// For the semantics of status codes see
+  /// https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/trace/api.md#set-status
+  public enum StatusCode: SwiftProtobuf.Enum {
+    public typealias RawValue = Int
+
+    /// The default status.
+    case unset // = 0
+
+    /// The Span has been validated by an Application developers or Operator to have
+    /// completed successfully.
+    case ok // = 1
+
+    /// The Span contains an error.
+    case error // = 2
+    case UNRECOGNIZED(Int)
+
+    public init() {
+      self = .unset
+    }
+
+    public init?(rawValue: Int) {
+      switch rawValue {
+      case 0: self = .unset
+      case 1: self = .ok
+      case 2: self = .error
+      default: self = .UNRECOGNIZED(rawValue)
+      }
+    }
+
+    public var rawValue: Int {
+      switch self {
+      case .unset: return 0
+      case .ok: return 1
+      case .error: return 2
+      case .UNRECOGNIZED(let i): return i
+      }
+    }
+
+  }
+
   public init() {}
 }
 
 #if swift(>=4.2)
 
-extension Opentelemetry_Proto_Trace_V1_Status.StatusCode: CaseIterable {
+extension Opentelemetry_Proto_Trace_V1_Status.DeprecatedStatusCode: CaseIterable {
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  public static var allCases: [Opentelemetry_Proto_Trace_V1_Status.StatusCode] = [
+  public static var allCases: [Opentelemetry_Proto_Trace_V1_Status.DeprecatedStatusCode] = [
     .ok,
     .cancelled,
     .unknownError,
@@ -514,6 +558,15 @@ extension Opentelemetry_Proto_Trace_V1_Status.StatusCode: CaseIterable {
     .unavailable,
     .dataLoss,
     .unauthenticated,
+  ]
+}
+
+extension Opentelemetry_Proto_Trace_V1_Status.StatusCode: CaseIterable {
+  // The compiler won't synthesize support with the UNRECOGNIZED case.
+  public static var allCases: [Opentelemetry_Proto_Trace_V1_Status.StatusCode] = [
+    .unset,
+    .ok,
+    .error,
   ]
 }
 
@@ -837,11 +890,11 @@ extension Opentelemetry_Proto_Trace_V1_Span: SwiftProtobuf.Message, SwiftProtobu
 extension Opentelemetry_Proto_Trace_V1_Span.SpanKind: SwiftProtobuf._ProtoNameProviding {
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     0: .same(proto: "SPAN_KIND_UNSPECIFIED"),
-    1: .same(proto: "INTERNAL"),
-    2: .same(proto: "SERVER"),
-    3: .same(proto: "CLIENT"),
-    4: .same(proto: "PRODUCER"),
-    5: .same(proto: "CONSUMER"),
+    1: .same(proto: "SPAN_KIND_INTERNAL"),
+    2: .same(proto: "SPAN_KIND_SERVER"),
+    3: .same(proto: "SPAN_KIND_CLIENT"),
+    4: .same(proto: "SPAN_KIND_PRODUCER"),
+    5: .same(proto: "SPAN_KIND_CONSUMER"),
   ]
 }
 
@@ -948,56 +1001,70 @@ extension Opentelemetry_Proto_Trace_V1_Span.Link: SwiftProtobuf.Message, SwiftPr
 extension Opentelemetry_Proto_Trace_V1_Status: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Status"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "code"),
+    1: .standard(proto: "deprecated_code"),
     2: .same(proto: "message"),
+    3: .same(proto: "code"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
-      case 1: try decoder.decodeSingularEnumField(value: &self.code)
+      case 1: try decoder.decodeSingularEnumField(value: &self.deprecatedCode)
       case 2: try decoder.decodeSingularStringField(value: &self.message)
+      case 3: try decoder.decodeSingularEnumField(value: &self.code)
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if self.code != .ok {
-      try visitor.visitSingularEnumField(value: self.code, fieldNumber: 1)
+    if self.deprecatedCode != .ok {
+      try visitor.visitSingularEnumField(value: self.deprecatedCode, fieldNumber: 1)
     }
     if !self.message.isEmpty {
       try visitor.visitSingularStringField(value: self.message, fieldNumber: 2)
+    }
+    if self.code != .unset {
+      try visitor.visitSingularEnumField(value: self.code, fieldNumber: 3)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Opentelemetry_Proto_Trace_V1_Status, rhs: Opentelemetry_Proto_Trace_V1_Status) -> Bool {
-    if lhs.code != rhs.code {return false}
+    if lhs.deprecatedCode != rhs.deprecatedCode {return false}
     if lhs.message != rhs.message {return false}
+    if lhs.code != rhs.code {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
+extension Opentelemetry_Proto_Trace_V1_Status.DeprecatedStatusCode: SwiftProtobuf._ProtoNameProviding {
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    0: .same(proto: "DEPRECATED_STATUS_CODE_OK"),
+    1: .same(proto: "DEPRECATED_STATUS_CODE_CANCELLED"),
+    2: .same(proto: "DEPRECATED_STATUS_CODE_UNKNOWN_ERROR"),
+    3: .same(proto: "DEPRECATED_STATUS_CODE_INVALID_ARGUMENT"),
+    4: .same(proto: "DEPRECATED_STATUS_CODE_DEADLINE_EXCEEDED"),
+    5: .same(proto: "DEPRECATED_STATUS_CODE_NOT_FOUND"),
+    6: .same(proto: "DEPRECATED_STATUS_CODE_ALREADY_EXISTS"),
+    7: .same(proto: "DEPRECATED_STATUS_CODE_PERMISSION_DENIED"),
+    8: .same(proto: "DEPRECATED_STATUS_CODE_RESOURCE_EXHAUSTED"),
+    9: .same(proto: "DEPRECATED_STATUS_CODE_FAILED_PRECONDITION"),
+    10: .same(proto: "DEPRECATED_STATUS_CODE_ABORTED"),
+    11: .same(proto: "DEPRECATED_STATUS_CODE_OUT_OF_RANGE"),
+    12: .same(proto: "DEPRECATED_STATUS_CODE_UNIMPLEMENTED"),
+    13: .same(proto: "DEPRECATED_STATUS_CODE_INTERNAL_ERROR"),
+    14: .same(proto: "DEPRECATED_STATUS_CODE_UNAVAILABLE"),
+    15: .same(proto: "DEPRECATED_STATUS_CODE_DATA_LOSS"),
+    16: .same(proto: "DEPRECATED_STATUS_CODE_UNAUTHENTICATED"),
+  ]
+}
+
 extension Opentelemetry_Proto_Trace_V1_Status.StatusCode: SwiftProtobuf._ProtoNameProviding {
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "Ok"),
-    1: .same(proto: "Cancelled"),
-    2: .same(proto: "UnknownError"),
-    3: .same(proto: "InvalidArgument"),
-    4: .same(proto: "DeadlineExceeded"),
-    5: .same(proto: "NotFound"),
-    6: .same(proto: "AlreadyExists"),
-    7: .same(proto: "PermissionDenied"),
-    8: .same(proto: "ResourceExhausted"),
-    9: .same(proto: "FailedPrecondition"),
-    10: .same(proto: "Aborted"),
-    11: .same(proto: "OutOfRange"),
-    12: .same(proto: "Unimplemented"),
-    13: .same(proto: "InternalError"),
-    14: .same(proto: "Unavailable"),
-    15: .same(proto: "DataLoss"),
-    16: .same(proto: "Unauthenticated"),
+    0: .same(proto: "STATUS_CODE_UNSET"),
+    1: .same(proto: "STATUS_CODE_OK"),
+    2: .same(proto: "STATUS_CODE_ERROR"),
   ]
 }
