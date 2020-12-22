@@ -81,7 +81,8 @@ let package = Package(
         ),
         .target(name: "DatadogExporter",
                 dependencies: ["OpenTelemetrySdk"],
-                path: "Sources/Exporters/DatadogExporter"
+                path: "Sources/Exporters/DatadogExporter",
+                exclude: ["NOTICE", "README.md"]
         ),
         .testTarget(name: "OpenTelemetryApiTests",
                     dependencies: ["OpenTelemetryApi"],
@@ -129,15 +130,18 @@ let package = Package(
         ),
         .target(name: "SimpleExporter",
                 dependencies: ["OpenTelemetrySdk", "JaegerExporter", "StdoutExporter", "ZipkinExporter"],
-                path: "Examples/Simple Exporter"
+                path: "Examples/Simple Exporter",
+                exclude: ["README.md"]
         ),
         .target(name: "PrometheusSample",
                 dependencies: ["OpenTelemetrySdk", "PrometheusExporter"],
-                path: "Examples/Prometheus Sample"
+                path: "Examples/Prometheus Sample",
+                exclude: ["README.md"]
         ),
         .target(name: "DatadogSample",
                 dependencies: ["DatadogExporter"],
-                path: "Examples/Datadog Sample"
+                path: "Examples/Datadog Sample",
+                exclude: ["README.md"]
         ),
     ]
 )
