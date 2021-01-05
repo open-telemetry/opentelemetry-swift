@@ -25,7 +25,7 @@ class BoundCounterMetricSdkBase<T>: BoundCounterMetric<T> {
         super.init()
     }
 
-    func getAggregator() -> AnyAggregator<T> {
+    func getAggregator() -> Aggregator<T> {
         fatalError()
     }
 }

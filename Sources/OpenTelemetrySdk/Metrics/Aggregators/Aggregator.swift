@@ -15,40 +15,51 @@
 
 import Foundation
 
-protocol Aggregator: AnyObject {
-    associatedtype T
-    func update(value: T)
-    func checkpoint()
-    func toMetricData() -> MetricData
-    func getAggregationType() -> AggregationType
+public class Aggregator<T> {
+    var lastStart: Date = Date.distantFuture
+    var lastEnd: Date = Date()
+
+    public func update(value: T) {}
+    public func checkpoint() {
+        lastStart = lastEnd
+        lastEnd = Date()
+    }
+
+    public func toMetricData() -> MetricData {
+        return NoopMetricData()
+    }
+    public func getAggregationType() -> AggregationType {
+        return .intSum
+    }
+
 }
 
-public class AnyAggregator<T>: Aggregator {
-    private let _update: (T) -> Void
-    private let _checkpoint: () -> Void
-    private let _toMetricData: () -> MetricData
-    private let _getAggregationType: () -> AggregationType
-
-    init<U: Aggregator>(_ aggregable: U) where U.T == T {
-        _update = aggregable.update
-        _checkpoint = aggregable.checkpoint
-        _toMetricData = aggregable.toMetricData
-        _getAggregationType = aggregable.getAggregationType
-    }
-
-    func update(value: T) {
-        _update(value)
-    }
-
-    func checkpoint() {
-        _checkpoint()
-    }
-
-    func toMetricData() -> MetricData {
-        return _toMetricData()
-    }
-
-    func getAggregationType() -> AggregationType {
-        return _getAggregationType()
-    }
-}
+// public class AnyAggregator<T>: Aggregator {
+//    private let _update: (T) -> Void
+//    private let _checkpoint: () -> Void
+//    private let _toMetricData: () -> MetricData
+//    private let _getAggregationType: () -> AggregationType
+//
+//    init<U: Aggregator>(_ aggregable: U) where U.T == T {
+//        _update = aggregable.update
+//        _checkpoint = aggregable.checkpoint
+//        _toMetricData = aggregable.toMetricData
+//        _getAggregationType = aggregable.getAggregationType
+//    }
+//
+//    func update(value: T) {
+//        _update(value)
+//    }
+//
+//    func checkpoint() {
+//        _checkpoint()
+//    }
+//
+//    func toMetricData() -> MetricData {
+//        return _toMetricData()
+//    }
+//
+//    func getAggregationType() -> AggregationType {
+//        return _getAggregationType()
+//    }
+// }

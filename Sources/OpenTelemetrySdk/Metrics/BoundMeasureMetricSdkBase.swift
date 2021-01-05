@@ -21,7 +21,7 @@ class BoundMeasureMetricSdkBase<T>: BoundMeasureMetric<T> {
         super.init()
     }
 
-    func getAggregator() -> AnyAggregator<T> {
+    func getAggregator() -> Aggregator<T> {
         fatalError()
     }
 }

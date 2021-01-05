@@ -27,7 +27,7 @@ internal class BoundMeasureMetricSdk<T: SignedNumeric & Comparable>: BoundMeasur
         measureAggregator.update(value: value)
     }
 
-    override func getAggregator() -> AnyAggregator<T> {
-        return AnyAggregator<T>(measureAggregator)
+    override func getAggregator() -> MeasureMinMaxSumCountAggregator<T> {
+        return measureAggregator
     }
 }

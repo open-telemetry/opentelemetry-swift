@@ -27,7 +27,7 @@ class BoundCounterMetricSdk<T: SignedNumeric>: BoundCounterMetricSdkBase<T> {
         sumAggregator.update(value: value)
     }
 
-    override func getAggregator() -> AnyAggregator<T> {
-        return AnyAggregator<T>(sumAggregator)
+    override func getAggregator() -> CounterSumAggregator<T> {
+        return sumAggregator
     }
 }
