@@ -79,17 +79,7 @@ public protocol Span: AnyObject, CustomStringConvertible {
 
     /// End the span.
     /// - Parameter endOptions: The explicit EndSpanOptions for this span
-    func end(timestamp: UInt64)
-}
-
-extension Span {
-    public func end() {
-        scope?.close()
-    }
-
-    public func end(timestamp: UInt64) {
-        end()
-    }
+    func end(time: Date)
 }
 
 extension Span {

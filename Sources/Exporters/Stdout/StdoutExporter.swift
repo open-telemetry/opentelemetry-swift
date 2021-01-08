@@ -14,12 +14,12 @@
 //
 
 import Foundation
-import OpenTelemetrySdk
 import OpenTelemetryApi
+import OpenTelemetrySdk
 
 public class StdoutExporter: SpanExporter {
     let isDebug: Bool
-    
+
     public init(isDebug: Bool = false) {
         self.isDebug = isDebug
     }
@@ -27,7 +27,7 @@ public class StdoutExporter: SpanExporter {
     public func export(spans: [SpanData]) -> SpanExporterResultCode {
         let jsonEncoder = JSONEncoder()
         for span in spans {
-            if (isDebug) {
+            if isDebug {
                 print("__________________")
                 print("Span \(span.name):")
                 print("TraceId: \(span.traceId.hexString)")
@@ -36,8 +36,8 @@ public class StdoutExporter: SpanExporter {
                 print("TraceFlags: \(span.traceFlags)")
                 print("TraceState: \(span.traceState)")
                 print("ParentSpanId: \(span.parentSpanId?.hexString ?? SpanId.invalid.hexString)")
-                print("Start: \(span.startEpochNanos)")
-                print("Duration: \(span.endEpochNanos - span.startEpochNanos) nanoseconds")
+                print("Start: \(span.startTime.timeIntervalSince1970.toNanoseconds)")
+                print("Duration: \(span.endTime.timeIntervalSince(span.startTime).toNanoseconds) nanoseconds")
                 print("Attributes: \(span.attributes)")
                 print("------------------\n")
             } else {
@@ -53,16 +53,15 @@ public class StdoutExporter: SpanExporter {
         }
         return .success
     }
-    
+
     public func flush() -> SpanExporterResultCode {
         return .success
     }
 
-    public func shutdown() {
-    }
+    public func shutdown() {}
 }
 
-fileprivate struct SpanExporterData: Encodable {
+private struct SpanExporterData: Encodable {
     private let span: String
     private let traceId: String
     private let spanId: String
@@ -70,10 +69,10 @@ fileprivate struct SpanExporterData: Encodable {
     private let traceFlags: TraceFlags
     private let traceState: TraceState
     private let parentSpanId: String?
-    private let start: UInt64
-    private let duration: UInt64
+    private let start: Date
+    private let duration: TimeInterval
     private let attributes: [String: AttributeValue]
-    
+
     init(span: SpanData) {
         self.span = span.name
         self.traceId = span.traceId.hexString
@@ -82,8 +81,8 @@ fileprivate struct SpanExporterData: Encodable {
         self.traceFlags = span.traceFlags
         self.traceState = span.traceState
         self.parentSpanId = span.parentSpanId?.hexString ?? SpanId.invalid.hexString
-        self.start = span.startEpochNanos
-        self.duration = span.endEpochNanos - span.startEpochNanos
+        self.start = span.startTime
+        self.duration = span.endTime.timeIntervalSince(span.startTime)
         self.attributes = span.attributes
     }
 }

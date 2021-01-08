@@ -18,7 +18,7 @@ import OpenTelemetryApi
 
 // A dictionary implementation with a fixed capacity that drops events when the dictionary gets full. Eviction
 // is based on the access order.
-public struct AttributesDictionay {
+public struct AttributesDictionary {
     var attributes: [String: AttributeValue]
     var keys: [String]
     private var capacity: Int
@@ -66,7 +66,7 @@ public struct AttributesDictionay {
         }
     }
 
-    public mutating func updateValues(attributes: AttributesDictionay) {
+    public mutating func updateValues(attributes: AttributesDictionary) {
         _ = attributes.keys.map {
             updateValue(value: attributes[$0]!, forKey: $0)
         }
@@ -81,7 +81,7 @@ public struct AttributesDictionay {
 
     public mutating func removeAll(keepCapacity: Int) {
         keys = []
-        attributes = Dictionary<String, AttributeValue>(minimumCapacity: keepCapacity)
+        attributes = [String: AttributeValue](minimumCapacity: keepCapacity)
     }
 
     public var count: Int {
@@ -92,28 +92,28 @@ public struct AttributesDictionay {
         recordedAttributes - attributes.count
     }
 
-    public var values: Array<AttributeValue> {
+    public var values: [AttributeValue] {
         keys.map { attributes[$0]! }
     }
 
-    static func == (lhs: AttributesDictionay, rhs: AttributesDictionay) -> Bool {
+    static func == (lhs: AttributesDictionary, rhs: AttributesDictionary) -> Bool {
         lhs.keys == rhs.keys && lhs.attributes == rhs.attributes
     }
 
-    static func != (lhs: AttributesDictionay, rhs: AttributesDictionay) -> Bool {
+    static func != (lhs: AttributesDictionary, rhs: AttributesDictionary) -> Bool {
         lhs.keys != rhs.keys || lhs.attributes != rhs.attributes
     }
 }
 
-extension AttributesDictionay: Sequence {
+extension AttributesDictionary: Sequence {
     public func makeIterator() -> AttributesWithCapacityIterator {
         AttributesWithCapacityIterator(sequence: attributes, keys: keys, current: 0)
     }
 }
 
 public struct AttributesWithCapacityIterator: IteratorProtocol {
-    let sequence: Dictionary<String, AttributeValue>
-    let keys: Array<String>
+    let sequence: [String: AttributeValue]
+    let keys: [String]
     var current = 0
 
     public mutating func next() -> (String, AttributeValue)? {

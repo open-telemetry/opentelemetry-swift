@@ -24,15 +24,15 @@ class SpanDataEventTests: XCTestCase {
     static let attributes2 = ["attribute2": AttributeValue.string("value2")]
 
     func testRawTimedEventWithName() {
-        let event = SpanData.Event(name: SpanDataEventTests.eventName, epochNanos: 1000)
-        XCTAssertEqual(event.epochNanos, 1000)
+        let event = SpanData.Event(name: SpanDataEventTests.eventName, timestamp: Date(timeIntervalSince1970: 1000))
+        XCTAssertEqual(event.timestamp, Date(timeIntervalSince1970: 1000))
         XCTAssertEqual(event.name, SpanDataEventTests.eventName)
         XCTAssertEqual(event.attributes.count, 0)
     }
 
     func testRawTimedEventWithNameAndAttributes() {
-        let event = SpanData.Event(name: SpanDataEventTests.eventName, epochNanos: 2000, attributes: SpanDataEventTests.attributes)
-        XCTAssertEqual(event.epochNanos, 2000)
+        let event = SpanData.Event(name: SpanDataEventTests.eventName, timestamp: Date(timeIntervalSince1970: 2000), attributes: SpanDataEventTests.attributes)
+        XCTAssertEqual(event.timestamp, Date(timeIntervalSince1970: 2000))
         XCTAssertEqual(event.name, SpanDataEventTests.eventName)
         XCTAssertEqual(event.attributes, SpanDataEventTests.attributes)
     }
@@ -40,7 +40,7 @@ class SpanDataEventTests: XCTestCase {
     func testRawTimedEventWithDate() {
         let dateForEvent = Date()
         let event = SpanData.Event(name: SpanDataEventTests.eventName, timestamp: dateForEvent)
-        XCTAssertEqual(event.epochNanos, UInt64(dateForEvent.timeIntervalSince1970.toNanoseconds))
+        XCTAssertEqual(event.timestamp, dateForEvent)
         XCTAssertEqual(event.name, SpanDataEventTests.eventName)
         XCTAssertEqual(event.attributes.count, 0)
     }

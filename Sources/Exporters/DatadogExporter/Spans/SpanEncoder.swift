@@ -92,8 +92,8 @@ internal struct DDSpan: Encodable {
 
         self.serviceName = configuration.serviceName
         self.resource = spanData.name
-        self.startTime = spanData.startEpochNanos
-        self.duration = spanData.endEpochNanos - spanData.startEpochNanos
+        self.startTime = spanData.startTime.timeIntervalSince1970.toNanoseconds
+        self.duration = spanData.endTime.timeIntervalSince(spanData.startTime).toNanoseconds
 
         if spanData.status.isOk {
             self.error = false

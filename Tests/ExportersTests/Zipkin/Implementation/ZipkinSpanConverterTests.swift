@@ -37,8 +37,8 @@ class ZipkinSpanConverterTests: XCTestCase {
 
     func testGenerateSpanRemoteEndpointResolutionPriority() {
         let span = ZipkinSpanConverterTests.createTestSpan(additionalAttributes: ["http.host": "DiscardedRemoteServiceName",
-                                                         "net.peer.name": "RemoteServiceName",
-                                                         "peer.hostname": "DiscardedRemoteServiceName"])
+                                                                                  "net.peer.name": "RemoteServiceName",
+                                                                                  "peer.hostname": "DiscardedRemoteServiceName"])
         let zipkinSpan = ZipkinConversionExtension.toZipkinSpan(otelSpan: span, defaultLocalEndpoint: defaultZipkinEndpoint)
         XCTAssertNotNil(zipkinSpan.remoteEndpoint)
         XCTAssertEqual(zipkinSpan.remoteEndpoint?.serviceName, "RemoteServiceName")
@@ -64,11 +64,10 @@ class ZipkinSpanConverterTests: XCTestCase {
         }
 
         let events: [SpanData.Event] = [SpanData.Event(name: "Event1", timestamp: eventTimestamp, attributes: ["key": AttributeValue.string("value")]),
-                                    SpanData.Event(name: "Event2", timestamp: eventTimestamp, attributes: ["key": AttributeValue.string("value")])]
+                                        SpanData.Event(name: "Event2", timestamp: eventTimestamp, attributes: ["key": AttributeValue.string("value")])]
 
 //        let linkedSpanId = SpanId(fromHexString: "888915b6286b9c41")
 
-        return SpanData(traceId: traceId, spanId: spanId, parentSpanId: parentSpanId, name: "Name", kind: .client, startEpochNanos: UInt64(startTimestamp.timeIntervalSince1970.toNanoseconds), attributes: attributes, events: events, status: Status.ok, endEpochNanos: UInt64(endTimestamp.timeIntervalSince1970.toNanoseconds)
-        )
+        return SpanData(traceId: traceId, spanId: spanId, parentSpanId: parentSpanId, name: "Name", kind: .client, startTime: startTimestamp, attributes: attributes, events: events, status: Status.ok, endTime: endTimestamp)
     }
 }

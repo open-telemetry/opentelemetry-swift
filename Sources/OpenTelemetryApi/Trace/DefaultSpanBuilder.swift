@@ -26,7 +26,7 @@ public class DefaultSpanBuilder: SpanBuilder {
     }
 
     @discardableResult public func startSpan() -> Span {
-        if spanContext == nil && !isRootSpan {
+        if spanContext == nil, !isRootSpan {
             spanContext = tracer.activeSpan?.context
         }
         return spanContext != nil && spanContext != SpanContext.invalid ? DefaultSpan(context: spanContext!, kind: .client) : DefaultSpan.random()
@@ -59,7 +59,7 @@ public class DefaultSpanBuilder: SpanBuilder {
         return self
     }
 
-    @discardableResult public func setStartTimestamp(timestamp: UInt64) -> Self {
+    @discardableResult public func setStartTime(time: Date) -> Self {
         return self
     }
 

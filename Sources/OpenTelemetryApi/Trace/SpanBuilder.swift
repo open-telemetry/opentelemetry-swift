@@ -48,7 +48,7 @@ public protocol SpanBuilder: class {
     /// - Parameter parent: the SpanContext used as parent.
     @discardableResult func setParent(_ parent: SpanContext) -> Self
 
-    /// Sets the option to become a root Span} for a new trace. If not set, the value of
+    /// Sets the option to become a root Span for a new trace. If not set, the value of
     /// Tracer.getCurrentSpan() at #startSpan() time will be used as parent.
     ///
     /// Observe that any previously set parent will be discarded.
@@ -67,41 +67,41 @@ public protocol SpanBuilder: class {
 
     /// Adds a Link to the newly created Span.
     ///
-    /// Links are used to link Span}s in different traces. Used (for example) in batching
+    /// Links are used to link Spans in different traces. Used (for example) in batching
     /// operations, where a single batch handler processes multiple requests from different traces or
-    ///the same trace.
+    /// the same trace.
     /// - Parameter link: the Link to be added.
 //    @discardableResult func addLink(_ link: Link) -> Self
 
-    /// Sets an attribute to the newly created {@code Span}. If {@code Span.Builder} previously
+    /// Sets an attribute to the newly created Span. If SpanBuilder previously
     /// contained a mapping for the key, the old value is replaced by the specified value.
     /// - Parameters:
     ///   - key: the key for this attribute
     ///   - value: the value for this attribute
     @discardableResult func setAttribute(key: String, value: String) -> Self
 
-    /// Sets an attribute to the newly created {@code Span}. If {@code Span.Builder} previously
+    /// Sets an attribute to the newly created Span. If SpanBuilder previously
     /// contained a mapping for the key, the old value is replaced by the specified value.
     /// - Parameters:
     ///   - key: the key for this attribute
     ///   - value: the value for this attribute
     @discardableResult func setAttribute(key: String, value: Int) -> Self
 
-    /// Sets an attribute to the newly created {@code Span}. If {@code Span.Builder} previously
+    /// Sets an attribute to the newly created Span. If SpanBuilder previously
     /// contained a mapping for the key, the old value is replaced by the specified value.
     /// - Parameters:
     ///   - key: the key for this attribute
     ///   - value: the value for this attribute
     @discardableResult func setAttribute(key: String, value: Double) -> Self
 
-    /// Sets an attribute to the newly created {@code Span}. If {@code Span.Builder} previously
+    /// Sets an attribute to the newly created Span. If SpanBuilder previously
     /// contained a mapping for the key, the old value is replaced by the specified value.
     /// - Parameters:
     ///   - key: the key for this attribute
     ///   - value: the value for this attribute
     @discardableResult func setAttribute(key: String, value: Bool) -> Self
 
-    /// Sets an attribute to the newly created {@code Span}. If {@code Span.Builder} previously
+    /// Sets an attribute to the newly created Span. If SpanBuilder previously
     /// contained a mapping for the key, the old value is replaced by the specified value.
     /// - Parameters:
     ///   - key: the key for this attribute
@@ -118,7 +118,7 @@ public protocol SpanBuilder: class {
     /// Use this method to specify an explicit start timestamp. If not called, the implementation
     /// will use the timestamp value at #startSpan() time, which should be the default case.
     /// - Parameter startTimestamp: the explicit start timestamp of the newly created Span in nanos since epoch.
-    @discardableResult func setStartTimestamp(timestamp: UInt64) -> Self
+    @discardableResult func setStartTime(time: Date) -> Self
 
     /// Starts a new Span.
     ///
@@ -129,7 +129,7 @@ public protocol SpanBuilder: class {
 }
 
 extension SpanBuilder {
-    @discardableResult  public func setAttribute(key: String, value: String) -> Self {
+    @discardableResult public func setAttribute(key: String, value: String) -> Self {
         return setAttribute(key: key, value: AttributeValue.string(value))
     }
 
@@ -144,9 +144,8 @@ extension SpanBuilder {
     @discardableResult public func setAttribute(key: String, value: Bool) -> Self {
         return setAttribute(key: key, value: AttributeValue.bool(value))
     }
-    
-    @discardableResult public func setStartTimestamp(timestamp: Date) -> Self {
-        return setStartTimestamp(timestamp: UInt64(timestamp.timeIntervalSince1970.toNanoseconds) )
-    }
 
+//    @discardableResult public func setStartTimestamp(timestamp: Date) -> Self {
+//        return setStartTimestamp(timestamp: UInt64(timestamp.timeIntervalSince1970.toNanoseconds) )
+//    }
 }

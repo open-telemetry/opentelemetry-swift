@@ -32,6 +32,10 @@ class SpanMock: Span {
 
     var scope: Scope?
 
+    func end() {}
+
+    func end(time: Date) {}
+
     func updateName(name: String) {}
 
     func setAttribute(key: String, value: AttributeValue?) {}

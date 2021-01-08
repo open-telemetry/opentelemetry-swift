@@ -63,7 +63,7 @@ class OtlpTraceExporterTests: XCTestCase {
         XCTAssertEqual(fakeCollector.receivedSpans, SpanAdapter.toProtoResourceSpans(spanDataList: spans))
         exporter.shutdown()
     }
-    
+
     func testExportAfterShutdown() {
         let span = generateFakeSpan()
         let exporter = OtlpTraceExporter(channel: channel)
@@ -71,7 +71,7 @@ class OtlpTraceExporterTests: XCTestCase {
         let result = exporter.export(spans: [span])
         XCTAssertEqual(result, SpanExporterResultCode.failure)
     }
-    
+
     func testExportCancelled() {
         fakeCollector.returnedStatus = GRPCStatus(code: .cancelled, message: nil)
         let exporter = OtlpTraceExporter(channel: channel)
@@ -82,16 +82,16 @@ class OtlpTraceExporterTests: XCTestCase {
     }
 
     private func generateFakeSpan() -> SpanData {
-        let duration = 900000000
-        let startNs = Int(Date().timeIntervalSince1970) * 1000000
-        let endNs = startNs + duration
+        let duration = 0.9
+        let start = Date()
+        let end = start.addingTimeInterval(duration)
 
         var testData = SpanData(traceId: TraceId(fromHexString: traceId),
                                 spanId: SpanId(fromHexString: spanId),
                                 name: "GET /api/endpoint",
                                 kind: SpanKind.server,
-                                startEpochNanos: UInt64(startNs),
-                                endEpochNanos: UInt64(endNs))
+                                startTime: start,
+                                endTime: end)
         testData.settingHasEnded(true)
         testData.settingTotalRecordedEvents(0)
         testData.settingLinks([SpanData.Link]())

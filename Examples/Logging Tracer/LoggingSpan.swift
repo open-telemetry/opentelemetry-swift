@@ -84,7 +84,7 @@ class LoggingSpan: Span {
         Logger.log("Span.End, Name: \(name)")
     }
 
-    public func end(timestamp: UInt64) {
-        Logger.log("Span.End, Name: \(name), timestamp:\(timestamp)) }")
+    public func end(time: Date) {
+        Logger.log("Span.End, Name: \(name), time:\(time)) }")
     }
 }

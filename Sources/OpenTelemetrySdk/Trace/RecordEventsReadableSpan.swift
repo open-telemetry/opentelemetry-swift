@@ -57,9 +57,9 @@ public class RecordEventsReadableSpan: ReadableSpan {
     /// instrumentation library of the named tracer which created this span
     public private(set) var instrumentationLibraryInfo: InstrumentationLibraryInfo
     /// The resource associated with this span.
-    public private(set) var startEpochNanos: UInt64
+    public private(set) var startTime: Date
     /// Set of recorded attributes. DO NOT CALL any other method that changes the ordering of events.
-    private var attributes: AttributesDictionay
+    private var attributes: AttributesDictionary
     /// List of recorded events.
     public private(set) var events: ArrayWithCapacity<SpanData.Event>
     /// Number of attributes recorded.
@@ -74,16 +74,17 @@ public class RecordEventsReadableSpan: ReadableSpan {
             }
         }
     }
+
     /// The scope where the span is associated
     public var scope: Scope?
 
-    /// Returns the latency of the {@code Span} in nanos. If still active then returns now() - start time.
-    public var latencyNanos: UInt64 {
-        return (hasEnded ? endEpochNanos! : clock.now) - startEpochNanos
+    /// Returns the latency of the Span in seconds. If still active then returns now() - start time.
+    public var latency: TimeInterval {
+        return endTime?.timeIntervalSince(startTime) ?? clock.now.timeIntervalSince(startTime)
     }
 
     /// The end time of the span.
-    public private(set) var endEpochNanos: UInt64?
+    public private(set) var endTime: Date?
     /// True if the span is ended.
     public private(set) var hasEnded: Bool = false
 
@@ -100,10 +101,10 @@ public class RecordEventsReadableSpan: ReadableSpan {
                  spanProcessor: SpanProcessor,
                  clock: Clock,
                  resource: Resource,
-                 attributes: AttributesDictionay,
+                 attributes: AttributesDictionary,
                  links: [SpanData.Link],
                  totalRecordedLinks: Int,
-                 startEpochNanos: UInt64) {
+                 startTime: Date?) {
         self.context = context
         self.name = name
         self.instrumentationLibraryInfo = instrumentationLibraryInfo
@@ -116,7 +117,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
         self.spanProcessor = spanProcessor
         self.clock = clock
         self.resource = resource
-        self.startEpochNanos = (startEpochNanos == 0 ? clock.now : startEpochNanos)
+        self.startTime = startTime ?? clock.now
         self.attributes = attributes
         events = ArrayWithCapacity<SpanData.Event>(capacity: traceConfig.maxNumberOfEvents)
         maxNumberOfAttributes = traceConfig.maxNumberOfAttributes
@@ -138,7 +139,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
     ///   - attributes: the attributes set during span creation.
     ///   - links: the links set during span creation, may be truncated.
     ///   - totalRecordedLinks: the total number of links set (including dropped links).
-    ///   - startEpochNanos: the timestamp for the new span.
+    ///   - startTime: the time for the new span.
     public static func startSpan(context: SpanContext,
                                  name: String,
                                  instrumentationLibraryInfo: InstrumentationLibraryInfo,
@@ -149,10 +150,11 @@ public class RecordEventsReadableSpan: ReadableSpan {
                                  spanProcessor: SpanProcessor,
                                  clock: Clock,
                                  resource: Resource,
-                                 attributes: AttributesDictionay,
+                                 attributes: AttributesDictionary,
                                  links: [SpanData.Link],
                                  totalRecordedLinks: Int,
-                                 startEpochNanos: UInt64) -> RecordEventsReadableSpan {
+                                 startTime: Date) -> RecordEventsReadableSpan {
+        print(startTime)
         let span = RecordEventsReadableSpan(context: context,
                                             name: name,
                                             instrumentationLibraryInfo: instrumentationLibraryInfo,
@@ -165,7 +167,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
                                             attributes: attributes,
                                             links: links,
                                             totalRecordedLinks: totalRecordedLinks,
-                                            startEpochNanos: startEpochNanos)
+                                            startTime: startTime)
         spanProcessor.onStart(span: span)
         return span
     }
@@ -180,12 +182,12 @@ public class RecordEventsReadableSpan: ReadableSpan {
                         instrumentationLibraryInfo: instrumentationLibraryInfo,
                         name: name,
                         kind: kind,
-                        startEpochNanos: startEpochNanos,
+                        startTime: startTime,
                         attributes: attributes.attributes,
                         events: adaptEvents(),
                         links: adaptLinks(),
                         status: status,
-                        endEpochNanos: endEpochNanos ?? clock.now,
+                        endTime: endTime ?? clock.now,
                         hasRemoteParent: hasRemoteParent,
                         hasEnded: hasEnded,
                         totalRecordedEvents: totalRecordedEvents,
@@ -197,7 +199,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
         let sourceEvents = events
         var result = [SpanData.Event]()
         sourceEvents.forEach {
-            result.append(SpanData.Event(name: $0.name, epochNanos: $0.epochNanos, attributes: $0.attributes))
+            result.append(SpanData.Event(name: $0.name, timestamp: $0.timestamp, attributes: $0.attributes))
         }
         return result
     }
@@ -229,7 +231,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
     }
 
     public func addEvent(name: String) {
-        addEvent(event: SpanData.Event(name: name, epochNanos: clock.now))
+        addEvent(event: SpanData.Event(name: name, timestamp: clock.now))
     }
 
     public func addEvent(name: String, timestamp: Date) {
@@ -237,13 +239,13 @@ public class RecordEventsReadableSpan: ReadableSpan {
     }
 
     public func addEvent(name: String, attributes: [String: AttributeValue]) {
-        var limitedAttributes = AttributesDictionay(capacity: maxNumberOfAttributesPerEvent)
+        var limitedAttributes = AttributesDictionary(capacity: maxNumberOfAttributesPerEvent)
         limitedAttributes.updateValues(attributes: attributes)
-        addEvent(event: SpanData.Event(name: name, epochNanos: clock.now, attributes: limitedAttributes.attributes))
+        addEvent(event: SpanData.Event(name: name, timestamp: clock.now, attributes: limitedAttributes.attributes))
     }
 
     public func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Date) {
-        var limitedAttributes = AttributesDictionay(capacity: maxNumberOfAttributesPerEvent)
+        var limitedAttributes = AttributesDictionary(capacity: maxNumberOfAttributesPerEvent)
         limitedAttributes.updateValues(attributes: attributes)
         addEvent(event: SpanData.Event(name: name, timestamp: timestamp, attributes: limitedAttributes.attributes))
     }
@@ -259,18 +261,14 @@ public class RecordEventsReadableSpan: ReadableSpan {
     }
 
     public func end() {
-        endInternal(timestamp: clock.now)
+        end(time: clock.now)
     }
 
-    public func end(timestamp: UInt64) {
-        endInternal(timestamp: timestamp == 0 ? clock.now : timestamp)
-    }
-
-    private func endInternal(timestamp: UInt64) {
+    public func end(time: Date) {
         if hasEnded {
             return
         }
-        endEpochNanos = timestamp
+        endTime = time
         hasEnded = true
         spanProcessor.onEnd(span: self)
         isRecording = false

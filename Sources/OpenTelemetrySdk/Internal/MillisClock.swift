@@ -16,17 +16,11 @@
 import Foundation
 import OpenTelemetryApi
 
-/// A Clock that uses Date().timeIntervalSince1970 .
 class MillisClock: Clock {
     ///  Returns a MillisClock
-    init() {
-    }
+    init() {}
 
-    var now: UInt64 {
-        return UInt64(Date().timeIntervalSince1970.toNanoseconds)
-    }
-
-    var nanoTime: UInt64 {
-        return UInt64(Date().timeIntervalSince1970.toNanoseconds)
+    var now: Date {
+        return Date()
     }
 }

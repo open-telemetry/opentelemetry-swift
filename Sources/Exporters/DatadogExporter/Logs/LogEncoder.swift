@@ -80,7 +80,7 @@ internal struct DDLog: Encodable {
             TracingAttributes.spanID: "\(span.spanId.rawValue)"
         ]
 
-        self.date = Date(timeIntervalSince1970: TimeInterval.fromNanoseconds(event.epochNanos))
+        self.date = event.timestamp
         self.status = Status(rawValue: event.attributes["status"]?.description ?? "info") ?? .info
         self.message = attributes.removeValue(forKey: "message")?.description ?? "Span event"
         self.serviceName = configuration.serviceName

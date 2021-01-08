@@ -40,10 +40,10 @@ class DatadogExporterTests: XCTestCase {
                                         tracesSent = true
                                         expecTrace.fulfill()
                                     },
-                                    logsReceivedCallback: {
+                                                                 logsReceivedCallback: {
                                         logsSent = true
                                         expecLog.fulfill()
-                                    }))
+        }))
         DispatchQueue.global(qos: .default).async {
             do {
                 try server.start()
@@ -83,7 +83,6 @@ class DatadogExporterTests: XCTestCase {
             XCTAssertTrue(tracesSent)
         } else {
             XCTFail()
-
         }
 
         server.stop()

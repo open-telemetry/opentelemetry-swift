@@ -67,7 +67,7 @@ final class PushControllerTests: XCTestCase {
 
     func validateMeterCollect(meterCollectCount: inout Int, expectedMeterCollectCount: Int, meterName: String, timeout: TimeInterval) {
         // Sleep in short intervals, so the actual test duration is not always the max wait time.
-        let start = DispatchTime.now()
+        let start = Date()
 
         var wait = true
         lock.withLockVoid {
@@ -83,7 +83,7 @@ final class PushControllerTests: XCTestCase {
                 }
             }
 
-            let elapsed = TimeInterval.fromNanoseconds(DispatchTime.now().uptimeNanoseconds - start.uptimeNanoseconds)
+            let elapsed = Date().timeIntervalSince(start)
             if elapsed <= timeout {
                 usleep(1000000)
             } else {

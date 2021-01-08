@@ -68,8 +68,8 @@ struct SpanAdapter {
         }
         protoSpan.name = spanData.name
         protoSpan.kind = toProtoSpanKind(kind: spanData.kind)
-        protoSpan.startTimeUnixNano = spanData.startEpochNanos
-        protoSpan.endTimeUnixNano = spanData.endEpochNanos
+        protoSpan.startTimeUnixNano = spanData.startTime.timeIntervalSince1970.toNanoseconds
+        protoSpan.endTimeUnixNano = spanData.endTime.timeIntervalSince1970.toNanoseconds
         spanData.attributes.forEach {
             protoSpan.attributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
         }
@@ -77,13 +77,13 @@ struct SpanAdapter {
         spanData.events.forEach {
             protoSpan.events.append(toProtoSpanEvent(event: $0))
         }
-        protoSpan.droppedEventsCount = UInt32(spanData.totalRecordedEvents - spanData.events.count )
+        protoSpan.droppedEventsCount = UInt32(spanData.totalRecordedEvents - spanData.events.count)
 
         spanData.links.forEach {
             protoSpan.links.append(toProtoSpanLink(link: $0))
         }
-        protoSpan.droppedLinksCount = UInt32(spanData.totalRecordedLinks - spanData.links.count )
-        protoSpan.status = toStatusProto(status: spanData.status ?? .unset)
+        protoSpan.droppedLinksCount = UInt32(spanData.totalRecordedLinks - spanData.links.count)
+        protoSpan.status = toStatusProto(status: spanData.status)
         return protoSpan
     }
 
@@ -105,7 +105,7 @@ struct SpanAdapter {
     static func toProtoSpanEvent(event: SpanData.Event) -> Opentelemetry_Proto_Trace_V1_Span.Event {
         var protoEvent = Opentelemetry_Proto_Trace_V1_Span.Event()
         protoEvent.name = event.name
-        protoEvent.timeUnixNano = event.epochNanos
+        protoEvent.timeUnixNano = event.timestamp.timeIntervalSince1970.toNanoseconds
         event.attributes.forEach {
             protoEvent.attributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
         }
@@ -125,12 +125,12 @@ struct SpanAdapter {
     static func toStatusProto(status: Status) -> Opentelemetry_Proto_Trace_V1_Status {
         var statusProto = Opentelemetry_Proto_Trace_V1_Status()
         switch status.statusCode {
-            case .ok:
-                statusProto.code = .ok
-            case .unset:
-                statusProto.code = .unset
-            case .error:
-                statusProto.code = .error
+        case .ok:
+            statusProto.code = .ok
+        case .unset:
+            statusProto.code = .unset
+        case .error:
+            statusProto.code = .error
         }
         if let desc = status.statusDescription {
             statusProto.message = desc

@@ -18,6 +18,10 @@ import OpenTelemetryApi
 @testable import OpenTelemetrySdk
 
 struct TestUtils {
+    static func dateFromNanos(_ nanos: UInt64) -> Date {
+        return Date(timeIntervalSince1970: Double(nanos) / 1000000000)
+    }
+
     static func generateRandomAttributes() -> [String: AttributeValue] {
         var result = [String: AttributeValue]()
         let name = UUID().uuidString
@@ -35,8 +39,8 @@ struct TestUtils {
                         instrumentationLibraryInfo: InstrumentationLibraryInfo(),
                         name: "spanName",
                         kind: .server,
-                        startEpochNanos: 100000000000 + 100,
-                        endEpochNanos: 200000000000 + 200,
+                        startTime: Date(timeIntervalSince1970: 100000000000 + 100),
+                        endTime: Date(timeIntervalSince1970: 200000000000 + 200),
                         hasRemoteParent: false,
                         hasEnded: true)
     }

@@ -66,13 +66,13 @@ public class TracerShim: OTTracer, BaseShimProtocol {
         }
 
         if let startTime = startTime {
-            builder.setStartTimestamp(timestamp: startTime)
+            builder.setStartTime(time: startTime)
         }
 
         let span = builder.startSpan()
         tracer.setActive(span)
         let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
-        if correlationContext != nil && !(correlationContext! == telemetryInfo.emptyCorrelationContext) {
+        if correlationContext != nil, !(correlationContext! == telemetryInfo.emptyCorrelationContext) {
             spanContextTable.create(spanShim: spanShim, distContext: correlationContext!)
         }
         return spanShim

@@ -60,13 +60,13 @@ struct ZipkinConversionExtension {
                 localEndpointCache[serviceName] = localEndpoint
             }
         }
-        
+
         if let serviceNamespace = attributeEnumerationState.serviceNamespace, !serviceNamespace.isEmpty {
             attributeEnumerationState.tags["service.namespace"] = serviceNamespace
         }
 
         var remoteEndpoint: ZipkinEndpoint?
-        if (otelSpan.kind == .client || otelSpan.kind == .producer) && attributeEnumerationState.RemoteEndpointServiceName != nil {
+        if otelSpan.kind == .client || otelSpan.kind == .producer, attributeEnumerationState.RemoteEndpointServiceName != nil {
             remoteEndpoint = remoteEndpointCache[attributeEnumerationState.RemoteEndpointServiceName!]
             if remoteEndpoint == nil {
                 remoteEndpoint = ZipkinEndpoint(serviceName: attributeEnumerationState.RemoteEndpointServiceName!)
@@ -90,8 +90,8 @@ struct ZipkinConversionExtension {
                           id: ZipkinConversionExtension.EncodeSpanId(spanId: otelSpan.spanId),
                           kind: ZipkinConversionExtension.toSpanKind(otelSpan: otelSpan),
                           name: otelSpan.name,
-                          timestamp: otelSpan.startEpochNanos / 1000,
-                          duration: (otelSpan.endEpochNanos - otelSpan.startEpochNanos) / 1000,
+                          timestamp: otelSpan.startTime.timeIntervalSince1970.toMicroseconds,
+                          duration: otelSpan.endTime.timeIntervalSince(otelSpan.startTime).toMicroseconds,
                           localEndpoint: localEndpoint,
                           remoteEndpoint: remoteEndpoint,
                           annotations: annotations,
@@ -128,7 +128,7 @@ struct ZipkinConversionExtension {
     }
 
     private static func processEvents(event: SpanData.Event) -> ZipkinAnnotation {
-        return ZipkinAnnotation(timestamp: event.epochNanos / 1000, value: event.name)
+        return ZipkinAnnotation(timestamp: event.timestamp.timeIntervalSince1970.toMicroseconds, value: event.name)
     }
 
     private static func processAttributes(state: inout AttributeEnumerationState, key: String, value: AttributeValue) {

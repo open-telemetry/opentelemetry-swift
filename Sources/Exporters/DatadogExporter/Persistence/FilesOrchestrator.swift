@@ -117,7 +117,7 @@ internal class FilesOrchestrator {
     func getAllFiles(excludingFilesNamed excludedFileNames: Set<String> = []) -> [ReadableFile]? {
         do {
             return try directory.files()
-                .filter({ excludedFileNames.contains($0.name) == false })
+                .filter { excludedFileNames.contains($0.name) == false }
         } catch {
             print("🔥 Failed to obtain readable files: \(error)")
             return nil
@@ -182,4 +182,25 @@ internal func fileNameFrom(fileCreationDate: Date) -> String {
 internal func fileCreationDateFrom(fileName: String) -> Date {
     let millisecondsSinceReferenceDate = TimeInterval(UInt64(fileName) ?? 0) / 1_000
     return Date(timeIntervalSinceReferenceDate: TimeInterval(millisecondsSinceReferenceDate))
+}
+
+private enum FixedWidthIntegerError<T: BinaryFloatingPoint>: Error {
+    case overflow(overflowingValue: T)
+}
+
+private extension FixedWidthInteger {
+    /* NOTE: RUMM-182
+     Self(:) is commonly used for conversion, however it fatalError() in case of conversion failure
+     Self(exactly:) does the exact same thing internally yet it returns nil instead of fatalError()
+     It is not trivial to guess if the conversion would fail or succeed, therefore we use Self(exactly:)
+     so that we don't need to guess in order to save the app from crashing
+
+     IMPORTANT: If you pass floatingPoint to Self(exactly:) without rounded(), it may return nil
+     */
+    init<T: BinaryFloatingPoint>(withReportingOverflow floatingPoint: T) throws {
+        guard let converted = Self(exactly: floatingPoint.rounded()) else {
+            throw FixedWidthIntegerError<T>.overflow(overflowingValue: floatingPoint)
+        }
+        self = converted
+    }
 }

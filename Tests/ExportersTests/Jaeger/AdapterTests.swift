@@ -202,9 +202,9 @@ class AdapterTests: XCTestCase {
                             instrumentationLibraryInfo: InstrumentationLibraryInfo(),
                             name: "GET /api/endpoint",
                             kind: .server,
-                            startEpochNanos: startMs * 1000,
+                            startTime: Date(timeIntervalSince1970: Double(startMs) / 1000),
                             status: Status.error,
-                            endEpochNanos: endMs * 1000,
+                            endTime: Date(timeIntervalSince1970: Double(endMs) / 1000),
                             hasRemoteParent: false)
 
         XCTAssertNotNil(Adapter.toJaeger(span: span))
@@ -220,8 +220,8 @@ class AdapterTests: XCTestCase {
                             spanId: SpanId(fromHexString: AdapterTests.spanId),
                             name: "GET /api/endpoint",
                             kind: .server,
-                            startEpochNanos: startMs * 1000,
-                            endEpochNanos: endMs * 1000)
+                            startTime: Date(timeIntervalSince1970: Double(startMs) / 1000),
+                            endTime: Date(timeIntervalSince1970: Double(endMs) / 1000))
         span.settingHasEnded(true)
         span.settingStatus(.error)
         span.settingAttributes(attributes)
@@ -235,10 +235,9 @@ class AdapterTests: XCTestCase {
     }
 
     private func getTimedEvent() -> SpanData.Event {
-        let epochNanos = UInt64(Date().timeIntervalSince1970 * 1000000)
         let valueS = AttributeValue.string("bar")
         let attributes = ["foo": valueS]
-        return SpanData.Event(name: "the log message", epochNanos: epochNanos, attributes: attributes)
+        return SpanData.Event(name: "the log message", timestamp: Date(), attributes: attributes)
     }
 
     private func getSpanData(startMs: UInt64, endMs: UInt64) -> SpanData {
@@ -256,12 +255,12 @@ class AdapterTests: XCTestCase {
                         instrumentationLibraryInfo: InstrumentationLibraryInfo(),
                         name: "GET /api/endpoint",
                         kind: .server,
-                        startEpochNanos: startMs * 1000,
+                        startTime: Date(timeIntervalSince1970: Double(startMs) / 1000),
                         attributes: attributes,
                         events: [getTimedEvent()],
                         links: [link],
                         status: Status.ok,
-                        endEpochNanos: endMs * 1000,
+                        endTime: Date(timeIntervalSince1970: Double(endMs) / 1000),
                         hasRemoteParent: false)
     }
 
