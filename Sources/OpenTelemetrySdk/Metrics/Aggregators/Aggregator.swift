@@ -28,38 +28,8 @@ public class Aggregator<T> {
     public func toMetricData() -> MetricData {
         return NoopMetricData()
     }
+
     public func getAggregationType() -> AggregationType {
         return .intSum
     }
-
 }
-
-// public class AnyAggregator<T>: Aggregator {
-//    private let _update: (T) -> Void
-//    private let _checkpoint: () -> Void
-//    private let _toMetricData: () -> MetricData
-//    private let _getAggregationType: () -> AggregationType
-//
-//    init<U: Aggregator>(_ aggregable: U) where U.T == T {
-//        _update = aggregable.update
-//        _checkpoint = aggregable.checkpoint
-//        _toMetricData = aggregable.toMetricData
-//        _getAggregationType = aggregable.getAggregationType
-//    }
-//
-//    func update(value: T) {
-//        _update(value)
-//    }
-//
-//    func checkpoint() {
-//        _checkpoint()
-//    }
-//
-//    func toMetricData() -> MetricData {
-//        return _toMetricData()
-//    }
-//
-//    func getAggregationType() -> AggregationType {
-//        return _getAggregationType()
-//    }
-// }
