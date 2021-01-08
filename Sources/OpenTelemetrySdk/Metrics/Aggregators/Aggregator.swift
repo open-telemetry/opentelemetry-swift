@@ -15,40 +15,21 @@
 
 import Foundation
 
-protocol Aggregator: AnyObject {
-    associatedtype T
-    func update(value: T)
-    func checkpoint()
-    func toMetricData() -> MetricData
-    func getAggregationType() -> AggregationType
-}
+public class Aggregator<T> {
+    var lastStart: Date = Date.distantFuture
+    var lastEnd: Date = Date()
 
-public class AnyAggregator<T>: Aggregator {
-    private let _update: (T) -> Void
-    private let _checkpoint: () -> Void
-    private let _toMetricData: () -> MetricData
-    private let _getAggregationType: () -> AggregationType
-
-    init<U: Aggregator>(_ aggregable: U) where U.T == T {
-        _update = aggregable.update
-        _checkpoint = aggregable.checkpoint
-        _toMetricData = aggregable.toMetricData
-        _getAggregationType = aggregable.getAggregationType
+    public func update(value: T) {}
+    public func checkpoint() {
+        lastStart = lastEnd
+        lastEnd = Date()
     }
 
-    func update(value: T) {
-        _update(value)
+    public func toMetricData() -> MetricData {
+        return NoopMetricData()
     }
 
-    func checkpoint() {
-        _checkpoint()
-    }
-
-    func toMetricData() -> MetricData {
-        return _toMetricData()
-    }
-
-    func getAggregationType() -> AggregationType {
-        return _getAggregationType()
+    public func getAggregationType() -> AggregationType {
+        return .intSum
     }
 }

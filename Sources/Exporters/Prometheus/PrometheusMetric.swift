@@ -49,7 +49,7 @@ struct PrometheusMetric {
         }
 
         values.forEach { value in
-            output += value.name ?? name
+            output += value.name != nil ? PrometheusMetric.getSafeMetricName(name: value.name!) : name
 
             if value.labels.count > 0 {
                 output += "{"

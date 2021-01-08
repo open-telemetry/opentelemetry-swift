@@ -16,13 +16,13 @@
 import Foundation
 
 /// Aggregator which calculates summary (Min,Max,Sum,Count) from measures.
-public class MeasureMinMaxSumCountAggregator<T: SignedNumeric & Comparable>: Aggregator {
+public class MeasureMinMaxSumCountAggregator<T: SignedNumeric & Comparable>: Aggregator<T> {
     fileprivate var summary = Summary<T>()
     fileprivate var pointCheck = Summary<T>()
 
     private let lock = Lock()
 
-    func update(value: T) {
+    override public func update(value: T) {
         lock.withLockVoid {
             self.summary.count += 1
             self.summary.sum += value
@@ -31,22 +31,24 @@ public class MeasureMinMaxSumCountAggregator<T: SignedNumeric & Comparable>: Agg
         }
     }
 
-    func checkpoint() {
+    override public func checkpoint() {
         lock.withLockVoid {
+            super.checkpoint()
             pointCheck = summary
             summary = Summary<T>()
         }
     }
 
-    func toMetricData() -> MetricData {
-        return SummaryData<T>(timestamp: Date(),
+    public override func toMetricData() -> MetricData {
+        return SummaryData<T>(startTimestamp: lastStart,
+                              timestamp: lastEnd,
                               count: pointCheck.count,
                               sum: pointCheck.sum,
                               min: pointCheck.min ?? 0,
                               max: pointCheck.max ?? 0)
     }
 
-    func getAggregationType() -> AggregationType {
+    public override func getAggregationType() -> AggregationType {
         if T.self == Double.Type.self {
             return .doubleSummary
         } else {

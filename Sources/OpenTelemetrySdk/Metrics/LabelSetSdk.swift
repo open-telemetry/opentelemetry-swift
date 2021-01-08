@@ -36,7 +36,6 @@ class LabelSetSdk: LabelSet {
             output += $0
             isFirstLabel = false
         }
-
         return output
     }
 }
