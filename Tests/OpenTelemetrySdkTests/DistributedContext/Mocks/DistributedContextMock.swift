@@ -17,9 +17,9 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
-class CorrelationContextMock: CorrelationContext {
-    static func contextBuilder() -> CorrelationContextBuilder {
-        return EmptyCorrelationContextBuilder()
+class BaggageMock: Baggage {
+    static func contextBuilder() -> BaggageBuilder {
+        return EmptyBaggageBuilder()
     }
 
     func getEntries() -> [Entry] {

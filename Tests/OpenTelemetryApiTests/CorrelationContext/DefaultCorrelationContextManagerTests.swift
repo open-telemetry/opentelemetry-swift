@@ -19,9 +19,9 @@ import XCTest
 private let key = EntryKey(name: "key")!
 private let value = EntryValue(string: "value")!
 
-class TestCorrelationContext: CorrelationContext {
-    static func contextBuilder() -> CorrelationContextBuilder {
-        EmptyCorrelationContextBuilder()
+class TestBaggage: Baggage {
+    static func contextBuilder() -> BaggageBuilder {
+        EmptyBaggageBuilder()
     }
 
     func getEntries() -> [Entry] {
@@ -33,45 +33,45 @@ class TestCorrelationContext: CorrelationContext {
     }
 }
 
-class DefaultCorrelationContextManagerTests: XCTestCase {
-    let defaultCorrelationContextManager = DefaultCorrelationContextManager.instance
-    let correlationContext = TestCorrelationContext()
+class DefaultBaggageManagerTests: XCTestCase {
+    let defaultBaggageManager = DefaultBaggageManager.instance
+    let baggage = TestBaggage()
 
     func testBuilderMethod() {
-        let builder = defaultCorrelationContextManager.contextBuilder()
+        let builder = defaultBaggageManager.contextBuilder()
         XCTAssertEqual(builder.build().getEntries().count, 0)
     }
 
     func testGetCurrentContext_DefaultContext() {
-        XCTAssertTrue(defaultCorrelationContextManager.getCurrentContext() === EmptyCorrelationContext.instance)
+        XCTAssertTrue(defaultBaggageManager.getCurrentContext() === EmptyBaggage.instance)
     }
 
     func testGetCurrentContext_ContextSetToNil() {
-        let correlationContext = defaultCorrelationContextManager.getCurrentContext()
-        XCTAssertNotNil(correlationContext)
-        XCTAssertEqual(correlationContext.getEntries().count, 0)
+        let baggage = defaultBaggageManager.getCurrentContext()
+        XCTAssertNotNil(baggage)
+        XCTAssertEqual(baggage.getEntries().count, 0)
     }
 
     func testWithContext() {
-        XCTAssertTrue(defaultCorrelationContextManager.getCurrentContext() === EmptyCorrelationContext.instance)
-        var wtm = defaultCorrelationContextManager.withContext(correlationContext: correlationContext)
-        XCTAssertTrue(defaultCorrelationContextManager.getCurrentContext() === correlationContext)
+        XCTAssertTrue(defaultBaggageManager.getCurrentContext() === EmptyBaggage.instance)
+        var wtm = defaultBaggageManager.withContext(baggage: baggage)
+        XCTAssertTrue(defaultBaggageManager.getCurrentContext() === baggage)
         wtm.close()
-        XCTAssertTrue(defaultCorrelationContextManager.getCurrentContext() === EmptyCorrelationContext.instance)
+        XCTAssertTrue(defaultBaggageManager.getCurrentContext() === EmptyBaggage.instance)
     }
 
     func testWithContextUsingWrap() {
         let expec = expectation(description: "testWithContextUsingWrap")
-        var wtm = defaultCorrelationContextManager.withContext(correlationContext: correlationContext)
-        XCTAssertTrue(defaultCorrelationContextManager.getCurrentContext() === correlationContext)
+        var wtm = defaultBaggageManager.withContext(baggage: baggage)
+        XCTAssertTrue(defaultBaggageManager.getCurrentContext() === baggage)
         let semaphore = DispatchSemaphore(value: 0)
         DispatchQueue.global().async {
             semaphore.wait()
-            XCTAssertTrue(self.defaultCorrelationContextManager.getCurrentContext() === self.correlationContext)
+            XCTAssertTrue(self.defaultBaggageManager.getCurrentContext() === self.baggage)
             expec.fulfill()
         }
         wtm.close()
-        XCTAssertTrue(defaultCorrelationContextManager.getCurrentContext() === EmptyCorrelationContext.instance)
+        XCTAssertTrue(defaultBaggageManager.getCurrentContext() === EmptyBaggage.instance)
         semaphore.signal()
         waitForExpectations(timeout: 30) { error in
             if let error = error {

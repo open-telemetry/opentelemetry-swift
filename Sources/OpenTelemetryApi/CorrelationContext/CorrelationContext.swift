@@ -17,13 +17,13 @@ import Foundation
 
 /// A map from EntryKey to EntryValue and EntryMetadata that can be used to
 /// label anything that is associated with a specific operation.
-/// For example, CorrelationContexts can be used to label stats, log messages, or
+/// For example, Baggages can be used to label stats, log messages, or
 /// debugging information.
-public protocol CorrelationContext: AnyObject {
-    /// Builder for the CorrelationContext class
-    static func contextBuilder() -> CorrelationContextBuilder
+public protocol Baggage: AnyObject {
+    /// Builder for the Baggage class
+    static func contextBuilder() -> BaggageBuilder
 
-    /// Returns an immutable collection of the entries in this CorrelationContext. Order of
+    /// Returns an immutable collection of the entries in this Baggage. Order of
     /// entries is not guaranteed.
     func getEntries() -> [Entry]
 
@@ -32,7 +32,7 @@ public protocol CorrelationContext: AnyObject {
     func getEntryValue(key: EntryKey) -> EntryValue?
 }
 
-public func == (lhs: CorrelationContext, rhs: CorrelationContext) -> Bool {
+public func == (lhs: Baggage, rhs: Baggage) -> Bool {
     guard type(of: lhs) == type(of: rhs) else { return false }
     return lhs.getEntries() == rhs.getEntries()
 }

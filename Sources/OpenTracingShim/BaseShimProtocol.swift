@@ -29,7 +29,7 @@ extension BaseShimProtocol {
         return telemetryInfo.spanContextTable
     }
 
-    var contextManager: CorrelationContextManager {
+    var contextManager: BaggageManager {
         return telemetryInfo.contextManager
     }
 

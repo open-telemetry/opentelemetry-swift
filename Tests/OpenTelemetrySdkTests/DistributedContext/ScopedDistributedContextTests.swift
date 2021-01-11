@@ -17,7 +17,7 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 import XCTest
 
-class ScopedCorrelationContextTests: XCTestCase {
+class ScopedBaggageTests: XCTestCase {
     let key1 = EntryKey(name: "key 1")!
     let key2 = EntryKey(name: "key 2")!
     let key3 = EntryKey(name: "key 3")!
@@ -30,19 +30,19 @@ class ScopedCorrelationContextTests: XCTestCase {
     let metadataUnlimitedPropagation = EntryMetadata(entryTtl: .unlimitedPropagation)
     let metadataNoPropagation = EntryMetadata(entryTtl: .noPropagation)
 
-    var contextManager = CorrelationContextManagerSdk()
+    var contextManager = BaggageManagerSdk()
 
-    func testEmptyCorrelationContext() {
-        let defaultCorrelationContext = contextManager.getCurrentContext()
-        XCTAssertEqual(defaultCorrelationContext.getEntries().count, 0)
-        XCTAssertTrue(defaultCorrelationContext is EmptyCorrelationContext)
+    func testEmptyBaggage() {
+        let defaultBaggage = contextManager.getCurrentContext()
+        XCTAssertEqual(defaultBaggage.getEntries().count, 0)
+        XCTAssertTrue(defaultBaggage is EmptyBaggage)
     }
 
     func testWithContext() {
         XCTAssertEqual(contextManager.getCurrentContext().getEntries().count, 0)
         let scopedEntries = contextManager.contextBuilder().put(key: key1, value: value1, metadata: metadataUnlimitedPropagation).build()
         do {
-            let scope = contextManager.withContext(correlationContext: scopedEntries)
+            let scope = contextManager.withContext(baggage: scopedEntries)
             XCTAssertTrue(contextManager.getCurrentContext() === scopedEntries)
             print(scope) // Silence unused warning
         }
@@ -52,7 +52,7 @@ class ScopedCorrelationContextTests: XCTestCase {
     func testCreateBuilderFromCurrentEntries() {
         let scopedDistContext = contextManager.contextBuilder().put(key: key1, value: value1, metadata: metadataUnlimitedPropagation).build()
         do {
-            let scope = contextManager.withContext(correlationContext: scopedDistContext)
+            let scope = contextManager.withContext(baggage: scopedDistContext)
             let newEntries = contextManager.contextBuilder().put(key: key2, value: value2, metadata: metadataUnlimitedPropagation).build()
             XCTAssertEqual(newEntries.getEntries().count, 2)
             XCTAssertEqual(newEntries.getEntries().sorted(), [Entry(key: key1, value: value1, entryMetadata: metadataUnlimitedPropagation), Entry(key: key2, value: value2, entryMetadata: metadataUnlimitedPropagation)].sorted())
@@ -65,7 +65,7 @@ class ScopedCorrelationContextTests: XCTestCase {
         XCTAssertEqual(contextManager.getCurrentContext().getEntries().count, 0)
         let scopedDistContext = contextManager.contextBuilder().put(key: key1, value: value1, metadata: metadataUnlimitedPropagation).build()
         do {
-            let scope = contextManager.withContext(correlationContext: scopedDistContext)
+            let scope = contextManager.withContext(baggage: scopedDistContext)
             XCTAssertEqual(contextManager.getCurrentContext().getEntries().count, 1)
             XCTAssertEqual(contextManager.getCurrentContext().getEntries().first, Entry(key: key1, value: value1, entryMetadata: metadataUnlimitedPropagation))
             print(scope) // Silence unused warning
@@ -76,10 +76,10 @@ class ScopedCorrelationContextTests: XCTestCase {
     func testAddToCurrentEntriesWithBuilder() {
         let scopedDistContext = contextManager.contextBuilder().put(key: key1, value: value1, metadata: metadataUnlimitedPropagation).build()
         do {
-            let scope1 = contextManager.withContext(correlationContext: scopedDistContext)
+            let scope1 = contextManager.withContext(baggage: scopedDistContext)
             let innerDistContext = contextManager.contextBuilder().put(key: key2, value: value2, metadata: metadataUnlimitedPropagation).build()
             do {
-                let scope2 = contextManager.withContext(correlationContext: innerDistContext)
+                let scope2 = contextManager.withContext(baggage: innerDistContext)
                 XCTAssertEqual(contextManager.getCurrentContext().getEntries().sorted(),
                                [Entry(key: key1, value: value1, entryMetadata: metadataUnlimitedPropagation),
                                 Entry(key: key2, value: value2, entryMetadata: metadataUnlimitedPropagation)].sorted())
@@ -92,19 +92,19 @@ class ScopedCorrelationContextTests: XCTestCase {
         }
     }
 
-    func testMultiScopeCorrelationContextWithMetadata() {
+    func testMultiScopeBaggageWithMetadata() {
         let scopedDistContext = contextManager.contextBuilder().put(key: key1, value: value1, metadata: metadataUnlimitedPropagation)
             .put(key: key2, value: value2, metadata: metadataUnlimitedPropagation)
             .build()
 
         do {
-            let scope1 = contextManager.withContext(correlationContext: scopedDistContext)
+            let scope1 = contextManager.withContext(baggage: scopedDistContext)
 
             let innerDistContext = contextManager.contextBuilder().put(key: key3, value: value3, metadata: metadataUnlimitedPropagation)
                 .put(key: key2, value: value4, metadata: metadataUnlimitedPropagation)
                 .build()
             do {
-                let scope2 = contextManager.withContext(correlationContext: innerDistContext)
+                let scope2 = contextManager.withContext(baggage: innerDistContext)
                 XCTAssertEqual(contextManager.getCurrentContext().getEntries().sorted(),
                                [Entry(key: key1, value: value1, entryMetadata: metadataUnlimitedPropagation),
                                 Entry(key: key2, value: value4, entryMetadata: metadataUnlimitedPropagation),
@@ -121,7 +121,7 @@ class ScopedCorrelationContextTests: XCTestCase {
         XCTAssertEqual(contextManager.getCurrentContext().getEntries().count, 0)
         let scopedDistContext = contextManager.contextBuilder().put(key: key1, value: value1, metadata: metadataUnlimitedPropagation).build()
         do {
-            let scope = contextManager.withContext(correlationContext: scopedDistContext)
+            let scope = contextManager.withContext(baggage: scopedDistContext)
             let innerDistContext = contextManager.contextBuilder().setNoParent().put(key: key2, value: value2, metadata: metadataUnlimitedPropagation).build()
             XCTAssertEqual(innerDistContext.getEntries(), [Entry(key: key2, value: value2, entryMetadata: metadataUnlimitedPropagation)])
             print(scope) // Silence unused warning

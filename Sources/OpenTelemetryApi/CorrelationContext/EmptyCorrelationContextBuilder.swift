@@ -15,8 +15,8 @@
 
 import Foundation
 
-public class EmptyCorrelationContextBuilder: CorrelationContextBuilder {
-    public func setParent(_ parent: CorrelationContext) -> Self {
+public class EmptyBaggageBuilder: BaggageBuilder {
+    public func setParent(_ parent: Baggage) -> Self {
         return self
     }
 
@@ -32,8 +32,8 @@ public class EmptyCorrelationContextBuilder: CorrelationContextBuilder {
         return self
     }
 
-    public func build() -> CorrelationContext {
-        return EmptyCorrelationContext.instance
+    public func build() -> Baggage {
+        return EmptyBaggage.instance
     }
 
     public init() {}

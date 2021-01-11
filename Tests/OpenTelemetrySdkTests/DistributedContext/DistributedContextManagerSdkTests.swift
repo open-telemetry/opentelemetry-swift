@@ -17,30 +17,30 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 import XCTest
 
-class CorrelationContextManagerSdkTests: XCTestCase {
-    let correlationContext = CorrelationContextMock()
-    let contextManager = CorrelationContextManagerSdk()
+class BaggageManagerSdkTests: XCTestCase {
+    let baggage = BaggageMock()
+    let contextManager = BaggageManagerSdk()
 
     func testGetCurrentContext_DefaultContext() {
-        XCTAssertTrue(contextManager.getCurrentContext() === EmptyCorrelationContext.instance)
+        XCTAssertTrue(contextManager.getCurrentContext() === EmptyBaggage.instance)
     }
 
-    func testWithCorrelationContext() {
-        XCTAssertTrue(contextManager.getCurrentContext() === EmptyCorrelationContext.instance)
-        var wtm = contextManager.withContext(correlationContext: correlationContext)
-        XCTAssertTrue(contextManager.getCurrentContext() === correlationContext)
+    func testWithBaggage() {
+        XCTAssertTrue(contextManager.getCurrentContext() === EmptyBaggage.instance)
+        var wtm = contextManager.withContext(baggage: baggage)
+        XCTAssertTrue(contextManager.getCurrentContext() === baggage)
         wtm.close()
-        XCTAssertTrue(contextManager.getCurrentContext() === EmptyCorrelationContext.instance)
+        XCTAssertTrue(contextManager.getCurrentContext() === EmptyBaggage.instance)
     }
 
-    func testWithCorrelationContextUsingWrap() {
-        let expec = expectation(description: "testWithCorrelationContextUsingWrap")
-        var wtm = contextManager.withContext(correlationContext: correlationContext)
-        XCTAssertTrue(contextManager.getCurrentContext() === correlationContext)
+    func testWithBaggageUsingWrap() {
+        let expec = expectation(description: "testWithBaggageUsingWrap")
+        var wtm = contextManager.withContext(baggage: baggage)
+        XCTAssertTrue(contextManager.getCurrentContext() === baggage)
         let semaphore = DispatchSemaphore(value: 0)
         DispatchQueue.global().async {
             semaphore.wait()
-            XCTAssertTrue(self.contextManager.getCurrentContext() === self.correlationContext)
+            XCTAssertTrue(self.contextManager.getCurrentContext() === self.baggage)
             expec.fulfill()
         }
         wtm.close()

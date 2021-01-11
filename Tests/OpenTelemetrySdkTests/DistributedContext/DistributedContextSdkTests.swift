@@ -17,8 +17,8 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 import XCTest
 
-class CorrelationContextSdkTests: XCTestCase {
-    let contextManager = CorrelationContextManagerSdk()
+class BaggageSdkTests: XCTestCase {
+    let contextManager = BaggageManagerSdk()
 
     let tmd = EntryMetadata(entryTtl: .unlimitedPropagation)
 
@@ -37,71 +37,71 @@ class CorrelationContextSdkTests: XCTestCase {
     }
 
     func testGetEntries_empty() {
-        let correlationContext = CorrelationContextSdk.contextBuilder().build()
-        XCTAssertEqual(correlationContext.getEntries().count, 0)
+        let baggage = BaggageSdk.contextBuilder().build()
+        XCTAssertEqual(baggage.getEntries().count, 0)
     }
 
     func testGetEntries_nonEmpty() {
-        let correlationContext = CorrelationContextTestUtil.listToCorrelationContext(entries: [t1, t2])
-        XCTAssertEqual(correlationContext.getEntries().sorted(), [t1, t2].sorted())
+        let baggage = BaggageTestUtil.listToBaggage(entries: [t1, t2])
+        XCTAssertEqual(baggage.getEntries().sorted(), [t1, t2].sorted())
     }
 
     func testGetEntries_chain() {
         let t1alt = Entry(key: k1, value: v2, entryMetadata: tmd)
-        let parent = CorrelationContextTestUtil.listToCorrelationContext(entries: [t1, t2])
-        let correlationContext = CorrelationContextSdk.contextBuilder().setParent(parent).put(key: t1alt.key, value: t1alt.value, metadata: t1alt.metadata).build()
-        XCTAssertEqual(correlationContext.getEntries().sorted(), [t1alt, t2].sorted())
+        let parent = BaggageTestUtil.listToBaggage(entries: [t1, t2])
+        let baggage = BaggageSdk.contextBuilder().setParent(parent).put(key: t1alt.key, value: t1alt.value, metadata: t1alt.metadata).build()
+        XCTAssertEqual(baggage.getEntries().sorted(), [t1alt, t2].sorted())
     }
 
     func testPut_newKey() {
-        let correlationContext = CorrelationContextTestUtil.listToCorrelationContext(entries: [t1])
-        XCTAssertEqual(contextManager.contextBuilder().setParent(correlationContext).put(key: k2, value: v2, metadata: tmd).build().getEntries().sorted(), [t1, t2].sorted())
+        let baggage = BaggageTestUtil.listToBaggage(entries: [t1])
+        XCTAssertEqual(contextManager.contextBuilder().setParent(baggage).put(key: k2, value: v2, metadata: tmd).build().getEntries().sorted(), [t1, t2].sorted())
     }
 
     func testPut_existingKey() {
-        let correlationContext = CorrelationContextTestUtil.listToCorrelationContext(entries: [t1])
-        XCTAssertEqual(contextManager.contextBuilder().setParent(correlationContext).put(key: k1, value: v2, metadata: tmd).build().getEntries(), [Entry(key: k1, value: v2, entryMetadata: tmd)])
+        let baggage = BaggageTestUtil.listToBaggage(entries: [t1])
+        XCTAssertEqual(contextManager.contextBuilder().setParent(baggage).put(key: k1, value: v2, metadata: tmd).build().getEntries(), [Entry(key: k1, value: v2, entryMetadata: tmd)])
     }
 
     func testPetParent_setNoParent() {
-        let parent = CorrelationContextTestUtil.listToCorrelationContext(entries: [t1])
-        let correlationContext = contextManager.contextBuilder().setParent(parent).setNoParent().build()
-        XCTAssertEqual(correlationContext.getEntries().count, 0)
+        let parent = BaggageTestUtil.listToBaggage(entries: [t1])
+        let baggage = contextManager.contextBuilder().setParent(parent).setNoParent().build()
+        XCTAssertEqual(baggage.getEntries().count, 0)
     }
 
     func testRemove_existingKey() {
-        let builder = CorrelationContextSdkBuilder()
+        let builder = BaggageSdkBuilder()
         builder.put(key: t1.key, value: t1.value, metadata: t1.metadata)
         builder.put(key: t2.key, value: t2.value, metadata: t2.metadata)
         XCTAssertEqual(builder.remove(key: k1).build().getEntries(), [t2])
     }
 
     func testRemove_differentKey() {
-        let builder = CorrelationContextSdkBuilder()
+        let builder = BaggageSdkBuilder()
         builder.put(key: t1.key, value: t1.value, metadata: t1.metadata)
         builder.put(key: t2.key, value: t2.value, metadata: t2.metadata)
         XCTAssertEqual(builder.remove(key: k2).build().getEntries(), [t1])
     }
 
     func testRemove_keyFromParent() {
-        let correlationContext = CorrelationContextTestUtil.listToCorrelationContext(entries: [t1, t2])
-        XCTAssertEqual(contextManager.contextBuilder().setParent(correlationContext).remove(key: k1).build().getEntries(), [t2])
+        let baggage = BaggageTestUtil.listToBaggage(entries: [t1, t2])
+        XCTAssertEqual(contextManager.contextBuilder().setParent(baggage).remove(key: k1).build().getEntries(), [t2])
     }
 
     func testEquals() {
-        XCTAssertEqual(contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v2, metadata: tmd).build() as! CorrelationContextSdk,
-                       contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v2, metadata: tmd).build() as! CorrelationContextSdk)
-        XCTAssertEqual(contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v2, metadata: tmd).build() as! CorrelationContextSdk,
-                       contextManager.contextBuilder().put(key: k2, value: v2, metadata: tmd).put(key: k1, value: v1, metadata: tmd).build() as! CorrelationContextSdk)
-        XCTAssertNotEqual(contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v2, metadata: tmd).build() as! CorrelationContextSdk,
-                          contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! CorrelationContextSdk)
-        XCTAssertNotEqual(contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v2, metadata: tmd).build() as! CorrelationContextSdk,
-                          contextManager.contextBuilder().put(key: k1, value: v2, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! CorrelationContextSdk)
-        XCTAssertNotEqual(contextManager.contextBuilder().put(key: k2, value: v2, metadata: tmd).put(key: k1, value: v1, metadata: tmd).build() as! CorrelationContextSdk,
-                          contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! CorrelationContextSdk)
-        XCTAssertNotEqual(contextManager.contextBuilder().put(key: k2, value: v2, metadata: tmd).put(key: k1, value: v1, metadata: tmd).build() as! CorrelationContextSdk,
-                          contextManager.contextBuilder().put(key: k1, value: v2, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! CorrelationContextSdk)
-        XCTAssertNotEqual(contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! CorrelationContextSdk,
-                          contextManager.contextBuilder().put(key: k1, value: v2, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! CorrelationContextSdk)
+        XCTAssertEqual(contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v2, metadata: tmd).build() as! BaggageSdk,
+                       contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v2, metadata: tmd).build() as! BaggageSdk)
+        XCTAssertEqual(contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v2, metadata: tmd).build() as! BaggageSdk,
+                       contextManager.contextBuilder().put(key: k2, value: v2, metadata: tmd).put(key: k1, value: v1, metadata: tmd).build() as! BaggageSdk)
+        XCTAssertNotEqual(contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v2, metadata: tmd).build() as! BaggageSdk,
+                          contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! BaggageSdk)
+        XCTAssertNotEqual(contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v2, metadata: tmd).build() as! BaggageSdk,
+                          contextManager.contextBuilder().put(key: k1, value: v2, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! BaggageSdk)
+        XCTAssertNotEqual(contextManager.contextBuilder().put(key: k2, value: v2, metadata: tmd).put(key: k1, value: v1, metadata: tmd).build() as! BaggageSdk,
+                          contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! BaggageSdk)
+        XCTAssertNotEqual(contextManager.contextBuilder().put(key: k2, value: v2, metadata: tmd).put(key: k1, value: v1, metadata: tmd).build() as! BaggageSdk,
+                          contextManager.contextBuilder().put(key: k1, value: v2, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! BaggageSdk)
+        XCTAssertNotEqual(contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! BaggageSdk,
+                          contextManager.contextBuilder().put(key: k1, value: v2, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! BaggageSdk)
     }
 }

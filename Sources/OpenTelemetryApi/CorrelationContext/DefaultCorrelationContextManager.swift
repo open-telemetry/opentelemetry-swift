@@ -15,23 +15,23 @@
 
 import Foundation
 
-/// No-op implementations of CorrelationContextManager.
-public class DefaultCorrelationContextManager: CorrelationContextManager {
-    ///  Returns a CorrelationContextManager singleton that is the default implementation for
-    ///  CorrelationContextManager.
-    public static var instance = DefaultCorrelationContextManager()
+/// No-op implementations of BaggageManager.
+public class DefaultBaggageManager: BaggageManager {
+    ///  Returns a BaggageManager singleton that is the default implementation for
+    ///  BaggageManager.
+    public static var instance = DefaultBaggageManager()
 
     private init() {}
 
-    public func contextBuilder() -> CorrelationContextBuilder {
-        return EmptyCorrelationContextBuilder()
+    public func contextBuilder() -> BaggageBuilder {
+        return EmptyBaggageBuilder()
     }
 
-    public func getCurrentContext() -> CorrelationContext {
-        ContextUtils.getCurrentCorrelationContext() ?? EmptyCorrelationContext.instance
+    public func getCurrentContext() -> Baggage {
+        ContextUtils.getCurrentBaggage() ?? EmptyBaggage.instance
     }
 
-    public func withContext(correlationContext: CorrelationContext) -> Scope {
-        return ContextUtils.withCorrelationContext(correlationContext)
+    public func withContext(baggage: Baggage) -> Scope {
+        return ContextUtils.withBaggage(baggage)
     }
 }

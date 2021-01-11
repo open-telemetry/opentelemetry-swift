@@ -33,7 +33,7 @@ public class TraceShim {
                                                        propagators: OpenTelemetrySDK.instance.propagators))
     }
 
-    public static func createTracerShim(tracerProvider: TracerProvider, contextManager: CorrelationContextManager) -> OTTracer {
+    public static func createTracerShim(tracerProvider: TracerProvider, contextManager: BaggageManager) -> OTTracer {
         return TracerShim(telemetryInfo: TelemetryInfo(tracer: TraceShim.getTracer(tracerProvider: tracerProvider),
                                                        contextManager: contextManager,
                                                        propagators: OpenTelemetrySDK.instance.propagators))

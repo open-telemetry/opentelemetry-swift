@@ -15,7 +15,7 @@
 
 import Foundation
 
-/// A key to a value stored in a CorrelationContext.
+/// A key to a value stored in a Baggage.
 /// Each EntryKey has a String name. Names have a maximum length of 255
 /// and contain only printable ASCII characters.
 /// EntryKeys are designed to be used as constants. Declaring each key as a constant

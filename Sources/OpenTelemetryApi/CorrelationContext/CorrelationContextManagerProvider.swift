@@ -15,6 +15,6 @@
 
 import Foundation
 
-public protocol CorrelationContextManagerProvider {
-    func create() -> CorrelationContextManager
+public protocol BaggageManagerProvider {
+    func create() -> BaggageManager
 }

@@ -28,7 +28,7 @@ class TraceShimTests: XCTestCase {
 
     func testCreateTracerShim() {
         let sdk = OpenTelemetrySDK.instance.tracerProvider
-        let contextManager = CorrelationContextManagerSdk()
+        let contextManager = BaggageManagerSdk()
         let tracerShim = TraceShim.createTracerShim(tracerProvider: sdk, contextManager: contextManager) as! TracerShim
 
         XCTAssert(sdk.get(instrumentationName: "opentracingshim", instrumentationVersion: nil) === tracerShim.tracer)

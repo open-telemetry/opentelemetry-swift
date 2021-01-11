@@ -17,12 +17,12 @@ import Foundation
 import OpenTelemetryApi
 @testable import OpenTelemetrySdk
 
-struct CorrelationContextTestUtil {
-    static func listToCorrelationContext(entries: [Entry]) -> CorrelationContextSdk {
-        let builder = CorrelationContextSdk.contextBuilder()
+struct BaggageTestUtil {
+    static func listToBaggage(entries: [Entry]) -> BaggageSdk {
+        let builder = BaggageSdk.contextBuilder()
         for entry in entries {
             builder.put(key: entry.key, value: entry.value, metadata: entry.metadata)
         }
-        return builder.build() as! CorrelationContextSdk
+        return builder.build() as! BaggageSdk
     }
 }

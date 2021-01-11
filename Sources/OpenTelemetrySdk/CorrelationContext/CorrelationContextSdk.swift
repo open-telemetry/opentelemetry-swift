@@ -16,22 +16,22 @@
 import Foundation
 import OpenTelemetryApi
 
-public class CorrelationContextSdk: CorrelationContext, Equatable {
+public class BaggageSdk: Baggage, Equatable {
     // The types of the EntryKey and Entry must match for each entry.
     var entries: [EntryKey: Entry?]
-    var parent: CorrelationContextSdk?
+    var parent: BaggageSdk?
 
-    /// Creates a new CorrelationContextSdk with the given entries.
+    /// Creates a new BaggageSdk with the given entries.
     /// - Parameters:
-    ///   - entries: the initial entries for this CorrelationContextSdk
+    ///   - entries: the initial entries for this BaggageSdk
     ///   - parent: parent providing a default set of entries
-    fileprivate init(entries: [EntryKey: Entry?], parent: CorrelationContextSdk?) {
+    fileprivate init(entries: [EntryKey: Entry?], parent: BaggageSdk?) {
         self.entries = entries
         self.parent = parent
     }
 
-    public static func contextBuilder() -> CorrelationContextBuilder {
-        return CorrelationContextSdkBuilder()
+    public static func contextBuilder() -> BaggageBuilder {
+        return BaggageSdkBuilder()
     }
 
     public func getEntries() -> [Entry] {
@@ -50,20 +50,20 @@ public class CorrelationContextSdk: CorrelationContext, Equatable {
         return entries[key]??.value ?? parent?.getEntryValue(key: key)
     }
 
-    public static func == (lhs: CorrelationContextSdk, rhs: CorrelationContextSdk) -> Bool {
+    public static func == (lhs: BaggageSdk, rhs: BaggageSdk) -> Bool {
         return lhs.parent == rhs.parent && lhs.entries == rhs.entries
     }
 }
 
-public class CorrelationContextSdkBuilder: CorrelationContextBuilder {
-    var parent: CorrelationContext?
+public class BaggageSdkBuilder: BaggageBuilder {
+    var parent: Baggage?
     var noImplicitParent: Bool = false
     var entries = [EntryKey: Entry?]()
 
     public init() {
     }
 
-    @discardableResult public func setParent(_ parent: CorrelationContext) -> Self {
+    @discardableResult public func setParent(_ parent: Baggage) -> Self {
         self.parent = parent
         return self
     }
@@ -88,11 +88,11 @@ public class CorrelationContextSdkBuilder: CorrelationContextBuilder {
         return self
     }
 
-    public func build() -> CorrelationContext {
+    public func build() -> Baggage {
         var parentCopy = parent
         if parent == nil && !noImplicitParent {
             parentCopy = OpenTelemetry.instance.contextManager.getCurrentContext()
         }
-        return CorrelationContextSdk(entries: entries, parent: parentCopy as? CorrelationContextSdk)
+        return BaggageSdk(entries: entries, parent: parentCopy as? BaggageSdk)
     }
 }

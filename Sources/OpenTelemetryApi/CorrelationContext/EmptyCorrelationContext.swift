@@ -15,13 +15,13 @@
 
 import Foundation
 
-/// An immutable implementation of the CorrelationContext that does not contain any entries.
-public class EmptyCorrelationContext: CorrelationContext {
-    /// Returns the single instance of the EmptyCorrelationContext class.
-    public static var instance = EmptyCorrelationContext()
+/// An immutable implementation of the Baggage that does not contain any entries.
+public class EmptyBaggage: Baggage {
+    /// Returns the single instance of the EmptyBaggage class.
+    public static var instance = EmptyBaggage()
 
-    public static func contextBuilder() -> CorrelationContextBuilder {
-        return EmptyCorrelationContextBuilder()
+    public static func contextBuilder() -> BaggageBuilder {
+        return EmptyBaggageBuilder()
     }
 
     private init() {}
