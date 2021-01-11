@@ -20,7 +20,7 @@ private let key = EntryKey(name: "key")!
 private let value = EntryValue(string: "value")!
 
 class TestBaggage: Baggage {
-    static func contextBuilder() -> BaggageBuilder {
+    static func baggageBuilder() -> BaggageBuilder {
         EmptyBaggageBuilder()
     }
 
@@ -38,7 +38,7 @@ class DefaultBaggageManagerTests: XCTestCase {
     let baggage = TestBaggage()
 
     func testBuilderMethod() {
-        let builder = defaultBaggageManager.contextBuilder()
+        let builder = defaultBaggageManager.baggageBuilder()
         XCTAssertEqual(builder.build().getEntries().count, 0)
     }
 

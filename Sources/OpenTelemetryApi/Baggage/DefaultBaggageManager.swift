@@ -23,7 +23,7 @@ public class DefaultBaggageManager: BaggageManager {
 
     private init() {}
 
-    public func contextBuilder() -> BaggageBuilder {
+    public func baggageBuilder() -> BaggageBuilder {
         return EmptyBaggageBuilder()
     }
 

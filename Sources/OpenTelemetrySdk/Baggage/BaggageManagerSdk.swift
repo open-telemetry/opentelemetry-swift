@@ -21,7 +21,7 @@ public class BaggageManagerSdk: BaggageManager {
     public init() {
     }
 
-    public func contextBuilder() -> BaggageBuilder {
+    public func baggageBuilder() -> BaggageBuilder {
         return BaggageSdkBuilder()
     }
 

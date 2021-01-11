@@ -30,7 +30,7 @@ public class BaggageSdk: Baggage, Equatable {
         self.parent = parent
     }
 
-    public static func contextBuilder() -> BaggageBuilder {
+    public static func baggageBuilder() -> BaggageBuilder {
         return BaggageSdkBuilder()
     }
 

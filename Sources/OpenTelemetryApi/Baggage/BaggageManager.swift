@@ -27,7 +27,7 @@ public protocol BaggageManager: AnyObject {
     func getCurrentContext() -> Baggage
 
     /// Returns a new ContextBuilder.
-    func contextBuilder() -> BaggageBuilder
+    func baggageBuilder() -> BaggageBuilder
 
     /// Enters the scope of code where the given Baggage is in the current context
     /// (replacing the previous Baggage) and returns an object that represents that

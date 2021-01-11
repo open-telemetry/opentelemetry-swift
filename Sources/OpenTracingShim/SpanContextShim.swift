@@ -39,10 +39,10 @@ public class SpanContextShim: OTSpanContext, BaseShimProtocol {
     }
 
     func newWith(key: String, value: String) -> SpanContextShim {
-        let contextBuilder = contextManager.contextBuilder().setParent(baggage)
-        contextBuilder.put(key: EntryKey(name: key)!, value: EntryValue(string: value)!, metadata: SpanContextShim.defaultEntryMetadata)
+        let baggageBuilder = contextManager.baggageBuilder().setParent(baggage)
+        baggageBuilder.put(key: EntryKey(name: key)!, value: EntryValue(string: value)!, metadata: SpanContextShim.defaultEntryMetadata)
 
-        return SpanContextShim(telemetryInfo: telemetryInfo, context: context, baggage: contextBuilder.build())
+        return SpanContextShim(telemetryInfo: telemetryInfo, context: context, baggage: baggageBuilder.build())
     }
 
     func getBaggageItem(key: String) -> String? {

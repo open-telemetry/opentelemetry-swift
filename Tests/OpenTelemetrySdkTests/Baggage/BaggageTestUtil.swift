@@ -19,7 +19,7 @@ import OpenTelemetryApi
 
 struct BaggageTestUtil {
     static func listToBaggage(entries: [Entry]) -> BaggageSdk {
-        let builder = BaggageSdk.contextBuilder()
+        let builder = BaggageSdk.baggageBuilder()
         for entry in entries {
             builder.put(key: entry.key, value: entry.value, metadata: entry.metadata)
         }

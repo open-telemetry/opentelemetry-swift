@@ -40,7 +40,7 @@ class ScopedBaggageTests: XCTestCase {
 
     func testWithContext() {
         XCTAssertEqual(contextManager.getCurrentContext().getEntries().count, 0)
-        let scopedEntries = contextManager.contextBuilder().put(key: key1, value: value1, metadata: metadataUnlimitedPropagation).build()
+        let scopedEntries = contextManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataUnlimitedPropagation).build()
         do {
             let scope = contextManager.withContext(baggage: scopedEntries)
             XCTAssertTrue(contextManager.getCurrentContext() === scopedEntries)
@@ -50,10 +50,10 @@ class ScopedBaggageTests: XCTestCase {
     }
 
     func testCreateBuilderFromCurrentEntries() {
-        let scopedDistContext = contextManager.contextBuilder().put(key: key1, value: value1, metadata: metadataUnlimitedPropagation).build()
+        let scopedDistContext = contextManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataUnlimitedPropagation).build()
         do {
             let scope = contextManager.withContext(baggage: scopedDistContext)
-            let newEntries = contextManager.contextBuilder().put(key: key2, value: value2, metadata: metadataUnlimitedPropagation).build()
+            let newEntries = contextManager.baggageBuilder().put(key: key2, value: value2, metadata: metadataUnlimitedPropagation).build()
             XCTAssertEqual(newEntries.getEntries().count, 2)
             XCTAssertEqual(newEntries.getEntries().sorted(), [Entry(key: key1, value: value1, entryMetadata: metadataUnlimitedPropagation), Entry(key: key2, value: value2, entryMetadata: metadataUnlimitedPropagation)].sorted())
             XCTAssertTrue(contextManager.getCurrentContext() === scopedDistContext)
@@ -63,7 +63,7 @@ class ScopedBaggageTests: XCTestCase {
 
     func testSetCurrentEntriesWithBuilder() {
         XCTAssertEqual(contextManager.getCurrentContext().getEntries().count, 0)
-        let scopedDistContext = contextManager.contextBuilder().put(key: key1, value: value1, metadata: metadataUnlimitedPropagation).build()
+        let scopedDistContext = contextManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataUnlimitedPropagation).build()
         do {
             let scope = contextManager.withContext(baggage: scopedDistContext)
             XCTAssertEqual(contextManager.getCurrentContext().getEntries().count, 1)
@@ -74,10 +74,10 @@ class ScopedBaggageTests: XCTestCase {
     }
 
     func testAddToCurrentEntriesWithBuilder() {
-        let scopedDistContext = contextManager.contextBuilder().put(key: key1, value: value1, metadata: metadataUnlimitedPropagation).build()
+        let scopedDistContext = contextManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataUnlimitedPropagation).build()
         do {
             let scope1 = contextManager.withContext(baggage: scopedDistContext)
-            let innerDistContext = contextManager.contextBuilder().put(key: key2, value: value2, metadata: metadataUnlimitedPropagation).build()
+            let innerDistContext = contextManager.baggageBuilder().put(key: key2, value: value2, metadata: metadataUnlimitedPropagation).build()
             do {
                 let scope2 = contextManager.withContext(baggage: innerDistContext)
                 XCTAssertEqual(contextManager.getCurrentContext().getEntries().sorted(),
@@ -93,14 +93,14 @@ class ScopedBaggageTests: XCTestCase {
     }
 
     func testMultiScopeBaggageWithMetadata() {
-        let scopedDistContext = contextManager.contextBuilder().put(key: key1, value: value1, metadata: metadataUnlimitedPropagation)
+        let scopedDistContext = contextManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataUnlimitedPropagation)
             .put(key: key2, value: value2, metadata: metadataUnlimitedPropagation)
             .build()
 
         do {
             let scope1 = contextManager.withContext(baggage: scopedDistContext)
 
-            let innerDistContext = contextManager.contextBuilder().put(key: key3, value: value3, metadata: metadataUnlimitedPropagation)
+            let innerDistContext = contextManager.baggageBuilder().put(key: key3, value: value3, metadata: metadataUnlimitedPropagation)
                 .put(key: key2, value: value4, metadata: metadataUnlimitedPropagation)
                 .build()
             do {
@@ -119,10 +119,10 @@ class ScopedBaggageTests: XCTestCase {
 
     func testSetNoParent_doesNotInheritContext() {
         XCTAssertEqual(contextManager.getCurrentContext().getEntries().count, 0)
-        let scopedDistContext = contextManager.contextBuilder().put(key: key1, value: value1, metadata: metadataUnlimitedPropagation).build()
+        let scopedDistContext = contextManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataUnlimitedPropagation).build()
         do {
             let scope = contextManager.withContext(baggage: scopedDistContext)
-            let innerDistContext = contextManager.contextBuilder().setNoParent().put(key: key2, value: value2, metadata: metadataUnlimitedPropagation).build()
+            let innerDistContext = contextManager.baggageBuilder().setNoParent().put(key: key2, value: value2, metadata: metadataUnlimitedPropagation).build()
             XCTAssertEqual(innerDistContext.getEntries(), [Entry(key: key2, value: value2, entryMetadata: metadataUnlimitedPropagation)])
             print(scope) // Silence unused warning
         }

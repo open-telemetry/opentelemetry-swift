@@ -21,7 +21,7 @@ import Foundation
 /// debugging information.
 public protocol Baggage: AnyObject {
     /// Builder for the Baggage class
-    static func contextBuilder() -> BaggageBuilder
+    static func baggageBuilder() -> BaggageBuilder
 
     /// Returns an immutable collection of the entries in this Baggage. Order of
     /// entries is not guaranteed.

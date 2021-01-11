@@ -27,7 +27,7 @@ struct TelemetryInfo {
         self.tracer = tracer
         self.contextManager = contextManager
         self.propagators = propagators
-        emptyBaggage = contextManager.contextBuilder().build()
+        emptyBaggage = contextManager.baggageBuilder().build()
         spanContextTable = SpanContextShimTable()
     }
 }

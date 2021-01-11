@@ -37,7 +37,7 @@ class BaggageSdkTests: XCTestCase {
     }
 
     func testGetEntries_empty() {
-        let baggage = BaggageSdk.contextBuilder().build()
+        let baggage = BaggageSdk.baggageBuilder().build()
         XCTAssertEqual(baggage.getEntries().count, 0)
     }
 
@@ -49,23 +49,23 @@ class BaggageSdkTests: XCTestCase {
     func testGetEntries_chain() {
         let t1alt = Entry(key: k1, value: v2, entryMetadata: tmd)
         let parent = BaggageTestUtil.listToBaggage(entries: [t1, t2])
-        let baggage = BaggageSdk.contextBuilder().setParent(parent).put(key: t1alt.key, value: t1alt.value, metadata: t1alt.metadata).build()
+        let baggage = BaggageSdk.baggageBuilder().setParent(parent).put(key: t1alt.key, value: t1alt.value, metadata: t1alt.metadata).build()
         XCTAssertEqual(baggage.getEntries().sorted(), [t1alt, t2].sorted())
     }
 
     func testPut_newKey() {
         let baggage = BaggageTestUtil.listToBaggage(entries: [t1])
-        XCTAssertEqual(contextManager.contextBuilder().setParent(baggage).put(key: k2, value: v2, metadata: tmd).build().getEntries().sorted(), [t1, t2].sorted())
+        XCTAssertEqual(contextManager.baggageBuilder().setParent(baggage).put(key: k2, value: v2, metadata: tmd).build().getEntries().sorted(), [t1, t2].sorted())
     }
 
     func testPut_existingKey() {
         let baggage = BaggageTestUtil.listToBaggage(entries: [t1])
-        XCTAssertEqual(contextManager.contextBuilder().setParent(baggage).put(key: k1, value: v2, metadata: tmd).build().getEntries(), [Entry(key: k1, value: v2, entryMetadata: tmd)])
+        XCTAssertEqual(contextManager.baggageBuilder().setParent(baggage).put(key: k1, value: v2, metadata: tmd).build().getEntries(), [Entry(key: k1, value: v2, entryMetadata: tmd)])
     }
 
     func testPetParent_setNoParent() {
         let parent = BaggageTestUtil.listToBaggage(entries: [t1])
-        let baggage = contextManager.contextBuilder().setParent(parent).setNoParent().build()
+        let baggage = contextManager.baggageBuilder().setParent(parent).setNoParent().build()
         XCTAssertEqual(baggage.getEntries().count, 0)
     }
 
@@ -85,23 +85,23 @@ class BaggageSdkTests: XCTestCase {
 
     func testRemove_keyFromParent() {
         let baggage = BaggageTestUtil.listToBaggage(entries: [t1, t2])
-        XCTAssertEqual(contextManager.contextBuilder().setParent(baggage).remove(key: k1).build().getEntries(), [t2])
+        XCTAssertEqual(contextManager.baggageBuilder().setParent(baggage).remove(key: k1).build().getEntries(), [t2])
     }
 
     func testEquals() {
-        XCTAssertEqual(contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v2, metadata: tmd).build() as! BaggageSdk,
-                       contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v2, metadata: tmd).build() as! BaggageSdk)
-        XCTAssertEqual(contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v2, metadata: tmd).build() as! BaggageSdk,
-                       contextManager.contextBuilder().put(key: k2, value: v2, metadata: tmd).put(key: k1, value: v1, metadata: tmd).build() as! BaggageSdk)
-        XCTAssertNotEqual(contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v2, metadata: tmd).build() as! BaggageSdk,
-                          contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! BaggageSdk)
-        XCTAssertNotEqual(contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v2, metadata: tmd).build() as! BaggageSdk,
-                          contextManager.contextBuilder().put(key: k1, value: v2, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! BaggageSdk)
-        XCTAssertNotEqual(contextManager.contextBuilder().put(key: k2, value: v2, metadata: tmd).put(key: k1, value: v1, metadata: tmd).build() as! BaggageSdk,
-                          contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! BaggageSdk)
-        XCTAssertNotEqual(contextManager.contextBuilder().put(key: k2, value: v2, metadata: tmd).put(key: k1, value: v1, metadata: tmd).build() as! BaggageSdk,
-                          contextManager.contextBuilder().put(key: k1, value: v2, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! BaggageSdk)
-        XCTAssertNotEqual(contextManager.contextBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! BaggageSdk,
-                          contextManager.contextBuilder().put(key: k1, value: v2, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! BaggageSdk)
+        XCTAssertEqual(contextManager.baggageBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v2, metadata: tmd).build() as! BaggageSdk,
+                       contextManager.baggageBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v2, metadata: tmd).build() as! BaggageSdk)
+        XCTAssertEqual(contextManager.baggageBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v2, metadata: tmd).build() as! BaggageSdk,
+                       contextManager.baggageBuilder().put(key: k2, value: v2, metadata: tmd).put(key: k1, value: v1, metadata: tmd).build() as! BaggageSdk)
+        XCTAssertNotEqual(contextManager.baggageBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v2, metadata: tmd).build() as! BaggageSdk,
+                          contextManager.baggageBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! BaggageSdk)
+        XCTAssertNotEqual(contextManager.baggageBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v2, metadata: tmd).build() as! BaggageSdk,
+                          contextManager.baggageBuilder().put(key: k1, value: v2, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! BaggageSdk)
+        XCTAssertNotEqual(contextManager.baggageBuilder().put(key: k2, value: v2, metadata: tmd).put(key: k1, value: v1, metadata: tmd).build() as! BaggageSdk,
+                          contextManager.baggageBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! BaggageSdk)
+        XCTAssertNotEqual(contextManager.baggageBuilder().put(key: k2, value: v2, metadata: tmd).put(key: k1, value: v1, metadata: tmd).build() as! BaggageSdk,
+                          contextManager.baggageBuilder().put(key: k1, value: v2, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! BaggageSdk)
+        XCTAssertNotEqual(contextManager.baggageBuilder().put(key: k1, value: v1, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! BaggageSdk,
+                          contextManager.baggageBuilder().put(key: k1, value: v2, metadata: tmd).put(key: k2, value: v1, metadata: tmd).build() as! BaggageSdk)
     }
 }

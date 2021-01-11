@@ -20,7 +20,7 @@ public class EmptyBaggage: Baggage {
     /// Returns the single instance of the EmptyBaggage class.
     public static var instance = EmptyBaggage()
 
-    public static func contextBuilder() -> BaggageBuilder {
+    public static func baggageBuilder() -> BaggageBuilder {
         return EmptyBaggageBuilder()
     }
 
