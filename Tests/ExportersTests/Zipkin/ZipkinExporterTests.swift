@@ -31,7 +31,7 @@ class ZipkinExporterTests: XCTestCase {
 
         let span = spans[0]
 
-        let timestamp = Int64(Double(span.startEpochNanos) / 1000.0)
+        let timestamp = span.startTime.timeIntervalSince1970 * 1000000
 
         var ipInformation = ""
         if let ipv4 = exporter.localEndPoint.ipv4 {

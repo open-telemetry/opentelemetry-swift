@@ -101,7 +101,7 @@ public class SpanShim: OTSpan, BaseShimProtocol {
 
     public func log(_ eventName: String, timestamp: Date?, payload: NSObject?) {
         if let object = payload {
-            span.addEvent(name: eventName, attributes: SpanShim.convertToAttributes(fields: [eventName: object]), timestamp:timestamp ?? Date())
+            span.addEvent(name: eventName, attributes: SpanShim.convertToAttributes(fields: [eventName: object]), timestamp: timestamp ?? Date())
         } else {
             span.addEvent(name: eventName, timestamp: timestamp ?? Date())
         }
@@ -121,7 +121,11 @@ public class SpanShim: OTSpan, BaseShimProtocol {
     }
 
     public func finish(withTime finishTime: Date?) {
-        span.end(timestamp: UInt64(finishTime?.timeIntervalSince1970.toNanoseconds ?? Date().timeIntervalSince1970.toNanoseconds))
+        if let finishTime = finishTime {
+            span.end(time: finishTime)
+        } else {
+            span.end()
+        }
     }
 
     static func getEventNameFrom(fields: [String: NSObject]) -> String {

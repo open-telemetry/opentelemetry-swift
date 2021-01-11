@@ -51,8 +51,8 @@ final class Adapter {
         let spanHex = span.spanId.hexString
         let spanId = Int64(spanHex, radix: 16) ?? 0
         let operationName = span.name
-        let startTime = Int64(span.startEpochNanos / 1000)
-        let duration = Int64((span.endEpochNanos - span.startEpochNanos) / 1000)
+        let startTime = Int64(span.startTime.timeIntervalSince1970.toMilliseconds)
+        let duration = Int64(span.endTime.timeIntervalSince(span.startTime).toMilliseconds)
 
         var parentSpanId: Int64 = 0
 
@@ -76,7 +76,7 @@ final class Adapter {
 
         tags.append(Tag(key: Adapter.keySpanKind, vType: .string, vStr: span.kind.rawValue.uppercased(), vDouble: nil, vBool: nil, vLong: nil, vBinary: nil))
         tags.append(Tag(key: Adapter.keySpanStatusMessage, vType: .string, vStr: span.status.statusDescription ?? "", vDouble: nil, vBool: nil, vLong: nil, vBinary: nil))
-        tags.append(Tag(key: Adapter.keySpanStatusCode, vType: .long, vStr: nil, vDouble: nil, vBool: nil, vLong: Int64(span.status.statusCode.rawValue ?? 0), vBinary: nil))
+        tags.append(Tag(key: Adapter.keySpanStatusCode, vType: .long, vStr: nil, vDouble: nil, vBool: nil, vLong: Int64(span.status.statusCode.rawValue), vBinary: nil))
 
         if span.status != .ok {
             tags.append(Tag(key: keyError, vType: .bool, vStr: nil, vDouble: nil, vBool: true, vLong: nil, vBinary: nil))
@@ -142,7 +142,7 @@ final class Adapter {
     }
 
     static func toJaegerLog(event: SpanData.Event) -> Log {
-        let timestamp = Int64(event.epochNanos * 1000)
+        let timestamp = Int64(event.timestamp.timeIntervalSince1970.toMilliseconds)
 
         var tags = TList<Tag>()
         tags.append(Tag(key: Adapter.keyLogMessage, vType: .string, vStr: event.name, vDouble: nil, vBool: nil, vLong: nil, vBinary: nil))

@@ -46,8 +46,8 @@ public struct SpanData: Equatable {
     /// The kind of this Span.
     public private(set) var kind: SpanKind
 
-    /// The start epoch timestamp in nanos of this Span.
-    public private(set) var startEpochNanos: UInt64
+    /// The start epoch time in nanos of this Span.
+    public private(set) var startTime: Date
 
     /// The attributes recorded for this Span.
     public private(set) var attributes = [String: AttributeValue]()
@@ -61,8 +61,8 @@ public struct SpanData: Equatable {
     /// The Status.
     public private(set) var status: Status = .unset
 
-    /// The end epoch timestamp in nanos of this Span
-    public private(set) var endEpochNanos: UInt64
+    /// The end epoch time in nanos of this Span
+    public private(set) var endTime: Date
 
     /// True if the parent is on a different process, false if this is a root span.
     public private(set) var hasRemoteParent: Bool = false
@@ -94,8 +94,8 @@ public struct SpanData: Equatable {
             lhs.name == rhs.name &&
             lhs.kind == rhs.kind &&
             lhs.status == rhs.status &&
-            lhs.endEpochNanos == rhs.endEpochNanos &&
-            lhs.startEpochNanos == rhs.startEpochNanos &&
+            lhs.endTime == rhs.endTime &&
+            lhs.startTime == rhs.startTime &&
             lhs.hasRemoteParent == rhs.hasRemoteParent &&
             lhs.resource == rhs.resource &&
             lhs.attributes == rhs.attributes &&
@@ -137,13 +137,13 @@ public struct SpanData: Equatable {
         return self
     }
 
-    @discardableResult public mutating func settingStartEpochNanos(_ nanos: UInt64) -> SpanData {
-        startEpochNanos = nanos
+    @discardableResult public mutating func settingStartTime(_ time: Date) -> SpanData {
+        startTime = time
         return self
     }
 
-    @discardableResult public mutating func settingEndEpochNanos(_ nanos: UInt64) -> SpanData {
-        endEpochNanos = nanos
+    @discardableResult public mutating func settingEndTime(_ time: Date) -> SpanData {
+        endTime = time
         return self
     }
 
@@ -206,49 +206,29 @@ public struct SpanData: Equatable {
 public extension SpanData {
     /// Timed event.
     struct Event: Equatable {
-        public private(set) var epochNanos: UInt64
+        public private(set) var timestamp: Date
         public private(set) var name: String
         public private(set) var attributes: [String: AttributeValue]
 
         /// Creates an Event with the given time, name and empty attributes.
         /// - Parameters:
-        ///   - nanotime: epoch timestamp in nanos.
+        ///   - nanotime: epoch time in nanos.
         ///   - name: the name of this Event.
         ///   - attributes: the attributes of this Event. Empty by default.
-        public init(name: String, epochNanos: UInt64, attributes: [String: AttributeValue] = [String: AttributeValue]()) {
-            self.epochNanos = epochNanos
+        public init(name: String, timestamp: Date, attributes: [String: AttributeValue]? = nil) {
+            self.timestamp = timestamp
             self.name = name
-            self.attributes = attributes
+            self.attributes = attributes ?? [String: AttributeValue]()
         }
 
         /// Creates an Event with the given time and event.
         /// - Parameters:
-        ///   - nanotime: epoch timestamp in nanos.
-        ///   - event: the event.
-        public init(epochNanos: UInt64, event: Event) {
-            self.init(name: event.name, epochNanos: epochNanos, attributes: event.attributes)
-        }
-
-        /// Creates an Event with the given time, name and empty attributes.
-        /// - Parameters:
-        ///   - timestamp: timestamp in Date format.
-        ///   - name: the name of this Event.
-        ///   - attributes: the attributes of this Event. Empty by default.
-        public init(name: String, timestamp: Date, attributes: [String: AttributeValue] = [String: AttributeValue]()) {
-            epochNanos = UInt64(timestamp.timeIntervalSince1970.toNanoseconds)
-            self.name = name
-            self.attributes = attributes
-        }
-
-        /// Creates an Event with the given time and event.
-        /// - Parameters:
-        ///   - timestamp: timestamp in Date format.
+        ///   - nanotime: epoch time in nanos.
         ///   - event: the event.
         public init(timestamp: Date, event: Event) {
-            self.init(name: event.name, epochNanos: UInt64(timestamp.timeIntervalSince1970.toNanoseconds), attributes: event.attributes)
+            self.init(name: event.name, timestamp: timestamp, attributes: event.attributes)
         }
     }
-
 }
 
 public extension SpanData {

@@ -39,12 +39,12 @@ public class SpanBuilderSdk: SpanBuilder {
     private var parent: Span?
     private var remoteParent: SpanContext?
     private var spanKind = SpanKind.internal
-    private var attributes: AttributesDictionay
+    private var attributes: AttributesDictionary
     private var links = [SpanData.Link]()
     private var totalNumberOfLinksAdded: Int = 0
     private var parentType: ParentType = .currentSpan
 
-    private var startEpochNanos: UInt64 = 0
+    private var startTime: Date = Date()
 
     public init(spanName: String,
                 instrumentationLibraryInfo: InstrumentationLibraryInfo,
@@ -57,7 +57,7 @@ public class SpanBuilderSdk: SpanBuilder {
         self.instrumentationLibraryInfo = instrumentationLibraryInfo
         self.spanProcessor = spanProcessor
         self.traceConfig = traceConfig
-        attributes = AttributesDictionay(capacity: traceConfig.maxNumberOfAttributes)
+        attributes = AttributesDictionary(capacity: traceConfig.maxNumberOfAttributes)
         self.resource = resource
         self.idsGenerator = idsGenerator
         self.clock = clock
@@ -111,8 +111,8 @@ public class SpanBuilderSdk: SpanBuilder {
         return self
     }
 
-    @discardableResult public func setStartTimestamp(timestamp: UInt64) -> Self {
-        startEpochNanos = timestamp
+    @discardableResult public func setStartTime(time: Date) -> Self {
+        startTime = time
         return self
     }
 
@@ -161,7 +161,7 @@ public class SpanBuilderSdk: SpanBuilder {
                                                   attributes: attributes,
                                                   links: links,
                                                   totalRecordedLinks: totalNumberOfLinksAdded,
-                                                  startEpochNanos: startEpochNanos)
+                                                  startTime: startTime)
     }
 
     private static func getClock(parent: Span?, clock: Clock) -> Clock {

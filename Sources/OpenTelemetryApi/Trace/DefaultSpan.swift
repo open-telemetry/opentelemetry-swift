@@ -19,7 +19,6 @@ import Foundation
 /// implementation is available. All operations are no-op except context propagation.
 /// Used also to stop tracing, see Tracer.withSpan()
 public class DefaultSpan: Span {
-    
     public var name: String = ""
 
     public var kind: SpanKind
@@ -27,6 +26,14 @@ public class DefaultSpan: Span {
     public var context: SpanContext
 
     public var scope: Scope?
+
+    public func end() {
+        scope?.close()
+    }
+
+    public func end(time: Date) {
+        end()
+    }
 
     /// Returns a DefaultSpan with an invalid SpanContext.
     public convenience init() {

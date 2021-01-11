@@ -18,8 +18,8 @@ import OpenTelemetryApi
 import XCTest
 
 class SpanDataTests: XCTestCase {
-    let startEpochNanos: UInt64 = 3000000000000 + 200
-    let endEpochNanos: UInt64 = 3001000000000 + 255
+    let startTime: Date = TestUtils.dateFromNanos(3000000000000 + 200)
+    let endTime: Date = TestUtils.dateFromNanos(3001000000000 + 255)
 
     func testdefaultValues() {
         let spanData = createBasicSpan()
@@ -40,8 +40,8 @@ class SpanDataTests: XCTestCase {
                         instrumentationLibraryInfo: InstrumentationLibraryInfo(),
                         name: "spanName",
                         kind: .server,
-                        startEpochNanos: startEpochNanos,
-                        endEpochNanos: endEpochNanos,
+                        startTime: startTime,
+                        endTime: endTime,
                         hasRemoteParent: false)
     }
 }

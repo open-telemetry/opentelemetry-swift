@@ -42,12 +42,12 @@ final class DefaultSpanTest: XCTestCase {
         span.setAttribute(key: "MyEmptyIntArrayAttributeKey", value: AttributeValue.intArray([]))
         span.setAttribute(key: "MyEmptyDoubleArrayAttributeKey", value: AttributeValue.doubleArray([]))
         span.addEvent(name: "event")
-        span.addEvent(name: "event", timestamp: Date(timeIntervalSince1970: 0))
+        span.addEvent(name: "event", timestamp: Date(timeIntervalSinceReferenceDate: 0))
         span.addEvent(name: "event", attributes: ["MyBooleanAttributeKey": AttributeValue.bool(true)])
-        span.addEvent(name: "event", attributes: ["MyBooleanAttributeKey": AttributeValue.bool(true)], timestamp: Date(timeIntervalSince1970: 0))
+        span.addEvent(name: "event", attributes: ["MyBooleanAttributeKey": AttributeValue.bool(true)], timestamp: Date(timeIntervalSinceReferenceDate: 1.5))
         span.status = .ok
         span.end()
-        span.end(timestamp: Date().timeIntervalSince1970.toNanoseconds)
+        span.end(time: Date())
     }
 
     func testDefaultSpan_ToString() {

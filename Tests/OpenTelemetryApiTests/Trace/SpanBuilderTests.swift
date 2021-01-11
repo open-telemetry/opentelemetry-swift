@@ -17,7 +17,6 @@ import OpenTelemetryApi
 import XCTest
 
 class SpanBuilderTests: XCTestCase {
-
     let tracer = DefaultTracer.instance
 
     func testDoNotCrash_NoopImplementation() {
@@ -34,7 +33,7 @@ class SpanBuilderTests: XCTestCase {
         spanBuilder.setAttribute(key: "key", value: 0.12345)
         spanBuilder.setAttribute(key: "key", value: true)
         spanBuilder.setAttribute(key: "key", value: AttributeValue.string("value"))
-        spanBuilder.setStartTimestamp(timestamp: 12345)
+        spanBuilder.setStartTime(time: Date())
         XCTAssert(spanBuilder.startSpan() is DefaultSpan)
     }
 }

@@ -16,6 +16,26 @@
 @testable import DatadogExporter
 import XCTest
 
+extension Date {
+    static func mockSpecificUTCGregorianDate(year: Int, month: Int, day: Int, hour: Int, minute: Int = 0, second: Int = 0) -> Date {
+        var dateComponents = DateComponents()
+        dateComponents.year = year
+        dateComponents.month = month
+        dateComponents.day = day
+        dateComponents.hour = hour
+        dateComponents.minute = minute
+        dateComponents.second = second
+        dateComponents.timeZone = TimeZone(abbreviation: "UTC")
+        dateComponents.calendar = Calendar(identifier: .gregorian)
+        return dateComponents.date!
+    }
+
+    static func mockDecember15th2019At10AMUTC(addingTimeInterval timeInterval: TimeInterval = 0) -> Date {
+        return mockSpecificUTCGregorianDate(year: 2_019, month: 12, day: 15, hour: 10)
+            .addingTimeInterval(timeInterval)
+    }
+}
+
 class TimeIntervalExtensionTests: XCTestCase {
     func testTimeIntervalSince1970InMilliseconds() {
         let date15Dec2019 = Date.mockDecember15th2019At10AMUTC()

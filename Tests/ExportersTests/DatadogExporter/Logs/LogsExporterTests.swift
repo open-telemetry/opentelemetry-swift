@@ -82,9 +82,9 @@ class LogsExporterTests: XCTestCase {
                         instrumentationLibraryInfo: InstrumentationLibraryInfo(),
                         name: "spanName",
                         kind: .server,
-                        startEpochNanos: 3000000000000 + 200,
+                        startTime: Date(timeIntervalSinceReferenceDate: 3000),
                         events: [SpanData.Event(name: "event", timestamp: Date())],
-                        endEpochNanos: 3001000000000 + 255,
+                        endTime: Date(timeIntervalSinceReferenceDate: 3001),
                         hasRemoteParent: false)
     }
 }

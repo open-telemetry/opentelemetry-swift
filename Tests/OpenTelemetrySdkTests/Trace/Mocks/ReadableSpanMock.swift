@@ -19,7 +19,7 @@ import OpenTelemetryApi
 
 class ReadableSpanMock: ReadableSpan {
     var hasEnded: Bool = false
-    var latencyNanos: UInt64 = 0
+    var latency: TimeInterval = 0
 
     var kind: SpanKind {
         return .client
@@ -32,6 +32,10 @@ class ReadableSpanMock: ReadableSpan {
     var forcedReturnSpanContext: SpanContext?
     var forcedReturnSpanData: SpanData?
 
+    func end() {}
+
+    func end(time: Date) {}
+
     func toSpanData() -> SpanData {
         return forcedReturnSpanData ?? SpanData(traceId: context.traceId,
                                                 spanId: context.spanId,
@@ -41,8 +45,8 @@ class ReadableSpanMock: ReadableSpan {
                                                 instrumentationLibraryInfo: InstrumentationLibraryInfo(),
                                                 name: "ReadableSpanMock",
                                                 kind: .client,
-                                                startEpochNanos: 0,
-                                                endEpochNanos: 0,
+                                                startTime: Date(timeIntervalSinceReferenceDate: 0),
+                                                endTime: Date(timeIntervalSinceReferenceDate: 0),
                                                 hasRemoteParent: false)
     }
 
@@ -56,23 +60,17 @@ class ReadableSpanMock: ReadableSpan {
 
     var scope: Scope?
 
-    func updateName(name: String) {
-    }
+    func updateName(name: String) {}
 
-    func setAttribute(key: String, value: AttributeValue?) {
-    }
+    func setAttribute(key: String, value: AttributeValue?) {}
 
-    func addEvent(name: String) {
-    }
+    func addEvent(name: String) {}
 
-    func addEvent(name: String, attributes: [String: AttributeValue]) {
-    }
+    func addEvent(name: String, attributes: [String: AttributeValue]) {}
 
-    func addEvent(name: String, timestamp: Date) {
-    }
+    func addEvent(name: String, timestamp: Date) {}
 
-    func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Date) {
-    }
-    
+    func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Date) {}
+
     var description: String = "ReadableSpanMock"
 }

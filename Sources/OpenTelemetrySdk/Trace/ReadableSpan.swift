@@ -31,6 +31,6 @@ public protocol ReadableSpan: Span {
     /// Returns whether this Span has already been ended.
     var hasEnded: Bool { get }
 
-    /// Returns the latecy of the {@code Span} in nanos. If still active then returns now() - start time.
-    var latencyNanos: UInt64 { get }
+    /// Returns the latecy of the  Span. If still active then returns now() - start time.
+    var latency: TimeInterval { get }
 }

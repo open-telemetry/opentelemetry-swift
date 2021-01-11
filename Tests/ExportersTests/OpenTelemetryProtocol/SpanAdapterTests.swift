@@ -34,11 +34,11 @@ class SpanAdapterTests: XCTestCase {
     }
 
     func testToProtoSpan() {
-        var testData = SpanData(traceId: traceId, spanId: spanId, name: "GET /api/endpoint", kind: SpanKind.server, startEpochNanos: 12345, endEpochNanos: 12349)
+        var testData = SpanData(traceId: traceId, spanId: spanId, name: "GET /api/endpoint", kind: SpanKind.server, startTime: Date(timeIntervalSince1970: 12345), endTime: Date(timeIntervalSince1970: 12349))
         testData.settingHasEnded(false)
         testData.settingAttributes(["key": AttributeValue.bool(true)])
         testData.settingTotalAttributeCount(2)
-        testData.settingEvents([SpanData.Event(name: "my_event", epochNanos: 12347)])
+        testData.settingEvents([SpanData.Event(name: "my_event", timestamp: Date(timeIntervalSince1970: 12347))])
         testData.settingTotalRecordedEvents(3)
         testData.settingLinks([SpanData.Link(context: spanContext)])
         testData.settingTotalRecordedLinks(2)
@@ -51,8 +51,8 @@ class SpanAdapterTests: XCTestCase {
         XCTAssertEqual(span.parentSpanID, Data(repeating: 0, count: 0))
         XCTAssertEqual(span.name, "GET /api/endpoint")
         XCTAssertEqual(span.kind, Opentelemetry_Proto_Trace_V1_Span.SpanKind.server)
-        XCTAssertEqual(span.startTimeUnixNano, 12345)
-        XCTAssertEqual(span.endTimeUnixNano, 12349)
+        XCTAssertEqual(span.startTimeUnixNano, 12345 * 1000000000)
+        XCTAssertEqual(span.endTimeUnixNano, 12349 * 1000000000)
 
         var attribute = Opentelemetry_Proto_Common_V1_KeyValue()
         attribute.key = "key"
@@ -62,7 +62,7 @@ class SpanAdapterTests: XCTestCase {
         XCTAssertEqual(span.droppedAttributesCount, 1)
 
         var event = Opentelemetry_Proto_Trace_V1_Span.Event()
-        event.timeUnixNano = 12347
+        event.timeUnixNano = 12347 * 1000000000
         event.name = "my_event"
         XCTAssertEqual(span.events, [event])
         XCTAssertEqual(span.droppedEventsCount, 2)
@@ -96,7 +96,6 @@ class SpanAdapterTests: XCTestCase {
         status.message = "SUCCESS"
         XCTAssertEqual(SpanAdapter.toStatusProto(status: Status.ok.withDescription(description: "SUCCESS")), status)
 
-
         status = Opentelemetry_Proto_Trace_V1_Status()
         status.code = .error
         status.message = "ERROR"
@@ -105,12 +104,12 @@ class SpanAdapterTests: XCTestCase {
 
     func testToProtoSpanEvent() {
         var eventNoAttrib = Opentelemetry_Proto_Trace_V1_Span.Event()
-        eventNoAttrib.timeUnixNano = 12345
+        eventNoAttrib.timeUnixNano = 12345 * 1000000000
         eventNoAttrib.name = "test_without_attributes"
-        XCTAssertEqual(SpanAdapter.toProtoSpanEvent(event: SpanData.Event(name: "test_without_attributes", epochNanos: 12345)), eventNoAttrib)
+        XCTAssertEqual(SpanAdapter.toProtoSpanEvent(event: SpanData.Event(name: "test_without_attributes", timestamp: Date(timeIntervalSince1970: 12345))), eventNoAttrib)
 
         var eventWithAttrib = Opentelemetry_Proto_Trace_V1_Span.Event()
-        eventWithAttrib.timeUnixNano = 12345
+        eventWithAttrib.timeUnixNano = 12345 * 1000000000
         eventWithAttrib.name = "test_with_attributes"
 
         var attribute = Opentelemetry_Proto_Common_V1_KeyValue()
@@ -119,7 +118,7 @@ class SpanAdapterTests: XCTestCase {
         attribute.value.stringValue = "string"
         eventWithAttrib.attributes = [attribute]
 
-        XCTAssertEqual(SpanAdapter.toProtoSpanEvent(event: SpanData.Event(name: "test_with_attributes", epochNanos: 12345, attributes: ["key_string": AttributeValue.string("string")])), eventWithAttrib)
+        XCTAssertEqual(SpanAdapter.toProtoSpanEvent(event: SpanData.Event(name: "test_with_attributes", timestamp: Date(timeIntervalSince1970: 12345), attributes: ["key_string": AttributeValue.string("string")])), eventWithAttrib)
     }
 
     func testToProtoSpanLink() {

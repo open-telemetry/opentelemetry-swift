@@ -22,14 +22,14 @@ class PushMetricController {
 
     let pushMetricQueue = DispatchQueue(label: "org.opentelemetry.PushMetricController.pushMetricQueue")
 
-    init( meterProvider:MeterSdkProvider, metricProcessor: MetricProcessor, metricExporter: MetricExporter, pushInterval: TimeInterval, shouldCancel: (() -> Bool)? = nil) {
+    init(meterProvider: MeterSdkProvider, metricProcessor: MetricProcessor, metricExporter: MetricExporter, pushInterval: TimeInterval, shouldCancel: (() -> Bool)? = nil) {
         self.meterProvider = meterProvider
         self.metricProcessor = metricProcessor
         self.metricExporter = metricExporter
         self.pushInterval = pushInterval
         pushMetricQueue.asyncAfter(deadline: .now() + pushInterval) {
             while !(shouldCancel?() ?? false) {
-                let start = DispatchTime.now()
+                let start = Date()
                 let values = self.meterProvider.getMeters().values
                 for index in values.indices {
                     values[index].collect()
@@ -38,7 +38,7 @@ class PushMetricController {
                 let metricToExport = self.metricProcessor.finishCollectionCycle()
 
                 _ = metricExporter.export(metrics: metricToExport, shouldCancel: shouldCancel)
-                let timeInterval = TimeInterval.fromNanoseconds(DispatchTime.now().uptimeNanoseconds - start.uptimeNanoseconds)
+                let timeInterval = Date().timeIntervalSince(start)
                 let remainingWait = pushInterval - timeInterval
                 if remainingWait > 0 {
                     usleep(UInt32(remainingWait * 1000000))

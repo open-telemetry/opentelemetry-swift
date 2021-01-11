@@ -16,27 +16,22 @@
 import Foundation
 import OpenTelemetryApi
 
-/// This class provides a mechanism for calculating the epoch time using Date().timeIntervalSince1970
-/// and a reference epoch timestamp.
+/// This class provides a mechanism for calculating the epoch time using a reference date
 /// This clock needs to be re-created periodically in order to re-sync with the kernel clock, and
 /// it is not recommended to use only one instance for a very long period of time.
 public class MonotonicClock: Clock {
     let clock: Clock
-    let epochNanos: UInt64
-    let initialNanoTime: UInt64
+    let epoch: Date
+    let initialTime: Date
 
     public init(clock: Clock) {
         self.clock = clock
-        epochNanos = clock.now
-        initialNanoTime = clock.nanoTime
+        epoch = clock.now
+        initialTime = clock.now
     }
 
-    public var now: UInt64 {
-        let deltaNanos = Int64(clock.nanoTime) - Int64(initialNanoTime)
-        return UInt64(Int64(epochNanos) + deltaNanos)
-    }
-
-    public var nanoTime: UInt64 {
-        return clock.nanoTime
+    public var now: Date {
+        let delta = clock.now.timeIntervalSince(initialTime)
+        return epoch.addingTimeInterval(delta)
     }
 }
