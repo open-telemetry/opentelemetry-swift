@@ -154,7 +154,6 @@ public class RecordEventsReadableSpan: ReadableSpan {
                                  links: [SpanData.Link],
                                  totalRecordedLinks: Int,
                                  startTime: Date) -> RecordEventsReadableSpan {
-        print(startTime)
         let span = RecordEventsReadableSpan(context: context,
                                             name: name,
                                             instrumentationLibraryInfo: instrumentationLibraryInfo,
