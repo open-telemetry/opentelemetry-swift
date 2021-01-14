@@ -37,7 +37,7 @@ public protocol BaggageBuilder: AnyObject {
     ///   - key: the EntryKey which will be set.
     ///   - value: the EntryValue to set for the given key.
     ///   - metadata: the EntryMetadata associated with this Entry.
-    @discardableResult func put(key: EntryKey, value: EntryValue, metadata: EntryMetadata) -> Self
+    @discardableResult func put(key: EntryKey, value: EntryValue, metadata: EntryMetadata?) -> Self
 
     /// Removes the key if it exists.
     /// - Parameter key: the EntryKey which will be removed.

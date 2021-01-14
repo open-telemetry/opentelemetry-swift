@@ -23,15 +23,15 @@ class TraceShimTests: XCTestCase {
     func testCreateTracerShimDefault() {
         let tracerShim = TraceShim.createTracerShim() as! TracerShim
         XCTAssert(OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: "opentracingshim", instrumentationVersion: nil) === tracerShim.tracer)
-        XCTAssert(OpenTelemetrySDK.instance.contextManager === tracerShim.contextManager)
+        XCTAssert(OpenTelemetrySDK.instance.baggageManager === tracerShim.baggageManager)
     }
 
     func testCreateTracerShim() {
         let sdk = OpenTelemetrySDK.instance.tracerProvider
-        let contextManager = BaggageManagerSdk()
-        let tracerShim = TraceShim.createTracerShim(tracerProvider: sdk, contextManager: contextManager) as! TracerShim
+        let baggageManager = DefaultBaggageManager.instance
+        let tracerShim = TraceShim.createTracerShim(tracerProvider: sdk, baggageManager: baggageManager) as! TracerShim
 
         XCTAssert(sdk.get(instrumentationName: "opentracingshim", instrumentationVersion: nil) === tracerShim.tracer)
-        XCTAssert(contextManager === tracerShim.contextManager)
+        XCTAssert(baggageManager === tracerShim.baggageManager)
     }
 }

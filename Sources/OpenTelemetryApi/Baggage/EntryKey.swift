@@ -33,6 +33,7 @@ public struct EntryKey: Equatable, Comparable, Hashable {
     /// - It can only contain printable ASCII characters.
     /// - Parameter name: the name of the key.
     public init?(name: String) {
+        let name = name.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
         if !EntryKey.isValid(name: name) {
             return nil
         }

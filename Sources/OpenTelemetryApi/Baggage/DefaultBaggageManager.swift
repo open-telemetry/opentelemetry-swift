@@ -17,18 +17,18 @@ import Foundation
 
 /// No-op implementations of BaggageManager.
 public class DefaultBaggageManager: BaggageManager {
+    private init() {}
+
     ///  Returns a BaggageManager singleton that is the default implementation for
     ///  BaggageManager.
     public static var instance = DefaultBaggageManager()
 
-    private init() {}
-
     public func baggageBuilder() -> BaggageBuilder {
-        return EmptyBaggageBuilder()
+        return DefaultBaggageBuilder()
     }
 
-    public func getCurrentContext() -> Baggage {
-        ContextUtils.getCurrentBaggage() ?? EmptyBaggage.instance
+    public func getCurrentBaggage() -> Baggage {
+        return ContextUtils.getCurrentBaggage() ?? EmptyBaggage.instance
     }
 
     public func withContext(baggage: Baggage) -> Scope {

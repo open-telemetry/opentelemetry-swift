@@ -34,5 +34,5 @@ public protocol Baggage: AnyObject {
 
 public func == (lhs: Baggage, rhs: Baggage) -> Bool {
     guard type(of: lhs) == type(of: rhs) else { return false }
-    return lhs.getEntries() == rhs.getEntries()
+    return lhs.getEntries().sorted() == rhs.getEntries().sorted()
 }

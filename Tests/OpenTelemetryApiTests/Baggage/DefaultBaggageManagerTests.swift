@@ -25,7 +25,7 @@ class TestBaggage: Baggage {
     }
 
     func getEntries() -> [Entry] {
-        return [Entry(key: key, value: value, entryMetadata: EntryMetadata(entryTtl: .unlimitedPropagation))]
+        return [Entry(key: key, value: value, metadata: EntryMetadata(metadata: "test"))]
     }
 
     func getEntryValue(key: EntryKey) -> EntryValue? {
@@ -43,35 +43,35 @@ class DefaultBaggageManagerTests: XCTestCase {
     }
 
     func testGetCurrentContext_DefaultContext() {
-        XCTAssertTrue(defaultBaggageManager.getCurrentContext() === EmptyBaggage.instance)
+        XCTAssertTrue(defaultBaggageManager.getCurrentBaggage() === EmptyBaggage.instance)
     }
 
     func testGetCurrentContext_ContextSetToNil() {
-        let baggage = defaultBaggageManager.getCurrentContext()
+        let baggage = defaultBaggageManager.getCurrentBaggage()
         XCTAssertNotNil(baggage)
         XCTAssertEqual(baggage.getEntries().count, 0)
     }
 
     func testWithContext() {
-        XCTAssertTrue(defaultBaggageManager.getCurrentContext() === EmptyBaggage.instance)
+        XCTAssertTrue(defaultBaggageManager.getCurrentBaggage() === EmptyBaggage.instance)
         var wtm = defaultBaggageManager.withContext(baggage: baggage)
-        XCTAssertTrue(defaultBaggageManager.getCurrentContext() === baggage)
+        XCTAssertTrue(defaultBaggageManager.getCurrentBaggage() === baggage)
         wtm.close()
-        XCTAssertTrue(defaultBaggageManager.getCurrentContext() === EmptyBaggage.instance)
+        XCTAssertTrue(defaultBaggageManager.getCurrentBaggage() === EmptyBaggage.instance)
     }
 
     func testWithContextUsingWrap() {
         let expec = expectation(description: "testWithContextUsingWrap")
         var wtm = defaultBaggageManager.withContext(baggage: baggage)
-        XCTAssertTrue(defaultBaggageManager.getCurrentContext() === baggage)
+        XCTAssertTrue(defaultBaggageManager.getCurrentBaggage() === baggage)
         let semaphore = DispatchSemaphore(value: 0)
         DispatchQueue.global().async {
             semaphore.wait()
-            XCTAssertTrue(self.defaultBaggageManager.getCurrentContext() === self.baggage)
+            XCTAssertTrue(self.defaultBaggageManager.getCurrentBaggage() === self.baggage)
             expec.fulfill()
         }
         wtm.close()
-        XCTAssertTrue(defaultBaggageManager.getCurrentContext() === EmptyBaggage.instance)
+        XCTAssertTrue(defaultBaggageManager.getCurrentBaggage() === EmptyBaggage.instance)
         semaphore.signal()
         waitForExpectations(timeout: 30) { error in
             if let error = error {

@@ -46,10 +46,6 @@ class W3CTraceContextPropagatorTest: XCTestCase {
         }
     }
 
-    func getSpanContext() -> SpanContext? {
-        return ContextUtils.getCurrentSpan()?.context
-    }
-
     let setter = TestSetter()
     let getter = TestGetter()
 
@@ -96,83 +92,83 @@ class W3CTraceContextPropagatorTest: XCTestCase {
     func testExtract_SampledContext() {
         var carrier = [String: String]()
         carrier[W3CTraceContextPropagator.traceparent] = traceParentHeaderSampled
-        XCTAssertEqual(httpTraceContext.extract(spanContext: getSpanContext(), carrier: carrier, getter: getter), SpanContext.createFromRemoteParent(traceId: traceId, spanId: spanId, traceFlags: sampledTraceOptions, traceState: traceState_not_default))
+        XCTAssertEqual(httpTraceContext.extract(carrier: carrier, getter: getter), SpanContext.createFromRemoteParent(traceId: traceId, spanId: spanId, traceFlags: sampledTraceOptions, traceState: traceState_not_default))
     }
 
     func testExtract_NotSampledContext() {
         var carrier = [String: String]()
         carrier[W3CTraceContextPropagator.traceparent] = traceParentHeaderNotSampled
-        XCTAssertEqual(httpTraceContext.extract(spanContext: getSpanContext(), carrier: carrier, getter: getter), SpanContext.createFromRemoteParent(traceId: traceId, spanId: spanId, traceFlags: TraceFlags(), traceState: traceState_default))
+        XCTAssertEqual(httpTraceContext.extract(carrier: carrier, getter: getter), SpanContext.createFromRemoteParent(traceId: traceId, spanId: spanId, traceFlags: TraceFlags(), traceState: traceState_default))
     }
 
     func testExtract_SampledContext_WithTraceState() {
         var carrier = [String: String]()
         carrier[W3CTraceContextPropagator.traceparent] = traceParentHeaderSampled
         carrier[W3CTraceContextPropagator.traceState] = traceStateNotDefaultEncoding
-        XCTAssertEqual(httpTraceContext.extract(spanContext: getSpanContext(), carrier: carrier, getter: getter), SpanContext.createFromRemoteParent(traceId: traceId, spanId: spanId, traceFlags: sampledTraceOptions, traceState: traceState_not_default))
+        XCTAssertEqual(httpTraceContext.extract(carrier: carrier, getter: getter), SpanContext.createFromRemoteParent(traceId: traceId, spanId: spanId, traceFlags: sampledTraceOptions, traceState: traceState_not_default))
     }
 
     func testExtract_NotSampledContext_WithTraceState() {
         var carrier = [String: String]()
         carrier[W3CTraceContextPropagator.traceparent] = traceParentHeaderNotSampled
         carrier[W3CTraceContextPropagator.traceState] = traceStateNotDefaultEncoding
-        XCTAssertEqual(httpTraceContext.extract(spanContext: getSpanContext(), carrier: carrier, getter: getter), SpanContext.createFromRemoteParent(traceId: traceId, spanId: spanId, traceFlags: TraceFlags(), traceState: traceState_not_default))
+        XCTAssertEqual(httpTraceContext.extract(carrier: carrier, getter: getter), SpanContext.createFromRemoteParent(traceId: traceId, spanId: spanId, traceFlags: TraceFlags(), traceState: traceState_not_default))
     }
 
     func testExtract_NotSampledContext_NextVersion() {
         var carrier = [String: String]()
         carrier[W3CTraceContextPropagator.traceparent] = "01-" + traceId_base16 + "-" + spanId_base16 + "-00-02"
-        XCTAssertEqual(httpTraceContext.extract(spanContext: getSpanContext(), carrier: carrier, getter: getter), SpanContext.createFromRemoteParent(traceId: traceId, spanId: spanId, traceFlags: TraceFlags(), traceState: traceState_default))
+        XCTAssertEqual(httpTraceContext.extract(carrier: carrier, getter: getter), SpanContext.createFromRemoteParent(traceId: traceId, spanId: spanId, traceFlags: TraceFlags(), traceState: traceState_default))
     }
 
     func testExtract_NotSampledContext_EmptyTraceState() {
         var carrier = [String: String]()
         carrier[W3CTraceContextPropagator.traceparent] = traceParentHeaderNotSampled
         carrier[W3CTraceContextPropagator.traceState] = ""
-        XCTAssertEqual(httpTraceContext.extract(spanContext: getSpanContext(), carrier: carrier, getter: getter), SpanContext.createFromRemoteParent(traceId: traceId, spanId: spanId, traceFlags: TraceFlags(), traceState: traceState_default))
+        XCTAssertEqual(httpTraceContext.extract(carrier: carrier, getter: getter), SpanContext.createFromRemoteParent(traceId: traceId, spanId: spanId, traceFlags: TraceFlags(), traceState: traceState_default))
     }
 
     func testExtract_NotSampledContext_TraceStateWithSpaces() {
         var carrier = [String: String]()
         carrier[W3CTraceContextPropagator.traceparent] = traceParentHeaderNotSampled
         carrier[W3CTraceContextPropagator.traceState] = "foo=bar   ,    bar=baz"
-        XCTAssertEqual(httpTraceContext.extract(spanContext: getSpanContext(), carrier: carrier, getter: getter), SpanContext.createFromRemoteParent(traceId: traceId, spanId: spanId, traceFlags: TraceFlags(), traceState: traceState_not_default))
+        XCTAssertEqual(httpTraceContext.extract(carrier: carrier, getter: getter), SpanContext.createFromRemoteParent(traceId: traceId, spanId: spanId, traceFlags: TraceFlags(), traceState: traceState_not_default))
     }
 
     func testExtract_InvalidTraceId() {
         var invalidHeaders = [String: String]()
         invalidHeaders[W3CTraceContextPropagator.traceparent] = "00-" + "abcdefghijklmnopabcdefghijklmnop" + "-" + spanId_base16 + "-01"
-        XCTAssertNil(httpTraceContext.extract(spanContext: getSpanContext(), carrier: invalidHeaders, getter: getter))
+        XCTAssertNil(httpTraceContext.extract(carrier: invalidHeaders, getter: getter))
     }
 
     func testExtract_InvalidTraceId_Size() {
         var invalidHeaders = [String: String]()
         invalidHeaders[W3CTraceContextPropagator.traceparent] = "00-" + traceId_base16 + "00-" + spanId_base16 + "-01"
-        XCTAssertNil(httpTraceContext.extract(spanContext: getSpanContext(), carrier: invalidHeaders, getter: getter))
+        XCTAssertNil(httpTraceContext.extract(carrier: invalidHeaders, getter: getter))
     }
 
     func testExtract_InvalidSpanId() {
         var invalidHeaders = [String: String]()
         invalidHeaders[W3CTraceContextPropagator.traceparent] = "00-" + traceId_base16 + "-" + "abcdefghijklmnop" + "-01"
-        XCTAssertNil(httpTraceContext.extract(spanContext: getSpanContext(), carrier: invalidHeaders, getter: getter))
+        XCTAssertNil(httpTraceContext.extract(carrier: invalidHeaders, getter: getter))
     }
 
     func testExtract_InvalidSpanId_Size() {
         var invalidHeaders = [String: String]()
         invalidHeaders[W3CTraceContextPropagator.traceparent] = "00-" + traceId_base16 + "-" + spanId_base16 + "00-01"
-        XCTAssertNil(httpTraceContext.extract(spanContext: getSpanContext(), carrier: invalidHeaders, getter: getter))
+        XCTAssertNil(httpTraceContext.extract(carrier: invalidHeaders, getter: getter))
     }
 
     func testExtract_InvalidTraceFlags() {
         var invalidHeaders = [String: String]()
         invalidHeaders[W3CTraceContextPropagator.traceparent] = "00-" + traceId_base16 + "-" + spanId_base16 + "-gh"
-        XCTAssertNil(httpTraceContext.extract(spanContext: getSpanContext(), carrier: invalidHeaders, getter: getter))
+        XCTAssertNil(httpTraceContext.extract(carrier: invalidHeaders, getter: getter))
     }
 
     func testExtract_InvalidTraceFlags_Size() {
         var invalidHeaders = [String: String]()
         invalidHeaders[W3CTraceContextPropagator.traceparent] = "00-" + traceId_base16 + "-" + spanId_base16 + "-0100"
-        XCTAssertNil(httpTraceContext.extract(spanContext: getSpanContext(), carrier: invalidHeaders, getter: getter))
+        XCTAssertNil(httpTraceContext.extract(carrier: invalidHeaders, getter: getter))
     }
 
 //    func testExtract_InvalidTraceState_EntriesDelimiter() {
@@ -207,6 +203,6 @@ class W3CTraceContextPropagatorTest: XCTestCase {
 
     func testExtract_EmptyCarrier() {
         let emptyHeaders = [String: String]()
-        XCTAssertNil(httpTraceContext.extract(spanContext: getSpanContext(), carrier: emptyHeaders, getter: getter))
+        XCTAssertNil(httpTraceContext.extract(carrier: emptyHeaders, getter: getter))
     }
 }

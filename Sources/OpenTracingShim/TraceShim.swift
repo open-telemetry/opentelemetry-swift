@@ -29,13 +29,13 @@ public class TraceShim {
 
     public static func createTracerShim() -> OTTracer {
         return TracerShim(telemetryInfo: TelemetryInfo(tracer: TraceShim.getTracer(tracerProvider: OpenTelemetrySDK.instance.tracerProvider),
-                                                       contextManager: OpenTelemetrySDK.instance.contextManager,
+                                                       baggageManager: OpenTelemetrySDK.instance.baggageManager,
                                                        propagators: OpenTelemetrySDK.instance.propagators))
     }
 
-    public static func createTracerShim(tracerProvider: TracerProvider, contextManager: BaggageManager) -> OTTracer {
+    public static func createTracerShim(tracerProvider: TracerProvider, baggageManager: BaggageManager) -> OTTracer {
         return TracerShim(telemetryInfo: TelemetryInfo(tracer: TraceShim.getTracer(tracerProvider: tracerProvider),
-                                                       contextManager: contextManager,
+                                                       baggageManager: baggageManager,
                                                        propagators: OpenTelemetrySDK.instance.propagators))
     }
 

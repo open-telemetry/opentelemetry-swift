@@ -18,8 +18,6 @@ import OpenTelemetryApi
 import Opentracing
 
 public class SpanContextShim: OTSpanContext, BaseShimProtocol {
-    static let defaultEntryMetadata = EntryMetadata(entryTtl: .unlimitedPropagation)
-
     var telemetryInfo: TelemetryInfo
     public private(set) var context: SpanContext
     public private(set) var baggage: Baggage
@@ -39,8 +37,8 @@ public class SpanContextShim: OTSpanContext, BaseShimProtocol {
     }
 
     func newWith(key: String, value: String) -> SpanContextShim {
-        let baggageBuilder = contextManager.baggageBuilder().setParent(baggage)
-        baggageBuilder.put(key: EntryKey(name: key)!, value: EntryValue(string: value)!, metadata: SpanContextShim.defaultEntryMetadata)
+        let baggageBuilder = baggageManager.baggageBuilder().setParent(baggage)
+        baggageBuilder.put(key: EntryKey(name: key)!, value: EntryValue(string: value)!, metadata: nil)
 
         return SpanContextShim(telemetryInfo: telemetryInfo, context: context, baggage: baggageBuilder.build())
     }

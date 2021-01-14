@@ -30,8 +30,8 @@ public struct OpenTelemetrySDK {
         return OpenTelemetry.instance.meterProvider as! MeterSdkProvider
     }
 
-    public var contextManager: BaggageManagerSdk {
-        return OpenTelemetry.instance.contextManager as! BaggageManagerSdk
+    public var baggageManager: DefaultBaggageManager {
+        return OpenTelemetry.instance.baggageManager as! DefaultBaggageManager
     }
 
     public var propagators: ContextPropagators {
@@ -41,6 +41,6 @@ public struct OpenTelemetrySDK {
     private init() {
         OpenTelemetry.registerTracerProvider(tracerProvider: TracerSdkProvider())
         OpenTelemetry.registerMeterProvider(meterProvider: MeterSdkProvider())
-        OpenTelemetry.registerBaggageManager(baggageManager: BaggageManagerSdk())
+        OpenTelemetry.registerBaggageManager(baggageManager: DefaultBaggageManager.instance)
     }
 }

@@ -14,15 +14,27 @@
 //
 
 import Foundation
-import OpenTelemetryApi
-@testable import OpenTelemetrySdk
 
-struct BaggageTestUtil {
-    static func listToBaggage(entries: [Entry]) -> BaggageSdk {
-        let builder = BaggageSdk.baggageBuilder()
-        for entry in entries {
-            builder.put(key: entry.key, value: entry.value, metadata: entry.metadata)
-        }
-        return builder.build() as! BaggageSdk
+public class EmptyBaggageBuilder: BaggageBuilder {
+    public func setParent(_ parent: Baggage) -> Self {
+        return self
     }
+
+    public func setNoParent() -> Self {
+        return self
+    }
+
+    public func put(key: EntryKey, value: EntryValue, metadata: EntryMetadata?) -> Self {
+        return self
+    }
+
+    public func remove(key: EntryKey) -> Self {
+        return self
+    }
+
+    public func build() -> Baggage {
+        return EmptyBaggage.instance
+    }
+
+    public init() {}
 }

@@ -15,22 +15,32 @@
 
 import Foundation
 
-/// An immutable implementation of the Baggage that does not contain any entries.
-public class EmptyBaggage: Baggage {
-    private init() {}
+public final class DefaultBaggage: Baggage, Equatable {
+    // The types of the EntryKey and Entry must match for each entry.
+    var entries: [EntryKey: Entry?]
 
-    /// Returns the single instance of the EmptyBaggage class.
-    public static var instance = EmptyBaggage()
+    /// Creates a new DefaultBaggage with the given entries.
+    /// - Parameters:
+    ///   - entries: the initial entries for this BaggageSdk
+    ///   - parent: parent providing a default set of entries
+    public init(entries: [EntryKey: Entry?]) {
+        self.entries = entries
+    }
 
     public static func baggageBuilder() -> BaggageBuilder {
-        return EmptyBaggageBuilder()
+        return DefaultBaggageBuilder()
     }
 
     public func getEntries() -> [Entry] {
-        return [Entry]()
+        return Array(entries.values).compactMap { $0 }
     }
 
     public func getEntryValue(key: EntryKey) -> EntryValue? {
-        return nil
+        return entries[key]??.value
+    }
+
+    static public func == (lhs: DefaultBaggage, rhs: DefaultBaggage) -> Bool {
+        return lhs.getEntries().sorted() == rhs.getEntries().sorted()
     }
 }
+

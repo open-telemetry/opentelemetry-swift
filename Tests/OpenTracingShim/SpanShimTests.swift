@@ -29,7 +29,7 @@ class SpanShimTests: XCTestCase {
 
     override func setUp() {
         tracer = tracerSdkProvider.get(instrumentationName: "SpanShimTest")
-        telemetryInfo = TelemetryInfo(tracer: tracer, contextManager: OpenTelemetrySDK.instance.contextManager, propagators: OpenTelemetrySDK.instance.propagators)
+        telemetryInfo = TelemetryInfo(tracer: tracer, baggageManager: OpenTelemetrySDK.instance.baggageManager, propagators: OpenTelemetrySDK.instance.propagators)
         span = tracer.spanBuilder(spanName: spanName).startSpan()
         tracerShim = TracerShim(telemetryInfo: telemetryInfo)
     }

@@ -14,22 +14,14 @@
 //
 
 import Foundation
-import OpenTelemetryApi
+@testable import OpenTelemetryApi
 
-/// BaggageManagerSdk is SDK implementation of BaggageManager.
-public class BaggageManagerSdk: BaggageManager {
-    public init() {
-    }
-
-    public func baggageBuilder() -> BaggageBuilder {
-        return BaggageSdkBuilder()
-    }
-
-    public func getCurrentContext() -> Baggage {
-        return ContextUtils.getCurrentBaggage() ?? EmptyBaggage.instance
-    }
-
-    public func withContext(baggage: Baggage) -> Scope {
-        return ContextUtils.withBaggage(baggage)
+struct BaggageTestUtil {
+    static func listToBaggage(entries: [Entry]) -> DefaultBaggage {
+        let builder = DefaultBaggage.baggageBuilder()
+        for entry in entries {
+            builder.put(key: entry.key, value: entry.value, metadata: entry.metadata)
+        }
+        return builder.build() as! DefaultBaggage
     }
 }

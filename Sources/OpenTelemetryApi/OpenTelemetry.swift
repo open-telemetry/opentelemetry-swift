@@ -28,15 +28,15 @@ public struct OpenTelemetry {
     public private(set) var meterProvider: MeterProvider
 
     /// registered manager or default via  DefaultBaggageManager.instance.
-    public private(set) var contextManager: BaggageManager
+    public private(set) var baggageManager: BaggageManager
 
     /// registered manager or default via  DefaultBaggageManager.instance.
-    public private(set) var propagators: ContextPropagators = DefaultContextPropagators(textPropagators: [W3CTraceContextPropagator()])
+    public private(set) var propagators: ContextPropagators = DefaultContextPropagators(textPropagators: [W3CTraceContextPropagator()], baggagePropagator: W3CBaggagePropagator())
 
     private init() {
         tracerProvider = DefaultTracerProvider.instance
         meterProvider = DefaultMeterProvider.instance
-        contextManager = DefaultBaggageManager.instance
+        baggageManager = DefaultBaggageManager.instance
     }
 
     public static func registerTracerProvider(tracerProvider: TracerProvider) {
@@ -48,6 +48,6 @@ public struct OpenTelemetry {
     }
 
     public static func registerBaggageManager(baggageManager: BaggageManager) {
-        instance.contextManager = baggageManager
+        instance.baggageManager = baggageManager
     }
 }

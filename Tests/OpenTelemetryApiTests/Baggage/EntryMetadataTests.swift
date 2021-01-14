@@ -18,12 +18,12 @@ import XCTest
 
 class EntryMetadataTests: XCTestCase {
     func testGetEntryTtl() {
-        let entryMetadata = EntryMetadata(entryTtl: .noPropagation)
-        XCTAssertEqual(entryMetadata.entryTtl, EntryTtl.noPropagation)
+        let entryMetadata = EntryMetadata(metadata: "test")
+        XCTAssertEqual(entryMetadata!.metadata,  "test")
     }
 
     func testEquals() {
-        XCTAssertEqual(EntryMetadata(entryTtl: .noPropagation), EntryMetadata(entryTtl: .noPropagation))
-        XCTAssertNotEqual(EntryMetadata(entryTtl: .noPropagation), EntryMetadata(entryTtl: .unlimitedPropagation))
+        XCTAssertEqual(EntryMetadata(metadata:  "test"), EntryMetadata(metadata:  "test"))
+        XCTAssertNotEqual(EntryMetadata(metadata:  "test1"), EntryMetadata(metadata: "test2"))
     }
 }

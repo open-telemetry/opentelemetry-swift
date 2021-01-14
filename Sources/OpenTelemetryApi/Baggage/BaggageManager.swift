@@ -24,7 +24,7 @@ import Foundation
 /// is the same instance as the one withContext() placed into scope.
 public protocol BaggageManager: AnyObject {
     /// Returns the current Baggage
-    func getCurrentContext() -> Baggage
+    func getCurrentBaggage() -> Baggage
 
     /// Returns a new ContextBuilder.
     func baggageBuilder() -> BaggageBuilder
