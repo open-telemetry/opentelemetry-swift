@@ -51,11 +51,11 @@ public class TracerShim: OTTracer, BaseShimProtocol {
     }
 
     public func startSpan(_ operationName: String, childOf parent: OTSpanContext?, tags: [AnyHashable: Any]?, startTime: Date?) -> OTSpan {
-        var correlationContext: CorrelationContext?
+        var baggage: Baggage?
         let builder = tracer.spanBuilder(spanName: operationName)
         if let parent = parent as? SpanContextShim {
             builder.setParent(parent.context)
-            correlationContext = parent.correlationContext
+            baggage = parent.baggage
         }
 
         if let tags = tags as? [String: NSObject] {
@@ -72,8 +72,8 @@ public class TracerShim: OTTracer, BaseShimProtocol {
         let span = builder.startSpan()
         tracer.setActive(span)
         let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
-        if correlationContext != nil, !(correlationContext! == telemetryInfo.emptyCorrelationContext) {
-            spanContextTable.create(spanShim: spanShim, distContext: correlationContext!)
+        if baggage != nil, !(baggage! == telemetryInfo.emptyBaggage) {
+            spanContextTable.create(spanShim: spanShim, distContext: baggage!)
         }
         return spanShim
     }

@@ -14,19 +14,23 @@
 //
 
 import Foundation
-import OpenTelemetryApi
-import OpenTelemetrySdk
 
-class CorrelationContextMock: CorrelationContext {
-    static func contextBuilder() -> CorrelationContextBuilder {
-        return EmptyCorrelationContextBuilder()
+/// An immutable implementation of the Baggage that does not contain any entries.
+public class EmptyBaggage: Baggage {
+    private init() {}
+
+    /// Returns the single instance of the EmptyBaggage class.
+    public static var instance = EmptyBaggage()
+
+    public static func baggageBuilder() -> BaggageBuilder {
+        return EmptyBaggageBuilder()
     }
 
-    func getEntries() -> [Entry] {
+    public func getEntries() -> [Entry] {
         return [Entry]()
     }
 
-    func getEntryValue(key: EntryKey) -> EntryValue? {
+    public func getEntryValue(key: EntryKey) -> EntryValue? {
         return nil
     }
 }

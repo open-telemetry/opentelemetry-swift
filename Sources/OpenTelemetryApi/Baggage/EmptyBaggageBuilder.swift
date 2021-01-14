@@ -15,11 +15,26 @@
 
 import Foundation
 
-/// No-op implementations of CorrelationContextManager.
-public class DefaultCorrelationContextManagerProvider: CorrelationContextManagerProvider {
-    public static var instance = DefaultCorrelationContextManagerProvider()
-
-    public func create() -> CorrelationContextManager {
-        return DefaultCorrelationContextManager.instance
+public class EmptyBaggageBuilder: BaggageBuilder {
+    public func setParent(_ parent: Baggage) -> Self {
+        return self
     }
+
+    public func setNoParent() -> Self {
+        return self
+    }
+
+    public func put(key: EntryKey, value: EntryValue, metadata: EntryMetadata?) -> Self {
+        return self
+    }
+
+    public func remove(key: EntryKey) -> Self {
+        return self
+    }
+
+    public func build() -> Baggage {
+        return EmptyBaggage.instance
+    }
+
+    public init() {}
 }

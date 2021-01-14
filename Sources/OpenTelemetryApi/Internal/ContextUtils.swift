@@ -16,13 +16,13 @@
 import Foundation
 import os.activity
 
-/// Helper class to get the current Span and current CorrelationContext
+/// Helper class to get the current Span and current Baggage
 /// Users must interact with the current Context via the public APIs in Tracer and avoid
 /// accessing this class directly.
 public struct ContextUtils {
     struct ContextEntry {
         var span: Span?
-        var correlationContext: CorrelationContext?
+        var baggage: Baggage?
     }
 
     static let RTLD_DEFAULT = UnsafeMutableRawPointer(bitPattern: -2)
@@ -47,16 +47,16 @@ public struct ContextUtils {
         return returnSpan
     }
 
-    /// Returns the CorrelationContext from the current context
-    public static func getCurrentCorrelationContext() -> CorrelationContext? {
-        // We should try to traverse all hierarchy to locate the CorrelationContext, but I could not find a way, just direct parent
+    /// Returns the Baggage from the current context
+    public static func getCurrentBaggage() -> Baggage? {
+        // We should try to traverse all hierarchy to locate the Baggage, but I could not find a way, just direct parent
         var parentIdent: os_activity_id_t = 0
         let activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, &parentIdent)
-        var returnContext: CorrelationContext?
+        var returnContext: Baggage?
         rlock.lock()
-        returnContext = contextMap[activityIdent]?.correlationContext
+        returnContext = contextMap[activityIdent]?.baggage
         if returnContext == nil {
-            returnContext = contextMap[parentIdent]?.correlationContext
+            returnContext = contextMap[parentIdent]?.baggage
         }
         rlock.unlock()
         return returnContext
@@ -69,9 +69,9 @@ public struct ContextUtils {
     }
 
     /// Returns a new Scope encapsulating the provided Correlation Context added to the current context
-    /// - Parameter correlationContext: the Correlation Context to be added to the current contex
-    public static func withCorrelationContext(_ correlationContext: CorrelationContext) -> Scope {
-        return CorrelationContextInScope(correlationContext: correlationContext)
+    /// - Parameter baggage: the Correlation Context to be added to the current contex
+    public static func withBaggage(_ baggage: Baggage) -> Scope {
+        return BaggageInScope(baggage: baggage)
     }
 
     static func setContext(activityId: os_activity_id_t, forSpan span: Span) {
@@ -79,35 +79,35 @@ public struct ContextUtils {
         if contextMap[activityId] != nil {
             contextMap[activityId]!.span = span
         } else {
-            contextMap[activityId] = ContextEntry(span: span, correlationContext: getCurrentCorrelationContext())
+            contextMap[activityId] = ContextEntry(span: span, baggage: getCurrentBaggage())
         }
         rlock.unlock()
     }
 
     static func removeContextForSpan(activityId: os_activity_id_t) {
         rlock.lock()
-        if let correlationContext = contextMap[activityId]?.correlationContext {
-            contextMap[activityId] = ContextEntry(span: nil, correlationContext: correlationContext)
+        if let baggage = contextMap[activityId]?.baggage {
+            contextMap[activityId] = ContextEntry(span: nil, baggage: baggage)
         } else {
             contextMap[activityId] = nil
         }
         rlock.unlock()
     }
 
-    static func setContext(activityId: os_activity_id_t, forCorrelationContext correlationContext: CorrelationContext) {
+    static func setContext(activityId: os_activity_id_t, forBaggage baggage: Baggage) {
         rlock.lock()
         if contextMap[activityId] != nil {
-            contextMap[activityId]!.correlationContext = correlationContext
+            contextMap[activityId]!.baggage = baggage
         } else {
-            contextMap[activityId] = ContextEntry(span: getCurrentSpan(), correlationContext: correlationContext)
+            contextMap[activityId] = ContextEntry(span: getCurrentSpan(), baggage: baggage)
         }
         rlock.unlock()
     }
 
-    static func removeContextForCorrelationContext(activityId: os_activity_id_t) {
+    static func removeContextForBaggage(activityId: os_activity_id_t) {
         rlock.lock()
         if let span = contextMap[activityId]?.span {
-            contextMap[activityId] = ContextEntry(span: span, correlationContext: nil)
+            contextMap[activityId] = ContextEntry(span: span, baggage: nil)
         } else {
             contextMap[activityId] = nil
         }

@@ -13,16 +13,17 @@
 // limitations under the License.
 //
 
-import Foundation
 import OpenTelemetryApi
-@testable import OpenTelemetrySdk
+import XCTest
 
-struct CorrelationContextTestUtil {
-    static func listToCorrelationContext(entries: [Entry]) -> CorrelationContextSdk {
-        let builder = CorrelationContextSdk.contextBuilder()
-        for entry in entries {
-            builder.put(key: entry.key, value: entry.value, metadata: entry.metadata)
-        }
-        return builder.build() as! CorrelationContextSdk
+class EntryMetadataTests: XCTestCase {
+    func testGetEntryTtl() {
+        let entryMetadata = EntryMetadata(metadata: "test")
+        XCTAssertEqual(entryMetadata!.metadata,  "test")
+    }
+
+    func testEquals() {
+        XCTAssertEqual(EntryMetadata(metadata:  "test"), EntryMetadata(metadata:  "test"))
+        XCTAssertNotEqual(EntryMetadata(metadata:  "test1"), EntryMetadata(metadata: "test2"))
     }
 }

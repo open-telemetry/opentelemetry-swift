@@ -24,7 +24,7 @@ class LoggingTextFormat: TextMapPropagator {
         Logger.log("LoggingTextFormat.Inject(\(spanContext), ...)")
     }
 
-    func extract<G>(spanContext: SpanContext?, carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
+    func extract<G>(carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
         Logger.log("LoggingTextFormat.Extract(...)")
         return nil
     }

@@ -15,22 +15,11 @@
 
 import Foundation
 
-/// An immutable implementation of the CorrelationContext that does not contain any entries.
-public class EmptyCorrelationContext: CorrelationContext {
-    /// Returns the single instance of the EmptyCorrelationContext class.
-    public static var instance = EmptyCorrelationContext()
+/// No-op implementations of BaggageManager.
+public class DefaultBaggageManagerProvider: BaggageManagerProvider {
+    public static var instance = DefaultBaggageManagerProvider()
 
-    public static func contextBuilder() -> CorrelationContextBuilder {
-        return EmptyCorrelationContextBuilder()
-    }
-
-    private init() {}
-
-    public func getEntries() -> [Entry] {
-        return [Entry]()
-    }
-
-    public func getEntryValue(key: EntryKey) -> EntryValue? {
-        return nil
+    public func create() -> BaggageManager {
+        return DefaultBaggageManager.instance
     }
 }

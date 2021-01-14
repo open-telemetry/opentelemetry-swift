@@ -14,27 +14,19 @@
 //
 
 import Foundation
+import OpenTelemetryApi
+import OpenTelemetrySdk
 
-public class EmptyCorrelationContextBuilder: CorrelationContextBuilder {
-    public func setParent(_ parent: CorrelationContext) -> Self {
-        return self
+class BaggageMock: Baggage {
+    static func baggageBuilder() -> BaggageBuilder {
+        return EmptyBaggageBuilder()
     }
 
-    public func setNoParent() -> Self {
-        return self
+    func getEntries() -> [Entry] {
+        return [Entry]()
     }
 
-    public func put(key: EntryKey, value: EntryValue, metadata: EntryMetadata) -> Self {
-        return self
+    func getEntryValue(key: EntryKey) -> EntryValue? {
+        return nil
     }
-
-    public func remove(key: EntryKey) -> Self {
-        return self
-    }
-
-    public func build() -> CorrelationContext {
-        return EmptyCorrelationContext.instance
-    }
-
-    public init() {}
 }

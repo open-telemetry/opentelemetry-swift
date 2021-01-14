@@ -13,7 +13,6 @@
 // limitations under the License.
 //
 
-@testable import DatadogExporter
 import XCTest
 
 extension Date {

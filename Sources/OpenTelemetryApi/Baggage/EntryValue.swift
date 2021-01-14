@@ -30,6 +30,7 @@ public struct EntryValue: Equatable {
     ///  - It cannot be longer than {255.
     ///  - It can only contain printable ASCII characters.
     public init?(string: String) {
+        let string = string.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
         if !EntryValue.isValid(value: string) {
             return nil
         }

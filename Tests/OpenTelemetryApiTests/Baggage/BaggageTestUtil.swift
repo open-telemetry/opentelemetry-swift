@@ -13,17 +13,15 @@
 // limitations under the License.
 //
 
-import OpenTelemetryApi
-import XCTest
+import Foundation
+@testable import OpenTelemetryApi
 
-class EntryMetadataTests: XCTestCase {
-    func testGetEntryTtl() {
-        let entryMetadata = EntryMetadata(entryTtl: .noPropagation)
-        XCTAssertEqual(entryMetadata.entryTtl, EntryTtl.noPropagation)
-    }
-
-    func testEquals() {
-        XCTAssertEqual(EntryMetadata(entryTtl: .noPropagation), EntryMetadata(entryTtl: .noPropagation))
-        XCTAssertNotEqual(EntryMetadata(entryTtl: .noPropagation), EntryMetadata(entryTtl: .unlimitedPropagation))
+struct BaggageTestUtil {
+    static func listToBaggage(entries: [Entry]) -> DefaultBaggage {
+        let builder = DefaultBaggage.baggageBuilder()
+        for entry in entries {
+            builder.put(key: entry.key, value: entry.value, metadata: entry.metadata)
+        }
+        return builder.build() as! DefaultBaggage
     }
 }

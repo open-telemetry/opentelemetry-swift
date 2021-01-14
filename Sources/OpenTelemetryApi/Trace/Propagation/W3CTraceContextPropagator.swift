@@ -58,7 +58,7 @@ public struct W3CTraceContextPropagator: TextMapPropagator {
         }
     }
 
-    public func extract<G>(spanContext: SpanContext?, carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
+    public func extract<G>(carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
         guard let traceparentCollection = getter.get(carrier: carrier,
                                                      key: W3CTraceContextPropagator.traceparent),
             traceparentCollection.count <= 1 else {

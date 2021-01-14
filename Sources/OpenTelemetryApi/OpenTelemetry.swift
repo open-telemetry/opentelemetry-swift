@@ -16,7 +16,7 @@
 import Foundation
 
 /// This class provides a static global accessor for telemetry objects Tracer, Meter
-///  and CorrelationContextManager.
+///  and BaggageManager.
 ///  The telemetry objects are lazy-loaded singletons resolved via ServiceLoader mechanism.
 public struct OpenTelemetry {
     public static var instance = OpenTelemetry()
@@ -27,16 +27,16 @@ public struct OpenTelemetry {
     /// Registered MeterProvider or default via DefaultMeterProvider.instance.
     public private(set) var meterProvider: MeterProvider
 
-    /// registered manager or default via  DefaultCorrelationContextManager.instance.
-    public private(set) var contextManager: CorrelationContextManager
+    /// registered manager or default via  DefaultBaggageManager.instance.
+    public private(set) var baggageManager: BaggageManager
 
-    /// registered manager or default via  DefaultCorrelationContextManager.instance.
-    public private(set) var propagators: ContextPropagators = DefaultContextPropagators(textPropagators: [W3CTraceContextPropagator()])
+    /// registered manager or default via  DefaultBaggageManager.instance.
+    public private(set) var propagators: ContextPropagators = DefaultContextPropagators(textPropagators: [W3CTraceContextPropagator()], baggagePropagator: W3CBaggagePropagator())
 
     private init() {
         tracerProvider = DefaultTracerProvider.instance
         meterProvider = DefaultMeterProvider.instance
-        contextManager = DefaultCorrelationContextManager.instance
+        baggageManager = DefaultBaggageManager.instance
     }
 
     public static func registerTracerProvider(tracerProvider: TracerProvider) {
@@ -47,7 +47,7 @@ public struct OpenTelemetry {
         instance.meterProvider = meterProvider
     }
 
-    public static func registerCorrelationContextManager(correlationContextManager: CorrelationContextManager) {
-        instance.contextManager = correlationContextManager
+    public static func registerBaggageManager(baggageManager: BaggageManager) {
+        instance.baggageManager = baggageManager
     }
 }
