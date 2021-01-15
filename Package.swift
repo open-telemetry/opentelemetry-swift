@@ -38,14 +38,16 @@ let package = Package(
         .package(name: "Thrift", url: "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1"),
         .package(name: "swift-nio", url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
         .package(name: "grpc-swift", url: "https://github.com/grpc/grpc-swift.git", .exact("1.0.0-alpha.12")),
-        .package(name: "SwiftProtobuf", url: "https://github.com/apple/swift-protobuf.git", from: "1.6.0")
+        .package(name: "SwiftProtobuf", url: "https://github.com/apple/swift-protobuf.git", from: "1.6.0"),
+        .package(name: "swift-atomics", url: "https://github.com/apple/swift-atomics.git", from: "0.0.1")
     ],
     targets: [
         .target(name: "OpenTelemetryApi",
                 dependencies: []
         ),
         .target(name: "OpenTelemetrySdk",
-                dependencies: ["OpenTelemetryApi"]
+                dependencies: ["OpenTelemetryApi",
+                               .product(name: "Atomics", package: "swift-atomics")]
         ),
         .target(name: "OpenTracingShim",
                 dependencies: ["OpenTelemetrySdk",

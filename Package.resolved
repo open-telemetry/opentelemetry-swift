@@ -6,8 +6,8 @@
         "repositoryURL": "https://github.com/grpc/grpc-swift.git",
         "state": {
           "branch": null,
-          "revision": "399cfe1cfec19d8dc37dcd945a389e6eaae3ea43",
-          "version": "1.0.0-alpha.14"
+          "revision": "b83ee1ee2caa0660eb02444977b9b6e353c2adbf",
+          "version": "1.0.0-alpha.12"
         }
       },
       {
@@ -17,6 +17,15 @@
           "branch": null,
           "revision": "18c1a35ca966236cee0c5a714a51a73ff33384c1",
           "version": "0.5.2"
+        }
+      },
+      {
+        "package": "swift-atomics",
+        "repositoryURL": "https://github.com/apple/swift-atomics.git",
+        "state": {
+          "branch": null,
+          "revision": "26e346cd64f6b92d4089e7fafe2f8e82f60ddb8c",
+          "version": "0.0.2"
         }
       },
       {

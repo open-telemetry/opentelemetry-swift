@@ -15,6 +15,7 @@
 
 import Foundation
 import OpenTelemetryApi
+import Atomics
 
 /// Implementation for the Span class that records trace events.
 public class RecordEventsReadableSpan: ReadableSpan {
@@ -86,7 +87,15 @@ public class RecordEventsReadableSpan: ReadableSpan {
     /// The end time of the span.
     public private(set) var endTime: Date?
     /// True if the span is ended.
-    public private(set) var hasEnded: Bool = false
+    private var endAtomic = ManagedAtomic<Bool>(false)
+    public private(set) var hasEnded: Bool {
+        set {
+            self.endAtomic.store(newValue, ordering: .relaxed)
+        }
+        get {
+            return self.endAtomic.load(ordering: .relaxed)
+        }
+    }
 
     private let eventsSyncLock = Lock()
     private let attributesSyncLock = Lock()

@@ -95,16 +95,16 @@ internal struct DDSpan: Encodable {
         self.startTime = spanData.startTime.timeIntervalSince1970.toNanoseconds
         self.duration = spanData.endTime.timeIntervalSince(spanData.startTime).toNanoseconds
 
-        if spanData.status.isOk {
-            self.error = false
-            self.errorMessage = nil
-            self.errorType = nil
-            self.errorStack = nil
-        } else {
+        if spanData.status.isError {
             self.error = true
             self.errorType = spanData.attributes["error.type"]?.description ?? spanData.status.description
             self.errorMessage = spanData.attributes["error.message"]?.description
             self.errorStack = spanData.attributes["error.stack"]?.description
+        } else {
+            self.error = false
+            self.errorMessage = nil
+            self.errorType = nil
+            self.errorStack = nil
         }
 
         let spanType = spanData.attributes["type"] ?? spanData.attributes["db.type"]

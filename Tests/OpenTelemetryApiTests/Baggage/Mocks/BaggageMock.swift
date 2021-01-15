@@ -15,7 +15,6 @@
 
 import Foundation
 import OpenTelemetryApi
-import OpenTelemetrySdk
 
 class BaggageMock: Baggage {
     static func baggageBuilder() -> BaggageBuilder {
