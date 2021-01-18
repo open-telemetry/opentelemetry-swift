@@ -87,11 +87,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
     /// The end time of the span.
     public private(set) var endTime: Date?
     /// True if the span is ended.
-    private var endAtomic = ManagedAtomic<Bool>(false)
-    public private(set) var hasEnded: Bool {
-        set {
-            self.endAtomic.store(newValue, ordering: .relaxed)
-        }
+    fileprivate var endAtomic = ManagedAtomic<Bool>(false)
+    public var hasEnded: Bool {
         get {
             return self.endAtomic.load(ordering: .relaxed)
         }
@@ -222,11 +219,10 @@ public class RecordEventsReadableSpan: ReadableSpan {
     }
 
     public func setAttribute(key: String, value: AttributeValue?) {
-        if hasEnded {
-            return
-        }
-
         attributesSyncLock.withLockVoid {
+            if !isRecording {
+                return
+            }
             if value == nil {
                 attributes.removeValueForKey(key: key)
             }
@@ -259,10 +255,10 @@ public class RecordEventsReadableSpan: ReadableSpan {
     }
 
     private func addEvent(event: SpanData.Event) {
-        if hasEnded {
-            return
-        }
         eventsSyncLock.withLockVoid {
+            if !isRecording {
+                return
+            }
             events.append(event)
             totalRecordedEvents += 1
         }
@@ -273,13 +269,16 @@ public class RecordEventsReadableSpan: ReadableSpan {
     }
 
     public func end(time: Date) {
-        if hasEnded {
+        if endAtomic.exchange(true, ordering: .relaxed) {
             return
         }
+        eventsSyncLock.withLockVoid{
+            attributesSyncLock.withLockVoid{
+                isRecording = false
+            }
+        }
         endTime = time
-        hasEnded = true
         spanProcessor.onEnd(span: self)
-        isRecording = false
         scope?.close()
     }
 
