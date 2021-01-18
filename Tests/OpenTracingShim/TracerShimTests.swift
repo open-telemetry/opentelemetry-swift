@@ -21,7 +21,7 @@ import XCTest
 
 class TracerShimTests: XCTestCase {
     var tracerShim = TracerShim(telemetryInfo: TelemetryInfo(tracer: OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: "opentracingshim"),
-                                                             contextManager: OpenTelemetrySDK.instance.contextManager,
+                                                             baggageManager: OpenTelemetrySDK.instance.baggageManager,
                                                              propagators: OpenTelemetrySDK.instance.propagators))
 
     func testDefaultTracer() {

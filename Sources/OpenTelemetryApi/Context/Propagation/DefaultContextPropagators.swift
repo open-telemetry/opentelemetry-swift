@@ -20,13 +20,16 @@ import Foundation
 /// synchronically upon injection and extraction.
 public struct DefaultContextPropagators: ContextPropagators {
     public var textMapPropagator: TextMapPropagator
+    public var textMapBaggagePropagator: TextMapBaggagePropagator
 
     public init() {
         textMapPropagator = NoopTextMapPropagator()
+        textMapBaggagePropagator = NoopBaggagePropagator()
     }
 
-    public init(textPropagators: [TextMapPropagator]) {
+    public init(textPropagators: [TextMapPropagator], baggagePropagator: TextMapBaggagePropagator) {
         textMapPropagator = MultiTextMapPropagator(textPropagators: textPropagators)
+        textMapBaggagePropagator = baggagePropagator
     }
 
     public mutating func addTextMapPropagator(textFormat: TextMapPropagator) {
@@ -65,21 +68,34 @@ public struct DefaultContextPropagators: ContextPropagators {
             }
         }
 
-        public func extract<G>(spanContext: SpanContext?, carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
+        public func extract<G>(carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
+            var spanContext: SpanContext?
             textPropagators.forEach {
-                $0.extract(spanContext: spanContext, carrier: carrier, getter: getter)
+                spanContext = $0.extract(carrier: carrier, getter: getter)
             }
             return spanContext
         }
     }
+
 
     struct NoopTextMapPropagator: TextMapPropagator {
         public var fields = Set<String>()
 
         public func inject<S>(spanContext: SpanContext, carrier: inout [String: String], setter: S) where S: Setter {}
 
-        public func extract<G>(spanContext: SpanContext?, carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
-            return spanContext
+        public func extract<G>(carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
+            return nil
+        }
+    }
+
+    struct NoopBaggagePropagator: TextMapBaggagePropagator {
+
+        public var fields = Set<String>()
+
+        public func inject<S>(baggage: Baggage, carrier: inout [String: String], setter: S) where S: Setter {}
+
+        public func extract<G>(carrier: [String: String], getter: G) -> Baggage? where G: Getter {
+            return nil
         }
     }
 }

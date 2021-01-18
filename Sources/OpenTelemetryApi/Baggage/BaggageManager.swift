@@ -15,23 +15,23 @@
 
 import Foundation
 
-/// Object for creating new CorrelationContexts and CorrelationContexts based on the
+/// Object for creating new Baggages and Baggages based on the
 /// current context.
-/// This class returns CorrelationContext builders that can be used to create the
-/// implementation-dependent CorrelationContexts.
+/// This class returns Baggage builders that can be used to create the
+/// implementation-dependent Baggages.
 /// Implementations may have different constraints and are free to convert entry contexts to their
 /// own subtypes. This means callers cannot assume the getCurrentContext()
 /// is the same instance as the one withContext() placed into scope.
-public protocol CorrelationContextManager: AnyObject {
-    /// Returns the current CorrelationContext
-    func getCurrentContext() -> CorrelationContext
+public protocol BaggageManager: AnyObject {
+    /// Returns the current Baggage
+    func getCurrentBaggage() -> Baggage
 
     /// Returns a new ContextBuilder.
-    func contextBuilder() -> CorrelationContextBuilder
+    func baggageBuilder() -> BaggageBuilder
 
-    /// Enters the scope of code where the given CorrelationContext is in the current context
-    /// (replacing the previous CorrelationContext) and returns an object that represents that
+    /// Enters the scope of code where the given Baggage is in the current context
+    /// (replacing the previous Baggage) and returns an object that represents that
     /// scope. The scope is exited when the returned object is closed.
-    /// - Parameter correlationContext: the CorrelationContext to be set as the current context.
-    func withContext(correlationContext: CorrelationContext) -> Scope
+    /// - Parameter baggage: the Baggage to be set as the current context.
+    func withContext(baggage: Baggage) -> Scope
 }

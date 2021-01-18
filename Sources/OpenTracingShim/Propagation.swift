@@ -30,13 +30,12 @@ public class Propagation: BaseShimProtocol {
     }
 
     public func extractTextFormat(carrier: [String: String]) -> SpanContextShim? {
-        guard let currentCorrelationContext = ContextUtils.getCurrentCorrelationContext() else { return nil }
-        let currentContext = ContextUtils.getCurrentSpan()?.context
-        let context = propagators.textMapPropagator.extract(spanContext: currentContext, carrier: carrier, getter: TextMapGetter())
+        guard let currentBaggage = ContextUtils.getCurrentBaggage() else { return nil }
+        let context = propagators.textMapPropagator.extract(carrier: carrier, getter: TextMapGetter())
         if !(context?.isValid ?? false) {
             return nil
         }
-        return SpanContextShim(telemetryInfo: telemetryInfo, context: context!, correlationContext: currentCorrelationContext)
+        return SpanContextShim(telemetryInfo: telemetryInfo, context: context!, baggage: currentBaggage)
     }
 }
 

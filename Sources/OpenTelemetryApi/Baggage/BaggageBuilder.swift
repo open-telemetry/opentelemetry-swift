@@ -15,20 +15,20 @@
 
 import Foundation
 
-/// Builder for the CorrelationContext class
-public protocol CorrelationContextBuilder: AnyObject {
-    ///  Sets the parent CorrelationContext to use. If no parent is provided, the value of
-    ///  CorrelationContextManager.getCurrentContext() at build() time will be used
+/// Builder for the Baggage class
+public protocol BaggageBuilder: AnyObject {
+    ///  Sets the parent Baggage to use. If no parent is provided, the value of
+    ///  BaggageManager.getCurrentContext() at build() time will be used
     ///  as parent, unless setNoParent() was called.
-    ///  This must be used to create a CorrelationContext when manual Context
+    ///  This must be used to create a Baggage when manual Context
     ///  propagation is used.
     ///  If called multiple times, only the last specified value will be used.
-    /// - Parameter parent: the CorrelationContext used as parent
-    @discardableResult func setParent(_ parent: CorrelationContext) -> Self
+    /// - Parameter parent: the Baggage used as parent
+    @discardableResult func setParent(_ parent: Baggage) -> Self
 
-    /// Sets the option to become a root CorrelationContext with no parent. If not
-    /// called, the value provided using setParent(CorrelationContext) or otherwise
-    /// CorrelationContextManager.getCurrentContext()} at build() time will be used as
+    /// Sets the option to become a root Baggage with no parent. If not
+    /// called, the value provided using setParent(Baggage) or otherwise
+    /// BaggageManager.getCurrentContext()} at build() time will be used as
     /// parent.
     @discardableResult func setNoParent() -> Self
 
@@ -37,12 +37,12 @@ public protocol CorrelationContextBuilder: AnyObject {
     ///   - key: the EntryKey which will be set.
     ///   - value: the EntryValue to set for the given key.
     ///   - metadata: the EntryMetadata associated with this Entry.
-    @discardableResult func put(key: EntryKey, value: EntryValue, metadata: EntryMetadata) -> Self
+    @discardableResult func put(key: EntryKey, value: EntryValue, metadata: EntryMetadata?) -> Self
 
     /// Removes the key if it exists.
     /// - Parameter key: the EntryKey which will be removed.
     @discardableResult func remove(key: EntryKey) -> Self
 
-    /// Creates a CorrelationContext from this builder.
-    func build() -> CorrelationContext
+    /// Creates a Baggage from this builder.
+    func build() -> Baggage
 }

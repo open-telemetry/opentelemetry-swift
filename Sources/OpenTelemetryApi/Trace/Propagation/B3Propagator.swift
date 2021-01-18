@@ -60,7 +60,7 @@ public class B3Propagator: TextMapPropagator {
         }
     }
     
-    public func extract<G>(spanContext: SpanContext?, carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
+    public func extract<G>(carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
         var spanContext: SpanContext?
         
         if singleHeader {

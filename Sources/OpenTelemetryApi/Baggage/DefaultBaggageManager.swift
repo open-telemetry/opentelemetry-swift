@@ -14,22 +14,24 @@
 //
 
 import Foundation
-import OpenTelemetryApi
 
-/// CorrelationContextManagerSdk is SDK implementation of CorrelationContextManager.
-public class CorrelationContextManagerSdk: CorrelationContextManager {
-    public init() {
+/// No-op implementations of BaggageManager.
+public class DefaultBaggageManager: BaggageManager {
+    private init() {}
+
+    ///  Returns a BaggageManager singleton that is the default implementation for
+    ///  BaggageManager.
+    public static var instance = DefaultBaggageManager()
+
+    public func baggageBuilder() -> BaggageBuilder {
+        return DefaultBaggageBuilder()
     }
 
-    public func contextBuilder() -> CorrelationContextBuilder {
-        return CorrelationContextSdkBuilder()
+    public func getCurrentBaggage() -> Baggage {
+        return ContextUtils.getCurrentBaggage() ?? EmptyBaggage.instance
     }
 
-    public func getCurrentContext() -> CorrelationContext {
-        return ContextUtils.getCurrentCorrelationContext() ?? EmptyCorrelationContext.instance
-    }
-
-    public func withContext(correlationContext: CorrelationContext) -> Scope {
-        return ContextUtils.withCorrelationContext(correlationContext)
+    public func withContext(baggage: Baggage) -> Scope {
+        return ContextUtils.withBaggage(baggage)
     }
 }

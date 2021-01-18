@@ -18,16 +18,16 @@ import OpenTelemetryApi
 
 struct TelemetryInfo {
     var tracer: Tracer
-    var contextManager: CorrelationContextManager
+    var baggageManager: BaggageManager
     var propagators: ContextPropagators
-    var emptyCorrelationContext: CorrelationContext
+    var emptyBaggage: Baggage
     var spanContextTable: SpanContextShimTable
 
-    init(tracer: Tracer, contextManager: CorrelationContextManager, propagators: ContextPropagators) {
+    init(tracer: Tracer, baggageManager: BaggageManager, propagators: ContextPropagators) {
         self.tracer = tracer
-        self.contextManager = contextManager
+        self.baggageManager = baggageManager
         self.propagators = propagators
-        emptyCorrelationContext = contextManager.contextBuilder().build()
+        emptyBaggage = baggageManager.baggageBuilder().build()
         spanContextTable = SpanContextShimTable()
     }
 }
