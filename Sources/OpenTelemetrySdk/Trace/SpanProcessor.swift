@@ -14,6 +14,7 @@
 //
 
 import Foundation
+import OpenTelemetryApi
 
 /// SpanProcessor is the interface TracerSdk uses to allow synchronous hooks for when a Span
 /// is started or when a Span is ended.
@@ -28,7 +29,7 @@ public protocol SpanProcessor {
     /// This method is called synchronously on the execution thread, should not throw or block the
     /// execution thread.
     /// - Parameter span: the ReadableSpan that just started
-    func onStart(span: ReadableSpan)
+    func onStart(parentContext: SpanContext?, span: ReadableSpan)
 
     /// Called when a Span is ended, if the Span.isRecording() is true.
     /// This method is called synchronously on the execution thread, should not throw or block the

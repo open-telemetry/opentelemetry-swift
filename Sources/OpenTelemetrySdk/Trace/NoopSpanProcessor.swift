@@ -14,6 +14,7 @@
 //
 
 import Foundation
+import OpenTelemetryApi
 
 public struct NoopSpanProcessor: SpanProcessor {
     public init() {}
@@ -21,7 +22,7 @@ public struct NoopSpanProcessor: SpanProcessor {
     public let isStartRequired = false
     public let isEndRequired = false
 
-    public func onStart(span: ReadableSpan) {}
+    public func onStart(parentContext: SpanContext?, span: ReadableSpan) {}
 
     public func onEnd(span: ReadableSpan) {}
 

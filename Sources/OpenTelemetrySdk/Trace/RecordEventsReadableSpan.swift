@@ -33,7 +33,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
     /// Contains the identifiers associated with this Span.
     public private(set) var context: SpanContext
     /// The parent SpanId of this span. Invalid if this is a root span.
-    public private(set) var parentSpanId: SpanId?
+    public private(set) var parentContext: SpanContext?
     /// True if the parent is on a different process.
     public private(set) var hasRemoteParent: Bool
     /// /Handler called when the span starts and ends.
@@ -95,7 +95,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
                  name: String,
                  instrumentationLibraryInfo: InstrumentationLibraryInfo,
                  kind: SpanKind,
-                 parentSpanId: SpanId?,
+                 parentContext: SpanContext?,
                  hasRemoteParent: Bool,
                  traceConfig: TraceConfig,
                  spanProcessor: SpanProcessor,
@@ -108,7 +108,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
         self.context = context
         self.name = name
         self.instrumentationLibraryInfo = instrumentationLibraryInfo
-        self.parentSpanId = parentSpanId
+        self.parentContext = parentContext
         self.hasRemoteParent = hasRemoteParent
         self.traceConfig = traceConfig
         self.links = links
@@ -144,7 +144,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
                                  name: String,
                                  instrumentationLibraryInfo: InstrumentationLibraryInfo,
                                  kind: SpanKind,
-                                 parentSpanId: SpanId?,
+                                 parentContext: SpanContext?,
                                  hasRemoteParent: Bool,
                                  traceConfig: TraceConfig,
                                  spanProcessor: SpanProcessor,
@@ -157,7 +157,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
         let span = RecordEventsReadableSpan(context: context,
                                             name: name,
                                             instrumentationLibraryInfo: instrumentationLibraryInfo,
-                                            kind: kind, parentSpanId: parentSpanId,
+                                            kind: kind,
+                                            parentContext: parentContext,
                                             hasRemoteParent: hasRemoteParent,
                                             traceConfig: traceConfig,
                                             spanProcessor: spanProcessor,
@@ -167,7 +168,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
                                             links: links,
                                             totalRecordedLinks: totalRecordedLinks,
                                             startTime: startTime)
-        spanProcessor.onStart(span: span)
+        spanProcessor.onStart(parentContext: parentContext, span: span)
         return span
     }
 
@@ -176,7 +177,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
                         spanId: context.spanId,
                         traceFlags: context.traceFlags,
                         traceState: context.traceState,
-                        parentSpanId: parentSpanId,
+                        parentSpanId: parentContext?.spanId,
                         resource: resource,
                         instrumentationLibraryInfo: instrumentationLibraryInfo,
                         name: name,

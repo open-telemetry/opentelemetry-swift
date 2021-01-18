@@ -338,6 +338,10 @@ class RecordEventsReadableSpanTest: XCTestCase {
                                          spanId: spanId,
                                          traceFlags: TraceFlags(),
                                          traceState: TraceState())
+        let parentContext = SpanContext.create(traceId: traceId,
+                                         spanId: parentSpanId,
+                                         traceFlags: TraceFlags(),
+                                         traceState: TraceState())
         let link1 = SpanData.Link(context: context, attributes: TestUtils.generateRandomAttributes())
         let links = [link1]
 
@@ -345,7 +349,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
                                                               name: name,
                                                               instrumentationLibraryInfo: instrumentationLibraryInfo,
                                                               kind: kind,
-                                                              parentSpanId: parentSpanId,
+                                                              parentContext: parentContext,
                                                               hasRemoteParent: false,
                                                               traceConfig: traceConfig,
                                                               spanProcessor: spanProcessor,
@@ -394,22 +398,26 @@ class RecordEventsReadableSpanTest: XCTestCase {
     }
 
     private func createTestRootSpan() -> RecordEventsReadableSpan {
-        return createTestSpan(kind: .internal, config: TraceConfig(), parentSpanId: nil, attributes: [String: AttributeValue]())
+        return createTestSpan(kind: .internal, config: TraceConfig(), parentContext: nil, attributes: [String: AttributeValue]())
     }
 
     private func createTestSpan(attributes: [String: AttributeValue]) -> RecordEventsReadableSpan {
-        return createTestSpan(kind: .internal, config: TraceConfig(), parentSpanId: nil, attributes: attributes)
+        return createTestSpan(kind: .internal, config: TraceConfig(), parentContext: nil, attributes: attributes)
     }
 
     private func createTestSpan(kind: SpanKind) -> RecordEventsReadableSpan {
-        return createTestSpan(kind: kind, config: TraceConfig(), parentSpanId: parentSpanId, attributes: [String: AttributeValue]())
+        let parentContext = SpanContext.create(traceId: traceId,
+                                               spanId: parentSpanId,
+                                               traceFlags: TraceFlags(),
+                                               traceState: TraceState())
+        return createTestSpan(kind: kind, config: TraceConfig(), parentContext: parentContext, attributes: [String: AttributeValue]())
     }
 
     private func createTestSpan(config: TraceConfig) -> RecordEventsReadableSpan {
-        return createTestSpan(kind: .internal, config: config, parentSpanId: nil, attributes: [String: AttributeValue]())
+        return createTestSpan(kind: .internal, config: config, parentContext: nil, attributes: [String: AttributeValue]())
     }
 
-    private func createTestSpan(kind: SpanKind, config: TraceConfig, parentSpanId: SpanId?, attributes: [String: AttributeValue]) -> RecordEventsReadableSpan {
+    private func createTestSpan(kind: SpanKind, config: TraceConfig, parentContext: SpanContext?, attributes: [String: AttributeValue]) -> RecordEventsReadableSpan {
         var attributesWithCapacity = AttributesDictionary(capacity: config.maxNumberOfAttributes)
         attributesWithCapacity.updateValues(attributes: attributes)
 
@@ -417,7 +425,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
                                                       name: spanName,
                                                       instrumentationLibraryInfo: instrumentationLibraryInfo,
                                                       kind: kind,
-                                                      parentSpanId: parentSpanId,
+                                                      parentContext: parentContext,
                                                       hasRemoteParent: true,
                                                       traceConfig: config,
                                                       spanProcessor: spanProcessor,

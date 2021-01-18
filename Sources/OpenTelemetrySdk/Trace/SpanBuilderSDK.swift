@@ -152,7 +152,7 @@ public class SpanBuilderSdk: SpanBuilder {
                                                   name: spanName,
                                                   instrumentationLibraryInfo: instrumentationLibraryInfo,
                                                   kind: spanKind,
-                                                  parentSpanId: parentContext?.spanId,
+                                                  parentContext: parentContext,
                                                   hasRemoteParent: parentContext?.isRemote ?? false,
                                                   traceConfig: traceConfig,
                                                   spanProcessor: spanProcessor,

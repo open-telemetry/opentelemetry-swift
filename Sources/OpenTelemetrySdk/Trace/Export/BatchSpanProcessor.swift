@@ -14,6 +14,7 @@
 //
 
 import Foundation
+import OpenTelemetryApi
 
 /// Implementation of the SpanProcessor that batches spans exported by the SDK then pushes
 /// to the exporter pipeline.
@@ -39,7 +40,7 @@ public struct BatchSpanProcessor: SpanProcessor {
     public let isStartRequired = false
     public let isEndRequired = true
 
-    public func onStart(span: ReadableSpan) {}
+    public func onStart(parentContext: SpanContext?, span: ReadableSpan) {}
 
     public func onEnd(span: ReadableSpan) {
         if sampled, !span.context.traceFlags.sampled {

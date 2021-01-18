@@ -25,7 +25,7 @@ public struct SimpleSpanProcessor: SpanProcessor {
     public let isStartRequired = false
     public let isEndRequired = true
     
-    public func onStart(span: ReadableSpan) {
+    public func onStart(parentContext: SpanContext?, span: ReadableSpan) {
     }
 
     public mutating func onEnd(span: ReadableSpan) {
