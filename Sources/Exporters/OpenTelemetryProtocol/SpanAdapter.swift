@@ -43,19 +43,9 @@ struct SpanAdapter {
     private static func groupByResourceAndLibrary(spanDataList: [SpanData]) -> [Resource: [InstrumentationLibraryInfo: [Opentelemetry_Proto_Trace_V1_Span]]] {
         var result = [Resource: [InstrumentationLibraryInfo: [Opentelemetry_Proto_Trace_V1_Span]]]()
         spanDataList.forEach {
-            let resource = $0.resource
-            var libraryInfo = result[resource]
-            if result[resource] == nil {
-                libraryInfo = [InstrumentationLibraryInfo: [Opentelemetry_Proto_Trace_V1_Span]]()
-                result[resource] = libraryInfo
+            result[$0.resource,default:[InstrumentationLibraryInfo:[Opentelemetry_Proto_Trace_V1_Span]]()][$0.instrumentationLibraryInfo,default:[Opentelemetry_Proto_Trace_V1_Span]()]
+                .append(toProtoSpan(spanData: $0))
             }
-            var spanList = libraryInfo![$0.instrumentationLibraryInfo]
-            if spanList == nil {
-                spanList = [Opentelemetry_Proto_Trace_V1_Span]()
-                libraryInfo![$0.instrumentationLibraryInfo] = spanList
-            }
-            spanList!.append(toProtoSpan(spanData: $0))
-        }
         return result
     }
 
