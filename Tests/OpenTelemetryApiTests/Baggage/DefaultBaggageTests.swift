@@ -14,7 +14,6 @@
 //
 
 import OpenTelemetryApi
-import OpenTelemetrySdk
 import XCTest
 
 class BaggageSdkTests: XCTestCase {

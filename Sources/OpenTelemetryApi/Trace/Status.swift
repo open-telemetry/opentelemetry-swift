@@ -58,9 +58,14 @@ public struct Status: Equatable {
         return Status(statusCode: statusCode, description: description)
     }
 
-    /// True if this Status is OK, i.e., not an error.
+    /// True if this Status is OK
     public var isOk: Bool {
         return StatusCode.ok == statusCode
+    }
+
+    /// True if this Status is an Error
+    public var isError: Bool {
+        return StatusCode.error == statusCode
     }
 }
 
