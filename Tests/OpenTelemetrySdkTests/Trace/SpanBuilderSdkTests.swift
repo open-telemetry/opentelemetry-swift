@@ -211,7 +211,7 @@ class SpanBuilderSdkTest: XCTestCase {
         let parent = tracerSdk.spanBuilder(spanName: spanName).startSpan()
         let span = tracerSdk.spanBuilder(spanName: spanName).setNoParent().setParent(parent).startSpan() as! RecordEventsReadableSpan
         XCTAssertEqual(span.context.traceId, parent.context.traceId)
-        XCTAssertEqual(span.parentSpanId, parent.context.spanId)
+        XCTAssertEqual(span.parentContext?.spanId, parent.context.spanId)
         let span2 = tracerSdk.spanBuilder(spanName: spanName).setNoParent().setParent(parent.context).startSpan()
         XCTAssertEqual(span2.context.traceId, parent.context.traceId)
         span2.end()
@@ -223,7 +223,7 @@ class SpanBuilderSdkTest: XCTestCase {
         let parent = tracerSdk.spanBuilder(spanName: spanName).startSpan()
         let span = tracerSdk.spanBuilder(spanName: spanName).setNoParent().setParent(parent.context).startSpan() as! RecordEventsReadableSpan
         XCTAssertEqual(span.context.traceId, parent.context.traceId)
-        XCTAssertEqual(span.parentSpanId, parent.context.spanId)
+        XCTAssertEqual(span.parentContext?.spanId, parent.context.spanId)
         span.end()
         parent.end()
     }
@@ -233,7 +233,7 @@ class SpanBuilderSdkTest: XCTestCase {
         tracerSdk.setActive(parent)
         let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
         XCTAssertEqual(span.context.traceId, parent.context.traceId)
-        XCTAssertEqual(span.parentSpanId, parent.context.spanId)
+        XCTAssertEqual(span.parentContext?.spanId, parent.context.spanId)
         span.end()
         parent.end()
     }
@@ -242,7 +242,7 @@ class SpanBuilderSdkTest: XCTestCase {
         let parent = DefaultSpan()
         let span = tracerSdk.spanBuilder(spanName: spanName).setParent(parent.context).startSpan() as! RecordEventsReadableSpan
         XCTAssertNotEqual(span.context.traceId, parent.context.traceId)
-        XCTAssertNil(span.parentSpanId)
+        XCTAssertNil(span.parentContext?.spanId)
         span.end()
     }
 

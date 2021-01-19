@@ -14,6 +14,7 @@
 //
 
 import Foundation
+import OpenTelemetryApi
 
 /// Implementation of the SpanProcessor that simply forwards all received events to a list of
 /// SpanProcessors.
@@ -42,9 +43,9 @@ public struct MultiSpanProcessor: SpanProcessor {
         return spanProcessorsEnd.count > 0
     }
 
-    public func onStart(span: ReadableSpan) {
+    public func onStart(parentContext: SpanContext?, span: ReadableSpan) {
         spanProcessorsStart.forEach {
-            $0.onStart(span: span)
+            $0.onStart(parentContext: parentContext, span: span)
         }
     }
 

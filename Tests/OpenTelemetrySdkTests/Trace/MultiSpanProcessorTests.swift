@@ -14,6 +14,7 @@
 //
 
 import OpenTelemetrySdk
+import OpenTelemetryApi
 import XCTest
 
 class MultiSpanProcessorTest: XCTestCase {
@@ -30,14 +31,14 @@ class MultiSpanProcessorTest: XCTestCase {
 
     func testEmpty() {
         let multiSpanProcessor = MultiSpanProcessor(spanProcessors: [SpanProcessor]())
-        multiSpanProcessor.onStart(span: readableSpan)
+        multiSpanProcessor.onStart(parentContext: nil, span: readableSpan)
         multiSpanProcessor.onEnd(span: readableSpan)
         multiSpanProcessor.shutdown()
     }
 
     func testOneSpanProcessor() {
         let multiSpanProcessor = MultiSpanProcessor(spanProcessors: [spanProcessor1])
-        multiSpanProcessor.onStart(span: readableSpan)
+        multiSpanProcessor.onStart(parentContext: nil, span: readableSpan)
         XCTAssert(spanProcessor1.onStartCalledSpan === readableSpan)
         multiSpanProcessor.onEnd(span: readableSpan)
         XCTAssert(spanProcessor1.onEndCalledSpan === readableSpan)
@@ -51,12 +52,12 @@ class MultiSpanProcessorTest: XCTestCase {
         spanProcessor1.isStartRequired = false
         spanProcessor1.isEndRequired = false
         let multiSpanProcessor = MultiSpanProcessor(spanProcessors: [spanProcessor1])
-        multiSpanProcessor.onStart(span: readableSpan)
+        multiSpanProcessor.onStart(parentContext: nil, span: readableSpan)
 
         XCTAssertFalse(multiSpanProcessor.isStartRequired)
         XCTAssertFalse(multiSpanProcessor.isEndRequired)
 
-        multiSpanProcessor.onStart(span: readableSpan)
+        multiSpanProcessor.onStart(parentContext: nil, span: readableSpan)
         XCTAssertFalse(spanProcessor1.onStartCalled)
         multiSpanProcessor.onEnd(span: readableSpan)
         XCTAssertFalse(spanProcessor1.onEndCalled)
@@ -69,7 +70,7 @@ class MultiSpanProcessorTest: XCTestCase {
     func testTwoSpanProcessor() {
         let multiSpanProcessor = MultiSpanProcessor(spanProcessors: [spanProcessor1, spanProcessor2])
 
-        multiSpanProcessor.onStart(span: readableSpan)
+        multiSpanProcessor.onStart(parentContext: nil, span: readableSpan)
         XCTAssert(spanProcessor1.onStartCalledSpan === readableSpan)
         XCTAssert(spanProcessor2.onStartCalledSpan === readableSpan)
 
@@ -95,7 +96,7 @@ class MultiSpanProcessorTest: XCTestCase {
         XCTAssertTrue(multiSpanProcessor.isStartRequired)
         XCTAssertTrue(multiSpanProcessor.isEndRequired)
 
-        multiSpanProcessor.onStart(span: readableSpan)
+        multiSpanProcessor.onStart(parentContext: nil, span: readableSpan)
         XCTAssert(spanProcessor1.onStartCalledSpan === readableSpan)
         XCTAssertFalse(spanProcessor2.onStartCalled)
 

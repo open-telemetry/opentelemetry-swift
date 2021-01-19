@@ -21,7 +21,7 @@ class NoopSpanProcessorTest: XCTestCase {
 
     func testNoCrash() {
         let noopSpanProcessor = NoopSpanProcessor()
-        noopSpanProcessor.onStart(span: readableSpan)
+        noopSpanProcessor.onStart(parentContext: nil, span: readableSpan)
         XCTAssertFalse(noopSpanProcessor.isStartRequired)
         noopSpanProcessor.onEnd(span: readableSpan)
         XCTAssertFalse(noopSpanProcessor.isEndRequired)

@@ -15,6 +15,7 @@
 
 import Foundation
 import OpenTelemetrySdk
+import OpenTelemetryApi
 
 class SpanProcessorMock: SpanProcessor {
     var onStartCalledTimes = 0
@@ -31,7 +32,7 @@ class SpanProcessorMock: SpanProcessor {
     var isStartRequired = true
     var isEndRequired = true
 
-    func onStart(span: ReadableSpan) {
+    func onStart(parentContext: SpanContext?, span: ReadableSpan) {
         onStartCalledTimes += 1
         onStartCalledSpan = span
     }

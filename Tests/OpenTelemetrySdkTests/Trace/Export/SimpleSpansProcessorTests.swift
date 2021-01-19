@@ -35,7 +35,7 @@ class SimpleSpansProcessorTests: XCTestCase {
     }
 
     func testOnStartSync() {
-        simpleSampledSpansProcessor.onStart(span: readableSpan)
+        simpleSampledSpansProcessor.onStart(parentContext: nil, span: readableSpan)
         XCTAssertTrue(spanExporter.exportCalledTimes == 0 && spanExporter.shutdownCalledTimes == 0)
     }
 
