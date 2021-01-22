@@ -53,7 +53,7 @@ final class PushControllerTests: XCTestCase {
 
         let pushInterval = controllerPushIntervalInSec
 
-        _ = PushMetricController(meterProvider: meterProvider, metricProcessor: testProcessor, metricExporter: testExporter, pushInterval: pushInterval)
+        let controller = PushMetricController(meterProvider: meterProvider, metricProcessor: testProcessor, metricExporter: testExporter, pushInterval: pushInterval)
 
         // Validate that collect is called on Meter1, Meter2.
         validateMeterCollect(meterCollectCount: &meter1CollectCount, expectedMeterCollectCount: collectionCountExpectedMin, meterName: "meter1", timeout: maxWaitInSec)
@@ -63,6 +63,7 @@ final class PushControllerTests: XCTestCase {
         lock.withLockVoid {
             XCTAssertTrue(exportCalledCount >= collectionCountExpectedMin)
         }
+        XCTAssertEqual(controller.pushInterval, pushInterval)
     }
 
     func validateMeterCollect(meterCollectCount: inout Int, expectedMeterCollectCount: Int, meterName: String, timeout: TimeInterval) {

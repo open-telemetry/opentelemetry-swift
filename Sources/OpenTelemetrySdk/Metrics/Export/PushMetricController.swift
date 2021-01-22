@@ -27,21 +27,26 @@ class PushMetricController {
         self.metricProcessor = metricProcessor
         self.metricExporter = metricExporter
         self.pushInterval = pushInterval
-        pushMetricQueue.asyncAfter(deadline: .now() + pushInterval) {
+        pushMetricQueue.asyncAfter(deadline: .now() + pushInterval) { [weak self] in
+            guard let self = self else {
+                return
+            }
             while !(shouldCancel?() ?? false) {
-                let start = Date()
-                let values = self.meterProvider.getMeters().values
-                for index in values.indices {
-                    values[index].collect()
-                }
+                autoreleasepool {
+                    let start = Date()
+                    let values = self.meterProvider.getMeters().values
+                    for index in values.indices {
+                        values[index].collect()
+                    }
 
-                let metricToExport = self.metricProcessor.finishCollectionCycle()
+                    let metricToExport = self.metricProcessor.finishCollectionCycle()
 
-                _ = metricExporter.export(metrics: metricToExport, shouldCancel: shouldCancel)
-                let timeInterval = Date().timeIntervalSince(start)
-                let remainingWait = pushInterval - timeInterval
-                if remainingWait > 0 {
-                    usleep(UInt32(remainingWait * 1000000))
+                    _ = metricExporter.export(metrics: metricToExport, shouldCancel: shouldCancel)
+                    let timeInterval = Date().timeIntervalSince(start)
+                    let remainingWait = pushInterval - timeInterval
+                    if remainingWait > 0 {
+                        usleep(UInt32(remainingWait * 1000000))
+                    }
                 }
             }
         }
