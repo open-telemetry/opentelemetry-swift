@@ -98,17 +98,19 @@ private class BatchWorker: Thread {
 
     override func main() {
         repeat {
-            var spansCopy: [ReadableSpan]
-            cond.lock()
-            if spanList.count < maxExportBatchSize {
-                repeat {
-                    cond.wait(until: Date().addingTimeInterval(scheduleDelay))
-                } while spanList.isEmpty
+            autoreleasepool {
+                var spansCopy: [ReadableSpan]
+                cond.lock()
+                if spanList.count < maxExportBatchSize {
+                    repeat {
+                        cond.wait(until: Date().addingTimeInterval(scheduleDelay))
+                    } while spanList.isEmpty
+                }
+                spansCopy = spanList
+                spanList.removeAll()
+                cond.unlock()
+                exportBatches(spanList: spansCopy)
             }
-            spansCopy = spanList
-            spanList.removeAll()
-            cond.unlock()
-            exportBatches(spanList: spansCopy)
         } while true
     }
 
