@@ -27,7 +27,10 @@ class PushMetricController {
         self.metricProcessor = metricProcessor
         self.metricExporter = metricExporter
         self.pushInterval = pushInterval
-        pushMetricQueue.asyncAfter(deadline: .now() + pushInterval) {
+        pushMetricQueue.asyncAfter(deadline: .now() + pushInterval) { [weak self] in
+            guard let self = self else {
+                return
+            }
             while !(shouldCancel?() ?? false) {
                 autoreleasepool {
                     let start = Date()
