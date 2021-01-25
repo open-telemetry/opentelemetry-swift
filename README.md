@@ -16,7 +16,7 @@ Libraries that produce telemetry data should only depend on `OpenTelemetryApi`, 
 opentelemetry-swift is designed for Swift 5. To depend on the  opentelemetry-swift package, you need to declare your dependency in your `Package.swift`:
 
 ```
-.package(url: "https://github.com/undefinedlabs/opentelemetry-swift", from: "0.1.0"),
+.package(url: "https://github.com/open-telemetry/opentelemetry-swift", from: "0.4.0"),
 ```
 
 and to your application/library target, add `OpenTelemetryApi` or  `OpenTelemetrySdk`to your `dependencies`, e.g. like this:
