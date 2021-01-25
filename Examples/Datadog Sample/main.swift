@@ -15,11 +15,11 @@
 
 import DatadogExporter
 import Foundation
-import OpenTelemetrySdk
 import OpenTelemetryApi
-
+import OpenTelemetrySdk
 
 let clientKey = ""
+let apikey = ""
 
 let sampleKey = "sampleKey"
 let sampleValue = "sampleValue"
@@ -30,6 +30,36 @@ var instrumentationLibraryInfo = InstrumentationLibraryInfo(name: instrumentatio
 
 var tracer: TracerSdk
 tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: instrumentationLibraryName, instrumentationVersion: instrumentationLibraryVersion) as! TracerSdk
+
+let exporterConfiguration = ExporterConfiguration(
+    serviceName: "Opentelemetry exporter Example",
+    resource: "Opentelemetry exporter",
+    applicationName: "SimpleExample",
+    applicationVersion: "0.0.1",
+    environment: "test",
+    clientToken: clientKey,
+    apiKey: apikey,
+    endpoint: Endpoint.us,
+    uploadCondition: { true },
+    performancePreset: .instantDataDelivery,
+    hostName: Host.current().localizedName
+)
+
+let datadogExporter = try! DatadogExporter(config: exporterConfiguration)
+
+testTraces()
+testMetrics()
+
+sleep(10)
+
+func testTraces() {
+    let spanProcessor = SimpleSpanProcessor(spanExporter: datadogExporter)
+    OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(spanProcessor)
+
+    simpleSpan()
+    childSpan()
+    spanProcessor.shutdown()
+}
 
 func simpleSpan() {
     let span = tracer.spanBuilder(spanName: "SimpleSpan").setSpanKind(spanKind: .client).startSpan()
@@ -48,25 +78,40 @@ func childSpan() {
     span.end()
 }
 
-let exporterConfiguration = ExporterConfiguration(
-    serviceName: "Otel exporter Example",
-    resource: "OTel exporter",
-    applicationName: "SimpleExample",
-    applicationVersion: "0.0.1",
-    environment: "test",
-    clientToken: clientKey,
-    endpoint: Endpoint.us,
-    uploadCondition: { true },
-    performancePreset: .instantDataDelivery
-)
+func testMetrics() {
+    let processor = UngroupedBatcher()
 
-let datadogExporter = try! DatadogExporter(config: exporterConfiguration)
+    let state = MeterSharedState(metricProcessor: processor, metricExporter: datadogExporter, metricPushInterval: 0.1)
+    let meterProvider = MeterSdkProvider(meterSharedState: state)
 
-var spanProcessor = SimpleSpanProcessor(spanExporter: datadogExporter)
-OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(spanProcessor)
+    let meter = meterProvider.get(instrumentationName: "MyMeter")
 
-simpleSpan()
-childSpan()
-spanProcessor.shutdown()
+    let testCounter = meter.createIntCounter(name: "MyCounter")
+    let testMeasure = meter.createIntMeasure(name: "MyMeasure")
 
-sleep(10)
+    let labels1 = ["dim1": "value1"]
+    let labels2 = ["dim1": "value2"]
+
+    _ = meter.createIntObserver(name: "MyObservation") { observer in
+        var taskInfo = mach_task_basic_info()
+        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
+        let _: kern_return_t = withUnsafeMutablePointer(to: &taskInfo) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
+                task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+            }
+        }
+        observer.observe(value: Int(taskInfo.resident_size), labels: labels2)
+    }
+
+    var counter = 0
+    while counter < 3000 {
+        testCounter.add(value: 100, labelset: meter.getLabelSet(labels: labels1))
+
+        testMeasure.record(value: 100, labelset: meter.getLabelSet(labels: labels1))
+        testMeasure.record(value: 500, labelset: meter.getLabelSet(labels: labels1))
+        testMeasure.record(value: 5, labelset: meter.getLabelSet(labels: labels1))
+        testMeasure.record(value: 750, labelset: meter.getLabelSet(labels: labels1))
+        counter += 1
+        sleep(1)
+    }
+}

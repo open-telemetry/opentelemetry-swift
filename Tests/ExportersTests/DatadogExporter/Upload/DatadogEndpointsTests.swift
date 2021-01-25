@@ -52,7 +52,7 @@ class DatadogEndpointsTests: XCTestCase {
         let logsURL = try endpoint.logsUrlWithClientToken(clientToken: clientToken)
 
         XCTAssertEqual(logsURL, endpoint.logsURL.appendingPathComponent(clientToken))
-        XCTAssertEqual(logsURL.absoluteString, "https://mobile-http-intake.logs.ddog-gov.com/v1/input/abcdef123456789")
+        XCTAssertEqual(logsURL.absoluteString, "https://logs.browser-intake-ddog-gov.com/v1/input/abcdef123456789")
     }
 
     func testWhenAsksLogEndpointsWithEmptyToken_raisesAnError() throws {
@@ -89,7 +89,7 @@ class DatadogEndpointsTests: XCTestCase {
         let logsURL = try endpoint.tracesUrlWithClientToken(clientToken: clientToken)
 
         XCTAssertEqual(logsURL, endpoint.tracesURL.appendingPathComponent(clientToken))
-        XCTAssertEqual(logsURL.absoluteString, "https://public-trace-http-intake.logs.ddog-gov.com/v1/input/abcdef123456789")
+        XCTAssertEqual(logsURL.absoluteString, "https://trace.browser-intake-ddog-gov.com/v1/input/abcdef123456789")
     }
 
     func testWhenAsksTracesEndpointsWithEmptyToken_raisesAnError() throws {
@@ -100,7 +100,7 @@ class DatadogEndpointsTests: XCTestCase {
     }
 
     func testWhenAsksCustomLogEndpointsWithClientToken_returnsCorrectly() throws {
-        let endpoint = Endpoint.custom(tracesURL: URL(string: "https://traces.test.com/v1/input")!, logsURL: URL(string: "https://logs.test.com/v1/input")!)
+        let endpoint = Endpoint.custom(tracesURL: URL(string: "https://traces.test.com/v1/input")!, logsURL: URL(string: "https://logs.test.com/v1/input")!, metricsURL: URL(string: "https://metrics.test.com/v1/input")!)
 
         let clientToken = "abcdef123456789"
 
@@ -111,12 +111,12 @@ class DatadogEndpointsTests: XCTestCase {
     }
 
     func testWhenAsksCustomTracesEndpointsWithClientToken_returnsCorrectly() throws {
-        let endpoint = Endpoint.custom(tracesURL: URL(string: "https://traces.test.com/v1/input")!, logsURL: URL(string: "https://logs.test.com/v1/input")!)
+        let endpoint = Endpoint.custom(tracesURL: URL(string: "https://traces.test.com/v1/input")!, logsURL: URL(string: "https://logs.test.com/v1/input")!, metricsURL: URL(string: "https://metrics.test.com/v1/input")!)
         let clientToken = "abcdef123456789"
 
-        let logsURL = try endpoint.tracesUrlWithClientToken(clientToken: clientToken)
+        let tracesURL = try endpoint.tracesUrlWithClientToken(clientToken: clientToken)
 
-        XCTAssertEqual(logsURL, endpoint.tracesURL.appendingPathComponent(clientToken))
-        XCTAssertEqual(logsURL.absoluteString, "https://traces.test.com/v1/input/abcdef123456789")
+        XCTAssertEqual(tracesURL, endpoint.tracesURL.appendingPathComponent(clientToken))
+        XCTAssertEqual(tracesURL.absoluteString, "https://traces.test.com/v1/input/abcdef123456789")
     }
 }

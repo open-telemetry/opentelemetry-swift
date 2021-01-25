@@ -37,11 +37,15 @@ internal class LogsExporter {
     let logsUploadQueue = DispatchQueue(label: "com.otel.datadog.logsupload", target: .global(qos: .userInteractive))
 
     init(config: ExporterConfiguration) throws {
+        guard let clientToken = config.clientToken else {
+            throw ExporterError(description: "Logs Exporter need a client token")
+        }
+
         self.configuration = config
 
         let filesOrchestrator = FilesOrchestrator(
             directory: try Directory(withSubdirectoryPath: logsDirectory),
-             performance: configuration.performancePreset,
+            performance: configuration.performancePreset,
             dateProvider: SystemDateProvider()
         )
 
@@ -62,7 +66,7 @@ internal class LogsExporter {
         logsStorage = FeatureStorage(writer: logsFileWriter, reader: logsFileReader)
 
         let urlProvider = UploadURLProvider(
-            urlWithClientToken: try configuration.endpoint.logsUrlWithClientToken(clientToken: configuration.clientToken),
+            urlWithClientToken: try configuration.endpoint.logsUrlWithClientToken(clientToken: clientToken),
             queryItemProviders: [
                 .ddsource(),
                 .batchTime(using: SystemDateProvider())

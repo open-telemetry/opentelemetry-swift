@@ -17,10 +17,8 @@ import Foundation
 
 /// Batcher which retains all dimensions/labels.
 public class UngroupedBatcher: MetricProcessor {
-    public init(){
-        print("Init")
-    }
-    
+    public init() {}
+
     private var metrics = [Metric]()
 
     public func finishCollectionCycle() -> [Metric] {

@@ -39,6 +39,10 @@ internal struct HTTPHeaders {
             )
         }
 
+        static func applicationKeyHeader(applicationKey: String) -> HTTPHeader {
+            return HTTPHeader(field: "DD-APPLICATION-KEY", value: applicationKey)
+        }
+
         // MARK: - Initialization
 
         private init(field: String, value: String) {

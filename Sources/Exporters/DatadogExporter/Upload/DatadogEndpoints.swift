@@ -26,14 +26,14 @@ public enum Endpoint {
     /// Sends logs to [app.ddog-gov.com](https://app.ddog-gov.com/).
     case gov
     /// User-defined server.
-    case custom(tracesURL: URL, logsURL: URL)
+    case custom(tracesURL: URL, logsURL: URL, metricsURL: URL)
 
     internal var logsURL: URL {
         switch self {
             case .us: return URL(string: "https://mobile-http-intake.logs.datadoghq.com/v1/input/")!
             case .eu: return URL(string: "https://mobile-http-intake.logs.datadoghq.eu/v1/input/")!
-            case .gov: return URL(string: "https://mobile-http-intake.logs.ddog-gov.com/v1/input/")!
-            case let .custom(_, logsURL: logsUrl): return logsUrl
+            case .gov: return URL(string: "https://logs.browser-intake-ddog-gov.com/v1/input/")!
+            case let .custom(_, logsURL: logsUrl, _): return logsUrl
         }
     }
 
@@ -41,8 +41,17 @@ public enum Endpoint {
         switch self {
             case .us: return URL(string: "https://public-trace-http-intake.logs.datadoghq.com/v1/input/")!
             case .eu: return URL(string: "https://public-trace-http-intake.logs.datadoghq.eu/v1/input/")!
-            case .gov: return URL(string: "https://public-trace-http-intake.logs.ddog-gov.com/v1/input/")!
-            case let .custom(tracesURL: tracesUrl, _): return tracesUrl
+            case .gov: return URL(string: "https://trace.browser-intake-ddog-gov.com/v1/input/")!
+            case let .custom(tracesURL: tracesUrl, _, _): return tracesUrl
+        }
+    }
+
+    internal var metricsURL: URL {
+        switch self {
+            case .us: return URL(string: "https://api.datadoghq.com/api/v1/series/")!
+            case .eu: return URL(string: "https://api.datadoghq.eu/api/v1/series/")!
+            case .gov: return URL(string: "https://api.ddog-gov.com/api/v1/series/")!
+            case let .custom(_, _, metricsURL: metricsURL): return metricsURL
         }
     }
 
