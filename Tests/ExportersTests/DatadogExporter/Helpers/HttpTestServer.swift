@@ -22,6 +22,7 @@ typealias GenericCallback = () -> ()
 struct HttpTestServerConfig {
     var tracesReceivedCallback: GenericCallback?
     var logsReceivedCallback: GenericCallback?
+    var metricsReceivedCallback: GenericCallback?
 }
 
 internal class HttpTestServer {
@@ -115,6 +116,20 @@ internal class HttpTestServer {
                         _ = channel.write(part)
 
                         config?.tracesReceivedCallback?()
+
+                        let endpart = HTTPServerResponsePart.end(nil)
+                        _ = channel.writeAndFlush(endpart).flatMap {
+                            channel.close()
+                        }
+                    } else if request.uri.unicodeScalars.starts(with: "/metrics".unicodeScalars) {
+                        let channel = context.channel
+
+                        let head = HTTPResponseHead(version: request.version,
+                                                    status: .ok)
+                        let part = HTTPServerResponsePart.head(head)
+                        _ = channel.write(part)
+
+                        config?.metricsReceivedCallback?()
 
                         let endpart = HTTPServerResponsePart.end(nil)
                         _ = channel.writeAndFlush(endpart).flatMap {

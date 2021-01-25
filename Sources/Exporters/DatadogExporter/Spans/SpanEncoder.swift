@@ -64,9 +64,6 @@ internal struct DDSpan: Encodable {
 
     let tracerVersion: String
     let applicationVersion: String
-//    let networkConnectionInfo: NetworkConnectionInfo?
-//    let mobileCarrierInfo: CarrierInfo?
-//    let userInfo: UserInfo
 
     /// Custom tags, received from user
     let tags: [String: AttributeValue]

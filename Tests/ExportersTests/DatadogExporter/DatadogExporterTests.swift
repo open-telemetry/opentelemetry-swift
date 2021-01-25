@@ -63,9 +63,11 @@ class DatadogExporterTests: XCTestCase {
                                                           applicationVersion: "applicationVersion",
                                                           environment: "environment",
                                                           clientToken: "clientToken",
+                                                          apiKey: "apikey",
                                                           endpoint: Endpoint.custom(
                                                               tracesURL: URL(string: "http://localhost:33333/traces")!,
-                                                              logsURL: URL(string: "http://localhost:33333/logs")!),
+                                                              logsURL: URL(string: "http://localhost:33333/logs")!,
+                                                              metricsURL: URL(string: "http://localhost:33333/metrics")!),
                                                           uploadCondition: { true })
 
         let datadogExporter = try! DatadogExporter(config: exporterConfiguration)
@@ -92,5 +94,57 @@ class DatadogExporterTests: XCTestCase {
         let span = tracer.spanBuilder(spanName: "SimpleSpan").setSpanKind(spanKind: .client).startSpan()
         span.addEvent(name: "My event", timestamp: Date())
         span.end()
+    }
+
+    func testWhenExportMetricIsCalled_thenMetricsAreUploaded() throws {
+        var metricsSent = false
+        let expecMetrics = expectation(description: "metrics received")
+        expecMetrics.assertForOverFulfill = false
+
+        let server = HttpTestServer(url: URL(string: "http://localhost:33333"),
+                                    config: HttpTestServerConfig(metricsReceivedCallback: {
+                                        metricsSent = true
+                                        expecMetrics.fulfill()
+        }))
+        DispatchQueue.global(qos: .default).async {
+            do {
+                try server.start()
+            } catch {
+                XCTFail()
+                return
+            }
+        }
+
+        let exporterConfiguration = ExporterConfiguration(serviceName: "serviceName",
+                                                          resource: "resource",
+                                                          applicationName: "applicationName",
+                                                          applicationVersion: "applicationVersion",
+                                                          environment: "environment",
+                                                          clientToken: "clientToken",
+                                                          apiKey: "apikey",
+                                                          endpoint: Endpoint.custom(
+                                                              tracesURL: URL(string: "http://localhost:33333/traces")!,
+                                                              logsURL: URL(string: "http://localhost:33333/logs")!,
+                                                              metricsURL: URL(string: "http://localhost:33333/metrics")!),
+                                                          uploadCondition: { true })
+
+        let datadogExporter = try! DatadogExporter(config: exporterConfiguration)
+
+        let state = MeterSharedState(metricProcessor: UngroupedBatcher(), metricExporter: datadogExporter, metricPushInterval: 0.1)
+        let meter = MeterSdkProvider(meterSharedState: state).get(instrumentationName: "MyMeter")
+
+        let testCounter = meter.createIntCounter(name: "MyCounter")
+
+        testCounter.add(value: 100, labelset: LabelSet.empty)
+
+        let result = XCTWaiter().wait(for: [expecMetrics], timeout: 20)
+
+        if result == .completed {
+            XCTAssertTrue(metricsSent)
+        } else {
+            XCTFail()
+        }
+
+        server.stop()
     }
 }

@@ -31,6 +31,13 @@ internal class UploadURLProvider {
             }
         }
 
+        /// Creates `application_key=...` query item adding current timestamp (in milliseconds) to the URL.
+        static func apiKey(apiKey: String) -> QueryItemProvider {
+            return QueryItemProvider {
+                return URLQueryItem(name: "api_key", value: "\(apiKey)")
+            }
+        }
+
         /// Creates `ddsource=ios` query item.
         static func ddsource() -> QueryItemProvider {
             let queryItem = URLQueryItem(name: "ddsource", value: Constants.ddsource)

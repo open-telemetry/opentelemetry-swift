@@ -16,19 +16,17 @@
 import Foundation
 import OpenTelemetrySdk
 
-internal struct ExporterError: Error, CustomStringConvertible {
-    let description: String
-}
-
-public class DatadogExporter: SpanExporter {
+public class DatadogExporter: SpanExporter, MetricExporter {
     let configuration: ExporterConfiguration
     let spansExporter: SpansExporter
     let logsExporter: LogsExporter
+    let metricsExporter: MetricsExporter
 
     public init(config: ExporterConfiguration) throws {
         self.configuration = config
         spansExporter = try SpansExporter(config: configuration)
         logsExporter = try LogsExporter(config: configuration)
+        metricsExporter = try MetricsExporter(config: configuration)
     }
 
     public func export(spans: [SpanData]) -> SpanExporterResultCode {
@@ -43,12 +41,21 @@ public class DatadogExporter: SpanExporter {
         return .success
     }
 
+    public func export(metrics: [Metric], shouldCancel: (() -> Bool)?) -> MetricExporterResultCode {
+        metrics.forEach {
+            metricsExporter.exportMetric(metric: $0)
+        }
+        return .success
+    }
+
     public func flush() -> SpanExporterResultCode {
         spansExporter.tracesStorage.writer.queue.sync {}
         logsExporter.logsStorage.writer.queue.sync {}
+        metricsExporter.metricsStorage.writer.queue.sync {}
 
         _ = logsExporter.logsUpload.uploader.flush()
         _ = spansExporter.tracesUpload.uploader.flush()
+        _ = metricsExporter.metricsUpload.uploader.flush()
         return .success
     }
 
@@ -58,6 +65,7 @@ public class DatadogExporter: SpanExporter {
 
     public func endpointURLs() -> Set<String> {
         return [configuration.endpoint.logsURL.absoluteString,
-                configuration.endpoint.tracesURL.absoluteString]
+                configuration.endpoint.tracesURL.absoluteString,
+                configuration.endpoint.metricsURL.absoluteString]
     }
 }

@@ -52,9 +52,11 @@ class LogsExporterTests: XCTestCase {
                                                   applicationVersion: "applicationVersion",
                                                   environment: "environment",
                                                   clientToken: "clientToken",
+                                                  apiKey: nil,
                                                   endpoint: Endpoint.custom(
                                                       tracesURL: URL(string: "http://localhost:33333/traces")!,
-                                                      logsURL: URL(string: "http://localhost:33333/logs")!),
+                                                      logsURL: URL(string: "http://localhost:33333/logs")!,
+                                                      metricsURL: URL(string: "http://localhost:33333/metrics")!),
                                                   uploadCondition: { true })
 
         let logsExporter = try LogsExporter(config: configuration)

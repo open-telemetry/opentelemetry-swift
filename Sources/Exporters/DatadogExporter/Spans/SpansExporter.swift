@@ -28,6 +28,10 @@ internal class SpansExporter {
     let tracesUploadQueue = DispatchQueue(label: "com.otel.datadog.tracesupload", target: .global(qos: .userInteractive))
 
     init(config: ExporterConfiguration) throws {
+        guard let clientToken = config.clientToken else {
+            throw ExporterError(description: "Span Exporter need a client token")
+        }
+
         self.configuration = config
 
         let filesOrchestrator = FilesOrchestrator(
@@ -53,7 +57,7 @@ internal class SpansExporter {
         tracesStorage = FeatureStorage(writer: spanFileWriter, reader: spanFileReader)
 
         let urlProvider = UploadURLProvider(
-            urlWithClientToken: try configuration.endpoint.tracesUrlWithClientToken(clientToken: configuration.clientToken),
+            urlWithClientToken: try configuration.endpoint.tracesUrlWithClientToken(clientToken: clientToken),
             queryItemProviders: [
                 .batchTime(using: SystemDateProvider())
             ]
