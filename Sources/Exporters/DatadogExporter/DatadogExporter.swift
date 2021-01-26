@@ -18,15 +18,23 @@ import OpenTelemetrySdk
 
 public class DatadogExporter: SpanExporter, MetricExporter {
     let configuration: ExporterConfiguration
-    let spansExporter: SpansExporter
-    let logsExporter: LogsExporter
-    let metricsExporter: MetricsExporter
+    var spansExporter: SpansExporter!
+    var logsExporter: LogsExporter!
+    var metricsExporter: MetricsExporter!
 
     public init(config: ExporterConfiguration) throws {
+        guard config.clientToken != nil || config.apiKey != nil else {
+            throw ExporterError(description: "Traces exporter needs a client token and Metrics Exporter need an api key")
+        }
+
         self.configuration = config
-        spansExporter = try SpansExporter(config: configuration)
-        logsExporter = try LogsExporter(config: configuration)
-        metricsExporter = try MetricsExporter(config: configuration)
+        if configuration.clientToken != nil {
+            spansExporter = try SpansExporter(config: configuration)
+            logsExporter = try LogsExporter(config: configuration)
+        }
+        if configuration.apiKey != nil {
+            metricsExporter = try MetricsExporter(config: configuration)
+        }
     }
 
     public func export(spans: [SpanData]) -> SpanExporterResultCode {
