@@ -21,7 +21,7 @@ internal struct LogSanitizer {
         /// Attribute names reserved for Datadog.
         /// If any of those is used by the user, the attribute will be ignored.
         static let reservedAttributeNames: Set<String> = [
-            "host", "message", "status", "service", "source", "error.message", "error.stack", "ddtags",
+            "host", "message", "status", "service", "source", "ddtags",
             DDLog.TracingAttributes.traceID,
             DDLog.TracingAttributes.spanID,
         ]

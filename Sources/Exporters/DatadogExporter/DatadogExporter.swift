@@ -18,9 +18,9 @@ import OpenTelemetrySdk
 
 public class DatadogExporter: SpanExporter, MetricExporter {
     let configuration: ExporterConfiguration
-    var spansExporter: SpansExporter!
-    var logsExporter: LogsExporter!
-    var metricsExporter: MetricsExporter!
+    var spansExporter: SpansExporter?
+    var logsExporter: LogsExporter?
+    var metricsExporter: MetricsExporter?
 
     public init(config: ExporterConfiguration) throws {
         guard config.clientToken != nil || config.apiKey != nil else {
@@ -40,10 +40,10 @@ public class DatadogExporter: SpanExporter, MetricExporter {
     public func export(spans: [SpanData]) -> SpanExporterResultCode {
         spans.forEach {
             if $0.traceFlags.sampled || configuration.exportUnsampledSpans {
-                spansExporter.exportSpan(span: $0)
+                spansExporter?.exportSpan(span: $0)
             }
             if $0.traceFlags.sampled || configuration.exportUnsampledLogs {
-                logsExporter.exportLogs(fromSpan: $0)
+                logsExporter?.exportLogs(fromSpan: $0)
             }
         }
         return .success
@@ -51,19 +51,19 @@ public class DatadogExporter: SpanExporter, MetricExporter {
 
     public func export(metrics: [Metric], shouldCancel: (() -> Bool)?) -> MetricExporterResultCode {
         metrics.forEach {
-            metricsExporter.exportMetric(metric: $0)
+            metricsExporter?.exportMetric(metric: $0)
         }
         return .success
     }
 
     public func flush() -> SpanExporterResultCode {
-        spansExporter.tracesStorage.writer.queue.sync {}
-        logsExporter.logsStorage.writer.queue.sync {}
-        metricsExporter.metricsStorage.writer.queue.sync {}
+        spansExporter?.tracesStorage.writer.queue.sync {}
+        logsExporter?.logsStorage.writer.queue.sync {}
+        metricsExporter?.metricsStorage.writer.queue.sync {}
 
-        _ = logsExporter.logsUpload.uploader.flush()
-        _ = spansExporter.tracesUpload.uploader.flush()
-        _ = metricsExporter.metricsUpload.uploader.flush()
+        _ = logsExporter?.logsUpload.uploader.flush()
+        _ = spansExporter?.tracesUpload.uploader.flush()
+        _ = metricsExporter?.metricsUpload.uploader.flush()
         return .success
     }
 
