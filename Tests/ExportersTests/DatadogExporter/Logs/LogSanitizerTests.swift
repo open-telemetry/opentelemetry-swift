@@ -29,8 +29,6 @@ class LogSanitizerTests: XCTestCase {
                     "status": mockValue(),
                     "service": mockValue(),
                     "source": mockValue(),
-                    "error.message": mockValue(),
-                    "error.stack": mockValue(),
                     "ddtags": mockValue(),
 
                     // valid attributes:
