@@ -22,11 +22,9 @@ public class TracerSdkProvider: TracerProvider {
     private var sharedState: TracerSharedState
 
     /// Returns a new TracerSdkProvider with default Clock, IdsGenerator and Resource.
-    public convenience init() {
-        self.init(clock: MillisClock(), idsGenerator: RandomIdsGenerator(), resource: EnvVarResource.resource)
-    }
-
-    init(clock: Clock, idsGenerator: IdsGenerator, resource: Resource) {
+    public init(clock: Clock = MillisClock(),
+                idsGenerator: IdsGenerator =  RandomIdsGenerator(),
+                resource: Resource = EnvVarResource.resource) {
         sharedState = TracerSharedState(clock: clock, idsGenerator: idsGenerator, resource: resource)
     }
 

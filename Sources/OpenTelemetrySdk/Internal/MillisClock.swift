@@ -16,11 +16,11 @@
 import Foundation
 import OpenTelemetryApi
 
-class MillisClock: Clock {
+public class MillisClock: Clock {
     ///  Returns a MillisClock
-    init() {}
+    public init() {}
 
-    var now: Date {
+    public var now: Date {
         return Date()
     }
 }
