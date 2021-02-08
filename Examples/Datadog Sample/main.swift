@@ -81,8 +81,7 @@ func childSpan() {
 func testMetrics() {
     let processor = UngroupedBatcher()
 
-    let state = MeterSharedState(metricProcessor: processor, metricExporter: datadogExporter, metricPushInterval: 0.1)
-    let meterProvider = MeterSdkProvider(meterSharedState: state)
+    let meterProvider = MeterSdkProvider(metricProcessor: processor, metricExporter: datadogExporter, metricPushInterval: 0.1)
 
     let meter = meterProvider.get(instrumentationName: "MyMeter")
 

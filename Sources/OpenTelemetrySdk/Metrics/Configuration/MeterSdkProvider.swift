@@ -18,41 +18,40 @@ import OpenTelemetryApi
 
 public class MeterSdkProvider: MeterProvider {
     private let lock = Lock()
-    private let defaultPushInterval: TimeInterval = 60
+    static public let defaultPushInterval: TimeInterval = 60
 
-    var meterRegistry = [MeterRegistryKey: MeterSdk]()
+    var meterRegistry = [InstrumentationLibraryInfo: MeterSdk]()
 
-    let metricProcessor: MetricProcessor
-    let metricExporter: MetricExporter
+    var meterSharedState : MeterSharedState
     var pushMetricController: PushMetricController!
     var defaultMeter: MeterSdk
 
     public convenience init() {
-        self.init(meterSharedState: MeterSharedState())
+        self.init(metricProcessor: NoopMetricProcessor(),
+                  metricExporter: NoopMetricExporter())
     }
+    
+    public init(metricProcessor: MetricProcessor,
+                metricExporter: MetricExporter,
+                metricPushInterval: TimeInterval = MeterSdkProvider.defaultPushInterval,
+                resource: Resource = EnvVarResource.resource) {
+       self.meterSharedState = MeterSharedState(metricProcessor: metricProcessor,
+                                                metricExporter: metricExporter,
+                                                metricPushInterval: metricPushInterval,
+                                                resource: resource)
 
-    public init(meterSharedState: MeterSharedState) {
-        metricProcessor = meterSharedState.metricProcessor ?? NoopMetricProcessor()
-        metricExporter = meterSharedState.metricExporter ?? NoopMetricExporter()
+        defaultMeter = MeterSdk(meterSharedState: self.meterSharedState, instrumentationLibraryInfo: InstrumentationLibraryInfo())
 
-        defaultMeter = MeterSdk(meterName: "", metricProcessor: metricProcessor)
-
-        let defaultPushInterval = self.defaultPushInterval
         pushMetricController = PushMetricController(
             meterProvider: self,
             metricProcessor: metricProcessor,
             metricExporter: metricExporter,
-            pushInterval: meterSharedState.metricPushInterval ?? defaultPushInterval) {
+            pushInterval: meterSharedState.metricPushInterval) {
             false
         }
     }
 
-    public static func create(configure: (MeterSharedState) -> Void) -> MeterSdkProvider {
-        let builder = MeterSharedState()
-        configure(builder)
 
-        return MeterSdkProvider(meterSharedState: builder)
-    }
 
     public func get(instrumentationName: String, instrumentationVersion: String? = nil) -> Meter {
         if instrumentationName.isEmpty {
@@ -63,16 +62,16 @@ public class MeterSdkProvider: MeterProvider {
         defer {
             lock.unlock()
         }
-        let key = MeterRegistryKey(name: instrumentationName, version: instrumentationVersion)
-        var meter: MeterSdk! = meterRegistry[key]
+        let instrumentationLibraryInfo  = InstrumentationLibraryInfo(name: instrumentationName, version: instrumentationVersion)
+        var meter: MeterSdk! = meterRegistry[instrumentationLibraryInfo]
         if meter == nil {
-            meter = MeterSdk(meterName: instrumentationName, metricProcessor: metricProcessor)
-            meterRegistry[key] = meter!
+            meter = MeterSdk(meterSharedState: self.meterSharedState, instrumentationLibraryInfo: instrumentationLibraryInfo)
+            meterRegistry[instrumentationLibraryInfo] = meter!
         }
         return meter!
     }
 
-    func getMeters() -> [MeterRegistryKey: MeterSdk] {
+    func getMeters() -> [InstrumentationLibraryInfo: MeterSdk] {
         lock.lock()
         defer {
             lock.unlock()
@@ -87,9 +86,4 @@ public class MeterSdkProvider: MeterProvider {
         }
         return labels
     }
-}
-
-struct MeterRegistryKey: Hashable {
-    var name: String
-    var version: String?
 }

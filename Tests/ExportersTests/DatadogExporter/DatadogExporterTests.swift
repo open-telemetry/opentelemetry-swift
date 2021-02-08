@@ -130,8 +130,10 @@ class DatadogExporterTests: XCTestCase {
 
         let datadogExporter = try! DatadogExporter(config: exporterConfiguration)
 
-        let state = MeterSharedState(metricProcessor: UngroupedBatcher(), metricExporter: datadogExporter, metricPushInterval: 0.1)
-        let meter = MeterSdkProvider(meterSharedState: state).get(instrumentationName: "MyMeter")
+
+        let meter = MeterSdkProvider(metricProcessor: UngroupedBatcher(),
+                                     metricExporter: datadogExporter,
+                                     metricPushInterval: 0.1).get(instrumentationName: "MyMeter")
 
         let testCounter = meter.createIntCounter(name: "MyCounter")
 

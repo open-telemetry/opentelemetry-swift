@@ -32,24 +32,31 @@ final class PushControllerTests: XCTestCase {
         })
         let testProcessor = TestMetricProcessor()
 
-        let meterProvider = MeterSdkProvider(meterSharedState: MeterSharedState(metricProcessor: testProcessor))
+        let meterProvider = MeterSdkProvider(metricProcessor: testProcessor,
+                                             metricExporter: NoopMetricExporter())
 
         // Setup 2 meters whose Collect will increment the collect count.
         var meter1CollectCount = 0
         var meter2CollectCount = 0
-        let testMeter1 = TestMeter(meterName: "meter1", metricProcessor: testProcessor) {
+        let meterSharedState = MeterSharedState(metricProcessor: testProcessor, metricExporter: NoopMetricExporter(), metricPushInterval: MeterSdkProvider.defaultPushInterval, resource: Resource())
+        
+        let meterInstrumentationLibrary1 = InstrumentationLibraryInfo(name:"meter1")
+
+        let  testMeter1 = TestMeter(meterSharedState: meterSharedState, instrumentationLibraryInfo: meterInstrumentationLibrary1){
             self.lock.withLockVoid {
                 meter1CollectCount += 1
             }
         }
-        meterProvider.meterRegistry[MeterRegistryKey(name: "meter1")] = testMeter1
+        meterProvider.meterRegistry[meterInstrumentationLibrary1] = testMeter1
 
-        let testMeter2 = TestMeter(meterName: "meter2", metricProcessor: testProcessor) {
+        
+        let meterInstrumentationLibrary2 = InstrumentationLibraryInfo(name: "meter2")
+        let testMeter2 = TestMeter(meterSharedState:meterSharedState, instrumentationLibraryInfo: meterInstrumentationLibrary2) {
             self.lock.withLockVoid {
                 meter2CollectCount += 1
             }
         }
-        meterProvider.meterRegistry[MeterRegistryKey(name: "meter2")] = testMeter2
+        meterProvider.meterRegistry[meterInstrumentationLibrary2] = testMeter2
 
         let pushInterval = controllerPushIntervalInSec
 

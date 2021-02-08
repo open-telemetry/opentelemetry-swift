@@ -15,7 +15,7 @@
 
 import Foundation
 
-public protocol MetricProcessor: AnyObject {
+public protocol MetricProcessor {
     /// Finish the current collection cycle and return the metrics it holds.
     /// This is called at the end of one collection cycle by the Controller.
     /// MetricProcessor can use this to clear its Metrics (in case of stateless).
@@ -23,12 +23,12 @@ public protocol MetricProcessor: AnyObject {
     func finishCollectionCycle() -> [Metric]
     
     /// Process the metric. This method is called once every collection interval.
-    /// - PArameters:
+    /// - Parameters:
     ///   - metric: the metric record.
     func process(metric: Metric)
 }
 
-class NoopMetricProcessor: MetricProcessor {
+struct NoopMetricProcessor: MetricProcessor {
     func finishCollectionCycle() -> [Metric] {
         return [Metric]()
     }

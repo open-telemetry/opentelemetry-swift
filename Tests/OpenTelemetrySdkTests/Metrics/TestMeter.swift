@@ -19,9 +19,10 @@ import XCTest
 class TestMeter: MeterSdk {
     let collectAction: () -> Void
 
-    init(meterName: String, metricProcessor: MetricProcessor, collectAction: @escaping () -> Void) {
+    init(meterSharedState: MeterSharedState, instrumentationLibraryInfo: InstrumentationLibraryInfo, collectAction: @escaping () -> Void) {
+        
         self.collectAction = collectAction
-        super.init(meterName: meterName, metricProcessor: metricProcessor)
+        super.init(meterSharedState: meterSharedState, instrumentationLibraryInfo: instrumentationLibraryInfo)
     }
 
     override func collect() {
