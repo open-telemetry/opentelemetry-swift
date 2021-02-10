@@ -20,6 +20,7 @@ class MeterSdk: Meter {
     fileprivate let collectLock = Lock()
     let meterName: String
     var metricProcessor: MetricProcessor
+    var instrumentationLibraryInfo : InstrumentationLibraryInfo
     var resource: Resource
 
     var intCounters = [String: CounterMetricSdk<Int>]()
@@ -33,6 +34,7 @@ class MeterSdk: Meter {
         self.meterName = instrumentationLibraryInfo.name
         self.resource = meterSharedState.resource
         self.metricProcessor = meterSharedState.metricProcessor
+        self.instrumentationLibraryInfo  = instrumentationLibraryInfo
     }
 
     func getLabelSet(labels: [String: String]) -> LabelSet {
@@ -47,7 +49,7 @@ class MeterSdk: Meter {
                 let metricName = counter.key
                 let counterInstrument = counter.value
 
-                var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.intSum, resource: resource)
+                var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.intSum, resource: resource, instrumentationLibraryInfo: instrumentationLibraryInfo)
 
                 counterInstrument.boundInstruments.forEach { boundInstrument in
                     let labelSet = boundInstrument.key
@@ -82,7 +84,7 @@ class MeterSdk: Meter {
                 let metricName = counter.key
                 let counterInstrument = counter.value
 
-                var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.doubleSum, resource: resource)
+                var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.doubleSum, resource: resource, instrumentationLibraryInfo: instrumentationLibraryInfo)
 
                 counterInstrument.boundInstruments.forEach { boundInstrument in
                     let labelSet = boundInstrument.key
@@ -117,7 +119,7 @@ class MeterSdk: Meter {
             intMeasures.forEach { measure in
                 let metricName = measure.key
                 let measureInstrument = measure.value
-            var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.intSummary, resource:resource)
+            var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.intSummary, resource: resource, instrumentationLibraryInfo: instrumentationLibraryInfo)
                 measureInstrument.boundInstruments.forEach { boundInstrument in
                     let labelSet = boundInstrument.key
                     let aggregator = boundInstrument.value.getAggregator()
@@ -132,7 +134,7 @@ class MeterSdk: Meter {
             doubleMeasures.forEach { measure in
                 let metricName = measure.key
                 let measureInstrument = measure.value
-                var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.doubleSummary, resource: resource)
+                var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.doubleSummary, resource: resource, instrumentationLibraryInfo: instrumentationLibraryInfo)
                 measureInstrument.boundInstruments.forEach { boundInstrument in
                     let labelSet = boundInstrument.key
                     let aggregator = boundInstrument.value.getAggregator()
@@ -147,7 +149,7 @@ class MeterSdk: Meter {
             intObservers.forEach { observer in
                 let metricName = observer.key
                 let observerInstrument = observer.value
-                var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.intSum, resource: resource)
+                var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.intSum, resource: resource, instrumentationLibraryInfo: instrumentationLibraryInfo)
                 observerInstrument.invokeCallback()
 
                 observerInstrument.observerHandles.forEach { handle in
@@ -164,7 +166,7 @@ class MeterSdk: Meter {
             doubleObservers.forEach { observer in
                 let metricName = observer.key
                 let observerInstrument = observer.value
-                var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.doubleSum, resource: resource)
+                var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.doubleSum, resource: resource, instrumentationLibraryInfo: instrumentationLibraryInfo)
                 observerInstrument.invokeCallback()
 
                 observerInstrument.observerHandles.forEach { handle in

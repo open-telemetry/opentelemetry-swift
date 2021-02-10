@@ -24,7 +24,7 @@ public class OtelpMetricExporter : MetricExporter {
     let metricClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClient
     let deadlineMS : Int
     
-    public init(channel: GRPCChannel, timeoutMS: Int) {
+    public init(channel: GRPCChannel, timeoutMS: Int = 0) {
         self.channel = channel
         self.deadlineMS = timeoutMS
         self.metricClient = Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClient(channel: self.channel)
@@ -32,10 +32,33 @@ public class OtelpMetricExporter : MetricExporter {
     
     
     public func export(metrics: [Metric], shouldCancel: (() -> Bool)?) -> MetricExporterResultCode {
+        let exportRequest = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest
+            .with {
+                $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(metricDataList: metrics)
+            }
+        
+        if deadlineMS > 0 {
+            metricClient.defaultCallOptions.timeout = try! GRPCTimeout.milliseconds(deadlineMS)
+        }
+        
+        let export = metricClient.export(exportRequest)
+        
+        
+        do {
+            _ = try export.response.wait()
+            return .success
+        } catch {
+            return .failureRetryable
+        }
+    }
+    
+    public func flush() -> SpanExporterResultCode {
         return .success
     }
     
-    
+    public func shutdown() {
+       _ = channel.close()
+    }
     
     
 }
