@@ -35,10 +35,7 @@ public class MeterSdkProvider: MeterProvider {
                 metricExporter: MetricExporter,
                 metricPushInterval: TimeInterval = MeterSdkProvider.defaultPushInterval,
                 resource: Resource = EnvVarResource.resource) {
-       self.meterSharedState = MeterSharedState(metricProcessor: metricProcessor,
-                                                metricExporter: metricExporter,
-                                                metricPushInterval: metricPushInterval,
-                                                resource: resource)
+        self.meterSharedState = MeterSharedState(metricProcessor:metricProcessor, metricPushInterval: metricPushInterval, resource: resource)
 
         defaultMeter = MeterSdk(meterSharedState: self.meterSharedState, instrumentationLibraryInfo: InstrumentationLibraryInfo())
 

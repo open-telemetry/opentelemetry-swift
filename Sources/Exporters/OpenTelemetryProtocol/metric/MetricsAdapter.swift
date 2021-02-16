@@ -127,8 +127,7 @@ struct MetricsAdapter {
                 var protoDataPoint = Opentelemetry_Proto_Metrics_V1_IntHistogramDataPoint()
                 protoDataPoint.sum = Int64(summaryData.sum)
                 protoDataPoint.count = UInt64(summaryData.count)
-//                protoDataPoint.explicitBounds = [summaryData.min, summaryData.max]
-                
+                protoDataPoint.bucketCounts = [UInt64(summaryData.min), UInt64(summaryData.max)]
                 protoDataPoint.startTimeUnixNano = summaryData.startTimestamp.timeIntervalSince1970.toNanoseconds
                 protoDataPoint.timeUnixNano = summaryData.timestamp.timeIntervalSince1970.toNanoseconds
                 
