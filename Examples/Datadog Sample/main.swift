@@ -35,7 +35,7 @@ let exporterConfiguration = ExporterConfiguration(
     serviceName: "Opentelemetry exporter Example",
     resource: "Opentelemetry exporter",
     applicationName: "SimpleExample",
-    applicationVersion: "0.0.1",
+    applicationVersion: "1.0.0",
     environment: "test",
     clientToken: clientKey,
     apiKey: apikey,
