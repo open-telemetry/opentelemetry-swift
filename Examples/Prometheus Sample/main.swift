@@ -34,8 +34,8 @@ DispatchQueue.global(qos: .default).async {
 
 let processor = UngroupedBatcher()
 
-let state = MeterSharedState(metricProcessor: processor, metricExporter: promExporter, metricPushInterval: 0.1)
-let meterProvider = MeterSdkProvider(meterSharedState: state)
+
+let meterProvider = MeterSdkProvider(metricProcessor: processor, metricExporter: promExporter, metricPushInterval: 0.1)
 
 var meter = meterProvider.get(instrumentationName: "MyMeter")
 
