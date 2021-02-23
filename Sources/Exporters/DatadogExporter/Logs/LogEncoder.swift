@@ -88,7 +88,7 @@ internal struct DDLog: Encodable {
         self.loggerName = attributes.removeValue(forKey: "loggerName")?.description ?? "logger"
         self.loggerVersion = "1.0" // loggerVersion
         self.threadName = attributes.removeValue(forKey: "threadName")?.description ?? "unkown"
-        self.applicationVersion = configuration.applicationVersion
+        self.applicationVersion = configuration.version
 
         self.attributes = LogAttributes(userAttributes: event.attributes, internalAttributes: internalAttributes)
         self.tags = nil // tags

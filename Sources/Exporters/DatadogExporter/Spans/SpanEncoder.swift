@@ -62,7 +62,6 @@ internal struct DDSpan: Encodable {
 
     // MARK: - Meta
 
-    let tracerVersion: String
     let applicationVersion: String
 
     /// Custom tags, received from user
@@ -107,8 +106,7 @@ internal struct DDSpan: Encodable {
         let spanType = spanData.attributes["type"] ?? spanData.attributes["db.type"]
         self.type = spanType?.description ?? spanData.kind.rawValue
 
-        self.tracerVersion = "1.0" // spanData.tracerVersion
-        self.applicationVersion = "0.0.1" // spanData.applicationVersion
+        self.applicationVersion = configuration.version
         self.tags = spanData.attributes.filter {
             !DDSpan.errorTagKeys.contains($0.key)
         }.mapValues { $0 }
@@ -144,7 +142,6 @@ internal struct SpanEncoder {
 
         case source = "meta._dd.source"
         case applicationVersion = "meta.version"
-        case tracerVersion = "meta.tracer.version"
     }
 
     /// Coding keys for dynamic `Span` attributes specified by user.
@@ -201,7 +198,6 @@ internal struct SpanEncoder {
     private func encodeDefaultMeta(_ span: DDSpan, to container: inout KeyedEncodingContainer<StaticCodingKeys>) throws {
         // NOTE: RUMM-299 only string values are supported for `meta.*` attributes
         try container.encode(Constants.ddsource, forKey: .source)
-        try container.encode(span.tracerVersion, forKey: .tracerVersion)
         try container.encode(span.applicationVersion, forKey: .applicationVersion)
     }
 

@@ -23,8 +23,8 @@ public struct ExporterConfiguration {
     /// The name of the service, resource, version,... that will be reported to the backend.
     var serviceName: String
     var resource: String
-    var applicationName: String
-    var applicationVersion: String
+    var applicationName: String 
+    var version: String
     var environment: String
 
     /// Either the RUM client token (which supports RUM, Logging and APM) or regular client token, only for Logging and APM.
@@ -51,7 +51,7 @@ public struct ExporterConfiguration {
         self.serviceName = serviceName
         self.resource = resource
         self.applicationName = applicationName
-        self.applicationVersion = applicationVersion
+        self.version = applicationVersion
         self.environment = environment
         self.clientToken = clientToken
         self.apiKey = apiKey
