@@ -82,56 +82,56 @@ public protocol Span: AnyObject, CustomStringConvertible {
     func end(time: Date)
 }
 
-extension Span {
-    public func hash(into hasher: inout Hasher) {
+public extension Span {
+    func hash(into hasher: inout Hasher) {
         hasher.combine(context.spanId)
     }
 
-    public static func == (lhs: Span, rhs: Span) -> Bool {
+    static func == (lhs: Span, rhs: Span) -> Bool {
         return lhs.context.spanId == rhs.context.spanId
     }
 }
 
-extension Span {
-    public func setAttribute(key: String, value: String) {
+public extension Span {
+    func setAttribute(key: String, value: String) {
         return setAttribute(key: key, value: AttributeValue.string(value))
     }
 
-    public func setAttribute(key: String, value: Int) {
+    func setAttribute(key: String, value: Int) {
         return setAttribute(key: key, value: AttributeValue.int(value))
     }
 
-    public func setAttribute(key: String, value: Double) {
+    func setAttribute(key: String, value: Double) {
         return setAttribute(key: key, value: AttributeValue.double(value))
     }
 
-    public func setAttribute(key: String, value: Bool) {
+    func setAttribute(key: String, value: Bool) {
         return setAttribute(key: key, value: AttributeValue.bool(value))
     }
 
-    public func setAttribute(key: SemanticAttributes, value: String) {
+    func setAttribute(key: SemanticAttributes, value: String) {
         return setAttribute(key: key.rawValue, value: AttributeValue.string(value))
     }
 
-    public func setAttribute(key: SemanticAttributes, value: Int) {
+    func setAttribute(key: SemanticAttributes, value: Int) {
         return setAttribute(key: key.rawValue, value: AttributeValue.int(value))
     }
 
-    public func setAttribute(key: SemanticAttributes, value: Double) {
+    func setAttribute(key: SemanticAttributes, value: Double) {
         return setAttribute(key: key.rawValue, value: AttributeValue.double(value))
     }
 
-    public func setAttribute(key: SemanticAttributes, value: Bool) {
+    func setAttribute(key: SemanticAttributes, value: Bool) {
         return setAttribute(key: key.rawValue, value: AttributeValue.bool(value))
     }
 }
 
-extension Span {
+public extension Span {
     /// Helper method that populates span properties from host and port
     /// - Parameters:
     ///   - hostName: Hostr name.
     ///   - port: Port number.
-    public func putHttpHostAttribute(string hostName: String, int port: Int) {
+    func putHttpHostAttribute(string hostName: String, int port: Int) {
         if port == 80 || port == 443 {
             setAttribute(key: .httpHost, value: hostName)
         } else {
@@ -143,17 +143,17 @@ extension Span {
     /// - Parameters:
     ///   - statusCode: Http status code.
     ///   - reasonPhrase: Http reason phrase.
-    public func putHttpStatusCode(statusCode: Int, reasonPhrase: String) {
+    func putHttpStatusCode(statusCode: Int, reasonPhrase: String) {
         setAttribute(key: .httpStatusCode, value: statusCode)
-        var newStatus: Status = .ok
+        var newStatus: Status
         switch statusCode {
         case 200 ..< 400:
             newStatus = .ok
         case 400 ..< 600:
-            newStatus = .error
+            newStatus = .error(description: description)
         default:
             newStatus = .unset
         }
-        status = newStatus.withDescription(description: reasonPhrase)
+        status = newStatus
     }
 }

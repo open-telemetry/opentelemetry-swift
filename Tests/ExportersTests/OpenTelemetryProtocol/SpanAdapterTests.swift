@@ -37,13 +37,12 @@ class SpanAdapterTests: XCTestCase {
         let libInfo = InstrumentationLibraryInfo(name: "testLibrary", version: "semver:0.0.1")
 
         let event = RecordEventsReadableSpan.startSpan(context: spanContext, name: "GET /api/endpoint", instrumentationLibraryInfo: libInfo, kind: SpanKind.server, parentContext: nil, hasRemoteParent: false, traceConfig: TraceConfig(), spanProcessor: NoopSpanProcessor(), clock: MillisClock(), resource: Resource(), attributes: AttributesDictionary(capacity: 0), links: [], totalRecordedLinks: 0, startTime: Date())
-        
-        let result = SpanAdapter.toProtoResourceSpans(spanDataList: [event.toSpanData()])
-        
-        XCTAssertTrue(result[0].instrumentationLibrarySpans.count > 0)
 
+        let result = SpanAdapter.toProtoResourceSpans(spanDataList: [event.toSpanData()])
+
+        XCTAssertTrue(result[0].instrumentationLibrarySpans.count > 0)
     }
-    
+
     func testToProtoSpan() {
         var testData = SpanData(traceId: traceId, spanId: spanId, name: "GET /api/endpoint", kind: SpanKind.server, startTime: Date(timeIntervalSince1970: 12345), endTime: Date(timeIntervalSince1970: 12349))
         testData.settingHasEnded(false)
@@ -104,13 +103,12 @@ class SpanAdapterTests: XCTestCase {
 
         status = Opentelemetry_Proto_Trace_V1_Status()
         status.code = .ok
-        status.message = "SUCCESS"
-        XCTAssertEqual(SpanAdapter.toStatusProto(status: Status.ok.withDescription(description: "SUCCESS")), status)
+        XCTAssertEqual(SpanAdapter.toStatusProto(status: .ok), status)
 
         status = Opentelemetry_Proto_Trace_V1_Status()
         status.code = .error
         status.message = "ERROR"
-        XCTAssertEqual(SpanAdapter.toStatusProto(status: Status.error.withDescription(description: "ERROR")), status)
+        XCTAssertEqual(SpanAdapter.toStatusProto(status: .error(description: "ERROR")), status)
     }
 
     func testToProtoSpanEvent() {

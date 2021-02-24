@@ -28,7 +28,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
     var parentSpanId: SpanId!
     let expectedHasRemoteParent = true
     var spanContext: SpanContext!
-    let startTime: Date = Date(timeIntervalSinceReferenceDate: 0)
+    let startTime = Date(timeIntervalSinceReferenceDate: 0)
     var testClock: TestClock!
     let resource = Resource()
     let instrumentationLibraryInfo = InstrumentationLibraryInfo(name: "theName", version: nil)
@@ -56,7 +56,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
         span.end()
         // Check that adding trace events or update fields after Span#end() does not throw any thrown
         // and are ignored.
-        spanDoWork(span: span, status: .error)
+        spanDoWork(span: span, status: .error(description: "GenericError"))
         let spanData = span.toSpanData()
         verifySpanData(spanData: spanData,
                        attributes: [String: AttributeValue](),
@@ -137,11 +137,11 @@ class RecordEventsReadableSpanTest: XCTestCase {
         XCTAssertEqual(span.toSpanData().status, Status.unset)
         span.status = .ok
         XCTAssertEqual(span.toSpanData().status, Status.ok)
-        span.status = .error
-        XCTAssertEqual(span.toSpanData().status, Status.error)
+        span.status = .error(description: "GenericError")
+        XCTAssertTrue(span.toSpanData().status.isError)
         span.end()
         span.status = .ok
-        XCTAssertEqual(span.toSpanData().status, Status.error)
+        XCTAssertTrue(span.toSpanData().status.isError)
     }
 
     func testGetSpanKind() {
@@ -339,9 +339,9 @@ class RecordEventsReadableSpanTest: XCTestCase {
                                          traceFlags: TraceFlags(),
                                          traceState: TraceState())
         let parentContext = SpanContext.create(traceId: traceId,
-                                         spanId: parentSpanId,
-                                         traceFlags: TraceFlags(),
-                                         traceState: TraceState())
+                                               spanId: parentSpanId,
+                                               traceFlags: TraceFlags(),
+                                               traceState: TraceState())
         let link1 = SpanData.Link(context: context, attributes: TestUtils.generateRandomAttributes())
         let links = [link1]
 
@@ -459,7 +459,8 @@ class RecordEventsReadableSpanTest: XCTestCase {
                                 startTime: Date,
                                 endTime: Date,
                                 status: Status,
-                                hasEnded: Bool) {
+                                hasEnded: Bool)
+    {
         XCTAssertEqual(spanData.traceId, traceId)
         XCTAssertEqual(spanData.spanId, spanId)
         XCTAssertEqual(spanData.parentSpanId, parentSpanId)
@@ -473,7 +474,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
         XCTAssert(spanData.links == links)
         XCTAssertEqual(spanData.startTime, startTime)
         XCTAssertEqual(spanData.endTime, endTime)
-        XCTAssertEqual(spanData.status.statusCode, status.statusCode)
+        XCTAssertEqual(spanData.status, status)
         XCTAssertEqual(spanData.hasEnded, hasEnded)
     }
 }

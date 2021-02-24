@@ -65,14 +65,6 @@ public protocol SpanBuilder: class {
     ///   - attributes: the attributes of the Link
     @discardableResult func addLink(spanContext: SpanContext, attributes: [String: AttributeValue]) -> Self
 
-    /// Adds a Link to the newly created Span.
-    ///
-    /// Links are used to link Spans in different traces. Used (for example) in batching
-    /// operations, where a single batch handler processes multiple requests from different traces or
-    /// the same trace.
-    /// - Parameter link: the Link to be added.
-//    @discardableResult func addLink(_ link: Link) -> Self
-
     /// Sets an attribute to the newly created Span. If SpanBuilder previously
     /// contained a mapping for the key, the old value is replaced by the specified value.
     /// - Parameters:
@@ -128,24 +120,20 @@ public protocol SpanBuilder: class {
     func startSpan() -> Span
 }
 
-extension SpanBuilder {
-    @discardableResult public func setAttribute(key: String, value: String) -> Self {
+public extension SpanBuilder {
+    @discardableResult func setAttribute(key: String, value: String) -> Self {
         return setAttribute(key: key, value: AttributeValue.string(value))
     }
 
-    @discardableResult public func setAttribute(key: String, value: Int) -> Self {
+    @discardableResult func setAttribute(key: String, value: Int) -> Self {
         return setAttribute(key: key, value: AttributeValue.int(value))
     }
 
-    @discardableResult public func setAttribute(key: String, value: Double) -> Self {
+    @discardableResult func setAttribute(key: String, value: Double) -> Self {
         return setAttribute(key: key, value: AttributeValue.double(value))
     }
 
-    @discardableResult public func setAttribute(key: String, value: Bool) -> Self {
+    @discardableResult func setAttribute(key: String, value: Bool) -> Self {
         return setAttribute(key: key, value: AttributeValue.bool(value))
     }
-
-//    @discardableResult public func setStartTimestamp(timestamp: Date) -> Self {
-//        return setStartTimestamp(timestamp: UInt64(timestamp.timeIntervalSince1970.toNanoseconds) )
-//    }
 }

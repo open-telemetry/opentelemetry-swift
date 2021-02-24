@@ -17,26 +17,21 @@ import OpenTelemetryApi
 import XCTest
 
 final class StatusTests: XCTestCase {
-    func testStatus_Ok() {
-        XCTAssertEqual(Status.ok.statusCode, Status.StatusCode.ok)
-        XCTAssertNil(Status.ok.statusDescription)
-        XCTAssertTrue(Status.ok.isOk)
+    func testStatusIsOk() {
+        let statusOK = Status.ok
+        XCTAssertTrue(statusOK.isOk)
+        let statusUnset = Status.unset
+        XCTAssertFalse(statusUnset.isOk)
+        let statusError = Status.error(description: "Error")
+        XCTAssertFalse(statusError.isOk)
     }
 
-    func testCreateStatus_WithDescription() {
-        let status = Status.unset.withDescription(description: "This is an error.")
-        XCTAssertEqual(status.statusCode, Status.StatusCode.unset)
-        XCTAssertEqual(status.statusDescription, "This is an error.")
-        XCTAssertFalse(status.isOk)
-    }
-
-    func testStatus_EqualsAndHashCode() {
-        XCTAssertEqual(Status.ok, Status.ok.withDescription(description: nil))
-        XCTAssertNotEqual(Status.ok, Status.unset.withDescription(description: "ThisIsAnError"))
-        XCTAssertNotEqual(Status.ok, Status.error.withDescription(description: "ThisIsAnError"))
-        XCTAssertNotEqual(Status.ok.withDescription(description: nil), Status.error.withDescription(description: "ThisIsAnError"))
-        XCTAssertNotEqual(Status.ok.withDescription(description: nil), Status.unset.withDescription(description: "ThisIsAnError"))
-        XCTAssertEqual(Status.error.withDescription(description: "ThisIsAnError"), Status.error.withDescription(description: "ThisIsAnError"))
-        XCTAssertNotEqual(Status.error.withDescription(description: "ThisIsAnError"), Status.unset.withDescription(description: "ThisIsAnError"))
+    func testStatusIsError() {
+        let statusOK = Status.ok
+        XCTAssertFalse(statusOK.isError)
+        let statusUnset = Status.unset
+        XCTAssertFalse(statusUnset.isError)
+        let statusError = Status.error(description: "Error")
+        XCTAssertTrue(statusError.isError)
     }
 }

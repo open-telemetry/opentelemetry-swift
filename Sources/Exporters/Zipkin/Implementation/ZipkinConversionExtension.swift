@@ -77,9 +77,9 @@ struct ZipkinConversionExtension {
         let status = otelSpan.status
 
         if status.isOk {
-            attributeEnumerationState.tags[statusCode] = "\(status.statusCode)".capitalized
-            if status.statusDescription != nil {
-                attributeEnumerationState.tags[statusDescription] = status.statusDescription
+            attributeEnumerationState.tags[statusCode] = "\(status.name)".capitalized
+            if case let Status.error(description) = status {
+                attributeEnumerationState.tags[statusDescription] = description
             }
         }
 
@@ -132,8 +132,7 @@ struct ZipkinConversionExtension {
     }
 
     private static func processAttributes(state: inout AttributeEnumerationState, key: String, value: AttributeValue) {
-        if case let .string(val) = value,
-            let priority = remoteEndpointServiceNameKeyResolution[key] {
+        if case let .string(val) = value, let priority = remoteEndpointServiceNameKeyResolution[key] {
             if state.RemoteEndpointServiceName == nil || priority < state.remoteEndpointServiceNamePriority ?? 5 {
                 state.RemoteEndpointServiceName = val
                 state.remoteEndpointServiceNamePriority = priority
