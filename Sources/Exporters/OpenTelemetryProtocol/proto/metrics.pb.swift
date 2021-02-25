@@ -68,7 +68,7 @@ public enum Opentelemetry_Proto_Metrics_V1_AggregationTemporality: SwiftProtobuf
   ///      t_0+2 with a value of 2.
   case delta // = 1
 
-  /// CUMULATIVE is an AggregationTemporality for a metic aggregator which
+  /// CUMULATIVE is an AggregationTemporality for a metric aggregator which
   /// reports changes since a fixed start time. This means that current values
   /// of a CUMULATIVE metric depend on all previous measurements since the
   /// start time. Because of this, the sender is required to retain this state
@@ -180,7 +180,8 @@ public struct Opentelemetry_Proto_Metrics_V1_InstrumentationLibraryMetrics {
   // methods supported on all messages.
 
   /// The instrumentation library information for the metrics in this message.
-  /// If this field is not set then no library info is known.
+  /// Semantically when InstrumentationLibrary isn't set, it is equivalent with
+  /// an empty instrumentation library name (unknown).
   public var instrumentationLibrary: Opentelemetry_Proto_Common_V1_InstrumentationLibrary {
     get {return _storage._instrumentationLibrary ?? Opentelemetry_Proto_Common_V1_InstrumentationLibrary()}
     set {_uniqueStorage()._instrumentationLibrary = newValue}
@@ -220,11 +221,11 @@ public struct Opentelemetry_Proto_Metrics_V1_InstrumentationLibraryMetrics {
 ///  +------------+
 ///  |name        |
 ///  |description |
-///  |unit        |     +---------------------------+
-///  |data        |---> |Gauge, Sum, Histogram, ... |
-///  +------------+     +---------------------------+ 
+///  |unit        |     +------------------------------------+
+///  |data        |---> |Gauge, Sum, Histogram, Summary, ... |
+///  +------------+     +------------------------------------+
 ///
-///    Data [One of Gauge, Sum, Histogram, ...]
+///    Data [One of Gauge, Sum, Histogram, Summary, ...]
 ///  +-----------+
 ///  |...        |  // Metadata about the Data.
 ///  |points     |--+
@@ -355,6 +356,14 @@ public struct Opentelemetry_Proto_Metrics_V1_Metric {
     set {_uniqueStorage()._data = .doubleHistogram(newValue)}
   }
 
+  public var doubleSummary: Opentelemetry_Proto_Metrics_V1_DoubleSummary {
+    get {
+      if case .doubleSummary(let v)? = _storage._data {return v}
+      return Opentelemetry_Proto_Metrics_V1_DoubleSummary()
+    }
+    set {_uniqueStorage()._data = .doubleSummary(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   /// Data determines the aggregation type (if any) of the metric, what is the
@@ -381,6 +390,7 @@ public struct Opentelemetry_Proto_Metrics_V1_Metric {
     case doubleSum(Opentelemetry_Proto_Metrics_V1_DoubleSum)
     case intHistogram(Opentelemetry_Proto_Metrics_V1_IntHistogram)
     case doubleHistogram(Opentelemetry_Proto_Metrics_V1_DoubleHistogram)
+    case doubleSummary(Opentelemetry_Proto_Metrics_V1_DoubleSummary)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_Metric.OneOf_Data, rhs: Opentelemetry_Proto_Metrics_V1_Metric.OneOf_Data) -> Bool {
@@ -391,6 +401,7 @@ public struct Opentelemetry_Proto_Metrics_V1_Metric {
       case (.doubleSum(let l), .doubleSum(let r)): return l == r
       case (.intHistogram(let l), .intHistogram(let r)): return l == r
       case (.doubleHistogram(let l), .doubleHistogram(let r)): return l == r
+      case (.doubleSummary(let l), .doubleSummary(let r)): return l == r
       default: return false
       }
     }
@@ -516,6 +527,24 @@ public struct Opentelemetry_Proto_Metrics_V1_DoubleHistogram {
   /// aggregation_temporality describes if the aggregator reports delta changes
   /// since last report time, or cumulative changes since a fixed start time.
   public var aggregationTemporality: Opentelemetry_Proto_Metrics_V1_AggregationTemporality = .unspecified
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// DoubleSummary metric data are used to convey quantile summaries,
+/// a Prometheus (see: https://prometheus.io/docs/concepts/metric_types/#summary)
+/// and OpenMetrics (see: https://github.com/OpenObservability/OpenMetrics/blob/4dbf6075567ab43296eed941037c12951faafb92/protos/prometheus.proto#L45)
+/// data type. These data points cannot always be merged in a meaningful way.
+/// While they can be useful in some applications, histogram data points are
+/// recommended for new applications.
+public struct Opentelemetry_Proto_Metrics_V1_DoubleSummary {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var dataPoints: [Opentelemetry_Proto_Metrics_V1_DoubleSummaryDataPoint] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -758,6 +787,77 @@ public struct Opentelemetry_Proto_Metrics_V1_DoubleHistogramDataPoint {
   public init() {}
 }
 
+/// DoubleSummaryDataPoint is a single data point in a timeseries that describes the
+/// time-varying values of a Summary metric.
+public struct Opentelemetry_Proto_Metrics_V1_DoubleSummaryDataPoint {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// The set of labels that uniquely identify this timeseries.
+  public var labels: [Opentelemetry_Proto_Common_V1_StringKeyValue] = []
+
+  /// start_time_unix_nano is the last time when the aggregation value was reset
+  /// to "zero". For some metric types this is ignored, see data types for more
+  /// details.
+  ///
+  /// The aggregation value is over the time interval (start_time_unix_nano,
+  /// time_unix_nano].
+  ///
+  /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
+  /// 1970.
+  ///
+  /// Value of 0 indicates that the timestamp is unspecified. In that case the
+  /// timestamp may be decided by the backend.
+  public var startTimeUnixNano: UInt64 = 0
+
+  /// time_unix_nano is the moment when this aggregation value was reported.
+  ///
+  /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
+  /// 1970.
+  public var timeUnixNano: UInt64 = 0
+
+  /// count is the number of values in the population. Must be non-negative.
+  public var count: UInt64 = 0
+
+  /// sum of the values in the population. If count is zero then this field
+  /// must be zero.
+  public var sum: Double = 0
+
+  /// (Optional) list of values at different quantiles of the distribution calculated
+  /// from the current snapshot. The quantiles must be strictly increasing.
+  public var quantileValues: [Opentelemetry_Proto_Metrics_V1_DoubleSummaryDataPoint.ValueAtQuantile] = []
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  /// Represents the value at a given quantile of a distribution.
+  ///
+  /// To record Min and Max values following conventions are used:
+  /// - The 1.0 quantile is equivalent to the maximum value observed.
+  /// - The 0.0 quantile is equivalent to the minimum value observed.
+  ///
+  /// See the following issue for more context:
+  /// https://github.com/open-telemetry/opentelemetry-proto/issues/125
+  public struct ValueAtQuantile {
+    // SwiftProtobuf.Message conformance is added in an extension below. See the
+    // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+    // methods supported on all messages.
+
+    /// The quantile of a distribution. Must be in the interval
+    /// [0.0, 1.0].
+    public var quantile: Double = 0
+
+    /// The value at the given quantile of a distribution.
+    public var value: Double = 0
+
+    public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+    public init() {}
+  }
+
+  public init() {}
+}
+
 /// A representation of an exemplar, which is a sample input int measurement.
 /// Exemplars also hold information about the environment when the measurement
 /// was recorded, for example the span and trace ID of the active span when the
@@ -996,6 +1096,7 @@ extension Opentelemetry_Proto_Metrics_V1_Metric: SwiftProtobuf.Message, SwiftPro
     7: .standard(proto: "double_sum"),
     8: .standard(proto: "int_histogram"),
     9: .standard(proto: "double_histogram"),
+    11: .standard(proto: "double_summary"),
   ]
 
   fileprivate class _StorageClass {
@@ -1079,6 +1180,14 @@ extension Opentelemetry_Proto_Metrics_V1_Metric: SwiftProtobuf.Message, SwiftPro
           }
           try decoder.decodeSingularMessageField(value: &v)
           if let v = v {_storage._data = .doubleHistogram(v)}
+        case 11:
+          var v: Opentelemetry_Proto_Metrics_V1_DoubleSummary?
+          if let current = _storage._data {
+            try decoder.handleConflictingOneOf()
+            if case .doubleSummary(let m) = current {v = m}
+          }
+          try decoder.decodeSingularMessageField(value: &v)
+          if let v = v {_storage._data = .doubleSummary(v)}
         default: break
         }
       }
@@ -1109,6 +1218,8 @@ extension Opentelemetry_Proto_Metrics_V1_Metric: SwiftProtobuf.Message, SwiftPro
         try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
       case .doubleHistogram(let v)?:
         try visitor.visitSingularMessageField(value: v, fieldNumber: 9)
+      case .doubleSummary(let v)?:
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 11)
       case nil: break
       }
     }
@@ -1338,6 +1449,35 @@ extension Opentelemetry_Proto_Metrics_V1_DoubleHistogram: SwiftProtobuf.Message,
   public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_DoubleHistogram, rhs: Opentelemetry_Proto_Metrics_V1_DoubleHistogram) -> Bool {
     if lhs.dataPoints != rhs.dataPoints {return false}
     if lhs.aggregationTemporality != rhs.aggregationTemporality {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Opentelemetry_Proto_Metrics_V1_DoubleSummary: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DoubleSummary"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .standard(proto: "data_points"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try decoder.decodeRepeatedMessageField(value: &self.dataPoints)
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.dataPoints.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.dataPoints, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_DoubleSummary, rhs: Opentelemetry_Proto_Metrics_V1_DoubleSummary) -> Bool {
+    if lhs.dataPoints != rhs.dataPoints {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -1586,6 +1726,100 @@ extension Opentelemetry_Proto_Metrics_V1_DoubleHistogramDataPoint: SwiftProtobuf
     if lhs.bucketCounts != rhs.bucketCounts {return false}
     if lhs.explicitBounds != rhs.explicitBounds {return false}
     if lhs.exemplars != rhs.exemplars {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Opentelemetry_Proto_Metrics_V1_DoubleSummaryDataPoint: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DoubleSummaryDataPoint"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "labels"),
+    2: .standard(proto: "start_time_unix_nano"),
+    3: .standard(proto: "time_unix_nano"),
+    4: .same(proto: "count"),
+    5: .same(proto: "sum"),
+    6: .standard(proto: "quantile_values"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try decoder.decodeRepeatedMessageField(value: &self.labels)
+      case 2: try decoder.decodeSingularFixed64Field(value: &self.startTimeUnixNano)
+      case 3: try decoder.decodeSingularFixed64Field(value: &self.timeUnixNano)
+      case 4: try decoder.decodeSingularFixed64Field(value: &self.count)
+      case 5: try decoder.decodeSingularDoubleField(value: &self.sum)
+      case 6: try decoder.decodeRepeatedMessageField(value: &self.quantileValues)
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.labels.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.labels, fieldNumber: 1)
+    }
+    if self.startTimeUnixNano != 0 {
+      try visitor.visitSingularFixed64Field(value: self.startTimeUnixNano, fieldNumber: 2)
+    }
+    if self.timeUnixNano != 0 {
+      try visitor.visitSingularFixed64Field(value: self.timeUnixNano, fieldNumber: 3)
+    }
+    if self.count != 0 {
+      try visitor.visitSingularFixed64Field(value: self.count, fieldNumber: 4)
+    }
+    if self.sum != 0 {
+      try visitor.visitSingularDoubleField(value: self.sum, fieldNumber: 5)
+    }
+    if !self.quantileValues.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.quantileValues, fieldNumber: 6)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_DoubleSummaryDataPoint, rhs: Opentelemetry_Proto_Metrics_V1_DoubleSummaryDataPoint) -> Bool {
+    if lhs.labels != rhs.labels {return false}
+    if lhs.startTimeUnixNano != rhs.startTimeUnixNano {return false}
+    if lhs.timeUnixNano != rhs.timeUnixNano {return false}
+    if lhs.count != rhs.count {return false}
+    if lhs.sum != rhs.sum {return false}
+    if lhs.quantileValues != rhs.quantileValues {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Opentelemetry_Proto_Metrics_V1_DoubleSummaryDataPoint.ValueAtQuantile: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = Opentelemetry_Proto_Metrics_V1_DoubleSummaryDataPoint.protoMessageName + ".ValueAtQuantile"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "quantile"),
+    2: .same(proto: "value"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      switch fieldNumber {
+      case 1: try decoder.decodeSingularDoubleField(value: &self.quantile)
+      case 2: try decoder.decodeSingularDoubleField(value: &self.value)
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.quantile != 0 {
+      try visitor.visitSingularDoubleField(value: self.quantile, fieldNumber: 1)
+    }
+    if self.value != 0 {
+      try visitor.visitSingularDoubleField(value: self.value, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_DoubleSummaryDataPoint.ValueAtQuantile, rhs: Opentelemetry_Proto_Metrics_V1_DoubleSummaryDataPoint.ValueAtQuantile) -> Bool {
+    if lhs.quantile != rhs.quantile {return false}
+    if lhs.value != rhs.value {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

@@ -37,7 +37,7 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 public enum Opentelemetry_Proto_Logs_V1_SeverityNumber: SwiftProtobuf.Enum {
   public typealias RawValue = Int
 
-  /// UNSPECIFIED is the default SeverityNumber, it MUST not be used.
+  /// UNSPECIFIED is the default SeverityNumber, it MUST NOT be used.
   case unspecified // = 0
   case trace // = 1
   case trace2 // = 2
@@ -216,7 +216,7 @@ public struct Opentelemetry_Proto_Logs_V1_ResourceLogs {
   // methods supported on all messages.
 
   /// The resource for the logs in this message.
-  /// If this field is not set then no resource info is known.
+  /// If this field is not set then resource info is unknown.
   public var resource: Opentelemetry_Proto_Resource_V1_Resource {
     get {return _storage._resource ?? Opentelemetry_Proto_Resource_V1_Resource()}
     set {_uniqueStorage()._resource = newValue}
@@ -246,7 +246,8 @@ public struct Opentelemetry_Proto_Logs_V1_InstrumentationLibraryLogs {
   // methods supported on all messages.
 
   /// The instrumentation library information for the logs in this message.
-  /// If this field is not set then no library info is known.
+  /// Semantically when InstrumentationLibrary isn't set, it is equivalent with
+  /// an empty instrumentation library name (unknown).
   public var instrumentationLibrary: Opentelemetry_Proto_Common_V1_InstrumentationLibrary {
     get {return _storage._instrumentationLibrary ?? Opentelemetry_Proto_Common_V1_InstrumentationLibrary()}
     set {_uniqueStorage()._instrumentationLibrary = newValue}

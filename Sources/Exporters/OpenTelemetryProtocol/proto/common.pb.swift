@@ -213,6 +213,7 @@ public struct Opentelemetry_Proto_Common_V1_InstrumentationLibrary {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
+  /// An empty instrumentation library name means the name is unknown. 
   public var name: String = String()
 
   public var version: String = String()

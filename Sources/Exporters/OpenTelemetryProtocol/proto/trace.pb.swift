@@ -70,7 +70,8 @@ public struct Opentelemetry_Proto_Trace_V1_InstrumentationLibrarySpans {
   // methods supported on all messages.
 
   /// The instrumentation library information for the spans in this message.
-  /// If this field is not set then no library info is known.
+  /// Semantically when InstrumentationLibrary isn't set, it is equivalent with
+  /// an empty instrumentation library name (unknown).
   public var instrumentationLibrary: Opentelemetry_Proto_Common_V1_InstrumentationLibrary {
     get {return _storage._instrumentationLibrary ?? Opentelemetry_Proto_Common_V1_InstrumentationLibrary()}
     set {_uniqueStorage()._instrumentationLibrary = newValue}
