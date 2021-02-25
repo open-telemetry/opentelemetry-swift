@@ -35,7 +35,7 @@ class BatchSpansProcessorTests: XCTestCase {
     }
 
     @discardableResult private func createSampledEndedSpan(spanName: String) -> ReadableSpan {
-        let span = TestUtils.startSpanWithSampler(tracerSdkFactory: tracerSdkFactory,
+        let span = TestUtils.createSpanWithSampler(tracerSdkFactory: tracerSdkFactory,
                                                   tracer: tracer,
                                                   spanName: spanName,
                                                   sampler: Samplers.alwaysOn)
@@ -45,7 +45,7 @@ class BatchSpansProcessorTests: XCTestCase {
     }
 
     private func createNotSampledEndedSpan(spanName: String) {
-        TestUtils.startSpanWithSampler(tracerSdkFactory: tracerSdkFactory,
+        TestUtils.createSpanWithSampler(tracerSdkFactory: tracerSdkFactory,
                                        tracer: tracer,
                                        spanName: spanName,
                                        sampler: Samplers.alwaysOff)

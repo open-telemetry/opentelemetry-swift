@@ -33,16 +33,13 @@ public class TracerSdk: Tracer {
     }
 
     public func spanBuilder(spanName: String) -> SpanBuilder {
-        if sharedState.isStopped {
+        if sharedState.hasBeenShutdown {
             return DefaultTracer.instance.spanBuilder(spanName: spanName)
         }
         return SpanBuilderSdk(spanName: spanName,
                               instrumentationLibraryInfo: instrumentationLibraryInfo,
-                              spanProcessor: sharedState.activeSpanProcessor,
-                              traceConfig: sharedState.activeTraceConfig,
-                              resource: sharedState.resource,
-                              idsGenerator: sharedState.idsGenerator,
-                              clock: sharedState.clock)
+                              tracerSharedState: sharedState,
+                              spanLimits: sharedState.activeSpanLimits)
     }
 
     @discardableResult public func setActive(_ span: Span) -> Scope {

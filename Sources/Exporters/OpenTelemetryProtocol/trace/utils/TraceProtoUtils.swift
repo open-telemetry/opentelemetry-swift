@@ -31,18 +31,17 @@ struct TraceProtoUtils {
         return traceIdData
     }
     
-    static func traceConfigFromProto(protoTraceConfig: Opentelemetry_Proto_Trace_V1_TraceConfig) -> TraceConfig {
-        let traceConfig = TraceConfig()
-        traceConfig.settingSampler(fromProtoSampler(protoTraceConfig: protoTraceConfig))
-            .settingMaxNumberOfAttributes(Int(protoTraceConfig.maxNumberOfAttributes))
+    static func spanLimitsFromProto(protoTraceConfig: Opentelemetry_Proto_Trace_V1_TraceConfig) -> SpanLimits {
+        let spanLimits = SpanLimits()
+        spanLimits.settingMaxNumberOfAttributes(Int(protoTraceConfig.maxNumberOfAttributes))
             .settingMaxNumberOfEvents(Int(protoTraceConfig.maxNumberOfTimedEvents))
             .settingMaxNumberOfLinks(Int(protoTraceConfig.maxNumberOfLinks))
             .settingMaxNumberOfAttributesPerEvent(Int(protoTraceConfig.maxNumberOfAttributesPerTimedEvent))
             .settingMaxNumberOfAttributesPerLink(Int(protoTraceConfig.maxNumberOfAttributesPerLink))
-        return traceConfig
+        return spanLimits
     }
     
-    static func fromProtoSampler( protoTraceConfig: Opentelemetry_Proto_Trace_V1_TraceConfig) -> Sampler {
+    static func fromProtoSampler(protoTraceConfig: Opentelemetry_Proto_Trace_V1_TraceConfig) -> Sampler {
         guard protoTraceConfig.sampler != nil else {
             return Samplers.alwaysOff
         }
@@ -56,15 +55,15 @@ struct TraceProtoUtils {
                 return Samplers.alwaysOn
             case .alwaysParent:
                 // TODO: add support for alwaysParent
-                break;
-            case .UNRECOGNIZED(_):
-                break;
+                break
+            case .UNRECOGNIZED:
+                break
             }
         case .traceIDRatioBased(let ratio):
             return Samplers.probability(probability: ratio.samplingRatio)
-        case .rateLimitingSampler(_):
+        case .rateLimitingSampler:
             // TODO: add support for RateLimiting Sampler
-            break;
+            break
         }
         return Samplers.alwaysOff
     }

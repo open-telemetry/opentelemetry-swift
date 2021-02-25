@@ -30,11 +30,8 @@ public class SpanBuilderSdk: SpanBuilder {
 
     private var spanName: String
     private var instrumentationLibraryInfo: InstrumentationLibraryInfo
-    private var spanProcessor: SpanProcessor
-    private var traceConfig: TraceConfig
-    private var resource: Resource
-    private var idsGenerator: IdsGenerator
-    private var clock: Clock
+    private var tracerSharedState: TracerSharedState
+    private var spanLimits: SpanLimits
 
     private var parent: Span?
     private var remoteParent: SpanContext?
@@ -44,23 +41,18 @@ public class SpanBuilderSdk: SpanBuilder {
     private var totalNumberOfLinksAdded: Int = 0
     private var parentType: ParentType = .currentSpan
 
-    private var startTime: Date = Date()
+    private var startTime = Date()
 
     public init(spanName: String,
                 instrumentationLibraryInfo: InstrumentationLibraryInfo,
-                spanProcessor: SpanProcessor,
-                traceConfig: TraceConfig,
-                resource: Resource,
-                idsGenerator: IdsGenerator,
-                clock: Clock) {
+                tracerSharedState: TracerSharedState,
+                spanLimits: SpanLimits)
+    {
         self.spanName = spanName
         self.instrumentationLibraryInfo = instrumentationLibraryInfo
-        self.spanProcessor = spanProcessor
-        self.traceConfig = traceConfig
-        attributes = AttributesDictionary(capacity: traceConfig.maxNumberOfAttributes)
-        self.resource = resource
-        self.idsGenerator = idsGenerator
-        self.clock = clock
+        self.tracerSharedState = tracerSharedState
+        self.spanLimits = spanLimits
+        attributes = AttributesDictionary(capacity: spanLimits.maxNumberOfAttributes)
     }
 
     @discardableResult public func setParent(_ parent: Span) -> Self {
@@ -94,7 +86,7 @@ public class SpanBuilderSdk: SpanBuilder {
 
     @discardableResult public func addLink(_ link: SpanData.Link) -> Self {
         totalNumberOfLinksAdded += 1
-        if links.count >= traceConfig.maxNumberOfLinks {
+        if links.count >= spanLimits.maxNumberOfLinks {
             return self
         }
         links.append(link)
@@ -119,23 +111,23 @@ public class SpanBuilderSdk: SpanBuilder {
     public func startSpan() -> Span {
         var parentContext = getParentContext(parentType: parentType, explicitParent: parent, remoteParent: remoteParent)
         let traceId: TraceId
-        let spanId = idsGenerator.generateSpanId()
+        let spanId = tracerSharedState.idsGenerator.generateSpanId()
         var traceState = TraceState()
 
         if parentContext?.isValid ?? false {
             traceId = parentContext!.traceId
             traceState = parentContext!.traceState
         } else {
-            traceId = idsGenerator.generateTraceId()
+            traceId = tracerSharedState.idsGenerator.generateTraceId()
             parentContext = nil
         }
 
-        let samplingDecision = traceConfig.sampler.shouldSample(parentContext: parentContext,
-                                                                traceId: traceId,
-                                                                name: spanName,
-                                                                kind: spanKind,
-                                                                attributes: attributes.attributes,
-                                                                parentLinks: links)
+        let samplingDecision = tracerSharedState.sampler.shouldSample(parentContext: parentContext,
+                                                                      traceId: traceId,
+                                                                      name: spanName,
+                                                                      kind: spanKind,
+                                                                      attributes: attributes.attributes,
+                                                                      parentLinks: links)
 
         let spanContext = SpanContext.create(traceId: traceId,
                                              spanId: spanId,
@@ -154,10 +146,10 @@ public class SpanBuilderSdk: SpanBuilder {
                                                   kind: spanKind,
                                                   parentContext: parentContext,
                                                   hasRemoteParent: parentContext?.isRemote ?? false,
-                                                  traceConfig: traceConfig,
-                                                  spanProcessor: spanProcessor,
-                                                  clock: SpanBuilderSdk.getClock(parent: SpanBuilderSdk.getParentSpan(parentType: parentType, explicitParent: parent), clock: clock),
-                                                  resource: resource,
+                                                  spanLimits: spanLimits,
+                                                  spanProcessor: tracerSharedState.activeSpanProcessor,
+                                                  clock: SpanBuilderSdk.getClock(parent: SpanBuilderSdk.getParentSpan(parentType: parentType, explicitParent: parent), clock: tracerSharedState.clock),
+                                                  resource: tracerSharedState.resource,
                                                   attributes: attributes,
                                                   links: links,
                                                   totalRecordedLinks: totalNumberOfLinksAdded,

@@ -53,8 +53,8 @@ class SpanBuilderSdkTest: XCTestCase {
 
     func testTruncateLink() {
         let maxNumberOfLinks = 8
-        let traceConfig = tracerSdkFactory.getActiveTraceConfig().settingMaxNumberOfLinks(maxNumberOfLinks)
-        tracerSdkFactory.updateActiveTraceConfig(traceConfig)
+        let spanLimits = tracerSdkFactory.getActiveSpanLimits().settingMaxNumberOfLinks(maxNumberOfLinks)
+        tracerSdkFactory.updateActiveSpanLimits(spanLimits)
         // Verify methods do not crash.
         let spanBuilder = tracerSdk.spanBuilder(spanName: spanName)
         for _ in 0 ..< 2 * maxNumberOfLinks {
@@ -69,7 +69,7 @@ class SpanBuilderSdkTest: XCTestCase {
             XCTAssertEqual(spanData.totalRecordedLinks, 2 * maxNumberOfLinks)
         }
         span.end()
-        tracerSdkFactory.updateActiveTraceConfig(TraceConfig())
+        tracerSdkFactory.updateActiveSpanLimits(SpanLimits())
     }
 
     func testSetAttribute() {
@@ -103,8 +103,8 @@ class SpanBuilderSdkTest: XCTestCase {
 
     func testDroppingAttributes() {
         let maxNumberOfAttrs = 8
-        let traceConfig = tracerSdkFactory.getActiveTraceConfig().settingMaxNumberOfAttributes(maxNumberOfAttrs)
-        tracerSdkFactory.updateActiveTraceConfig(traceConfig)
+        let spanLimits = tracerSdkFactory.getActiveSpanLimits().settingMaxNumberOfAttributes(maxNumberOfAttrs)
+        tracerSdkFactory.updateActiveSpanLimits(spanLimits)
         let spanBuilder = tracerSdk.spanBuilder(spanName: spanName)
         for i in 0 ..< 2 * maxNumberOfAttrs {
             spanBuilder.setAttribute(key: "key\(i)", value: i)
@@ -116,7 +116,7 @@ class SpanBuilderSdkTest: XCTestCase {
             XCTAssertEqual(attrs["key\(i + maxNumberOfAttrs)"], AttributeValue.int(i + maxNumberOfAttrs))
         }
         span.end()
-        tracerSdkFactory.updateActiveTraceConfig(TraceConfig())
+        tracerSdkFactory.updateActiveSpanLimits(SpanLimits())
     }
 
     func testRecordEvents_default() {
@@ -137,9 +137,11 @@ class SpanBuilderSdkTest: XCTestCase {
     }
 
     func testSampler() {
-        let span = TestUtils.startSpanWithSampler(tracerSdkFactory: tracerSdkFactory,
-                                                  tracer: tracerSdk, spanName: spanName,
-                                                  sampler: Samplers.alwaysOff).startSpan()
+        let span = TestUtils.createSpanWithSampler(tracerSdkFactory: tracerSdkFactory,
+                                                   tracer: tracerSdk, spanName: spanName,
+                                                   sampler: Samplers.alwaysOff)
+            .startSpan()
+
         XCTAssertFalse(span.context.traceFlags.sampled)
         span.end()
     }
@@ -154,7 +156,8 @@ class SpanBuilderSdkTest: XCTestCase {
                               name: String,
                               kind: SpanKind,
                               attributes: [String: AttributeValue],
-                              parentLinks: [SpanData.Link]) -> Decision {
+                              parentLinks: [SpanData.Link]) -> Decision
+            {
                 return decision
             }
 
@@ -174,11 +177,11 @@ class SpanBuilderSdkTest: XCTestCase {
 
         let decision = TestDecision()
         let sampler = TestSampler(decision: decision)
-        let span = TestUtils.startSpanWithSampler(tracerSdkFactory: tracerSdkFactory,
-                                                  tracer: tracerSdk,
-                                                  spanName: spanName,
-                                                  sampler: sampler,
-                                                  attributes: [SpanBuilderSdkTest.samplerAttributeName: AttributeValue.string("none")])
+        let span = TestUtils.createSpanWithSampler(tracerSdkFactory: tracerSdkFactory,
+                                                   tracer: tracerSdk,
+                                                   spanName: spanName,
+                                                   sampler: sampler,
+                                                   attributes: [SpanBuilderSdkTest.samplerAttributeName: AttributeValue.string("none")])
             .startSpan() as! RecordEventsReadableSpan
         XCTAssertTrue(span.context.traceFlags.sampled)
         XCTAssertTrue(span.toSpanData().attributes.keys.contains(SpanBuilderSdkTest.samplerAttributeName))
@@ -186,9 +189,9 @@ class SpanBuilderSdkTest: XCTestCase {
     }
 
     func testSampledViaParentLinks() {
-        let span = TestUtils.startSpanWithSampler(tracerSdkFactory: tracerSdkFactory,
-                                                  tracer: tracerSdk, spanName: spanName,
-                                                  sampler: Samplers.probability(probability: 0.0))
+        let span = TestUtils.createSpanWithSampler(tracerSdkFactory: tracerSdkFactory,
+                                                   tracer: tracerSdk, spanName: spanName,
+                                                   sampler: Samplers.probability(probability: 0.0))
             .addLink(spanContext: sampledSpanContext)
             .startSpan()
         XCTAssertTrue(span.context.traceFlags.sampled)

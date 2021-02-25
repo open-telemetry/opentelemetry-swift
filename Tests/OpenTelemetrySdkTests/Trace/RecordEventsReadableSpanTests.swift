@@ -248,8 +248,8 @@ class RecordEventsReadableSpanTest: XCTestCase {
 
     func testDroppingAttributes() {
         let maxNumberOfAttributes = 8
-        let traceConfig = TraceConfig().settingMaxNumberOfAttributes(maxNumberOfAttributes)
-        let span = createTestSpan(config: traceConfig)
+        let spanLimits = SpanLimits().settingMaxNumberOfAttributes(maxNumberOfAttributes)
+        let span = createTestSpan(config: spanLimits)
         for i in 0 ..< 2 * maxNumberOfAttributes {
             span.setAttribute(key: "MyStringAttributeKey\(i)", value: AttributeValue.int(i))
         }
@@ -264,8 +264,8 @@ class RecordEventsReadableSpanTest: XCTestCase {
 
     func testDroppingAndAddingAttributes() {
         let maxNumberOfAttributes = 8
-        let traceConfig = TraceConfig().settingMaxNumberOfAttributes(maxNumberOfAttributes)
-        let span = createTestSpan(config: traceConfig)
+        let spanLimits = SpanLimits().settingMaxNumberOfAttributes(maxNumberOfAttributes)
+        let span = createTestSpan(config: spanLimits)
         for i in 0 ..< 2 * maxNumberOfAttributes {
             span.setAttribute(key: "MyStringAttributeKey\(i)", value: AttributeValue.int(i))
         }
@@ -294,8 +294,8 @@ class RecordEventsReadableSpanTest: XCTestCase {
 
     func testDroppingEvents() {
         let maxNumberOfEvents = 8
-        let traceConfig = TraceConfig().settingMaxNumberOfEvents(maxNumberOfEvents)
-        let span = createTestSpan(config: traceConfig)
+        let spanLimits = SpanLimits().settingMaxNumberOfEvents(maxNumberOfEvents)
+        let span = createTestSpan(config: spanLimits)
         for _ in 0 ..< 2 * maxNumberOfEvents {
             span.addEvent(name: "event2", attributes: [String: AttributeValue]())
             testClock.advanceMillis(millisPerSecond)
@@ -322,7 +322,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
         let traceId = idsGenerator.generateTraceId()
         let spanId = idsGenerator.generateSpanId()
         let parentSpanId = idsGenerator.generateSpanId()
-        let traceConfig = TraceConfig()
+        let spanLimits = SpanLimits()
         let spanProcessor = NoopSpanProcessor()
         let clock = TestClock()
         var attribute = [String: AttributeValue]()
@@ -351,7 +351,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
                                                               kind: kind,
                                                               parentContext: parentContext,
                                                               hasRemoteParent: false,
-                                                              traceConfig: traceConfig,
+                                                              spanLimits: spanLimits,
                                                               spanProcessor: spanProcessor,
                                                               clock: clock,
                                                               resource: resource,
@@ -398,11 +398,11 @@ class RecordEventsReadableSpanTest: XCTestCase {
     }
 
     private func createTestRootSpan() -> RecordEventsReadableSpan {
-        return createTestSpan(kind: .internal, config: TraceConfig(), parentContext: nil, attributes: [String: AttributeValue]())
+        return createTestSpan(kind: .internal, config: SpanLimits(), parentContext: nil, attributes: [String: AttributeValue]())
     }
 
     private func createTestSpan(attributes: [String: AttributeValue]) -> RecordEventsReadableSpan {
-        return createTestSpan(kind: .internal, config: TraceConfig(), parentContext: nil, attributes: attributes)
+        return createTestSpan(kind: .internal, config: SpanLimits(), parentContext: nil, attributes: attributes)
     }
 
     private func createTestSpan(kind: SpanKind) -> RecordEventsReadableSpan {
@@ -410,14 +410,14 @@ class RecordEventsReadableSpanTest: XCTestCase {
                                                spanId: parentSpanId,
                                                traceFlags: TraceFlags(),
                                                traceState: TraceState())
-        return createTestSpan(kind: kind, config: TraceConfig(), parentContext: parentContext, attributes: [String: AttributeValue]())
+        return createTestSpan(kind: kind, config: SpanLimits(), parentContext: parentContext, attributes: [String: AttributeValue]())
     }
 
-    private func createTestSpan(config: TraceConfig) -> RecordEventsReadableSpan {
+    private func createTestSpan(config: SpanLimits) -> RecordEventsReadableSpan {
         return createTestSpan(kind: .internal, config: config, parentContext: nil, attributes: [String: AttributeValue]())
     }
 
-    private func createTestSpan(kind: SpanKind, config: TraceConfig, parentContext: SpanContext?, attributes: [String: AttributeValue]) -> RecordEventsReadableSpan {
+    private func createTestSpan(kind: SpanKind, config: SpanLimits, parentContext: SpanContext?, attributes: [String: AttributeValue]) -> RecordEventsReadableSpan {
         var attributesWithCapacity = AttributesDictionary(capacity: config.maxNumberOfAttributes)
         attributesWithCapacity.updateValues(attributes: attributes)
 
@@ -427,7 +427,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
                                                       kind: kind,
                                                       parentContext: parentContext,
                                                       hasRemoteParent: true,
-                                                      traceConfig: config,
+                                                      spanLimits: config,
                                                       spanProcessor: spanProcessor,
                                                       clock: testClock,
                                                       resource: resource,

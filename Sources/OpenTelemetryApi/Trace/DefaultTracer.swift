@@ -19,7 +19,7 @@ import Foundation
 public class DefaultTracer: Tracer {
     public static var instance = DefaultTracer()
 
-    private init() {}
+    public init() {}
 
     public var activeSpan: Span? {
         return ContextUtils.getCurrentSpan()

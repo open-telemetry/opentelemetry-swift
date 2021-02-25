@@ -19,16 +19,20 @@ import OpenTelemetryApi
 /// This class is not intended to be used in application code and it is used only by OpenTelemetry.
 public class TracerSdkProvider: TracerProvider {
     private var tracerProvider = [InstrumentationLibraryInfo: TracerSdk]()
-    private var sharedState: TracerSharedState
+    internal var sharedState: TracerSharedState
 
     /// Returns a new TracerSdkProvider with default Clock, IdsGenerator and Resource.
     public init(clock: Clock = MillisClock(),
-                idsGenerator: IdsGenerator =  RandomIdsGenerator(),
-                resource: Resource = EnvVarResource.resource) {
+                idsGenerator: IdsGenerator = RandomIdsGenerator(),
+                resource: Resource = EnvVarResource.resource)
+    {
         sharedState = TracerSharedState(clock: clock, idsGenerator: idsGenerator, resource: resource)
     }
 
     public func get(instrumentationName: String, instrumentationVersion: String? = nil) -> Tracer {
+        if sharedState.hasBeenShutdown {
+            return DefaultTracer()
+        }
         let instrumentationLibraryInfo = InstrumentationLibraryInfo(name: instrumentationName, version: instrumentationVersion ?? "")
         if let tracer = tracerProvider[instrumentationLibraryInfo] {
             return tracer
@@ -46,14 +50,14 @@ public class TracerSdkProvider: TracerProvider {
         }
     }
 
-    /// Returns the active TraceConfig.
-    public func getActiveTraceConfig() -> TraceConfig {
-        sharedState.activeTraceConfig
+    /// Returns the active SpanLimits.
+    public func getActiveSpanLimits() -> SpanLimits {
+        sharedState.activeSpanLimits
     }
 
-    /// Updates the active TraceConfig.
-    public func updateActiveTraceConfig(_ traceConfig: TraceConfig) {
-        sharedState.setActiveTraceConfig(traceConfig)
+    /// Updates the active SpanLimits.
+    public func updateActiveSpanLimits(_ spanLimits: SpanLimits) {
+        sharedState.setActiveSpanLimits(spanLimits)
     }
 
     /// Adds a new SpanProcessor to this Tracer.
@@ -70,13 +74,13 @@ public class TracerSdkProvider: TracerProvider {
     /// off the main application to ensure all data are processed and exported.
     /// After this is called all the newly created Spanss will be no-op.
     public func shutdown() {
-        if sharedState.isStopped {
+        if sharedState.hasBeenShutdown {
             return
         }
         sharedState.stop()
     }
 
-    ///Requests the active span processor to process all span events that have not yet been processed.
+    /// Requests the active span processor to process all span events that have not yet been processed.
     public func forceFlush() {
         sharedState.activeSpanProcessor.forceFlush()
     }

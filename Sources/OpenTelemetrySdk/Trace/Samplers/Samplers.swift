@@ -44,7 +44,7 @@ class AlwaysOnSampler: Sampler {
     }
 
     var description: String {
-        return String(describing: AlwaysOnSampler.self)
+        return "AlwaysOnSampler"
     }
 }
 
@@ -59,7 +59,7 @@ class AlwaysOffSampler: Sampler {
     }
 
     var description: String {
-        return String(describing: AlwaysOffSampler.self)
+        return "AlwaysOffSampler"
     }
 }
 

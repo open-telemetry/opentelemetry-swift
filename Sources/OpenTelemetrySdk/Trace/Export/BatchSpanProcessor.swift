@@ -25,16 +25,17 @@ import OpenTelemetryApi
 /// exports the spans to wake up and start a new export cycle.
 /// This batchSpanProcessor can cause high contention in a very high traffic service.
 public struct BatchSpanProcessor: SpanProcessor {
-    var sampled: Bool
     fileprivate var worker: BatchWorker
 
-    public init(spanExporter: SpanExporter, sampled: Bool = true, scheduleDelay: TimeInterval = 5, maxQueueSize: Int = 2048, maxExportBatchSize: Int = 512) {
+    public init(spanExporter: SpanExporter, scheduleDelay: TimeInterval = 5, exportTimeout: TimeInterval = 30,
+                maxQueueSize: Int = 2048, maxExportBatchSize: Int = 512)
+    {
         worker = BatchWorker(spanExporter: spanExporter,
                              scheduleDelay: scheduleDelay,
+                             exportTimeout: exportTimeout,
                              maxQueueSize: maxQueueSize,
                              maxExportBatchSize: maxExportBatchSize)
         worker.start()
-        self.sampled = sampled
     }
 
     public let isStartRequired = false
@@ -43,7 +44,7 @@ public struct BatchSpanProcessor: SpanProcessor {
     public func onStart(parentContext: SpanContext?, span: ReadableSpan) {}
 
     public func onEnd(span: ReadableSpan) {
-        if sampled, !span.context.traceFlags.sampled {
+        if !span.context.traceFlags.sampled {
             return
         }
         worker.addSpan(span: span)
@@ -66,17 +67,23 @@ private class BatchWorker: Thread {
     let spanExporter: SpanExporter
     let scheduleDelay: TimeInterval
     let maxQueueSize: Int
+    let exportTimeout: TimeInterval
     let maxExportBatchSize: Int
     let halfMaxQueueSize: Int
     private let cond = NSCondition()
     var spanList = [ReadableSpan]()
+    var queue: OperationQueue
 
-    init(spanExporter: SpanExporter, scheduleDelay: TimeInterval, maxQueueSize: Int, maxExportBatchSize: Int) {
+    init(spanExporter: SpanExporter, scheduleDelay: TimeInterval, exportTimeout:TimeInterval, maxQueueSize: Int, maxExportBatchSize: Int) {
         self.spanExporter = spanExporter
         self.scheduleDelay = scheduleDelay
+        self.exportTimeout = exportTimeout
         self.maxQueueSize = maxQueueSize
         halfMaxQueueSize = maxQueueSize >> 1
         self.maxExportBatchSize = maxExportBatchSize
+        queue = OperationQueue()
+        queue.name = "BatchWorker Queue"
+        queue.maxConcurrentOperationCount = 1
     }
 
     func addSpan(span: ReadableSpan) {
@@ -109,7 +116,7 @@ private class BatchWorker: Thread {
                 spansCopy = spanList
                 spanList.removeAll()
                 cond.unlock()
-                exportBatches(spanList: spansCopy)
+                self.exportBatch(spanList: spansCopy)
             }
         } while true
     }
@@ -126,10 +133,23 @@ private class BatchWorker: Thread {
         spanList.removeAll()
         cond.unlock()
         // Execute the batch export outside the synchronized to not block all producers.
-        exportBatches(spanList: spansCopy)
+        exportBatch(spanList: spansCopy)
     }
 
-    private func exportBatches(spanList: [ReadableSpan]) {
+    private func exportBatch(spanList: [ReadableSpan]) {
+        let exportOperation = BlockOperation { [weak self] in
+            self?.exportAction(spanList: spanList)
+        }
+        let timeoutTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
+        timeoutTimer.setEventHandler{ exportOperation.cancel() }
+        timeoutTimer.schedule(deadline: .now() + .milliseconds(Int(exportTimeout.toMilliseconds)), leeway: .milliseconds(1))
+        timeoutTimer.activate()
+        queue.addOperation(exportOperation)
+        queue.waitUntilAllOperationsAreFinished()
+        timeoutTimer.cancel()
+    }
+
+    private func exportAction(spanList: [ReadableSpan]) {
         stride(from: 0, to: spanList.endIndex, by: maxExportBatchSize).forEach {
             spanExporter.export(spans: spanList[$0 ..< min($0 + maxExportBatchSize, spanList.count)].map { $0.toSpanData() })
         }

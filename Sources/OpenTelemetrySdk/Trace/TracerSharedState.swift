@@ -21,9 +21,10 @@ public class TracerSharedState {
     public private(set) var idsGenerator: IdsGenerator
     public private(set) var resource: Resource
 
-    public private(set) var activeTraceConfig = TraceConfig()
+    public private(set) var sampler: Sampler = Samplers.alwaysOn
+    public private(set) var activeSpanLimits = SpanLimits()
     public private(set) var activeSpanProcessor: SpanProcessor = NoopSpanProcessor()
-    public private(set) var isStopped = false
+    public private(set) var hasBeenShutdown = false
 
     private var registeredSpanProcessors = [SpanProcessor]()
 
@@ -42,14 +43,29 @@ public class TracerSharedState {
 
     /// Stops tracing, including shutting down processors and set to true isStopped.
     public func stop() {
-        if isStopped {
+        if hasBeenShutdown {
             return
         }
         activeSpanProcessor.shutdown()
-        isStopped = true
+        hasBeenShutdown = true
     }
 
-    internal func setActiveTraceConfig(_ activeTraceConfig: TraceConfig) {
-        self.activeTraceConfig = activeTraceConfig
+    internal func setActiveSpanLimits(_ activeSpanLimits: SpanLimits) {
+        self.activeSpanLimits = activeSpanLimits
+    }
+
+    public func setSampler(_ sampler: Sampler) {
+        self.sampler = sampler
+    }
+
+    // Sets the global sampler probability
+    public func setSamplerProbability(samplerProbability: Double) {
+        if samplerProbability >= 1 {
+            return setSampler(Samplers.alwaysOn)
+        } else if samplerProbability <= 0 {
+            return setSampler(Samplers.alwaysOff)
+        } else {
+            return setSampler(Samplers.probability(probability: samplerProbability))
+        }
     }
 }

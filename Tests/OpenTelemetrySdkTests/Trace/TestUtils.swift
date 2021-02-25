@@ -45,14 +45,12 @@ struct TestUtils {
                         hasEnded: true)
     }
 
-    static func startSpanWithSampler(tracerSdkFactory: TracerSdkProvider, tracer: Tracer, spanName: String, sampler: Sampler) -> SpanBuilder {
-        return startSpanWithSampler(tracerSdkFactory: tracerSdkFactory, tracer: tracer, spanName: spanName, sampler: sampler, attributes: [String: AttributeValue]())
+    static func createSpanWithSampler(tracerSdkFactory: TracerSdkProvider, tracer: Tracer, spanName: String, sampler: Sampler) -> SpanBuilder {
+        return createSpanWithSampler(tracerSdkFactory: tracerSdkFactory, tracer: tracer, spanName: spanName, sampler: sampler, attributes: [String: AttributeValue]())
     }
 
-    static func startSpanWithSampler(tracerSdkFactory: TracerSdkProvider, tracer: Tracer, spanName: String, sampler: Sampler, attributes: [String: AttributeValue]) -> SpanBuilder {
-        let originalConfig = tracerSdkFactory.getActiveTraceConfig()
-        tracerSdkFactory.updateActiveTraceConfig(originalConfig.settingSampler(sampler))
-        defer { tracerSdkFactory.updateActiveTraceConfig(originalConfig) }
+    static func createSpanWithSampler(tracerSdkFactory: TracerSdkProvider, tracer: Tracer, spanName: String, sampler: Sampler, attributes: [String: AttributeValue]) -> SpanBuilder {
+        tracerSdkFactory.sharedState.setSampler(sampler)
         let builder = tracer.spanBuilder(spanName: spanName)
         for attribute in attributes {
             builder.setAttribute(key: attribute.key, value: attribute.value)
