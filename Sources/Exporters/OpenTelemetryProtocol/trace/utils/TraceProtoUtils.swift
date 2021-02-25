@@ -60,7 +60,7 @@ struct TraceProtoUtils {
                 break
             }
         case .traceIDRatioBased(let ratio):
-            return Samplers.probability(probability: ratio.samplingRatio)
+            return Samplers.traceIdRatio(ratio: ratio.samplingRatio)
         case .rateLimitingSampler:
             // TODO: add support for RateLimiting Sampler
             break

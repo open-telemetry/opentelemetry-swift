@@ -17,7 +17,7 @@ import OpenTelemetryApi
 @testable import OpenTelemetrySdk
 import XCTest
 
-class ProbabilitySamplerTest: XCTestCase {
+class SamplerTests: XCTestCase {
     let spanName = "MySpanName"
     let spanKind = SpanKind.internal
     let numSamplesTries = 1000
@@ -59,32 +59,32 @@ class ProbabilitySamplerTest: XCTestCase {
                 .isSampled)
     }
 
-    func testProbabilitySampler_AlwaysSample() {
-        let sampler = Probability(probability: 1)
+    func testTraceIdRatioBasedSampler_AlwaysSample() {
+        let sampler = TraceIdRatioBased(ratio: 1)
         XCTAssertEqual(sampler.idUpperBound, UInt.max)
     }
 
-    func testProbabilitySampler_NeverSample() {
-        let sampler = Probability(probability: 0)
+    func testTraceIdRatioBasedSampler_NeverSample() {
+        let sampler = TraceIdRatioBased(ratio: 0)
         XCTAssertEqual(sampler.idUpperBound, UInt.min)
     }
 
-    func testProbabilitySampler_outOfRangeHighProbability() {
-        let sampler = Probability(probability: 1.01)
+    func testTraceIdRatioBasedSampler_outOfRangeHighProbability() {
+        let sampler = TraceIdRatioBased(ratio: 1.01)
         XCTAssertEqual(sampler.idUpperBound, UInt.max)
     }
 
-    func testProbabilitySampler_outOfRangeLowProbability() {
-        let sampler = Probability(probability: -0.0001)
+    func testTraceIdRatioBasedSampler_outOfRangeLowProbability() {
+        let sampler = TraceIdRatioBased(ratio: -0.0001)
         XCTAssertEqual(sampler.idUpperBound, UInt.min)
     }
 
-    func testProbabilitySampler_getDescription() {
-        XCTAssertEqual(Probability(probability: 0.5).description, String(format: "ProbabilitySampler{%.6f}", 0.5))
+    func testTraceIdRatioBasedSampler_getDescription() {
+        XCTAssertEqual(TraceIdRatioBased(ratio: 0.5).description, String(format: "TraceIdRatioBased{%.6f}", 0.5))
     }
 
-    func testProbabilitySampler_ToString() {
-        XCTAssertTrue(Probability(probability: 0.5).description.contains("0.5"))
+    func testTraceIdRatioBasedSampler_ToString() {
+        XCTAssertTrue(TraceIdRatioBased(ratio: 0.5).description.contains("0.5"))
     }
 
     // Applies the given sampler to NUM_SAMPLE_TRIES random traceId/spanId pairs.
@@ -106,34 +106,34 @@ class ProbabilitySamplerTest: XCTestCase {
     }
 
     func testProbabilitySampler_DifferentProbabilities_NotSampledParent() {
-        let fiftyPercentSample = Probability(probability: 0.5)
+        let fiftyPercentSample = TraceIdRatioBased(ratio: 0.5)
         assertSamplerSamplesWithProbability(sampler: fiftyPercentSample, parent: notSampledSpanContext, parentLinks: [SpanData.Link](), probability: 0.5)
-        let twentyPercentSample = Probability(probability: 0.2)
+        let twentyPercentSample = TraceIdRatioBased(ratio: 0.2)
         assertSamplerSamplesWithProbability(sampler: twentyPercentSample, parent: notSampledSpanContext, parentLinks: [SpanData.Link](), probability: 0.2)
-        let twoThirdsSample = Probability(probability: 2.0 / 3.0)
+        let twoThirdsSample = TraceIdRatioBased(ratio: 2.0 / 3.0)
         assertSamplerSamplesWithProbability(sampler: twoThirdsSample, parent: notSampledSpanContext, parentLinks: [SpanData.Link](), probability: 2.0 / 3.0)
     }
 
     func testProbabilitySampler_DifferentProbabilities_SampledParent() {
-        let fiftyPercentSample = Probability(probability: 0.5)
+        let fiftyPercentSample = TraceIdRatioBased(ratio: 0.5)
         assertSamplerSamplesWithProbability(sampler: fiftyPercentSample, parent: sampledSpanContext, parentLinks: [SpanData.Link](), probability: 1.0)
-        let twentyPercentSample = Probability(probability: 0.2)
+        let twentyPercentSample = TraceIdRatioBased(ratio: 0.2)
         assertSamplerSamplesWithProbability(sampler: twentyPercentSample, parent: sampledSpanContext, parentLinks: [SpanData.Link](), probability: 1.0)
-        let twoThirdsSample = Probability(probability: 2.0 / 3.0)
+        let twoThirdsSample = TraceIdRatioBased(ratio: 2.0 / 3.0)
         assertSamplerSamplesWithProbability(sampler: twoThirdsSample, parent: sampledSpanContext, parentLinks: [SpanData.Link](), probability: 1.0)
     }
 
     func testProbabilitySampler_DifferentProbabilities_SampledParentLink() {
-        let fiftyPercentSample = Probability(probability: 0.5)
+        let fiftyPercentSample = TraceIdRatioBased(ratio: 0.5)
         assertSamplerSamplesWithProbability(sampler: fiftyPercentSample, parent: notSampledSpanContext, parentLinks: [sampledParentLink], probability: 1.0)
-        let twentyPercentSample = Probability(probability: 0.2)
+        let twentyPercentSample = TraceIdRatioBased(ratio: 0.2)
         assertSamplerSamplesWithProbability(sampler: twentyPercentSample, parent: notSampledSpanContext, parentLinks: [sampledParentLink], probability: 1.0)
-        let twoThirdsSample = Probability(probability: 2.0 / 3.0)
+        let twoThirdsSample = TraceIdRatioBased(ratio: 2.0 / 3.0)
         assertSamplerSamplesWithProbability(sampler: twoThirdsSample, parent: notSampledSpanContext, parentLinks: [sampledParentLink], probability: 1.0)
     }
 
     func testProbabilitySampler_SampleBasedOnTraceId() {
-        let defaultProbability = Probability(probability: 0.0001)
+        let defaultProbability = TraceIdRatioBased(ratio: 0.0001)
         // This traceId will not be sampled by the ProbabilitySampler because the first 8 bytes as long
         // is not less than probability * Long.MAX_VALUE;
         let notSampledtraceId = TraceId(fromBytes: [0, 0, 0, 0, 0, 0, 0, 0, 0x8F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF])

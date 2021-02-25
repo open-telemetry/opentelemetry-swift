@@ -21,7 +21,7 @@ public class TracerSharedState {
     public private(set) var idsGenerator: IdsGenerator
     public private(set) var resource: Resource
 
-    public private(set) var sampler: Sampler = Samplers.alwaysOn
+    public private(set) var sampler: Sampler = ParentBasedSampler(root: Samplers.alwaysOn)
     public private(set) var activeSpanLimits = SpanLimits()
     public private(set) var activeSpanProcessor: SpanProcessor = NoopSpanProcessor()
     public private(set) var hasBeenShutdown = false
@@ -65,7 +65,7 @@ public class TracerSharedState {
         } else if samplerProbability <= 0 {
             return setSampler(Samplers.alwaysOff)
         } else {
-            return setSampler(Samplers.probability(probability: samplerProbability))
+            return setSampler(Samplers.traceIdRatio(ratio: samplerProbability))
         }
     }
 }

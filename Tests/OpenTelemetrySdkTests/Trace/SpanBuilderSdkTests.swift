@@ -191,7 +191,7 @@ class SpanBuilderSdkTest: XCTestCase {
     func testSampledViaParentLinks() {
         let span = TestUtils.createSpanWithSampler(tracerSdkFactory: tracerSdkFactory,
                                                    tracer: tracerSdk, spanName: spanName,
-                                                   sampler: Samplers.probability(probability: 0.0))
+                                                   sampler: Samplers.traceIdRatio(ratio: 0.0))
             .addLink(spanContext: sampledSpanContext)
             .startSpan()
         XCTAssertTrue(span.context.traceFlags.sampled)
