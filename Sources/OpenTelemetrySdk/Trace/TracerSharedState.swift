@@ -18,7 +18,7 @@ import Foundation
 /// Represents the shared state/config between all Tracers created by the same TracerProvider.
 public class TracerSharedState {
     public private(set) var clock: Clock
-    public private(set) var idsGenerator: IdsGenerator
+    public private(set) var idGenerator: IdGenerator
     public private(set) var resource: Resource
 
     public private(set) var sampler: Sampler = ParentBasedSampler(root: Samplers.alwaysOn)
@@ -28,9 +28,9 @@ public class TracerSharedState {
 
     private var registeredSpanProcessors = [SpanProcessor]()
 
-    public init(clock: Clock, idsGenerator: IdsGenerator, resource: Resource) {
+    public init(clock: Clock, idGenerator: IdGenerator, resource: Resource) {
         self.clock = clock
-        self.idsGenerator = idsGenerator
+        self.idGenerator = idGenerator
         self.resource = resource
     }
 

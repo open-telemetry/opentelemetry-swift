@@ -111,14 +111,14 @@ public class SpanBuilderSdk: SpanBuilder {
     public func startSpan() -> Span {
         var parentContext = getParentContext(parentType: parentType, explicitParent: parent, remoteParent: remoteParent)
         let traceId: TraceId
-        let spanId = tracerSharedState.idsGenerator.generateSpanId()
+        let spanId = tracerSharedState.idGenerator.generateSpanId()
         var traceState = TraceState()
 
         if parentContext?.isValid ?? false {
             traceId = parentContext!.traceId
             traceState = parentContext!.traceState
         } else {
-            traceId = tracerSharedState.idsGenerator.generateTraceId()
+            traceId = tracerSharedState.idGenerator.generateTraceId()
             parentContext = nil
         }
 

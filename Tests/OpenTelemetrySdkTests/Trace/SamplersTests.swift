@@ -21,7 +21,7 @@ class SamplerTests: XCTestCase {
     let spanName = "MySpanName"
     let spanKind = SpanKind.internal
     let numSamplesTries = 1000
-    let idsGenerator: IdsGenerator = RandomIdsGenerator()
+    let idGenerator: IdGenerator = RandomIdGenerator()
     var traceId: TraceId!
     var spanId: SpanId!
     var parentSpanId: SpanId!
@@ -31,9 +31,9 @@ class SamplerTests: XCTestCase {
     var sampledParentLink: SpanData.Link!
 
     override func setUp() {
-        traceId = idsGenerator.generateTraceId()
-        spanId = idsGenerator.generateSpanId()
-        parentSpanId = idsGenerator.generateSpanId()
+        traceId = idGenerator.generateTraceId()
+        spanId = idGenerator.generateSpanId()
+        parentSpanId = idGenerator.generateSpanId()
         sampledSpanContext = SpanContext.create(traceId: traceId, spanId: parentSpanId, traceFlags: TraceFlags().settingIsSampled(true), traceState: traceState)
         notSampledSpanContext = SpanContext.create(traceId: traceId, spanId: parentSpanId, traceFlags: TraceFlags(), traceState: traceState)
         sampledParentLink = SpanData.Link(context: sampledSpanContext)

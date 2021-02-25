@@ -21,12 +21,12 @@ public class TracerSdkProvider: TracerProvider {
     private var tracerProvider = [InstrumentationLibraryInfo: TracerSdk]()
     internal var sharedState: TracerSharedState
 
-    /// Returns a new TracerSdkProvider with default Clock, IdsGenerator and Resource.
+    /// Returns a new TracerSdkProvider with default Clock, IdGenerator and Resource.
     public init(clock: Clock = MillisClock(),
-                idsGenerator: IdsGenerator = RandomIdsGenerator(),
+                idGenerator: IdGenerator = RandomIdGenerator(),
                 resource: Resource = EnvVarResource.resource)
     {
-        sharedState = TracerSharedState(clock: clock, idsGenerator: idsGenerator, resource: resource)
+        sharedState = TracerSharedState(clock: clock, idGenerator: idGenerator, resource: resource)
     }
 
     public func get(instrumentationName: String, instrumentationVersion: String? = nil) -> Tracer {

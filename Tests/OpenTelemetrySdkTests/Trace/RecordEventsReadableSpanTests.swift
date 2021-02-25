@@ -22,7 +22,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
     let spanNewName = "NewName"
     let nanosPerSecond: Int64 = 1000000000
     let millisPerSecond: Int64 = 1000
-    let idsGenerator: IdsGenerator = RandomIdsGenerator()
+    let idGenerator: IdGenerator = RandomIdGenerator()
     var traceId: TraceId!
     var spanId: SpanId!
     var parentSpanId: SpanId!
@@ -38,9 +38,9 @@ class RecordEventsReadableSpanTest: XCTestCase {
     let spanProcessor = SpanProcessorMock()
 
     override func setUp() {
-        traceId = idsGenerator.generateTraceId()
-        spanId = idsGenerator.generateSpanId()
-        parentSpanId = idsGenerator.generateSpanId()
+        traceId = idGenerator.generateTraceId()
+        spanId = idGenerator.generateSpanId()
+        parentSpanId = idGenerator.generateSpanId()
         spanContext = SpanContext.create(traceId: traceId, spanId: spanId, traceFlags: TraceFlags(), traceState: TraceState())
         testClock = TestClock(timeInterval: startTime.timeIntervalSince1970)
         link = SpanData.Link(context: spanContext)
@@ -319,9 +319,9 @@ class RecordEventsReadableSpanTest: XCTestCase {
     func testAsSpanData() {
         let name = "GreatSpan"
         let kind = SpanKind.server
-        let traceId = idsGenerator.generateTraceId()
-        let spanId = idsGenerator.generateSpanId()
-        let parentSpanId = idsGenerator.generateSpanId()
+        let traceId = idGenerator.generateTraceId()
+        let spanId = idGenerator.generateSpanId()
+        let parentSpanId = idGenerator.generateSpanId()
         let spanLimits = SpanLimits()
         let spanProcessor = NoopSpanProcessor()
         let clock = TestClock()
