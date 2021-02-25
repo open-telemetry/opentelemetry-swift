@@ -125,6 +125,7 @@ class OtlpTraceExporterTests: XCTestCase {
 class FakeCollector: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceProvider {
     var receivedSpans = [Opentelemetry_Proto_Trace_V1_ResourceSpans]()
     var returnedStatus = GRPCStatus.ok
+    var interceptors: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceServerInterceptorFactoryProtocol? = nil
 
     func export(request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse> {
         receivedSpans.append(contentsOf: request.resourceSpans)
