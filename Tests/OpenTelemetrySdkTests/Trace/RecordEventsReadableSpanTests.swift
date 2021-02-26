@@ -248,7 +248,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
 
     func testDroppingAttributes() {
         let maxNumberOfAttributes = 8
-        let spanLimits = SpanLimits().settingMaxNumberOfAttributes(maxNumberOfAttributes)
+        let spanLimits = SpanLimits().settingAttributeCountLimit(UInt(maxNumberOfAttributes))
         let span = createTestSpan(config: spanLimits)
         for i in 0 ..< 2 * maxNumberOfAttributes {
             span.setAttribute(key: "MyStringAttributeKey\(i)", value: AttributeValue.int(i))
@@ -264,7 +264,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
 
     func testDroppingAndAddingAttributes() {
         let maxNumberOfAttributes = 8
-        let spanLimits = SpanLimits().settingMaxNumberOfAttributes(maxNumberOfAttributes)
+        let spanLimits = SpanLimits().settingAttributeCountLimit(UInt(maxNumberOfAttributes))
         let span = createTestSpan(config: spanLimits)
         for i in 0 ..< 2 * maxNumberOfAttributes {
             span.setAttribute(key: "MyStringAttributeKey\(i)", value: AttributeValue.int(i))
@@ -278,7 +278,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
         }
         spanData = span.toSpanData()
         XCTAssertEqual(spanData.attributes.count, maxNumberOfAttributes)
-        // Test that we still have in the attributes map the latest maxNumberOfAttributes / 2 entries.
+        // Test that we still have in the attributes map the latest attributeCountLimit / 2 entries.
         for i in 0 ..< maxNumberOfAttributes / 2 {
             let val = i + maxNumberOfAttributes * 3 / 2
             let expectedValue = AttributeValue.int(val)
@@ -294,7 +294,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
 
     func testDroppingEvents() {
         let maxNumberOfEvents = 8
-        let spanLimits = SpanLimits().settingMaxNumberOfEvents(maxNumberOfEvents)
+        let spanLimits = SpanLimits().settingEventCountLimit(UInt(maxNumberOfEvents))
         let span = createTestSpan(config: spanLimits)
         for _ in 0 ..< 2 * maxNumberOfEvents {
             span.addEvent(name: "event2", attributes: [String: AttributeValue]())
@@ -418,7 +418,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
     }
 
     private func createTestSpan(kind: SpanKind, config: SpanLimits, parentContext: SpanContext?, attributes: [String: AttributeValue]) -> RecordEventsReadableSpan {
-        var attributesWithCapacity = AttributesDictionary(capacity: config.maxNumberOfAttributes)
+        var attributesWithCapacity = AttributesDictionary(capacity: config.attributeCountLimit)
         attributesWithCapacity.updateValues(attributes: attributes)
 
         let span = RecordEventsReadableSpan.startSpan(context: spanContext,

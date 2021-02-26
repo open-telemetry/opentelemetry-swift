@@ -22,78 +22,53 @@ public struct SpanLimits: Equatable {
     // TODO: decide which default sampler to use
 
     /// The global default max number of attributes perSpan.
-    public private(set) var maxNumberOfAttributes: Int = 1000 {
-        didSet {
-            maxNumberOfAttributes < 0 ? maxNumberOfAttributes = 0 : ()
-        }
-    }
-
-    ///  the global default max number of Events per Span.
-    public private(set) var maxNumberOfEvents: Int = 1000 {
-        didSet {
-            maxNumberOfEvents < 0 ? maxNumberOfEvents = 0 : ()
-        }
-    }
-
-    /// the global default max number of Link entries per Span.
-    public private(set) var maxNumberOfLinks: Int = 1000 {
-        didSet {
-            maxNumberOfLinks < 0 ? maxNumberOfLinks = 0 : ()
-        }
-    }
-
-    /// the global default max number of attributes per Event.
-    public private(set) var maxNumberOfAttributesPerEvent: Int = 32 {
-        didSet {
-            maxNumberOfAttributesPerEvent < 0 ? maxNumberOfAttributesPerEvent = 0 : ()
-        }
-    }
-
+    public private(set) var attributeCountLimit: Int = 128
+     ///  the global default max number of Events per Span.
+    public private(set) var eventCountLimit: Int = 128
+     /// the global default max number of Link entries per Span.
+    public private(set) var linkCountLimit: Int = 128
+     /// the global default max number of attributes per Event.
+    public private(set) var attributePerEventCountLimit: Int = 128
     /// the global default max number of attributes per Link.
-    public private(set) var maxNumberOfAttributesPerLink: Int = 32 {
-        didSet {
-            maxNumberOfAttributesPerLink < 0 ? maxNumberOfAttributesPerLink = 0 : ()
-        }
-    }
-
+    public private(set) var attributePerLinkCountLimit: Int = 128
     /// Returns the defaultSpanLimits.
     public init() {}
 
-    @discardableResult public func settingMaxNumberOfAttributes(_ number: Int) -> Self {
+    @discardableResult public func settingAttributeCountLimit(_ number: UInt) -> Self {
         var spanLimits = self
-        spanLimits.maxNumberOfAttributes = number
+        spanLimits.attributeCountLimit = number > 0 ? Int(number) : 0
         return spanLimits
     }
 
-    @discardableResult public func settingMaxNumberOfEvents(_ number: Int) -> Self {
+    @discardableResult public func settingEventCountLimit(_ number: UInt) -> Self {
         var spanLimits = self
-        spanLimits.maxNumberOfEvents = number
+        spanLimits.eventCountLimit = number > 0 ? Int(number) : 0
         return spanLimits
     }
 
-    @discardableResult public func settingMaxNumberOfLinks(_ number: Int) -> Self {
+    @discardableResult public func settingLinkCountLimit(_ number: UInt) -> Self {
         var spanLimits = self
-        spanLimits.maxNumberOfLinks = number
+        spanLimits.linkCountLimit = number > 0 ? Int(number) : 0
         return spanLimits
     }
 
-    @discardableResult public func settingMaxNumberOfAttributesPerEvent(_ number: Int) -> Self {
+    @discardableResult public func settingAttributePerEventCountLimit(_ number: UInt) -> Self {
         var spanLimits = self
-        spanLimits.maxNumberOfAttributesPerEvent = number
+        spanLimits.attributePerEventCountLimit = number > 0 ? Int(number) : 0
         return spanLimits
     }
 
-    @discardableResult public func settingMaxNumberOfAttributesPerLink(_ number: Int) -> Self {
+    @discardableResult public func settingAttributePerLinkCountLimit(_ number: UInt) -> Self {
         var spanLimits = self
-        spanLimits.maxNumberOfAttributesPerLink = number
+        spanLimits.attributePerLinkCountLimit = number > 0 ? Int(number) : 0
         return spanLimits
     }
 
     public static func == (lhs: SpanLimits, rhs: SpanLimits) -> Bool {
-        return lhs.maxNumberOfAttributes == rhs.maxNumberOfAttributes &&
-            lhs.maxNumberOfEvents == rhs.maxNumberOfEvents &&
-            lhs.maxNumberOfLinks == rhs.maxNumberOfLinks &&
-            lhs.maxNumberOfAttributesPerEvent == rhs.maxNumberOfAttributesPerEvent &&
-            lhs.maxNumberOfAttributesPerLink == rhs.maxNumberOfAttributesPerLink
+        return lhs.attributeCountLimit == rhs.attributeCountLimit &&
+            lhs.eventCountLimit == rhs.eventCountLimit &&
+            lhs.linkCountLimit == rhs.linkCountLimit &&
+            lhs.attributePerEventCountLimit == rhs.attributePerEventCountLimit &&
+            lhs.attributePerLinkCountLimit == rhs.attributePerLinkCountLimit
     }
 }

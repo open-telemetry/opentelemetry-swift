@@ -124,9 +124,9 @@ public class RecordEventsReadableSpan: ReadableSpan {
         self.resource = resource
         self.startTime = startTime ?? clock.now
         self.attributes = attributes
-        events = ArrayWithCapacity<SpanData.Event>(capacity: spanLimits.maxNumberOfEvents)
-        maxNumberOfAttributes = spanLimits.maxNumberOfAttributes
-        maxNumberOfAttributesPerEvent = spanLimits.maxNumberOfAttributesPerEvent
+        events = ArrayWithCapacity<SpanData.Event>(capacity: spanLimits.eventCountLimit)
+        maxNumberOfAttributes = spanLimits.attributeCountLimit
+        maxNumberOfAttributesPerEvent = spanLimits.attributePerEventCountLimit
     }
 
     /// Creates and starts a span with the given configuration.

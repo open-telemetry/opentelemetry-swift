@@ -53,7 +53,7 @@ class SpanBuilderSdkTest: XCTestCase {
 
     func testTruncateLink() {
         let maxNumberOfLinks = 8
-        let spanLimits = tracerSdkFactory.getActiveSpanLimits().settingMaxNumberOfLinks(maxNumberOfLinks)
+        let spanLimits = tracerSdkFactory.getActiveSpanLimits().settingLinkCountLimit(UInt(maxNumberOfLinks))
         tracerSdkFactory.updateActiveSpanLimits(spanLimits)
         // Verify methods do not crash.
         let spanBuilder = tracerSdk.spanBuilder(spanName: spanName)
@@ -103,7 +103,7 @@ class SpanBuilderSdkTest: XCTestCase {
 
     func testDroppingAttributes() {
         let maxNumberOfAttrs = 8
-        let spanLimits = tracerSdkFactory.getActiveSpanLimits().settingMaxNumberOfAttributes(maxNumberOfAttrs)
+        let spanLimits = tracerSdkFactory.getActiveSpanLimits().settingAttributeCountLimit(UInt(maxNumberOfAttrs))
         tracerSdkFactory.updateActiveSpanLimits(spanLimits)
         let spanBuilder = tracerSdk.spanBuilder(spanName: spanName)
         for i in 0 ..< 2 * maxNumberOfAttrs {

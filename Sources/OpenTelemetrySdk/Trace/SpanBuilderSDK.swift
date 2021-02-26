@@ -52,7 +52,7 @@ public class SpanBuilderSdk: SpanBuilder {
         self.instrumentationLibraryInfo = instrumentationLibraryInfo
         self.tracerSharedState = tracerSharedState
         self.spanLimits = spanLimits
-        attributes = AttributesDictionary(capacity: spanLimits.maxNumberOfAttributes)
+        attributes = AttributesDictionary(capacity: spanLimits.attributeCountLimit)
     }
 
     @discardableResult public func setParent(_ parent: Span) -> Self {
@@ -86,7 +86,7 @@ public class SpanBuilderSdk: SpanBuilder {
 
     @discardableResult public func addLink(_ link: SpanData.Link) -> Self {
         totalNumberOfLinksAdded += 1
-        if links.count >= spanLimits.maxNumberOfLinks {
+        if links.count >= spanLimits.linkCountLimit {
             return self
         }
         links.append(link)

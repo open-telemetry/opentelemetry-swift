@@ -33,11 +33,11 @@ struct TraceProtoUtils {
     
     static func spanLimitsFromProto(protoTraceConfig: Opentelemetry_Proto_Trace_V1_TraceConfig) -> SpanLimits {
         let spanLimits = SpanLimits()
-        spanLimits.settingMaxNumberOfAttributes(Int(protoTraceConfig.maxNumberOfAttributes))
-            .settingMaxNumberOfEvents(Int(protoTraceConfig.maxNumberOfTimedEvents))
-            .settingMaxNumberOfLinks(Int(protoTraceConfig.maxNumberOfLinks))
-            .settingMaxNumberOfAttributesPerEvent(Int(protoTraceConfig.maxNumberOfAttributesPerTimedEvent))
-            .settingMaxNumberOfAttributesPerLink(Int(protoTraceConfig.maxNumberOfAttributesPerLink))
+        spanLimits.settingAttributeCountLimit(UInt(protoTraceConfig.maxNumberOfAttributes))
+            .settingEventCountLimit(UInt(protoTraceConfig.maxNumberOfTimedEvents))
+            .settingLinkCountLimit(UInt(protoTraceConfig.maxNumberOfLinks))
+            .settingAttributePerEventCountLimit(UInt(protoTraceConfig.maxNumberOfAttributesPerTimedEvent))
+            .settingAttributePerLinkCountLimit(UInt(protoTraceConfig.maxNumberOfAttributesPerLink))
         return spanLimits
     }
     
