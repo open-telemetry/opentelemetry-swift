@@ -203,7 +203,7 @@ class AdapterTests: XCTestCase {
                             name: "GET /api/endpoint",
                             kind: .server,
                             startTime: Date(timeIntervalSince1970: Double(startMs) / 1000),
-                            status: Status.error,
+                            status: .error(description: "GenericError"),
                             endTime: Date(timeIntervalSince1970: Double(endMs) / 1000),
                             hasRemoteParent: false)
 
@@ -223,7 +223,7 @@ class AdapterTests: XCTestCase {
                             startTime: Date(timeIntervalSince1970: Double(startMs) / 1000),
                             endTime: Date(timeIntervalSince1970: Double(endMs) / 1000))
         span.settingHasEnded(true)
-        span.settingStatus(.error)
+        span.settingStatus(.error(description: "GenericError"))
         span.settingAttributes(attributes)
 
         let jaegerSpan = Adapter.toJaeger(span: span)

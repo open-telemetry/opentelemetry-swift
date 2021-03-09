@@ -13,9 +13,9 @@
 // limitations under the License.
 //
 
+import Atomics
 import Foundation
 import OpenTelemetryApi
-import Atomics
 
 /// Implementation for the Span class that records trace events.
 public class RecordEventsReadableSpan: ReadableSpan {
@@ -30,7 +30,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
     }
 
     // The config used when constructing this Span.
-    public private(set) var traceConfig: TraceConfig
+    public private(set) var spanLimits: SpanLimits
     /// Contains the identifiers associated with this Span.
     public private(set) var context: SpanContext
     /// The parent SpanId of this span. Invalid if this is a root span.
@@ -68,7 +68,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
     /// Number of events recorded.
     public private(set) var totalRecordedEvents = 0
     /// The status of the span.
-    public var status: Status = Status.unset {
+    public var status = Status.unset {
         didSet {
             if hasEnded {
                 status = oldValue
@@ -89,9 +89,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
     /// True if the span is ended.
     fileprivate var endAtomic = ManagedAtomic<Bool>(false)
     public var hasEnded: Bool {
-        get {
-            return self.endAtomic.load(ordering: .relaxed)
-        }
+        return self.endAtomic.load(ordering: .relaxed)
     }
 
     private let eventsSyncLock = Lock()
@@ -103,20 +101,21 @@ public class RecordEventsReadableSpan: ReadableSpan {
                  kind: SpanKind,
                  parentContext: SpanContext?,
                  hasRemoteParent: Bool,
-                 traceConfig: TraceConfig,
+                 spanLimits: SpanLimits,
                  spanProcessor: SpanProcessor,
                  clock: Clock,
                  resource: Resource,
                  attributes: AttributesDictionary,
                  links: [SpanData.Link],
                  totalRecordedLinks: Int,
-                 startTime: Date?) {
+                 startTime: Date?)
+    {
         self.context = context
         self.name = name
         self.instrumentationLibraryInfo = instrumentationLibraryInfo
         self.parentContext = parentContext
         self.hasRemoteParent = hasRemoteParent
-        self.traceConfig = traceConfig
+        self.spanLimits = spanLimits
         self.links = links
         self.totalRecordedLinks = totalRecordedLinks
         self.kind = kind
@@ -125,9 +124,9 @@ public class RecordEventsReadableSpan: ReadableSpan {
         self.resource = resource
         self.startTime = startTime ?? clock.now
         self.attributes = attributes
-        events = ArrayWithCapacity<SpanData.Event>(capacity: traceConfig.maxNumberOfEvents)
-        maxNumberOfAttributes = traceConfig.maxNumberOfAttributes
-        maxNumberOfAttributesPerEvent = traceConfig.maxNumberOfAttributesPerEvent
+        events = ArrayWithCapacity<SpanData.Event>(capacity: spanLimits.eventCountLimit)
+        maxNumberOfAttributes = spanLimits.attributeCountLimit
+        maxNumberOfAttributesPerEvent = spanLimits.attributePerEventCountLimit
     }
 
     /// Creates and starts a span with the given configuration.
@@ -138,7 +137,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
     ///   - kind: the span kind.
     ///   - parentSpanId: the span_id of the parent span, or nil if the new span is a root span.
     ///   - hasRemoteParent: true if the parentContext is remote, false if this is a root span.
-    ///   - traceConfig: trace parameters like sampler and probability.
+    ///   - spanLimits: trace parameters like sampler and probability.
     ///   - spanProcessor: handler called when the span starts and ends.
     ///   - clock: the clock used to get the time.
     ///   - resource: the resource associated with this span.
@@ -152,21 +151,22 @@ public class RecordEventsReadableSpan: ReadableSpan {
                                  kind: SpanKind,
                                  parentContext: SpanContext?,
                                  hasRemoteParent: Bool,
-                                 traceConfig: TraceConfig,
+                                 spanLimits: SpanLimits,
                                  spanProcessor: SpanProcessor,
                                  clock: Clock,
                                  resource: Resource,
                                  attributes: AttributesDictionary,
                                  links: [SpanData.Link],
                                  totalRecordedLinks: Int,
-                                 startTime: Date) -> RecordEventsReadableSpan {
+                                 startTime: Date) -> RecordEventsReadableSpan
+    {
         let span = RecordEventsReadableSpan(context: context,
                                             name: name,
                                             instrumentationLibraryInfo: instrumentationLibraryInfo,
                                             kind: kind,
                                             parentContext: parentContext,
                                             hasRemoteParent: hasRemoteParent,
-                                            traceConfig: traceConfig,
+                                            spanLimits: spanLimits,
                                             spanProcessor: spanProcessor,
                                             clock: clock,
                                             resource: resource,
@@ -273,8 +273,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
         if endAtomic.exchange(true, ordering: .relaxed) {
             return
         }
-        eventsSyncLock.withLockVoid{
-            attributesSyncLock.withLockVoid{
+        eventsSyncLock.withLockVoid {
+            attributesSyncLock.withLockVoid {
                 isRecording = false
             }
         }

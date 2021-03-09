@@ -49,7 +49,7 @@ public struct TraceState: Equatable {
     /// - Parameters:
     ///   - key: the key for the Entry to be added.
     ///   - value: the value for the Entry to be added.
-    public mutating func set(key: String, value: String) {
+    internal mutating func set(key: String, value: String) {
         // Initially create the Entry to validate input.
         guard let entry = Entry(key: key, value: value) else { return }
         if entries.contains(where: { $0.key == entry.key }) {
@@ -72,7 +72,7 @@ public struct TraceState: Equatable {
 
     /// Removes the Entry that has the given key if it is present.
     /// - Parameter key: the key for the Entry to be removed.
-    public mutating func remove(key: String) {
+    internal mutating func remove(key: String) {
         if let index = entries.firstIndex(where: { $0.key == key }) {
             entries.remove(at: index)
         }

@@ -60,8 +60,7 @@ final class Adapter {
         logs.append(contentsOf: toJaegerLogs(events: span.events))
         references.append(contentsOf: toSpanRefs(links: span.links))
 
-        if let parentId = span.parentSpanId,
-            parentId.isValid {
+        if let parentId = span.parentSpanId, parentId.isValid {
             let parentTraceIdHigh = traceIdHigh
             let parentTraceIdLow = traceIdLow
 
@@ -75,8 +74,12 @@ final class Adapter {
         }
 
         tags.append(Tag(key: Adapter.keySpanKind, vType: .string, vStr: span.kind.rawValue.uppercased(), vDouble: nil, vBool: nil, vLong: nil, vBinary: nil))
-        tags.append(Tag(key: Adapter.keySpanStatusMessage, vType: .string, vStr: span.status.statusDescription ?? "", vDouble: nil, vBool: nil, vLong: nil, vBinary: nil))
-        tags.append(Tag(key: Adapter.keySpanStatusCode, vType: .long, vStr: nil, vDouble: nil, vBool: nil, vLong: Int64(span.status.statusCode.rawValue), vBinary: nil))
+        if case let Status.error(description) = span.status {
+            tags.append(Tag(key: Adapter.keySpanStatusMessage, vType: .string, vStr: description, vDouble: nil, vBool: nil, vLong: nil, vBinary: nil))
+        } else {
+            tags.append(Tag(key: Adapter.keySpanStatusMessage, vType: .string, vStr: "", vDouble: nil, vBool: nil, vLong: nil, vBinary: nil))
+        }
+        tags.append(Tag(key: Adapter.keySpanStatusCode, vType: .long, vStr: nil, vDouble: nil, vBool: nil, vLong: Int64(span.status.code), vBinary: nil))
 
         if span.status != .ok {
             tags.append(Tag(key: keyError, vType: .bool, vStr: nil, vDouble: nil, vBool: true, vLong: nil, vBinary: nil))
