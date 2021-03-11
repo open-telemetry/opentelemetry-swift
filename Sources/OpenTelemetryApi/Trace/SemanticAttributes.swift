@@ -133,4 +133,20 @@ public enum SemanticAttributes: String {
     case faasDocumentTime = "faas.document.time"
     /// The document name/table subjected to the operation. For example, in Cloud Storage or S3 is the name of the file, and in Cosmos DB the table name.
     case faasDocumentName = "faas.document.name"
+    
+    // MARK: Exception Attributes
+    
+    /// for use in exception events :  https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/exceptions.md
+    /// An exception event must be named "exception"
+    case exception = "exception";
+    /// The type of the exception (its fully-qualified class name, if applicable). The dynamic type of the exception should be preferred over the static type in languages that support it.
+    case exceptionType = "exception.type";
+    /// SHOULD be set to true if the exception event is recorded at a point where it is known that the exception is escaping the scope of the span.
+    case exceptionEscaped = "exception.escaped";
+    /// The exception message.
+    case exceptionMessage = "exception.message";
+    /// A stacktrace as a string in the natural representation for the language runtime. The representation is to be determined and documented by each language SIG.
+    case exceptionStackTrace = "exception.stacktrace";
+    
+    
 }
