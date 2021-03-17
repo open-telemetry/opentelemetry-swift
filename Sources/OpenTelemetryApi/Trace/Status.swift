@@ -17,60 +17,56 @@ import Foundation
 
 /// The set of canonical status codes. If new codes are added over time they must choose a numerical
 /// value that does not collide with any previously used value.
-public struct Status: Equatable {
-    /// The set of canonical status codes. If new codes are added over time they must choose a
-    /// numerical value that does not collide with any previously used value.
-    public enum StatusCode: Int {
-        /// The operation has been validated by an Application developers or Operator to have completed successfully.
-        case ok = 0
-        /// The default status.
-        case unset = 1
-        /// The operation contains an error.
-        case error = 2
-    }
-
-    // A pseudo-enum of Status instances mapped 1:1 with values in StatusCode. This simplifies
-    // construction patterns for derived instances of Status.
-
-    /// The default status.
-    public static let unset = Status(statusCode: StatusCode.unset)
+public enum Status: Equatable {
     /// The operation has been validated by an Application developers or Operator to have completed successfully.
-    public static let ok = Status(statusCode: StatusCode.ok)
+    case ok
+    /// The default status.
+    case unset
     /// The operation contains an error.
-    public static let error = Status(statusCode: StatusCode.error)
-
-
-    public private(set) var statusCode: StatusCode
-    // An additional error message.
-    public private(set) var statusDescription: String?
-
-    private init(statusCode: StatusCode, description: String? = nil) {
-        self.statusCode = statusCode
-        statusDescription = description
-    }
-
-    /// Creates a derived instance of Status with the given description.
-    /// - Parameter description: the new description of the Status
-    public func withDescription(description: String?) -> Status {
-        if statusDescription == description {
-            return self
-        }
-        return Status(statusCode: statusCode, description: description)
-    }
+    case error(description: String)
 
     /// True if this Status is OK
     public var isOk: Bool {
-        return StatusCode.ok == statusCode
+        return self == .ok
     }
 
     /// True if this Status is an Error
     public var isError: Bool {
-        return StatusCode.error == statusCode
+        if case .error = self {
+            return true
+        }
+        return false
+    }
+
+    public var name: String {
+        switch self {
+            case .ok:
+                return "ok"
+            case .unset:
+                return "unset"
+            case .error(description: _):
+                return "error"
+        }
+    }
+
+    public var code: Int {
+        switch self {
+            case .ok:
+                return 0
+            case .unset:
+                return 1
+            case .error(description: _):
+                return 2
+        }
     }
 }
 
 extension Status: CustomStringConvertible {
     public var description: String {
-        return "Status{statusCode=\(statusCode), description=\(statusDescription ?? "")"
+        if case let Status.error(description) = self {
+            return "Status{statusCode=\(name), description=\(description)}"
+        } else {
+            return "Status{statusCode=\(name)}"
+        }
     }
 }

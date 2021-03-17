@@ -25,20 +25,20 @@ public struct SpanData: Equatable {
     public private(set) var spanId: SpanId
 
     /// The trace flags for this span.
-    public private(set) var traceFlags: TraceFlags = TraceFlags()
+    public private(set) var traceFlags = TraceFlags()
 
     /// The TraceState for this span.
-    public private(set) var traceState: TraceState = TraceState()
+    public private(set) var traceState = TraceState()
 
     /// The parent SpanId. If the  Span is a root Span, the SpanId
     /// returned will be nil.
     public private(set) var parentSpanId: SpanId?
 
     /// The resource of this Span.
-    public private(set) var resource: Resource = Resource()
+    public private(set) var resource = Resource()
 
     /// The instrumentation library specified when creating the tracer which produced this Span
-    public private(set) var instrumentationLibraryInfo: InstrumentationLibraryInfo = InstrumentationLibraryInfo()
+    public private(set) var instrumentationLibraryInfo = InstrumentationLibraryInfo()
 
     /// The name of this Span.
     public private(set) var name: String
@@ -72,17 +72,17 @@ public struct SpanData: Equatable {
 
     /// The total number of {@link TimedEvent} events that were recorded on this span. This
     /// number may be larger than the number of events that are attached to this span, if the total
-    /// number recorded was greater than the configured maximum value. See TraceConfig.maxNumberOfEvents
+    /// number recorded was greater than the configured maximum value. See SpanLimits.maxNumberOfEvents
     public private(set) var totalRecordedEvents: Int = 0
 
     /// The total number of  links that were recorded on this span. This number
     /// may be larger than the number of links that are attached to this span, if the total number
-    /// recorded was greater than the configured maximum value. See TraceConfig.maxNumberOfLinks
+    /// recorded was greater than the configured maximum value. See SpanLimits.maxNumberOfLinks
     public private(set) var totalRecordedLinks: Int = 0
 
     /// The total number of attributes that were recorded on this span. This number may be larger than
     /// the number of attributes that are attached to this span, if the total number recorded was
-    /// greater than the configured maximum value. See TraceConfig.maxNumberOfAttributes
+    /// greater than the configured maximum value. See SpanLimits.maxNumberOfAttributes
     public private(set) var totalAttributeCount: Int = 0
 
     public static func == (lhs: SpanData, rhs: SpanData) -> Bool {

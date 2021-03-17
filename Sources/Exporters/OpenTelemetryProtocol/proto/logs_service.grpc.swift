@@ -20,30 +20,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-import Foundation
 import GRPC
 import NIO
-import NIOHTTP1
 import SwiftProtobuf
 
 
-/// Usage: instantiate Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClient, then call methods of this protocol to make API calls.
-public protocol Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientProtocol {
-  func export(_ request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, callOptions: CallOptions?) -> UnaryCall<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse>
+/// Service that can be used to push logs between one Application instrumented with
+/// OpenTelemetry and an collector, or between an collector and a central collector (in this
+/// case logs are sent/received to/from multiple Applications).
+///
+/// Usage: instantiate `Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClient`, then call methods of this protocol to make API calls.
+public protocol Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientProtocol: GRPCClient {
+  var serviceName: String { get }
+  var interceptors: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientInterceptorFactoryProtocol? { get }
+
+  func export(
+    _ request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest,
+    callOptions: CallOptions?
+  ) -> UnaryCall<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse>
 }
 
-public final class Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClient: GRPCClient, Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientProtocol {
-  public let channel: GRPCChannel
-  public var defaultCallOptions: CallOptions
-
-  /// Creates a client for the opentelemetry.proto.collector.logs.v1.LogsService service.
-  ///
-  /// - Parameters:
-  ///   - channel: `GRPCChannel` to the service host.
-  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
-  public init(channel: GRPCChannel, defaultCallOptions: CallOptions = CallOptions()) {
-    self.channel = channel
-    self.defaultCallOptions = defaultCallOptions
+extension Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientProtocol {
+  public var serviceName: String {
+    return "opentelemetry.proto.collector.logs.v1.LogsService"
   }
 
   /// For performance reasons, it is recommended to keep this RPC
@@ -51,43 +50,90 @@ public final class Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClient: GRPC
   ///
   /// - Parameters:
   ///   - request: Request to send to Export.
-  ///   - callOptions: Call options; `self.defaultCallOptions` is used if `nil`.
+  ///   - callOptions: Call options.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func export(_ request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, callOptions: CallOptions? = nil) -> UnaryCall<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse> {
-    return self.makeUnaryCall(path: "/opentelemetry.proto.collector.logs.v1.LogsService/Export",
-                              request: request,
-                              callOptions: callOptions ?? self.defaultCallOptions)
+  public func export(
+    _ request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse> {
+    return self.makeUnaryCall(
+      path: "/opentelemetry.proto.collector.logs.v1.LogsService/Export",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeExportInterceptors() ?? []
+    )
   }
-
 }
 
+public protocol Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientInterceptorFactoryProtocol {
+
+  /// - Returns: Interceptors to use when invoking 'export'.
+  func makeExportInterceptors() -> [ClientInterceptor<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse>]
+}
+
+public final class Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClient: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientProtocol {
+  public let channel: GRPCChannel
+  public var defaultCallOptions: CallOptions
+  public var interceptors: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientInterceptorFactoryProtocol?
+
+  /// Creates a client for the opentelemetry.proto.collector.logs.v1.LogsService service.
+  ///
+  /// - Parameters:
+  ///   - channel: `GRPCChannel` to the service host.
+  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
+  ///   - interceptors: A factory providing interceptors for each RPC.
+  public init(
+    channel: GRPCChannel,
+    defaultCallOptions: CallOptions = CallOptions(),
+    interceptors: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientInterceptorFactoryProtocol? = nil
+  ) {
+    self.channel = channel
+    self.defaultCallOptions = defaultCallOptions
+    self.interceptors = interceptors
+  }
+}
+
+/// Service that can be used to push logs between one Application instrumented with
+/// OpenTelemetry and an collector, or between an collector and a central collector (in this
+/// case logs are sent/received to/from multiple Applications).
+///
 /// To build a server, implement a class that conforms to this protocol.
 public protocol Opentelemetry_Proto_Collector_Logs_V1_LogsServiceProvider: CallHandlerProvider {
+  var interceptors: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceServerInterceptorFactoryProtocol? { get }
+
   /// For performance reasons, it is recommended to keep this RPC
   /// alive for the entire life of the application.
   func export(request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse>
 }
 
 extension Opentelemetry_Proto_Collector_Logs_V1_LogsServiceProvider {
-  public var serviceName: String { return "opentelemetry.proto.collector.logs.v1.LogsService" }
+  public var serviceName: Substring { return "opentelemetry.proto.collector.logs.v1.LogsService" }
 
   /// Determines, calls and returns the appropriate request handler, depending on the request's method.
   /// Returns nil for methods not handled by this service.
-  public func handleMethod(_ methodName: String, callHandlerContext: CallHandlerContext) -> GRPCCallHandler? {
-    switch methodName {
+  public func handle(
+    method name: Substring,
+    context: CallHandlerContext
+  ) -> GRPCServerHandlerProtocol? {
+    switch name {
     case "Export":
-      return UnaryCallHandler(callHandlerContext: callHandlerContext) { context in
-        return { request in
-          self.export(request: request, context: context)
-        }
-      }
+      return UnaryServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest>(),
+        responseSerializer: ProtobufSerializer<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse>(),
+        interceptors: self.interceptors?.makeExportInterceptors() ?? [],
+        userFunction: self.export(request:context:)
+      )
 
-    default: return nil
+    default:
+      return nil
     }
   }
 }
 
+public protocol Opentelemetry_Proto_Collector_Logs_V1_LogsServiceServerInterceptorFactoryProtocol {
 
-// Provides conformance to `GRPCPayload`
-extension Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest: GRPCProtobufPayload {}
-extension Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse: GRPCProtobufPayload {}
+  /// - Returns: Interceptors to use when handling 'export'.
+  ///   Defaults to calling `self.makeInterceptors()`.
+  func makeExportInterceptors() -> [ServerInterceptor<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse>]
+}

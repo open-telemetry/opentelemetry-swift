@@ -50,7 +50,7 @@ public class SpanShim: OTSpan, BaseShimProtocol {
     public func setTag(_ key: String, value: String) {
         if key == SpanShim.OpenTracingErrorTag {
             let error = Bool(value) ?? false
-            span.status = error ? .error : .ok
+            span.status = error ? .error(description: "error") : .ok
         } else {
             span.setAttribute(key: key, value: value)
         }
@@ -73,7 +73,7 @@ public class SpanShim: OTSpan, BaseShimProtocol {
 
     public func setTag(_ key: String, boolValue value: Bool) {
         if key == SpanShim.OpenTracingErrorTag {
-            span.status = value ? .error : .ok
+            span.status = value ? .error(description: "error") : .ok
         } else {
             span.setAttribute(key: key, value: value)
         }

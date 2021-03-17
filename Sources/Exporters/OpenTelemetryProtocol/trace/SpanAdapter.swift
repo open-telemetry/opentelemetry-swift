@@ -43,9 +43,9 @@ struct SpanAdapter {
     private static func groupByResourceAndLibrary(spanDataList: [SpanData]) -> [Resource: [InstrumentationLibraryInfo: [Opentelemetry_Proto_Trace_V1_Span]]] {
         var result = [Resource: [InstrumentationLibraryInfo: [Opentelemetry_Proto_Trace_V1_Span]]]()
         spanDataList.forEach {
-            result[$0.resource,default:[InstrumentationLibraryInfo:[Opentelemetry_Proto_Trace_V1_Span]]()][$0.instrumentationLibraryInfo,default:[Opentelemetry_Proto_Trace_V1_Span]()]
+            result[$0.resource, default: [InstrumentationLibraryInfo: [Opentelemetry_Proto_Trace_V1_Span]]()][$0.instrumentationLibraryInfo, default: [Opentelemetry_Proto_Trace_V1_Span]()]
                 .append(toProtoSpan(spanData: $0))
-            }
+        }
         return result
     }
 
@@ -114,16 +114,14 @@ struct SpanAdapter {
 
     static func toStatusProto(status: Status) -> Opentelemetry_Proto_Trace_V1_Status {
         var statusProto = Opentelemetry_Proto_Trace_V1_Status()
-        switch status.statusCode {
+        switch status {
         case .ok:
             statusProto.code = .ok
         case .unset:
             statusProto.code = .unset
-        case .error:
+        case .error(let description):
             statusProto.code = .error
-        }
-        if let desc = status.statusDescription {
-            statusProto.message = desc
+            statusProto.message = description
         }
         return statusProto
     }

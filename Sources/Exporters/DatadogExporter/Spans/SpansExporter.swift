@@ -67,7 +67,7 @@ internal class SpansExporter {
             .contentTypeHeader(contentType: .textPlainUTF8),
             .userAgentHeader(
                 appName: configuration.applicationName,
-                appVersion: configuration.applicationVersion,
+                appVersion: configuration.version,
                 device: Device.current
             )
         ])

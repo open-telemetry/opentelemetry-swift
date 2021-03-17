@@ -15,18 +15,19 @@
 
 import Foundation
 import GRPC
+import NIO
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
 public class OtlpTraceExporter: SpanExporter {
     let channel: GRPCChannel
     let traceClient: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClient
-    let deadlineMS: Int
+    let timeoutNanos: Int64
 
-    public init(channel: GRPCChannel, deadlineMS: Int = 0) {
+    public init(channel: GRPCChannel, timeoutNanos: Int64 = 0) {
         self.channel = channel
         traceClient = Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClient(channel: channel)
-        self.deadlineMS = deadlineMS
+        self.timeoutNanos = timeoutNanos
     }
 
     public func export(spans: [SpanData]) -> SpanExporterResultCode {
@@ -34,15 +35,15 @@ public class OtlpTraceExporter: SpanExporter {
             $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
         }
 
-        if deadlineMS > 0 {
-            traceClient.defaultCallOptions.timeout = try! GRPCTimeout.milliseconds(deadlineMS)
+        if timeoutNanos > 0 {
+            traceClient.defaultCallOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(timeoutNanos))
         }
 
         let export = traceClient.export(exportRequest)
 
         do {
             // wait() on the response to stop the program from exiting before the response is received.
-           _ = try export.response.wait()
+            _ = try export.response.wait()
             return .success
         } catch {
             return .failure
