@@ -71,10 +71,10 @@ internal class URLSessionTracingHandler: URLSessionInterceptionHandler {
         } else if let error = resourceCompletion.error as? URLError {
             span.status = Status.error.withDescription(description: "\(URLError.errorDomain): \(error.localizedDescription)")
             
-            span.addEvent(name: TraceConstants.exception.rawValue,
-                          attributes: [TraceConstants.exceptionType.rawValue : AttributeValue.string(String(describing: type(of: error))),
-                                       TraceConstants.exceptionEscaped.rawValue : AttributeValue.bool(false),
-                                       TraceConstants.exceptionMessage.rawValue : AttributeValue.string(error.localizedDescription)],
+            span.addEvent(name: SemanticAttributes.exception.rawValue,
+                          attributes: [SemanticAttributes.exceptionType.rawValue : AttributeValue.string(String(describing: type(of: error))),
+                                       SemanticAttributes.exceptionEscaped.rawValue : AttributeValue.bool(false),
+                                       SemanticAttributes.exceptionMessage.rawValue : AttributeValue.string(error.localizedDescription)],
                           timestamp: resourceMetrics.fetch.end)
         }
 

@@ -30,6 +30,7 @@ let package = Package(
         .library(name: "libInMemoryExporter", type: .static, targets: ["InMemoryExporter"]),
         .library(name: "DatadogExporter", type: .dynamic, targets: ["DatadogExporter"]),
         .library(name: "libDatadogExporter", type: .static, targets: ["DatadogExporter"]),
+        .library(name: "NSURLSessionInstrumentation", type: .dynamic, targets: ["NSURLSessionInstrumentation"]),
         .executable(name: "simpleExporter", targets: ["SimpleExporter"]),
         .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
     ],
@@ -145,5 +146,9 @@ let package = Package(
                 path: "Examples/Datadog Sample",
                 exclude: ["README.md"]
         ),
+        .target(name: "NSURLSessionInstrumentation",
+                dependencies: ["OpenTelemetrySdk"],
+                path: "Sources/Instrumentation/NSURLSession",
+                exclude: ["README.md"])
     ]
 )
