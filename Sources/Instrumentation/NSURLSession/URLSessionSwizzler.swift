@@ -17,6 +17,8 @@ internal class URLSessionSwizzler {
     /// `URLSession.dataTask(with:)` (for `URL`) swizzling. Only applied on iOS 13 and above.
     let dataTaskWithURL: DataTaskWithURL?
 
+    let initWithConfigDelegateQueue: InitWithDelegate?
+    
     init() throws {
         if #available(iOS 13.0, *) {
             self.dataTaskWithURLAndCompletion = try DataTaskWithURLAndCompletion.build()
@@ -30,9 +32,11 @@ internal class URLSessionSwizzler {
         }
         self.dataTaskWithURLRequestAndCompletion = try DataTaskWithURLRequestAndCompletion.build()
         self.dataTaskWithURLRequest = try DataTaskWithURLRequest.build()
+        self.initWithConfigDelegateQueue = try InitWithDelegate.build()
     }
 
     func swizzle() {
+        initWithConfigDelegateQueue?.swizzle()
         dataTaskWithURLRequestAndCompletion.swizzle()
         dataTaskWithURLAndCompletion?.swizzle()
         dataTaskWithURLRequest.swizzle()
@@ -195,6 +199,43 @@ internal class URLSessionSwizzler {
                         interceptor.taskCreated(task: task)
                     }
                     return task
+                }
+            }
+        }
+    }
+    
+    
+    class InitWithDelegate: MethodSwizzler<
+        @convention(c) (URLSession, Selector, URLSessionConfiguration, URLSessionDelegate?, OperationQueue?) -> URLSession,
+        @convention(block) (URLSession,URLSessionConfiguration, URLSessionDelegate?, OperationQueue?) -> URLSession
+    > {
+        private static let selector = #selector(
+            URLSession.init(configuration:delegate:delegateQueue:)
+        )
+        
+        private let method : FoundMethod
+        static func build() throws -> InitWithDelegate {
+            return try InitWithDelegate(selector: self.selector, klass: URLSession.self)
+        }
+        
+        private init (selector: Selector, klass: AnyClass) throws {
+            guard let metaClass = object_getClass(klass) else {
+                throw  ProgrammerError(description: "metaclass is not found for \(NSStringFromClass(klass))")
+            }
+            self.method = try Self.findMethod(with: selector, in: metaClass)
+            super.init()
+        }
+        
+        func swizzle() {
+            typealias Signature = @convention(block) (URLSession, URLSessionConfiguration, URLSessionDelegate?, OperationQueue?) -> URLSession
+            swizzle(method) { previousImplementation -> Signature in
+                return { session, config, delegate, queue -> URLSession in
+                    // intercept delegate here
+                     let newDelegate =  DDURLSessionDelegate(originalDelegate: delegate)
+                    
+                        return previousImplementation(session, Self.selector, config, newDelegate, queue)
+                
+
                 }
             }
         }
