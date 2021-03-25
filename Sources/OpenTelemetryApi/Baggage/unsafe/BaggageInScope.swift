@@ -36,7 +36,7 @@ class BaggageInScope: Scope {
         let activity = _os_activity_create(dso, "InitBaggage", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
         let activityId = os_activity_get_identifier(activity, nil)
         os_activity_scope_enter(activity, &current)
-        ContextUtils.setContext(activityId: activityId, forBaggage: baggage)
+        OpenTelemetryContext.setContext(activityId: activityId, forBaggage: baggage)
     }
 
     func close() {

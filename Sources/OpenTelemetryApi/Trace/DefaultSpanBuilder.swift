@@ -27,7 +27,7 @@ public class DefaultSpanBuilder: SpanBuilder {
 
     @discardableResult public func startSpan() -> Span {
         if spanContext == nil, !isRootSpan {
-            spanContext = tracer.activeSpan?.context
+            spanContext = OpenTelemetryContext.activeSpan?.context
         }
         return spanContext != nil && spanContext != SpanContext.invalid ? DefaultSpan(context: spanContext!, kind: .client) : DefaultSpan.random()
     }

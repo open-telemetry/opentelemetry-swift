@@ -30,16 +30,16 @@ final class DefaultTracerTests: XCTestCase {
     }
 
     func testDefaultGetCurrentSpan() {
-        XCTAssert(defaultTracer.activeSpan is DefaultSpan?)
+        XCTAssert(OpenTelemetryContext.activeSpan is DefaultSpan?)
     }
 
     func testGetCurrentSpan_WithSpan() {
-        XCTAssert(defaultTracer.activeSpan == nil)
-        var ws = defaultTracer.setActive(DefaultSpan.random())
-        XCTAssert(defaultTracer.activeSpan != nil)
-        XCTAssert(defaultTracer.activeSpan is DefaultSpan)
+        XCTAssert(OpenTelemetryContext.activeSpan == nil)
+        var ws = OpenTelemetryContext.setActiveSpan(DefaultSpan.random())
+        XCTAssert(OpenTelemetryContext.activeSpan != nil)
+        XCTAssert(OpenTelemetryContext.activeSpan is DefaultSpan)
         ws.close()
-        XCTAssert(defaultTracer.activeSpan == nil)
+        XCTAssert(OpenTelemetryContext.activeSpan == nil)
     }
 
     func testDefaultSpanBuilderWithName() {
@@ -48,19 +48,19 @@ final class DefaultTracerTests: XCTestCase {
 
     func testTestInProcessContext() {
         let span = defaultTracer.spanBuilder(spanName: spanName).startSpan()
-        var scope = defaultTracer.setActive(span)
-        XCTAssert(defaultTracer.activeSpan === span)
+        var scope = OpenTelemetryContext.setActiveSpan(span)
+        XCTAssert(OpenTelemetryContext.activeSpan === span)
 
         let secondSpan = defaultTracer.spanBuilder(spanName: spanName).startSpan()
-        var secondScope = defaultTracer.setActive(secondSpan)
+        var secondScope = OpenTelemetryContext.setActiveSpan(secondSpan)
 
-        XCTAssert(defaultTracer.activeSpan === secondSpan)
+        XCTAssert(OpenTelemetryContext.activeSpan === secondSpan)
 
         secondScope.close()
-        XCTAssert(defaultTracer.activeSpan === span)
+        XCTAssert(OpenTelemetryContext.activeSpan === span)
 
         scope.close()
-        XCTAssert(defaultTracer.activeSpan == nil)
+        XCTAssert(OpenTelemetryContext.activeSpan == nil)
     }
 
     func testTestSpanContextPropagationExplicitParent() {
@@ -77,7 +77,7 @@ final class DefaultTracerTests: XCTestCase {
 
     func testTestSpanContextPropagationCurrentSpan() {
         let parent = DefaultSpan(context: spanContext)
-        var scope = defaultTracer.setActive(parent)
+        var scope = OpenTelemetryContext.setActiveSpan(parent)
         let span = defaultTracer.spanBuilder(spanName: spanName).startSpan()
         XCTAssert(span.context === spanContext)
         scope.close()
