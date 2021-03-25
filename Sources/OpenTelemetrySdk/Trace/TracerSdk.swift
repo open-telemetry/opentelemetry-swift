@@ -18,7 +18,6 @@ import OpenTelemetryApi
 
 /// TracerSdk is SDK implementation of Tracer.
 public class TracerSdk: Tracer {
-    public let binaryFormat: BinaryFormattable = BinaryTraceContextFormat()
     public let textFormat: TextMapPropagator = W3CTraceContextPropagator()
     public var sharedState: TracerSharedState
     public var instrumentationLibraryInfo: InstrumentationLibraryInfo

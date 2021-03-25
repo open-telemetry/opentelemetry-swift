@@ -44,10 +44,6 @@ class TracerSdkTests: XCTestCase {
         XCTAssertTrue(tracer.textFormat is W3CTraceContextPropagator)
     }
 
-    func testDefaultBinaryFormat() {
-        XCTAssertTrue(tracer.binaryFormat is BinaryTraceContextFormat)
-    }
-
     func testGetCurrentSpan() {
         XCTAssertNil(tracer.activeSpan)
         // Make sure context is detached even if test fails.

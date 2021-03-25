@@ -22,7 +22,7 @@ class LoggingTracer: Tracer {
         return ContextUtils.getCurrentSpan()
     }
 
-    var binaryFormat: BinaryFormattable = BinaryTraceContextFormat()
+    var binaryFormat: BinaryFormattable = LoggingBinaryFormat()
     var textFormat: TextMapPropagator = W3CTraceContextPropagator()
 
     func spanBuilder(spanName: String) -> SpanBuilder {
