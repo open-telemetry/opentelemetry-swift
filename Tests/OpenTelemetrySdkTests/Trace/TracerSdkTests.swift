@@ -54,7 +54,7 @@ class TracerSdkTests: XCTestCase {
         // TODO: Check context bahaviour
 //        let origContext = ContextUtils.withSpan(span)
 //        XCTAssertTrue(tracer.currentSpan === span)
-//        XCTAssertTrue(tracer.currentSpan is DefaultSpan)
+//        XCTAssertTrue(tracer.currentSpan is PropagatedSpan)
     }
 
     func testGetCurrentSpan_WithSpan() {

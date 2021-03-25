@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-import OpenTelemetryApi
+@testable import OpenTelemetryApi
 import OpenTelemetrySdk
 import XCTest
 
@@ -43,9 +43,9 @@ class SpanBuilderSdkTest: XCTestCase {
     func testAddLink() {
         // Verify methods do not crash.
         let spanBuilder = tracerSdk.spanBuilder(spanName: spanName) as! SpanBuilderSdk
-        spanBuilder.addLink(SpanData.Link(context: DefaultSpan().context))
-        spanBuilder.addLink(spanContext: DefaultSpan().context)
-        spanBuilder.addLink(spanContext: DefaultSpan().context, attributes: [String: AttributeValue]())
+        spanBuilder.addLink(SpanData.Link(context: PropagatedSpan().context))
+        spanBuilder.addLink(spanContext: PropagatedSpan().context)
+        spanBuilder.addLink(spanContext: PropagatedSpan().context, attributes: [String: AttributeValue]())
         let span = spanBuilder.startSpan() as! RecordEventsReadableSpan
         XCTAssertEqual(span.toSpanData().links.count, 3)
         span.end()
@@ -242,7 +242,7 @@ class SpanBuilderSdkTest: XCTestCase {
     }
 
     func testParent_invalidContext() {
-        let parent = DefaultSpan()
+        let parent = PropagatedSpan()
         let span = tracerSdk.spanBuilder(spanName: spanName).setParent(parent.context).startSpan() as! RecordEventsReadableSpan
         XCTAssertNotEqual(span.context.traceId, parent.context.traceId)
         XCTAssertNil(span.parentContext?.spanId)

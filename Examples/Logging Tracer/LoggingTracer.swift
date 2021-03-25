@@ -46,10 +46,14 @@ class LoggingTracer: Tracer {
         }
 
         func startSpan() -> Span {
-            if spanContext == nil && !isRootSpan {
+            if spanContext == nil, !isRootSpan {
                 spanContext = tracer.activeSpan?.context
             }
-            return spanContext != nil && spanContext != SpanContext.invalid ? LoggingSpan(name: name, kind: .client) : DefaultSpan.random()
+            if spanContext != nil, spanContext != SpanContext.invalid {
+                return LoggingSpan(name: name, kind: .client)
+            } else {
+                return DefaultTracer.instance.spanBuilder(spanName: name).startSpan()
+            }
         }
 
         func setParent(_ parent: Span) -> Self {
@@ -74,7 +78,7 @@ class LoggingTracer: Tracer {
         func addLink(spanContext: SpanContext, attributes: [String: AttributeValue]) -> Self {
             return self
         }
-        
+
         func setSpanKind(spanKind: SpanKind) -> Self {
             return self
         }

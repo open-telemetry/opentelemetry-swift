@@ -15,34 +15,33 @@
 
 import Foundation
 
-/// The DefaultSpan is the default Span that is used when no Span
+/// The PropagatedSpan is the default Span that is used when no Span
 /// implementation is available. All operations are no-op except context propagation.
-/// Used also to stop tracing, see Tracer.withSpan()
-public class DefaultSpan: Span {
-    public var name: String = ""
+class PropagatedSpan: Span {
+    var name: String = ""
 
-    public var kind: SpanKind
+    var kind: SpanKind
 
-    public var context: SpanContext
+    var context: SpanContext
 
-    public var scope: Scope?
+    var scope: Scope?
 
-    public func end() {
+    func end() {
         scope?.close()
     }
 
-    public func end(time: Date) {
+    func end(time: Date) {
         end()
     }
 
     /// Returns a DefaultSpan with an invalid SpanContext.
-    public convenience init() {
+    convenience init() {
         self.init(context: SpanContext.invalid, kind: .client)
     }
 
     /// Creates an instance of this class with the SpanContext.
     /// - Parameter context: the SpanContext
-    public convenience init(context: SpanContext) {
+    convenience init(context: SpanContext) {
         self.init(context: context, kind: .client)
     }
 
@@ -50,43 +49,43 @@ public class DefaultSpan: Span {
     /// - Parameters:
     ///   - context: the SpanContext
     ///   - kind: the SpanKind
-    public init(context: SpanContext, kind: SpanKind) {
+    init(context: SpanContext, kind: SpanKind) {
         self.context = context
         self.kind = kind
     }
 
-    public static func random() -> DefaultSpan {
-        return DefaultSpan(context: SpanContext.create(traceId: TraceId.random(),
+    static func random() -> PropagatedSpan {
+        return PropagatedSpan(context: SpanContext.create(traceId: TraceId.random(),
                                                        spanId: SpanId.random(),
                                                        traceFlags: TraceFlags(),
                                                        traceState: TraceState()),
                            kind: .client)
     }
 
-    public var isRecording: Bool {
+    var isRecording: Bool {
         return false
     }
 
-    public var status: Status {
+    var status: Status {
         get {
             return Status.ok
         }
         set {}
     }
 
-    public var description: String {
-        return "DefaultSpan"
+    var description: String {
+        return "PropagatedSpan"
     }
 
-    public func updateName(name: String) {}
+    func updateName(name: String) {}
 
-    public func setAttribute(key: String, value: AttributeValue?) {}
+    func setAttribute(key: String, value: AttributeValue?) {}
 
-    public func addEvent(name: String) {}
+    func addEvent(name: String) {}
 
-    public func addEvent(name: String, timestamp: Date) {}
+    func addEvent(name: String, timestamp: Date) {}
 
-    public func addEvent(name: String, attributes: [String: AttributeValue]) {}
+    func addEvent(name: String, attributes: [String: AttributeValue]) {}
 
-    public func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Date) {}
+    func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Date) {}
 }

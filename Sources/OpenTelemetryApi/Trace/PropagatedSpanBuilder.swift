@@ -16,7 +16,7 @@
 import Foundation
 
 /// No-op implementation of the SpanBuilder
-public class DefaultSpanBuilder: SpanBuilder {
+class PropagatedSpanBuilder: SpanBuilder {
     private var tracer: Tracer
     private var isRootSpan: Bool = false
     private var spanContext: SpanContext?
@@ -29,7 +29,7 @@ public class DefaultSpanBuilder: SpanBuilder {
         if spanContext == nil, !isRootSpan {
             spanContext = tracer.activeSpan?.context
         }
-        return spanContext != nil && spanContext != SpanContext.invalid ? DefaultSpan(context: spanContext!, kind: .client) : DefaultSpan.random()
+        return spanContext != nil && spanContext != SpanContext.invalid ? PropagatedSpan(context: spanContext!, kind: .client) : PropagatedSpan.random()
     }
 
     @discardableResult public func setParent(_ parent: Span) -> Self {

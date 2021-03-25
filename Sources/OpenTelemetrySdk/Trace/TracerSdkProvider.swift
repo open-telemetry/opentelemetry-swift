@@ -31,7 +31,7 @@ public class TracerSdkProvider: TracerProvider {
 
     public func get(instrumentationName: String, instrumentationVersion: String? = nil) -> Tracer {
         if sharedState.hasBeenShutdown {
-            return DefaultTracer()
+            return DefaultTracer.instance
         }
         let instrumentationLibraryInfo = InstrumentationLibraryInfo(name: instrumentationName, version: instrumentationVersion ?? "")
         if let tracer = tracerProvider[instrumentationLibraryInfo] {
