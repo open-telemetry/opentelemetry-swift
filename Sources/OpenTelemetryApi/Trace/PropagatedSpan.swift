@@ -54,14 +54,6 @@ class PropagatedSpan: Span {
         self.kind = kind
     }
 
-    static func random() -> PropagatedSpan {
-        return PropagatedSpan(context: SpanContext.create(traceId: TraceId.random(),
-                                                       spanId: SpanId.random(),
-                                                       traceFlags: TraceFlags(),
-                                                       traceState: TraceState()),
-                           kind: .client)
-    }
-
     var isRecording: Bool {
         return false
     }

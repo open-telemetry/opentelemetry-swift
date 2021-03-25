@@ -16,22 +16,29 @@
 @testable import OpenTelemetryApi
 import XCTest
 
-final class DefaultSpanTest: XCTestCase {
+fileprivate func createRandomPropagatedSpan() -> PropagatedSpan {
+    return PropagatedSpan(context: SpanContext.create(traceId: TraceId.random(),
+                                                      spanId: SpanId.random(),
+                                                      traceFlags: TraceFlags(),
+                                                      traceState: TraceState()))
+}
+
+final class PropagatedSpanTest: XCTestCase {
     func testHasInvalidContextAndDefaultSpanOptions() {
-        let context = PropagatedSpan.random().context
+        let context = createRandomPropagatedSpan().context
         XCTAssertEqual(context.traceFlags, TraceFlags())
         XCTAssertEqual(context.traceState, TraceState())
     }
 
     func testHasUniqueTraceIdAndSpanId() {
-        let span1 = PropagatedSpan.random()
-        let span2 = PropagatedSpan.random()
+        let span1 = createRandomPropagatedSpan()
+        let span2 = createRandomPropagatedSpan()
         XCTAssertNotEqual(span1.context.traceId, span2.context.traceId)
         XCTAssertNotEqual(span1.context.spanId, span2.context.spanId)
     }
 
     func testDoNotCrash() {
-        let span = PropagatedSpan.random()
+        let span = createRandomPropagatedSpan()
         span.setAttribute(key: "MyStringAttributeKey", value: AttributeValue.string("MyStringAttributeValue"))
         span.setAttribute(key: "MyBooleanAttributeKey", value: AttributeValue.bool(true))
         span.setAttribute(key: "MyLongAttributeKey", value: AttributeValue.int(123))
@@ -51,7 +58,7 @@ final class DefaultSpanTest: XCTestCase {
     }
 
     func testDefaultSpan_ToString() {
-        let span = PropagatedSpan.random()
+        let span = createRandomPropagatedSpan()
         XCTAssertEqual(span.description, "PropagatedSpan")
     }
 

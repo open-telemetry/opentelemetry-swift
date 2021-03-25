@@ -29,7 +29,14 @@ class PropagatedSpanBuilder: SpanBuilder {
         if spanContext == nil, !isRootSpan {
             spanContext = tracer.activeSpan?.context
         }
-        return spanContext != nil && spanContext != SpanContext.invalid ? PropagatedSpan(context: spanContext!, kind: .client) : PropagatedSpan.random()
+        if spanContext != nil && spanContext != SpanContext.invalid {
+            return PropagatedSpan(context: spanContext!, kind: .client)
+        } else {
+            return PropagatedSpan(context: SpanContext.create(traceId: TraceId.random(),
+                                                              spanId: SpanId.random(),
+                                                              traceFlags: TraceFlags(),
+                                                              traceState: TraceState()))
+        }
     }
 
     @discardableResult public func setParent(_ parent: Span) -> Self {

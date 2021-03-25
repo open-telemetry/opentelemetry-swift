@@ -18,6 +18,13 @@ import Foundation
 @testable import OpenTelemetryApi
 import XCTest
 
+fileprivate func createRandomPropagatedSpan() -> PropagatedSpan {
+    return PropagatedSpan(context: SpanContext.create(traceId: TraceId.random(),
+                                                      spanId: SpanId.random(),
+                                                      traceFlags: TraceFlags(),
+                                                      traceState: TraceState()))
+}
+
 final class DefaultTracerTests: XCTestCase {
     let defaultTracer = DefaultTracer.instance
     let spanName = "MySpanName"
@@ -35,7 +42,7 @@ final class DefaultTracerTests: XCTestCase {
 
     func testGetCurrentSpan_WithSpan() {
         XCTAssert(defaultTracer.activeSpan == nil)
-        var ws = defaultTracer.setActive(PropagatedSpan.random())
+        var ws = defaultTracer.setActive(createRandomPropagatedSpan())
         XCTAssert(defaultTracer.activeSpan != nil)
         XCTAssert(defaultTracer.activeSpan is PropagatedSpan)
         ws.close()
