@@ -37,13 +37,13 @@ class SpanInScope: Scope {
         let activity = _os_activity_create(dso, "InitSpan", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
         currentActivityId = os_activity_get_identifier(activity, nil)
         os_activity_scope_enter(activity, &currentActivityState)
-        ContextUtils.setContext(activityId: currentActivityId, forSpan: span)
+        OpenTelemetryContext.setContext(activityId: currentActivityId, forSpan: span)
         span.scope = self
     }
 
     func close() {
         os_activity_scope_leave(&currentActivityState)
-        ContextUtils.removeContextForSpan(activityId: currentActivityId)
+        OpenTelemetryContext.removeContextForSpan(activityId: currentActivityId)
     }
 
     deinit {

@@ -22,11 +22,11 @@ OpenTelemetry.registerTracerProvider(tracerProvider: LoggingTracerProvider())
 
 var tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "ConsoleApp", instrumentationVersion: "semver:1.0.0")
 
-let scope = tracer.setActive(tracer.spanBuilder(spanName: "Main (span1)").startSpan())
+let scope = OpenTelemetryContext.setActiveSpan(tracer.spanBuilder(spanName: "Main (span1)").startSpan())
 let semaphore = DispatchSemaphore(value: 0)
 DispatchQueue.global().async {
-    var scope2 = tracer.setActive(tracer.spanBuilder(spanName: "Main (span2)").startSpan())
-    tracer.activeSpan?.setAttribute(key: "myAttribute", value: "myValue")
+    var scope2 = OpenTelemetryContext.setActiveSpan(tracer.spanBuilder(spanName: "Main (span2)").startSpan())
+    OpenTelemetryContext.activeSpan?.setAttribute(key: "myAttribute", value: "myValue")
     sleep(1)
     semaphore.signal()
     scope2.close()
