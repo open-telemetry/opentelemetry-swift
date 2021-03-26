@@ -19,9 +19,7 @@ import Foundation
 public class DefaultTracer: Tracer {
     public static var instance = DefaultTracer()
 
-    public init() {}
-
     public func spanBuilder(spanName: String) -> SpanBuilder {
-        return DefaultSpanBuilder(tracer: self, spanName: spanName)
+        return PropagatedSpanBuilder(tracer: self, spanName: spanName)
     }
 }

@@ -49,7 +49,11 @@ class LoggingTracer: Tracer {
             if spanContext == nil, !isRootSpan {
                 spanContext = OpenTelemetryContext.activeSpan?.context
             }
-            return spanContext != nil && spanContext != SpanContext.invalid ? LoggingSpan(name: name, kind: .client) : DefaultSpan.random()
+            if spanContext != nil, spanContext != SpanContext.invalid {
+                return LoggingSpan(name: name, kind: .client)
+            } else {
+                return DefaultTracer.instance.spanBuilder(spanName: name).startSpan()
+            }
         }
 
         func setParent(_ parent: Span) -> Self {

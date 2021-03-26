@@ -15,8 +15,15 @@
 
 import Foundation
 
-import OpenTelemetryApi
+@testable import OpenTelemetryApi
 import XCTest
+
+fileprivate func createRandomPropagatedSpan() -> PropagatedSpan {
+    return PropagatedSpan(context: SpanContext.create(traceId: TraceId.random(),
+                                                      spanId: SpanId.random(),
+                                                      traceFlags: TraceFlags(),
+                                                      traceState: TraceState()))
+}
 
 final class DefaultTracerTests: XCTestCase {
     let defaultTracer = DefaultTracer.instance
@@ -30,20 +37,20 @@ final class DefaultTracerTests: XCTestCase {
     }
 
     func testDefaultGetCurrentSpan() {
-        XCTAssert(OpenTelemetryContext.activeSpan is DefaultSpan?)
+        XCTAssert(OpenTelemetryContext.activeSpan is PropagatedSpan?)
     }
 
     func testGetCurrentSpan_WithSpan() {
         XCTAssert(OpenTelemetryContext.activeSpan == nil)
-        var ws = OpenTelemetryContext.setActiveSpan(DefaultSpan.random())
+        var ws = OpenTelemetryContext.setActiveSpan(createRandomPropagatedSpan())
         XCTAssert(OpenTelemetryContext.activeSpan != nil)
-        XCTAssert(OpenTelemetryContext.activeSpan is DefaultSpan)
+        XCTAssert(OpenTelemetryContext.activeSpan is PropagatedSpan)
         ws.close()
         XCTAssert(OpenTelemetryContext.activeSpan == nil)
     }
 
     func testDefaultSpanBuilderWithName() {
-        XCTAssert(defaultTracer.spanBuilder(spanName: spanName).startSpan() is DefaultSpan)
+        XCTAssert(defaultTracer.spanBuilder(spanName: spanName).startSpan() is PropagatedSpan)
     }
 
     func testTestInProcessContext() {
@@ -69,14 +76,14 @@ final class DefaultTracerTests: XCTestCase {
     }
 
     func testTestSpanContextPropagation() {
-        let parent = DefaultSpan(context: spanContext)
+        let parent = PropagatedSpan(context: spanContext)
 
         let span = defaultTracer.spanBuilder(spanName: spanName).setParent(parent).startSpan()
         XCTAssert(span.context === spanContext)
     }
 
     func testTestSpanContextPropagationCurrentSpan() {
-        let parent = DefaultSpan(context: spanContext)
+        let parent = PropagatedSpan(context: spanContext)
         var scope = OpenTelemetryContext.setActiveSpan(parent)
         let span = defaultTracer.spanBuilder(spanName: spanName).startSpan()
         XCTAssert(span.context === spanContext)
