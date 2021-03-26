@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-import OpenTelemetryApi
+@testable import OpenTelemetryApi
 import XCTest
 
 class BinaryFormatTests: XCTestCase {
@@ -32,7 +32,7 @@ class BinaryFormatTests: XCTestCase {
         traceId = TraceId(fromBytes: traceId_bytes)
         spanId = SpanId(fromBytes: spanId_bytes)
         traceOptions = TraceFlags(fromByte: traceOptions_byte)
-        invalidSpanContext = DefaultSpan().context
+        invalidSpanContext = PropagatedSpan().context
     }
 
     private func testSpanContextConversion(spanContext: SpanContext) {

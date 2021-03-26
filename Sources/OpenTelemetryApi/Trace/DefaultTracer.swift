@@ -19,8 +19,6 @@ import Foundation
 public class DefaultTracer: Tracer {
     public static var instance = DefaultTracer()
 
-    public init() {}
-
     public var activeSpan: Span? {
         return ContextUtils.getCurrentSpan()
     }
@@ -30,6 +28,6 @@ public class DefaultTracer: Tracer {
     }
 
     public func spanBuilder(spanName: String) -> SpanBuilder {
-        return DefaultSpanBuilder(tracer: self, spanName: spanName)
+        return PropagatedSpanBuilder(tracer: self, spanName: spanName)
     }
 }
