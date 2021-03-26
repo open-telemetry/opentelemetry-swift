@@ -22,7 +22,7 @@ class LoggingTracer: Tracer {
         return OpenTelemetryContext.activeSpan
     }
 
-    var binaryFormat: BinaryFormattable = BinaryTraceContextFormat()
+    var binaryFormat: BinaryFormattable = LoggingBinaryFormat()
     var textFormat: TextMapPropagator = W3CTraceContextPropagator()
 
     func spanBuilder(spanName: String) -> SpanBuilder {
