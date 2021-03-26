@@ -19,7 +19,7 @@ import os.activity
 /// Helper class to get the current Span and current Baggage
 /// Users must interact with the current Context via the public APIs in Tracer and avoid
 /// accessing this class directly.
-public struct ContextUtils {
+public enum OpenTelemetryContext {
     struct ContextEntry {
         var span: Span?
         var baggage: Baggage?
@@ -33,7 +33,7 @@ public struct ContextUtils {
     static let rlock = NSRecursiveLock()
 
     /// Returns the Span from the current context
-    public static func getCurrentSpan() -> Span? {
+    public static var activeSpan: Span? {
         // We should try to traverse all hierarchy to locate the Span, but I could not find a way, just direct parent
         var parentIdent: os_activity_id_t = 0
         let activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, &parentIdent)
@@ -48,7 +48,7 @@ public struct ContextUtils {
     }
 
     /// Returns the Baggage from the current context
-    public static func getCurrentBaggage() -> Baggage? {
+    public static var activeBaggage: Baggage? {
         // We should try to traverse all hierarchy to locate the Baggage, but I could not find a way, just direct parent
         var parentIdent: os_activity_id_t = 0
         let activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, &parentIdent)
@@ -64,13 +64,13 @@ public struct ContextUtils {
 
     /// Returns a new Scope encapsulating the provided Span added to the current context
     /// - Parameter span: the Span to be added to the current context
-    public static func withSpan(_ span: Span) -> Scope {
+    @discardableResult public static func setActiveSpan(_ span: Span) -> Scope {
         return SpanInScope(span: span)
     }
 
     /// Returns a new Scope encapsulating the provided Correlation Context added to the current context
     /// - Parameter baggage: the Correlation Context to be added to the current contex
-    public static func withBaggage(_ baggage: Baggage) -> Scope {
+    @discardableResult public static func setActiveBaggage(_ baggage: Baggage) -> Scope {
         return BaggageInScope(baggage: baggage)
     }
 
@@ -79,7 +79,7 @@ public struct ContextUtils {
         if contextMap[activityId] != nil {
             contextMap[activityId]!.span = span
         } else {
-            contextMap[activityId] = ContextEntry(span: span, baggage: getCurrentBaggage())
+            contextMap[activityId] = ContextEntry(span: span, baggage: activeBaggage)
         }
         rlock.unlock()
     }
@@ -99,7 +99,7 @@ public struct ContextUtils {
         if contextMap[activityId] != nil {
             contextMap[activityId]!.baggage = baggage
         } else {
-            contextMap[activityId] = ContextEntry(span: getCurrentSpan(), baggage: baggage)
+            contextMap[activityId] = ContextEntry(span: activeSpan, baggage: baggage)
         }
         rlock.unlock()
     }

@@ -19,7 +19,7 @@ import OpenTelemetryApi
 class LoggingTracer: Tracer {
     let tracerName = "LoggingTracer"
     public var activeSpan: Span? {
-        return ContextUtils.getCurrentSpan()
+        return OpenTelemetryContext.activeSpan
     }
 
     var binaryFormat: BinaryFormattable = BinaryTraceContextFormat()
@@ -31,7 +31,7 @@ class LoggingTracer: Tracer {
 
     @discardableResult func setActive(_ span: Span) -> Scope {
         Logger.log("\(tracerName).WithSpan")
-        return ContextUtils.withSpan(span)
+        return OpenTelemetryContext.setActiveSpan(span)
     }
 
     class LoggingSpanBuilder: SpanBuilder {
@@ -47,7 +47,7 @@ class LoggingTracer: Tracer {
 
         func startSpan() -> Span {
             if spanContext == nil, !isRootSpan {
-                spanContext = tracer.activeSpan?.context
+                spanContext = OpenTelemetryContext.activeSpan?.context
             }
             if spanContext != nil, spanContext != SpanContext.invalid {
                 return LoggingSpan(name: name, kind: .client)

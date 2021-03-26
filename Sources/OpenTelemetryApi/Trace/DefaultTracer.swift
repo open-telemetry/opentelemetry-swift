@@ -19,14 +19,6 @@ import Foundation
 public class DefaultTracer: Tracer {
     public static var instance = DefaultTracer()
 
-    public var activeSpan: Span? {
-        return ContextUtils.getCurrentSpan()
-    }
-
-    @discardableResult public func setActive(_ span: Span) -> Scope {
-        return SpanInScope(span: span)
-    }
-
     public func spanBuilder(spanName: String) -> SpanBuilder {
         return PropagatedSpanBuilder(tracer: self, spanName: spanName)
     }

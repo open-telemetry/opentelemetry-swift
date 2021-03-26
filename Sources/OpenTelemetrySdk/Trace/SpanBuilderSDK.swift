@@ -165,7 +165,7 @@ public class SpanBuilderSdk: SpanBuilder {
     }
 
     private func getParentContext(parentType: ParentType, explicitParent: Span?, remoteParent: SpanContext?) -> SpanContext? {
-        let currentSpan = ContextUtils.getCurrentSpan()
+        let currentSpan = OpenTelemetryContext.activeSpan
         switch parentType {
         case .noParent:
             return nil
@@ -181,7 +181,7 @@ public class SpanBuilderSdk: SpanBuilder {
     private static func getParentSpan(parentType: ParentType, explicitParent: Span?) -> Span? {
         switch parentType {
         case .currentSpan:
-            return ContextUtils.getCurrentSpan()
+            return OpenTelemetryContext.activeSpan
         case .explicitParent:
             return explicitParent
         default:

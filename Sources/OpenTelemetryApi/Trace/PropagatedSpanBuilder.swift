@@ -27,7 +27,7 @@ class PropagatedSpanBuilder: SpanBuilder {
 
     @discardableResult public func startSpan() -> Span {
         if spanContext == nil, !isRootSpan {
-            spanContext = tracer.activeSpan?.context
+            spanContext = OpenTelemetryContext.activeSpan?.context
         }
         if spanContext != nil && spanContext != SpanContext.invalid {
             return PropagatedSpan(context: spanContext!, kind: .client)
