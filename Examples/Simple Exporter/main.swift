@@ -15,6 +15,7 @@
 
 import Foundation
 import JaegerExporter
+import OpenTelemetryApi
 import OpenTelemetrySdk
 import StdoutExporter
 import ZipkinExporter
@@ -38,7 +39,7 @@ func simpleSpan() {
 func childSpan() {
     let span = tracer.spanBuilder(spanName: "parentSpan").setSpanKind(spanKind: .client).startSpan()
     span.setAttribute(key: sampleKey, value: sampleValue)
-    tracer.setActive(span)
+    OpenTelemetryContext.setActiveSpan(span)
     let childSpan = tracer.spanBuilder(spanName: "childSpan").setSpanKind(spanKind: .client).startSpan()
     childSpan.setAttribute(key: sampleKey, value: sampleValue)
     childSpan.end()
@@ -49,10 +50,10 @@ let jaegerCollectorAdress = "localhost"
 let jaegerExporter = JaegerSpanExporter(serviceName: "SimpleExporter", collectorAddress: jaegerCollectorAdress)
 let stdoutExporter = StdoutExporter()
 
-//let zipkinExporterOptions = ZipkinTraceExporterOptions()
-//let zipkinExporter = ZipkinTraceExporter(options: zipkinExporterOptions)
+// let zipkinExporterOptions = ZipkinTraceExporterOptions()
+// let zipkinExporter = ZipkinTraceExporter(options: zipkinExporterOptions)
 
-let spanExporter = MultiSpanExporter(spanExporters: [jaegerExporter, stdoutExporter/*, zipkinExporter*/])
+let spanExporter = MultiSpanExporter(spanExporters: [jaegerExporter, stdoutExporter /* , zipkinExporter */ ])
 
 let spanProcessor = SimpleSpanProcessor(spanExporter: spanExporter)
 OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(spanProcessor)

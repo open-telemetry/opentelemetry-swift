@@ -26,12 +26,12 @@ class TracerShimTests: XCTestCase {
 
     func testDefaultTracer() {
         _ = tracerShim.startSpan("one")
-        XCTAssertNotNil(tracerShim.tracer.activeSpan)
+        XCTAssertNotNil(OpenTelemetryContext.activeSpan)
     }
 
     func testActiveSpan() {
         let otSpan = tracerShim.startSpan("one") as! SpanShim
-        XCTAssertNotNil(tracerShim.tracer.activeSpan)
+        XCTAssertNotNil(OpenTelemetryContext.activeSpan)
         otSpan.finish()
     }
 

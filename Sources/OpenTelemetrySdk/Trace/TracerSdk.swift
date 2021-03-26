@@ -27,10 +27,6 @@ public class TracerSdk: Tracer {
         self.instrumentationLibraryInfo = instrumentationLibraryInfo
     }
 
-    public var activeSpan: Span? {
-        return ContextUtils.getCurrentSpan()
-    }
-
     public func spanBuilder(spanName: String) -> SpanBuilder {
         if sharedState.hasBeenShutdown {
             return DefaultTracer.instance.spanBuilder(spanName: spanName)
@@ -39,9 +35,5 @@ public class TracerSdk: Tracer {
                               instrumentationLibraryInfo: instrumentationLibraryInfo,
                               tracerSharedState: sharedState,
                               spanLimits: sharedState.activeSpanLimits)
-    }
-
-    @discardableResult public func setActive(_ span: Span) -> Scope {
-        return ContextUtils.withSpan(span)
     }
 }

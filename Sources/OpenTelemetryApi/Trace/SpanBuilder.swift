@@ -16,7 +16,7 @@
 import Foundation
 
 public protocol SpanBuilder: class {
-    /// Sets the parent Span to use. If not set, the value of Tracer.getCurrentSpan()
+    /// Sets the parent Span to use. If not set, the value of OpenTelemetryContext.activeSpan
     /// at startSpan() time will be used as parent.
     ///
     /// This must be used to create a Span when manual Context propagation is used
@@ -33,7 +33,7 @@ public protocol SpanBuilder: class {
     @discardableResult func setParent(_ parent: Span) -> Self
 
     /// Sets the parent SpanContext to use. If not set, the value of
-    /// Tracer.getCurrentSpan() at startSpan() time will be used as parent.
+    /// OpenTelemetryContext.activeSpan at startSpan() time will be used as parent.
     ///
     /// Similar to setParent(Span parent) but this must be used to create a
     /// Span when the parent is in a different process. This is only intended for use by RPC systems
@@ -49,7 +49,7 @@ public protocol SpanBuilder: class {
     @discardableResult func setParent(_ parent: SpanContext) -> Self
 
     /// Sets the option to become a root Span for a new trace. If not set, the value of
-    /// Tracer.getCurrentSpan() at #startSpan() time will be used as parent.
+    /// OpenTelemetryContext.activeSpan at startSpan() time will be used as parent.
     ///
     /// Observe that any previously set parent will be discarded.
     @discardableResult func setNoParent() -> Self
