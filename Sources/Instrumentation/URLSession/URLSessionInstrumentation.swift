@@ -500,7 +500,7 @@ public class URLSessionInstrumentation {
             }
         }
 
-        guard let currentSpan = tracer.activeSpan else {
+        guard let currentSpan = OpenTelemetryContext.activeSpan else {
             return headers
         }
         tracer.textFormat.inject(spanContext: currentSpan.context, carrier: &headers, setter: HeaderSetter())
