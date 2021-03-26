@@ -29,11 +29,6 @@ class LoggingTracer: Tracer {
         return LoggingSpanBuilder(tracer: self, spanName: spanName)
     }
 
-    @discardableResult func setActive(_ span: Span) -> Scope {
-        Logger.log("\(tracerName).WithSpan")
-        return OpenTelemetryContext.setActiveSpan(span)
-    }
-
     class LoggingSpanBuilder: SpanBuilder {
         private var tracer: Tracer
         private var isRootSpan: Bool = false
@@ -49,7 +44,7 @@ class LoggingTracer: Tracer {
             if spanContext == nil, !isRootSpan {
                 spanContext = OpenTelemetryContext.activeSpan?.context
             }
-            if spanContext != nil, spanContext != SpanContext.invalid {
+            if spanContext != nil {
                 return LoggingSpan(name: name, kind: .client)
             } else {
                 return DefaultTracer.instance.spanBuilder(spanName: name).startSpan()
