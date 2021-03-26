@@ -43,7 +43,7 @@ public class SpanBuilderSdk: SpanBuilder {
 
     private var startTime = Date()
 
-    public init(spanName: String,
+    init(spanName: String,
                 instrumentationLibraryInfo: InstrumentationLibraryInfo,
                 tracerSharedState: TracerSharedState,
                 spanLimits: SpanLimits)

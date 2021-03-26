@@ -16,19 +16,19 @@
 import Foundation
 
 /// Represents the shared state/config between all Tracers created by the same TracerProvider.
-public class TracerSharedState {
-    public private(set) var clock: Clock
-    public private(set) var idGenerator: IdGenerator
-    public private(set) var resource: Resource
+class TracerSharedState {
+    var clock: Clock
+    var idGenerator: IdGenerator
+    var resource: Resource
 
-    public private(set) var sampler: Sampler = ParentBasedSampler(root: Samplers.alwaysOn)
-    public private(set) var activeSpanLimits = SpanLimits()
-    public private(set) var activeSpanProcessor: SpanProcessor = NoopSpanProcessor()
-    public private(set) var hasBeenShutdown = false
+    var sampler: Sampler = ParentBasedSampler(root: Samplers.alwaysOn)
+    var activeSpanLimits = SpanLimits()
+    var activeSpanProcessor: SpanProcessor = NoopSpanProcessor()
+    var hasBeenShutdown = false
 
-    private var registeredSpanProcessors = [SpanProcessor]()
+    var registeredSpanProcessors = [SpanProcessor]()
 
-    public init(clock: Clock, idGenerator: IdGenerator, resource: Resource) {
+    init(clock: Clock, idGenerator: IdGenerator, resource: Resource) {
         self.clock = clock
         self.idGenerator = idGenerator
         self.resource = resource
@@ -36,13 +36,13 @@ public class TracerSharedState {
 
     /// Adds a new SpanProcessor
     /// - Parameter spanProcessor:  the new SpanProcessor to be added.
-    public func addSpanProcessor(_ spanProcessor: SpanProcessor) {
+    func addSpanProcessor(_ spanProcessor: SpanProcessor) {
         registeredSpanProcessors.append(spanProcessor)
         activeSpanProcessor = MultiSpanProcessor(spanProcessors: registeredSpanProcessors)
     }
 
     /// Stops tracing, including shutting down processors and set to true isStopped.
-    public func stop() {
+    func stop() {
         if hasBeenShutdown {
             return
         }
@@ -50,16 +50,16 @@ public class TracerSharedState {
         hasBeenShutdown = true
     }
 
-    internal func setActiveSpanLimits(_ activeSpanLimits: SpanLimits) {
+    func setActiveSpanLimits(_ activeSpanLimits: SpanLimits) {
         self.activeSpanLimits = activeSpanLimits
     }
 
-    public func setSampler(_ sampler: Sampler) {
+    func setSampler(_ sampler: Sampler) {
         self.sampler = sampler
     }
 
     // Sets the global sampler probability
-    public func setSamplerProbability(samplerProbability: Double) {
+    func setSamplerProbability(samplerProbability: Double) {
         if samplerProbability >= 1 {
             return setSampler(Samplers.alwaysOn)
         } else if samplerProbability <= 0 {
