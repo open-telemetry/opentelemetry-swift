@@ -19,10 +19,10 @@ import OpenTelemetryApi
 class LoggingTracer: Tracer {
     let tracerName = "LoggingTracer"
     public var activeSpan: Span? {
-        return ContextUtils.getCurrentSpan()
+        return OpenTelemetryContext.activeSpan
     }
 
-    var binaryFormat: BinaryFormattable = BinaryTraceContextFormat()
+    var binaryFormat: BinaryFormattable = LoggingBinaryFormat()
     var textFormat: TextMapPropagator = W3CTraceContextPropagator()
 
     func spanBuilder(spanName: String) -> SpanBuilder {
@@ -31,7 +31,7 @@ class LoggingTracer: Tracer {
 
     @discardableResult func setActive(_ span: Span) -> Scope {
         Logger.log("\(tracerName).WithSpan")
-        return ContextUtils.withSpan(span)
+        return OpenTelemetryContext.setActiveSpan(span)
     }
 
     class LoggingSpanBuilder: SpanBuilder {
@@ -46,10 +46,14 @@ class LoggingTracer: Tracer {
         }
 
         func startSpan() -> Span {
-            if spanContext == nil && !isRootSpan {
-                spanContext = tracer.activeSpan?.context
+            if spanContext == nil, !isRootSpan {
+                spanContext = OpenTelemetryContext.activeSpan?.context
             }
-            return spanContext != nil && spanContext != SpanContext.invalid ? LoggingSpan(name: name, kind: .client) : DefaultSpan.random()
+            if spanContext != nil, spanContext != SpanContext.invalid {
+                return LoggingSpan(name: name, kind: .client)
+            } else {
+                return DefaultTracer.instance.spanBuilder(spanName: name).startSpan()
+            }
         }
 
         func setParent(_ parent: Span) -> Self {
@@ -74,7 +78,7 @@ class LoggingTracer: Tracer {
         func addLink(spanContext: SpanContext, attributes: [String: AttributeValue]) -> Self {
             return self
         }
-        
+
         func setSpanKind(spanKind: SpanKind) -> Self {
             return self
         }

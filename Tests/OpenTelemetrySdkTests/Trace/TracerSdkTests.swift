@@ -33,7 +33,7 @@ class TracerSdkTests: XCTestCase {
     }
 
     func testDefaultGetCurrentSpan() {
-        XCTAssertNil(tracer.activeSpan)
+        XCTAssertNil(OpenTelemetryContext.activeSpan)
     }
 
     func testDefaultSpanBuilder() {
@@ -44,25 +44,21 @@ class TracerSdkTests: XCTestCase {
         XCTAssertTrue(tracer.textFormat is W3CTraceContextPropagator)
     }
 
-    func testDefaultBinaryFormat() {
-        XCTAssertTrue(tracer.binaryFormat is BinaryTraceContextFormat)
-    }
-
     func testGetCurrentSpan() {
-        XCTAssertNil(tracer.activeSpan)
+        XCTAssertNil(OpenTelemetryContext.activeSpan)
         // Make sure context is detached even if test fails.
         // TODO: Check context bahaviour
 //        let origContext = ContextUtils.withSpan(span)
 //        XCTAssertTrue(tracer.currentSpan === span)
-//        XCTAssertTrue(tracer.currentSpan is DefaultSpan)
+//        XCTAssertTrue(tracer.currentSpan is PropagatedSpan)
     }
 
     func testGetCurrentSpan_WithSpan() {
-        XCTAssertNil(tracer.activeSpan)
-        var ws = tracer.setActive(span)
-        XCTAssertTrue(tracer.activeSpan === span)
+        XCTAssertNil(OpenTelemetryContext.activeSpan)
+        var ws = OpenTelemetryContext.setActiveSpan(span)
+        XCTAssertTrue(OpenTelemetryContext.activeSpan === span)
         ws.close()
-        XCTAssertNil(tracer.activeSpan)
+        XCTAssertNil(OpenTelemetryContext.activeSpan)
     }
 
     func testGetInstrumentationLibraryInfo() {

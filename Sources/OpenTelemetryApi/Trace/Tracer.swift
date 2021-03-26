@@ -20,14 +20,7 @@ import Foundation
 /// offers APIs to facilitate both usages.
 /// The automatic context propagation is done using os.activity
 public protocol Tracer: AnyObject {
-    /// Gets the active Span from the current Context.
-    var activeSpan: Span? { get }
-
     /// Returns a SpanBuilder to create and start a new Span
     /// - Parameter spanName: The name of the returned Span.
     func spanBuilder(spanName: String) -> SpanBuilder
-
-    /// Associates the span with the current context.
-    /// - Parameter span: Span to associate with the current context.
-    @discardableResult func setActive(_ span: Span) -> Scope
 }

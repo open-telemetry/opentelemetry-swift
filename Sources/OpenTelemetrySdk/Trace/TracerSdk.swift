@@ -18,18 +18,13 @@ import OpenTelemetryApi
 
 /// TracerSdk is SDK implementation of Tracer.
 public class TracerSdk: Tracer {
-    public let binaryFormat: BinaryFormattable = BinaryTraceContextFormat()
     public let textFormat: TextMapPropagator = W3CTraceContextPropagator()
-    public var sharedState: TracerSharedState
-    public var instrumentationLibraryInfo: InstrumentationLibraryInfo
+    public let instrumentationLibraryInfo: InstrumentationLibraryInfo
+    var sharedState: TracerSharedState
 
-    public init(sharedState: TracerSharedState, instrumentationLibraryInfo: InstrumentationLibraryInfo) {
+    init(sharedState: TracerSharedState, instrumentationLibraryInfo: InstrumentationLibraryInfo) {
         self.sharedState = sharedState
         self.instrumentationLibraryInfo = instrumentationLibraryInfo
-    }
-
-    public var activeSpan: Span? {
-        return ContextUtils.getCurrentSpan()
     }
 
     public func spanBuilder(spanName: String) -> SpanBuilder {
@@ -40,9 +35,5 @@ public class TracerSdk: Tracer {
                               instrumentationLibraryInfo: instrumentationLibraryInfo,
                               tracerSharedState: sharedState,
                               spanLimits: sharedState.activeSpanLimits)
-    }
-
-    @discardableResult public func setActive(_ span: Span) -> Scope {
-        return ContextUtils.withSpan(span)
     }
 }

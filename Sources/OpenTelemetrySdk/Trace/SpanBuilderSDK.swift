@@ -43,7 +43,7 @@ public class SpanBuilderSdk: SpanBuilder {
 
     private var startTime = Date()
 
-    public init(spanName: String,
+    init(spanName: String,
                 instrumentationLibraryInfo: InstrumentationLibraryInfo,
                 tracerSharedState: TracerSharedState,
                 spanLimits: SpanLimits)
@@ -135,7 +135,7 @@ public class SpanBuilderSdk: SpanBuilder {
                                              traceState: traceState)
 
         if !samplingDecision.isSampled {
-            return DefaultSpan(context: spanContext, kind: spanKind)
+            return DefaultTracer.instance.spanBuilder(spanName: spanName).startSpan()
         }
 
         attributes.updateValues(attributes: samplingDecision.attributes)
@@ -165,7 +165,7 @@ public class SpanBuilderSdk: SpanBuilder {
     }
 
     private func getParentContext(parentType: ParentType, explicitParent: Span?, remoteParent: SpanContext?) -> SpanContext? {
-        let currentSpan = ContextUtils.getCurrentSpan()
+        let currentSpan = OpenTelemetryContext.activeSpan
         switch parentType {
         case .noParent:
             return nil
@@ -181,7 +181,7 @@ public class SpanBuilderSdk: SpanBuilder {
     private static func getParentSpan(parentType: ParentType, explicitParent: Span?) -> Span? {
         switch parentType {
         case .currentSpan:
-            return ContextUtils.getCurrentSpan()
+            return OpenTelemetryContext.activeSpan
         case .explicitParent:
             return explicitParent
         default:
