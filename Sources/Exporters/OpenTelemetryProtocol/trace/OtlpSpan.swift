@@ -15,8 +15,7 @@
 
 import Foundation
 
-import Foundation
-
+// Model class
 struct OtlpSpan: Codable {
     var resourceSpans: [ResourceSpan]?
     
