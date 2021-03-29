@@ -15,7 +15,7 @@
 
 import Foundation
 
-@testable import OtlpTraceJsonExporter
+@testable import OpenTelemetryProtocolExporter
 @testable import OpenTelemetrySdk
 @testable import OpenTelemetryApi
 import XCTest
@@ -32,13 +32,6 @@ final class OtlpTraceJsonExporterTests: XCTestCase {
         exporter = OtlpTraceJsonExporter()
         tracerSdkFactory.addSpanProcessor(SimpleSpanProcessor(spanExporter: exporter))
         tracer = tracerSdkFactory.get(instrumentationName: "OtlpTraceJsonExporterTests")
-    }
-    
-    // MARK: - tearDown()
-    override func tearDown() {
-        tracerSdkFactory = nil
-        tracer = nil
-        exporter = nil
     }
     
     // MARK: - Unit Tests
