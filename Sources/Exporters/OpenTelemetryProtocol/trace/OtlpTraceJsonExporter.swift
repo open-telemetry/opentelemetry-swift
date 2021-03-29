@@ -18,9 +18,11 @@ import OpenTelemetrySdk
 
 public class OtlpTraceJsonExporter: SpanExporter {
     
+    // MARK: - Variables declaration
     private var exportedSpans = [OtlpSpan]()
     private var isRunning: Bool = true
     
+    // MARK: - Json Exporter helper methods
     func getExportedSpans() -> [OtlpSpan] {
         exportedSpans
     }
