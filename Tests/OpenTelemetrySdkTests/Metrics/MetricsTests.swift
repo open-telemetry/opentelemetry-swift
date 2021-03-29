@@ -20,7 +20,7 @@ import XCTest
 final class MetricsTests: XCTestCase {
     func testCounterSendsAggregateToRegisteredProcessor() {
         let testProcessor = TestMetricProcessor()
-        let meter = MeterSdkProvider(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
+        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
         let testCounter = meter.createIntCounter(name: "testCounter")
 
         let labels1 = ["dim1": "value1"]
@@ -62,7 +62,7 @@ final class MetricsTests: XCTestCase {
 
     func testMeasureSendsAggregateToRegisteredProcessor() {
         let testProcessor = TestMetricProcessor()
-        let meter = MeterSdkProvider(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
+        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
         let testMeasure = meter.createIntMeasure(name: "testMeasure")
 
         let labels1 = ["dim1": "value1"]
@@ -101,7 +101,7 @@ final class MetricsTests: XCTestCase {
 
     func testIntObserverSendsAggregateToRegisteredProcessor() {
         let testProcessor = TestMetricProcessor()
-        let meter = MeterSdkProvider(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
+        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
         _ = meter.createIntObserver(name: "testObserver", callback: callbackInt)
 
         meter.collect()
@@ -138,7 +138,7 @@ final class MetricsTests: XCTestCase {
 
     func testDoubleObserverSendsAggregateToRegisteredProcessor() {
         let testProcessor = TestMetricProcessor()
-        let meter = MeterSdkProvider(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
+        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
         _ = meter.createDoubleObserver(name: "testObserver", callback: callbackDouble)
 
         meter.collect()

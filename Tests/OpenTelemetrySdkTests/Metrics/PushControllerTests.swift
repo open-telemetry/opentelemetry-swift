@@ -32,13 +32,13 @@ final class PushControllerTests: XCTestCase {
         })
         let testProcessor = TestMetricProcessor()
 
-        let meterProvider = MeterSdkProvider(metricProcessor: testProcessor,
+        let meterProvider = MeterProviderSdk(metricProcessor: testProcessor,
                                              metricExporter: NoopMetricExporter())
 
         // Setup 2 meters whose Collect will increment the collect count.
         var meter1CollectCount = 0
         var meter2CollectCount = 0
-        let meterSharedState = MeterSharedState(metricProcessor: testProcessor, metricPushInterval: MeterSdkProvider.defaultPushInterval, resource: Resource())
+        let meterSharedState = MeterSharedState(metricProcessor: testProcessor, metricPushInterval: MeterProviderSdk.defaultPushInterval, resource: Resource())
         
         let meterInstrumentationLibrary1 = InstrumentationLibraryInfo(name:"meter1")
 
