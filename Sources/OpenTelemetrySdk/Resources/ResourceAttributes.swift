@@ -15,15 +15,21 @@
 
 import Foundation
 
-public enum ResourceConstants: String {
-     /// Logical name of the service. MUST be the same for all instances of horizontally scaled services.
-    case serviceName = "service.name";
+public enum ResourceAttributes: String {
+    /// Logical name of the service. MUST be the same for all instances of horizontally scaled services.
+    case serviceName = "service.name"
     /// A namespace for `service.name`. A string value having a meaning that helps to distinguish a group of services,
-    case serviceNamespace = "service.namespace";
+    case serviceNamespace = "service.namespace"
     /// The string ID of the service instance. MUST be unique for each instance of the same
     case serviceInstance = "service.instance.id"
     /// The version string of the service API or implementation.
     case serviceVersion = "service.version"
+    /// The name of the telemetry SDK
+    case telemetrySdkName = "telemetry.sdk.name"
+    /// The language of the telemetry SDK.
+    case telemetrySdkLanguage = "telemetry.sdk.language"
+    /// The version string of the telemetry SDK.
+    case telemetrySdkVersion = "telemetry.sdk.version"
     /// The name of the telemetry library.
     case libraryName = "library.name"
     /// The language of telemetry library and of the code instrumented with it.
@@ -68,10 +74,10 @@ public enum ResourceConstants: String {
     case cloudZone = "cloud.zone"
 }
 
-public func ==(left: ResourceConstants, right: String) -> Bool {
+public func ==(left: ResourceAttributes, right: String) -> Bool {
     return left.rawValue == right
 }
 
-public func ==(left: String, right: ResourceConstants) -> Bool {
+public func ==(left: String, right: ResourceAttributes) -> Bool {
     return left == right.rawValue
 }
