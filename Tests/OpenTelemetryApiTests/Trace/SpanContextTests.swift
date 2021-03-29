@@ -40,14 +40,7 @@ final class SpanContextTests: XCTestCase {
         remote = SpanContext.createFromRemoteParent(traceId: TraceId(fromBytes: secondTraceIdBytes), spanId: SpanId(fromBytes: secondSpanIdBytes), traceFlags: TraceFlags().settingIsSampled(true), traceState: emptyTraceState)
     }
 
-    func testInvalidSpanContext() {
-        XCTAssertEqual(SpanContext.invalid.traceId, TraceId.invalid)
-        XCTAssertEqual(SpanContext.invalid.spanId, SpanId.invalid)
-        XCTAssertEqual(SpanContext.invalid.traceFlags, TraceFlags())
-    }
-
     func testIsValid() {
-        XCTAssertFalse(SpanContext.invalid.isValid)
         XCTAssertFalse(SpanContext.create(traceId: TraceId(fromBytes: firstTraceIdBytes), spanId: SpanId.invalid, traceFlags: TraceFlags(), traceState: emptyTraceState).isValid)
         XCTAssertFalse(SpanContext.create(traceId: TraceId.invalid, spanId: SpanId.invalid, traceFlags: TraceFlags(), traceState: emptyTraceState).isValid)
         XCTAssertFalse(SpanContext.create(traceId: TraceId.invalid, spanId: SpanId(fromBytes: firstSpanIdBytes), traceFlags: TraceFlags(), traceState: emptyTraceState).isValid)

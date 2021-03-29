@@ -29,14 +29,10 @@ class PropagatedSpanBuilder: SpanBuilder {
         if spanContext == nil, !isRootSpan {
             spanContext = OpenTelemetryContext.activeSpan?.context
         }
-        if spanContext != nil && spanContext != SpanContext.invalid {
-            return PropagatedSpan(context: spanContext!, kind: .client)
-        } else {
-            return PropagatedSpan(context: SpanContext.create(traceId: TraceId.random(),
-                                                              spanId: SpanId.random(),
-                                                              traceFlags: TraceFlags(),
-                                                              traceState: TraceState()))
-        }
+        return PropagatedSpan(context: spanContext ?? SpanContext.create(traceId: TraceId.random(),
+                                                                         spanId: SpanId.random(),
+                                                                         traceFlags: TraceFlags(),
+                                                                         traceState: TraceState()))
     }
 
     @discardableResult public func setParent(_ parent: Span) -> Self {
