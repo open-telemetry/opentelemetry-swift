@@ -26,16 +26,24 @@ class URLSessionLogger {
             return
         }
 
-        var attributes: [String: String]
+        var attributes = [String: String]()
 
-        attributes = [
-            SemanticAttributes.httpMethod.rawValue: request.httpMethod ?? "unknown_method",
-            SemanticAttributes.httpURL.rawValue: request.url?.absoluteString ?? "unknown_url",
-            SemanticAttributes.httpScheme.rawValue: request.url?.scheme ?? "unknown_scheme",
-        ]
+        attributes[SemanticAttributes.httpMethod.rawValue] = request.httpMethod ?? "unknown_method"
+
+        if let requestURL = request.url {
+            attributes[SemanticAttributes.httpURL.rawValue] = requestURL.absoluteString
+        }
+
+        if let requestURLPath = request.url?.path {
+            attributes[SemanticAttributes.httpTarget.rawValue] = requestURLPath
+        }
 
         if let host = request.url?.host {
             attributes[SemanticAttributes.netPeerName.rawValue] = host
+        }
+
+        if let requestScheme = request.url?.scheme {
+            attributes[SemanticAttributes.httpScheme.rawValue] = requestScheme
         }
 
         if let port = request.url?.port {
@@ -93,8 +101,8 @@ class URLSessionLogger {
 
     static func statusForStatusCode(code: Int) -> Status {
         switch code {
-            case 200 ... 399:
-                return .ok
+            case 100 ... 399:
+                return .unset
             default:
                 return .error(description: String(code))
         }
