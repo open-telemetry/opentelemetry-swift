@@ -120,7 +120,7 @@ class B3PropagatorTests: XCTestCase {
         invalidHeaders[B3Propagator.spanIdHeader] = spanIdHexString
         invalidHeaders[B3Propagator.sampledHeader] = B3Propagator.trueInt
 
-        XCTAssertFalse(b3Propagator.extract(carrier: invalidHeaders, getter: getter)!.isValid)
+        XCTAssertNil(b3Propagator.extract(carrier: invalidHeaders, getter: getter))
     }
 
     func testExtract_InvalidTraceId_Size() {
@@ -129,7 +129,7 @@ class B3PropagatorTests: XCTestCase {
         invalidHeaders[B3Propagator.spanIdHeader] = spanIdHexString
         invalidHeaders[B3Propagator.sampledHeader] = B3Propagator.trueInt
 
-        XCTAssertFalse(b3Propagator.extract(carrier: invalidHeaders, getter: getter)!.isValid)
+        XCTAssertNil(b3Propagator.extract(carrier: invalidHeaders, getter: getter))
     }
 
     func testExtract_InvalidSpanId() {
@@ -138,7 +138,7 @@ class B3PropagatorTests: XCTestCase {
         invalidHeaders[B3Propagator.spanIdHeader] = "abcdefghijklmnop"
         invalidHeaders[B3Propagator.sampledHeader] = B3Propagator.trueInt
 
-        XCTAssertFalse(b3Propagator.extract(carrier: invalidHeaders, getter: getter)!.isValid)
+        XCTAssertNil(b3Propagator.extract(carrier: invalidHeaders, getter: getter))
     }
 
     func testExtract_InvalidSpanId_Size() {
@@ -147,7 +147,7 @@ class B3PropagatorTests: XCTestCase {
         invalidHeaders[B3Propagator.spanIdHeader] = spanIdHexString + "00"
         invalidHeaders[B3Propagator.sampledHeader] = B3Propagator.trueInt
 
-        XCTAssertFalse(b3Propagator.extract(carrier: invalidHeaders, getter: getter)!.isValid)
+        XCTAssertNil(b3Propagator.extract(carrier: invalidHeaders, getter: getter))
     }
 
     func testInject_SampledContext_SingleHeader() {
@@ -195,42 +195,42 @@ class B3PropagatorTests: XCTestCase {
     func testExtract_Empty_SingleHeader() {
         var invalidHeaders = [String: String]()
         invalidHeaders[B3Propagator.combinedHeader] = ""
-        XCTAssertFalse(singleHeaderB3Propagator.extract(carrier: invalidHeaders, getter: getter)!.isValid)
+        XCTAssertNil(singleHeaderB3Propagator.extract(carrier: invalidHeaders, getter: getter))
     }
 
     func testExtract_InvalidTraceId_SingleHeader() {
         var invalidHeaders = [String: String]()
         invalidHeaders[B3Propagator.combinedHeader] = "abcdefghijklmnopabcdefghijklmnop-\(spanIdHexString)-\(B3Propagator.falseInt)"
-        XCTAssertFalse(singleHeaderB3Propagator.extract(carrier: invalidHeaders, getter: getter)!.isValid)
+        XCTAssertNil(singleHeaderB3Propagator.extract(carrier: invalidHeaders, getter: getter))
     }
 
     func testExtract_InvalidTraceId_Size_SingleHeader() {
         var invalidHeaders = [String: String]()
         invalidHeaders[B3Propagator.combinedHeader] = "\(traceIdHexString)00-\(spanIdHexString)-\(B3Propagator.falseInt)"
-        XCTAssertFalse(singleHeaderB3Propagator.extract(carrier: invalidHeaders, getter: getter)!.isValid)
+        XCTAssertNil(singleHeaderB3Propagator.extract(carrier: invalidHeaders, getter: getter))
     }
 
     func testExtract_InvalidSpanId_SingleHeader() {
         var invalidHeaders = [String: String]()
         invalidHeaders[B3Propagator.combinedHeader] = "\(traceIdHexString)-abcdefghijklmnop-\(B3Propagator.falseInt)"
-        XCTAssertFalse(singleHeaderB3Propagator.extract(carrier: invalidHeaders, getter: getter)!.isValid)
+        XCTAssertNil(singleHeaderB3Propagator.extract(carrier: invalidHeaders, getter: getter))
     }
 
     func testExtract_InvalidSpanId_Size_SingleHeader() {
         var invalidHeaders = [String: String]()
         invalidHeaders[B3Propagator.combinedHeader] = "\(traceIdHexString)-\(spanIdHexString)00-\(B3Propagator.falseInt)"
-        XCTAssertFalse(singleHeaderB3Propagator.extract(carrier: invalidHeaders, getter: getter)!.isValid)
+        XCTAssertNil(singleHeaderB3Propagator.extract(carrier: invalidHeaders, getter: getter))
     }
 
     func testExtract_TooFewParts_SingleHeader() {
         var invalidHeaders = [String: String]()
         invalidHeaders[B3Propagator.combinedHeader] = traceIdHexString
-        XCTAssertFalse(singleHeaderB3Propagator.extract(carrier: invalidHeaders, getter: getter)!.isValid)
+        XCTAssertNil(singleHeaderB3Propagator.extract(carrier: invalidHeaders, getter: getter))
     }
 
     func testExtract_TooManyParts_SingleHeader() {
         var invalidHeaders = [String: String]()
         invalidHeaders[B3Propagator.combinedHeader] = "\(traceIdHexString)-\(spanIdHexString)-\(B3Propagator.falseInt)-extra-extra"
-        XCTAssertFalse(singleHeaderB3Propagator.extract(carrier: invalidHeaders, getter: getter)!.isValid)
+        XCTAssertNil(singleHeaderB3Propagator.extract(carrier: invalidHeaders, getter: getter))
     }
 }

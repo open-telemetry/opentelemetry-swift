@@ -18,7 +18,7 @@ import Foundation
 /// A class that represents a span context. A span context contains the state that must propagate to
 /// child Spans and across process boundaries. It contains the identifiers race_id and span_id
 /// associated with the Span and a set of options.
-public final class SpanContext: Equatable, CustomStringConvertible, Hashable {
+public struct SpanContext: Equatable, CustomStringConvertible, Hashable {
     /// The trace identifier associated with this SpanContext
     public private(set) var traceId: TraceId
 
@@ -33,12 +33,6 @@ public final class SpanContext: Equatable, CustomStringConvertible, Hashable {
 
     /// The traceState associated with this SpanContext
     public let isRemote: Bool
-
-    /// The invalid SpanContext that can be used for no-op operations.
-    public static let invalid = SpanContext(traceId: TraceId.invalid,
-                                            spanId: SpanId.invalid,
-                                            traceFlags: TraceFlags(),
-                                            traceState: TraceState(), isRemote: false)
 
     private init(traceId: TraceId, spanId: SpanId, traceFlags: TraceFlags, traceState: TraceState, isRemote: Bool) {
         self.traceId = traceId

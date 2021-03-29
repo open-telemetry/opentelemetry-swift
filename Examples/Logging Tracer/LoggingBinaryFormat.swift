@@ -19,7 +19,7 @@ import OpenTelemetryApi
 struct LoggingBinaryFormat: BinaryFormattable {
     func fromByteArray(bytes: [UInt8]) -> SpanContext? {
         Logger.log("LoggingBinaryFormat.FromByteArray(...)")
-        return SpanContext.invalid
+        return nil
     }
 
     func toByteArray(spanContext: SpanContext) -> [UInt8] {

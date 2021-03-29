@@ -39,6 +39,13 @@ public class StdoutExporter: SpanExporter {
                 print("Start: \(span.startTime.timeIntervalSince1970.toNanoseconds)")
                 print("Duration: \(span.endTime.timeIntervalSince(span.startTime).toNanoseconds) nanoseconds")
                 print("Attributes: \(span.attributes)")
+                if !span.events.isEmpty {
+                    print("Events:")
+                    for event in span.events {
+                        let ts = event.timestamp.timeIntervalSince(span.startTime).toNanoseconds
+                        print("  \(event.name) Time: +\(ts) Attributes: \(event.attributes)")
+                    }
+                }
                 print("------------------\n")
             } else {
                 do {

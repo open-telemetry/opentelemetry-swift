@@ -245,6 +245,15 @@ class RecordEventsReadableSpanTest: XCTestCase {
         let spanData = span.toSpanData()
         XCTAssertEqual(spanData.events.count, 2)
     }
+    
+    func testWithInitializedAttributes() {
+        
+        let attributes =  ["hello" : AttributeValue.string("world")]
+        
+        let span = createTestSpan(attributes: attributes)
+        
+        XCTAssertEqual(attributes.count, span.totalAttributeCount, "total attributes not counted properly")
+    }
 
     func testDroppingAttributes() {
         let maxNumberOfAttributes = 8
@@ -391,7 +400,8 @@ class RecordEventsReadableSpanTest: XCTestCase {
                                 hasRemoteParent: false,
                                 hasEnded: true,
                                 totalRecordedEvents: 2,
-                                totalRecordedLinks: links.count)
+                                totalRecordedLinks: links.count,
+                                totalAttributeCount: 1)
 
         let result = readableSpan.toSpanData()
         XCTAssertEqual(expected, result)
