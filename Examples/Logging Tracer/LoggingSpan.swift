@@ -19,15 +19,18 @@ import OpenTelemetryApi
 class LoggingSpan: Span {
     var name: String
     var kind: SpanKind
-    var context: SpanContext = SpanContext.invalid
+    var context: SpanContext
     var isRecording: Bool = true
     var status: Status = .unset
     var scope: Scope?
 
-
     public init(name: String, kind: SpanKind) {
         self.name = name
         self.kind = kind
+        self.context = SpanContext.create(traceId: TraceId.random(),
+                                          spanId: SpanId.random(),
+                                          traceFlags: TraceFlags(),
+                                          traceState: TraceState())
     }
 
     public var description: String {

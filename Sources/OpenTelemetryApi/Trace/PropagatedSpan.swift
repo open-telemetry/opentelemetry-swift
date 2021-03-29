@@ -36,7 +36,11 @@ class PropagatedSpan: Span {
 
     /// Returns a DefaultSpan with an invalid SpanContext.
     convenience init() {
-        self.init(context: SpanContext.invalid, kind: .client)
+        let invalidContext = SpanContext.create(traceId: TraceId(),
+                           spanId: SpanId(),
+                           traceFlags: TraceFlags(),
+                           traceState: TraceState())
+        self.init(context: invalidContext, kind: .client)
     }
 
     /// Creates an instance of this class with the SpanContext.
