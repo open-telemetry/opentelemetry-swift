@@ -14,7 +14,7 @@
 //
 
 @testable import OpenTelemetryApi
-import OpenTelemetrySdk
+@testable import OpenTelemetrySdk
 import XCTest
 
 import os.activity
