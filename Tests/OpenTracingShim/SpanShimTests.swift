@@ -14,7 +14,7 @@
 //
 
 import OpenTelemetryApi
-import OpenTelemetrySdk
+@testable import OpenTelemetrySdk
 @testable import OpenTracingShim
 import XCTest
 

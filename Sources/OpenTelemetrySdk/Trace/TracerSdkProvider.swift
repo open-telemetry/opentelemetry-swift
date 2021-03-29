@@ -20,18 +20,35 @@ import OpenTelemetryApi
 public class TracerSdkProvider: TracerProvider {
     private var tracerProvider = [InstrumentationLibraryInfo: TracerSdk]()
     internal var sharedState: TracerSharedState
+    internal static let emptyName = "unknown"
 
     /// Returns a new TracerSdkProvider with default Clock, IdGenerator and Resource.
-    public init(clock: Clock = MillisClock(),
+    init(clock: Clock = MillisClock(),
                 idGenerator: IdGenerator = RandomIdGenerator(),
-                resource: Resource = EnvVarResource.resource)
+                resource: Resource = EnvVarResource.resource,
+                spanLimits: SpanLimits = SpanLimits(),
+                sampler: Sampler = ParentBasedSampler(root: Samplers.alwaysOn),
+                spanProcessors: [SpanProcessor] = [NoopSpanProcessor()]
+                )
     {
-        sharedState = TracerSharedState(clock: clock, idGenerator: idGenerator, resource: resource)
+        sharedState = TracerSharedState(clock: clock,
+                                        idGenerator: idGenerator,
+                                        resource: resource,
+                                        spanLimits: spanLimits,
+                                        sampler: sampler,
+                                        spanProcessors: spanProcessors)
     }
 
     public func get(instrumentationName: String, instrumentationVersion: String? = nil) -> Tracer {
         if sharedState.hasBeenShutdown {
             return DefaultTracer.instance
+        }
+
+        var instrumentationName = instrumentationName
+        if instrumentationName.isEmpty {
+            // Per the spec, empty is "invalid"
+            print("Tracer requested without instrumentation name.");
+            instrumentationName = TracerSdkProvider.emptyName
         }
         let instrumentationLibraryInfo = InstrumentationLibraryInfo(name: instrumentationName, version: instrumentationVersion ?? "")
         if let tracer = tracerProvider[instrumentationLibraryInfo] {
