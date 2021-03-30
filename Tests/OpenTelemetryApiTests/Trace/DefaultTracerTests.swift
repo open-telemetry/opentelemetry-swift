@@ -72,21 +72,21 @@ final class DefaultTracerTests: XCTestCase {
 
     func testTestSpanContextPropagationExplicitParent() {
         let span = defaultTracer.spanBuilder(spanName: spanName).setParent(spanContext).startSpan()
-        XCTAssert(span.context === spanContext)
+        XCTAssert(span.context == spanContext)
     }
 
     func testTestSpanContextPropagation() {
         let parent = PropagatedSpan(context: spanContext)
 
         let span = defaultTracer.spanBuilder(spanName: spanName).setParent(parent).startSpan()
-        XCTAssert(span.context === spanContext)
+        XCTAssert(span.context == spanContext)
     }
 
     func testTestSpanContextPropagationCurrentSpan() {
         let parent = PropagatedSpan(context: spanContext)
         var scope = OpenTelemetryContext.setActiveSpan(parent)
         let span = defaultTracer.spanBuilder(spanName: spanName).startSpan()
-        XCTAssert(span.context === spanContext)
+        XCTAssert(span.context == spanContext)
         scope.close()
     }
 }

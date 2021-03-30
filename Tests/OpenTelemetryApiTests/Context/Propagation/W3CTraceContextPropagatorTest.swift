@@ -59,7 +59,11 @@ class W3CTraceContextPropagatorTest: XCTestCase {
 
     func testInject_Nothing() {
         var carrier = [String: String]()
-        httpTraceContext.inject(spanContext: SpanContext.invalid, carrier: &carrier, setter: setter)
+        let invalidContext = SpanContext.create(traceId: TraceId(),
+                                                spanId: SpanId(),
+                                                traceFlags: TraceFlags(),
+                                                traceState: TraceState())
+        httpTraceContext.inject(spanContext: invalidContext, carrier: &carrier, setter: setter)
         XCTAssertEqual(carrier.count, 0)
     }
 
