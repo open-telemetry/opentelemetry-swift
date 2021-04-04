@@ -104,7 +104,7 @@ public enum ResourceConstants: String {
     /// The name of the cluster that the pod is running in.
     case k8sCluster = "k8s.cluster.name"
     /// The name of the Node
-    case k8sNodeName = "k8s.cluster.name"
+    case k8sNodeName = "k8s.node.name"
     /// The UID of the Node
     case k8sNodeUid = "k8s.node.uid"
     /// The name of the namespace that the pod is running in.

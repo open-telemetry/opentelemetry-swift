@@ -166,8 +166,6 @@ public enum SemanticAttributes: String {
     case dbConnectionString = "db.connection_string"
     /// If no tech-specific attribute is defined, this attribute is used to report the name of the database being accessed. For commands that switch the database, this should be set to the target database (even if the command fails).
     case dbName = "db.name"
-    /// The database statement being executed.
-    case dbStatement = "db.statement"
     /// The name of the operation being executed, e.g. the MongoDB command name such as findAndModify, or the SQL keyword
     case dbOperation = "db.operation"
 
