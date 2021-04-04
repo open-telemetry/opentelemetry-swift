@@ -19,6 +19,15 @@ public enum SemanticAttributes: String {
     // MARK: General network connection attributes
 
     /// Transport protocol used.
+    ///
+    /// **MUST** be one of the following:
+    /// - IP.TCP
+    /// - IP.UDP
+    /// - IP: Another IP-based protocol.
+    /// - Unix: Unix Domain socket.
+    /// - pipe: Named or anonymous pipe.
+    /// - inproc: In-process communication.
+    /// - other: Something else (non IP-based).
     case netTransport = "net.transport"
     /// Remote address of the peer (dotted decimal for IPv4 or RFC5952 for IPv6).
     case netPeerIP = "net.peer.ip"
@@ -26,13 +35,18 @@ public enum SemanticAttributes: String {
     case netPeerPort = "net.peer.port"
     /// Remote hostname or similar.
     case netPeerName = "net.peer.name"
-    /// Like net.peer.ip but for the host IP. Useful in case of a multi-IP host.
+    /// Like `net.peer.ip` but for the host IP. Useful in case of a multi-IP host.
     case netHostIP = "net.host.ip"
-    /// Like net.peer.port but for the host port.
+    /// Like `net.peer.port` but for the host port.
     case netHostPort = "net.host.port"
     /// Local hostname or similar.
     case netHostName = "net.host.name"
 
+    // MARK: General remote service attributes
+    
+    /// The `service.name` of the remote service. **SHOULD** be equal to the actual `service.name` resource attribute of the remote service if any.
+    case peerService = "peer.service"
+    
     // MARK: General identity attributes
 
     /// Username or client_id extracted from the access token or Authorization header in the inbound request from outside the system.
@@ -43,6 +57,24 @@ public enum SemanticAttributes: String {
     /// Access Token or an attribute value in a SAML 2.0 Assertion.
     case enduserScope = "enduser.scope"
 
+    // MARK: General thread attributes
+
+    /// Current "managed" thread ID (as opposed to OS thread ID).
+    case threadId = "thread.id"
+    /// Current thread name.
+    case threadName = "thread.name"
+    
+    // MARK: Source Code Attributes
+    
+    /// The method or function name, or equivalent (usually rightmost part of the code unit's name).
+    case codeFunction = "code.function"
+    /// The "namespace" within which code.function is defined. Usually the qualified class or module name, such that code.namespace + some separator + code.function form a unique identifier for the code unit.
+    case codeNamespace = "code.namespace"
+    /// The source code file name that identifies the code unit as uniquely as possible (preferably an absolute file path).
+    case codeFilePath = "code.filepath"
+    /// The line number in code.filepath best representing the operation. It SHOULD point within the code unit named in code.function.
+    case codeLineNumber = "code.lineno"
+    
     // MARK: HTTP attributes
 
     /// HTTP request method. E.g. "GET".
@@ -69,11 +101,25 @@ public enum SemanticAttributes: String {
     case httpRoute = "http.route"
     /// The IP address of the original client behind all proxies, if known.
     case httpClientIP = "http.client_ip"
+    /// The size of the request payload body in bytes. This is the number of bytes transferred excluding headers and is often, but not always, present as the Content-Length header. For requests using transport encoding, this should be the compressed size.
+    case httpRequestContentLength = "http.request_content_length"
+    /// The size of the uncompressed request payload body after transport decoding. Not set if transport encoding not used.
+    case httpRequestContentLengthUncompressed = "http.request_content_length_uncompressed"
+    /// The size of the response payload body in bytes. This is the number of bytes transferred excluding headers and is often, but not always, present as the Content-Length header. For requests using transport encoding, this should be the compressed size.
+    case httpResponseContentLength = "http.response_content_length"
+    /// The size of the uncompressed response payload body after transport decoding. Not set if transport encoding not used.
+    case httpResponseContentLengthUncompressed = "http.response_content_length_uncompressed"
 
     // MARK: RPC attributes
 
+    /// A string identifying the remoting system.
+    case rpcSystem = "rpc.system"
+    /// The name of the method being called, must be equal to the $method part in the span name.
+    case rpcMethod = "rpc.method"
     /// The service name, must be equal to the $service part in the span name.
     case rpcService = "rpc.service"
+    /// The numeric status code of the gRPC request.
+    case grpcStatusCode = "rpc.grpc.status_code"
 
     // MARK: Messaging attributes
 
@@ -116,6 +162,14 @@ public enum SemanticAttributes: String {
     case dbUser = "db.user"
     /// JDBC substring like "mysql://db.example.com:3306"
     case dbURL = "db.url"
+    /// The connection string used to connect to the database. It is recommended to remove embedded credentials.
+    case dbConnectionString = "db.connection_string"
+    /// If no tech-specific attribute is defined, this attribute is used to report the name of the database being accessed. For commands that switch the database, this should be set to the target database (even if the command fails).
+    case dbName = "db.name"
+    /// The database statement being executed.
+    case dbStatement = "db.statement"
+    /// The name of the operation being executed, e.g. the MongoDB command name such as findAndModify, or the SQL keyword
+    case dbOperation = "db.operation"
 
     // MARK: FaaS attributes
 
@@ -133,6 +187,18 @@ public enum SemanticAttributes: String {
     case faasDocumentTime = "faas.document.time"
     /// The document name/table subjected to the operation. For example, in Cloud Storage or S3 is the name of the file, and in Cosmos DB the table name.
     case faasDocumentName = "faas.document.name"
+    /// A boolean that is true if the serverless function is executed for the first time (aka cold-start).
+    case faasColdStart = "faas.coldstart"
+    /// The name of the invoked function
+    case faasInvokedName = "faas.invoked_name"
+    /// The cloud provider of the invoked function
+    case faasInvokedProvider = "faas.invoked_provider"
+    /// The cloud region of the invoked function
+    case faasInvokedRegion = "faas.invoked_region"
+    /// A string containing the function invocation time in the ISO 8601 format expressed in UTC.
+    case faasTime = "faas.time"
+    /// A string containing the schedule period as Cron Expression.
+    case faasCron = "faas.cron"
     
     // MARK: Exception Attributes
     
