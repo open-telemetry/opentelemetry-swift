@@ -27,6 +27,9 @@
     {{type}}
   {%- endif -%}
 {%- endmacro %}
+{%- macro print_value(type, value) -%}
+  {{ "\"" if type == "String"}}{{value}}{{ "\"" if type == "String"}}
+{%- endmacro %}
 
 import Foundation
 
@@ -75,7 +78,45 @@ public enum {{enum}}: String {
     An exception event **MUST** be called "exception" as per the [specification](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/exceptions.md).
     */
     case exception = "exception";
+    {%- endif %}
+    {% for attribute in attributes | unique(attribute="fqn") %}
+    {%- set class_name = attribute.fqn | to_camelcase(True) ~ "Values" %}
+    {%- set type = to_swift_return_type(attribute.attr_type.enum_type) %}
+    {%- if attribute.is_enum %}
+    /**
+    {{attribute.brief | to_doc_brief}}.
+    */
+    {%- if attribute.attr_type.custom_values %}
+    public struct {{class_name}}: CustomStringConvertible {
+        {%- for member in attribute.attr_type.members %}
+        /**
+        {{member.brief | to_doc_brief}}.
+        */
+        static let {{ member.member_id | to_camelcase }} = {{class_name}}({{ print_value(type, member.value) }})
+        {%- endfor %}
+
+        internal let value: String
+
+        public init(_ customValue: String) {
+            self.value = customValue
+        }
+
+        public var description: String {
+            return value
+        }
+    }
+    {% else %}
+    public enum {{class_name}}: {{ type }} {
+        {%- for member in attribute.attr_type.members %}
+        /**
+        {{member.brief | to_doc_brief}}.
+        */
+        case {{ member.member_id | replace(".", "_") }} = {{ print_value(type, member.value) }}
+        {%- endfor %}
+    }
     {% endif %}
+    {%- endif %}
+    {%- endfor %}
 }
 
 {%- if enum == "ResourceConstants" %}

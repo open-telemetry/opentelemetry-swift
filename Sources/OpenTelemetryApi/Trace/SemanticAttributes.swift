@@ -1002,4 +1002,504 @@ public enum SemanticAttributes: String {
     */
     case exception = "exception";
     
+    /**
+    An identifier for the database management system (DBMS) product being used. See below for a list of well-known identifiers.
+    */
+    public struct DbSystemValues: CustomStringConvertible {
+        /**
+        Some other SQL database. Fallback only. See notes.
+        */
+        static let otherSql = DbSystemValues("other_sql")
+        /**
+        Microsoft SQL Server.
+        */
+        static let mssql = DbSystemValues("mssql")
+        /**
+        MySQL.
+        */
+        static let mysql = DbSystemValues("mysql")
+        /**
+        Oracle Database.
+        */
+        static let oracle = DbSystemValues("oracle")
+        /**
+        IBM Db2.
+        */
+        static let db2 = DbSystemValues("db2")
+        /**
+        PostgreSQL.
+        */
+        static let postgresql = DbSystemValues("postgresql")
+        /**
+        Amazon Redshift.
+        */
+        static let redshift = DbSystemValues("redshift")
+        /**
+        Apache Hive.
+        */
+        static let hive = DbSystemValues("hive")
+        /**
+        Cloudscape.
+        */
+        static let cloudscape = DbSystemValues("cloudscape")
+        /**
+        HyperSQL DataBase.
+        */
+        static let hsqldb = DbSystemValues("hsqldb")
+        /**
+        Progress Database.
+        */
+        static let progress = DbSystemValues("progress")
+        /**
+        SAP MaxDB.
+        */
+        static let maxdb = DbSystemValues("maxdb")
+        /**
+        SAP HANA.
+        */
+        static let hanadb = DbSystemValues("hanadb")
+        /**
+        Ingres.
+        */
+        static let ingres = DbSystemValues("ingres")
+        /**
+        FirstSQL.
+        */
+        static let firstsql = DbSystemValues("firstsql")
+        /**
+        EnterpriseDB.
+        */
+        static let edb = DbSystemValues("edb")
+        /**
+        InterSystems Caché.
+        */
+        static let cache = DbSystemValues("cache")
+        /**
+        Adabas (Adaptable Database System).
+        */
+        static let adabas = DbSystemValues("adabas")
+        /**
+        Firebird.
+        */
+        static let firebird = DbSystemValues("firebird")
+        /**
+        Apache Derby.
+        */
+        static let derby = DbSystemValues("derby")
+        /**
+        FileMaker.
+        */
+        static let filemaker = DbSystemValues("filemaker")
+        /**
+        Informix.
+        */
+        static let informix = DbSystemValues("informix")
+        /**
+        InstantDB.
+        */
+        static let instantdb = DbSystemValues("instantdb")
+        /**
+        InterBase.
+        */
+        static let interbase = DbSystemValues("interbase")
+        /**
+        MariaDB.
+        */
+        static let mariadb = DbSystemValues("mariadb")
+        /**
+        Netezza.
+        */
+        static let netezza = DbSystemValues("netezza")
+        /**
+        Pervasive PSQL.
+        */
+        static let pervasive = DbSystemValues("pervasive")
+        /**
+        PointBase.
+        */
+        static let pointbase = DbSystemValues("pointbase")
+        /**
+        SQLite.
+        */
+        static let sqlite = DbSystemValues("sqlite")
+        /**
+        Sybase.
+        */
+        static let sybase = DbSystemValues("sybase")
+        /**
+        Teradata.
+        */
+        static let teradata = DbSystemValues("teradata")
+        /**
+        Vertica.
+        */
+        static let vertica = DbSystemValues("vertica")
+        /**
+        H2.
+        */
+        static let h2 = DbSystemValues("h2")
+        /**
+        ColdFusion IMQ.
+        */
+        static let coldfusion = DbSystemValues("coldfusion")
+        /**
+        Apache Cassandra.
+        */
+        static let cassandra = DbSystemValues("cassandra")
+        /**
+        Apache HBase.
+        */
+        static let hbase = DbSystemValues("hbase")
+        /**
+        MongoDB.
+        */
+        static let mongodb = DbSystemValues("mongodb")
+        /**
+        Redis.
+        */
+        static let redis = DbSystemValues("redis")
+        /**
+        Couchbase.
+        */
+        static let couchbase = DbSystemValues("couchbase")
+        /**
+        CouchDB.
+        */
+        static let couchdb = DbSystemValues("couchdb")
+        /**
+        Microsoft Azure Cosmos DB.
+        */
+        static let cosmosdb = DbSystemValues("cosmosdb")
+        /**
+        Amazon DynamoDB.
+        */
+        static let dynamodb = DbSystemValues("dynamodb")
+        /**
+        Neo4j.
+        */
+        static let neo4j = DbSystemValues("neo4j")
+        /**
+        Apache Geode.
+        */
+        static let geode = DbSystemValues("geode")
+        /**
+        Elasticsearch.
+        */
+        static let elasticsearch = DbSystemValues("elasticsearch")
+
+        internal let value: String
+
+        public init(_ customValue: String) {
+            self.value = customValue
+        }
+
+        public var description: String {
+            return value
+        }
+    }
+    
+    /**
+    Transport protocol used. See note below.
+    */
+    public enum NetTransportValues: String {
+        /**
+        IP.TCP.
+        */
+        case IP_TCP = "IP.TCP"
+        /**
+        IP.UDP.
+        */
+        case IP_UDP = "IP.UDP"
+        /**
+        Another IP-based protocol.
+        */
+        case IP = "IP"
+        /**
+        Unix Domain socket. See below.
+        */
+        case Unix = "Unix"
+        /**
+        Named or anonymous pipe. See note below.
+        */
+        case pipe = "pipe"
+        /**
+        In-process communication.
+        */
+        case inproc = "inproc"
+        /**
+        Something else (non IP-based).
+        */
+        case other = "other"
+    }
+    
+    /**
+    The consistency level of the query. Based on consistency values from [CQL](https://docs.datastax.com/en/cassandra-oss/3.0/cassandra/dml/dmlConfigConsistency.html).
+    */
+    public enum DbCassandraConsistencyLevelValues: String {
+        /**
+        ALL.
+        */
+        case ALL = "ALL"
+        /**
+        EACH_QUORUM.
+        */
+        case EACH_QUORUM = "EACH_QUORUM"
+        /**
+        QUORUM.
+        */
+        case QUORUM = "QUORUM"
+        /**
+        LOCAL_QUORUM.
+        */
+        case LOCAL_QUORUM = "LOCAL_QUORUM"
+        /**
+        ONE.
+        */
+        case ONE = "ONE"
+        /**
+        TWO.
+        */
+        case TWO = "TWO"
+        /**
+        THREE.
+        */
+        case THREE = "THREE"
+        /**
+        LOCAL_ONE.
+        */
+        case LOCAL_ONE = "LOCAL_ONE"
+        /**
+        ANY.
+        */
+        case ANY = "ANY"
+        /**
+        SERIAL.
+        */
+        case SERIAL = "SERIAL"
+        /**
+        LOCAL_SERIAL.
+        */
+        case LOCAL_SERIAL = "LOCAL_SERIAL"
+    }
+    
+    /**
+    Type of the trigger on which the function is executed.
+    */
+    public enum FaasTriggerValues: String {
+        /**
+        A response to some data source operation such as a database or filesystem read/write.
+        */
+        case datasource = "datasource"
+        /**
+        To provide an answer to an inbound HTTP request.
+        */
+        case http = "http"
+        /**
+        A function is set to be executed when messages are sent to a messaging system.
+        */
+        case pubsub = "pubsub"
+        /**
+        A function is scheduled to be executed regularly.
+        */
+        case timer = "timer"
+        /**
+        If none of the others apply.
+        */
+        case other = "other"
+    }
+    
+    /**
+    Describes the type of the operation that was performed on the data.
+    */
+    public struct FaasDocumentOperationValues: CustomStringConvertible {
+        /**
+        When a new object is created.
+        */
+        static let insert = FaasDocumentOperationValues("insert")
+        /**
+        When an object is modified.
+        */
+        static let edit = FaasDocumentOperationValues("edit")
+        /**
+        When an object is deleted.
+        */
+        static let delete = FaasDocumentOperationValues("delete")
+
+        internal let value: String
+
+        public init(_ customValue: String) {
+            self.value = customValue
+        }
+
+        public var description: String {
+            return value
+        }
+    }
+    
+    /**
+    Kind of HTTP protocol used.
+    */
+    public struct HttpFlavorValues: CustomStringConvertible {
+        /**
+        HTTP 1.0.
+        */
+        static let HTTP10 = HttpFlavorValues("1.0")
+        /**
+        HTTP 1.1.
+        */
+        static let HTTP11 = HttpFlavorValues("1.1")
+        /**
+        HTTP 2.
+        */
+        static let HTTP20 = HttpFlavorValues("2.0")
+        /**
+        SPDY protocol.
+        */
+        static let SPDY = HttpFlavorValues("SPDY")
+        /**
+        QUIC protocol.
+        */
+        static let QUIC = HttpFlavorValues("QUIC")
+
+        internal let value: String
+
+        public init(_ customValue: String) {
+            self.value = customValue
+        }
+
+        public var description: String {
+            return value
+        }
+    }
+    
+    /**
+    The kind of message destination.
+    */
+    public enum MessagingDestinationKindValues: String {
+        /**
+        A message sent to a queue.
+        */
+        case queue = "queue"
+        /**
+        A message sent to a topic.
+        */
+        case topic = "topic"
+    }
+    
+    /**
+    The cloud provider of the invoked function.
+    */
+    public struct FaasInvokedProviderValues: CustomStringConvertible {
+        /**
+        Amazon Web Services.
+        */
+        static let AWS = FaasInvokedProviderValues("aws")
+        /**
+        Amazon Web Services.
+        */
+        static let Azure = FaasInvokedProviderValues("azure")
+        /**
+        Google Cloud Platform.
+        */
+        static let GCP = FaasInvokedProviderValues("gcp")
+
+        internal let value: String
+
+        public init(_ customValue: String) {
+            self.value = customValue
+        }
+
+        public var description: String {
+            return value
+        }
+    }
+    
+    /**
+    A string identifying the kind of message consumption as defined in the [Operation names](#operation-names) section above. If the operation is "send", this attribute MUST NOT be set, since the operation can be inferred from the span kind in that case.
+    */
+    public enum MessagingOperationValues: String {
+        /**
+        receive.
+        */
+        case receive = "receive"
+        /**
+        process.
+        */
+        case process = "process"
+    }
+    
+    /**
+    The [numeric status code](https://github.com/grpc/grpc/blob/v1.33.2/doc/statuscodes.md) of the gRPC request.
+    */
+    public enum RpcGrpcStatusCodeValues: Int {
+        /**
+        OK.
+        */
+        case OK = 0
+        /**
+        CANCELLED.
+        */
+        case CANCELLED = 1
+        /**
+        UNKNOWN.
+        */
+        case UNKNOWN = 2
+        /**
+        INVALID_ARGUMENT.
+        */
+        case INVALID_ARGUMENT = 3
+        /**
+        DEADLINE_EXCEEDED.
+        */
+        case DEADLINE_EXCEEDED = 4
+        /**
+        NOT_FOUND.
+        */
+        case NOT_FOUND = 5
+        /**
+        ALREADY_EXISTS.
+        */
+        case ALREADY_EXISTS = 6
+        /**
+        PERMISSION_DENIED.
+        */
+        case PERMISSION_DENIED = 7
+        /**
+        RESOURCE_EXHAUSTED.
+        */
+        case RESOURCE_EXHAUSTED = 8
+        /**
+        FAILED_PRECONDITION.
+        */
+        case FAILED_PRECONDITION = 9
+        /**
+        ABORTED.
+        */
+        case ABORTED = 10
+        /**
+        OUT_OF_RANGE.
+        */
+        case OUT_OF_RANGE = 11
+        /**
+        UNIMPLEMENTED.
+        */
+        case UNIMPLEMENTED = 12
+        /**
+        INTERNAL.
+        */
+        case INTERNAL = 13
+        /**
+        UNAVAILABLE.
+        */
+        case UNAVAILABLE = 14
+        /**
+        DATA_LOSS.
+        */
+        case DATA_LOSS = 15
+        /**
+        UNAUTHENTICATED.
+        */
+        case UNAUTHENTICATED = 16
+    }
+    
 }

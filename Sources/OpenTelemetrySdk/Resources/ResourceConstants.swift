@@ -817,6 +817,285 @@ public enum ResourceConstants: String {
     - Requires: Value type should be `String`
     */
     case telemetryAutoVersion = "telemetry.auto.version"
+    
+    /**
+    Name of the cloud provider.
+    */
+    public struct CloudProviderValues: CustomStringConvertible {
+        /**
+        Amazon Web Services.
+        */
+        static let AWS = CloudProviderValues("aws")
+        /**
+        Microsoft Azure.
+        */
+        static let Azure = CloudProviderValues("azure")
+        /**
+        Google Cloud Platform.
+        */
+        static let GCP = CloudProviderValues("gcp")
+
+        internal let value: String
+
+        public init(_ customValue: String) {
+            self.value = customValue
+        }
+
+        public var description: String {
+            return value
+        }
+    }
+    
+    /**
+    The cloud infrastructure resource in use.
+    */
+    public struct CloudInfrastructureServiceValues: CustomStringConvertible {
+        /**
+        AWS Elastic Compute Cloud.
+        */
+        static let AWSEc2 = CloudInfrastructureServiceValues("aws_ec2")
+        /**
+        AWS Elastic Container Service.
+        */
+        static let AWSEcs = CloudInfrastructureServiceValues("aws_ecs")
+        /**
+        AWS Elastic Kubernetes Service.
+        */
+        static let AWSEks = CloudInfrastructureServiceValues("aws_eks")
+        /**
+        AWS Lambda.
+        */
+        static let AWSLambda = CloudInfrastructureServiceValues("aws_lambda")
+        /**
+        AWS Elastic Beanstalk.
+        */
+        static let AWSElasticbeanstalk = CloudInfrastructureServiceValues("aws_elastic_beanstalk")
+        /**
+        Azure Virtual Machines.
+        */
+        static let AzureVm = CloudInfrastructureServiceValues("azure_vm")
+        /**
+        Azure Container Instances.
+        */
+        static let AzureContainerinstances = CloudInfrastructureServiceValues("azure_container_instances")
+        /**
+        Azure Kubernetes Service.
+        */
+        static let AzureAks = CloudInfrastructureServiceValues("azure_aks")
+        /**
+        Azure Functions.
+        */
+        static let AzureFunctions = CloudInfrastructureServiceValues("azure_functions")
+        /**
+        Azure App Service.
+        */
+        static let AzureAppservice = CloudInfrastructureServiceValues("azure_app_service")
+        /**
+        Google Cloud Compute Engine (GCE).
+        */
+        static let GCPComputeengine = CloudInfrastructureServiceValues("gcp_compute_engine")
+        /**
+        Google Cloud Run.
+        */
+        static let GCPCloudrun = CloudInfrastructureServiceValues("gcp_cloud_run")
+        /**
+        Google Cloud Kubernetes Engine (GKE).
+        */
+        static let GCPKubernetesengine = CloudInfrastructureServiceValues("gcp_kubernetes_engine")
+        /**
+        Google Cloud Functions (GCF).
+        */
+        static let GCPCloudfunctions = CloudInfrastructureServiceValues("gcp_cloud_functions")
+        /**
+        Google Cloud App Engine (GAE).
+        */
+        static let GCPAppengine = CloudInfrastructureServiceValues("gcp_app_engine")
+
+        internal let value: String
+
+        public init(_ customValue: String) {
+            self.value = customValue
+        }
+
+        public var description: String {
+            return value
+        }
+    }
+    
+    /**
+    The [launch type](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/launch_types.html) for an ECS task.
+    */
+    public enum AwsEcsLaunchtypeValues: String {
+        /**
+        ec2.
+        */
+        case ec2 = "ec2"
+        /**
+        fargate.
+        */
+        case fargate = "fargate"
+    }
+    
+    /**
+    The CPU architecture the host system is running on.
+    */
+    public struct HostArchValues: CustomStringConvertible {
+        /**
+        AMD64.
+        */
+        static let amd64 = HostArchValues("amd64")
+        /**
+        ARM32.
+        */
+        static let arm32 = HostArchValues("arm32")
+        /**
+        ARM64.
+        */
+        static let arm64 = HostArchValues("arm64")
+        /**
+        Itanium.
+        */
+        static let ia64 = HostArchValues("ia64")
+        /**
+        32-bit PowerPC.
+        */
+        static let ppc32 = HostArchValues("ppc32")
+        /**
+        64-bit PowerPC.
+        */
+        static let ppc64 = HostArchValues("ppc64")
+        /**
+        32-bit x86.
+        */
+        static let x86 = HostArchValues("x86")
+
+        internal let value: String
+
+        public init(_ customValue: String) {
+            self.value = customValue
+        }
+
+        public var description: String {
+            return value
+        }
+    }
+    
+    /**
+    The operating system type.
+    */
+    public struct OsTypeValues: CustomStringConvertible {
+        /**
+        Microsoft Windows.
+        */
+        static let WINDOWS = OsTypeValues("WINDOWS")
+        /**
+        Linux.
+        */
+        static let LINUX = OsTypeValues("LINUX")
+        /**
+        Apple Darwin.
+        */
+        static let DARWIN = OsTypeValues("DARWIN")
+        /**
+        FreeBSD.
+        */
+        static let FREEBSD = OsTypeValues("FREEBSD")
+        /**
+        NetBSD.
+        */
+        static let NETBSD = OsTypeValues("NETBSD")
+        /**
+        OpenBSD.
+        */
+        static let OPENBSD = OsTypeValues("OPENBSD")
+        /**
+        DragonFly BSD.
+        */
+        static let DRAGONFLYBSD = OsTypeValues("DRAGONFLYBSD")
+        /**
+        HP-UX (Hewlett Packard Unix).
+        */
+        static let HPUX = OsTypeValues("HPUX")
+        /**
+        AIX (Advanced Interactive eXecutive).
+        */
+        static let AIX = OsTypeValues("AIX")
+        /**
+        Oracle Solaris.
+        */
+        static let SOLARIS = OsTypeValues("SOLARIS")
+        /**
+        IBM z/OS.
+        */
+        static let ZOS = OsTypeValues("ZOS")
+
+        internal let value: String
+
+        public init(_ customValue: String) {
+            self.value = customValue
+        }
+
+        public var description: String {
+            return value
+        }
+    }
+    
+    /**
+    The language of the telemetry SDK.
+    */
+    public struct TelemetrySdkLanguageValues: CustomStringConvertible {
+        /**
+        cpp.
+        */
+        static let cpp = TelemetrySdkLanguageValues("cpp")
+        /**
+        dotnet.
+        */
+        static let dotnet = TelemetrySdkLanguageValues("dotnet")
+        /**
+        erlang.
+        */
+        static let erlang = TelemetrySdkLanguageValues("erlang")
+        /**
+        go.
+        */
+        static let go = TelemetrySdkLanguageValues("go")
+        /**
+        java.
+        */
+        static let java = TelemetrySdkLanguageValues("java")
+        /**
+        nodejs.
+        */
+        static let nodejs = TelemetrySdkLanguageValues("nodejs")
+        /**
+        php.
+        */
+        static let php = TelemetrySdkLanguageValues("php")
+        /**
+        python.
+        */
+        static let python = TelemetrySdkLanguageValues("python")
+        /**
+        ruby.
+        */
+        static let ruby = TelemetrySdkLanguageValues("ruby")
+        /**
+        webjs.
+        */
+        static let webjs = TelemetrySdkLanguageValues("webjs")
+
+        internal let value: String
+
+        public init(_ customValue: String) {
+            self.value = customValue
+        }
+
+        public var description: String {
+            return value
+        }
+    }
+    
 }
 public func ==(left: ResourceConstants, right: String) -> Bool {
     return left.rawValue == right
