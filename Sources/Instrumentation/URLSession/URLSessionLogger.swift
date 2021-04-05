@@ -31,7 +31,7 @@ class URLSessionLogger {
         attributes[SemanticAttributes.httpMethod.rawValue] = request.httpMethod ?? "unknown_method"
 
         if let requestURL = request.url {
-            attributes[SemanticAttributes.httpURL.rawValue] = requestURL.absoluteString
+            attributes[SemanticAttributes.httpUrl.rawValue] = requestURL.absoluteString
         }
 
         if let requestURLPath = request.url?.path {

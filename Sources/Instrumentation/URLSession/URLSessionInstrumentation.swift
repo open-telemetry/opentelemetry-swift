@@ -27,8 +27,6 @@ private var idKey: Void?
 public class URLSessionInstrumentation {
     private var requestMap = [String: NetworkRequestState]()
 
-    
-
     var configuration: URLSessionConfiguration
 
     private let queue = DispatchQueue(label: "com.datadoghq.ddnetworkinstrumentation")
@@ -36,6 +34,14 @@ public class URLSessionInstrumentation {
     static var instrumentedKey = "com.datadoghq.instrumentedCall"
 
     public private(set) var tracer: TracerSdk
+
+    public var startedRequestSpans: [Span] {
+        var spans = [Span]()
+        queue.sync {
+            spans = Array(URLSessionLogger.runningSpans.values)
+        }
+        return spans
+    }
 
     public init(configuration: URLSessionConfiguration) {
         self.configuration = configuration
