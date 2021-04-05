@@ -18,6 +18,8 @@ let package = Package(
         .library(name: "libURLSessionInstrumentation", type: .static, targets: ["URLSessionInstrumentation"]),
         .library(name: "OpenTracingShim", type: .dynamic, targets: ["OpenTracingShim"]),
         .library(name: "libOpenTracingShim", type: .static, targets: ["OpenTracingShim"]),
+        .library(name: "SwiftMetricsShim", type: .dynamic, targets: ["SwiftMetricsShim"]),
+        .library(name: "libSwiftMetricsShim", type: .static, targets: ["SwiftMetricsShim"]),
         .library(name: "JaegerExporter", type: .dynamic, targets: ["JaegerExporter"]),
         .library(name: "libJaegerExporter", type: .static, targets: ["JaegerExporter"]),
         .library(name: "ZipkinExporter", type: .dynamic, targets: ["ZipkinExporter"]),
@@ -40,7 +42,8 @@ let package = Package(
         .package(name: "Thrift", url: "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1"),
         .package(name: "swift-nio", url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
         .package(name: "grpc-swift", url: "https://github.com/grpc/grpc-swift.git", from: "1.0.0"),
-        .package(name: "swift-atomics", url: "https://github.com/apple/swift-atomics.git", from: "0.0.1")
+        .package(name: "swift-atomics", url: "https://github.com/apple/swift-atomics.git", from: "0.0.1"),
+        .package(name: "swift-metrics", url: "https://github.com/apple/swift-metrics.git", from: "2.1.1"),
     ],
     targets: [
         .target(name: "OpenTelemetryApi",
@@ -58,6 +61,11 @@ let package = Package(
         .target(name: "OpenTracingShim",
                 dependencies: ["OpenTelemetrySdk",
                                "Opentracing"]
+        ),
+        .target(name: "SwiftMetricsShim",
+                dependencies: ["OpenTelemetrySdk",
+                               .product(name: "NIO", package: "swift-nio"),
+                               .product(name: "CoreMetrics", package: "swift-metrics")]
         ),
         .target(name: "JaegerExporter",
                 dependencies: ["OpenTelemetrySdk",
@@ -100,6 +108,11 @@ let package = Package(
                     dependencies: ["OpenTracingShim",
                                    "OpenTelemetrySdk"],
                     path: "Tests/OpenTracingShim"
+        ),
+        .testTarget(name: "SwiftMetricsShimTests",
+                    dependencies: ["SwiftMetricsShim",
+                                   "OpenTelemetrySdk"],
+                    path: "Tests/SwiftMetricsShim"
         ),
         .testTarget(name: "OpenTelemetrySdkTests",
                     dependencies: ["OpenTelemetryApi",
