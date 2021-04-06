@@ -23,13 +23,12 @@ public class TracerSdkProvider: TracerProvider {
     internal static let emptyName = "unknown"
 
     /// Returns a new TracerSdkProvider with default Clock, IdGenerator and Resource.
-    init(clock: Clock = MillisClock(),
+    public init(clock: Clock = MillisClock(),
                 idGenerator: IdGenerator = RandomIdGenerator(),
                 resource: Resource = EnvVarResource.resource,
                 spanLimits: SpanLimits = SpanLimits(),
-                sampler: Sampler = ParentBasedSampler(root: Samplers.alwaysOn),
-                spanProcessors: [SpanProcessor] = [NoopSpanProcessor()]
-                )
+                sampler: Sampler = Samplers.parentBased(root: Samplers.alwaysOn),
+                spanProcessors: [SpanProcessor] = [])
     {
         sharedState = TracerSharedState(clock: clock,
                                         idGenerator: idGenerator,
@@ -47,7 +46,7 @@ public class TracerSdkProvider: TracerProvider {
         var instrumentationName = instrumentationName
         if instrumentationName.isEmpty {
             // Per the spec, empty is "invalid"
-            print("Tracer requested without instrumentation name.");
+            print("Tracer requested without instrumentation name.")
             instrumentationName = TracerSdkProvider.emptyName
         }
         let instrumentationLibraryInfo = InstrumentationLibraryInfo(name: instrumentationName, version: instrumentationVersion ?? "")
