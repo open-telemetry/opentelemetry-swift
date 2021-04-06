@@ -17,7 +17,7 @@ import Foundation
 import OpenTelemetryApi
 
 /// SpanBuilderSdk is SDK implementation of SpanBuilder.
-public class SpanBuilderSdk: SpanBuilder {
+class SpanBuilderSdk: SpanBuilder {
     private enum ParentType {
         case currentSpan
         case explicitParent
@@ -44,9 +44,9 @@ public class SpanBuilderSdk: SpanBuilder {
     private var startTime = Date()
 
     init(spanName: String,
-                instrumentationLibraryInfo: InstrumentationLibraryInfo,
-                tracerSharedState: TracerSharedState,
-                spanLimits: SpanLimits)
+         instrumentationLibraryInfo: InstrumentationLibraryInfo,
+         tracerSharedState: TracerSharedState,
+         spanLimits: SpanLimits)
     {
         self.spanName = spanName
         self.instrumentationLibraryInfo = instrumentationLibraryInfo
@@ -55,36 +55,36 @@ public class SpanBuilderSdk: SpanBuilder {
         attributes = AttributesDictionary(capacity: spanLimits.attributeCountLimit)
     }
 
-    @discardableResult public func setParent(_ parent: Span) -> Self {
+    @discardableResult func setParent(_ parent: Span) -> Self {
         self.parent = parent
         remoteParent = nil
         parentType = .explicitParent
         return self
     }
 
-    @discardableResult public func setParent(_ parent: SpanContext) -> Self {
+    @discardableResult func setParent(_ parent: SpanContext) -> Self {
         remoteParent = parent
         self.parent = nil
         parentType = .explicitRemoteParent
         return self
     }
 
-    @discardableResult public func setNoParent() -> Self {
+    @discardableResult func setNoParent() -> Self {
         parentType = .noParent
         remoteParent = nil
         parent = nil
         return self
     }
 
-    @discardableResult public func addLink(spanContext: SpanContext) -> Self {
+    @discardableResult func addLink(spanContext: SpanContext) -> Self {
         return addLink(SpanData.Link(context: spanContext))
     }
 
-    @discardableResult public func addLink(spanContext: SpanContext, attributes: [String: AttributeValue]) -> Self {
+    @discardableResult func addLink(spanContext: SpanContext, attributes: [String: AttributeValue]) -> Self {
         return addLink(SpanData.Link(context: spanContext, attributes: attributes))
     }
 
-    @discardableResult public func addLink(_ link: SpanData.Link) -> Self {
+    @discardableResult func addLink(_ link: SpanData.Link) -> Self {
         totalNumberOfLinksAdded += 1
         if links.count >= spanLimits.linkCountLimit {
             return self
@@ -93,22 +93,22 @@ public class SpanBuilderSdk: SpanBuilder {
         return self
     }
 
-    @discardableResult public func setAttribute(key: String, value: AttributeValue) -> Self {
+    @discardableResult func setAttribute(key: String, value: AttributeValue) -> Self {
         attributes.updateValue(value: value, forKey: key)
         return self
     }
 
-    @discardableResult public func setSpanKind(spanKind: SpanKind) -> Self {
+    @discardableResult func setSpanKind(spanKind: SpanKind) -> Self {
         self.spanKind = spanKind
         return self
     }
 
-    @discardableResult public func setStartTime(time: Date) -> Self {
+    @discardableResult func setStartTime(time: Date) -> Self {
         startTime = time
         return self
     }
 
-    public func startSpan() -> Span {
+    func startSpan() -> Span {
         var parentContext = getParentContext(parentType: parentType, explicitParent: parent, remoteParent: remoteParent)
         let traceId: TraceId
         let spanId = tracerSharedState.idGenerator.generateSpanId()
