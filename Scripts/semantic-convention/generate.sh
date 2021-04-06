@@ -38,6 +38,6 @@ docker run --rm \
   code \
   --template /templates/SemanticAttributes.swift.j2 \
   --output /output/ResourceAttributes.swift \
-  -Denum=ResourceConstants \
+  -Denum=ResourceAttributes \
 
 cd "$ROOT_DIR"
