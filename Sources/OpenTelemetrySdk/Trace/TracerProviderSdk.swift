@@ -17,11 +17,11 @@ import Foundation
 import OpenTelemetryApi
 
 /// This class is not intended to be used in application code and it is used only by OpenTelemetry.
-public class TracerSdkProvider: TracerProvider {
+public class TracerProviderSdk: TracerProvider {
     private var tracerProvider = [InstrumentationLibraryInfo: TracerSdk]()
     internal var sharedState: TracerSharedState
 
-    /// Returns a new TracerSdkProvider with default Clock, IdGenerator and Resource.
+    /// Returns a new TracerProviderSdk with default Clock, IdGenerator and Resource.
     public init(clock: Clock = MillisClock(),
                 idGenerator: IdGenerator = RandomIdGenerator(),
                 resource: Resource = EnvVarResource.resource)

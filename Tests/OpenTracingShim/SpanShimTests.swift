@@ -19,7 +19,7 @@ import OpenTelemetrySdk
 import XCTest
 
 class SpanShimTests: XCTestCase {
-    let tracerSdkProvider = TracerSdkProvider()
+    let tracerSdkProvider = TracerProviderSdk()
     var tracer: Tracer!
     var telemetryInfo: TelemetryInfo!
     var span: Span!

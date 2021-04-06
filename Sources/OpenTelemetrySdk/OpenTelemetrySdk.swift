@@ -16,19 +16,19 @@
 import Foundation
 import OpenTelemetryApi
 
-/// This class provides a static global accessor for SDK telemetry objects TracerSdkProvider,
+/// This class provides a static global accessor for SDK telemetry objects TracerProviderSdk,
 /// MeterSdkFactory BaggageManagerSdk.
 /// This is a convenience class getting and casting the telemetry objects from OpenTelemetry.
 public struct OpenTelemetrySDK {
     static var version = "0.6.0"
     public static var instance = OpenTelemetrySDK()
 
-    public var tracerProvider: TracerSdkProvider {
-        return OpenTelemetry.instance.tracerProvider as! TracerSdkProvider
+    public var tracerProvider: TracerProviderSdk {
+        return OpenTelemetry.instance.tracerProvider as! TracerProviderSdk
     }
 
-    public var meterProvider: MeterSdkProvider {
-        return OpenTelemetry.instance.meterProvider as! MeterSdkProvider
+    public var meterProvider: MeterProviderSdk {
+        return OpenTelemetry.instance.meterProvider as! MeterProviderSdk
     }
 
     public var baggageManager: DefaultBaggageManager {
@@ -40,8 +40,8 @@ public struct OpenTelemetrySDK {
     }
 
     private init() {
-        OpenTelemetry.registerTracerProvider(tracerProvider: TracerSdkProvider())
-        OpenTelemetry.registerMeterProvider(meterProvider: MeterSdkProvider())
+        OpenTelemetry.registerTracerProvider(tracerProvider: TracerProviderSdk())
+        OpenTelemetry.registerMeterProvider(meterProvider: MeterProviderSdk())
         OpenTelemetry.registerBaggageManager(baggageManager: DefaultBaggageManager.instance)
     }
 }
