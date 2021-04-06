@@ -47,7 +47,7 @@ public class TracerProviderSdk: TracerProvider {
         if instrumentationName.isEmpty {
             // Per the spec, empty is "invalid"
             print("Tracer requested without instrumentation name.")
-            instrumentationName = TracerSdkProvider.emptyName
+            instrumentationName = TracerProviderSdk.emptyName
         }
         let instrumentationLibraryInfo = InstrumentationLibraryInfo(name: instrumentationName, version: instrumentationVersion ?? "")
         if let tracer = tracerProvider[instrumentationLibraryInfo] {

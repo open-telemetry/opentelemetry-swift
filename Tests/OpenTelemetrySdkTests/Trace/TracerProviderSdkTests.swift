@@ -17,29 +17,29 @@
 import XCTest
 
 class TracerProviderSdkTests: XCTestCase {
-    var tracerSdkProvider = TracerSdkProvider()
+    var tracerProviderSdk = TracerProviderSdk()
 
     func testDefaultGet() {
-        XCTAssert(tracerSdkProvider.get(instrumentationName: "test") is TracerSdk)
+        XCTAssert(tracerProviderSdk.get(instrumentationName: "test") is TracerSdk)
     }
 
     func testgGtSameInstanceForSameName_WithoutVersion() {
-        XCTAssert(tracerSdkProvider.get(instrumentationName: "test") === tracerSdkProvider.get(instrumentationName: "test"))
-        XCTAssert(tracerSdkProvider.get(instrumentationName: "test") === tracerSdkProvider.get(instrumentationName: "test", instrumentationVersion: nil))
+        XCTAssert(tracerProviderSdk.get(instrumentationName: "test") === tracerProviderSdk.get(instrumentationName: "test"))
+        XCTAssert(tracerProviderSdk.get(instrumentationName: "test") === tracerProviderSdk.get(instrumentationName: "test", instrumentationVersion: nil))
     }
 
     func testPropagatesInstrumentationLibraryInfoToTracer() {
         let expected = InstrumentationLibraryInfo(name: "theName", version: "theVersion")
-        let tracer = tracerSdkProvider.get(instrumentationName: expected.name, instrumentationVersion: expected.version) as! TracerSdk
+        let tracer = tracerProviderSdk.get(instrumentationName: expected.name, instrumentationVersion: expected.version) as! TracerSdk
         XCTAssertEqual(tracer.instrumentationLibraryInfo, expected)
     }
 
     func testGetSameInstanceForSameName_WithVersion() {
-        XCTAssert(tracerSdkProvider.get(instrumentationName: "test", instrumentationVersion: "version") === tracerSdkProvider.get(instrumentationName: "test", instrumentationVersion: "version"))
+        XCTAssert(tracerProviderSdk.get(instrumentationName: "test", instrumentationVersion: "version") === tracerProviderSdk.get(instrumentationName: "test", instrumentationVersion: "version"))
     }
 
     func testGetWithoutName() {
-        let tracer = tracerSdkProvider.get(instrumentationName: "") as! TracerSdk
-        XCTAssertEqual(tracer.instrumentationLibraryInfo.name, TracerSdkProvider.emptyName)
+        let tracer = tracerProviderSdk.get(instrumentationName: "") as! TracerSdk
+        XCTAssertEqual(tracer.instrumentationLibraryInfo.name, TracerProviderSdk.emptyName)
     }
 }
