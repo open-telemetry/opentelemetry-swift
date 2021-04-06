@@ -18,7 +18,7 @@ import OpenTelemetryApi
 
 class SwiftCounterMetric: CounterHandler, SwiftMetric {
     
-    var metricName: String
+    private(set) var metricName: String
     var metricType: MetricType = .counter
     let counter: AnyCounterMetric<Int>
     let labels: [String: String]
@@ -41,7 +41,7 @@ class SwiftCounterMetric: CounterHandler, SwiftMetric {
 
 class SwiftGaugeMetric: RecorderHandler, SwiftMetric {
     
-    var metricName: String
+    private(set) var metricName: String
     var metricType: MetricType = .gauge
     let counter: AnyCounterMetric<Double>
     let labels: [String: String]
@@ -64,7 +64,7 @@ class SwiftGaugeMetric: RecorderHandler, SwiftMetric {
 
 class SwiftHistogramMetric: RecorderHandler, SwiftMetric {
     
-    var metricName: String
+    private(set) var metricName: String
     var metricType: MetricType = .histogram
     let measure: AnyMeasureMetric<Double>
     let labels: [String: String]
@@ -87,7 +87,7 @@ class SwiftHistogramMetric: RecorderHandler, SwiftMetric {
 
 class SwiftSummaryMetric: TimerHandler, SwiftMetric {
     
-    var metricName: String
+    private(set) var metricName: String
     var metricType: MetricType = .summary
     let measure: AnyMeasureMetric<Double>
     let labels: [String: String]
