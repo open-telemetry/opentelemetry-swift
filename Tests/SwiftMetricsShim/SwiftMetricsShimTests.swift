@@ -21,7 +21,7 @@ import XCTest
 
 class SwiftMetricsShimTests: XCTestCase {
     var testProcessor = TestMetricProcessor()
-    let provider = MeterSdkProvider()
+    let provider = MeterProviderSdk()
     var meter: MeterSdk!
     var metrics: OpenTelemetrySwiftMetrics!
 
@@ -29,7 +29,7 @@ class SwiftMetricsShimTests: XCTestCase {
         super.setUp()
         testProcessor = TestMetricProcessor()
         
-        meter = MeterSdkProvider(
+        meter = MeterProviderSdk(
             metricProcessor: testProcessor,
             metricExporter: NoopMetricExporter()
         ).get(instrumentationName: "SwiftMetricsShimTest") as? MeterSdk
