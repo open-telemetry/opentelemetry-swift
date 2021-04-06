@@ -24,9 +24,19 @@ public struct Resource: Equatable, Hashable {
     /// A dictionary of labels that describe the resource.
     public var attributes: [String: AttributeValue]
 
-    ///  Returns an empty Resource.
+    ///  Returns a default Resource.
     public init() {
-        self.init(attributes: [String: AttributeValue]())
+        let executableName = ProcessInfo.processInfo.processName
+        self.init(attributes: [ResourceAttributes.serviceName.rawValue: AttributeValue.string("unknown_service:\(executableName)"),
+                               ResourceAttributes.telemetrySdkName.rawValue: AttributeValue.string("opentelemetry"),
+                               ResourceAttributes.telemetrySdkLanguage.rawValue: AttributeValue.string("swift"),
+                               ResourceAttributes.telemetrySdkVersion.rawValue: AttributeValue.string(OpenTelemetrySDK.version)]
+        )
+    }
+
+    ///  Returns an empty Resource.
+    static var empty: Resource {
+        return self.init(attributes: [String: AttributeValue]())
     }
 
     /// Returns a Resource.

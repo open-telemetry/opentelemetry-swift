@@ -20,6 +20,7 @@ import OpenTelemetryApi
 /// MeterSdkFactory BaggageManagerSdk.
 /// This is a convenience class getting and casting the telemetry objects from OpenTelemetry.
 public struct OpenTelemetrySDK {
+    static var version = "0.6.0"
     public static var instance = OpenTelemetrySDK()
 
     public var tracerProvider: TracerSdkProvider {
