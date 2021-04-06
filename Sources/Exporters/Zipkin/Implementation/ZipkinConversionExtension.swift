@@ -145,9 +145,9 @@ struct ZipkinConversionExtension {
 
     private static func processResources(state: inout AttributeEnumerationState, key: String, value: AttributeValue) {
         if case let .string(val) = value {
-            if key == ResourceConstants.serviceName {
+            if key == ResourceAttributes.serviceName {
                 state.serviceName = val
-            } else if key == ResourceConstants.serviceNamespace {
+            } else if key == ResourceAttributes.serviceNamespace {
                 state.serviceNamespace = val
             } else {
                 state.tags[key] = val
