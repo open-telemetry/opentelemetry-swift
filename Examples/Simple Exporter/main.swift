@@ -39,7 +39,7 @@ func simpleSpan() {
 func childSpan() {
     let span = tracer.spanBuilder(spanName: "parentSpan").setSpanKind(spanKind: .client).startSpan()
     span.setAttribute(key: sampleKey, value: sampleValue)
-    OpenTelemetryContext.setActiveSpan(span)
+    OpenTelemetry.instance.contextProvider.setActiveSpan(span)
     let childSpan = tracer.spanBuilder(spanName: "childSpan").setSpanKind(spanKind: .client).startSpan()
     childSpan.setAttribute(key: sampleKey, value: sampleValue)
     childSpan.end()

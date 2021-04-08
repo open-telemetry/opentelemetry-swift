@@ -22,7 +22,7 @@ public class DefaultBaggageBuilder: BaggageBuilder {
     
     public init() {}
     
-    @discardableResult public func setParent(_ parent: Baggage) -> Self {
+    @discardableResult public func setParent(_ parent: Baggage?) -> Self {
         self.parent = parent
         return self
     }
@@ -57,10 +57,10 @@ public class DefaultBaggageBuilder: BaggageBuilder {
         return self
     }
     
-    public func build() -> Baggage {
+    public func build() -> Baggage? {
         var parentCopy = parent
         if parent == nil, !noImplicitParent {
-            parentCopy = OpenTelemetry.instance.baggageManager.getCurrentBaggage()
+            parentCopy = OpenTelemetry.instance.contextProvider.activeBaggage
         }
         
         var combined = entries
@@ -71,6 +71,6 @@ public class DefaultBaggageBuilder: BaggageBuilder {
                 }
             }
         }
-        return entries.isEmpty ? EmptyBaggage.instance : DefaultBaggage(entries: combined)
+        return entries.isEmpty ? nil : DefaultBaggage(entries: combined)
     }
 }

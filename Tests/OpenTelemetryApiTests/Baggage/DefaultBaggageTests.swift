@@ -37,7 +37,7 @@ class BaggageSdkTests: XCTestCase {
 
     func testGetEntries_empty() {
         let baggage = DefaultBaggage.baggageBuilder().build()
-        XCTAssertEqual(baggage.getEntries().count, 0)
+        XCTAssertNil(baggage)
     }
 
     func testGetEntries_nonEmpty() {
@@ -49,42 +49,42 @@ class BaggageSdkTests: XCTestCase {
         let t1alt = Entry(key: k1, value: v2, metadata: tmd)
         let parent = BaggageTestUtil.listToBaggage(entries: [t1, t2])
         let baggage = DefaultBaggage.baggageBuilder().setParent(parent).put(key: t1alt.key, value: t1alt.value, metadata: t1alt.metadata).build()
-        XCTAssertEqual(baggage.getEntries().sorted(), [t1alt, t2].sorted())
+        XCTAssertEqual(baggage?.getEntries().sorted(), [t1alt, t2].sorted())
     }
 
     func testPut_newKey() {
         let baggage = BaggageTestUtil.listToBaggage(entries: [t1])
-        XCTAssertEqual(baggageManager.baggageBuilder().setParent(baggage).put(key: k2, value: v2, metadata: tmd).build().getEntries().sorted(), [t1, t2].sorted())
+        XCTAssertEqual(baggageManager.baggageBuilder().setParent(baggage).put(key: k2, value: v2, metadata: tmd).build()?.getEntries().sorted(), [t1, t2].sorted())
     }
 
     func testPut_existingKey() {
         let baggage = BaggageTestUtil.listToBaggage(entries: [t1])
-        XCTAssertEqual(baggageManager.baggageBuilder().setParent(baggage).put(key: k1, value: v2, metadata: tmd).build().getEntries(), [Entry(key: k1, value: v2, metadata: tmd)])
+        XCTAssertEqual(baggageManager.baggageBuilder().setParent(baggage).put(key: k1, value: v2, metadata: tmd).build()?.getEntries(), [Entry(key: k1, value: v2, metadata: tmd)])
     }
 
     func testPetParent_setNoParent() {
         let parent = BaggageTestUtil.listToBaggage(entries: [t1])
         let baggage = baggageManager.baggageBuilder().setParent(parent).setNoParent().build()
-        XCTAssertEqual(baggage.getEntries().count, 0)
+        XCTAssertNil(baggage)
     }
 
     func testRemove_existingKey() {
         let builder = DefaultBaggageBuilder()
         builder.put(key: t1.key, value: t1.value, metadata: t1.metadata)
         builder.put(key: t2.key, value: t2.value, metadata: t2.metadata)
-        XCTAssertEqual(builder.remove(key: k1).build().getEntries(), [t2])
+        XCTAssertEqual(builder.remove(key: k1).build()?.getEntries(), [t2])
     }
 
     func testRemove_differentKey() {
         let builder = DefaultBaggageBuilder()
         builder.put(key: t1.key, value: t1.value, metadata: t1.metadata)
         builder.put(key: t2.key, value: t2.value, metadata: t2.metadata)
-        XCTAssertEqual(builder.remove(key: k2).build().getEntries(), [t1])
+        XCTAssertEqual(builder.remove(key: k2).build()?.getEntries(), [t1])
     }
 
     func testRemove_keyFromParent() {
         let baggage = BaggageTestUtil.listToBaggage(entries: [t1, t2])
-        XCTAssertEqual(baggageManager.baggageBuilder().setParent(baggage).remove(key: k1).build().getEntries(), [t2])
+        XCTAssertEqual(baggageManager.baggageBuilder().setParent(baggage).remove(key: k1).build()?.getEntries(), [t2])
     }
 
     func testEquals() {

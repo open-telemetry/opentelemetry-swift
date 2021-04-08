@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-import OpenTelemetryApi
+@testable import OpenTelemetryApi
 import XCTest
 
 private let key = EntryKey(name: "key")!
@@ -37,41 +37,50 @@ class DefaultBaggageManagerTests: XCTestCase {
     let defaultBaggageManager = DefaultBaggageManager.instance
     let baggage = TestBaggage()
 
+    override func tearDown() {
+        if defaultBaggageManager.getCurrentBaggage() != nil {
+            XCTAssert(false, "Test must clean baggage context")
+        }
+    }
+    
     func testBuilderMethod() {
         let builder = defaultBaggageManager.baggageBuilder()
-        XCTAssertEqual(builder.build().getEntries().count, 0)
+        XCTAssertNil(builder.build())
     }
 
     func testGetCurrentContext_DefaultContext() {
-        XCTAssertTrue(defaultBaggageManager.getCurrentBaggage() === EmptyBaggage.instance)
+        XCTAssertTrue(defaultBaggageManager.getCurrentBaggage() === nil)
     }
 
     func testGetCurrentContext_ContextSetToNil() {
         let baggage = defaultBaggageManager.getCurrentBaggage()
-        XCTAssertNotNil(baggage)
-        XCTAssertEqual(baggage.getEntries().count, 0)
+        XCTAssertNil(baggage)
     }
 
     func testWithContext() {
-        XCTAssertTrue(defaultBaggageManager.getCurrentBaggage() === EmptyBaggage.instance)
-        var wtm = defaultBaggageManager.withContext(baggage: baggage)
+        XCTAssertNil(defaultBaggageManager.getCurrentBaggage())
+        OpenTelemetry.instance.contextProvider.setActiveBaggage(baggage)
         XCTAssertTrue(defaultBaggageManager.getCurrentBaggage() === baggage)
-        wtm.close()
-        XCTAssertTrue(defaultBaggageManager.getCurrentBaggage() === EmptyBaggage.instance)
+        OpenTelemetry.instance.contextProvider.removeContextForBaggage(baggage)
+        XCTAssertNil(defaultBaggageManager.getCurrentBaggage())
     }
 
     func testWithContextUsingWrap() {
         let expec = expectation(description: "testWithContextUsingWrap")
-        var wtm = defaultBaggageManager.withContext(baggage: baggage)
+        OpenTelemetry.instance.contextProvider.setActiveBaggage(baggage)
         XCTAssertTrue(defaultBaggageManager.getCurrentBaggage() === baggage)
         let semaphore = DispatchSemaphore(value: 0)
+        let semaphore2 = DispatchSemaphore(value: 0)
         DispatchQueue.global().async {
+            semaphore2.signal()
             semaphore.wait()
-            XCTAssertTrue(self.defaultBaggageManager.getCurrentBaggage() === self.baggage)
+            let currentBaggage = self.defaultBaggageManager.getCurrentBaggage()
+            XCTAssert(self.defaultBaggageManager.getCurrentBaggage() === self.baggage)
             expec.fulfill()
         }
-        wtm.close()
-        XCTAssertTrue(defaultBaggageManager.getCurrentBaggage() === EmptyBaggage.instance)
+        semaphore2.wait()
+        OpenTelemetry.instance.contextProvider.removeContextForBaggage(baggage)
+        XCTAssertNil(defaultBaggageManager.getCurrentBaggage())
         semaphore.signal()
         waitForExpectations(timeout: 30) { error in
             if let error = error {

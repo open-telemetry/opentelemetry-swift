@@ -20,9 +20,9 @@ import Opentracing
 public class SpanContextShim: OTSpanContext, BaseShimProtocol {
     var telemetryInfo: TelemetryInfo
     public private(set) var context: SpanContext
-    public private(set) var baggage: Baggage
+    public private(set) var baggage: Baggage?
 
-    init(telemetryInfo: TelemetryInfo, context: SpanContext, baggage: Baggage) {
+    init(telemetryInfo: TelemetryInfo, context: SpanContext, baggage: Baggage?) {
         self.telemetryInfo = telemetryInfo
         self.context = context
         self.baggage = baggage
@@ -37,7 +37,8 @@ public class SpanContextShim: OTSpanContext, BaseShimProtocol {
     }
 
     func newWith(key: String, value: String) -> SpanContextShim {
-        let baggageBuilder = baggageManager.baggageBuilder().setParent(baggage)
+        let baggageBuilder = baggageManager.baggageBuilder()
+        baggageBuilder.setParent(baggage)
         baggageBuilder.put(key: EntryKey(name: key)!, value: EntryValue(string: value)!, metadata: nil)
 
         return SpanContextShim(telemetryInfo: telemetryInfo, context: context, baggage: baggageBuilder.build())
@@ -45,13 +46,13 @@ public class SpanContextShim: OTSpanContext, BaseShimProtocol {
 
     func getBaggageItem(key: String) -> String? {
         guard let key = EntryKey(name: key) else { return nil }
-        let value = baggage.getEntryValue(key: key)
+        let value = baggage?.getEntryValue(key: key)
         return value?.string
     }
 
     public func forEachBaggageItem(_ callback: @escaping (String, String) -> Bool) {
-        let entries = baggage.getEntries()
-        entries.forEach {
+        let entries = baggage?.getEntries()
+        entries?.forEach {
             if !callback($0.key.name, $0.value.string) {
                 return
             }
@@ -61,6 +62,11 @@ public class SpanContextShim: OTSpanContext, BaseShimProtocol {
 
 extension SpanContextShim: Equatable {
     public static func == (lhs: SpanContextShim, rhs: SpanContextShim) -> Bool {
-        return lhs.context == rhs.context && lhs.baggage == rhs.baggage
+        if let lbaggage = lhs.baggage, let rbaggage = rhs.baggage {
+            return lbaggage == rbaggage && lhs.context == rhs.context
+        }
+        else {
+            return lhs.baggage == nil && rhs.baggage == nil && lhs.context == rhs.context
+        }
     }
 }

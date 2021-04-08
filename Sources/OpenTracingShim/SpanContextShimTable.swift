@@ -49,7 +49,7 @@ public class SpanContextShimTable {
         return create(spanShim: spanShim, distContext: spanShim.telemetryInfo.emptyBaggage)
     }
 
-    @discardableResult public func create(spanShim: SpanShim, distContext: Baggage) -> SpanContextShim {
+    @discardableResult public func create(spanShim: SpanShim, distContext: Baggage?) -> SpanContextShim {
         lock.withWriterLock {
             var contextShim = shimsMap[spanShim.span.context]
             if contextShim != nil {
