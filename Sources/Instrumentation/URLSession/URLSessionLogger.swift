@@ -21,9 +21,10 @@ class URLSessionLogger {
     static var runningSpans = [String: Span]()
     static var runningSpansQueue = DispatchQueue(label: "org.opentelemetry.URLSessionLogger")
 
-    static func logRequest(_ request: URLRequest, instrumentation: URLSessionInstrumentation, sessionTaskId: String) {
+    /// This methods creates a Span for a request, and optionally injects tracing headers, returns a  new request if it was needed to create a new one to add the tracing headers
+    @discardableResult static func processAndLogRequest(_ request: URLRequest, sessionTaskId: String, instrumentation: URLSessionInstrumentation, shouldInjectHeaders: Bool) -> URLRequest? {
         guard instrumentation.configuration.shouldInstrument?(request) ?? true else {
-            return
+            return nil
         }
 
         var attributes = [String: String]()
@@ -57,14 +58,22 @@ class URLSessionLogger {
             spanBuilder.setAttribute(key: $0.key, value: $0.value)
         }
 
-        instrumentation.configuration.createdRequest?(request, spanBuilder)
-
         let span = spanBuilder.startSpan()
         runningSpansQueue.sync {
             runningSpans[sessionTaskId] = span
         }
+
+        var returnRequest: URLRequest?
+        if shouldInjectHeaders {
+            returnRequest = instrumentedRequest(for: request, span: span, instrumentation: instrumentation)
+        }
+
+        instrumentation.configuration.createdRequest?(returnRequest ?? request, spanBuilder)
+
+        return returnRequest ?? request
     }
 
+    /// This methods ends a Span when a response arrives
     static func logResponse(_ response: URLResponse, dataOrFile: Any?, instrumentation: URLSessionInstrumentation, sessionTaskId: String) {
         var span: Span!
         runningSpansQueue.sync {
@@ -84,6 +93,7 @@ class URLSessionLogger {
         span.end()
     }
 
+    /// This methods ends a Span when a error arrives
     static func logError(_ error: Error, dataOrFile: Any?, statusCode: Int, instrumentation: URLSessionInstrumentation, sessionTaskId: String) {
         var span: Span!
         runningSpansQueue.sync {
@@ -99,12 +109,44 @@ class URLSessionLogger {
         span.end()
     }
 
-    static func statusForStatusCode(code: Int) -> Status {
+    private static func statusForStatusCode(code: Int) -> Status {
         switch code {
             case 100 ... 399:
                 return .unset
             default:
                 return .error(description: String(code))
         }
+    }
+
+    private static func instrumentedRequest(for request: URLRequest, span: Span?, instrumentation: URLSessionInstrumentation) -> URLRequest? {
+        var request = request
+        guard instrumentation.configuration.shouldInjectTracingHeaders?(&request) ?? true
+        else {
+            return nil
+        }
+        var instrumentedRequest = request
+        objc_setAssociatedObject(instrumentedRequest, &URLSessionInstrumentation.instrumentedKey, true, .OBJC_ASSOCIATION_COPY_NONATOMIC)
+        var traceHeaders = tracePropagationHTTPHeaders(span: span, textMapPropagator: instrumentation.tracer.textFormat)
+        if let originalHeaders = request.allHTTPHeaderFields {
+            traceHeaders.merge(originalHeaders) { _, new in new }
+        }
+        instrumentedRequest.allHTTPHeaderFields = traceHeaders
+        return instrumentedRequest
+    }
+
+    private static func tracePropagationHTTPHeaders(span: Span?, textMapPropagator: TextMapPropagator) -> [String: String] {
+        var headers = [String: String]()
+
+        struct HeaderSetter: Setter {
+            func set(carrier: inout [String: String], key: String, value: String) {
+                carrier[key] = value
+            }
+        }
+
+        guard let currentSpan = span ?? OpenTelemetryContext.activeSpan else {
+            return headers
+        }
+        textMapPropagator.inject(spanContext: currentSpan.context, carrier: &headers, setter: HeaderSetter())
+        return headers
     }
 }

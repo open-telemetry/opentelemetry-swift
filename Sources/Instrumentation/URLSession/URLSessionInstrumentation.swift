@@ -129,15 +129,13 @@ public class URLSessionInstrumentation {
                 var task: URLSessionTask
 
                 if let request = argument as? URLRequest, objc_getAssociatedObject(argument, &idKey) == nil {
-                    let instrumentedRequest = self.instrumentedRequest(for: request)
-                    task = castedIMP(session, selector, instrumentedRequest)
-                    URLSessionLogger.logRequest(instrumentedRequest, instrumentation: self, sessionTaskId: sessionTaskId)
+                    let instrumentedRequest = URLSessionLogger.processAndLogRequest(request, sessionTaskId: sessionTaskId, instrumentation: self, shouldInjectHeaders: true)
+                    task = castedIMP(session, selector, instrumentedRequest ?? request)
                 } else {
                     task = castedIMP(session, selector, argument)
-                    if objc_getAssociatedObject(argument, &idKey) == nil,
-                       let currentRequest = task.currentRequest
+                    if objc_getAssociatedObject(argument, &idKey) == nil, let currentRequest = task.currentRequest
                     {
-                        URLSessionLogger.logRequest(currentRequest, instrumentation: self, sessionTaskId: sessionTaskId)
+                        URLSessionLogger.processAndLogRequest(currentRequest, sessionTaskId: sessionTaskId, instrumentation: self, shouldInjectHeaders: false)
                     }
                 }
                 self.setIdKey(value: sessionTaskId, for: task)
@@ -164,9 +162,8 @@ public class URLSessionInstrumentation {
 
             let block: @convention(block) (URLSession, URLRequest, AnyObject) -> URLSessionTask = { session, request, argument in
                 let castedIMP = unsafeBitCast(originalIMP, to: (@convention(c) (URLSession, Selector, URLRequest, AnyObject) -> URLSessionDataTask).self)
-                let instrumentedRequest = self.instrumentedRequest(for: request)
-                let task = castedIMP(session, selector, instrumentedRequest, argument)
-                URLSessionLogger.logRequest(instrumentedRequest, instrumentation: self, sessionTaskId: sessionTaskId)
+                let instrumentedRequest = URLSessionLogger.processAndLogRequest(request, sessionTaskId: sessionTaskId, instrumentation: self, shouldInjectHeaders: true)
+                let task = castedIMP(session, selector, instrumentedRequest ?? request, argument)
                 self.setIdKey(value: sessionTaskId, for: task)
                 return task
             }
@@ -238,15 +235,14 @@ public class URLSessionInstrumentation {
                 }
 
                 if let request = argument as? URLRequest, objc_getAssociatedObject(argument, &idKey) == nil {
-                    let instrumentedRequest = self.instrumentedRequest(for: request)
-                    task = castedIMP(session, selector, instrumentedRequest, completionBlock)
-                    URLSessionLogger.logRequest(instrumentedRequest, instrumentation: self, sessionTaskId: sessionTaskId)
+                    let instrumentedRequest = URLSessionLogger.processAndLogRequest(request, sessionTaskId: sessionTaskId, instrumentation: self, shouldInjectHeaders: true)
+                    task = castedIMP(session, selector, instrumentedRequest ?? request, completionBlock)
                 } else {
                     task = castedIMP(session, selector, argument, completionBlock)
                     if objc_getAssociatedObject(argument, &idKey) == nil,
                        let currentRequest = task.currentRequest
                     {
-                        URLSessionLogger.logRequest(currentRequest, instrumentation: self, sessionTaskId: sessionTaskId)
+                        URLSessionLogger.processAndLogRequest(currentRequest, sessionTaskId: sessionTaskId, instrumentation: self, shouldInjectHeaders: false)
                     }
                 }
                 self.setIdKey(value: sessionTaskId, for: task)
@@ -296,9 +292,8 @@ public class URLSessionInstrumentation {
                     completionBlock = completionWrapper
                 }
 
-                let instrumentedRequest = self.instrumentedRequest(for: request)
-                task = castedIMP(session, selector, instrumentedRequest, argument, completionBlock)
-                URLSessionLogger.logRequest(instrumentedRequest, instrumentation: self, sessionTaskId: sessionTaskId)
+                let processedRequest = URLSessionLogger.processAndLogRequest(request, sessionTaskId: sessionTaskId, instrumentation: self, shouldInjectHeaders: true)
+                task = castedIMP(session, selector, processedRequest ?? request, argument, completionBlock)
 
                 self.setIdKey(value: sessionTaskId, for: task)
                 return task
@@ -479,37 +474,5 @@ public class URLSessionInstrumentation {
             requestMap[id] = state
         }
         return state!
-    }
-
-    private func instrumentedRequest(for request: URLRequest) -> URLRequest {
-        var request = request
-        guard configuration.shouldInjectTracingHeaders?(&request) ?? true
-        else {
-            return request
-        }
-        var instrumentedRequest = request
-        objc_setAssociatedObject(instrumentedRequest, &URLSessionInstrumentation.instrumentedKey, true, .OBJC_ASSOCIATION_COPY_NONATOMIC)
-        var traceHeaders = tracePropagationHTTPHeaders()
-        if let originalHeaders = request.allHTTPHeaderFields {
-            traceHeaders.merge(originalHeaders) { _, new in new }
-        }
-        instrumentedRequest.allHTTPHeaderFields = traceHeaders
-        return instrumentedRequest
-    }
-
-    private func tracePropagationHTTPHeaders() -> [String: String] {
-        var headers = [String: String]()
-
-        struct HeaderSetter: Setter {
-            func set(carrier: inout [String: String], key: String, value: String) {
-                carrier[key] = value
-            }
-        }
-
-        guard let currentSpan = OpenTelemetryContext.activeSpan else {
-            return headers
-        }
-        tracer.textFormat.inject(spanContext: currentSpan.context, carrier: &headers, setter: HeaderSetter())
-        return headers
     }
 }
