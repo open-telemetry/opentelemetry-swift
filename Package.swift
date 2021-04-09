@@ -53,12 +53,15 @@ let package = Package(
         ),
         .target(name: "OpenTracingShim",
                 dependencies: ["OpenTelemetrySdk",
-                               "Opentracing"]
+                               "Opentracing"],
+                path: "Sources/Importers/OpenTracingShim"
         ),
         .target(name: "SwiftMetricsShim",
                 dependencies: ["OpenTelemetrySdk",
                                .product(name: "NIO", package: "swift-nio"),
-                               .product(name: "CoreMetrics", package: "swift-metrics")]
+                               .product(name: "CoreMetrics", package: "swift-metrics")],
+                path: "Sources/Importers/SwiftMetricsShim"
+
         ),
         .target(name: "JaegerExporter",
                 dependencies: ["OpenTelemetrySdk",
@@ -100,12 +103,12 @@ let package = Package(
         .testTarget(name: "OpenTracingShimTests",
                     dependencies: ["OpenTracingShim",
                                    "OpenTelemetrySdk"],
-                    path: "Tests/OpenTracingShim"
+                    path: "Tests/ImportersTests/OpenTracingShim"
         ),
         .testTarget(name: "SwiftMetricsShimTests",
                     dependencies: ["SwiftMetricsShim",
                                    "OpenTelemetrySdk"],
-                    path: "Tests/SwiftMetricsShim"
+                    path: "Tests/ImportersTests/SwiftMetricsShim"
         ),
         .testTarget(name: "OpenTelemetrySdkTests",
                     dependencies: ["OpenTelemetryApi",
