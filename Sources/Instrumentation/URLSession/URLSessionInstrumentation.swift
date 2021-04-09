@@ -90,6 +90,7 @@ public class URLSessionInstrumentation {
         injectTaskDidReceiveResponseIntoDelegateClass(cls: cls)
         injectTaskDidCompleteWithErrorIntoDelegateClass(cls: cls)
         injectRespondsToSelectorIntoDelegateClass(cls: cls)
+        injectTaskDidFinishCollectingMetricsIntoDelegateClass(cls: cls)
 
         // Data tasks
         injectDataTaskDidBecomeDownloadTaskIntoDelegateClass(cls: cls)
@@ -365,6 +366,31 @@ public class URLSessionInstrumentation {
         originalIMP = method_setImplementation(original, swizzledIMP)
     }
 
+    private func injectTaskDidFinishCollectingMetricsIntoDelegateClass(cls: AnyClass) {
+        let selector = #selector(URLSessionTaskDelegate.urlSession(_:task:didFinishCollecting:))
+        guard let original = class_getInstanceMethod(cls, selector) else {
+            let block: @convention(block) (Any, URLSession, URLSessionTask, URLSessionTaskMetrics) -> Void = { _, session, task, metrics in
+                self.urlSession(session, task: task, didFinishCollecting: metrics)
+            }
+            let imp = imp_implementationWithBlock(unsafeBitCast(block, to: AnyObject.self))
+            class_addMethod(cls, selector, imp, "@@@")
+            return
+        }
+        var originalIMP: IMP?
+        let block: @convention(block) (Any, URLSession, URLSessionTask, URLSessionTaskMetrics) -> Void = { object, session, task, metrics in
+            if objc_getAssociatedObject(session, &idKey) == nil {
+                self.urlSession(session, task: task, didFinishCollecting: metrics)
+            }
+            let key = String(selector.hashValue)
+            objc_setAssociatedObject(session, key, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            let castedIMP = unsafeBitCast(originalIMP, to: (@convention(c) (Any, Selector, URLSession, URLSessionTask, URLSessionTaskMetrics) -> Void).self)
+            castedIMP(object, selector, session, task, metrics)
+            objc_setAssociatedObject(session, key, nil, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+        let swizzledIMP = imp_implementationWithBlock(unsafeBitCast(block, to: AnyObject.self))
+        originalIMP = method_setImplementation(original, swizzledIMP)
+    }
+
     func injectRespondsToSelectorIntoDelegateClass(cls: AnyClass) {
         let selector = #selector(NSObject.responds(to:))
         guard let original = class_getInstanceMethod(cls, selector),
@@ -450,6 +476,13 @@ public class URLSessionInstrumentation {
         queue.async {
             let id = self.idKeyForTask(dataTask)
             self.setIdKey(value: id, for: downloadTask)
+        }
+    }
+
+    private func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
+        let taskId = self.idKeyForTask(task)
+        if (self.requestMap[taskId]?.request) != nil {
+            let a = 0
         }
     }
 

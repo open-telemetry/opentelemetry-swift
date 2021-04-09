@@ -36,10 +36,40 @@ func simpleNetworkCall() {
     semaphore.wait()
 }
 
+
+class SessionDelegate: NSObject, URLSessionDataDelegate, URLSessionTaskDelegate {
+    let semaphore = DispatchSemaphore(value: 0)
+
+//    func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
+//
+//        let a = 0
+//    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        semaphore.signal()
+    }
+}
+let delegate = SessionDelegate()
+
+func simpleNetworkCallWithDelegate() {
+
+    let session = URLSession(configuration: .default, delegate: delegate, delegateQueue:nil)
+
+    let url = URL(string: "http://httpbin.org/get")!
+    let request = URLRequest(url: url)
+
+    let task = session.dataTask(with: request)
+    task.resume()
+
+    delegate.semaphore.wait()
+}
+
+
 let spanProcessor = SimpleSpanProcessor(spanExporter: StdoutExporter(isDebug: true))
 OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(spanProcessor)
 
 let networkInstrumentation = URLSessionInstrumentation(configuration: URLSessionConfiguration())
 
 simpleNetworkCall()
+simpleNetworkCallWithDelegate()
 sleep(1)
