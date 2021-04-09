@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-import OpenTelemetryApi
+@testable import OpenTelemetryApi
 import XCTest
 
 class B3PropagatorTests: XCTestCase {
@@ -30,21 +30,6 @@ class B3PropagatorTests: XCTestCase {
     private let singleHeaderB3Propagator = B3Propagator(true)
     let setter = TestSetter()
     let getter = TestGetter()
-
-    struct TestSetter: Setter {
-        func set(carrier: inout [String: String], key: String, value: String) {
-            carrier[key] = value
-        }
-    }
-
-    struct TestGetter: Getter {
-        func get(carrier: [String: String], key: String) -> [String]? {
-            if let value = carrier[key] {
-                return [value]
-            }
-            return nil
-        }
-    }
 
     override func setUp() {
         traceId = TraceId(fromHexString: traceIdHexString)

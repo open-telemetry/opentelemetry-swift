@@ -21,24 +21,45 @@ class TracerSharedState {
     var idGenerator: IdGenerator
     var resource: Resource
 
-    var sampler: Sampler = ParentBasedSampler(root: Samplers.alwaysOn)
-    var activeSpanLimits = SpanLimits()
-    var activeSpanProcessor: SpanProcessor = NoopSpanProcessor()
+    var activeSpanLimits: SpanLimits
+    var sampler: Sampler
+    var activeSpanProcessor: SpanProcessor
     var hasBeenShutdown = false
 
     var registeredSpanProcessors = [SpanProcessor]()
 
-    init(clock: Clock, idGenerator: IdGenerator, resource: Resource) {
+    init(clock: Clock,
+         idGenerator: IdGenerator,
+         resource: Resource,
+         spanLimits: SpanLimits,
+         sampler: Sampler,
+         spanProcessors: [SpanProcessor])
+    {
         self.clock = clock
         self.idGenerator = idGenerator
         self.resource = resource
+        self.activeSpanLimits = spanLimits
+        self.sampler = sampler
+        if spanProcessors.count > 1 {
+            self.activeSpanProcessor = MultiSpanProcessor(spanProcessors: spanProcessors)
+            registeredSpanProcessors = spanProcessors
+        } else if spanProcessors.count == 1 {
+            self.activeSpanProcessor = spanProcessors[0]
+            registeredSpanProcessors = spanProcessors
+        } else {
+            activeSpanProcessor = NoopSpanProcessor()
+        }
     }
 
     /// Adds a new SpanProcessor
     /// - Parameter spanProcessor:  the new SpanProcessor to be added.
     func addSpanProcessor(_ spanProcessor: SpanProcessor) {
         registeredSpanProcessors.append(spanProcessor)
-        activeSpanProcessor = MultiSpanProcessor(spanProcessors: registeredSpanProcessors)
+        if registeredSpanProcessors.count > 1 {
+            activeSpanProcessor = MultiSpanProcessor(spanProcessors: registeredSpanProcessors)
+        } else {
+            activeSpanProcessor = registeredSpanProcessors[0]
+        }
     }
 
     /// Stops tracing, including shutting down processors and set to true isStopped.
