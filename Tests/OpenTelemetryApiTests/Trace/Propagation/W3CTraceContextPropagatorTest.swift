@@ -31,21 +31,6 @@ class W3CTraceContextPropagatorTest: XCTestCase {
     let traceStateNotDefaultEncoding = "foo=bar,bar=baz"
     let httpTraceContext = W3CTraceContextPropagator()
 
-    struct TestSetter: Setter {
-        func set(carrier: inout [String: String], key: String, value: String) {
-            carrier[key] = value
-        }
-    }
-
-    struct TestGetter: Getter {
-        func get(carrier: [String: String], key: String) -> [String]? {
-            if let value = carrier[key] {
-                return [value]
-            }
-            return nil
-        }
-    }
-
     let setter = TestSetter()
     let getter = TestGetter()
 

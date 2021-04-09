@@ -18,11 +18,11 @@ class PushMetricController {
     public private(set) var pushInterval: TimeInterval
     var metricExporter: MetricExporter
     var metricProcessor: MetricProcessor
-    var meterProvider: MeterSdkProvider
+    var meterProvider: MeterProviderSdk
 
     let pushMetricQueue = DispatchQueue(label: "org.opentelemetry.PushMetricController.pushMetricQueue")
 
-    init(meterProvider: MeterSdkProvider, metricProcessor: MetricProcessor, metricExporter: MetricExporter, pushInterval: TimeInterval, shouldCancel: (() -> Bool)? = nil) {
+    init(meterProvider: MeterProviderSdk, metricProcessor: MetricProcessor, metricExporter: MetricExporter, pushInterval: TimeInterval, shouldCancel: (() -> Bool)? = nil) {
         self.meterProvider = meterProvider
         self.metricProcessor = metricProcessor
         self.metricExporter = metricExporter

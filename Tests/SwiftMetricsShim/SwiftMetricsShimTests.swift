@@ -21,7 +21,7 @@ import XCTest
 
 class SwiftMetricsShimTests: XCTestCase {
     var testProcessor = TestMetricProcessor()
-    let provider = MeterSdkProvider()
+    let provider = MeterProviderSdk()
     var meter: MeterSdk!
     var metrics: OpenTelemetrySwiftMetrics!
 
@@ -29,7 +29,7 @@ class SwiftMetricsShimTests: XCTestCase {
         super.setUp()
         testProcessor = TestMetricProcessor()
         
-        meter = MeterSdkProvider(
+        meter = MeterProviderSdk(
             metricProcessor: testProcessor,
             metricExporter: NoopMetricExporter()
         ).get(instrumentationName: "SwiftMetricsShimTest") as? MeterSdk
@@ -123,6 +123,24 @@ class SwiftMetricsShimTests: XCTestCase {
         XCTAssertEqual(metric.name, "my_timer")
         XCTAssertEqual(metric.aggregationType, .doubleSummary)
         XCTAssertEqual(data.sum, 1000000000)
+        XCTAssertNil(data.labels["label_one"])
+    }
+    
+    // MARK: - Test Concurrency
+    
+    func testConcurrency() throws {
+        DispatchQueue.concurrentPerform(iterations: 5) { iteration in
+            let counter = Counter(label: "my_counter")
+            counter.increment()
+        }
+        
+        meter.collect()
+        
+        let metric = testProcessor.metrics[0]
+        let data = try XCTUnwrap(metric.data.last as? SumData<Int>)
+        XCTAssertEqual(metric.name, "my_counter")
+        XCTAssertEqual(metric.aggregationType, .intSum)
+        XCTAssertEqual(data.sum, 5)
         XCTAssertNil(data.labels["label_one"])
     }
 

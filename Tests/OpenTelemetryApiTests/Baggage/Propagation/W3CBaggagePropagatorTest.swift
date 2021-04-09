@@ -17,21 +17,6 @@
 import XCTest
 
 class W3BaggagePropagatorTest: XCTestCase {
-    struct TestSetter: Setter {
-        func set(carrier: inout [String: String], key: String, value: String) {
-            carrier[key] = value
-        }
-    }
-
-    struct TestGetter: Getter {
-        func get(carrier: [String: String], key: String) -> [String]? {
-            if let value = carrier[key] {
-                return [value]
-            }
-            return nil
-        }
-    }
-
     let setter = TestSetter()
     let getter = TestGetter()
     let propagator = W3CBaggagePropagator()
@@ -81,7 +66,7 @@ class W3BaggagePropagatorTest: XCTestCase {
 
     func testExtractFullComplexities() {
         let result = propagator.extract(carrier: ["baggage": "key1= value1; metadata-key = value; othermetadata, " +
-                                                    "key2 =value2 , key3 =\tvalue3 ; "], getter: getter)!
+                "key2 =value2 , key3 =\tvalue3 ; "], getter: getter)!
         let expectedBaggage = builder.put(key: "key1", value: "value1", metadata: "metadata-key = value; othermetadata")
             .put(key: "key2", value: "value2")
             .put(key: "key3", value: "value3")
@@ -106,6 +91,6 @@ class W3BaggagePropagatorTest: XCTestCase {
 
         let expected1 = ["baggage": "meta=meta-value;somemetadata; someother=foo,nometa=nometa-value"]
         let expected2 = ["baggage": "nometa=nometa-value,meta=meta-value;somemetadata; someother=foo"]
-        XCTAssert( carrier == expected1 || carrier == expected2)
+        XCTAssert(carrier == expected1 || carrier == expected2)
     }
 }

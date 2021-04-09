@@ -16,7 +16,7 @@
 
 import Foundation
 
-public enum ResourceConstants: String {
+public enum ResourceAttributes: String {
     /**
     Name of the cloud provider.
 
@@ -1097,10 +1097,10 @@ public enum ResourceConstants: String {
     }
     
 }
-public func ==(left: ResourceConstants, right: String) -> Bool {
+public func ==(left: ResourceAttributes, right: String) -> Bool {
     return left.rawValue == right
 }
 
-public func ==(left: String, right: ResourceConstants) -> Bool {
+public func ==(left: String, right: ResourceAttributes) -> Bool {
     return left == right.rawValue
 }

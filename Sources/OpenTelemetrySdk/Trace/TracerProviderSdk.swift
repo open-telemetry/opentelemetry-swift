@@ -17,21 +17,37 @@ import Foundation
 import OpenTelemetryApi
 
 /// This class is not intended to be used in application code and it is used only by OpenTelemetry.
-public class TracerSdkProvider: TracerProvider {
+public class TracerProviderSdk: TracerProvider {
     private var tracerProvider = [InstrumentationLibraryInfo: TracerSdk]()
     internal var sharedState: TracerSharedState
+    internal static let emptyName = "unknown"
 
-    /// Returns a new TracerSdkProvider with default Clock, IdGenerator and Resource.
+    /// Returns a new TracerProviderSdk with default Clock, IdGenerator and Resource.
     public init(clock: Clock = MillisClock(),
                 idGenerator: IdGenerator = RandomIdGenerator(),
-                resource: Resource = EnvVarResource.resource)
+                resource: Resource = EnvVarResource.resource,
+                spanLimits: SpanLimits = SpanLimits(),
+                sampler: Sampler = Samplers.parentBased(root: Samplers.alwaysOn),
+                spanProcessors: [SpanProcessor] = [])
     {
-        sharedState = TracerSharedState(clock: clock, idGenerator: idGenerator, resource: resource)
+        sharedState = TracerSharedState(clock: clock,
+                                        idGenerator: idGenerator,
+                                        resource: resource,
+                                        spanLimits: spanLimits,
+                                        sampler: sampler,
+                                        spanProcessors: spanProcessors)
     }
 
     public func get(instrumentationName: String, instrumentationVersion: String? = nil) -> Tracer {
         if sharedState.hasBeenShutdown {
             return DefaultTracer.instance
+        }
+
+        var instrumentationName = instrumentationName
+        if instrumentationName.isEmpty {
+            // Per the spec, empty is "invalid"
+            print("Tracer requested without instrumentation name.")
+            instrumentationName = TracerProviderSdk.emptyName
         }
         let instrumentationLibraryInfo = InstrumentationLibraryInfo(name: instrumentationName, version: instrumentationVersion ?? "")
         if let tracer = tracerProvider[instrumentationLibraryInfo] {

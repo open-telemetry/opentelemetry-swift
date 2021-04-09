@@ -16,7 +16,7 @@
 
 import Foundation
 
-public class MetricSdkProcessor : MetricProcessor {
+public class MetricProcessorSdk : MetricProcessor {
     private let lock : Lock
     var metrics : [Metric]
     

@@ -119,12 +119,12 @@ public enum {{enum}}: String {
     {%- endfor %}
 }
 
-{%- if enum == "ResourceConstants" %}
-public func ==(left: ResourceConstants, right: String) -> Bool {
+{%- if enum == "ResourceAttributes" %}
+public func ==(left: ResourceAttributes, right: String) -> Bool {
     return left.rawValue == right
 }
 
-public func ==(left: String, right: ResourceConstants) -> Bool {
+public func ==(left: String, right: ResourceAttributes) -> Bool {
     return left == right.rawValue
 }
 {% endif %}

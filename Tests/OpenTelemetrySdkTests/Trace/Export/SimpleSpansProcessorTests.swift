@@ -14,7 +14,7 @@
 //
 
 import OpenTelemetryApi
-import OpenTelemetrySdk
+@testable import OpenTelemetrySdk
 import XCTest
 
 class SimpleSpansProcessorTests: XCTestCase {
@@ -22,7 +22,7 @@ class SimpleSpansProcessorTests: XCTestCase {
     let spanName = "MySpanName"
     var readableSpan = ReadableSpanMock()
     var spanExporter = SpanExporterMock()
-    var tracerSdkFactory = TracerSdkProvider()
+    var tracerSdkFactory = TracerProviderSdk()
     var tracer: Tracer!
     let sampledSpanContext = SpanContext.create(traceId: TraceId(), spanId: SpanId(), traceFlags: TraceFlags().settingIsSampled(true), traceState: TraceState())
     let notSampledSpanContext = SpanContext.create(traceId: TraceId(), spanId: SpanId(), traceFlags: TraceFlags(), traceState: TraceState())

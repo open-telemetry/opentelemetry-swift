@@ -16,17 +16,17 @@
 import Foundation
 import OpenTelemetryApi
 
-struct NoopSpanProcessor: SpanProcessor {
-    init() {}
+struct TestSetter: Setter {
+    func set(carrier: inout [String: String], key: String, value: String) {
+        carrier[key] = value
+    }
+}
 
-    let isStartRequired = false
-    let isEndRequired = false
-
-    func onStart(parentContext: SpanContext?, span: ReadableSpan) {}
-
-    func onEnd(span: ReadableSpan) {}
-
-    func shutdown() {}
-
-    func forceFlush() {}
+struct TestGetter: Getter {
+    func get(carrier: [String: String], key: String) -> [String]? {
+        if let value = carrier[key] {
+            return [value]
+        }
+        return nil
+    }
 }

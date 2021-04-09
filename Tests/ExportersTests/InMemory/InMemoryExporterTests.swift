@@ -21,7 +21,7 @@ import Foundation
 import XCTest
 
 final class InMemoryExporterTests: XCTestCase {
-  private var tracerSdkFactory = TracerSdkProvider()
+  private var tracerSdkFactory = TracerProviderSdk()
   private var tracer: Tracer!
   private var exporter: InMemoryExporter!
 
