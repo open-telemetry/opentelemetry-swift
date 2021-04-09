@@ -20,13 +20,13 @@ import Foundation
  * https://github.com/openzipkin/b3-propagation
  */
 public class B3Propagator: TextMapPropagator {
-    public static let traceIdHeader = "X-B3-TraceId"
-    public static let spanIdHeader = "X-B3-SpanId"
-    public static let sampledHeader = "X-B3-Sampled"
-    public static let trueInt = "1"
-    public static let falseInt = "0"
-    public static let combinedHeader = "b3"
-    public static let combinedHeaderDelimiter = "-"
+    static let traceIdHeader = "X-B3-TraceId"
+    static let spanIdHeader = "X-B3-SpanId"
+    static let sampledHeader = "X-B3-Sampled"
+    static let trueInt = "1"
+    static let falseInt = "0"
+    static let combinedHeader = "b3"
+    static let combinedHeaderDelimiter = "-"
 
     public let fields: Set<String> = [traceIdHeader, spanIdHeader, sampledHeader]
 
