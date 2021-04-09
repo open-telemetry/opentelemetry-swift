@@ -74,7 +74,6 @@ class DefaultBaggageManagerTests: XCTestCase {
         DispatchQueue.global().async {
             semaphore2.signal()
             semaphore.wait()
-            let currentBaggage = self.defaultBaggageManager.getCurrentBaggage()
             XCTAssert(self.defaultBaggageManager.getCurrentBaggage() === self.baggage)
             expec.fulfill()
         }
