@@ -35,7 +35,6 @@ class ActivityContextManager: ContextManager {
         }
 
         deinit {
-            //os_activity_scope_leave(&scope)
         }
 
         var scope: os_activity_scope_state_s
@@ -83,17 +82,10 @@ class ActivityContextManager: ContextManager {
     }
 
     func removeContextValue(forKey key: String, value: AnyObject) {
-//        var parentIdent: os_activity_id_t = 0
-//        let activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, &parentIdent)
-//        if contextMap[activityIdent] != nil {
-//            contextMap[activityIdent]![key] = nil
-//            if contextMap[activityIdent]!.isEmpty {
-//                contextMap[activityIdent] = nil
-//            }
-//        }
         if let scope = objectScope.object(forKey: value) {
             var scope = scope.scope
             os_activity_scope_leave(&scope)
+            objectScope.removeObject(forKey: value)
         }
     }
 }
