@@ -71,7 +71,7 @@ class PrometheusExporterTests: XCTestCase {
 
     private func collectMetrics(simpleProcessor: UngroupedBatcher, exporter: MetricExporter) {
 
-        let meterProvider = MeterSdkProvider(metricProcessor: simpleProcessor, metricExporter: exporter, metricPushInterval: metricPushIntervalSec)
+        let meterProvider = MeterProviderSdk(metricProcessor: simpleProcessor, metricExporter: exporter, metricPushInterval: metricPushIntervalSec)
 
         let meter = meterProvider.get(instrumentationName: "library1")
 

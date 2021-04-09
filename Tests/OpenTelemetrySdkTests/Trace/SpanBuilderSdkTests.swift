@@ -14,7 +14,7 @@
 //
 
 @testable import OpenTelemetryApi
-import OpenTelemetrySdk
+@testable import OpenTelemetrySdk
 import XCTest
 
 import os.activity
@@ -33,7 +33,7 @@ class SpanBuilderSdkTest: XCTestCase {
                                                 spanId: SpanId(id: 3000),
                                                 traceFlags: TraceFlags().settingIsSampled(true),
                                                 traceState: TraceState())
-    var tracerSdkFactory = TracerSdkProvider()
+    var tracerSdkFactory = TracerProviderSdk()
     var tracerSdk: Tracer!
 
     override func setUp() {

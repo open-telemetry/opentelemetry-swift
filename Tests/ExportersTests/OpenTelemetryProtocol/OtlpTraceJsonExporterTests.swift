@@ -23,7 +23,7 @@ import XCTest
 final class OtlpTraceJsonExporterTests: XCTestCase {
     
     // MARK: - Variable Declaration
-    private var tracerSdkFactory = TracerSdkProvider()
+    private var tracerSdkFactory = TracerProviderSdk()
     private var tracer: Tracer!
     private var exporter: OtlpTraceJsonExporter!
     

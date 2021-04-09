@@ -16,7 +16,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public class MeterSdkProvider: MeterProvider {
+public class MeterProviderSdk: MeterProvider {
     private let lock = Lock()
     static public let defaultPushInterval: TimeInterval = 60
 
@@ -33,7 +33,7 @@ public class MeterSdkProvider: MeterProvider {
     
     public init(metricProcessor: MetricProcessor,
                 metricExporter: MetricExporter,
-                metricPushInterval: TimeInterval = MeterSdkProvider.defaultPushInterval,
+                metricPushInterval: TimeInterval = MeterProviderSdk.defaultPushInterval,
                 resource: Resource = EnvVarResource.resource) {
         self.meterSharedState = MeterSharedState(metricProcessor:metricProcessor, metricPushInterval: metricPushInterval, resource: resource)
 
