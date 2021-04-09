@@ -32,9 +32,14 @@ or
 ```
 
 ## Current status
-**Please note** Tracing spec follows version 1.0.1 and should be considered almost stable now. Metrics support is experimental, and the spec is still under development
+<!--Please note: 
+Tracing spec follows version 1.0.1 and should be considered almost stable now.
+Metrics support is experimental, and the spec is still under development.
+Semantic Conventions AND OpenTracing shim are also experimental.
+Libraries only dependant on these experimental status include the experimental postfix
+--> 
 
-Currently Tracing, Metrics and Baggage API's and SDK are implemented, also OpenTracing shims, for compatibility with existing Opentracing code.
+Currently Tracing, Metrics and Baggage API's and SDK are implemented, also OpenTracing shim, for compatibility with existing Opentracing code.
 
 Implemented traces exporters: Stdout, Jaeger, Zipkin, Datadog and OpenTelemetry collector
 
