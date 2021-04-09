@@ -42,9 +42,9 @@ class ScopedBaggageTests: XCTestCase {
     }
 
     func testCreateBuilderFromCurrentEntries() {
-        let baggage = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()!
+        let baggage = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()
         OpenTelemetry.instance.contextProvider.setActiveBaggage(baggage)
-        let newEntries = baggageManager.baggageBuilder().put(key: key2, value: value2, metadata: metadataTest).build()!
+        let newEntries = baggageManager.baggageBuilder().put(key: key2, value: value2, metadata: metadataTest).build()
         XCTAssertEqual(newEntries.getEntries().count, 2)
         XCTAssertEqual(newEntries.getEntries().sorted(), [Entry(key: key1, value: value1, metadata: metadataTest), Entry(key: key2, value: value2, metadata: metadataTest)].sorted())
         XCTAssertTrue(baggageManager.getCurrentBaggage() === baggage)
@@ -53,7 +53,7 @@ class ScopedBaggageTests: XCTestCase {
 
     func testSetCurrentEntriesWithBuilder() {
         XCTAssertNil(baggageManager.getCurrentBaggage())
-        let baggage = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()!
+        let baggage = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()
         OpenTelemetry.instance.contextProvider.setActiveBaggage(baggage)
         XCTAssertEqual(baggageManager.getCurrentBaggage()?.getEntries().count, 1)
         XCTAssertEqual(baggageManager.getCurrentBaggage()?.getEntries().first, Entry(key: key1, value: value1, metadata: metadataTest))
@@ -62,9 +62,9 @@ class ScopedBaggageTests: XCTestCase {
     }
 
     func testAddToCurrentEntriesWithBuilder() {
-        let outerBaggage = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()!
+        let outerBaggage = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()
         OpenTelemetry.instance.contextProvider.setActiveBaggage(outerBaggage)
-        let innerBaggage = baggageManager.baggageBuilder().put(key: key2, value: value2, metadata: metadataTest).build()!
+        let innerBaggage = baggageManager.baggageBuilder().put(key: key2, value: value2, metadata: metadataTest).build()
         OpenTelemetry.instance.contextProvider.setActiveBaggage(innerBaggage)
         XCTAssertEqual(baggageManager.getCurrentBaggage()?.getEntries().sorted(),
                        [Entry(key: key1, value: value1, metadata: metadataTest),
@@ -79,12 +79,12 @@ class ScopedBaggageTests: XCTestCase {
     func testMultiScopeBaggageWithMetadata() {
         let baggage1 = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest)
             .put(key: key2, value: value2, metadata: metadataTest)
-            .build()!
+            .build()
         OpenTelemetry.instance.contextProvider.setActiveBaggage(baggage1)
 
         let baggage2 = baggageManager.baggageBuilder().put(key: key3, value: value3, metadata: metadataTest)
             .put(key: key2, value: value4, metadata: metadataTest)
-            .build()!
+            .build()
         OpenTelemetry.instance.contextProvider.setActiveBaggage(baggage2)
 
         XCTAssertEqual(baggageManager.getCurrentBaggage()?.getEntries().sorted(),
@@ -100,9 +100,9 @@ class ScopedBaggageTests: XCTestCase {
 
     func testSetNoParent_doesNotInheritContext() {
         XCTAssertNil(baggageManager.getCurrentBaggage())
-        let baggage = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()!
+        let baggage = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()
         OpenTelemetry.instance.contextProvider.setActiveBaggage(baggage)
-        let innerDistContext = baggageManager.baggageBuilder().setNoParent().put(key: key2, value: value2, metadata: metadataTest).build()!
+        let innerDistContext = baggageManager.baggageBuilder().setNoParent().put(key: key2, value: value2, metadata: metadataTest).build()
         XCTAssertEqual(innerDistContext.getEntries(), [Entry(key: key2, value: value2, metadata: metadataTest)])
         OpenTelemetry.instance.contextProvider.removeContextForBaggage(baggage)
         XCTAssertNil(baggageManager.getCurrentBaggage())

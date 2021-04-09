@@ -43,6 +43,6 @@ public protocol BaggageBuilder: AnyObject {
     /// - Parameter key: the EntryKey which will be removed.
     @discardableResult func remove(key: EntryKey) -> Self
 
-    /// Creates a Baggage from this builder or nil if it has no entries itself or the parent
-    func build() -> Baggage?
+    /// Creates a Baggage from this builder. 
+    func build() -> Baggage
 }

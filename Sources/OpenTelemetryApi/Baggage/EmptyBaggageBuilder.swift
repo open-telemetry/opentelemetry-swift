@@ -32,7 +32,7 @@ class EmptyBaggageBuilder: BaggageBuilder {
         return self
     }
 
-    func build() -> Baggage? {
+    func build() -> Baggage {
         return EmptyBaggage.instance
     }
 

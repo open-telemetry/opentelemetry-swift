@@ -54,31 +54,31 @@ class W3BaggagePropagatorTest: XCTestCase {
 
     func testExtractEmptyBaggageHeader() {
         let result = propagator.extract(carrier: ["baggage": ""], getter: getter)
-        XCTAssertNil(result)
+        XCTAssertEqual(result?.getEntries().count, 0)
     }
 
     func testExtractSingleEntry() {
         let result = propagator.extract(carrier: ["baggage": "key=value"], getter: getter)!
-        let expectedBaggage = builder.put(key: "key", value: "value").build()!
+        let expectedBaggage = builder.put(key: "key", value: "value").build()
         XCTAssert(result == expectedBaggage)
     }
 
     func testExtractMultiEntry() {
         let result = propagator.extract(carrier: ["baggage": "key1=value1,key2=value2"], getter: getter)!
-        let expectedBaggage = builder.put(key: "key1", value: "value1").put(key: "key2", value: "value2").build()!
+        let expectedBaggage = builder.put(key: "key1", value: "value1").put(key: "key2", value: "value2").build()
         XCTAssert(result == expectedBaggage)
     }
 
     func testExtractDuplicateKeys() {
         let result = propagator.extract(carrier: ["baggage": "key=value1,key=value2"], getter: getter)!
-        let expectedBaggage = builder.put(key: "key", value: "value2").build()!
+        let expectedBaggage = builder.put(key: "key", value: "value2").build()
         XCTAssert(result == expectedBaggage)
     }
 
     func testExtractWithMetadata() {
         let result = propagator.extract(carrier: ["baggage": "key=value;metadata-key=value;othermetadata"], getter: getter)!
         let expectedBaggage = builder.put(key: "key", value: "value", metadata: "metadata-key=value;othermetadata")
-            .build()!
+            .build()
         XCTAssert(result == expectedBaggage)
     }
 
@@ -88,7 +88,7 @@ class W3BaggagePropagatorTest: XCTestCase {
         let expectedBaggage = builder.put(key: "key1", value: "value1", metadata: "metadata-key = value; othermetadata")
             .put(key: "key2", value: "value2")
             .put(key: "key3", value: "value3")
-            .build()!
+            .build()
         XCTAssert(result == expectedBaggage)
     }
 
@@ -102,7 +102,7 @@ class W3BaggagePropagatorTest: XCTestCase {
         let baggage = builder.put(key: "nometa", value: "nometa-value")
             .put(key: "nometa", value: "nometa-value")
             .put(key: "meta", value: "meta-value", metadata: "somemetadata; someother=foo")
-            .build()!
+            .build()
 
         var carrier = [String: String]()
         propagator.inject(baggage: baggage, carrier: &carrier, setter: setter)

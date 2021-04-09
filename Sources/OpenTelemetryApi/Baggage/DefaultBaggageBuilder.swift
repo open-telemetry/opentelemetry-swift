@@ -57,7 +57,7 @@ public class DefaultBaggageBuilder: BaggageBuilder {
         return self
     }
     
-    public func build() -> Baggage? {
+    public func build() -> Baggage {
         var parentCopy = parent
         if parent == nil, !noImplicitParent {
             parentCopy = OpenTelemetry.instance.contextProvider.activeBaggage
@@ -71,6 +71,6 @@ public class DefaultBaggageBuilder: BaggageBuilder {
                 }
             }
         }
-        return entries.isEmpty ? nil : DefaultBaggage(entries: combined)
+        return entries.isEmpty ? EmptyBaggage.instance : DefaultBaggage(entries: combined)
     }
 }

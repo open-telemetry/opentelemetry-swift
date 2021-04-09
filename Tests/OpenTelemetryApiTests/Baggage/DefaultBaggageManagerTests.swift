@@ -45,7 +45,7 @@ class DefaultBaggageManagerTests: XCTestCase {
     
     func testBuilderMethod() {
         let builder = defaultBaggageManager.baggageBuilder()
-        XCTAssertNil(builder.build())
+        XCTAssertEqual(builder.build().getEntries().count, 0)
     }
 
     func testGetCurrentContext_DefaultContext() {
