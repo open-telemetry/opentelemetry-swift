@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-import OpenTelemetrySdk
+@testable import OpenTelemetrySdk
 import XCTest
 
 class NoopSpanProcessorTest: XCTestCase {

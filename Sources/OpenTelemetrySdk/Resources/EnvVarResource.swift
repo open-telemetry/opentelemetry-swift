@@ -24,7 +24,7 @@ public struct EnvVarResource {
 
     ///  This resource information is loaded from the OC_RESOURCE_LABELS
     ///  environment variable.
-    public static let resource = Resource(attributes: parseResourceAttributes(rawEnvAttributes: ProcessInfo.processInfo.environment[otelResourceAttributesEnv]))
+    public static let resource = Resource(attributes: parseResourceAttributes(rawEnvAttributes: ProcessInfo.processInfo.environment[otelResourceAttributesEnv])).merging(other: Resource())
 
     private init() {}
 

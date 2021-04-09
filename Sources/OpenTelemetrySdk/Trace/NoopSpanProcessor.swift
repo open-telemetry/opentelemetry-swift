@@ -16,17 +16,17 @@
 import Foundation
 import OpenTelemetryApi
 
-public struct NoopSpanProcessor: SpanProcessor {
-    public init() {}
+struct NoopSpanProcessor: SpanProcessor {
+    init() {}
 
-    public let isStartRequired = false
-    public let isEndRequired = false
+    let isStartRequired = false
+    let isEndRequired = false
 
-    public func onStart(parentContext: SpanContext?, span: ReadableSpan) {}
+    func onStart(parentContext: SpanContext?, span: ReadableSpan) {}
 
-    public func onEnd(span: ReadableSpan) {}
+    func onEnd(span: ReadableSpan) {}
 
-    public func shutdown() {}
+    func shutdown() {}
 
-    public func forceFlush() {}
+    func forceFlush() {}
 }

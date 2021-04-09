@@ -14,12 +14,12 @@
 //
 
 import OpenTelemetryApi
-import OpenTelemetrySdk
+@testable import OpenTelemetrySdk
 @testable import OpenTracingShim
 import XCTest
 
 class SpanShimTests: XCTestCase {
-    let tracerSdkProvider = TracerProviderSdk()
+    let tracerProviderSdk = TracerProviderSdk()
     var tracer: Tracer!
     var telemetryInfo: TelemetryInfo!
     var span: Span!
@@ -28,7 +28,7 @@ class SpanShimTests: XCTestCase {
     let spanName = "Span"
 
     override func setUp() {
-        tracer = tracerSdkProvider.get(instrumentationName: "SpanShimTest")
+        tracer = tracerProviderSdk.get(instrumentationName: "SpanShimTest")
         telemetryInfo = TelemetryInfo(tracer: tracer, baggageManager: OpenTelemetrySDK.instance.baggageManager, propagators: OpenTelemetrySDK.instance.propagators)
         span = tracer.spanBuilder(spanName: spanName).startSpan()
         tracerShim = TracerShim(telemetryInfo: telemetryInfo)
