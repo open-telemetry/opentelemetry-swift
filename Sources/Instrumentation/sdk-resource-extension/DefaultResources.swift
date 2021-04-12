@@ -26,6 +26,8 @@ public class DefaultResources {
 
     let telemetry = TelemetryResourceProvider(source: TelemetryDataSource())
 
+    public init() {} 
+    
     public func get() -> Resource {
         var resource = Resource()
         let mirror = Mirror(reflecting: self)

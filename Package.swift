@@ -15,7 +15,7 @@ let package = Package(
         .library(name: "OpenTelemetrySdk", type: .dynamic, targets: ["OpenTelemetrySdk"]),
         .library(name: "libOpenTelemetrySdk", type: .static, targets: ["OpenTelemetrySdk"]),
         .library(name: "ResourceExtension", type: .dynamic, targets: ["ResourceExtension"]),
-        .library(name: "libResourceExtension", type: .dynamic, targets: ["ResourceExtension"]),
+        .library(name: "libResourceExtension", type: .static, targets: ["ResourceExtension"]),
         .library(name: "OpenTracingShim", type: .dynamic, targets: ["OpenTracingShim"]),
         .library(name: "libOpenTracingShim", type: .static, targets: ["OpenTracingShim"]),
         .library(name: "SwiftMetricsShim", type: .dynamic, targets: ["SwiftMetricsShim"]),
