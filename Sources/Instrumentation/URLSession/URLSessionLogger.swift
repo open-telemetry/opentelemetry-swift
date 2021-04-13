@@ -1,4 +1,4 @@
-// Copyright 2020, OpenTelemetry Authors
+// Copyright 2021, OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,7 +51,10 @@ class URLSessionLogger {
             attributes[SemanticAttributes.netPeerPort.rawValue] = String(port)
         }
 
-        let spanName = "HTTP " + (request.httpMethod ?? "")
+        var spanName = "HTTP " + (request.httpMethod ?? "")
+        if let customSpanName = instrumentation.configuration.nameSpan?(request) {
+            spanName = customSpanName
+        }
         let spanBuilder = instrumentation.tracer.spanBuilder(spanName: spanName)
         spanBuilder.setSpanKind(spanKind: .client)
         attributes.forEach {
@@ -111,10 +114,10 @@ class URLSessionLogger {
 
     private static func statusForStatusCode(code: Int) -> Status {
         switch code {
-            case 100 ... 399:
-                return .unset
-            default:
-                return .error(description: String(code))
+        case 100 ... 399:
+            return .unset
+        default:
+            return .error(description: String(code))
         }
     }
 
