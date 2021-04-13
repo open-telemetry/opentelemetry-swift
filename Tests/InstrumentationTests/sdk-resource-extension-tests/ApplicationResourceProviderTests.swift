@@ -18,7 +18,6 @@ import XCTest
 
 @testable import ResourceExtension
 
-#if canImport(UIKit)
     class ApplicationResourceProviderTests: XCTestCase {
         func testContents() {
             let appData = mockApplicationData(name: "appName", identifier: "com.bundle.id", version: "1.2.3", build: "9876")
@@ -77,4 +76,3 @@ import XCTest
         }
     }
 
-#endif // #if canImport(UIKit)

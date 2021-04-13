@@ -13,15 +13,27 @@
 // limitations under the License.
 //
 
-#if canImport(UIKit)
-    import Foundation
-    import UIKit
 
+    import Foundation
+#if os(watchOS)
+    import WatchKit
+#elseif os(macOS)
+import AppKit
+#else
+import UIKit
+#endif
     public class DeviceDataSource: IDeviceDataSource {
         public var model: String? {
+            #if os(watchOS)
+            return WKInterfaceDevice.current().localizedModel
+            #else
             let hwName = UnsafeMutablePointer<Int32>.allocate(capacity: 2)
             hwName[0] = CTL_HW
+            #if os(macOS)
+            hwName[1] = HW_MODEL
+            #else
             hwName[1] = HW_MACHINE
+            #endif
             let machine = UnsafeMutablePointer<CChar>.allocate(capacity: 255)
             let len: UnsafeMutablePointer<Int>! = UnsafeMutablePointer<Int>.allocate(capacity: 1)
 
@@ -34,10 +46,22 @@
             }
             let machineName = String(cString: machine)
             return machineName
+            #endif
         }
 
         public var identifier: String? {
-            UIDevice.current.identifierForVendor?.uuidString
+            #if os(watchOS)
+            if #available (watchOS 6.3, *) {
+                return WKInterfaceDevice.current().identifierForVendor?.uuidString
+            } else {
+                return nil
+            }
+            #elseif os(macOS)
+            return nil
+            #else
+            return UIDevice.current.identifierForVendor?.uuidString
+
+            #endif
+            
         }
     }
-#endif // canImport(UIKit)

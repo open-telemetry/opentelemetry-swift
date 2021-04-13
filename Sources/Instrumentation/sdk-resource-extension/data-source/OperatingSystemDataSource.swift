@@ -12,17 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-
-#if canImport(UIKit)
-    import Foundation
-    import UIKit
-    public class OperatingSystemDataSource: IOperatingSystemDataSource {
-        public var description: String {
-            ProcessInfo.processInfo.operatingSystemVersionString
-        }
-
-        public var type: String {
-            UIDevice.current.systemName
-        }
-    }
+#if os(watchOS)
+import WatchKit
+#elseif os(macOS)
+#else
+import UIKit
 #endif
+
+import Foundation
+
+public class OperatingSystemDataSource: IOperatingSystemDataSource {
+    public var description: String {
+        ProcessInfo.processInfo.operatingSystemVersionString
+    }
+
+    public var type: String {
+        #if os(watchOS)
+            return "watchOS"
+        #elseif os(macOS)
+        return "macOS"
+        #else
+            return UIDevice.current.systemName
+        #endif
+    }
+}

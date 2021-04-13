@@ -130,7 +130,7 @@ let package = Package(
                 dependencies: ["OpenTelemetryApi"],
                 path: "Examples/Logging Tracer"),
         .target(name: "SimpleExporter",
-                dependencies: ["OpenTelemetrySdk", "JaegerExporter", "StdoutExporter", "ZipkinExporter"],
+                dependencies: ["OpenTelemetrySdk", "JaegerExporter", "StdoutExporter", "ZipkinExporter", "ResourceExtension"],
                 path: "Examples/Simple Exporter",
                 exclude: ["README.md"]),
         .target(name: "PrometheusSample",

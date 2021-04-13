@@ -18,11 +18,9 @@ import OpenTelemetrySdk
 
 public class DefaultResources {
     // add new resource providers here
-    #if canImport(UIKit)
-        let application = ApplicationResourceProvider(source: ApplicationDataSource())
-        let device = DeviceResourceProvider(source: DeviceDataSource())
-        let os = OSResourceProvider(source: OperatingSystemDataSource())
-    #endif // canImport(UIKit)
+    let application = ApplicationResourceProvider(source: ApplicationDataSource())
+    let device = DeviceResourceProvider(source: DeviceDataSource())
+    let os = OSResourceProvider(source: OperatingSystemDataSource())
 
     let telemetry = TelemetryResourceProvider(source: TelemetryDataSource())
 

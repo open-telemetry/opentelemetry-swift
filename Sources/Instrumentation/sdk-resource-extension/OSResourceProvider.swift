@@ -13,11 +13,9 @@
 // limitations under the License.
 //
 
-#if canImport(UIKit)
     import Foundation
     import OpenTelemetryApi
     import OpenTelemetrySdk
-    import UIKit
 
     public class OSResourceProvider: ResourceProvider {
         let osDataSource: IOperatingSystemDataSource
@@ -35,4 +33,3 @@
             return attributes
         }
     }
-#endif // canImport(UIKit)

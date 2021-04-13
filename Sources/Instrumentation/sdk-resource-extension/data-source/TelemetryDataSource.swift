@@ -21,7 +21,15 @@ public class TelemetryDataSource: ITelemetryDataSource {
     }
 
     public var name: String {
-        "iOS"
+        #if os(tvOS)
+        return "tvOS"
+        #elseif os(watchOS)
+        return "watchOS"
+        #elseif os(macOS)
+        return "macOS"
+        #else
+        return "iOS"
+        #endif
     }
 
     public var version: String? {
