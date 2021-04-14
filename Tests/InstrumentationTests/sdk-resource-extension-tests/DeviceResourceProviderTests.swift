@@ -26,7 +26,7 @@ class DeviceResourceProviderTests: XCTestCase {
 
         let resource = provider.create()
 
-        XCTAssertTrue(resource.attributes["device.model"]?.description == mock.model)
-        XCTAssertTrue(resource.attributes[ResourceAttributes.hostId.rawValue]?.description == mock.identifier)
+        XCTAssertEqual(mock.model, resource.attributes["device.model"]?.description)
+        XCTAssertEqual(mock.identifier, resource.attributes[ResourceAttributes.hostId.rawValue]?.description)
     }
 }

@@ -32,9 +32,9 @@ class TelemetryResourceProviderTests: XCTestCase {
 
         let resource = provider.create()
 
-        XCTAssertTrue(resource.attributes["telemetry.sdk.name"]?.description == mock.name)
-        XCTAssertTrue(resource.attributes["telemetry.sdk.language"]?.description == mock.language)
-        XCTAssertTrue(resource.attributes["telemetry.sdk.version"]?.description == mock.version)
+        XCTAssertEqual(mock.name, resource.attributes["telemetry.sdk.name"]?.description)
+        XCTAssertEqual(mock.language, resource.attributes["telemetry.sdk.language"]?.description)
+        XCTAssertEqual(mock.version, resource.attributes["telemetry.sdk.version"]?.description)
     }
 
     func testNils() {
@@ -43,8 +43,8 @@ class TelemetryResourceProviderTests: XCTestCase {
 
         let resource = provider.create()
 
-        XCTAssertTrue(resource.attributes["telemetry.sdk.name"]?.description == mock.name)
-        XCTAssertTrue(resource.attributes["telemetry.sdk.language"]?.description == mock.language)
+        XCTAssertEqual(mock.name, resource.attributes["telemetry.sdk.name"]?.description)
+        XCTAssertEqual(mock.language, resource.attributes["telemetry.sdk.language"]?.description)
         XCTAssertNil(resource.attributes["telemetry.sdk.version"])
     }
 }

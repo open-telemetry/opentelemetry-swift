@@ -27,8 +27,8 @@ import XCTest
 
             let resource = provider.create()
 
-            XCTAssertTrue(resource.attributes["os.type"]?.description == mock.type)
-            XCTAssertTrue(resource.attributes["os.description"]?.description == mock.description)
+            XCTAssertEqual(mock.type, resource.attributes["os.type"]?.description)
+            XCTAssertEqual(mock.description, resource.attributes["os.description"]?.description)
         }
     }
 

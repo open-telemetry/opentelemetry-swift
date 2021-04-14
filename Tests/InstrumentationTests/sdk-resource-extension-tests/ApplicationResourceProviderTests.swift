@@ -26,7 +26,7 @@ import XCTest
 
             let resource = provider.create()
 
-            XCTAssertTrue(appData.name == resource.attributes[ResourceAttributes.serviceName.rawValue]?.description)
+            XCTAssertEqual(appData.name, resource.attributes[ResourceAttributes.serviceName.rawValue]?.description)
             let versionDescription = resource.attributes[ResourceAttributes.serviceVersion.rawValue]?.description
 
             XCTAssertNotNil(versionDescription)
@@ -42,12 +42,12 @@ import XCTest
 
             let resource = provider.create()
 
-            XCTAssertTrue(appData.name == resource.attributes[ResourceAttributes.serviceName.rawValue]?.description)
+            XCTAssertEqual(appData.name, resource.attributes[ResourceAttributes.serviceName.rawValue]?.description)
             let versionDescription = resource.attributes[ResourceAttributes.serviceVersion.rawValue]?.description
 
             XCTAssertNotNil(versionDescription)
 
-            XCTAssertTrue(versionDescription! == appData.version!)
+            XCTAssertEqual(versionDescription, appData.version)
         }
 
         func testNoShortVersion() {
@@ -57,12 +57,11 @@ import XCTest
 
             let resource = provider.create()
 
-            XCTAssertTrue(appData.name == resource.attributes[ResourceAttributes.serviceName.rawValue]?.description)
+            XCTAssertEqual(appData.name, resource.attributes[ResourceAttributes.serviceName.rawValue]?.description)
             let versionDescription = resource.attributes[ResourceAttributes.serviceVersion.rawValue]?.description
 
             XCTAssertNotNil(versionDescription)
-
-            XCTAssertTrue(versionDescription! == appData.build!)
+            XCTAssertEqual(versionDescription, appData.build)
         }
 
         func testNoAppData() {
