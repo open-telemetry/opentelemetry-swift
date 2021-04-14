@@ -50,8 +50,10 @@ final class URLSessionConfigurationTests: XCTestCase {
         XCTAssertEqual(true, checker.nameSpanCalled)
 
         XCTAssertEqual(1, URLSessionLogger.runningSpans.count)
-        let span = URLSessionLogger.runningSpans["id"]!
-        XCTAssertEqual("new name", span.name)
+        XCTAssertNotNil(URLSessionLogger.runningSpans["id"])
+        if let span = URLSessionLogger.runningSpans["id"] {
+            XCTAssertEqual("new name", span.name)
+        }
     }
 
     public func testDefaultSpanName() {
@@ -68,8 +70,10 @@ final class URLSessionConfigurationTests: XCTestCase {
         URLSessionLogger.processAndLogRequest(request, sessionTaskId: "id", instrumentation: instrumentation, shouldInjectHeaders: true)
 
         XCTAssertEqual(1, URLSessionLogger.runningSpans.count)
-        let span = URLSessionLogger.runningSpans["id"]!
-        XCTAssertEqual("HTTP GET", span.name)
+        XCTAssertNotNil(URLSessionLogger.runningSpans["id"])
+        if let span = URLSessionLogger.runningSpans["id"] {
+            XCTAssertEqual("HTTP GET", span.name)
+        }
     }
 
     public func testDefaultSpanWithNameClosure() {
@@ -100,7 +104,9 @@ final class URLSessionConfigurationTests: XCTestCase {
         XCTAssertEqual(true, checker.nameSpanCalled)
 
         XCTAssertEqual(1, URLSessionLogger.runningSpans.count)
-        let span = URLSessionLogger.runningSpans["id"]!
-        XCTAssertEqual("HTTP GET", span.name)
+        XCTAssertNotNil(URLSessionLogger.runningSpans["id"])
+        if let span = URLSessionLogger.runningSpans["id"] {
+            XCTAssertEqual("HTTP GET", span.name)
+        }
     }
 }
