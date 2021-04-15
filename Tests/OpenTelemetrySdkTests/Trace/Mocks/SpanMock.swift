@@ -24,17 +24,17 @@ class SpanMock: Span {
         return .client
     }
 
-    var context: SpanContext = SpanContext.create(traceId: TraceId.random(), spanId: SpanId.random(), traceFlags: TraceFlags(), traceState: TraceState())
+    var context = SpanContext.create(traceId: TraceId.random(), spanId: SpanId.random(), traceFlags: TraceFlags(), traceState: TraceState())
 
     var isRecording: Bool = false
 
     var status: Status = .unset
 
-    var scope: Scope?
+    func end() {
+        OpenTelemetry.instance.contextProvider.removeContextForSpan(self)
+    }
 
-    func end() {}
-
-    func end(time: Date) {}
+    func end(time: Date) { end() }
 
     func updateName(name: String) {}
 

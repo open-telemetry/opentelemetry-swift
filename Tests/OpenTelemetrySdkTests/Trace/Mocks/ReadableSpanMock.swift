@@ -25,16 +25,18 @@ class ReadableSpanMock: ReadableSpan {
         return .client
     }
 
-    var instrumentationLibraryInfo: InstrumentationLibraryInfo = InstrumentationLibraryInfo()
+    var instrumentationLibraryInfo = InstrumentationLibraryInfo()
 
     var name: String = "ReadableSpanMock"
 
     var forcedReturnSpanContext: SpanContext?
     var forcedReturnSpanData: SpanData?
 
-    func end() {}
+    func end() {
+        OpenTelemetry.instance.contextProvider.removeContextForSpan(self)
+    }
 
-    func end(time: Date) {}
+    func end(time: Date) { end() }
 
     func toSpanData() -> SpanData {
         return forcedReturnSpanData ?? SpanData(traceId: context.traceId,
@@ -57,8 +59,6 @@ class ReadableSpanMock: ReadableSpan {
     var isRecording: Bool = false
 
     var status: Status = .unset
-
-    var scope: Scope?
 
     func updateName(name: String) {}
 

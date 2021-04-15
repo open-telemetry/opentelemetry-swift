@@ -14,9 +14,20 @@
 //
 
 import Foundation
+import OpenTelemetryApi
 
-/// Represents a change to the current context over a scope of code.
-public protocol Scope {
-    /// Closes the current context
-    mutating func close()
+struct TelemetryInfo {
+    var tracer: Tracer
+    var baggageManager: BaggageManager
+    var propagators: ContextPropagators
+    var emptyBaggage: Baggage?
+    var spanContextTable: SpanContextShimTable
+
+    init(tracer: Tracer, baggageManager: BaggageManager, propagators: ContextPropagators) {
+        self.tracer = tracer
+        self.baggageManager = baggageManager
+        self.propagators = propagators
+        emptyBaggage = baggageManager.baggageBuilder().build()
+        spanContextTable = SpanContextShimTable()
+    }
 }

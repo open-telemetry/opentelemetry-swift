@@ -30,7 +30,7 @@ public class Propagation: BaseShimProtocol {
     }
 
     public func extractTextFormat(carrier: [String: String]) -> SpanContextShim? {
-        guard let currentBaggage = OpenTelemetryContext.activeBaggage else { return nil }
+        guard let currentBaggage = OpenTelemetry.instance.contextProvider.activeBaggage else { return nil }
         let context = propagators.textMapPropagator.extract(carrier: carrier, getter: TextMapGetter())
         if !(context?.isValid ?? false) {
             return nil

@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-import OpenTelemetryApi
+@testable import OpenTelemetryApi
 import XCTest
 
 class ScopedBaggageTests: XCTestCase {
@@ -30,100 +30,81 @@ class ScopedBaggageTests: XCTestCase {
 
     var baggageManager = DefaultBaggageManager.instance
 
-    func testEmptyBaggage() {
-        let defaultBaggage = baggageManager.getCurrentBaggage()
-        XCTAssertEqual(defaultBaggage.getEntries().count, 0)
-        XCTAssertTrue(defaultBaggage is EmptyBaggage)
+    override func tearDown() {
+        if baggageManager.getCurrentBaggage() != nil {
+            XCTAssert(false, "Test must clean baggage context")
+        }
     }
 
-    func testWithContext() {
-        XCTAssertEqual(baggageManager.getCurrentBaggage().getEntries().count, 0)
-        let scopedEntries = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()
-        do {
-            let scope = baggageManager.withContext(baggage: scopedEntries)
-            XCTAssertTrue(baggageManager.getCurrentBaggage() === scopedEntries)
-            print(scope) // Silence unused warning
-        }
-        XCTAssertEqual(baggageManager.getCurrentBaggage().getEntries().count, 0)
+    func testEmptyBaggage() {
+        let defaultBaggage = baggageManager.getCurrentBaggage()
+        XCTAssertNil(defaultBaggage)
     }
 
     func testCreateBuilderFromCurrentEntries() {
-        let scopedDistContext = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()
-        do {
-            let scope = baggageManager.withContext(baggage: scopedDistContext)
-            let newEntries = baggageManager.baggageBuilder().put(key: key2, value: value2, metadata: metadataTest).build()
-            XCTAssertEqual(newEntries.getEntries().count, 2)
-            XCTAssertEqual(newEntries.getEntries().sorted(), [Entry(key: key1, value: value1, metadata: metadataTest), Entry(key: key2, value: value2, metadata: metadataTest)].sorted())
-            XCTAssertTrue(baggageManager.getCurrentBaggage() === scopedDistContext)
-            print(scope) // Silence unused warning
-        }
+        let baggage = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()
+        OpenTelemetry.instance.contextProvider.setActiveBaggage(baggage)
+        let newEntries = baggageManager.baggageBuilder().put(key: key2, value: value2, metadata: metadataTest).build()
+        XCTAssertEqual(newEntries.getEntries().count, 2)
+        XCTAssertEqual(newEntries.getEntries().sorted(), [Entry(key: key1, value: value1, metadata: metadataTest), Entry(key: key2, value: value2, metadata: metadataTest)].sorted())
+        XCTAssertTrue(baggageManager.getCurrentBaggage() === baggage)
+        OpenTelemetry.instance.contextProvider.removeContextForBaggage(baggage)
     }
 
     func testSetCurrentEntriesWithBuilder() {
-        XCTAssertEqual(baggageManager.getCurrentBaggage().getEntries().count, 0)
-        let scopedDistContext = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()
-        do {
-            let scope = baggageManager.withContext(baggage: scopedDistContext)
-            XCTAssertEqual(baggageManager.getCurrentBaggage().getEntries().count, 1)
-            XCTAssertEqual(baggageManager.getCurrentBaggage().getEntries().first, Entry(key: key1, value: value1, metadata: metadataTest))
-            print(scope) // Silence unused warning
-        }
-        XCTAssertEqual(baggageManager.getCurrentBaggage().getEntries().count, 0)
+        XCTAssertNil(baggageManager.getCurrentBaggage())
+        let baggage = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()
+        OpenTelemetry.instance.contextProvider.setActiveBaggage(baggage)
+        XCTAssertEqual(baggageManager.getCurrentBaggage()?.getEntries().count, 1)
+        XCTAssertEqual(baggageManager.getCurrentBaggage()?.getEntries().first, Entry(key: key1, value: value1, metadata: metadataTest))
+        OpenTelemetry.instance.contextProvider.removeContextForBaggage(baggage)
+        XCTAssertNil(baggageManager.getCurrentBaggage())
     }
 
     func testAddToCurrentEntriesWithBuilder() {
-        let scopedDistContext = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()
-        do {
-            let scope1 = baggageManager.withContext(baggage: scopedDistContext)
-            let innerDistContext = baggageManager.baggageBuilder().put(key: key2, value: value2, metadata: metadataTest).build()
-            do {
-                let scope2 = baggageManager.withContext(baggage: innerDistContext)
-                XCTAssertEqual(baggageManager.getCurrentBaggage().getEntries().sorted(),
-                               [Entry(key: key1, value: value1, metadata: metadataTest),
-                                Entry(key: key2, value: value2, metadata: metadataTest)].sorted())
+        let outerBaggage = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()
+        OpenTelemetry.instance.contextProvider.setActiveBaggage(outerBaggage)
+        let innerBaggage = baggageManager.baggageBuilder().put(key: key2, value: value2, metadata: metadataTest).build()
+        OpenTelemetry.instance.contextProvider.setActiveBaggage(innerBaggage)
+        XCTAssertEqual(baggageManager.getCurrentBaggage()?.getEntries().sorted(),
+                       [Entry(key: key1, value: value1, metadata: metadataTest),
+                        Entry(key: key2, value: value2, metadata: metadataTest)].sorted())
 
-                XCTAssertTrue(baggageManager.getCurrentBaggage() === innerDistContext)
-                print(scope2) // Silence unused warning
-            }
-            XCTAssertTrue(baggageManager.getCurrentBaggage() === scopedDistContext)
-            print(scope1) // Silence unused warning
-        }
+        XCTAssertTrue(baggageManager.getCurrentBaggage() === innerBaggage)
+        OpenTelemetry.instance.contextProvider.removeContextForBaggage(innerBaggage)
+        XCTAssertTrue(baggageManager.getCurrentBaggage() === outerBaggage)
+        OpenTelemetry.instance.contextProvider.removeContextForBaggage(outerBaggage)
     }
 
     func testMultiScopeBaggageWithMetadata() {
-        let scopedDistContext = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest)
+        let baggage1 = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest)
             .put(key: key2, value: value2, metadata: metadataTest)
             .build()
+        OpenTelemetry.instance.contextProvider.setActiveBaggage(baggage1)
 
-        do {
-            let scope1 = baggageManager.withContext(baggage: scopedDistContext)
+        let baggage2 = baggageManager.baggageBuilder().put(key: key3, value: value3, metadata: metadataTest)
+            .put(key: key2, value: value4, metadata: metadataTest)
+            .build()
+        OpenTelemetry.instance.contextProvider.setActiveBaggage(baggage2)
 
-            let innerDistContext = baggageManager.baggageBuilder().put(key: key3, value: value3, metadata: metadataTest)
-                .put(key: key2, value: value4, metadata: metadataTest)
-                .build()
-            do {
-                let scope2 = baggageManager.withContext(baggage: innerDistContext)
-                XCTAssertEqual(baggageManager.getCurrentBaggage().getEntries().sorted(),
-                               [Entry(key: key1, value: value1, metadata: metadataTest),
-                                Entry(key: key2, value: value4, metadata: metadataTest),
-                                Entry(key: key3, value: value3, metadata: metadataTest)].sorted())
-                XCTAssertTrue(baggageManager.getCurrentBaggage() === innerDistContext)
-                print(scope2) // Silence unused warning
-            }
-            XCTAssertTrue(baggageManager.getCurrentBaggage() === scopedDistContext)
-            print(scope1) // Silence unused warning
-        }
+        XCTAssertEqual(baggageManager.getCurrentBaggage()?.getEntries().sorted(),
+                       [Entry(key: key1, value: value1, metadata: metadataTest),
+                        Entry(key: key2, value: value4, metadata: metadataTest),
+                        Entry(key: key3, value: value3, metadata: metadataTest)].sorted())
+        XCTAssertTrue(baggageManager.getCurrentBaggage() === baggage2)
+        OpenTelemetry.instance.contextProvider.removeContextForBaggage(baggage2)
+
+        XCTAssertTrue(baggageManager.getCurrentBaggage() === baggage1)
+        OpenTelemetry.instance.contextProvider.removeContextForBaggage(baggage1)
     }
 
     func testSetNoParent_doesNotInheritContext() {
-        XCTAssertEqual(baggageManager.getCurrentBaggage().getEntries().count, 0)
-        let scopedDistContext = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()
-        do {
-            let scope = baggageManager.withContext(baggage: scopedDistContext)
-            let innerDistContext = baggageManager.baggageBuilder().setNoParent().put(key: key2, value: value2, metadata: metadataTest).build()
-            XCTAssertEqual(innerDistContext.getEntries(), [Entry(key: key2, value: value2, metadata: metadataTest)])
-            print(scope) // Silence unused warning
-        }
-        XCTAssertEqual(baggageManager.getCurrentBaggage().getEntries().count, 0)
+        XCTAssertNil(baggageManager.getCurrentBaggage())
+        let baggage = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()
+        OpenTelemetry.instance.contextProvider.setActiveBaggage(baggage)
+        let innerDistContext = baggageManager.baggageBuilder().setNoParent().put(key: key2, value: value2, metadata: metadataTest).build()
+        XCTAssertEqual(innerDistContext.getEntries(), [Entry(key: key2, value: value2, metadata: metadataTest)])
+        OpenTelemetry.instance.contextProvider.removeContextForBaggage(baggage)
+        XCTAssertNil(baggageManager.getCurrentBaggage())
     }
 }
