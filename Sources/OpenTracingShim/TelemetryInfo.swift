@@ -20,7 +20,7 @@ struct TelemetryInfo {
     var tracer: Tracer
     var baggageManager: BaggageManager
     var propagators: ContextPropagators
-    var emptyBaggage: Baggage
+    var emptyBaggage: Baggage?
     var spanContextTable: SpanContextShimTable
 
     init(tracer: Tracer, baggageManager: BaggageManager, propagators: ContextPropagators) {

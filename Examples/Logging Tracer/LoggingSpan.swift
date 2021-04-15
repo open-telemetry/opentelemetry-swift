@@ -22,7 +22,6 @@ class LoggingSpan: Span {
     var context: SpanContext
     var isRecording: Bool = true
     var status: Status = .unset
-    var scope: Scope?
 
     public init(name: String, kind: SpanKind) {
         self.name = name

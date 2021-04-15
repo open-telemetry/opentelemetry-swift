@@ -24,7 +24,7 @@ public protocol BaggageBuilder: AnyObject {
     ///  propagation is used.
     ///  If called multiple times, only the last specified value will be used.
     /// - Parameter parent: the Baggage used as parent
-    @discardableResult func setParent(_ parent: Baggage) -> Self
+    @discardableResult func setParent(_ parent: Baggage?) -> Self
 
     /// Sets the option to become a root Baggage with no parent. If not
     /// called, the value provided using setParent(Baggage) or otherwise
@@ -43,6 +43,6 @@ public protocol BaggageBuilder: AnyObject {
     /// - Parameter key: the EntryKey which will be removed.
     @discardableResult func remove(key: EntryKey) -> Self
 
-    /// Creates a Baggage from this builder.
+    /// Creates a Baggage from this builder. 
     func build() -> Baggage
 }

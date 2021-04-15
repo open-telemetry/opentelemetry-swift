@@ -27,7 +27,7 @@ class PropagatedSpanBuilder: SpanBuilder {
 
     @discardableResult public func startSpan() -> Span {
         if spanContext == nil, !isRootSpan {
-            spanContext = OpenTelemetryContext.activeSpan?.context
+            spanContext = OpenTelemetry.instance.contextProvider.activeSpan?.context
         }
         return PropagatedSpan(context: spanContext ?? SpanContext.create(traceId: TraceId.random(),
                                                                          spanId: SpanId.random(),
