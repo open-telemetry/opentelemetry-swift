@@ -8,6 +8,3 @@ This package captures a number of key data points of an iOS application and gene
 Use `DefaultResource.get()` to generate an all-in-one resource object.
 
 
-## Caveat 
-
-This package is will only work with projects that have `UIKit` available.

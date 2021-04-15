@@ -17,12 +17,19 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
-public class ResourceProvider {
-    public var attributes: [String: AttributeValue] {
-        return [String: AttributeValue]()
+public class OSResourceProvider: ResourceProvider {
+    let osDataSource: IOperatingSystemDataSource
+
+    public init(source: IOperatingSystemDataSource) {
+        osDataSource = source
     }
 
-    public func create() -> Resource {
-        return Resource(attributes: attributes)
+    override public var attributes: [String: AttributeValue] {
+        var attributes = [String: AttributeValue]()
+
+        attributes[ResourceAttributes.osType.rawValue] = AttributeValue.string(osDataSource.type)
+        attributes[ResourceAttributes.osDescription.rawValue] = AttributeValue.string(osDataSource.description)
+
+        return attributes
     }
 }

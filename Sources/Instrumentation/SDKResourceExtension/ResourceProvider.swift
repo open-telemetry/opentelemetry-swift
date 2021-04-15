@@ -14,26 +14,15 @@
 //
 
 import Foundation
+import OpenTelemetryApi
+import OpenTelemetrySdk
 
-public class TelemetryDataSource: ITelemetryDataSource {
-    public var language: String {
-        "swift"
+public class ResourceProvider {
+    public var attributes: [String: AttributeValue] {
+        [String: AttributeValue]()
     }
 
-    public var name: String {
-        #if os(tvOS)
-        return "tvOS"
-        #elseif os(watchOS)
-        return "watchOS"
-        #elseif os(macOS)
-        return "macOS"
-        #else
-        return "iOS"
-        #endif
-    }
-
-    public var version: String? {
-        // This may not work if this agent is statically built
-        Bundle(for: type(of: self)).infoDictionary?["CFBundleShortVersionString"] as? String
+    public func create() -> Resource {
+        Resource(attributes: attributes)
     }
 }

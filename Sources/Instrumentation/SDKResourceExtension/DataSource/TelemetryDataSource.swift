@@ -12,27 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-#if os(watchOS)
-import WatchKit
-#elseif os(macOS)
-#else
-import UIKit
-#endif
 
 import Foundation
 
-public class OperatingSystemDataSource: IOperatingSystemDataSource {
-    public var description: String {
-        ProcessInfo.processInfo.operatingSystemVersionString
+public class TelemetryDataSource: ITelemetryDataSource {
+    public var language: String {
+        "swift"
     }
 
-    public var type: String {
-        #if os(watchOS)
+    public var name: String {
+        #if os(tvOS)
+            return "tvOS"
+        #elseif os(watchOS)
             return "watchOS"
         #elseif os(macOS)
-        return "macOS"
+            return "macOS"
         #else
-            return UIDevice.current.systemName
+            return "iOS"
         #endif
+    }
+
+    public var version: String? {
+        // This may not work if this agent is statically built
+        Bundle(for: type(of: self)).infoDictionary?["CFBundleShortVersionString"] as? String
     }
 }
