@@ -17,11 +17,14 @@ import Foundation
 import JaegerExporter
 import OpenTelemetryApi
 import OpenTelemetrySdk
+import ResourceExtension
 import StdoutExporter
 import ZipkinExporter
 
 let sampleKey = "sampleKey"
 let sampleValue = "sampleValue"
+
+let resources = DefaultResources().get()
 
 let instrumentationLibraryName = "SimpleExporter"
 let instrumentationLibraryVersion = "semver:0.1.0"
