@@ -14,18 +14,18 @@ let package = Package(
         .library(name: "libOpenTelemetryApi", type: .static, targets: ["OpenTelemetryApi"]),
         .library(name: "OpenTelemetrySdk", type: .dynamic, targets: ["OpenTelemetrySdk"]),
         .library(name: "libOpenTelemetrySdk", type: .static, targets: ["OpenTelemetrySdk"]),
-        .library(name: "OpenTracingShim", type: .dynamic, targets: ["OpenTracingShim"]),
-        .library(name: "libOpenTracingShim", type: .static, targets: ["OpenTracingShim"]),
-        .library(name: "SwiftMetricsShim", type: .dynamic, targets: ["SwiftMetricsShim"]),
-        .library(name: "libSwiftMetricsShim", type: .static, targets: ["SwiftMetricsShim"]),
+        .library(name: "OpenTracingShim-experimental", type: .dynamic, targets: ["OpenTracingShim"]),
+        .library(name: "libOpenTracingShim-experimental", type: .static, targets: ["OpenTracingShim"]),
+        .library(name: "SwiftMetricsShim-experimental", type: .dynamic, targets: ["SwiftMetricsShim"]),
+        .library(name: "libSwiftMetricsShim-experimental", type: .static, targets: ["SwiftMetricsShim"]),
         .library(name: "JaegerExporter", type: .dynamic, targets: ["JaegerExporter"]),
         .library(name: "libJaegerExporter", type: .static, targets: ["JaegerExporter"]),
         .library(name: "ZipkinExporter", type: .dynamic, targets: ["ZipkinExporter"]),
         .library(name: "libZipkinExporter", type: .static, targets: ["ZipkinExporter"]),
         .library(name: "StdoutExporter", type: .dynamic, targets: ["StdoutExporter"]),
         .library(name: "libStdoutExporter", type: .static, targets: ["StdoutExporter"]),
-        .library(name: "PrometheusExporter", type: .dynamic, targets: ["PrometheusExporter"]),
-        .library(name: "libPrometheusExporter", type: .static, targets: ["PrometheusExporter"]),
+        .library(name: "PrometheusExporter-experimental", type: .dynamic, targets: ["PrometheusExporter"]),
+        .library(name: "libPrometheusExporter-experimental", type: .static, targets: ["PrometheusExporter"]),
         .library(name: "OpenTelemetryProtocolExporter", type: .dynamic, targets: ["OpenTelemetryProtocolExporter"]),
         .library(name: "libOpenTelemetryProtocolExporter", type: .static, targets: ["OpenTelemetryProtocolExporter"]),
         .library(name: "InMemoryExporter", type: .dynamic, targets: ["InMemoryExporter"]),
@@ -53,12 +53,15 @@ let package = Package(
         ),
         .target(name: "OpenTracingShim",
                 dependencies: ["OpenTelemetrySdk",
-                               "Opentracing"]
+                               "Opentracing"],
+                path: "Sources/Importers/OpenTracingShim"
         ),
         .target(name: "SwiftMetricsShim",
                 dependencies: ["OpenTelemetrySdk",
                                .product(name: "NIO", package: "swift-nio"),
-                               .product(name: "CoreMetrics", package: "swift-metrics")]
+                               .product(name: "CoreMetrics", package: "swift-metrics")],
+                path: "Sources/Importers/SwiftMetricsShim"
+
         ),
         .target(name: "JaegerExporter",
                 dependencies: ["OpenTelemetrySdk",
@@ -100,12 +103,12 @@ let package = Package(
         .testTarget(name: "OpenTracingShimTests",
                     dependencies: ["OpenTracingShim",
                                    "OpenTelemetrySdk"],
-                    path: "Tests/OpenTracingShim"
+                    path: "Tests/ImportersTests/OpenTracingShim"
         ),
         .testTarget(name: "SwiftMetricsShimTests",
                     dependencies: ["SwiftMetricsShim",
                                    "OpenTelemetrySdk"],
-                    path: "Tests/SwiftMetricsShim"
+                    path: "Tests/ImportersTests/SwiftMetricsShim"
         ),
         .testTarget(name: "OpenTelemetrySdkTests",
                     dependencies: ["OpenTelemetryApi",
