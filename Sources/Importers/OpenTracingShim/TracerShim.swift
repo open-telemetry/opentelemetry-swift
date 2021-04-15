@@ -70,10 +70,10 @@ public class TracerShim: OTTracer, BaseShimProtocol {
         }
 
         let span = builder.startSpan()
-        OpenTelemetryContext.setActiveSpan(span)
+        OpenTelemetry.instance.contextProvider.setActiveSpan(span)
         let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
-        if baggage != nil, !(baggage! == telemetryInfo.emptyBaggage) {
-            spanContextTable.create(spanShim: spanShim, distContext: baggage!)
+        if let baggage = baggage {
+            spanContextTable.create(spanShim: spanShim, distContext: baggage)
         }
         return spanShim
     }

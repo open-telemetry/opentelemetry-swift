@@ -24,6 +24,9 @@ class W3BaggagePropagatorTest: XCTestCase {
 
     override func setUp() {}
 
+    override func tearDown() {}
+
+
     func testFields() {
         XCTAssertEqual(propagator.fields.count, 1)
         XCTAssertTrue(propagator.fields.contains("baggage"))
@@ -35,8 +38,8 @@ class W3BaggagePropagatorTest: XCTestCase {
     }
 
     func testExtractEmptyBaggageHeader() {
-        let result = propagator.extract(carrier: ["baggage": ""], getter: getter)!
-        XCTAssert(result == EmptyBaggage.instance)
+        let result = propagator.extract(carrier: ["baggage": ""], getter: getter)
+        XCTAssertEqual(result?.getEntries().count, 0)
     }
 
     func testExtractSingleEntry() {

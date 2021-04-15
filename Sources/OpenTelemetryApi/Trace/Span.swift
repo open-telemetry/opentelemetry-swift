@@ -38,9 +38,6 @@ public protocol Span: AnyObject, CustomStringConvertible {
     /// implementation.
     var name: String { get set }
 
-    /// If the Span has its own Scope, if exist should be closed on span end
-    var scope: Scope? { get set }
-
     /// Puts a new attribute to the span.
     /// - Parameters:
     ///   - key: Key of the attribute.

@@ -27,11 +27,7 @@ public class DefaultBaggageManager: BaggageManager {
         return DefaultBaggageBuilder()
     }
 
-    public func getCurrentBaggage() -> Baggage {
-        return OpenTelemetryContext.activeBaggage ?? EmptyBaggage.instance
-    }
-
-    public func withContext(baggage: Baggage) -> Scope {
-        return OpenTelemetryContext.setActiveBaggage(baggage)
+    public func getCurrentBaggage() -> Baggage? {
+        return OpenTelemetry.instance.contextProvider.activeBaggage
     }
 }
