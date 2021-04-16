@@ -1,4 +1,4 @@
-// Copyright 2020, OpenTelemetry Authors
+// Copyright 2021, OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,8 +15,20 @@
 
 import Foundation
 
-/// Represents a change to the current context over a scope of code.
-public protocol Scope {
-    /// Closes the current context
-    mutating func close()
+public class ApplicationDataSource: IApplicationDataSource {
+    public var name: String? {
+        Bundle.main.infoDictionary?[kCFBundleNameKey as String] as? String
+    }
+
+    public var identifier: String? {
+        Bundle.main.infoDictionary?[kCFBundleIdentifierKey as String] as? String
+    }
+
+    public var version: String? {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+    }
+
+    public var build: String? {
+        Bundle.main.infoDictionary?[kCFBundleVersionKey as String] as? String
+    }
 }

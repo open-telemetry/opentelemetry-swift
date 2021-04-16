@@ -76,9 +76,6 @@ public class RecordEventsReadableSpan: ReadableSpan {
         }
     }
 
-    /// The scope where the span is associated
-    public var scope: Scope?
-
     /// Returns the latency of the Span in seconds. If still active then returns now() - start time.
     public var latency: TimeInterval {
         return endTime?.timeIntervalSince(startTime) ?? clock.now.timeIntervalSince(startTime)
@@ -281,7 +278,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
         }
         endTime = time
         spanProcessor.onEnd(span: self)
-        scope?.close()
+        OpenTelemetry.instance.contextProvider.removeContextForSpan(self)
     }
 
     public var description: String {

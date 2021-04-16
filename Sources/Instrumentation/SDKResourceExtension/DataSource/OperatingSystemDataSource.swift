@@ -1,4 +1,4 @@
-// Copyright 2020, OpenTelemetry Authors
+// Copyright 2021, OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,25 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+#if os(watchOS)
+    import WatchKit
+#elseif os(macOS)
+#else
+    import UIKit
+#endif
 
 import Foundation
 
-/// An immutable implementation of the Baggage that does not contain any entries.
- class EmptyBaggage: Baggage {
-    private init() {}
-
-    /// Returns the single instance of the EmptyBaggage class.
-    static var instance = EmptyBaggage()
-
-    static func baggageBuilder() -> BaggageBuilder {
-        return EmptyBaggageBuilder()
+public class OperatingSystemDataSource: IOperatingSystemDataSource {
+    public var description: String {
+        ProcessInfo.processInfo.operatingSystemVersionString
     }
 
-    func getEntries() -> [Entry] {
-        return [Entry]()
-    }
-
-    func getEntryValue(key: EntryKey) -> EntryValue? {
-        return nil
+    public var type: String {
+        #if os(watchOS)
+            return "watchOS"
+        #elseif os(macOS)
+            return "macOS"
+        #else
+            return UIDevice.current.systemName
+        #endif
     }
 }

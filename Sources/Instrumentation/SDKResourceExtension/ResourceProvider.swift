@@ -1,4 +1,4 @@
-// Copyright 2020, OpenTelemetry Authors
+// Copyright 2021, OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,23 +14,15 @@
 //
 
 import Foundation
+import OpenTelemetryApi
+import OpenTelemetrySdk
 
-/// An immutable implementation of the Baggage that does not contain any entries.
- class EmptyBaggage: Baggage {
-    private init() {}
-
-    /// Returns the single instance of the EmptyBaggage class.
-    static var instance = EmptyBaggage()
-
-    static func baggageBuilder() -> BaggageBuilder {
-        return EmptyBaggageBuilder()
+public class ResourceProvider {
+    public var attributes: [String: AttributeValue] {
+        [String: AttributeValue]()
     }
 
-    func getEntries() -> [Entry] {
-        return [Entry]()
-    }
-
-    func getEntryValue(key: EntryKey) -> EntryValue? {
-        return nil
+    public func create() -> Resource {
+        Resource(attributes: attributes)
     }
 }

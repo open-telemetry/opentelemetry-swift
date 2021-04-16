@@ -14,7 +14,7 @@
 //
 
 import Foundation
-import OpenTelemetryApi
+@testable import OpenTelemetryApi
 
 class BaggageMock: Baggage {
     static func baggageBuilder() -> BaggageBuilder {

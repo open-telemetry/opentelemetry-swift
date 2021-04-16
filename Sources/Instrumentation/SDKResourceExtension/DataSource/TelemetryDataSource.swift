@@ -1,4 +1,4 @@
-// Copyright 2020, OpenTelemetry Authors
+// Copyright 2021, OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,22 +15,25 @@
 
 import Foundation
 
-/// An immutable implementation of the Baggage that does not contain any entries.
- class EmptyBaggage: Baggage {
-    private init() {}
-
-    /// Returns the single instance of the EmptyBaggage class.
-    static var instance = EmptyBaggage()
-
-    static func baggageBuilder() -> BaggageBuilder {
-        return EmptyBaggageBuilder()
+public class TelemetryDataSource: ITelemetryDataSource {
+    public var language: String {
+        "swift"
     }
 
-    func getEntries() -> [Entry] {
-        return [Entry]()
+    public var name: String {
+        #if os(tvOS)
+            return "tvOS"
+        #elseif os(watchOS)
+            return "watchOS"
+        #elseif os(macOS)
+            return "macOS"
+        #else
+            return "iOS"
+        #endif
     }
 
-    func getEntryValue(key: EntryKey) -> EntryValue? {
-        return nil
+    public var version: String? {
+        // This may not work if this agent is statically built
+        Bundle(for: type(of: self)).infoDictionary?["CFBundleShortVersionString"] as? String
     }
 }

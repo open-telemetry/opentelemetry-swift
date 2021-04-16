@@ -17,11 +17,14 @@ import Foundation
 import JaegerExporter
 import OpenTelemetryApi
 import OpenTelemetrySdk
+import ResourceExtension
 import StdoutExporter
 import ZipkinExporter
 
 let sampleKey = "sampleKey"
 let sampleValue = "sampleValue"
+
+let resources = DefaultResources().get()
 
 let instrumentationLibraryName = "SimpleExporter"
 let instrumentationLibraryVersion = "semver:0.1.0"
@@ -39,7 +42,7 @@ func simpleSpan() {
 func childSpan() {
     let span = tracer.spanBuilder(spanName: "parentSpan").setSpanKind(spanKind: .client).startSpan()
     span.setAttribute(key: sampleKey, value: sampleValue)
-    OpenTelemetryContext.setActiveSpan(span)
+    OpenTelemetry.instance.contextProvider.setActiveSpan(span)
     let childSpan = tracer.spanBuilder(spanName: "childSpan").setSpanKind(spanKind: .client).startSpan()
     childSpan.setAttribute(key: sampleKey, value: sampleValue)
     childSpan.end()

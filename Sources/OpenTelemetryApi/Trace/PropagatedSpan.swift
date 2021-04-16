@@ -24,10 +24,8 @@ class PropagatedSpan: Span {
 
     var context: SpanContext
 
-    var scope: Scope?
-
     func end() {
-        scope?.close()
+        OpenTelemetry.instance.contextProvider.removeContextForSpan(self)
     }
 
     func end(time: Date) {
