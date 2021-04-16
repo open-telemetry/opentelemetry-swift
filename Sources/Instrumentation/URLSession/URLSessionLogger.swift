@@ -146,7 +146,7 @@ class URLSessionLogger {
             }
         }
 
-        guard let currentSpan = span ?? OpenTelemetryContext.activeSpan else {
+        guard let currentSpan = span ?? OpenTelemetry.instance.contextProvider.activeSpan else {
             return headers
         }
         textMapPropagator.inject(spanContext: currentSpan.context, carrier: &headers, setter: HeaderSetter())
