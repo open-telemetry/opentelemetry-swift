@@ -103,7 +103,7 @@ let package = Package(
                     path: "Tests/OpenTelemetryApiTests"),
         .testTarget(name: "ResourceExtensionTests",
                     dependencies: ["ResourceExtension", "OpenTelemetrySdk"],
-                    path: "Tests/InstrumentationTests/sdk-resource-extension-tests"),
+                    path: "Tests/InstrumentationTests/SDKResourceExtensionTests"),
         .testTarget(name: "URLSessionInstrumentationTests",
                     dependencies: ["URLSessionInstrumentation"],
                     path: "Tests/InstrumentationTests/URLSessionTests"),
