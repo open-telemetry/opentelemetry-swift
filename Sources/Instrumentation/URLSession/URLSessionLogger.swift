@@ -61,6 +61,8 @@ class URLSessionLogger {
             spanBuilder.setAttribute(key: $0.key, value: $0.value)
         }
 
+        instrumentation.configuration.createdRequest?(request, spanBuilder)
+        
         let span = spanBuilder.startSpan()
         runningSpansQueue.sync {
             runningSpans[sessionTaskId] = span
@@ -70,8 +72,6 @@ class URLSessionLogger {
         if shouldInjectHeaders {
             returnRequest = instrumentedRequest(for: request, span: span, instrumentation: instrumentation)
         }
-
-        instrumentation.configuration.createdRequest?(returnRequest ?? request, spanBuilder)
 
         return returnRequest ?? request
     }
