@@ -15,19 +15,15 @@
 import Foundation
 
 class PushMetricController {
-    public private(set) var pushInterval: TimeInterval
-    var metricExporter: MetricExporter
-    var metricProcessor: MetricProcessor
+    var meterSharedState: MeterSharedState
     var meterProvider: MeterProviderSdk
 
     let pushMetricQueue = DispatchQueue(label: "org.opentelemetry.PushMetricController.pushMetricQueue")
 
-    init(meterProvider: MeterProviderSdk, metricProcessor: MetricProcessor, metricExporter: MetricExporter, pushInterval: TimeInterval, shouldCancel: (() -> Bool)? = nil) {
+    init(meterProvider: MeterProviderSdk, meterSharedState: MeterSharedState, shouldCancel: (() -> Bool)? = nil) {
         self.meterProvider = meterProvider
-        self.metricProcessor = metricProcessor
-        self.metricExporter = metricExporter
-        self.pushInterval = pushInterval
-        pushMetricQueue.asyncAfter(deadline: .now() + pushInterval) { [weak self] in
+        self.meterSharedState = meterSharedState
+        pushMetricQueue.asyncAfter(deadline: .now() + meterSharedState.metricPushInterval) { [weak self] in
             guard let self = self else {
                 return
             }
@@ -35,15 +31,15 @@ class PushMetricController {
                 autoreleasepool {
                     let start = Date()
                     let values = self.meterProvider.getMeters().values
-                    for index in values.indices {
-                        values[index].collect()
+                    values.forEach {
+                        $0.collect()
                     }
 
-                    let metricToExport = self.metricProcessor.finishCollectionCycle()
+                    let metricToExport = self.meterSharedState.metricProcessor.finishCollectionCycle()
 
-                    _ = metricExporter.export(metrics: metricToExport, shouldCancel: shouldCancel)
+                    _ = meterSharedState.metricExporter.export(metrics: metricToExport, shouldCancel: shouldCancel)
                     let timeInterval = Date().timeIntervalSince(start)
-                    let remainingWait = pushInterval - timeInterval
+                    let remainingWait = meterSharedState.metricPushInterval - timeInterval
                     if remainingWait > 0 {
                         usleep(UInt32(remainingWait * 1000000))
                     }
