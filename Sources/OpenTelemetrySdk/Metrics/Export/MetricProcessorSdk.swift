@@ -13,18 +13,17 @@
 // limitations under the License.
 //
 
-
 import Foundation
 
-public class MetricProcessorSdk : MetricProcessor {
-    private let lock : Lock
-    var metrics : [Metric]
-    
+public class MetricProcessorSdk: MetricProcessor {
+    private let lock: Lock
+    var metrics: [Metric]
+
     public init() {
         metrics = [Metric]()
         lock = Lock()
     }
-    
+
     /// Finish the current collection cycle and return the metrics it holds.
     /// This is called at the end of one collection cycle by the Controller.
     /// MetricProcessor can use this to clear its Metrics (in case of stateless).
@@ -36,7 +35,7 @@ public class MetricProcessorSdk : MetricProcessor {
         }
         return metrics
     }
-    
+
     /// Process the metric. This method is called once every collection interval.
     /// - Parameters:
     ///   - metric: the metric record.
@@ -47,8 +46,5 @@ public class MetricProcessorSdk : MetricProcessor {
         }
 
         metrics.append(metric)
-        
     }
-
-    
 }

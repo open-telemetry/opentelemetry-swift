@@ -38,7 +38,7 @@ final class PushControllerTests: XCTestCase {
         // Setup 2 meters whose Collect will increment the collect count.
         var meter1CollectCount = 0
         var meter2CollectCount = 0
-        let meterSharedState = MeterSharedState(metricProcessor: testProcessor, metricPushInterval: MeterProviderSdk.defaultPushInterval, resource: Resource())
+        let meterSharedState = MeterSharedState(metricProcessor: testProcessor, metricPushInterval: controllerPushIntervalInSec, metricExporter: testExporter, resource: Resource())
         
         let meterInstrumentationLibrary1 = InstrumentationLibraryInfo(name:"meter1")
 
@@ -60,7 +60,7 @@ final class PushControllerTests: XCTestCase {
 
         let pushInterval = controllerPushIntervalInSec
 
-        let controller = PushMetricController(meterProvider: meterProvider, metricProcessor: testProcessor, metricExporter: testExporter, pushInterval: pushInterval)
+        let controller = PushMetricController(meterProvider: meterProvider, meterSharedState: meterSharedState)
 
         // Validate that collect is called on Meter1, Meter2.
         validateMeterCollect(meterCollectCount: &meter1CollectCount, expectedMeterCollectCount: collectionCountExpectedMin, meterName: "meter1", timeout: maxWaitInSec)
@@ -70,7 +70,7 @@ final class PushControllerTests: XCTestCase {
         lock.withLockVoid {
             XCTAssertTrue(exportCalledCount >= collectionCountExpectedMin)
         }
-        XCTAssertEqual(controller.pushInterval, pushInterval)
+        XCTAssertEqual(controller.meterSharedState.metricPushInterval, pushInterval)
     }
 
     func validateMeterCollect(meterCollectCount: inout Int, expectedMeterCollectCount: Int, meterName: String, timeout: TimeInterval) {
