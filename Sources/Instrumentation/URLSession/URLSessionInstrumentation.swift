@@ -37,7 +37,7 @@ public class URLSessionInstrumentation {
 
     public var startedRequestSpans: [Span] {
         var spans = [Span]()
-        queue.sync {
+        URLSessionLogger.runningSpansQueue.sync {
             spans = Array(URLSessionLogger.runningSpans.values)
         }
         return spans
@@ -90,7 +90,8 @@ public class URLSessionInstrumentation {
         injectTaskDidReceiveResponseIntoDelegateClass(cls: cls)
         injectTaskDidCompleteWithErrorIntoDelegateClass(cls: cls)
         injectRespondsToSelectorIntoDelegateClass(cls: cls)
-        injectTaskDidFinishCollectingMetricsIntoDelegateClass(cls: cls)
+        // For future use
+        // injectTaskDidFinishCollectingMetricsIntoDelegateClass(cls: cls)
 
         // Data tasks
         injectDataTaskDidBecomeDownloadTaskIntoDelegateClass(cls: cls)
@@ -461,14 +462,20 @@ public class URLSessionInstrumentation {
 
     private func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         let taskId = self.idKeyForTask(task)
+
+        var requestState: NetworkRequestState?
         if (self.requestMap[taskId]?.request) != nil {
-            let requestState = self.requestState(for: taskId)
-            if let error = error {
-                let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
-                URLSessionLogger.logError(error, dataOrFile: requestState.dataProcessed, statusCode: status, instrumentation: self, sessionTaskId: taskId)
-            } else if let response = task.response {
-                URLSessionLogger.logResponse(response, dataOrFile: requestState.dataProcessed, instrumentation: self, sessionTaskId: taskId)
-            }
+            requestState = self.requestState(for: taskId)
+        }
+        
+        if let error = error {
+            let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
+            URLSessionLogger.logError(error, dataOrFile: requestState?.dataProcessed, statusCode: status, instrumentation: self, sessionTaskId: taskId)
+        } else if let response = task.response {
+            URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed, instrumentation: self, sessionTaskId: taskId)
+        }
+        if requestState != nil {
+            requestMap[taskId] = nil
         }
     }
 
@@ -482,7 +489,7 @@ public class URLSessionInstrumentation {
     private func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
         let taskId = self.idKeyForTask(task)
         if (self.requestMap[taskId]?.request) != nil {
-            let a = 0
+            /// Code for instrumenting colletion should be written here
         }
     }
 

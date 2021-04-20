@@ -44,7 +44,8 @@ public struct URLSessionConfiguration {
     /// Implement this callback to filter which requests you want to instrument, all by default
     public var shouldInstrument: ((URLRequest) -> (Bool)?)?
 
-    /// Implement this callback if you want the session to record payload data, false by default
+    /// Implement this callback if you want the session to record payload data, false by default.
+    /// This callback is only necessary when using session delegate
     public var shouldRecordPayload: ((URLSession) -> (Bool)?)?
 
     /// Implement this callback to filter which requests you want to inject headers to follow the trace,
