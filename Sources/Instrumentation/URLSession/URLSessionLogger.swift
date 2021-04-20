@@ -71,7 +71,7 @@ class URLSessionLogger {
             returnRequest = instrumentedRequest(for: request, span: span, instrumentation: instrumentation)
         }
 
-        instrumentation.configuration.createdRequest?(returnRequest ?? request, spanBuilder)
+        instrumentation.configuration.createdRequest?(returnRequest ?? request, span)
 
         return returnRequest ?? request
     }

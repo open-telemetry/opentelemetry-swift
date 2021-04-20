@@ -26,7 +26,7 @@ public struct URLSessionConfiguration {
                 shouldInstrument: ((URLRequest) -> (Bool)?)? = nil,
                 nameSpan: ((URLRequest) -> (String)?)? = nil,
                 shouldInjectTracingHeaders: ((inout URLRequest) -> (Bool)?)? = nil,
-                createdRequest: ((URLRequest, SpanBuilder) -> Void)? = nil,
+                createdRequest: ((URLRequest, Span) -> Void)? = nil,
                 receivedResponse: ((URLResponse, DataOrFile?, Span) -> Void)? = nil,
                 receivedError: ((Error, DataOrFile?, HTTPStatus, Span) -> Void)? = nil)
     {
@@ -58,7 +58,7 @@ public struct URLSessionConfiguration {
     public var nameSpan: ((URLRequest) -> (String)?)?
 
     ///  Called before the span is created, it allows to add extra information to the Span through the builder
-    public var createdRequest: ((URLRequest, SpanBuilder) -> Void)?
+    public var createdRequest: ((URLRequest, Span) -> Void)?
 
     ///  Called before the span is ended, it allows to add extra information to the Span
     public var receivedResponse: ((URLResponse, DataOrFile?, Span) -> Void)?
