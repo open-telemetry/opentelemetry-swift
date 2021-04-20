@@ -22,7 +22,7 @@ public enum MetricExporterResultCode {
 
     /// Merges the current result code with other result code
     /// - Parameter newResultCode: the result code to merge with
-    public mutating func mergeResultCode(newResultCode: MetricExporterResultCode) {
+    mutating func mergeResultCode(newResultCode: MetricExporterResultCode) {
         // If both results are success then return success.
         if self == .success, newResultCode == .success {
             self = .success
