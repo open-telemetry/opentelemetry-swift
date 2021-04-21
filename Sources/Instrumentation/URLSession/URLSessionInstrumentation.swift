@@ -27,7 +27,7 @@ private var idKey: Void?
 public class URLSessionInstrumentation {
     private var requestMap = [String: NetworkRequestState]()
 
-    var configuration: URLSessionConfiguration
+    var configuration: URLSessionInstrumentationConfiguration
 
     private let queue = DispatchQueue(label: "com.datadoghq.ddnetworkinstrumentation")
 
@@ -43,7 +43,7 @@ public class URLSessionInstrumentation {
         return spans
     }
 
-    public init(configuration: URLSessionConfiguration) {
+    public init(configuration: URLSessionInstrumentationConfiguration) {
         self.configuration = configuration
         tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: "NSURLSession", instrumentationVersion: "0.0.1") as! TracerSdk
         self.injectInNSURLClasses()

@@ -48,38 +48,38 @@ class URLSessionInstrumentationTests: XCTestCase {
     static var requestCopy: URLRequest!
     static var responseCopy: HTTPURLResponse!
 
-    static var config = URLSessionConfiguration(shouldRecordPayload: nil,
-                                                shouldInstrument: { req in
-                                                    checker.shouldInstrumentCalled = true
-                                                    if req.url?.host?.contains("dontinstrument") ?? false {
-                                                        return false
-                                                    }
-                                                    return true
+    static var config = URLSessionInstrumentationConfiguration(shouldRecordPayload: nil,
+                                                               shouldInstrument: { req in
+                                                                   checker.shouldInstrumentCalled = true
+                                                                   if req.url?.host?.contains("dontinstrument") ?? false {
+                                                                       return false
+                                                                   }
+                                                                   return true
 
-                                                },
-                                                nameSpan: { req in
-                                                    checker.nameSpanCalled = true
-                                                    if req.url?.host?.contains("defaultName") ?? false {
-                                                        return nil
-                                                    }
-                                                    return "new name"
-                                                },
-                                                shouldInjectTracingHeaders: { _ in
-                                                    checker.shouldInjectTracingHeadersCalled = true
-                                                    return true
+                                                               },
+                                                               nameSpan: { req in
+                                                                   checker.nameSpanCalled = true
+                                                                   if req.url?.host?.contains("defaultName") ?? false {
+                                                                       return nil
+                                                                   }
+                                                                   return "new name"
+                                                               },
+                                                               shouldInjectTracingHeaders: { _ in
+                                                                   checker.shouldInjectTracingHeadersCalled = true
+                                                                   return true
 
-                                                },
-                                                createdRequest: { request, _ in
-                                                    requestCopy = request
-                                                    checker.createdRequestCalled = true
-                                                },
-                                                receivedResponse: { response, _, _ in
-                                                    responseCopy = response as? HTTPURLResponse
-                                                    checker.receivedResponseCalled = true
-                                                },
-                                                receivedError: { _, _, _, _ in
-                                                    URLSessionInstrumentationTests.checker.receivedErrorCalled = true
-                                                })
+                                                               },
+                                                               createdRequest: { request, _ in
+                                                                   requestCopy = request
+                                                                   checker.createdRequestCalled = true
+                                                               },
+                                                               receivedResponse: { response, _, _ in
+                                                                   responseCopy = response as? HTTPURLResponse
+                                                                   checker.receivedResponseCalled = true
+                                                               },
+                                                               receivedError: { _, _, _, _ in
+                                                                   URLSessionInstrumentationTests.checker.receivedErrorCalled = true
+                                                               })
 
     static var checker = Check()
     static var semaphore: DispatchSemaphore!
@@ -355,5 +355,4 @@ class URLSessionInstrumentationTests: XCTestCase {
         XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
         XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
     }
-
 }

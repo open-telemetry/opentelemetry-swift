@@ -21,7 +21,7 @@ public typealias DataOrFile = Any
 public typealias SessionTaskId = String
 public typealias HTTPStatus = Int
 
-public struct URLSessionConfiguration {
+public struct URLSessionInstrumentationConfiguration {
     public init(shouldRecordPayload: ((URLSession) -> (Bool)?)? = nil,
                 shouldInstrument: ((URLRequest) -> (Bool)?)? = nil,
                 nameSpan: ((URLRequest) -> (String)?)? = nil,
