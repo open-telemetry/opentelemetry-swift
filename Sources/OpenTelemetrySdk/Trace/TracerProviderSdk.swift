@@ -16,7 +16,6 @@
 import Foundation
 import OpenTelemetryApi
 
-/// This class is not intended to be used in application code and it is used only by OpenTelemetry.
 public class TracerProviderSdk: TracerProvider {
     private var tracerProvider = [InstrumentationLibraryInfo: TracerSdk]()
     internal var sharedState: TracerSharedState
@@ -66,14 +65,59 @@ public class TracerProviderSdk: TracerProvider {
         }
     }
 
+    /// Returns the active Clock.
+    public func getActiveClock() -> Clock {
+        return sharedState.clock
+    }
+
+    /// Updates the active Clock.
+    public func updateActiveClock(_ newClock: Clock) {
+        sharedState.clock = newClock
+    }
+
+    /// Returns the active IdGenerator.
+    public func getActiveIdGenerator() -> IdGenerator {
+        return sharedState.idGenerator
+    }
+
+    /// Updates the active IdGenerator.
+    public func updateActiveIdGenerator(_ newGenerator: IdGenerator) {
+        sharedState.idGenerator = newGenerator
+    }
+
+    /// Returns the active Resource.
+    public func getActiveResource() -> Resource {
+        return sharedState.resource
+    }
+
+    /// Updates the active Resource.
+    public func updateActiveResource(_ newResource: Resource) {
+        sharedState.resource = newResource
+    }
+
     /// Returns the active SpanLimits.
     public func getActiveSpanLimits() -> SpanLimits {
-        sharedState.activeSpanLimits
+        return sharedState.activeSpanLimits
     }
 
     /// Updates the active SpanLimits.
     public func updateActiveSpanLimits(_ spanLimits: SpanLimits) {
         sharedState.setActiveSpanLimits(spanLimits)
+    }
+
+    /// Returns the active Sampler.
+    public func getActiveSampler() -> Sampler {
+        return sharedState.sampler
+    }
+
+    /// Updates the active Sampler.
+    public func updateActiveSampler(_ newSampler: Sampler) {
+        sharedState.setSampler(newSampler)
+    }
+
+    /// Returns the active SpanProcessor.
+    public func getActiveSpanProcessor() -> SpanProcessor {
+        sharedState.activeSpanProcessor
     }
 
     /// Adds a new SpanProcessor to this Tracer.
