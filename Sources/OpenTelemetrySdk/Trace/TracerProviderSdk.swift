@@ -115,17 +115,26 @@ public class TracerProviderSdk: TracerProvider {
         sharedState.setSampler(newSampler)
     }
 
-    /// Returns the active SpanProcessor.
-    public func getActiveSpanProcessor() -> SpanProcessor {
-        sharedState.activeSpanProcessor
+    /// Returns the active SpanProcessors.
+    public func getActiveSpanProcessors() -> [SpanProcessor] {
+        if let processor = sharedState.activeSpanProcessor as? MultiSpanProcessor {
+            return processor.spanProcessorsAll
+        } else {
+            return [sharedState.activeSpanProcessor]
+        }
     }
 
-    /// Adds a new SpanProcessor to this Tracer.
+    /// Adds a new SpanProcessor to this TracerProvider.
     /// Any registered processor cause overhead, consider to use an async/batch processor especially
     /// for span exporting, and export to multiple backends using the MultiSpanExporter
     /// - Parameter spanProcessor: the new SpanProcessor to be added.
     public func addSpanProcessor(_ spanProcessor: SpanProcessor) {
         sharedState.addSpanProcessor(spanProcessor)
+    }
+
+    /// Removes all SpanProcessors from this provider
+    public func resetSpanProcessors() {
+        sharedState.activeSpanProcessor = NoopSpanProcessor()
     }
 
     /// Attempts to stop all the activity for this Tracer. Calls SpanProcessor.shutdown()
