@@ -14,6 +14,7 @@
 //
 
 import Foundation
+import OpenTelemetryApi
 
 /// Represents the shared state/config between all Tracers created by the same TracerProvider.
 class TracerSharedState {
@@ -25,6 +26,7 @@ class TracerSharedState {
     var sampler: Sampler
     var activeSpanProcessor: SpanProcessor
     var hasBeenShutdown = false
+    var launchEnvironmentContext: SpanContext?
 
     var registeredSpanProcessors = [SpanProcessor]()
 
@@ -49,6 +51,11 @@ class TracerSharedState {
         } else {
             activeSpanProcessor = NoopSpanProcessor()
         }
+
+        /// Recovers explicit parent context from process environment variables, it allows to automatic
+        /// trace context propagation to child processes
+        let environmentPropagator = EnvironmentContextPropagator()
+        self.launchEnvironmentContext = environmentPropagator.extract(carrier: ProcessInfo.processInfo.environment, getter: EnvironmentGetter())
     }
 
     /// Adds a new SpanProcessor
@@ -87,6 +94,15 @@ class TracerSharedState {
             return setSampler(Samplers.alwaysOff)
         } else {
             return setSampler(Samplers.traceIdRatio(ratio: samplerProbability))
+        }
+    }
+
+    private struct EnvironmentGetter: Getter {
+        func get(carrier: [String: String], key: String) -> [String]? {
+            if let value = carrier[key] {
+                return [value]
+            }
+            return nil
         }
     }
 }

@@ -33,7 +33,7 @@ public struct W3CTraceContextPropagator: TextMapPropagator {
     private static let traceparentLengthV0 = versionAndTraceIdAndSpanIdLength + optionsLength
 
     static let traceparent = "traceparent"
-    static let traceState = "traceState"
+    static let traceState = "tracestate"
 
     public init() {}
 
