@@ -187,7 +187,7 @@ class W3CTraceContextPropagatorTest: XCTestCase {
 
     func testHeaderNames() {
         XCTAssertEqual(W3CTraceContextPropagator.traceparent, "traceparent")
-        XCTAssertEqual(W3CTraceContextPropagator.traceState, "traceState")
+        XCTAssertEqual(W3CTraceContextPropagator.traceState, "tracestate")
     }
 
     func testExtract_EmptyCarrier() {
