@@ -45,9 +45,9 @@ class PrometheusExporterTests: XCTestCase {
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
             if error == nil, let data = data, let response = response as? HTTPURLResponse {
                 XCTAssert(response.statusCode == 200)
-                let responseText = String(data: data, encoding: .utf8)
-                print("Response from metric API is: \n\(responseText!)")
-                self.validateResponse(responseText: responseText!);
+                let responseText = String(decoding: data, as: UTF8.self)
+                print("Response from metric API is: \n\(responseText)")
+                self.validateResponse(responseText: responseText);
                 // This is your file-variable:
                 // data
                 expec.fulfill()

@@ -26,8 +26,8 @@ func simpleNetworkCall() {
 
     let task = URLSession.shared.dataTask(with: request) { data, _, _ in
         if let data = data {
-            let string = String(data: data, encoding: .utf8)
-            print(string ?? "")
+            let string = String(decoding: data, as: UTF8.self)
+            print(string)
         }
         semaphore.signal()
     }
@@ -39,11 +39,6 @@ func simpleNetworkCall() {
 
 class SessionDelegate: NSObject, URLSessionDataDelegate, URLSessionTaskDelegate {
     let semaphore = DispatchSemaphore(value: 0)
-
-//    func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
-//
-//        let a = 0
-//    }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         semaphore.signal()

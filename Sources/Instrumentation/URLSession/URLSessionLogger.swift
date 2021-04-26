@@ -19,7 +19,7 @@ import OpenTelemetrySdk
 
 class URLSessionLogger {
     static var runningSpans = [String: Span]()
-    static var runningSpansQueue = DispatchQueue(label: "org.opentelemetry.URLSessionLogger")
+    static var runningSpansQueue = DispatchQueue(label: "io.opentelemetry.URLSessionLogger")
 
     /// This methods creates a Span for a request, and optionally injects tracing headers, returns a  new request if it was needed to create a new one to add the tracing headers
     @discardableResult static func processAndLogRequest(_ request: URLRequest, sessionTaskId: String, instrumentation: URLSessionInstrumentation, shouldInjectHeaders: Bool) -> URLRequest? {

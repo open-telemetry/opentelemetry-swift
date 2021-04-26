@@ -29,9 +29,9 @@ public class URLSessionInstrumentation {
 
     var configuration: URLSessionInstrumentationConfiguration
 
-    private let queue = DispatchQueue(label: "com.datadoghq.ddnetworkinstrumentation")
+    private let queue = DispatchQueue(label: "io.opentelemetry.ddnetworkinstrumentation")
 
-    static var instrumentedKey = "com.datadoghq.instrumentedCall"
+    static var instrumentedKey = "io.opentelemetry.instrumentedCall"
 
     public private(set) var tracer: TracerSdk
 

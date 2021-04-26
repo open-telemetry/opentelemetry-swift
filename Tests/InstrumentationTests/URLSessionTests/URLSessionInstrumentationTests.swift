@@ -151,8 +151,8 @@ class URLSessionInstrumentationTests: XCTestCase {
 
         let task = URLSession.shared.dataTask(with: request) { data, _, _ in
             if let data = data {
-                let string = String(data: data, encoding: .utf8)
-                print(string ?? "")
+                let string = String(decoding: data, as: UTF8.self)
+                print(string)
             }
             URLSessionInstrumentationTests.semaphore.signal()
         }
@@ -171,7 +171,7 @@ class URLSessionInstrumentationTests: XCTestCase {
         let request = URLRequest(url: URL(string: "http://localhost:33333/forbidden")!)
         let task = URLSession.shared.dataTask(with: request) { data, _, _ in
             if let data = data {
-                let string = String(data: data, encoding: .utf8)
+                let string = String(decoding: data, as: UTF8.self)
                 print(string ?? "")
             }
             URLSessionInstrumentationTests.semaphore.signal()
