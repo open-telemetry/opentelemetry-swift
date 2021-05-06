@@ -15,7 +15,7 @@
 
 import Foundation
 
-public protocol SpanBuilder: class {
+public protocol SpanBuilder: AnyObject {
     /// Sets the parent Span to use. If not set, the value of OpenTelemetryContext.activeSpan
     /// at startSpan() time will be used as parent.
     ///

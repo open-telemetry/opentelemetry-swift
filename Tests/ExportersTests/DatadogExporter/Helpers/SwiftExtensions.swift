@@ -66,7 +66,7 @@ extension String {
 }
 
 extension Data {
-    var utf8String: String { String(data: self, encoding: .utf8)! }
+    var utf8String: String { String(decoding: self, as: UTF8.self) }
 }
 
 extension InputStream {
