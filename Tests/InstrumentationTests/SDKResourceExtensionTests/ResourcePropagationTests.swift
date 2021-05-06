@@ -19,8 +19,8 @@ import OpenTelemetrySdk
 @testable import ResourceExtension
 import XCTest
 
-class ResourcePropogationTests : XCTestCase {
-    func testPropogation() {
+class ResourcePropagationTests : XCTestCase {
+    func testPropagation() {
         let defaultResource = Resource()
         let appProvider = ApplicationResourceProvider(source: ApplicationDataSource())
         let telemetryProvider = TelemetryResourceProvider(source: TelemetryDataSource())
