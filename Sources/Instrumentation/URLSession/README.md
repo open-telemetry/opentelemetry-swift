@@ -1,6 +1,6 @@
 # URL Session instrumentation
 
-This package captures the network calls produced by URLSession. Just by initializing the cl
+This package captures the network calls produced by URLSession.
 
 
 ## Usage 
