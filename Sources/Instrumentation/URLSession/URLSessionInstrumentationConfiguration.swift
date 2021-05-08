@@ -57,7 +57,7 @@ public struct URLSessionInstrumentationConfiguration {
     /// default name: `HTTP {method}` e.g. `HTTP PUT`
     public var nameSpan: ((URLRequest) -> (String)?)?
 
-    ///  Called before the span is created, it allows to add extra information to the Span through the builder
+    ///  Called before the span is created, it allows to add extra information to the Span
     public var createdRequest: ((URLRequest, Span) -> Void)?
 
     ///  Called before the span is ended, it allows to add extra information to the Span

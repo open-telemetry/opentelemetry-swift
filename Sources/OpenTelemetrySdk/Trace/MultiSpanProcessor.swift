@@ -18,12 +18,12 @@ import OpenTelemetryApi
 
 /// Implementation of the SpanProcessor that simply forwards all received events to a list of
 /// SpanProcessors.
- struct MultiSpanProcessor: SpanProcessor {
+public struct MultiSpanProcessor: SpanProcessor {
     var spanProcessorsStart = [SpanProcessor]()
     var spanProcessorsEnd = [SpanProcessor]()
     var spanProcessorsAll = [SpanProcessor]()
 
-     init(spanProcessors: [SpanProcessor]) {
+    public init(spanProcessors: [SpanProcessor]) {
         spanProcessorsAll = spanProcessors
         spanProcessorsAll.forEach {
             if $0.isStartRequired {
@@ -35,33 +35,33 @@ import OpenTelemetryApi
         }
     }
 
-     var isStartRequired: Bool {
+    public var isStartRequired: Bool {
         return spanProcessorsStart.count > 0
     }
 
-     var isEndRequired: Bool {
+    public var isEndRequired: Bool {
         return spanProcessorsEnd.count > 0
     }
 
-     func onStart(parentContext: SpanContext?, span: ReadableSpan) {
+    public func onStart(parentContext: SpanContext?, span: ReadableSpan) {
         spanProcessorsStart.forEach {
             $0.onStart(parentContext: parentContext, span: span)
         }
     }
 
-     func onEnd(span: ReadableSpan) {
+    public func onEnd(span: ReadableSpan) {
         for var processor in spanProcessorsEnd {
             processor.onEnd(span: span)
         }
     }
 
-     func shutdown() {
+    public func shutdown() {
         for var processor in spanProcessorsAll {
             processor.shutdown()
         }
     }
 
-     func forceFlush() {
+    public func forceFlush() {
         spanProcessorsAll.forEach {
             $0.forceFlush()
         }
