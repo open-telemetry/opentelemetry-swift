@@ -90,7 +90,27 @@ internal struct DDLog: Encodable {
         self.threadName = attributes.removeValue(forKey: "threadName")?.description ?? "unkown"
         self.applicationVersion = configuration.version
 
-        self.attributes = LogAttributes(userAttributes: event.attributes, internalAttributes: internalAttributes)
+        let userAttributes:  [String: Encodable] = attributes.mapValues{
+            switch $0 {
+                case let .string(value):
+                    return value
+                case let .bool(value):
+                    return value
+                case let .int(value):
+                    return value
+                case let .double(value):
+                    return value
+                case let .stringArray(value):
+                    return value
+                case let .boolArray(value):
+                    return value
+                case let .intArray(value):
+                    return value
+                case let .doubleArray(value):
+                    return value
+            }
+        }
+        self.attributes = LogAttributes(userAttributes: userAttributes, internalAttributes: internalAttributes)
         self.tags = nil // tags
     }
 }
