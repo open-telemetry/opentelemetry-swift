@@ -85,7 +85,7 @@ class LogsExporterTests: XCTestCase {
                         name: "spanName",
                         kind: .server,
                         startTime: Date(timeIntervalSinceReferenceDate: 3000),
-                        events: [SpanData.Event(name: "event", timestamp: Date())],
+                        events: [SpanData.Event(name: "event", timestamp: Date(), attributes:["attributeKey": AttributeValue.string("attributeValue")])],
                         endTime: Date(timeIntervalSinceReferenceDate: 3001),
                         hasRemoteParent: false)
     }

@@ -34,7 +34,7 @@ tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: instr
 let exporterConfiguration = ExporterConfiguration(
     serviceName: "Opentelemetry exporter Example",
     resource: "Opentelemetry exporter",
-    applicationName: "SimpleExample",
+    applicationName: "SwiftDatadogSample",
     applicationVersion: "1.0.0",
     environment: "test",
     clientToken: clientKey,
@@ -64,7 +64,8 @@ func testTraces() {
 func simpleSpan() {
     let span = tracer.spanBuilder(spanName: "SimpleSpan").setSpanKind(spanKind: .client).startSpan()
     span.setAttribute(key: sampleKey, value: sampleValue)
-    span.addEvent(name: "My event", attributes: ["message": AttributeValue.string("test message")])
+    span.addEvent(name: "My event", attributes: ["message": AttributeValue.string("test message"),
+                                                 "newKey": AttributeValue.string("New Value")])
     span.end()
 }
 
