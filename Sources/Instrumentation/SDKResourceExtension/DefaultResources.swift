@@ -31,7 +31,7 @@ public class DefaultResources {
         let mirror = Mirror(reflecting: self)
         for children in mirror.children {
             if let provider = children.value as? ResourceProvider {
-                resource = provider.create().merging(other: resource)
+                resource.merge(other: provider.create())
             }
         }
         return resource
