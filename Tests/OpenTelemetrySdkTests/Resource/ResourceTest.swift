@@ -46,7 +46,7 @@ class ResourceTest: XCTestCase {
     }
 
     func testMergeResources() {
-        let expectedLabelMap = ["a": AttributeValue.string("1"), "b": AttributeValue.string("2"), "c": AttributeValue.string("4")]
+        let expectedLabelMap = ["a": AttributeValue.string("1"), "b": AttributeValue.string("3"), "c": AttributeValue.string("4")]
         let resource = defaultResource.merging(other: resource1).merging(other: resource2)
         XCTAssertEqual(resource.attributes, expectedLabelMap)
     }
