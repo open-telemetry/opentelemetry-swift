@@ -1,6 +1,6 @@
 ### Simple Exporter
 
-This example shows the Jaeger an Stdout exporters in action using a MultiSpanExporter
+This example shows the Jaeger an Stdout exporters in action using a MultiSpanExporter. It also adds support for SignPostIntegration, so running this app in `Instruments` will show the span creation and duration
 
 The sample expects a local Jaeger installation as explained in [Jaeger docs](https://www.jaegertracing.io/docs/1.16/getting-started/#all-in-one):
 

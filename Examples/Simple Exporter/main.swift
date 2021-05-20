@@ -20,6 +20,7 @@ import OpenTelemetrySdk
 import ResourceExtension
 import StdoutExporter
 import ZipkinExporter
+import SignPostIntegration
 
 let sampleKey = "sampleKey"
 let sampleValue = "sampleValue"
@@ -36,15 +37,18 @@ tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: instr
 func simpleSpan() {
     let span = tracer.spanBuilder(spanName: "SimpleSpan").setSpanKind(spanKind: .client).startSpan()
     span.setAttribute(key: sampleKey, value: sampleValue)
+    Thread.sleep(forTimeInterval: 0.5)
     span.end()
 }
 
 func childSpan() {
     let span = tracer.spanBuilder(spanName: "parentSpan").setSpanKind(spanKind: .client).startSpan()
     span.setAttribute(key: sampleKey, value: sampleValue)
+    Thread.sleep(forTimeInterval: 0.2)
     OpenTelemetry.instance.contextProvider.setActiveSpan(span)
     let childSpan = tracer.spanBuilder(spanName: "childSpan").setSpanKind(spanKind: .client).startSpan()
     childSpan.setAttribute(key: sampleKey, value: sampleValue)
+    Thread.sleep(forTimeInterval: 0.5)
     childSpan.end()
     span.end()
 }
@@ -60,6 +64,11 @@ let spanExporter = MultiSpanExporter(spanExporters: [jaegerExporter, stdoutExpor
 
 let spanProcessor = SimpleSpanProcessor(spanExporter: spanExporter)
 OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(spanProcessor)
+
+if #available(macOS 10.14, *) {
+    OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(SignPostIntegration())
+}
+
 
 simpleSpan()
 sleep(1)
