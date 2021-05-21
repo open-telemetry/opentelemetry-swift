@@ -75,7 +75,7 @@ class OtlpMetricExproterTests: XCTestCase {
         // Start the server and print its address once it has started.
         let server = Server.insecure(group: serverGroup)
             .withServiceProviders([fakeCollector])
-            .bind(host: "localhost", port: 55680)
+            .bind(host: "localhost", port: 4317)
 
         server.map {
             $0.channel.localAddress
@@ -87,7 +87,7 @@ class OtlpMetricExproterTests: XCTestCase {
 
     func startChannel() -> ClientConnection {
         let channel = ClientConnection.insecure(group: channelGroup)
-            .connect(host: "localhost", port: 55680)
+            .connect(host: "localhost", port: 4317)
         return channel
     }
 
