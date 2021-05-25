@@ -31,14 +31,14 @@ public struct PrometheusExporterExtensions {
                 case .intSum:
                     let sum = metricData as! SumData<Int>
                     output += PrometheusExporterExtensions.writeSum(prometheusMetric: prometheusMetric, timeStamp: now, labels: labels, doubleValue: Double(sum.sum))
-                case .doubleSummary:
+                case .doubleSummary, .doubleGauge:
                     let summary = metricData as! SummaryData<Double>
                     let count = summary.count
                     let sum = summary.sum
                     let min = summary.min
                     let max = summary.max
                     output += PrometheusExporterExtensions.writeSummary(prometheusMetric: prometheusMetric, timeStamp: now, labels: labels, metricName: metric.name, sum: sum, count: count, min: min, max: max)
-                case .intSummary:
+                case .intSummary, .intGauge:
                     let summary = metricData as! SummaryData<Int>
                     let count = summary.count
                     let sum = summary.sum
