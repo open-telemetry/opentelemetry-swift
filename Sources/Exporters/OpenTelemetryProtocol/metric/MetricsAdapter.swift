@@ -55,7 +55,8 @@ struct MetricsAdapter {
                     break
                 }
                 var protoDataPoint = Opentelemetry_Proto_Metrics_V1_DoubleDataPoint()
-
+                protoDataPoint.timeUnixNano = gaugeData.timestamp.timeIntervalSince1970.toNanoseconds
+                protoDataPoint.startTimeUnixNano = gaugeData.startTimestamp.timeIntervalSince1970.toNanoseconds
                 protoDataPoint.value = gaugeData.sum
                 gaugeData.labels.forEach {
                     var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
@@ -73,6 +74,8 @@ struct MetricsAdapter {
                 var protoDataPoint = Opentelemetry_Proto_Metrics_V1_IntDataPoint()
 
                 protoDataPoint.value = Int64(gaugeData.sum)
+                protoDataPoint.timeUnixNano = gaugeData.timestamp.timeIntervalSince1970.toNanoseconds
+                protoDataPoint.startTimeUnixNano = gaugeData.startTimestamp.timeIntervalSince1970.toNanoseconds
                 gaugeData.labels.forEach {
                     var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
                     kvp.key = $0.key
@@ -88,6 +91,8 @@ struct MetricsAdapter {
 
                 var protoDataPoint = Opentelemetry_Proto_Metrics_V1_DoubleDataPoint()
                 protoDataPoint.value = sumData.sum
+                protoDataPoint.timeUnixNano = sumData.timestamp.timeIntervalSince1970.toNanoseconds
+                protoDataPoint.startTimeUnixNano = sumData.startTimestamp.timeIntervalSince1970.toNanoseconds
                 sumData.labels.forEach {
                     var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
                     kvp.key = $0.key
@@ -122,6 +127,8 @@ struct MetricsAdapter {
                 }
                 var protoDataPoint = Opentelemetry_Proto_Metrics_V1_IntDataPoint()
                 protoDataPoint.value = Int64(sumData.sum)
+                protoDataPoint.timeUnixNano = sumData.timestamp.timeIntervalSince1970.toNanoseconds
+                protoDataPoint.startTimeUnixNano = sumData.startTimestamp.timeIntervalSince1970.toNanoseconds
                 sumData.labels.forEach {
                     var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
                     kvp.key = $0.key
