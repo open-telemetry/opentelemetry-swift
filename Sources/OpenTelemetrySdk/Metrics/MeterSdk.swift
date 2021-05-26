@@ -145,6 +145,8 @@ class MeterSdk: Meter {
 
                 var metric = Metric(namespace: meterName, name: metricName, desc: meterName+metricName, type: .intGauge, resource: resource, instrumentationLibraryInfo: instrumentationLibraryInfo)
 
+                gaugeInstrument.invokeCallback()
+
                 gaugeInstrument.observerHandles.forEach { handle in
                     let labelSet  = handle.key
                     let aggregator = handle.value.aggregator
@@ -162,6 +164,8 @@ class MeterSdk: Meter {
                 let gaugeInstrument = gauge.value
 
                 var metric = Metric(namespace: meterName, name: metricName, desc: meterName+metricName, type: .doubleGauge, resource: resource, instrumentationLibraryInfo: instrumentationLibraryInfo)
+
+                gaugeInstrument.invokeCallback()
 
                 gaugeInstrument.observerHandles.forEach { handle in
                     let labelSet  = handle.key

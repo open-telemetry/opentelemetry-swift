@@ -89,6 +89,14 @@ class TestNoopMeter: Meter {
         return NoopDoubleObserverMetric()
     }
 
+    func createIntObservableGauge(name: String, callback: @escaping (IntObserverMetric) -> ()) -> IntObserverMetric {
+        return NoopIntObserverMetric()
+    }
+
+    func createDoubleObservableGauge(name: String, callback: @escaping (DoubleObserverMetric) -> ()) -> DoubleObserverMetric {
+        return NoopDoubleObserverMetric()
+    }
+
     func getLabelSet(labels: [String: String]) -> LabelSet {
         return LabelSet.empty
     }
