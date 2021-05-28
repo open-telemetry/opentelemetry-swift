@@ -19,11 +19,11 @@ class AdapterTests: XCTestCase {
     static let parentSpanId = "0000000000aef789"
 
     func testProtoSpans() {
-        let duration = 900 // ms
-        let startMs = UInt64(Date().timeIntervalSince1970 * 1000)
-        let endMs = startMs + UInt64(duration)
+        let duration = 900 // microseconds
+        let startMicroseconds = UInt64(Date().timeIntervalSince1970 * 1000000)
+        let endMicroseconds = startMicroseconds + UInt64(duration)
 
-        let span = getSpanData(startMs: startMs, endMs: endMs)
+        let span = getSpanData(startMicroseconds: startMicroseconds, endMicroseconds: endMicroseconds)
         let spans = [span]
 
         let jaegerSpans = Adapter.toJaeger(spans: spans)
@@ -33,11 +33,11 @@ class AdapterTests: XCTestCase {
     }
 
     func testProtoSpan() {
-        let duration = 900 // ms
-        let startMs = UInt64(Date().timeIntervalSince1970 * 1000)
-        let endMs = startMs + UInt64(duration)
+        let duration = 900 // microseconds
+        let startMicroseconds = UInt64(Date().timeIntervalSince1970 * 1000000)
+        let endMicroseconds = startMicroseconds + UInt64(duration)
 
-        let span = getSpanData(startMs: startMs, endMs: endMs)
+        let span = getSpanData(startMicroseconds: startMicroseconds, endMicroseconds: endMicroseconds)
 
         // test
         let jaegerSpan = Adapter.toJaeger(span: span)
@@ -45,7 +45,7 @@ class AdapterTests: XCTestCase {
         XCTAssertEqual(span.traceId.hexString, String(format: "%016llx", jaegerSpan.traceIdHigh) + String(format: "%016llx", jaegerSpan.traceIdLow))
         XCTAssertEqual(span.spanId.hexString, String(format: "%016llx", jaegerSpan.spanId))
         XCTAssertEqual("GET /api/endpoint", jaegerSpan.operationName)
-        XCTAssertEqual(Int64(startMs), jaegerSpan.startTime)
+        XCTAssertEqual(Int64(startMicroseconds), jaegerSpan.startTime)
         XCTAssertEqual(duration, Int(jaegerSpan.duration))
 
         XCTAssertEqual(jaegerSpan.tags?.count, 4)
@@ -181,8 +181,8 @@ class AdapterTests: XCTestCase {
     }
 
     func testStatusNotOk() {
-        let startMs = UInt64(Date().timeIntervalSince1970 * 1000)
-        let endMs = startMs + 900
+        let startMicroseconds = UInt64(Date().timeIntervalSince1970 * 1000000)
+        let endMicroseconds = startMicroseconds + 900
 
         let span = SpanData(traceId: TraceId(fromHexString: AdapterTests.traceId),
                             spanId: SpanId(fromHexString: AdapterTests.spanId),
@@ -192,9 +192,9 @@ class AdapterTests: XCTestCase {
                             instrumentationLibraryInfo: InstrumentationLibraryInfo(),
                             name: "GET /api/endpoint",
                             kind: .server,
-                            startTime: Date(timeIntervalSince1970: Double(startMs) / 1000),
+                            startTime: Date(timeIntervalSince1970: Double(startMicroseconds) / 1000000),
                             status: .error(description: "GenericError"),
-                            endTime: Date(timeIntervalSince1970: Double(endMs) / 1000),
+                            endTime: Date(timeIntervalSince1970: Double(endMicroseconds) / 1000000),
                             hasRemoteParent: false)
 
         XCTAssertNotNil(Adapter.toJaeger(span: span))
@@ -203,15 +203,15 @@ class AdapterTests: XCTestCase {
     func testSpanError() {
         let attributes = ["error.type": AttributeValue.string(self.name),
                           "error.message": AttributeValue.string("server error")]
-        let startMs = UInt64(Date().timeIntervalSince1970 * 1000)
-        let endMs = startMs + 900
+        let startMicroseconds = UInt64(Date().timeIntervalSince1970 * 1000000)
+        let endMicroseconds = startMicroseconds + 900
 
         var span = SpanData(traceId: TraceId(fromHexString: AdapterTests.traceId),
                             spanId: SpanId(fromHexString: AdapterTests.spanId),
                             name: "GET /api/endpoint",
                             kind: .server,
-                            startTime: Date(timeIntervalSince1970: Double(startMs) / 1000),
-                            endTime: Date(timeIntervalSince1970: Double(endMs) / 1000))
+                            startTime: Date(timeIntervalSince1970: Double(startMicroseconds) / 1000000),
+                            endTime: Date(timeIntervalSince1970: Double(endMicroseconds) / 1000000))
         span.settingHasEnded(true)
         span.settingStatus(.error(description: "GenericError"))
         span.settingAttributes(attributes)
@@ -230,7 +230,7 @@ class AdapterTests: XCTestCase {
         return SpanData.Event(name: "the log message", timestamp: Date(), attributes: attributes)
     }
 
-    private func getSpanData(startMs: UInt64, endMs: UInt64) -> SpanData {
+    private func getSpanData(startMicroseconds: UInt64, endMicroseconds: UInt64) -> SpanData {
         let valueB = AttributeValue.bool(true)
         let attributes = ["valueB": valueB]
 
@@ -245,12 +245,12 @@ class AdapterTests: XCTestCase {
                         instrumentationLibraryInfo: InstrumentationLibraryInfo(),
                         name: "GET /api/endpoint",
                         kind: .server,
-                        startTime: Date(timeIntervalSince1970: Double(startMs) / 1000),
+                        startTime: Date(timeIntervalSince1970: Double(startMicroseconds) / 1000000),
                         attributes: attributes,
                         events: [getTimedEvent()],
                         links: [link],
                         status: Status.ok,
-                        endTime: Date(timeIntervalSince1970: Double(endMs) / 1000),
+                        endTime: Date(timeIntervalSince1970: Double(endMicroseconds) / 1000000),
                         hasRemoteParent: false)
     }
 
