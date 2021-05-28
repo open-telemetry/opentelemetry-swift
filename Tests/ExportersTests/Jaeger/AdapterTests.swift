@@ -18,9 +18,11 @@ class AdapterTests: XCTestCase {
     static let spanId = "0000000000def456"
     static let parentSpanId = "0000000000aef789"
 
+    let microsecondsInSecond: Double = 1000000
+
     func testProtoSpans() {
         let duration = 900 // microseconds
-        let startMicroseconds = UInt64(Date().timeIntervalSince1970 * 1000000)
+        let startMicroseconds = UInt64(Date().timeIntervalSince1970 * microsecondsInSecond)
         let endMicroseconds = startMicroseconds + UInt64(duration)
 
         let span = getSpanData(startMicroseconds: startMicroseconds, endMicroseconds: endMicroseconds)
@@ -34,7 +36,7 @@ class AdapterTests: XCTestCase {
 
     func testProtoSpan() {
         let duration = 900 // microseconds
-        let startMicroseconds = UInt64(Date().timeIntervalSince1970 * 1000000)
+        let startMicroseconds = UInt64(Date().timeIntervalSince1970 * microsecondsInSecond)
         let endMicroseconds = startMicroseconds + UInt64(duration)
 
         let span = getSpanData(startMicroseconds: startMicroseconds, endMicroseconds: endMicroseconds)
@@ -181,7 +183,7 @@ class AdapterTests: XCTestCase {
     }
 
     func testStatusNotOk() {
-        let startMicroseconds = UInt64(Date().timeIntervalSince1970 * 1000000)
+        let startMicroseconds = UInt64(Date().timeIntervalSince1970 * microsecondsInSecond)
         let endMicroseconds = startMicroseconds + 900
 
         let span = SpanData(traceId: TraceId(fromHexString: AdapterTests.traceId),
@@ -192,9 +194,9 @@ class AdapterTests: XCTestCase {
                             instrumentationLibraryInfo: InstrumentationLibraryInfo(),
                             name: "GET /api/endpoint",
                             kind: .server,
-                            startTime: Date(timeIntervalSince1970: Double(startMicroseconds) / 1000000),
+                            startTime: Date(timeIntervalSince1970: Double(startMicroseconds) / microsecondsInSecond),
                             status: .error(description: "GenericError"),
-                            endTime: Date(timeIntervalSince1970: Double(endMicroseconds) / 1000000),
+                            endTime: Date(timeIntervalSince1970: Double(endMicroseconds) / microsecondsInSecond),
                             hasRemoteParent: false)
 
         XCTAssertNotNil(Adapter.toJaeger(span: span))
@@ -203,15 +205,15 @@ class AdapterTests: XCTestCase {
     func testSpanError() {
         let attributes = ["error.type": AttributeValue.string(self.name),
                           "error.message": AttributeValue.string("server error")]
-        let startMicroseconds = UInt64(Date().timeIntervalSince1970 * 1000000)
+        let startMicroseconds = UInt64(Date().timeIntervalSince1970 * microsecondsInSecond)
         let endMicroseconds = startMicroseconds + 900
 
         var span = SpanData(traceId: TraceId(fromHexString: AdapterTests.traceId),
                             spanId: SpanId(fromHexString: AdapterTests.spanId),
                             name: "GET /api/endpoint",
                             kind: .server,
-                            startTime: Date(timeIntervalSince1970: Double(startMicroseconds) / 1000000),
-                            endTime: Date(timeIntervalSince1970: Double(endMicroseconds) / 1000000))
+                            startTime: Date(timeIntervalSince1970: Double(startMicroseconds) / microsecondsInSecond),
+                            endTime: Date(timeIntervalSince1970: Double(endMicroseconds) / microsecondsInSecond))
         span.settingHasEnded(true)
         span.settingStatus(.error(description: "GenericError"))
         span.settingAttributes(attributes)
@@ -245,12 +247,12 @@ class AdapterTests: XCTestCase {
                         instrumentationLibraryInfo: InstrumentationLibraryInfo(),
                         name: "GET /api/endpoint",
                         kind: .server,
-                        startTime: Date(timeIntervalSince1970: Double(startMicroseconds) / 1000000),
+                        startTime: Date(timeIntervalSince1970: Double(startMicroseconds) / microsecondsInSecond),
                         attributes: attributes,
                         events: [getTimedEvent()],
                         links: [link],
                         status: Status.ok,
-                        endTime: Date(timeIntervalSince1970: Double(endMicroseconds) / 1000000),
+                        endTime: Date(timeIntervalSince1970: Double(endMicroseconds) / microsecondsInSecond),
                         hasRemoteParent: false)
     }
 
