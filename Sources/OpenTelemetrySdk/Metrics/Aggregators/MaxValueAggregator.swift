@@ -33,6 +33,7 @@ public class MaxValueAggregator<T: SignedNumeric & Comparable>: Aggregator<T>  {
         lock.withLockVoid {
             super.checkpoint()
             self.pointCheck = self.value
+            self.value = 0
         }
     }
 

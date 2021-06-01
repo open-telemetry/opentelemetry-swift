@@ -37,9 +37,31 @@ class OtlpMetricExproterTests: XCTestCase {
         exporter.shutdown()
     }
 
+    func testGaugeExport() {
+        let metric = generateGaugeMetric()
+        let exporter = OtelpMetricExporter(channel: channel)
+
+        let result = exporter.export(metrics: [metric]) { () -> Bool in
+            false
+        }
+        XCTAssertEqual(result, MetricExporterResultCode.success)
+
+        XCTAssertEqual(fakeCollector.receivedMetrics.count, 1)
+        let otlpMetric = fakeCollector.receivedMetrics[0].instrumentationLibraryMetrics[0].metrics[0]
+        XCTAssertEqual(metric.name, otlpMetric.name)
+        XCTAssertEqual(otlpMetric.intGauge.dataPoints.count, 1)
+        let dataPoint = otlpMetric.intGauge.dataPoints[0]
+        let sum = metric.data[0] as! SumData<Int>
+        XCTAssertEqual(sum.timestamp.timeIntervalSince1970.toNanoseconds, dataPoint.timeUnixNano)
+        XCTAssertEqual(sum.startTimestamp.timeIntervalSince1970.toNanoseconds, dataPoint.startTimeUnixNano)
+        XCTAssertEqual(sum.sum, Int(dataPoint.value))
+
+    }
+
     func testExportMultipleMetrics() {
         var metrics = [Metric]()
         for _ in 0 ..< 10 {
+
             metrics.append(generateSumMetric())
         }
         let exporter = OtelpMetricExporter(channel: channel)
@@ -95,6 +117,14 @@ class OtlpMetricExproterTests: XCTestCase {
         let library = InstrumentationLibraryInfo(name: "lib", version: "semver:0.0.0")
         var metric = Metric(namespace: "namespace", name: "metric", desc: "description", type: .doubleSum, resource: Resource(), instrumentationLibraryInfo: library)
         let data = SumData(startTimestamp: Date(), timestamp: Date(), labels: ["hello": "world"], sum: 1)
+        metric.data.append(data)
+        return metric
+    }
+
+    func generateGaugeMetric() -> Metric {
+        let library = InstrumentationLibraryInfo(name: "lib", version: "semver:0.0.0")
+        var metric = Metric(namespace: "namespace", name: "MyGauge", desc: "description", type: .intGauge, resource: Resource(), instrumentationLibraryInfo: library)
+        let data = SumData(startTimestamp: Date(), timestamp: Date(), labels: ["hello": "world"], sum: 100)
         metric.data.append(data)
         return metric
     }
