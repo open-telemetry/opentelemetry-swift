@@ -59,45 +59,45 @@ final class DefaultMeterProviderTests: XCTestCase {
 }
 
 class TestMeter: MeterProvider {
-    func get(instrumentationName: String, instrumentationVersion: String?) -> Meter {
+    func get(instrumentationName _: String, instrumentationVersion _: String?) -> Meter {
         return TestNoopMeter()
     }
 }
 
 class TestNoopMeter: Meter {
-    func createIntCounter(name: String, monotonic: Bool) -> AnyCounterMetric<Int> {
+    func createIntCounter(name _: String, monotonic _: Bool) -> AnyCounterMetric<Int> {
         return AnyCounterMetric<Int>(NoopCounterMetric<Int>())
     }
 
-    func createDoubleCounter(name: String, monotonic: Bool) -> AnyCounterMetric<Double> {
+    func createDoubleCounter(name _: String, monotonic _: Bool) -> AnyCounterMetric<Double> {
         return AnyCounterMetric<Double>(NoopCounterMetric<Double>())
     }
 
-    func createIntMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Int> {
+    func createIntMeasure(name _: String, absolute _: Bool) -> AnyMeasureMetric<Int> {
         return AnyMeasureMetric<Int>(NoopMeasureMetric<Int>())
     }
 
-    func createDoubleMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Double> {
+    func createDoubleMeasure(name _: String, absolute _: Bool) -> AnyMeasureMetric<Double> {
         return AnyMeasureMetric<Double>(NoopMeasureMetric<Double>())
     }
 
-    func createIntObserver(name: String, absolute: Bool, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric {
+    func createIntObserver(name _: String, absolute _: Bool, callback _: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric {
         return NoopIntObserverMetric()
     }
 
-    func createDoubleObserver(name: String, absolute: Bool, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric {
+    func createDoubleObserver(name _: String, absolute _: Bool, callback _: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric {
         return NoopDoubleObserverMetric()
     }
 
-    func createIntObservableGauge(name: String, callback: @escaping (IntObserverMetric) -> ()) -> IntObserverMetric {
+    func createIntObservableGauge(name _: String, callback _: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric {
         return NoopIntObserverMetric()
     }
 
-    func createDoubleObservableGauge(name: String, callback: @escaping (DoubleObserverMetric) -> ()) -> DoubleObserverMetric {
+    func createDoubleObservableGauge(name _: String, callback _: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric {
         return NoopDoubleObserverMetric()
     }
 
-    func getLabelSet(labels: [String: String]) -> LabelSet {
+    func getLabelSet(labels _: [String: String]) -> LabelSet {
         return LabelSet.empty
     }
 }

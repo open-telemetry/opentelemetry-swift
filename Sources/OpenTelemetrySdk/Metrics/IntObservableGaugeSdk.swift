@@ -6,14 +6,13 @@
 import Foundation
 import OpenTelemetryApi
 
-
-class IntObservableGaugeSdk : IntObserverMetric {
+class IntObservableGaugeSdk: IntObserverMetric {
     public private(set) var observerHandles = [LabelSet: IntObservableGaugeHandle]()
-    let name : String
-    var callback : (IntObserverMetric) -> Void
+    let name: String
+    var callback: (IntObserverMetric) -> Void
 
-    init(measurementName: String, callback: @escaping (IntObserverMetric)->Void) {
-        self.name = measurementName
+    init(measurementName: String, callback: @escaping (IntObserverMetric) -> Void) {
+        name = measurementName
         self.callback = callback
     }
 

@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetrySdk
 
-public struct PrometheusExporterExtensions {
+public enum PrometheusExporterExtensions {
     static let prometheusCounterType = "counter"
     static let prometheusSummaryType = "summary"
     static let prometheusSummarySumPostFix = "_sum"

@@ -3,24 +3,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 import Foundation
 
-public class MaxValueAggregator<T: SignedNumeric & Comparable>: Aggregator<T>  {
+public class MaxValueAggregator<T: SignedNumeric & Comparable>: Aggregator<T> {
     var value: T = 0
     var pointCheck: T = 0
 
     private let lock = Lock()
 
-    public override func update(value: T) {
+    override public func update(value: T) {
         lock.withLockVoid {
-            if (value > self.value) {
+            if value > self.value {
                 self.value = value
             }
         }
     }
 
-    public override func checkpoint() {
+    override public func checkpoint() {
         lock.withLockVoid {
             super.checkpoint()
             self.pointCheck = self.value
@@ -28,11 +27,11 @@ public class MaxValueAggregator<T: SignedNumeric & Comparable>: Aggregator<T>  {
         }
     }
 
-    public override func toMetricData() -> MetricData {
+    override public func toMetricData() -> MetricData {
         return SumData<T>(startTimestamp: lastStart, timestamp: lastEnd, sum: pointCheck)
     }
 
-    public override func getAggregationType() -> AggregationType {
+    override public func getAggregationType() -> AggregationType {
         if T.self == Double.Type.self {
             return .doubleGauge
         } else {
@@ -40,4 +39,3 @@ public class MaxValueAggregator<T: SignedNumeric & Comparable>: Aggregator<T>  {
         }
     }
 }
-

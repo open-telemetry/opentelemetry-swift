@@ -22,10 +22,10 @@ internal struct MetricUtils: Encodable {
     /// getType maps a metric into a Datadog type
     static func getType(metric: Metric) -> String {
         switch metric.aggregationType {
-            case .doubleSum, .intSum:
-                return countType
-            case .doubleSummary, .intSummary, .intGauge, .doubleGauge:
-                return gaugeType
+        case .doubleSum, .intSum:
+            return countType
+        case .doubleSummary, .intSummary, .intGauge, .doubleGauge:
+            return gaugeType
         }
     }
 

@@ -29,11 +29,11 @@ public struct ProxyMeter: Meter {
         return realMeter?.createDoubleMeasure(name: name, absolute: absolute) ?? AnyMeasureMetric<Double>(NoopMeasureMetric<Double>())
     }
 
-    public func createIntObservableGauge(name: String, callback: @escaping (IntObserverMetric) -> ()) -> IntObserverMetric {
+    public func createIntObservableGauge(name: String, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric {
         return realMeter?.createIntObservableGauge(name: name, callback: callback) ?? NoopIntObserverMetric()
     }
 
-    public func createDoubleObservableGauge(name: String, callback: @escaping (DoubleObserverMetric) -> ()) -> DoubleObserverMetric {
+    public func createDoubleObservableGauge(name: String, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric {
         return realMeter?.createDoubleObservableGauge(name: name, callback: callback) ?? NoopDoubleObserverMetric()
     }
 

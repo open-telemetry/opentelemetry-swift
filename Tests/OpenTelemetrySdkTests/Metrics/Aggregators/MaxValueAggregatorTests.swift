@@ -6,7 +6,7 @@
 @testable import OpenTelemetrySdk
 import XCTest
 
-final class MaxValueAggregatorTests : XCTestCase {
+final class MaxValueAggregatorTests: XCTestCase {
     public func testAsyncSafety() {
         let agg = MaxValueAggregator<Int>()
         var sum = agg.toMetricData() as! SumData<Int>
@@ -46,6 +46,5 @@ final class MaxValueAggregatorTests : XCTestCase {
         sum = agg.toMetricData() as! SumData<Int>
 
         XCTAssertEqual(sum.sum, 88)
-
     }
 }

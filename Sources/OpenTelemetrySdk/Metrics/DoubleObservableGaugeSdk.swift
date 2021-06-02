@@ -6,13 +6,13 @@
 import Foundation
 import OpenTelemetryApi
 
-class DoubleObservableGaugeSdk : DoubleObserverMetric {
+class DoubleObservableGaugeSdk: DoubleObserverMetric {
     public private(set) var observerHandles = [LabelSet: DoubleObservableGaugeHandle]()
-    let name : String
-    var callback : (DoubleObserverMetric) -> Void
+    let name: String
+    var callback: (DoubleObserverMetric) -> Void
 
     init(measurementName: String, callback: @escaping (DoubleObserverMetric) -> Void) {
-        self.name = measurementName
+        name = measurementName
         self.callback = callback
     }
 
@@ -33,4 +33,3 @@ class DoubleObservableGaugeSdk : DoubleObserverMetric {
         callback(self)
     }
 }
-

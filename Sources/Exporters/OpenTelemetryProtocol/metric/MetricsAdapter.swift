@@ -65,10 +65,10 @@ struct MetricsAdapter {
                     protoDataPoint.labels.append(kvp)
                 }
 
-                protoMetric.doubleGauge.dataPoints.append(protoDataPoint);
+                protoMetric.doubleGauge.dataPoints.append(protoDataPoint)
             case .intGauge:
                 guard let gaugeData = $0 as? SumData<Int> else {
-                 break
+                    break
                 }
 
                 var protoDataPoint = Opentelemetry_Proto_Metrics_V1_IntDataPoint()
