@@ -1,5 +1,7 @@
-
 # opentelemetry-swift
+
+[![CI](https://github.com/open-telemetry/opentelemetry-swift/actions/workflows/BuildAndTest.yml/badge.svg)](https://github.com/open-telemetry/opentelemetry-swift/actions/workflows/BuildAndTest.yml?query=branch%3Amain+)
+
 
 A swift [OpenTelemetry](https://opentelemetry.io/) client
 

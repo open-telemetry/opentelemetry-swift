@@ -36,7 +36,7 @@ class HTTPClientTests: XCTestCase {
             case .success:
                 break
             case .failure(let error):
-                XCTAssertEqual((error as? ErrorMock)?.description, "no internet connection")
+                XCTAssertNotNil(error)
                 expectation.fulfill()
             }
         }

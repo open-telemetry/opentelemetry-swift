@@ -41,8 +41,8 @@ final class Adapter {
         let spanHex = span.spanId.hexString
         let spanId = Int64(spanHex, radix: 16) ?? 0
         let operationName = span.name
-        let startTime = Int64(span.startTime.timeIntervalSince1970.toMilliseconds)
-        let duration = Int64(span.endTime.timeIntervalSince(span.startTime).toMilliseconds)
+        let startTime = Int64(span.startTime.timeIntervalSince1970.toMicroseconds)
+        let duration = Int64(span.endTime.timeIntervalSince(span.startTime).toMicroseconds)
 
         var parentSpanId: Int64 = 0
 
@@ -66,14 +66,12 @@ final class Adapter {
         tags.append(Tag(key: Adapter.keySpanKind, vType: .string, vStr: span.kind.rawValue.uppercased(), vDouble: nil, vBool: nil, vLong: nil, vBinary: nil))
         if case let Status.error(description) = span.status {
             tags.append(Tag(key: Adapter.keySpanStatusMessage, vType: .string, vStr: description, vDouble: nil, vBool: nil, vLong: nil, vBinary: nil))
+            tags.append(Tag(key: keyError, vType: .bool, vStr: nil, vDouble: nil, vBool: true, vLong: nil, vBinary: nil))
+
         } else {
             tags.append(Tag(key: Adapter.keySpanStatusMessage, vType: .string, vStr: "", vDouble: nil, vBool: nil, vLong: nil, vBinary: nil))
         }
         tags.append(Tag(key: Adapter.keySpanStatusCode, vType: .long, vStr: nil, vDouble: nil, vBool: nil, vLong: Int64(span.status.code), vBinary: nil))
-
-        if span.status != .ok {
-            tags.append(Tag(key: keyError, vType: .bool, vStr: nil, vDouble: nil, vBool: true, vLong: nil, vBinary: nil))
-        }
 
         return Span(traceIdLow: traceIdLow, traceIdHigh: traceIdHigh, spanId: spanId, parentSpanId: parentSpanId, operationName: operationName, references: references, flags: 0, startTime: startTime, duration: duration, tags: tags, logs: logs)
     }
@@ -135,7 +133,7 @@ final class Adapter {
     }
 
     static func toJaegerLog(event: SpanData.Event) -> Log {
-        let timestamp = Int64(event.timestamp.timeIntervalSince1970.toMilliseconds)
+        let timestamp = Int64(event.timestamp.timeIntervalSince1970.toMicroseconds)
 
         var tags = TList<Tag>()
         tags.append(Tag(key: Adapter.keyLogMessage, vType: .string, vStr: event.name, vDouble: nil, vBool: nil, vLong: nil, vBinary: nil))
