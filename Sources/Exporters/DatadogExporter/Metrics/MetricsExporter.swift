@@ -22,7 +22,7 @@ internal class MetricsExporter {
             throw ExporterError(description: "Metrics Exporter need an api key")
         }
 
-        self.configuration = config
+        configuration = config
 
         let filesOrchestrator = FilesOrchestrator(
             directory: try Directory(withSubdirectoryPath: metricsDirectory),
@@ -76,18 +76,18 @@ internal class MetricsExporter {
             let labels = metricData.labels
             tags.append(contentsOf: MetricUtils.getTags(labels: labels))
             switch metric.aggregationType {
-                case .doubleSum:
-                    let sum = metricData as! SumData<Double>
-                    return DDMetricPoint(timestamp: metricData.timestamp, value: sum.sum)
-                case .intSum:
-                    let sum = metricData as! SumData<Int>
-                    return DDMetricPoint(timestamp: metricData.timestamp, value: Double(sum.sum))
-                case .doubleSummary:
-                    let summary = metricData as! SummaryData<Double>
-                    return DDMetricPoint(timestamp: metricData.timestamp, value: summary.sum)
-                case .intSummary:
-                    let summary = metricData as! SummaryData<Int>
-                    return DDMetricPoint(timestamp: metricData.timestamp, value: Double(summary.sum))
+            case .doubleSum:
+                let sum = metricData as! SumData<Double>
+                return DDMetricPoint(timestamp: metricData.timestamp, value: sum.sum)
+            case .intSum:
+                let sum = metricData as! SumData<Int>
+                return DDMetricPoint(timestamp: metricData.timestamp, value: Double(sum.sum))
+            case .doubleSummary, .doubleGauge:
+                let summary = metricData as! SummaryData<Double>
+                return DDMetricPoint(timestamp: metricData.timestamp, value: summary.sum)
+            case .intSummary, .intGauge:
+                let summary = metricData as! SummaryData<Int>
+                return DDMetricPoint(timestamp: metricData.timestamp, value: Double(summary.sum))
             }
         }
 

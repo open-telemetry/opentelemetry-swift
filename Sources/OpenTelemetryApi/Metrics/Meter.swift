@@ -51,6 +51,20 @@ public protocol Meter {
     /// - Returns:The observer instance.
     func createDoubleObserver(name: String, absolute: Bool, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric
 
+    /// Creates Double Observable Gauge with given name.
+    /// - Parameters:
+    ///   - name: The name of the gauge.
+    ///   - callback: The callback to be called to observe metric value.
+    /// - Returns:The gauge instance.
+    func createIntObservableGauge(name: String, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric
+
+    /// Creates Int Observable Gauge with given name.
+    /// - Parameters:
+    ///   - name: The name of the gauge.
+    ///   - callback: The callback to be called to observe metric value.
+    /// - Returns:The gauge instance.
+    func createDoubleObservableGauge(name: String, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric
+
     /// Constructs or retrieves the LabelSet from the given dictionary.
     /// - Parameters:
     ///   - labels: dictionary with  key-value pairs.
