@@ -37,6 +37,10 @@ public class MeterProviderSdk: MeterProvider {
         }
     }
 
+    deinit {
+
+    }
+
     public func get(instrumentationName: String, instrumentationVersion: String? = nil) -> Meter {
         if instrumentationName.isEmpty {
             return defaultMeter
