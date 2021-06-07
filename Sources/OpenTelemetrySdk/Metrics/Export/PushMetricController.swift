@@ -9,10 +9,9 @@ class PushMetricController {
     unowned var meterProvider: MeterProviderSdk
 
     let pushMetricQueue = DispatchQueue(label: "org.opentelemetry.PushMetricController.pushMetricQueue")
-    let metricPushTimer : DispatchSourceTimer
+    let metricPushTimer: DispatchSourceTimer
 
     init(meterProvider: MeterProviderSdk, meterSharedState: MeterSharedState, shouldCancel: (() -> Bool)? = nil) {
-
         self.meterProvider = meterProvider
         self.meterSharedState = meterSharedState
         metricPushTimer = DispatchSource.makeTimerSource(flags: DispatchSource.TimerFlags(), queue: pushMetricQueue)
@@ -21,7 +20,7 @@ class PushMetricController {
                 guard let self = self else {
                     return
                 }
-                if(shouldCancel?() ?? false) {
+                if shouldCancel?() ?? false {
                     self.metricPushTimer.cancel()
                     return
                 }
@@ -43,7 +42,7 @@ class PushMetricController {
 
     deinit {
         metricPushTimer.suspend() // suspending the timer prior to checking `isCancelled()` prevents a race condition between the check and actually calling `cancel()`
-        if (!metricPushTimer.isCancelled) {
+        if !metricPushTimer.isCancelled {
             metricPushTimer.cancel()
             metricPushTimer.resume()
         }
