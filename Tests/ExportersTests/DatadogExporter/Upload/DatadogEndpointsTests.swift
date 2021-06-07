@@ -25,6 +25,17 @@ class DatadogEndpointsTests: XCTestCase {
         XCTAssertEqual(logsURL.absoluteString, "https://mobile-http-intake.logs.datadoghq.com/v1/input/abcdef123456789")
     }
 
+    func testWhenAsksUS3LogEndpointsWithClientToken_returnsCorrectly() throws {
+        let endpoint = Endpoint.us3
+        let clientToken = "abcdef123456789"
+
+        let logsURL = try endpoint.logsUrlWithClientToken(clientToken: clientToken)
+
+        XCTAssertEqual(logsURL, endpoint.logsURL.appendingPathComponent(clientToken))
+        XCTAssertEqual(logsURL.absoluteString, "https://logs.browser-intake-us3-datadoghq.com/v1/input/abcdef123456789")
+    }
+
+
     func testWhenAsksEULogEndpointsWithClientToken_returnsCorrectly() throws {
         let endpoint = Endpoint.eu
         let clientToken = "abcdef123456789"
@@ -60,6 +71,16 @@ class DatadogEndpointsTests: XCTestCase {
 
         XCTAssertEqual(logsURL, endpoint.tracesURL.appendingPathComponent(clientToken))
         XCTAssertEqual(logsURL.absoluteString, "https://public-trace-http-intake.logs.datadoghq.com/v1/input/abcdef123456789")
+    }
+
+    func testWhenAsksUS3TracesEndpointsWithClientToken_returnsCorrectly() throws {
+        let endpoint = Endpoint.us3
+        let clientToken = "abcdef123456789"
+
+        let logsURL = try endpoint.tracesUrlWithClientToken(clientToken: clientToken)
+
+        XCTAssertEqual(logsURL, endpoint.tracesURL.appendingPathComponent(clientToken))
+        XCTAssertEqual(logsURL.absoluteString, "https://trace.browser-intake-us3-datadoghq.com/v1/input/abcdef123456789")
     }
 
     func testWhenAsksEUTracesEndpointsWithClientToken_returnsCorrectly() throws {
