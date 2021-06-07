@@ -15,7 +15,6 @@ public class MeterProviderSdk: MeterProvider {
     var meterSharedState: MeterSharedState
     var pushMetricController: PushMetricController!
     var defaultMeter: MeterSdk
-    var shutdown: Bool = false
 
     public convenience init() {
         self.init(metricProcessor: NoopMetricProcessor(),
@@ -33,13 +32,9 @@ public class MeterProviderSdk: MeterProvider {
 
         pushMetricController = PushMetricController(
             meterProvider: self,
-            meterSharedState: self.meterSharedState) { [shutdown] in
-                shutdown
-        }
-    }
-
-    deinit {
-        shutdown = true
+            meterSharedState: self.meterSharedState) {
+                false
+             }
     }
 
     public func get(instrumentationName: String, instrumentationVersion: String? = nil) -> Meter {
