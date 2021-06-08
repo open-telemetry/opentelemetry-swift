@@ -9,7 +9,7 @@ import NIO
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
-public class OtlpTraceExporter: SpanExporter {
+open class OtlpTraceExporter: SpanExporter {
     let channel: GRPCChannel
     let traceClient: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClient
     let timeoutNanos: Int64
@@ -20,7 +20,7 @@ public class OtlpTraceExporter: SpanExporter {
         self.timeoutNanos = timeoutNanos
     }
 
-    public func export(spans: [SpanData]) -> SpanExporterResultCode {
+    open func export(spans: [SpanData]) -> SpanExporterResultCode {
         let exportRequest = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
             $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
         }
