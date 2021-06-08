@@ -26,7 +26,7 @@ class PushMetricController {
                     return
                 }
                 let start = Date()
-                let values = self.meterProvider.getMeters().values
+                let values = meterProvider.getMeters().values
                 values.forEach {
                     $0.collect()
                 }
