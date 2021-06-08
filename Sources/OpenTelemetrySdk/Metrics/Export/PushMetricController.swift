@@ -6,7 +6,7 @@ import Foundation
 
 class PushMetricController {
     var meterSharedState: MeterSharedState
-    unowned var meterProvider: MeterProviderSdk
+    weak var meterProvider: MeterProviderSdk?
 
     let pushMetricQueue = DispatchQueue(label: "org.opentelemetry.PushMetricController.pushMetricQueue")
     let metricPushTimer: DispatchSourceTimer
