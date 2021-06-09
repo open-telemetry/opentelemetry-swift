@@ -120,10 +120,11 @@ class DatadogExporterTests: XCTestCase {
 
         let datadogExporter = try! DatadogExporter(config: exporterConfiguration)
 
+        let provider = MeterProviderSdk(metricProcessor: UngroupedBatcher(),
+                              metricExporter: datadogExporter,
+                              metricPushInterval: 0.1)
 
-        let meter = MeterProviderSdk(metricProcessor: UngroupedBatcher(),
-                                     metricExporter: datadogExporter,
-                                     metricPushInterval: 0.1).get(instrumentationName: "MyMeter")
+        let meter = provider.get(instrumentationName: "MyMeter")
 
         let testCounter = meter.createIntCounter(name: "MyCounter")
 
