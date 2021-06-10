@@ -26,14 +26,15 @@ public class MeterProviderSdk: MeterProvider {
                 metricPushInterval: TimeInterval = MeterProviderSdk.defaultPushInterval,
                 resource: Resource = EnvVarResource.resource)
     {
-        self.meterSharedState = MeterSharedState(metricProcessor: metricProcessor, metricPushInterval: metricPushInterval, metricExporter: metricExporter, resource: resource)
+        meterSharedState = MeterSharedState(metricProcessor: metricProcessor, metricPushInterval: metricPushInterval, metricExporter: metricExporter, resource: resource)
 
-        defaultMeter = MeterSdk(meterSharedState: self.meterSharedState, instrumentationLibraryInfo: InstrumentationLibraryInfo())
+        defaultMeter = MeterSdk(meterSharedState: meterSharedState, instrumentationLibraryInfo: InstrumentationLibraryInfo())
 
         pushMetricController = PushMetricController(
             meterProvider: self,
-            meterSharedState: self.meterSharedState) {
-                false
+            meterSharedState: meterSharedState
+        ) {
+            false
         }
     }
 
@@ -49,7 +50,7 @@ public class MeterProviderSdk: MeterProvider {
         let instrumentationLibraryInfo = InstrumentationLibraryInfo(name: instrumentationName, version: instrumentationVersion)
         var meter: MeterSdk! = meterRegistry[instrumentationLibraryInfo]
         if meter == nil {
-            meter = MeterSdk(meterSharedState: self.meterSharedState, instrumentationLibraryInfo: instrumentationLibraryInfo)
+            meter = MeterSdk(meterSharedState: meterSharedState, instrumentationLibraryInfo: instrumentationLibraryInfo)
             meterRegistry[instrumentationLibraryInfo] = meter!
         }
         return meter!

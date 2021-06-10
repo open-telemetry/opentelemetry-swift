@@ -12,6 +12,7 @@ class PrometheusExporterTests: XCTestCase {
     let metricPushIntervalSec = 0.05
     let waitDuration = 0.1 + 0.1
 
+    
     func testMetricsHttpServerAsync() {
         let promOptions = PrometheusExporterOptions(url: "http://localhost:9184/metrics/")
         let promExporter = PrometheusExporter(options: promOptions)
@@ -29,7 +30,7 @@ class PrometheusExporterTests: XCTestCase {
             }
         }
 
-        collectMetrics(simpleProcessor: simpleProcessor, exporter: promExporter)
+        let retain_me = collectMetrics(simpleProcessor: simpleProcessor, exporter: promExporter)
         usleep(useconds_t(waitDuration * 1000000))
         let url = URL(string: "http://localhost:9184/metrics/")!
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
@@ -59,10 +60,10 @@ class PrometheusExporterTests: XCTestCase {
         metricsHttpServer.stop()
     }
 
-    private func collectMetrics(simpleProcessor: UngroupedBatcher, exporter: MetricExporter) {
+    private func collectMetrics(simpleProcessor: UngroupedBatcher, exporter: MetricExporter) -> MeterProviderSdk {
 
         let meterProvider = MeterProviderSdk(metricProcessor: simpleProcessor, metricExporter: exporter, metricPushInterval: metricPushIntervalSec)
-
+        
         let meter = meterProvider.get(instrumentationName: "library1")
 
         let testCounter = meter.createIntCounter(name: "testCounter")
@@ -81,6 +82,7 @@ class PrometheusExporterTests: XCTestCase {
             testMeasure.record(value: 5, labelset: meter.getLabelSet(labels: labels1))
             testMeasure.record(value: 500, labelset: meter.getLabelSet(labels: labels1))
         }
+        return meterProvider
     }
 
     private func validateResponse(responseText: String) {
