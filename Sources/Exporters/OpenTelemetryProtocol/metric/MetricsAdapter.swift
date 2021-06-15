@@ -100,6 +100,7 @@ struct MetricsAdapter {
                     protoDataPoint.labels.append(kvp)
                 }
 
+                protoMetric.doubleSum.aggregationTemporality = .cumulative
                 protoMetric.doubleSum.dataPoints.append(protoDataPoint)
             case .doubleSummary:
 
@@ -136,6 +137,7 @@ struct MetricsAdapter {
                     protoDataPoint.labels.append(kvp)
                 }
 
+                protoMetric.intSum.aggregationTemporality = .cumulative
                 protoMetric.intSum.dataPoints.append(protoDataPoint)
             case .intSummary:
                 guard let summaryData = $0 as? SummaryData<Int> else {
