@@ -21,6 +21,7 @@ public class MetricProcessorSdk: MetricProcessor {
     public func finishCollectionCycle() -> [Metric] {
         lock.lock()
         defer {
+            self.metrics = [Metric]()
             lock.unlock()
         }
         return metrics

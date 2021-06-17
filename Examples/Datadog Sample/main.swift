@@ -70,7 +70,7 @@ func childSpan() {
 }
 
 func testMetrics() {
-    let processor = UngroupedBatcher()
+    let processor = MetricProcessorSdk()
 
     let meterProvider = MeterProviderSdk(metricProcessor: processor, metricExporter: datadogExporter, metricPushInterval: 0.1)
 

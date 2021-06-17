@@ -120,7 +120,7 @@ class DatadogExporterTests: XCTestCase {
 
         let datadogExporter = try! DatadogExporter(config: exporterConfiguration)
 
-        let provider = MeterProviderSdk(metricProcessor: UngroupedBatcher(),
+        let provider = MeterProviderSdk(metricProcessor: MetricProcessorSdk(),
                               metricExporter: datadogExporter,
                               metricPushInterval: 0.1)
 
