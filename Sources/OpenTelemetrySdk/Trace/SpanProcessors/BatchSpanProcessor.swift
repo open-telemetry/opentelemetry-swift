@@ -18,13 +18,14 @@ public struct BatchSpanProcessor: SpanProcessor {
     fileprivate var worker: BatchWorker
 
     public init(spanExporter: SpanExporter, scheduleDelay: TimeInterval = 5, exportTimeout: TimeInterval = 30,
-                maxQueueSize: Int = 2048, maxExportBatchSize: Int = 512)
+                maxQueueSize: Int = 2048, maxExportBatchSize: Int = 512, willExportCallback:((inout [SpanData]) -> Void)? = nil)
     {
         worker = BatchWorker(spanExporter: spanExporter,
                              scheduleDelay: scheduleDelay,
                              exportTimeout: exportTimeout,
                              maxQueueSize: maxQueueSize,
-                             maxExportBatchSize: maxExportBatchSize)
+                             maxExportBatchSize: maxExportBatchSize,
+                             willExportCallback: willExportCallback)
         worker.start()
     }
 
@@ -59,18 +60,20 @@ private class BatchWorker: Thread {
     let maxQueueSize: Int
     let exportTimeout: TimeInterval
     let maxExportBatchSize: Int
+    let willExportCallback:((inout [SpanData]) -> Void)?
     let halfMaxQueueSize: Int
     private let cond = NSCondition()
     var spanList = [ReadableSpan]()
     var queue: OperationQueue
 
-    init(spanExporter: SpanExporter, scheduleDelay: TimeInterval, exportTimeout:TimeInterval, maxQueueSize: Int, maxExportBatchSize: Int) {
+    init(spanExporter: SpanExporter, scheduleDelay: TimeInterval, exportTimeout:TimeInterval, maxQueueSize: Int, maxExportBatchSize: Int, willExportCallback:((inout [SpanData]) -> Void)?) {
         self.spanExporter = spanExporter
         self.scheduleDelay = scheduleDelay
         self.exportTimeout = exportTimeout
         self.maxQueueSize = maxQueueSize
         halfMaxQueueSize = maxQueueSize >> 1
         self.maxExportBatchSize = maxExportBatchSize
+        self.willExportCallback = willExportCallback
         queue = OperationQueue()
         queue.name = "BatchWorker Queue"
         queue.maxConcurrentOperationCount = 1
@@ -141,7 +144,9 @@ private class BatchWorker: Thread {
 
     private func exportAction(spanList: [ReadableSpan]) {
         stride(from: 0, to: spanList.endIndex, by: maxExportBatchSize).forEach {
-            spanExporter.export(spans: spanList[$0 ..< min($0 + maxExportBatchSize, spanList.count)].map { $0.toSpanData() })
+            var spansToExport = spanList[$0 ..< min($0 + maxExportBatchSize, spanList.count)].map { $0.toSpanData() }
+            willExportCallback?(&spansToExport)
+            spanExporter.export(spans: spansToExport)
         }
     }
 }
