@@ -1,14 +1,15 @@
 ### Prometheus Sample
 
-This example shows the Prometheus exporter returning data in a web server
+This example shows the Prometheus exporter returning data in a web server.
+Modify your local ip address in the main file an the prometheus.yml file
 
 The sample expects a Prometheus instance scraping data from a specific local port ,you can  run it like: 
 
 ```
-docker run -p 9090:9090 -p 9184:9184 -v /Users/nacho/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus
+docker run -p 9090:9090 -p 9184:9184 -v $HOME/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus
 ```
 
-with a prometheus.yml with the content:
+with a prometheus.yml with the content (use your local ip address at the bottom):
 
 ```
 --- 
@@ -36,5 +37,5 @@ scrape_configs:
     static_configs: 
       - 
         targets: 
-          - "localhost:9184"
+          - "192.168.1.28:9184"
 ```
