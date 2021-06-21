@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import Compression
 import Foundation
 
 /// Creates URL and adds query items before providing them
@@ -107,8 +108,32 @@ internal final class DataUploader {
         var request = URLRequest(url: urlProvider.url)
         request.httpMethod = "POST"
         request.allHTTPHeaderFields = httpHeaders.all
-        request.httpBody = data
+        request.httpBody = httpHeaders.all["Content-Encoding"] != nil ? compressData(data: data) : data
         return request
+    }
+
+    private func compressData(data: Data) -> Data {
+        let destinationBuffer = UnsafeMutablePointer<UInt8>.allocate(capacity: data.count + 10)
+        var compressedSize: Int = 0
+        data.withUnsafeBytes { (source: UnsafeRawBufferPointer) in
+            // Set gzip header
+            destinationBuffer[0] = 31
+            destinationBuffer[1] = 139
+            destinationBuffer[2] = 8
+            destinationBuffer[3] = 0
+            destinationBuffer[4] = 0
+            destinationBuffer[5] = 0
+            destinationBuffer[6] = 0
+            destinationBuffer[7] = 0
+            destinationBuffer[8] = 0
+            destinationBuffer[9] = 0
+            // Actually compress the buffer
+            compressedSize = compression_encode_buffer(destinationBuffer.advanced(by: 10), data.count,
+                                                       source.bindMemory(to: UInt8.self).baseAddress!, data.count,
+                                                       nil,
+                                                       COMPRESSION_ZLIB)
+        }
+        return Data(bytesNoCopy: destinationBuffer, count: compressedSize + 2, deallocator: .free)
     }
 }
 
