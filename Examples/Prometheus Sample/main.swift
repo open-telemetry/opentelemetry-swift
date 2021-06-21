@@ -9,7 +9,12 @@ import PrometheusExporter
 
 print("Hello Prometheus")
 
-let promOptions = PrometheusExporterOptions(url: "http://192.168.1.167:9184/metrics")
+//
+//You should use here your real local address, change it also in the prometheus.yml file
+let localAddress = "192.168.1.28"
+//
+
+let promOptions = PrometheusExporterOptions(url: "http://\(localAddress):9184/metrics")
 let promExporter = PrometheusExporter(options: promOptions)
 let metricsHttpServer = PrometheusExporterHttpServer(exporter: promExporter)
 
