@@ -59,7 +59,8 @@ internal class SpansExporter {
                 appName: configuration.applicationName,
                 appVersion: configuration.version,
                 device: Device.current
-            )
+            ),
+            .compressedContentEncodingHeader()
         ])
 
         tracesUpload = FeatureUpload(featureName: "tracesUpload",
