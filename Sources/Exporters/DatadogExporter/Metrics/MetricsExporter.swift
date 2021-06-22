@@ -60,6 +60,8 @@ internal class MetricsExporter {
                 appVersion: configuration.version,
                 device: Device.current
             ),
+            // metrics endpoint doesnt accept gzipped content
+            //.compressedContentEncodingHeader()
         ])
 
         metricsUpload = FeatureUpload(featureName: "metricsUpload",
