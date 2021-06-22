@@ -6,6 +6,7 @@
 import Foundation
 import GRPC
 import NIO
+import NIOHPACK
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
@@ -13,6 +14,9 @@ public class OtelpMetricExporter: MetricExporter {
     let channel: GRPCChannel
     let metricClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClient
     let timeoutNanos: Int64
+     let callOptions : CallOptions? = CallOptions(customMetadata: HPACKHeaders(EnvVarHeaders.attributes))
+
+
 
     public init(channel: GRPCChannel, timeoutNanos: Int64 = 0) {
         self.channel = channel
@@ -30,7 +34,7 @@ public class OtelpMetricExporter: MetricExporter {
             metricClient.defaultCallOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(timeoutNanos))
         }
         
-        let export = metricClient.export(exportRequest)
+        let export = metricClient.export(exportRequest, callOptions: callOptions)
         
         do {
             _ = try export.response.wait()

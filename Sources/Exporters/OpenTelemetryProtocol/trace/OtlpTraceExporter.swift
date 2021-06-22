@@ -6,6 +6,7 @@
 import Foundation
 import GRPC
 import NIO
+import NIOHPACK
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
@@ -13,6 +14,7 @@ public class OtlpTraceExporter: SpanExporter {
     let channel: GRPCChannel
     let traceClient: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClient
     let timeoutNanos: Int64
+    let callOptions : CallOptions? = CallOptions(customMetadata: HPACKHeaders(EnvVarHeaders.attributes))
 
     public init(channel: GRPCChannel, timeoutNanos: Int64 = 0) {
         self.channel = channel
@@ -29,7 +31,9 @@ public class OtlpTraceExporter: SpanExporter {
             traceClient.defaultCallOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(timeoutNanos))
         }
 
-        let export = traceClient.export(exportRequest)
+
+
+        let export = traceClient.export(exportRequest, callOptions: callOptions)
 
         do {
             // wait() on the response to stop the program from exiting before the response is received.
