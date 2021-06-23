@@ -25,7 +25,6 @@ class PushMetricController {
                     self.metricPushTimer.cancel()
                     return
                 }
-                let start = Date()
                 let values = meterProvider.getMeters().values
                 values.forEach {
                     $0.collect()

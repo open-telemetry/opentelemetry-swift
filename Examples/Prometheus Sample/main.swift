@@ -27,7 +27,7 @@ DispatchQueue.global(qos: .default).async {
     }
 }
 
-let processor = UngroupedBatcher()
+let processor = MetricProcessorSdk()
 
 
 let meterProvider = MeterProviderSdk(metricProcessor: processor, metricExporter: promExporter, metricPushInterval: 0.1)
