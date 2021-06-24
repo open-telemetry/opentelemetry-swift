@@ -1,6 +1,7 @@
-//
-// Created by Bryce Buchanan on 6/24/21.
-//
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import Foundation
 
