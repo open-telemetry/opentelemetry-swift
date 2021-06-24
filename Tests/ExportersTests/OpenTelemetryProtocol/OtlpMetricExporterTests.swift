@@ -28,7 +28,7 @@ class OtlpMetricExproterTests: XCTestCase {
 
     func testExport() {
         let metric = generateSumMetric()
-        let exporter = OtelpMetricExporter(channel: channel)
+        let exporter = OtlpMetricExporter(channel: channel)
         let result = exporter.export(metrics: [metric]) { () -> Bool in
             false
         }
@@ -39,7 +39,7 @@ class OtlpMetricExproterTests: XCTestCase {
 
     func testGaugeExport() {
         let metric = generateGaugeMetric()
-        let exporter = OtelpMetricExporter(channel: channel)
+        let exporter = OtlpMetricExporter(channel: channel)
 
         let result = exporter.export(metrics: [metric]) { () -> Bool in
             false
@@ -62,7 +62,7 @@ class OtlpMetricExproterTests: XCTestCase {
         for _ in 0 ..< 10 {
             metrics.append(generateSumMetric())
         }
-        let exporter = OtelpMetricExporter(channel: channel)
+        let exporter = OtlpMetricExporter(channel: channel)
         let result = exporter.export(metrics: metrics) { () -> Bool in
             false
         }
@@ -73,7 +73,7 @@ class OtlpMetricExproterTests: XCTestCase {
 
     func testExportAfterShutdown() {
         let metric = generateSumMetric()
-        let exporter = OtelpMetricExporter(channel: channel)
+        let exporter = OtlpMetricExporter(channel: channel)
         exporter.shutdown()
         let result = exporter.export(metrics: [metric]) { () -> Bool in
             false
@@ -83,7 +83,7 @@ class OtlpMetricExproterTests: XCTestCase {
 
     func testExportCancelled() {
         fakeCollector.returnedStatus = GRPCStatus(code: .cancelled, message: nil)
-        let exporter = OtelpMetricExporter(channel: channel)
+        let exporter = OtlpMetricExporter(channel: channel)
         let metric = generateSumMetric()
         let result = exporter.export(metrics: [metric]) { () -> Bool in
             false

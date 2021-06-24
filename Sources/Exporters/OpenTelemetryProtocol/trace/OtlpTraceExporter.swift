@@ -13,13 +13,18 @@ import OpenTelemetrySdk
 public class OtlpTraceExporter: SpanExporter {
     let channel: GRPCChannel
     let traceClient: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClient
-    let timeoutNanos: Int64
-    let callOptions : CallOptions? = CallOptions(customMetadata: HPACKHeaders(EnvVarHeaders.attributes))
+    let config : OtlpConfiguration
+    var callOptions : CallOptions? = nil
 
-    public init(channel: GRPCChannel, timeoutNanos: Int64 = 0) {
+    public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration()) {
         self.channel = channel
         traceClient = Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClient(channel: channel)
-        self.timeoutNanos = timeoutNanos
+        self.config = config
+        if let headers = EnvVarHeaders.attributes {
+            callOptions = CallOptions(customMetadata: HPACKHeaders(headers))
+        } else if let headers = config.headers {
+            callOptions = CallOptions(customMetadata: HPACKHeaders(headers))
+        }
     }
 
     public func export(spans: [SpanData]) -> SpanExporterResultCode {
@@ -27,11 +32,9 @@ public class OtlpTraceExporter: SpanExporter {
             $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
         }
 
-        if timeoutNanos > 0 {
-            traceClient.defaultCallOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(timeoutNanos))
+        if config.timeout > 0 {
+            traceClient.defaultCallOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(config.timeout.toNanoseconds)))
         }
-
-
 
         let export = traceClient.export(exportRequest, callOptions: callOptions)
 

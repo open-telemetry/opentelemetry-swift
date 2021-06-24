@@ -10,18 +10,24 @@ import NIOHPACK
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
-public class OtelpMetricExporter: MetricExporter {
+public class OtlpMetricExporter: MetricExporter {
     let channel: GRPCChannel
     let metricClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClient
-    let timeoutNanos: Int64
-     let callOptions : CallOptions? = CallOptions(customMetadata: HPACKHeaders(EnvVarHeaders.attributes))
+    let config : OtlpConfiguration
+    var callOptions : CallOptions? = nil
 
 
 
-    public init(channel: GRPCChannel, timeoutNanos: Int64 = 0) {
+    public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration()) {
         self.channel = channel
-        self.timeoutNanos = timeoutNanos
+        self.config = config
         self.metricClient = Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClient(channel: self.channel)
+
+        if let headers = EnvVarHeaders.attributes {
+            callOptions = CallOptions(customMetadata: HPACKHeaders(headers))
+        } else if let headers = config.headers {
+            callOptions = CallOptions(customMetadata: HPACKHeaders(headers))
+        }
     }
     
     public func export(metrics: [Metric], shouldCancel: (() -> Bool)?) -> MetricExporterResultCode {
@@ -30,8 +36,8 @@ public class OtelpMetricExporter: MetricExporter {
                 $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(metricDataList: metrics)
             }
         
-        if timeoutNanos > 0 {
-            metricClient.defaultCallOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(timeoutNanos))
+        if config.timeout > 0 {
+            metricClient.defaultCallOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(config.timeout.toNanoseconds)))
         }
         
         let export = metricClient.export(exportRequest, callOptions: callOptions)

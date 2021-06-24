@@ -14,14 +14,14 @@ public struct EnvVarHeaders {
 
     ///  This resource information is loaded from the 
     ///  environment variable.
-    public static let attributes : [(String,String)] = parseAttributes(rawEnvAttributes: ProcessInfo.processInfo.environment[otelAttributesEnv])
+    public static let attributes : [(String,String)]? = parseAttributes(rawEnvAttributes: ProcessInfo.processInfo.environment[otelAttributesEnv])
 
     private init() {}
 
     /// Creates a label map from the environment variable string.
     /// - Parameter rawEnvLabels: the comma-separated list of labels
-    private static func parseAttributes(rawEnvAttributes: String?) -> [(String, String)] {
-        guard let rawEnvLabels = rawEnvAttributes else { return [(String, String)]() }
+    private static func parseAttributes(rawEnvAttributes: String?) -> [(String, String)]? {
+        guard let rawEnvLabels = rawEnvAttributes else { return nil }
 
         var labels = [(String, String)]()
 
