@@ -12,6 +12,8 @@ public class MeterProviderBuilder {
     public private(set) var metricPushInterval : TimeInterval = MeterProviderSdk.defaultPushInterval
     public private(set) var metricProcessor : MetricProcessor = NoopMetricProcessor()
 
+    public init() {}
+
     public func with(processor: MetricProcessor) -> Self {
         self.metricProcessor = processor
         return self
