@@ -5,9 +5,8 @@
 import Foundation
 
 import OpenTelemetryApi
-import OpenTelemetrySdk
 
-class MeterProviderBuilder {
+public class MeterProviderBuilder {
     public private(set) var resource : Resource = Resource()
     public private(set) var metricExporter : MetricExporter = NoopMetricExporter()
     public private(set) var metricPushInterval : TimeInterval = MeterProviderSdk.defaultPushInterval

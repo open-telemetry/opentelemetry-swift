@@ -5,15 +5,7 @@
 
 import Foundation
 import OpenTelemetryApi
-import OpenTelemetrySdk
 
-/*  public init(clock: Clock = MillisClock(),
-               idGenerator: IdGenerator = RandomIdGenerator(),
-               resource: Resource = EnvVarResource.resource,
-               spanLimits: SpanLimits = SpanLimits(),
-               sampler: Sampler = Samplers.parentBased(root: Samplers.alwaysOn),
-               spanProcessors: [SpanProcessor] = [])
-*/
 class TracerProviderBuilder {
     public private(set) var clock : Clock = MillisClock()
     public private(set) var idGenerator : IdGenerator = RandomIdGenerator()
