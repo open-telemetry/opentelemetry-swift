@@ -6,6 +6,7 @@
 import Foundation
 
 /// Batcher which retains all dimensions/labels.
+@available(*, deprecated, message: "Use MetricProcessorSdk instead")
 public class UngroupedBatcher: MetricProcessor {
     public init() {}
 

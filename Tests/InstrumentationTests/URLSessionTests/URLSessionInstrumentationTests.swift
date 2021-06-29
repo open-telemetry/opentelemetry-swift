@@ -162,7 +162,7 @@ class URLSessionInstrumentationTests: XCTestCase {
         let task = URLSession.shared.dataTask(with: request) { data, _, _ in
             if let data = data {
                 let string = String(decoding: data, as: UTF8.self)
-                print(string ?? "")
+                print(string)
             }
             URLSessionInstrumentationTests.semaphore.signal()
         }

@@ -22,6 +22,10 @@ internal struct HTTPHeaders {
             return HTTPHeader(field: "Content-Type", value: contentType.rawValue)
         }
 
+        static func compressedContentEncodingHeader() -> HTTPHeader {
+            return HTTPHeader( field: "Content-Encoding", value: "gzip")
+        }
+
         static func userAgentHeader(appName: String, appVersion: String, device: Device) -> HTTPHeader {
             return HTTPHeader(
                 field: "User-Agent",

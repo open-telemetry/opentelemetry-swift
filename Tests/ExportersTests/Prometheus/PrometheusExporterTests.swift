@@ -16,7 +16,7 @@ class PrometheusExporterTests: XCTestCase {
     func testMetricsHttpServerAsync() {
         let promOptions = PrometheusExporterOptions(url: "http://localhost:9184/metrics/")
         let promExporter = PrometheusExporter(options: promOptions)
-        let simpleProcessor = UngroupedBatcher()
+        let simpleProcessor = MetricProcessorSdk()
         let metricsHttpServer = PrometheusExporterHttpServer(exporter: promExporter)
 
         let expec = expectation(description: "Get metrics from server")
@@ -60,7 +60,7 @@ class PrometheusExporterTests: XCTestCase {
         metricsHttpServer.stop()
     }
 
-    private func collectMetrics(simpleProcessor: UngroupedBatcher, exporter: MetricExporter) -> MeterProviderSdk {
+    private func collectMetrics(simpleProcessor: MetricProcessorSdk, exporter: MetricExporter) -> MeterProviderSdk {
 
         let meterProvider = MeterProviderSdk(metricProcessor: simpleProcessor, metricExporter: exporter, metricPushInterval: metricPushIntervalSec)
         
