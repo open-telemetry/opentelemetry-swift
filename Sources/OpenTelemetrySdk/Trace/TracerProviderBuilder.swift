@@ -50,7 +50,7 @@ public class TracerProviderBuilder {
         return self
     }
 
-    public func build() -> TracerProvider {
+    public func build() -> TracerProviderSdk {
         return TracerProviderSdk(clock: clock, idGenerator: idGenerator, resource: resource, spanLimits: spanLimits, sampler: sampler, spanProcessors: spanProcessors)
     }
 }
