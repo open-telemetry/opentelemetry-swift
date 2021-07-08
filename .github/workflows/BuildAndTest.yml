@@ -9,7 +9,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Build for macOS
-      run: swift build
-    - name: Test for macOS
-      run: swift test
+    - name: Build and Test for macOS
+      run: swift test --enable-code-coverage
+    - name: Upload Code coverage
+      run: |
+        curl -Os https://uploader.codecov.io/latest/macos/codecov
+        chmod +x codecov
+        codecovpath=$(swift test --show-codecov-path)
+        ./codecov -f $codecovpath
