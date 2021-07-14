@@ -9,7 +9,7 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 
 /// A span processor that decorates spans with the origin attribute
-@available(macOS 10.14, *)
+@available(macOS 10.14, iOS 12.0, tvOS 12.0, *)
 public class SignPostIntegration: SpanProcessor {
     public let isStartRequired = true
     public let isEndRequired = true
