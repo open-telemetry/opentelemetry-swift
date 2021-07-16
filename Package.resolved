@@ -20,6 +20,15 @@
         }
       },
       {
+        "package": "Reachability",
+        "repositoryURL": "git@github.com:ashleymills/Reachability.swift.git",
+        "state": {
+          "branch": "master",
+          "revision": "a81b7367f2c46875f29577e03a60c39cdfad0c8d",
+          "version": null
+        }
+      },
+      {
         "package": "swift-atomics",
         "repositoryURL": "https://github.com/apple/swift-atomics.git",
         "state": {
