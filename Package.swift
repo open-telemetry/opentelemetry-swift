@@ -50,7 +50,7 @@ let package = Package(
         .package(name: "grpc-swift", url: "https://github.com/grpc/grpc-swift.git", from: "1.0.0"),
         .package(name: "swift-atomics", url: "https://github.com/apple/swift-atomics.git", from: "0.0.1"),
         .package(name: "swift-metrics", url: "https://github.com/apple/swift-metrics.git", from: "2.1.1"),
-        .package(name: "Reachability", url: "git@github.com:ashleymills/Reachability.swift.git", .branch("master")),
+        .package(name: "Reachability", url: "https://github.com/ashleymills/Reachability.swift", .branch("master")),
 
     ],
     targets: [
