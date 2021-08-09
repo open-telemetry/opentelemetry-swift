@@ -8,6 +8,6 @@ import Foundation
 public enum Connection {
     case unavailable, wifi, cellular
 }
-public protocol INetworkMonitor {
+public protocol NetworkMonitorProtocol {
     func getConnection() -> Connection;
 }

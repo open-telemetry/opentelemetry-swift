@@ -12,12 +12,12 @@
 
     public class NetworkStatus {
         public private(set) var networkInfo: CTTelephonyNetworkInfo
-        public private(set) var networkMonitor: INetworkMonitor
+        public private(set) var networkMonitor: NetworkMonitorProtocol
         public convenience init() throws {
             self.init(with: try NetworkMonitor())
         }
 
-        public init(with monitor: INetworkMonitor, info: CTTelephonyNetworkInfo = CTTelephonyNetworkInfo()) {
+        public init(with monitor: NetworkMonitorProtocol, info: CTTelephonyNetworkInfo = CTTelephonyNetworkInfo()) {
             networkMonitor = monitor
             networkInfo = info
         }

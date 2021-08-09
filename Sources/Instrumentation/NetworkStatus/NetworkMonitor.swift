@@ -6,7 +6,7 @@
 import Foundation
 import Reachability
 
-public class NetworkMonitor : INetworkMonitor {
+public class NetworkMonitor : NetworkMonitorProtocol {
     public private(set) var reachability :Reachability
     
     public init() throws {

@@ -10,7 +10,7 @@
     import Reachability
     import XCTest
 
-    class MockNetworkMonitor: INetworkMonitor {
+    class MockNetworkMonitor: NetworkMonitorProtocol {
         var connection: Connection
         init(connection: Connection) {
             self.connection = connection

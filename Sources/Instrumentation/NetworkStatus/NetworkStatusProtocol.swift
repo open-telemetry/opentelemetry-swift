@@ -7,8 +7,8 @@
 import Foundation
 import CoreTelephony
 
-public protocol INetworkStatus {
-    var networkMonitor : INetworkMonitor { get }
+public protocol NetworkStatusProtocol {
+    var networkMonitor : NetworkMonitorProtocol { get }
     func getStatus() -> (String, CTCarrier?)
 }
 #endif
