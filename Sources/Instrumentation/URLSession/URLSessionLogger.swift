@@ -7,6 +7,10 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
+#if os(iOS)
+import NetworkStatus
+#endif //os(iOS)
+
 class URLSessionLogger {
     static var runningSpans = [String: Span]()
     static var runningSpansQueue = DispatchQueue(label: "io.opentelemetry.URLSessionLogger")
@@ -60,6 +64,13 @@ class URLSessionLogger {
         if shouldInjectHeaders {
             returnRequest = instrumentedRequest(for: request, span: span, instrumentation: instrumentation)
         }
+
+        #if os(iOS)
+        if let injector = self.netstatInjector {
+            injector.inject(span: span)
+        }
+        #endif
+
 
         instrumentation.configuration.createdRequest?(returnRequest ?? request, span)
 
