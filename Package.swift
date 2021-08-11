@@ -68,7 +68,7 @@ let package = Package(
                 path: "Sources/Instrumentation/URLSession",
                 exclude: ["README.md"]),
         .target(name: "NetworkStatus",
-                dependencies: ["Reachability"],
+                dependencies: ["Reachability", "OpenTelemetryApi"],
                 path: "Sources/Instrumentation/NetworkStatus",
                 linkerSettings: [.linkedFramework("CoreTelephony")]),
         .target(name: "SignPostIntegration",

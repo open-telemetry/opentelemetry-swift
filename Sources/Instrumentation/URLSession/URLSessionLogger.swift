@@ -6,15 +6,30 @@
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
-
+import os.log
 #if os(iOS)
-import NetworkStatus
-#endif //os(iOS)
+    import NetworkStatus
+#endif // os(iOS)
 
 class URLSessionLogger {
     static var runningSpans = [String: Span]()
     static var runningSpansQueue = DispatchQueue(label: "io.opentelemetry.URLSessionLogger")
+    #if os(iOS)
+        static var netstatInjector: NetworkStatusInjector? = { () -> NetworkStatusInjector? in
+            do {
+                let netstats = try NetworkStatus()
+                return NetworkStatusInjector(netstat: netstats)
+            } catch {
+                if #available(iOS 14, macOS 11, tvOS 14, *) {
+                    os_log(.error, "failed to initialize network connection status: %@", error.localizedDescription)
+                } else {
+                    NSLog("failed to initialize network connection status: %@", error.localizedDescription)
+                }
 
+                return nil
+            }
+        }()
+    #endif // os(iOS)
     /// This methods creates a Span for a request, and optionally injects tracing headers, returns a  new request if it was needed to create a new one to add the tracing headers
     @discardableResult static func processAndLogRequest(_ request: URLRequest, sessionTaskId: String, instrumentation: URLSessionInstrumentation, shouldInjectHeaders: Bool) -> URLRequest? {
         guard instrumentation.configuration.shouldInstrument?(request) ?? true else {
@@ -66,11 +81,10 @@ class URLSessionLogger {
         }
 
         #if os(iOS)
-        if let injector = self.netstatInjector {
-            injector.inject(span: span)
-        }
+            if let injector = netstatInjector {
+                injector.inject(span: span)
+            }
         #endif
-
 
         instrumentation.configuration.createdRequest?(returnRequest ?? request, span)
 
