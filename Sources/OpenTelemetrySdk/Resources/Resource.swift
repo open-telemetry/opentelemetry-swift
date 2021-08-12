@@ -40,14 +40,14 @@ public struct Resource: Equatable, Hashable {
     }
 
     /// Modifies the current Resource by merging with the other Resource.
-    /// In case of a collision, current Resource takes precedence.
+    /// In case of a collision, new Resource takes precedence.
     /// - Parameter other: the Resource that will be merged with this
     public mutating func merge(other: Resource) {
         attributes.merge(other.attributes) { _, other in other }
     }
 
     /// Returns a new, merged Resource by merging the current Resource with the other Resource.
-    /// In case of a collision, current Resource takes precedence.
+    /// In case of a collision, new Resource takes precedence.
     /// - Parameter other: the Resource that will be merged with this
     public func merging(other: Resource) -> Resource {
         let labelsCopy = attributes.merging(other.attributes) { _, other in other }
