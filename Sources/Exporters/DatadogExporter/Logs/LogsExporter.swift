@@ -69,8 +69,7 @@ internal class LogsExporter {
                 appName: configuration.applicationName,
                 appVersion: configuration.version,
                 device: Device.current
-            ),
-            .compressedContentEncodingHeader()
+            )
         ])
 
         logsUpload = FeatureUpload(featureName: "logsUpload",
