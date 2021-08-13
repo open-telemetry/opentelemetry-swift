@@ -138,10 +138,11 @@ class URLSessionLogger {
 
     private static func instrumentedRequest(for request: URLRequest, span: Span?, instrumentation: URLSessionInstrumentation) -> URLRequest? {
         var request = request
-        guard instrumentation.configuration.shouldInjectTracingHeaders?(&request) ?? true
+        guard instrumentation.configuration.shouldInjectTracingHeaders?(request) ?? true
         else {
             return nil
         }
+        instrumentation.configuration.injectCustomHeaders?(&request, span)
         var instrumentedRequest = request
         objc_setAssociatedObject(instrumentedRequest, &URLSessionInstrumentation.instrumentedKey, true, .OBJC_ASSOCIATION_COPY_NONATOMIC)
         var traceHeaders = tracePropagationHTTPHeaders(span: span, textMapPropagator: instrumentation.tracer.textFormat)

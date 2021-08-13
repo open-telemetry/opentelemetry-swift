@@ -13,7 +13,9 @@ This behaviour can be modified or augmented by using the optional callbacks defi
 
 `shouldRecordPayload: ((URLSession) -> (Bool)?)?`: Implement if you want the session to record payload data, false by default.
 
-`shouldInjectTracingHeaders: ((inout URLRequest) -> (Bool)?)?`: Allows filtering which requests you want to inject headers to follow the trace, true by default. You can also modify the request or add other headers in this method.
+`shouldInjectTracingHeaders: ((URLRequest) -> (Bool)?)?`: Allows filtering which requests you want to inject headers to follow the trace, true by default. You must also return true if you want to inject custom headers.
+
+`injectCustomHeaders: ((inout URLRequest, Span?) -> Void)?`: Implement this callback to inject custom headers or modify the request in any other way
 
 `nameSpan: ((URLRequest) -> (String)?)?` - Modifies the name for the given request instead of stantard Opentelemetry name
 
