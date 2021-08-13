@@ -15,7 +15,8 @@ public struct URLSessionInstrumentationConfiguration {
     public init(shouldRecordPayload: ((URLSession) -> (Bool)?)? = nil,
                 shouldInstrument: ((URLRequest) -> (Bool)?)? = nil,
                 nameSpan: ((URLRequest) -> (String)?)? = nil,
-                shouldInjectTracingHeaders: ((inout URLRequest) -> (Bool)?)? = nil,
+                shouldInjectTracingHeaders: ((URLRequest) -> (Bool)?)? = nil,
+                injectCustomHeaders: ((inout URLRequest, Span?) -> Void)? = nil,
                 createdRequest: ((URLRequest, Span) -> Void)? = nil,
                 receivedResponse: ((URLResponse, DataOrFile?, Span) -> Void)? = nil,
                 receivedError: ((Error, DataOrFile?, HTTPStatus, Span) -> Void)? = nil)
@@ -23,6 +24,7 @@ public struct URLSessionInstrumentationConfiguration {
         self.shouldRecordPayload = shouldRecordPayload
         self.shouldInstrument = shouldInstrument
         self.shouldInjectTracingHeaders = shouldInjectTracingHeaders
+        self.injectCustomHeaders = injectCustomHeaders
         self.nameSpan = nameSpan
         self.createdRequest = createdRequest
         self.receivedResponse = receivedResponse
@@ -39,9 +41,12 @@ public struct URLSessionInstrumentationConfiguration {
     public var shouldRecordPayload: ((URLSession) -> (Bool)?)?
 
     /// Implement this callback to filter which requests you want to inject headers to follow the trace,
-    /// you can also modify the request or add other headers in this method.
+    /// also must implement it if you want to inject custom headers
     /// Instruments all requests by default
-    public var shouldInjectTracingHeaders: ((inout URLRequest) -> (Bool)?)?
+    public var shouldInjectTracingHeaders: ((URLRequest) -> (Bool)?)?
+
+    /// Implement this callback to inject custom headers or modify the request in any other way
+    public var injectCustomHeaders: ((inout URLRequest, Span?) -> Void)?
 
     /// Implement this callback to override the default span name for a given request, return nil to use default.
     /// default name: `HTTP {method}` e.g. `HTTP PUT`

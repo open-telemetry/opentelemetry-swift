@@ -107,8 +107,8 @@ public class URLSessionInstrumentation {
 
             let block: @convention(block) (URLSession, AnyObject) -> URLSessionTask = { session, argument in
                 if let url = argument as? URL {
-                    var request = URLRequest(url: url)
-                    if self.configuration.shouldInjectTracingHeaders?(&request) ?? true {
+                    let request = URLRequest(url: url)
+                    if self.configuration.shouldInjectTracingHeaders?(request) ?? true {
                         if selector == #selector(URLSession.dataTask(with:) as (URLSession) -> (URL) -> URLSessionDataTask) {
                             return session.dataTask(with: request)
                         } else {
@@ -184,9 +184,9 @@ public class URLSessionInstrumentation {
             let block: @convention(block) (URLSession, AnyObject, ((Any?, URLResponse?, Error?) -> Void)?) -> URLSessionTask = { session, argument, completion in
 
                 if let url = argument as? URL {
-                    var request = URLRequest(url: url)
+                    let request = URLRequest(url: url)
 
-                    if self.configuration.shouldInjectTracingHeaders?(&request) ?? true {
+                    if self.configuration.shouldInjectTracingHeaders?(request) ?? true {
                         if selector == #selector(URLSession.dataTask(with:completionHandler:) as (URLSession) -> (URL, @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask) {
                             if let completion = completion {
                                 return session.dataTask(with: request, completionHandler: completion)
