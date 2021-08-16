@@ -70,7 +70,7 @@ let package = Package(
         .target(name: "NetworkStatus",
                 dependencies: ["Reachability", "OpenTelemetryApi"],
                 path: "Sources/Instrumentation/NetworkStatus",
-                linkerSettings: [.linkedFramework("CoreTelephony")]),
+                linkerSettings: [.linkedFramework("CoreTelephony", .when(platforms: [.iOS], configuration: nil))]),
         .target(name: "SignPostIntegration",
                 dependencies: ["OpenTelemetrySdk"],
                 path: "Sources/Instrumentation/SignPostIntegration",
