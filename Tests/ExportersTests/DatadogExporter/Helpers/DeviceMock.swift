@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if !os(macOS)
+#if !os(macOS) && !targetEnvironment(macCatalyst)
 import UIKit
 
 class UIDeviceMock: UIDevice {
