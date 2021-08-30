@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if os(iOS)
+#if os(iOS) && !targetEnvironment(macCatalyst)
     import CoreTelephony
     import Foundation
     @testable import NetworkStatus
@@ -140,4 +140,4 @@
         }
     }
 
-#endif // os(iOS)
+#endif // os(iOS) && !targetEnvironment(macCatalyst)

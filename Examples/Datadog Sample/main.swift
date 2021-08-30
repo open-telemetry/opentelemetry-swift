@@ -7,6 +7,9 @@ import DatadogExporter
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
+#if targetEnvironment(macCatalyst)
+import UIKit
+#endif
 
 let clientToken = ""
 let apikey = ""
@@ -21,6 +24,12 @@ var instrumentationLibraryInfo = InstrumentationLibraryInfo(name: instrumentatio
 var tracer: TracerSdk
 tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: instrumentationLibraryName, instrumentationVersion: instrumentationLibraryVersion) as! TracerSdk
 
+#if targetEnvironment(macCatalyst)
+let hostName = UIDevice.current.name
+#else
+let hostName = Host.current().localizedName
+#endif
+
 let exporterConfiguration = ExporterConfiguration(
     serviceName: "Opentelemetry exporter Example",
     resource: "Opentelemetry exporter",
@@ -32,7 +41,7 @@ let exporterConfiguration = ExporterConfiguration(
     endpoint: Endpoint.us,
     uploadCondition: { true },
     performancePreset: .instantDataDelivery,
-    hostName: Host.current().localizedName
+    hostName: hostName
 )
 
 let datadogExporter = try! DatadogExporter(config: exporterConfiguration)

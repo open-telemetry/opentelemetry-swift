@@ -13,7 +13,6 @@ class ResourcePropagationTests : XCTestCase {
     func testPropagation() {
         let defaultResource = Resource()
         let appProvider = ApplicationResourceProvider(source: ApplicationDataSource())
-        let telemetryProvider = TelemetryResourceProvider(source: TelemetryDataSource())
         let resultResource = DefaultResources().get()
         
         let defaultValue = defaultResource.attributes[ResourceAttributes.serviceName.rawValue]?.description

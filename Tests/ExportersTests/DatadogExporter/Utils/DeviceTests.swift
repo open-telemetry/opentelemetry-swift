@@ -19,7 +19,7 @@ class DeviceTests: XCTestCase {
         XCTAssertNotNil(Device.current)
     }
 
-    #if !os(macOS)
+    #if !os(macOS) && !targetEnvironment(macCatalyst)
     func testWhenRunningOnMobile_itUsesUIDeviceInfo() {
         let uiDevice = DeviceMock(
             model: "model mock",
@@ -32,5 +32,5 @@ class DeviceTests: XCTestCase {
         XCTAssertEqual(device.osName, uiDevice.systemName)
         XCTAssertEqual(device.osVersion, uiDevice.systemVersion)
     }
-    #endif
+    #endif // os(iOS) && !targetEnvironment(macCatalyst)
 }
