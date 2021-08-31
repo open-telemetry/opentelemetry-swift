@@ -8,8 +8,7 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
-let clientToken = ""
-let apikey = ""
+let apikeyOrClientToken = ""
 
 let sampleKey = "sampleKey"
 let sampleValue = "sampleValue"
@@ -27,9 +26,8 @@ let exporterConfiguration = ExporterConfiguration(
     applicationName: "SwiftDatadogSample",
     applicationVersion: "1.0.0",
     environment: "test",
-    clientToken: clientToken,
-    apiKey: apikey,
-    endpoint: Endpoint.us,
+    apiKey: apikeyOrClientToken,
+    endpoint: Endpoint.us1,
     uploadCondition: { true },
     performancePreset: .instantDataDelivery,
     hostName: Host.current().localizedName

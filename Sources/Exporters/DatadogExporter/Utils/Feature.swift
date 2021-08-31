@@ -32,8 +32,7 @@ internal struct FeatureUpload {
     init(
         featureName: String,
         storage: FeatureStorage,
-        uploadHTTPHeaders: HTTPHeaders,
-        uploadURLProvider: UploadURLProvider,
+        requestBuilder: RequestBuilder,
         performance: PerformancePreset,
         uploadCondition: @escaping () -> Bool
     ) {
@@ -43,9 +42,8 @@ internal struct FeatureUpload {
         )
 
         let dataUploader = DataUploader(
-            urlProvider: uploadURLProvider,
             httpClient: HTTPClient(),
-            httpHeaders: uploadHTTPHeaders
+            requestBuilder: requestBuilder
         )
 
         self.init(

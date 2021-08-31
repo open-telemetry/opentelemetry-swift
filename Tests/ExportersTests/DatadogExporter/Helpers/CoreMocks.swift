@@ -111,24 +111,23 @@ class RelativeDateProvider: DateProvider {
     }
 }
 
-extension UploadURLProvider {
-    static func mockAny() -> UploadURLProvider {
-        return UploadURLProvider(
-            urlWithClientToken: URL(string: "https://app.example.com/v2/api?abc-def-ghi")!,
-            queryItemProviders: []
-        )
+extension RequestBuilder: AnyMockable {
+    static func mockAny() -> RequestBuilder {
+        return mockWith()
+    }
+
+    static func mockWith(
+        url: URL = .mockAny(),
+        queryItems: [QueryItem] = [],
+        headers: [HTTPHeader] = []
+    ) -> RequestBuilder {
+        return RequestBuilder(url: url, queryItems: queryItems, headers: headers)
     }
 }
 
 extension HTTPClient {
     static func mockAny() -> HTTPClient {
         return HTTPClient(session: URLSession(configuration: URLSessionConfiguration.default))
-    }
-}
-
-extension HTTPHeaders {
-    static func mockAny() -> HTTPHeaders {
-        return HTTPHeaders(headers: [])
     }
 }
 
@@ -146,6 +145,42 @@ extension Device {
             model: model,
             osName: osName,
             osVersion: osVersion
+        )
+    }
+}
+
+struct DataUploaderMock: DataUploaderType {
+    let uploadStatus: DataUploadStatus
+
+    var onUpload: (() -> Void)? = nil
+
+    func upload(data: Data) -> DataUploadStatus {
+        onUpload?()
+        return uploadStatus
+    }
+}
+
+extension DataUploadStatus: RandomMockable {
+    static func mockRandom() -> DataUploadStatus {
+        let retryRandom: Bool = .random()
+        return DataUploadStatus(
+            needsRetry: retryRandom,
+            userDebugDescription: .mockRandom(),
+            userErrorMessage: .mockRandom()
+        )
+    }
+
+    static func mockWith(
+        needsRetry: Bool = .mockAny(),
+        accepted: Bool = true,
+        userDebugDescription: String = .mockAny(),
+        userErrorMessage: String? = nil,
+        internalMonitoringError: (message: String, error: Error?, attributes: [String: String]?)? = nil
+    ) -> DataUploadStatus {
+        return DataUploadStatus(
+            needsRetry: needsRetry,
+            userDebugDescription: userDebugDescription,
+            userErrorMessage: userErrorMessage
         )
     }
 }

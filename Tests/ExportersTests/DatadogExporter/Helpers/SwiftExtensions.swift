@@ -86,3 +86,11 @@ extension InputStream {
         return data
     }
 }
+
+extension URLRequest {
+    func removing(httpHeaderField: String) -> URLRequest {
+        var request = self
+        request.setValue(nil, forHTTPHeaderField: httpHeaderField)
+        return request
+    }
+}

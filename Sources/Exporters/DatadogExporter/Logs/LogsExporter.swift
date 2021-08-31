@@ -27,10 +27,6 @@ internal class LogsExporter {
     let logsUploadQueue = DispatchQueue(label: "com.otel.datadog.logsupload", target: .global(qos: .userInteractive))
 
     init(config: ExporterConfiguration) throws {
-        guard let clientToken = config.clientToken else {
-            throw ExporterError(description: "Logs Exporter need a client token")
-        }
-
         self.configuration = config
 
         let filesOrchestrator = FilesOrchestrator(
@@ -55,27 +51,28 @@ internal class LogsExporter {
 
         logsStorage = FeatureStorage(writer: logsFileWriter, reader: logsFileReader)
 
-        let urlProvider = UploadURLProvider(
-            urlWithClientToken: try configuration.endpoint.logsUrlWithClientToken(clientToken: clientToken),
-            queryItemProviders: [
-                .ddsource(),
-                .batchTime(using: SystemDateProvider())
+        let requestBuilder = RequestBuilder(
+            url: configuration.endpoint.logsURL,
+            queryItems: [
+                .ddsource(source: configuration.source)
+            ],
+            headers: [
+                .contentTypeHeader(contentType: .applicationJSON),
+                .userAgentHeader(
+                    appName: configuration.applicationName,
+                    appVersion: configuration.version,
+                    device: Device.current
+                ),
+                .ddAPIKeyHeader(apiKey: configuration.apiKey),
+                .ddEVPOriginHeader(source: configuration.source),
+                .ddEVPOriginVersionHeader(version: configuration.version),
+                .ddRequestIDHeader()
             ]
         )
 
-        let httpHeaders = HTTPHeaders(headers: [
-            .contentTypeHeader(contentType: .textPlainUTF8),
-            .userAgentHeader(
-                appName: configuration.applicationName,
-                appVersion: configuration.version,
-                device: Device.current
-            )
-        ])
-
         logsUpload = FeatureUpload(featureName: "logsUpload",
                                    storage: logsStorage,
-                                   uploadHTTPHeaders: httpHeaders,
-                                   uploadURLProvider: urlProvider,
+                                   requestBuilder: requestBuilder,
                                    performance: configuration.performancePreset,
                                    uploadCondition: configuration.uploadCondition)
     }

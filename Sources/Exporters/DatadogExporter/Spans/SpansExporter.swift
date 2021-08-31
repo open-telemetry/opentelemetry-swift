@@ -18,10 +18,6 @@ internal class SpansExporter {
     let tracesUploadQueue = DispatchQueue(label: "com.otel.datadog.tracesupload", target: .global(qos: .userInteractive))
 
     init(config: ExporterConfiguration) throws {
-        guard let clientToken = config.clientToken else {
-            throw ExporterError(description: "Span Exporter need a client token")
-        }
-
         self.configuration = config
 
         let filesOrchestrator = FilesOrchestrator(
@@ -46,26 +42,26 @@ internal class SpansExporter {
 
         tracesStorage = FeatureStorage(writer: spanFileWriter, reader: spanFileReader)
 
-        let urlProvider = UploadURLProvider(
-            urlWithClientToken: try configuration.endpoint.tracesUrlWithClientToken(clientToken: clientToken),
-            queryItemProviders: [
-                .batchTime(using: SystemDateProvider())
+        let requestBuilder = RequestBuilder(
+            url: configuration.endpoint.tracesURL,
+            queryItems: [],
+            headers: [
+                .contentTypeHeader(contentType: .textPlainUTF8),
+                .userAgentHeader(
+                    appName: configuration.applicationName,
+                    appVersion: configuration.version,
+                    device: Device.current
+                ),
+                .ddAPIKeyHeader(apiKey: config.apiKey),
+                .ddEVPOriginHeader(source: configuration.source),
+                .ddEVPOriginVersionHeader(version: configuration.version),
+                .ddRequestIDHeader(),
             ]
         )
 
-        let httpHeaders = HTTPHeaders(headers: [
-            .contentTypeHeader(contentType: .textPlainUTF8),
-            .userAgentHeader(
-                appName: configuration.applicationName,
-                appVersion: configuration.version,
-                device: Device.current
-            )
-        ])
-
         tracesUpload = FeatureUpload(featureName: "tracesUpload",
                                      storage: tracesStorage,
-                                     uploadHTTPHeaders: httpHeaders,
-                                     uploadURLProvider: urlProvider,
+                                     requestBuilder: requestBuilder,
                                      performance: configuration.performancePreset,
                                      uploadCondition: configuration.uploadCondition)
     }
