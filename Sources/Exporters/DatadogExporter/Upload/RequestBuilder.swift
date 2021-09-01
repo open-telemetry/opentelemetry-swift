@@ -5,6 +5,7 @@
  */
 
 import Foundation
+import DataCompression
 
 /// Builds `URLRequest` for sending data to Datadog.
 internal struct RequestBuilder {
@@ -29,13 +30,19 @@ internal struct RequestBuilder {
         case textPlainUTF8 = "text/plain;charset=UTF-8"
     }
 
+    enum ContentEncoding: String {
+        case deflate = "deflate"
+    }
+
     struct HTTPHeader {
         static let contentTypeHeaderField = "Content-Type"
+        static let contentEncodingHeaderField = "Content-Encoding"
         static let userAgentHeaderField = "User-Agent"
         static let ddAPIKeyHeaderField = "DD-API-KEY"
         static let ddEVPOriginHeaderField = "DD-EVP-ORIGIN"
         static let ddEVPOriginVersionHeaderField = "DD-EVP-ORIGIN-VERSION"
         static let ddRequestIDHeaderField = "DD-REQUEST-ID"
+
 
         enum Value {
             /// If the header's value is constant.
@@ -60,6 +67,11 @@ internal struct RequestBuilder {
                 field: userAgentHeaderField,
                 value: .constant("\(appName)/\(appVersion) CFNetwork (\(device.model); \(device.osName)/\(device.osVersion))")
             )
+        }
+
+        /// Standard "Content-Encoding" header.
+        static func contentEncodingHeader(contentEncoding: ContentEncoding) -> HTTPHeader {
+            return HTTPHeader(field: contentEncodingHeaderField, value: .constant(contentEncoding.rawValue))
         }
 
         // MARK: - Datadog Headers
@@ -127,8 +139,7 @@ internal struct RequestBuilder {
 
         request.httpMethod = "POST"
         request.allHTTPHeaderFields = headers
-        request.httpBody = data
-
+        request.httpBody = headers["Content-Encoding"] != nil ? data.deflate() : data
         return request
     }
 }

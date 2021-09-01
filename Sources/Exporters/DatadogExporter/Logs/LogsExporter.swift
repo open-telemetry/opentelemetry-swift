@@ -58,6 +58,7 @@ internal class LogsExporter {
             ],
             headers: [
                 .contentTypeHeader(contentType: .applicationJSON),
+                .contentEncodingHeader(contentEncoding: .deflate),
                 .userAgentHeader(
                     appName: configuration.applicationName,
                     appVersion: configuration.version,

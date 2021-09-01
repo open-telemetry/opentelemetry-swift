@@ -47,6 +47,7 @@ internal class SpansExporter {
             queryItems: [],
             headers: [
                 .contentTypeHeader(contentType: .textPlainUTF8),
+                .contentEncodingHeader(contentEncoding: .deflate),
                 .userAgentHeader(
                     appName: configuration.applicationName,
                     appVersion: configuration.version,
