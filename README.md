@@ -53,7 +53,11 @@ Implemented metrics exporters: Prometheus, Datadog, and OpenTelemetry collector
 
 The package includes some example projects with basic functionality:
 
+- `Datadog Sample` -  Shows the Datadog exporter used with a Simple Exporter, showing how to configure for sending.
 - `Logging Tracer` -  Simple api implementation of a Tracer that logs every api call
+- `Network Tracer` -  Shows how to use the `URLSessionInstrumentation` instrumentation in your application 
 - `Simple Exporter` - Shows the Jaeger an Stdout exporters in action using a MultiSpanExporter. Can be easily modified for other exporters
 - `Prometheus Sample` - Shows the Prometheus exporter reporting metrics to a Prometheus instance
+- `OTLP Exporter` - Shows the OTLP exporter reporting traces to Zipkin and metrics to a Prometheus via the otel-collector
+
 
