@@ -1,0 +1,36 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+        cors_allowed_origins:
+        - http://*
+        - https://*
+
+exporters:
+  logging:
+    loglevel: debug
+  zipkin:
+    endpoint: "http://zipkin-all-in-one:9411/api/v2/spans"
+  prometheus:
+    endpoint: "0.0.0.0:9464"
+    
+
+processors:
+  resource:
+    attributes:
+      - key: service.name
+        value: OTLP Exporter
+        action: insert
+  batch:
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [zipkin, logging]
+      processors: [batch]
+    metrics:
+      receivers: [otlp]
+      exporters: [prometheus]
+      processors: [batch]
