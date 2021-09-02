@@ -14,7 +14,6 @@ exporters:
     endpoint: "http://zipkin-all-in-one:9411/api/v2/spans"
   prometheus:
     endpoint: "0.0.0.0:9464"
-    
 
 processors:
   resource:

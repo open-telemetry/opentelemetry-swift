@@ -2,7 +2,7 @@
 
 This example shows how to use [OTLP Exporter](https://github.com/open-telemetry/opentelemetry-swift/tree/main/Sources/Exporters/OpenTelemetryProtocol) to instrument a simple Swift application.
 
-This example will export spans data simultaneously using [OTLP Exporter ](https://github.com/open-telemetry/opentelemetry-swift/tree/main/Sources/Exporters/OpenTelemetryProtocol)) and grpc. It will use [proto format](https://github.com/open-telemetry/opentelemetry-proto).
+This example will export spans data simultaneously using [OTLP Exporter ](https://github.com/open-telemetry/opentelemetry-swift/tree/main/Sources/Exporters/OpenTelemetryProtocol) and grpc. It will use [proto format](https://github.com/open-telemetry/opentelemetry-proto).
 
 
 ## Run the Application
