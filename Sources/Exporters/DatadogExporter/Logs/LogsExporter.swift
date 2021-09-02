@@ -35,7 +35,7 @@ internal class LogsExporter {
             dateProvider: SystemDateProvider()
         )
 
-        let dataFormat = DataFormat(prefix: "", suffix: "", separator: "\n")
+        let dataFormat = DataFormat(prefix: "[", suffix: "]", separator: ",")
 
         let logsFileWriter = FileWriter(
             dataFormat: dataFormat,

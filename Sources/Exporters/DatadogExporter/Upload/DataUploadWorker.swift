@@ -91,7 +91,7 @@ internal class DataUploadWorker: DataUploadWorkerType {
             self.fileReader.onRemainingBatches {
                 let uploadStatus = self.dataUploader.upload(data: $0.data)
                 if !uploadStatus.needsRetry {
-                    self.fileReader.synchronizedMarkBatchAsRead($0)
+                    self.fileReader.markBatchAsRead($0)
                 }
             }
         }
@@ -101,7 +101,7 @@ internal class DataUploadWorker: DataUploadWorkerType {
     /// Cancels scheduled uploads and stops scheduling next ones.
     /// - It does not affect the upload that has already begun.
     /// - It blocks the caller thread if called in the middle of upload execution.
-    func cancelSynchronously() {
+    internal func cancelSynchronously() {
         queue.sync {
             // This cancellation must be performed on the `queue` to ensure that it is not called
             // in the middle of a `DispatchWorkItem` execution - otherwise, as the pending block would be
