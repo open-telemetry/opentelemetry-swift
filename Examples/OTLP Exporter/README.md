@@ -36,8 +36,8 @@ This example will export spans data simultaneously using [OTLP Exporter ](https:
 The prometheus client will be available at <http://localhost:9090>.
 
 Note: It may take some time for the application metrics to appear on the Prometheus dashboard.
+![Screenshot of the running example](images/prometheus-metrics.png)
 
-<p align="center"><img src="./images/prometheus-metrics.png?raw=true"/></p>
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
