@@ -17,8 +17,8 @@ public struct ExporterConfiguration {
     var version: String
     var environment: String
 
-    /// Either the API key or ther RUM client token (which supports RUM, Logging and APM) or regular client token
-    /// For metrics reporting client token is not supported
+    /// Either the API key or a regular client token
+    /// For metrics reporting API key is needed
     var apiKey: String
     /// Endpoint that will be used for reporting.
     var endpoint: Endpoint
