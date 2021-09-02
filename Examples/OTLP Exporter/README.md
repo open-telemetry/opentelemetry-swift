@@ -29,7 +29,7 @@ This example will export spans data simultaneously using [OTLP Exporter ](https:
     ```
 
 4. Open page at <http://localhost:9411/zipkin/> -  you should be able to see the spans in zipkin
-![Screenshot of the running example](images/spans.png)
+![Screenshot of the running example](images/zipkin-spans.png)
 
 ### Prometheus UI
 
@@ -37,7 +37,7 @@ The prometheus client will be available at <http://localhost:9090>.
 
 Note: It may take some time for the application metrics to appear on the Prometheus dashboard.
 
-<p align="center"><img src="./images/prom-metrics.png?raw=true"/></p>
+<p align="center"><img src="./images/prometheus-metrics.png?raw=true"/></p>
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
