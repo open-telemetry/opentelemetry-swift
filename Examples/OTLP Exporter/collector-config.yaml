@@ -28,8 +28,8 @@ service:
     traces:
       receivers: [otlp]
       exporters: [zipkin, logging]
-      processors: [batch]
+      processors: [resource, batch]
     metrics:
       receivers: [otlp]
       exporters: [prometheus]
-      processors: [batch]
+      processors: [resource, batch]
