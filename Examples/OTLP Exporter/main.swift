@@ -45,13 +45,22 @@ if #available(macOS 10.14, *) {
 }
 
 func createSpan() {
-    let parentSpan = tracer.spanBuilder(spanName: "Main").setSpanKind(spanKind: .client).startSpan()
-    parentSpan.setAttribute(key: sampleKey, value: sampleValue)
-    for _ in 1...10 {
-        doWork(parentSpan: parentSpan)
+    let parentSpan1 = tracer.spanBuilder(spanName: "Main").setSpanKind(spanKind: .client).startSpan()
+    parentSpan1.setAttribute(key: sampleKey, value: sampleValue)
+    for _ in 1...3 {
+        doWork(parentSpan: parentSpan1)
     }
     Thread.sleep(forTimeInterval: 0.5)
-    parentSpan.end()
+    parentSpan1.end()
+    
+    let parentSpan2 = tracer.spanBuilder(spanName: "Another").setSpanKind(spanKind: .client).startSpan()
+    parentSpan2.setAttribute(key: sampleKey, value: sampleValue)
+    // do more Work
+    for _ in 1...3 {
+        doWork(parentSpan: parentSpan2)
+    }
+    Thread.sleep(forTimeInterval: 0.5)
+    parentSpan2.end()
 }
 
 func doWork(parentSpan: Span) {
