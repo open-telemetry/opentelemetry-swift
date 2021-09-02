@@ -44,7 +44,7 @@ if #available(macOS 10.14, *) {
     OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(SignPostIntegration())
 }
 
-func createSpan() {
+func createSpans() {
     let parentSpan1 = tracer.spanBuilder(spanName: "Main").setSpanKind(spanKind: .client).startSpan()
     parentSpan1.setAttribute(key: sampleKey, value: sampleValue)
     for _ in 1...3 {
@@ -71,9 +71,8 @@ func doWork(parentSpan: Span) {
     childSpan.end()
 }
 
-// Create a Parent span (Main) and do some Work (child Spans)
-createSpan()
-
+// Create a Parent span (Main) and do some Work (child Spans). Repeat for another Span.
+createSpans()
 
 //Metrics
 let otlpMetricExporter = OtlpMetricExporter(channel: client)
