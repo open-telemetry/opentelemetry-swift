@@ -37,160 +37,273 @@ class DataUploadWorkerTests: XCTestCase {
         super.tearDown()
     }
 
-    func testItUploadsAllData() throws {
+    // MARK: - Data Uploads
+
+    func testItUploadsAllData() {
         let server = ServerMock(delivery: .success(response: .mockResponseWith(statusCode: 200)))
         let dataUploader = DataUploader(
-            urlProvider: .mockAny(),
-            httpClient: HTTPClient(session: .serverMockURLSession),
-            httpHeaders: .mockAny()
+            httpClient: HTTPClient(session: server.getInterceptedURLSession()),
+            requestBuilder: .mockAny()
         )
-        // Write 3 files
+
+        // Given
         writer.write(value: ["k1": "v1"])
         writer.write(value: ["k2": "v2"])
         writer.write(value: ["k3": "v3"])
-        // Start logs uploader
-        try withExtendedLifetime(
-            DataUploadWorker(
-                queue: uploaderQueue,
-                fileReader: reader,
-                dataUploader: dataUploader,
-                uploadCondition: { true },
-                delay: DataUploadDelay(performance: UploadPerformanceMock.veryQuick),
-                featureName: .mockAny()
-            )
-        ) {
-            let recordedRequests = server.waitAndReturnRequests(count: 3)
-            XCTAssertTrue(recordedRequests.contains { $0.httpBody == #"[{"k1":"v1"}]"# .utf8Data })
-            XCTAssertTrue(recordedRequests.contains { $0.httpBody == #"[{"k2":"v2"}]"# .utf8Data })
-            XCTAssertTrue(recordedRequests.contains { $0.httpBody == #"[{"k3":"v3"}]"# .utf8Data })
 
-            uploaderQueue.sync {} // wait until last "process upload" operation completes (to make sure "delete file" was requested)
-            fileReadWriteQueue.sync {} // wait until last scheduled "delete file" operation completed
+        // When
+        let worker = DataUploadWorker(
+            queue: uploaderQueue,
+            fileReader: reader,
+            dataUploader: dataUploader,
+            uploadCondition: { true },
+            delay: DataUploadDelay(performance: UploadPerformanceMock.veryQuick),
+            featureName: .mockAny()
+        )
 
-            XCTAssertEqual(try temporaryDirectory.files().count, 0)
-        }
+        // Then
+        let recordedRequests = server.waitAndReturnRequests(count: 3)
+        XCTAssertTrue(recordedRequests.contains { $0.httpBody == #"[{"k1":"v1"}]"#.utf8Data })
+        XCTAssertTrue(recordedRequests.contains { $0.httpBody == #"[{"k2":"v2"}]"#.utf8Data })
+        XCTAssertTrue(recordedRequests.contains { $0.httpBody == #"[{"k3":"v3"}]"#.utf8Data })
+
+        worker.cancelSynchronously()
+
+        XCTAssertEqual(try temporaryDirectory.files().count, 0)
     }
 
-    // swiftlint:disable multiline_arguments_brackets
-    func testWhenThereIsNoBatch_thenIntervalIncreases() throws {
-        let expectation = XCTestExpectation(description: "high expectation")
+    func testGivenDataToUpload_whenUploadFinishesAndDoesNotNeedToBeRetried_thenDataIsDeleted() {
+        let startUploadExpectation = self.expectation(description: "Upload has started")
+
+        var mockDataUploader = DataUploaderMock(uploadStatus: .mockWith(needsRetry: false))
+        mockDataUploader.onUpload = { startUploadExpectation.fulfill() }
+
+        // Given
+        writer.writeSync(value: ["key": "value"])
+        XCTAssertEqual(try temporaryDirectory.files().count, 1)
+
+        // When
+        let worker = DataUploadWorker(
+            queue: uploaderQueue,
+            fileReader: reader,
+            dataUploader: mockDataUploader,
+            uploadCondition: { true },
+            delay: DataUploadDelay(performance: UploadPerformanceMock.veryQuick),
+            featureName: .mockAny()
+        )
+
+        wait(for: [startUploadExpectation], timeout: 0.5)
+        worker.cancelSynchronously()
+
+        // Then
+        XCTAssertEqual(try temporaryDirectory.files().count, 0, "When upload finishes with `needsRetry: false`, data should be deleted")
+    }
+
+    func testGivenDataToUpload_whenUploadFinishesAndNeedsToBeRetried_thenDataIsPreserved() {
+        let startUploadExpectation = self.expectation(description: "Upload has started")
+
+        var mockDataUploader = DataUploaderMock(uploadStatus: .mockWith(needsRetry: true))
+        mockDataUploader.onUpload = { startUploadExpectation.fulfill() }
+
+        // Given
+        writer.writeSync(value: ["key": "value"])
+        XCTAssertEqual(try temporaryDirectory.files().count, 1)
+
+        // When
+        let worker = DataUploadWorker(
+            queue: uploaderQueue,
+            fileReader: reader,
+            dataUploader: mockDataUploader,
+            uploadCondition: { true },
+            delay: DataUploadDelay(performance: UploadPerformanceMock.veryQuick),
+            featureName: .mockAny()
+        )
+
+        wait(for: [startUploadExpectation], timeout: 0.5)
+        worker.cancelSynchronously()
+
+        // Then
+        XCTAssertEqual(try temporaryDirectory.files().count, 1, "When upload finishes with `needsRetry: true`, data should be preserved")
+    }
+
+    // MARK: - Upload Interval Changes
+
+    func testWhenThereIsNoBatch_thenIntervalIncreases() {
+        let delayChangeExpectation = expectation(description: "Upload delay is increased")
         let mockDelay = MockDelay { command in
             if case .increase = command {
-                expectation.fulfill()
+                delayChangeExpectation.fulfill()
             } else {
                 XCTFail("Wrong command is sent!")
             }
         }
+
+        // When
+        XCTAssertEqual(try temporaryDirectory.files().count, 0)
+
+        let server = ServerMock(delivery: .success(response: .mockResponseWith(statusCode: 200)))
         let dataUploader = DataUploader(
-            urlProvider: .mockAny(),
-            httpClient: HTTPClient(session: .serverMockURLSession),
-            httpHeaders: .mockAny()
+            httpClient: HTTPClient(session: server.getInterceptedURLSession()),
+            requestBuilder: .mockAny()
         )
-        // Start logs uploader
-        withExtendedLifetime([
-            ServerMock(delivery: .success(response: .mockResponseWith(statusCode: 200))),
-            DataUploadWorker(
-                queue: uploaderQueue,
-                fileReader: reader,
-                dataUploader: dataUploader,
-                uploadCondition: { false },
-                delay: mockDelay,
-                featureName: .mockAny()
-            )
-        ]) {
-            self.wait(for: [expectation], timeout: 1.5)
-        }
+        let worker = DataUploadWorker(
+            queue: uploaderQueue,
+            fileReader: reader,
+            dataUploader: dataUploader,
+            uploadCondition: { false },
+            delay: mockDelay,
+            featureName: .mockAny()
+        )
+
+        // Then
+        server.waitFor(requestsCompletion: 0)
+        waitForExpectations(timeout: 1, handler: nil)
+        worker.cancelSynchronously()
     }
 
-    func testWhenBatchFails_thenIntervalIncreases() throws {
-        let expectation = XCTestExpectation(description: "high expectation")
+    func testWhenBatchFails_thenIntervalIncreases() {
+        let delayChangeExpectation = expectation(description: "Upload delay is increased")
         let mockDelay = MockDelay { command in
             if case .increase = command {
-                expectation.fulfill()
+                delayChangeExpectation.fulfill()
             } else {
                 XCTFail("Wrong command is sent!")
             }
         }
-        let dataUploader = DataUploader(
-            urlProvider: .mockAny(),
-            httpClient: HTTPClient(session: .serverMockURLSession),
-            httpHeaders: .mockAny()
-        )
-        // Write some content
+
+        // When
         writer.write(value: ["k1": "v1"])
-        // Start logs uploader
-        withExtendedLifetime([
-            ServerMock(delivery: .success(response: .mockResponseWith(statusCode: 500))),
-            DataUploadWorker(
-                queue: uploaderQueue,
-                fileReader: reader,
-                dataUploader: dataUploader,
-                uploadCondition: { true },
-                delay: mockDelay,
-                featureName: .mockAny()
-            )
-        ]) {
-            self.wait(for: [expectation], timeout: 1.5)
-        }
+
+        let server = ServerMock(delivery: .success(response: .mockResponseWith(statusCode: 500)))
+        let dataUploader = DataUploader(
+            httpClient: HTTPClient(session: server.getInterceptedURLSession()),
+            requestBuilder: .mockAny()
+        )
+        let worker = DataUploadWorker(
+            queue: uploaderQueue,
+            fileReader: reader,
+            dataUploader: dataUploader,
+            uploadCondition: { true },
+            delay: mockDelay,
+            featureName: .mockAny()
+        )
+
+        // Then
+        server.waitFor(requestsCompletion: 1)
+        waitForExpectations(timeout: 1, handler: nil)
+        worker.cancelSynchronously()
     }
 
-    func testWhenBatchSucceeds_thenIntervalDecreases() throws {
-        let expectation = XCTestExpectation(description: "low expectation")
+    func testWhenBatchSucceeds_thenIntervalDecreases() {
+        let delayChangeExpectation = expectation(description: "Upload delay is decreased")
         let mockDelay = MockDelay { command in
             if case .decrease = command {
-                expectation.fulfill()
+                delayChangeExpectation.fulfill()
             } else {
                 XCTFail("Wrong command is sent!")
             }
         }
-        let dataUploader = DataUploader(
-            urlProvider: .mockAny(),
-            httpClient: HTTPClient(session: .serverMockURLSession),
-            httpHeaders: .mockAny()
-        )
-        // Write some content
+
+        // When
         writer.write(value: ["k1": "v1"])
-        // Start logs uploader
-        withExtendedLifetime([
-            ServerMock(delivery: .success(response: .mockResponseWith(statusCode: 200))),
-            DataUploadWorker(
-                queue: uploaderQueue,
-                fileReader: reader,
-                dataUploader: dataUploader,
-                uploadCondition: { Thread.sleep(forTimeInterval: 0.5); return true },
-                delay: mockDelay,
-                featureName: .mockAny()
-            )
-        ]) {
-            self.wait(for: [expectation], timeout: 1.5)
-        }
+
+        let server = ServerMock(delivery: .success(response: .mockResponseWith(statusCode: 200)))
+        let dataUploader = DataUploader(
+            httpClient: HTTPClient(session: server.getInterceptedURLSession()),
+            requestBuilder: .mockAny()
+        )
+        let worker = DataUploadWorker(
+            queue: uploaderQueue,
+            fileReader: reader,
+            dataUploader: dataUploader,
+            uploadCondition: { true },
+            delay: mockDelay,
+            featureName: .mockAny()
+        )
+
+        // Then
+        server.waitFor(requestsCompletion: 1)
+        waitForExpectations(timeout: 2, handler: nil)
+        worker.cancelSynchronously()
     }
 
-    // swiftlint:enable multiline_arguments_brackets
+    // MARK: - Tearing Down
+
+    func testWhenCancelled_itPerformsNoMoreUploads() {
+        // Given
+        let server = ServerMock(delivery: .success(response: .mockResponseWith(statusCode: 200)))
+        let dataUploader = DataUploader(
+            httpClient: HTTPClient(session: server.getInterceptedURLSession()),
+            requestBuilder: .mockAny()
+        )
+        let worker = DataUploadWorker(
+            queue: uploaderQueue,
+            fileReader: reader,
+            dataUploader: dataUploader,
+            uploadCondition: { false },
+            delay: MockDelay(),
+            featureName: .mockAny()
+        )
+
+        // When
+        worker.cancelSynchronously()
+
+        // Then
+        writer.write(value: ["k1": "v1"])
+
+        server.waitFor(requestsCompletion: 0)
+    }
+
+    func testItFlushesAllData() {
+        let server = ServerMock(delivery: .success(response: .mockResponseWith(statusCode: 200)))
+        let dataUploader = DataUploader(
+            httpClient: HTTPClient(session: server.getInterceptedURLSession()),
+            requestBuilder: .mockAny()
+        )
+        let worker = DataUploadWorker(
+            queue: uploaderQueue,
+            fileReader: reader,
+            dataUploader: dataUploader,
+            uploadCondition: { true },
+            delay: DataUploadDelay(performance: UploadPerformanceMock.veryQuick),
+            featureName: .mockAny()
+        )
+
+        // Given
+        writer.write(value: ["k1": "v1"])
+        writer.write(value: ["k2": "v2"])
+        writer.write(value: ["k3": "v3"])
+
+        // When
+        _ = worker.flush()
+
+        // Then
+        XCTAssertEqual(try temporaryDirectory.files().count, 0)
+
+        let recordedRequests = server.waitAndReturnRequests(count: 3)
+        XCTAssertTrue(recordedRequests.contains { $0.httpBody == #"[{"k1":"v1"}]"#.utf8Data })
+        XCTAssertTrue(recordedRequests.contains { $0.httpBody == #"[{"k2":"v2"}]"#.utf8Data })
+        XCTAssertTrue(recordedRequests.contains { $0.httpBody == #"[{"k3":"v3"}]"#.utf8Data })
+
+        worker.cancelSynchronously()
+    }
 }
 
 struct MockDelay: Delay {
     enum Command {
         case increase, decrease
     }
-    var current: TimeInterval = 0.0
 
-    let callback: (Command) -> Void
-    // NOTE: RUMM-737 private only doesn't compile due to "private initializer is inaccessible", probably a bug in Swift
-    private(set) var didReceiveCommand = false
+    var callback: ((Command) -> Void)?
+    let current: TimeInterval = 0.1
 
     mutating func decrease() {
-        if didReceiveCommand {
-            return
-        }
-        didReceiveCommand = true
-        callback(.decrease)
+        callback?(.decrease)
+        callback = nil
     }
+
     mutating func increase() {
-        if didReceiveCommand {
-            return
-        }
-        didReceiveCommand = true
-        callback(.increase)
+        callback?(.increase)
+        callback = nil
     }
 }

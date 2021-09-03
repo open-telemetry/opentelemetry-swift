@@ -13,16 +13,17 @@ public struct ExporterConfiguration {
     /// The name of the service, resource, version,... that will be reported to the backend.
     var serviceName: String
     var resource: String
-    var applicationName: String 
+    var applicationName: String
     var version: String
     var environment: String
 
-    /// Either the RUM client token (which supports RUM, Logging and APM) or regular client token, only for Logging and APM.
-    var clientToken: String?
-    /// The api key, needed for metrics reporting
-    var apiKey: String?
+    /// Either the API key or a regular client token
+    /// For metrics reporting API key is needed
+    var apiKey: String
     /// Endpoint that will be used for reporting.
     var endpoint: Endpoint
+
+    var source: String
     /// This conditon will be evaluated before trying to upload data
     /// Can be used to avoid reporting when no connection
     var uploadCondition: () -> Bool
@@ -37,15 +38,15 @@ public struct ExporterConfiguration {
     /// Option to add a custom prefix to all the metrics sent by the exporter
     var metricsNamePrefix: String?
 
-    public init(serviceName: String, resource: String, applicationName: String, applicationVersion: String, environment: String, clientToken: String?, apiKey: String?, endpoint: Endpoint, uploadCondition: @escaping () -> Bool, performancePreset: PerformancePreset = .default, exportUnsampledSpans: Bool = true, exportUnsampledLogs: Bool = true, hostName: String? = nil, metricsNamePrefix: String? = "otel") {
+    public init(serviceName: String, resource: String, applicationName: String, applicationVersion: String, environment: String, apiKey: String, endpoint: Endpoint, source: String = "ios", uploadCondition: @escaping () -> Bool, performancePreset: PerformancePreset = .default, exportUnsampledSpans: Bool = true, exportUnsampledLogs: Bool = true, hostName: String? = nil, metricsNamePrefix: String? = "otel") {
         self.serviceName = serviceName
         self.resource = resource
         self.applicationName = applicationName
         self.version = applicationVersion
         self.environment = environment
-        self.clientToken = clientToken
         self.apiKey = apiKey
         self.endpoint = endpoint
+        self.source = source
         self.uploadCondition = uploadCondition
         self.performancePreset = performancePreset
         self.exportUnsampledSpans = exportUnsampledSpans

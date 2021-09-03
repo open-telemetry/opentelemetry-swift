@@ -52,7 +52,6 @@ class DatadogExporterTests: XCTestCase {
                                                           applicationName: "applicationName",
                                                           applicationVersion: "applicationVersion",
                                                           environment: "environment",
-                                                          clientToken: "clientToken",
                                                           apiKey: "apikey",
                                                           endpoint: Endpoint.custom(
                                                               tracesURL: URL(string: "http://localhost:33333/traces")!,
@@ -110,7 +109,6 @@ class DatadogExporterTests: XCTestCase {
                                                           applicationName: "applicationName",
                                                           applicationVersion: "applicationVersion",
                                                           environment: "environment",
-                                                          clientToken: "clientToken",
                                                           apiKey: "apikey",
                                                           endpoint: Endpoint.custom(
                                                               tracesURL: URL(string: "http://localhost:33333/traces")!,

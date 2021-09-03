@@ -17,24 +17,23 @@ internal class DataUploadWorker: DataUploadWorkerType {
     /// File reader providing data to upload.
     private let fileReader: FileReader
     /// Data uploader sending data to server.
-    private let dataUploader: DataUploader
+    private let dataUploader: DataUploaderType
     /// Variable system conditions determining if upload should be performed.
     private let uploadCondition: () -> Bool
-    /// For each file upload, the status is checked against this list of acceptable statuses.
-    /// If it's there, the file will be deleted. If not, it will be retried in next upload.
-    private let acceptableUploadStatuses: Set<DataUploadStatus> = [
-        .success, .redirection, .clientError, .unknown
-    ]
+
     /// Name of the feature this worker is performing uploads for.
     private let featureName: String
 
     /// Delay used to schedule consecutive uploads.
     private var delay: Delay
 
+    /// Upload work scheduled by this worker.
+    private var uploadWork: DispatchWorkItem?
+
     init(
         queue: DispatchQueue,
         fileReader: FileReader,
-        dataUploader: DataUploader,
+        dataUploader: DataUploaderType,
         uploadCondition: @escaping () -> Bool,
         delay: Delay,
         featureName: String
@@ -46,27 +45,24 @@ internal class DataUploadWorker: DataUploadWorkerType {
         self.delay = delay
         self.featureName = featureName
 
-        scheduleNextUpload(after: self.delay.current)
-    }
-
-    private func scheduleNextUpload(after delay: TimeInterval) {
-        queue.asyncAfter(deadline: .now() + delay) { [weak self] in
+        let uploadWork = DispatchWorkItem { [weak self] in
             guard let self = self else {
                 return
             }
 
             let isSystemReady = self.uploadCondition()
             let nextBatch = isSystemReady ? self.fileReader.readNextBatch() : nil
-
             if let batch = nextBatch {
+                // Upload batch
                 let uploadStatus = self.dataUploader.upload(data: batch.data)
-                let shouldBeAccepted = self.acceptableUploadStatuses.contains(uploadStatus)
 
-                if shouldBeAccepted {
+                // Delete or keep batch depending on the upload status
+                if uploadStatus.needsRetry {
+                    self.delay.increase()
+
+                } else {
                     self.fileReader.markBatchAsRead(batch)
                     self.delay.decrease()
-                } else {
-                    self.delay.increase()
                 }
             } else {
                 self.delay.increase()
@@ -74,6 +70,18 @@ internal class DataUploadWorker: DataUploadWorkerType {
 
             self.scheduleNextUpload(after: self.delay.current)
         }
+
+        self.uploadWork = uploadWork
+
+        scheduleNextUpload(after: self.delay.current)
+    }
+
+    private func scheduleNextUpload(after delay: TimeInterval) {
+        guard let work = uploadWork else {
+            return
+        }
+
+        queue.asyncAfter(deadline: .now() + delay, execute: work)
     }
 
     /// This method  gets remaining files at once, and uploads them
@@ -82,12 +90,24 @@ internal class DataUploadWorker: DataUploadWorkerType {
         let success = queue.sync {
             self.fileReader.onRemainingBatches {
                 let uploadStatus = self.dataUploader.upload(data: $0.data)
-                let shouldBeAccepted = self.acceptableUploadStatuses.contains(uploadStatus)
-                if shouldBeAccepted {
-                    self.fileReader.synchronizedMarkBatchAsRead($0)
+                if !uploadStatus.needsRetry {
+                    self.fileReader.markBatchAsRead($0)
                 }
             }
         }
         return success ? .success : .failure
+    }
+
+    /// Cancels scheduled uploads and stops scheduling next ones.
+    /// - It does not affect the upload that has already begun.
+    /// - It blocks the caller thread if called in the middle of upload execution.
+    internal func cancelSynchronously() {
+        queue.sync {
+            // This cancellation must be performed on the `queue` to ensure that it is not called
+            // in the middle of a `DispatchWorkItem` execution - otherwise, as the pending block would be
+            // fully executed, it will schedule another upload by calling `nextScheduledWork(after:)` at the end.
+            self.uploadWork?.cancel()
+            self.uploadWork = nil
+        }
     }
 }

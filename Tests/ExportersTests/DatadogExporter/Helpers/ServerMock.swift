@@ -7,6 +7,8 @@
 import Foundation
 import XCTest
 
+private let ddURLSessionUUIDHeaderField = "dd-urlsession-uuid"
+
 private class ServerMockProtocol: URLProtocol {
     override class func canInit(with request: URLRequest) -> Bool {
         return true
@@ -30,55 +32,68 @@ private class ServerMockProtocol: URLProtocol {
         }
     }
 
+    /// An instance of the `ServerMock` configured to intercept request processed by this `URLProtocol`.
+    private weak var server: ServerMock?
+
+    override init(request: URLRequest, cachedResponse: CachedURLResponse?, client: URLProtocolClient?) {
+        // Capture the active instance of `ServerMock`
+        server = ServerMock.activeInstance
+
+        // Get utility header value to match it with an active instance of `ServerMock`
+        let urlSessionUUID = UUID(uuidString: request.allHTTPHeaderFields![ddURLSessionUUIDHeaderField]!)!
+
+        super.init(
+            request: request.removing(httpHeaderField: ddURLSessionUUIDHeaderField), // remove utility header
+            cachedResponse: cachedResponse,
+            client: client
+        )
+
+        // Assert that the request will be intercepted by the right instance of `ServerMock`.
+        precondition(
+            server?.urlSessionUUID == urlSessionUUID,
+            """
+            ⚠️ Request to \(request.url?.absoluteString ?? "null") was sent to `ServerMock` with `urlSessionUUID`: \(urlSessionUUID.uuidString),
+            but it was received by the `ServerMock` with `urlSessionUUID`: \(server?.urlSessionUUID.uuidString ?? "<deallocated>")).
+            This indicates lack of test synchronization or cleanup and must be fixed, otherwise the test will become flaky.
+            """
+        )
+    }
+
     override func startLoading() {
-        if let response = ServerMock.activeInstance?.mockedResponse  {
+        if let response = server?.mockedResponse {
             client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         }
-        if let data = ServerMock.activeInstance?.mockedData {
+        if let data = server?.mockedData {
             client?.urlProtocol(self, didLoad: data)
         }
-        if let error = ServerMock.activeInstance?.mockedError {
+        if let error = server?.mockedError {
             client?.urlProtocol(self, didFailWithError: error)
         }
 
         client?.urlProtocolDidFinishLoading(self)
 
-        DispatchQueue.main.async {
-            ServerMock.activeInstance?.record(newRequest: self.request)
-        }
+        server?.record(newRequest: request)
     }
 
     override func stopLoading() {
-        if ServerMock.activeInstance != nil {
-            // This may happen when testing requests which deliver completion on the `URLSessionDelegate`.
-            print("⚠️ Request was stopped while no `ServerMock` instance is active.")
-        }
+        // No-op. This method must be defined as this method is made abstract in a base class (`URLProtocol`).
     }
-}
-
-/// All unit tests should use this shared `URLSession` through `URLSession.serverMockURLSession`.
-private let sharedURLSession: URLSession = {
-    let configuration = URLSessionConfiguration.ephemeral
-    configuration.protocolClasses = [ServerMockProtocol.self]
-    return URLSession(configuration: configuration)
-}()
-
-extension URLSession {
-    static var serverMockURLSession: URLSession { sharedURLSession }
 }
 
 class ServerMock {
     weak static var activeInstance: ServerMock?
 
-    private let queue = DispatchQueue(label: "com.datadoghq.ServerMock-\(UUID().uuidString)")
+    /// An unique identifier of the `URLSession` produced by this instance of `ServerMock`.
+    internal let urlSessionUUID = UUID()
+    private let queue: DispatchQueue
 
     fileprivate let mockedResponse: HTTPURLResponse?
     fileprivate let mockedData: Data?
-    fileprivate let mockedError: Error?
+    fileprivate let mockedError: NSError?
 
     enum Delivery {
         case success(response: HTTPURLResponse, data: Data = .mockAny())
-        case failure(error: Error)
+        case failure(error: NSError)
     }
 
     init(delivery: Delivery) {
@@ -94,6 +109,8 @@ class ServerMock {
         }
         precondition(Thread.isMainThread, "`ServerMock` should be initialized on the main thread.")
         precondition(ServerMock.activeInstance == nil, "Only one active instance of `ServerMock` is allowed at a time.")
+        self.queue = DispatchQueue(label: "com.datadoghq.ServerMock-\(urlSessionUUID.uuidString)")
+
         ServerMock.activeInstance = self
     }
 
@@ -126,6 +143,23 @@ class ServerMock {
 
     private var requests: [URLRequest] = []
     private var waitAndReturnRequestsExpectation: XCTestExpectation?
+
+    // MARK: - Obtaining URLSession
+
+    private var doesInterceptSession = false
+
+    /// Produces `URLSession` intercepted by this instance of `ServerMock`. The session will use `delegate` if it's provided.
+    /// Requests sent to this session can be obtained later with using `serverMock.wait...()` APIs.
+    func getInterceptedURLSession(delegate: URLSessionDelegate? = nil) -> URLSession {
+        precondition(!doesInterceptSession, "This instance of `ServerMock` already intercepts the `URLSession`. Re-use the existing one.")
+        doesInterceptSession = true
+
+        let configuration = URLSessionConfiguration.ephemeral
+        // Set utility header so we can identify this request in `ServerMockProtocol`.
+        configuration.httpAdditionalHeaders = [ddURLSessionUUIDHeaderField: urlSessionUUID.uuidString]
+        configuration.protocolClasses = [ServerMockProtocol.self]
+        return URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
+    }
 
     // MARK: - Waiting for total number of requests
 

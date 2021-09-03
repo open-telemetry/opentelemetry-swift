@@ -13,18 +13,10 @@ public class DatadogExporter: SpanExporter, MetricExporter {
     var metricsExporter: MetricsExporter?
 
     public init(config: ExporterConfiguration) throws {
-        guard config.clientToken != nil || config.apiKey != nil else {
-            throw ExporterError(description: "Traces exporter needs a client token and Metrics Exporter need an api key")
-        }
-
         self.configuration = config
-        if configuration.clientToken != nil {
-            spansExporter = try SpansExporter(config: configuration)
-            logsExporter = try LogsExporter(config: configuration)
-        }
-        if configuration.apiKey != nil {
-            metricsExporter = try MetricsExporter(config: configuration)
-        }
+        spansExporter = try SpansExporter(config: configuration)
+        logsExporter = try LogsExporter(config: configuration)
+        metricsExporter = try MetricsExporter(config: configuration)
     }
 
     public func export(spans: [SpanData]) -> SpanExporterResultCode {
