@@ -52,7 +52,7 @@ let package = Package(
         .package(name: "swift-atomics", url: "https://github.com/apple/swift-atomics.git", from: "0.0.1"),
         .package(name: "swift-metrics", url: "https://github.com/apple/swift-metrics.git", from: "2.1.1"),
         .package(name: "Reachability", url: "https://github.com/ashleymills/Reachability.swift", from: "5.1.0"),
-
+        .package(name: "DataCompression", url: "https://github.com/mw99/DataCompression.git",  from: "3.5.0")
     ],
     targets: [
         .target(name: "OpenTelemetryApi",
@@ -110,7 +110,7 @@ let package = Package(
                 dependencies: ["OpenTelemetrySdk"],
                 path: "Sources/Exporters/InMemory"),
         .target(name: "DatadogExporter",
-                dependencies: ["OpenTelemetrySdk"],
+                dependencies: ["OpenTelemetrySdk", "DataCompression"],
                 path: "Sources/Exporters/DatadogExporter",
                 exclude: ["NOTICE", "README.md"]),
         .testTarget(name: "NetworkStatusTests",

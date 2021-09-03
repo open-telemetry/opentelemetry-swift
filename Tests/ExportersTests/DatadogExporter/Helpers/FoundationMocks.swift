@@ -32,7 +32,15 @@ import Foundation
 
 // MARK: - Basic types
 
-extension Data {
+protocol AnyMockable {
+    static func mockAny() -> Self
+}
+
+protocol RandomMockable {
+    static func mockRandom() -> Self
+}
+
+extension Data: AnyMockable, RandomMockable {
     static func mockAny() -> Data {
         return Data()
     }
@@ -43,6 +51,16 @@ extension Data {
 
     static func mock(ofSize size: UInt64) -> Data {
         return mockRepeating(byte: 0x41, times: Int(size))
+    }
+
+    static func mockRandom() -> Data {
+        return mockRepeating(byte: .random(in: 0x00 ... 0xff), times: 256)
+    }
+}
+
+extension Optional: AnyMockable where Wrapped: AnyMockable {
+    static func mockAny() -> Self {
+        return .some(.mockAny())
     }
 }
 
@@ -64,7 +82,31 @@ extension Array where Element == Data {
     }
 }
 
-extension Date {
+extension Array {
+    func randomElements() -> [Element] {
+        return compactMap { Bool.random() ? $0 : nil }
+    }
+}
+
+extension Array: RandomMockable where Element: RandomMockable {
+    static func mockRandom() -> [Element] {
+        return Array(repeating: .mockRandom(), count: 10)
+    }
+}
+
+extension Dictionary: AnyMockable where Key: AnyMockable, Value: AnyMockable {
+    static func mockAny() -> Dictionary {
+        return [Key.mockAny(): Value.mockAny()]
+    }
+}
+
+extension Dictionary: RandomMockable where Key: RandomMockable, Value: RandomMockable {
+    static func mockRandom() -> Dictionary {
+        return [Key.mockRandom(): Value.mockRandom()]
+    }
+}
+
+extension Date: AnyMockable {
     static func mockAny() -> Date {
         return Date(timeIntervalSinceReferenceDate: 1)
     }
@@ -88,7 +130,7 @@ extension Date {
     }
 }
 
-extension URL {
+extension URL: AnyMockable, RandomMockable {
     static func mockAny() -> URL {
         return URL(string: "https://www.datadoghq.com")!
     }
@@ -96,16 +138,70 @@ extension URL {
     static func mockWith(pathComponent: String) -> URL {
         return URL(string: "https://www.foo.com/")!.appendingPathComponent(pathComponent)
     }
+
+    static func mockRandom() -> URL {
+        return URL(string: "https://www.foo.com/")!
+            .appendingPathComponent(
+                .mockRandom(
+                    among: .alphanumerics,
+                    length: 32
+                )
+            )
+    }
+
+    static func mockRandomPath(containing subpathComponents: [String] = []) -> URL {
+        let count: Int = .mockRandom(min: 2, max: 10)
+        var components: [String] = (0..<count).map { _ in
+            .mockRandom(
+                among: .alphanumerics,
+                length: .mockRandom(min: 3, max: 10)
+            )
+        }
+        components.insert(contentsOf: subpathComponents, at: .random(in: 0..<count))
+        return URL(fileURLWithPath: "/\(components.joined(separator: "/"))")
+    }
 }
 
-extension String {
+extension String: AnyMockable, RandomMockable {
     static func mockAny() -> String {
         return "abc"
+    }
+
+    static func mockRandom() -> String {
+        return mockRandom(length: 10)
+    }
+
+    static func mockRandom(length: Int) -> String {
+        return mockRandom(
+            among: .alphanumerics + " ",
+            length: length
+        )
+    }
+
+    static func mockRandom(among characters: String, length: Int = 10) -> String {
+        return String((0..<length).map { _ in characters.randomElement()! })
     }
 
     static func mockRepeating(character: Character, times: Int) -> String {
         let characters = (0..<times).map { _ in character }
         return String(characters)
+    }
+
+    static let alphanumerics = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    static let decimalDigits = "0123456789"
+}
+
+extension Int: AnyMockable, RandomMockable {
+    static func mockAny() -> Int {
+        return 0
+    }
+
+    static func mockRandom() -> Int {
+        return mockRandom(min: .min, max: .max)
+    }
+
+    static func mockRandom(min: Int, max: Int) -> Int {
+        return .random(in: min ... max)
     }
 }
 

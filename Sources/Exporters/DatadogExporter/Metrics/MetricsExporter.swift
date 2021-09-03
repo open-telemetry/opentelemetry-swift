@@ -18,10 +18,6 @@ internal class MetricsExporter {
     let metricsUploadQueue = DispatchQueue(label: "com.otel.datadog.metricsupload", target: .global(qos: .userInteractive))
 
     init(config: ExporterConfiguration) throws {
-        guard let apiKey = config.apiKey else {
-            throw ExporterError(description: "Metrics Exporter need an api key")
-        }
-
         configuration = config
 
         let filesOrchestrator = FilesOrchestrator(
@@ -46,26 +42,26 @@ internal class MetricsExporter {
 
         metricsStorage = FeatureStorage(writer: spanFileWriter, reader: spanFileReader)
 
-        let urlProvider = UploadURLProvider(
-            urlWithClientToken: configuration.endpoint.metricsURL,
-            queryItemProviders: [
-                .apiKey(apiKey: apiKey),
+        let requestBuilder = RequestBuilder(
+            url: configuration.endpoint.metricsURL,
+            queryItems: [],
+            headers: [
+                .contentTypeHeader(contentType: .textPlainUTF8),
+                .userAgentHeader(
+                    appName: configuration.applicationName,
+                    appVersion: configuration.version,
+                    device: Device.current
+                ),
+                .ddAPIKeyHeader(apiKey: configuration.apiKey),
+                .ddEVPOriginHeader(source: configuration.source),
+                .ddEVPOriginVersionHeader(version: configuration.version),
+                .ddRequestIDHeader(),
             ]
         )
 
-        let httpHeaders = HTTPHeaders(headers: [
-            .contentTypeHeader(contentType: .textPlainUTF8),
-            .userAgentHeader(
-                appName: configuration.applicationName,
-                appVersion: configuration.version,
-                device: Device.current
-            ),
-        ])
-
         metricsUpload = FeatureUpload(featureName: "metricsUpload",
                                       storage: metricsStorage,
-                                      uploadHTTPHeaders: httpHeaders,
-                                      uploadURLProvider: urlProvider,
+                                      requestBuilder: requestBuilder,
                                       performance: configuration.performancePreset,
                                       uploadCondition: configuration.uploadCondition)
     }
