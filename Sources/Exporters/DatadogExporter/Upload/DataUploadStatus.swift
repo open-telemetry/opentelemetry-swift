@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 import Foundation
 
 private enum HTTPResponseStatusCode: Int {
@@ -52,15 +51,6 @@ internal struct DataUploadStatus {
     /// If set to `false` then data associated with the upload should be deleted as it does not need any more upload
     /// attempts (i.e. the upload succeeded or failed due to unrecoverable client error).
     let needsRetry: Bool
-
-    // MARK: - Debug Info
-
-    /// Upload status description printed to the console if SDK `.debug` verbosity is enabled.
-    let userDebugDescription: String
-
-    /// An optional error printed to the console if SDK `.error` (or lower) verbosity is enabled.
-    /// It is meant to indicate user action that must be taken to fix the upload issue (e.g. if the client token is invalid, it needs to be fixed).
-    let userErrorMessage: String?
 }
 
 extension DataUploadStatus {
@@ -68,19 +58,10 @@ extension DataUploadStatus {
 
     init(httpResponse: HTTPURLResponse, ddRequestID: String?) {
         let statusCode = HTTPResponseStatusCode(rawValue: httpResponse.statusCode) ?? .unexpected
-
-        self.init(
-            needsRetry: statusCode.needsRetry,
-            userDebugDescription: "[response code: \(httpResponse.statusCode) (\(statusCode)), request ID: \(ddRequestID ?? "(???)")]",
-            userErrorMessage: statusCode == .unauthorized ? "⚠️ The client token you provided seems to be invalid." : nil
-        )
+        self.init(needsRetry: statusCode.needsRetry)
     }
 
     init(networkError: Error) {
-        self.init(
-            needsRetry: true, // retry this upload as it failed due to network transport isse
-            userDebugDescription: "[error: \(networkError.localizedDescription)]", // e.g. "[error: A data connection is not currently allowed]"
-            userErrorMessage: nil // nothing actionable for the user
-        )
+        self.init(needsRetry: true)
     }
 }

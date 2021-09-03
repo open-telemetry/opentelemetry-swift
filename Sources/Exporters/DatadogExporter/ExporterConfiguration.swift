@@ -38,7 +38,7 @@ public struct ExporterConfiguration {
     /// Option to add a custom prefix to all the metrics sent by the exporter
     var metricsNamePrefix: String?
 
-    public init(serviceName: String, resource: String, applicationName: String, applicationVersion: String, environment: String, apiKey: String, endpoint: Endpoint, source: String = "otel-swift-exporter", uploadCondition: @escaping () -> Bool, performancePreset: PerformancePreset = .default, exportUnsampledSpans: Bool = true, exportUnsampledLogs: Bool = true, hostName: String? = nil, metricsNamePrefix: String? = "otel") {
+    public init(serviceName: String, resource: String, applicationName: String, applicationVersion: String, environment: String, apiKey: String, endpoint: Endpoint, source: String = "ios", uploadCondition: @escaping () -> Bool, performancePreset: PerformancePreset = .default, exportUnsampledSpans: Bool = true, exportUnsampledLogs: Bool = true, hostName: String? = nil, metricsNamePrefix: String? = "otel") {
         self.serviceName = serviceName
         self.resource = resource
         self.applicationName = applicationName

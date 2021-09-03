@@ -14,7 +14,7 @@ internal protocol DataUploaderType {
 /// Synchronously uploads data to server using `HTTPClient`.
 internal final class DataUploader: DataUploaderType {
     /// An unreachable upload status - only meant to satisfy the compiler.
-    private static let unreachableUploadStatus = DataUploadStatus(needsRetry: false, userDebugDescription: "", userErrorMessage: nil)
+    private static let unreachableUploadStatus = DataUploadStatus(needsRetry: false)
 
     private let httpClient: HTTPClient
     private let requestBuilder: RequestBuilder

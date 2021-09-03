@@ -163,24 +163,13 @@ struct DataUploaderMock: DataUploaderType {
 extension DataUploadStatus: RandomMockable {
     static func mockRandom() -> DataUploadStatus {
         let retryRandom: Bool = .random()
-        return DataUploadStatus(
-            needsRetry: retryRandom,
-            userDebugDescription: .mockRandom(),
-            userErrorMessage: .mockRandom()
-        )
+        return DataUploadStatus(needsRetry: retryRandom)
     }
 
     static func mockWith(
         needsRetry: Bool = .mockAny(),
-        accepted: Bool = true,
-        userDebugDescription: String = .mockAny(),
-        userErrorMessage: String? = nil,
-        internalMonitoringError: (message: String, error: Error?, attributes: [String: String]?)? = nil
+        accepted: Bool = true
     ) -> DataUploadStatus {
-        return DataUploadStatus(
-            needsRetry: needsRetry,
-            userDebugDescription: userDebugDescription,
-            userErrorMessage: userErrorMessage
-        )
+        return DataUploadStatus(needsRetry: needsRetry)
     }
 }
