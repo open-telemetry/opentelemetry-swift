@@ -7,20 +7,17 @@ import Foundation
 import os.activity
 
 /// Keys used by Opentelemetry to store values in the Context
-internal struct OpenTelemetryContextKeys {
-    static let span = "opentelemetrycontext.span"
-    static let baggage    = "opentelemetrycontext.baggage"
+public enum OpenTelemetryContextKeys: String {
+    case span
+    case baggage
 }
 
-
 public struct OpenTelemetryContextProvider {
-
     var contextManager: ContextManager
-
 
     /// Returns the Span from the current context
     public var activeSpan: Span? {
-        return contextManager.getCurrentContextValue(forKey: OpenTelemetryContextKeys.span) as? Span
+        return contextManager.getCurrentContextValue(forKey: .span) as? Span
     }
 
     /// Returns the Baggage from the current context
@@ -30,7 +27,7 @@ public struct OpenTelemetryContextProvider {
 
     /// Sets the span as the activeSpan for the current context
     /// - Parameter span: the Span to be set to the current context
-    public func setActiveSpan(_ span: Span)  {
+    public func setActiveSpan(_ span: Span) {
         contextManager.setCurrentContextValue(forKey: OpenTelemetryContextKeys.span, value: span)
     }
 
