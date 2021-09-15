@@ -34,7 +34,7 @@ class ZipkinExporterTests: XCTestCase {
 
         let exporterOutputArray = spans.map { ZipkinConversionExtension.toZipkinSpan(otelSpan: $0, defaultLocalEndpoint: ZipkinTraceExporter.getLocalZipkinEndpoint(name: "Open Telemetry Exporter")) }.map { $0.write() }
 
-        let expectedOutputString = #"{"traceId":"e8ea7e9ac72de94e91fabc613f9686b2","name":"Name","parentId":"\#(span.parentSpanId!.hexString)","id":"\#(span.spanId.hexString)","kind":"CLIENT","timestamp":\#(timestamp),"duration":60000000,"localEndpoint":{"serviceName":"Open Telemetry Exporter"\#(ipInformation)},"annotations":[{"timestamp":\#(timestamp),"value":"Event1"},{"timestamp":\#(timestamp),"value":"Event2"}],"tags":{"stringKey":"value","longKey":"1","longKey2":"1","doubleKey":"1.0","doubleKey2":"1.0","boolKey":"true","ot.status_code":"Ok"}}"#
+        let expectedOutputString = #"{"traceId":"e8ea7e9ac72de94e91fabc613f9686b2","name":"Name","parentId":"\#(span.parentSpanId!.hexString)","id":"\#(span.spanId.hexString)","kind":"CLIENT","timestamp":\#(timestamp),"duration":60000000,"localEndpoint":{"serviceName":"Open Telemetry Exporter"\#(ipInformation)},"annotations":[{"timestamp":\#(timestamp),"value":"Event1"},{"timestamp":\#(timestamp),"value":"Event2"}],"tags":{"stringKey":"value","longKey":"1","longKey2":"1","doubleKey":"1.0","doubleKey2":"1.0","boolKey":"true","otel.status_code":"OK"}}"#
         let expectedData = expectedOutputString.data(using: .utf8)!
         let expectedOutputObject = try? JSONSerialization.jsonObject(with: expectedData)
         let expectedOutput = expectedOutputObject as! NSDictionary
