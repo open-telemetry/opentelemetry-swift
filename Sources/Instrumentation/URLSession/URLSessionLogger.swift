@@ -79,7 +79,7 @@ class URLSessionLogger {
         }
 
         var returnRequest: URLRequest?
-        if shouldInjectHeaders {
+        if shouldInjectHeaders && (instrumentation.configuration.shouldInjectTracingHeaders?(request) ?? true) {
             returnRequest = instrumentedRequest(for: request, span: span, instrumentation: instrumentation)
         }
 
@@ -91,7 +91,7 @@ class URLSessionLogger {
 
         instrumentation.configuration.createdRequest?(returnRequest ?? request, span)
 
-        return returnRequest ?? request
+        return returnRequest
     }
 
     /// This methods ends a Span when a response arrives
