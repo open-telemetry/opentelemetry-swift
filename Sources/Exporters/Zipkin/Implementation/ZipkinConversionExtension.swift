@@ -8,8 +8,8 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 
 struct ZipkinConversionExtension {
-    static let statusCode = "ot.status_code"
-    static let statusDescription = "ot.status_description"
+    static let statusCode = "otel.status_code"
+    static let statusErrorDescription = "error"
 
     static let remoteEndpointServiceNameKeyResolution = ["peer.service": 0,
                                                          "net.peer.name": 1,
@@ -65,12 +65,11 @@ struct ZipkinConversionExtension {
         }
 
         let status = otelSpan.status
-
-        if status.isOk {
-            attributeEnumerationState.tags[statusCode] = "\(status.name)".capitalized
-            if case let Status.error(description) = status {
-                attributeEnumerationState.tags[statusDescription] = description
-            }
+        if status != .unset {
+            attributeEnumerationState.tags[statusCode] = "\(status.name)".uppercased()
+        }
+        if case let Status.error(description) = status {
+            attributeEnumerationState.tags[statusErrorDescription] = description
         }
 
         let annotations = otelSpan.events.map { processEvents(event: $0) }

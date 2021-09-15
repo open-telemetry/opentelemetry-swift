@@ -34,7 +34,20 @@ class ZipkinSpanConverterTests: XCTestCase {
         XCTAssertEqual(zipkinSpan.remoteEndpoint?.serviceName, "RemoteServiceName")
     }
 
-    public static func createTestSpan(setAttributes: Bool = true, additionalAttributes: [String: Any]? = nil, addEvents: Bool = true, addLinks: Bool = true) -> SpanData {
+    func testStatusUnset() {
+        let span = ZipkinSpanConverterTests.createTestSpan(status: Status.unset)
+        let zipkinSpan = ZipkinConversionExtension.toZipkinSpan(otelSpan: span, defaultLocalEndpoint: defaultZipkinEndpoint)
+        XCTAssertNil(zipkinSpan.tags["otel.status_code"])
+    }
+
+    func testStatusError() {
+        let span = ZipkinSpanConverterTests.createTestSpan(status: Status.error(description: "error message"))
+        let zipkinSpan = ZipkinConversionExtension.toZipkinSpan(otelSpan: span, defaultLocalEndpoint: defaultZipkinEndpoint)
+        XCTAssertEqual(zipkinSpan.tags["otel.status_code"], "ERROR")
+        XCTAssertEqual(zipkinSpan.tags["error"], "error message")
+    }
+
+    public static func createTestSpan(setAttributes: Bool = true, additionalAttributes: [String: Any]? = nil, addEvents: Bool = true, addLinks: Bool = true, status: Status = Status.ok) -> SpanData {
         let startTimestamp = Date(timeIntervalSince1970: Double(Int(Date().timeIntervalSince1970))) // Round for comparison
         let endTimestamp = startTimestamp.addingTimeInterval(60)
         let eventTimestamp = startTimestamp
@@ -58,6 +71,6 @@ class ZipkinSpanConverterTests: XCTestCase {
 
 //        let linkedSpanId = SpanId(fromHexString: "888915b6286b9c41")
 
-        return SpanData(traceId: traceId, spanId: spanId, parentSpanId: parentSpanId, resource: Resource.empty, name: "Name", kind: .client, startTime: startTimestamp, attributes: attributes, events: events, status: Status.ok, endTime: endTimestamp)
+        return SpanData(traceId: traceId, spanId: spanId, parentSpanId: parentSpanId, resource: Resource.empty, name: "Name", kind: .client, startTime: startTimestamp, attributes: attributes, events: events, status: status, endTime: endTimestamp)
     }
 }
