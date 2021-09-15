@@ -10,6 +10,14 @@ import OpenTelemetrySdk
 struct NetworkRequestState {
     var request: URLRequest?
     var dataProcessed: Data?
+
+    mutating func setRequest(_ request: URLRequest) {
+        self.request = request
+    }
+
+    mutating func setData(_ data: URLRequest) {
+        self.request = data
+    }
 }
 
 private var idKey: Void?
@@ -68,10 +76,13 @@ public class URLSessionInstrumentation {
                 }
             }
         }
-        injectIntoNSURLSessionCreateTaskMethods()
+        if #available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
+            injectIntoNSURLSessionCreateTaskMethods()
+        }
         injectIntoNSURLSessionCreateTaskWithParameterMethods()
         injectIntoNSURLSessionAsyncDataAndDownloadTaskMethods()
         injectIntoNSURLSessionAsyncUploadTaskMethods()
+        injectIntoNSURLSessionTaskResume()
     }
 
     private func injectIntoDelegateClass(cls: AnyClass) {
@@ -207,23 +218,26 @@ public class URLSessionInstrumentation {
                 var task: URLSessionTask!
 
                 var completionBlock = completion
-                if objc_getAssociatedObject(argument, &idKey) == nil {
-                    let completionWrapper: (Any?, URLResponse?, Error?) -> Void = { object, response, error in
-                        if error != nil {
-                            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-                            URLSessionLogger.logError(error!, dataOrFile: object, statusCode: status, instrumentation: self, sessionTaskId: sessionTaskId)
-                        } else {
-                            if let response = response {
-                                URLSessionLogger.logResponse(response, dataOrFile: object, instrumentation: self, sessionTaskId: sessionTaskId)
+
+                if completionBlock != nil {
+                    if objc_getAssociatedObject(argument, &idKey) == nil {
+                        let completionWrapper: (Any?, URLResponse?, Error?) -> Void = { object, response, error in
+                            if error != nil {
+                                let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+                                URLSessionLogger.logError(error!, dataOrFile: object, statusCode: status, instrumentation: self, sessionTaskId: sessionTaskId)
+                            } else {
+                                if let response = response {
+                                    URLSessionLogger.logResponse(response, dataOrFile: object, instrumentation: self, sessionTaskId: sessionTaskId)
+                                }
+                            }
+                            if let completion = completion {
+                                completion(object, response, error)
+                            } else {
+                                (session.delegate as? URLSessionTaskDelegate)?.urlSession?(session, task: task, didCompleteWithError: error)
                             }
                         }
-                        if let completion = completion {
-                            completion(object, response, error)
-                        } else {
-                            (session.delegate as? URLSessionTaskDelegate)?.urlSession?(session, task: task, didCompleteWithError: error)
-                        }
+                        completionBlock = completionWrapper
                     }
-                    completionBlock = completionWrapper
                 }
 
                 if let request = argument as? URLRequest, objc_getAssociatedObject(argument, &idKey) == nil {
@@ -292,6 +306,45 @@ public class URLSessionInstrumentation {
             }
             let swizzledIMP = imp_implementationWithBlock(unsafeBitCast(block, to: AnyObject.self))
             originalIMP = method_setImplementation(original, swizzledIMP)
+        }
+    }
+
+    private func injectIntoNSURLSessionTaskResume() {
+        var methodsToSwizzle = [Method]()
+
+        if let method = class_getInstanceMethod(URLSessionTask.self, #selector(URLSessionTask.resume)) {
+            methodsToSwizzle.append(method)
+        }
+
+        if let cfURLSession = NSClassFromString("__NSCFURLSessionTask"),
+           let method = class_getInstanceMethod(cfURLSession, NSSelectorFromString("resume"))
+        {
+            methodsToSwizzle.append(method)
+        }
+
+        if NSClassFromString("AFURLSessionManager") != nil {
+            let classes = InstrumentationUtils.objc_getClassList()
+            classes.forEach {
+                if let method = class_getInstanceMethod($0, NSSelectorFromString("af_resume")) {
+                    methodsToSwizzle.append(method)
+                }
+            }
+        }
+
+        methodsToSwizzle.forEach {
+            let theMethod = $0
+
+            var originalIMP: IMP?
+            let block: @convention(block) (URLSessionTask) -> Void = { anyTask in
+                self.urlSessionTaskWillResume(anyTask)
+                let key = String(theMethod.hashValue)
+                objc_setAssociatedObject(anyTask, key, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+                let castedIMP = unsafeBitCast(originalIMP, to: (@convention(c) (Any) -> Void).self)
+                castedIMP(anyTask)
+                objc_setAssociatedObject(anyTask, key, nil, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            }
+            let swizzledIMP = imp_implementationWithBlock(unsafeBitCast(block, to: AnyObject.self))
+            originalIMP = method_setImplementation(theMethod, swizzledIMP)
         }
     }
 
@@ -429,8 +482,11 @@ public class URLSessionInstrumentation {
         queue.async {
             let taskId = self.idKeyForTask(dataTask)
             if (self.requestMap[taskId]?.request) != nil {
-                var requestState = self.requestState(for: taskId)
-                requestState.dataProcessed?.append(dataCopy)
+                self.createRequestState(for: taskId)
+                if self.requestMap[taskId]?.dataProcessed == nil {
+                    self.requestMap[taskId]?.dataProcessed = Data()
+                }
+                self.requestMap[taskId]?.dataProcessed?.append(dataCopy)
             }
         }
     }
@@ -440,11 +496,11 @@ public class URLSessionInstrumentation {
         queue.async {
             let taskId = self.idKeyForTask(dataTask)
             if (self.requestMap[taskId]?.request) != nil {
-                var requestState = self.requestState(for: taskId)
+                self.createRequestState(for: taskId)
                 if response.expectedContentLength < 0 {
-                    requestState.dataProcessed = Data()
+                    self.requestMap[taskId]?.dataProcessed = Data()
                 } else {
-                    requestState.dataProcessed = Data(capacity: Int(response.expectedContentLength))
+                    self.requestMap[taskId]?.dataProcessed = Data(capacity: Int(response.expectedContentLength))
                 }
             }
         }
@@ -453,11 +509,8 @@ public class URLSessionInstrumentation {
     private func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         let taskId = self.idKeyForTask(task)
 
-        var requestState: NetworkRequestState?
-        if (self.requestMap[taskId]?.request) != nil {
-            requestState = self.requestState(for: taskId)
-        }
-        
+        let requestState = self.requestMap[taskId]
+
         if let error = error {
             let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
             URLSessionLogger.logError(error, dataOrFile: requestState?.dataProcessed, statusCode: status, instrumentation: self, sessionTaskId: taskId)
@@ -483,6 +536,18 @@ public class URLSessionInstrumentation {
         }
     }
 
+    private func urlSessionTaskWillResume(_ session: URLSessionTask) {
+        let taskId = self.idKeyForTask(session)
+        if let request = session.currentRequest {
+            var state = requestMap[taskId]
+            if state == nil {
+                state = NetworkRequestState()
+                requestMap[taskId] = state
+            }
+            requestMap[taskId]?.setRequest(request)
+        }
+    }
+
     // Helpers
     private func idKeyForTask(_ task: URLSessionTask) -> String {
         var id = objc_getAssociatedObject(task, &idKey) as? String
@@ -497,12 +562,11 @@ public class URLSessionInstrumentation {
         objc_setAssociatedObject(task, &idKey, value, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     }
 
-    private func requestState(for id: String) -> NetworkRequestState {
+    private func createRequestState(for id: String) {
         var state = requestMap[id]
-        if state == nil {
+        if requestMap[id] == nil {
             state = NetworkRequestState()
             requestMap[id] = state
         }
-        return state!
     }
 }

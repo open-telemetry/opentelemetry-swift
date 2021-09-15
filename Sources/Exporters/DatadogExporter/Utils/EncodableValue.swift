@@ -62,7 +62,7 @@ internal struct JSONStringEncodableValue: Encodable {
         } else {
             let jsonData: Data
 
-            if #available(iOS 13.0, *) {
+            if #available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
                 jsonData = try jsonEncoder.encode(encodable)
             } else {
                 // Prior to `iOS13.0` the `JSONEncoder` is unable to encode primitive values - it expects them to be
