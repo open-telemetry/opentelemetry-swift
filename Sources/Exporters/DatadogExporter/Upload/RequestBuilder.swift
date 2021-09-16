@@ -4,7 +4,6 @@
  */
 
 import Foundation
-import DataCompression
 
 /// Builds `URLRequest` for sending data to Datadog.
 internal struct RequestBuilder {

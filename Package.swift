@@ -51,8 +51,6 @@ let package = Package(
         .package(name: "grpc-swift", url: "https://github.com/grpc/grpc-swift.git", from: "1.0.0"),
         .package(name: "swift-atomics", url: "https://github.com/apple/swift-atomics.git", from: "0.0.1"),
         .package(name: "swift-metrics", url: "https://github.com/apple/swift-metrics.git", from: "2.1.1"),
-        .package(name: "Reachability", url: "https://github.com/ashleymills/Reachability.swift", from: "5.1.0"),
-        .package(name: "DataCompression", url: "https://github.com/mw99/DataCompression.git",  from: "3.5.0")
     ],
     targets: [
         .target(name: "OpenTelemetryApi",
@@ -69,7 +67,7 @@ let package = Package(
                 path: "Sources/Instrumentation/URLSession",
                 exclude: ["README.md"]),
         .target(name: "NetworkStatus",
-                dependencies: ["Reachability", "OpenTelemetryApi"],
+                dependencies: ["OpenTelemetryApi"],
                 path: "Sources/Instrumentation/NetworkStatus",
                 linkerSettings: [.linkedFramework("CoreTelephony", .when(platforms: [.iOS], configuration: nil))]),
         .target(name: "SignPostIntegration",
@@ -110,7 +108,7 @@ let package = Package(
                 dependencies: ["OpenTelemetrySdk"],
                 path: "Sources/Exporters/InMemory"),
         .target(name: "DatadogExporter",
-                dependencies: ["OpenTelemetrySdk", "DataCompression"],
+                dependencies: ["OpenTelemetrySdk"],
                 path: "Sources/Exporters/DatadogExporter",
                 exclude: ["NOTICE", "README.md"]),
         .testTarget(name: "NetworkStatusTests",
