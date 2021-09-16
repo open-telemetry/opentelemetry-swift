@@ -157,6 +157,46 @@ struct MetricsAdapter {
                 }
 
                 protoMetric.doubleSummary.dataPoints.append(protoDataPoint)
+            case .intHistogram:
+                guard let histogramData = $0 as? HistogramData<Int> else {
+                    break
+                }
+                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_DoubleHistogramDataPoint()
+                protoDataPoint.sum = Double(histogramData.sum)
+                protoDataPoint.count = UInt64(histogramData.count)
+                protoDataPoint.startTimeUnixNano = histogramData.startTimestamp.timeIntervalSince1970.toNanoseconds
+                protoDataPoint.timeUnixNano = histogramData.timestamp.timeIntervalSince1970.toNanoseconds
+                protoDataPoint.explicitBounds = histogramData.buckets.boundaries.map { Double($0) }
+                protoDataPoint.bucketCounts = histogramData.buckets.counts.map { UInt64($0) }
+                
+                histogramData.labels.forEach {
+                    var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
+                    kvp.key = $0.key
+                    kvp.value = $0.value
+                    protoDataPoint.labels.append(kvp)
+                }
+                
+                protoMetric.doubleHistogram.dataPoints.append(protoDataPoint)
+            case .doubleHistogram:
+                guard let histogramData = $0 as? HistogramData<Double> else {
+                    break
+                }
+                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_DoubleHistogramDataPoint()
+                protoDataPoint.sum = Double(histogramData.sum)
+                protoDataPoint.count = UInt64(histogramData.count)
+                protoDataPoint.startTimeUnixNano = histogramData.startTimestamp.timeIntervalSince1970.toNanoseconds
+                protoDataPoint.timeUnixNano = histogramData.timestamp.timeIntervalSince1970.toNanoseconds
+                protoDataPoint.explicitBounds = histogramData.buckets.boundaries.map { Double($0) }
+                protoDataPoint.bucketCounts = histogramData.buckets.counts.map { UInt64($0) }
+                
+                histogramData.labels.forEach {
+                    var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
+                    kvp.key = $0.key
+                    kvp.value = $0.value
+                    protoDataPoint.labels.append(kvp)
+                }
+                
+                protoMetric.doubleHistogram.dataPoints.append(protoDataPoint)
             }
         }
         return protoMetric

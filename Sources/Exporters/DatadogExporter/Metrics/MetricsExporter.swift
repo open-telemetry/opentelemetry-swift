@@ -84,6 +84,12 @@ internal class MetricsExporter {
             case .intSummary, .intGauge:
                 let summary = metricData as! SummaryData<Int>
                 return DDMetricPoint(timestamp: metricData.timestamp, value: Double(summary.sum))
+            case .intHistogram:
+                let histogram = metricData as! HistogramData<Int>
+                return DDMetricPoint(timestamp: metricData.timestamp, value: Double(histogram.sum))
+            case .doubleHistogram:
+                let histogram = metricData as! HistogramData<Double>
+                return DDMetricPoint(timestamp: metricData.timestamp, value: histogram.sum)
             }
         }
 

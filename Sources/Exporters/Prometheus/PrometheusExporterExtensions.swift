@@ -45,6 +45,8 @@ public enum PrometheusExporterExtensions {
                     let min = summary.min
                     let max = summary.max
                     output += PrometheusExporterExtensions.writeSummary(prometheusMetric: prometheusMetric, timeStamp: now, labels: labels, metricName: metric.name, sum: Double(sum), count: count, min: Double(min), max: Double(max))
+                case .intHistogram, .doubleHistogram:
+                    break
                 }
             }
         }

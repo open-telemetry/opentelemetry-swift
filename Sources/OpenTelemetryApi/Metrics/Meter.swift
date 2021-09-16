@@ -34,6 +34,22 @@ public protocol Meter {
     ///   - absolute: indicates if only positive values are expected.
     /// - Returns:The measure instance.
     func createDoubleMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Double>
+    
+    /// Creates Int Histogram with given name and boundaries.
+    /// - Parameters:
+    ///   - name: The name of the measure.
+    ///   - boundaries: The boundary for sorting values into buckets
+    ///   - absolute: indicates if only positive values are expected.
+    /// - Returns:The histogram instance.
+    func createIntHistogram(name: String, boundaries: Array<Int>, absolute: Bool) -> AnyHistogramMetric<Int>
+    
+    /// Creates Double Histogram with given name and boundaries.
+    /// - Parameters:
+    ///   - name: The name of the measure.
+    ///   - boundaries: The boundary for sorting values into buckets
+    ///   - absolute: indicates if only positive values are expected.
+    /// - Returns:The histogram instance.
+    func createDoubleHistogram(name: String, boundaries: Array<Double>, absolute: Bool) -> AnyHistogramMetric<Double>
 
     /// Creates Int Observer with given name.
     /// - Parameters:

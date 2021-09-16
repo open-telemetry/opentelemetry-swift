@@ -33,3 +33,15 @@ public struct SummaryData<T>: MetricData {
     public var min: T
     public var max: T
 }
+
+public struct HistogramData<T>: MetricData {
+    public var startTimestamp: Date
+    public var timestamp: Date
+    public var labels: [String: String] = [String: String]()
+    public var buckets: (
+      boundaries: Array<T>,
+      counts: Array<Int>
+    )
+    public var count: Int
+    public var sum: T
+}
