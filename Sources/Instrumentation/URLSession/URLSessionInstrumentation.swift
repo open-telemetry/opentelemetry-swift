@@ -507,18 +507,21 @@ public class URLSessionInstrumentation {
     }
 
     private func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        let taskId = self.idKeyForTask(task)
+        queue.sync {
+            let taskId = self.idKeyForTask(task)
 
-        let requestState = self.requestMap[taskId]
+            let requestState = self.requestMap[taskId]
 
-        if let error = error {
-            let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
-            URLSessionLogger.logError(error, dataOrFile: requestState?.dataProcessed, statusCode: status, instrumentation: self, sessionTaskId: taskId)
-        } else if let response = task.response {
-            URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed, instrumentation: self, sessionTaskId: taskId)
-        }
-        if requestState != nil {
-            requestMap[taskId] = nil
+            if let error = error {
+                let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
+                URLSessionLogger.logError(error, dataOrFile: requestState?.dataProcessed, statusCode: status, instrumentation: self, sessionTaskId: taskId)
+            } else if let response = task.response {
+                URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed, instrumentation: self, sessionTaskId: taskId)
+            }
+
+            if requestState != nil {
+                self.requestMap[taskId] = nil
+            }
         }
     }
 
@@ -537,14 +540,16 @@ public class URLSessionInstrumentation {
     }
 
     private func urlSessionTaskWillResume(_ session: URLSessionTask) {
-        let taskId = self.idKeyForTask(session)
-        if let request = session.currentRequest {
-            var state = requestMap[taskId]
-            if state == nil {
-                state = NetworkRequestState()
-                requestMap[taskId] = state
+        queue.sync {
+            let taskId = self.idKeyForTask(session)
+            if let request = session.currentRequest {
+                var state = requestMap[taskId]
+                if state == nil {
+                    state = NetworkRequestState()
+                    requestMap[taskId] = state
+                }
+                requestMap[taskId]?.setRequest(request)
             }
-            requestMap[taskId]?.setRequest(request)
         }
     }
 
