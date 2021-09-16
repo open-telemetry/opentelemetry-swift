@@ -2,15 +2,6 @@
   "object": {
     "pins": [
       {
-        "package": "DataCompression",
-        "repositoryURL": "https://github.com/mw99/DataCompression.git",
-        "state": {
-          "branch": null,
-          "revision": "6abb8f3cd0e4b2a33b4927a7a92b6764528f2440",
-          "version": "3.6.0"
-        }
-      },
-      {
         "package": "grpc-swift",
         "repositoryURL": "https://github.com/grpc/grpc-swift.git",
         "state": {
@@ -26,15 +17,6 @@
           "branch": null,
           "revision": "18c1a35ca966236cee0c5a714a51a73ff33384c1",
           "version": "0.5.2"
-        }
-      },
-      {
-        "package": "Reachability",
-        "repositoryURL": "https://github.com/ashleymills/Reachability.swift",
-        "state": {
-          "branch": null,
-          "revision": "c01bbdf2d633cf049ae1ed1a68a2020a8bda32e2",
-          "version": "5.1.0"
         }
       },
       {

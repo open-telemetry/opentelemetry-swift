@@ -4,7 +4,6 @@
  */
 
 import Foundation
-import Reachability
 
 public class NetworkMonitor: NetworkMonitorProtocol {
     public private(set) var reachability: Reachability
@@ -24,7 +23,7 @@ public class NetworkMonitor: NetworkMonitorProtocol {
             return .wifi
         case .cellular:
             return .cellular
-        case .unavailable, .none:
+        case .unavailable:
             return .unavailable
         }
     }
