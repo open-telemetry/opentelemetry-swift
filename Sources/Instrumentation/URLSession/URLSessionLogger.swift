@@ -8,7 +8,6 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 import os.log
 #if os(iOS) && !targetEnvironment(macCatalyst)
-
     import NetworkStatus
 #endif // os(iOS) && !targetEnvironment(macCatalyst)
 
@@ -79,7 +78,7 @@ class URLSessionLogger {
         }
 
         var returnRequest: URLRequest?
-        if shouldInjectHeaders && (instrumentation.configuration.shouldInjectTracingHeaders?(request) ?? true) {
+        if shouldInjectHeaders, instrumentation.configuration.shouldInjectTracingHeaders?(request) ?? true {
             returnRequest = instrumentedRequest(for: request, span: span, instrumentation: instrumentation)
         }
 

@@ -6,7 +6,7 @@
 import Foundation
 
 public class NetworkMonitor: NetworkMonitorProtocol {
-    public private(set) var reachability: Reachability
+    var reachability: Reachability
 
     public init() throws {
         reachability = try Reachability()
