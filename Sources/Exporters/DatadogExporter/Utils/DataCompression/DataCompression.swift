@@ -30,7 +30,7 @@
 import Foundation
 import Compression
 
-public extension Data
+extension Data
 {
     /// Compresses the data.
     /// - parameter withAlgorithm: Compression algorithm to use. See the `CompressionAlgorithm` type
@@ -268,7 +268,7 @@ public extension Data
 
 
 /// Struct based type representing a Crc32 checksum.
-public struct Crc32: CustomStringConvertible
+struct Crc32: CustomStringConvertible
 {
     private static let zLibCrc32: ZLibCrc32FuncPtr? = loadCrc32fromZLib()
     
@@ -367,7 +367,7 @@ public struct Crc32: CustomStringConvertible
 
 
 /// Struct based type representing a Adler32 checksum.
-public struct Adler32: CustomStringConvertible
+struct Adler32: CustomStringConvertible
 {
     private static let zLibAdler32: ZLibAdler32FuncPtr? = loadAdler32fromZLib()
     

@@ -7,7 +7,6 @@
 import CoreTelephony
 import Foundation
 import Network
-import Reachability
 
 public class NetworkStatus {
     public private(set) var networkInfo: CTTelephonyNetworkInfo
