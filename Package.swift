@@ -49,7 +49,7 @@ let package = Package(
         .package(name: "Thrift", url: "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1"),
         .package(name: "swift-nio", url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
         .package(name: "grpc-swift", url: "https://github.com/grpc/grpc-swift.git", from: "1.0.0"),
-        .package(name: "swift-atomics", url: "https://github.com/apple/swift-atomics.git", from: "0.0.1"),
+        .package(name: "swift-atomics", url: "https://github.com/apple/swift-atomics.git", from: "1.0.0"),
         .package(name: "swift-metrics", url: "https://github.com/apple/swift-metrics.git", from: "2.1.1"),
     ],
     targets: [
