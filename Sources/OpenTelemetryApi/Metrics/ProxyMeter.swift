@@ -29,12 +29,12 @@ public struct ProxyMeter: Meter {
         return realMeter?.createDoubleMeasure(name: name, absolute: absolute) ?? AnyMeasureMetric<Double>(NoopMeasureMetric<Double>())
     }
     
-    public func createIntHistogram(name: String, boundaries: Array<Int>, absolute: Bool) -> AnyHistogramMetric<Int> {
-        return realMeter?.createIntHistogram(name: name, boundaries: boundaries, absolute: absolute) ?? AnyHistogramMetric<Int>(NoopHistogramMetric<Int>())
+    public func createIntHistogram(name: String, explicitBoundaries: Array<Int>? = nil, absolute: Bool) -> AnyHistogramMetric<Int> {
+        return realMeter?.createIntHistogram(name: name, explicitBoundaries: explicitBoundaries, absolute: absolute) ?? AnyHistogramMetric<Int>(NoopHistogramMetric<Int>())
     }
     
-    public func createDoubleHistogram(name: String, boundaries: Array<Double>, absolute: Bool) -> AnyHistogramMetric<Double> {
-        return realMeter?.createDoubleHistogram(name: name, boundaries: boundaries, absolute: absolute) ?? AnyHistogramMetric<Double>(NoopHistogramMetric<Double>())
+    public func createDoubleHistogram(name: String, explicitBoundaries: Array<Double>?, absolute: Bool) -> AnyHistogramMetric<Double> {
+        return realMeter?.createDoubleHistogram(name: name, explicitBoundaries: explicitBoundaries, absolute: absolute) ?? AnyHistogramMetric<Double>(NoopHistogramMetric<Double>())
     }
 
     public func createIntObservableGauge(name: String, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric {

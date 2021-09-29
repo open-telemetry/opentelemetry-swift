@@ -8,23 +8,26 @@ import XCTest
 
 final class HistogramAggregatorTests: XCTestCase {
     public func testConstructedHistogramAggregator() {
-        XCTAssertNoThrow(try HistogramAggregator(boundaries: [5, 10, 25]))
+        XCTAssertNoThrow(try HistogramAggregator(explicitBoundaries: [5, 10, 25]))
     }
     
-    public func testThrowsWithNoBoundaries() {
-        let boundaries = [Int]()
-        XCTAssertThrowsError(try HistogramAggregator(boundaries: boundaries))
+    public func testUsesDefaultBoundariesWhenNotExplicit() {
+      let aggregator = try! HistogramAggregator<Int>()
+      let histogram = aggregator.toMetricData() as! HistogramData<Int>
+      
+      XCTAssertEqual([5, 10, 25, 50, 75, 100, 250, 500, 750, 1_000, 2_500, 5_000, 7_500,
+                      10_000], histogram.buckets.boundaries)
     }
     
     public func testSortsBoundaries() {
-        let aggregator = try! HistogramAggregator(boundaries: [100, 5, 10, 50, 25])
+        let aggregator = try! HistogramAggregator(explicitBoundaries: [100, 5, 10, 50, 25])
         let histogram = aggregator.toMetricData() as! HistogramData<Int>
         
         XCTAssertEqual([5, 10, 25, 50, 100], histogram.buckets.boundaries)
     }
     
     public func testUpdatesBucketsWithValue() {
-        let aggregator = try! HistogramAggregator(boundaries: [100, 200])
+        let aggregator = try! HistogramAggregator(explicitBoundaries: [100, 200])
         
         // Should start with 0 values
         var histogram = aggregator.toMetricData() as! HistogramData<Int>
@@ -64,7 +67,7 @@ final class HistogramAggregatorTests: XCTestCase {
     }
     
     public func testUpdatesCountSumWithValue() {
-        let aggregator = try! HistogramAggregator(boundaries: [100, 200])
+        let aggregator = try! HistogramAggregator(explicitBoundaries: [100, 200])
         
         // Should start with 0 values
         var histogram = aggregator.toMetricData() as! HistogramData<Int>

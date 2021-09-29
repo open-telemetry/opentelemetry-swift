@@ -12,15 +12,18 @@ public class HistogramAggregator<T: SignedNumeric & Comparable>: Aggregator<T> {
     fileprivate var boundaries: Array<T>
     
     private let lock = Lock()
+    private let defaultBoundaries: Array<T> = [5, 10, 25, 50, 75, 100, 250, 500, 750, 1_000, 2_500, 5_000, 7_500,
+                                            10_000]
     
-    public init(boundaries: Array<T>) throws {
-        if boundaries.count == 0 {
-            throw HistogramError(description: "HistogramAggregator should be created with boundaries.")
+    public init(explicitBoundaries: Array<T>? = nil) throws {
+        if let explicitBoundaries = explicitBoundaries, explicitBoundaries.count > 0 {
+          // we need to an ordered set to be able to correctly compute count for each
+          // boundary since we'll iterate on each in order.
+          self.boundaries = explicitBoundaries.sorted { $0 < $1 }
+        } else {
+          self.boundaries = defaultBoundaries
         }
         
-        // we need to an ordered set to be able to correctly compute count for each
-        // boundary since we'll iterate on each in order.
-        self.boundaries = boundaries.sorted { $0 < $1 }
         self.histogram = Histogram<T>(boundaries: self.boundaries)
         self.pointCheck = Histogram<T>(boundaries: self.boundaries)
     }
@@ -98,8 +101,4 @@ private struct Histogram<T> where T: SignedNumeric {
             counts: Array(repeating: 0, count: boundaries.count + 1)
         )
     }
-}
-
-internal struct HistogramError: Error, CustomStringConvertible {
-    let description: String
 }

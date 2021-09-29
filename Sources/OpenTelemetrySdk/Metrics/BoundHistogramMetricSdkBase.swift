@@ -7,8 +7,8 @@ import Foundation
 import OpenTelemetryApi
 
 class BoundHistogramMetricSdkBase<T>: BoundHistogramMetric<T> {
-    override init(boundaries: Array<T>) {
-        super.init(boundaries: boundaries)
+    override init(explicitBoundaries: Array<T>? = nil) {
+        super.init(explicitBoundaries: explicitBoundaries)
     }
 
     func getAggregator() -> Aggregator<T> {

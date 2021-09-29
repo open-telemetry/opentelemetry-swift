@@ -313,10 +313,10 @@ class MeterSdk: Meter {
         return AnyMeasureMetric<Double>(measure!)
     }
     
-    func createIntHistogram(name: String, boundaries: Array<Int>, absolute: Bool) -> AnyHistogramMetric<Int> {
+    func createIntHistogram(name: String, explicitBoundaries: Array<Int>? = nil, absolute: Bool) -> AnyHistogramMetric<Int> {
         var histogram = intHistogram[name]
         if histogram == nil {
-            histogram = HistogramMetricSdk<Int>(name: name, boundaries: boundaries)
+            histogram = HistogramMetricSdk<Int>(name: name, explicitBoundaries: explicitBoundaries)
             collectLock.withLockVoid {
                 intHistogram[name] = histogram!
             }
@@ -324,10 +324,10 @@ class MeterSdk: Meter {
         return AnyHistogramMetric<Int>(histogram!)
     }
     
-    func createDoubleHistogram(name: String, boundaries: Array<Double>, absolute: Bool) -> AnyHistogramMetric<Double> {
+    func createDoubleHistogram(name: String, explicitBoundaries: Array<Double>? = nil, absolute: Bool) -> AnyHistogramMetric<Double> {
         var histogram = doubleHistogram[name]
         if histogram == nil {
-            histogram = HistogramMetricSdk<Double>(name: name, boundaries: boundaries)
+            histogram = HistogramMetricSdk<Double>(name: name, explicitBoundaries: explicitBoundaries)
             collectLock.withLockVoid {
                 doubleHistogram[name] = histogram!
             }

@@ -7,7 +7,7 @@ import Foundation
 
 /// Bound histogram metric
 open class BoundHistogramMetric<T> {
-    public init(boundaries: Array<T>) {}
+    public init(explicitBoundaries: Array<T>? = nil) {}
 
     /// Record the given value to the bound histogram metric.
     /// - Parameters:

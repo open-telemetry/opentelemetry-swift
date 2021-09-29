@@ -62,10 +62,10 @@ public struct NoopHistogramMetric<T>: HistogramMetric {
     public init() {}
 
     public func bind(labelset: LabelSet) -> BoundHistogramMetric<T> {
-        BoundHistogramMetric<T>(boundaries: [])
+        BoundHistogramMetric<T>()
     }
 
     public func bind(labels: [String: String]) -> BoundHistogramMetric<T> {
-        BoundHistogramMetric<T>(boundaries: [])
+        BoundHistogramMetric<T>()
     }
 }
