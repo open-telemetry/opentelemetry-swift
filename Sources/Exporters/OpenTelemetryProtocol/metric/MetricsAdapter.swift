@@ -176,6 +176,7 @@ struct MetricsAdapter {
                     protoDataPoint.labels.append(kvp)
                 }
                 
+                protoMetric.doubleHistogram.aggregationTemporality = .cumulative
                 protoMetric.doubleHistogram.dataPoints.append(protoDataPoint)
             case .doubleHistogram:
                 guard let histogramData = $0 as? HistogramData<Double> else {
@@ -196,6 +197,7 @@ struct MetricsAdapter {
                     protoDataPoint.labels.append(kvp)
                 }
                 
+                protoMetric.doubleHistogram.aggregationTemporality = .cumulative
                 protoMetric.doubleHistogram.dataPoints.append(protoDataPoint)
             }
         }
