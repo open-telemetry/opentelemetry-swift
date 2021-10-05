@@ -13,8 +13,7 @@ OpenTelemetry.registerTracerProvider(tracerProvider: LoggingTracerProvider())
 var tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "ConsoleApp", instrumentationVersion: "semver:1.0.0")
 
 
-let span1 = tracer.spanBuilder(spanName: "Main (span1)").startSpan()
-OpenTelemetry.instance.contextProvider.setActiveSpan(span1)
+let span1 = tracer.spanBuilder(spanName: "Main (span1)").setActive(true).startSpan()
 let semaphore = DispatchSemaphore(value: 0)
 DispatchQueue.global().async {
     let span2 = tracer.spanBuilder(spanName: "Main (span2)").startSpan()

@@ -51,12 +51,10 @@ final class DefaultTracerTests: XCTestCase {
     }
 
     func testTestInProcessContext() {
-        let span = defaultTracer.spanBuilder(spanName: spanName).startSpan()
-        OpenTelemetry.instance.contextProvider.setActiveSpan(span)
+        let span = defaultTracer.spanBuilder(spanName: spanName).setActive(true).startSpan()
         XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === span)
 
-        let secondSpan = defaultTracer.spanBuilder(spanName: spanName).startSpan()
-        OpenTelemetry.instance.contextProvider.setActiveSpan(secondSpan)
+        let secondSpan = defaultTracer.spanBuilder(spanName: spanName).setActive(true).startSpan()
 
         XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === secondSpan)
 
