@@ -53,9 +53,8 @@ func createSpans() {
     }
     Thread.sleep(forTimeInterval: 0.5)
     
-    let parentSpan2 = tracer.spanBuilder(spanName: "Another").setSpanKind(spanKind: .client).startSpan()
+    let parentSpan2 = tracer.spanBuilder(spanName: "Another").setSpanKind(spanKind: .client).setActive(true).startSpan()
     parentSpan2.setAttribute(key: sampleKey, value: sampleValue)
-    OpenTelemetry.instance.contextProvider.setActiveSpan(parentSpan2)
     // do more Work
     for _ in 1...3 {
         doWork()

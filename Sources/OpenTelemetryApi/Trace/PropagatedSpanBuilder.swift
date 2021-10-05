@@ -59,4 +59,9 @@ class PropagatedSpanBuilder: SpanBuilder {
     public func setAttribute(key: String, value: AttributeValue) -> Self {
         return self
     }
+
+    func setActive(_ active: Bool) -> Self {
+        return self
+    }
+
 }

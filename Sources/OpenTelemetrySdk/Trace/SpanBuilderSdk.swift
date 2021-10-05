@@ -31,6 +31,8 @@ class SpanBuilderSdk: SpanBuilder {
     private var totalNumberOfLinksAdded: Int = 0
     private var parentType: ParentType = .currentSpan
 
+    private var startAsActive: Bool = false
+
     private var startTime = Date()
 
     init(spanName: String,
@@ -98,6 +100,11 @@ class SpanBuilderSdk: SpanBuilder {
         return self
     }
 
+    @discardableResult func setActive(_ active: Bool) -> Self {
+        startAsActive = active
+        return self
+    }
+
     func startSpan() -> Span {
         var parentContext = getParentContext(parentType: parentType, explicitParent: parent, remoteParent: remoteParent)
         let traceId: TraceId
@@ -130,20 +137,24 @@ class SpanBuilderSdk: SpanBuilder {
 
         attributes.updateValues(attributes: samplingDecision.attributes)
 
-        return RecordEventsReadableSpan.startSpan(context: spanContext,
-                                                  name: spanName,
-                                                  instrumentationLibraryInfo: instrumentationLibraryInfo,
-                                                  kind: spanKind,
-                                                  parentContext: parentContext,
-                                                  hasRemoteParent: parentContext?.isRemote ?? false,
-                                                  spanLimits: spanLimits,
-                                                  spanProcessor: tracerSharedState.activeSpanProcessor,
-                                                  clock: SpanBuilderSdk.getClock(parent: SpanBuilderSdk.getParentSpan(parentType: parentType, explicitParent: parent), clock: tracerSharedState.clock),
-                                                  resource: tracerSharedState.resource,
-                                                  attributes: attributes,
-                                                  links: links,
-                                                  totalRecordedLinks: totalNumberOfLinksAdded,
-                                                  startTime: startTime)
+        let createdSpan = RecordEventsReadableSpan.startSpan(context: spanContext,
+                                                             name: spanName,
+                                                             instrumentationLibraryInfo: instrumentationLibraryInfo,
+                                                             kind: spanKind,
+                                                             parentContext: parentContext,
+                                                             hasRemoteParent: parentContext?.isRemote ?? false,
+                                                             spanLimits: spanLimits,
+                                                             spanProcessor: tracerSharedState.activeSpanProcessor,
+                                                             clock: SpanBuilderSdk.getClock(parent: SpanBuilderSdk.getParentSpan(parentType: parentType, explicitParent: parent), clock: tracerSharedState.clock),
+                                                             resource: tracerSharedState.resource,
+                                                             attributes: attributes,
+                                                             links: links,
+                                                             totalRecordedLinks: totalNumberOfLinksAdded,
+                                                             startTime: startTime)
+        if startAsActive {
+            OpenTelemetry.instance.contextProvider.setActiveSpan(createdSpan)
+        }
+        return createdSpan
     }
 
     private static func getClock(parent: Span?, clock: Clock) -> Clock {

@@ -102,6 +102,10 @@ public protocol SpanBuilder: AnyObject {
     /// - Parameter startTimestamp: the explicit start timestamp of the newly created Span in nanos since epoch.
     @discardableResult func setStartTime(time: Date) -> Self
 
+    /// Sets the Span as the active Span in the current context when started.
+    /// - Parameter active: If the span will be set as the activeSpan
+    @discardableResult func setActive(_ active: Bool) -> Self
+
     /// Starts a new Span.
     ///
     /// Users must manually call Span.end() to end this Span
