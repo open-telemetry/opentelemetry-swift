@@ -70,7 +70,7 @@ internal struct DDSpan: Encodable {
         self.spanID = spanData.spanId
         self.parentID = spanData.parentSpanId
 
-        if let type = spanData.attributes["type"] {
+        if spanData.attributes["type"] != nil {
             self.name = spanData.name
         } else {
             self.name = spanData.name + "." + spanData.kind.rawValue
