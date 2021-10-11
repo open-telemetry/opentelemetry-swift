@@ -58,7 +58,6 @@ internal class LogsExporter {
             ],
             headers: [
                 .contentTypeHeader(contentType: .applicationJSON),
-                .contentEncodingHeader(contentEncoding: .deflate),
                 .userAgentHeader(
                     appName: configuration.applicationName,
                     appVersion: configuration.version,
@@ -68,7 +67,8 @@ internal class LogsExporter {
                 .ddEVPOriginHeader(source: configuration.source),
                 .ddEVPOriginVersionHeader(version: configuration.version),
                 .ddRequestIDHeader()
-            ]
+            ] + (configuration.payloadCompression ? [RequestBuilder.HTTPHeader.contentEncodingHeader(contentEncoding: .deflate)] : [])
+
         )
 
         logsUpload = FeatureUpload(featureName: "logsUpload",

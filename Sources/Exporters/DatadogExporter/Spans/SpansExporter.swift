@@ -47,7 +47,6 @@ internal class SpansExporter {
             queryItems: [],
             headers: [
                 .contentTypeHeader(contentType: .textPlainUTF8),
-                .contentEncodingHeader(contentEncoding: .deflate),
                 .userAgentHeader(
                     appName: configuration.applicationName,
                     appVersion: configuration.version,
@@ -57,7 +56,7 @@ internal class SpansExporter {
                 .ddEVPOriginHeader(source: configuration.source),
                 .ddEVPOriginVersionHeader(version: configuration.version),
                 .ddRequestIDHeader(),
-            ]
+            ] + (configuration.payloadCompression ? [RequestBuilder.HTTPHeader.contentEncodingHeader(contentEncoding: .deflate)] : [])
         )
 
         tracesUpload = FeatureUpload(featureName: "tracesUpload",
