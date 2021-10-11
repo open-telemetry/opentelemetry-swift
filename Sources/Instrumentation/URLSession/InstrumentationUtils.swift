@@ -24,16 +24,16 @@ enum InstrumentationUtils {
         var implements = false
         if cls.instancesRespond(to: selector) {
             var methodCount: UInt32 = 0
-            let methodList = class_copyMethodList(cls, &methodCount)
-            if let methodList = methodList {
-                defer { free(methodList) }
-                if methodCount > 0 {
-                    enumerateCArray(array: methodList, count: methodCount) { _, m in
-                        let sel = method_getName(m)
-                        if sel == selector {
-                            implements = true
-                            return
-                        }
+            guard let methodList = class_copyMethodList(cls, &methodCount) else {
+                return
+            }
+            defer { free(methodList) }
+            if methodCount > 0 {
+                enumerateCArray(array: methodList, count: methodCount) { _, m in
+                    let sel = method_getName(m)
+                    if sel == selector {
+                        implements = true
+                        return
                     }
                 }
             }
