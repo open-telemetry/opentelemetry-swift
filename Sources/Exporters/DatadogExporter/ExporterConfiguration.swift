@@ -22,6 +22,8 @@ public struct ExporterConfiguration {
     var apiKey: String
     /// Endpoint that will be used for reporting.
     var endpoint: Endpoint
+    /// Exporter will deflate payloads before sending
+    var payloadCompression: Bool
 
     var source: String
     /// This conditon will be evaluated before trying to upload data
@@ -38,7 +40,7 @@ public struct ExporterConfiguration {
     /// Option to add a custom prefix to all the metrics sent by the exporter
     var metricsNamePrefix: String?
 
-    public init(serviceName: String, resource: String, applicationName: String, applicationVersion: String, environment: String, apiKey: String, endpoint: Endpoint, source: String = "ios", uploadCondition: @escaping () -> Bool, performancePreset: PerformancePreset = .default, exportUnsampledSpans: Bool = true, exportUnsampledLogs: Bool = true, hostName: String? = nil, metricsNamePrefix: String? = "otel") {
+    public init(serviceName: String, resource: String, applicationName: String, applicationVersion: String, environment: String, apiKey: String, endpoint: Endpoint, payloadCompression: Bool = true, source: String = "ios", uploadCondition: @escaping () -> Bool, performancePreset: PerformancePreset = .default, exportUnsampledSpans: Bool = true, exportUnsampledLogs: Bool = true, hostName: String? = nil, metricsNamePrefix: String? = "otel") {
         self.serviceName = serviceName
         self.resource = resource
         self.applicationName = applicationName
@@ -46,6 +48,7 @@ public struct ExporterConfiguration {
         self.environment = environment
         self.apiKey = apiKey
         self.endpoint = endpoint
+        self.payloadCompression = payloadCompression
         self.source = source
         self.uploadCondition = uploadCondition
         self.performancePreset = performancePreset
