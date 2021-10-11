@@ -17,8 +17,12 @@ func addressesFor(host: String, port: Int) throws -> [sockaddr_storage] {
     guard err == 0, let start = addrList else {
         throw NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotFindHost, userInfo: nil)
     }
-    defer { free(addrList) }
-    return sequence(first: start, next: { $0.pointee.ai_next }).map { (addr) -> sockaddr_storage in
+    defer {
+        if let addrList = addrList {
+            free(addrList)
+        }
+    }
+    return sequence(first: start, next: { $0.pointee.ai_next }).map { addr -> sockaddr_storage in
         sockaddr_storage(sa: addr.pointee.ai_addr, saLen: addr.pointee.ai_addrlen)
     }
 }
