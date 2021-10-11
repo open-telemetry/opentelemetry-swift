@@ -25,7 +25,7 @@ enum InstrumentationUtils {
         if cls.instancesRespond(to: selector) {
             var methodCount: UInt32 = 0
             guard let methodList = class_copyMethodList(cls, &methodCount) else {
-                return
+                return implements
             }
             defer { free(methodList) }
             if methodCount > 0 {
