@@ -24,7 +24,7 @@ internal struct MetricUtils: Encodable {
         switch metric.aggregationType {
         case .doubleSum, .intSum:
             return countType
-        case .doubleSummary, .intSummary, .intGauge, .doubleGauge:
+        case .doubleSummary, .intSummary, .intGauge, .doubleGauge, .doubleHistogram, .intHistogram:
             return gaugeType
         }
     }

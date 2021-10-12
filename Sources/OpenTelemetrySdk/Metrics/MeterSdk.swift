@@ -19,6 +19,8 @@ class MeterSdk: Meter {
     var doubleCounters = [String: CounterMetricSdk<Double>]()
     var intMeasures = [String: MeasureMetricSdk<Int>]()
     var doubleMeasures = [String: MeasureMetricSdk<Double>]()
+    var intHistogram = [String: HistogramMetricSdk<Int>]()
+    var doubleHistogram = [String: HistogramMetricSdk<Double>]()
     var intObservers = [String: IntObserverMetricSdk]()
     var doubleObservers = [String: DoubleObserverMetricSdk]()
 
@@ -127,6 +129,36 @@ class MeterSdk: Meter {
                 let metricName = measure.key
                 let measureInstrument = measure.value
                 var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.doubleSummary, resource: resource, instrumentationLibraryInfo: instrumentationLibraryInfo)
+                measureInstrument.boundInstruments.forEach { boundInstrument in
+                    let labelSet = boundInstrument.key
+                    let aggregator = boundInstrument.value.getAggregator()
+                    aggregator.checkpoint()
+                    var metricData = aggregator.toMetricData()
+                    metricData.labels = labelSet.labels
+                    metric.data.append(metricData)
+                }
+                metricProcessor.process(metric: metric)
+            }
+            
+            intHistogram.forEach { histogram in
+                let metricName = histogram.key
+                let measureInstrument = histogram.value
+                var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.intHistogram, resource: resource, instrumentationLibraryInfo: instrumentationLibraryInfo)
+                measureInstrument.boundInstruments.forEach { boundInstrument in
+                    let labelSet = boundInstrument.key
+                    let aggregator = boundInstrument.value.getAggregator()
+                    aggregator.checkpoint()
+                    var metricData = aggregator.toMetricData()
+                    metricData.labels = labelSet.labels
+                    metric.data.append(metricData)
+                }
+                metricProcessor.process(metric: metric)
+            }
+            
+            doubleHistogram.forEach { histogram in
+                let metricName = histogram.key
+                let measureInstrument = histogram.value
+                var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.doubleHistogram, resource: resource, instrumentationLibraryInfo: instrumentationLibraryInfo)
                 measureInstrument.boundInstruments.forEach { boundInstrument in
                     let labelSet = boundInstrument.key
                     let aggregator = boundInstrument.value.getAggregator()
@@ -280,6 +312,29 @@ class MeterSdk: Meter {
         }
         return AnyMeasureMetric<Double>(measure!)
     }
+    
+    func createIntHistogram(name: String, explicitBoundaries: Array<Int>? = nil, absolute: Bool) -> AnyHistogramMetric<Int> {
+        var histogram = intHistogram[name]
+        if histogram == nil {
+            histogram = HistogramMetricSdk<Int>(name: name, explicitBoundaries: explicitBoundaries)
+            collectLock.withLockVoid {
+                intHistogram[name] = histogram!
+            }
+        }
+        return AnyHistogramMetric<Int>(histogram!)
+    }
+    
+    func createDoubleHistogram(name: String, explicitBoundaries: Array<Double>? = nil, absolute: Bool) -> AnyHistogramMetric<Double> {
+        var histogram = doubleHistogram[name]
+        if histogram == nil {
+            histogram = HistogramMetricSdk<Double>(name: name, explicitBoundaries: explicitBoundaries)
+            collectLock.withLockVoid {
+                doubleHistogram[name] = histogram!
+            }
+        }
+        return AnyHistogramMetric<Double>(histogram!)
+    }
+    
 
     func createIntObserver(name: String, absolute _: Bool, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric {
         var observer = intObservers[name]

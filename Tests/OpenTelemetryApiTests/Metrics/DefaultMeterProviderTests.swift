@@ -80,6 +80,14 @@ class TestNoopMeter: Meter {
     func createDoubleMeasure(name _: String, absolute _: Bool) -> AnyMeasureMetric<Double> {
         return AnyMeasureMetric<Double>(NoopMeasureMetric<Double>())
     }
+    
+    func createIntHistogram(name: String, explicitBoundaries: Array<Int>? = nil, absolute: Bool) -> AnyHistogramMetric<Int> {
+        return AnyHistogramMetric<Int>(NoopHistogramMetric<Int>())
+    }
+    
+    func createDoubleHistogram(name: String, explicitBoundaries: Array<Double>? = nil, absolute: Bool) -> AnyHistogramMetric<Double> {
+        return AnyHistogramMetric<Double>(NoopHistogramMetric<Double>())
+    }
 
     func createIntObserver(name _: String, absolute _: Bool, callback _: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric {
         return NoopIntObserverMetric()

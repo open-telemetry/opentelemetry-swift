@@ -28,6 +28,14 @@ public struct ProxyMeter: Meter {
     public func createDoubleMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Double> {
         return realMeter?.createDoubleMeasure(name: name, absolute: absolute) ?? AnyMeasureMetric<Double>(NoopMeasureMetric<Double>())
     }
+    
+    public func createIntHistogram(name: String, explicitBoundaries: Array<Int>? = nil, absolute: Bool) -> AnyHistogramMetric<Int> {
+        return realMeter?.createIntHistogram(name: name, explicitBoundaries: explicitBoundaries, absolute: absolute) ?? AnyHistogramMetric<Int>(NoopHistogramMetric<Int>())
+    }
+    
+    public func createDoubleHistogram(name: String, explicitBoundaries: Array<Double>?, absolute: Bool) -> AnyHistogramMetric<Double> {
+        return realMeter?.createDoubleHistogram(name: name, explicitBoundaries: explicitBoundaries, absolute: absolute) ?? AnyHistogramMetric<Double>(NoopHistogramMetric<Double>())
+    }
 
     public func createIntObservableGauge(name: String, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric {
         return realMeter?.createIntObservableGauge(name: name, callback: callback) ?? NoopIntObserverMetric()

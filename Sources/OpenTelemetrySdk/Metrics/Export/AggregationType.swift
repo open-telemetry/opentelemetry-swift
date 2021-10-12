@@ -12,4 +12,6 @@ public enum AggregationType {
     case intSum
     case doubleSummary
     case intSummary
+    case doubleHistogram
+    case intHistogram
 }
