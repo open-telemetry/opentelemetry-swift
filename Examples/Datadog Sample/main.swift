@@ -13,6 +13,9 @@ import UIKit
 
 let apikeyOrClientToken = ""
 
+let resourceKey = "resource.name"
+let resourceValue = "The resource"
+
 let sampleKey = "sampleKey"
 let sampleValue = "sampleValue"
 
@@ -60,7 +63,7 @@ func testTraces() {
 
 func simpleSpan() {
     let span = tracer.spanBuilder(spanName: "SimpleSpan").setSpanKind(spanKind: .client).startSpan()
-    span.setAttribute(key: sampleKey, value: sampleValue)
+    span.setAttribute(key: resourceKey, value: resourceValue)
     span.addEvent(name: "My event", attributes: ["message": AttributeValue.string("test message"),
                                                  "newKey": AttributeValue.string("New Value")])
     span.end()

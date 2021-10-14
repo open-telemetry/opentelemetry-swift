@@ -57,8 +57,8 @@ internal struct DDSpan: Encodable {
     /// Custom tags, received from user
     let tags: [String: AttributeValue]
 
-    static let errorTagKeys: Set<String> = [
-        "error.message", "error.type", "error.stack",
+    static let filteredTagKeys: Set<String> = [
+        "error.message", "error.type", "error.stack", "resource.name"
     ]
 
     func encode(to encoder: Encoder) throws {
@@ -77,7 +77,7 @@ internal struct DDSpan: Encodable {
         }
 
         self.serviceName = configuration.serviceName
-        self.resource = spanData.name
+        self.resource = spanData.attributes["resource.name"]?.description ?? spanData.name
         self.startTime = spanData.startTime.timeIntervalSince1970.toNanoseconds
         self.duration = spanData.endTime.timeIntervalSince(spanData.startTime).toNanoseconds
 
@@ -99,7 +99,7 @@ internal struct DDSpan: Encodable {
 
         self.applicationVersion = configuration.version
         self.tags = spanData.attributes.filter {
-            !DDSpan.errorTagKeys.contains($0.key)
+            !DDSpan.filteredTagKeys.contains($0.key)
         }.mapValues { $0 }
     }
 }
