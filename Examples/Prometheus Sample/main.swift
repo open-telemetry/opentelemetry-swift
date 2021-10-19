@@ -37,6 +37,9 @@ var meter = meterProvider.get(instrumentationName: "MyMeter")
 var testCounter = meter.createIntCounter(name: "MyCounter")
 var testMeasure = meter.createIntMeasure(name: "MyMeasure")
 
+let boundaries: Array<Int> = [5, 10, 25]
+var testHistogram = meter.createIntHistogram(name: "MyHistogram", explicitBoundaries: boundaries, absolute: true)
+
 var testObserver = meter.createIntObserver(name: "MyObservation") { observer in
     var taskInfo = mach_task_basic_info()
     var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
@@ -60,6 +63,11 @@ while counter < 3000 {
     testMeasure.record(value: 500, labelset: meter.getLabelSet(labels: labels1))
     testMeasure.record(value: 5, labelset: meter.getLabelSet(labels: labels1))
     testMeasure.record(value: 750, labelset: meter.getLabelSet(labels: labels1))
+
+    testHistogram.record(value: 8, labelset: meter.getLabelSet(labels: labels1))
+    testHistogram.record(value: 20, labelset: meter.getLabelSet(labels: labels1))
+    testHistogram.record(value: 30, labelset: meter.getLabelSet(labels: labels1))
+
     counter += 1
     sleep(1)
 }
