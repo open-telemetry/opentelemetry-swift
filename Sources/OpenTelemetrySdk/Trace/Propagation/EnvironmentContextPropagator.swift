@@ -11,8 +11,8 @@ import OpenTelemetryApi
  */
 
 public struct EnvironmentContextPropagator: TextMapPropagator {
-    static let traceParent = "OTEL_TRACE_PARENT"
-    static let traceState = "OTEL_TRACE_STATE"
+    static let traceParent = "TRACEPARENT"
+    static let traceState = "TRACESTATE"
     let w3cPropagator = W3CTraceContextPropagator()
 
     public let fields: Set<String> = [traceState, traceParent]
