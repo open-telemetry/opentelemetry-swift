@@ -9,10 +9,12 @@ import OpenTelemetryApi
 public class TracerProviderSdk: TracerProvider {
     private var tracerProvider = [InstrumentationLibraryInfo: TracerSdk]()
     internal var sharedState: TracerSharedState
+    internal var textFormat: TextMapPropagator
     internal static let emptyName = "unknown"
 
     /// Returns a new TracerProviderSdk with default Clock, IdGenerator and Resource.
-    public init(clock: Clock = MillisClock(),
+    public init(textFormat : TextMapPropagator = W3CTraceContextPropagator(),
+                clock: Clock = MillisClock(),
                 idGenerator: IdGenerator = RandomIdGenerator(),
                 resource: Resource = EnvVarResource.resource,
                 spanLimits: SpanLimits = SpanLimits(),
@@ -25,6 +27,7 @@ public class TracerProviderSdk: TracerProvider {
                                         spanLimits: spanLimits,
                                         sampler: sampler,
                                         spanProcessors: spanProcessors)
+        self.textFormat = textFormat
     }
 
     public func get(instrumentationName: String, instrumentationVersion: String? = nil) -> Tracer {
@@ -49,7 +52,7 @@ public class TracerProviderSdk: TracerProvider {
                 // A different thread already added the named Tracer, just reuse.
                 return tracer
             }
-            let tracer = TracerSdk(sharedState: sharedState, instrumentationLibraryInfo: instrumentationLibraryInfo)
+            let tracer = TracerSdk(sharedState: sharedState, instrumentationLibraryInfo: instrumentationLibraryInfo, textFormat: self.textFormat)
             tracerProvider[instrumentationLibraryInfo] = tracer
             return tracer
         }

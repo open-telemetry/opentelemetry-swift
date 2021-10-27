@@ -7,6 +7,7 @@ import Foundation
 import OpenTelemetryApi
 
 public class TracerProviderBuilder {
+    public private(set) var textFormat : TextMapPropagator = W3CTraceContextPropagator()
     public private(set) var clock : Clock = MillisClock()
     public private(set) var idGenerator : IdGenerator = RandomIdGenerator()
     public private(set) var resource : Resource = Resource()
@@ -15,6 +16,11 @@ public class TracerProviderBuilder {
     public private(set) var spanProcessors : [SpanProcessor] = []
 
     public init() {}
+
+    public func with(textFormat: TextMapPropagator) -> Self {
+        self.textFormat = textFormat
+        return self
+    }
 
     public func with(clock: Clock) -> Self {
         self.clock = clock
@@ -51,6 +57,6 @@ public class TracerProviderBuilder {
     }
 
     public func build() -> TracerProviderSdk {
-        return TracerProviderSdk(clock: clock, idGenerator: idGenerator, resource: resource, spanLimits: spanLimits, sampler: sampler, spanProcessors: spanProcessors)
+        return TracerProviderSdk(textFormat: textFormat, clock: clock, idGenerator: idGenerator, resource: resource, spanLimits: spanLimits, sampler: sampler, spanProcessors: spanProcessors)
     }
 }
