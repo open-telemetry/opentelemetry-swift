@@ -238,7 +238,7 @@ class SpanBuilderSdkTest: XCTestCase {
     }
 
     func testParentEnvironmentContext() {
-        setenv("OTEL_TRACE_PARENT", "00-ff000000000000000000000000000041-ff00000000000041-01", 1)
+        setenv("TRACEPARENT", "00-ff000000000000000000000000000041-ff00000000000041-01", 1)
         let providerWithEnv = TracerProviderSdk()
         let tracerAux = providerWithEnv.get(instrumentationName: "SpanBuilderWithEnvTest")
         let parent = tracerAux.spanBuilder(spanName: spanName).setNoParent().setActive(true).startSpan()
@@ -247,7 +247,7 @@ class SpanBuilderSdkTest: XCTestCase {
         XCTAssertEqual(parent.context.traceId.hexString, "ff000000000000000000000000000041")
         span.end()
         parent.end()
-        unsetenv("OTEL_TRACE_PARENT")
+        unsetenv("TRACEPARENT")
     }
 
     func testParent_timestampConverter() {

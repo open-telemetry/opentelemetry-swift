@@ -8,7 +8,7 @@ import OpenTelemetryApi
 
 /// Provides a framework for detection of resource information from the environment variable "OC_RESOURCE_LABELS".
 public struct EnvVarResource {
-    private static let otelResourceAttributesEnv = "OTEL_RESOURCE_ATTRIBUTES_ENV"
+    private static let otelResourceAttributesEnv = "OTEL_RESOURCE_ATTRIBUTES"
     private static let labelListSplitter = Character(",")
     private static let labelKeyValueSplitter = Character("=")
 
