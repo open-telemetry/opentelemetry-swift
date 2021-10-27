@@ -21,6 +21,8 @@ struct ZipkinConversionExtension {
     static var localEndpointCache = [String: ZipkinEndpoint]()
     static var remoteEndpointCache = [String: ZipkinEndpoint]()
 
+    static let defaultServiceName = "unknown_service:" + ProcessInfo.processInfo.processName
+
     struct AttributeEnumerationState {
         var tags = [String: String]()
         var RemoteEndpointServiceName: String?
@@ -44,10 +46,12 @@ struct ZipkinConversionExtension {
 
         var localEndpoint = defaultLocalEndpoint
 
-        if let serviceName = attributeEnumerationState.serviceName, !serviceName.isEmpty {
+        if let serviceName = attributeEnumerationState.serviceName, !serviceName.isEmpty && !defaultServiceName.elementsEqual(serviceName) {
             if localEndpointCache[serviceName] == nil {
                 localEndpoint = defaultLocalEndpoint.clone(serviceName: serviceName)
                 localEndpointCache[serviceName] = localEndpoint
+            } else {
+                localEndpoint = localEndpointCache[serviceName]
             }
         }
 
