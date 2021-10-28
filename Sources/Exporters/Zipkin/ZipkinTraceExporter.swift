@@ -12,7 +12,7 @@ public class ZipkinTraceExporter: SpanExporter {
 
     public init(options: ZipkinTraceExporterOptions) {
         self.options = options
-        localEndPoint = ZipkinTraceExporter.getLocalZipkinEndpoint(name: "Open Telemetry Exporter")
+        localEndPoint = ZipkinTraceExporter.getLocalZipkinEndpoint(name: options.serviceName)
     }
 
     public func export(spans: [SpanData]) -> SpanExporterResultCode {
