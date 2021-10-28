@@ -242,7 +242,11 @@ public class URLSessionInstrumentation {
 
                 if let request = argument as? URLRequest, objc_getAssociatedObject(argument, &idKey) == nil {
                     let instrumentedRequest = URLSessionLogger.processAndLogRequest(request, sessionTaskId: sessionTaskId, instrumentation: self, shouldInjectHeaders: true)
-                    task = castedIMP(session, selector, instrumentedRequest ?? request, completionBlock)
+                    if let instrumentedRequest = instrumentedRequest {
+                        task = castedIMP(session, selector, instrumentedRequest, completionBlock)
+                    } else {
+                        task = castedIMP(session, selector, request, completion)
+                    }
                 } else {
                     task = castedIMP(session, selector, argument, completionBlock)
                     if objc_getAssociatedObject(argument, &idKey) == nil,
@@ -479,57 +483,53 @@ public class URLSessionInstrumentation {
     private func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
         guard configuration.shouldRecordPayload?(session) ?? false else { return }
         let dataCopy = data
-        queue.async {
-            let taskId = self.idKeyForTask(dataTask)
-            if (self.requestMap[taskId]?.request) != nil {
-                self.createRequestState(for: taskId)
-                if self.requestMap[taskId]?.dataProcessed == nil {
-                    self.requestMap[taskId]?.dataProcessed = Data()
+        let taskId = self.idKeyForTask(dataTask)
+        queue.sync {
+            if (requestMap[taskId]?.request) != nil {
+                createRequestState(for: taskId)
+                if requestMap[taskId]?.dataProcessed == nil {
+                    requestMap[taskId]?.dataProcessed = Data()
                 }
-                self.requestMap[taskId]?.dataProcessed?.append(dataCopy)
+                requestMap[taskId]?.dataProcessed?.append(dataCopy)
             }
         }
     }
 
     private func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
         guard configuration.shouldRecordPayload?(session) ?? false else { return }
-        queue.async {
-            let taskId = self.idKeyForTask(dataTask)
-            if (self.requestMap[taskId]?.request) != nil {
-                self.createRequestState(for: taskId)
+        let taskId = self.idKeyForTask(dataTask)
+        queue.sync {
+            if (requestMap[taskId]?.request) != nil {
+                createRequestState(for: taskId)
                 if response.expectedContentLength < 0 {
-                    self.requestMap[taskId]?.dataProcessed = Data()
+                    requestMap[taskId]?.dataProcessed = Data()
                 } else {
-                    self.requestMap[taskId]?.dataProcessed = Data(capacity: Int(response.expectedContentLength))
+                    requestMap[taskId]?.dataProcessed = Data(capacity: Int(response.expectedContentLength))
                 }
             }
         }
     }
 
     private func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        let taskId = self.idKeyForTask(task)
+        var requestState: NetworkRequestState?
         queue.sync {
-            let taskId = self.idKeyForTask(task)
-
-            let requestState = self.requestMap[taskId]
-
-            if let error = error {
-                let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
-                URLSessionLogger.logError(error, dataOrFile: requestState?.dataProcessed, statusCode: status, instrumentation: self, sessionTaskId: taskId)
-            } else if let response = task.response {
-                URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed, instrumentation: self, sessionTaskId: taskId)
-            }
-
+            requestState = requestMap[taskId]
             if requestState != nil {
-                self.requestMap[taskId] = nil
+                requestMap[taskId] = nil
             }
+        }
+        if let error = error {
+            let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
+            URLSessionLogger.logError(error, dataOrFile: requestState?.dataProcessed, statusCode: status, instrumentation: self, sessionTaskId: taskId)
+        } else if let response = task.response {
+            URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed, instrumentation: self, sessionTaskId: taskId)
         }
     }
 
     private func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didBecome downloadTask: URLSessionDownloadTask) {
-        queue.async {
-            let id = self.idKeyForTask(dataTask)
-            self.setIdKey(value: id, for: downloadTask)
-        }
+        let id = self.idKeyForTask(dataTask)
+        self.setIdKey(value: id, for: downloadTask)
     }
 
     private func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
@@ -540,13 +540,11 @@ public class URLSessionInstrumentation {
     }
 
     private func urlSessionTaskWillResume(_ session: URLSessionTask) {
-        queue.sync {
-            let taskId = self.idKeyForTask(session)
-            if let request = session.currentRequest {
-                var state = requestMap[taskId]
-                if state == nil {
-                    state = NetworkRequestState()
-                    requestMap[taskId] = state
+        let taskId = self.idKeyForTask(session)
+        if let request = session.currentRequest {
+            queue.sync {
+                if requestMap[taskId] == nil {
+                    requestMap[taskId] = NetworkRequestState()
                 }
                 requestMap[taskId]?.setRequest(request)
             }

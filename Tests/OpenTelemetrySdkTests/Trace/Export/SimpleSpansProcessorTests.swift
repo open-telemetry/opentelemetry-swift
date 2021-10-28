@@ -34,6 +34,7 @@ class SimpleSpansProcessorTests: XCTestCase {
         readableSpan.forcedReturnSpanContext = sampledSpanContext
         readableSpan.forcedReturnSpanData = spanData
         simpleSampledSpansProcessor.onEnd(span: readableSpan)
+        simpleSampledSpansProcessor.forceFlush()
         XCTAssertEqual(spanExporter.exportCalledTimes, 1)
     }
 
@@ -56,6 +57,7 @@ class SimpleSpansProcessorTests: XCTestCase {
         readableSpan.forcedReturnSpanData = TestUtils.makeBasicSpan()
         var simpleSpansProcessor = SimpleSpanProcessor(spanExporter: spanExporter).reportingOnlySampled(sampled: true)
         simpleSpansProcessor.onEnd(span: readableSpan)
+        simpleSpansProcessor.forceFlush()
         XCTAssertEqual(spanExporter.exportCalledTimes, 1)
     }
 
@@ -106,6 +108,7 @@ class SimpleSpansProcessorTests: XCTestCase {
         simpleSampledSpansProcessor.onEnd(span: readableSpan)
         // Try again, now will no longer return error.
         simpleSampledSpansProcessor.onEnd(span: readableSpan)
+        simpleSampledSpansProcessor.forceFlush()
         XCTAssertEqual(spanExporter.exportCalledTimes, 2)
     }
 

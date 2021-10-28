@@ -5,30 +5,35 @@
 
 import Foundation
 
+@testable import OpenTelemetryApi
 @testable import OpenTelemetryProtocolExporter
 @testable import OpenTelemetrySdk
-@testable import OpenTelemetryApi
 import XCTest
 
 final class OtlpTraceJsonExporterTests: XCTestCase {
-    
     // MARK: - Variable Declaration
+
     private var tracerSdkFactory = TracerProviderSdk()
+    private var spanProcessor: SpanProcessor!
     private var tracer: Tracer!
     private var exporter: OtlpTraceJsonExporter!
     
     // MARK: - setUp()
+
     override func setUp() {
         exporter = OtlpTraceJsonExporter()
-        tracerSdkFactory.addSpanProcessor(SimpleSpanProcessor(spanExporter: exporter))
+        spanProcessor = SimpleSpanProcessor(spanExporter: exporter)
+        tracerSdkFactory.addSpanProcessor(spanProcessor)
         tracer = tracerSdkFactory.get(instrumentationName: "OtlpTraceJsonExporterTests")
     }
     
     // MARK: - Unit Tests
+
     func testGetExportedSpans() {
         tracer.spanBuilder(spanName: "one").startSpan().end()
         tracer.spanBuilder(spanName: "two").startSpan().end()
         tracer.spanBuilder(spanName: "three").startSpan().end()
+        spanProcessor.forceFlush()
         
         let spans = exporter.getExportedSpans()
         XCTAssertEqual(spans.count, 3)
@@ -36,19 +41,18 @@ final class OtlpTraceJsonExporterTests: XCTestCase {
         let firstSpan = spans[0].resourceSpans?[0].instrumentationLibrarySpans?[0].spans
         XCTAssertEqual(firstSpan?[0].name, "one")
         
-        
         let secondSpan = spans[1].resourceSpans?[0].instrumentationLibrarySpans?[0].spans
         XCTAssertEqual(secondSpan?[0].name, "two")
         
         let thirdSpan = spans[2].resourceSpans?[0].instrumentationLibrarySpans?[0].spans
         XCTAssertEqual(thirdSpan?[0].name, "three")
-        
     }
     
     func testResetClearsFinishedSpans() {
         tracer.spanBuilder(spanName: "one").startSpan().end()
         tracer.spanBuilder(spanName: "two").startSpan().end()
         tracer.spanBuilder(spanName: "three").startSpan().end()
+        spanProcessor.forceFlush()
         
         var spans = exporter.getExportedSpans()
         XCTAssertEqual(spans.count, 3)
@@ -60,6 +64,7 @@ final class OtlpTraceJsonExporterTests: XCTestCase {
     
     func testResetDoesNotRestartAfterShutdown() {
         tracer.spanBuilder(spanName: "one").startSpan().end()
+        spanProcessor.forceFlush()
         
         exporter.shutdown()
         exporter.reset()
@@ -71,7 +76,8 @@ final class OtlpTraceJsonExporterTests: XCTestCase {
         tracer.spanBuilder(spanName: "one").startSpan().end()
         tracer.spanBuilder(spanName: "two").startSpan().end()
         tracer.spanBuilder(spanName: "three").startSpan().end()
-        
+        spanProcessor.forceFlush()
+
         exporter.shutdown()
         
         let traces = exporter.getExportedSpans()
@@ -82,9 +88,11 @@ final class OtlpTraceJsonExporterTests: XCTestCase {
         tracer.spanBuilder(spanName: "one").startSpan().end()
         tracer.spanBuilder(spanName: "two").startSpan().end()
         tracer.spanBuilder(spanName: "three").startSpan().end()
-        
+        spanProcessor.forceFlush()
+
         exporter.shutdown()
         tracer.spanBuilder(spanName: "four").startSpan().end()
+        spanProcessor.forceFlush()
         
         let spans = exporter.getExportedSpans()
         XCTAssertEqual(spans.count, 0)

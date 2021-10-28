@@ -9,29 +9,36 @@ import OpenTelemetryApi
 /// An implementation of the SpanProcessor that converts the ReadableSpan SpanData
 ///  and passes it to the configured exporter.
 public struct SimpleSpanProcessor: SpanProcessor {
-    private var spanExporter: SpanExporter
+    private let spanExporter: SpanExporter
     private var sampled: Bool = true
+    private let processorQueue = DispatchQueue(label: "io.opentelemetry.simplespanprocessor")
 
     public let isStartRequired = false
     public let isEndRequired = true
-    
-    public func onStart(parentContext: SpanContext?, span: ReadableSpan) {
-    }
+
+    public func onStart(parentContext: SpanContext?, span: ReadableSpan) {}
 
     public mutating func onEnd(span: ReadableSpan) {
-        if sampled && !span.context.traceFlags.sampled {
+        if sampled, !span.context.traceFlags.sampled {
             return
         }
         let span = span.toSpanData()
-        spanExporter.export(spans: [span])
+        let spanExporterAux = self.spanExporter
+        processorQueue.async {
+            spanExporterAux.export(spans: [span])
+        }
     }
 
     public func shutdown() {
-        spanExporter.shutdown()
+        processorQueue.sync {
+            spanExporter.shutdown()
+        }
     }
 
     public func forceFlush() {
-        _ = spanExporter.flush()
+        processorQueue.sync {
+            _ = spanExporter.flush()
+        }
     }
 
     /// Returns a new SimpleSpansProcessor that converts spans to proto and forwards them to
