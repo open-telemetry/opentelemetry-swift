@@ -30,10 +30,6 @@ class TracerSdkTests: XCTestCase {
         XCTAssertTrue(tracer.spanBuilder(spanName: spanName) is SpanBuilderSdk)
     }
 
-    func testDefaultTextMapPropagator() {
-        XCTAssertTrue(tracer.textFormat is W3CTraceContextPropagator)
-    }
-
     func testGetCurrentSpan() {
         XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
         // Make sure context is detached even if test fails.
