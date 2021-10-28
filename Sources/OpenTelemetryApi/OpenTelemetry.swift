@@ -45,6 +45,10 @@ public struct OpenTelemetry {
         instance.baggageManager = baggageManager
     }
 
+    public static func registerPropagators(textPropagators: [TextMapPropagator], baggagePropagator: TextMapBaggagePropagator) {
+        instance.propagators = DefaultContextPropagators(textPropagators: textPropagators, baggagePropagator: baggagePropagator)
+    }
+
     public static func registerContextManager(contextManager: ContextManager) {
         instance.contextProvider.contextManager = contextManager
     }
