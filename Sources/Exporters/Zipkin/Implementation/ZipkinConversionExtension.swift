@@ -46,13 +46,11 @@ struct ZipkinConversionExtension {
 
         var localEndpoint = defaultLocalEndpoint
 
-        if let serviceName = attributeEnumerationState.serviceName, !serviceName.isEmpty && !defaultServiceName.elementsEqual(serviceName) {
+        if let serviceName = attributeEnumerationState.serviceName, !serviceName.isEmpty, defaultServiceName != serviceName {
             if localEndpointCache[serviceName] == nil {
-                localEndpoint = defaultLocalEndpoint.clone(serviceName: serviceName)
-                localEndpointCache[serviceName] = localEndpoint
-            } else {
-                localEndpoint = localEndpointCache[serviceName]
+                localEndpointCache[serviceName] = defaultLocalEndpoint.clone(serviceName: serviceName)
             }
+            localEndpoint = localEndpointCache[serviceName] ?? localEndpoint
         }
 
         if let serviceNamespace = attributeEnumerationState.serviceNamespace, !serviceNamespace.isEmpty {
