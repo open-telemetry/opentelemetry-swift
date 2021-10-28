@@ -16,4 +16,4 @@ jobs:
         curl -Os https://uploader.codecov.io/latest/macos/codecov
         chmod +x codecov
         xcrun llvm-cov export -format="lcov" .build/debug/opentelemetry-swiftPackageTests.xctest/Contents/MacOS/opentelemetry-swiftPackageTests -instr-profile .build/debug/codecov/default.profdata > .build/debug/codecov/coverage_report.lcov
-        ./codecov -f .build/debug/codecov/
+        ./codecov -f .build/debug/codecov/coverage_report.lcov
