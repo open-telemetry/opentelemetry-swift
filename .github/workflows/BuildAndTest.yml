@@ -1,6 +1,6 @@
 name: Build and Test
 
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
   build:
@@ -15,5 +15,5 @@ jobs:
       run: |
         curl -Os https://uploader.codecov.io/latest/macos/codecov
         chmod +x codecov
-        codecovpath=$(swift test --show-codecov-path)
-        ./codecov -f $codecovpath
+        xcrun llvm-cov export -format="lcov" .build/debug/opentelemetry-swiftPackageTests.xctest/Contents/MacOS/opentelemetry-swiftPackageTests -instr-profile .build/debug/codecov/default.profdata > .build/debug/codecov/coverage_report.lcov
+        ./codecov -f .build/debug/codecov/coverage_report.lcov
