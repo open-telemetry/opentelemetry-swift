@@ -242,11 +242,7 @@ public class URLSessionInstrumentation {
 
                 if let request = argument as? URLRequest, objc_getAssociatedObject(argument, &idKey) == nil {
                     let instrumentedRequest = URLSessionLogger.processAndLogRequest(request, sessionTaskId: sessionTaskId, instrumentation: self, shouldInjectHeaders: true)
-                    if let instrumentedRequest = instrumentedRequest {
-                        task = castedIMP(session, selector, instrumentedRequest, completionBlock)
-                    } else {
-                        task = castedIMP(session, selector, request, completion)
-                    }
+                        task = castedIMP(session, selector, instrumentedRequest ?? request, completionBlock)
                 } else {
                     task = castedIMP(session, selector, argument, completionBlock)
                     if objc_getAssociatedObject(argument, &idKey) == nil,
