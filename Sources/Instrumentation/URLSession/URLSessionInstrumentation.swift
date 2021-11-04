@@ -114,7 +114,6 @@ public class URLSessionInstrumentation {
                 return
             }
             var originalIMP: IMP?
-            let sessionTaskId = UUID().uuidString
 
             let block: @convention(block) (URLSession, AnyObject) -> URLSessionTask = { session, argument in
                 if let url = argument as? URL {
@@ -130,6 +129,7 @@ public class URLSessionInstrumentation {
 
                 let castedIMP = unsafeBitCast(originalIMP, to: (@convention(c) (URLSession, Selector, Any) -> URLSessionDataTask).self)
                 var task: URLSessionTask
+                let sessionTaskId = UUID().uuidString
 
                 if let request = argument as? URLRequest, objc_getAssociatedObject(argument, &idKey) == nil {
                     let instrumentedRequest = URLSessionLogger.processAndLogRequest(request, sessionTaskId: sessionTaskId, instrumentation: self, shouldInjectHeaders: true)
@@ -161,9 +161,9 @@ public class URLSessionInstrumentation {
                 return
             }
             var originalIMP: IMP?
-            let sessionTaskId = UUID().uuidString
 
             let block: @convention(block) (URLSession, URLRequest, AnyObject) -> URLSessionTask = { session, request, argument in
+                let sessionTaskId = UUID().uuidString
                 let castedIMP = unsafeBitCast(originalIMP, to: (@convention(c) (URLSession, Selector, URLRequest, AnyObject) -> URLSessionDataTask).self)
                 let instrumentedRequest = URLSessionLogger.processAndLogRequest(request, sessionTaskId: sessionTaskId, instrumentation: self, shouldInjectHeaders: true)
                 let task = castedIMP(session, selector, instrumentedRequest ?? request, argument)
@@ -190,7 +190,6 @@ public class URLSessionInstrumentation {
                 return
             }
             var originalIMP: IMP?
-            let sessionTaskId = UUID().uuidString
 
             let block: @convention(block) (URLSession, AnyObject, ((Any?, URLResponse?, Error?) -> Void)?) -> URLSessionTask = { session, argument, completion in
 
@@ -216,6 +215,7 @@ public class URLSessionInstrumentation {
 
                 let castedIMP = unsafeBitCast(originalIMP, to: (@convention(c) (URLSession, Selector, Any, ((Any?, URLResponse?, Error?) -> Void)?) -> URLSessionDataTask).self)
                 var task: URLSessionTask!
+                let sessionTaskId = UUID().uuidString
 
                 var completionBlock = completion
 
@@ -242,11 +242,7 @@ public class URLSessionInstrumentation {
 
                 if let request = argument as? URLRequest, objc_getAssociatedObject(argument, &idKey) == nil {
                     let instrumentedRequest = URLSessionLogger.processAndLogRequest(request, sessionTaskId: sessionTaskId, instrumentation: self, shouldInjectHeaders: true)
-                    if let instrumentedRequest = instrumentedRequest {
-                        task = castedIMP(session, selector, instrumentedRequest, completionBlock)
-                    } else {
-                        task = castedIMP(session, selector, request, completion)
-                    }
+                        task = castedIMP(session, selector, instrumentedRequest ?? request, completionBlock)
                 } else {
                     task = castedIMP(session, selector, argument, completionBlock)
                     if objc_getAssociatedObject(argument, &idKey) == nil,
@@ -275,13 +271,14 @@ public class URLSessionInstrumentation {
                 return
             }
             var originalIMP: IMP?
-            let sessionTaskId = UUID().uuidString
 
             let block: @convention(block) (URLSession, URLRequest, AnyObject, ((Any?, URLResponse?, Error?) -> Void)?) -> URLSessionTask = { session, request, argument, completion in
 
                 let castedIMP = unsafeBitCast(originalIMP, to: (@convention(c) (URLSession, Selector, URLRequest, AnyObject, ((Any?, URLResponse?, Error?) -> Void)?) -> URLSessionDataTask).self)
 
                 var task: URLSessionTask!
+                let sessionTaskId = UUID().uuidString
+
                 var completionBlock = completion
                 if objc_getAssociatedObject(argument, &idKey) == nil {
                     let completionWrapper: (Any?, URLResponse?, Error?) -> Void = { object, response, error in
