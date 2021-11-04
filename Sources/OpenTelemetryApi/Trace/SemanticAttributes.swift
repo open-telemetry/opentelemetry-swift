@@ -8,6 +8,19 @@ import Foundation
 
 public enum SemanticAttributes: String {
     /**
+    The full invoked ARN as provided on the `Context` passed to the function (`Lambda-Runtime-Invoked-Function-Arn` header on the `/runtime/invocation/next` applicable).
+
+    ~~~
+    // Examples
+    attributes[.awsLambdaInvokedArn] = "arn:aws:lambda:us-east-1:123456:function:myfunction:myalias"
+    ~~~
+
+    - Note: This may be different from `faas.id` if an alias is involved.
+
+    - Requires: Value type should be `String`
+    */
+    case awsLambdaInvokedArn = "aws.lambda.invoked_arn"
+    /**
     An identifier for the database management system (DBMS) product being used. See below for a list of well-known identifiers.
 
     - Requires: Value type should be `String`
@@ -120,16 +133,11 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.netPeerPort] = 80attributes[.netPeerPort] = 8080attributes[.netPeerPort] = 443
     ~~~
 
-    - Requires: Value type should be `Int`
+    - Requires: Value type should be `int`
     */
     case netPeerPort = "net.peer.port"
     /**
     Transport protocol used. See note below.
-
-    ~~~
-    // Examples
-    attributes[.netTransport] = "IP.TCP"
-    ~~~
 
     - Requires: Value type should be `String`
     */
@@ -165,7 +173,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.dbCassandraPageSize] = 5000
     ~~~
 
-    - Requires: Value type should be `Int`
+    - Requires: Value type should be `int`
     */
     case dbCassandraPageSize = "db.cassandra.page_size"
     /**
@@ -200,7 +208,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.dbCassandraSpeculativeExecutionCount] = 0attributes[.dbCassandraSpeculativeExecutionCount] = 2
     ~~~
 
-    - Requires: Value type should be `Int`
+    - Requires: Value type should be `int`
     */
     case dbCassandraSpeculativeExecutionCount = "db.cassandra.speculative_execution_count"
     /**
@@ -243,7 +251,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.dbRedisDatabaseIndex] = 0attributes[.dbRedisDatabaseIndex] = 1attributes[.dbRedisDatabaseIndex] = 15
     ~~~
 
-    - Requires: Value type should be `Int`
+    - Requires: Value type should be `int`
     */
     case dbRedisDatabaseIndex = "db.redis.database_index"
     /**
@@ -426,12 +434,14 @@ public enum SemanticAttributes: String {
     */
     case httpTarget = "http.target"
     /**
-    The value of the [HTTP host header](https://tools.ietf.org/html/rfc7230#section-5.4). When the header is empty or not present, this attribute should be the same.
+    The value of the [HTTP host header](https://tools.ietf.org/html/rfc7230#section-5.4). An empty Host header should also be reported, see note.
 
     ~~~
     // Examples
     attributes[.httpHost] = "www.example.org"
     ~~~
+
+    - Note: When the header is present but empty the attribute SHOULD be set to the empty string. Note that this is a valid situation that is expected in certain cases, according the aforementioned [section of RFC 7230](https://tools.ietf.org/html/rfc7230#section-5.4). When the header is not set the attribute MUST NOT be set.
 
     - Requires: Value type should be `String`
     */
@@ -455,16 +465,11 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.httpStatusCode] = 200
     ~~~
 
-    - Requires: Value type should be `Int`
+    - Requires: Value type should be `int`
     */
     case httpStatusCode = "http.status_code"
     /**
     Kind of HTTP protocol used.
-
-    ~~~
-    // Examples
-    attributes[.httpFlavor] = "1.0"
-    ~~~
 
     - Note: If `net.transport` is not specified, it can be assumed to be `IP.TCP` except if `http.flavor` is `QUIC`, in which case `IP.UDP` is assumed.
 
@@ -489,7 +494,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.httpRequestContentLength] = 3495
     ~~~
 
-    - Requires: Value type should be `Int`
+    - Requires: Value type should be `int`
     */
     case httpRequestContentLength = "http.request_content_length"
     /**
@@ -499,7 +504,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.httpRequestContentLengthUncompressed] = 5493
     ~~~
 
-    - Requires: Value type should be `Int`
+    - Requires: Value type should be `int`
     */
     case httpRequestContentLengthUncompressed = "http.request_content_length_uncompressed"
     /**
@@ -509,7 +514,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.httpResponseContentLength] = 3495
     ~~~
 
-    - Requires: Value type should be `Int`
+    - Requires: Value type should be `int`
     */
     case httpResponseContentLength = "http.response_content_length"
     /**
@@ -519,7 +524,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.httpResponseContentLengthUncompressed] = 5493
     ~~~
 
-    - Requires: Value type should be `Int`
+    - Requires: Value type should be `int`
     */
     case httpResponseContentLengthUncompressed = "http.response_content_length_uncompressed"
     /**
@@ -554,7 +559,17 @@ public enum SemanticAttributes: String {
     attributes[.httpClientIp] = "83.164.160.102"
     ~~~
 
-    - Note: This is not necessarily the same as `net.peer.ip`, which would identify the network-level peer, which may be a proxy.
+    - Note: This is not necessarily the same as `net.peer.ip`, which would
+      identify the network-level peer, which may be a proxy.
+
+      This attribute should be set when a source of information different
+      from the one used for `net.peer.ip`, is available even if that other
+      source just confirms the same value as `net.peer.ip`.
+      Rationale: For `net.peer.ip`, one typically does not know if it
+      comes from a proxy, reverse proxy, or the actual client. Setting
+      `http.client_ip` when it's the same as `net.peer.ip` means that
+      one is at least somewhat confident that the address is not that of
+      the closest proxy.
 
     - Requires: Value type should be `String`
     */
@@ -577,7 +592,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.netHostPort] = 35555
     ~~~
 
-    - Requires: Value type should be `Int`
+    - Requires: Value type should be `int`
     */
     case netHostPort = "net.host.port"
     /**
@@ -592,6 +607,72 @@ public enum SemanticAttributes: String {
     */
     case netHostName = "net.host.name"
     /**
+    The internet connection type currently being used by the host.
+
+    ~~~
+    // Examples
+    attributes[.netHostConnectionType] = "wifi"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case netHostConnectionType = "net.host.connection.type"
+    /**
+    This describes more details regarding the connection.type. It may be the type of cell technology connection, but it could be used for describing details about a wifi connection.
+
+    ~~~
+    // Examples
+    attributes[.netHostConnectionSubtype] = "LTE"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case netHostConnectionSubtype = "net.host.connection.subtype"
+    /**
+    The name of the mobile carrier.
+
+    ~~~
+    // Examples
+    attributes[.netHostCarrierName] = "sprint"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case netHostCarrierName = "net.host.carrier.name"
+    /**
+    The mobile carrier country code.
+
+    ~~~
+    // Examples
+    attributes[.netHostCarrierMcc] = "310"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case netHostCarrierMcc = "net.host.carrier.mcc"
+    /**
+    The mobile carrier network code.
+
+    ~~~
+    // Examples
+    attributes[.netHostCarrierMnc] = "001"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case netHostCarrierMnc = "net.host.carrier.mnc"
+    /**
+    The ISO 3166-1 alpha-2 2-character country code associated with the mobile carrier network.
+
+    ~~~
+    // Examples
+    attributes[.netHostCarrierIcc] = "DE"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case netHostCarrierIcc = "net.host.carrier.icc"
+    /**
     A string identifying the messaging system.
 
     ~~~
@@ -599,6 +680,7 @@ public enum SemanticAttributes: String {
     attributes[.messagingSystem] = "kafka"
     attributes[.messagingSystem] = "rabbitmq"
     attributes[.messagingSystem] = "activemq"
+    attributes[.messagingSystem] = "AmazonSQS"
     ~~~
 
     - Requires: Value type should be `String`
@@ -692,7 +774,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.messagingMessagePayloadSizeBytes] = 2738
     ~~~
 
-    - Requires: Value type should be `Int`
+    - Requires: Value type should be `int`
     */
     case messagingMessagePayloadSizeBytes = "messaging.message_payload_size_bytes"
     /**
@@ -702,7 +784,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.messagingMessagePayloadCompressedSizeBytes] = 2048
     ~~~
 
-    - Requires: Value type should be `Int`
+    - Requires: Value type should be `int`
     */
     case messagingMessagePayloadCompressedSizeBytes = "messaging.message_payload_compressed_size_bytes"
     /**
@@ -748,11 +830,6 @@ public enum SemanticAttributes: String {
     case faasInvokedName = "faas.invoked_name"
     /**
     The cloud provider of the invoked function.
-
-    ~~~
-    // Examples
-    attributes[.faasInvokedProvider] = "aws"
-    ~~~
 
     - Note: SHOULD be equal to the `cloud.provider` resource attribute of the invoked function.
 
@@ -823,7 +900,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.threadId] = 42
     ~~~
 
-    - Requires: Value type should be `Int`
+    - Requires: Value type should be `int`
     */
     case threadId = "thread.id"
     /**
@@ -877,15 +954,297 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.codeLineno] = 42
     ~~~
 
-    - Requires: Value type should be `Int`
+    - Requires: Value type should be `int`
     */
     case codeLineno = "code.lineno"
+    /**
+    The value `aws-api`.
+
+    ~~~
+    // Examples
+    attributes[.rpcSystem] = "aws-api"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case rpcSystem = "rpc.system"
+    /**
+    The name of the service to which a request is made, as returned by the AWS SDK.
+
+    ~~~
+    // Examples
+    attributes[.rpcService] = "DynamoDB"
+    attributes[.rpcService] = "S3"
+    ~~~
+
+    - Note: This is the logical name of the service from the RPC interface perspective, which can be different from the name of any implementing class. The `code.namespace` attribute may be used to store the latter (despite the attribute name, it may include a class name; e.g., class with method actually executing the call on the server side, RPC client stub class on the client side).
+
+    - Requires: Value type should be `String`
+    */
+    case rpcService = "rpc.service"
+    /**
+    The name of the operation corresponding to the request, as returned by the AWS SDK.
+
+    ~~~
+    // Examples
+    attributes[.rpcMethod] = "GetItem"
+    attributes[.rpcMethod] = "PutItem"
+    ~~~
+
+    - Note: This is the logical name of the method from the RPC interface perspective, which can be different from the name of any implementing method/function. The `code.function` attribute may be used to store the latter (e.g., method actually executing the call on the server side, RPC client stub method on the client side).
+
+    - Requires: Value type should be `String`
+    */
+    case rpcMethod = "rpc.method"
+    /**
+    The keys in the `RequestItems` object field.
+
+    ~~~
+    // Examplesattributes[.awsDynamodbTableNames] = Usersattributes[.awsDynamodbTableNames] = Cats
+    ~~~
+
+    - Requires: Value type should be `[String]`
+    */
+    case awsDynamodbTableNames = "aws.dynamodb.table_names"
+    /**
+    The JSON-serialized value of each item in the `ConsumedCapacity` response field.
+
+    ~~~
+    // Examplesattributes[.awsDynamodbConsumedCapacity] = { "CapacityUnits": number, "GlobalSecondaryIndexes": { "string" : { "CapacityUnits": number, "ReadCapacityUnits": number, "WriteCapacityUnits": number } }, "LocalSecondaryIndexes": { "string" : { "CapacityUnits": number, "ReadCapacityUnits": number, "WriteCapacityUnits": number } }, "ReadCapacityUnits": number, "Table": { "CapacityUnits": number, "ReadCapacityUnits": number, "WriteCapacityUnits": number }, "TableName": "string", "WriteCapacityUnits": number }
+    ~~~
+
+    - Requires: Value type should be `[String]`
+    */
+    case awsDynamodbConsumedCapacity = "aws.dynamodb.consumed_capacity"
+    /**
+    The JSON-serialized value of the `ItemCollectionMetrics` response field.
+
+    ~~~
+    // Examples
+    attributes[.awsDynamodbItemCollectionMetrics] = "{ \"string\" : [ { \"ItemCollectionKey\": { \"string\" : { \"B\": blob, \"BOOL\": boolean, \"BS\": [ blob ], \"L\": [ \"AttributeValue\" ], \"M\": { \"string\" : \"AttributeValue\" }, \"N\": \"string\", \"NS\": [ \"string\" ], \"NULL\": boolean, \"S\": \"string\", \"SS\": [ \"string\" ] } }, \"SizeEstimateRangeGB\": [ number ] } ] }"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case awsDynamodbItemCollectionMetrics = "aws.dynamodb.item_collection_metrics"
+    /**
+    The value of the `ProvisionedThroughput.ReadCapacityUnits` request parameter.
+
+    ~~~
+    // Examplesattributes[.awsDynamodbProvisionedReadCapacity] = 1.0attributes[.awsDynamodbProvisionedReadCapacity] = 2.0
+    ~~~
+
+    - Requires: Value type should be `double`
+    */
+    case awsDynamodbProvisionedReadCapacity = "aws.dynamodb.provisioned_read_capacity"
+    /**
+    The value of the `ProvisionedThroughput.WriteCapacityUnits` request parameter.
+
+    ~~~
+    // Examplesattributes[.awsDynamodbProvisionedWriteCapacity] = 1.0attributes[.awsDynamodbProvisionedWriteCapacity] = 2.0
+    ~~~
+
+    - Requires: Value type should be `double`
+    */
+    case awsDynamodbProvisionedWriteCapacity = "aws.dynamodb.provisioned_write_capacity"
+    /**
+    The value of the `ConsistentRead` request parameter.
+
+    - Requires: Value type should be `Bool`
+    */
+    case awsDynamodbConsistentRead = "aws.dynamodb.consistent_read"
+    /**
+    The value of the `ProjectionExpression` request parameter.
+
+    ~~~
+    // Examples
+    attributes[.awsDynamodbProjection] = "Title"
+    attributes[.awsDynamodbProjection] = "Title, Price, Color"
+    attributes[.awsDynamodbProjection] = "Title, Description, RelatedItems, ProductReviews"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case awsDynamodbProjection = "aws.dynamodb.projection"
+    /**
+    The value of the `Limit` request parameter.
+
+    ~~~
+    // Examplesattributes[.awsDynamodbLimit] = 10
+    ~~~
+
+    - Requires: Value type should be `int`
+    */
+    case awsDynamodbLimit = "aws.dynamodb.limit"
+    /**
+    The value of the `AttributesToGet` request parameter.
+
+    ~~~
+    // Examplesattributes[.awsDynamodbAttributesToGet] = livesattributes[.awsDynamodbAttributesToGet] = id
+    ~~~
+
+    - Requires: Value type should be `[String]`
+    */
+    case awsDynamodbAttributesToGet = "aws.dynamodb.attributes_to_get"
+    /**
+    The value of the `IndexName` request parameter.
+
+    ~~~
+    // Examples
+    attributes[.awsDynamodbIndexName] = "name_to_group"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case awsDynamodbIndexName = "aws.dynamodb.index_name"
+    /**
+    The value of the `Select` request parameter.
+
+    ~~~
+    // Examples
+    attributes[.awsDynamodbSelect] = "ALL_ATTRIBUTES"
+    attributes[.awsDynamodbSelect] = "COUNT"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case awsDynamodbSelect = "aws.dynamodb.select"
+    /**
+    The JSON-serialized value of each item of the `GlobalSecondaryIndexes` request field.
+
+    ~~~
+    // Examplesattributes[.awsDynamodbGlobalSecondaryIndexes] = { "IndexName": "string", "KeySchema": [ { "AttributeName": "string", "KeyType": "string" } ], "Projection": { "NonKeyAttributes": [ "string" ], "ProjectionType": "string" }, "ProvisionedThroughput": { "ReadCapacityUnits": number, "WriteCapacityUnits": number } }
+    ~~~
+
+    - Requires: Value type should be `[String]`
+    */
+    case awsDynamodbGlobalSecondaryIndexes = "aws.dynamodb.global_secondary_indexes"
+    /**
+    The JSON-serialized value of each item of the `LocalSecondaryIndexes` request field.
+
+    ~~~
+    // Examplesattributes[.awsDynamodbLocalSecondaryIndexes] = { "IndexArn": "string", "IndexName": "string", "IndexSizeBytes": number, "ItemCount": number, "KeySchema": [ { "AttributeName": "string", "KeyType": "string" } ], "Projection": { "NonKeyAttributes": [ "string" ], "ProjectionType": "string" } }
+    ~~~
+
+    - Requires: Value type should be `[String]`
+    */
+    case awsDynamodbLocalSecondaryIndexes = "aws.dynamodb.local_secondary_indexes"
+    /**
+    The value of the `ExclusiveStartTableName` request parameter.
+
+    ~~~
+    // Examples
+    attributes[.awsDynamodbExclusiveStartTable] = "Users"
+    attributes[.awsDynamodbExclusiveStartTable] = "CatsTable"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case awsDynamodbExclusiveStartTable = "aws.dynamodb.exclusive_start_table"
+    /**
+    The the number of items in the `TableNames` response parameter.
+
+    ~~~
+    // Examplesattributes[.awsDynamodbTableCount] = 20
+    ~~~
+
+    - Requires: Value type should be `int`
+    */
+    case awsDynamodbTableCount = "aws.dynamodb.table_count"
+    /**
+    The value of the `ScanIndexForward` request parameter.
+
+    - Requires: Value type should be `Bool`
+    */
+    case awsDynamodbScanForward = "aws.dynamodb.scan_forward"
+    /**
+    The value of the `Segment` request parameter.
+
+    ~~~
+    // Examplesattributes[.awsDynamodbSegment] = 10
+    ~~~
+
+    - Requires: Value type should be `int`
+    */
+    case awsDynamodbSegment = "aws.dynamodb.segment"
+    /**
+    The value of the `TotalSegments` request parameter.
+
+    ~~~
+    // Examplesattributes[.awsDynamodbTotalSegments] = 100
+    ~~~
+
+    - Requires: Value type should be `int`
+    */
+    case awsDynamodbTotalSegments = "aws.dynamodb.total_segments"
+    /**
+    The value of the `Count` response parameter.
+
+    ~~~
+    // Examplesattributes[.awsDynamodbCount] = 10
+    ~~~
+
+    - Requires: Value type should be `int`
+    */
+    case awsDynamodbCount = "aws.dynamodb.count"
+    /**
+    The value of the `ScannedCount` response parameter.
+
+    ~~~
+    // Examplesattributes[.awsDynamodbScannedCount] = 50
+    ~~~
+
+    - Requires: Value type should be `int`
+    */
+    case awsDynamodbScannedCount = "aws.dynamodb.scanned_count"
+    /**
+    The JSON-serialized value of each item in the `AttributeDefinitions` request field.
+
+    ~~~
+    // Examplesattributes[.awsDynamodbAttributeDefinitions] = { "AttributeName": "string", "AttributeType": "string" }
+    ~~~
+
+    - Requires: Value type should be `[String]`
+    */
+    case awsDynamodbAttributeDefinitions = "aws.dynamodb.attribute_definitions"
+    /**
+    The JSON-serialized value of each item in the the `GlobalSecondaryIndexUpdates` request field.
+
+    ~~~
+    // Examplesattributes[.awsDynamodbGlobalSecondaryIndexUpdates] = { "Create": { "IndexName": "string", "KeySchema": [ { "AttributeName": "string", "KeyType": "string" } ], "Projection": { "NonKeyAttributes": [ "string" ], "ProjectionType": "string" }, "ProvisionedThroughput": { "ReadCapacityUnits": number, "WriteCapacityUnits": number } }
+    ~~~
+
+    - Requires: Value type should be `[String]`
+    */
+    case awsDynamodbGlobalSecondaryIndexUpdates = "aws.dynamodb.global_secondary_index_updates"
     /**
     A string identifying the kind of message consumption as defined in the [Operation names](#operation-names) section above. If the operation is "send", this attribute MUST NOT be set, since the operation can be inferred from the span kind in that case.
 
     - Requires: Value type should be `String`
     */
     case messagingOperation = "messaging.operation"
+    /**
+    The identifier for the consumer receiving a message. For Kafka, set it to `{messaging.kafka.consumer_group} - {messaging.kafka.client_id}`, if both are present, or only `messaging.kafka.consumer_group`. For brokers, such as RabbitMQ and Artemis, set it to the `client_id` of the client consuming the message.
+
+    ~~~
+    // Examples
+    attributes[.messagingConsumerId] = "mygroup - client-6"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case messagingConsumerId = "messaging.consumer_id"
+    /**
+    RabbitMQ message routing key.
+
+    ~~~
+    // Examples
+    attributes[.messagingRabbitmqRoutingKey] = "myKey"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case messagingRabbitmqRoutingKey = "messaging.rabbitmq.routing_key"
     /**
     Message keys in Kafka are used for grouping alike messages to ensure they're processed on the same partition. They differ from `messaging.message_id` in that they're not unique. If the key is `null`, the attribute MUST NOT be set.
 
@@ -928,7 +1287,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.messagingKafkaPartition] = 2
     ~~~
 
-    - Requires: Value type should be `Int`
+    - Requires: Value type should be `int`
     */
     case messagingKafkaPartition = "messaging.kafka.partition"
     /**
@@ -938,50 +1297,84 @@ public enum SemanticAttributes: String {
     */
     case messagingKafkaTombstone = "messaging.kafka.tombstone"
     /**
-    A string identifying the remoting system.
-
-    ~~~
-    // Examples
-    attributes[.rpcSystem] = "grpc"
-    attributes[.rpcSystem] = "java_rmi"
-    attributes[.rpcSystem] = "wcf"
-    ~~~
-
-    - Requires: Value type should be `String`
-    */
-    case rpcSystem = "rpc.system"
-    /**
-    The full name of the service being called, including its package name, if applicable.
-
-    ~~~
-    // Examples
-    attributes[.rpcService] = "myservice.EchoService"
-    ~~~
-
-    - Requires: Value type should be `String`
-    */
-    case rpcService = "rpc.service"
-    /**
-    The name of the method being called, must be equal to the $method part in the span name.
-
-    ~~~
-    // Examples
-    attributes[.rpcMethod] = "exampleMethod"
-    ~~~
-
-    - Requires: Value type should be `String`
-    */
-    case rpcMethod = "rpc.method"
-    /**
     The [numeric status code](https://github.com/grpc/grpc/blob/v1.33.2/doc/statuscodes.md) of the gRPC request.
 
-    ~~~
-    // Examplesattributes[.rpcGrpcStatusCode] = 0attributes[.rpcGrpcStatusCode] = 1attributes[.rpcGrpcStatusCode] = 16
-    ~~~
-
-    - Requires: Value type should be `Int`
+    - Requires: Value type should be `int`
     */
     case rpcGrpcStatusCode = "rpc.grpc.status_code"
+    /**
+    Protocol version as in `jsonrpc` property of request/response. Since JSON-RPC 1.0 does not specify this, the value can be omitted.
+
+    ~~~
+    // Examples
+    attributes[.rpcJsonrpcVersion] = "2.0"
+    attributes[.rpcJsonrpcVersion] = "1.0"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case rpcJsonrpcVersion = "rpc.jsonrpc.version"
+    /**
+    `id` property of request or response. Since protocol allows id to be int, string, `null` or missing (for notifications), value is expected to be cast to string for simplicity. Use empty string in case of `null` value. Omit entirely if this is a notification.
+
+    ~~~
+    // Examples
+    attributes[.rpcJsonrpcRequestId] = "10"
+    attributes[.rpcJsonrpcRequestId] = "request-7"
+    attributes[.rpcJsonrpcRequestId] = ""
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case rpcJsonrpcRequestId = "rpc.jsonrpc.request_id"
+    /**
+    `error.code` property of response if it is an error response.
+
+    ~~~
+    // Examplesattributes[.rpcJsonrpcErrorCode] = -32700attributes[.rpcJsonrpcErrorCode] = 100
+    ~~~
+
+    - Requires: Value type should be `int`
+    */
+    case rpcJsonrpcErrorCode = "rpc.jsonrpc.error_code"
+    /**
+    `error.message` property of response if it is an error response.
+
+    ~~~
+    // Examples
+    attributes[.rpcJsonrpcErrorMessage] = "Parse error"
+    attributes[.rpcJsonrpcErrorMessage] = "User already exists"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case rpcJsonrpcErrorMessage = "rpc.jsonrpc.error_message"
+    /**
+    Whether this is a received or sent message.
+
+    - Requires: Value type should be `String`
+    */
+    case messageType = "message.type"
+    /**
+    MUST be calculated as two different counters starting from `1` one for sent messages and one for received message.
+
+    - Note: This way we guarantee that the values will be consistent between different implementations.
+
+    - Requires: Value type should be `int`
+    */
+    case messageId = "message.id"
+    /**
+    Compressed size of the message in bytes.
+
+    - Requires: Value type should be `int`
+    */
+    case messageCompressedSize = "message.compressed_size"
+    /**
+    Uncompressed size of the message in bytes.
+
+    - Requires: Value type should be `int`
+    */
+    case messageUncompressedSize = "message.uncompressed_size"
 
     // MARK: - Manual Definitions
     // Some definitions have not yet been added to the YAML which generates this script.
@@ -1176,6 +1569,14 @@ public enum SemanticAttributes: String {
         Elasticsearch.
         */
         static let elasticsearch = DbSystemValues("elasticsearch")
+        /**
+        Memcached.
+        */
+        static let memcached = DbSystemValues("memcached")
+        /**
+        CockroachDB.
+        */
+        static let cockroachdb = DbSystemValues("cockroachdb")
 
         internal let value: String
 
@@ -1193,21 +1594,21 @@ public enum SemanticAttributes: String {
     */
     public enum NetTransportValues: String {
         /**
-        IP.TCP.
+        ip_tcp.
         */
-        case IP_TCP = "IP.TCP"
+        case ip_tcp = "ip_tcp"
         /**
-        IP.UDP.
+        ip_udp.
         */
-        case IP_UDP = "IP.UDP"
+        case ip_udp = "ip_udp"
         /**
         Another IP-based protocol.
         */
-        case IP = "IP"
+        case ip = "ip"
         /**
         Unix Domain socket. See below.
         */
-        case Unix = "Unix"
+        case unix = "unix"
         /**
         Named or anonymous pipe. See note below.
         */
@@ -1227,49 +1628,49 @@ public enum SemanticAttributes: String {
     */
     public enum DbCassandraConsistencyLevelValues: String {
         /**
-        ALL.
+        all.
         */
-        case ALL = "ALL"
+        case all = "all"
         /**
-        EACH_QUORUM.
+        each_quorum.
         */
-        case EACH_QUORUM = "EACH_QUORUM"
+        case each_quorum = "each_quorum"
         /**
-        QUORUM.
+        quorum.
         */
-        case QUORUM = "QUORUM"
+        case quorum = "quorum"
         /**
-        LOCAL_QUORUM.
+        local_quorum.
         */
-        case LOCAL_QUORUM = "LOCAL_QUORUM"
+        case local_quorum = "local_quorum"
         /**
-        ONE.
+        one.
         */
-        case ONE = "ONE"
+        case one = "one"
         /**
-        TWO.
+        two.
         */
-        case TWO = "TWO"
+        case two = "two"
         /**
-        THREE.
+        three.
         */
-        case THREE = "THREE"
+        case three = "three"
         /**
-        LOCAL_ONE.
+        local_one.
         */
-        case LOCAL_ONE = "LOCAL_ONE"
+        case local_one = "local_one"
         /**
-        ANY.
+        any.
         */
-        case ANY = "ANY"
+        case any = "any"
         /**
-        SERIAL.
+        serial.
         */
-        case SERIAL = "SERIAL"
+        case serial = "serial"
         /**
-        LOCAL_SERIAL.
+        local_serial.
         */
-        case LOCAL_SERIAL = "LOCAL_SERIAL"
+        case local_serial = "local_serial"
     }
     
     /**
@@ -1333,23 +1734,159 @@ public enum SemanticAttributes: String {
         /**
         HTTP 1.0.
         */
-        static let HTTP10 = HttpFlavorValues("1.0")
+        static let http10 = HttpFlavorValues("1.0")
         /**
         HTTP 1.1.
         */
-        static let HTTP11 = HttpFlavorValues("1.1")
+        static let http11 = HttpFlavorValues("1.1")
         /**
         HTTP 2.
         */
-        static let HTTP20 = HttpFlavorValues("2.0")
+        static let http20 = HttpFlavorValues("2.0")
         /**
         SPDY protocol.
         */
-        static let SPDY = HttpFlavorValues("SPDY")
+        static let spdy = HttpFlavorValues("SPDY")
         /**
         QUIC protocol.
         */
-        static let QUIC = HttpFlavorValues("QUIC")
+        static let quic = HttpFlavorValues("QUIC")
+
+        internal let value: String
+
+        public init(_ customValue: String) {
+            self.value = customValue
+        }
+
+        public var description: String {
+            return value
+        }
+    }
+    
+    /**
+    The internet connection type currently being used by the host.
+    */
+    public struct NetHostConnectionTypeValues: CustomStringConvertible {
+        /**
+        wifi.
+        */
+        static let wifi = NetHostConnectionTypeValues("wifi")
+        /**
+        wired.
+        */
+        static let wired = NetHostConnectionTypeValues("wired")
+        /**
+        cell.
+        */
+        static let cell = NetHostConnectionTypeValues("cell")
+        /**
+        unavailable.
+        */
+        static let unavailable = NetHostConnectionTypeValues("unavailable")
+        /**
+        unknown.
+        */
+        static let unknown = NetHostConnectionTypeValues("unknown")
+
+        internal let value: String
+
+        public init(_ customValue: String) {
+            self.value = customValue
+        }
+
+        public var description: String {
+            return value
+        }
+    }
+    
+    /**
+    This describes more details regarding the connection.type. It may be the type of cell technology connection, but it could be used for describing details about a wifi connection.
+    */
+    public struct NetHostConnectionSubtypeValues: CustomStringConvertible {
+        /**
+        GPRS.
+        */
+        static let gprs = NetHostConnectionSubtypeValues("gprs")
+        /**
+        EDGE.
+        */
+        static let edge = NetHostConnectionSubtypeValues("edge")
+        /**
+        UMTS.
+        */
+        static let umts = NetHostConnectionSubtypeValues("umts")
+        /**
+        CDMA.
+        */
+        static let cdma = NetHostConnectionSubtypeValues("cdma")
+        /**
+        EVDO Rel. 0.
+        */
+        static let evdo0 = NetHostConnectionSubtypeValues("evdo_0")
+        /**
+        EVDO Rev. A.
+        */
+        static let evdoA = NetHostConnectionSubtypeValues("evdo_a")
+        /**
+        CDMA2000 1XRTT.
+        */
+        static let cdma20001xrtt = NetHostConnectionSubtypeValues("cdma2000_1xrtt")
+        /**
+        HSDPA.
+        */
+        static let hsdpa = NetHostConnectionSubtypeValues("hsdpa")
+        /**
+        HSUPA.
+        */
+        static let hsupa = NetHostConnectionSubtypeValues("hsupa")
+        /**
+        HSPA.
+        */
+        static let hspa = NetHostConnectionSubtypeValues("hspa")
+        /**
+        IDEN.
+        */
+        static let iden = NetHostConnectionSubtypeValues("iden")
+        /**
+        EVDO Rev. B.
+        */
+        static let evdoB = NetHostConnectionSubtypeValues("evdo_b")
+        /**
+        LTE.
+        */
+        static let lte = NetHostConnectionSubtypeValues("lte")
+        /**
+        EHRPD.
+        */
+        static let ehrpd = NetHostConnectionSubtypeValues("ehrpd")
+        /**
+        HSPAP.
+        */
+        static let hspap = NetHostConnectionSubtypeValues("hspap")
+        /**
+        GSM.
+        */
+        static let gsm = NetHostConnectionSubtypeValues("gsm")
+        /**
+        TD-SCDMA.
+        */
+        static let tdScdma = NetHostConnectionSubtypeValues("td_scdma")
+        /**
+        IWLAN.
+        */
+        static let iwlan = NetHostConnectionSubtypeValues("iwlan")
+        /**
+        5G NR (New Radio).
+        */
+        static let nr = NetHostConnectionSubtypeValues("nr")
+        /**
+        5G NRNSA (New Radio Non-Standalone).
+        */
+        static let nrnsa = NetHostConnectionSubtypeValues("nrnsa")
+        /**
+        LTE CA.
+        */
+        static let lteCa = NetHostConnectionSubtypeValues("lte_ca")
 
         internal let value: String
 
@@ -1381,17 +1918,21 @@ public enum SemanticAttributes: String {
     */
     public struct FaasInvokedProviderValues: CustomStringConvertible {
         /**
-        Amazon Web Services.
+        Alibaba Cloud.
         */
-        static let AWS = FaasInvokedProviderValues("aws")
+        static let alibabaCloud = FaasInvokedProviderValues("alibaba_cloud")
         /**
         Amazon Web Services.
         */
-        static let Azure = FaasInvokedProviderValues("azure")
+        static let aws = FaasInvokedProviderValues("aws")
+        /**
+        Microsoft Azure.
+        */
+        static let azure = FaasInvokedProviderValues("azure")
         /**
         Google Cloud Platform.
         */
-        static let GCP = FaasInvokedProviderValues("gcp")
+        static let gcp = FaasInvokedProviderValues("gcp")
 
         internal let value: String
 
@@ -1425,71 +1966,85 @@ public enum SemanticAttributes: String {
         /**
         OK.
         */
-        case OK = 0
+        case ok = 0
         /**
         CANCELLED.
         */
-        case CANCELLED = 1
+        case cancelled = 1
         /**
         UNKNOWN.
         */
-        case UNKNOWN = 2
+        case unknown = 2
         /**
         INVALID_ARGUMENT.
         */
-        case INVALID_ARGUMENT = 3
+        case invalid_argument = 3
         /**
         DEADLINE_EXCEEDED.
         */
-        case DEADLINE_EXCEEDED = 4
+        case deadline_exceeded = 4
         /**
         NOT_FOUND.
         */
-        case NOT_FOUND = 5
+        case not_found = 5
         /**
         ALREADY_EXISTS.
         */
-        case ALREADY_EXISTS = 6
+        case already_exists = 6
         /**
         PERMISSION_DENIED.
         */
-        case PERMISSION_DENIED = 7
+        case permission_denied = 7
         /**
         RESOURCE_EXHAUSTED.
         */
-        case RESOURCE_EXHAUSTED = 8
+        case resource_exhausted = 8
         /**
         FAILED_PRECONDITION.
         */
-        case FAILED_PRECONDITION = 9
+        case failed_precondition = 9
         /**
         ABORTED.
         */
-        case ABORTED = 10
+        case aborted = 10
         /**
         OUT_OF_RANGE.
         */
-        case OUT_OF_RANGE = 11
+        case out_of_range = 11
         /**
         UNIMPLEMENTED.
         */
-        case UNIMPLEMENTED = 12
+        case unimplemented = 12
         /**
         INTERNAL.
         */
-        case INTERNAL = 13
+        case `internal` = 13
         /**
         UNAVAILABLE.
         */
-        case UNAVAILABLE = 14
+        case unavailable = 14
         /**
         DATA_LOSS.
         */
-        case DATA_LOSS = 15
+        case data_loss = 15
         /**
         UNAUTHENTICATED.
         */
-        case UNAUTHENTICATED = 16
+        case unauthenticated = 16
+    }
+    
+    /**
+    Whether this is a received or sent message.
+    */
+    public enum MessageTypeValues: String {
+        /**
+        sent.
+        */
+        case sent = "SENT"
+        /**
+        received.
+        */
+        case received = "RECEIVED"
     }
     
 }

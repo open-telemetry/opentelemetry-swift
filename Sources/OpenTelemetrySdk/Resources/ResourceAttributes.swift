@@ -10,11 +10,6 @@ public enum ResourceAttributes: String {
     /**
     Name of the cloud provider.
 
-    ~~~
-    // Examples
-    attributes[.cloudProvider] = "gcp"
-    ~~~
-
     - Requires: Value type should be `String`
     */
     case cloudProvider = "cloud.provider"
@@ -31,7 +26,7 @@ public enum ResourceAttributes: String {
     */
     case cloudAccountId = "cloud.account.id"
     /**
-    The geographical region the resource is running. Refer to your provider's docs to see the available regions, for example [AWS regions](https://aws.amazon.com/about-aws/global-infrastructure/regions_az/), [Azure regions](https://azure.microsoft.com/en-us/global-infrastructure/geographies/), or [Google Cloud regions](https://cloud.google.com/about/locations).
+    The geographical region the resource is running. Refer to your provider's docs to see the available regions, for example [Alibaba Cloud regions](https://www.alibabacloud.com/help/doc-detail/40654.htm), [AWS regions](https://aws.amazon.com/about-aws/global-infrastructure/regions_az/), [Azure regions](https://azure.microsoft.com/en-us/global-infrastructure/geographies/), or [Google Cloud regions](https://cloud.google.com/about/locations).
 
     ~~~
     // Examples
@@ -50,26 +45,19 @@ public enum ResourceAttributes: String {
     attributes[.cloudAvailabilityZone] = "us-east-1c"
     ~~~
 
-    - Note: Availability zones are called "zones" on Google Cloud.
+    - Note: Availability zones are called "zones" on Alibaba Cloud and Google Cloud.
 
     - Requires: Value type should be `String`
     */
     case cloudAvailabilityZone = "cloud.availability_zone"
     /**
-    The cloud infrastructure resource in use.
-
-    ~~~
-    // Examples
-    attributes[.cloudInfrastructureService] = "aws_ec2"
-    attributes[.cloudInfrastructureService] = "azure_vm"
-    attributes[.cloudInfrastructureService] = "gcp_compute_engine"
-    ~~~
+    The cloud platform in use.
 
     - Note: The prefix of the service SHOULD match the one specified in `cloud.provider`.
 
     - Requires: Value type should be `String`
     */
-    case cloudInfrastructureService = "cloud.infrastructure_service"
+    case cloudPlatform = "cloud.platform"
     /**
     The Amazon Resource Name (ARN) of an [ECS container instance](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_instances.html).
 
@@ -94,12 +82,6 @@ public enum ResourceAttributes: String {
     case awsEcsClusterArn = "aws.ecs.cluster.arn"
     /**
     The [launch type](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/launch_types.html) for an ECS task.
-
-    ~~~
-    // Examples
-    attributes[.awsEcsLaunchtype] = "ec2"
-    attributes[.awsEcsLaunchtype] = "fargate"
-    ~~~
 
     - Requires: Value type should be `String`
     */
@@ -126,6 +108,18 @@ public enum ResourceAttributes: String {
     - Requires: Value type should be `String`
     */
     case awsEcsTaskFamily = "aws.ecs.task.family"
+    /**
+    The revision for this task definition.
+
+    ~~~
+    // Examples
+    attributes[.awsEcsTaskRevision] = "8"
+    attributes[.awsEcsTaskRevision] = "26"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case awsEcsTaskRevision = "aws.ecs.task.revision"
     /**
     The ARN of an EKS cluster.
 
@@ -253,47 +247,116 @@ public enum ResourceAttributes: String {
     */
     case deploymentEnvironment = "deployment.environment"
     /**
-    The name of the function being executed.
+    A unique identifier representing the device.
+
+    ~~~
+    // Examples
+    attributes[.deviceId] = "2ab2916d-a51f-4ac8-80ee-45ac31a28092"
+    ~~~
+
+    - Note: The device identifier MUST only be defined using the values outlined below. This value is not an advertising identifier and MUST NOT be used as such. On iOS (Swift or Objective-C), this value MUST be equal to the [vendor identifier](https://developer.apple.com/documentation/uikit/uidevice/1620059-identifierforvendor). On Android (Java or Kotlin), this value MUST be equal to the Firebase Installation ID or a globally unique UUID which is persisted across sessions in your application. More information can be found [here](https://developer.android.com/training/articles/user-data-ids) on best practices and exact implementation details. Caution should be taken when storing personal data or anything which can identify a user. GDPR and data protection laws may apply, ensure you do your own due diligence.
+
+    - Requires: Value type should be `String`
+    */
+    case deviceId = "device.id"
+    /**
+    The model identifier for the device.
+
+    ~~~
+    // Examples
+    attributes[.deviceModelIdentifier] = "iPhone3,4"
+    attributes[.deviceModelIdentifier] = "SM-G920F"
+    ~~~
+
+    - Note: It's recommended this value represents a machine readable version of the model identifier rather than the market or consumer-friendly name of the device.
+
+    - Requires: Value type should be `String`
+    */
+    case deviceModelIdentifier = "device.model.identifier"
+    /**
+    The marketing name for the device model.
+
+    ~~~
+    // Examples
+    attributes[.deviceModelName] = "iPhone 6s Plus"
+    attributes[.deviceModelName] = "Samsung Galaxy S6"
+    ~~~
+
+    - Note: It's recommended this value represents a human readable version of the device model rather than a machine readable alternative.
+
+    - Requires: Value type should be `String`
+    */
+    case deviceModelName = "device.model.name"
+    /**
+    The name of the single function that this runtime instance executes.
 
     ~~~
     // Examples
     attributes[.faasName] = "my-function"
     ~~~
 
+    - Note: This is the name of the function as configured/deployed on the FaaS platform and is usually different from the name of the callback function (which may be stored in the [`code.namespace`/`code.function`](../../trace/semantic_conventions/span-general.md#source-code-attributes) span attributes).
+
     - Requires: Value type should be `String`
     */
     case faasName = "faas.name"
     /**
-    The unique ID of the function being executed.
+    The unique ID of the single function that this runtime instance executes.
 
     ~~~
     // Examples
     attributes[.faasId] = "arn:aws:lambda:us-west-2:123456789012:function:my-function"
     ~~~
 
-    - Note: For example, in AWS Lambda this field corresponds to the [ARN](https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html) value, in GCP to the URI of the resource, and in Azure to the [FunctionDirectory](https://github.com/Azure/azure-functions-host/wiki/Retrieving-information-about-the-currently-running-function) field.
+    - Note: Depending on the cloud provider, use:
+
+      * **AWS Lambda:** The function [ARN](https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html).
+      Take care not to use the "invoked ARN" directly but replace any
+      [alias suffix](https://docs.aws.amazon.com/lambda/latest/dg/configuration-aliases.html) with the resolved function version, as the same runtime instance may be invokable with multiple
+      different aliases.
+      * **GCP:** The [URI of the resource](https://cloud.google.com/iam/docs/full-resource-names)
+      * **Azure:** The [Fully Qualified Resource ID](https://docs.microsoft.com/en-us/rest/api/resources/resources/get-by-id).
+
+      On some providers, it may not be possible to determine the full ID at startup,
+      which is why this field cannot be made required. For example, on AWS the account ID
+      part of the ARN is not available without calling another AWS API
+      which may be deemed too slow for a short-running lambda function.
+      As an alternative, consider setting `faas.id` as a span attribute instead.
 
     - Requires: Value type should be `String`
     */
     case faasId = "faas.id"
     /**
-    The version string of the function being executed as defined in [Version Attributes](../../resource/semantic_conventions/README.md#version-attributes).
+    The immutable version of the function being executed.
 
     ~~~
     // Examples
-    attributes[.faasVersion] = "2.0.0"
+    attributes[.faasVersion] = "26"
+    attributes[.faasVersion] = "pinkfroid-00002"
     ~~~
+
+    - Note: Depending on the cloud provider and platform, use:
+
+      * **AWS Lambda:** The [function version](https://docs.aws.amazon.com/lambda/latest/dg/configuration-versions.html)
+        (an integer represented as a decimal string).
+      * **Google Cloud Run:** The [revision](https://cloud.google.com/run/docs/managing/revisions)
+        (i.e., the function name plus the revision suffix).
+      * **Google Cloud Functions:** The value of the
+        [`K_REVISION` environment variable](https://cloud.google.com/functions/docs/env-var#runtime_environment_variables_set_automatically).
+      * **Azure Functions:** Not applicable. Do not set this attribute.
 
     - Requires: Value type should be `String`
     */
     case faasVersion = "faas.version"
     /**
-    The execution environment ID as a string.
+    The execution environment ID as a string, that will be potentially reused for other invocations to the same function/function version.
 
     ~~~
     // Examples
-    attributes[.faasInstance] = "my-function:instance-0001"
+    attributes[.faasInstance] = "2021/06/28/[$LATEST]2f399eb14537447da05ab2a2e39309de"
     ~~~
+
+    - Note: * **AWS Lambda:** Use the (full) log stream name.
 
     - Requires: Value type should be `String`
     */
@@ -307,7 +370,7 @@ public enum ResourceAttributes: String {
 
     - Note: It's recommended to set this attribute since e.g. too little memory can easily stop a Java AWS Lambda function from working correctly. On AWS Lambda, the environment variable `AWS_LAMBDA_FUNCTION_MEMORY_SIZE` provides this information.
 
-    - Requires: Value type should be `Int`
+    - Requires: Value type should be `int`
     */
     case faasMaxMemory = "faas.max_memory"
     /**
@@ -611,13 +674,38 @@ public enum ResourceAttributes: String {
     */
     case osDescription = "os.description"
     /**
+    Human readable operating system name.
+
+    ~~~
+    // Examples
+    attributes[.osName] = "iOS"
+    attributes[.osName] = "Android"
+    attributes[.osName] = "Ubuntu"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case osName = "os.name"
+    /**
+    The version string of the operating system as defined in [Version Attributes](../../resource/semantic_conventions/README.md#version-attributes).
+
+    ~~~
+    // Examples
+    attributes[.osVersion] = "14.2.1"
+    attributes[.osVersion] = "18.04.1"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case osVersion = "os.version"
+    /**
     Process identifier (PID).
 
     ~~~
     // Examplesattributes[.processPid] = 1234
     ~~~
 
-    - Requires: Value type should be `Int`
+    - Requires: Value type should be `int`
     */
     case processPid = "process.pid"
     /**
@@ -807,23 +895,60 @@ public enum ResourceAttributes: String {
     - Requires: Value type should be `String`
     */
     case telemetryAutoVersion = "telemetry.auto.version"
+    /**
+    The name of the web engine.
+
+    ~~~
+    // Examples
+    attributes[.webengineName] = "WildFly"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case webengineName = "webengine.name"
+    /**
+    The version of the web engine.
+
+    ~~~
+    // Examples
+    attributes[.webengineVersion] = "21.0.0"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case webengineVersion = "webengine.version"
+    /**
+    Additional description of the web engine (e.g. detailed version and edition information).
+
+    ~~~
+    // Examples
+    attributes[.webengineDescription] = "WildFly Full 21.0.0.Final (WildFly Core 13.0.1.Final) - 2.2.2.Final"
+    ~~~
+
+    - Requires: Value type should be `String`
+    */
+    case webengineDescription = "webengine.description"
     
     /**
     Name of the cloud provider.
     */
     public struct CloudProviderValues: CustomStringConvertible {
         /**
+        Alibaba Cloud.
+        */
+        static let alibabaCloud = CloudProviderValues("alibaba_cloud")
+        /**
         Amazon Web Services.
         */
-        static let AWS = CloudProviderValues("aws")
+        static let aws = CloudProviderValues("aws")
         /**
         Microsoft Azure.
         */
-        static let Azure = CloudProviderValues("azure")
+        static let azure = CloudProviderValues("azure")
         /**
         Google Cloud Platform.
         */
-        static let GCP = CloudProviderValues("gcp")
+        static let gcp = CloudProviderValues("gcp")
 
         internal let value: String
 
@@ -837,69 +962,77 @@ public enum ResourceAttributes: String {
     }
     
     /**
-    The cloud infrastructure resource in use.
+    The cloud platform in use.
     */
-    public struct CloudInfrastructureServiceValues: CustomStringConvertible {
+    public struct CloudPlatformValues: CustomStringConvertible {
+        /**
+        Alibaba Cloud Elastic Compute Service.
+        */
+        static let alibabaCloudEcs = CloudPlatformValues("alibaba_cloud_ecs")
+        /**
+        Alibaba Cloud Function Compute.
+        */
+        static let alibabaCloudFc = CloudPlatformValues("alibaba_cloud_fc")
         /**
         AWS Elastic Compute Cloud.
         */
-        static let AWSEc2 = CloudInfrastructureServiceValues("aws_ec2")
+        static let awsEc2 = CloudPlatformValues("aws_ec2")
         /**
         AWS Elastic Container Service.
         */
-        static let AWSEcs = CloudInfrastructureServiceValues("aws_ecs")
+        static let awsEcs = CloudPlatformValues("aws_ecs")
         /**
         AWS Elastic Kubernetes Service.
         */
-        static let AWSEks = CloudInfrastructureServiceValues("aws_eks")
+        static let awsEks = CloudPlatformValues("aws_eks")
         /**
         AWS Lambda.
         */
-        static let AWSLambda = CloudInfrastructureServiceValues("aws_lambda")
+        static let awsLambda = CloudPlatformValues("aws_lambda")
         /**
         AWS Elastic Beanstalk.
         */
-        static let AWSElasticbeanstalk = CloudInfrastructureServiceValues("aws_elastic_beanstalk")
+        static let awsElasticBeanstalk = CloudPlatformValues("aws_elastic_beanstalk")
         /**
         Azure Virtual Machines.
         */
-        static let AzureVm = CloudInfrastructureServiceValues("azure_vm")
+        static let azureVm = CloudPlatformValues("azure_vm")
         /**
         Azure Container Instances.
         */
-        static let AzureContainerinstances = CloudInfrastructureServiceValues("azure_container_instances")
+        static let azureContainerInstances = CloudPlatformValues("azure_container_instances")
         /**
         Azure Kubernetes Service.
         */
-        static let AzureAks = CloudInfrastructureServiceValues("azure_aks")
+        static let azureAks = CloudPlatformValues("azure_aks")
         /**
         Azure Functions.
         */
-        static let AzureFunctions = CloudInfrastructureServiceValues("azure_functions")
+        static let azureFunctions = CloudPlatformValues("azure_functions")
         /**
         Azure App Service.
         */
-        static let AzureAppservice = CloudInfrastructureServiceValues("azure_app_service")
+        static let azureAppService = CloudPlatformValues("azure_app_service")
         /**
         Google Cloud Compute Engine (GCE).
         */
-        static let GCPComputeengine = CloudInfrastructureServiceValues("gcp_compute_engine")
+        static let gcpComputeEngine = CloudPlatformValues("gcp_compute_engine")
         /**
         Google Cloud Run.
         */
-        static let GCPCloudrun = CloudInfrastructureServiceValues("gcp_cloud_run")
+        static let gcpCloudRun = CloudPlatformValues("gcp_cloud_run")
         /**
         Google Cloud Kubernetes Engine (GKE).
         */
-        static let GCPKubernetesengine = CloudInfrastructureServiceValues("gcp_kubernetes_engine")
+        static let gcpKubernetesEngine = CloudPlatformValues("gcp_kubernetes_engine")
         /**
         Google Cloud Functions (GCF).
         */
-        static let GCPCloudfunctions = CloudInfrastructureServiceValues("gcp_cloud_functions")
+        static let gcpCloudFunctions = CloudPlatformValues("gcp_cloud_functions")
         /**
         Google Cloud App Engine (GAE).
         */
-        static let GCPAppengine = CloudInfrastructureServiceValues("gcp_app_engine")
+        static let gcpAppEngine = CloudPlatformValues("gcp_app_engine")
 
         internal let value: String
 
@@ -977,47 +1110,47 @@ public enum ResourceAttributes: String {
         /**
         Microsoft Windows.
         */
-        static let WINDOWS = OsTypeValues("WINDOWS")
+        static let windows = OsTypeValues("windows")
         /**
         Linux.
         */
-        static let LINUX = OsTypeValues("LINUX")
+        static let linux = OsTypeValues("linux")
         /**
         Apple Darwin.
         */
-        static let DARWIN = OsTypeValues("DARWIN")
+        static let darwin = OsTypeValues("darwin")
         /**
         FreeBSD.
         */
-        static let FREEBSD = OsTypeValues("FREEBSD")
+        static let freebsd = OsTypeValues("freebsd")
         /**
         NetBSD.
         */
-        static let NETBSD = OsTypeValues("NETBSD")
+        static let netbsd = OsTypeValues("netbsd")
         /**
         OpenBSD.
         */
-        static let OPENBSD = OsTypeValues("OPENBSD")
+        static let openbsd = OsTypeValues("openbsd")
         /**
         DragonFly BSD.
         */
-        static let DRAGONFLYBSD = OsTypeValues("DRAGONFLYBSD")
+        static let dragonflybsd = OsTypeValues("dragonflybsd")
         /**
         HP-UX (Hewlett Packard Unix).
         */
-        static let HPUX = OsTypeValues("HPUX")
+        static let hpux = OsTypeValues("hpux")
         /**
         AIX (Advanced Interactive eXecutive).
         */
-        static let AIX = OsTypeValues("AIX")
+        static let aix = OsTypeValues("aix")
         /**
         Oracle Solaris.
         */
-        static let SOLARIS = OsTypeValues("SOLARIS")
+        static let solaris = OsTypeValues("solaris")
         /**
         IBM z/OS.
         */
-        static let ZOS = OsTypeValues("ZOS")
+        static let zOs = OsTypeValues("z_os")
 
         internal let value: String
 
@@ -1074,6 +1207,11 @@ public enum ResourceAttributes: String {
         webjs.
         */
         static let webjs = TelemetrySdkLanguageValues("webjs")
+        /**
+         swift.
+         */
+        static let swift = TelemetrySdkLanguageValues("swift")
+
 
         internal let value: String
 
