@@ -135,7 +135,8 @@ private class BatchWorker: Thread {
         }
         let timeoutTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
         timeoutTimer.setEventHandler { exportOperation.cancel() }
-        timeoutTimer.schedule(deadline: .now() + .milliseconds(Int(explicitTimeout?.toMilliseconds ?? exportTimeout.toMilliseconds)), leeway: .milliseconds(1))
+        let maxTimeOut = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, exportTimeout)
+        timeoutTimer.schedule(deadline: .now() + .milliseconds(Int(maxTimeOut.toMilliseconds)), leeway: .milliseconds(1))
         timeoutTimer.activate()
         queue.addOperation(exportOperation)
         queue.waitUntilAllOperationsAreFinished()
