@@ -6,8 +6,9 @@
 import Foundation
 import OpenTelemetryApi
 
-/// An implementation of the SpanProcessor that converts the ReadableSpan SpanData
-///  and passes it to the configured exporter.
+/// A really simple implementation of the SpanProcessor that converts the ReadableSpan SpanData
+/// and passes it to the configured exporter.
+/// For production environment BatchSpanProcessor is configurable and is preferred.
 public struct SimpleSpanProcessor: SpanProcessor {
     private let spanExporter: SpanExporter
     private var sampled: Bool = true
@@ -35,7 +36,9 @@ public struct SimpleSpanProcessor: SpanProcessor {
         }
     }
 
-    public func forceFlush() {
+    /// Forces the processing of the remaining spans
+    /// - Parameter timeout: unused in this processor
+    public func forceFlush(timeout: TimeInterval? = nil) {
         processorQueue.sync {
             _ = spanExporter.flush()
         }

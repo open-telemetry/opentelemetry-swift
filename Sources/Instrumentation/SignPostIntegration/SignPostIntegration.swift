@@ -28,5 +28,5 @@ public class SignPostIntegration: SpanProcessor {
     }
 
     public func shutdown() {}
-    public func forceFlush() {}
+    public func forceFlush(timeout: TimeInterval? = nil) {}
 }

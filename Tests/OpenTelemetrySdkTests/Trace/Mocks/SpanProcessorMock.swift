@@ -36,7 +36,7 @@ class SpanProcessorMock: SpanProcessor {
         shutdownCalledTimes += 1
     }
 
-    func forceFlush() {
+    func forceFlush(timeout: TimeInterval? = nil) {
         forceFlushCalledTimes += 1
     }
 }

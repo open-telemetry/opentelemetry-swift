@@ -33,5 +33,12 @@ public protocol SpanProcessor {
 
     /// Processes all span events that have not yet been processed.
     /// This method is executed synchronously on the calling thread
-    func forceFlush()
+    func forceFlush(timeout: TimeInterval?)
 }
+
+extension SpanProcessor {
+    func forceFlush() {
+        return forceFlush(timeout: nil)
+    }
+}
+

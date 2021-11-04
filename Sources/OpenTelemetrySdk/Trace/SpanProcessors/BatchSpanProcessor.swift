@@ -18,7 +18,7 @@ public struct BatchSpanProcessor: SpanProcessor {
     fileprivate var worker: BatchWorker
 
     public init(spanExporter: SpanExporter, scheduleDelay: TimeInterval = 5, exportTimeout: TimeInterval = 30,
-                maxQueueSize: Int = 2048, maxExportBatchSize: Int = 512, willExportCallback:((inout [SpanData]) -> Void)? = nil)
+                maxQueueSize: Int = 2048, maxExportBatchSize: Int = 512, willExportCallback: ((inout [SpanData]) -> Void)? = nil)
     {
         worker = BatchWorker(spanExporter: spanExporter,
                              scheduleDelay: scheduleDelay,
@@ -46,8 +46,8 @@ public struct BatchSpanProcessor: SpanProcessor {
         worker.shutdown()
     }
 
-    public func forceFlush() {
-        worker.forceFlush()
+    public func forceFlush(timeout: TimeInterval? = nil) {
+        worker.forceFlush(explicitTimeout: timeout)
     }
 }
 
@@ -60,13 +60,13 @@ private class BatchWorker: Thread {
     let maxQueueSize: Int
     let exportTimeout: TimeInterval
     let maxExportBatchSize: Int
-    let willExportCallback:((inout [SpanData]) -> Void)?
+    let willExportCallback: ((inout [SpanData]) -> Void)?
     let halfMaxQueueSize: Int
     private let cond = NSCondition()
     var spanList = [ReadableSpan]()
     var queue: OperationQueue
 
-    init(spanExporter: SpanExporter, scheduleDelay: TimeInterval, exportTimeout:TimeInterval, maxQueueSize: Int, maxExportBatchSize: Int, willExportCallback:((inout [SpanData]) -> Void)?) {
+    init(spanExporter: SpanExporter, scheduleDelay: TimeInterval, exportTimeout: TimeInterval, maxQueueSize: Int, maxExportBatchSize: Int, willExportCallback: ((inout [SpanData]) -> Void)?) {
         self.spanExporter = spanExporter
         self.scheduleDelay = scheduleDelay
         self.exportTimeout = exportTimeout
@@ -109,33 +109,33 @@ private class BatchWorker: Thread {
                 spansCopy = spanList
                 spanList.removeAll()
                 cond.unlock()
-                self.exportBatch(spanList: spansCopy)
+                self.exportBatch(spanList: spansCopy, explicitTimeout: nil)
             }
         } while true
     }
 
     func shutdown() {
-        forceFlush()
+        forceFlush(explicitTimeout: nil)
         spanExporter.shutdown()
     }
 
-    public func forceFlush() {
+    public func forceFlush(explicitTimeout: TimeInterval?) {
         var spansCopy: [ReadableSpan]
         cond.lock()
         spansCopy = spanList
         spanList.removeAll()
         cond.unlock()
         // Execute the batch export outside the synchronized to not block all producers.
-        exportBatch(spanList: spansCopy)
+        exportBatch(spanList: spansCopy, explicitTimeout: explicitTimeout)
     }
 
-    private func exportBatch(spanList: [ReadableSpan]) {
+    private func exportBatch(spanList: [ReadableSpan], explicitTimeout: TimeInterval?) {
         let exportOperation = BlockOperation { [weak self] in
             self?.exportAction(spanList: spanList)
         }
         let timeoutTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        timeoutTimer.setEventHandler{ exportOperation.cancel() }
-        timeoutTimer.schedule(deadline: .now() + .milliseconds(Int(exportTimeout.toMilliseconds)), leeway: .milliseconds(1))
+        timeoutTimer.setEventHandler { exportOperation.cancel() }
+        timeoutTimer.schedule(deadline: .now() + .milliseconds(Int(explicitTimeout?.toMilliseconds ?? exportTimeout.toMilliseconds)), leeway: .milliseconds(1))
         timeoutTimer.activate()
         queue.addOperation(exportOperation)
         queue.waitUntilAllOperationsAreFinished()
