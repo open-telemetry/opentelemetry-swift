@@ -51,9 +51,9 @@ public struct MultiSpanProcessor: SpanProcessor {
         }
     }
 
-    public func forceFlush() {
+    public func forceFlush(timeout: TimeInterval? = nil) {
         spanProcessorsAll.forEach {
-            $0.forceFlush()
+            $0.forceFlush(timeout: timeout)
         }
     }
 }

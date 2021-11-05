@@ -140,7 +140,7 @@ public class TracerProviderSdk: TracerProvider {
     }
 
     /// Requests the active span processor to process all span events that have not yet been processed.
-    public func forceFlush() {
-        sharedState.activeSpanProcessor.forceFlush()
+    public func forceFlush(timeout: TimeInterval? = nil) {
+        sharedState.activeSpanProcessor.forceFlush(timeout: timeout)
     }
 }

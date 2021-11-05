@@ -18,6 +18,7 @@ public protocol SpanProcessor {
     /// Called when a Span is started, if the Span.isRecording is true.
     /// This method is called synchronously on the execution thread, should not throw or block the
     /// execution thread.
+    /// - Parameter parentContext: the context of the span parent, if exists
     /// - Parameter span: the ReadableSpan that just started
     func onStart(parentContext: SpanContext?, span: ReadableSpan)
 
@@ -33,5 +34,13 @@ public protocol SpanProcessor {
 
     /// Processes all span events that have not yet been processed.
     /// This method is executed synchronously on the calling thread
-    func forceFlush()
+    /// - Parameter timeout: Maximum time the flush complete or abort. If nil, it will wait indefinitely
+    func forceFlush(timeout: TimeInterval?)
 }
+
+extension SpanProcessor {
+    func forceFlush() {
+        return forceFlush(timeout: nil)
+    }
+}
+
