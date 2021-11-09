@@ -9,8 +9,7 @@ import Foundation
 public enum ResourceAttributes: String {
     /**
     Name of the cloud provider.
-
-    - Requires: Value type should be `String`
+    - Requires: Value should be one of [`ResourceAttributes.CloudProviderValues`](x-source-tag://otelCloudProviderValues) (of type `String`)
     */
     case cloudProvider = "cloud.provider"
     /**
@@ -21,7 +20,6 @@ public enum ResourceAttributes: String {
     attributes[.cloudAccountId] = "111111111111"
     attributes[.cloudAccountId] = "opentelemetry"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case cloudAccountId = "cloud.account.id"
@@ -33,7 +31,6 @@ public enum ResourceAttributes: String {
     attributes[.cloudRegion] = "us-central1"
     attributes[.cloudRegion] = "us-east-1"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case cloudRegion = "cloud.region"
@@ -46,7 +43,6 @@ public enum ResourceAttributes: String {
     ~~~
 
     - Note: Availability zones are called "zones" on Alibaba Cloud and Google Cloud.
-
     - Requires: Value type should be `String`
     */
     case cloudAvailabilityZone = "cloud.availability_zone"
@@ -54,8 +50,7 @@ public enum ResourceAttributes: String {
     The cloud platform in use.
 
     - Note: The prefix of the service SHOULD match the one specified in `cloud.provider`.
-
-    - Requires: Value type should be `String`
+    - Requires: Value should be one of [`ResourceAttributes.CloudPlatformValues`](x-source-tag://otelCloudPlatformValues) (of type `String`)
     */
     case cloudPlatform = "cloud.platform"
     /**
@@ -65,7 +60,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.awsEcsContainerArn] = "arn:aws:ecs:us-west-1:123456789123:container/32624152-9086-4f0e-acae-1a75b14fe4d9"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case awsEcsContainerArn = "aws.ecs.container.arn"
@@ -76,14 +70,12 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.awsEcsClusterArn] = "arn:aws:ecs:us-west-2:123456789123:cluster/my-cluster"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case awsEcsClusterArn = "aws.ecs.cluster.arn"
     /**
     The [launch type](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/launch_types.html) for an ECS task.
-
-    - Requires: Value type should be `String`
+    - Requires: Value should be one of [`ResourceAttributes.AwsEcsLaunchtypeValues`](x-source-tag://otelAwsEcsLaunchtypeValues) (of type `String`)
     */
     case awsEcsLaunchtype = "aws.ecs.launchtype"
     /**
@@ -93,7 +85,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.awsEcsTaskArn] = "arn:aws:ecs:us-west-1:123456789123:task/10838bed-421f-43ef-870a-f43feacbbb5b"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case awsEcsTaskArn = "aws.ecs.task.arn"
@@ -104,7 +95,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.awsEcsTaskFamily] = "opentelemetry-family"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case awsEcsTaskFamily = "aws.ecs.task.family"
@@ -116,7 +106,6 @@ public enum ResourceAttributes: String {
     attributes[.awsEcsTaskRevision] = "8"
     attributes[.awsEcsTaskRevision] = "26"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case awsEcsTaskRevision = "aws.ecs.task.revision"
@@ -127,7 +116,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.awsEksClusterArn] = "arn:aws:ecs:us-west-2:123456789123:cluster/my-cluster"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case awsEksClusterArn = "aws.eks.cluster.arn"
@@ -139,7 +127,6 @@ public enum ResourceAttributes: String {
     ~~~
 
     - Note: Multiple log groups must be supported for cases like multi-container applications, where a single application has sidecar containers, and each write to their own log group.
-
     - Requires: Value type should be `[String]`
     */
     case awsLogGroupNames = "aws.log.group.names"
@@ -151,7 +138,6 @@ public enum ResourceAttributes: String {
     ~~~
 
     - Note: See the [log group ARN format documentation](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/iam-access-control-overview-cwl.html#CWL_ARN_Format).
-
     - Requires: Value type should be `[String]`
     */
     case awsLogGroupArns = "aws.log.group.arns"
@@ -161,7 +147,6 @@ public enum ResourceAttributes: String {
     ~~~
     // Examplesattributes[.awsLogStreamNames] = logs/main/10838bed-421f-43ef-870a-f43feacbbb5b
     ~~~
-
     - Requires: Value type should be `[String]`
     */
     case awsLogStreamNames = "aws.log.stream.names"
@@ -173,7 +158,6 @@ public enum ResourceAttributes: String {
     ~~~
 
     - Note: See the [log stream ARN format documentation](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/iam-access-control-overview-cwl.html#CWL_ARN_Format). One log group can contain several log streams, so these ARNs necessarily identify both a log group and a log stream.
-
     - Requires: Value type should be `[String]`
     */
     case awsLogStreamArns = "aws.log.stream.arns"
@@ -184,7 +168,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.containerName] = "opentelemetry-autoconf"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case containerName = "container.name"
@@ -195,7 +178,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.containerId] = "a3bf90e006b2"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case containerId = "container.id"
@@ -208,7 +190,6 @@ public enum ResourceAttributes: String {
     attributes[.containerRuntime] = "containerd"
     attributes[.containerRuntime] = "rkt"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case containerRuntime = "container.runtime"
@@ -219,7 +200,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.containerImageName] = "gcr.io/opentelemetry/operator"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case containerImageName = "container.image.name"
@@ -230,7 +210,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.containerImageTag] = "0.1"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case containerImageTag = "container.image.tag"
@@ -242,7 +221,6 @@ public enum ResourceAttributes: String {
     attributes[.deploymentEnvironment] = "staging"
     attributes[.deploymentEnvironment] = "production"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case deploymentEnvironment = "deployment.environment"
@@ -255,7 +233,6 @@ public enum ResourceAttributes: String {
     ~~~
 
     - Note: The device identifier MUST only be defined using the values outlined below. This value is not an advertising identifier and MUST NOT be used as such. On iOS (Swift or Objective-C), this value MUST be equal to the [vendor identifier](https://developer.apple.com/documentation/uikit/uidevice/1620059-identifierforvendor). On Android (Java or Kotlin), this value MUST be equal to the Firebase Installation ID or a globally unique UUID which is persisted across sessions in your application. More information can be found [here](https://developer.android.com/training/articles/user-data-ids) on best practices and exact implementation details. Caution should be taken when storing personal data or anything which can identify a user. GDPR and data protection laws may apply, ensure you do your own due diligence.
-
     - Requires: Value type should be `String`
     */
     case deviceId = "device.id"
@@ -269,7 +246,6 @@ public enum ResourceAttributes: String {
     ~~~
 
     - Note: It's recommended this value represents a machine readable version of the model identifier rather than the market or consumer-friendly name of the device.
-
     - Requires: Value type should be `String`
     */
     case deviceModelIdentifier = "device.model.identifier"
@@ -283,7 +259,6 @@ public enum ResourceAttributes: String {
     ~~~
 
     - Note: It's recommended this value represents a human readable version of the device model rather than a machine readable alternative.
-
     - Requires: Value type should be `String`
     */
     case deviceModelName = "device.model.name"
@@ -296,7 +271,6 @@ public enum ResourceAttributes: String {
     ~~~
 
     - Note: This is the name of the function as configured/deployed on the FaaS platform and is usually different from the name of the callback function (which may be stored in the [`code.namespace`/`code.function`](../../trace/semantic_conventions/span-general.md#source-code-attributes) span attributes).
-
     - Requires: Value type should be `String`
     */
     case faasName = "faas.name"
@@ -322,7 +296,6 @@ public enum ResourceAttributes: String {
       part of the ARN is not available without calling another AWS API
       which may be deemed too slow for a short-running lambda function.
       As an alternative, consider setting `faas.id` as a span attribute instead.
-
     - Requires: Value type should be `String`
     */
     case faasId = "faas.id"
@@ -344,7 +317,6 @@ public enum ResourceAttributes: String {
       * **Google Cloud Functions:** The value of the
         [`K_REVISION` environment variable](https://cloud.google.com/functions/docs/env-var#runtime_environment_variables_set_automatically).
       * **Azure Functions:** Not applicable. Do not set this attribute.
-
     - Requires: Value type should be `String`
     */
     case faasVersion = "faas.version"
@@ -357,7 +329,6 @@ public enum ResourceAttributes: String {
     ~~~
 
     - Note: * **AWS Lambda:** Use the (full) log stream name.
-
     - Requires: Value type should be `String`
     */
     case faasInstance = "faas.instance"
@@ -369,7 +340,6 @@ public enum ResourceAttributes: String {
     ~~~
 
     - Note: It's recommended to set this attribute since e.g. too little memory can easily stop a Java AWS Lambda function from working correctly. On AWS Lambda, the environment variable `AWS_LAMBDA_FUNCTION_MEMORY_SIZE` provides this information.
-
     - Requires: Value type should be `Int`
     */
     case faasMaxMemory = "faas.max_memory"
@@ -380,7 +350,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.hostId] = "opentelemetry-test"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case hostId = "host.id"
@@ -391,7 +360,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.hostName] = "opentelemetry-test"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case hostName = "host.name"
@@ -402,14 +370,12 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.hostType] = "n1-standard-1"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case hostType = "host.type"
     /**
     The CPU architecture the host system is running on.
-
-    - Requires: Value type should be `String`
+    - Requires: Value should be one of [`ResourceAttributes.HostArchValues`](x-source-tag://otelHostArchValues) (of type `String`)
     */
     case hostArch = "host.arch"
     /**
@@ -420,7 +386,6 @@ public enum ResourceAttributes: String {
     attributes[.hostImageName] = "infra-ami-eks-worker-node-7d4ec78312"
     attributes[.hostImageName] = "CentOS-8-x86_64-1905"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case hostImageName = "host.image.name"
@@ -431,7 +396,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.hostImageId] = "ami-07b06b442921831e5"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case hostImageId = "host.image.id"
@@ -442,7 +406,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.hostImageVersion] = "0.1"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case hostImageVersion = "host.image.version"
@@ -453,7 +416,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.k8sClusterName] = "opentelemetry-cluster"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case k8sClusterName = "k8s.cluster.name"
@@ -464,7 +426,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.k8sNodeName] = "node-1"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case k8sNodeName = "k8s.node.name"
@@ -475,7 +436,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.k8sNodeUid] = "1eb3a0c6-0477-4080-a9cb-0cb7db65c6a2"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case k8sNodeUid = "k8s.node.uid"
@@ -486,7 +446,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.k8sNamespaceName] = "default"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case k8sNamespaceName = "k8s.namespace.name"
@@ -497,7 +456,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.k8sPodUid] = "275ecb36-5aa8-4c2a-9c47-d8bb681b9aff"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case k8sPodUid = "k8s.pod.uid"
@@ -508,7 +466,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.k8sPodName] = "opentelemetry-pod-autoconf"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case k8sPodName = "k8s.pod.name"
@@ -519,7 +476,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.k8sContainerName] = "redis"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case k8sContainerName = "k8s.container.name"
@@ -530,7 +486,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.k8sReplicasetUid] = "275ecb36-5aa8-4c2a-9c47-d8bb681b9aff"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case k8sReplicasetUid = "k8s.replicaset.uid"
@@ -541,7 +496,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.k8sReplicasetName] = "opentelemetry"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case k8sReplicasetName = "k8s.replicaset.name"
@@ -552,7 +506,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.k8sDeploymentUid] = "275ecb36-5aa8-4c2a-9c47-d8bb681b9aff"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case k8sDeploymentUid = "k8s.deployment.uid"
@@ -563,7 +516,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.k8sDeploymentName] = "opentelemetry"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case k8sDeploymentName = "k8s.deployment.name"
@@ -574,7 +526,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.k8sStatefulsetUid] = "275ecb36-5aa8-4c2a-9c47-d8bb681b9aff"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case k8sStatefulsetUid = "k8s.statefulset.uid"
@@ -585,7 +536,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.k8sStatefulsetName] = "opentelemetry"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case k8sStatefulsetName = "k8s.statefulset.name"
@@ -596,7 +546,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.k8sDaemonsetUid] = "275ecb36-5aa8-4c2a-9c47-d8bb681b9aff"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case k8sDaemonsetUid = "k8s.daemonset.uid"
@@ -607,7 +556,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.k8sDaemonsetName] = "opentelemetry"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case k8sDaemonsetName = "k8s.daemonset.name"
@@ -618,7 +566,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.k8sJobUid] = "275ecb36-5aa8-4c2a-9c47-d8bb681b9aff"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case k8sJobUid = "k8s.job.uid"
@@ -629,7 +576,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.k8sJobName] = "opentelemetry"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case k8sJobName = "k8s.job.name"
@@ -640,7 +586,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.k8sCronjobUid] = "275ecb36-5aa8-4c2a-9c47-d8bb681b9aff"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case k8sCronjobUid = "k8s.cronjob.uid"
@@ -651,14 +596,12 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.k8sCronjobName] = "opentelemetry"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case k8sCronjobName = "k8s.cronjob.name"
     /**
     The operating system type.
-
-    - Requires: Value type should be `String`
+    - Requires: Value should be one of [`ResourceAttributes.OsTypeValues`](x-source-tag://otelOsTypeValues) (of type `String`)
     */
     case osType = "os.type"
     /**
@@ -669,7 +612,6 @@ public enum ResourceAttributes: String {
     attributes[.osDescription] = "Microsoft Windows [Version 10.0.18363.778]"
     attributes[.osDescription] = "Ubuntu 18.04.1 LTS"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case osDescription = "os.description"
@@ -682,7 +624,6 @@ public enum ResourceAttributes: String {
     attributes[.osName] = "Android"
     attributes[.osName] = "Ubuntu"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case osName = "os.name"
@@ -694,7 +635,6 @@ public enum ResourceAttributes: String {
     attributes[.osVersion] = "14.2.1"
     attributes[.osVersion] = "18.04.1"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case osVersion = "os.version"
@@ -704,7 +644,6 @@ public enum ResourceAttributes: String {
     ~~~
     // Examplesattributes[.processPid] = 1234
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case processPid = "process.pid"
@@ -715,7 +654,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.processExecutableName] = "otelcol"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case processExecutableName = "process.executable.name"
@@ -726,7 +664,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.processExecutablePath] = "/usr/bin/cmd/otelcol"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case processExecutablePath = "process.executable.path"
@@ -737,7 +674,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.processCommand] = "cmd/otelcol"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case processCommand = "process.command"
@@ -748,7 +684,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.processCommandLine] = "C:\cmd\otecol --config=\"my directory\config.yaml\""
     ~~~
-
     - Requires: Value type should be `String`
     */
     case processCommandLine = "process.command_line"
@@ -758,7 +693,6 @@ public enum ResourceAttributes: String {
     ~~~
     // Examplesattributes[.processCommandArgs] = cmd/otecolattributes[.processCommandArgs] = --config=config.yaml
     ~~~
-
     - Requires: Value type should be `[String]`
     */
     case processCommandArgs = "process.command_args"
@@ -769,7 +703,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.processOwner] = "root"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case processOwner = "process.owner"
@@ -780,7 +713,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.processRuntimeName] = "OpenJDK Runtime Environment"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case processRuntimeName = "process.runtime.name"
@@ -791,7 +723,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.processRuntimeVersion] = "14.0.2"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case processRuntimeVersion = "process.runtime.version"
@@ -802,7 +733,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.processRuntimeDescription] = "Eclipse OpenJ9 Eclipse OpenJ9 VM openj9-0.21.0"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case processRuntimeDescription = "process.runtime.description"
@@ -815,7 +745,6 @@ public enum ResourceAttributes: String {
     ~~~
 
     - Note: MUST be the same for all instances of horizontally scaled services. If the value was not specified, SDKs MUST fallback to `unknown_service:` concatenated with [`process.executable.name`](process.md#process), e.g. `unknown_service:bash`. If `process.executable.name` is not available, the value MUST be set to `unknown_service`.
-
     - Requires: Value type should be `String`
     */
     case serviceName = "service.name"
@@ -828,7 +757,6 @@ public enum ResourceAttributes: String {
     ~~~
 
     - Note: A string value having a meaning that helps to distinguish a group of services, for example the team name that owns a group of services. `service.name` is expected to be unique within the same namespace. If `service.namespace` is not specified in the Resource then `service.name` is expected to be unique for all services that have no explicit namespace defined (so the empty/unspecified namespace is simply one more valid namespace). Zero-length namespace string is assumed equal to unspecified namespace.
-
     - Requires: Value type should be `String`
     */
     case serviceNamespace = "service.namespace"
@@ -841,7 +769,6 @@ public enum ResourceAttributes: String {
     ~~~
 
     - Note: MUST be unique for each instance of the same `service.namespace,service.name` pair (in other words `service.namespace,service.name,service.instance.id` triplet MUST be globally unique). The ID helps to distinguish instances of the same service that exist at the same time (e.g. instances of a horizontally scaled service). It is preferable for the ID to be persistent and stay the same for the lifetime of the service instance, however it is acceptable that the ID is ephemeral and changes during important lifetime events for the service (e.g. service restarts). If the service has no inherent unique ID that can be used as the value of this attribute it is recommended to generate a random Version 1 or Version 4 RFC 4122 UUID (services aiming for reproducible UUIDs may also use Version 5, see RFC 4122 for more recommendations).
-
     - Requires: Value type should be `String`
     */
     case serviceInstanceId = "service.instance.id"
@@ -852,7 +779,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.serviceVersion] = "2.0.0"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case serviceVersion = "service.version"
@@ -863,14 +789,12 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.telemetrySdkName] = "opentelemetry"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case telemetrySdkName = "telemetry.sdk.name"
     /**
     The language of the telemetry SDK.
-
-    - Requires: Value type should be `String`
+    - Requires: Value should be one of [`ResourceAttributes.TelemetrySdkLanguageValues`](x-source-tag://otelTelemetrySdkLanguageValues) (of type `String`)
     */
     case telemetrySdkLanguage = "telemetry.sdk.language"
     /**
@@ -880,7 +804,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.telemetrySdkVersion] = "1.2.3"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case telemetrySdkVersion = "telemetry.sdk.version"
@@ -891,7 +814,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.telemetryAutoVersion] = "1.2.3"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case telemetryAutoVersion = "telemetry.auto.version"
@@ -902,7 +824,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.webengineName] = "WildFly"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case webengineName = "webengine.name"
@@ -913,7 +834,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.webengineVersion] = "21.0.0"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case webengineVersion = "webengine.version"
@@ -924,7 +844,6 @@ public enum ResourceAttributes: String {
     // Examples
     attributes[.webengineDescription] = "WildFly Full 21.0.0.Final (WildFly Core 13.0.1.Final) - 2.2.2.Final"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case webengineDescription = "webengine.description"
@@ -932,6 +851,7 @@ public enum ResourceAttributes: String {
     /**
     Name of the cloud provider.
     */
+    /// - Tag: otelCloudProviderValues
     public struct CloudProviderValues: CustomStringConvertible {
         /**
         Alibaba Cloud.
@@ -964,6 +884,7 @@ public enum ResourceAttributes: String {
     /**
     The cloud platform in use.
     */
+    /// - Tag: otelCloudPlatformValues
     public struct CloudPlatformValues: CustomStringConvertible {
         /**
         Alibaba Cloud Elastic Compute Service.
@@ -1048,6 +969,7 @@ public enum ResourceAttributes: String {
     /**
     The [launch type](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/launch_types.html) for an ECS task.
     */
+    /// - Tag: otelAwsEcsLaunchtypeValues
     public enum AwsEcsLaunchtypeValues: String {
         /**
         ec2.
@@ -1062,6 +984,7 @@ public enum ResourceAttributes: String {
     /**
     The CPU architecture the host system is running on.
     */
+    /// - Tag: otelHostArchValues
     public struct HostArchValues: CustomStringConvertible {
         /**
         AMD64.
@@ -1106,6 +1029,7 @@ public enum ResourceAttributes: String {
     /**
     The operating system type.
     */
+    /// - Tag: otelOsTypeValues
     public struct OsTypeValues: CustomStringConvertible {
         /**
         Microsoft Windows.
@@ -1166,6 +1090,7 @@ public enum ResourceAttributes: String {
     /**
     The language of the telemetry SDK.
     */
+    /// - Tag: otelTelemetrySdkLanguageValues
     public struct TelemetrySdkLanguageValues: CustomStringConvertible {
         /**
         cpp.

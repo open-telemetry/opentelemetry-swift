@@ -16,14 +16,12 @@ public enum SemanticAttributes: String {
     ~~~
 
     - Note: This may be different from `faas.id` if an alias is involved.
-
     - Requires: Value type should be `String`
     */
     case awsLambdaInvokedArn = "aws.lambda.invoked_arn"
     /**
     An identifier for the database management system (DBMS) product being used. See below for a list of well-known identifiers.
-
-    - Requires: Value type should be `String`
+    - Requires: Value should be one of [`SemanticAttributes.DbSystemValues`](x-source-tag://otelDbSystemValues) (of type `String`)
     */
     case dbSystem = "db.system"
     /**
@@ -33,7 +31,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.dbConnectionString] = "Server=(localdb)\v11.0;Integrated Security=true;"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case dbConnectionString = "db.connection_string"
@@ -45,7 +42,6 @@ public enum SemanticAttributes: String {
     attributes[.dbUser] = "readonly_user"
     attributes[.dbUser] = "reporting_user"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case dbUser = "db.user"
@@ -57,7 +53,6 @@ public enum SemanticAttributes: String {
     attributes[.dbJdbcDriverClassname] = "org.postgresql.Driver"
     attributes[.dbJdbcDriverClassname] = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case dbJdbcDriverClassname = "db.jdbc.driver_classname"
@@ -71,7 +66,6 @@ public enum SemanticAttributes: String {
     ~~~
 
     - Note: In some SQL databases, the database name to be used is called "schema name".
-
     - Requires: Value type should be `String`
     */
     case dbName = "db.name"
@@ -85,7 +79,6 @@ public enum SemanticAttributes: String {
     ~~~
 
     - Note: The value may be sanitized to exclude sensitive information.
-
     - Requires: Value type should be `String`
     */
     case dbStatement = "db.statement"
@@ -100,7 +93,6 @@ public enum SemanticAttributes: String {
     ~~~
 
     - Note: When setting this to an SQL keyword, it is not recommended to attempt any client-side parsing of `db.statement` just to get this property, but it should be set if the operation name is provided by the library being instrumented. If the SQL statement has an ambiguous operation, or performs more than one operation, this value may be omitted.
-
     - Requires: Value type should be `String`
     */
     case dbOperation = "db.operation"
@@ -111,7 +103,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.netPeerName] = "example.com"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case netPeerName = "net.peer.name"
@@ -122,7 +113,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.netPeerIp] = "127.0.0.1"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case netPeerIp = "net.peer.ip"
@@ -132,14 +122,12 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.netPeerPort] = 80attributes[.netPeerPort] = 8080attributes[.netPeerPort] = 443
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case netPeerPort = "net.peer.port"
     /**
     Transport protocol used. See note below.
-
-    - Requires: Value type should be `String`
+    - Requires: Value should be one of [`SemanticAttributes.NetTransportValues`](x-source-tag://otelNetTransportValues) (of type `String`)
     */
     case netTransport = "net.transport"
     /**
@@ -151,7 +139,6 @@ public enum SemanticAttributes: String {
     ~~~
 
     - Note: If setting a `db.mssql.instance_name`, `net.peer.port` is no longer required (but still recommended if non-standard).
-
     - Requires: Value type should be `String`
     */
     case dbMssqlInstanceName = "db.mssql.instance_name"
@@ -162,7 +149,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.dbCassandraKeyspace] = "mykeyspace"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case dbCassandraKeyspace = "db.cassandra.keyspace"
@@ -172,14 +158,12 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.dbCassandraPageSize] = 5000
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case dbCassandraPageSize = "db.cassandra.page_size"
     /**
     The consistency level of the query. Based on consistency values from [CQL](https://docs.datastax.com/en/cassandra-oss/3.0/cassandra/dml/dmlConfigConsistency.html).
-
-    - Requires: Value type should be `String`
+    - Requires: Value should be one of [`SemanticAttributes.DbCassandraConsistencyLevelValues`](x-source-tag://otelDbCassandraConsistencyLevelValues) (of type `String`)
     */
     case dbCassandraConsistencyLevel = "db.cassandra.consistency_level"
     /**
@@ -191,13 +175,11 @@ public enum SemanticAttributes: String {
     ~~~
 
     - Note: This mirrors the db.sql.table attribute but references cassandra rather than sql. It is not recommended to attempt any client-side parsing of `db.statement` just to get this property, but it should be set if it is provided by the library being instrumented. If the operation is acting upon an anonymous table, or more than one table, this value MUST NOT be set.
-
     - Requires: Value type should be `String`
     */
     case dbCassandraTable = "db.cassandra.table"
     /**
     Whether or not the query is idempotent.
-
     - Requires: Value type should be `Bool`
     */
     case dbCassandraIdempotence = "db.cassandra.idempotence"
@@ -207,7 +189,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.dbCassandraSpeculativeExecutionCount] = 0attributes[.dbCassandraSpeculativeExecutionCount] = 2
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case dbCassandraSpeculativeExecutionCount = "db.cassandra.speculative_execution_count"
@@ -218,7 +199,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.dbCassandraCoordinatorId] = "be13faa2-8574-4d71-926d-27f16cf8a7af"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case dbCassandraCoordinatorId = "db.cassandra.coordinator.id"
@@ -229,7 +209,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.dbCassandraCoordinatorDc] = "us-west-2"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case dbCassandraCoordinatorDc = "db.cassandra.coordinator.dc"
@@ -240,7 +219,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.dbHbaseNamespace] = "default"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case dbHbaseNamespace = "db.hbase.namespace"
@@ -250,7 +228,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.dbRedisDatabaseIndex] = 0attributes[.dbRedisDatabaseIndex] = 1attributes[.dbRedisDatabaseIndex] = 15
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case dbRedisDatabaseIndex = "db.redis.database_index"
@@ -262,7 +239,6 @@ public enum SemanticAttributes: String {
     attributes[.dbMongodbCollection] = "customers"
     attributes[.dbMongodbCollection] = "products"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case dbMongodbCollection = "db.mongodb.collection"
@@ -276,7 +252,6 @@ public enum SemanticAttributes: String {
     ~~~
 
     - Note: It is not recommended to attempt any client-side parsing of `db.statement` just to get this property, but it should be set if it is provided by the library being instrumented. If the operation is acting upon an anonymous table, or more than one table, this value MUST NOT be set.
-
     - Requires: Value type should be `String`
     */
     case dbSqlTable = "db.sql.table"
@@ -288,7 +263,6 @@ public enum SemanticAttributes: String {
     attributes[.exceptionType] = "java.net.ConnectException"
     attributes[.exceptionType] = "OSError"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case exceptionType = "exception.type"
@@ -300,7 +274,6 @@ public enum SemanticAttributes: String {
     attributes[.exceptionMessage] = "Division by zero"
     attributes[.exceptionMessage] = "Can't convert 'int' object to str implicitly"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case exceptionMessage = "exception.message"
@@ -311,7 +284,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.exceptionStacktrace] = "Exception in thread \"main\" java.lang.RuntimeException: Test exception\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\n at com.example.GenerateTrace.main(GenerateTrace.java:5)"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case exceptionStacktrace = "exception.stacktrace"
@@ -334,14 +306,12 @@ public enum SemanticAttributes: String {
       even if the `exception.escaped` attribute was not set or set to false,
       since the event might have been recorded at a time where it was not
       clear whether the exception will escape.
-
     - Requires: Value type should be `Bool`
     */
     case exceptionEscaped = "exception.escaped"
     /**
     Type of the trigger on which the function is executed.
-
-    - Requires: Value type should be `String`
+    - Requires: Value should be one of [`SemanticAttributes.FaasTriggerValues`](x-source-tag://otelFaasTriggerValues) (of type `String`)
     */
     case faasTrigger = "faas.trigger"
     /**
@@ -351,7 +321,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.faasExecution] = "af9d5aa4-a685-4c5f-a22b-444f80b3cc28"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case faasExecution = "faas.execution"
@@ -363,14 +332,12 @@ public enum SemanticAttributes: String {
     attributes[.faasDocumentCollection] = "myBucketName"
     attributes[.faasDocumentCollection] = "myDbName"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case faasDocumentCollection = "faas.document.collection"
     /**
     Describes the type of the operation that was performed on the data.
-
-    - Requires: Value type should be `String`
+    - Requires: Value should be one of [`SemanticAttributes.FaasDocumentOperationValues`](x-source-tag://otelFaasDocumentOperationValues) (of type `String`)
     */
     case faasDocumentOperation = "faas.document.operation"
     /**
@@ -380,7 +347,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.faasDocumentTime] = "2020-01-23T13:47:06Z"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case faasDocumentTime = "faas.document.time"
@@ -392,7 +358,6 @@ public enum SemanticAttributes: String {
     attributes[.faasDocumentName] = "myFile.txt"
     attributes[.faasDocumentName] = "myTableName"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case faasDocumentName = "faas.document.name"
@@ -405,7 +370,6 @@ public enum SemanticAttributes: String {
     attributes[.httpMethod] = "POST"
     attributes[.httpMethod] = "HEAD"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case httpMethod = "http.method"
@@ -418,7 +382,6 @@ public enum SemanticAttributes: String {
     ~~~
 
     - Note: `http.url` MUST NOT contain credentials passed via URL in form of `https://username:password@www.example.com/`. In such case the attribute's value should be `https://www.example.com/`.
-
     - Requires: Value type should be `String`
     */
     case httpUrl = "http.url"
@@ -429,7 +392,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.httpTarget] = "/path/12314/?q=ddds#123"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case httpTarget = "http.target"
@@ -442,7 +404,6 @@ public enum SemanticAttributes: String {
     ~~~
 
     - Note: When the header is present but empty the attribute SHOULD be set to the empty string. Note that this is a valid situation that is expected in certain cases, according the aforementioned [section of RFC 7230](https://tools.ietf.org/html/rfc7230#section-5.4). When the header is not set the attribute MUST NOT be set.
-
     - Requires: Value type should be `String`
     */
     case httpHost = "http.host"
@@ -454,7 +415,6 @@ public enum SemanticAttributes: String {
     attributes[.httpScheme] = "http"
     attributes[.httpScheme] = "https"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case httpScheme = "http.scheme"
@@ -464,7 +424,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.httpStatusCode] = 200
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case httpStatusCode = "http.status_code"
@@ -472,8 +431,7 @@ public enum SemanticAttributes: String {
     Kind of HTTP protocol used.
 
     - Note: If `net.transport` is not specified, it can be assumed to be `IP.TCP` except if `http.flavor` is `QUIC`, in which case `IP.UDP` is assumed.
-
-    - Requires: Value type should be `String`
+    - Requires: Value should be one of [`SemanticAttributes.HttpFlavorValues`](x-source-tag://otelHttpFlavorValues) (of type `String`)
     */
     case httpFlavor = "http.flavor"
     /**
@@ -483,7 +441,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.httpUserAgent] = "CERN-LineMode/2.15 libwww/2.17b3"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case httpUserAgent = "http.user_agent"
@@ -493,7 +450,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.httpRequestContentLength] = 3495
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case httpRequestContentLength = "http.request_content_length"
@@ -503,7 +459,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.httpRequestContentLengthUncompressed] = 5493
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case httpRequestContentLengthUncompressed = "http.request_content_length_uncompressed"
@@ -513,7 +468,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.httpResponseContentLength] = 3495
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case httpResponseContentLength = "http.response_content_length"
@@ -523,7 +477,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.httpResponseContentLengthUncompressed] = 5493
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case httpResponseContentLengthUncompressed = "http.response_content_length_uncompressed"
@@ -536,7 +489,6 @@ public enum SemanticAttributes: String {
     ~~~
 
     - Note: `http.url` is usually not readily available on the server side but would have to be assembled in a cumbersome and sometimes lossy process from other information (see e.g. open-telemetry/opentelemetry-python/pull/148). It is thus preferred to supply the raw data that is available.
-
     - Requires: Value type should be `String`
     */
     case httpServerName = "http.server_name"
@@ -547,7 +499,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.httpRoute] = "/users/:userID?"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case httpRoute = "http.route"
@@ -570,7 +521,6 @@ public enum SemanticAttributes: String {
       `http.client_ip` when it's the same as `net.peer.ip` means that
       one is at least somewhat confident that the address is not that of
       the closest proxy.
-
     - Requires: Value type should be `String`
     */
     case httpClientIp = "http.client_ip"
@@ -581,7 +531,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.netHostIp] = "192.168.0.1"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case netHostIp = "net.host.ip"
@@ -591,7 +540,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.netHostPort] = 35555
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case netHostPort = "net.host.port"
@@ -602,7 +550,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.netHostName] = "localhost"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case netHostName = "net.host.name"
@@ -613,8 +560,7 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.netHostConnectionType] = "wifi"
     ~~~
-
-    - Requires: Value type should be `String`
+    - Requires: Value should be one of [`SemanticAttributes.NetHostConnectionTypeValues`](x-source-tag://otelNetHostConnectionTypeValues) (of type `String`)
     */
     case netHostConnectionType = "net.host.connection.type"
     /**
@@ -624,8 +570,7 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.netHostConnectionSubtype] = "LTE"
     ~~~
-
-    - Requires: Value type should be `String`
+    - Requires: Value should be one of [`SemanticAttributes.NetHostConnectionSubtypeValues`](x-source-tag://otelNetHostConnectionSubtypeValues) (of type `String`)
     */
     case netHostConnectionSubtype = "net.host.connection.subtype"
     /**
@@ -635,7 +580,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.netHostCarrierName] = "sprint"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case netHostCarrierName = "net.host.carrier.name"
@@ -646,7 +590,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.netHostCarrierMcc] = "310"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case netHostCarrierMcc = "net.host.carrier.mcc"
@@ -657,7 +600,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.netHostCarrierMnc] = "001"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case netHostCarrierMnc = "net.host.carrier.mnc"
@@ -668,7 +610,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.netHostCarrierIcc] = "DE"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case netHostCarrierIcc = "net.host.carrier.icc"
@@ -682,7 +623,6 @@ public enum SemanticAttributes: String {
     attributes[.messagingSystem] = "activemq"
     attributes[.messagingSystem] = "AmazonSQS"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case messagingSystem = "messaging.system"
@@ -694,19 +634,16 @@ public enum SemanticAttributes: String {
     attributes[.messagingDestination] = "MyQueue"
     attributes[.messagingDestination] = "MyTopic"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case messagingDestination = "messaging.destination"
     /**
     The kind of message destination.
-
-    - Requires: Value type should be `String`
+    - Requires: Value should be one of [`SemanticAttributes.MessagingDestinationKindValues`](x-source-tag://otelMessagingDestinationKindValues) (of type `String`)
     */
     case messagingDestinationKind = "messaging.destination_kind"
     /**
     A boolean that is true if the message destination is temporary.
-
     - Requires: Value type should be `Bool`
     */
     case messagingTempDestination = "messaging.temp_destination"
@@ -718,7 +655,6 @@ public enum SemanticAttributes: String {
     attributes[.messagingProtocol] = "AMQP"
     attributes[.messagingProtocol] = "MQTT"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case messagingProtocol = "messaging.protocol"
@@ -729,7 +665,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.messagingProtocolVersion] = "0.9.1"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case messagingProtocolVersion = "messaging.protocol_version"
@@ -741,7 +676,6 @@ public enum SemanticAttributes: String {
     attributes[.messagingUrl] = "tibjmsnaming://localhost:7222"
     attributes[.messagingUrl] = "https://queue.amazonaws.com/80398EXAMPLE/MyQueue"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case messagingUrl = "messaging.url"
@@ -752,7 +686,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.messagingMessageId] = "452a7c7c7c7048c2f887f61572b18fc2"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case messagingMessageId = "messaging.message_id"
@@ -763,7 +696,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.messagingConversationId] = "MyConversationId"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case messagingConversationId = "messaging.conversation_id"
@@ -773,7 +705,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.messagingMessagePayloadSizeBytes] = 2738
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case messagingMessagePayloadSizeBytes = "messaging.message_payload_size_bytes"
@@ -783,7 +714,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.messagingMessagePayloadCompressedSizeBytes] = 2048
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case messagingMessagePayloadCompressedSizeBytes = "messaging.message_payload_compressed_size_bytes"
@@ -794,7 +724,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.faasTime] = "2020-01-23T13:47:06Z"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case faasTime = "faas.time"
@@ -805,13 +734,11 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.faasCron] = "0/5 * * * ? *"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case faasCron = "faas.cron"
     /**
     A boolean that is true if the serverless function is executed for the first time (aka cold-start).
-
     - Requires: Value type should be `Bool`
     */
     case faasColdstart = "faas.coldstart"
@@ -824,7 +751,6 @@ public enum SemanticAttributes: String {
     ~~~
 
     - Note: SHOULD be equal to the `faas.name` resource attribute of the invoked function.
-
     - Requires: Value type should be `String`
     */
     case faasInvokedName = "faas.invoked_name"
@@ -832,8 +758,7 @@ public enum SemanticAttributes: String {
     The cloud provider of the invoked function.
 
     - Note: SHOULD be equal to the `cloud.provider` resource attribute of the invoked function.
-
-    - Requires: Value type should be `String`
+    - Requires: Value should be one of [`SemanticAttributes.FaasInvokedProviderValues`](x-source-tag://otelFaasInvokedProviderValues) (of type `String`)
     */
     case faasInvokedProvider = "faas.invoked_provider"
     /**
@@ -845,7 +770,6 @@ public enum SemanticAttributes: String {
     ~~~
 
     - Note: SHOULD be equal to the `cloud.region` resource attribute of the invoked function.
-
     - Requires: Value type should be `String`
     */
     case faasInvokedRegion = "faas.invoked_region"
@@ -856,7 +780,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.peerService] = "AuthTokenCache"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case peerService = "peer.service"
@@ -867,7 +790,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.enduserId] = "username"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case enduserId = "enduser.id"
@@ -878,7 +800,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.enduserRole] = "admin"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case enduserRole = "enduser.role"
@@ -889,7 +810,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.enduserScope] = "read:message, write:files"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case enduserScope = "enduser.scope"
@@ -899,7 +819,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.threadId] = 42
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case threadId = "thread.id"
@@ -910,7 +829,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.threadName] = "main"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case threadName = "thread.name"
@@ -921,7 +839,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.codeFunction] = "serveRequest"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case codeFunction = "code.function"
@@ -932,7 +849,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.codeNamespace] = "com.example.MyHttpService"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case codeNamespace = "code.namespace"
@@ -943,7 +859,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.codeFilepath] = "/usr/local/MyApplication/content_root/app/index.php"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case codeFilepath = "code.filepath"
@@ -953,7 +868,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.codeLineno] = 42
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case codeLineno = "code.lineno"
@@ -964,7 +878,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.rpcSystem] = "aws-api"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case rpcSystem = "rpc.system"
@@ -978,7 +891,6 @@ public enum SemanticAttributes: String {
     ~~~
 
     - Note: This is the logical name of the service from the RPC interface perspective, which can be different from the name of any implementing class. The `code.namespace` attribute may be used to store the latter (despite the attribute name, it may include a class name; e.g., class with method actually executing the call on the server side, RPC client stub class on the client side).
-
     - Requires: Value type should be `String`
     */
     case rpcService = "rpc.service"
@@ -992,7 +904,6 @@ public enum SemanticAttributes: String {
     ~~~
 
     - Note: This is the logical name of the method from the RPC interface perspective, which can be different from the name of any implementing method/function. The `code.function` attribute may be used to store the latter (e.g., method actually executing the call on the server side, RPC client stub method on the client side).
-
     - Requires: Value type should be `String`
     */
     case rpcMethod = "rpc.method"
@@ -1002,7 +913,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.awsDynamodbTableNames] = Usersattributes[.awsDynamodbTableNames] = Cats
     ~~~
-
     - Requires: Value type should be `[String]`
     */
     case awsDynamodbTableNames = "aws.dynamodb.table_names"
@@ -1012,7 +922,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.awsDynamodbConsumedCapacity] = { "CapacityUnits": number, "GlobalSecondaryIndexes": { "string" : { "CapacityUnits": number, "ReadCapacityUnits": number, "WriteCapacityUnits": number } }, "LocalSecondaryIndexes": { "string" : { "CapacityUnits": number, "ReadCapacityUnits": number, "WriteCapacityUnits": number } }, "ReadCapacityUnits": number, "Table": { "CapacityUnits": number, "ReadCapacityUnits": number, "WriteCapacityUnits": number }, "TableName": "string", "WriteCapacityUnits": number }
     ~~~
-
     - Requires: Value type should be `[String]`
     */
     case awsDynamodbConsumedCapacity = "aws.dynamodb.consumed_capacity"
@@ -1023,7 +932,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.awsDynamodbItemCollectionMetrics] = "{ \"string\" : [ { \"ItemCollectionKey\": { \"string\" : { \"B\": blob, \"BOOL\": boolean, \"BS\": [ blob ], \"L\": [ \"AttributeValue\" ], \"M\": { \"string\" : \"AttributeValue\" }, \"N\": \"string\", \"NS\": [ \"string\" ], \"NULL\": boolean, \"S\": \"string\", \"SS\": [ \"string\" ] } }, \"SizeEstimateRangeGB\": [ number ] } ] }"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case awsDynamodbItemCollectionMetrics = "aws.dynamodb.item_collection_metrics"
@@ -1033,7 +941,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.awsDynamodbProvisionedReadCapacity] = 1.0attributes[.awsDynamodbProvisionedReadCapacity] = 2.0
     ~~~
-
     - Requires: Value type should be `double`
     */
     case awsDynamodbProvisionedReadCapacity = "aws.dynamodb.provisioned_read_capacity"
@@ -1043,13 +950,11 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.awsDynamodbProvisionedWriteCapacity] = 1.0attributes[.awsDynamodbProvisionedWriteCapacity] = 2.0
     ~~~
-
     - Requires: Value type should be `double`
     */
     case awsDynamodbProvisionedWriteCapacity = "aws.dynamodb.provisioned_write_capacity"
     /**
     The value of the `ConsistentRead` request parameter.
-
     - Requires: Value type should be `Bool`
     */
     case awsDynamodbConsistentRead = "aws.dynamodb.consistent_read"
@@ -1062,7 +967,6 @@ public enum SemanticAttributes: String {
     attributes[.awsDynamodbProjection] = "Title, Price, Color"
     attributes[.awsDynamodbProjection] = "Title, Description, RelatedItems, ProductReviews"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case awsDynamodbProjection = "aws.dynamodb.projection"
@@ -1072,7 +976,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.awsDynamodbLimit] = 10
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case awsDynamodbLimit = "aws.dynamodb.limit"
@@ -1082,7 +985,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.awsDynamodbAttributesToGet] = livesattributes[.awsDynamodbAttributesToGet] = id
     ~~~
-
     - Requires: Value type should be `[String]`
     */
     case awsDynamodbAttributesToGet = "aws.dynamodb.attributes_to_get"
@@ -1093,7 +995,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.awsDynamodbIndexName] = "name_to_group"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case awsDynamodbIndexName = "aws.dynamodb.index_name"
@@ -1105,7 +1006,6 @@ public enum SemanticAttributes: String {
     attributes[.awsDynamodbSelect] = "ALL_ATTRIBUTES"
     attributes[.awsDynamodbSelect] = "COUNT"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case awsDynamodbSelect = "aws.dynamodb.select"
@@ -1115,7 +1015,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.awsDynamodbGlobalSecondaryIndexes] = { "IndexName": "string", "KeySchema": [ { "AttributeName": "string", "KeyType": "string" } ], "Projection": { "NonKeyAttributes": [ "string" ], "ProjectionType": "string" }, "ProvisionedThroughput": { "ReadCapacityUnits": number, "WriteCapacityUnits": number } }
     ~~~
-
     - Requires: Value type should be `[String]`
     */
     case awsDynamodbGlobalSecondaryIndexes = "aws.dynamodb.global_secondary_indexes"
@@ -1125,7 +1024,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.awsDynamodbLocalSecondaryIndexes] = { "IndexArn": "string", "IndexName": "string", "IndexSizeBytes": number, "ItemCount": number, "KeySchema": [ { "AttributeName": "string", "KeyType": "string" } ], "Projection": { "NonKeyAttributes": [ "string" ], "ProjectionType": "string" } }
     ~~~
-
     - Requires: Value type should be `[String]`
     */
     case awsDynamodbLocalSecondaryIndexes = "aws.dynamodb.local_secondary_indexes"
@@ -1137,7 +1035,6 @@ public enum SemanticAttributes: String {
     attributes[.awsDynamodbExclusiveStartTable] = "Users"
     attributes[.awsDynamodbExclusiveStartTable] = "CatsTable"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case awsDynamodbExclusiveStartTable = "aws.dynamodb.exclusive_start_table"
@@ -1147,13 +1044,11 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.awsDynamodbTableCount] = 20
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case awsDynamodbTableCount = "aws.dynamodb.table_count"
     /**
     The value of the `ScanIndexForward` request parameter.
-
     - Requires: Value type should be `Bool`
     */
     case awsDynamodbScanForward = "aws.dynamodb.scan_forward"
@@ -1163,7 +1058,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.awsDynamodbSegment] = 10
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case awsDynamodbSegment = "aws.dynamodb.segment"
@@ -1173,7 +1067,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.awsDynamodbTotalSegments] = 100
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case awsDynamodbTotalSegments = "aws.dynamodb.total_segments"
@@ -1183,7 +1076,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.awsDynamodbCount] = 10
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case awsDynamodbCount = "aws.dynamodb.count"
@@ -1193,7 +1085,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.awsDynamodbScannedCount] = 50
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case awsDynamodbScannedCount = "aws.dynamodb.scanned_count"
@@ -1203,7 +1094,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.awsDynamodbAttributeDefinitions] = { "AttributeName": "string", "AttributeType": "string" }
     ~~~
-
     - Requires: Value type should be `[String]`
     */
     case awsDynamodbAttributeDefinitions = "aws.dynamodb.attribute_definitions"
@@ -1213,14 +1103,12 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.awsDynamodbGlobalSecondaryIndexUpdates] = { "Create": { "IndexName": "string", "KeySchema": [ { "AttributeName": "string", "KeyType": "string" } ], "Projection": { "NonKeyAttributes": [ "string" ], "ProjectionType": "string" }, "ProvisionedThroughput": { "ReadCapacityUnits": number, "WriteCapacityUnits": number } }
     ~~~
-
     - Requires: Value type should be `[String]`
     */
     case awsDynamodbGlobalSecondaryIndexUpdates = "aws.dynamodb.global_secondary_index_updates"
     /**
     A string identifying the kind of message consumption as defined in the [Operation names](#operation-names) section above. If the operation is "send", this attribute MUST NOT be set, since the operation can be inferred from the span kind in that case.
-
-    - Requires: Value type should be `String`
+    - Requires: Value should be one of [`SemanticAttributes.MessagingOperationValues`](x-source-tag://otelMessagingOperationValues) (of type `String`)
     */
     case messagingOperation = "messaging.operation"
     /**
@@ -1230,7 +1118,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.messagingConsumerId] = "mygroup - client-6"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case messagingConsumerId = "messaging.consumer_id"
@@ -1241,7 +1128,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.messagingRabbitmqRoutingKey] = "myKey"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case messagingRabbitmqRoutingKey = "messaging.rabbitmq.routing_key"
@@ -1254,7 +1140,6 @@ public enum SemanticAttributes: String {
     ~~~
 
     - Note: If the key type is not string, it's string representation has to be supplied for the attribute. If the key has no unambiguous, canonical string form, don't include its value.
-
     - Requires: Value type should be `String`
     */
     case messagingKafkaMessageKey = "messaging.kafka.message_key"
@@ -1265,7 +1150,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.messagingKafkaConsumerGroup] = "my-group"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case messagingKafkaConsumerGroup = "messaging.kafka.consumer_group"
@@ -1276,7 +1160,6 @@ public enum SemanticAttributes: String {
     // Examples
     attributes[.messagingKafkaClientId] = "client-5"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case messagingKafkaClientId = "messaging.kafka.client_id"
@@ -1286,20 +1169,17 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.messagingKafkaPartition] = 2
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case messagingKafkaPartition = "messaging.kafka.partition"
     /**
     A boolean that is true if the message is a tombstone.
-
     - Requires: Value type should be `Bool`
     */
     case messagingKafkaTombstone = "messaging.kafka.tombstone"
     /**
     The [numeric status code](https://github.com/grpc/grpc/blob/v1.33.2/doc/statuscodes.md) of the gRPC request.
-
-    - Requires: Value type should be `Int`
+    - Requires: Value should be one of [`SemanticAttributes.RpcGrpcStatusCodeValues`](x-source-tag://otelRpcGrpcStatusCodeValues) (of type `Int`)
     */
     case rpcGrpcStatusCode = "rpc.grpc.status_code"
     /**
@@ -1310,7 +1190,6 @@ public enum SemanticAttributes: String {
     attributes[.rpcJsonrpcVersion] = "2.0"
     attributes[.rpcJsonrpcVersion] = "1.0"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case rpcJsonrpcVersion = "rpc.jsonrpc.version"
@@ -1323,7 +1202,6 @@ public enum SemanticAttributes: String {
     attributes[.rpcJsonrpcRequestId] = "request-7"
     attributes[.rpcJsonrpcRequestId] = ""
     ~~~
-
     - Requires: Value type should be `String`
     */
     case rpcJsonrpcRequestId = "rpc.jsonrpc.request_id"
@@ -1333,7 +1211,6 @@ public enum SemanticAttributes: String {
     ~~~
     // Examplesattributes[.rpcJsonrpcErrorCode] = -32700attributes[.rpcJsonrpcErrorCode] = 100
     ~~~
-
     - Requires: Value type should be `Int`
     */
     case rpcJsonrpcErrorCode = "rpc.jsonrpc.error_code"
@@ -1345,33 +1222,28 @@ public enum SemanticAttributes: String {
     attributes[.rpcJsonrpcErrorMessage] = "Parse error"
     attributes[.rpcJsonrpcErrorMessage] = "User already exists"
     ~~~
-
     - Requires: Value type should be `String`
     */
     case rpcJsonrpcErrorMessage = "rpc.jsonrpc.error_message"
     /**
     Whether this is a received or sent message.
-
-    - Requires: Value type should be `String`
+    - Requires: Value should be one of [`SemanticAttributes.MessageTypeValues`](x-source-tag://otelMessageTypeValues) (of type `String`)
     */
     case messageType = "message.type"
     /**
     MUST be calculated as two different counters starting from `1` one for sent messages and one for received message.
 
     - Note: This way we guarantee that the values will be consistent between different implementations.
-
     - Requires: Value type should be `Int`
     */
     case messageId = "message.id"
     /**
     Compressed size of the message in bytes.
-
     - Requires: Value type should be `Int`
     */
     case messageCompressedSize = "message.compressed_size"
     /**
     Uncompressed size of the message in bytes.
-
     - Requires: Value type should be `Int`
     */
     case messageUncompressedSize = "message.uncompressed_size"
@@ -1388,6 +1260,7 @@ public enum SemanticAttributes: String {
     /**
     An identifier for the database management system (DBMS) product being used. See below for a list of well-known identifiers.
     */
+    /// - Tag: otelDbSystemValues
     public struct DbSystemValues: CustomStringConvertible {
         /**
         Some other SQL database. Fallback only. See notes.
@@ -1592,6 +1465,7 @@ public enum SemanticAttributes: String {
     /**
     Transport protocol used. See note below.
     */
+    /// - Tag: otelNetTransportValues
     public enum NetTransportValues: String {
         /**
         ip_tcp.
@@ -1626,6 +1500,7 @@ public enum SemanticAttributes: String {
     /**
     The consistency level of the query. Based on consistency values from [CQL](https://docs.datastax.com/en/cassandra-oss/3.0/cassandra/dml/dmlConfigConsistency.html).
     */
+    /// - Tag: otelDbCassandraConsistencyLevelValues
     public enum DbCassandraConsistencyLevelValues: String {
         /**
         all.
@@ -1676,6 +1551,7 @@ public enum SemanticAttributes: String {
     /**
     Type of the trigger on which the function is executed.
     */
+    /// - Tag: otelFaasTriggerValues
     public enum FaasTriggerValues: String {
         /**
         A response to some data source operation such as a database or filesystem read/write.
@@ -1702,6 +1578,7 @@ public enum SemanticAttributes: String {
     /**
     Describes the type of the operation that was performed on the data.
     */
+    /// - Tag: otelFaasDocumentOperationValues
     public struct FaasDocumentOperationValues: CustomStringConvertible {
         /**
         When a new object is created.
@@ -1730,6 +1607,7 @@ public enum SemanticAttributes: String {
     /**
     Kind of HTTP protocol used.
     */
+    /// - Tag: otelHttpFlavorValues
     public struct HttpFlavorValues: CustomStringConvertible {
         /**
         HTTP 1.0.
@@ -1766,6 +1644,7 @@ public enum SemanticAttributes: String {
     /**
     The internet connection type currently being used by the host.
     */
+    /// - Tag: otelNetHostConnectionTypeValues
     public struct NetHostConnectionTypeValues: CustomStringConvertible {
         /**
         wifi.
@@ -1802,6 +1681,7 @@ public enum SemanticAttributes: String {
     /**
     This describes more details regarding the connection.type. It may be the type of cell technology connection, but it could be used for describing details about a wifi connection.
     */
+    /// - Tag: otelNetHostConnectionSubtypeValues
     public struct NetHostConnectionSubtypeValues: CustomStringConvertible {
         /**
         GPRS.
@@ -1902,6 +1782,7 @@ public enum SemanticAttributes: String {
     /**
     The kind of message destination.
     */
+    /// - Tag: otelMessagingDestinationKindValues
     public enum MessagingDestinationKindValues: String {
         /**
         A message sent to a queue.
@@ -1916,6 +1797,7 @@ public enum SemanticAttributes: String {
     /**
     The cloud provider of the invoked function.
     */
+    /// - Tag: otelFaasInvokedProviderValues
     public struct FaasInvokedProviderValues: CustomStringConvertible {
         /**
         Alibaba Cloud.
@@ -1948,6 +1830,7 @@ public enum SemanticAttributes: String {
     /**
     A string identifying the kind of message consumption as defined in the [Operation names](#operation-names) section above. If the operation is "send", this attribute MUST NOT be set, since the operation can be inferred from the span kind in that case.
     */
+    /// - Tag: otelMessagingOperationValues
     public enum MessagingOperationValues: String {
         /**
         receive.
@@ -1962,6 +1845,7 @@ public enum SemanticAttributes: String {
     /**
     The [numeric status code](https://github.com/grpc/grpc/blob/v1.33.2/doc/statuscodes.md) of the gRPC request.
     */
+    /// - Tag: otelRpcGrpcStatusCodeValues
     public enum RpcGrpcStatusCodeValues: Int {
         /**
         OK.
@@ -2036,6 +1920,7 @@ public enum SemanticAttributes: String {
     /**
     Whether this is a received or sent message.
     */
+    /// - Tag: otelMessageTypeValues
     public enum MessageTypeValues: String {
         /**
         sent.
