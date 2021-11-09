@@ -1392,191 +1392,191 @@ public enum SemanticAttributes: String {
         /**
         Some other SQL database. Fallback only. See notes.
         */
-        static let otherSql = DbSystemValues("other_sql")
+        public static let otherSql = DbSystemValues("other_sql")
         /**
         Microsoft SQL Server.
         */
-        static let mssql = DbSystemValues("mssql")
+        public static let mssql = DbSystemValues("mssql")
         /**
         MySQL.
         */
-        static let mysql = DbSystemValues("mysql")
+        public static let mysql = DbSystemValues("mysql")
         /**
         Oracle Database.
         */
-        static let oracle = DbSystemValues("oracle")
+        public static let oracle = DbSystemValues("oracle")
         /**
         IBM Db2.
         */
-        static let db2 = DbSystemValues("db2")
+        public static let db2 = DbSystemValues("db2")
         /**
         PostgreSQL.
         */
-        static let postgresql = DbSystemValues("postgresql")
+        public static let postgresql = DbSystemValues("postgresql")
         /**
         Amazon Redshift.
         */
-        static let redshift = DbSystemValues("redshift")
+        public static let redshift = DbSystemValues("redshift")
         /**
         Apache Hive.
         */
-        static let hive = DbSystemValues("hive")
+        public static let hive = DbSystemValues("hive")
         /**
         Cloudscape.
         */
-        static let cloudscape = DbSystemValues("cloudscape")
+        public static let cloudscape = DbSystemValues("cloudscape")
         /**
         HyperSQL DataBase.
         */
-        static let hsqldb = DbSystemValues("hsqldb")
+        public static let hsqldb = DbSystemValues("hsqldb")
         /**
         Progress Database.
         */
-        static let progress = DbSystemValues("progress")
+        public static let progress = DbSystemValues("progress")
         /**
         SAP MaxDB.
         */
-        static let maxdb = DbSystemValues("maxdb")
+        public static let maxdb = DbSystemValues("maxdb")
         /**
         SAP HANA.
         */
-        static let hanadb = DbSystemValues("hanadb")
+        public static let hanadb = DbSystemValues("hanadb")
         /**
         Ingres.
         */
-        static let ingres = DbSystemValues("ingres")
+        public static let ingres = DbSystemValues("ingres")
         /**
         FirstSQL.
         */
-        static let firstsql = DbSystemValues("firstsql")
+        public static let firstsql = DbSystemValues("firstsql")
         /**
         EnterpriseDB.
         */
-        static let edb = DbSystemValues("edb")
+        public static let edb = DbSystemValues("edb")
         /**
         InterSystems Caché.
         */
-        static let cache = DbSystemValues("cache")
+        public static let cache = DbSystemValues("cache")
         /**
         Adabas (Adaptable Database System).
         */
-        static let adabas = DbSystemValues("adabas")
+        public static let adabas = DbSystemValues("adabas")
         /**
         Firebird.
         */
-        static let firebird = DbSystemValues("firebird")
+        public static let firebird = DbSystemValues("firebird")
         /**
         Apache Derby.
         */
-        static let derby = DbSystemValues("derby")
+        public static let derby = DbSystemValues("derby")
         /**
         FileMaker.
         */
-        static let filemaker = DbSystemValues("filemaker")
+        public static let filemaker = DbSystemValues("filemaker")
         /**
         Informix.
         */
-        static let informix = DbSystemValues("informix")
+        public static let informix = DbSystemValues("informix")
         /**
         InstantDB.
         */
-        static let instantdb = DbSystemValues("instantdb")
+        public static let instantdb = DbSystemValues("instantdb")
         /**
         InterBase.
         */
-        static let interbase = DbSystemValues("interbase")
+        public static let interbase = DbSystemValues("interbase")
         /**
         MariaDB.
         */
-        static let mariadb = DbSystemValues("mariadb")
+        public static let mariadb = DbSystemValues("mariadb")
         /**
         Netezza.
         */
-        static let netezza = DbSystemValues("netezza")
+        public static let netezza = DbSystemValues("netezza")
         /**
         Pervasive PSQL.
         */
-        static let pervasive = DbSystemValues("pervasive")
+        public static let pervasive = DbSystemValues("pervasive")
         /**
         PointBase.
         */
-        static let pointbase = DbSystemValues("pointbase")
+        public static let pointbase = DbSystemValues("pointbase")
         /**
         SQLite.
         */
-        static let sqlite = DbSystemValues("sqlite")
+        public static let sqlite = DbSystemValues("sqlite")
         /**
         Sybase.
         */
-        static let sybase = DbSystemValues("sybase")
+        public static let sybase = DbSystemValues("sybase")
         /**
         Teradata.
         */
-        static let teradata = DbSystemValues("teradata")
+        public static let teradata = DbSystemValues("teradata")
         /**
         Vertica.
         */
-        static let vertica = DbSystemValues("vertica")
+        public static let vertica = DbSystemValues("vertica")
         /**
         H2.
         */
-        static let h2 = DbSystemValues("h2")
+        public static let h2 = DbSystemValues("h2")
         /**
         ColdFusion IMQ.
         */
-        static let coldfusion = DbSystemValues("coldfusion")
+        public static let coldfusion = DbSystemValues("coldfusion")
         /**
         Apache Cassandra.
         */
-        static let cassandra = DbSystemValues("cassandra")
+        public static let cassandra = DbSystemValues("cassandra")
         /**
         Apache HBase.
         */
-        static let hbase = DbSystemValues("hbase")
+        public static let hbase = DbSystemValues("hbase")
         /**
         MongoDB.
         */
-        static let mongodb = DbSystemValues("mongodb")
+        public static let mongodb = DbSystemValues("mongodb")
         /**
         Redis.
         */
-        static let redis = DbSystemValues("redis")
+        public static let redis = DbSystemValues("redis")
         /**
         Couchbase.
         */
-        static let couchbase = DbSystemValues("couchbase")
+        public static let couchbase = DbSystemValues("couchbase")
         /**
         CouchDB.
         */
-        static let couchdb = DbSystemValues("couchdb")
+        public static let couchdb = DbSystemValues("couchdb")
         /**
         Microsoft Azure Cosmos DB.
         */
-        static let cosmosdb = DbSystemValues("cosmosdb")
+        public static let cosmosdb = DbSystemValues("cosmosdb")
         /**
         Amazon DynamoDB.
         */
-        static let dynamodb = DbSystemValues("dynamodb")
+        public static let dynamodb = DbSystemValues("dynamodb")
         /**
         Neo4j.
         */
-        static let neo4j = DbSystemValues("neo4j")
+        public static let neo4j = DbSystemValues("neo4j")
         /**
         Apache Geode.
         */
-        static let geode = DbSystemValues("geode")
+        public static let geode = DbSystemValues("geode")
         /**
         Elasticsearch.
         */
-        static let elasticsearch = DbSystemValues("elasticsearch")
+        public static let elasticsearch = DbSystemValues("elasticsearch")
         /**
         Memcached.
         */
-        static let memcached = DbSystemValues("memcached")
+        public static let memcached = DbSystemValues("memcached")
         /**
         CockroachDB.
         */
-        static let cockroachdb = DbSystemValues("cockroachdb")
+        public static let cockroachdb = DbSystemValues("cockroachdb")
 
         internal let value: String
 
@@ -1706,15 +1706,15 @@ public enum SemanticAttributes: String {
         /**
         When a new object is created.
         */
-        static let insert = FaasDocumentOperationValues("insert")
+        public static let insert = FaasDocumentOperationValues("insert")
         /**
         When an object is modified.
         */
-        static let edit = FaasDocumentOperationValues("edit")
+        public static let edit = FaasDocumentOperationValues("edit")
         /**
         When an object is deleted.
         */
-        static let delete = FaasDocumentOperationValues("delete")
+        public static let delete = FaasDocumentOperationValues("delete")
 
         internal let value: String
 
@@ -1734,23 +1734,23 @@ public enum SemanticAttributes: String {
         /**
         HTTP 1.0.
         */
-        static let http10 = HttpFlavorValues("1.0")
+        public static let http10 = HttpFlavorValues("1.0")
         /**
         HTTP 1.1.
         */
-        static let http11 = HttpFlavorValues("1.1")
+        public static let http11 = HttpFlavorValues("1.1")
         /**
         HTTP 2.
         */
-        static let http20 = HttpFlavorValues("2.0")
+        public static let http20 = HttpFlavorValues("2.0")
         /**
         SPDY protocol.
         */
-        static let spdy = HttpFlavorValues("SPDY")
+        public static let spdy = HttpFlavorValues("SPDY")
         /**
         QUIC protocol.
         */
-        static let quic = HttpFlavorValues("QUIC")
+        public static let quic = HttpFlavorValues("QUIC")
 
         internal let value: String
 
@@ -1770,23 +1770,23 @@ public enum SemanticAttributes: String {
         /**
         wifi.
         */
-        static let wifi = NetHostConnectionTypeValues("wifi")
+        public static let wifi = NetHostConnectionTypeValues("wifi")
         /**
         wired.
         */
-        static let wired = NetHostConnectionTypeValues("wired")
+        public static let wired = NetHostConnectionTypeValues("wired")
         /**
         cell.
         */
-        static let cell = NetHostConnectionTypeValues("cell")
+        public static let cell = NetHostConnectionTypeValues("cell")
         /**
         unavailable.
         */
-        static let unavailable = NetHostConnectionTypeValues("unavailable")
+        public static let unavailable = NetHostConnectionTypeValues("unavailable")
         /**
         unknown.
         */
-        static let unknown = NetHostConnectionTypeValues("unknown")
+        public static let unknown = NetHostConnectionTypeValues("unknown")
 
         internal let value: String
 
@@ -1806,87 +1806,87 @@ public enum SemanticAttributes: String {
         /**
         GPRS.
         */
-        static let gprs = NetHostConnectionSubtypeValues("gprs")
+        public static let gprs = NetHostConnectionSubtypeValues("gprs")
         /**
         EDGE.
         */
-        static let edge = NetHostConnectionSubtypeValues("edge")
+        public static let edge = NetHostConnectionSubtypeValues("edge")
         /**
         UMTS.
         */
-        static let umts = NetHostConnectionSubtypeValues("umts")
+        public static let umts = NetHostConnectionSubtypeValues("umts")
         /**
         CDMA.
         */
-        static let cdma = NetHostConnectionSubtypeValues("cdma")
+        public static let cdma = NetHostConnectionSubtypeValues("cdma")
         /**
         EVDO Rel. 0.
         */
-        static let evdo0 = NetHostConnectionSubtypeValues("evdo_0")
+        public static let evdo0 = NetHostConnectionSubtypeValues("evdo_0")
         /**
         EVDO Rev. A.
         */
-        static let evdoA = NetHostConnectionSubtypeValues("evdo_a")
+        public static let evdoA = NetHostConnectionSubtypeValues("evdo_a")
         /**
         CDMA2000 1XRTT.
         */
-        static let cdma20001xrtt = NetHostConnectionSubtypeValues("cdma2000_1xrtt")
+        public static let cdma20001xrtt = NetHostConnectionSubtypeValues("cdma2000_1xrtt")
         /**
         HSDPA.
         */
-        static let hsdpa = NetHostConnectionSubtypeValues("hsdpa")
+        public static let hsdpa = NetHostConnectionSubtypeValues("hsdpa")
         /**
         HSUPA.
         */
-        static let hsupa = NetHostConnectionSubtypeValues("hsupa")
+        public static let hsupa = NetHostConnectionSubtypeValues("hsupa")
         /**
         HSPA.
         */
-        static let hspa = NetHostConnectionSubtypeValues("hspa")
+        public static let hspa = NetHostConnectionSubtypeValues("hspa")
         /**
         IDEN.
         */
-        static let iden = NetHostConnectionSubtypeValues("iden")
+        public static let iden = NetHostConnectionSubtypeValues("iden")
         /**
         EVDO Rev. B.
         */
-        static let evdoB = NetHostConnectionSubtypeValues("evdo_b")
+        public static let evdoB = NetHostConnectionSubtypeValues("evdo_b")
         /**
         LTE.
         */
-        static let lte = NetHostConnectionSubtypeValues("lte")
+        public static let lte = NetHostConnectionSubtypeValues("lte")
         /**
         EHRPD.
         */
-        static let ehrpd = NetHostConnectionSubtypeValues("ehrpd")
+        public static let ehrpd = NetHostConnectionSubtypeValues("ehrpd")
         /**
         HSPAP.
         */
-        static let hspap = NetHostConnectionSubtypeValues("hspap")
+        public static let hspap = NetHostConnectionSubtypeValues("hspap")
         /**
         GSM.
         */
-        static let gsm = NetHostConnectionSubtypeValues("gsm")
+        public static let gsm = NetHostConnectionSubtypeValues("gsm")
         /**
         TD-SCDMA.
         */
-        static let tdScdma = NetHostConnectionSubtypeValues("td_scdma")
+        public static let tdScdma = NetHostConnectionSubtypeValues("td_scdma")
         /**
         IWLAN.
         */
-        static let iwlan = NetHostConnectionSubtypeValues("iwlan")
+        public static let iwlan = NetHostConnectionSubtypeValues("iwlan")
         /**
         5G NR (New Radio).
         */
-        static let nr = NetHostConnectionSubtypeValues("nr")
+        public static let nr = NetHostConnectionSubtypeValues("nr")
         /**
         5G NRNSA (New Radio Non-Standalone).
         */
-        static let nrnsa = NetHostConnectionSubtypeValues("nrnsa")
+        public static let nrnsa = NetHostConnectionSubtypeValues("nrnsa")
         /**
         LTE CA.
         */
-        static let lteCa = NetHostConnectionSubtypeValues("lte_ca")
+        public static let lteCa = NetHostConnectionSubtypeValues("lte_ca")
 
         internal let value: String
 
@@ -1920,19 +1920,19 @@ public enum SemanticAttributes: String {
         /**
         Alibaba Cloud.
         */
-        static let alibabaCloud = FaasInvokedProviderValues("alibaba_cloud")
+        public static let alibabaCloud = FaasInvokedProviderValues("alibaba_cloud")
         /**
         Amazon Web Services.
         */
-        static let aws = FaasInvokedProviderValues("aws")
+        public static let aws = FaasInvokedProviderValues("aws")
         /**
         Microsoft Azure.
         */
-        static let azure = FaasInvokedProviderValues("azure")
+        public static let azure = FaasInvokedProviderValues("azure")
         /**
         Google Cloud Platform.
         */
-        static let gcp = FaasInvokedProviderValues("gcp")
+        public static let gcp = FaasInvokedProviderValues("gcp")
 
         internal let value: String
 

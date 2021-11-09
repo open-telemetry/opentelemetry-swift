@@ -10,13 +10,18 @@
 #endif
 
 import Foundation
+import OpenTelemetrySdk
 
 public class OperatingSystemDataSource: IOperatingSystemDataSource {
     public var description: String {
-        ProcessInfo.processInfo.operatingSystemVersionString
+        name + " " + ProcessInfo.processInfo.operatingSystemVersionString
     }
 
     public var type: String {
+        ResourceAttributes.OsTypeValues.darwin.description
+    }
+    
+    public var name: String {
         #if os(watchOS)
             return "watchOS"
         #elseif os(macOS)
@@ -24,5 +29,10 @@ public class OperatingSystemDataSource: IOperatingSystemDataSource {
         #else
             return UIDevice.current.systemName
         #endif
+    }
+    
+    public var version: String {
+        let version = ProcessInfo.processInfo.operatingSystemVersion
+        return "\(version.majorVersion).\(version.minorVersion).\(version.patchVersion)"
     }
 }

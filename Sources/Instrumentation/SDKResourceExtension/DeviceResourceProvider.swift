@@ -19,12 +19,11 @@ public class DeviceResourceProvider: ResourceProvider {
         var attributes = [String: AttributeValue]()
 
         if let deviceModel = deviceSource.model {
-            // TODO: update with semantic convention when it is added to the OTel sdk.
-            attributes["device.model"] = AttributeValue.string(deviceModel)
+            attributes[ResourceAttributes.deviceModelIdentifier.rawValue] = AttributeValue.string(deviceModel)
         }
 
         if let deviceId = deviceSource.identifier {
-            attributes[ResourceAttributes.hostId.rawValue] = AttributeValue.string(deviceId)
+            attributes[ResourceAttributes.deviceId.rawValue] = AttributeValue.string(deviceId)
         }
 
         return attributes

@@ -936,19 +936,19 @@ public enum ResourceAttributes: String {
         /**
         Alibaba Cloud.
         */
-        static let alibabaCloud = CloudProviderValues("alibaba_cloud")
+        public static let alibabaCloud = CloudProviderValues("alibaba_cloud")
         /**
         Amazon Web Services.
         */
-        static let aws = CloudProviderValues("aws")
+        public static let aws = CloudProviderValues("aws")
         /**
         Microsoft Azure.
         */
-        static let azure = CloudProviderValues("azure")
+        public static let azure = CloudProviderValues("azure")
         /**
         Google Cloud Platform.
         */
-        static let gcp = CloudProviderValues("gcp")
+        public static let gcp = CloudProviderValues("gcp")
 
         internal let value: String
 
@@ -968,71 +968,71 @@ public enum ResourceAttributes: String {
         /**
         Alibaba Cloud Elastic Compute Service.
         */
-        static let alibabaCloudEcs = CloudPlatformValues("alibaba_cloud_ecs")
+        public static let alibabaCloudEcs = CloudPlatformValues("alibaba_cloud_ecs")
         /**
         Alibaba Cloud Function Compute.
         */
-        static let alibabaCloudFc = CloudPlatformValues("alibaba_cloud_fc")
+        public static let alibabaCloudFc = CloudPlatformValues("alibaba_cloud_fc")
         /**
         AWS Elastic Compute Cloud.
         */
-        static let awsEc2 = CloudPlatformValues("aws_ec2")
+        public static let awsEc2 = CloudPlatformValues("aws_ec2")
         /**
         AWS Elastic Container Service.
         */
-        static let awsEcs = CloudPlatformValues("aws_ecs")
+        public static let awsEcs = CloudPlatformValues("aws_ecs")
         /**
         AWS Elastic Kubernetes Service.
         */
-        static let awsEks = CloudPlatformValues("aws_eks")
+        public static let awsEks = CloudPlatformValues("aws_eks")
         /**
         AWS Lambda.
         */
-        static let awsLambda = CloudPlatformValues("aws_lambda")
+        public static let awsLambda = CloudPlatformValues("aws_lambda")
         /**
         AWS Elastic Beanstalk.
         */
-        static let awsElasticBeanstalk = CloudPlatformValues("aws_elastic_beanstalk")
+        public static let awsElasticBeanstalk = CloudPlatformValues("aws_elastic_beanstalk")
         /**
         Azure Virtual Machines.
         */
-        static let azureVm = CloudPlatformValues("azure_vm")
+        public static let azureVm = CloudPlatformValues("azure_vm")
         /**
         Azure Container Instances.
         */
-        static let azureContainerInstances = CloudPlatformValues("azure_container_instances")
+        public static let azureContainerInstances = CloudPlatformValues("azure_container_instances")
         /**
         Azure Kubernetes Service.
         */
-        static let azureAks = CloudPlatformValues("azure_aks")
+        public static let azureAks = CloudPlatformValues("azure_aks")
         /**
         Azure Functions.
         */
-        static let azureFunctions = CloudPlatformValues("azure_functions")
+        public static let azureFunctions = CloudPlatformValues("azure_functions")
         /**
         Azure App Service.
         */
-        static let azureAppService = CloudPlatformValues("azure_app_service")
+        public static let azureAppService = CloudPlatformValues("azure_app_service")
         /**
         Google Cloud Compute Engine (GCE).
         */
-        static let gcpComputeEngine = CloudPlatformValues("gcp_compute_engine")
+        public static let gcpComputeEngine = CloudPlatformValues("gcp_compute_engine")
         /**
         Google Cloud Run.
         */
-        static let gcpCloudRun = CloudPlatformValues("gcp_cloud_run")
+        public static let gcpCloudRun = CloudPlatformValues("gcp_cloud_run")
         /**
         Google Cloud Kubernetes Engine (GKE).
         */
-        static let gcpKubernetesEngine = CloudPlatformValues("gcp_kubernetes_engine")
+        public static let gcpKubernetesEngine = CloudPlatformValues("gcp_kubernetes_engine")
         /**
         Google Cloud Functions (GCF).
         */
-        static let gcpCloudFunctions = CloudPlatformValues("gcp_cloud_functions")
+        public static let gcpCloudFunctions = CloudPlatformValues("gcp_cloud_functions")
         /**
         Google Cloud App Engine (GAE).
         */
-        static let gcpAppEngine = CloudPlatformValues("gcp_app_engine")
+        public static let gcpAppEngine = CloudPlatformValues("gcp_app_engine")
 
         internal let value: String
 
@@ -1066,31 +1066,31 @@ public enum ResourceAttributes: String {
         /**
         AMD64.
         */
-        static let amd64 = HostArchValues("amd64")
+        public static let amd64 = HostArchValues("amd64")
         /**
         ARM32.
         */
-        static let arm32 = HostArchValues("arm32")
+        public static let arm32 = HostArchValues("arm32")
         /**
         ARM64.
         */
-        static let arm64 = HostArchValues("arm64")
+        public static let arm64 = HostArchValues("arm64")
         /**
         Itanium.
         */
-        static let ia64 = HostArchValues("ia64")
+        public static let ia64 = HostArchValues("ia64")
         /**
         32-bit PowerPC.
         */
-        static let ppc32 = HostArchValues("ppc32")
+        public static let ppc32 = HostArchValues("ppc32")
         /**
         64-bit PowerPC.
         */
-        static let ppc64 = HostArchValues("ppc64")
+        public static let ppc64 = HostArchValues("ppc64")
         /**
         32-bit x86.
         */
-        static let x86 = HostArchValues("x86")
+        public static let x86 = HostArchValues("x86")
 
         internal let value: String
 
@@ -1110,47 +1110,47 @@ public enum ResourceAttributes: String {
         /**
         Microsoft Windows.
         */
-        static let windows = OsTypeValues("windows")
+        public static let windows = OsTypeValues("windows")
         /**
         Linux.
         */
-        static let linux = OsTypeValues("linux")
+        public static let linux = OsTypeValues("linux")
         /**
         Apple Darwin.
         */
-        static let darwin = OsTypeValues("darwin")
+        public static let darwin = OsTypeValues("darwin")
         /**
         FreeBSD.
         */
-        static let freebsd = OsTypeValues("freebsd")
+        public static let freebsd = OsTypeValues("freebsd")
         /**
         NetBSD.
         */
-        static let netbsd = OsTypeValues("netbsd")
+        public static let netbsd = OsTypeValues("netbsd")
         /**
         OpenBSD.
         */
-        static let openbsd = OsTypeValues("openbsd")
+        public static let openbsd = OsTypeValues("openbsd")
         /**
         DragonFly BSD.
         */
-        static let dragonflybsd = OsTypeValues("dragonflybsd")
+        public static let dragonflybsd = OsTypeValues("dragonflybsd")
         /**
         HP-UX (Hewlett Packard Unix).
         */
-        static let hpux = OsTypeValues("hpux")
+        public static let hpux = OsTypeValues("hpux")
         /**
         AIX (Advanced Interactive eXecutive).
         */
-        static let aix = OsTypeValues("aix")
+        public static let aix = OsTypeValues("aix")
         /**
         Oracle Solaris.
         */
-        static let solaris = OsTypeValues("solaris")
+        public static let solaris = OsTypeValues("solaris")
         /**
         IBM z/OS.
         */
-        static let zOs = OsTypeValues("z_os")
+        public static let zOs = OsTypeValues("z_os")
 
         internal let value: String
 
@@ -1170,48 +1170,47 @@ public enum ResourceAttributes: String {
         /**
         cpp.
         */
-        static let cpp = TelemetrySdkLanguageValues("cpp")
+        public static let cpp = TelemetrySdkLanguageValues("cpp")
         /**
         dotnet.
         */
-        static let dotnet = TelemetrySdkLanguageValues("dotnet")
+        public static let dotnet = TelemetrySdkLanguageValues("dotnet")
         /**
         erlang.
         */
-        static let erlang = TelemetrySdkLanguageValues("erlang")
+        public static let erlang = TelemetrySdkLanguageValues("erlang")
         /**
         go.
         */
-        static let go = TelemetrySdkLanguageValues("go")
+        public static let go = TelemetrySdkLanguageValues("go")
         /**
         java.
         */
-        static let java = TelemetrySdkLanguageValues("java")
+        public static let java = TelemetrySdkLanguageValues("java")
         /**
         nodejs.
         */
-        static let nodejs = TelemetrySdkLanguageValues("nodejs")
+        public static let nodejs = TelemetrySdkLanguageValues("nodejs")
         /**
         php.
         */
-        static let php = TelemetrySdkLanguageValues("php")
+        public static let php = TelemetrySdkLanguageValues("php")
         /**
         python.
         */
-        static let python = TelemetrySdkLanguageValues("python")
+        public static let python = TelemetrySdkLanguageValues("python")
         /**
         ruby.
         */
-        static let ruby = TelemetrySdkLanguageValues("ruby")
+        public static let ruby = TelemetrySdkLanguageValues("ruby")
         /**
         webjs.
         */
-        static let webjs = TelemetrySdkLanguageValues("webjs")
+        public static let webjs = TelemetrySdkLanguageValues("webjs")
         /**
-         swift.
-         */
-        static let swift = TelemetrySdkLanguageValues("swift")
-
+        swift.
+        */
+        public static let swift = TelemetrySdkLanguageValues("swift")
 
         internal let value: String
 
