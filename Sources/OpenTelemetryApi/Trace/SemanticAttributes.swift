@@ -133,7 +133,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.netPeerPort] = 80attributes[.netPeerPort] = 8080attributes[.netPeerPort] = 443
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case netPeerPort = "net.peer.port"
     /**
@@ -173,7 +173,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.dbCassandraPageSize] = 5000
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case dbCassandraPageSize = "db.cassandra.page_size"
     /**
@@ -208,7 +208,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.dbCassandraSpeculativeExecutionCount] = 0attributes[.dbCassandraSpeculativeExecutionCount] = 2
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case dbCassandraSpeculativeExecutionCount = "db.cassandra.speculative_execution_count"
     /**
@@ -251,7 +251,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.dbRedisDatabaseIndex] = 0attributes[.dbRedisDatabaseIndex] = 1attributes[.dbRedisDatabaseIndex] = 15
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case dbRedisDatabaseIndex = "db.redis.database_index"
     /**
@@ -465,7 +465,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.httpStatusCode] = 200
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case httpStatusCode = "http.status_code"
     /**
@@ -494,7 +494,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.httpRequestContentLength] = 3495
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case httpRequestContentLength = "http.request_content_length"
     /**
@@ -504,7 +504,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.httpRequestContentLengthUncompressed] = 5493
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case httpRequestContentLengthUncompressed = "http.request_content_length_uncompressed"
     /**
@@ -514,7 +514,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.httpResponseContentLength] = 3495
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case httpResponseContentLength = "http.response_content_length"
     /**
@@ -524,7 +524,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.httpResponseContentLengthUncompressed] = 5493
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case httpResponseContentLengthUncompressed = "http.response_content_length_uncompressed"
     /**
@@ -592,7 +592,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.netHostPort] = 35555
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case netHostPort = "net.host.port"
     /**
@@ -774,7 +774,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.messagingMessagePayloadSizeBytes] = 2738
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case messagingMessagePayloadSizeBytes = "messaging.message_payload_size_bytes"
     /**
@@ -784,7 +784,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.messagingMessagePayloadCompressedSizeBytes] = 2048
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case messagingMessagePayloadCompressedSizeBytes = "messaging.message_payload_compressed_size_bytes"
     /**
@@ -900,7 +900,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.threadId] = 42
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case threadId = "thread.id"
     /**
@@ -954,7 +954,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.codeLineno] = 42
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case codeLineno = "code.lineno"
     /**
@@ -1073,7 +1073,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.awsDynamodbLimit] = 10
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case awsDynamodbLimit = "aws.dynamodb.limit"
     /**
@@ -1148,7 +1148,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.awsDynamodbTableCount] = 20
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case awsDynamodbTableCount = "aws.dynamodb.table_count"
     /**
@@ -1164,7 +1164,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.awsDynamodbSegment] = 10
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case awsDynamodbSegment = "aws.dynamodb.segment"
     /**
@@ -1174,7 +1174,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.awsDynamodbTotalSegments] = 100
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case awsDynamodbTotalSegments = "aws.dynamodb.total_segments"
     /**
@@ -1184,7 +1184,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.awsDynamodbCount] = 10
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case awsDynamodbCount = "aws.dynamodb.count"
     /**
@@ -1194,7 +1194,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.awsDynamodbScannedCount] = 50
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case awsDynamodbScannedCount = "aws.dynamodb.scanned_count"
     /**
@@ -1287,7 +1287,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.messagingKafkaPartition] = 2
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case messagingKafkaPartition = "messaging.kafka.partition"
     /**
@@ -1299,7 +1299,7 @@ public enum SemanticAttributes: String {
     /**
     The [numeric status code](https://github.com/grpc/grpc/blob/v1.33.2/doc/statuscodes.md) of the gRPC request.
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case rpcGrpcStatusCode = "rpc.grpc.status_code"
     /**
@@ -1334,7 +1334,7 @@ public enum SemanticAttributes: String {
     // Examplesattributes[.rpcJsonrpcErrorCode] = -32700attributes[.rpcJsonrpcErrorCode] = 100
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case rpcJsonrpcErrorCode = "rpc.jsonrpc.error_code"
     /**
@@ -1360,19 +1360,19 @@ public enum SemanticAttributes: String {
 
     - Note: This way we guarantee that the values will be consistent between different implementations.
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case messageId = "message.id"
     /**
     Compressed size of the message in bytes.
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case messageCompressedSize = "message.compressed_size"
     /**
     Uncompressed size of the message in bytes.
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case messageUncompressedSize = "message.uncompressed_size"
 

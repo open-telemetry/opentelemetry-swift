@@ -13,6 +13,8 @@
     Bool
   {%- elif type == "number" -%}
     Int
+  {%- elif type == "int" -%}
+    Int
   {%- else -%}
     {{type}}
   {%- endif -%}
@@ -84,6 +86,11 @@ public enum {{enum}}: String {
         */
         public static let {{ member.member_id | to_camelcase }} = {{class_name}}({{ print_value(type, member.value) }})
         {%- endfor %}
+        {%- if 'TelemetrySdkLanguage' in class_name %}
+        /**
+        swift.
+        */
+        public static let swift = TelemetrySdkLanguageValues("swift"){% endif %}
 
         internal let value: String
 
@@ -101,7 +108,7 @@ public enum {{enum}}: String {
         /**
         {{member.brief | to_doc_brief}}.
         */
-        case {{ member.member_id | replace(".", "_") }} = {{ print_value(type, member.value) }}
+        case {{ member.member_id | replace(".", "_") | replace("internal", "`internal`") }} = {{ print_value(type, member.value) }}
         {%- endfor %}
     }
     {% endif %}

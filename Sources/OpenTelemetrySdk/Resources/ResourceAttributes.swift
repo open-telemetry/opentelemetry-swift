@@ -370,7 +370,7 @@ public enum ResourceAttributes: String {
 
     - Note: It's recommended to set this attribute since e.g. too little memory can easily stop a Java AWS Lambda function from working correctly. On AWS Lambda, the environment variable `AWS_LAMBDA_FUNCTION_MEMORY_SIZE` provides this information.
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case faasMaxMemory = "faas.max_memory"
     /**
@@ -705,7 +705,7 @@ public enum ResourceAttributes: String {
     // Examplesattributes[.processPid] = 1234
     ~~~
 
-    - Requires: Value type should be `int`
+    - Requires: Value type should be `Int`
     */
     case processPid = "process.pid"
     /**
