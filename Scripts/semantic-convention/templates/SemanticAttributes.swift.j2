@@ -92,12 +92,6 @@ public enum {{enum}}: String {
         */
         public static let {{ member.member_id | to_camelcase }} = {{class_name}}({{ print_value(type, member.value) }})
         {%- endfor %}
-        {%- if 'TelemetrySdkLanguage' in class_name %}
-        /**
-        swift.
-        */
-        public static let swift = TelemetrySdkLanguageValues("swift")
-        {%- endif %}
 
         internal let value: String
 
