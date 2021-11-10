@@ -13,6 +13,8 @@
     Bool
   {%- elif type == "number" -%}
     Int
+  {%- elif type == "int" -%}
+    Int
   {%- else -%}
     {{type}}
   {%- endif -%}
@@ -26,6 +28,7 @@ import Foundation
 public enum {{enum}}: String {
 
     {%- for attribute in attributes | unique(attribute="fqn") %}
+    {%- set class_name = attribute.fqn | to_camelcase(True) ~ "Values" %}
     /**
     {{attribute.brief | to_doc_brief}}.
     {%- if attribute.examples %}
@@ -50,7 +53,11 @@ public enum {{enum}}: String {
     - Warning: Deprecated • {{attribute.deprecated | to_doc_brief}}.
     {%- endif %}
 
+    {%- if attribute.is_enum %}
+    - Requires: Value should be one of [`{{enum}}.{{class_name}}`](x-source-tag://otel{{class_name}}) (of type `{{to_swift_return_type(attribute.attr_type|lower)}}`)
+    {% else %}
     - Requires: Value type should be `{{to_swift_return_type(attribute.attr_type|lower)}}`
+    {% endif -%}
     */
     {%- if attribute.deprecated %}
     @available(*, deprecated)
@@ -76,6 +83,7 @@ public enum {{enum}}: String {
     /**
     {{attribute.brief | to_doc_brief}}.
     */
+    /// - Tag: otel{{class_name}}
     {%- if attribute.attr_type.custom_values %}
     public struct {{class_name}}: CustomStringConvertible {
         {%- for member in attribute.attr_type.members %}
@@ -101,7 +109,7 @@ public enum {{enum}}: String {
         /**
         {{member.brief | to_doc_brief}}.
         */
-        case {{ member.member_id | replace(".", "_") }} = {{ print_value(type, member.value) }}
+        case {{ member.member_id | replace(".", "_") | replace("internal", "`internal`") }} = {{ print_value(type, member.value) }}
         {%- endfor %}
     }
     {% endif %}
