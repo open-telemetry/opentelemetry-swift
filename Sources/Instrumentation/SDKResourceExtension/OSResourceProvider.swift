@@ -17,8 +17,10 @@ public class OSResourceProvider: ResourceProvider {
     override public var attributes: [String: AttributeValue] {
         var attributes = [String: AttributeValue]()
 
-        attributes[ResourceAttributes.osType.rawValue] = AttributeValue.string(osDataSource.type)
-        attributes[ResourceAttributes.osDescription.rawValue] = AttributeValue.string(osDataSource.description)
+        attributes[ResourceAttributes.osType.rawValue] = .string(osDataSource.type)
+        attributes[ResourceAttributes.osName.rawValue] = .string(osDataSource.name)
+        attributes[ResourceAttributes.osDescription.rawValue] = .string(osDataSource.description)
+        attributes[ResourceAttributes.osVersion.rawValue] = .string(osDataSource.version)
 
         return attributes
     }

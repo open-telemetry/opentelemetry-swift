@@ -82,7 +82,7 @@ public enum {{enum}}: String {
         /**
         {{member.brief | to_doc_brief}}.
         */
-        static let {{ member.member_id | to_camelcase }} = {{class_name}}({{ print_value(type, member.value) }})
+        public static let {{ member.member_id | to_camelcase }} = {{class_name}}({{ print_value(type, member.value) }})
         {%- endfor %}
 
         internal let value: String
