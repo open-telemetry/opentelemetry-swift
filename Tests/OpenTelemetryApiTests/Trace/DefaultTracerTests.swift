@@ -8,7 +8,7 @@ import Foundation
 @testable import OpenTelemetryApi
 import XCTest
 
-fileprivate func createRandomPropagatedSpan() -> PropagatedSpan {
+private func createRandomPropagatedSpan() -> PropagatedSpan {
     return PropagatedSpan(context: SpanContext.create(traceId: TraceId.random(),
                                                       spanId: SpanId.random(),
                                                       traceFlags: TraceFlags(),
@@ -24,12 +24,12 @@ final class DefaultTracerTests: XCTestCase {
 
     override func setUp() {
         spanContext = SpanContext.create(traceId: TraceId(fromBytes: firstBytes), spanId: SpanId(fromBytes: firstBytes, withOffset: 8), traceFlags: TraceFlags(), traceState: TraceState())
+        XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan, "Test must start without context")
+
     }
 
     override func tearDown() {
-        if OpenTelemetry.instance.contextProvider.activeSpan != nil {
-            XCTAssert(false, "Test must clean span context")
-        }
+        XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan, "Test must clean span context")
     }
 
     func testDefaultGetCurrentSpan() {

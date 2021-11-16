@@ -16,10 +16,15 @@ private let OS_ACTIVITY_CURRENT = unsafeBitCast(dlsym(UnsafeMutableRawPointer(bi
 
 class ActivityContextManager: ContextManager {
     static let instance = ActivityContextManager()
-#if canImport(_Concurrency)
-    @available(macOS 12.0, iOS 15.0, tvOS 15.0, *)
-    static let taskLocalContextManager = TaskLocalContextManager.instance
-#endif
+//#if canImport(_Concurrency)
+//#if swift(<5.5.2)
+//    @available(macOS 12.0, iOS 15.0, tvOS 15.0, *)
+//    static let taskLocalContextManager = TaskLocalContextManager.instance
+//#else
+//    @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
+//    static let taskLocalContextManager = TaskLocalContextManager.instance
+//#endif
+//#endif
 
     let rlock = NSRecursiveLock()
 
@@ -38,14 +43,22 @@ class ActivityContextManager: ContextManager {
     var contextMap = [os_activity_id_t: [String: AnyObject]]()
 
     func getCurrentContextValue(forKey key: OpenTelemetryContextKeys) -> AnyObject? {
-#if canImport(_Concurrency)
-        if #available(macOS 12.0, iOS 15.0, tvOS 15.0, *) {
-            // If running with task local, use first its stored value
-            if let contextValue = ActivityContextManager.taskLocalContextManager.getCurrentContextValue(forKey: key) {
-                return contextValue
-            }
-        }
-#endif
+//#if canImport(_Concurrency)
+//// If running with task local, use first its stored value
+//#if swift(<5.5.2)
+//        if #available(macOS 12.0, iOS 15.0, tvOS 15.0, *) {
+//            if let contextValue = ActivityContextManager.taskLocalContextManager.getCurrentContextValue(forKey: key) {
+//                return contextValue
+//            }
+//        }
+//#else
+//        if #available(macOS 10.15, iOS 13.0, tvOS 13.0, *) {
+//            if let contextValue = ActivityContextManager.taskLocalContextManager.getCurrentContextValue(forKey: key) {
+//                return contextValue
+//            }
+//        }
+//#endif
+//#endif
         var parentIdent: os_activity_id_t = 0
         let activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, &parentIdent)
         var contextValue: AnyObject?
@@ -70,12 +83,19 @@ class ActivityContextManager: ContextManager {
             objectScope.setObject(ScopeElement(scope: scope), forKey: value)
         }
         contextMap[activityIdent]?[key.rawValue] = value
-#if canImport(_Concurrency)
-        if #available(macOS 12.0, iOS 15.0, tvOS 15.0, *) {
-            // If running with task local, set the value after the activity, so activity is not empty
-            ActivityContextManager.taskLocalContextManager.setCurrentContextValue(forKey: key, value: value)
-        }
-#endif
+//#if canImport(_Concurrency)
+//// If running with task local, set the value after the activity, so activity is not empty
+//#if swift(<5.5.2)
+//        if #available(macOS 12.0, iOS 15.0, tvOS 15.0, *) {
+//            ActivityContextManager.taskLocalContextManager.setCurrentContextValue(forKey: key, value: value)
+//        }
+//#else
+//        if #available(macOS 10.15, iOS 13.0, tvOS 13.0, *) {
+//            ActivityContextManager.taskLocalContextManager.setCurrentContextValue(forKey: key, value: value)
+//        }
+//
+//#endif
+//#endif
         rlock.unlock()
     }
 
@@ -94,14 +114,24 @@ class ActivityContextManager: ContextManager {
             os_activity_scope_leave(&scope)
             objectScope.removeObject(forKey: value)
         }
-#if canImport(_Concurrency)
-        if #available(macOS 12.0, iOS 15.0, tvOS 15.0, *) {
-            // If there is a parent activity, set its content as the task local
-            ActivityContextManager.taskLocalContextManager.removeContextValue(forKey: key, value: value)
-            if let currentContext = self.getCurrentContextValue(forKey: key) {
-                ActivityContextManager.taskLocalContextManager.setCurrentContextValue(forKey: key, value: currentContext)
-            }
-        }
-#endif
+//#if canImport(_Concurrency)
+//#if swift(<5.5.2)
+//        if #available(macOS 12.0, iOS 15.0, tvOS 15.0, *) {
+//            // If there is a parent activity, set its content as the task local
+//            ActivityContextManager.taskLocalContextManager.removeContextValue(forKey: key, value: value)
+//            if let currentContext = self.getCurrentContextValue(forKey: key) {
+//                ActivityContextManager.taskLocalContextManager.setCurrentContextValue(forKey: key, value: currentContext)
+//            }
+//        }
+//#else
+//        // If there is a parent activity, set its content as the task local
+//        if #available(macOS 10.15, iOS 13.0, tvOS 13.0, *) {
+//            ActivityContextManager.taskLocalContextManager.removeContextValue(forKey: key, value: value)
+//            if let currentContext = self.getCurrentContextValue(forKey: key) {
+//                ActivityContextManager.taskLocalContextManager.setCurrentContextValue(forKey: key, value: currentContext)
+//            }
+//        }
+//#endif
+//#endif
     }
 }
