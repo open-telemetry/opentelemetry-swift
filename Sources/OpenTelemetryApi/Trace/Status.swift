@@ -60,3 +60,58 @@ extension Status: CustomStringConvertible {
         }
     }
 }
+
+// this explicit Codable implementation for Status will probably be redundant with Swift 5.5
+extension Status: Codable {
+    enum CodingKeys: String, CodingKey {
+        case ok
+        case unset
+        case error
+    }
+
+    enum EmptyCodingKeys: CodingKey {
+
+    }
+
+    enum ErrorCodingKeys: String, CodingKey {
+        case description
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        guard container.allKeys.count == 1 else {
+            let context = DecodingError.Context(
+                codingPath: container.codingPath,
+                debugDescription: "Invalid number of keys found, expected one.")
+            throw DecodingError.typeMismatch(Status.self, context)
+        }
+
+        switch container.allKeys.first.unsafelyUnwrapped {
+        case .ok:
+            _ = try container.nestedContainer(keyedBy: EmptyCodingKeys.self, forKey: .ok)
+            self = .ok
+        case .unset:
+            _ = try container.nestedContainer(keyedBy: EmptyCodingKeys.self, forKey: .unset)
+            self = .unset
+        case .error:
+            let nestedContainer = try container.nestedContainer(keyedBy: ErrorCodingKeys.self, forKey: .error)
+            self = .error(description: try nestedContainer.decode(String.self, forKey: .description))
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        switch self {
+        case .ok:
+            _ = container.nestedContainer(keyedBy: EmptyCodingKeys.self, forKey: .ok)
+        case .unset:
+            _ = container.nestedContainer(keyedBy: EmptyCodingKeys.self, forKey: .unset)
+        case .error(let description):
+            var nestedContainer = container.nestedContainer(keyedBy: ErrorCodingKeys.self, forKey: .error)
+            try nestedContainer.encode(description, forKey: .description)
+        }
+    }
+}

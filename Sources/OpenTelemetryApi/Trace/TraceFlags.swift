@@ -8,7 +8,7 @@ import Foundation
 /// A struct that represents global trace options. These options are propagated to all child spans.
 /// These determine features such as whether a Span should be traced. It is
 /// implemented as a bitmask.
-public struct TraceFlags: Equatable, CustomStringConvertible {
+public struct TraceFlags: Equatable, CustomStringConvertible, Codable {
     /// Default options. Nothing set.
     private static let defaultOptions: UInt8 = 0
     /// Bit to represent whether trace is sampled or not.
@@ -86,16 +86,5 @@ public struct TraceFlags: Equatable, CustomStringConvertible {
 
     public var description: String {
         "TraceFlags{sampled=\(sampled)}"
-    }
-}
-
-extension TraceFlags: Encodable {
-    enum CodingKeys: String, CodingKey {
-        case sampled
-    }
-
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(sampled, forKey: .sampled)
     }
 }

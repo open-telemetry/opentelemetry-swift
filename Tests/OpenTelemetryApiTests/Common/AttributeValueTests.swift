@@ -74,4 +74,81 @@ class AttributeValueTest: XCTestCase {
         attribute = AttributeValue.doubleArray([1.11, 0.01, -2.22])
         XCTAssertEqual(attribute.description, "[1.11, 0.01, -2.22]")
     }
+    
+    func testAttributeValue_Codable() throws {
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        
+        var attribute = AttributeValue.string("")
+        var decodedAttribute = try decoder.decode(AttributeValue.self, from: try encoder.encode(attribute))
+        XCTAssertEqual(attribute, decodedAttribute)
+        
+        attribute = AttributeValue.string("MyStringAttributeValue")
+        decodedAttribute = try decoder.decode(AttributeValue.self, from: try encoder.encode(attribute))
+        XCTAssertEqual(attribute, decodedAttribute)
+        
+        attribute = AttributeValue.bool(true)
+        decodedAttribute = try decoder.decode(AttributeValue.self, from: try encoder.encode(attribute))
+        XCTAssertEqual(attribute, decodedAttribute)
+        
+        attribute = AttributeValue.int(123456)
+        decodedAttribute = try decoder.decode(AttributeValue.self, from: try encoder.encode(attribute))
+        XCTAssertEqual(attribute, decodedAttribute)
+        
+        attribute = AttributeValue.int(0)
+        decodedAttribute = try decoder.decode(AttributeValue.self, from: try encoder.encode(attribute))
+        XCTAssertEqual(attribute, decodedAttribute)
+        
+        attribute = AttributeValue.int(-123456)
+        decodedAttribute = try decoder.decode(AttributeValue.self, from: try encoder.encode(attribute))
+        XCTAssertEqual(attribute, decodedAttribute)
+        
+        attribute = AttributeValue.double(1.23456)
+        decodedAttribute = try decoder.decode(AttributeValue.self, from: try encoder.encode(attribute))
+        XCTAssertEqual(attribute, decodedAttribute)
+        
+        attribute = AttributeValue.double(0.0)
+        decodedAttribute = try decoder.decode(AttributeValue.self, from: try encoder.encode(attribute))
+        XCTAssertEqual(attribute, decodedAttribute)
+        
+        attribute = AttributeValue.double(-1.23456)
+        decodedAttribute = try decoder.decode(AttributeValue.self, from: try encoder.encode(attribute))
+        XCTAssertEqual(attribute, decodedAttribute)
+        
+        attribute = AttributeValue.stringArray([])
+        decodedAttribute = try decoder.decode(AttributeValue.self, from: try encoder.encode(attribute))
+        XCTAssertEqual(attribute, decodedAttribute)
+        
+        attribute = AttributeValue.stringArray(["MyStringAttributeValue1", "MyStringAttributeValue2"])
+        decodedAttribute = try decoder.decode(AttributeValue.self, from: try encoder.encode(attribute))
+        XCTAssertEqual(attribute, decodedAttribute)
+        
+        attribute = AttributeValue.boolArray([])
+        decodedAttribute = try decoder.decode(AttributeValue.self, from: try encoder.encode(attribute))
+        XCTAssertEqual(attribute, decodedAttribute)
+        
+        attribute = AttributeValue.boolArray([true, false])
+        decodedAttribute = try decoder.decode(AttributeValue.self, from: try encoder.encode(attribute))
+        XCTAssertEqual(attribute, decodedAttribute)
+        
+        attribute = AttributeValue.intArray([])
+        decodedAttribute = try decoder.decode(AttributeValue.self, from: try encoder.encode(attribute))
+        XCTAssertEqual(attribute, decodedAttribute)
+        
+        attribute = AttributeValue.intArray([1, 3, 2])
+        decodedAttribute = try decoder.decode(AttributeValue.self, from: try encoder.encode(attribute))
+        XCTAssertEqual(attribute, decodedAttribute)
+        
+        attribute = AttributeValue.doubleArray([])
+        decodedAttribute = try decoder.decode(AttributeValue.self, from: try encoder.encode(attribute))
+        XCTAssertEqual(attribute, decodedAttribute)
+        
+        attribute = AttributeValue.doubleArray([1.11, 0.01, -2.22])
+        decodedAttribute = try decoder.decode(AttributeValue.self, from: try encoder.encode(attribute))
+        XCTAssertEqual(attribute, decodedAttribute)
+        
+        XCTAssertThrowsError(try decoder.decode(AttributeValue.self, from: "".data(using: .utf8)!))
+        XCTAssertThrowsError(try decoder.decode(AttributeValue.self,
+                                                from: #"{"string":"MyStringAttributeValue", "int":1234}"#.data(using: .utf8)!))
+    }
 }

@@ -61,13 +61,70 @@ public enum AttributeValue: Equatable, CustomStringConvertible, Hashable {
     }
 }
 
-extension AttributeValue: Encodable {
+// this explicit Codable implementation for AttributeValue will probably be redundant with Swift 5.5
+extension AttributeValue: Codable {
     enum CodingKeys: String, CodingKey {
-        case description
+        case string
+        case bool
+        case int
+        case double
+        case stringArray
+        case boolArray
+        case intArray
+        case doubleArray
+    }
+         
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+            
+        guard container.allKeys.count == 1 else {
+            let context = DecodingError.Context(
+                codingPath: container.codingPath,
+                debugDescription: "Invalid number of keys found, expected one.")
+            throw DecodingError.typeMismatch(Status.self, context)
+        }
+
+        switch container.allKeys.first.unsafelyUnwrapped {
+        case .string:
+            self = .string(try container.decode(String.self, forKey: .string))
+        case .bool:
+            self = .bool(try container.decode(Bool.self, forKey: .bool))
+        case .int:
+            self = .int(try container.decode(Int.self, forKey: .int))
+        case .double:
+            self = .double(try container.decode(Double.self, forKey: .double))
+        case .stringArray:
+            self = .stringArray(try container.decode([String].self, forKey: .stringArray))
+        case .boolArray:
+            self = .boolArray(try container.decode([Bool].self, forKey: .boolArray))
+        case .intArray:
+            self = .intArray(try container.decode([Int].self, forKey: .intArray))
+        case .doubleArray:
+            self = .doubleArray(try container.decode([Double].self, forKey: .doubleArray))
+        }
     }
 
     public func encode(to encoder: Encoder) throws {
+        
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(description, forKey: .description)
+        
+        switch self {
+        case .string(let value):
+            try container.encode(value, forKey: .string)
+        case .bool(let value):
+            try container.encode(value, forKey: .bool)
+        case .int(let value):
+            try container.encode(value, forKey: .int)
+        case .double(let value):
+            try container.encode(value, forKey: .double)
+        case .stringArray(let value):
+            try container.encode(value, forKey: .stringArray)
+        case .boolArray(let value):
+            try container.encode(value, forKey: .boolArray)
+        case .intArray(let value):
+            try container.encode(value, forKey: .intArray)
+        case .doubleArray(let value):
+            try container.encode(value, forKey: .doubleArray)
+        }
     }
 }

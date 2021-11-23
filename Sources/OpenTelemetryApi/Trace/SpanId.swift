@@ -7,7 +7,7 @@ import Foundation
 
 /// A struct that represents a span identifier. A valid span identifier is an 8-byte array with at
 /// least one non-zero byte.
-public struct SpanId: Equatable, Comparable, Hashable, CustomStringConvertible {
+public struct SpanId: Equatable, Comparable, Hashable, CustomStringConvertible, Codable {
     public static let size = 8
     public static let invalidId: UInt64 = 0
     public static let invalid = SpanId(id: invalidId)

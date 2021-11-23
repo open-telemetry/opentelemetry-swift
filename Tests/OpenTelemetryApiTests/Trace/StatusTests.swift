@@ -24,4 +24,29 @@ final class StatusTests: XCTestCase {
         let statusError = Status.error(description: "Error")
         XCTAssertTrue(statusError.isError)
     }
+    
+    func testStatusCodable() throws {
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        
+        var status = Status.ok
+        var decodedStatus = try decoder.decode(Status.self, from: try encoder.encode(status))
+        XCTAssertEqual(status, decodedStatus)
+        
+        status = Status.unset
+        decodedStatus = try decoder.decode(Status.self, from: try encoder.encode(status))
+        XCTAssertEqual(status, decodedStatus)
+        
+        status = Status.error(description: "Error")
+        decodedStatus = try decoder.decode(Status.self, from: try encoder.encode(status))
+        XCTAssertEqual(status, decodedStatus)
+        
+        status = Status.error(description: "")
+        decodedStatus = try decoder.decode(Status.self, from: try encoder.encode(status))
+        XCTAssertEqual(status, decodedStatus)
+        
+        XCTAssertThrowsError(try decoder.decode(Status.self, from: "".data(using: .utf8)!))
+        XCTAssertThrowsError(try decoder.decode(Status.self,
+                                                from: #"{"error":{"description":"Error"}, "ok":{}}"#.data(using: .utf8)!))
+    }
 }
