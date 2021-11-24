@@ -163,7 +163,7 @@ extension AttributeValue: Codable { }
 extension AttributeValue: Codable {
          
     public init(from decoder: Decoder) throws {
-        let explicitDecoded = AttributeValueExplicitCodable(from: decoder)
+        let explicitDecoded = try AttributeValueExplicitCodable(from: decoder)
         
         self = explicitDecoded.attributeValue
     }
@@ -171,7 +171,7 @@ extension AttributeValue: Codable {
     public func encode(to encoder: Encoder) throws {
         let explicitEncoded = AttributeValueExplicitCodable(attributeValue: self)
         
-        explicitEncoded.encode(to: encoder)
+        try explicitEncoded.encode(to: encoder)
     }
 }
 #endif

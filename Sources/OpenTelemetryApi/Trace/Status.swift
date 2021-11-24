@@ -130,7 +130,7 @@ extension Status: Codable { }
 extension Status: Codable {
 
     public init(from decoder: Decoder) throws {
-        let explicitDecoded = StatusExplicitCodable(from: decoder)
+        let explicitDecoded = try StatusExplicitCodable(from: decoder)
         
         self = explicitDecoded.status
     }
@@ -138,7 +138,7 @@ extension Status: Codable {
     public func encode(to encoder: Encoder) throws {
         let explicitEncoded = StatusExplicitCodable(status: self)
         
-        explicitEncoded.encode(to: encoder)
+        try explicitEncoded.encode(to: encoder)
     }        
 }
 #endif
