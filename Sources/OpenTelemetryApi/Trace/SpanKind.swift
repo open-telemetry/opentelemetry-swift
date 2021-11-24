@@ -7,7 +7,7 @@ import Foundation
 
 /// Type of span. Can be used to specify additional relationships between spans in addition to a
 /// parent/child relationship
-public enum SpanKind: String, Equatable {
+public enum SpanKind: String, Equatable, Codable {
     /// Default value. Indicates that the span is used internally.
     case `internal`
     /// ndicates that the span covers server-side handling of an RPC or other remote request.

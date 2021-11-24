@@ -149,6 +149,16 @@ final class TraceStateTests: XCTestCase {
     func testTraceState_ToString() {
         XCTAssertEqual("\(TraceState())", "TraceState(entries: [])")
     }
+    
+    func testTraceState_Codable() {
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        
+        XCTAssertEqual(empty, try decoder.decode(TraceState.self, from: try encoder.encode(empty)))
+        XCTAssertEqual(firstTraceState, try decoder.decode(TraceState.self, from: try encoder.encode(firstTraceState)))
+        XCTAssertEqual(secondTraceState, try decoder.decode(TraceState.self, from: try encoder.encode(secondTraceState)))
+        XCTAssertEqual(multiValueTraceState, try decoder.decode(TraceState.self, from: try encoder.encode(multiValueTraceState)))
+    }
 
     static var allTests = [
         ("testGet", testGet),
@@ -174,5 +184,6 @@ final class TraceStateTests: XCTestCase {
         ("testAddAndRemoveEntry", testAddAndRemoveEntry),
         ("testTraceState_EqualsAndHashCode", testTraceState_EqualsAndHashCode),
         ("testTraceState_ToString", testTraceState_ToString),
+        ("testTraceState_Codable", testTraceState_Codable),
     ]
 }

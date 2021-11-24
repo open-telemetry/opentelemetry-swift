@@ -94,6 +94,16 @@ final class TraceIdTests: XCTestCase {
         XCTAssertTrue(second.description.contains("ff000000000000000000000000000041"))
         XCTAssertTrue(short.description.contains("0000000000000062"))
     }
+    
+    func testTraceId_Codable() throws {
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        
+        XCTAssertEqual(TraceId.invalid, try decoder.decode(TraceId.self, from: try encoder.encode(TraceId.invalid)))
+        XCTAssertEqual(first, try decoder.decode(TraceId.self, from: try encoder.encode(first)))
+        XCTAssertEqual(second, try decoder.decode(TraceId.self, from: try encoder.encode(second)))
+        XCTAssertEqual(short, try decoder.decode(TraceId.self, from: try encoder.encode(short)))
+    }
 
     static var allTests = [
         ("testInvalidTraceId", testInvalidTraceId),
@@ -106,5 +116,6 @@ final class TraceIdTests: XCTestCase {
         ("testTraceId_CompareTo", testTraceId_CompareTo),
         ("testTraceId_EqualsAndHashCode", testTraceId_EqualsAndHashCode),
         ("testTraceId_ToString", testTraceId_ToString),
+        ("testTraceId_Codable", testTraceId_Codable),
     ]
 }

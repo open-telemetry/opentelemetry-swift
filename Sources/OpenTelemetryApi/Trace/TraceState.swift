@@ -13,7 +13,7 @@ import Foundation
 /// forward slashes /.
 /// Value is opaque string up to 256 characters printable ASCII RFC0020 characters (i.e., the
 /// range 0x20 to 0x7E) except comma , and =.
-public struct TraceState: Equatable {
+public struct TraceState: Equatable, Codable {
     private static let maxKeyValuePairs = 32
 
     public private(set) var entries = [Entry]()
@@ -78,7 +78,7 @@ public struct TraceState: Equatable {
     }
 
     /// Immutable key-value pair for TraceState
-    public struct Entry: Equatable, Encodable {
+    public struct Entry: Equatable, Codable {
         /// The key of the Entry
         public private(set) var key: String
 
@@ -97,16 +97,5 @@ public struct TraceState: Equatable {
             }
             return nil
         }
-    }
-}
-
-extension TraceState: Encodable {
-    enum CodingKeys: String, CodingKey {
-        case entries
-    }
-
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(entries, forKey: .entries)
     }
 }
