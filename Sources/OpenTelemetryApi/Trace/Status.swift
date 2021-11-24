@@ -61,8 +61,9 @@ extension Status: CustomStringConvertible {
     }
 }
 
-// this explicit Codable implementation for Status will probably be redundant with Swift 5.5
-extension Status: Codable {
+internal struct StatusExplicitCodable : Codable {
+    let status: Status
+    
     enum CodingKeys: String, CodingKey {
         case ok
         case unset
@@ -77,6 +78,10 @@ extension Status: Codable {
         case description
     }
 
+    internal init(status: Status) {
+        self.status = status
+    }
+    
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
@@ -90,13 +95,13 @@ extension Status: Codable {
         switch container.allKeys.first.unsafelyUnwrapped {
         case .ok:
             _ = try container.nestedContainer(keyedBy: EmptyCodingKeys.self, forKey: .ok)
-            self = .ok
+            self.status = .ok
         case .unset:
             _ = try container.nestedContainer(keyedBy: EmptyCodingKeys.self, forKey: .unset)
-            self = .unset
+            self.status = .unset
         case .error:
             let nestedContainer = try container.nestedContainer(keyedBy: ErrorCodingKeys.self, forKey: .error)
-            self = .error(description: try nestedContainer.decode(String.self, forKey: .description))
+            self.status = .error(description: try nestedContainer.decode(String.self, forKey: .description))
         }
     }
 
@@ -104,7 +109,7 @@ extension Status: Codable {
 
         var container = encoder.container(keyedBy: CodingKeys.self)
 
-        switch self {
+        switch self.status {
         case .ok:
             _ = container.nestedContainer(keyedBy: EmptyCodingKeys.self, forKey: .ok)
         case .unset:
@@ -115,3 +120,25 @@ extension Status: Codable {
         }
     }
 }
+
+#if swift(>=5.5)
+// swift 5.5 supports synthesizing Codable for enums with associated values
+// see https://github.com/apple/swift-evolution/blob/main/proposals/0295-codable-synthesis-for-enums-with-associated-values.md
+extension Status: Codable { }
+#else
+// for older swift versions use a forward compatible explicit Codable implementation
+extension Status: Codable {
+
+    public init(from decoder: Decoder) throws {
+        let explicitDecoded = StatusExplicitCodable(from: decoder)
+        
+        self = explicitDecoded.status
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        let explicitEncoded = StatusExplicitCodable(status: self)
+        
+        explicitEncoded.encode(to: encoder)
+    }        
+}
+#endif
