@@ -65,6 +65,7 @@ public class PersistenceSpanExporterDecorator: SpanExporter {
     }
     
     public func shutdown() {
+        persistenceExporter.flush()
         spanExporter.shutdown()
     }
 }
