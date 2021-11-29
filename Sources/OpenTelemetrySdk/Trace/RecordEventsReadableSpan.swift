@@ -146,7 +146,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
                                  attributes: AttributesDictionary,
                                  links: [SpanData.Link],
                                  totalRecordedLinks: Int,
-                                 startTime: Date) -> RecordEventsReadableSpan
+                                 startTime: Date?) -> RecordEventsReadableSpan
     {
         let span = RecordEventsReadableSpan(context: context,
                                             name: name,
