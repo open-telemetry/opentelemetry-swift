@@ -44,10 +44,9 @@ public class RecordEventsReadableSpan: ReadableSpan {
     public private(set) var clock: Clock
     /// The resource associated with this span.
     public private(set) var resource: Resource
-    /// The start time of the span.
     /// instrumentation library of the named tracer which created this span
     public private(set) var instrumentationLibraryInfo: InstrumentationLibraryInfo
-    /// The resource associated with this span.
+    /// The start time of the span.
     public private(set) var startTime: Date
     /// Set of recorded attributes. DO NOT CALL any other method that changes the ordering of events.
     private var attributes: AttributesDictionary
@@ -132,7 +131,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
     ///   - attributes: the attributes set during span creation.
     ///   - links: the links set during span creation, may be truncated.
     ///   - totalRecordedLinks: the total number of links set (including dropped links).
-    ///   - startTime: the time for the new span.
+    ///   - startTime: the time for the new span, if not set it will use assigned Clock time
     public static func startSpan(context: SpanContext,
                                  name: String,
                                  instrumentationLibraryInfo: InstrumentationLibraryInfo,
