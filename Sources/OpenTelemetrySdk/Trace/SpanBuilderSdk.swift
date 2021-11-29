@@ -33,7 +33,7 @@ class SpanBuilderSdk: SpanBuilder {
 
     private var startAsActive: Bool = false
 
-    private var startTime = Date()
+    private var startTime: Date?
 
     init(spanName: String,
          instrumentationLibraryInfo: InstrumentationLibraryInfo,
