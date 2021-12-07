@@ -32,6 +32,9 @@ enum ContextManagement {
     public static func removeSpan() {
         spanRLock.lock()
         defer { spanRLock.unlock() }
+        guard !spans.isEmpty else {
+            return
+        }
         var aux = spans
         aux.removeLast()
         _spans = TaskLocal(wrappedValue: aux)
@@ -39,18 +42,34 @@ enum ContextManagement {
 
 
     @TaskLocal
-    private static var baggage: Baggage?
+    private static var baggages = [Baggage]()
+
     public static func getBaggage() -> Baggage? {
         baggageRLock.lock()
         defer { baggageRLock.unlock() }
-        return baggage
+        return baggages.last
     }
 
-    public static func setBaggage(wrappedBaggage: TaskLocal<Baggage?>) {
+    public static func setBaggage(baggage: Baggage) {
         baggageRLock.lock()
         defer { baggageRLock.unlock() }
-        _baggage = wrappedBaggage
+        var aux = baggages
+        aux.append(baggage)
+        _baggages = TaskLocal(wrappedValue: aux)
     }
+
+    public static func removeBaggage() {
+        baggageRLock.lock()
+        defer { baggageRLock.unlock() }
+        guard !baggages.isEmpty else {
+            return
+        }
+        var aux = baggages
+        aux.removeLast()
+        _baggages = TaskLocal(wrappedValue: aux)
+    }
+
+
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
@@ -74,7 +93,7 @@ class TaskLocalContextManager: ContextManager {
                 }
             case .baggage:
                 if let baggage = value as? Baggage {
-                    ContextManagement.setBaggage(wrappedBaggage: TaskLocal(wrappedValue: baggage))
+                    ContextManagement.setBaggage(baggage: baggage)
                 }
         }
     }
@@ -84,7 +103,7 @@ class TaskLocalContextManager: ContextManager {
             case .span:
                 ContextManagement.removeSpan()
             case .baggage:
-                ContextManagement.setBaggage(wrappedBaggage: TaskLocal(wrappedValue: nil))
+                ContextManagement.removeBaggage()
         }
     }
 }

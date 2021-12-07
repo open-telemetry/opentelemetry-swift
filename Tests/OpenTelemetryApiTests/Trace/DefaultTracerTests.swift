@@ -86,5 +86,6 @@ final class DefaultTracerTests: XCTestCase {
         XCTAssert(span.context == spanContext)
         span.end()
         parent.end()
+        OpenTelemetry.instance.contextProvider.removeContextForSpan(parent)
     }
 }
