@@ -48,7 +48,7 @@ final class SpanIdTests: XCTestCase {
         XCTAssertEqual(first, SpanId(fromBytes: firstBytes))
     }
 
-    func testTraceId_EqualsAndHashCode() {
+    func testSpanId_EqualsAndHashCode() {
         XCTAssertEqual(SpanId.invalid, SpanId.invalid)
         XCTAssertNotEqual(SpanId.invalid, first)
         XCTAssertNotEqual(SpanId.invalid, SpanId(fromBytes: firstBytes))
@@ -60,10 +60,19 @@ final class SpanIdTests: XCTestCase {
         XCTAssertEqual(second, SpanId(fromBytes: secondBytes))
     }
 
-    func testTraceId_ToString() {
+    func testSpanId_ToString() {
         XCTAssertTrue(SpanId.invalid.description.contains("0000000000000000"))
         XCTAssertTrue(first.description.contains("0000000000000061"))
         XCTAssertTrue(second.description.contains("ff00000000000041"))
+    }
+    
+    func testSpanId_Codable() throws {
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        
+        XCTAssertEqual(SpanId.invalid, try decoder.decode(SpanId.self, from: try encoder.encode(SpanId.invalid)))
+        XCTAssertEqual(first, try decoder.decode(SpanId.self, from: try encoder.encode(first)))
+        XCTAssertEqual(second, try decoder.decode(SpanId.self, from: try encoder.encode(second)))
     }
 
     static var allTests = [
@@ -72,7 +81,8 @@ final class SpanIdTests: XCTestCase {
         ("testToHexString", testToHexString),
         ("testToHexString", testToHexString),
         ("testSpanId_CompareTo", testSpanId_CompareTo),
-        ("testTraceId_EqualsAndHashCode", testTraceId_EqualsAndHashCode),
-        ("testTraceId_ToString", testTraceId_ToString),
+        ("testSpanId_EqualsAndHashCode", testSpanId_EqualsAndHashCode),
+        ("testSpanId_ToString", testSpanId_ToString),
+        ("testSpanId_Codable", testSpanId_Codable),
     ]
 }

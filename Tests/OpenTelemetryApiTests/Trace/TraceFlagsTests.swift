@@ -54,4 +54,27 @@ final class TraceFlagsTests: XCTestCase {
         XCTAssert(TraceFlags().description.contains("sampled=false"))
         XCTAssert(TraceFlags().settingIsSampled(true).description.contains("sampled=true"))
     }
+    
+    func testTraceFlags_Codabe() {
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        
+        var traceFlags = TraceFlags()
+        XCTAssertEqual(traceFlags, try decoder.decode(TraceFlags.self, from: try encoder.encode(traceFlags)))
+        
+        traceFlags = TraceFlags().settingIsSampled(true)
+        XCTAssertEqual(traceFlags, try decoder.decode(TraceFlags.self, from: try encoder.encode(traceFlags)))
+        
+        traceFlags = TraceFlags().settingIsSampled(false)
+        XCTAssertEqual(traceFlags, try decoder.decode(TraceFlags.self, from: try encoder.encode(traceFlags)))
+        
+        traceFlags = TraceFlags(fromByte: firstByte)
+        XCTAssertEqual(traceFlags, try decoder.decode(TraceFlags.self, from: try encoder.encode(traceFlags)))
+        
+        traceFlags = TraceFlags(fromByte: secondByte)
+        XCTAssertEqual(traceFlags, try decoder.decode(TraceFlags.self, from: try encoder.encode(traceFlags)))
+        
+        traceFlags = TraceFlags(fromByte: thirdByte)
+        XCTAssertEqual(traceFlags, try decoder.decode(TraceFlags.self, from: try encoder.encode(traceFlags)))
+    }
 }

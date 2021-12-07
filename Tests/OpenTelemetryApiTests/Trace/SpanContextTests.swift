@@ -95,4 +95,13 @@ final class SpanContextTests: XCTestCase {
         XCTAssert(second.description.contains(SpanId(fromBytes: secondSpanIdBytes).description))
         XCTAssert(second.description.contains(TraceFlags().settingIsSampled(true).description))
     }
+    
+    func testSpanContext_Codable() throws {
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        
+        XCTAssertEqual(first, try decoder.decode(SpanContext.self, from: try encoder.encode(first)))
+        XCTAssertEqual(second, try decoder.decode(SpanContext.self, from: try encoder.encode(second)))
+        XCTAssertEqual(remote, try decoder.decode(SpanContext.self, from: try encoder.encode(remote)))
+    }
 }
