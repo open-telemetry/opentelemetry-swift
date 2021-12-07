@@ -56,7 +56,7 @@ class ActivityContextManager: ContextManager {
             rlock.unlock()
             return contextValue
         } else {
-            //If activityIdent == 0,  it means no active Span or we are inside an Task
+// If activityIdent == 0,  it means no active Span or we are inside an Task
 #if canImport(_Concurrency)
 #if swift(<5.5.2)
             if #available(macOS 12.0, iOS 15.0, tvOS 15.0, *) {
@@ -80,7 +80,7 @@ class ActivityContextManager: ContextManager {
         var parentIdent: os_activity_id_t = 0
         var activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, &parentIdent)
         if activityIdent != 0 {
-            //We are inside an activity, it can be an activity created by us for a span context or another independent activty
+            // We are inside an activity, it can be an activity created by us for a span context or another independent activty
             // We are surely not inside a Task
             rlock.lock()
             if contextMap[activityIdent] == nil || contextMap[activityIdent]?[key.rawValue] != nil {
@@ -95,7 +95,7 @@ class ActivityContextManager: ContextManager {
             var scope: os_activity_scope_state_s
             (activityIdent, scope) = createActivityContext()
             if activityIdent == 0 {
-                // If activityIdent == 0, means we are inside a Task, because we cannot create an activity, set the context inside the task
+// If activityIdent == 0, means we are inside a Task, because we cannot create an activity, set the context inside the task
 #if canImport(_Concurrency)
 #if swift(<5.5.2)
                 if #available(macOS 12.0, iOS 15.0, tvOS 15.0, *) {

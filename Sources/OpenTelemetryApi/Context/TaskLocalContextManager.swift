@@ -40,7 +40,6 @@ enum ContextManagement {
         _spans = TaskLocal(wrappedValue: aux)
     }
 
-
     @TaskLocal
     private static var baggages = [Baggage]()
 
@@ -68,8 +67,6 @@ enum ContextManagement {
         aux.removeLast()
         _baggages = TaskLocal(wrappedValue: aux)
     }
-
-
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
