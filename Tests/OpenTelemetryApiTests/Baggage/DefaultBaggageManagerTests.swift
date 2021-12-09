@@ -28,11 +28,9 @@ class DefaultBaggageManagerTests: XCTestCase {
     let baggage = TestBaggage()
 
     override func tearDown() {
-        if defaultBaggageManager.getCurrentBaggage() != nil {
-            XCTAssert(false, "Test must clean baggage context")
-        }
+        XCTAssertNil(defaultBaggageManager.getCurrentBaggage(), "Test must clean baggage context")
     }
-    
+
     func testBuilderMethod() {
         let builder = defaultBaggageManager.baggageBuilder()
         XCTAssertEqual(builder.build().getEntries().count, 0)
@@ -62,6 +60,7 @@ class DefaultBaggageManagerTests: XCTestCase {
         let semaphore = DispatchSemaphore(value: 0)
         let semaphore2 = DispatchSemaphore(value: 0)
         DispatchQueue.global().async {
+            XCTAssert(self.defaultBaggageManager.getCurrentBaggage() === self.baggage)
             semaphore2.signal()
             semaphore.wait()
             XCTAssert(self.defaultBaggageManager.getCurrentBaggage() === self.baggage)
