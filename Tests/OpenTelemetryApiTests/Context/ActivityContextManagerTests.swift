@@ -62,7 +62,7 @@ class ActivityContextManagerTests: XCTestCase {
         return newSpan
     }
 
-    func endSpanAndValidateContext(span: Span, parentSpan: Span) {
+    func endSpanAndValidateContext(span: Span, parentSpan: Span?) {
         var activeSpan = ActivityContextManager.instance.getCurrentContextValue(forKey: .span)
         XCTAssert(activeSpan === span)
         span.end()
@@ -88,15 +88,17 @@ class ActivityContextManagerTests: XCTestCase {
             let span1 = defaultTracer.spanBuilder(spanName: "testStartAndEndSpanInAsyncTaskTwice1").startSpan()
             ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: span1)
             XCTAssert(ActivityContextManager.instance.getCurrentContextValue(forKey: .span) === span1)
-            await createAsyncSpan(parentSpan: span1)
-            await createAsyncSpan(parentSpan: span1)
+            async let one: () = createAsyncSpan(parentSpan: span1)
+            async let two: () = createAsyncSpan(parentSpan: span1)
             XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === span1)
             span1.end()
             XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === nil)
+            await one
+            await two
         }
 
         @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
-        func createAsyncSpan(parentSpan: Span) async {
+        func createAsyncSpan(parentSpan: Span?) async {
             let activeSpan = ActivityContextManager.instance.getCurrentContextValue(forKey: .span)
             XCTAssert(activeSpan === parentSpan)
             let newSpan = defaultTracer.spanBuilder(spanName: "testStartAndEndSpanInAsyncTaskTwice2").startSpan()
@@ -136,15 +138,15 @@ class ActivityContextManagerTests: XCTestCase {
         }
 
         @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
+        // First created task correctly does not inherit activity when created detached
         func testStartAndEndSpanInAsyncTaskDetachedWithParent() {
-            XCTExpectFailure()
             let span1 = defaultTracer.spanBuilder(spanName: "testStartAndEndSpanInAsyncTask1").startSpan()
             ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: span1)
             let expec = expectation(description: "testStartAndEndSpanInAsyncTaskWithParent")
             Task.detached {
-                XCTAssert(ActivityContextManager.instance.getCurrentContextValue(forKey: .span) === span1)
-                await self.createAsyncSpan(parentSpan: span1)
-                XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === span1)
+                XCTAssert(ActivityContextManager.instance.getCurrentContextValue(forKey: .span) === nil)
+                await self.createAsyncSpan(parentSpan: nil)
+                XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === nil)
                 expec.fulfill()
             }
             span1.end()
@@ -153,8 +155,8 @@ class ActivityContextManagerTests: XCTestCase {
         }
 
         @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
+        // First created task correctly inherits activity when created, so assigns the proper parent
         func testStartAndEndSpanInAsyncTaskWithParent() {
-            // XCTExpectFailure()
             let span1 = defaultTracer.spanBuilder(spanName: "testStartAndEndSpanInAsyncTask1").startSpan()
             ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: span1)
             let expec = expectation(description: "testStartAndEndSpanInAsyncTaskWithParent")
@@ -168,5 +170,6 @@ class ActivityContextManagerTests: XCTestCase {
             XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === nil)
             waitForExpectations(timeout: 30)
         }
+
     #endif
 }
