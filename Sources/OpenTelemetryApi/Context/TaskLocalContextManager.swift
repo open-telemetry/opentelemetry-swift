@@ -107,16 +107,63 @@ class TaskLocalContextManager: ContextManager {
 #else
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, *)
 enum ContextManagement {
+    static let spanRLock = NSRecursiveLock()
+    static let baggageRLock = NSRecursiveLock()
+
     @TaskLocal
-    static var span: Span?
-    public static func setSpan(wrappedSpan: TaskLocal<Span?>) {
-        _span = wrappedSpan
+    private static var spans = [Span]()
+
+    public static func getSpan() -> Span? {
+        spanRLock.lock()
+        defer { spanRLock.unlock() }
+        return spans.last
+    }
+
+    public static func setSpan(span: Span) {
+        spanRLock.lock()
+        defer { spanRLock.unlock() }
+        var aux = spans
+        aux.append(span)
+        _spans = TaskLocal(wrappedValue: aux)
+    }
+
+    public static func removeSpan() {
+        spanRLock.lock()
+        defer { spanRLock.unlock() }
+        guard !spans.isEmpty else {
+            return
+        }
+        var aux = spans
+        aux.removeLast()
+        _spans = TaskLocal(wrappedValue: aux)
     }
 
     @TaskLocal
-    static var baggage: Baggage?
-    public static func setBaggage(wrappedBaggage: TaskLocal<Baggage?>) {
-        _baggage = wrappedBaggage
+    private static var baggages = [Baggage]()
+
+    public static func getBaggage() -> Baggage? {
+        baggageRLock.lock()
+        defer { baggageRLock.unlock() }
+        return baggages.last
+    }
+
+    public static func setBaggage(baggage: Baggage) {
+        baggageRLock.lock()
+        defer { baggageRLock.unlock() }
+        var aux = baggages
+        aux.append(baggage)
+        _baggages = TaskLocal(wrappedValue: aux)
+    }
+
+    public static func removeBaggage() {
+        baggageRLock.lock()
+        defer { baggageRLock.unlock() }
+        guard !baggages.isEmpty else {
+            return
+        }
+        var aux = baggages
+        aux.removeLast()
+        _baggages = TaskLocal(wrappedValue: aux)
     }
 }
 
@@ -127,9 +174,9 @@ class TaskLocalContextManager: ContextManager {
     func getCurrentContextValue(forKey key: OpenTelemetryContextKeys) -> AnyObject? {
         switch key {
             case .span:
-                return ContextManagement.span
+                return ContextManagement.getSpan()
             case .baggage:
-                return ContextManagement.baggage
+                return ContextManagement.getBaggage()
         }
     }
 
@@ -137,11 +184,11 @@ class TaskLocalContextManager: ContextManager {
         switch key {
             case .span:
                 if let span = value as? Span {
-                    ContextManagement.setSpan(wrappedSpan: TaskLocal(wrappedValue: span))
+                    ContextManagement.setSpan(span: span)
                 }
             case .baggage:
                 if let baggage = value as? Baggage {
-                    ContextManagement.setBaggage(wrappedBaggage: TaskLocal(wrappedValue: baggage))
+                    ContextManagement.setBaggage(baggage: baggage)
                 }
         }
     }
@@ -149,9 +196,9 @@ class TaskLocalContextManager: ContextManager {
     func removeContextValue(forKey key: OpenTelemetryContextKeys, value: AnyObject) {
         switch key {
             case .span:
-                ContextManagement.setSpan(wrappedSpan: TaskLocal(wrappedValue: nil))
+                ContextManagement.removeSpan()
             case .baggage:
-                ContextManagement.setBaggage(wrappedBaggage: TaskLocal(wrappedValue: nil))
+                ContextManagement.removeBaggage()
         }
     }
 }
