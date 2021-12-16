@@ -7,16 +7,19 @@ import Foundation
 
 public enum Endpoint {
     /// US based servers.
-    /// Sends logs to [app.datadoghq.com](https://app.datadoghq.com/).
+    /// Sends data to [app.datadoghq.com](https://app.datadoghq.com/).
     case us1
     /// US3 based servers.
-    /// Sends logs to [us3.datadoghq.com](https://us3.datadoghq.com/).
+    /// Sends data to [us3.datadoghq.com](https://us3.datadoghq.com/).
     case us3
+    /// US based servers.
+    /// Sends data to [app.datadoghq.com](https://us5.datadoghq.com/).
+    case us5
     /// Europe based servers.
-    /// Sends logs to [app.datadoghq.eu](https://app.datadoghq.eu/).
+    /// Sends data to [app.datadoghq.eu](https://app.datadoghq.eu/).
     case eu1
     /// Gov servers.
-    /// Sends logs to [app.ddog-gov.com](https://app.ddog-gov.com/).
+    /// Sends data to [app.ddog-gov.com](https://app.ddog-gov.com/).
     case us1_fed
     /// User-defined server.
     case custom(tracesURL: URL, logsURL: URL, metricsURL: URL)
@@ -33,6 +36,7 @@ public enum Endpoint {
         switch self {
             case .us1: return URL(string: "https://logs.browser-intake-datadoghq.com/" + endpoint)!
             case .us3: return URL(string: "https://logs.browser-intake-us3-datadoghq.com/" + endpoint)!
+            case .us5: return URL(string: "https://logs.browser-intake-us5-datadoghq.com/" + endpoint)!
             case .eu1: return URL(string: "https://mobile-http-intake.logs.datadoghq.eu/" + endpoint)!
             case .us1_fed: return URL(string: "https://logs.browser-intake-ddog-gov.com/" + endpoint)!
             case let .custom(_, logsURL: logsUrl, _): return logsUrl
@@ -44,6 +48,7 @@ public enum Endpoint {
         switch self {
             case .us1: return URL(string: "https://trace.browser-intake-datadoghq.com/" + endpoint)!
             case .us3: return URL(string: "https://trace.browser-intake-us3-datadoghq.com/" + endpoint)!
+            case .us5: return URL(string: "https://trace.browser-intake-us5-datadoghq.com/" + endpoint)!
             case .eu1: return URL(string: "https:/public-trace-http-intake.logs.datadoghq.eu/" + endpoint)!
             case .us1_fed: return URL(string: "https://trace.browser-intake-ddog-gov.com/" + endpoint)!
             case let .custom(tracesURL: tracesUrl, _, _): return tracesUrl
@@ -55,6 +60,7 @@ public enum Endpoint {
         switch self {
             case .us1: return URL(string: "https://api.datadoghq.com/" + endpoint)!
             case .us3: return URL(string: "https://api.us3.datadoghq.com/" + endpoint)!
+            case .us5: return URL(string: "https://api.us5.datadoghq.com/" + endpoint)!
             case .eu1: return URL(string: "https://api.datadoghq.eu/" + endpoint)!
             case .us1_fed: return URL(string: "https://api.ddog-gov.com/" + endpoint)!
             case let .custom(_, _, metricsURL: metricsURL): return metricsURL
