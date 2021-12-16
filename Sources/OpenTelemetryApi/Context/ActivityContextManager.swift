@@ -139,7 +139,7 @@ class ActivityContextManager: ContextManager {
             if #available(macOS 12.0, iOS 15.0, tvOS 15.0, *) {
                 // If there is a parent activity, set its content as the task local
                 ActivityContextManager.taskLocalContextManager.removeContextValue(forKey: key, value: value)
-                if let currentContext = self.getCurrentContextValue(forKey: key) {
+                if let currentContext = ActivityContextManager.taskLocalContextManager.getCurrentContextValue(forKey: key) {
                     ActivityContextManager.taskLocalContextManager.setCurrentContextValue(forKey: key, value: currentContext)
                 }
             }
@@ -147,7 +147,7 @@ class ActivityContextManager: ContextManager {
             // If there is a parent activity, set its content as the task local
             if #available(macOS 10.15, iOS 13.0, tvOS 13.0, *) {
                 ActivityContextManager.taskLocalContextManager.removeContextValue(forKey: key, value: value)
-                if let currentContext = self.getCurrentContextValue(forKey: key) {
+                if let currentContext = ActivityContextManager.taskLocalContextManager.getCurrentContextValue(forKey: key) {
                     ActivityContextManager.taskLocalContextManager.setCurrentContextValue(forKey: key, value: currentContext)
                 }
             }
