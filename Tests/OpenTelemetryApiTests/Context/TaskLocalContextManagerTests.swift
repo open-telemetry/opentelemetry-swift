@@ -16,37 +16,42 @@ class TaskLocalContextManagerTests: XCTestCase {
 
     override func setUp() {
         spanContext = SpanContext.create(traceId: TraceId(fromBytes: firstBytes), spanId: SpanId(fromBytes: firstBytes, withOffset: 8), traceFlags: TraceFlags(), traceState: TraceState())
+        XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === nil)
+    }
+
+    override func tearDown() {
+        XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === nil)
     }
 
     @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
     func testStartAndEndSpanInAsyncTask() async {
-        let span1 = defaultTracer.spanBuilder(spanName: spanName).startSpan()
+        let span1 = defaultTracer.spanBuilder(spanName: "FirstSpan").startSpan()
         TaskLocalContextManager.instance.setCurrentContextValue(forKey: .span, value: span1)
         XCTAssert(TaskLocalContextManager.instance.getCurrentContextValue(forKey: .span) === span1)
 
         await createAsyncSpan(parentSpan: span1)
-        XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === span1)
+        XCTAssert(TaskLocalContextManager.instance.getCurrentContextValue(forKey: .span) === span1)
         span1.end()
-        XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === nil)
+        XCTAssert(TaskLocalContextManager.instance.getCurrentContextValue(forKey: .span) === nil)
     }
 
     @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
     func testStartAndEndSpanInAsyncTaskTwice() async {
-        let span1 = defaultTracer.spanBuilder(spanName: spanName).startSpan()
+        let span1 = defaultTracer.spanBuilder(spanName: "FirstSpan").startSpan()
         TaskLocalContextManager.instance.setCurrentContextValue(forKey: .span, value: span1)
         XCTAssert(TaskLocalContextManager.instance.getCurrentContextValue(forKey: .span) === span1)
         await createAsyncSpan(parentSpan: span1)
         await createAsyncSpan(parentSpan: span1)
-        XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === span1)
+        XCTAssert(TaskLocalContextManager.instance.getCurrentContextValue(forKey: .span) === span1)
         span1.end()
-        XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === nil)
+        XCTAssert(TaskLocalContextManager.instance.getCurrentContextValue(forKey: .span) === nil)
     }
 
     @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
     func createAsyncSpan(parentSpan: Span) async {
         let activeSpan = TaskLocalContextManager.instance.getCurrentContextValue(forKey: .span)
         XCTAssert(activeSpan === parentSpan)
-        let newSpan = defaultTracer.spanBuilder(spanName: spanName).startSpan()
+        let newSpan = defaultTracer.spanBuilder(spanName: "AsyncSpan").startSpan()
         TaskLocalContextManager.instance.setCurrentContextValue(forKey: .span, value: newSpan)
         endSpanAndValidateContext(span: newSpan, parentSpan: parentSpan)
     }
@@ -56,27 +61,26 @@ class TaskLocalContextManagerTests: XCTestCase {
         var activeSpan = TaskLocalContextManager.instance.getCurrentContextValue(forKey: .span)
         XCTAssert(activeSpan === span)
         span.end()
-        TaskLocalContextManager.instance.removeContextValue(forKey: .span, value: span)
         activeSpan = TaskLocalContextManager.instance.getCurrentContextValue(forKey: .span)
         XCTAssert(activeSpan === parentSpan)
     }
 
     @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
     func testStartAndEndSpanInAsyncTaskAnidated() async {
-        let span1 = defaultTracer.spanBuilder(spanName: spanName).startSpan()
+        let span1 = defaultTracer.spanBuilder(spanName: "FirstSpan").startSpan()
         TaskLocalContextManager.instance.setCurrentContextValue(forKey: .span, value: span1)
         XCTAssert(TaskLocalContextManager.instance.getCurrentContextValue(forKey: .span) === span1)
         await createAsyncSpanOutside(parentSpan: span1)
-        XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === span1)
+        XCTAssert(TaskLocalContextManager.instance.getCurrentContextValue(forKey: .span) === span1)
         span1.end()
-        XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === nil)
+        XCTAssert(TaskLocalContextManager.instance.getCurrentContextValue(forKey: .span) === nil)
     }
 
     @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
     func createAsyncSpanOutside(parentSpan: Span) async {
         let activeSpan = TaskLocalContextManager.instance.getCurrentContextValue(forKey: .span)
         XCTAssert(activeSpan === parentSpan)
-        let newSpan = defaultTracer.spanBuilder(spanName: spanName).startSpan()
+        let newSpan = defaultTracer.spanBuilder(spanName: "OutsideSpan").startSpan()
         TaskLocalContextManager.instance.setCurrentContextValue(forKey: .span, value: newSpan)
         await createAsyncSpanInside(parentSpan: newSpan)
         endSpanAndValidateContext(span: newSpan, parentSpan: parentSpan)
@@ -86,7 +90,7 @@ class TaskLocalContextManagerTests: XCTestCase {
     func createAsyncSpanInside(parentSpan: Span) async {
         let activeSpan = TaskLocalContextManager.instance.getCurrentContextValue(forKey: .span)
         XCTAssert(activeSpan === parentSpan)
-        let newSpan = defaultTracer.spanBuilder(spanName: spanName).startSpan()
+        let newSpan = defaultTracer.spanBuilder(spanName: "InsideSpan").startSpan()
         TaskLocalContextManager.instance.setCurrentContextValue(forKey: .span, value: newSpan)
         await createAsyncSpan(parentSpan: newSpan)
         endSpanAndValidateContext(span: newSpan, parentSpan: parentSpan)
