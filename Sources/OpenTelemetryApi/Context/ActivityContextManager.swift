@@ -16,10 +16,6 @@ private let OS_ACTIVITY_CURRENT = unsafeBitCast(dlsym(UnsafeMutableRawPointer(bi
 
 class ActivityContextManager: ContextManager {
     static let instance = ActivityContextManager()
-#if swift(>=5.5.2)
-    @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
-    static let taskLocalContextManager = TaskLocalContextManager.instance
-#endif
 
     let rlock = NSRecursiveLock()
 
@@ -27,8 +23,6 @@ class ActivityContextManager: ContextManager {
         init(scope: os_activity_scope_state_s) {
             self.scope = scope
         }
-
-        deinit {}
 
         var scope: os_activity_scope_state_s
     }
@@ -38,13 +32,6 @@ class ActivityContextManager: ContextManager {
     var contextMap = [os_activity_id_t: [String: AnyObject]]()
 
     func getCurrentContextValue(forKey key: OpenTelemetryContextKeys) -> AnyObject? {
-#if swift(>=5.5.2)
-        if #available(macOS 10.15, iOS 13.0, tvOS 13.0, *) {
-            if let contextValue = ActivityContextManager.taskLocalContextManager.getCurrentContextValue(forKey: key) {
-                return contextValue
-            }
-        }
-#endif
         var parentIdent: os_activity_id_t = 0
         let activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, &parentIdent)
         var contextValue: AnyObject?
@@ -59,20 +46,6 @@ class ActivityContextManager: ContextManager {
     }
 
     func setCurrentContextValue(forKey key: OpenTelemetryContextKeys, value: AnyObject) {
-#if swift(>=5.5.2)
-        if #available(macOS 10.15, iOS 13.0, tvOS 13.0, *) {
-            var insideTask = false
-            withUnsafeCurrentTask { task in
-                if task != nil {
-                    insideTask = true
-                }
-            }
-            if insideTask {
-                ActivityContextManager.taskLocalContextManager.setCurrentContextValue(forKey: key, value: value)
-                return
-            }
-        }
-#endif
         var parentIdent: os_activity_id_t = 0
         var activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, &parentIdent)
         rlock.lock()
@@ -96,20 +69,6 @@ class ActivityContextManager: ContextManager {
     }
 
     func removeContextValue(forKey key: OpenTelemetryContextKeys, value: AnyObject) {
-#if swift(>=5.5.2)
-        if #available(macOS 10.15, iOS 13.0, tvOS 13.0, *) {
-            var insideTask = false
-            withUnsafeCurrentTask { task in
-                if task != nil {
-                    insideTask = true
-                }
-            }
-            if insideTask {
-                ActivityContextManager.taskLocalContextManager.removeContextValue(forKey: key, value: value)
-                return
-            }
-        }
-#endif
         if let scope = objectScope.object(forKey: value) {
             var scope = scope.scope
             os_activity_scope_leave(&scope)

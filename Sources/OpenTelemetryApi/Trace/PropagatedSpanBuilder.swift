@@ -10,24 +10,19 @@ class PropagatedSpanBuilder: SpanBuilder {
     private var tracer: Tracer
     private var isRootSpan: Bool = false
     private var spanContext: SpanContext?
-    private var spanName: String
 
-
-    init(tracer: Tracer, spanName: String = "") {
+    init(tracer: Tracer, spanName: String) {
         self.tracer = tracer
-        self.spanName = spanName
     }
 
     @discardableResult public func startSpan() -> Span {
         if spanContext == nil, !isRootSpan {
             spanContext = OpenTelemetry.instance.contextProvider.activeSpan?.context
         }
-        let span =  PropagatedSpan(context: spanContext ?? SpanContext.create(traceId: TraceId.random(),
+        return PropagatedSpan(context: spanContext ?? SpanContext.create(traceId: TraceId.random(),
                                                                          spanId: SpanId.random(),
                                                                          traceFlags: TraceFlags(),
                                                                          traceState: TraceState()))
-        span.name = spanName
-        return span
     }
 
     @discardableResult public func setParent(_ parent: Span) -> Self {
