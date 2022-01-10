@@ -59,9 +59,6 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
             try PersistenceMetricExporterDecorator(
                 metricExporter: mockMetricExporter,
                 storageURL: temporaryDirectory.url,
-                writerQueue: DispatchQueue(label: "metricWriterQueue"),
-                readerQueue: DispatchQueue(label: "metricReaderQueue"),
-                exportQueue: DispatchQueue(label: "metricExportQueue"),
                 exportCondition: { return true },
                 performancePreset: PersistencePerformancePreset.mockWith(
                     storagePerformance: StoragePerformanceMock.writeEachObjectToNewFileAndReadAllFiles,

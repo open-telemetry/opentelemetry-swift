@@ -7,8 +7,6 @@
 import XCTest
 
 class OrchestratedFileWriterTests: XCTestCase {
-    private let queue = DispatchQueue(label: "persistence-tests-write", target: .global(qos: .utility))
-
     override func setUp() {
         super.setUp()
         temporaryDirectory.create()
@@ -26,8 +24,7 @@ class OrchestratedFileWriterTests: XCTestCase {
                 directory: temporaryDirectory,
                 performance: PersistencePerformancePreset.default,
                 dateProvider: SystemDateProvider()
-            ),
-            queue: queue
+            )
         )
 
         var data = Data()
@@ -44,7 +41,7 @@ class OrchestratedFileWriterTests: XCTestCase {
         writer.write(data: value.utf8Data)
         data.append(value.utf8Data)
 
-        waitForWritesCompletion(on: queue, thenFulfill: expectation)
+        waitForWritesCompletion(on: writer.queue, thenFulfill: expectation)
         waitForExpectations(timeout: 1, handler: nil)
         XCTAssertEqual(try temporaryDirectory.files().count, 1)
         XCTAssertEqual(try temporaryDirectory.files()[0].read(), data)
@@ -67,19 +64,18 @@ class OrchestratedFileWriterTests: XCTestCase {
                     maxObjectSize: 17 // 17 bytes is enough to write {"key1":"value1"} JSON
                 ),
                 dateProvider: SystemDateProvider()
-            ),
-            queue: queue
+            )
         )
 
         writer.write(data: "value1".utf8Data) // will be written
 
-        waitForWritesCompletion(on: queue, thenFulfill: expectation1)
+        waitForWritesCompletion(on: writer.queue, thenFulfill: expectation1)
         wait(for: [expectation1], timeout: 1)
         XCTAssertEqual(try temporaryDirectory.files()[0].read(), "value1".utf8Data)
 
         writer.write(data: "value2 that makes it exceed 17 bytes".utf8Data) // will be dropped
 
-        waitForWritesCompletion(on: queue, thenFulfill: expectation2)
+        waitForWritesCompletion(on: writer.queue, thenFulfill: expectation2)
         wait(for: [expectation2], timeout: 1)
         XCTAssertEqual(try temporaryDirectory.files()[0].read(), "value1".utf8Data) // same content as before
     }
@@ -100,8 +96,7 @@ class OrchestratedFileWriterTests: XCTestCase {
                     maxObjectSize: .max
                 ),
                 dateProvider: SystemDateProvider()
-            ),
-            queue: queue
+            )
         )
 
         let ioInterruptionQueue = DispatchQueue(label: "com.otel.persistence.file-writer-random-io")
@@ -126,7 +121,7 @@ class OrchestratedFileWriterTests: XCTestCase {
         }
 
         ioInterruptionQueue.sync {}
-        waitForWritesCompletion(on: queue, thenFulfill: expectation)
+        waitForWritesCompletion(on: writer.queue, thenFulfill: expectation)
         waitForExpectations(timeout: 7, handler: nil)
         XCTAssertEqual(try temporaryDirectory.files().count, 1)
 

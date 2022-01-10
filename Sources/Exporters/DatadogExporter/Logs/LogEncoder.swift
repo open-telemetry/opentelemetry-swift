@@ -16,7 +16,7 @@ internal struct LogAttributes {
 
 /// `Encodable` representation of log. It gets sanitized before encoding.
 internal struct DDLog: Encodable {
-    internal struct TracingAttributes {
+    internal enum TracingAttributes {
         static let traceID = "dd.trace_id"
         static let spanID = "dd.span_id"
     }
@@ -80,7 +80,7 @@ internal struct DDLog: Encodable {
         self.threadName = attributes.removeValue(forKey: "threadName")?.description ?? "unkown"
         self.applicationVersion = configuration.version
 
-        let userAttributes:  [String: Encodable] = attributes.mapValues{
+        let userAttributes: [String: Encodable] = attributes.mapValues {
             switch $0 {
                 case let .string(value):
                     return value

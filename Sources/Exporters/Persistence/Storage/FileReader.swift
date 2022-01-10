@@ -14,24 +14,21 @@ internal struct Batch {
 
 internal protocol FileReader {
     func readNextBatch() -> Batch?
-    
+
     func onRemainingBatches(process: (Batch) -> ()) -> Bool
-    
+
     func markBatchAsRead(_ batch: Batch)
 }
 
 internal final class OrchestratedFileReader: FileReader {
     /// Orchestrator producing reference to readable file.
     private let orchestrator: FilesOrchestrator
-    /// Queue used to synchronize files access (read / write).
-    private let queue: DispatchQueue
 
     /// Files marked as read.
     private var filesRead: [ReadableFile] = []
 
-    init(orchestrator: FilesOrchestrator, queue: DispatchQueue) {
+    init(orchestrator: FilesOrchestrator) {
         self.orchestrator = orchestrator
-        self.queue = queue
     }
 
     // MARK: - Reading batches
@@ -39,9 +36,9 @@ internal final class OrchestratedFileReader: FileReader {
     func readNextBatch() -> Batch? {
         if let file = orchestrator.getReadableFile(excludingFilesNamed: Set(filesRead.map { $0.name })) {
             do {
-                let fileData = try file.read()                
+                let fileData = try file.read()
                 return Batch(data: fileData, file: file)
-            } catch {                
+            } catch {
                 return nil
             }
         }
@@ -54,7 +51,7 @@ internal final class OrchestratedFileReader: FileReader {
     func onRemainingBatches(process: (Batch) -> ()) -> Bool {
         do {
             try orchestrator.getAllFiles(excludingFilesNamed: Set(filesRead.map { $0.name }))?.forEach {
-                let fileData = try $0.read()                
+                let fileData = try $0.read()
                 process(Batch(data: fileData, file: $0))
             }
         } catch {

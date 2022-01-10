@@ -29,7 +29,7 @@ internal protocol StoragePerformancePreset {
     var maxObjectsInFile: Int { get }
     /// Maximum size of serialized object data (in bytes).
     /// If serialized object data exceeds this limit, it is skipped (not written to file and not exported).
-    var maxObjectSize: UInt64 { get }     
+    var maxObjectSize: UInt64 { get }
 }
 
 internal protocol ExportPerformancePreset {

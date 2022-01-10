@@ -52,14 +52,14 @@ private func createCachesSubdirectoryIfNotExists(subdirectoryPath: String) throw
     guard let cachesDirectoryURL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else {
         throw StorageError.obtainCacheLibraryError
     }
-    
+
     let subdirectoryURL = cachesDirectoryURL.appendingPathComponent(subdirectoryPath, isDirectory: true)
-    
+
     do {
         try FileManager.default.createDirectory(at: subdirectoryURL, withIntermediateDirectories: true, attributes: nil)
-    } catch let error {
+    } catch {
         throw StorageError.createDirectoryError(path: subdirectoryURL, error: error)
     }
-    
+
     return subdirectoryURL
 }

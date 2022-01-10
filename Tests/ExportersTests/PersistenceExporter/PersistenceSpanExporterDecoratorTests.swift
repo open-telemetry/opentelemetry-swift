@@ -69,9 +69,6 @@ class PersistenceSpanExporterDecoratorTests: XCTestCase {
             try PersistenceSpanExporterDecorator(
                 spanExporter: mockSpanExporter,
                 storageURL: temporaryDirectory.url,
-                writerQueue: DispatchQueue(label: "spanWriterQueue"),
-                readerQueue: DispatchQueue(label: "spanReaderQueue"),
-                exportQueue: DispatchQueue(label: "spanExportQueue"),
                 exportCondition: { return true },
                 performancePreset: PersistencePerformancePreset.mockWith(
                     storagePerformance: StoragePerformanceMock.writeEachObjectToNewFileAndReadAllFiles,
