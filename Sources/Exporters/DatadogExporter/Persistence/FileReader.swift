@@ -17,16 +17,12 @@ internal final class FileReader {
     private let dataFormat: DataFormat
     /// Orchestrator producing reference to readable file.
     private let orchestrator: FilesOrchestrator
-    /// Queue used to synchronize files access (read / write).
-    private let queue: DispatchQueue
-
     /// Files marked as read.
     private var filesRead: [ReadableFile] = []
 
-    init(dataFormat: DataFormat, orchestrator: FilesOrchestrator, queue: DispatchQueue) {
+    init(dataFormat: DataFormat, orchestrator: FilesOrchestrator) {
         self.dataFormat = dataFormat
         self.orchestrator = orchestrator
-        self.queue = queue
     }
 
     // MARK: - Reading batches

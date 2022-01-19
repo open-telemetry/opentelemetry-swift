@@ -7,8 +7,6 @@
 import XCTest
 
 class FileWriterTests: XCTestCase {
-    private let queue = DispatchQueue(label: "dd-tests-write", target: .global(qos: .utility))
-
     override func setUp() {
         super.setUp()
         temporaryDirectory.create()
@@ -27,15 +25,14 @@ class FileWriterTests: XCTestCase {
                 directory: temporaryDirectory,
                 performance: PerformancePreset.default,
                 dateProvider: SystemDateProvider()
-            ),
-            queue: queue
+            )
         )
 
         writer.write(value: ["key1": "value1"])
         writer.write(value: ["key2": "value3"])
         writer.write(value: ["key3": "value3"])
 
-        waitForWritesCompletion(on: queue, thenFulfill: expectation)
+        waitForWritesCompletion(on: writer.queue, thenFulfill: expectation)
         waitForExpectations(timeout: 1, handler: nil)
         XCTAssertEqual(try temporaryDirectory.files().count, 1)
         XCTAssertEqual(
@@ -62,19 +59,18 @@ class FileWriterTests: XCTestCase {
                     maxObjectSize: 17 // 17 bytes is enough to write {"key1":"value1"} JSON
                 ),
                 dateProvider: SystemDateProvider()
-            ),
-            queue: queue
+            )
         )
 
         writer.write(value: ["key1": "value1"]) // will be written
 
-        waitForWritesCompletion(on: queue, thenFulfill: expectation1)
+        waitForWritesCompletion(on: writer.queue, thenFulfill: expectation1)
         wait(for: [expectation1], timeout: 1)
         XCTAssertEqual(try temporaryDirectory.files()[0].read(), #"{"key1":"value1"}"# .utf8Data)
 
         writer.write(value: ["key2": "value3 that makes it exceed 17 bytes"]) // will be dropped
 
-        waitForWritesCompletion(on: queue, thenFulfill: expectation2)
+        waitForWritesCompletion(on: writer.queue, thenFulfill: expectation2)
         wait(for: [expectation2], timeout: 1)
         XCTAssertEqual(try temporaryDirectory.files()[0].read(), #"{"key1":"value1"}"# .utf8Data) // same content as before
     }
@@ -96,8 +92,7 @@ class FileWriterTests: XCTestCase {
                     maxObjectSize: .max
                 ),
                 dateProvider: SystemDateProvider()
-            ),
-            queue: queue
+            )
         )
 
         let ioInterruptionQueue = DispatchQueue(label: "com.datadohq.file-writer-random-io")
@@ -118,7 +113,7 @@ class FileWriterTests: XCTestCase {
         }
 
         ioInterruptionQueue.sync {}
-        waitForWritesCompletion(on: queue, thenFulfill: expectation)
+        waitForWritesCompletion(on: writer.queue, thenFulfill: expectation)
         waitForExpectations(timeout: 7, handler: nil)
         XCTAssertEqual(try temporaryDirectory.files().count, 1)
 

@@ -8,14 +8,9 @@ import OpenTelemetrySdk
 
 internal class MetricsExporter {
     let metricsDirectory = "com.otel.datadog.metrics/v1"
-
     let configuration: ExporterConfiguration
-
     let metricsStorage: FeatureStorage
-    let metricsStorageQueue = DispatchQueue(label: "com.otel.datadog.metricswriter", target: .global(qos: .userInteractive))
-
     let metricsUpload: FeatureUpload
-    let metricsUploadQueue = DispatchQueue(label: "com.otel.datadog.metricsupload", target: .global(qos: .userInteractive))
 
     init(config: ExporterConfiguration) throws {
         configuration = config
@@ -30,14 +25,12 @@ internal class MetricsExporter {
 
         let spanFileWriter = FileWriter(
             dataFormat: dataFormat,
-            orchestrator: filesOrchestrator,
-            queue: metricsStorageQueue
+            orchestrator: filesOrchestrator
         )
 
         let spanFileReader = FileReader(
             dataFormat: dataFormat,
-            orchestrator: filesOrchestrator,
-            queue: metricsUploadQueue
+            orchestrator: filesOrchestrator
         )
 
         metricsStorage = FeatureStorage(writer: spanFileWriter, reader: spanFileReader)

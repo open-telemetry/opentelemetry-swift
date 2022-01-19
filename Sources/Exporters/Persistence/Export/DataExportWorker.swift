@@ -18,7 +18,7 @@ internal protocol DataExportWorkerProtocol {
 
 internal class DataExportWorker: DataExportWorkerProtocol {
     /// Queue to execute exports.
-    private let queue: DispatchQueue
+    internal let queue = DispatchQueue(label: "com.otel.datadog.dataExportWorker", target: .global(qos: .utility))
     /// File reader providing data to export.
     private let fileReader: FileReader
     /// Data exporter sending data to server.
@@ -33,13 +33,11 @@ internal class DataExportWorker: DataExportWorkerProtocol {
     private var exportWork: DispatchWorkItem?
 
     init(
-        queue: DispatchQueue,
         fileReader: FileReader,
         dataExporter: DataExporter,
         exportCondition: @escaping () -> Bool,
         delay: Delay
     ) {
-        self.queue = queue
         self.fileReader = fileReader
         self.exportCondition = exportCondition
         self.dataExporter = dataExporter
@@ -52,7 +50,7 @@ internal class DataExportWorker: DataExportWorkerProtocol {
 
             let isSystemReady = self.exportCondition()
             let nextBatch = isSystemReady ? self.fileReader.readNextBatch() : nil
-            if let batch = nextBatch {                
+            if let batch = nextBatch {
                 // Export batch
                 let exportStatus = self.dataExporter.export(data: batch.data)
 

@@ -9,7 +9,6 @@ import OpenTelemetrySdk
 // a persistence exporter decorator for `SpanData`.
 // specialization of `PersistenceExporterDecorator` for `SpanExporter`.
 public class PersistenceSpanExporterDecorator: SpanExporter {
-    
     struct SpanDecoratedExporter: DecoratedExporter {
         typealias SignalType = SpanData
         
@@ -30,21 +29,15 @@ public class PersistenceSpanExporterDecorator: SpanExporter {
     
     public init(spanExporter: SpanExporter,
                 storageURL: URL,
-                writerQueue: DispatchQueue,
-                readerQueue: DispatchQueue,
-                exportQueue: DispatchQueue,
-                exportCondition: @escaping () -> Bool,
-                performancePreset: PersistencePerformancePreset = .default) throws {
-        
+                exportCondition: @escaping () -> Bool = { true },
+                performancePreset: PersistencePerformancePreset = .default) throws
+    {
         self.spanExporter = spanExporter
         
         self.persistenceExporter =
             PersistenceExporterDecorator<SpanDecoratedExporter>(
                 decoratedExporter: SpanDecoratedExporter(spanExporter: spanExporter),
                 storageURL: storageURL,
-                writerQueue: writerQueue,
-                readerQueue: readerQueue,
-                exportQueue: exportQueue,
                 exportCondition: exportCondition,
                 performancePreset: performancePreset)
     }
@@ -60,7 +53,7 @@ public class PersistenceSpanExporterDecorator: SpanExporter {
     }
     
     public func flush() -> SpanExporterResultCode {
-        persistenceExporter.flush()        
+        persistenceExporter.flush()
         return spanExporter.flush()
     }
     

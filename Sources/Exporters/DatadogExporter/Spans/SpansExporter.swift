@@ -8,14 +8,9 @@ import OpenTelemetrySdk
 
 internal class SpansExporter {
     let tracesDirectory = "com.otel.datadog.traces/v1"
-
     let configuration: ExporterConfiguration
-
     let tracesStorage: FeatureStorage
-    let tracesStorageQueue = DispatchQueue(label: "com.otel.datadog.traceswriter", target: .global(qos: .userInteractive))
-
     let tracesUpload: FeatureUpload
-    let tracesUploadQueue = DispatchQueue(label: "com.otel.datadog.tracesupload", target: .global(qos: .userInteractive))
 
     init(config: ExporterConfiguration) throws {
         self.configuration = config
@@ -30,14 +25,12 @@ internal class SpansExporter {
 
         let spanFileWriter = FileWriter(
             dataFormat: dataFormat,
-            orchestrator: filesOrchestrator,
-            queue: tracesStorageQueue
+            orchestrator: filesOrchestrator
         )
 
         let spanFileReader = FileReader(
             dataFormat: dataFormat,
-            orchestrator: filesOrchestrator,
-            queue: tracesUploadQueue
+            orchestrator: filesOrchestrator
         )
 
         tracesStorage = FeatureStorage(writer: spanFileWriter, reader: spanFileReader)

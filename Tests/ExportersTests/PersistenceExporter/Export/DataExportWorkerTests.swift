@@ -7,9 +7,6 @@
 import XCTest
 
 class DataExportWorkerTests: XCTestCase {
-    private let fileReadQueue = DispatchQueue(label: "persistence-tests-read", attributes: .concurrent)
-    private let exporterQueue = DispatchQueue(label: "persistence-tests-exporter", attributes: .concurrent)
-
     lazy var dateProvider = RelativeDateProvider(advancingBySeconds: 1)
 
     override func setUp() {
@@ -46,7 +43,6 @@ class DataExportWorkerTests: XCTestCase {
                         
         // When
         let worker = DataExportWorker(
-            queue: exporterQueue,
             fileReader: fileReader,
             dataExporter: mockDataExporter,
             exportCondition: { true },
@@ -73,7 +69,6 @@ class DataExportWorkerTests: XCTestCase {
 
         // When
         let worker = DataExportWorker(
-            queue: exporterQueue,
             fileReader: fileReader,
             dataExporter: mockDataExporter,
             exportCondition: { true },
@@ -100,7 +95,6 @@ class DataExportWorkerTests: XCTestCase {
 
         // When
         let worker = DataExportWorker(
-            queue: exporterQueue,
             fileReader: fileReader,
             dataExporter: mockDataExporter,
             exportCondition: { true },
@@ -131,7 +125,6 @@ class DataExportWorkerTests: XCTestCase {
         let mockDataExporter = DataExporterMock(exportStatus: .mockWith(needsRetry: false))
         
         let worker = DataExportWorker(
-            queue: exporterQueue,
             fileReader: fileReader,
             dataExporter: mockDataExporter,
             exportCondition: { false },
@@ -164,7 +157,6 @@ class DataExportWorkerTests: XCTestCase {
         fileReader.addFile(name: "file", data: "value".utf8Data)
         
         let worker = DataExportWorker(
-            queue: exporterQueue,
             fileReader: fileReader,
             dataExporter: mockDataExporter,
             exportCondition: { true },
@@ -197,7 +189,6 @@ class DataExportWorkerTests: XCTestCase {
         fileReader.addFile(name: "file", data: "value".utf8Data)
                 
         let worker = DataExportWorker(
-            queue: exporterQueue,
             fileReader: fileReader,
             dataExporter: mockDataExporter,
             exportCondition: { true },
@@ -221,7 +212,6 @@ class DataExportWorkerTests: XCTestCase {
         
         // Given
         let worker = DataExportWorker(
-            queue: exporterQueue,
             fileReader: fileReader,
             dataExporter: mockDataExporter,
             exportCondition: { false },
@@ -232,7 +222,7 @@ class DataExportWorkerTests: XCTestCase {
         fileReader.addFile(name: "file", data: "value".utf8Data)
 
         // Then
-        exporterQueue.sync(flags: .barrier) { }
+        worker.queue.sync(flags: .barrier) { }
     }
 
     func testItFlushesAllData() {
@@ -259,7 +249,6 @@ class DataExportWorkerTests: XCTestCase {
         
         // When
         let worker = DataExportWorker(
-            queue: exporterQueue,
             fileReader: fileReader,
             dataExporter: mockDataExporter,
             exportCondition: { true },
