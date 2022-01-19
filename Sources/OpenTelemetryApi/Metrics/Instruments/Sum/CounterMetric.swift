@@ -6,6 +6,7 @@
 import Foundation
 
 /// Counter instrument.
+@available(*,deprecated)
 public protocol CounterMetric {
     associatedtype T
 
@@ -33,7 +34,6 @@ public protocol CounterMetric {
     /// - Returns: The bound counter metric.
     func bind(labels: [String: String]) -> BoundCounterMetric<T>
 }
-
 public struct AnyCounterMetric<T>: CounterMetric {
     let internalCounter: Any
     private let _addLabelSet: (T, LabelSet) -> Void
