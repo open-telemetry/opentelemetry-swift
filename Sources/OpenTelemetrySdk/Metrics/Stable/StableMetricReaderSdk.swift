@@ -5,9 +5,29 @@
 
 import Foundation
 import OpenTelemetryApi
-class StableMetricReaderSdk : StableMetricReader{
-    init(exporter: MetricExporter, exportInterval: TimeInterval = 60.0, exportTimeout: TimeInterval = 30.0) {
+class StableMetricReaderSdk : StableMetricReader {
 
+    let exporter : MetricExporter
+    let sharedState : StableMeterSharedState
+    let exportInterval : TimeInterval
+    let exportTimeout : TimeInterval
+
+    func forceFlush() -> Bool {
+        do {
+            try sharedState.meterRegistry.forEach { meter in
+             _ = try meter.collect()
+            }
+        } catch {
+            return false
+        }
+        return true
+    }
+
+    init(exporter: MetricExporter, sharedState: StableMeterSharedState, exportInterval: TimeInterval = 60.0, exportTimeout: TimeInterval = 30.0) {
+        self.sharedState = sharedState
+        self.exporter = exporter
+        self.exportInterval = exportInterval
+        self.exportTimeout = exportTimeout
     }
 
     func collect() -> Bool {

@@ -1,21 +1,26 @@
-//
-// Created by Bryce Buchanan on 1/19/22.
-//
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import Foundation
 import OpenTelemetryApi
 class StableMeterSdk : StableMeter {
     fileprivate let collectLock = Lock()
     var instrumentationLibraryInfo: InstrumentationLibraryInfo
-    var meterSharedState : StableMeterSharedState
 
-    var intCounters = [String: CounterMetricSdk<Int>]()
-    var doubleCounters = [String: CounterMetricSdk<Double>]()
-    var intObservableCounters = [String: IntObserverMetric]()
+    var intCounters = [String: IntCounterSdk]()
+    var doubleCounters = [String: DoubleCounterSdk]()
+    var intObservableCounters = [String: IntObservableCounterSdk]()
+    var doubleObservableCounter = [String: DoubleObservableCounterSdk]()
 
-    init(meterSharedState: StableMeterSharedState, instrumentationLibraryInfo: InstrumentationLibraryInfo) {
+    // stub: maybe this doesn't throw, nor return metric data
+    func collect() throws -> MetricData {
+        return NoopMetricData()
+    }
+
+    init(instrumentationLibraryInfo: InstrumentationLibraryInfo) {
         self.instrumentationLibraryInfo = instrumentationLibraryInfo
-        self.meterSharedState = meterSharedState
     }
 
     func createIntCounter(name: String, unit: String?, description: String?) -> AnyCounterMetric<Int> {

@@ -11,6 +11,10 @@ import Foundation
 /// - Collecting metrics from the SDK
 /// - Handling the ForceFlush and Shutdown signals from the SDK
 public protocol StableMetricReader {
+    /// force flush handler from meter provider
+    ///
+    /// - Returns: success
+    func forceFlush() -> Bool
     /// Collects the metrics from the SDK. If there are asynchronous instruments,
     /// their callbacks will be invoked.
     /// todo: extend with status: success, failed, timeout.
@@ -23,12 +27,16 @@ public protocol StableMetricReader {
 }
 
 struct NoopStableMetricReader : StableMetricReader{
+    func forceFlush() -> Bool {
+        true
+    }
+
     func collect() -> Bool {
-        return true
+        true
     }
 
     func shutdown() -> Bool {
-        return true
+        true
     }
 
 

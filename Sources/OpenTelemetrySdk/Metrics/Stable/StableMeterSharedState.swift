@@ -1,24 +1,25 @@
-//
-// Created by Bryce Buchanan on 1/18/22.
-//
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import Foundation
 
 class StableMeterSharedState {
-    var readers = [StableMetricReader]()
+    let meterLock = Lock()
+    public private(set) var meterRegistry = [StableMeterSdk]()
+    public private(set) var viewRegistry = StableViewRegistry()
     var resource: Resource
 
-    init(reader: StableMetricReader, resource: Resource) {
-        readers.append(reader)
+    init(resource: Resource) {
         self.resource = resource
     }
 
-    init(readers: [StableMetricReader], resource: Resource) {
-        self.readers = readers
-        self.resource = resource
-    }
-
-    func addMetricReader(reader: StableMetricReader) {
-        readers.append(reader)
+    func add(meter: StableMeterSdk) {
+        meterLock.lock()
+        defer{
+            meterLock.unlock()
+        }
+        meterRegistry.append(meter)
     }
 }

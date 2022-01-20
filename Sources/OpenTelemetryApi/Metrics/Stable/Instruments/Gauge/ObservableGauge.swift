@@ -1,8 +1,16 @@
-//
-// Created by Bryce Buchanan on 1/19/22.
-//
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import Foundation
 
-protocol ObservableGauge {
+public protocol ObservableGauge : ObservableMeter {
+    associatedtype T
 }
+
+public struct NoopObservableGauge<T> : ObservableGauge {
+    public typealias U = NoopObservableResult<T>
+    public private(set) var callback: (U) -> ()
+}
+
