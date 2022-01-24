@@ -18,7 +18,7 @@ internal protocol DataExportWorkerProtocol {
 
 internal class DataExportWorker: DataExportWorkerProtocol {
     /// Queue to execute exports.
-    internal let queue = DispatchQueue(label: "com.otel.datadog.dataExportWorker", target: .global(qos: .utility))
+    internal let queue = DispatchQueue(label: "com.otel.persistence.dataExportWorker", target: .global(qos: .utility))
     /// File reader providing data to export.
     private let fileReader: FileReader
     /// Data exporter sending data to server.
