@@ -7,8 +7,6 @@
 import XCTest
 
 class OrchestratedFileReaderTests: XCTestCase {
-    private let queue = DispatchQueue(label: "persistence-tests-read", target: .global(qos: .utility))
-
     override func setUp() {
         super.setUp()
         temporaryDirectory.create()
@@ -25,8 +23,7 @@ class OrchestratedFileReaderTests: XCTestCase {
                 directory: temporaryDirectory,
                 performance: StoragePerformanceMock.readAllFiles,
                 dateProvider: SystemDateProvider()
-            ),
-            queue: queue
+            )
         )
         _ = try temporaryDirectory
             .createFile(named: Date.mockAny().toFileName)
@@ -45,8 +42,7 @@ class OrchestratedFileReaderTests: XCTestCase {
                 directory: temporaryDirectory,
                 performance: StoragePerformanceMock.readAllFiles,
                 dateProvider: dateProvider
-            ),
-            queue: queue
+            )
         )
         let file1 = try temporaryDirectory.createFile(named: dateProvider.currentDate().toFileName)
         try file1.append(data: "1".utf8Data)

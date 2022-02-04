@@ -7,7 +7,7 @@ import Foundation
 
 /// Sanitizes `Log` representation received from the user, so it can match Datadog log constraints.
 internal struct LogSanitizer {
-    struct Constraints {
+    enum Constraints {
         /// Attribute names reserved for Datadog.
         /// If any of those is used by the user, the attribute will be ignored.
         static let reservedAttributeNames: Set<String> = [
@@ -23,7 +23,7 @@ internal struct LogSanitizer {
         static let maxNumberOfAttributes: Int = 256
         /// Allowed first character of a tag name (given as ASCII values ranging from lowercased `a` to `z`) .
         /// Tags with name starting with different character will be dropped.
-        static let allowedTagNameFirstCharacterASCIIRange: [UInt8] = Array(97...122)
+        static let allowedTagNameFirstCharacterASCIIRange: [UInt8] = Array(97 ... 122)
         /// Maximum lenght of the tag.
         /// Tags exceeting this lenght will be trunkated.
         static let maxTagLength: Int = 200

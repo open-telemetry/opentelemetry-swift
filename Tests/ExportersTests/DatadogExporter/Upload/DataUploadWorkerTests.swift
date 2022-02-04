@@ -7,9 +7,6 @@
 import XCTest
 
 class DataUploadWorkerTests: XCTestCase {
-    private let fileReadWriteQueue = DispatchQueue(label: "dd-tests-read-write", target: .global(qos: .utility))
-    private let uploaderQueue = DispatchQueue(label: "dd-tests-uploader", target: .global(qos: .utility))
-
     lazy var dateProvider = RelativeDateProvider(advancingBySeconds: 1)
     lazy var orchestrator = FilesOrchestrator(
         directory: temporaryDirectory,
@@ -18,13 +15,11 @@ class DataUploadWorkerTests: XCTestCase {
     )
     lazy var writer = FileWriter(
         dataFormat: .mockWith(prefix: "[", suffix: "]"),
-        orchestrator: orchestrator,
-        queue: fileReadWriteQueue
+        orchestrator: orchestrator
     )
     lazy var reader = FileReader(
         dataFormat: .mockWith(prefix: "[", suffix: "]"),
-        orchestrator: orchestrator,
-        queue: fileReadWriteQueue
+        orchestrator: orchestrator
     )
 
     override func setUp() {
@@ -53,7 +48,6 @@ class DataUploadWorkerTests: XCTestCase {
 
         // When
         let worker = DataUploadWorker(
-            queue: uploaderQueue,
             fileReader: reader,
             dataUploader: dataUploader,
             uploadCondition: { true },
@@ -84,7 +78,6 @@ class DataUploadWorkerTests: XCTestCase {
 
         // When
         let worker = DataUploadWorker(
-            queue: uploaderQueue,
             fileReader: reader,
             dataUploader: mockDataUploader,
             uploadCondition: { true },
@@ -111,7 +104,6 @@ class DataUploadWorkerTests: XCTestCase {
 
         // When
         let worker = DataUploadWorker(
-            queue: uploaderQueue,
             fileReader: reader,
             dataUploader: mockDataUploader,
             uploadCondition: { true },
@@ -147,7 +139,6 @@ class DataUploadWorkerTests: XCTestCase {
             requestBuilder: .mockAny()
         )
         let worker = DataUploadWorker(
-            queue: uploaderQueue,
             fileReader: reader,
             dataUploader: dataUploader,
             uploadCondition: { false },
@@ -180,7 +171,6 @@ class DataUploadWorkerTests: XCTestCase {
             requestBuilder: .mockAny()
         )
         let worker = DataUploadWorker(
-            queue: uploaderQueue,
             fileReader: reader,
             dataUploader: dataUploader,
             uploadCondition: { true },
@@ -213,7 +203,6 @@ class DataUploadWorkerTests: XCTestCase {
             requestBuilder: .mockAny()
         )
         let worker = DataUploadWorker(
-            queue: uploaderQueue,
             fileReader: reader,
             dataUploader: dataUploader,
             uploadCondition: { true },
@@ -237,7 +226,6 @@ class DataUploadWorkerTests: XCTestCase {
             requestBuilder: .mockAny()
         )
         let worker = DataUploadWorker(
-            queue: uploaderQueue,
             fileReader: reader,
             dataUploader: dataUploader,
             uploadCondition: { false },
@@ -261,7 +249,6 @@ class DataUploadWorkerTests: XCTestCase {
             requestBuilder: .mockAny()
         )
         let worker = DataUploadWorker(
-            queue: uploaderQueue,
             fileReader: reader,
             dataUploader: dataUploader,
             uploadCondition: { true },

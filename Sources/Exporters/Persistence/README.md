@@ -6,7 +6,7 @@ An example use case is mobile apps that operate while the device has no network 
 
 The Persistence Exporter provides decorators for MetricExporter and SpanExporter. The decorators handle exported data by:
 
-- Asynchronously serializing and writing the exported data to the disk to a specified path. Writing to the disk is performed on a specified DispatchQueue.
+- Asynchronously serializing and writing the exported data to the disk to a specified path.
 - Asynchronously picking up persisted data, deserializing it, and forwarding it to the decorated exporter.
 
 ## Getting Started
@@ -21,11 +21,7 @@ An example of decorating a `MetricExporter`:
 let metricExporter = ... // create some MetricExporter
 let persistenceMetricExporter = try PersistenceMetricExporterDecorator(
   metricExporter: metricExporter,
-  storageURL: metricsSubdirectoryURL,
-  writerQueue: DispatchQueue(label: "metricWriterQueue"),
-  readerQueue: DispatchQueue(label: "metricReaderQueue"),
-  exportQueue: DispatchQueue(label: "metricExportQueue"),
-  exportCondition: { return true })
+  storageURL: metricsSubdirectoryURL)
 ```
 
 An example of decorating a `SpanExporter`:
@@ -34,9 +30,5 @@ An example of decorating a `SpanExporter`:
 let spanExporter = ... // create some SpanExporter
 let persistenceTraceExporter = try PersistenceSpanExporterDecorator(
   spanExporter: spanExporter,
-  storageURL: tracesSubdirectoryURL,
-  writerQueue: DispatchQueue(label: "spanWriterQueue"),
-  readerQueue: DispatchQueue(label: "spanWriterQueue"),
-  exportQueue: DispatchQueue(label: "spanWriterQueue"),
-  exportCondition: { return true })
+  storageURL: tracesSubdirectoryURL)
 ```

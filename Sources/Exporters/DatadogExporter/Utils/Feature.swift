@@ -36,11 +36,6 @@ internal struct FeatureUpload {
         performance: PerformancePreset,
         uploadCondition: @escaping () -> Bool
     ) {
-        let uploadQueue = DispatchQueue(
-            label: "com.datadoghq.ios-sdk-\(featureName)-upload",
-            target: .global(qos: .utility)
-        )
-
         let dataUploader = DataUploader(
             httpClient: HTTPClient(),
             requestBuilder: requestBuilder
@@ -48,7 +43,6 @@ internal struct FeatureUpload {
 
         self.init(
             uploader: DataUploadWorker(
-                queue: uploadQueue,
                 fileReader: storage.reader,
                 dataUploader: dataUploader,
                 uploadCondition: uploadCondition,

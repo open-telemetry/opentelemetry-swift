@@ -13,7 +13,7 @@ internal protocol DataUploadWorkerType {
 
 internal class DataUploadWorker: DataUploadWorkerType {
     /// Queue to execute uploads.
-    private let queue: DispatchQueue
+    internal let queue = DispatchQueue(label: "com.otel.datadog.datauploadworker", target: .global(qos: .utility))
     /// File reader providing data to upload.
     private let fileReader: FileReader
     /// Data uploader sending data to server.
@@ -31,14 +31,12 @@ internal class DataUploadWorker: DataUploadWorkerType {
     private var uploadWork: DispatchWorkItem?
 
     init(
-        queue: DispatchQueue,
         fileReader: FileReader,
         dataUploader: DataUploaderType,
         uploadCondition: @escaping () -> Bool,
         delay: Delay,
         featureName: String
     ) {
-        self.queue = queue
         self.fileReader = fileReader
         self.uploadCondition = uploadCondition
         self.dataUploader = dataUploader

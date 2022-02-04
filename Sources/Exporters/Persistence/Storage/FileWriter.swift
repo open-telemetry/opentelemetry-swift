@@ -7,9 +7,9 @@ import Foundation
 
 protocol FileWriter {
     func write(data: Data)
-    
+
     func writeSync(data: Data)
-    
+
     func flush()
 }
 
@@ -17,14 +17,14 @@ internal final class OrchestratedFileWriter: FileWriter {
     /// Orchestrator producing reference to writable file.
     private let orchestrator: FilesOrchestrator
     /// Queue used to synchronize files access (read / write) and perform decoding on background thread.
-    private let queue: DispatchQueue
+    internal let queue = DispatchQueue(label: "com.otel.persistence.filewriter", target: .global(qos: .userInteractive))
 
-    init(orchestrator: FilesOrchestrator, queue: DispatchQueue) {
+    init(orchestrator: FilesOrchestrator) {
         self.orchestrator = orchestrator
-        self.queue = queue        
     }
 
     // MARK: - Writing data
+
     func write(data: Data) {
         queue.async { [weak self] in
             self?.synchronizedWrite(data: data)
@@ -40,11 +40,10 @@ internal final class OrchestratedFileWriter: FileWriter {
     private func synchronizedWrite(data: Data, syncOnEnd: Bool = false) {
         do {
             let file = try orchestrator.getWritableFile(writeSize: UInt64(data.count))
-            try file.append(data: data, synchronized: syncOnEnd)            
-        } catch {            
-        }
+            try file.append(data: data, synchronized: syncOnEnd)
+        } catch {}
     }
-    
+
     func flush() {
         queue.sync(flags: .barrier) {}
     }

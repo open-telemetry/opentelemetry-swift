@@ -14,7 +14,7 @@ internal protocol WritableFile {
     func size() throws -> UInt64
 
     /// Synchronously appends given data at the end of this file.
-    func append(data: Data, synchronized: Bool ) throws
+    func append(data: Data, synchronized: Bool) throws
 }
 
 /// Provides convenient interface for reading contents and metadata of the file.

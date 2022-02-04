@@ -75,7 +75,7 @@ internal class FilesOrchestrator {
                 return nil
             }
         }
-        
+
         return nil
     }
 
@@ -116,8 +116,7 @@ internal class FilesOrchestrator {
     func delete(readableFile: ReadableFile) {
         do {
             try readableFile.delete()
-        } catch {            
-        }
+        } catch {}
     }
 
     // MARK: - Directory size management
@@ -177,7 +176,7 @@ private enum FixedWidthIntegerError<T: BinaryFloatingPoint>: Error {
 }
 
 private extension FixedWidthInteger {
-    /* 
+    /*
      Self(:) is commonly used for conversion, however it fatalError() in case of conversion failure
      Self(exactly:) does the exact same thing internally yet it returns nil instead of fatalError()
      It is not trivial to guess if the conversion would fail or succeed, therefore we use Self(exactly:)

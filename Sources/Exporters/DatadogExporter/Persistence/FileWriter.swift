@@ -13,17 +13,16 @@ internal final class FileWriter {
     /// JSON encoder used to encode data.
     private let jsonEncoder: JSONEncoder
     /// Queue used to synchronize files access (read / write) and perform decoding on background thread.
-    // Temporarily internal so tests can wait for the writer to finish before exiting
-    internal let queue: DispatchQueue
+    internal let queue = DispatchQueue(label: "com.otel.datadog.filewriter", target: .global(qos: .userInteractive))
 
-    init(dataFormat: DataFormat, orchestrator: FilesOrchestrator, queue: DispatchQueue) {
+    init(dataFormat: DataFormat, orchestrator: FilesOrchestrator) {
         self.dataFormat = dataFormat
         self.orchestrator = orchestrator
-        self.queue = queue
         self.jsonEncoder = JSONEncoder.default()
     }
 
     // MARK: - Writing data
+
     /// Encodes given value to JSON data and writes it to file.
     /// Comma is used to separate consecutive values in the file.
 
