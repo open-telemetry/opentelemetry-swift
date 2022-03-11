@@ -94,10 +94,18 @@ public struct Opentelemetry_Proto_Common_V1_AnyValue {
     set {value = .kvlistValue(newValue)}
   }
 
+  var bytesValue: Data {
+    get {
+      if case .bytesValue(let v)? = value {return v}
+      return Data()
+    }
+    set {value = .bytesValue(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   /// The value is one of the listed fields. It is valid for all values to be unspecified
-  /// in which case this AnyValue is considered to be "null".
+  /// in which case this AnyValue is considered to be "empty".
   public enum OneOf_Value: Equatable {
     case stringValue(String)
     case boolValue(Bool)
@@ -105,6 +113,7 @@ public struct Opentelemetry_Proto_Common_V1_AnyValue {
     case doubleValue(Double)
     case arrayValue(Opentelemetry_Proto_Common_V1_ArrayValue)
     case kvlistValue(Opentelemetry_Proto_Common_V1_KeyValueList)
+    case bytesValue(Data)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Opentelemetry_Proto_Common_V1_AnyValue.OneOf_Value, rhs: Opentelemetry_Proto_Common_V1_AnyValue.OneOf_Value) -> Bool {
@@ -134,6 +143,10 @@ public struct Opentelemetry_Proto_Common_V1_AnyValue {
       }()
       case (.kvlistValue, .kvlistValue): return {
         guard case .kvlistValue(let l) = lhs, case .kvlistValue(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.bytesValue, .bytesValue): return {
+        guard case .bytesValue(let l) = lhs, case .bytesValue(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       default: return false
@@ -172,6 +185,8 @@ public struct Opentelemetry_Proto_Common_V1_KeyValueList {
 
   /// A collection of key/value pairs of key-value pairs. The list may be empty (may
   /// contain 0 elements).
+  /// The keys MUST be unique (it is not allowed to have more than one
+  /// value with the same key).
   public var values: [Opentelemetry_Proto_Common_V1_KeyValue] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -204,30 +219,17 @@ public struct Opentelemetry_Proto_Common_V1_KeyValue {
   fileprivate var _value: Opentelemetry_Proto_Common_V1_AnyValue? = nil
 }
 
-/// StringKeyValue is a pair of key/value strings. This is the simpler (and faster) version
-/// of KeyValue that only supports string values.
-public struct Opentelemetry_Proto_Common_V1_StringKeyValue {
-  // SwiftProtobuf.Message conformance is added in an extension below. See the
-  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
-  // methods supported on all messages.
-
-  public var key: String = String()
-
-  public var value: String = String()
-
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
-
-  public init() {}
-}
-
 /// InstrumentationLibrary is a message representing the instrumentation library information
-/// such as the fully qualified name and version. 
+/// such as the fully qualified name and version.
+/// InstrumentationLibrary is wire-compatible with InstrumentationScope for binary
+/// Protobuf format.
+/// This message is deprecated and will be removed on June 15, 2022.
 public struct Opentelemetry_Proto_Common_V1_InstrumentationLibrary {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  /// An empty instrumentation library name means the name is unknown. 
+  /// An empty instrumentation library name means the name is unknown.
   public var name: String = String()
 
   public var version: String = String()
@@ -236,6 +238,33 @@ public struct Opentelemetry_Proto_Common_V1_InstrumentationLibrary {
 
   public init() {}
 }
+
+/// InstrumentationScope is a message representing the instrumentation scope information
+/// such as the fully qualified name and version. 
+public struct Opentelemetry_Proto_Common_V1_InstrumentationScope {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// An empty instrumentation scope name means the name is unknown.
+  public var name: String = String()
+
+  public var version: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+#if swift(>=5.5) && canImport(_Concurrency)
+extension Opentelemetry_Proto_Common_V1_AnyValue: @unchecked Sendable {}
+extension Opentelemetry_Proto_Common_V1_AnyValue.OneOf_Value: @unchecked Sendable {}
+extension Opentelemetry_Proto_Common_V1_ArrayValue: @unchecked Sendable {}
+extension Opentelemetry_Proto_Common_V1_KeyValueList: @unchecked Sendable {}
+extension Opentelemetry_Proto_Common_V1_KeyValue: @unchecked Sendable {}
+extension Opentelemetry_Proto_Common_V1_InstrumentationLibrary: @unchecked Sendable {}
+extension Opentelemetry_Proto_Common_V1_InstrumentationScope: @unchecked Sendable {}
+#endif  // swift(>=5.5) && canImport(_Concurrency)
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
@@ -250,6 +279,7 @@ extension Opentelemetry_Proto_Common_V1_AnyValue: SwiftProtobuf.Message, SwiftPr
     4: .standard(proto: "double_value"),
     5: .standard(proto: "array_value"),
     6: .standard(proto: "kvlist_value"),
+    7: .standard(proto: "bytes_value"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -259,46 +289,70 @@ extension Opentelemetry_Proto_Common_V1_AnyValue: SwiftProtobuf.Message, SwiftPr
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try {
-        if self.value != nil {try decoder.handleConflictingOneOf()}
         var v: String?
         try decoder.decodeSingularStringField(value: &v)
-        if let v = v {self.value = .stringValue(v)}
+        if let v = v {
+          if self.value != nil {try decoder.handleConflictingOneOf()}
+          self.value = .stringValue(v)
+        }
       }()
       case 2: try {
-        if self.value != nil {try decoder.handleConflictingOneOf()}
         var v: Bool?
         try decoder.decodeSingularBoolField(value: &v)
-        if let v = v {self.value = .boolValue(v)}
+        if let v = v {
+          if self.value != nil {try decoder.handleConflictingOneOf()}
+          self.value = .boolValue(v)
+        }
       }()
       case 3: try {
-        if self.value != nil {try decoder.handleConflictingOneOf()}
         var v: Int64?
         try decoder.decodeSingularInt64Field(value: &v)
-        if let v = v {self.value = .intValue(v)}
+        if let v = v {
+          if self.value != nil {try decoder.handleConflictingOneOf()}
+          self.value = .intValue(v)
+        }
       }()
       case 4: try {
-        if self.value != nil {try decoder.handleConflictingOneOf()}
         var v: Double?
         try decoder.decodeSingularDoubleField(value: &v)
-        if let v = v {self.value = .doubleValue(v)}
+        if let v = v {
+          if self.value != nil {try decoder.handleConflictingOneOf()}
+          self.value = .doubleValue(v)
+        }
       }()
       case 5: try {
         var v: Opentelemetry_Proto_Common_V1_ArrayValue?
+        var hadOneofValue = false
         if let current = self.value {
-          try decoder.handleConflictingOneOf()
+          hadOneofValue = true
           if case .arrayValue(let m) = current {v = m}
         }
         try decoder.decodeSingularMessageField(value: &v)
-        if let v = v {self.value = .arrayValue(v)}
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.value = .arrayValue(v)
+        }
       }()
       case 6: try {
         var v: Opentelemetry_Proto_Common_V1_KeyValueList?
+        var hadOneofValue = false
         if let current = self.value {
-          try decoder.handleConflictingOneOf()
+          hadOneofValue = true
           if case .kvlistValue(let m) = current {v = m}
         }
         try decoder.decodeSingularMessageField(value: &v)
-        if let v = v {self.value = .kvlistValue(v)}
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.value = .kvlistValue(v)
+        }
+      }()
+      case 7: try {
+        var v: Data?
+        try decoder.decodeSingularBytesField(value: &v)
+        if let v = v {
+          if self.value != nil {try decoder.handleConflictingOneOf()}
+          self.value = .bytesValue(v)
+        }
       }()
       default: break
       }
@@ -307,8 +361,9 @@ extension Opentelemetry_Proto_Common_V1_AnyValue: SwiftProtobuf.Message, SwiftPr
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every case branch when no optimizations are
-    // enabled. https://github.com/apple/swift-protobuf/issues/1034
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     switch self.value {
     case .stringValue?: try {
       guard case .stringValue(let v)? = self.value else { preconditionFailure() }
@@ -333,6 +388,10 @@ extension Opentelemetry_Proto_Common_V1_AnyValue: SwiftProtobuf.Message, SwiftPr
     case .kvlistValue?: try {
       guard case .kvlistValue(let v)? = self.value else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
+    }()
+    case .bytesValue?: try {
+      guard case .bytesValue(let v)? = self.value else { preconditionFailure() }
+      try visitor.visitSingularBytesField(value: v, fieldNumber: 7)
     }()
     case nil: break
     }
@@ -431,56 +490,22 @@ extension Opentelemetry_Proto_Common_V1_KeyValue: SwiftProtobuf.Message, SwiftPr
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.key.isEmpty {
       try visitor.visitSingularStringField(value: self.key, fieldNumber: 1)
     }
-    if let v = self._value {
+    try { if let v = self._value {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    }
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Opentelemetry_Proto_Common_V1_KeyValue, rhs: Opentelemetry_Proto_Common_V1_KeyValue) -> Bool {
     if lhs.key != rhs.key {return false}
     if lhs._value != rhs._value {return false}
-    if lhs.unknownFields != rhs.unknownFields {return false}
-    return true
-  }
-}
-
-extension Opentelemetry_Proto_Common_V1_StringKeyValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".StringKeyValue"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "key"),
-    2: .same(proto: "value"),
-  ]
-
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try { try decoder.decodeSingularStringField(value: &self.key) }()
-      case 2: try { try decoder.decodeSingularStringField(value: &self.value) }()
-      default: break
-      }
-    }
-  }
-
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if !self.key.isEmpty {
-      try visitor.visitSingularStringField(value: self.key, fieldNumber: 1)
-    }
-    if !self.value.isEmpty {
-      try visitor.visitSingularStringField(value: self.value, fieldNumber: 2)
-    }
-    try unknownFields.traverse(visitor: &visitor)
-  }
-
-  public static func ==(lhs: Opentelemetry_Proto_Common_V1_StringKeyValue, rhs: Opentelemetry_Proto_Common_V1_StringKeyValue) -> Bool {
-    if lhs.key != rhs.key {return false}
-    if lhs.value != rhs.value {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -517,6 +542,44 @@ extension Opentelemetry_Proto_Common_V1_InstrumentationLibrary: SwiftProtobuf.Me
   }
 
   public static func ==(lhs: Opentelemetry_Proto_Common_V1_InstrumentationLibrary, rhs: Opentelemetry_Proto_Common_V1_InstrumentationLibrary) -> Bool {
+    if lhs.name != rhs.name {return false}
+    if lhs.version != rhs.version {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+extension Opentelemetry_Proto_Common_V1_InstrumentationScope: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".InstrumentationScope"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "name"),
+    2: .same(proto: "version"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.name) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.version) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.name.isEmpty {
+      try visitor.visitSingularStringField(value: self.name, fieldNumber: 1)
+    }
+    if !self.version.isEmpty {
+      try visitor.visitSingularStringField(value: self.version, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Opentelemetry_Proto_Common_V1_InstrumentationScope, rhs: Opentelemetry_Proto_Common_V1_InstrumentationScope) -> Bool {
     if lhs.name != rhs.name {return false}
     if lhs.version != rhs.version {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
