@@ -54,60 +54,70 @@ struct MetricsAdapter {
                 guard let gaugeData = $0 as? SumData<Double> else {
                     break
                 }
-                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_DoubleDataPoint()
+//                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_DoubleDataPoint()
+                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_NumberDataPoint()
+
                 protoDataPoint.timeUnixNano = gaugeData.timestamp.timeIntervalSince1970.toNanoseconds
                 protoDataPoint.startTimeUnixNano = gaugeData.startTimestamp.timeIntervalSince1970.toNanoseconds
-                protoDataPoint.value = gaugeData.sum
+                protoDataPoint.value = .asDouble(gaugeData.sum)
                 gaugeData.labels.forEach {
-                    var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
+//                    var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
+                    var kvp = Opentelemetry_Proto_Common_V1_KeyValue()
                     kvp.key = $0.key
-                    kvp.value = $0.value
-                    protoDataPoint.labels.append(kvp)
+                    kvp.value.stringValue = $0.value
+                    protoDataPoint.attributes.append(kvp)
                 }
 
-                protoMetric.doubleGauge.dataPoints.append(protoDataPoint)
+                protoMetric.gauge.dataPoints.append(protoDataPoint)
             case .intGauge:
                 guard let gaugeData = $0 as? SumData<Int> else {
                     break
                 }
 
-                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_IntDataPoint()
+//                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_IntDataPoint()
+                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_NumberDataPoint()
 
-                protoDataPoint.value = Int64(gaugeData.sum)
+                protoDataPoint.value = .asInt(Int64(exactly: gaugeData.sum)!)
                 protoDataPoint.timeUnixNano = gaugeData.timestamp.timeIntervalSince1970.toNanoseconds
                 protoDataPoint.startTimeUnixNano = gaugeData.startTimestamp.timeIntervalSince1970.toNanoseconds
                 gaugeData.labels.forEach {
-                    var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
+//                    var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
+                    var kvp = Opentelemetry_Proto_Common_V1_KeyValue()
                     kvp.key = $0.key
-                    kvp.value = $0.value
-                    protoDataPoint.labels.append(kvp)
+                    kvp.value.stringValue = $0.value
+                    protoDataPoint.attributes.append(kvp)
                 }
 
-                protoMetric.intGauge.dataPoints.append(protoDataPoint)
+                protoMetric.gauge.dataPoints.append(protoDataPoint)
             case .doubleSum:
                 guard let sumData = $0 as? SumData<Double> else {
                     break
                 }
 
-                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_DoubleDataPoint()
-                protoDataPoint.value = sumData.sum
+//                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_DoubleDataPoint()
+                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_NumberDataPoint()
+
+                protoDataPoint.value = .asDouble(sumData.sum)
                 protoDataPoint.timeUnixNano = sumData.timestamp.timeIntervalSince1970.toNanoseconds
                 protoDataPoint.startTimeUnixNano = sumData.startTimestamp.timeIntervalSince1970.toNanoseconds
                 sumData.labels.forEach {
-                    var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
+//                    var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
+                    var kvp = Opentelemetry_Proto_Common_V1_KeyValue()
                     kvp.key = $0.key
-                    kvp.value = $0.value
-                    protoDataPoint.labels.append(kvp)
+                    kvp.value.stringValue = $0.value
+                    protoDataPoint.attributes.append(kvp)
                 }
 
-                protoMetric.doubleSum.aggregationTemporality = .cumulative
-                protoMetric.doubleSum.dataPoints.append(protoDataPoint)
+                protoMetric.sum.aggregationTemporality = .cumulative
+                protoMetric.sum.dataPoints.append(protoDataPoint)
             case .doubleSummary:
 
                 guard let summaryData = $0 as? SummaryData<Double> else {
                     break
                 }
-                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_DoubleSummaryDataPoint()
+//                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_DoubleSummaryDataPoint()
+                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_SummaryDataPoint()
+
                 protoDataPoint.sum = summaryData.sum
                 protoDataPoint.count = UInt64(summaryData.count)
 
@@ -115,53 +125,61 @@ struct MetricsAdapter {
                 protoDataPoint.timeUnixNano = summaryData.timestamp.timeIntervalSince1970.toNanoseconds
 
                 summaryData.labels.forEach {
-                    var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
+                    var kvp = Opentelemetry_Proto_Common_V1_KeyValue()
                     kvp.key = $0.key
-                    kvp.value = $0.value
-                    protoDataPoint.labels.append(kvp)
+                    kvp.value.stringValue = $0.value
+                    protoDataPoint.attributes.append(kvp)
                 }
 
-                protoMetric.doubleSummary.dataPoints.append(protoDataPoint)
+                protoMetric.summary.dataPoints.append(protoDataPoint)
             case .intSum:
                 guard let sumData = $0 as? SumData<Int> else {
                     break
                 }
-                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_IntDataPoint()
-                protoDataPoint.value = Int64(sumData.sum)
+//                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_IntDataPoint()
+                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_NumberDataPoint()
+
+                protoDataPoint.value = .asInt(Int64(sumData.sum))
                 protoDataPoint.timeUnixNano = sumData.timestamp.timeIntervalSince1970.toNanoseconds
                 protoDataPoint.startTimeUnixNano = sumData.startTimestamp.timeIntervalSince1970.toNanoseconds
                 sumData.labels.forEach {
-                    var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
+//                    var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
+                    var kvp = Opentelemetry_Proto_Common_V1_KeyValue()
+
                     kvp.key = $0.key
-                    kvp.value = $0.value
-                    protoDataPoint.labels.append(kvp)
+                    kvp.value.stringValue = $0.value
+                    protoDataPoint.attributes.append(kvp)
                 }
 
-                protoMetric.intSum.aggregationTemporality = .cumulative
-                protoMetric.intSum.dataPoints.append(protoDataPoint)
+                protoMetric.sum.aggregationTemporality = .cumulative
+                protoMetric.sum.dataPoints.append(protoDataPoint)
             case .intSummary:
                 guard let summaryData = $0 as? SummaryData<Int> else {
                     break
                 }
-                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_DoubleSummaryDataPoint()
+//                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_DoubleSummaryDataPoint()
+                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_SummaryDataPoint()
+
                 protoDataPoint.sum = Double(summaryData.sum)
                 protoDataPoint.count = UInt64(summaryData.count)
                 protoDataPoint.startTimeUnixNano = summaryData.startTimestamp.timeIntervalSince1970.toNanoseconds
                 protoDataPoint.timeUnixNano = summaryData.timestamp.timeIntervalSince1970.toNanoseconds
 
                 summaryData.labels.forEach {
-                    var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
+                    var kvp = Opentelemetry_Proto_Common_V1_KeyValue()
                     kvp.key = $0.key
-                    kvp.value = $0.value
-                    protoDataPoint.labels.append(kvp)
+                    kvp.value.stringValue = $0.value
+                    protoDataPoint.attributes.append(kvp)
                 }
 
-                protoMetric.doubleSummary.dataPoints.append(protoDataPoint)
+                protoMetric.summary.dataPoints.append(protoDataPoint)
             case .intHistogram:
                 guard let histogramData = $0 as? HistogramData<Int> else {
                     break
                 }
-                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_DoubleHistogramDataPoint()
+//                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_DoubleHistogramDataPoint()
+                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_HistogramDataPoint()
+
                 protoDataPoint.sum = Double(histogramData.sum)
                 protoDataPoint.count = UInt64(histogramData.count)
                 protoDataPoint.startTimeUnixNano = histogramData.startTimestamp.timeIntervalSince1970.toNanoseconds
@@ -170,19 +188,19 @@ struct MetricsAdapter {
                 protoDataPoint.bucketCounts = histogramData.buckets.counts.map { UInt64($0) }
                 
                 histogramData.labels.forEach {
-                    var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
+                    var kvp = Opentelemetry_Proto_Common_V1_KeyValue()
                     kvp.key = $0.key
-                    kvp.value = $0.value
-                    protoDataPoint.labels.append(kvp)
+                    kvp.value.stringValue = $0.value
+                    protoDataPoint.attributes.append(kvp)
                 }
                 
-                protoMetric.doubleHistogram.aggregationTemporality = .cumulative
-                protoMetric.doubleHistogram.dataPoints.append(protoDataPoint)
+                protoMetric.histogram.aggregationTemporality = .cumulative
+                protoMetric.histogram.dataPoints.append(protoDataPoint)
             case .doubleHistogram:
                 guard let histogramData = $0 as? HistogramData<Double> else {
                     break
                 }
-                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_DoubleHistogramDataPoint()
+                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_HistogramDataPoint()
                 protoDataPoint.sum = Double(histogramData.sum)
                 protoDataPoint.count = UInt64(histogramData.count)
                 protoDataPoint.startTimeUnixNano = histogramData.startTimestamp.timeIntervalSince1970.toNanoseconds
@@ -191,14 +209,14 @@ struct MetricsAdapter {
                 protoDataPoint.bucketCounts = histogramData.buckets.counts.map { UInt64($0) }
                 
                 histogramData.labels.forEach {
-                    var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
+                    var kvp = Opentelemetry_Proto_Common_V1_KeyValue()
                     kvp.key = $0.key
-                    kvp.value = $0.value
-                    protoDataPoint.labels.append(kvp)
+                    kvp.value.stringValue = $0.value
+                    protoDataPoint.attributes.append(kvp)
                 }
                 
-                protoMetric.doubleHistogram.aggregationTemporality = .cumulative
-                protoMetric.doubleHistogram.dataPoints.append(protoDataPoint)
+                protoMetric.histogram.aggregationTemporality = .cumulative
+                protoMetric.histogram.dataPoints.append(protoDataPoint)
             }
         }
         return protoMetric
