@@ -40,7 +40,9 @@ public struct Opentelemetry_Proto_Resource_V1_Resource {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  /// Set of labels that describe the resource.
+  /// Set of attributes that describe the resource.
+  /// Attribute keys MUST be unique (it is not allowed to have more than one
+  /// attribute with the same key).
   public var attributes: [Opentelemetry_Proto_Common_V1_KeyValue] = []
 
   /// dropped_attributes_count is the number of dropped attributes. If the value is 0, then
@@ -51,6 +53,10 @@ public struct Opentelemetry_Proto_Resource_V1_Resource {
 
   public init() {}
 }
+
+#if swift(>=5.5) && canImport(_Concurrency)
+extension Opentelemetry_Proto_Resource_V1_Resource: @unchecked Sendable {}
+#endif  // swift(>=5.5) && canImport(_Concurrency)
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 

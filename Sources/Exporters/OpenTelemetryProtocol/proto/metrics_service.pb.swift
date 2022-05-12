@@ -61,6 +61,11 @@ public struct Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRespo
   public init() {}
 }
 
+#if swift(>=5.5) && canImport(_Concurrency)
+extension Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest: @unchecked Sendable {}
+extension Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse: @unchecked Sendable {}
+#endif  // swift(>=5.5) && canImport(_Concurrency)
+
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
 fileprivate let _protobuf_package = "opentelemetry.proto.collector.metrics.v1"
