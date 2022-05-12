@@ -54,14 +54,12 @@ struct MetricsAdapter {
                 guard let gaugeData = $0 as? SumData<Double> else {
                     break
                 }
-//                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_DoubleDataPoint()
                 var protoDataPoint = Opentelemetry_Proto_Metrics_V1_NumberDataPoint()
 
                 protoDataPoint.timeUnixNano = gaugeData.timestamp.timeIntervalSince1970.toNanoseconds
                 protoDataPoint.startTimeUnixNano = gaugeData.startTimestamp.timeIntervalSince1970.toNanoseconds
                 protoDataPoint.value = .asDouble(gaugeData.sum)
                 gaugeData.labels.forEach {
-//                    var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
                     var kvp = Opentelemetry_Proto_Common_V1_KeyValue()
                     kvp.key = $0.key
                     kvp.value.stringValue = $0.value
@@ -74,14 +72,12 @@ struct MetricsAdapter {
                     break
                 }
 
-//                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_IntDataPoint()
                 var protoDataPoint = Opentelemetry_Proto_Metrics_V1_NumberDataPoint()
 
                 protoDataPoint.value = .asInt(Int64(exactly: gaugeData.sum)!)
                 protoDataPoint.timeUnixNano = gaugeData.timestamp.timeIntervalSince1970.toNanoseconds
                 protoDataPoint.startTimeUnixNano = gaugeData.startTimestamp.timeIntervalSince1970.toNanoseconds
                 gaugeData.labels.forEach {
-//                    var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
                     var kvp = Opentelemetry_Proto_Common_V1_KeyValue()
                     kvp.key = $0.key
                     kvp.value.stringValue = $0.value
@@ -94,14 +90,12 @@ struct MetricsAdapter {
                     break
                 }
 
-//                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_DoubleDataPoint()
                 var protoDataPoint = Opentelemetry_Proto_Metrics_V1_NumberDataPoint()
 
                 protoDataPoint.value = .asDouble(sumData.sum)
                 protoDataPoint.timeUnixNano = sumData.timestamp.timeIntervalSince1970.toNanoseconds
                 protoDataPoint.startTimeUnixNano = sumData.startTimestamp.timeIntervalSince1970.toNanoseconds
                 sumData.labels.forEach {
-//                    var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
                     var kvp = Opentelemetry_Proto_Common_V1_KeyValue()
                     kvp.key = $0.key
                     kvp.value.stringValue = $0.value
@@ -115,7 +109,6 @@ struct MetricsAdapter {
                 guard let summaryData = $0 as? SummaryData<Double> else {
                     break
                 }
-//                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_DoubleSummaryDataPoint()
                 var protoDataPoint = Opentelemetry_Proto_Metrics_V1_SummaryDataPoint()
 
                 protoDataPoint.sum = summaryData.sum
@@ -136,14 +129,12 @@ struct MetricsAdapter {
                 guard let sumData = $0 as? SumData<Int> else {
                     break
                 }
-//                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_IntDataPoint()
                 var protoDataPoint = Opentelemetry_Proto_Metrics_V1_NumberDataPoint()
 
                 protoDataPoint.value = .asInt(Int64(sumData.sum))
                 protoDataPoint.timeUnixNano = sumData.timestamp.timeIntervalSince1970.toNanoseconds
                 protoDataPoint.startTimeUnixNano = sumData.startTimestamp.timeIntervalSince1970.toNanoseconds
                 sumData.labels.forEach {
-//                    var kvp = Opentelemetry_Proto_Common_V1_StringKeyValue()
                     var kvp = Opentelemetry_Proto_Common_V1_KeyValue()
 
                     kvp.key = $0.key
@@ -157,7 +148,6 @@ struct MetricsAdapter {
                 guard let summaryData = $0 as? SummaryData<Int> else {
                     break
                 }
-//                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_DoubleSummaryDataPoint()
                 var protoDataPoint = Opentelemetry_Proto_Metrics_V1_SummaryDataPoint()
 
                 protoDataPoint.sum = Double(summaryData.sum)
@@ -177,7 +167,6 @@ struct MetricsAdapter {
                 guard let histogramData = $0 as? HistogramData<Int> else {
                     break
                 }
-//                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_DoubleHistogramDataPoint()
                 var protoDataPoint = Opentelemetry_Proto_Metrics_V1_HistogramDataPoint()
 
                 protoDataPoint.sum = Double(histogramData.sum)
