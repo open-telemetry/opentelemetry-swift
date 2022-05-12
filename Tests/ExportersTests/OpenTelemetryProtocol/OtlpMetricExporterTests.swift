@@ -54,6 +54,7 @@ class OtlpMetricExproterTests: XCTestCase {
         let sum = metric.data[0] as! SumData<Int>
         XCTAssertEqual(sum.timestamp.timeIntervalSince1970.toNanoseconds, dataPoint.timeUnixNano)
         XCTAssertEqual(sum.startTimestamp.timeIntervalSince1970.toNanoseconds, dataPoint.startTimeUnixNano)
+        XCTAssertEqual(sum.sum, Int(dataPoint.asInt))
     }
 
     func testExportMultipleMetrics() {

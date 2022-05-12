@@ -399,6 +399,13 @@ public struct Opentelemetry_Proto_Logs_V1_LogRecord {
   /// it is known at the source. [Optional].
   public var severityText: String = String()
 
+  /// Short event identifier that does not contain varying parts. Name describes
+  /// what happened (e.g. "ProcessStarted"). Recommended to be no longer than 50
+  /// characters. Not guaranteed to be unique in any way. [Optional].
+  /// This deprecated field is planned to be removed March 15, 2022. Receivers can
+  /// ignore this field.
+  public var name: String = String()
+
   /// A value containing the body of the log record. Can be for example a human-readable
   /// string message (including multi-line) describing the event in a free form or it can
   /// be a structured data composed of arrays and maps of other values. [Optional].
@@ -684,6 +691,7 @@ extension Opentelemetry_Proto_Logs_V1_LogRecord: SwiftProtobuf.Message, SwiftPro
     11: .standard(proto: "observed_time_unix_nano"),
     2: .standard(proto: "severity_number"),
     3: .standard(proto: "severity_text"),
+    4: .same(proto: "name"),
     5: .same(proto: "body"),
     6: .same(proto: "attributes"),
     7: .standard(proto: "dropped_attributes_count"),
@@ -701,6 +709,7 @@ extension Opentelemetry_Proto_Logs_V1_LogRecord: SwiftProtobuf.Message, SwiftPro
       case 1: try { try decoder.decodeSingularFixed64Field(value: &self.timeUnixNano) }()
       case 2: try { try decoder.decodeSingularEnumField(value: &self.severityNumber) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self.severityText) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.name) }()
       case 5: try { try decoder.decodeSingularMessageField(value: &self._body) }()
       case 6: try { try decoder.decodeRepeatedMessageField(value: &self.attributes) }()
       case 7: try { try decoder.decodeSingularUInt32Field(value: &self.droppedAttributesCount) }()
@@ -726,6 +735,9 @@ extension Opentelemetry_Proto_Logs_V1_LogRecord: SwiftProtobuf.Message, SwiftPro
     }
     if !self.severityText.isEmpty {
       try visitor.visitSingularStringField(value: self.severityText, fieldNumber: 3)
+    }
+    if !self.name.isEmpty {
+      try visitor.visitSingularStringField(value: self.name, fieldNumber: 4)
     }
     try { if let v = self._body {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
@@ -756,6 +768,7 @@ extension Opentelemetry_Proto_Logs_V1_LogRecord: SwiftProtobuf.Message, SwiftPro
     if lhs.observedTimeUnixNano != rhs.observedTimeUnixNano {return false}
     if lhs.severityNumber != rhs.severityNumber {return false}
     if lhs.severityText != rhs.severityText {return false}
+    if lhs.name != rhs.name {return false}
     if lhs._body != rhs._body {return false}
     if lhs.attributes != rhs.attributes {return false}
     if lhs.droppedAttributesCount != rhs.droppedAttributesCount {return false}

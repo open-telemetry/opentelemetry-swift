@@ -3,13 +3,12 @@ receivers:
     protocols:
       grpc:
       http:
-        cors_allowed_origins:
-        - http://*
-        - https://*
+        cors:
+          allowed_origins:
+            - http://*
+            - https://*
 
 exporters:
-  logging:
-    loglevel: debug
   zipkin:
     endpoint: "http://zipkin-all-in-one:9411/api/v2/spans"
   prometheus:
@@ -24,10 +23,13 @@ processors:
   batch:
 
 service:
+  telemetry:
+    logs:
+      level: "debug"
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [zipkin, logging]
+      exporters: [zipkin]
       processors: [resource, batch]
     metrics:
       receivers: [otlp]
