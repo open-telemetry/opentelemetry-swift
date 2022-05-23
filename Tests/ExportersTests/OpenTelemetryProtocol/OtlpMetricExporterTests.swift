@@ -49,12 +49,12 @@ class OtlpMetricExproterTests: XCTestCase {
         XCTAssertEqual(fakeCollector.receivedMetrics.count, 1)
         let otlpMetric = fakeCollector.receivedMetrics[0].instrumentationLibraryMetrics[0].metrics[0]
         XCTAssertEqual(metric.name, otlpMetric.name)
-        XCTAssertEqual(otlpMetric.intGauge.dataPoints.count, 1)
-        let dataPoint = otlpMetric.intGauge.dataPoints[0]
+        XCTAssertEqual(otlpMetric.gauge.dataPoints.count, 1)
+        let dataPoint = otlpMetric.gauge.dataPoints[0]
         let sum = metric.data[0] as! SumData<Int>
         XCTAssertEqual(sum.timestamp.timeIntervalSince1970.toNanoseconds, dataPoint.timeUnixNano)
         XCTAssertEqual(sum.startTimestamp.timeIntervalSince1970.toNanoseconds, dataPoint.startTimeUnixNano)
-        XCTAssertEqual(sum.sum, Int(dataPoint.value))
+        XCTAssertEqual(sum.sum, Int(dataPoint.asInt))
     }
 
     func testExportMultipleMetrics() {
