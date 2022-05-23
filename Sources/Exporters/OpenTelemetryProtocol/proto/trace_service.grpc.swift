@@ -26,7 +26,7 @@ import SwiftProtobuf
 
 
 /// Service that can be used to push spans between one Application instrumented with
-/// OpenTelemetry and an collector, or between an collector and a central collector (in this
+/// OpenTelemetry and a collector, or between a collector and a central collector (in this
 /// case spans are sent/received to/from multiple Applications).
 ///
 /// Usage: instantiate `Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClient`, then call methods of this protocol to make API calls.
@@ -94,7 +94,7 @@ public final class Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClient: Op
 }
 
 /// Service that can be used to push spans between one Application instrumented with
-/// OpenTelemetry and an collector, or between an collector and a central collector (in this
+/// OpenTelemetry and a collector, or between a collector and a central collector (in this
 /// case spans are sent/received to/from multiple Applications).
 ///
 /// To build a server, implement a class that conforms to this protocol.
