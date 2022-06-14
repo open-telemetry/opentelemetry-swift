@@ -208,6 +208,15 @@ public struct Opentelemetry_Proto_Trace_V1_RateLimitingSampler {
   public init() {}
 }
 
+#if swift(>=5.5) && canImport(_Concurrency)
+extension Opentelemetry_Proto_Trace_V1_TraceConfig: @unchecked Sendable {}
+extension Opentelemetry_Proto_Trace_V1_TraceConfig.OneOf_Sampler: @unchecked Sendable {}
+extension Opentelemetry_Proto_Trace_V1_ConstantSampler: @unchecked Sendable {}
+extension Opentelemetry_Proto_Trace_V1_ConstantSampler.ConstantDecision: @unchecked Sendable {}
+extension Opentelemetry_Proto_Trace_V1_TraceIdRatioBased: @unchecked Sendable {}
+extension Opentelemetry_Proto_Trace_V1_RateLimitingSampler: @unchecked Sendable {}
+#endif  // swift(>=5.5) && canImport(_Concurrency)
+
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
 fileprivate let _protobuf_package = "opentelemetry.proto.trace.v1"
@@ -233,30 +242,42 @@ extension Opentelemetry_Proto_Trace_V1_TraceConfig: SwiftProtobuf.Message, Swift
       switch fieldNumber {
       case 1: try {
         var v: Opentelemetry_Proto_Trace_V1_ConstantSampler?
+        var hadOneofValue = false
         if let current = self.sampler {
-          try decoder.handleConflictingOneOf()
+          hadOneofValue = true
           if case .constantSampler(let m) = current {v = m}
         }
         try decoder.decodeSingularMessageField(value: &v)
-        if let v = v {self.sampler = .constantSampler(v)}
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.sampler = .constantSampler(v)
+        }
       }()
       case 2: try {
         var v: Opentelemetry_Proto_Trace_V1_TraceIdRatioBased?
+        var hadOneofValue = false
         if let current = self.sampler {
-          try decoder.handleConflictingOneOf()
+          hadOneofValue = true
           if case .traceIDRatioBased(let m) = current {v = m}
         }
         try decoder.decodeSingularMessageField(value: &v)
-        if let v = v {self.sampler = .traceIDRatioBased(v)}
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.sampler = .traceIDRatioBased(v)
+        }
       }()
       case 3: try {
         var v: Opentelemetry_Proto_Trace_V1_RateLimitingSampler?
+        var hadOneofValue = false
         if let current = self.sampler {
-          try decoder.handleConflictingOneOf()
+          hadOneofValue = true
           if case .rateLimitingSampler(let m) = current {v = m}
         }
         try decoder.decodeSingularMessageField(value: &v)
-        if let v = v {self.sampler = .rateLimitingSampler(v)}
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.sampler = .rateLimitingSampler(v)
+        }
       }()
       case 4: try { try decoder.decodeSingularInt64Field(value: &self.maxNumberOfAttributes) }()
       case 5: try { try decoder.decodeSingularInt64Field(value: &self.maxNumberOfTimedEvents) }()
@@ -270,8 +291,9 @@ extension Opentelemetry_Proto_Trace_V1_TraceConfig: SwiftProtobuf.Message, Swift
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every case branch when no optimizations are
-    // enabled. https://github.com/apple/swift-protobuf/issues/1034
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     switch self.sampler {
     case .constantSampler?: try {
       guard case .constantSampler(let v)? = self.sampler else { preconditionFailure() }
