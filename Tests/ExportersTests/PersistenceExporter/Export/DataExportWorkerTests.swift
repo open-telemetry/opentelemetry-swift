@@ -138,7 +138,6 @@ class DataExportWorkerTests: XCTestCase {
 
     func testWhenBatchFails_thenIntervalIncreases() {
         let delayChangeExpectation = expectation(description: "Export delay is increased")
-
         let mockDelay = MockDelay { command in
             if case .increase = command {
                 delayChangeExpectation.fulfill()
@@ -157,10 +156,7 @@ class DataExportWorkerTests: XCTestCase {
         exportExpectation.assertForOverFulfill = false
 
         var mockDataExporter = DataExporterMock(exportStatus: .mockWith(needsRetry: true))
-
-        mockDataExporter.onExport = { data in
-            exportExpectation.fulfill()
-        }
+        mockDataExporter.onExport = { data in exportExpectation.fulfill() }
 
         // When
         let fileReader = FileReaderMock()
