@@ -8,6 +8,7 @@ import XCTest
 
 class FileTests: XCTestCase {
     private let fileManager = FileManager.default
+    private let temporaryDirectory = obtainUniqueTemporaryDirectory()
 
     override func setUp() {
         super.setUp()
