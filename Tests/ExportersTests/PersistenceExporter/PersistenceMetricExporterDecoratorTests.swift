@@ -9,7 +9,8 @@ import OpenTelemetrySdk
 import XCTest
 
 class PersistenceMetricExporterDecoratorTests: XCTestCase {
-    
+    private let temporaryDirectory = obtainUniqueTemporaryDirectory()
+
     class MetricExporterMock: MetricExporter {
         
         let onExport: ([Metric]) -> MetricExporterResultCode
