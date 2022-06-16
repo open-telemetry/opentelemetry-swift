@@ -34,14 +34,18 @@ class DatadogExporterTests: XCTestCase {
                                         logsSent = true
                                         expecLog.fulfill()
         }))
+
+        let sem = DispatchSemaphore(value: 0)
         DispatchQueue.global(qos: .default).async {
             do {
-                try server.start()
+                try server.start(semaphore: sem)
             } catch {
                 XCTFail()
                 return
             }
         }
+        sem.wait()
+        
         let instrumentationLibraryName = "SimpleExporter"
         let instrumentationLibraryVersion = "semver:0.1.0"
 
@@ -95,14 +99,17 @@ class DatadogExporterTests: XCTestCase {
                                         metricsSent = true
                                         expecMetrics.fulfill()
         }))
+
+        let sem = DispatchSemaphore(value: 0)
         DispatchQueue.global(qos: .default).async {
             do {
-                try server.start()
+                try server.start(semaphore: sem)
             } catch {
                 XCTFail()
                 return
             }
         }
+        sem.wait()
 
         let exporterConfiguration = ExporterConfiguration(serviceName: "serviceName",
                                                           resource: "resource",
