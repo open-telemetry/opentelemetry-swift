@@ -49,7 +49,7 @@ public enum Endpoint {
             case .us1: return URL(string: "https://trace.browser-intake-datadoghq.com/" + endpoint)!
             case .us3: return URL(string: "https://trace.browser-intake-us3-datadoghq.com/" + endpoint)!
             case .us5: return URL(string: "https://trace.browser-intake-us5-datadoghq.com/" + endpoint)!
-            case .eu1: return URL(string: "https:/public-trace-http-intake.logs.datadoghq.eu/" + endpoint)!
+            case .eu1: return URL(string: "https://public-trace-http-intake.logs.datadoghq.eu/" + endpoint)!
             case .us1_fed: return URL(string: "https://trace.browser-intake-ddog-gov.com/" + endpoint)!
             case let .custom(tracesURL: tracesUrl, _, _): return tracesUrl
         }
