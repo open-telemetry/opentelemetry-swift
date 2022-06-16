@@ -7,6 +7,8 @@
 import XCTest
 
 class FileWriterTests: XCTestCase {
+    private let temporaryDirectory = obtainUniqueTemporaryDirectory()
+
     override func setUp() {
         super.setUp()
         temporaryDirectory.create()
