@@ -7,6 +7,7 @@ import Foundation
 import OpenTelemetryApi
 
 public class TracerProviderSdk: TracerProvider {
+    private var tracerLock = pthread_rwlock_t()
     private var tracerProvider = [InstrumentationLibraryInfo: TracerSdk]()
     internal var sharedState: TracerSharedState
     internal static let emptyName = "unknown"
@@ -19,12 +20,17 @@ public class TracerProviderSdk: TracerProvider {
                 sampler: Sampler = Samplers.parentBased(root: Samplers.alwaysOn),
                 spanProcessors: [SpanProcessor] = [])
     {
+        pthread_rwlock_init(&tracerLock, nil)
         sharedState = TracerSharedState(clock: clock,
                                         idGenerator: idGenerator,
                                         resource: resource,
                                         spanLimits: spanLimits,
                                         sampler: sampler,
                                         spanProcessors: spanProcessors)
+    }
+
+    deinit {
+        pthread_rwlock_destroy(&tracerLock)
     }
 
     public func get(instrumentationName: String, instrumentationVersion: String? = nil) -> Tracer {
@@ -39,20 +45,24 @@ public class TracerProviderSdk: TracerProvider {
             instrumentationName = TracerProviderSdk.emptyName
         }
         let instrumentationLibraryInfo = InstrumentationLibraryInfo(name: instrumentationName, version: instrumentationVersion ?? "")
-        if let tracer = tracerProvider[instrumentationLibraryInfo] {
-            return tracer
-        } else {
-            // Re-check if the value was added since the previous check, this can happen if multiple
-            // threads try to access the same named tracer during the same time. This way we ensure that
-            // we create only one TracerSdk per name.
-            if let tracer = tracerProvider[instrumentationLibraryInfo] {
-                // A different thread already added the named Tracer, just reuse.
-                return tracer
+
+        if pthread_rwlock_rdlock(&tracerLock) == 0 {
+            let existingTracer = tracerProvider[instrumentationLibraryInfo]
+            pthread_rwlock_unlock(&tracerLock)
+
+            if existingTracer != nil {
+                return existingTracer!
             }
-            let tracer = TracerSdk(sharedState: sharedState, instrumentationLibraryInfo: instrumentationLibraryInfo)
-            tracerProvider[instrumentationLibraryInfo] = tracer
-            return tracer
         }
+
+        let tracer = TracerSdk(sharedState: sharedState, instrumentationLibraryInfo: instrumentationLibraryInfo)
+
+        if pthread_rwlock_wrlock(&tracerLock) == 0 {
+            tracerProvider[instrumentationLibraryInfo] = tracer
+            pthread_rwlock_unlock(&tracerLock)
+        }
+
+        return tracer
     }
 
     /// Returns the active Clock.
