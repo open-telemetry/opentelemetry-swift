@@ -4,6 +4,7 @@
  */
 
 import Foundation
+import Logging
 import GRPC
 import NIO
 import NIOHPACK
@@ -16,14 +17,17 @@ public class OtlpTraceExporter: SpanExporter {
     let config : OtlpConfiguration
     var callOptions : CallOptions? = nil
 
-    public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration()) {
+    public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration(), logger: Logger = Logger(label: "io.grpc", factory: { _ in SwiftLogNoOpLogHandler() })) {
         self.channel = channel
         traceClient = Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClient(channel: channel)
         self.config = config
         if let headers = EnvVarHeaders.attributes {
-            callOptions = CallOptions(customMetadata: HPACKHeaders(headers))
+            callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
         } else if let headers = config.headers {
-            callOptions = CallOptions(customMetadata: HPACKHeaders(headers))
+            callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
+        }
+        else {
+            callOptions = CallOptions(logger: logger)
         }
     }
 
