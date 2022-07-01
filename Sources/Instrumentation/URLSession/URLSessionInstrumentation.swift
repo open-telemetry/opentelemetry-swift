@@ -377,19 +377,15 @@ public class URLSessionInstrumentation {
         }
         var originalIMP: IMP?
         let block: @convention(block) (Any, URLSession, URLSessionDataTask, URLResponse, @escaping (URLSession.ResponseDisposition) -> Void) -> Void = { object, session, dataTask, response, completion in
-
             if objc_getAssociatedObject(session, &idKey) == nil {
                 self.urlSession(session, dataTask: dataTask, didReceive: response, completionHandler: completion)
             }
-
             let key = String(selector.hashValue)
             objc_setAssociatedObject(session, key, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
             let castedIMP = unsafeBitCast(originalIMP, to: (@convention(c) (Any, Selector, URLSession, URLSessionDataTask, URLResponse, @escaping (URLSession.ResponseDisposition) -> Void) -> Void).self)
-
             castedIMP(object, selector, session, dataTask, response, completion)
             objc_setAssociatedObject(session, key, nil, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         }
-
         let swizzledIMP = imp_implementationWithBlock(unsafeBitCast(block, to: AnyObject.self))
         originalIMP = method_setImplementation(original, swizzledIMP)
     }
