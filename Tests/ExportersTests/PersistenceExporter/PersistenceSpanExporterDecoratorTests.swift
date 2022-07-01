@@ -9,7 +9,8 @@ import OpenTelemetrySdk
 import XCTest
 
 class PersistenceSpanExporterDecoratorTests: XCTestCase {
-    
+    private let temporaryDirectory = obtainUniqueTemporaryDirectory()
+
     class SpanExporterMock: SpanExporter {
         
         let onExport: ([SpanData]) -> SpanExporterResultCode

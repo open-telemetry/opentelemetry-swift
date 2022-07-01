@@ -79,14 +79,16 @@ class URLSessionInstrumentationTests: XCTestCase {
     static let server = HttpTestServer(url: URL(string: "http://localhost:33333"), config: nil)
 
     override class func setUp() {
+        let sem = DispatchSemaphore(value: 0)
         DispatchQueue.global(qos: .default).async {
             do {
-                try server.start()
+                try server.start(semaphore: sem)
             } catch {
                 XCTFail()
                 return
             }
         }
+        sem.wait()
         instrumentation = URLSessionInstrumentation(configuration: config)
     }
 

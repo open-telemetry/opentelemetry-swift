@@ -27,10 +27,11 @@ internal class HttpTestServer {
         self.config = config
     }
 
-    public func start() throws {
+    public func start(semaphore: DispatchSemaphore) throws {
         do {
             let channel = try serverBootstrap.bind(host: host, port: port).wait()
             print("Listening on \(String(describing: channel.localAddress))...")
+            semaphore.signal()
             try channel.closeFuture.wait()
         } catch {
             throw error

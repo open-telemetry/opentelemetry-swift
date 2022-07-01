@@ -26,15 +26,16 @@ class SpansExporterTests: XCTestCase {
                                         expec.fulfill()
                                     },
                                                                  logsReceivedCallback: nil))
-
+        let sem = DispatchSemaphore(value: 0)
         DispatchQueue.global(qos: .default).async {
             do {
-                try server.start()
+                try server.start(semaphore: sem)
             } catch {
                 XCTFail()
                 return
             }
         }
+        sem.wait()
 
         let configuration = ExporterConfiguration(serviceName: "serviceName",
                                                   resource: "resource",
@@ -52,6 +53,7 @@ class SpansExporterTests: XCTestCase {
 
         let spanData = createBasicSpan()
         spansExporter.exportSpan(span: spanData)
+        spansExporter.tracesStorage.writer.queue.sync {}
 
         waitForExpectations(timeout: 30) { error in
             if let error = error {

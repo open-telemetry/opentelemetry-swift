@@ -23,11 +23,24 @@ public class DeviceDataSource: IDeviceDataSource {
             #else
                 hwName[1] = HW_MACHINE
             #endif
-            let machine = UnsafeMutablePointer<CChar>.allocate(capacity: 255)
-            let len: UnsafeMutablePointer<Int>! = UnsafeMutablePointer<Int>.allocate(capacity: 1)
 
-            let error = sysctl(hwName, 2, machine, len, nil, 0)
-            if error != 0 {
+            // Returned 'error #12: Optional("Cannot allocate memory")' because len was not initialized properly.
+
+            let desiredLen = UnsafeMutablePointer<Int>.allocate(capacity: 1)
+            let lenRequestError = sysctl(hwName, 2, nil, desiredLen, nil, 0)
+            if lenRequestError != 0 {
+                // TODO: better error log
+                print("error #\(errno): \(String(describing: String(utf8String: strerror(errno))))")
+
+                return nil
+            }
+
+            let machine = UnsafeMutablePointer<CChar>.allocate(capacity: desiredLen[0])
+            let len: UnsafeMutablePointer<Int>! = UnsafeMutablePointer<Int>.allocate(capacity: 1)
+            len[0] = desiredLen[0]
+
+            let modelRequestError = sysctl(hwName, 2, machine, len, nil, 0)
+            if modelRequestError != 0 {
                 // TODO: better error log
                 print("error #\(errno): \(String(describing: String(utf8String: strerror(errno))))")
 

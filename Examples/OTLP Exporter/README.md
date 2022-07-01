@@ -38,6 +38,14 @@ The prometheus client will be available at <http://localhost:9090>.
 Note: It may take some time for the application metrics to appear on the Prometheus dashboard.
 ![Screenshot of the running example](images/prometheus-metrics.png)
 
+5. If you don't set service.name as per https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/sdk-environment-variables.md the default name of the service and spans generate by the OTLP Exporter is `unknown_service:otlpexporter` You can either set the service.name by editing the schema in Xcode and the set the environment variable for OTEL_RESOURCE_ATTRIBUTES, or set it via command line:
+
+    ```shell script
+    # from this directory
+    OTEL_RESOURCE_ATTRIBUTES="service.name=my-swift-app,service.version=v1.2.3" swift run OTLPExporter
+    ```
+This will create a service and spans with the name `my-swift-app`
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
