@@ -7,6 +7,8 @@
 import XCTest
 
 class DataUploadWorkerTests: XCTestCase {
+    private let temporaryDirectory = obtainUniqueTemporaryDirectory()
+
     lazy var dateProvider = RelativeDateProvider(advancingBySeconds: 1)
     lazy var orchestrator = FilesOrchestrator(
         directory: temporaryDirectory,
@@ -260,6 +262,7 @@ class DataUploadWorkerTests: XCTestCase {
         writer.write(value: ["k1": "v1"])
         writer.write(value: ["k2": "v2"])
         writer.write(value: ["k3": "v3"])
+        writer.queue.sync {}
 
         // When
         _ = worker.flush()

@@ -18,7 +18,7 @@ func obtainUniqueTemporaryDirectory() -> Directory {
 
 /// `Directory` pointing to subfolder in `/var/folders/`.
 /// The subfolder does not exist and can be created and deleted by calling `.create()` and `.delete()`.
-let temporaryDirectory = obtainUniqueTemporaryDirectory()
+//let temporaryDirectory = obtainUniqueTemporaryDirectory()
 
 /// Extends `Directory` with set of utilities for convenient work with files in tests.
 /// Provides handy methods to create / delete files and directires.
