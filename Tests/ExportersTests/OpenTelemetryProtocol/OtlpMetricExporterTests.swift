@@ -1,5 +1,6 @@
 
 import Foundation
+import Logging
 import GRPC
 import NIO
 import OpenTelemetryApi
@@ -36,6 +37,23 @@ class OtlpMetricExproterTests: XCTestCase {
         XCTAssertEqual(fakeCollector.receivedMetrics, MetricsAdapter.toProtoResourceMetrics(metricDataList: [metric]))
         exporter.shutdown()
     }
+
+    func testImplicitGrpcLoggingConfig() throws {
+        let exporter = OtlpMetricExporter(channel: channel)
+        guard let logger = exporter.callOptions?.logger else {
+            throw "Missing logger"
+        }
+        XCTAssertEqual(logger.label, "io.grpc")
+    }
+
+    func testExplicitGrpcLoggingConfig() throws {
+        let exporter = OtlpMetricExporter(channel: channel, logger: Logger(label: "my.grpc.logger"))
+        guard let logger = exporter.callOptions?.logger else {
+            throw "Missing logger"
+        }
+        XCTAssertEqual(logger.label, "my.grpc.logger")
+    }
+
 
     func testGaugeExport() {
         let metric = generateGaugeMetric()

@@ -4,12 +4,17 @@
  */
 
 import Foundation
+import Logging
 import GRPC
 import NIO
 import OpenTelemetryApi
 @testable import OpenTelemetryProtocolExporter
 @testable import OpenTelemetrySdk
 import XCTest
+
+extension String: LocalizedError {
+    public var errorDescription: String? { return self }
+}
 
 class OtlpTraceExporterTests: XCTestCase {
     let traceId = "00000000000000000000000000abc123"
@@ -40,6 +45,22 @@ class OtlpTraceExporterTests: XCTestCase {
         XCTAssertEqual(result, SpanExporterResultCode.success)
         XCTAssertEqual(fakeCollector.receivedSpans, SpanAdapter.toProtoResourceSpans(spanDataList: [span]))
         exporter.shutdown()
+    }
+
+    func testImplicitGrpcLoggingConfig() throws {
+        let exporter = OtlpTraceExporter(channel: channel)
+        guard let logger = exporter.callOptions?.logger else {
+            throw "Missing logger"
+        }
+        XCTAssertEqual(logger.label, "io.grpc")
+    }
+
+    func testExplicitGrpcLoggingConfig() throws {
+        let exporter = OtlpTraceExporter(channel: channel, logger: Logger(label: "my.grpc.logger"))
+        guard let logger = exporter.callOptions?.logger else {
+            throw "Missing logger"
+        }
+        XCTAssertEqual(logger.label, "my.grpc.logger")
     }
 
     func testExportMultipleSpans() {
