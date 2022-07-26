@@ -1,3 +1,7 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import Foundation
 import Logging
@@ -54,6 +58,24 @@ class OtlpMetricExproterTests: XCTestCase {
         XCTAssertEqual(logger.label, "my.grpc.logger")
     }
 
+    func testConfigHeadersIsNil_whenDefaultInitCalled() throws {
+        let exporter = OtlpMetricExporter(channel: channel)
+        XCTAssertNil(exporter.config.headers)
+    }
+
+    func testConfigHeadersAreSet_whenInitCalledWithCustomConfig() throws {
+        let config: OtlpConfiguration = OtlpConfiguration(timeout: TimeInterval(10), headers: [("FOO", "BAR")])
+        let exporter = OtlpMetricExporter(channel: channel, config: config)
+        XCTAssertNotNil(exporter.config.headers)
+        XCTAssertEqual(exporter.config.headers?[0].0, "FOO")
+        XCTAssertEqual(exporter.config.headers?[0].1, "BAR")
+    }
+
+    func testConfigHeadersAreSet_whenInitCalledWithExplicitHeaders() throws {
+        let exporter = OtlpMetricExporter(channel: channel, envVarHeaders: [("FOO", "BAR")])
+        XCTAssertNil(exporter.config.headers)
+        XCTAssertEqual("BAR", exporter.callOptions?.customMetadata.first(name: "FOO"))
+    }
 
     func testGaugeExport() {
         let metric = generateGaugeMetric()
