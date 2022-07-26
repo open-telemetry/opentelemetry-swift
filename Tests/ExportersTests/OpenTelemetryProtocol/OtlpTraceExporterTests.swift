@@ -63,6 +63,25 @@ class OtlpTraceExporterTests: XCTestCase {
         XCTAssertEqual(logger.label, "my.grpc.logger")
     }
 
+    func testConfigHeadersIsNil_whenDefaultInitCalled() throws {
+        let exporter = OtlpTraceExporter(channel: channel)
+        XCTAssertNil(exporter.config.headers)
+    }
+
+    func testConfigHeadersAreSet_whenInitCalledWithCustomConfig() throws {
+        let config: OtlpConfiguration = OtlpConfiguration(timeout: TimeInterval(10), headers: [("FOO", "BAR")])
+        let exporter = OtlpTraceExporter(channel: channel, config: config)
+        XCTAssertNotNil(exporter.config.headers)
+        XCTAssertEqual(exporter.config.headers?[0].0, "FOO")
+        XCTAssertEqual(exporter.config.headers?[0].1, "BAR")
+    }
+
+    func testConfigHeadersAreSet_whenInitCalledWithExplicitHeaders() throws {
+        let exporter = OtlpTraceExporter(channel: channel, envVarHeaders: [("FOO", "BAR")])
+        XCTAssertNil(exporter.config.headers)
+        XCTAssertEqual("BAR", exporter.callOptions?.customMetadata.first(name: "FOO"))
+    }
+
     func testExportMultipleSpans() {
         var spans = [SpanData]()
         for _ in 0 ..< 10 {

@@ -17,11 +17,11 @@ public class OtlpTraceExporter: SpanExporter {
     let config : OtlpConfiguration
     var callOptions : CallOptions? = nil
 
-    public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration(), logger: Logger = Logger(label: "io.grpc", factory: { _ in SwiftLogNoOpLogHandler() })) {
+    public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration(), logger: Logger = Logger(label: "io.grpc", factory: { _ in SwiftLogNoOpLogHandler() }), envVarHeaders: [(String,String)]? = EnvVarHeaders.attributes) {
         self.channel = channel
         traceClient = Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClient(channel: channel)
         self.config = config
-        if let headers = EnvVarHeaders.attributes {
+        if let headers = envVarHeaders {
             callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
         } else if let headers = config.headers {
             callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
