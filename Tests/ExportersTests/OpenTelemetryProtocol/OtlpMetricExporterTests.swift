@@ -69,6 +69,7 @@ class OtlpMetricExproterTests: XCTestCase {
         XCTAssertNotNil(exporter.config.headers)
         XCTAssertEqual(exporter.config.headers?[0].0, "FOO")
         XCTAssertEqual(exporter.config.headers?[0].1, "BAR")
+        XCTAssertEqual("BAR", exporter.callOptions?.customMetadata.first(name: "FOO"))
     }
 
     func testConfigHeadersAreSet_whenInitCalledWithExplicitHeaders() throws {
