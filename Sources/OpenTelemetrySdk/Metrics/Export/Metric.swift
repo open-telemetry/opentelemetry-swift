@@ -22,6 +22,15 @@ public struct Metric {
         aggregationType = type
         self.resource = resource
     }
+    public init(namespace: String, name: String, desc: String, type: AggregationType, resource: Resource, instrumentationLibraryInfo: InstrumentationLibraryInfo, data: [MetricData]) {
+        self.namespace = namespace
+        self.instrumentationLibraryInfo = instrumentationLibraryInfo
+        self.name = name
+        description = desc
+        aggregationType = type
+        self.resource = resource
+        self.data = data 
+    }
 }
 
 extension Metric: Equatable {
