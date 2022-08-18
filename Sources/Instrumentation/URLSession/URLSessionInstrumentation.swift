@@ -388,7 +388,6 @@ public class URLSessionInstrumentation {
         let block: @convention(block) (Any, URLSession, URLSessionDataTask, URLResponse, @escaping (URLSession.ResponseDisposition) -> Void) -> Void = { object, session, dataTask, response, completion in
             if objc_getAssociatedObject(session, &idKey) == nil {
                 self.urlSession(session, dataTask: dataTask, didReceive: response, completionHandler: completion)
-                completion(.allow)
             }
             let key = String(selector.hashValue)
             objc_setAssociatedObject(session, key, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
