@@ -6,8 +6,15 @@
 import Foundation
 import OpenTelemetryApi
 
+extension Meter {
+    func addMetric(name: String, type: AggregationType, data: [MetricData]) {
+        //noop
+    }
+}
+
 class MeterSdk: Meter {
     fileprivate let collectLock = Lock()
+    fileprivate let rawMetricLock = Lock()
     let meterName: String
     var metricProcessor: MetricProcessor
     var instrumentationLibraryInfo: InstrumentationLibraryInfo
@@ -24,6 +31,8 @@ class MeterSdk: Meter {
     var intObservers = [String: IntObserverMetricSdk]()
     var doubleObservers = [String: DoubleObserverMetricSdk]()
 
+    var metrics = [Metric]()
+    
     init(meterSharedState: MeterSharedState, instrumentationLibraryInfo: InstrumentationLibraryInfo) {
         meterName = instrumentationLibraryInfo.name
         resource = meterSharedState.resource
@@ -35,10 +44,29 @@ class MeterSdk: Meter {
         return LabelSetSdk(labels: labels)
     }
 
+    func addMetric(name: String, type: AggregationType, data: [MetricData]) {
+        var metric = Metric(namespace: meterName, name: name, desc: meterName + name, type: type, resource: resource, instrumentationLibraryInfo: instrumentationLibraryInfo)
+        metric.data = data
+        rawMetricLock.withLockVoid {
+            metrics.append(metric)
+        }
+    }
+    
     func collect() {
         collectLock.withLockVoid {
             var boundInstrumentsToRemove = [LabelSet]()
 
+
+            // process raw metrics
+            var checkpointMetrics = [Metric]()
+            rawMetricLock.withLockVoid {
+               checkpointMetrics = metrics
+                metrics = [Metric]()
+            }
+            checkpointMetrics.forEach {
+                metricProcessor.process(metric: $0)
+            }
+            
             intCounters.forEach { counter in
                 let metricName = counter.key
                 let counterInstrument = counter.value
