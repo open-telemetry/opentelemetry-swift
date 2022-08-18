@@ -4,6 +4,7 @@
  */
 
 import Foundation
+import Logging
 import GRPC
 import NIO
 import NIOHPACK
@@ -16,17 +17,19 @@ public class OtlpMetricExporter: MetricExporter {
     let config : OtlpConfiguration
     var callOptions : CallOptions? = nil
 
+    
 
-
-    public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration()) {
+    public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration(), logger: Logger = Logger(label: "io.grpc", factory: { _ in SwiftLogNoOpLogHandler() }), envVarHeaders: [(String,String)]? = EnvVarHeaders.attributes) {
         self.channel = channel
         self.config = config
         self.metricClient = Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClient(channel: self.channel)
-
-        if let headers = EnvVarHeaders.attributes {
-            callOptions = CallOptions(customMetadata: HPACKHeaders(headers))
+        if let headers = envVarHeaders {
+            callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
         } else if let headers = config.headers {
-            callOptions = CallOptions(customMetadata: HPACKHeaders(headers))
+            callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
+        }
+        else {
+            callOptions = CallOptions(logger: logger)
         }
     }
     

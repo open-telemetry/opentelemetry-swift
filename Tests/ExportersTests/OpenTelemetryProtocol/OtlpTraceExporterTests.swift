@@ -4,12 +4,17 @@
  */
 
 import Foundation
+import Logging
 import GRPC
 import NIO
 import OpenTelemetryApi
 @testable import OpenTelemetryProtocolExporter
 @testable import OpenTelemetrySdk
 import XCTest
+
+extension String: LocalizedError {
+    public var errorDescription: String? { return self }
+}
 
 class OtlpTraceExporterTests: XCTestCase {
     let traceId = "00000000000000000000000000abc123"
@@ -40,6 +45,42 @@ class OtlpTraceExporterTests: XCTestCase {
         XCTAssertEqual(result, SpanExporterResultCode.success)
         XCTAssertEqual(fakeCollector.receivedSpans, SpanAdapter.toProtoResourceSpans(spanDataList: [span]))
         exporter.shutdown()
+    }
+
+    func testImplicitGrpcLoggingConfig() throws {
+        let exporter = OtlpTraceExporter(channel: channel)
+        guard let logger = exporter.callOptions?.logger else {
+            throw "Missing logger"
+        }
+        XCTAssertEqual(logger.label, "io.grpc")
+    }
+
+    func testExplicitGrpcLoggingConfig() throws {
+        let exporter = OtlpTraceExporter(channel: channel, logger: Logger(label: "my.grpc.logger"))
+        guard let logger = exporter.callOptions?.logger else {
+            throw "Missing logger"
+        }
+        XCTAssertEqual(logger.label, "my.grpc.logger")
+    }
+
+    func testConfigHeadersIsNil_whenDefaultInitCalled() throws {
+        let exporter = OtlpTraceExporter(channel: channel)
+        XCTAssertNil(exporter.config.headers)
+    }
+
+    func testConfigHeadersAreSet_whenInitCalledWithCustomConfig() throws {
+        let config: OtlpConfiguration = OtlpConfiguration(timeout: TimeInterval(10), headers: [("FOO", "BAR")])
+        let exporter = OtlpTraceExporter(channel: channel, config: config)
+        XCTAssertNotNil(exporter.config.headers)
+        XCTAssertEqual(exporter.config.headers?[0].0, "FOO")
+        XCTAssertEqual(exporter.config.headers?[0].1, "BAR")
+        XCTAssertEqual("BAR", exporter.callOptions?.customMetadata.first(name: "FOO"))
+    }
+
+    func testConfigHeadersAreSet_whenInitCalledWithExplicitHeaders() throws {
+        let exporter = OtlpTraceExporter(channel: channel, envVarHeaders: [("FOO", "BAR")])
+        XCTAssertNil(exporter.config.headers)
+        XCTAssertEqual("BAR", exporter.callOptions?.customMetadata.first(name: "FOO"))
     }
 
     func testExportMultipleSpans() {

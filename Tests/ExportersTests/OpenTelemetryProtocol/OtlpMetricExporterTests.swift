@@ -1,5 +1,10 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import Foundation
+import Logging
 import GRPC
 import NIO
 import OpenTelemetryApi
@@ -35,6 +40,42 @@ class OtlpMetricExproterTests: XCTestCase {
         XCTAssertEqual(result, MetricExporterResultCode.success)
         XCTAssertEqual(fakeCollector.receivedMetrics, MetricsAdapter.toProtoResourceMetrics(metricDataList: [metric]))
         exporter.shutdown()
+    }
+
+    func testImplicitGrpcLoggingConfig() throws {
+        let exporter = OtlpMetricExporter(channel: channel)
+        guard let logger = exporter.callOptions?.logger else {
+            throw "Missing logger"
+        }
+        XCTAssertEqual(logger.label, "io.grpc")
+    }
+
+    func testExplicitGrpcLoggingConfig() throws {
+        let exporter = OtlpMetricExporter(channel: channel, logger: Logger(label: "my.grpc.logger"))
+        guard let logger = exporter.callOptions?.logger else {
+            throw "Missing logger"
+        }
+        XCTAssertEqual(logger.label, "my.grpc.logger")
+    }
+
+    func testConfigHeadersIsNil_whenDefaultInitCalled() throws {
+        let exporter = OtlpMetricExporter(channel: channel)
+        XCTAssertNil(exporter.config.headers)
+    }
+
+    func testConfigHeadersAreSet_whenInitCalledWithCustomConfig() throws {
+        let config: OtlpConfiguration = OtlpConfiguration(timeout: TimeInterval(10), headers: [("FOO", "BAR")])
+        let exporter = OtlpMetricExporter(channel: channel, config: config)
+        XCTAssertNotNil(exporter.config.headers)
+        XCTAssertEqual(exporter.config.headers?[0].0, "FOO")
+        XCTAssertEqual(exporter.config.headers?[0].1, "BAR")
+        XCTAssertEqual("BAR", exporter.callOptions?.customMetadata.first(name: "FOO"))
+    }
+
+    func testConfigHeadersAreSet_whenInitCalledWithExplicitHeaders() throws {
+        let exporter = OtlpMetricExporter(channel: channel, envVarHeaders: [("FOO", "BAR")])
+        XCTAssertNil(exporter.config.headers)
+        XCTAssertEqual("BAR", exporter.callOptions?.customMetadata.first(name: "FOO"))
     }
 
     func testGaugeExport() {
