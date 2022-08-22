@@ -189,7 +189,10 @@ public class RecordEventsReadableSpan: ReadableSpan {
     }
 
     private func adaptEvents() -> [SpanData.Event] {
-        let sourceEvents = events
+        var sourceEvents = [SpanData.Event]()
+        attributesSyncLock.withLockVoid {
+            sourceEvents = events.array
+        }
         var result = [SpanData.Event]()
         sourceEvents.forEach {
             result.append(SpanData.Event(name: $0.name, timestamp: $0.timestamp, attributes: $0.attributes))
