@@ -51,6 +51,16 @@ public protocol Meter {
     /// - Returns:The histogram instance.
     func createDoubleHistogram(name: String, explicitBoundaries: Array<Double>?, absolute: Bool) -> AnyHistogramMetric<Double>
 
+        // Creates a double histogram given the name, boundries, counts, and start and end dates.
+        /// - Parameters:
+        ///   - name: The name of the measure.
+        func createRawDoubleHistogram(name: String) -> AnyRawHistogramMetric<Double>
+    
+        // Creates a Int histogram given the name, boundries, counts, and start and end dates.
+        /// - Parameters:
+        ///   - name: The name of the measure.
+        func createRawIntHistogram(name: String) -> AnyRawHistogramMetric<Int>
+        
     /// Creates Int Observer with given name.
     /// - Parameters:
     ///   - name: The name of the observer.
@@ -78,7 +88,7 @@ public protocol Meter {
     /// - Parameters:
     ///   - name: The name of the gauge.
     ///   - callback: The callback to be called to observe metric value.
-    /// - Returns:The gauge instance.
+    ///   - Returns:The gauge instance.
     func createDoubleObservableGauge(name: String, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric
 
     /// Constructs or retrieves the LabelSet from the given dictionary.

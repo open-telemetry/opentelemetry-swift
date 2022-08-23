@@ -6,13 +6,15 @@
 import Foundation
 import OpenTelemetryApi
 
-extension Meter {
+public extension Meter {
     func addMetric(name: String, type: AggregationType, data: [MetricData]) {
         //noop
     }
 }
 
 class MeterSdk: Meter {
+
+    
     fileprivate let collectLock = Lock()
     fileprivate let rawMetricLock = Lock()
     let meterName: String
@@ -27,6 +29,8 @@ class MeterSdk: Meter {
     var intMeasures = [String: MeasureMetricSdk<Int>]()
     var doubleMeasures = [String: MeasureMetricSdk<Double>]()
     var intHistogram = [String: HistogramMetricSdk<Int>]()
+    var rawDoubleHistogram = [String: RawHistogramMetricSdk<Double>]()
+    var rawIntHistogram = [String: RawHistogramMetricSdk<Int>]()
     var doubleHistogram = [String: HistogramMetricSdk<Double>]()
     var intObservers = [String: IntObserverMetricSdk]()
     var doubleObservers = [String: DoubleObserverMetricSdk]()
@@ -255,6 +259,15 @@ class MeterSdk: Meter {
                 metricProcessor.process(metric: metric)
             }
 
+            rawIntHistogram.forEach { histogram in
+                let name = histogram.key
+                let instrument = histogram.value
+                var metric = Metric(namespace: meterName, name: name, desc: meterName + name, type: .intHistogram, resource: resource, instrumentationLibraryInfo: instrumentationLibraryInfo)
+                instrument.checkpoint()
+                metric.data.append(contentsOf: instrument.getMetrics())
+                metricProcessor.process(metric: metric)
+            }
+            
             doubleObservers.forEach { observer in
                 let metricName = observer.key
                 let observerInstrument = observer.value
@@ -340,6 +353,31 @@ class MeterSdk: Meter {
         }
         return AnyMeasureMetric<Double>(measure!)
     }
+    
+    
+    func createRawDoubleHistogram(name: String) -> AnyRawHistogramMetric<Double> {
+        var histogram = rawDoubleHistogram[name]
+        if histogram == nil {
+            histogram = RawHistogramMetricSdk<Double>()
+        }
+        collectLock.withLockVoid {
+            rawDoubleHistogram[name] = histogram!
+        }
+        return AnyRawHistogramMetric<Double>(histogram!)
+    }
+    
+    func createRawIntHistogram(name: String) -> AnyRawHistogramMetric<Int> {
+        var histogram = rawIntHistogram[name]
+        if histogram == nil {
+            histogram = RawHistogramMetricSdk<Int>()
+        }
+        collectLock.withLockVoid {
+            rawIntHistogram[name] = histogram!
+        }
+        return AnyRawHistogramMetric<Int>(histogram!)
+    }
+    
+    
     
     func createIntHistogram(name: String, explicitBoundaries: Array<Int>? = nil, absolute: Bool) -> AnyHistogramMetric<Int> {
         var histogram = intHistogram[name]

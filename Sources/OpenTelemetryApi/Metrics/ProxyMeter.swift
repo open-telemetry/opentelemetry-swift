@@ -7,6 +7,14 @@ import Foundation
 
 /// Proxy Meter which act as a No-Op Meter, until real meter is provided.
 public struct ProxyMeter: Meter {
+    public func createRawDoubleHistogram(name: String) -> AnyRawHistogramMetric<Double> {
+        return realMeter?.createRawDoubleHistogram(name: name) ?? AnyRawHistogramMetric<Double>(NoopRawHistogramMetric<Double>())
+    }
+    
+    public func createRawIntHistogram(name: String) -> AnyRawHistogramMetric<Int> {
+        return realMeter?.createRawIntHistogram(name: name) ?? AnyRawHistogramMetric<Int>(NoopRawHistogramMetric<Int>())
+    }
+    
     private var realMeter: Meter?
 
     public func getLabelSet(labels: [String: String]) -> LabelSet {
