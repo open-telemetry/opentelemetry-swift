@@ -7,6 +7,16 @@ import Foundation
 
 /// Proxy Meter which act as a No-Op Meter, until real meter is provided.
 public struct ProxyMeter: Meter {
+
+    public func createRawDoubleCounter(name: String) -> AnyRawCounterMetric<Double> {
+        return realMeter?.createRawDoubleCounter(name: name) ?? AnyRawCounterMetric<Double>(NoopRawCounterMetric<Double>())
+    }
+    
+    
+    public func createRawIntCounter(name: String) -> AnyRawCounterMetric<Int> {
+        return realMeter?.createRawIntCounter(name: name) ?? AnyRawCounterMetric<Int>(NoopRawCounterMetric<Int>())
+    }
+    
     public func createRawDoubleHistogram(name: String) -> AnyRawHistogramMetric<Double> {
         return realMeter?.createRawDoubleHistogram(name: name) ?? AnyRawHistogramMetric<Double>(NoopRawHistogramMetric<Double>())
     }

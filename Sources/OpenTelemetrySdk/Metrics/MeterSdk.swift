@@ -14,6 +14,7 @@ public extension Meter {
 
 class MeterSdk: Meter {
 
+
     
     fileprivate let collectLock = Lock()
     fileprivate let rawMetricLock = Lock()
@@ -31,6 +32,8 @@ class MeterSdk: Meter {
     var intHistogram = [String: HistogramMetricSdk<Int>]()
     var rawDoubleHistogram = [String: RawHistogramMetricSdk<Double>]()
     var rawIntHistogram = [String: RawHistogramMetricSdk<Int>]()
+    var rawDoubleCounters = [String: RawCounterMetricSdk<Double>]()
+    var rawIntCounters = [String: RawCounterMetricSdk<Int>]()
     var doubleHistogram = [String: HistogramMetricSdk<Double>]()
     var intObservers = [String: IntObserverMetricSdk]()
     var doubleObservers = [String: DoubleObserverMetricSdk]()
@@ -259,10 +262,44 @@ class MeterSdk: Meter {
                 metricProcessor.process(metric: metric)
             }
 
+
+            
+            rawDoubleHistogram.forEach {
+                histogram in
+                    let name = histogram.key
+                    let instrument = histogram.value
+                    var metric = Metric(namespace: meterName, name: name, desc: meterName + name, type: .doubleHistogram, resource: resource, instrumentationLibraryInfo: instrumentationLibraryInfo)
+                    instrument.checkpoint()
+                    metric.data.append(contentsOf: instrument.getMetrics())
+                    metricProcessor.process(metric: metric)
+            }
+            
             rawIntHistogram.forEach { histogram in
                 let name = histogram.key
                 let instrument = histogram.value
                 var metric = Metric(namespace: meterName, name: name, desc: meterName + name, type: .intHistogram, resource: resource, instrumentationLibraryInfo: instrumentationLibraryInfo)
+                instrument.checkpoint()
+                metric.data.append(contentsOf: instrument.getMetrics())
+                metricProcessor.process(metric: metric)
+            }
+            
+            rawIntCounters.forEach {
+                counter in
+                let name = counter.key
+                let instrument = counter.value
+                
+                var metric = Metric(namespace: meterName, name: name, desc: meterName + name, type: .intSum, resource: resource, instrumentationLibraryInfo: instrumentationLibraryInfo)
+                instrument.checkpoint()
+                metric.data.append(contentsOf: instrument.getMetrics())
+                metricProcessor.process(metric: metric)
+            }
+
+            rawDoubleCounters.forEach {
+                counter in
+                let name = counter.key
+                let instrument = counter.value
+                
+                var metric = Metric(namespace: meterName, name: name, desc: meterName + name, type: .doubleSum, resource: resource, instrumentationLibraryInfo: instrumentationLibraryInfo)
                 instrument.checkpoint()
                 metric.data.append(contentsOf: instrument.getMetrics())
                 metricProcessor.process(metric: metric)
@@ -352,6 +389,30 @@ class MeterSdk: Meter {
             }
         }
         return AnyMeasureMetric<Double>(measure!)
+    }
+    
+    func createRawDoubleCounter(name: String) -> AnyRawCounterMetric<Double> {
+        var measure = rawDoubleCounters[name]
+        if measure == nil {
+            measure = RawCounterMetricSdk<Double>()
+            
+            collectLock.withLockVoid {
+                rawDoubleCounters[name] = measure!
+            }
+        }
+        return AnyRawCounterMetric<Double>(measure!)
+    }
+    
+    func createRawIntCounter(name: String) -> AnyRawCounterMetric<Int> {
+        var measure = rawIntCounters[name]
+        if measure == nil {
+            measure = RawCounterMetricSdk<Int>()
+            
+            collectLock.withLockVoid {
+                rawIntCounters[name] = measure!
+            }
+        }
+        return AnyRawCounterMetric<Int>(measure!)
     }
     
     

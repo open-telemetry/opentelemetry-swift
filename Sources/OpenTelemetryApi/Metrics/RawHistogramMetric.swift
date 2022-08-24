@@ -23,12 +23,17 @@ public protocol RawHistogramMetric {
 
 
 public struct AnyRawHistogramMetric<T> : RawHistogramMetric {
+   
+    let internalHistogram : Any
+    private let _record: (Array<T>, Array<Int>, Date, Date, Int, T) -> Void
+    
     public func record(explicitBoundaries: Array<T>, counts: Array<Int>, startDate: Date, endDate: Date, count: Int, sum: T) {
-        
+        _record(explicitBoundaries, counts, startDate, endDate, count, sum)
     }
     
     public init <U: RawHistogramMetric>(_ histogram: U) where U.T == T {
-        
+        internalHistogram =  histogram
+        _record = histogram.record(explicitBoundaries:counts:startDate:endDate:count:sum:)
     }
 }
      

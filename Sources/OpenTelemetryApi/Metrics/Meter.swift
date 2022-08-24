@@ -61,6 +61,11 @@ public protocol Meter {
         ///   - name: The name of the measure.
         func createRawIntHistogram(name: String) -> AnyRawHistogramMetric<Int>
         
+    
+    func createRawDoubleCounter(name: String) -> AnyRawCounterMetric<Double>
+    
+    func createRawIntCounter(name: String) -> AnyRawCounterMetric<Int>
+    
     /// Creates Int Observer with given name.
     /// - Parameters:
     ///   - name: The name of the observer.
