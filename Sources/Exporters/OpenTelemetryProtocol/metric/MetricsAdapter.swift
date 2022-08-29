@@ -36,17 +36,20 @@ struct MetricsAdapter {
         var results = [Resource: [InstrumentationLibraryInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]]()
 
         metricDataList.forEach {
-            results[$0.resource, default: [InstrumentationLibraryInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]()][$0.instrumentationLibraryInfo, default: [Opentelemetry_Proto_Metrics_V1_Metric]()]
-                .append(toProtoMetric(metric: $0))
+            if let metric = toProtoMetric(metric: $0) {
+                results[$0.resource, default: [InstrumentationLibraryInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]()][$0.instrumentationLibraryInfo, default: [Opentelemetry_Proto_Metrics_V1_Metric]()]
+                    .append(metric)
+            }
         }
 
         return results
     }
 
-    static func toProtoMetric(metric: Metric) -> Opentelemetry_Proto_Metrics_V1_Metric {
+    static func toProtoMetric(metric: Metric) -> Opentelemetry_Proto_Metrics_V1_Metric? {
         var protoMetric = Opentelemetry_Proto_Metrics_V1_Metric()
         protoMetric.name = metric.name
         protoMetric.description_p = metric.description
+        if metric.data.isEmpty { return nil }
 
         metric.data.forEach {
             switch metric.aggregationType {
