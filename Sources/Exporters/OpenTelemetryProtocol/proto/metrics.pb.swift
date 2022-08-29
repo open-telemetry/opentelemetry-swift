@@ -807,11 +807,33 @@ public struct Opentelemetry_Proto_Metrics_V1_HistogramDataPoint {
   /// for the available flags and their meaning.
   public var flags: UInt32 = 0
 
+  /// min is the minimum value over (start_time, end_time].
+  public var min: Double {
+    get {return _min ?? 0}
+    set {_min = newValue}
+  }
+  /// Returns true if `min` has been explicitly set.
+  public var hasMin: Bool {return self._min != nil}
+  /// Clears the value of `min`. Subsequent reads from it will return its default value.
+  public mutating func clearMin() {self._min = nil}
+
+  /// max is the maximum value over (start_time, end_time].
+  public var max: Double {
+    get {return _max ?? 0}
+    set {_max = newValue}
+  }
+  /// Returns true if `max` has been explicitly set.
+  public var hasMax: Bool {return self._max != nil}
+  /// Clears the value of `max`. Subsequent reads from it will return its default value.
+  public mutating func clearMax() {self._max = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
   fileprivate var _sum: Double? = nil
+  fileprivate var _min: Double? = nil
+  fileprivate var _max: Double? = nil
 }
 
 /// ExponentialHistogramDataPoint is a single data point in a timeseries that describes the
@@ -855,7 +877,14 @@ public struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint {
   /// Negative events *can* be recorded, but sum should not be filled out when
   /// doing so.  This is specifically to enforce compatibility w/ OpenMetrics,
   /// see: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#histogram
-  public var sum: Double = 0
+  public var sum: Double {
+    get {return _sum ?? 0}
+    set {_sum = newValue}
+  }
+  /// Returns true if `sum` has been explicitly set.
+  public var hasSum: Bool {return self._sum != nil}
+  /// Clears the value of `sum`. Subsequent reads from it will return its default value.
+  public mutating func clearSum() {self._sum = nil}
 
   /// scale describes the resolution of the histogram.  Boundaries are
   /// located at powers of the base, where:
@@ -912,6 +941,26 @@ public struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint {
   /// measurements that were used to form the data point
   public var exemplars: [Opentelemetry_Proto_Metrics_V1_Exemplar] = []
 
+  /// min is the minimum value over (start_time, end_time].
+  public var min: Double {
+    get {return _min ?? 0}
+    set {_min = newValue}
+  }
+  /// Returns true if `min` has been explicitly set.
+  public var hasMin: Bool {return self._min != nil}
+  /// Clears the value of `min`. Subsequent reads from it will return its default value.
+  public mutating func clearMin() {self._min = nil}
+
+  /// max is the maximum value over (start_time, end_time].
+  public var max: Double {
+    get {return _max ?? 0}
+    set {_max = newValue}
+  }
+  /// Returns true if `max` has been explicitly set.
+  public var hasMax: Bool {return self._max != nil}
+  /// Clears the value of `max`. Subsequent reads from it will return its default value.
+  public mutating func clearMax() {self._max = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   /// Buckets are a set of bucket counts, encoded in a contiguous array
@@ -944,8 +993,11 @@ public struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint {
 
   public init() {}
 
+  fileprivate var _sum: Double? = nil
   fileprivate var _positive: Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.Buckets? = nil
   fileprivate var _negative: Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.Buckets? = nil
+  fileprivate var _min: Double? = nil
+  fileprivate var _max: Double? = nil
 }
 
 /// SummaryDataPoint is a single data point in a timeseries that describes the
@@ -1759,6 +1811,8 @@ extension Opentelemetry_Proto_Metrics_V1_HistogramDataPoint: SwiftProtobuf.Messa
     7: .standard(proto: "explicit_bounds"),
     8: .same(proto: "exemplars"),
     10: .same(proto: "flags"),
+    11: .same(proto: "min"),
+    12: .same(proto: "max"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -1776,6 +1830,8 @@ extension Opentelemetry_Proto_Metrics_V1_HistogramDataPoint: SwiftProtobuf.Messa
       case 8: try { try decoder.decodeRepeatedMessageField(value: &self.exemplars) }()
       case 9: try { try decoder.decodeRepeatedMessageField(value: &self.attributes) }()
       case 10: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
+      case 11: try { try decoder.decodeSingularDoubleField(value: &self._min) }()
+      case 12: try { try decoder.decodeSingularDoubleField(value: &self._max) }()
       default: break
       }
     }
@@ -1813,6 +1869,12 @@ extension Opentelemetry_Proto_Metrics_V1_HistogramDataPoint: SwiftProtobuf.Messa
     if self.flags != 0 {
       try visitor.visitSingularUInt32Field(value: self.flags, fieldNumber: 10)
     }
+    try { if let v = self._min {
+      try visitor.visitSingularDoubleField(value: v, fieldNumber: 11)
+    } }()
+    try { if let v = self._max {
+      try visitor.visitSingularDoubleField(value: v, fieldNumber: 12)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -1826,6 +1888,8 @@ extension Opentelemetry_Proto_Metrics_V1_HistogramDataPoint: SwiftProtobuf.Messa
     if lhs.explicitBounds != rhs.explicitBounds {return false}
     if lhs.exemplars != rhs.exemplars {return false}
     if lhs.flags != rhs.flags {return false}
+    if lhs._min != rhs._min {return false}
+    if lhs._max != rhs._max {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -1845,6 +1909,8 @@ extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint: SwiftPro
     9: .same(proto: "negative"),
     10: .same(proto: "flags"),
     11: .same(proto: "exemplars"),
+    12: .same(proto: "min"),
+    13: .same(proto: "max"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -1857,13 +1923,15 @@ extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint: SwiftPro
       case 2: try { try decoder.decodeSingularFixed64Field(value: &self.startTimeUnixNano) }()
       case 3: try { try decoder.decodeSingularFixed64Field(value: &self.timeUnixNano) }()
       case 4: try { try decoder.decodeSingularFixed64Field(value: &self.count) }()
-      case 5: try { try decoder.decodeSingularDoubleField(value: &self.sum) }()
+      case 5: try { try decoder.decodeSingularDoubleField(value: &self._sum) }()
       case 6: try { try decoder.decodeSingularSInt32Field(value: &self.scale) }()
       case 7: try { try decoder.decodeSingularFixed64Field(value: &self.zeroCount) }()
       case 8: try { try decoder.decodeSingularMessageField(value: &self._positive) }()
       case 9: try { try decoder.decodeSingularMessageField(value: &self._negative) }()
       case 10: try { try decoder.decodeSingularUInt32Field(value: &self.flags) }()
       case 11: try { try decoder.decodeRepeatedMessageField(value: &self.exemplars) }()
+      case 12: try { try decoder.decodeSingularDoubleField(value: &self._min) }()
+      case 13: try { try decoder.decodeSingularDoubleField(value: &self._max) }()
       default: break
       }
     }
@@ -1886,9 +1954,9 @@ extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint: SwiftPro
     if self.count != 0 {
       try visitor.visitSingularFixed64Field(value: self.count, fieldNumber: 4)
     }
-    if self.sum != 0 {
-      try visitor.visitSingularDoubleField(value: self.sum, fieldNumber: 5)
-    }
+    try { if let v = self._sum {
+      try visitor.visitSingularDoubleField(value: v, fieldNumber: 5)
+    } }()
     if self.scale != 0 {
       try visitor.visitSingularSInt32Field(value: self.scale, fieldNumber: 6)
     }
@@ -1907,6 +1975,12 @@ extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint: SwiftPro
     if !self.exemplars.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.exemplars, fieldNumber: 11)
     }
+    try { if let v = self._min {
+      try visitor.visitSingularDoubleField(value: v, fieldNumber: 12)
+    } }()
+    try { if let v = self._max {
+      try visitor.visitSingularDoubleField(value: v, fieldNumber: 13)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -1915,13 +1989,15 @@ extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint: SwiftPro
     if lhs.startTimeUnixNano != rhs.startTimeUnixNano {return false}
     if lhs.timeUnixNano != rhs.timeUnixNano {return false}
     if lhs.count != rhs.count {return false}
-    if lhs.sum != rhs.sum {return false}
+    if lhs._sum != rhs._sum {return false}
     if lhs.scale != rhs.scale {return false}
     if lhs.zeroCount != rhs.zeroCount {return false}
     if lhs._positive != rhs._positive {return false}
     if lhs._negative != rhs._negative {return false}
     if lhs.flags != rhs.flags {return false}
     if lhs.exemplars != rhs.exemplars {return false}
+    if lhs._min != rhs._min {return false}
+    if lhs._max != rhs._max {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
