@@ -48,6 +48,7 @@ struct MetricsAdapter {
     static func toProtoMetric(metric: Metric) -> Opentelemetry_Proto_Metrics_V1_Metric? {
         var protoMetric = Opentelemetry_Proto_Metrics_V1_Metric()
         protoMetric.name = metric.name
+        protoMetric.unit = "unit"
         protoMetric.description_p = metric.description
         if metric.data.isEmpty { return nil }
 
