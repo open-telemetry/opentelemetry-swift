@@ -15,7 +15,7 @@ public class TracerProviderSdk: TracerProvider {
     /// Returns a new TracerProviderSdk with default Clock, IdGenerator and Resource.
     public init(clock: Clock = MillisClock(),
                 idGenerator: IdGenerator = RandomIdGenerator(),
-                resource: Resource = EnvVarResource.resource,
+                resource: Resource = EnvVarResource.get(),
                 spanLimits: SpanLimits = SpanLimits(),
                 sampler: Sampler = Samplers.parentBased(root: Samplers.alwaysOn),
                 spanProcessors: [SpanProcessor] = [])
