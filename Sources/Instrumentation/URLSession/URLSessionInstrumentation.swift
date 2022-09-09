@@ -66,17 +66,19 @@ public class URLSessionInstrumentation {
         ]
 #endif
         let classes = InstrumentationUtils.objc_getClassList()
-        classes.forEach {
-            guard $0 != Self.self else { return }
+        let selectorsCount = selectors.count
+        DispatchQueue.concurrentPerform(iterations: classes.count) { iteration in
+            let theClass: AnyClass = classes[iteration]
+            guard theClass != Self.self else { return }
             var selectorFound = false
             var methodCount: UInt32 = 0
-            guard let methodList = class_copyMethodList($0, &methodCount) else { return }
+            guard let methodList = class_copyMethodList(theClass, &methodCount) else { return }
 
-            for i in 0..<Int(methodCount) {
-                for j in 0..<selectors.count {
+            for j in 0..<selectorsCount {
+                for i in 0..<Int(methodCount) {
                     if method_getName(methodList[i]) == selectors[j] {
                         selectorFound = true
-                        injectIntoDelegateClass(cls: $0)
+                        injectIntoDelegateClass(cls: theClass)
                         break
                     }
                 }
@@ -85,6 +87,7 @@ public class URLSessionInstrumentation {
                 }
             }
         }
+
         if #available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
             injectIntoNSURLSessionCreateTaskMethods()
         }
