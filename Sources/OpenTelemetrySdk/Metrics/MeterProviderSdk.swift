@@ -24,7 +24,7 @@ public class MeterProviderSdk: MeterProvider {
     public init(metricProcessor: MetricProcessor,
                 metricExporter: MetricExporter,
                 metricPushInterval: TimeInterval = MeterProviderSdk.defaultPushInterval,
-                resource: Resource = EnvVarResource.resource)
+                resource: Resource = EnvVarResource.get())
     {
         meterSharedState = MeterSharedState(metricProcessor: metricProcessor, metricPushInterval: metricPushInterval, metricExporter: metricExporter, resource: resource)
 

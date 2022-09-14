@@ -17,6 +17,10 @@ public struct EnvVarResource {
     public static let resource = Resource().merging(other: Resource(attributes: parseResourceAttributes(rawEnvAttributes: ProcessInfo.processInfo.environment[otelResourceAttributesEnv])))
     private init() {}
 
+    public static func get(environment: [String: String] = ProcessInfo.processInfo.environment) -> Resource {
+        return Resource().merging(other: Resource(attributes: parseResourceAttributes(rawEnvAttributes: environment[otelResourceAttributesEnv])))
+    }
+
     /// Creates a label map from the OC_RESOURCE_LABELS environment variable.
     /// OC_RESOURCE_LABELS: A comma-separated list of labels describing the source in more detail,
     /// e.g. “key1=val1,key2=val2”. Domain names and paths are accepted as label keys. Values may be
