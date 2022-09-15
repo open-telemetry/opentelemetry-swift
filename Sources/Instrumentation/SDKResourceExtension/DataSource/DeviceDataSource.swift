@@ -12,6 +12,8 @@ import Foundation
     import UIKit
 #endif
 public class DeviceDataSource: IDeviceDataSource {
+    public init() {}
+
     public var model: String? {
         #if os(watchOS)
             return WKInterfaceDevice.current().localizedModel
