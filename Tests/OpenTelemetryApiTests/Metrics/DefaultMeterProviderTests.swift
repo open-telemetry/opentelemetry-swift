@@ -65,6 +65,23 @@ class TestMeter: MeterProvider {
 }
 
 class TestNoopMeter: Meter {
+    func createRawDoubleHistogram(name: String) -> AnyRawHistogramMetric<Double> {
+        return AnyRawHistogramMetric<Double>(NoopRawHistogramMetric<Double>())
+    }
+    
+    func createRawIntHistogram(name: String) -> AnyRawHistogramMetric<Int> {
+        return AnyRawHistogramMetric<Int>(NoopRawHistogramMetric<Int>())
+
+    }
+    
+    func createRawDoubleCounter(name: String) -> AnyRawCounterMetric<Double> {
+            return AnyRawCounterMetric<Double>(NoopRawCounterMetric<Double>())
+    }
+    
+    func createRawIntCounter(name: String) -> AnyRawCounterMetric<Int> {
+        return AnyRawCounterMetric<Int>(NoopRawCounterMetric<Int>())
+    }
+    
     func createIntCounter(name _: String, monotonic _: Bool) -> AnyCounterMetric<Int> {
         return AnyCounterMetric<Int>(NoopCounterMetric<Int>())
     }

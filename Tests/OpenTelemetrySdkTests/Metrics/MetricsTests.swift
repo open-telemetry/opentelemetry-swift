@@ -126,6 +126,7 @@ final class MetricsTests: XCTestCase {
         observerMetric.observe(value: 300, labels: labels2)
     }
 
+
     func testDoubleObserverSendsAggregateToRegisteredProcessor() {
         let testProcessor = TestMetricProcessor()
         let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
@@ -161,5 +162,60 @@ final class MetricsTests: XCTestCase {
         observerMetric.observe(value: 100, labels: labels2)
         observerMetric.observe(value: 200, labels: labels2)
         observerMetric.observe(value: 300, labels: labels2)
+    }
+    
+    func testRawIntCounter() {
+        let testProcessor = TestMetricProcessor()
+        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
+        _ = meter.createRawIntCounter(name: "testRaw")
+        
+        meter.collect()
+        XCTAssertEqual(testProcessor.metrics.count, 1)
+
+        let metric = testProcessor.metrics[0]
+        XCTAssertEqual("testRaw", metric.name)
+        XCTAssertEqual("library1", metric.namespace)
+
+        
+        
+    }
+    
+    func testRawDoubleCounter() {
+        let testProcessor = TestMetricProcessor()
+        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
+        _ = meter.createRawDoubleCounter(name: "testRaw")
+        
+        meter.collect()
+        XCTAssertEqual(testProcessor.metrics.count, 1)
+
+        let metric = testProcessor.metrics[0]
+        XCTAssertEqual("testRaw", metric.name)
+        XCTAssertEqual("library1", metric.namespace)
+    }
+    
+    func testRawDoubleHitsogram() {
+        let testProcessor = TestMetricProcessor()
+        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
+        _ = meter.createRawDoubleHistogram(name: "testRaw")
+        
+        meter.collect()
+        XCTAssertEqual(testProcessor.metrics.count, 1)
+
+        let metric = testProcessor.metrics[0]
+        XCTAssertEqual("testRaw", metric.name)
+        XCTAssertEqual("library1", metric.namespace)
+    }
+    
+    func testRawIntHitsogram() {
+        let testProcessor = TestMetricProcessor()
+        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
+        _ = meter.createRawIntHistogram(name: "testRaw")
+        
+        meter.collect()
+        XCTAssertEqual(testProcessor.metrics.count, 1)
+
+        let metric = testProcessor.metrics[0]
+        XCTAssertEqual("testRaw", metric.name)
+        XCTAssertEqual("library1", metric.namespace)
     }
 }
