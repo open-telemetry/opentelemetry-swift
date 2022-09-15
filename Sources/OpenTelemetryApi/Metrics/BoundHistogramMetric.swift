@@ -14,4 +14,6 @@ open class BoundHistogramMetric<T> {
     ///   - value: the histogram to be recorded.
     open func record(value: T) {
     }
+    
+
 }
