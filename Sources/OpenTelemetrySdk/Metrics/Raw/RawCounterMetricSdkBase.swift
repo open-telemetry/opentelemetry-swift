@@ -5,7 +5,6 @@
 
 import Foundation
 import OpenTelemetryApi
-import SwiftProtobuf
 
 class RawCounterMetricSdkBase<T> : RawCounterMetric {
     private let bindUnbindLock = Lock()
