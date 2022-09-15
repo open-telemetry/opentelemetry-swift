@@ -13,6 +13,7 @@ import Foundation
 import OpenTelemetrySdk
 
 public class OperatingSystemDataSource: IOperatingSystemDataSource {
+    public init() {}
     public var description: String {
         name + " " + ProcessInfo.processInfo.operatingSystemVersionString
     }

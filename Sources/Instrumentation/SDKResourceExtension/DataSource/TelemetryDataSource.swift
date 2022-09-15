@@ -7,6 +7,7 @@ import Foundation
 import OpenTelemetrySdk
 
 public class TelemetryDataSource: ITelemetryDataSource {
+    public init() {}
     public var language: String {
         ResourceAttributes.TelemetrySdkLanguageValues.swift.description
     }
