@@ -73,6 +73,7 @@ public class URLSessionInstrumentation {
             var selectorFound = false
             var methodCount: UInt32 = 0
             guard let methodList = class_copyMethodList(theClass, &methodCount) else { return }
+            defer { free(methodList) }
 
             for j in 0..<selectorsCount {
                 for i in 0..<Int(methodCount) {
