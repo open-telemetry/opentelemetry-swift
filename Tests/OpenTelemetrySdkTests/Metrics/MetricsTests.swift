@@ -10,7 +10,7 @@ import XCTest
 final class MetricsTests: XCTestCase {
     func testCounterSendsAggregateToRegisteredProcessor() {
         let testProcessor = TestMetricProcessor()
-        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
+        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "scope1") as! MeterSdk
         let testCounter = meter.createIntCounter(name: "testCounter")
 
         let labels1 = ["dim1": "value1"]
@@ -32,7 +32,7 @@ final class MetricsTests: XCTestCase {
         let metric = testProcessor.metrics[0]
 
         XCTAssertEqual("testCounter", metric.name)
-        XCTAssertEqual("library1", metric.namespace)
+        XCTAssertEqual("scope1", metric.namespace)
 
         // 3 time series, as 3 unique label sets.
         XCTAssertEqual(3, metric.data.count)
@@ -52,7 +52,7 @@ final class MetricsTests: XCTestCase {
 
     func testMeasureSendsAggregateToRegisteredProcessor() {
         let testProcessor = TestMetricProcessor()
-        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
+        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "scope1") as! MeterSdk
         let testMeasure = meter.createIntMeasure(name: "testMeasure")
 
         let labels1 = ["dim1": "value1"]
@@ -69,7 +69,7 @@ final class MetricsTests: XCTestCase {
         XCTAssertEqual(testProcessor.metrics.count, 1)
         let metric = testProcessor.metrics[0]
         XCTAssertEqual("testMeasure", metric.name)
-        XCTAssertEqual("library1", metric.namespace)
+        XCTAssertEqual("scope1", metric.namespace)
 
         // 2 time series, as 2 unique label sets.
         XCTAssertEqual(2, metric.data.count)
@@ -91,7 +91,7 @@ final class MetricsTests: XCTestCase {
 
     func testIntObserverSendsAggregateToRegisteredProcessor() {
         let testProcessor = TestMetricProcessor()
-        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
+        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "scope1") as! MeterSdk
         _ = meter.createIntObserver(name: "testObserver", callback: callbackInt)
 
         meter.collect()
@@ -99,7 +99,7 @@ final class MetricsTests: XCTestCase {
         XCTAssertEqual(testProcessor.metrics.count, 1)
         let metric = testProcessor.metrics[0]
         XCTAssertEqual("testObserver", metric.name)
-        XCTAssertEqual("library1", metric.namespace)
+        XCTAssertEqual("scope1", metric.namespace)
 
         // 2 time series, as 2 unique label sets.
         XCTAssertEqual(2, metric.data.count)
@@ -129,7 +129,7 @@ final class MetricsTests: XCTestCase {
 
     func testDoubleObserverSendsAggregateToRegisteredProcessor() {
         let testProcessor = TestMetricProcessor()
-        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
+        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "scope1") as! MeterSdk
         _ = meter.createDoubleObserver(name: "testObserver", callback: callbackDouble)
 
         meter.collect()
@@ -137,7 +137,7 @@ final class MetricsTests: XCTestCase {
         XCTAssertEqual(testProcessor.metrics.count, 1)
         let metric = testProcessor.metrics[0]
         XCTAssertEqual("testObserver", metric.name)
-        XCTAssertEqual("library1", metric.namespace)
+        XCTAssertEqual("scope1", metric.namespace)
 
         // 2 time series, as 2 unique label sets.
         XCTAssertEqual(2, metric.data.count)
@@ -166,7 +166,7 @@ final class MetricsTests: XCTestCase {
     
     func testRawIntCounter() {
         let testProcessor = TestMetricProcessor()
-        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
+        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "scope1") as! MeterSdk
         _ = meter.createRawIntCounter(name: "testRaw")
         
         meter.collect()
@@ -174,7 +174,7 @@ final class MetricsTests: XCTestCase {
 
         let metric = testProcessor.metrics[0]
         XCTAssertEqual("testRaw", metric.name)
-        XCTAssertEqual("library1", metric.namespace)
+        XCTAssertEqual("scope1", metric.namespace)
 
         
         
@@ -182,7 +182,7 @@ final class MetricsTests: XCTestCase {
     
     func testRawDoubleCounter() {
         let testProcessor = TestMetricProcessor()
-        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
+        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "scope1") as! MeterSdk
         _ = meter.createRawDoubleCounter(name: "testRaw")
         
         meter.collect()
@@ -190,12 +190,12 @@ final class MetricsTests: XCTestCase {
 
         let metric = testProcessor.metrics[0]
         XCTAssertEqual("testRaw", metric.name)
-        XCTAssertEqual("library1", metric.namespace)
+        XCTAssertEqual("scope1", metric.namespace)
     }
     
     func testRawDoubleHitsogram() {
         let testProcessor = TestMetricProcessor()
-        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
+        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "scope1") as! MeterSdk
         _ = meter.createRawDoubleHistogram(name: "testRaw")
         
         meter.collect()
@@ -203,12 +203,12 @@ final class MetricsTests: XCTestCase {
 
         let metric = testProcessor.metrics[0]
         XCTAssertEqual("testRaw", metric.name)
-        XCTAssertEqual("library1", metric.namespace)
+        XCTAssertEqual("scope1", metric.namespace)
     }
     
     func testRawIntHitsogram() {
         let testProcessor = TestMetricProcessor()
-        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
+        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "scope1") as! MeterSdk
         _ = meter.createRawIntHistogram(name: "testRaw")
         
         meter.collect()
@@ -216,6 +216,6 @@ final class MetricsTests: XCTestCase {
 
         let metric = testProcessor.metrics[0]
         XCTAssertEqual("testRaw", metric.name)
-        XCTAssertEqual("library1", metric.namespace)
+        XCTAssertEqual("scope1", metric.namespace)
     }
 }

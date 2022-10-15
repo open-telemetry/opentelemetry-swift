@@ -13,7 +13,7 @@ import OpenTelemetrySdk
 
 public class OtlpMetricExporter: MetricExporter {
     let channel: GRPCChannel
-    let metricClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClient
+    var metricClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient
     let config : OtlpConfiguration
     var callOptions : CallOptions? = nil
 
@@ -22,7 +22,7 @@ public class OtlpMetricExporter: MetricExporter {
     public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration(), logger: Logger = Logger(label: "io.grpc", factory: { _ in SwiftLogNoOpLogHandler() }), envVarHeaders: [(String,String)]? = EnvVarHeaders.attributes) {
         self.channel = channel
         self.config = config
-        self.metricClient = Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClient(channel: self.channel)
+        self.metricClient = Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient(channel: self.channel)
         if let headers = envVarHeaders {
             callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
         } else if let headers = config.headers {

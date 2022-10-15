@@ -15,7 +15,7 @@ class ReadableSpanMock: ReadableSpan {
         return .client
     }
 
-    var instrumentationLibraryInfo = InstrumentationLibraryInfo()
+    var instrumentationScopeInfo = InstrumentationScopeInfo()
 
     var name: String = "ReadableSpanMock"
 
@@ -34,7 +34,7 @@ class ReadableSpanMock: ReadableSpan {
                                                 traceFlags: context.traceFlags,
                                                 traceState: TraceState(),
                                                 resource: Resource(attributes: [String: AttributeValue]()),
-                                                instrumentationLibraryInfo: InstrumentationLibraryInfo(),
+                                                instrumentationScope: InstrumentationScopeInfo(),
                                                 name: "ReadableSpanMock",
                                                 kind: .client,
                                                 startTime: Date(timeIntervalSinceReferenceDate: 0),

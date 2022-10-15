@@ -18,10 +18,10 @@ class TracerProviderSdkTests: XCTestCase {
         XCTAssert(tracerProviderSdk.get(instrumentationName: "test") === tracerProviderSdk.get(instrumentationName: "test", instrumentationVersion: nil))
     }
 
-    func testPropagatesInstrumentationLibraryInfoToTracer() {
-        let expected = InstrumentationLibraryInfo(name: "theName", version: "theVersion")
+    func testPropagatesInstrumentationScopeInfoToTracer() {
+        let expected = InstrumentationScopeInfo(name: "theName", version: "theVersion")
         let tracer = tracerProviderSdk.get(instrumentationName: expected.name, instrumentationVersion: expected.version) as! TracerSdk
-        XCTAssertEqual(tracer.instrumentationLibraryInfo, expected)
+        XCTAssertEqual(tracer.instrumentationScopeInfo, expected)
     }
 
     func testGetSameInstanceForSameName_WithVersion() {
@@ -30,6 +30,6 @@ class TracerProviderSdkTests: XCTestCase {
 
     func testGetWithoutName() {
         let tracer = tracerProviderSdk.get(instrumentationName: "") as! TracerSdk
-        XCTAssertEqual(tracer.instrumentationLibraryInfo.name, TracerProviderSdk.emptyName)
+        XCTAssertEqual(tracer.instrumentationScopeInfo.name, TracerProviderSdk.emptyName)
     }
 }

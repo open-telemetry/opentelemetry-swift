@@ -8,15 +8,15 @@ import Foundation
 public struct Metric {
     public private(set) var namespace: String
     public private(set) var resource: Resource
-    public private(set) var instrumentationLibraryInfo : InstrumentationLibraryInfo
+    public private(set) var instrumentationScopeInfo : InstrumentationScopeInfo
     public private(set) var name: String
     public private(set) var description: String
     public private(set) var aggregationType: AggregationType
     public internal(set) var data = [MetricData]()
 
-    init(namespace: String, name: String, desc: String, type: AggregationType, resource: Resource, instrumentationLibraryInfo: InstrumentationLibraryInfo) {
+    init(namespace: String, name: String, desc: String, type: AggregationType, resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo) {
         self.namespace = namespace
-        self.instrumentationLibraryInfo = instrumentationLibraryInfo
+        self.instrumentationScopeInfo = instrumentationScopeInfo
         self.name = name
         description = desc
         aggregationType = type
@@ -34,7 +34,7 @@ extension Metric: Equatable {
     public static func == (lhs: Metric, rhs: Metric) -> Bool {
         if lhs.namespace == rhs.namespace &&
             lhs.resource == rhs.resource &&
-            lhs.instrumentationLibraryInfo == rhs.instrumentationLibraryInfo &&
+            lhs.instrumentationScopeInfo == rhs.instrumentationScopeInfo &&
             lhs.name == rhs.name &&
             lhs.description == rhs.description &&
             lhs.aggregationType == rhs.aggregationType {
@@ -70,7 +70,7 @@ extension Metric: Codable {
     enum CodingKeys: String, CodingKey {
         case namespace
         case resource
-        case instrumentationLibraryInfo
+        case instrumentationScopeInfo
         case name
         case description
         case aggregationType
@@ -82,12 +82,12 @@ extension Metric: Codable {
         
         let namespace = try container.decode(String.self, forKey: .namespace)
         let resource = try container.decode(Resource.self, forKey: .resource)
-        let instrumentationLibraryInfo = try container.decode(InstrumentationLibraryInfo.self, forKey: .instrumentationLibraryInfo)
+        let instrumentationScopeInfo = try container.decode(InstrumentationScopeInfo.self, forKey: .instrumentationScopeInfo)
         let name = try container.decode(String.self, forKey: .name)
         let description = try container.decode(String.self, forKey: .description)
         let aggregationType = try container.decode(AggregationType.self, forKey: .aggregationType)
         
-        self.init(namespace: namespace, name: name, desc: description, type: aggregationType, resource: resource, instrumentationLibraryInfo: instrumentationLibraryInfo)
+        self.init(namespace: namespace, name: name, desc: description, type: aggregationType, resource: resource, instrumentationScopeInfo: instrumentationScopeInfo)
         
         switch aggregationType {
         case .doubleGauge:
@@ -114,7 +114,7 @@ extension Metric: Codable {
         
         try container.encode(namespace, forKey: .namespace)
         try container.encode(resource, forKey: .resource)
-        try container.encode(instrumentationLibraryInfo, forKey: .instrumentationLibraryInfo)
+        try container.encode(instrumentationScopeInfo, forKey: .instrumentationScopeInfo)
         try container.encode(name, forKey: .name)
         try container.encode(description, forKey: .description)
         try container.encode(aggregationType, forKey: .aggregationType)

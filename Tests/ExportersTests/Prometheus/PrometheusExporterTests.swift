@@ -64,7 +64,7 @@ class PrometheusExporterTests: XCTestCase {
 
         let meterProvider = MeterProviderSdk(metricProcessor: simpleProcessor, metricExporter: exporter, metricPushInterval: metricPushIntervalSec)
         
-        let meter = meterProvider.get(instrumentationName: "library1")
+        let meter = meterProvider.get(instrumentationName: "scope1")
 
         let testCounter = meter.createIntCounter(name: "testCounter")
         let testMeasure = meter.createIntMeasure(name: "testMeasure")

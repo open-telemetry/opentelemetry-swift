@@ -8,36 +8,36 @@ import OpenTelemetrySdk
 
 struct MetricsAdapter {
     static func toProtoResourceMetrics(metricDataList: [Metric]) -> [Opentelemetry_Proto_Metrics_V1_ResourceMetrics] {
-        let resourceAndLibraryMap = groupByResouceAndLibrary(metricDataList: metricDataList)
+        let resourceAndScopeMap = groupByResouceAndScope(metricDataList: metricDataList)
         var resourceMetrics = [Opentelemetry_Proto_Metrics_V1_ResourceMetrics]()
 
-        resourceAndLibraryMap.forEach { resMap in
-            var instrumentationLibraryMetrics = [Opentelemetry_Proto_Metrics_V1_InstrumentationLibraryMetrics]()
-            resMap.value.forEach { instLibrary in
+        resourceAndScopeMap.forEach { resMap in
+            var instrumentationScopeMetrics = [Opentelemetry_Proto_Metrics_V1_ScopeMetrics]()
+            resMap.value.forEach { instScope in
                 var protoInst =
-                    Opentelemetry_Proto_Metrics_V1_InstrumentationLibraryMetrics()
-                protoInst.instrumentationLibrary =
-                    CommonAdapter.toProtoInstrumentationLibrary(instrumentationLibraryInfo: instLibrary.key)
-                instLibrary.value.forEach {
+                Opentelemetry_Proto_Metrics_V1_ScopeMetrics()
+                protoInst.scope =
+                    CommonAdapter.toProtoInstrumentationScope(instrumentationScopeInfo: instScope.key)
+                instScope.value.forEach {
                     protoInst.metrics.append($0)
                 }
-                instrumentationLibraryMetrics.append(protoInst)
+                instrumentationScopeMetrics.append(protoInst)
             }
             var resourceMetric = Opentelemetry_Proto_Metrics_V1_ResourceMetrics()
             resourceMetric.resource = ResourceAdapter.toProtoResource(resource: resMap.key)
-            resourceMetric.instrumentationLibraryMetrics.append(contentsOf: instrumentationLibraryMetrics)
+            resourceMetric.scopeMetrics.append(contentsOf: instrumentationScopeMetrics)
             resourceMetrics.append(resourceMetric)
         }
 
         return resourceMetrics
     }
 
-    private static func groupByResouceAndLibrary(metricDataList: [Metric]) -> [Resource: [InstrumentationLibraryInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]] {
-        var results = [Resource: [InstrumentationLibraryInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]]()
+    private static func groupByResouceAndScope(metricDataList: [Metric]) -> [Resource: [InstrumentationScopeInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]] {
+        var results = [Resource: [InstrumentationScopeInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]]()
 
         metricDataList.forEach {
             if let metric = toProtoMetric(metric: $0) {
-                results[$0.resource, default: [InstrumentationLibraryInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]()][$0.instrumentationLibraryInfo, default: [Opentelemetry_Proto_Metrics_V1_Metric]()]
+                results[$0.resource, default: [InstrumentationScopeInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]()][$0.instrumentationScopeInfo, default: [Opentelemetry_Proto_Metrics_V1_Metric]()]
                     .append(metric)
             }
         }

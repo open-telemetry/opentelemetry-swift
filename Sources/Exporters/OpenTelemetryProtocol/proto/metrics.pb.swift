@@ -241,35 +241,6 @@ public struct Opentelemetry_Proto_Metrics_V1_ResourceMetrics {
   /// A list of metrics that originate from a resource.
   public var scopeMetrics: [Opentelemetry_Proto_Metrics_V1_ScopeMetrics] = []
 
-  /// A list of InstrumentationLibraryMetrics that originate from a resource.
-  /// This field is deprecated and will be removed after grace period expires on June 15, 2022.
-  ///
-  /// During the grace period the following rules SHOULD be followed:
-  ///
-  /// For Binary Protobufs
-  /// ====================
-  /// Binary Protobuf senders SHOULD NOT set instrumentation_library_metrics. Instead
-  /// scope_metrics SHOULD be set.
-  ///
-  /// Binary Protobuf receivers SHOULD check if instrumentation_library_metrics is set
-  /// and scope_metrics is not set then the value in instrumentation_library_metrics
-  /// SHOULD be used instead by converting InstrumentationLibraryMetrics into ScopeMetrics.
-  /// If scope_metrics is set then instrumentation_library_metrics SHOULD be ignored.
-  ///
-  /// For JSON
-  /// ========
-  /// JSON senders that set instrumentation_library_metrics field MAY also set
-  /// scope_metrics to carry the same metrics, essentially double-publishing the same data.
-  /// Such double-publishing MAY be controlled by a user-settable option.
-  /// If double-publishing is not used then the senders SHOULD set scope_metrics and
-  /// SHOULD NOT set instrumentation_library_metrics.
-  ///
-  /// JSON receivers SHOULD check if instrumentation_library_metrics is set and
-  /// scope_metrics is not set then the value in instrumentation_library_metrics
-  /// SHOULD be used instead by converting InstrumentationLibraryMetrics into ScopeMetrics.
-  /// If scope_metrics is set then instrumentation_library_metrics field SHOULD be ignored.
-  public var instrumentationLibraryMetrics: [Opentelemetry_Proto_Metrics_V1_InstrumentationLibraryMetrics] = []
-
   /// This schema_url applies to the data in the "resource" field. It does not apply
   /// to the data in the "scope_metrics" field which have their own schema_url field.
   public var schemaURL: String = String()
@@ -312,44 +283,10 @@ public struct Opentelemetry_Proto_Metrics_V1_ScopeMetrics {
   fileprivate var _scope: Opentelemetry_Proto_Common_V1_InstrumentationScope? = nil
 }
 
-/// A collection of Metrics produced by an InstrumentationLibrary.
-/// InstrumentationLibraryMetrics is wire-compatible with ScopeMetrics for binary
-/// Protobuf format.
-/// This message is deprecated and will be removed on June 15, 2022.
-public struct Opentelemetry_Proto_Metrics_V1_InstrumentationLibraryMetrics {
-  // SwiftProtobuf.Message conformance is added in an extension below. See the
-  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
-  // methods supported on all messages.
-
-  /// The instrumentation library information for the metrics in this message.
-  /// Semantically when InstrumentationLibrary isn't set, it is equivalent with
-  /// an empty instrumentation library name (unknown).
-  public var instrumentationLibrary: Opentelemetry_Proto_Common_V1_InstrumentationLibrary {
-    get {return _instrumentationLibrary ?? Opentelemetry_Proto_Common_V1_InstrumentationLibrary()}
-    set {_instrumentationLibrary = newValue}
-  }
-  /// Returns true if `instrumentationLibrary` has been explicitly set.
-  public var hasInstrumentationLibrary: Bool {return self._instrumentationLibrary != nil}
-  /// Clears the value of `instrumentationLibrary`. Subsequent reads from it will return its default value.
-  public mutating func clearInstrumentationLibrary() {self._instrumentationLibrary = nil}
-
-  /// A list of metrics that originate from an instrumentation library.
-  public var metrics: [Opentelemetry_Proto_Metrics_V1_Metric] = []
-
-  /// This schema_url applies to all metrics in the "metrics" field.
-  public var schemaURL: String = String()
-
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
-
-  public init() {}
-
-  fileprivate var _instrumentationLibrary: Opentelemetry_Proto_Common_V1_InstrumentationLibrary? = nil
-}
-
 /// Defines a Metric which has one or more timeseries.  The following is a
 /// brief summary of the Metric data model.  For more details, see:
 ///
-///   https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/datamodel.md
+///   https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/data-model.md
 ///
 ///
 /// The data model and relation between entities is shown in the
@@ -892,8 +829,8 @@ public struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint {
   ///   base = (2^(2^-scale))
   ///
   /// The histogram bucket identified by `index`, a signed integer,
-  /// contains values that are greater than or equal to (base^index) and
-  /// less than (base^(index+1)).
+  /// contains values that are greater than (base^index) and
+  /// less than or equal to (base^(index+1)).
   ///
   /// The positive and negative ranges of the histogram are expressed
   /// separately.  Negative values are mapped by their absolute value
@@ -977,7 +914,7 @@ public struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint {
 
     /// Count is an array of counts, where count[i] carries the count
     /// of the bucket at index (offset+i).  count[i] is the count of
-    /// values greater than or equal to base^(offset+i) and less than
+    /// values greater than base^(offset+i) and less or equal to than
     /// base^(offset+i+1).
     ///
     /// Note: By contrast, the explicit HistogramDataPoint uses
@@ -1168,7 +1105,6 @@ extension Opentelemetry_Proto_Metrics_V1_DataPointFlags: @unchecked Sendable {}
 extension Opentelemetry_Proto_Metrics_V1_MetricsData: @unchecked Sendable {}
 extension Opentelemetry_Proto_Metrics_V1_ResourceMetrics: @unchecked Sendable {}
 extension Opentelemetry_Proto_Metrics_V1_ScopeMetrics: @unchecked Sendable {}
-extension Opentelemetry_Proto_Metrics_V1_InstrumentationLibraryMetrics: @unchecked Sendable {}
 extension Opentelemetry_Proto_Metrics_V1_Metric: @unchecked Sendable {}
 extension Opentelemetry_Proto_Metrics_V1_Metric.OneOf_Data: @unchecked Sendable {}
 extension Opentelemetry_Proto_Metrics_V1_Gauge: @unchecked Sendable {}
@@ -1243,7 +1179,6 @@ extension Opentelemetry_Proto_Metrics_V1_ResourceMetrics: SwiftProtobuf.Message,
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "resource"),
     2: .standard(proto: "scope_metrics"),
-    1000: .standard(proto: "instrumentation_library_metrics"),
     3: .standard(proto: "schema_url"),
   ]
 
@@ -1256,7 +1191,6 @@ extension Opentelemetry_Proto_Metrics_V1_ResourceMetrics: SwiftProtobuf.Message,
       case 1: try { try decoder.decodeSingularMessageField(value: &self._resource) }()
       case 2: try { try decoder.decodeRepeatedMessageField(value: &self.scopeMetrics) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self.schemaURL) }()
-      case 1000: try { try decoder.decodeRepeatedMessageField(value: &self.instrumentationLibraryMetrics) }()
       default: break
       }
     }
@@ -1276,16 +1210,12 @@ extension Opentelemetry_Proto_Metrics_V1_ResourceMetrics: SwiftProtobuf.Message,
     if !self.schemaURL.isEmpty {
       try visitor.visitSingularStringField(value: self.schemaURL, fieldNumber: 3)
     }
-    if !self.instrumentationLibraryMetrics.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.instrumentationLibraryMetrics, fieldNumber: 1000)
-    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_ResourceMetrics, rhs: Opentelemetry_Proto_Metrics_V1_ResourceMetrics) -> Bool {
     if lhs._resource != rhs._resource {return false}
     if lhs.scopeMetrics != rhs.scopeMetrics {return false}
-    if lhs.instrumentationLibraryMetrics != rhs.instrumentationLibraryMetrics {return false}
     if lhs.schemaURL != rhs.schemaURL {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -1333,54 +1263,6 @@ extension Opentelemetry_Proto_Metrics_V1_ScopeMetrics: SwiftProtobuf.Message, Sw
 
   public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_ScopeMetrics, rhs: Opentelemetry_Proto_Metrics_V1_ScopeMetrics) -> Bool {
     if lhs._scope != rhs._scope {return false}
-    if lhs.metrics != rhs.metrics {return false}
-    if lhs.schemaURL != rhs.schemaURL {return false}
-    if lhs.unknownFields != rhs.unknownFields {return false}
-    return true
-  }
-}
-
-extension Opentelemetry_Proto_Metrics_V1_InstrumentationLibraryMetrics: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".InstrumentationLibraryMetrics"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "instrumentation_library"),
-    2: .same(proto: "metrics"),
-    3: .standard(proto: "schema_url"),
-  ]
-
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try { try decoder.decodeSingularMessageField(value: &self._instrumentationLibrary) }()
-      case 2: try { try decoder.decodeRepeatedMessageField(value: &self.metrics) }()
-      case 3: try { try decoder.decodeSingularStringField(value: &self.schemaURL) }()
-      default: break
-      }
-    }
-  }
-
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every if/case branch local when no optimizations
-    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-    // https://github.com/apple/swift-protobuf/issues/1182
-    try { if let v = self._instrumentationLibrary {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-    } }()
-    if !self.metrics.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.metrics, fieldNumber: 2)
-    }
-    if !self.schemaURL.isEmpty {
-      try visitor.visitSingularStringField(value: self.schemaURL, fieldNumber: 3)
-    }
-    try unknownFields.traverse(visitor: &visitor)
-  }
-
-  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_InstrumentationLibraryMetrics, rhs: Opentelemetry_Proto_Metrics_V1_InstrumentationLibraryMetrics) -> Bool {
-    if lhs._instrumentationLibrary != rhs._instrumentationLibrary {return false}
     if lhs.metrics != rhs.metrics {return false}
     if lhs.schemaURL != rhs.schemaURL {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}

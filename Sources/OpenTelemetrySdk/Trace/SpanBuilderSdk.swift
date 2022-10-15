@@ -19,7 +19,7 @@ class SpanBuilderSdk: SpanBuilder {
     static let traceOptionsNotSampled = TraceFlags().settingIsSampled(false)
 
     private var spanName: String
-    private var instrumentationLibraryInfo: InstrumentationLibraryInfo
+    private var instrumentationScopeInfo: InstrumentationScopeInfo
     private var tracerSharedState: TracerSharedState
     private var spanLimits: SpanLimits
 
@@ -36,12 +36,12 @@ class SpanBuilderSdk: SpanBuilder {
     private var startTime: Date?
 
     init(spanName: String,
-         instrumentationLibraryInfo: InstrumentationLibraryInfo,
+         instrumentationScopeInfo: InstrumentationScopeInfo,
          tracerSharedState: TracerSharedState,
          spanLimits: SpanLimits)
     {
         self.spanName = spanName
-        self.instrumentationLibraryInfo = instrumentationLibraryInfo
+        self.instrumentationScopeInfo = instrumentationScopeInfo
         self.tracerSharedState = tracerSharedState
         self.spanLimits = spanLimits
         attributes = AttributesDictionary(capacity: spanLimits.attributeCountLimit)
@@ -139,7 +139,7 @@ class SpanBuilderSdk: SpanBuilder {
 
         let createdSpan = RecordEventsReadableSpan.startSpan(context: spanContext,
                                                              name: spanName,
-                                                             instrumentationLibraryInfo: instrumentationLibraryInfo,
+                                                             instrumentationScopeInfo: instrumentationScopeInfo,
                                                              kind: spanKind,
                                                              parentContext: parentContext,
                                                              hasRemoteParent: parentContext?.isRemote ?? false,

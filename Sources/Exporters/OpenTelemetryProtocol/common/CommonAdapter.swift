@@ -48,14 +48,14 @@ struct CommonAdapter {
         return keyValue
     }
     
-    static func toProtoInstrumentationLibrary(instrumentationLibraryInfo: InstrumentationLibraryInfo) -> Opentelemetry_Proto_Common_V1_InstrumentationLibrary {
+    static func toProtoInstrumentationScope(instrumentationScopeInfo: InstrumentationScopeInfo) -> Opentelemetry_Proto_Common_V1_InstrumentationScope {
         
-        var instrumentationLibrary = Opentelemetry_Proto_Common_V1_InstrumentationLibrary()
-        instrumentationLibrary.name = instrumentationLibraryInfo.name
-        if let version = instrumentationLibraryInfo.version {
-            instrumentationLibrary.version = version
+        var instrumentationScope = Opentelemetry_Proto_Common_V1_InstrumentationScope()
+        instrumentationScope.name = instrumentationScopeInfo.name
+        if let version = instrumentationScopeInfo.version {
+            instrumentationScope.version = version
         }
-        return instrumentationLibrary
+        return instrumentationScope
     }
 
 }

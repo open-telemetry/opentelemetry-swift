@@ -26,7 +26,7 @@ struct TestUtils {
                         traceFlags: TraceFlags(),
                         traceState: TraceState(),
                         resource: Resource(),
-                        instrumentationLibraryInfo: InstrumentationLibraryInfo(),
+                        instrumentationScope: InstrumentationScopeInfo(),
                         name: "spanName",
                         kind: .server,
                         startTime: Date(timeIntervalSince1970: 100000000000 + 100),

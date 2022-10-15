@@ -22,6 +22,7 @@
 //
 import GRPC
 import NIO
+import NIOConcurrencyHelpers
 import SwiftProtobuf
 
 
@@ -57,7 +58,7 @@ extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientProtocol 
     callOptions: CallOptions? = nil
   ) -> UnaryCall<Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest, Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse> {
     return self.makeUnaryCall(
-      path: "/opentelemetry.proto.collector.metrics.v1.MetricsService/Export",
+      path: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientMetadata.Methods.export.path,
       request: request,
       callOptions: callOptions ?? self.defaultCallOptions,
       interceptors: self.interceptors?.makeExportInterceptors() ?? []
@@ -65,14 +66,45 @@ extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientProtocol 
   }
 }
 
-public protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol {
+#if compiler(>=5.6)
+@available(*, deprecated)
+extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClient: @unchecked Sendable {}
+#endif // compiler(>=5.6)
 
-  /// - Returns: Interceptors to use when invoking 'export'.
-  func makeExportInterceptors() -> [ClientInterceptor<Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest, Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse>]
+@available(*, deprecated, renamed: "Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient")
+public final class Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientProtocol {
+  private let lock = Lock()
+  private var _defaultCallOptions: CallOptions
+  private var _interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol?
+  public let channel: GRPCChannel
+  public var defaultCallOptions: CallOptions {
+    get { self.lock.withLock { return self._defaultCallOptions } }
+    set { self.lock.withLockVoid { self._defaultCallOptions = newValue } }
+  }
+  public var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol? {
+    get { self.lock.withLock { return self._interceptors } }
+    set { self.lock.withLockVoid { self._interceptors = newValue } }
+  }
+
+  /// Creates a client for the opentelemetry.proto.collector.metrics.v1.MetricsService service.
+  ///
+  /// - Parameters:
+  ///   - channel: `GRPCChannel` to the service host.
+  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
+  ///   - interceptors: A factory providing interceptors for each RPC.
+  public init(
+    channel: GRPCChannel,
+    defaultCallOptions: CallOptions = CallOptions(),
+    interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol? = nil
+  ) {
+    self.channel = channel
+    self._defaultCallOptions = defaultCallOptions
+    self._interceptors = interceptors
+  }
 }
 
-public final class Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientProtocol {
-  public let channel: GRPCChannel
+public struct Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientProtocol {
+  public var channel: GRPCChannel
   public var defaultCallOptions: CallOptions
   public var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol?
 
@@ -93,6 +125,102 @@ public final class Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClient
   }
 }
 
+#if compiler(>=5.6)
+/// Service that can be used to push metrics between one Application
+/// instrumented with OpenTelemetry and a collector, or between a collector and a
+/// central collector.
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+public protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncClientProtocol: GRPCClient {
+  static var serviceDescriptor: GRPCServiceDescriptor { get }
+  var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol? { get }
+
+  func makeExportCall(
+    _ request: Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest,
+    callOptions: CallOptions?
+  ) -> GRPCAsyncUnaryCall<Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest, Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse>
+}
+
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncClientProtocol {
+  public static var serviceDescriptor: GRPCServiceDescriptor {
+    return Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientMetadata.serviceDescriptor
+  }
+
+  public var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol? {
+    return nil
+  }
+
+  public func makeExportCall(
+    _ request: Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest,
+    callOptions: CallOptions? = nil
+  ) -> GRPCAsyncUnaryCall<Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest, Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse> {
+    return self.makeAsyncUnaryCall(
+      path: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientMetadata.Methods.export.path,
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeExportInterceptors() ?? []
+    )
+  }
+}
+
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncClientProtocol {
+  public func export(
+    _ request: Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest,
+    callOptions: CallOptions? = nil
+  ) async throws -> Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse {
+    return try await self.performAsyncUnaryCall(
+      path: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientMetadata.Methods.export.path,
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeExportInterceptors() ?? []
+    )
+  }
+}
+
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+public struct Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncClientProtocol {
+  public var channel: GRPCChannel
+  public var defaultCallOptions: CallOptions
+  public var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol?
+
+  public init(
+    channel: GRPCChannel,
+    defaultCallOptions: CallOptions = CallOptions(),
+    interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol? = nil
+  ) {
+    self.channel = channel
+    self.defaultCallOptions = defaultCallOptions
+    self.interceptors = interceptors
+  }
+}
+
+#endif // compiler(>=5.6)
+
+public protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol: GRPCSendable {
+
+  /// - Returns: Interceptors to use when invoking 'export'.
+  func makeExportInterceptors() -> [ClientInterceptor<Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest, Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse>]
+}
+
+public enum Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientMetadata {
+  public static let serviceDescriptor = GRPCServiceDescriptor(
+    name: "MetricsService",
+    fullName: "opentelemetry.proto.collector.metrics.v1.MetricsService",
+    methods: [
+      Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientMetadata.Methods.export,
+    ]
+  )
+
+  public enum Methods {
+    public static let export = GRPCMethodDescriptor(
+      name: "Export",
+      path: "/opentelemetry.proto.collector.metrics.v1.MetricsService/Export",
+      type: GRPCCallType.unary
+    )
+  }
+}
+
 /// Service that can be used to push metrics between one Application
 /// instrumented with OpenTelemetry and a collector, or between a collector and a
 /// central collector.
@@ -107,7 +235,9 @@ public protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceProvider:
 }
 
 extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceProvider {
-  public var serviceName: Substring { return "opentelemetry.proto.collector.metrics.v1.MetricsService" }
+  public var serviceName: Substring {
+    return Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerMetadata.serviceDescriptor.fullName[...]
+  }
 
   /// Determines, calls and returns the appropriate request handler, depending on the request's method.
   /// Returns nil for methods not handled by this service.
@@ -131,9 +261,83 @@ extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceProvider {
   }
 }
 
+#if compiler(>=5.6)
+
+/// Service that can be used to push metrics between one Application
+/// instrumented with OpenTelemetry and a collector, or between a collector and a
+/// central collector.
+///
+/// To implement a server, implement an object which conforms to this protocol.
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+public protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncProvider: CallHandlerProvider {
+  static var serviceDescriptor: GRPCServiceDescriptor { get }
+  var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerInterceptorFactoryProtocol? { get }
+
+  /// For performance reasons, it is recommended to keep this RPC
+  /// alive for the entire life of the application.
+  @Sendable func export(
+    request: Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest,
+    context: GRPCAsyncServerCallContext
+  ) async throws -> Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse
+}
+
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncProvider {
+  public static var serviceDescriptor: GRPCServiceDescriptor {
+    return Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerMetadata.serviceDescriptor
+  }
+
+  public var serviceName: Substring {
+    return Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerMetadata.serviceDescriptor.fullName[...]
+  }
+
+  public var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerInterceptorFactoryProtocol? {
+    return nil
+  }
+
+  public func handle(
+    method name: Substring,
+    context: CallHandlerContext
+  ) -> GRPCServerHandlerProtocol? {
+    switch name {
+    case "Export":
+      return GRPCAsyncServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest>(),
+        responseSerializer: ProtobufSerializer<Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse>(),
+        interceptors: self.interceptors?.makeExportInterceptors() ?? [],
+        wrapping: self.export(request:context:)
+      )
+
+    default:
+      return nil
+    }
+  }
+}
+
+#endif // compiler(>=5.6)
+
 public protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerInterceptorFactoryProtocol {
 
   /// - Returns: Interceptors to use when handling 'export'.
   ///   Defaults to calling `self.makeInterceptors()`.
   func makeExportInterceptors() -> [ServerInterceptor<Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest, Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse>]
+}
+
+public enum Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerMetadata {
+  public static let serviceDescriptor = GRPCServiceDescriptor(
+    name: "MetricsService",
+    fullName: "opentelemetry.proto.collector.metrics.v1.MetricsService",
+    methods: [
+      Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerMetadata.Methods.export,
+    ]
+  )
+
+  public enum Methods {
+    public static let export = GRPCMethodDescriptor(
+      name: "Export",
+      path: "/opentelemetry.proto.collector.metrics.v1.MetricsService/Export",
+      type: GRPCCallType.unary
+    )
+  }
 }

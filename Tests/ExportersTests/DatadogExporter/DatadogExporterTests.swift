@@ -46,10 +46,10 @@ class DatadogExporterTests: XCTestCase {
         }
         sem.wait()
         
-        let instrumentationLibraryName = "SimpleExporter"
-        let instrumentationLibraryVersion = "semver:0.1.0"
+        let instrumentationScopeName = "SimpleExporter"
+        let instrumentationScopeVersion = "semver:0.1.0"
 
-        let tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: instrumentationLibraryName, instrumentationVersion: instrumentationLibraryVersion) as! TracerSdk
+        let tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion) as! TracerSdk
 
         let exporterConfiguration = ExporterConfiguration(serviceName: "serviceName",
                                                           resource: "resource",

@@ -81,35 +81,6 @@ public struct Opentelemetry_Proto_Trace_V1_ResourceSpans {
   /// A list of ScopeSpans that originate from a resource.
   public var scopeSpans: [Opentelemetry_Proto_Trace_V1_ScopeSpans] = []
 
-  /// A list of InstrumentationLibrarySpans that originate from a resource.
-  /// This field is deprecated and will be removed after grace period expires on June 15, 2022.
-  ///
-  /// During the grace period the following rules SHOULD be followed:
-  ///
-  /// For Binary Protobufs
-  /// ====================
-  /// Binary Protobuf senders SHOULD NOT set instrumentation_library_spans. Instead
-  /// scope_spans SHOULD be set.
-  ///
-  /// Binary Protobuf receivers SHOULD check if instrumentation_library_spans is set
-  /// and scope_spans is not set then the value in instrumentation_library_spans
-  /// SHOULD be used instead by converting InstrumentationLibrarySpans into ScopeSpans.
-  /// If scope_spans is set then instrumentation_library_spans SHOULD be ignored.
-  ///
-  /// For JSON
-  /// ========
-  /// JSON senders that set instrumentation_library_spans field MAY also set
-  /// scope_spans to carry the same spans, essentially double-publishing the same data.
-  /// Such double-publishing MAY be controlled by a user-settable option.
-  /// If double-publishing is not used then the senders SHOULD set scope_spans and
-  /// SHOULD NOT set instrumentation_library_spans.
-  ///
-  /// JSON receivers SHOULD check if instrumentation_library_spans is set and
-  /// scope_spans is not set then the value in instrumentation_library_spans
-  /// SHOULD be used instead by converting InstrumentationLibrarySpans into ScopeSpans.
-  /// If scope_spans is set then instrumentation_library_spans field SHOULD be ignored.
-  public var instrumentationLibrarySpans: [Opentelemetry_Proto_Trace_V1_InstrumentationLibrarySpans] = []
-
   /// This schema_url applies to the data in the "resource" field. It does not apply
   /// to the data in the "scope_spans" field which have their own schema_url field.
   public var schemaURL: String = String()
@@ -152,47 +123,7 @@ public struct Opentelemetry_Proto_Trace_V1_ScopeSpans {
   fileprivate var _scope: Opentelemetry_Proto_Common_V1_InstrumentationScope? = nil
 }
 
-/// A collection of Spans produced by an InstrumentationLibrary.
-/// InstrumentationLibrarySpans is wire-compatible with ScopeSpans for binary
-/// Protobuf format.
-/// This message is deprecated and will be removed on June 15, 2022.
-public struct Opentelemetry_Proto_Trace_V1_InstrumentationLibrarySpans {
-  // SwiftProtobuf.Message conformance is added in an extension below. See the
-  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
-  // methods supported on all messages.
-
-  /// The instrumentation library information for the spans in this message.
-  /// Semantically when InstrumentationLibrary isn't set, it is equivalent with
-  /// an empty instrumentation library name (unknown).
-  public var instrumentationLibrary: Opentelemetry_Proto_Common_V1_InstrumentationLibrary {
-    get {return _instrumentationLibrary ?? Opentelemetry_Proto_Common_V1_InstrumentationLibrary()}
-    set {_instrumentationLibrary = newValue}
-  }
-  /// Returns true if `instrumentationLibrary` has been explicitly set.
-  public var hasInstrumentationLibrary: Bool {return self._instrumentationLibrary != nil}
-  /// Clears the value of `instrumentationLibrary`. Subsequent reads from it will return its default value.
-  public mutating func clearInstrumentationLibrary() {self._instrumentationLibrary = nil}
-
-  /// A list of Spans that originate from an instrumentation library.
-  public var spans: [Opentelemetry_Proto_Trace_V1_Span] = []
-
-  /// This schema_url applies to all spans and span events in the "spans" field.
-  public var schemaURL: String = String()
-
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
-
-  public init() {}
-
-  fileprivate var _instrumentationLibrary: Opentelemetry_Proto_Common_V1_InstrumentationLibrary? = nil
-}
-
-/// Span represents a single operation within a trace. Spans can be
-/// nested to form a trace tree. Spans may also be linked to other spans
-/// from the same or different trace and form graphs. Often, a trace
-/// contains a root span that describes the end-to-end latency, and one
-/// or more subspans for its sub-operations. A trace can also contain
-/// multiple root spans, or none at all. Spans do not need to be
-/// contiguous - there may be gaps or overlaps between spans in a trace.
+/// A Span represents a single operation performed by a single component of the system.
 ///
 /// The next available field id is 17.
 public struct Opentelemetry_Proto_Trace_V1_Span {
@@ -272,7 +203,7 @@ public struct Opentelemetry_Proto_Trace_V1_Span {
   ///     "abc.com/score": 10.239
   ///
   /// The OpenTelemetry API specification further restricts the allowed value types:
-  /// https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/common/common.md#attributes
+  /// https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/common/README.md#attribute
   /// Attribute keys MUST be unique (it is not allowed to have more than one
   /// attribute with the same key).
   public var attributes: [Opentelemetry_Proto_Common_V1_KeyValue] = []
@@ -477,8 +408,8 @@ public struct Opentelemetry_Proto_Trace_V1_Status {
     /// The default status.
     case unset // = 0
 
-    /// The Span has been validated by an Application developers or Operator to have
-    /// completed successfully.
+    /// The Span has been validated by an Application developer or Operator to 
+    /// have completed successfully.
     case ok // = 1
 
     /// The Span contains an error.
@@ -529,7 +460,6 @@ extension Opentelemetry_Proto_Trace_V1_Status.StatusCode: CaseIterable {
 extension Opentelemetry_Proto_Trace_V1_TracesData: @unchecked Sendable {}
 extension Opentelemetry_Proto_Trace_V1_ResourceSpans: @unchecked Sendable {}
 extension Opentelemetry_Proto_Trace_V1_ScopeSpans: @unchecked Sendable {}
-extension Opentelemetry_Proto_Trace_V1_InstrumentationLibrarySpans: @unchecked Sendable {}
 extension Opentelemetry_Proto_Trace_V1_Span: @unchecked Sendable {}
 extension Opentelemetry_Proto_Trace_V1_Span.SpanKind: @unchecked Sendable {}
 extension Opentelemetry_Proto_Trace_V1_Span.Event: @unchecked Sendable {}
@@ -579,7 +509,6 @@ extension Opentelemetry_Proto_Trace_V1_ResourceSpans: SwiftProtobuf.Message, Swi
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "resource"),
     2: .standard(proto: "scope_spans"),
-    1000: .standard(proto: "instrumentation_library_spans"),
     3: .standard(proto: "schema_url"),
   ]
 
@@ -592,7 +521,6 @@ extension Opentelemetry_Proto_Trace_V1_ResourceSpans: SwiftProtobuf.Message, Swi
       case 1: try { try decoder.decodeSingularMessageField(value: &self._resource) }()
       case 2: try { try decoder.decodeRepeatedMessageField(value: &self.scopeSpans) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self.schemaURL) }()
-      case 1000: try { try decoder.decodeRepeatedMessageField(value: &self.instrumentationLibrarySpans) }()
       default: break
       }
     }
@@ -612,16 +540,12 @@ extension Opentelemetry_Proto_Trace_V1_ResourceSpans: SwiftProtobuf.Message, Swi
     if !self.schemaURL.isEmpty {
       try visitor.visitSingularStringField(value: self.schemaURL, fieldNumber: 3)
     }
-    if !self.instrumentationLibrarySpans.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.instrumentationLibrarySpans, fieldNumber: 1000)
-    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Opentelemetry_Proto_Trace_V1_ResourceSpans, rhs: Opentelemetry_Proto_Trace_V1_ResourceSpans) -> Bool {
     if lhs._resource != rhs._resource {return false}
     if lhs.scopeSpans != rhs.scopeSpans {return false}
-    if lhs.instrumentationLibrarySpans != rhs.instrumentationLibrarySpans {return false}
     if lhs.schemaURL != rhs.schemaURL {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -669,54 +593,6 @@ extension Opentelemetry_Proto_Trace_V1_ScopeSpans: SwiftProtobuf.Message, SwiftP
 
   public static func ==(lhs: Opentelemetry_Proto_Trace_V1_ScopeSpans, rhs: Opentelemetry_Proto_Trace_V1_ScopeSpans) -> Bool {
     if lhs._scope != rhs._scope {return false}
-    if lhs.spans != rhs.spans {return false}
-    if lhs.schemaURL != rhs.schemaURL {return false}
-    if lhs.unknownFields != rhs.unknownFields {return false}
-    return true
-  }
-}
-
-extension Opentelemetry_Proto_Trace_V1_InstrumentationLibrarySpans: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".InstrumentationLibrarySpans"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "instrumentation_library"),
-    2: .same(proto: "spans"),
-    3: .standard(proto: "schema_url"),
-  ]
-
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try { try decoder.decodeSingularMessageField(value: &self._instrumentationLibrary) }()
-      case 2: try { try decoder.decodeRepeatedMessageField(value: &self.spans) }()
-      case 3: try { try decoder.decodeSingularStringField(value: &self.schemaURL) }()
-      default: break
-      }
-    }
-  }
-
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every if/case branch local when no optimizations
-    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-    // https://github.com/apple/swift-protobuf/issues/1182
-    try { if let v = self._instrumentationLibrary {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-    } }()
-    if !self.spans.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.spans, fieldNumber: 2)
-    }
-    if !self.schemaURL.isEmpty {
-      try visitor.visitSingularStringField(value: self.schemaURL, fieldNumber: 3)
-    }
-    try unknownFields.traverse(visitor: &visitor)
-  }
-
-  public static func ==(lhs: Opentelemetry_Proto_Trace_V1_InstrumentationLibrarySpans, rhs: Opentelemetry_Proto_Trace_V1_InstrumentationLibrarySpans) -> Bool {
-    if lhs._instrumentationLibrary != rhs._instrumentationLibrary {return false}
     if lhs.spans != rhs.spans {return false}
     if lhs.schemaURL != rhs.schemaURL {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}

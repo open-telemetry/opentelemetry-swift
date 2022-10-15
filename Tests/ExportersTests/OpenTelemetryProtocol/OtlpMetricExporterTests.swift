@@ -88,7 +88,7 @@ class OtlpMetricExproterTests: XCTestCase {
         XCTAssertEqual(result, MetricExporterResultCode.success)
 
         XCTAssertEqual(fakeCollector.receivedMetrics.count, 1)
-        let otlpMetric = fakeCollector.receivedMetrics[0].instrumentationLibraryMetrics[0].metrics[0]
+        let otlpMetric = fakeCollector.receivedMetrics[0].scopeMetrics[0].metrics[0]
         XCTAssertEqual(metric.name, otlpMetric.name)
         XCTAssertEqual(otlpMetric.gauge.dataPoints.count, 1)
         let dataPoint = otlpMetric.gauge.dataPoints[0]
@@ -153,16 +153,16 @@ class OtlpMetricExproterTests: XCTestCase {
     }
 
     func generateSumMetric() -> Metric {
-        let library = InstrumentationLibraryInfo(name: "lib", version: "semver:0.0.0")
-        var metric = Metric(namespace: "namespace", name: "metric", desc: "description", type: .doubleSum, resource: Resource(), instrumentationLibraryInfo: library)
+        let scope = InstrumentationScopeInfo(name: "lib", version: "semver:0.0.0")
+        var metric = Metric(namespace: "namespace", name: "metric", desc: "description", type: .doubleSum, resource: Resource(), instrumentationScopeInfo: scope)
         let data = SumData(startTimestamp: Date(), timestamp: Date(), labels: ["hello": "world"], sum: 1)
         metric.data.append(data)
         return metric
     }
 
     func generateGaugeMetric() -> Metric {
-        let library = InstrumentationLibraryInfo(name: "lib", version: "semver:0.0.0")
-        var metric = Metric(namespace: "namespace", name: "MyGauge", desc: "description", type: .intGauge, resource: Resource(), instrumentationLibraryInfo: library)
+        let scope = InstrumentationScopeInfo(name: "lib", version: "semver:0.0.0")
+        var metric = Metric(namespace: "namespace", name: "MyGauge", desc: "description", type: .intGauge, resource: Resource(), instrumentationScopeInfo: scope)
         let data = SumData(startTimestamp: Date(), timestamp: Date(), labels: ["hello": "world"], sum: 100)
         metric.data.append(data)
         return metric

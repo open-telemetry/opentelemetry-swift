@@ -9,17 +9,17 @@ import XCTest
 
 class TracerSdkTests: XCTestCase {
     let spanName = "span_name"
-    let instrumentationLibraryName = "TracerSdkTest"
-    let instrumentationLibraryVersion = "semver:0.2.0"
-    var instrumentationLibraryInfo: InstrumentationLibraryInfo!
+    let instrumentationScopeName = "TracerSdkTest"
+    let instrumentationScopeVersion = "semver:0.2.0"
+    var instrumentationScopeInfo: InstrumentationScopeInfo!
     var span = SpanMock()
     var spanProcessor = SpanProcessorMock()
     var tracerSdkFactory = TracerProviderSdk()
     var tracer: TracerSdk!
 
     override func setUp() {
-        instrumentationLibraryInfo = InstrumentationLibraryInfo(name: instrumentationLibraryName, version: instrumentationLibraryVersion)
-        tracer = (tracerSdkFactory.get(instrumentationName: instrumentationLibraryName, instrumentationVersion: instrumentationLibraryVersion) as! TracerSdk)
+        instrumentationScopeInfo = InstrumentationScopeInfo(name: instrumentationScopeName, version: instrumentationScopeVersion)
+        tracer = (tracerSdkFactory.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion) as! TracerSdk)
     }
 
     func testDefaultGetCurrentSpan() {
@@ -47,12 +47,12 @@ class TracerSdkTests: XCTestCase {
         XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
     }
 
-    func testGetInstrumentationLibraryInfo() {
-        XCTAssertEqual(tracer.instrumentationLibraryInfo, instrumentationLibraryInfo)
+    func testGetInstrumentationScopeInfo() {
+        XCTAssertEqual(tracer.instrumentationScopeInfo, instrumentationScopeInfo)
     }
 
-    func testPropagatesInstrumentationLibraryInfoToSpan() {
+    func testPropagatesInstrumentationScopeInfoToSpan() {
         let readableSpan = tracer.spanBuilder(spanName: "spanName").startSpan() as? ReadableSpan
-        XCTAssertEqual(readableSpan?.instrumentationLibraryInfo, instrumentationLibraryInfo)
+        XCTAssertEqual(readableSpan?.instrumentationScopeInfo, instrumentationScopeInfo)
     }
 }

@@ -24,13 +24,13 @@ class SpanAdapterTests: XCTestCase {
     }
 
     func testToPRotoResourceSpans() {
-        let libInfo = InstrumentationLibraryInfo(name: "testLibrary", version: "semver:0.0.1")
+        let libInfo = InstrumentationScopeInfo(name: "testScope", version: "semver:0.0.1")
 
-        let event = RecordEventsReadableSpan.startSpan(context: spanContext, name: "GET /api/endpoint", instrumentationLibraryInfo: libInfo, kind: SpanKind.server, parentContext: nil, hasRemoteParent: false, spanLimits: SpanLimits(), spanProcessor: NoopSpanProcessor(), clock: MillisClock(), resource: Resource(), attributes: AttributesDictionary(capacity: 0), links: [], totalRecordedLinks: 0, startTime: Date())
+        let event = RecordEventsReadableSpan.startSpan(context: spanContext, name: "GET /api/endpoint", instrumentationScopeInfo: libInfo, kind: SpanKind.server, parentContext: nil, hasRemoteParent: false, spanLimits: SpanLimits(), spanProcessor: NoopSpanProcessor(), clock: MillisClock(), resource: Resource(), attributes: AttributesDictionary(capacity: 0), links: [], totalRecordedLinks: 0, startTime: Date())
 
         let result = SpanAdapter.toProtoResourceSpans(spanDataList: [event.toSpanData()])
 
-        XCTAssertTrue(result[0].instrumentationLibrarySpans.count > 0)
+        XCTAssertTrue(result[0].scopeSpans.count > 0)
     }
 
     func testToProtoSpan() {

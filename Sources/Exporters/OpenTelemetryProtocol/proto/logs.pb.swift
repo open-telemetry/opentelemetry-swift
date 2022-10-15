@@ -257,35 +257,6 @@ public struct Opentelemetry_Proto_Logs_V1_ResourceLogs {
   /// A list of ScopeLogs that originate from a resource.
   public var scopeLogs: [Opentelemetry_Proto_Logs_V1_ScopeLogs] = []
 
-  /// A list of InstrumentationLibraryLogs that originate from a resource.
-  /// This field is deprecated and will be removed after grace period expires on June 15, 2022.
-  ///
-  /// During the grace period the following rules SHOULD be followed:
-  ///
-  /// For Binary Protobufs
-  /// ====================
-  /// Binary Protobuf senders SHOULD NOT set instrumentation_library_logs. Instead
-  /// scope_logs SHOULD be set.
-  ///
-  /// Binary Protobuf receivers SHOULD check if instrumentation_library_logs is set
-  /// and scope_logs is not set then the value in instrumentation_library_logs
-  /// SHOULD be used instead by converting InstrumentationLibraryLogs into ScopeLogs.
-  /// If scope_logs is set then instrumentation_library_logs SHOULD be ignored.
-  ///
-  /// For JSON
-  /// ========
-  /// JSON senders that set instrumentation_library_logs field MAY also set
-  /// scope_logs to carry the same logs, essentially double-publishing the same data.
-  /// Such double-publishing MAY be controlled by a user-settable option.
-  /// If double-publishing is not used then the senders SHOULD set scope_logs and
-  /// SHOULD NOT set instrumentation_library_logs.
-  ///
-  /// JSON receivers SHOULD check if instrumentation_library_logs is set and
-  /// scope_logs is not set then the value in instrumentation_library_logs
-  /// SHOULD be used instead by converting InstrumentationLibraryLogs into ScopeLogs.
-  /// If scope_logs is set then instrumentation_library_logs field SHOULD be ignored.
-  public var instrumentationLibraryLogs: [Opentelemetry_Proto_Logs_V1_InstrumentationLibraryLogs] = []
-
   /// This schema_url applies to the data in the "resource" field. It does not apply
   /// to the data in the "scope_logs" field which have their own schema_url field.
   public var schemaURL: String = String()
@@ -326,40 +297,6 @@ public struct Opentelemetry_Proto_Logs_V1_ScopeLogs {
   public init() {}
 
   fileprivate var _scope: Opentelemetry_Proto_Common_V1_InstrumentationScope? = nil
-}
-
-/// A collection of Logs produced by an InstrumentationLibrary.
-/// InstrumentationLibraryLogs is wire-compatible with ScopeLogs for binary
-/// Protobuf format.
-/// This message is deprecated and will be removed on June 15, 2022.
-public struct Opentelemetry_Proto_Logs_V1_InstrumentationLibraryLogs {
-  // SwiftProtobuf.Message conformance is added in an extension below. See the
-  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
-  // methods supported on all messages.
-
-  /// The instrumentation library information for the logs in this message.
-  /// Semantically when InstrumentationLibrary isn't set, it is equivalent with
-  /// an empty instrumentation library name (unknown).
-  public var instrumentationLibrary: Opentelemetry_Proto_Common_V1_InstrumentationLibrary {
-    get {return _instrumentationLibrary ?? Opentelemetry_Proto_Common_V1_InstrumentationLibrary()}
-    set {_instrumentationLibrary = newValue}
-  }
-  /// Returns true if `instrumentationLibrary` has been explicitly set.
-  public var hasInstrumentationLibrary: Bool {return self._instrumentationLibrary != nil}
-  /// Clears the value of `instrumentationLibrary`. Subsequent reads from it will return its default value.
-  public mutating func clearInstrumentationLibrary() {self._instrumentationLibrary = nil}
-
-  /// A list of logs that originate from an instrumentation library.
-  public var logRecords: [Opentelemetry_Proto_Logs_V1_LogRecord] = []
-
-  /// This schema_url applies to all logs in the "logs" field.
-  public var schemaURL: String = String()
-
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
-
-  public init() {}
-
-  fileprivate var _instrumentationLibrary: Opentelemetry_Proto_Common_V1_InstrumentationLibrary? = nil
 }
 
 /// A log record according to OpenTelemetry Log Data Model:
@@ -450,7 +387,6 @@ extension Opentelemetry_Proto_Logs_V1_LogRecordFlags: @unchecked Sendable {}
 extension Opentelemetry_Proto_Logs_V1_LogsData: @unchecked Sendable {}
 extension Opentelemetry_Proto_Logs_V1_ResourceLogs: @unchecked Sendable {}
 extension Opentelemetry_Proto_Logs_V1_ScopeLogs: @unchecked Sendable {}
-extension Opentelemetry_Proto_Logs_V1_InstrumentationLibraryLogs: @unchecked Sendable {}
 extension Opentelemetry_Proto_Logs_V1_LogRecord: @unchecked Sendable {}
 #endif  // swift(>=5.5) && canImport(_Concurrency)
 
@@ -532,7 +468,6 @@ extension Opentelemetry_Proto_Logs_V1_ResourceLogs: SwiftProtobuf.Message, Swift
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "resource"),
     2: .standard(proto: "scope_logs"),
-    1000: .standard(proto: "instrumentation_library_logs"),
     3: .standard(proto: "schema_url"),
   ]
 
@@ -545,7 +480,6 @@ extension Opentelemetry_Proto_Logs_V1_ResourceLogs: SwiftProtobuf.Message, Swift
       case 1: try { try decoder.decodeSingularMessageField(value: &self._resource) }()
       case 2: try { try decoder.decodeRepeatedMessageField(value: &self.scopeLogs) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self.schemaURL) }()
-      case 1000: try { try decoder.decodeRepeatedMessageField(value: &self.instrumentationLibraryLogs) }()
       default: break
       }
     }
@@ -565,16 +499,12 @@ extension Opentelemetry_Proto_Logs_V1_ResourceLogs: SwiftProtobuf.Message, Swift
     if !self.schemaURL.isEmpty {
       try visitor.visitSingularStringField(value: self.schemaURL, fieldNumber: 3)
     }
-    if !self.instrumentationLibraryLogs.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.instrumentationLibraryLogs, fieldNumber: 1000)
-    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Opentelemetry_Proto_Logs_V1_ResourceLogs, rhs: Opentelemetry_Proto_Logs_V1_ResourceLogs) -> Bool {
     if lhs._resource != rhs._resource {return false}
     if lhs.scopeLogs != rhs.scopeLogs {return false}
-    if lhs.instrumentationLibraryLogs != rhs.instrumentationLibraryLogs {return false}
     if lhs.schemaURL != rhs.schemaURL {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -622,54 +552,6 @@ extension Opentelemetry_Proto_Logs_V1_ScopeLogs: SwiftProtobuf.Message, SwiftPro
 
   public static func ==(lhs: Opentelemetry_Proto_Logs_V1_ScopeLogs, rhs: Opentelemetry_Proto_Logs_V1_ScopeLogs) -> Bool {
     if lhs._scope != rhs._scope {return false}
-    if lhs.logRecords != rhs.logRecords {return false}
-    if lhs.schemaURL != rhs.schemaURL {return false}
-    if lhs.unknownFields != rhs.unknownFields {return false}
-    return true
-  }
-}
-
-extension Opentelemetry_Proto_Logs_V1_InstrumentationLibraryLogs: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".InstrumentationLibraryLogs"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "instrumentation_library"),
-    2: .standard(proto: "log_records"),
-    3: .standard(proto: "schema_url"),
-  ]
-
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try { try decoder.decodeSingularMessageField(value: &self._instrumentationLibrary) }()
-      case 2: try { try decoder.decodeRepeatedMessageField(value: &self.logRecords) }()
-      case 3: try { try decoder.decodeSingularStringField(value: &self.schemaURL) }()
-      default: break
-      }
-    }
-  }
-
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every if/case branch local when no optimizations
-    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-    // https://github.com/apple/swift-protobuf/issues/1182
-    try { if let v = self._instrumentationLibrary {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-    } }()
-    if !self.logRecords.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.logRecords, fieldNumber: 2)
-    }
-    if !self.schemaURL.isEmpty {
-      try visitor.visitSingularStringField(value: self.schemaURL, fieldNumber: 3)
-    }
-    try unknownFields.traverse(visitor: &visitor)
-  }
-
-  public static func ==(lhs: Opentelemetry_Proto_Logs_V1_InstrumentationLibraryLogs, rhs: Opentelemetry_Proto_Logs_V1_InstrumentationLibraryLogs) -> Bool {
-    if lhs._instrumentationLibrary != rhs._instrumentationLibrary {return false}
     if lhs.logRecords != rhs.logRecords {return false}
     if lhs.schemaURL != rhs.schemaURL {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}

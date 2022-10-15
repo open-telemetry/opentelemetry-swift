@@ -30,23 +30,23 @@ final class PushControllerTests: XCTestCase {
         var meter2CollectCount = 0
         let meterSharedState = MeterSharedState(metricProcessor: testProcessor, metricPushInterval: controllerPushIntervalInSec, metricExporter: testExporter, resource: Resource())
         
-        let meterInstrumentationLibrary1 = InstrumentationLibraryInfo(name:"meter1")
+        let meterInstrumentationScope1 = InstrumentationScopeInfo(name:"meter1")
 
-        let  testMeter1 = TestMeter(meterSharedState: meterSharedState, instrumentationLibraryInfo: meterInstrumentationLibrary1){
+        let  testMeter1 = TestMeter(meterSharedState: meterSharedState, instrumentationScopeInfo: meterInstrumentationScope1){
             self.lock.withLockVoid {
                 meter1CollectCount += 1
             }
         }
-        meterProvider.meterRegistry[meterInstrumentationLibrary1] = testMeter1
+        meterProvider.meterRegistry[meterInstrumentationScope1] = testMeter1
 
         
-        let meterInstrumentationLibrary2 = InstrumentationLibraryInfo(name: "meter2")
-        let testMeter2 = TestMeter(meterSharedState:meterSharedState, instrumentationLibraryInfo: meterInstrumentationLibrary2) {
+        let meterInstrumentationScope2 = InstrumentationScopeInfo(name: "meter2")
+        let testMeter2 = TestMeter(meterSharedState:meterSharedState, instrumentationScopeInfo: meterInstrumentationScope2) {
             self.lock.withLockVoid {
                 meter2CollectCount += 1
             }
         }
-        meterProvider.meterRegistry[meterInstrumentationLibrary2] = testMeter2
+        meterProvider.meterRegistry[meterInstrumentationScope2] = testMeter2
 
         let pushInterval = controllerPushIntervalInSec
 
