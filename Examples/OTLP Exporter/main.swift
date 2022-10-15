@@ -20,12 +20,12 @@ let sampleValue = "sampleValue"
 
 var resources = DefaultResources().get()
 
-let instrumentationLibraryName = "OTLPExporter"
-let instrumentationLibraryVersion = "semver:0.1.0"
-var instrumentationLibraryInfo = InstrumentationLibraryInfo(name: instrumentationLibraryName, version: instrumentationLibraryVersion)
+let instrumentationScopeName = "OTLPExporter"
+let instrumentationScopeVersion = "semver:0.1.0"
+var instrumentationScopeInfo = InstrumentationScopeInfo(name: instrumentationScopeName, version: instrumentationScopeVersion)
 
 var tracer: TracerSdk
-tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: instrumentationLibraryName, instrumentationVersion: instrumentationLibraryVersion) as! TracerSdk
+tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion) as! TracerSdk
 
 let configuration = ClientConnection.Configuration(
     target: .hostAndPort("localhost", 4317),
