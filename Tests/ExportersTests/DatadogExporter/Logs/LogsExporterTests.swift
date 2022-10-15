@@ -73,7 +73,7 @@ class LogsExporterTests: XCTestCase {
                         traceFlags: TraceFlags(),
                         traceState: TraceState(),
                         resource: Resource(),
-                        instrumentationScopeInfo: InstrumentationScopeInfo(),
+                        instrumentationScope: InstrumentationScopeInfo(),
                         name: "spanName",
                         kind: .server,
                         startTime: Date(timeIntervalSinceReferenceDate: 3000),

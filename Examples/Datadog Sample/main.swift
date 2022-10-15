@@ -19,12 +19,12 @@ let resourceValue = "The resource"
 let sampleKey = "sampleKey"
 let sampleValue = "sampleValue"
 
-let instrumentationLibraryName = "DatadogExporter"
-let instrumentationLibraryVersion = "semver:0.1.0"
-var instrumentationLibraryInfo = InstrumentationLibraryInfo(name: instrumentationLibraryName, version: instrumentationLibraryVersion)
+let instrumentationScopeName = "DatadogExporter"
+let instrumentationScopeVersion = "semver:0.1.0"
+var instrumentationScopeInfo = InstrumentationScopeInfo(name: instrumentationScopeName, version: instrumentationScopeVersion)
 
 var tracer: TracerSdk
-tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: instrumentationLibraryName, instrumentationVersion: instrumentationLibraryVersion) as! TracerSdk
+tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion) as! TracerSdk
 
 #if targetEnvironment(macCatalyst)
 let hostName = UIDevice.current.name
