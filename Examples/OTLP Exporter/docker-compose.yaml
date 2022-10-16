@@ -3,6 +3,7 @@ services:
   # Collector
   collector:
     image: otel/opentelemetry-collector:0.62.1
+#    The latest image of the otel-collector may not work, so specifying the version that works with this release
 #    image: otel/opentelemetry-collector:latest
     command: ["--config=/conf/collector-config.yaml"]
     volumes:
