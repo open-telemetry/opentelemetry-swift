@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import Atomics
 import Foundation
 import OpenTelemetryApi
 
@@ -73,9 +72,12 @@ public class RecordEventsReadableSpan: ReadableSpan {
     /// The end time of the span.
     public private(set) var endTime: Date?
     /// True if the span is ended.
-    fileprivate var endAtomic = ManagedAtomic<Bool>(false)
+    fileprivate var endAtomic = false
+    private let endSyncLock = Lock()
     public var hasEnded: Bool {
-        return self.endAtomic.load(ordering: .relaxed)
+        endSyncLock.withLock {
+            return endAtomic
+        }
     }
 
     private let eventsSyncLock = Lock()
@@ -260,9 +262,15 @@ public class RecordEventsReadableSpan: ReadableSpan {
     }
 
     public func end(time: Date) {
-        if endAtomic.exchange(true, ordering: .relaxed) {
+        var wasAlreadyEnded = false
+        endSyncLock.withLockVoid {
+            wasAlreadyEnded = endAtomic
+            endAtomic = true
+        }
+        if wasAlreadyEnded {
             return
         }
+
         eventsSyncLock.withLockVoid {
             attributesSyncLock.withLockVoid {
                 isRecording = false
