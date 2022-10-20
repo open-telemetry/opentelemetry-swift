@@ -8,7 +8,7 @@ import OpenTelemetryApi
 
 public class TracerProviderSdk: TracerProvider {
     private var tracerLock = pthread_rwlock_t()
-    private var tracerProvider = [InstrumentationScopeInfo: TracerSdk]()
+    private var tracerProvider = [String: TracerSdk]()
     internal var sharedState: TracerSharedState
     internal static let emptyName = "unknown"
 
@@ -45,20 +45,20 @@ public class TracerProviderSdk: TracerProvider {
             instrumentationName = TracerProviderSdk.emptyName
         }
         let instrumentationScopeInfo = InstrumentationScopeInfo(name: instrumentationName, version: instrumentationVersion ?? "")
-
+        
         if pthread_rwlock_rdlock(&tracerLock) == 0 {
-            let existingTracer = tracerProvider[instrumentationScopeInfo]
+            let existingTracer = tracerProvider[instrumentationScopeInfo.stringVersion]
             pthread_rwlock_unlock(&tracerLock)
-
+            
             if existingTracer != nil {
                 return existingTracer!
             }
         }
-
+        
         let tracer = TracerSdk(sharedState: sharedState, instrumentationScopeInfo: instrumentationScopeInfo)
-
+        
         if pthread_rwlock_wrlock(&tracerLock) == 0 {
-            tracerProvider[instrumentationScopeInfo] = tracer
+            tracerProvider[instrumentationScopeInfo.stringVersion] = tracer
             pthread_rwlock_unlock(&tracerLock)
         }
 

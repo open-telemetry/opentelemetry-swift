@@ -23,4 +23,9 @@ public struct InstrumentationScopeInfo: Hashable, Codable {
         self.name = name
         self.version = version
     }
+	
+	public var stringVersion: String {
+		return "\(name):\(version ?? "main")"
+	}
+	
 }
