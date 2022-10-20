@@ -44,7 +44,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
     /// The resource associated with this span.
     public private(set) var resource: Resource
     /// instrumentation library of the named tracer which created this span
-    public private(set) var instrumentationLibraryInfo: InstrumentationLibraryInfo
+    public private(set) var instrumentationScopeInfo: InstrumentationScopeInfo
     /// The start time of the span.
     public private(set) var startTime: Date
     /// Set of recorded attributes. DO NOT CALL any other method that changes the ordering of events.
@@ -85,7 +85,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
 
     private init(context: SpanContext,
                  name: String,
-                 instrumentationLibraryInfo: InstrumentationLibraryInfo,
+                 instrumentationScopeInfo: InstrumentationScopeInfo,
                  kind: SpanKind,
                  parentContext: SpanContext?,
                  hasRemoteParent: Bool,
@@ -100,7 +100,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
     {
         self.context = context
         self.name = name
-        self.instrumentationLibraryInfo = instrumentationLibraryInfo
+        self.instrumentationScopeInfo = instrumentationScopeInfo
         self.parentContext = parentContext
         self.hasRemoteParent = hasRemoteParent
         self.spanLimits = spanLimits
@@ -122,7 +122,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
     /// - Parameters:
     ///   - context: supplies the trace_id and span_id for the newly started span.
     ///   - name: the displayed name for the new span.
-    ///   - instrumentationLibraryInfo: the information about the instrumentation library
+    ///   - instrumentationScopeInfo: the information about the instrumentation Scope
     ///   - kind: the span kind.
     ///   - parentSpanId: the span_id of the parent span, or nil if the new span is a root span.
     ///   - hasRemoteParent: true if the parentContext is remote, false if this is a root span.
@@ -136,7 +136,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
     ///   - startTime: the time for the new span, if not set it will use assigned Clock time
     public static func startSpan(context: SpanContext,
                                  name: String,
-                                 instrumentationLibraryInfo: InstrumentationLibraryInfo,
+                                 instrumentationScopeInfo: InstrumentationScopeInfo,
                                  kind: SpanKind,
                                  parentContext: SpanContext?,
                                  hasRemoteParent: Bool,
@@ -151,7 +151,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
     {
         let span = RecordEventsReadableSpan(context: context,
                                             name: name,
-                                            instrumentationLibraryInfo: instrumentationLibraryInfo,
+                                            instrumentationScopeInfo: instrumentationScopeInfo,
                                             kind: kind,
                                             parentContext: parentContext,
                                             hasRemoteParent: hasRemoteParent,
@@ -174,7 +174,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
                         traceState: context.traceState,
                         parentSpanId: parentContext?.spanId,
                         resource: resource,
-                        instrumentationLibraryInfo: instrumentationLibraryInfo,
+                        instrumentationScope: instrumentationScopeInfo,
                         name: name,
                         kind: kind,
                         startTime: startTime,

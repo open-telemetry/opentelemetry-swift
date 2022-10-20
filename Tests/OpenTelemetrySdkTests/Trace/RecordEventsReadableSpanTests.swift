@@ -21,7 +21,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
     let startTime = Date(timeIntervalSinceReferenceDate: 0)
     var testClock: TestClock!
     let resource = Resource()
-    let instrumentationLibraryInfo = InstrumentationLibraryInfo(name: "theName", version: nil)
+    let instrumentationScopeInfo = InstrumentationScopeInfo(name: "theName", version: nil)
     var attributes = [String: AttributeValue]()
     var expectedAttributes = [String: AttributeValue]()
     var link: SpanData.Link!
@@ -140,9 +140,9 @@ class RecordEventsReadableSpanTest: XCTestCase {
         span.end()
     }
 
-    func testGetInstrumentationLibraryInfo() {
+    func testGetInstrumentationScopeInfo() {
         let span = createTestSpan(kind: .client)
-        XCTAssertEqual(span.instrumentationLibraryInfo, instrumentationLibraryInfo)
+        XCTAssertEqual(span.instrumentationScopeInfo, instrumentationScopeInfo)
         span.end()
     }
 
@@ -346,7 +346,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
 
         let readableSpan = RecordEventsReadableSpan.startSpan(context: context,
                                                               name: name,
-                                                              instrumentationLibraryInfo: instrumentationLibraryInfo,
+                                                              instrumentationScopeInfo: instrumentationScopeInfo,
                                                               kind: kind,
                                                               parentContext: parentContext,
                                                               hasRemoteParent: false,
@@ -378,7 +378,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
                                 traceState: TraceState(),
                                 parentSpanId: parentSpanId,
                                 resource: resource,
-                                instrumentationLibraryInfo: instrumentationLibraryInfo,
+                                instrumentationScope: instrumentationScopeInfo,
                                 name: name,
                                 kind: kind,
                                 startTime: startTime,
@@ -423,7 +423,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
 
         let span = RecordEventsReadableSpan.startSpan(context: spanContext,
                                                       name: spanName,
-                                                      instrumentationLibraryInfo: instrumentationLibraryInfo,
+                                                      instrumentationScopeInfo: instrumentationScopeInfo,
                                                       kind: kind,
                                                       parentContext: parentContext,
                                                       hasRemoteParent: true,
@@ -467,7 +467,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
         XCTAssertEqual(spanData.hasRemoteParent, expectedHasRemoteParent)
         XCTAssertEqual(spanData.traceState, TraceState())
         XCTAssertEqual(spanData.resource, resource)
-        XCTAssertEqual(spanData.instrumentationLibraryInfo, instrumentationLibraryInfo)
+        XCTAssertEqual(spanData.instrumentationScope, instrumentationScopeInfo)
         XCTAssertEqual(spanData.name, spanName)
         XCTAssertEqual(spanData.attributes, attributes)
         XCTAssertEqual(spanData.events, events)

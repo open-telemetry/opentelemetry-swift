@@ -13,13 +13,13 @@ import OpenTelemetrySdk
 
 public class OtlpTraceExporter: SpanExporter {
     let channel: GRPCChannel
-    let traceClient: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClient
+    var traceClient: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceNIOClient
     let config : OtlpConfiguration
     var callOptions : CallOptions? = nil
 
     public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration(), logger: Logger = Logger(label: "io.grpc", factory: { _ in SwiftLogNoOpLogHandler() }), envVarHeaders: [(String,String)]? = EnvVarHeaders.attributes) {
         self.channel = channel
-        traceClient = Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClient(channel: channel)
+        traceClient = Opentelemetry_Proto_Collector_Trace_V1_TraceServiceNIOClient(channel: channel)
         self.config = config
         if let headers = envVarHeaders {
             callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)

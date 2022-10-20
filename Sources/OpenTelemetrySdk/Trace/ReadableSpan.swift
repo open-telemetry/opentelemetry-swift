@@ -12,8 +12,8 @@ public protocol ReadableSpan: Span {
     /// The name can be changed during the lifetime of the Span so this value cannot be cached.
     var name: String { get set }
 
-    /// The instrumentation library specified when creating the tracer which produced this span.
-    var instrumentationLibraryInfo: InstrumentationLibraryInfo { get }
+    /// The instrumentation scope specified when creating the tracer which produced this span.
+    var instrumentationScopeInfo: InstrumentationScopeInfo { get }
 
     /// This converts this instance into an immutable SpanData instance, for use in export.
     func toSpanData() -> SpanData

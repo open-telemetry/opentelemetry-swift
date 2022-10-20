@@ -42,15 +42,15 @@ class CommonAdapterTests: XCTestCase {
         XCTAssertEqual(CommonAdapter.toProtoAttribute(key: "key", attributeValue: AttributeValue.double(100.3)), attribute)
     }
 
-    func testToProtoInstrumentationLibrary() {
-        let instrumentationLibrary = CommonAdapter.toProtoInstrumentationLibrary(instrumentationLibraryInfo: InstrumentationLibraryInfo(name: "name", version: "version"))
-        XCTAssertEqual(instrumentationLibrary.name, "name")
-        XCTAssertEqual(instrumentationLibrary.version, "version")
+    func testToProtoInstrumentationScope() {
+        let instrumentationScope = CommonAdapter.toProtoInstrumentationScope(instrumentationScopeInfo: InstrumentationScopeInfo(name: "name", version: "version"))
+        XCTAssertEqual(instrumentationScope.name, "name")
+        XCTAssertEqual(instrumentationScope.version, "version")
     }
 
-    func testToProtoInstrumentationLibraryNoVersion() {
-        let instrumentationLibrary = CommonAdapter.toProtoInstrumentationLibrary(instrumentationLibraryInfo: InstrumentationLibraryInfo(name: "name"))
-        XCTAssertEqual(instrumentationLibrary.name, "name")
-        XCTAssertEqual(instrumentationLibrary.version, "")
+    func testToProtoInstrumentationScopeNoVersion() {
+        let instrumentationScope = CommonAdapter.toProtoInstrumentationScope(instrumentationScopeInfo: InstrumentationScopeInfo(name: "name"))
+        XCTAssertEqual(instrumentationScope.name, "name")
+        XCTAssertEqual(instrumentationScope.version, "")
     }
 }

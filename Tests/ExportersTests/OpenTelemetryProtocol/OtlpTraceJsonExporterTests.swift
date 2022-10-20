@@ -38,13 +38,13 @@ final class OtlpTraceJsonExporterTests: XCTestCase {
         let spans = exporter.getExportedSpans()
         XCTAssertEqual(spans.count, 3)
         
-        let firstSpan = spans[0].resourceSpans?[0].instrumentationLibrarySpans?[0].spans
+        let firstSpan = spans[0].resourceSpans?[0].scopeSpans?[0].spans
         XCTAssertEqual(firstSpan?[0].name, "one")
         
-        let secondSpan = spans[1].resourceSpans?[0].instrumentationLibrarySpans?[0].spans
+        let secondSpan = spans[1].resourceSpans?[0].scopeSpans?[0].spans
         XCTAssertEqual(secondSpan?[0].name, "two")
         
-        let thirdSpan = spans[2].resourceSpans?[0].instrumentationLibrarySpans?[0].spans
+        let thirdSpan = spans[2].resourceSpans?[0].scopeSpans?[0].spans
         XCTAssertEqual(thirdSpan?[0].name, "three")
     }
     

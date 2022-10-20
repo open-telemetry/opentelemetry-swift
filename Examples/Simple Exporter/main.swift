@@ -17,12 +17,12 @@ let sampleValue = "sampleValue"
 
 let resources = DefaultResources().get()
 
-let instrumentationLibraryName = "SimpleExporter"
-let instrumentationLibraryVersion = "semver:0.1.0"
-var instrumentationLibraryInfo = InstrumentationLibraryInfo(name: instrumentationLibraryName, version: instrumentationLibraryVersion)
+let instrumentationScopeName = "SimpleExporter"
+let instrumentationScopeVersion = "semver:0.1.0"
+var instrumentationScopeInfo = InstrumentationScopeInfo(name: instrumentationScopeName, version: instrumentationScopeVersion)
 
 var tracer: TracerSdk
-tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: instrumentationLibraryName, instrumentationVersion: instrumentationLibraryVersion) as! TracerSdk
+tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion) as! TracerSdk
 
 func simpleSpan() {
     let span = tracer.spanBuilder(spanName: "SimpleSpan").setSpanKind(spanKind: .client).startSpan()

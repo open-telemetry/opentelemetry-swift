@@ -27,8 +27,8 @@ public struct SpanData: Equatable, Codable {
     /// The resource of this Span.
     public private(set) var resource = Resource()
 
-    /// The instrumentation library specified when creating the tracer which produced this Span
-    public private(set) var instrumentationLibraryInfo = InstrumentationLibraryInfo()
+    /// The instrumentation scope specified when creating the tracer which produced this Span
+    public private(set) var instrumentationScope = InstrumentationScopeInfo()
 
     /// The name of this Span.
     public private(set) var name: String

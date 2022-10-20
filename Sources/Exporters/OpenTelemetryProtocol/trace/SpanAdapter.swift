@@ -9,31 +9,31 @@ import OpenTelemetrySdk
 
 struct SpanAdapter {
     static func toProtoResourceSpans(spanDataList: [SpanData]) -> [Opentelemetry_Proto_Trace_V1_ResourceSpans] {
-        let resourceAndLibraryMap = groupByResourceAndLibrary(spanDataList: spanDataList)
+        let resourceAndScopeMap = groupByResourceAndScope(spanDataList: spanDataList)
         var resourceSpans = [Opentelemetry_Proto_Trace_V1_ResourceSpans]()
-        resourceAndLibraryMap.forEach { resMap in
-            var instrumentationLibrarySpans = [Opentelemetry_Proto_Trace_V1_InstrumentationLibrarySpans]()
-            resMap.value.forEach { instLibrary in
-                var protoInst = Opentelemetry_Proto_Trace_V1_InstrumentationLibrarySpans()
-                protoInst.instrumentationLibrary = CommonAdapter.toProtoInstrumentationLibrary(instrumentationLibraryInfo: instLibrary.key)
-                instLibrary.value.forEach {
+        resourceAndScopeMap.forEach { resMap in
+            var scopeSpans = [Opentelemetry_Proto_Trace_V1_ScopeSpans]()
+            resMap.value.forEach { instScope in
+                var protoInst = Opentelemetry_Proto_Trace_V1_ScopeSpans()
+                protoInst.scope = CommonAdapter.toProtoInstrumentationScope(instrumentationScopeInfo: instScope.key)
+                instScope.value.forEach {
                     protoInst.spans.append($0)
                 }
-                instrumentationLibrarySpans.append(protoInst)
+                scopeSpans.append(protoInst)
             }
 
             var resourceSpan = Opentelemetry_Proto_Trace_V1_ResourceSpans()
             resourceSpan.resource = ResourceAdapter.toProtoResource(resource: resMap.key)
-            resourceSpan.instrumentationLibrarySpans.append(contentsOf: instrumentationLibrarySpans)
+            resourceSpan.scopeSpans.append(contentsOf: scopeSpans)
             resourceSpans.append(resourceSpan)
         }
         return resourceSpans
     }
 
-    private static func groupByResourceAndLibrary(spanDataList: [SpanData]) -> [Resource: [InstrumentationLibraryInfo: [Opentelemetry_Proto_Trace_V1_Span]]] {
-        var result = [Resource: [InstrumentationLibraryInfo: [Opentelemetry_Proto_Trace_V1_Span]]]()
+    private static func groupByResourceAndScope(spanDataList: [SpanData]) -> [Resource: [InstrumentationScopeInfo: [Opentelemetry_Proto_Trace_V1_Span]]] {
+        var result = [Resource: [InstrumentationScopeInfo: [Opentelemetry_Proto_Trace_V1_Span]]]()
         spanDataList.forEach {
-            result[$0.resource, default: [InstrumentationLibraryInfo: [Opentelemetry_Proto_Trace_V1_Span]]()][$0.instrumentationLibraryInfo, default: [Opentelemetry_Proto_Trace_V1_Span]()]
+            result[$0.resource, default: [InstrumentationScopeInfo: [Opentelemetry_Proto_Trace_V1_Span]]()][$0.instrumentationScope, default: [Opentelemetry_Proto_Trace_V1_Span]()]
                 .append(toProtoSpan(spanData: $0))
         }
         return result

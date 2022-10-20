@@ -10,7 +10,7 @@ public class MeterProviderSdk: MeterProvider {
     private let lock = Lock()
     public static let defaultPushInterval: TimeInterval = 60
 
-    var meterRegistry = [InstrumentationLibraryInfo: MeterSdk]()
+    var meterRegistry = [InstrumentationScopeInfo: MeterSdk]()
 
     var meterSharedState: MeterSharedState
     var pushMetricController: PushMetricController!
@@ -28,7 +28,7 @@ public class MeterProviderSdk: MeterProvider {
     {
         meterSharedState = MeterSharedState(metricProcessor: metricProcessor, metricPushInterval: metricPushInterval, metricExporter: metricExporter, resource: resource)
 
-        defaultMeter = MeterSdk(meterSharedState: meterSharedState, instrumentationLibraryInfo: InstrumentationLibraryInfo())
+        defaultMeter = MeterSdk(meterSharedState: meterSharedState, instrumentationScopeInfo: InstrumentationScopeInfo())
 
         pushMetricController = PushMetricController(
             meterProvider: self,
@@ -47,16 +47,16 @@ public class MeterProviderSdk: MeterProvider {
         defer {
             lock.unlock()
         }
-        let instrumentationLibraryInfo = InstrumentationLibraryInfo(name: instrumentationName, version: instrumentationVersion)
-        var meter: MeterSdk! = meterRegistry[instrumentationLibraryInfo]
+        let instrumentationScopeInfo = InstrumentationScopeInfo(name: instrumentationName, version: instrumentationVersion)
+        var meter: MeterSdk! = meterRegistry[instrumentationScopeInfo]
         if meter == nil {
-            meter = MeterSdk(meterSharedState: meterSharedState, instrumentationLibraryInfo: instrumentationLibraryInfo)
-            meterRegistry[instrumentationLibraryInfo] = meter!
+            meter = MeterSdk(meterSharedState: meterSharedState, instrumentationScopeInfo: instrumentationScopeInfo)
+            meterRegistry[instrumentationScopeInfo] = meter!
         }
         return meter!
     }
 
-    func getMeters() -> [InstrumentationLibraryInfo: MeterSdk] {
+    func getMeters() -> [InstrumentationScopeInfo: MeterSdk] {
         lock.lock()
         defer {
             lock.unlock()
@@ -88,7 +88,7 @@ public class MeterProviderSdk: MeterProvider {
         }
     }
 
-    private static func createLibraryResourceLabels(name: String, version: String) -> [String: String] {
+    private static func createScopeResourceLabels(name: String, version: String) -> [String: String] {
         var labels = ["name": name]
         if !version.isEmpty {
             labels["version"] = version

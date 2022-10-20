@@ -17,7 +17,7 @@ class SpanDataTests: XCTestCase {
         XCTAssertEqual(spanData.attributes, [String: AttributeValue]())
         XCTAssertEqual(spanData.events, [SpanData.Event]())
         XCTAssertEqual(spanData.links.count, 0)
-        XCTAssertEqual(InstrumentationLibraryInfo(), spanData.instrumentationLibraryInfo)
+        XCTAssertEqual(InstrumentationScopeInfo(), spanData.instrumentationScope)
         XCTAssertFalse(spanData.hasRemoteParent)
     }
 
@@ -27,7 +27,7 @@ class SpanDataTests: XCTestCase {
                         traceFlags: TraceFlags(),
                         traceState: TraceState(),
                         resource: Resource(),
-                        instrumentationLibraryInfo: InstrumentationLibraryInfo(),
+                        instrumentationScope: InstrumentationScopeInfo(),
                         name: "spanName",
                         kind: .server,
                         startTime: startTime,

@@ -8,12 +8,12 @@ import OpenTelemetryApi
 
 /// TracerSdk is SDK implementation of Tracer.
 public class TracerSdk: Tracer {
-    public let instrumentationLibraryInfo: InstrumentationLibraryInfo
+    public let instrumentationScopeInfo: InstrumentationScopeInfo
     var sharedState: TracerSharedState
 
-    init(sharedState: TracerSharedState, instrumentationLibraryInfo: InstrumentationLibraryInfo) {
+    init(sharedState: TracerSharedState, instrumentationScopeInfo: InstrumentationScopeInfo) {
         self.sharedState = sharedState
-        self.instrumentationLibraryInfo = instrumentationLibraryInfo
+        self.instrumentationScopeInfo = instrumentationScopeInfo
     }
 
     public func spanBuilder(spanName: String) -> SpanBuilder {
@@ -21,7 +21,7 @@ public class TracerSdk: Tracer {
             return DefaultTracer.instance.spanBuilder(spanName: spanName)
         }
         return SpanBuilderSdk(spanName: spanName,
-                              instrumentationLibraryInfo: instrumentationLibraryInfo,
+                              instrumentationScopeInfo: instrumentationScopeInfo,
                               tracerSharedState: sharedState,
                               spanLimits: sharedState.activeSpanLimits)
     }

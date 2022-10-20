@@ -11,7 +11,7 @@ final class CounterTests: XCTestCase {
     public func testIntCounterBoundInstrumentsStatusUpdatedCorrectlySingleThread() {
         let testProcessor = TestMetricProcessor()
 
-        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
+        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "scope1") as! MeterSdk
         let testCounter = meter.createIntCounter(name: "testCounter").internalCounter as! CounterMetricSdk<Int>
 
         let labels1 = ["dim1": "value1"]
@@ -71,7 +71,7 @@ final class CounterTests: XCTestCase {
 
     public func testDoubleCounterBoundInstrumentsStatusUpdatedCorrectlySingleThread() {
         let testProcessor = TestMetricProcessor()
-        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
+        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "scope1") as! MeterSdk
         let testCounter = meter.createDoubleCounter(name: "testCounter").internalCounter as! CounterMetricSdk<Double>
 
         let labels1 = ["dim1": "value1"]
@@ -131,7 +131,7 @@ final class CounterTests: XCTestCase {
 
     public func testIntCounterBoundInstrumentsStatusUpdatedCorrectlyMultiThread() {
         let testProcessor = TestMetricProcessor()
-        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "library1") as! MeterSdk
+        let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "scope1") as! MeterSdk
         let testCounter = meter.createIntCounter(name: "testCounter").internalCounter as! CounterMetricSdk<Int>
 
         let labels1 = ["dim1": "value1"]
@@ -180,7 +180,7 @@ final class CounterTests: XCTestCase {
     public func testDoubleCounterBoundInstrumentsStatusUpdatedCorrectlyMultiThread() {
 //        let testProcessor = TestMetricProcessor()
 //        let meterSharedState = MeterSharedState(metricProcessor: testProcessor)
-//        let meter = MeterProviderSdk(meterSharedState: meterSharedState).get(instrumentationName: "library1") as! MeterSdk
+//        let meter = MeterProviderSdk(meterSharedState: meterSharedState).get(instrumentationName: "scope1") as! MeterSdk
 //        let testCounter = meter.createDoubleCounter(name: "testCounter").internalCounter as! CounterMetricSdk<Double>
 //
 //        let labels1 = ["dim1": "value1"]
