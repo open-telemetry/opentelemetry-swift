@@ -68,6 +68,9 @@ class URLSessionLogger {
         }
         let spanBuilder = instrumentation.tracer.spanBuilder(spanName: spanName)
         spanBuilder.setSpanKind(spanKind: .client)
+        if let parentSpanContext = instrumentation.configuration.setParent?(request) {
+            spanBuilder.setParent(parentSpanContext)
+        }
         attributes.forEach {
             spanBuilder.setAttribute(key: $0.key, value: $0.value)
         }

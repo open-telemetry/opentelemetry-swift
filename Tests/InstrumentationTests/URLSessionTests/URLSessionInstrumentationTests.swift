@@ -13,6 +13,7 @@ class URLSessionInstrumentationTests: XCTestCase {
         public var shouldRecordPayloadCalled: Bool = false
         public var shouldInstrumentCalled: Bool = false
         public var nameSpanCalled: Bool = false
+        public var setParentCalled: Bool = false
         public var shouldInjectTracingHeadersCalled: Bool = false
         public var createdRequestCalled: Bool = false
         public var receivedResponseCalled: Bool = false
@@ -53,6 +54,16 @@ class URLSessionInstrumentationTests: XCTestCase {
                                                                        return nil
                                                                    }
                                                                    return "new name"
+                                                               },
+                                                               setParent: { req in
+                                                                   checker.setParentCalled = true
+                                                                   if req.url?.host?.contains("defaultName") ?? false {
+                                                                       return nil
+                                                                   }
+                                                                   return SpanContext.create(traceId: TraceId.random(),
+                                                                                             spanId: SpanId.random(),
+                                                                                             traceFlags: TraceFlags().settingIsSampled(true),
+                                                                                             traceState: TraceState())
                                                                },
                                                                shouldInjectTracingHeaders: { _ in
                                                                    checker.shouldInjectTracingHeadersCalled = true
@@ -138,6 +149,34 @@ class URLSessionInstrumentationTests: XCTestCase {
         }
     }
 
+    public func testOverrideSpanParent() {
+            let request = URLRequest(url: URL(string: "http://google.com")!)
+
+            URLSessionLogger.processAndLogRequest(request, sessionTaskId: "id", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
+
+            XCTAssertTrue(URLSessionInstrumentationTests.checker.setParentCalled)
+
+            XCTAssertEqual(1, URLSessionLogger.runningSpans.count)
+            XCTAssertNotNil(URLSessionLogger.runningSpans["id"])
+            if let span = URLSessionLogger.runningSpans["id"] {
+                guard let sdkSpan = span as? ReadableSpan else { return XCTFail() }
+                XCTAssertNotNil(sdkSpan.toSpanData().parentSpanId)
+            }
+        }
+
+    public func testDefaultSpanParent() {
+        let request = URLRequest(url: URL(string: "http://defaultName.com")!)
+
+        URLSessionLogger.processAndLogRequest(request, sessionTaskId: "id", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
+
+        XCTAssertEqual(1, URLSessionLogger.runningSpans.count)
+        XCTAssertNotNil(URLSessionLogger.runningSpans["id"])
+        if let span = URLSessionLogger.runningSpans["id"] {
+            guard let sdkSpan = span as? ReadableSpan else { return XCTFail() }
+            XCTAssertNil(sdkSpan.toSpanData().parentSpanId)
+        }
+    }
+
     public func testConfigurationCallbacksCalledWhenSuccess() {
         let request = URLRequest(url: URL(string: "http://localhost:33333/success")!)
 
@@ -154,6 +193,7 @@ class URLSessionInstrumentationTests: XCTestCase {
 
         XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInstrumentCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.nameSpanCalled)
+        XCTAssertTrue(URLSessionInstrumentationTests.checker.setParentCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInjectTracingHeadersCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
@@ -174,6 +214,7 @@ class URLSessionInstrumentationTests: XCTestCase {
 
         XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInstrumentCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.nameSpanCalled)
+        XCTAssertTrue(URLSessionInstrumentationTests.checker.setParentCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInjectTracingHeadersCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
@@ -193,6 +234,7 @@ class URLSessionInstrumentationTests: XCTestCase {
 
         XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInstrumentCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.nameSpanCalled)
+        XCTAssertTrue(URLSessionInstrumentationTests.checker.setParentCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInjectTracingHeadersCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
         XCTAssertFalse(URLSessionInstrumentationTests.checker.receivedResponseCalled)
