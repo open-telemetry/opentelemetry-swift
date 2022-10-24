@@ -15,7 +15,7 @@ public struct URLSessionInstrumentationConfiguration {
     public init(shouldRecordPayload: ((URLSession) -> (Bool)?)? = nil,
                 shouldInstrument: ((URLRequest) -> (Bool)?)? = nil,
                 nameSpan: ((URLRequest) -> (String)?)? = nil,
-                setParent: ((URLRequest) -> (SpanContext)?)? = nil,
+                spanCustomization: ((URLRequest, SpanBuilder) -> Void)? = nil,
                 shouldInjectTracingHeaders: ((URLRequest) -> (Bool)?)? = nil,
                 injectCustomHeaders: ((inout URLRequest, Span?) -> Void)? = nil,
                 createdRequest: ((URLRequest, Span) -> Void)? = nil,
@@ -27,7 +27,7 @@ public struct URLSessionInstrumentationConfiguration {
         self.shouldInjectTracingHeaders = shouldInjectTracingHeaders
         self.injectCustomHeaders = injectCustomHeaders
         self.nameSpan = nameSpan
-        self.setParent = setParent
+        self.spanCustomization = spanCustomization
         self.createdRequest = createdRequest
         self.receivedResponse = receivedResponse
         self.receivedError = receivedError
@@ -54,8 +54,8 @@ public struct URLSessionInstrumentationConfiguration {
     /// default name: `HTTP {method}` e.g. `HTTP PUT`
     public var nameSpan: ((URLRequest) -> (String)?)?
 
-    /// Implement this callback to override the default span parent for a given request, return nil to use parentless default
-    public var setParent: ((URLRequest) -> (SpanContext)?)?
+    /// Implement this callback to customize the span, such as by adding a parent, a link, attributes, etc
+    public var spanCustomization: ((URLRequest, SpanBuilder) -> Void)?
 
     ///  Called before the span is created, it allows to add extra information to the Span
     public var createdRequest: ((URLRequest, Span) -> Void)?
