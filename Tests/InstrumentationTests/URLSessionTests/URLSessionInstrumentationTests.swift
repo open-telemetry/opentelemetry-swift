@@ -13,6 +13,7 @@ class URLSessionInstrumentationTests: XCTestCase {
         public var shouldRecordPayloadCalled: Bool = false
         public var shouldInstrumentCalled: Bool = false
         public var nameSpanCalled: Bool = false
+        public var spanCustomizationCalled: Bool = false
         public var shouldInjectTracingHeadersCalled: Bool = false
         public var createdRequestCalled: Bool = false
         public var receivedResponseCalled: Bool = false
@@ -53,6 +54,12 @@ class URLSessionInstrumentationTests: XCTestCase {
                                                                        return nil
                                                                    }
                                                                    return "new name"
+                                                               },
+                                                               spanCustomization: { req, spanBuilder in
+                                                                   checker.spanCustomizationCalled = true
+                                                                   if !(req.url?.host?.contains("defaultName") ?? false) {
+                                                                       spanBuilder.setSpanKind(spanKind: .consumer)
+                                                                   }
                                                                },
                                                                shouldInjectTracingHeaders: { _ in
                                                                    checker.shouldInjectTracingHeadersCalled = true
@@ -138,6 +145,32 @@ class URLSessionInstrumentationTests: XCTestCase {
         }
     }
 
+    public func testOverrideSpanCustomization() {
+            let request = URLRequest(url: URL(string: "http://google.com")!)
+
+            URLSessionLogger.processAndLogRequest(request, sessionTaskId: "id", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
+
+            XCTAssertTrue(URLSessionInstrumentationTests.checker.spanCustomizationCalled)
+
+            XCTAssertEqual(1, URLSessionLogger.runningSpans.count)
+            XCTAssertNotNil(URLSessionLogger.runningSpans["id"])
+            if let span = URLSessionLogger.runningSpans["id"] {
+                XCTAssertEqual(SpanKind.consumer, span.kind)
+            }
+        }
+
+    public func testDefaultSpanCustomization() {
+        let request = URLRequest(url: URL(string: "http://defaultName.com")!)
+
+        URLSessionLogger.processAndLogRequest(request, sessionTaskId: "id", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
+
+        XCTAssertEqual(1, URLSessionLogger.runningSpans.count)
+        XCTAssertNotNil(URLSessionLogger.runningSpans["id"])
+        if let span = URLSessionLogger.runningSpans["id"] {
+            XCTAssertEqual(SpanKind.client, span.kind)
+        }
+    }
+
     public func testConfigurationCallbacksCalledWhenSuccess() {
         let request = URLRequest(url: URL(string: "http://localhost:33333/success")!)
 
@@ -154,6 +187,7 @@ class URLSessionInstrumentationTests: XCTestCase {
 
         XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInstrumentCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.nameSpanCalled)
+        XCTAssertTrue(URLSessionInstrumentationTests.checker.spanCustomizationCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInjectTracingHeadersCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
@@ -174,6 +208,7 @@ class URLSessionInstrumentationTests: XCTestCase {
 
         XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInstrumentCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.nameSpanCalled)
+        XCTAssertTrue(URLSessionInstrumentationTests.checker.spanCustomizationCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInjectTracingHeadersCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
@@ -193,6 +228,7 @@ class URLSessionInstrumentationTests: XCTestCase {
 
         XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInstrumentCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.nameSpanCalled)
+        XCTAssertTrue(URLSessionInstrumentationTests.checker.spanCustomizationCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInjectTracingHeadersCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
         XCTAssertFalse(URLSessionInstrumentationTests.checker.receivedResponseCalled)
