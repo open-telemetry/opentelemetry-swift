@@ -17,6 +17,9 @@ public struct OpenTelemetry {
     /// Registered MeterProvider or default via DefaultMeterProvider.instance.
     public private(set) var meterProvider: MeterProvider
 
+    /// Registered LoggerProvider or default via DefaultLoggerProvider.instance.
+    public private(set) var loggerProvider: LoggerProvider
+
     /// registered manager or default via  DefaultBaggageManager.instance.
     public private(set) var baggageManager: BaggageManager
 
@@ -29,6 +32,7 @@ public struct OpenTelemetry {
     private init() {
         tracerProvider = DefaultTracerProvider.instance
         meterProvider = DefaultMeterProvider.instance
+        loggerProvider = DefaultLoggerProvider.instance
         baggageManager = DefaultBaggageManager.instance
         contextProvider = OpenTelemetryContextProvider(contextManager: ActivityContextManager.instance)
     }
@@ -39,6 +43,10 @@ public struct OpenTelemetry {
 
     public static func registerMeterProvider(meterProvider: MeterProvider) {
         instance.meterProvider = meterProvider
+    }
+
+    public static func registerLoggerProvider(loggerProvider: LoggerProvider) {
+        instance.loggerProvider = loggerProvider
     }
 
     public static func registerBaggageManager(baggageManager: BaggageManager) {
