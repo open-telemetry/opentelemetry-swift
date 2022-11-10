@@ -38,20 +38,36 @@ or
 
 Official documentation for the library can be found in the official opentelemetry [documentation  page](https://opentelemetry.io/docs/instrumentation/swift/), including:
 
-    - Documentation about installation and [manual instrumentation](https://opentelemetry.io/docs/instrumentation/swift/manual/)
-    - [Libraries](https://opentelemetry.io/docs/instrumentation/swift/libraries/) that provide automatic instrumentation
+ * Documentation about installation and [manual instrumentation](https://opentelemetry.io/docs/instrumentation/swift/manual/)
+    
+* [Libraries](https://opentelemetry.io/docs/instrumentation/swift/libraries/) that provide automatic instrumentation
 
 ## Current status
 
-Tracing and Baggage API and SDK should be considered stable.
+### API and SDK
+
+Tracing and Baggage should be considered stable
+
 Metrics is implemented using an outdated spec, is fully functional but will change in the future
+
 Logs are currently in development
 
-Implemented traces exporters: Stdout, Jaeger, Zipkin, Datadog and OpenTelemetry (OTLP) collector
-Implemented metrics exporters: Prometheus, Datadog, and OpenTelemetry (OTLP) collector
-Automatic instrumentation libraries: URLSession, NetworkStatus, SDKResourceExtension and SignPostIntegration
-Implemented traces importers: OpenTracingShim
-Implemented metrics importers: SwiftMetricsShim
+### Supported exporters, importers and instrumentation libraries
+
+#### Traces
+* Exporters: Stdout, Jaeger, Zipkin, Datadog and OpenTelemetry (OTLP) collector
+* Importers: OpenTracingShim
+
+#### Metrics 
+* Exporters: Prometheus, Datadog, and OpenTelemetry (OTLP) collector
+* Importers: SwiftMetricsShim
+
+#### Instrumentation libraries
+* URLSession
+* NetworkStatus
+* SDKResourceExtension
+* SignPostIntegration
+
 
 ## Examples
 
