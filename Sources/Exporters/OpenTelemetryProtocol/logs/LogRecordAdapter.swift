@@ -33,29 +33,26 @@ public class LogRecordAdapter {
             logRecordList.forEach { logRecord in
                 result[logRecord.resource, default:[InstrumentationScopeInfo: [Opentelemetry_Proto_Logs_V1_LogRecord]]()][logRecord.instrumentationScopeInfo,default:[Opentelemetry_Proto_Logs_V1_LogRecord]()].append(toProtoLogRecord(logRecord: logRecord))
             }
-            return results
+            return result
         }
 
     public static func toProtoLogRecord(logRecord: ReadableLogRecord) -> Opentelemetry_Proto_Logs_V1_LogRecord {
         var protoLogRecord = Opentelemetry_Proto_Logs_V1_LogRecord()
         protoLogRecord.observedTimeUnixNano = logRecord.observedTimestamp.timeIntervalSince1970.toNanoseconds
         protoLogRecord.timeUnixNano = logRecord.observedTimestamp.timeIntervalSince1970.toNanoseconds
-        if logRecord.body.isEmpty {
-            protoLogRecord.hasBody = false
-        } else {
-            protoLogRecord.hasBody = true
+        if !logRecord.body.isEmpty {
             var body = Opentelemetry_Proto_Common_V1_AnyValue()
             body.stringValue = logRecord.body
             protoLogRecord.body = body
         }
         protoLogRecord.severityText = logRecord.severity.description
-        let protoSeverity = Opentelemetry_Proto_Logs_V1_SeverityNumber()
-        protoSeverity.rawValue = logRecord.severity.rawValue
-        protoLogRecord.severityNumber = protoSeverity
+        if let protoSeverity = Opentelemetry_Proto_Logs_V1_SeverityNumber(rawValue: logRecord.severity.rawValue) {
+            protoLogRecord.severityNumber = protoSeverity
+        }
         protoLogRecord.spanID = TraceProtoUtils.toProtoSpanId(spanId:logRecord.spanContext.spanId)
         protoLogRecord.traceID = TraceProtoUtils.toProtoTraceId(traceId: logRecord.spanContext.traceId)
-        protoLogRecord.flags = logRecord.spanContext.traceFlags.byte
-        let protoAttributes = [Opentelemetry_Proto_Common_V1_KeyValue]()
+        protoLogRecord.flags = UInt32(logRecord.spanContext.traceFlags.byte)
+        var protoAttributes = [Opentelemetry_Proto_Common_V1_KeyValue]()
         logRecord.attributes.forEach { key, value in
             protoAttributes.append(CommonAdapter.toProtoAttribute(key: key, attributeValue: value))
         }

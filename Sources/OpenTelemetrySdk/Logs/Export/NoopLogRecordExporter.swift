@@ -6,7 +6,7 @@
 import Foundation
 
 public class NoopLogRecordExporter : LogRecordExporter {
-    public private(set) static let instance = NoopLogRecordExporter()
+    public static let instance = NoopLogRecordExporter()
 
     public func export(logRecords: [ReadableLogRecord]) -> ExportResult {
         .success
