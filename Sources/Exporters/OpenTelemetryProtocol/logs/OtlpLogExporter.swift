@@ -4,7 +4,10 @@
  */
 
 import Foundation
+import Logging
 import GRPC
+import NIO
+import NIOHPACK
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
@@ -16,7 +19,7 @@ public class OtlpLogExporter : LogRecordExporter {
 
     public init(channel: GRPCChannel,
                 config: OtlpConfiguration = OtlpConfiguration(),
-                logger: Logger = Logger(label: "io.grpc", factory: { _ in SwiftLogNoOpLogHandler() }),
+                logger: Logging.Logger = Logging.Logger(label: "io.grpc", factory: { _ in SwiftLogNoOpLogHandler() }),
                 envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes){
         self.channel = channel
         logClient = Opentelemetry_Proto_Collector_Logs_V1_LogsServiceNIOClient(channel: channel)
@@ -33,10 +36,15 @@ public class OtlpLogExporter : LogRecordExporter {
 
     public func export(logRecords: [ReadableLogRecord]) -> ExportResult {
         let logRequest = Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest.with { request in
-            request.resourceLogs
+            request.resourceLogs = LogRecordAdapter.toProtoResourceRecordLog(logRecordList: logRecords)
         }
-
-        logClient.export(logRequest)
+        let export = logClient.export(logRequest, callOptions: callOptions)
+        do {
+            _ = try export.response.wait()
+            return .success
+        } catch {
+            return .failure
+        }
     }
 
     public func shutdown() {

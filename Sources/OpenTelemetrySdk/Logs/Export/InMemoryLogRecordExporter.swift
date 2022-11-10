@@ -26,5 +26,6 @@ public class InMemoryLogRecordExporter : LogRecordExporter {
         guard isRunning else {
             return .failure
         }
+        return .success
     }
 }
