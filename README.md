@@ -34,18 +34,24 @@ or
 .target(name: "ExampleApp", dependencies: ["OpenTelemetrySdk"]),
 ```
 
+## Documentation
+
+Official documentation for the library can be found in the official opentelemetry [documentation  page](https://opentelemetry.io/docs/instrumentation/swift/), including:
+
+    - Documentation about installation and [manual instrumentation](https://opentelemetry.io/docs/instrumentation/swift/manual/)
+    - [Libraries](https://opentelemetry.io/docs/instrumentation/swift/libraries/) that provide automatic instrumentation
+
 ## Current status
-<!--Please note: 
-Tracing spec follows version 1.0.1 and should be considered stable.
-Metrics support is in beta, and the spec is still not following latest approved spec.
-Semantic Conventions and OpenTracing shim are also experimental.
---> 
 
-Currently Tracing, Metrics and Baggage API's and SDK are implemented, also OpenTracing shim, for compatibility with existing Opentracing code.
+Tracing and Baggage API and SDK should be considered stable.
+Metrics is implemented using an outdated spec, is fully functional but will change in the future
+Logs are currently in development
 
-Implemented traces exporters: Stdout, Jaeger, Zipkin, Datadog and OpenTelemetry collector
-
-Implemented metrics exporters: Prometheus, Datadog, and OpenTelemetry collector
+Implemented traces exporters: Stdout, Jaeger, Zipkin, Datadog and OpenTelemetry (OTLP) collector
+Implemented metrics exporters: Prometheus, Datadog, and OpenTelemetry (OTLP) collector
+Automatic instrumentation libraries: URLSession, NetworkStatus, SDKResourceExtension and SignPostIntegration
+Implemented traces importers: OpenTracingShim
+Implemented metrics importers: SwiftMetricsShim
 
 ## Examples
 
