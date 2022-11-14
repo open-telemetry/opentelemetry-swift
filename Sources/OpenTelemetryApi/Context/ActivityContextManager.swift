@@ -28,7 +28,6 @@ class ActivityContextManager: ContextManager {
     }
 
     var objectScope = NSMapTable<AnyObject, ScopeElement>(keyOptions: .weakMemory, valueOptions: .strongMemory)
-
     var contextMap = [os_activity_id_t: [String: AnyObject]]()
 
     func getCurrentContextValue(forKey key: OpenTelemetryContextKeys) -> AnyObject? {
@@ -69,6 +68,14 @@ class ActivityContextManager: ContextManager {
     }
 
     func removeContextValue(forKey key: OpenTelemetryContextKeys, value: AnyObject) {
+        let activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, nil)
+        rlock.lock()
+        contextMap[activityIdent]?[key.rawValue] = nil
+        if contextMap[activityIdent]?.isEmpty ?? false {
+            contextMap[activityIdent] = nil
+        }
+        print("ContextMap Count: \(contextMap.count)")
+        rlock.unlock()
         if let scope = objectScope.object(forKey: value) {
             var scope = scope.scope
             os_activity_scope_leave(&scope)
