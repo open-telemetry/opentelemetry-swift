@@ -65,7 +65,6 @@ let package = Package(
                 exclude: ["README.md"]),
         .target(name: "SwiftMetricsShim",
                 dependencies: ["OpenTelemetrySdk",
-                               .product(name: "NIO", package: "swift-nio"),
                                .product(name: "CoreMetrics", package: "swift-metrics")],
                 path: "Sources/Importers/SwiftMetricsShim",
                 exclude: ["README.md"]),
