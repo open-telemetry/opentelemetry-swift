@@ -48,9 +48,10 @@ public class OtlpLogExporter : LogRecordExporter {
     }
 
     public func shutdown() {
+        _ = channel.close()
     }
 
     public func forceFlush() -> ExportResult {
-        fatalError("forceFlush() has not been implemented")
+        .success
     }
 }
