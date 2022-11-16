@@ -71,6 +71,7 @@ class URLSessionLogger {
         attributes.forEach {
             spanBuilder.setAttribute(key: $0.key, value: $0.value)
         }
+        instrumentation.configuration.spanCustomization?(request, spanBuilder)
 
         let span = spanBuilder.startSpan()
         runningSpansQueue.sync {

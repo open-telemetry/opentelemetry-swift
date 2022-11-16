@@ -8,7 +8,7 @@ import Foundation
 /// The PropagatedSpan is the default Span that is used when no Span
 /// implementation is available. All operations are no-op except context propagation.
 class PropagatedSpan: Span {
-    var name: String = ""
+    var name: String
 
     var kind: SpanKind
 
@@ -25,23 +25,40 @@ class PropagatedSpan: Span {
     /// Returns a DefaultSpan with an invalid SpanContext.
     convenience init() {
         let invalidContext = SpanContext.create(traceId: TraceId(),
-                           spanId: SpanId(),
-                           traceFlags: TraceFlags(),
-                           traceState: TraceState())
-        self.init(context: invalidContext, kind: .client)
+                                                spanId: SpanId(),
+                                                traceFlags: TraceFlags(),
+                                                traceState: TraceState())
+        self.init(name: "", context: invalidContext, kind: .client)
     }
 
     /// Creates an instance of this class with the SpanContext.
     /// - Parameter context: the SpanContext
     convenience init(context: SpanContext) {
-        self.init(context: context, kind: .client)
+        self.init(name: "", context: context, kind: .client)
     }
 
     /// Creates an instance of this class with the SpanContext and Span kind
     /// - Parameters:
     ///   - context: the SpanContext
     ///   - kind: the SpanKind
-    init(context: SpanContext, kind: SpanKind) {
+    convenience init(context: SpanContext, kind: SpanKind) {
+        self.init(name: "", context: context, kind: kind)
+    }
+
+    /// Creates an instance of this class with the SpanContext and Span name
+    /// - Parameters:
+    ///   - context: the SpanContext
+    ///   - kind: the SpanKind
+    convenience init(name: String, context: SpanContext) {
+        self.init(name: name, context: context, kind: .client)
+    }
+
+    /// Creates an instance of this class with the SpanContext, Span kind and name
+    /// - Parameters:
+    ///   - context: the SpanContext
+    ///   - kind: the SpanKind
+    init(name: String, context: SpanContext, kind: SpanKind) {
+        self.name = name
         self.context = context
         self.kind = kind
     }

@@ -63,7 +63,7 @@ class DefaultBaggageManagerTests: XCTestCase {
             XCTAssert(self.defaultBaggageManager.getCurrentBaggage() === self.baggage)
             semaphore2.signal()
             semaphore.wait()
-            XCTAssert(self.defaultBaggageManager.getCurrentBaggage() === self.baggage)
+            XCTAssertNil(self.defaultBaggageManager.getCurrentBaggage())
             expec.fulfill()
         }
         semaphore2.wait()

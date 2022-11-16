@@ -19,6 +19,8 @@ This behaviour can be modified or augmented by using the optional callbacks defi
 
 `nameSpan: ((URLRequest) -> (String)?)?` - Modifies the name for the given request instead of stantard Opentelemetry name
 
+`spanCustomization: ((URLRequest, SpanBuilder) -> Void)?` - Customizes the span while it's being built, such as by adding a parent, a link, attributes, etc.
+
 `createdRequest: ((URLRequest, Span) -> Void)?` - Called after request is created,  it allows to add extra information to the Span
 
 `receivedResponse: ((URLResponse, DataOrFile?, Span) -> Void)?`- Called after response is received,  it allows to add extra information to the Span
