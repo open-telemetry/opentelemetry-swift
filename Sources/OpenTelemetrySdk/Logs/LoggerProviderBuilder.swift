@@ -10,9 +10,11 @@ public class LoggerProviderBuilder {
     public private(set) var clock : Clock = MillisClock()
     public private(set) var resource : Resource = Resource()
     public private(set) var logLimits : LogLimits = LogLimits()
-    public private(set) var logProcessors : [LogRecordProcessor] = []
+    public private(set) var logProcessors : [LogRecordProcessor]
     
-    public init() {}
+    public init() {
+        logProcessors = [LogRecordProcessor]()
+    }
     
     public func with(clock: Clock) -> Self {
         self.clock = clock
