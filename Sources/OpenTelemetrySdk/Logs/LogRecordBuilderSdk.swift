@@ -67,7 +67,7 @@ public class LogRecordBuilderSdk : EventBuilder {
         
         sharedState.activeLogRecordProcessor.onEmit(logRecord: ReadableLogRecord(resource: sharedState.resource,
                                                                                  instrumentationScopeInfo: instrumentationScope,
-                                                                                 timestamp: Date(),
+                                                                                 timestamp: sharedState.clock.now,
                                                                                  observedTimestamp: observedTimestamp,
                                                                                  spanContext: spanContext,
                                                                                  severity: severity,
