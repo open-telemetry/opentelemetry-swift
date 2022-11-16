@@ -30,7 +30,7 @@ public class LoggerProviderBuilder {
     }
     
     public func with(processors: [LogRecordProcessor]) -> Self {
-        self.logProcessors = processors
+        logProcessors = processors
         return self
     }
     
