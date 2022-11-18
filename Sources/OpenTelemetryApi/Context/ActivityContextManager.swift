@@ -74,7 +74,6 @@ class ActivityContextManager: ContextManager {
         if contextMap[activityIdent]?.isEmpty ?? false {
             contextMap[activityIdent] = nil
         }
-        print("ContextMap Count: \(contextMap.count)")
         rlock.unlock()
         if let scope = objectScope.object(forKey: value) {
             var scope = scope.scope
