@@ -23,7 +23,7 @@ public class LoggerSdk : OpenTelemetryApi.Logger {
     public func eventBuilder(name: String) -> OpenTelemetryApi.EventBuilder {
         guard let eventDomain = self.eventDomain else {
             os_log("Events cannot be emitted from Logger without an event domain. Use `LoggerBuilder.setEventDomain(_ domain: String) when obtaining a Logger.")
-            return DefaultLoggerProvider.instance.loggerBuilder(instrumentationScopeName: "unused").setEventDomain("unused").setAttributes(["event.domain": AttributeValue.string("unused"), "event.name": AttributeValue.string(name)]) as! EventBuilder
+            return DefaultLoggerProvider.instance.loggerBuilder(instrumentationScopeName: "unused").setEventDomain("unused").setAttributes(["event.domain": AttributeValue.string("unused"), "event.name": AttributeValue.string(name)]).build().eventBuilder(name: "unused")
         }
         return LogRecordBuilderSdk(sharedState: sharedState, instrumentationScope: instrumentationScope, includeSpanContext: true).setAttributes(["event.domain": AttributeValue.string(eventDomain),
                                                                                                                                                   "event.name": AttributeValue.string(name)])

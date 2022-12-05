@@ -12,12 +12,14 @@ public struct AttributesDictionary {
     var attributes: [String: AttributeValue]
     var keys: [String]
     private var capacity: Int
+    private var valueLengthLimit : Int
     private var recordedAttributes: Int
 
-    public init(capacity: Int) {
+    public init(capacity: Int, valueLengthLimit: Int = Int.max) {
         attributes = [String: AttributeValue]()
         keys = [String]()
         recordedAttributes = 0
+        self.valueLengthLimit = valueLengthLimit
         self.capacity = capacity
     }
 
@@ -35,7 +37,24 @@ public struct AttributesDictionary {
     }
 
     @discardableResult public mutating func updateValue(value: AttributeValue, forKey key: String) -> AttributeValue? {
-        let oldValue = attributes.updateValue(value, forKey: key)
+        var attributedValue = value
+        switch value {
+        case let .string(v):
+            if v.count > valueLengthLimit {
+                attributedValue = AttributeValue.string(String(v.prefix(valueLengthLimit)))
+            }
+            break
+        case let .stringArray(v):
+            var strArr = [String]()
+            v.forEach { string in
+                strArr.append(String(string.prefix(valueLengthLimit)))
+            }
+            attributedValue = AttributeValue.stringArray(strArr)
+            break
+        default:
+            break
+        }
+        let oldValue = attributes.updateValue(attributedValue, forKey: key)
         if oldValue == nil {
             recordedAttributes += 1
             keys.append(key)

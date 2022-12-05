@@ -9,6 +9,10 @@ public class InMemoryLogRecordExporter : LogRecordExporter {
     private var finishedLogRecords = [ReadableLogRecord]()
     private var isRunning = true
 
+    public func getFinishedLogRecords() -> [ReadableLogRecord] {
+        return finishedLogRecords
+    }
+    
     public func export(logRecords: [ReadableLogRecord]) -> ExportResult {
         guard isRunning else {
             return .failure

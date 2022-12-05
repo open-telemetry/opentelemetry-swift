@@ -8,8 +8,8 @@ import Foundation
 public struct LogLimits {
     static public let defaultMaxAttributeCount = 128
     static public let defaultMaxAtributeLength = Int.max
-    private let maxAttributeCount : Int
-    private let maxAttributeLength : Int
+    public let maxAttributeCount : Int
+    public let maxAttributeLength : Int
     
     public init(maxAttributeCount: Int = Self.defaultMaxAttributeCount , maxAttributeLength: Int = Self.defaultMaxAtributeLength) {
         self.maxAttributeCount = maxAttributeCount
