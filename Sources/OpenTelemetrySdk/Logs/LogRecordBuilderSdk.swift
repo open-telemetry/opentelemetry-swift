@@ -19,7 +19,7 @@ public class LogRecordBuilderSdk : EventBuilder {
     private var observedTimestamp : Date?
     private var body : String?
     private var severity: Severity?
-    private var attributes = [String:AttributeValue]()
+    private var attributes : AttributesDictionary
     private var spanContext : SpanContext?
     
     
@@ -29,6 +29,7 @@ public class LogRecordBuilderSdk : EventBuilder {
         limits = sharedState.logLimits
         self.includeSpanContext = includeSpanContext
         self.instrumentationScope = instrumentationScope
+        attributes = AttributesDictionary(capacity: sharedState.logLimits.maxAttributeCount, valueLengthLimit: sharedState.logLimits.maxAttributeLength)
     }
     
     public func setObservedTimestamp(_ observed: Date) -> Self {
@@ -37,7 +38,7 @@ public class LogRecordBuilderSdk : EventBuilder {
     }
     
     public func setSpanContext(_ context: OpenTelemetryApi.SpanContext) -> Self {
-        self.spanContext = spanContext
+        self.spanContext = context
 
         return self
     }
@@ -53,7 +54,7 @@ public class LogRecordBuilderSdk : EventBuilder {
     }
     
     public func setAttributes(_ attributes: [String : OpenTelemetryApi.AttributeValue]) -> Self {
-        self.attributes = attributes
+        self.attributes.updateValues(attributes: attributes)
         return self
     }
     
@@ -72,7 +73,7 @@ public class LogRecordBuilderSdk : EventBuilder {
                                                                                  spanContext: spanContext,
                                                                                  severity: severity,
                                                                                  body: body,
-                                                                                 attributes: attributes))
+                                                                                 attributes: attributes.attributes))
     }
     
     
