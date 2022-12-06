@@ -38,10 +38,6 @@ public class DefaultLogger : Logger {
 
     private class NoopLogRecordBuilder : EventBuilder {
 
-        func setTimestamp(_ timestamp: Date) -> Self {
-            return self
-        }
-
         func setObservedTimestamp(_ observed: Date) -> Self {
             return self
         }
