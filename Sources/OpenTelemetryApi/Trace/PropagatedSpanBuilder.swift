@@ -10,16 +10,19 @@ class PropagatedSpanBuilder: SpanBuilder {
     private var tracer: Tracer
     private var isRootSpan: Bool = false
     private var spanContext: SpanContext?
+    private var spanName: String
 
     init(tracer: Tracer, spanName: String) {
         self.tracer = tracer
+        self.spanName = spanName
     }
 
     @discardableResult public func startSpan() -> Span {
         if spanContext == nil, !isRootSpan {
             spanContext = OpenTelemetry.instance.contextProvider.activeSpan?.context
         }
-        return PropagatedSpan(context: spanContext ?? SpanContext.create(traceId: TraceId.random(),
+        return PropagatedSpan(name: spanName,
+                              context: spanContext ?? SpanContext.create(traceId: TraceId.random(),
                                                                          spanId: SpanId.random(),
                                                                          traceFlags: TraceFlags(),
                                                                          traceState: TraceState()))
@@ -63,5 +66,4 @@ class PropagatedSpanBuilder: SpanBuilder {
     func setActive(_ active: Bool) -> Self {
         return self
     }
-
 }
