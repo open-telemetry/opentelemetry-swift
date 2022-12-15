@@ -40,7 +40,7 @@ let spanExporter = MultiSpanExporter(spanExporters: [otlpTraceExporter, stdoutEx
 let spanProcessor = SimpleSpanProcessor(spanExporter: spanExporter)
 OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(spanProcessor)
 
-if #available(macOS 10.14, *) {
+if #available(macOS 10.14, *), #available(iOS 12.0, *) {
     OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(SignPostIntegration())
 }
 

@@ -10,6 +10,7 @@ import Foundation
 public struct InstrumentationScopeInfo: Hashable, Codable {
     public private(set) var name: String = ""
     public private(set) var version: String?
+    public private(set) var schemaUrl : String?
 
     ///  Creates a new empty instance of InstrumentationScopeInfo.
     public init() {
@@ -19,8 +20,9 @@ public struct InstrumentationScopeInfo: Hashable, Codable {
     ///  - Parameters:
     ///    - name: name of the instrumentation library
     ///    - version: version of the instrumentation library (e.g., "semver:1.0.0"), might be nil
-    public init(name: String, version: String? = nil) {
+    public init(name: String, version: String? = nil, schemaUrl: String? = nil) {
         self.name = name
         self.version = version
+        self.schemaUrl = schemaUrl
     }
 }
