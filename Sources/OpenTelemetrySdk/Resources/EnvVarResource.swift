@@ -13,12 +13,15 @@ public struct EnvVarResource {
     private static let labelKeyValueSplitter = Character("=")
 
     ///  This resource information is loaded from the OC_RESOURCE_LABELS
-    ///  environment variable.
+    ///  environment variable or from the Info.plist file of the application loading the framework.
     public static let resource = Resource().merging(other: Resource(attributes: parseResourceAttributes(rawEnvAttributes: ProcessInfo.processInfo.environment[otelResourceAttributesEnv])))
     private init() {}
 
     public static func get(environment: [String: String] = ProcessInfo.processInfo.environment) -> Resource {
-        return Resource().merging(other: Resource(attributes: parseResourceAttributes(rawEnvAttributes: environment[otelResourceAttributesEnv])))
+        let attributesToRead = environment[otelResourceAttributesEnv] ??
+            Bundle.main.infoDictionary?[otelResourceAttributesEnv] as? String
+
+        return Resource().merging(other: Resource(attributes: parseResourceAttributes(rawEnvAttributes: attributesToRead)))
     }
 
     /// Creates a label map from the OC_RESOURCE_LABELS environment variable.
