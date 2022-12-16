@@ -110,7 +110,7 @@ class BatchSpansProcessorTests: XCTestCase {
         let maxQueuedSpans = 8
         let waitingSpanExporter = WaitingSpanExporter(numberToWaitFor: maxQueuedSpans)
 
-        tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(spanExporter: MultiSpanExporter(spanExporters: [waitingSpanExporter, blockingSpanExporter]), scheduleDelay: maxScheduleDelay, maxQueueSize: maxQueuedSpans, maxExportBatchSize: maxQueuedSpans / 2))
+        tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(spanExporter: MultiSpanExporter(spanExporters: [waitingSpanExporter, blockingSpanExporter]), scheduleDelay:    maxScheduleDelay, maxQueueSize: maxQueuedSpans, maxExportBatchSize: maxQueuedSpans / 2))
 
         var spansToExport = [SpanData]()
         // Wait to block the worker thread in the BatchSampledSpansProcessor. This ensures that no items
