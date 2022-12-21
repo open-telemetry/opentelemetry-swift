@@ -36,6 +36,7 @@ let package = Package(
         .package(name: "swift-nio", url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
         .package(name: "grpc-swift", url: "https://github.com/grpc/grpc-swift.git", from: "1.0.0"),
         .package(name: "swift-metrics", url: "https://github.com/apple/swift-metrics.git", from: "2.1.1"),
+        .package(name: "Reachability.swift", url: "https://github.com/ashleymills/Reachability.swift", from: "5.1.0")
     ],
     targets: [
         .target(name: "OpenTelemetryApi",
@@ -98,7 +99,7 @@ let package = Package(
                 dependencies: ["OpenTelemetrySdk"],
                 path: "Sources/Exporters/Persistence"),
         .testTarget(name: "NetworkStatusTests",
-                    dependencies: ["NetworkStatus"],
+                    dependencies: ["NetworkStatus", .product(name: "Reachability", package: "Reachability.swift")],
                     path: "Tests/InstrumentationTests/NetworkStatusTests"),
         .testTarget(name: "OpenTelemetryApiTests",
                     dependencies: ["OpenTelemetryApi"],
