@@ -54,7 +54,7 @@ let spanExporter = MultiSpanExporter(spanExporters: [jaegerExporter, stdoutExpor
 let spanProcessor = SimpleSpanProcessor(spanExporter: spanExporter)
 OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(spanProcessor)
 
-if #available(macOS 10.14, *) {
+if #available(iOS 12.0, macOS 10.14, *) {
     OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(SignPostIntegration())
 }
 
