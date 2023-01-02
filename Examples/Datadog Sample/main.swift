@@ -7,7 +7,7 @@ import DatadogExporter
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
-#if targetEnvironment(macCatalyst)
+#if !os(macOS)
 import UIKit
 #endif
 
@@ -26,10 +26,10 @@ var instrumentationScopeInfo = InstrumentationScopeInfo(name: instrumentationSco
 var tracer: TracerSdk
 tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion) as! TracerSdk
 
-#if targetEnvironment(macCatalyst)
-let hostName = UIDevice.current.name
-#else
+#if os(macOS)
 let hostName = Host.current().localizedName
+#else
+let hostName = UIDevice.current.name
 #endif
 
 let exporterConfiguration = ExporterConfiguration(

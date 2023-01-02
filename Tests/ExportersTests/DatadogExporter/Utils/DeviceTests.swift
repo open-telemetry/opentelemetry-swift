@@ -5,7 +5,7 @@
 
 import XCTest
 
-#if !os(macOS)
+#if os(iOS)
 import UIKit
 #else
 import Foundation
@@ -19,9 +19,9 @@ class DeviceTests: XCTestCase {
         XCTAssertNotNil(Device.current)
     }
 
-    #if !os(macOS) && !targetEnvironment(macCatalyst)
+    #if os(iOS) && !targetEnvironment(macCatalyst)
     func testWhenRunningOnMobile_itUsesUIDeviceInfo() {
-        let uiDevice = DeviceMock(
+        let uiDevice = UIDeviceMock(
             model: "model mock",
             systemName: "system name mock",
             systemVersion: "system version mock"
@@ -32,5 +32,7 @@ class DeviceTests: XCTestCase {
         XCTAssertEqual(device.osName, uiDevice.systemName)
         XCTAssertEqual(device.osVersion, uiDevice.systemVersion)
     }
-    #endif // os(iOS) && !targetEnvironment(macCatalyst)
+
+    class ProcessInfoMock: ProcessInfo {}
+    #endif
 }
