@@ -31,6 +31,7 @@ class PrometheusExporterTests: XCTestCase {
         }
 
         let retain_me = collectMetrics(simpleProcessor: simpleProcessor, exporter: promExporter)
+        _ = retain_me // silence warning
         usleep(useconds_t(waitDuration * 1000000))
         let url = URL(string: "http://localhost:9184/metrics/")!
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
@@ -69,7 +70,7 @@ class PrometheusExporterTests: XCTestCase {
         let testCounter = meter.createIntCounter(name: "testCounter")
         let testMeasure = meter.createIntMeasure(name: "testMeasure")
         let boundaries: Array<Int> = [5, 10, 25]
-        var testHistogram = meter.createIntHistogram(name: "testHistogram", explicitBoundaries: boundaries, absolute: true)
+        let testHistogram = meter.createIntHistogram(name: "testHistogram", explicitBoundaries: boundaries, absolute: true)
         let labels1 = ["dim1": "value1", "dim2": "value1"]
         let labels2 = ["dim1": "value2", "dim2": "value2"]
         let labels3 = ["dim1": "value1"]
