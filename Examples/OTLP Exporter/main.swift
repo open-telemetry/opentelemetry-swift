@@ -27,7 +27,7 @@ var instrumentationScopeInfo = InstrumentationScopeInfo(name: instrumentationSco
 var tracer: TracerSdk
 tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion) as! TracerSdk
 
-let configuration = ClientConnection.Configuration(
+let configuration = ClientConnection.Configuration.default(
     target: .hostAndPort("localhost", 4317),
     eventLoopGroup: MultiThreadedEventLoopGroup(numberOfThreads: 1)
 )
