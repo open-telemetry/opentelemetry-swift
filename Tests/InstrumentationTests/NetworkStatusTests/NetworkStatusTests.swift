@@ -122,6 +122,7 @@
 
             var (type, subtype, info) = wifi_status.status()
             XCTAssertNil(info)
+            XCTAssertNil(subtype)
             XCTAssertEqual("wifi", type)
 
             let cell_status = NetworkStatus(with: MockNetworkMonitor(connection: .cellular), info: MockCTTelephonyNetworkInfo(dataServiceIndentifier: nil, currentRadioAccessTechnology: nil, carrier: nil))

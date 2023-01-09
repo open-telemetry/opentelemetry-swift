@@ -8,7 +8,7 @@ import NIOConcurrencyHelpers
 import OpenTelemetrySdk
 
 public class PrometheusExporter: MetricExporter {
-    fileprivate let metricsLock = Lock()
+    fileprivate let metricsLock = NIOLock()
     let options: PrometheusExporterOptions
     private var metrics = [Metric]()
 
