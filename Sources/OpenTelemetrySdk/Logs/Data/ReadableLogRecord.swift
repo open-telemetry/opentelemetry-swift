@@ -7,6 +7,17 @@ import Foundation
 import OpenTelemetryApi
 
 public struct ReadableLogRecord {
+    public init(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, timestamp: Date, observedTimestamp: Date? = nil, spanContext: SpanContext? = nil, severity: Severity? = nil, body: String? = nil, attributes: [String : AttributeValue]) {
+        self.resource = resource
+        self.instrumentationScopeInfo = instrumentationScopeInfo
+        self.timestamp = timestamp
+        self.observedTimestamp = observedTimestamp
+        self.spanContext = spanContext
+        self.severity = severity
+        self.body = body
+        self.attributes = attributes
+    }
+        
     public private(set) var resource : Resource
     public private(set) var instrumentationScopeInfo : InstrumentationScopeInfo
     public private(set) var timestamp : Date
