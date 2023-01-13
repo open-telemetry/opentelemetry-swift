@@ -29,13 +29,8 @@ public class DeviceDataSource: IDeviceDataSource {
             // Returned 'error #12: Optional("Cannot allocate memory")' because len was not initialized properly.
 
             let desiredLen = UnsafeMutablePointer<Int>.allocate(capacity: 1)
-            let lenRequestError = sysctl(hwName, 2, nil, desiredLen, nil, 0)
-            if lenRequestError != 0 {
-                // TODO: better error log
-                print("error #\(errno): \(String(describing: String(utf8String: strerror(errno))))")
-
-                return nil
-            }
+            
+            sysctl(hwName, 2, nil, desiredLen, nil, 0)
 
             let machine = UnsafeMutablePointer<CChar>.allocate(capacity: desiredLen[0])
             let len: UnsafeMutablePointer<Int>! = UnsafeMutablePointer<Int>.allocate(capacity: 1)
