@@ -185,7 +185,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
                         endTime: endTime ?? clock.now,
                         hasRemoteParent: hasRemoteParent,
                         hasEnded: hasEnded,
-                        totalRecordedEvents: totalRecordedEvents,
+                        totalRecordedEvents: getTotalRecordedEvents(),
                         totalRecordedLinks: totalRecordedLinks,
                         totalAttributeCount: totalAttributeCount)
     }
@@ -285,12 +285,15 @@ public class RecordEventsReadableSpan: ReadableSpan {
         return "RecordEventsReadableSpan{}"
     }
 
+    internal func getTotalRecordedEvents() -> Int {
+        eventsSyncLock.withLock {
+            return totalRecordedEvents
+        }
+    }
+    
     /// For testing purposes
     internal func getDroppedLinksCount() -> Int {
         return totalRecordedLinks - links.count
     }
 
-    internal func getTotalRecordedEvents() -> Int {
-        return totalRecordedEvents
-    }
 }
