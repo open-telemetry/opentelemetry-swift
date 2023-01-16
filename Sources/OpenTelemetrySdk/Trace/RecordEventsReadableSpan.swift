@@ -192,7 +192,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
 
     private func adaptEvents() -> [SpanData.Event] {
         var sourceEvents = [SpanData.Event]()
-        attributesSyncLock.withLockVoid {
+        eventsSyncLock.withLockVoid {
             sourceEvents = events.array
         }
         var result = [SpanData.Event]()
