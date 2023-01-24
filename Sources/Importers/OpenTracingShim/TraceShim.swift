@@ -18,15 +18,15 @@ public class TraceShim {
     }
 
     public static func createTracerShim() -> OTTracer {
-        return TracerShim(telemetryInfo: TelemetryInfo(tracer: TraceShim.getTracer(tracerProvider: OpenTelemetrySDK.instance.tracerProvider),
-                                                       baggageManager: OpenTelemetrySDK.instance.baggageManager,
-                                                       propagators: OpenTelemetrySDK.instance.propagators))
+        return TracerShim(telemetryInfo: TelemetryInfo(tracer: TraceShim.getTracer(tracerProvider: OpenTelemetry.instance.tracerProvider),
+                                                       baggageManager: OpenTelemetry.instance.baggageManager,
+                                                       propagators: OpenTelemetry.instance.propagators))
     }
 
     public static func createTracerShim(tracerProvider: TracerProvider, baggageManager: BaggageManager) -> OTTracer {
         return TracerShim(telemetryInfo: TelemetryInfo(tracer: TraceShim.getTracer(tracerProvider: tracerProvider),
                                                        baggageManager: baggageManager,
-                                                       propagators: OpenTelemetrySDK.instance.propagators))
+                                                       propagators: OpenTelemetry.instance.propagators))
     }
 
     private static func getTracer(tracerProvider: TracerProvider) -> Tracer {

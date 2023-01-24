@@ -31,7 +31,7 @@ public class URLSessionInstrumentation {
 
     static var instrumentedKey = "io.opentelemetry.instrumentedCall"
 
-    public private(set) var tracer: TracerSdk
+    public private(set) var tracer: Tracer
 
     public var startedRequestSpans: [Span] {
         var spans = [Span]()
@@ -43,7 +43,7 @@ public class URLSessionInstrumentation {
 
     public init(configuration: URLSessionInstrumentationConfiguration) {
         self.configuration = configuration
-        tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: "NSURLSession", instrumentationVersion: "0.0.1") as! TracerSdk
+        tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "NSURLSession", instrumentationVersion: "0.0.1")
         self.injectInNSURLClasses()
     }
 

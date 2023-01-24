@@ -86,6 +86,7 @@ class URLSessionInstrumentationTests: XCTestCase {
     static let server = HttpTestServer(url: URL(string: "http://localhost:33333"), config: nil)
 
     override class func setUp() {
+        OpenTelemetry.registerTracerProvider(tracerProvider: TracerProviderSdk())
         let sem = DispatchSemaphore(value: 0)
         DispatchQueue.global(qos: .default).async {
             do {
@@ -146,18 +147,18 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
 
     public func testOverrideSpanCustomization() {
-            let request = URLRequest(url: URL(string: "http://google.com")!)
+        let request = URLRequest(url: URL(string: "http://google.com")!)
 
-            URLSessionLogger.processAndLogRequest(request, sessionTaskId: "id", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
+        URLSessionLogger.processAndLogRequest(request, sessionTaskId: "id", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
 
-            XCTAssertTrue(URLSessionInstrumentationTests.checker.spanCustomizationCalled)
+        XCTAssertTrue(URLSessionInstrumentationTests.checker.spanCustomizationCalled)
 
-            XCTAssertEqual(1, URLSessionLogger.runningSpans.count)
-            XCTAssertNotNil(URLSessionLogger.runningSpans["id"])
-            if let span = URLSessionLogger.runningSpans["id"] {
-                XCTAssertEqual(SpanKind.consumer, span.kind)
-            }
+        XCTAssertEqual(1, URLSessionLogger.runningSpans.count)
+        XCTAssertNotNil(URLSessionLogger.runningSpans["id"])
+        if let span = URLSessionLogger.runningSpans["id"] {
+            XCTAssertEqual(SpanKind.consumer, span.kind)
         }
+    }
 
     public func testDefaultSpanCustomization() {
         let request = URLRequest(url: URL(string: "http://defaultName.com")!)
