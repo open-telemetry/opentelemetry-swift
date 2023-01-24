@@ -10,9 +10,16 @@ import Opentracing
 import XCTest
 
 class TracerShimTests: XCTestCase {
-    var tracerShim = TracerShim(telemetryInfo: TelemetryInfo(tracer: OpenTelemetry.instance.tracerProvider.get(instrumentationName: "opentracingshim", instrumentationVersion: nil),
-                                                             baggageManager: OpenTelemetry.instance.baggageManager,
-                                                             propagators: OpenTelemetry.instance.propagators))
+    let tracerProviderSdk = TracerProviderSdk()
+    var tracer: Tracer!
+    var telemetryInfo: TelemetryInfo!
+    var tracerShim: TracerShim!
+
+    override func setUp() {
+        tracer = tracerProviderSdk.get(instrumentationName: "SpanShimTest")
+        let telemetryInfo = TelemetryInfo(tracer: tracer, baggageManager: OpenTelemetry.instance.baggageManager, propagators: OpenTelemetry.instance.propagators)
+        tracerShim = TracerShim(telemetryInfo: telemetryInfo)
+    }
 
     func testDefaultTracer() {
         _ = tracerShim.startSpan("one")
