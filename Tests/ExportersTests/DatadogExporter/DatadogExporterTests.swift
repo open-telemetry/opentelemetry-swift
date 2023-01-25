@@ -27,13 +27,13 @@ class DatadogExporterTests: XCTestCase {
 
         let server = HttpTestServer(url: URL(string: "http://localhost:33333"),
                                     config: HttpTestServerConfig(tracesReceivedCallback: {
-                                        tracesSent = true
-                                        expecTrace.fulfill()
-                                    },
+                                                                     tracesSent = true
+                                                                     expecTrace.fulfill()
+                                                                 },
                                                                  logsReceivedCallback: {
-                                        logsSent = true
-                                        expecLog.fulfill()
-        }))
+                                                                     logsSent = true
+                                                                     expecLog.fulfill()
+                                                                 }))
 
         let sem = DispatchSemaphore(value: 0)
         DispatchQueue.global(qos: .default).async {
@@ -45,11 +45,17 @@ class DatadogExporterTests: XCTestCase {
             }
         }
         sem.wait()
-        
+
         let instrumentationScopeName = "SimpleExporter"
         let instrumentationScopeVersion = "semver:0.1.0"
 
-        let tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion) as! TracerSdk
+        let tracerProvider = TracerProviderSdk()
+        OpenTelemetry.registerTracerProvider(tracerProvider: tracerProvider)
+        guard let tracer = tracerProvider.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion) as? TracerSdk else {
+            XCTFail()
+            server.stop()
+            return
+        }
 
         let exporterConfiguration = ExporterConfiguration(serviceName: "serviceName",
                                                           resource: "resource",
@@ -66,7 +72,7 @@ class DatadogExporterTests: XCTestCase {
         let datadogExporter = try! DatadogExporter(config: exporterConfiguration)
 
         let spanProcessor = SimpleSpanProcessor(spanExporter: datadogExporter)
-        OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(spanProcessor)
+        (OpenTelemetry.instance.tracerProvider as? TracerProviderSdk)?.addSpanProcessor(spanProcessor)
 
         simpleSpan(tracer: tracer)
         spanProcessor.shutdown()
@@ -79,7 +85,6 @@ class DatadogExporterTests: XCTestCase {
         } else {
             XCTFail()
         }
-
         server.stop()
     }
 
@@ -98,7 +103,7 @@ class DatadogExporterTests: XCTestCase {
                                     config: HttpTestServerConfig(metricsReceivedCallback: {
                                         metricsSent = true
                                         expecMetrics.fulfill()
-        }))
+                                    }))
 
         let sem = DispatchSemaphore(value: 0)
         DispatchQueue.global(qos: .default).async {
@@ -126,8 +131,8 @@ class DatadogExporterTests: XCTestCase {
         let datadogExporter = try! DatadogExporter(config: exporterConfiguration)
 
         let provider = MeterProviderSdk(metricProcessor: MetricProcessorSdk(),
-                              metricExporter: datadogExporter,
-                              metricPushInterval: 0.1)
+                                        metricExporter: datadogExporter,
+                                        metricPushInterval: 0.1)
 
         let meter = provider.get(instrumentationName: "MyMeter")
 

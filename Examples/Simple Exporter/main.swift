@@ -8,21 +8,43 @@ import JaegerExporter
 import OpenTelemetryApi
 import OpenTelemetrySdk
 import ResourceExtension
+import SignPostIntegration
 import StdoutExporter
 import ZipkinExporter
-import SignPostIntegration
 
 let sampleKey = "sampleKey"
 let sampleValue = "sampleValue"
 
-let resources = DefaultResources().get()
-
 let instrumentationScopeName = "SimpleExporter"
 let instrumentationScopeVersion = "semver:0.1.0"
-var instrumentationScopeInfo = InstrumentationScopeInfo(name: instrumentationScopeName, version: instrumentationScopeVersion)
 
 var tracer: TracerSdk
-tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion) as! TracerSdk
+let jaegerCollectorAdress = "localhost"
+let jaegerExporter = JaegerSpanExporter(serviceName: "SimpleExporter", collectorAddress: jaegerCollectorAdress)
+let stdoutExporter = StdoutExporter()
+
+// let zipkinExporterOptions = ZipkinTraceExporterOptions()
+// let zipkinExporter = ZipkinTraceExporter(options: zipkinExporterOptions)
+
+let spanExporter = MultiSpanExporter(spanExporters: [jaegerExporter, stdoutExporter /* , zipkinExporter */ ])
+let spanProcessor = SimpleSpanProcessor(spanExporter: spanExporter)
+let resources = DefaultResources().get()
+
+OpenTelemetry.registerTracerProvider(tracerProvider:
+    TracerProviderBuilder()
+        .add(spanProcessor: spanProcessor)
+        .with(resource: resources)
+        .build()
+)
+
+tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion) as! TracerSdk
+
+
+if #available(iOS 12.0, macOS 10.14, *) {
+    let tracerProviderSDK = OpenTelemetry.instance.tracerProvider as? TracerProviderSdk
+    tracerProviderSDK?.addSpanProcessor(SignPostIntegration())
+}
+
 
 func simpleSpan() {
     let span = tracer.spanBuilder(spanName: "SimpleSpan").setSpanKind(spanKind: .client).startSpan()
@@ -41,23 +63,6 @@ func childSpan() {
     childSpan.end()
     span.end()
 }
-
-let jaegerCollectorAdress = "localhost"
-let jaegerExporter = JaegerSpanExporter(serviceName: "SimpleExporter", collectorAddress: jaegerCollectorAdress)
-let stdoutExporter = StdoutExporter()
-
-// let zipkinExporterOptions = ZipkinTraceExporterOptions()
-// let zipkinExporter = ZipkinTraceExporter(options: zipkinExporterOptions)
-
-let spanExporter = MultiSpanExporter(spanExporters: [jaegerExporter, stdoutExporter /* , zipkinExporter */ ])
-
-let spanProcessor = SimpleSpanProcessor(spanExporter: spanExporter)
-OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(spanProcessor)
-
-if #available(iOS 12.0, macOS 10.14, *) {
-    OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(SignPostIntegration())
-}
-
 
 simpleSpan()
 sleep(1)

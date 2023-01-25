@@ -4,6 +4,7 @@
  */
 
 import Foundation
+import OpenTelemetryApi
 import OpenTelemetrySdk
 import PrometheusExporter
 
@@ -31,6 +32,7 @@ let processor = MetricProcessorSdk()
 
 
 let meterProvider = MeterProviderSdk(metricProcessor: processor, metricExporter: promExporter, metricPushInterval: 0.1)
+OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
 
 var meter = meterProvider.get(instrumentationName: "MyMeter")
 

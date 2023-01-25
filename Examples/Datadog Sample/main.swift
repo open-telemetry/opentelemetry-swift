@@ -21,10 +21,9 @@ let sampleValue = "sampleValue"
 
 let instrumentationScopeName = "DatadogExporter"
 let instrumentationScopeVersion = "semver:0.1.0"
-var instrumentationScopeInfo = InstrumentationScopeInfo(name: instrumentationScopeName, version: instrumentationScopeVersion)
 
-var tracer: TracerSdk
-tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion) as! TracerSdk
+var tracer: Tracer
+tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion)
 
 #if os(macOS)
 let hostName = Host.current().localizedName
@@ -54,7 +53,13 @@ sleep(10)
 
 func testTraces() {
     let spanProcessor = SimpleSpanProcessor(spanExporter: datadogExporter)
-    OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(spanProcessor)
+    
+    OpenTelemetry.registerTracerProvider(tracerProvider:
+        TracerProviderBuilder()
+            .add(spanProcessor: spanProcessor)
+            .build()
+    )
+    tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion) as! TracerSdk
 
     simpleSpan()
     childSpan()
@@ -82,6 +87,7 @@ func testMetrics() {
     let processor = MetricProcessorSdk()
 
     let meterProvider = MeterProviderSdk(metricProcessor: processor, metricExporter: datadogExporter, metricPushInterval: 0.1)
+    OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
 
     let meter = meterProvider.get(instrumentationName: "MyMeter")
 

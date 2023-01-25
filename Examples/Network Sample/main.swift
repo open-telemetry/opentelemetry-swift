@@ -4,6 +4,7 @@
  */
 
 import Foundation
+import OpenTelemetryApi
 import OpenTelemetrySdk
 import StdoutExporter
 import URLSessionInstrumentation
@@ -51,7 +52,11 @@ func simpleNetworkCallWithDelegate() {
 
 
 let spanProcessor = SimpleSpanProcessor(spanExporter: StdoutExporter(isDebug: true))
-OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(spanProcessor)
+OpenTelemetry.registerTracerProvider(tracerProvider:
+    TracerProviderBuilder()
+        .add(spanProcessor: spanProcessor)
+        .build()
+)
 
 let networkInstrumentation = URLSessionInstrumentation(configuration: URLSessionInstrumentationConfiguration())
 

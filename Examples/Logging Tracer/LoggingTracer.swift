@@ -28,14 +28,7 @@ class LoggingTracer: Tracer {
         }
 
         func startSpan() -> Span {
-            if spanContext == nil, !isRootSpan {
-                spanContext = OpenTelemetry.instance.contextProvider.activeSpan?.context
-            }
-            if spanContext != nil {
-                return LoggingSpan(name: name, kind: .client)
-            } else {
-                return DefaultTracer.instance.spanBuilder(spanName: name).startSpan()
-            }
+            return LoggingSpan(name: name, kind: .client)
         }
 
         func setParent(_ parent: Span) -> Self {

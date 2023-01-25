@@ -3,23 +3,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-@testable import PersistenceExporter
 import OpenTelemetryApi
 import OpenTelemetrySdk
+@testable import PersistenceExporter
 import XCTest
 
 class PersistenceSpanExporterDecoratorTests: XCTestCase {
     private let temporaryDirectory = obtainUniqueTemporaryDirectory()
 
     class SpanExporterMock: SpanExporter {
-        
         let onExport: ([SpanData]) -> SpanExporterResultCode
         let onFlush: () -> SpanExporterResultCode
         let onShutdown: () -> Void
         
         init(onExport: @escaping ([SpanData]) -> SpanExporterResultCode,
-             onFlush: @escaping () -> SpanExporterResultCode = { return .success },
-             onShutdown: @escaping () -> Void = {}) {
+             onFlush: @escaping () -> SpanExporterResultCode = { .success },
+             onShutdown: @escaping () -> Void = {})
+        {
             self.onExport = onExport
             self.onFlush = onFlush
             self.onShutdown = onShutdown
@@ -54,15 +54,16 @@ class PersistenceSpanExporterDecoratorTests: XCTestCase {
         
         let mockSpanExporter = SpanExporterMock(onExport: { spans in
             spans.forEach { span in
-                if span.name == "SimpleSpan" &&
-                    span.events.count == 1 &&
-                    span.events.first!.name == "My event" {
+                if span.name == "SimpleSpan",
+                   span.events.count == 1,
+                   span.events.first!.name == "My event"
+                {
                     spansExportExpectation.fulfill()
                 }
             }
             
             return .success
-        }, onShutdown:  {
+        }, onShutdown: {
             exporterShutdownExpectation.fulfill()
         })
                 
@@ -70,7 +71,7 @@ class PersistenceSpanExporterDecoratorTests: XCTestCase {
             try PersistenceSpanExporterDecorator(
                 spanExporter: mockSpanExporter,
                 storageURL: temporaryDirectory.url,
-                exportCondition: { return true },
+                exportCondition: { true },
                 performancePreset: PersistencePerformancePreset.mockWith(
                     storagePerformance: StoragePerformanceMock.writeEachObjectToNewFileAndReadAllFiles,
                     synchronousWrite: true,
@@ -78,14 +79,15 @@ class PersistenceSpanExporterDecoratorTests: XCTestCase {
 
         let instrumentationScopeName = "SimpleExporter"
         let instrumentationScopeVersion = "semver:0.1.0"
-
-        let tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion) as! TracerSdk
+        let tracerProviderSDK = TracerProviderSdk()
+        OpenTelemetry.registerTracerProvider(tracerProvider: tracerProviderSDK)
+        let tracer = tracerProviderSDK.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion) as! TracerSdk
         
         let spanProcessor = SimpleSpanProcessor(spanExporter: persistenceSpanExporter)
-        OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(spanProcessor)
+        tracerProviderSDK.addSpanProcessor(spanProcessor)
 
         simpleSpan(tracer: tracer)
-        spanProcessor.shutdown()                
+        spanProcessor.shutdown()
         
         waitForExpectations(timeout: 10, handler: nil)
     }

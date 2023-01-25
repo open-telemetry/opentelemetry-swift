@@ -4,16 +4,16 @@
  */
 
 import Foundation
-import OpenTelemetryProtocolExporter
-import OpenTelemetryApi
-import OpenTelemetrySdk
-import ResourceExtension
-import StdoutExporter
-import ZipkinExporter
-import SignPostIntegration
 import GRPC
 import NIO
 import NIOSSL
+import OpenTelemetryApi
+import OpenTelemetryProtocolExporter
+import OpenTelemetrySdk
+import ResourceExtension
+import SignPostIntegration
+import StdoutExporter
+import ZipkinExporter
 
 let sampleKey = "sampleKey"
 let sampleValue = "sampleValue"
@@ -22,10 +22,6 @@ var resources = DefaultResources().get()
 
 let instrumentationScopeName = "OTLPExporter"
 let instrumentationScopeVersion = "semver:0.1.0"
-var instrumentationScopeInfo = InstrumentationScopeInfo(name: instrumentationScopeName, version: instrumentationScopeVersion)
-
-var tracer: TracerSdk
-tracer = OpenTelemetrySDK.instance.tracerProvider.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion) as! TracerSdk
 
 let configuration = ClientConnection.Configuration.default(
     target: .hostAndPort("localhost", 4317),
@@ -38,10 +34,18 @@ let stdoutExporter = StdoutExporter()
 let spanExporter = MultiSpanExporter(spanExporters: [otlpTraceExporter, stdoutExporter])
 
 let spanProcessor = SimpleSpanProcessor(spanExporter: spanExporter)
-OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(spanProcessor)
+OpenTelemetry.registerTracerProvider(tracerProvider:
+    TracerProviderBuilder()
+        .add(spanProcessor: spanProcessor)
+        .build()
+)
+
+let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion)
+
 
 if #available(macOS 10.14, *), #available(iOS 12.0, *) {
-    OpenTelemetrySDK.instance.tracerProvider.addSpanProcessor(SignPostIntegration())
+    let tracerProviderSDK = OpenTelemetry.instance.tracerProvider as? TracerProviderSdk
+    tracerProviderSDK?.addSpanProcessor(SignPostIntegration())
 }
 
 func createSpans() {
@@ -52,7 +56,7 @@ func createSpans() {
         doWork()
     }
     Thread.sleep(forTimeInterval: 0.5)
-    
+
     let parentSpan2 = tracer.spanBuilder(spanName: "Another").setSpanKind(spanKind: .client).setActive(true).startSpan()
     parentSpan2.setAttribute(key: sampleKey, value: sampleValue)
     // do more Work
@@ -60,7 +64,7 @@ func createSpans() {
         doWork()
     }
     Thread.sleep(forTimeInterval: 0.5)
-    
+
     parentSpan2.end()
     parentSpan1.end()
 }
@@ -68,17 +72,20 @@ func createSpans() {
 func doWork() {
     let childSpan = tracer.spanBuilder(spanName: "doWork").setSpanKind(spanKind: .client).startSpan()
     childSpan.setAttribute(key: sampleKey, value: sampleValue)
-    Thread.sleep(forTimeInterval: Double.random(in: 0..<10)/100)
+    Thread.sleep(forTimeInterval: Double.random(in: 0 ..< 10) / 100)
     childSpan.end()
 }
 
 // Create a Parent span (Main) and do some Work (child Spans). Repeat for another Span.
 createSpans()
 
-//Metrics
+// Metrics
 let otlpMetricExporter = OtlpMetricExporter(channel: client)
 let processor = MetricProcessorSdk()
 let meterProvider = MeterProviderSdk(metricProcessor: processor, metricExporter: otlpMetricExporter, metricPushInterval: 0.1)
+
+OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
+
 
 var meter = meterProvider.get(instrumentationName: "otlp_example_meter'")
 var exampleCounter = meter.createIntCounter(name: "otlp_example_counter")
