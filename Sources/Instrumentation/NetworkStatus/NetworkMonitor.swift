@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if !os(watchOS)
+
 import Foundation
+import Reachability
 
 public class NetworkMonitor: NetworkMonitorProtocol {
     var reachability: Reachability
@@ -23,8 +26,10 @@ public class NetworkMonitor: NetworkMonitorProtocol {
             return .wifi
         case .cellular:
             return .cellular
-        case .unavailable:
+        case .unavailable, .none:
             return .unavailable
         }
     }
 }
+
+#endif

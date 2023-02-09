@@ -3,11 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if !os(macOS)
-import UIKit
-#else
+#if os(macOS)
 import Foundation
 import SystemConfiguration
+#elseif os(iOS) || targetEnvironment(macCatalyst)
+import UIKit
+#elseif os(watchOS)
+import WatchKit
 #endif
 
 /// Describes current mobile device.
@@ -27,14 +29,14 @@ internal class Device {
         self.osVersion = osVersion
     }
 
-    #if !os(macOS)
+    #if os(iOS) || targetEnvironment(macCatalyst)
     convenience init(uiDevice: UIDevice, processInfo: ProcessInfo) {
         self.init(
             model: uiDevice.model,
             osName: uiDevice.systemName,
             osVersion: uiDevice.systemVersion)
     }
-    #else
+    #elseif os(macOS)
     convenience init(processInfo: ProcessInfo) {
         self.init(
             model: "Mac",
@@ -51,12 +53,19 @@ internal class Device {
         #elseif os(iOS) && !targetEnvironment(simulator)
         // Real device
         return Device(uiDevice: UIDevice.current, processInfo: ProcessInfo.processInfo)
-        #else
+        #elseif os(iOS) || os(tvOS)
         // iOS Simulator or tvOS - battery monitoring doesn't work on Simulator, so return "always OK" value
         return Device(
             model: UIDevice.current.model,
             osName: UIDevice.current.systemName,
             osVersion: UIDevice.current.systemVersion)
+        #elseif os(watchOS)
+        let device = WKInterfaceDevice.current()
+        return Device(
+            model: device.model,
+            osName: device.systemName,
+            osVersion: device.systemVersion
+        )
         #endif
     }
 }

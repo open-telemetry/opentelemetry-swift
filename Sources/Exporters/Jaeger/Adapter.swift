@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if !os(watchOS)
+
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
@@ -163,3 +165,5 @@ final class Adapter {
         return SpanRef(refType: refType, traceIdLow: traceIdLow, traceIdHigh: traceIdHigh, spanId: spanId)
     }
 }
+
+#endif
