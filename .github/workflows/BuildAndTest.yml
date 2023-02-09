@@ -23,3 +23,7 @@ jobs:
       run: make build_for_testing_ios
     - name: Test for iOS
       run: make test_without_building_ios
+    - name: Build for watchOS
+      run: make build_for_testing_watchos
+    - name: Test for watchOS
+      run: make test_without_building_watchos
