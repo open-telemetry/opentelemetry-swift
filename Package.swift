@@ -1,4 +1,4 @@
-// swift-tools-version:5.6
+// swift-tools-version:5.2
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -8,8 +8,7 @@ let package = Package(
     platforms: [
         .macOS(.v10_13),
         .iOS(.v11),
-        .tvOS(.v11),
-        .watchOS(.v3)
+        .tvOS(.v11)
     ],
     products: [
         .library(name: "OpenTelemetryApi", type: .static, targets: ["OpenTelemetryApi"]),
@@ -33,12 +32,12 @@ let package = Package(
         .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/undefinedlabs/opentracing-objc", from: "0.5.2"),
-        .package(url: "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1"),
-        .package(url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
-        .package(url: "https://github.com/grpc/grpc-swift.git", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-metrics.git", from: "2.1.1"),
-        .package(url: "https://github.com/ashleymills/Reachability.swift", from: "5.1.0")
+        .package(name: "Opentracing", url: "https://github.com/undefinedlabs/opentracing-objc", from: "0.5.2"),
+        .package(name: "Thrift", url: "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1"),
+        .package(name: "swift-nio", url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
+        .package(name: "grpc-swift", url: "https://github.com/grpc/grpc-swift.git", from: "1.0.0"),
+        .package(name: "swift-metrics", url: "https://github.com/apple/swift-metrics.git", from: "2.1.1"),
+        .package(name: "Reachability.swift", url: "https://github.com/ashleymills/Reachability.swift", from: "5.1.0")
     ],
     targets: [
         .target(name: "OpenTelemetryApi",
@@ -56,7 +55,7 @@ let package = Package(
         .target(name: "NetworkStatus",
                 dependencies: [
                     "OpenTelemetryApi",
-                    .product(name: "Reachability", package: "Reachability.swift", condition: .when(platforms: [.iOS, .macOS, .macCatalyst, .linux]))
+                    .product(name: "Reachability", package: "Reachability.swift")
                 ],
                 path: "Sources/Instrumentation/NetworkStatus",
                 linkerSettings: [.linkedFramework("CoreTelephony", .when(platforms: [.iOS], configuration: nil))]),
@@ -65,10 +64,8 @@ let package = Package(
                 path: "Sources/Instrumentation/SignPostIntegration",
                 exclude: ["README.md"]),
         .target(name: "OpenTracingShim",
-                dependencies: [
-                    "OpenTelemetrySdk",
-                    .product(name: "Opentracing", package: "opentracing-objc")
-                ],
+                dependencies: ["OpenTelemetrySdk",
+                               "Opentracing"],
                 path: "Sources/Importers/OpenTracingShim",
                 exclude: ["README.md"]),
         .target(name: "SwiftMetricsShim",
@@ -77,10 +74,8 @@ let package = Package(
                 path: "Sources/Importers/SwiftMetricsShim",
                 exclude: ["README.md"]),
         .target(name: "JaegerExporter",
-                dependencies: [
-                    "OpenTelemetrySdk",
-                    .product(name: "Thrift", package: "Thrift-Swift", condition: .when(platforms: [.iOS, .macOS, .macCatalyst, .linux]))
-                ],
+                dependencies: ["OpenTelemetrySdk",
+                               .product(name: "Thrift", package: "Thrift")],
                 path: "Sources/Exporters/Jaeger"),
         .target(name: "ZipkinExporter",
                 dependencies: ["OpenTelemetrySdk"],
@@ -108,10 +103,7 @@ let package = Package(
                 dependencies: ["OpenTelemetrySdk"],
                 path: "Sources/Exporters/Persistence"),
         .testTarget(name: "NetworkStatusTests",
-                    dependencies: [
-                        "NetworkStatus",
-                        .product(name: "Reachability", package: "Reachability.swift", condition: .when(platforms: [.iOS, .macOS, .macCatalyst, .linux]))
-                    ],
+                    dependencies: ["NetworkStatus", .product(name: "Reachability", package: "Reachability.swift")],
                     path: "Tests/InstrumentationTests/NetworkStatusTests"),
         .testTarget(name: "OpenTelemetryApiTests",
                     dependencies: ["OpenTelemetryApi"],
@@ -159,40 +151,28 @@ let package = Package(
         .testTarget(name: "PersistenceExporterTests",
                     dependencies: ["PersistenceExporter"],
                     path: "Tests/ExportersTests/PersistenceExporter"),
-        .executableTarget(
-            name: "LoggingTracer",
-            dependencies: ["OpenTelemetryApi"],
-            path: "Examples/Logging Tracer"
-        ),
-        .executableTarget(
-            name: "SimpleExporter",
-            dependencies: ["OpenTelemetrySdk", "JaegerExporter", "StdoutExporter", "ZipkinExporter", "ResourceExtension", "SignPostIntegration"],
-            path: "Examples/Simple Exporter",
-            exclude: ["README.md"]
-        ),
-        .executableTarget(
-            name: "OTLPExporter",
-            dependencies: ["OpenTelemetrySdk", "OpenTelemetryProtocolExporter", "StdoutExporter", "ZipkinExporter", "ResourceExtension", "SignPostIntegration"],
-            path: "Examples/OTLP Exporter",
-            exclude: ["README.md"]
-        ),
-        .executableTarget(
-            name: "PrometheusSample",
-            dependencies: ["OpenTelemetrySdk", "PrometheusExporter"],
-            path: "Examples/Prometheus Sample",
-            exclude: ["README.md"]
-        ),
-        .executableTarget(
-            name: "DatadogSample",
-            dependencies: ["DatadogExporter"],
-            path: "Examples/Datadog Sample",
-            exclude: ["README.md"]
-        ),
-        .executableTarget(
-            name: "NetworkSample",
-            dependencies: ["URLSessionInstrumentation", "StdoutExporter"],
-            path: "Examples/Network Sample",
-            exclude: ["README.md"]
-        ),
+        .target(name: "LoggingTracer",
+                dependencies: ["OpenTelemetryApi"],
+                path: "Examples/Logging Tracer"),
+        .target(name: "SimpleExporter",
+                dependencies: ["OpenTelemetrySdk", "JaegerExporter", "StdoutExporter", "ZipkinExporter", "ResourceExtension", "SignPostIntegration"],
+                path: "Examples/Simple Exporter",
+                exclude: ["README.md"]),
+        .target(name: "OTLPExporter",
+                dependencies: ["OpenTelemetrySdk", "OpenTelemetryProtocolExporter", "StdoutExporter", "ZipkinExporter", "ResourceExtension", "SignPostIntegration"],
+                path: "Examples/OTLP Exporter",
+                exclude: ["README.md"]),
+        .target(name: "PrometheusSample",
+                dependencies: ["OpenTelemetrySdk", "PrometheusExporter"],
+                path: "Examples/Prometheus Sample",
+                exclude: ["README.md"]),
+        .target(name: "DatadogSample",
+                dependencies: ["DatadogExporter"],
+                path: "Examples/Datadog Sample",
+                exclude: ["README.md"]),
+        .target(name: "NetworkSample",
+                dependencies: ["URLSessionInstrumentation", "StdoutExporter"],
+                path: "Examples/Network Sample",
+                exclude: ["README.md"]),
     ]
 )
