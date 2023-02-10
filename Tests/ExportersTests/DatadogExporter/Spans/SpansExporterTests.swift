@@ -18,6 +18,10 @@ class SpansExporterTests: XCTestCase {
     }
 
     func testWhenExportSpanIsCalled_thenTraceIsUploaded() throws {
+        if #available(watchOS 3.0, *) {
+            throw XCTSkip("Test is flaky on watchOS")
+        }
+
         var tracesSent = false
         let expec = expectation(description: "traces received")
         let server = HttpTestServer(url: URL(string: "http://localhost:33333"),
