@@ -12,11 +12,13 @@ public func defaultOltpHTTPMetricsEndpoint() -> URL {
 
 public class OtlpHttpMetricExporter: MetricExporter {
     let endpoint: URL
-    let urlSession: URLSession
+    let urlSession: URLSession // TODO do we need this?
+    private let httpClient: HTTPClient
     var pendingMetrics: [Metric] = []
     
     public init(endpoint: URL = defaultOltpHTTPMetricsEndpoint(), urlSession: URLSession = URLSession.shared) {
         self.endpoint = endpoint
+        self.httpClient = HTTPClient();
         self.urlSession = urlSession
     }
     
@@ -26,6 +28,8 @@ public class OtlpHttpMetricExporter: MetricExporter {
     }
 
     public func flush() -> MetricExporterResultCode {
+        var exporterResult: MetricExporterResultCode = .success
+
         let metrics = pendingMetrics
         pendingMetrics = []
         let body = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest
@@ -38,16 +42,18 @@ public class OtlpHttpMetricExporter: MetricExporter {
         request.httpBody = try? body.serializedData()
         request.setValue("application/x-protobuf", forHTTPHeaderField: "Content-Type")
         
-        let task = URLSession.shared.dataTask(with: request) { _, response, error in
-            if let error = error {
-                print("Error sending telemetry: \(error)")
+        httpClient.send(request: request) { result in
+            switch result {
+            case .success(_):
+                exporterResult = MetricExporterResultCode.success
+            case .failure(let error):
+                print("ERROR: \(error)")
+                exporterResult = MetricExporterResultCode.failureNotRetryable // FIXME how do I know what type of failure?
             }
         }
-        
-        task.resume()
-        
-        return .success
+        return exporterResult
     }
+    
     
     public func shutdown() {
         

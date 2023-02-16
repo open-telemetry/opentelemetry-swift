@@ -28,7 +28,7 @@ public class OtlpHttpTraceExporter: SpanExporter {
     }
 
     public func flush() -> SpanExporterResultCode {
-        var blah: SpanExporterResultCode = .success
+        var exporterResult: SpanExporterResultCode = .success
         let spans = pendingSpans
         pendingSpans = []
         let body = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
@@ -43,13 +43,13 @@ public class OtlpHttpTraceExporter: SpanExporter {
         httpClient.send(request: request) { result in
             switch result {
             case .success(_):
-                blah = SpanExporterResultCode.success
+                exporterResult = SpanExporterResultCode.success
             case .failure(let error):
                 print(error)
-                blah = SpanExporterResultCode.failure
+                exporterResult = SpanExporterResultCode.failure
             }
         }
-        return blah
+        return exporterResult
     }
 
     public func shutdown() {  // FIXME should this be a no-op?
