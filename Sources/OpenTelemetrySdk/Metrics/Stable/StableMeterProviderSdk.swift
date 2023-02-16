@@ -15,45 +15,25 @@ public class StableMeterProviderSdk : StableMeterProvider {
     var meterSharedState: StableMeterSharedState
 
     var defaultMeter : StableMeterSdk
-    var readers = [StableMetricReaderSdk]()
+    var registeredReaders = [StableMetricReader]()
+    var registeredViews = [RegisteredView]()
+    
+    var componentRegistery : ComponentRegistry<StableMeterSdk>
 
-    public convenience init() {
-        self.init(readers: [])
+    public static func builder() -> StableMeterProviderBuilder {
+        return StableMeterProviderBuilder()
+    }
+    
+
+    init(registeredViews: [RegisteredView], metricReaders: [StableMetricReader], clock: Clock, resource : Resource, exemplarFilter : ExemplarFilter) {
+        let startEpochNano = Date().timeIntervalSince1970.toNanoseconds
+        self.registeredViews = registeredViews
+        self.registeredReaders = metricReaders.map { reader in
+            return RegisteredReader(reader: reader, registry: StableViewRegistry(reader, registeredViews))
+        }
     }
 
-    public convenience init(reader: StableMetricReaderBuilder, resource: Resource = EnvVarResource.resource) {
-        self.init(readers: [reader], resource: resource)
-    }
 
-    public init(readers: [StableMetricReaderBuilder], resource: Resource = EnvVarResource.resource) {
-
-        meterSharedState = StableMeterSharedState(resource: resource)
-        defaultMeter = StableMeterSdk(instrumentationLibraryInfo: InstrumentationLibraryInfo())
-        readers.forEach() { builder in
-            self.readers.append(builder.build(sharedState: meterSharedState))
-        }
-    }
-
-
-    public func get(name: String, version: String?, schema: String?) -> StableMeter {
-        if name.isEmpty {
-            return defaultMeter
-        }
-
-        readerLock.lock()
-        defer {
-            readerLock.unlock()
-        }
-        let instrumentationLibraryInfo = InstrumentationLibraryInfo(name: name, version: version)
-        var meter: StableMeterSdk! = meterSharedState.meterRegistry.first { meter in
-            meter.instrumentationLibraryInfo == instrumentationLibraryInfo
-        }
-        if meter == nil {
-            meter = StableMeterSdk(instrumentationLibraryInfo: instrumentationLibraryInfo)
-            meterSharedState.add(meter: meter!)
-        }
-        return meter!
-    }
 
     public func shutdown() -> Bool {
         readerLock.lock()
