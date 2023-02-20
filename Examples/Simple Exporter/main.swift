@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if os(macOS)
+
 import Foundation
 import JaegerExporter
 import OpenTelemetryApi
@@ -68,3 +70,5 @@ simpleSpan()
 sleep(1)
 childSpan()
 sleep(1)
+
+#endif

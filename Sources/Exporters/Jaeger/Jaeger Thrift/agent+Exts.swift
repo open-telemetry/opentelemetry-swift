@@ -5,6 +5,8 @@
  *  @generated
  */
 
+#if !os(watchOS)
+
 import Foundation
 
 import Thrift
@@ -266,3 +268,4 @@ extension AgentProcessor : TProcessor {
   }
 }
 
+#endif

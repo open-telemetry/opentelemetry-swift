@@ -5,6 +5,8 @@
  *  @generated
  */
 
+#if !os(watchOS)
+
 import Foundation
 
 import Thrift
@@ -297,4 +299,4 @@ open class CollectorProcessor /* Collector */ {
 
 }
 
-
+#endif

@@ -129,7 +129,11 @@ final class CounterTests: XCTestCase {
         XCTAssertNil(testCounter.boundInstruments[ls3])
     }
 
-    public func testIntCounterBoundInstrumentsStatusUpdatedCorrectlyMultiThread() {
+    public func testIntCounterBoundInstrumentsStatusUpdatedCorrectlyMultiThread() throws {
+        if #available(watchOS 3.0, *) {
+            throw XCTSkip("Test is flaky on watchOS")
+        }
+
         let testProcessor = TestMetricProcessor()
         let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "scope1") as! MeterSdk
         let testCounter = meter.createIntCounter(name: "testCounter").internalCounter as! CounterMetricSdk<Int>

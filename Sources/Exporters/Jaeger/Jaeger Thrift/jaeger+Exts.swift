@@ -5,6 +5,8 @@
  *  @generated
  */
 
+#if !os(watchOS)
+
 import Foundation
 
 import Thrift
@@ -813,3 +815,4 @@ extension CollectorProcessor : TProcessor {
   }
 }
 
+#endif

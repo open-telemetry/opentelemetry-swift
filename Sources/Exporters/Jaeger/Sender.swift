@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if !os(watchOS)
+
 import Foundation
 import Network
 import Thrift
@@ -55,3 +57,5 @@ public class Sender {
         return sendResult >= 0
     }
 }
+
+#endif
