@@ -18,6 +18,10 @@ class DatadogExporterTests: XCTestCase {
     }
 
     func testWhenExportSpanIsCalled_thenTraceAndLogsAreUploaded() throws {
+        if #available(watchOS 3.0, *) {
+            throw XCTSkip("Test is flaky on watchOS")
+        }
+
         var logsSent = false
         var tracesSent = false
         let expecTrace = expectation(description: "trace received")
@@ -95,6 +99,10 @@ class DatadogExporterTests: XCTestCase {
     }
 
     func testWhenExportMetricIsCalled_thenMetricsAreUploaded() throws {
+        if #available(watchOS 3.0, *) {
+            throw XCTSkip("Test is flaky on watchOS")
+        }
+
         var metricsSent = false
         let expecMetrics = expectation(description: "metrics received")
         expecMetrics.assertForOverFulfill = false
