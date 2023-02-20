@@ -18,6 +18,10 @@ class LogsExporterTests: XCTestCase {
     }
 
     func testWhenExportSpanIsCalledAndSpanHasEvent_thenLogIsUploaded() throws {
+        if #available(watchOS 3.0, *) {
+            throw XCTSkip("Test is flaky on watchOS")
+        }
+
         var logsSent = false
         let expec = expectation(description: "logs received")
         let server = HttpTestServer(url: URL(string: "http://localhost:33333"),

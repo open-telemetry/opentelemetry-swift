@@ -5,6 +5,8 @@
  *  @generated
  */
 
+#if !os(watchOS)
+
 import Foundation
 
 import Thrift
@@ -62,4 +64,4 @@ open class AgentProcessor /* Agent */ {
 
 }
 
-
+#endif
