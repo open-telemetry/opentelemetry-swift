@@ -12,13 +12,11 @@ public func defaultOltpHttpTracesEndpoint() -> URL {
 
 public class OtlpHttpTraceExporter: SpanExporter {
     let endpoint: URL
-    let urlSession: URLSession  // Do we need this?
     private let httpClient: HTTPClient
     var pendingSpans: [SpanData] = []
      
-    public init(endpoint: URL = defaultOltpHttpTracesEndpoint(), urlSession: URLSession = URLSession.shared) {  // FIXME should this take an URLSession??
+    public init(endpoint: URL = defaultOltpHttpTracesEndpoint()) {
         self.endpoint = endpoint
-        self.urlSession = urlSession
         self.httpClient = HTTPClient()
     }
     
@@ -52,6 +50,6 @@ public class OtlpHttpTraceExporter: SpanExporter {
         return exporterResult
     }
 
-    public func shutdown() {  // FIXME should this be a no-op?
+    public func shutdown() {
     }
 }

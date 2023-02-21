@@ -98,7 +98,7 @@ class OtlpHttpTraceExporterTests: XCTestCase {
         let duration = 0.9
         let start = Date()
         let end = start.addingTimeInterval(duration)
-        // let testattributes: [String: AttributeValue] = ["foo": AttributeValue("bar")!, "fizz": AttributeValue("buzz")!]
+        let testattributes: [String: AttributeValue] = ["foo": AttributeValue("bar")!, "fizz": AttributeValue("buzz")!]
                 
         var testData = SpanData(traceId: TraceId.random(),
                                 spanId: SpanId.random(),
@@ -107,7 +107,8 @@ class OtlpHttpTraceExporterTests: XCTestCase {
                                 startTime: start,
                                 endTime: end,
         totalAttributeCount: 2)
-       // testData.settingAttributes(testattributes)
+        testData.settingAttributes(testattributes)
+        testData.settingTotalAttributeCount(2)
         testData.settingHasEnded(true)
         testData.settingTotalRecordedEvents(0)
         testData.settingLinks([SpanData.Link]())

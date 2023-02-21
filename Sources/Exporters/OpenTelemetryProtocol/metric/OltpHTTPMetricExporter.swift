@@ -12,14 +12,12 @@ public func defaultOltpHTTPMetricsEndpoint() -> URL {
 
 public class OtlpHttpMetricExporter: MetricExporter {
     let endpoint: URL
-    let urlSession: URLSession // TODO do we need this?
     private let httpClient: HTTPClient
     var pendingMetrics: [Metric] = []
     
-    public init(endpoint: URL = defaultOltpHTTPMetricsEndpoint(), urlSession: URLSession = URLSession.shared) {
+    public init(endpoint: URL = defaultOltpHTTPMetricsEndpoint()) {
         self.endpoint = endpoint
         self.httpClient = HTTPClient();
-        self.urlSession = urlSession
     }
     
     public func export(metrics: [Metric], shouldCancel: (() -> Bool)?) -> MetricExporterResultCode {
