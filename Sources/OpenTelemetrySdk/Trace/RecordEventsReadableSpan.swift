@@ -9,11 +9,23 @@ import OpenTelemetryApi
 /// Implementation for the Span class that records trace events.
 public class RecordEventsReadableSpan: ReadableSpan {
     public var isRecording = true
+
+    fileprivate let internalStatusQueue = DispatchQueue(label: "org.opentelemetry.RecordEventsReadableSpan.internalStatusQueue", attributes: .concurrent)
     /// The displayed name of the span.
+    fileprivate var internalName: String
     public var name: String {
-        didSet {
-            if hasEnded {
-                name = oldValue
+        get {
+            var value: String = ""
+            internalStatusQueue.sync {
+                value = internalName
+            }
+            return value
+        }
+        set {
+            internalStatusQueue.sync(flags: .barrier) {
+                if !internalEnd {
+                    internalName = newValue
+                }
             }
         }
     }
@@ -55,11 +67,22 @@ public class RecordEventsReadableSpan: ReadableSpan {
     public private(set) var totalAttributeCount: Int = 0
     /// Number of events recorded.
     public private(set) var totalRecordedEvents = 0
+
     /// The status of the span.
-    public var status = Status.unset {
-        didSet {
-            if hasEnded {
-                status = oldValue
+    fileprivate var internalStatus: Status = .unset
+    public var status: Status {
+        get {
+            var value: Status = .unset
+            internalStatusQueue.sync {
+                value = internalStatus
+            }
+            return value
+        }
+        set {
+            internalStatusQueue.sync(flags: .barrier) {
+                if !internalEnd {
+                    internalStatus = newValue
+                }
             }
         }
     }
@@ -72,12 +95,13 @@ public class RecordEventsReadableSpan: ReadableSpan {
     /// The end time of the span.
     public private(set) var endTime: Date?
     /// True if the span is ended.
-    fileprivate var endAtomic = false
-    private let endSyncLock = Lock()
+    fileprivate var internalEnd = false
     public var hasEnded: Bool {
-        endSyncLock.withLock {
-            return endAtomic
+        var value = false
+        internalStatusQueue.sync {
+            value = internalEnd
         }
+        return value
     }
 
     private let eventsSyncLock = Lock()
@@ -99,7 +123,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
                  startTime: Date?)
     {
         self.context = context
-        self.name = name
+        self.internalName = name
         self.instrumentationScopeInfo = instrumentationScopeInfo
         self.parentContext = parentContext
         self.hasRemoteParent = hasRemoteParent
@@ -216,6 +240,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
             if !isRecording {
                 return
             }
+
             if value == nil {
                 attributes.removeValueForKey(key: key)
             }
@@ -262,23 +287,22 @@ public class RecordEventsReadableSpan: ReadableSpan {
     }
 
     public func end(time: Date) {
-        var wasAlreadyEnded = false
-        endSyncLock.withLockVoid {
-            wasAlreadyEnded = endAtomic
-            endAtomic = true
-        }
-        if wasAlreadyEnded {
-            return
-        }
+        internalStatusQueue.sync(flags: .barrier) {
+            if internalEnd {
+                return
 
+            } else {
+                internalEnd = true
+            }
+        }
         eventsSyncLock.withLockVoid {
             attributesSyncLock.withLockVoid {
                 isRecording = false
             }
         }
         endTime = time
-        spanProcessor.onEnd(span: self)
         OpenTelemetry.instance.contextProvider.removeContextForSpan(self)
+        spanProcessor.onEnd(span: self)
     }
 
     public var description: String {
@@ -287,13 +311,12 @@ public class RecordEventsReadableSpan: ReadableSpan {
 
     internal func getTotalRecordedEvents() -> Int {
         eventsSyncLock.withLock {
-            return totalRecordedEvents
+            totalRecordedEvents
         }
     }
-    
+
     /// For testing purposes
     internal func getDroppedLinksCount() -> Int {
         return totalRecordedLinks - links.count
     }
-
 }
