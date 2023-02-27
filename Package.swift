@@ -29,6 +29,7 @@ let package = Package(
         .library(name: "NetworkStatus", type: .static, targets: ["NetworkStatus"]),
         .executable(name: "simpleExporter", targets: ["SimpleExporter"]),
         .executable(name: "OTLPExporter", targets: ["OTLPExporter"]),
+        .executable(name: "OTLPHTTPExporter", targets: ["OTLPHTTPExporter"]),
         .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
     ],
     dependencies: [
@@ -164,6 +165,10 @@ let package = Package(
         .target(name: "OTLPExporter",
                 dependencies: ["OpenTelemetrySdk", "OpenTelemetryProtocolExporter", "StdoutExporter", "ZipkinExporter", "ResourceExtension", "SignPostIntegration"],
                 path: "Examples/OTLP Exporter",
+                exclude: ["README.md"]),
+        .target(name: "OTLPHTTPExporter",
+                dependencies: ["OpenTelemetrySdk", "OpenTelemetryProtocolExporter", "StdoutExporter", "ZipkinExporter", "ResourceExtension", "SignPostIntegration"],
+                path: "Examples/OTLP HTTP Exporter",
                 exclude: ["README.md"]),
         .target(name: "PrometheusSample",
                 dependencies: ["OpenTelemetrySdk", "PrometheusExporter"],
