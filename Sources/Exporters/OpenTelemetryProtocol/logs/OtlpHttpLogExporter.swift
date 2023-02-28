@@ -37,14 +37,14 @@ public class OtlpHttpLogExporter : LogRecordExporter {
     }
     
     public func flush() -> ExportResult {
-        var exporterResult: ExportResult = .success
+        var exporterResult: ExportResult = .failure
         let logRecords = pendingLogRecords
         pendingLogRecords = []
             
         let body = Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest.with { request in
             request.resourceLogs = LogRecordAdapter.toProtoResourceRecordLog(logRecordList: logRecords)
         }
-        
+
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.httpBody = try? body.serializedData()

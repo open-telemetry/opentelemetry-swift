@@ -26,7 +26,7 @@ public class OtlpHttpTraceExporter: SpanExporter {
     }
 
     public func flush() -> SpanExporterResultCode {
-        var exporterResult: SpanExporterResultCode = .success
+        var exporterResult: SpanExporterResultCode = .failure
         let spans = pendingSpans
         pendingSpans = []
         let body = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {

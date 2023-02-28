@@ -28,7 +28,9 @@ internal final class HTTPClient {
         let task = session.dataTask(with: request) { data, response, error in
             completion(httpClientResult(for: (data, response, error)))
         }
+        
         task.resume()
+        Thread.sleep(forTimeInterval: 1)  // FIXME is there a better way to handle this?
     }
 }
 
