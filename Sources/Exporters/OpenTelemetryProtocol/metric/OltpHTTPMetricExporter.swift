@@ -15,9 +15,13 @@ public class OtlpHttpMetricExporter: MetricExporter {
     private let httpClient: HTTPClient
     var pendingMetrics: [Metric] = []
     
-    public init(endpoint: URL = defaultOltpHTTPMetricsEndpoint()) {
+    public init(endpoint: URL = defaultOltpHTTPMetricsEndpoint(), useSession: URLSession? = nil) {
         self.endpoint = endpoint
-        self.httpClient = HTTPClient();
+        if let providedSession = useSession {
+            self.httpClient = HTTPClient(session: providedSession)
+        } else {
+            self.httpClient = HTTPClient()
+        }
     }
     
     public func export(metrics: [Metric], shouldCancel: (() -> Bool)?) -> MetricExporterResultCode {

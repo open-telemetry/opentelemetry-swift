@@ -15,9 +15,13 @@ public class OtlpHttpTraceExporter: SpanExporter {
     private let httpClient: HTTPClient
     var pendingSpans: [SpanData] = []
      
-    public init(endpoint: URL = defaultOltpHttpTracesEndpoint()) {
+    public init(endpoint: URL = defaultOltpHttpTracesEndpoint(), useSession: URLSession? = nil) {
         self.endpoint = endpoint
-        self.httpClient = HTTPClient()
+        if let providedSession = useSession {
+            self.httpClient = HTTPClient(session: providedSession)
+        } else {
+            self.httpClient = HTTPClient()
+        }
     }
     
     public func export(spans: [SpanData]) -> SpanExporterResultCode {

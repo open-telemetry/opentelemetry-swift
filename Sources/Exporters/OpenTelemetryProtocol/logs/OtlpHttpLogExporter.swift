@@ -19,9 +19,13 @@ public class OtlpHttpLogExporter : LogRecordExporter {
     private let httpClient: HTTPClient
     var pendingLogRecords: [ReadableLogRecord] = []
     
-    public init(endpoint: URL = defaultOltpHttpLoggingEndpoint()) {
+    public init(endpoint: URL = defaultOltpHttpLoggingEndpoint(), useSession: URLSession? = nil) {
         self.endpoint = endpoint
-        self.httpClient = HTTPClient()
+        if let providedSession = useSession {
+            self.httpClient = HTTPClient(session: providedSession)
+        } else {
+            self.httpClient = HTTPClient()
+        }
     }
     
     public func export(logRecords: [OpenTelemetrySdk.ReadableLogRecord]) -> OpenTelemetrySdk.ExportResult {
