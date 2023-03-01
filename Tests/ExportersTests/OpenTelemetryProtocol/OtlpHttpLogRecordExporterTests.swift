@@ -47,12 +47,9 @@ class OtlpHttpLogRecordExporterTests: XCTestCase {
         let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
         let exporter = OtlpHttpLogExporter(endpoint: endpoint)
         
-        let result = exporter.export(logRecords: [logRecord])
-        // XCTAssertEqual(result, ExportResult.success)  //  FIXME why is this failing if we are getting the correct content below?
+        let _ = exporter.export(logRecords: [logRecord])
         
-        // FIXME: Use protobuf to verify that we have received the correct Log records
-        //XCTAssertEqual(fakeCollector.receivedLogs, LogRecordAdapter.toProtoResourceRecordLog(logRecordList: [logRecord]))
-        
+        // TODO: Use protobuf to verify that we have received the correct Log records      
         XCTAssertNoThrow(try testServer.receiveHead())
         XCTAssertNoThrow(try testServer.receiveBodyAndVerify() { body in
             var contentsBuffer = ByteBuffer(buffer: body)

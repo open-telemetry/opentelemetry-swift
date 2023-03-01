@@ -37,7 +37,7 @@ public class OtlpHttpTraceExporter: SpanExporter {
         request.httpMethod = "POST"
         request.httpBody = try? body.serializedData()
         request.setValue("application/x-protobuf", forHTTPHeaderField: "Content-Type")
-        
+                
         httpClient.send(request: request) { result in
             switch result {
             case .success(_):

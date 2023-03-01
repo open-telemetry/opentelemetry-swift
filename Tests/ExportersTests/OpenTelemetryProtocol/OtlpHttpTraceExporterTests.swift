@@ -14,14 +14,12 @@ import OpenTelemetryApi
 import XCTest
 
 class OtlpHttpTraceExporterTests: XCTestCase {
-    var exporter: OtlpHttpTraceExporter!
     var testServer: NIOHTTP1TestServer!
     var group: MultiThreadedEventLoopGroup!
    
     override func setUp() {
         group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         testServer = NIOHTTP1TestServer(group: group)
-        exporter = OtlpHttpTraceExporter()
     }
     
     override func tearDown() {
@@ -33,17 +31,16 @@ class OtlpHttpTraceExporterTests: XCTestCase {
     // description strings (which is why I made them unique) in the body returned by testServer.receiveBodyAndVerify().
     // It should ideally turn that body into [SpanData] using protobuf and then confirm content
     func testExport() {
-        let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
-        exporter = OtlpHttpTraceExporter(endpoint: endpoint)
+        let endpoint = URL(string: "http://localhost:\(testServer.serverPort)/v1/traces")!
+        let exporter = OtlpHttpTraceExporter(endpoint: endpoint)
         
         var spans: [SpanData] = []
         let endpointName1 = "/api/foo" + String(Int.random(in: 1...100))
         let endpointName2 = "/api/bar" + String(Int.random(in: 100...500))
         spans.append(generateFakeSpan(endpointName: endpointName1))
         spans.append(generateFakeSpan(endpointName: endpointName2))
-        let result = exporter.export(spans: spans)
-        // XCTAssertEqual(result, SpanExporterResultCode.success) // FIXME 
-        
+        let _ = exporter.export(spans: spans)
+
         XCTAssertNoThrow(try testServer.receiveHead())
         XCTAssertNoThrow(try testServer.receiveBodyAndVerify() { body in
             var contentsBuffer = ByteBuffer(buffer: body)
