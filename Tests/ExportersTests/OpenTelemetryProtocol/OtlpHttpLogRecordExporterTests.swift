@@ -35,14 +35,13 @@ class OtlpHttpLogRecordExporterTests: XCTestCase {
     func testExport() {
         let testBody = "Hello world " + String(Int.random(in: 1...100))
         let logRecord = ReadableLogRecord(resource: Resource(),
-                                                     instrumentationScopeInfo: InstrumentationScopeInfo(name: "scope"),
-                                                     timestamp: Date(),
-                                                     observedTimestamp: Date.distantPast,
-            
-                                    spanContext: spanContext,
-                                                     severity: .fatal,
-                                                     body: testBody,
-                                                     attributes: ["event.name":AttributeValue.string("name"), "event.domain": AttributeValue.string("domain")])
+                                          instrumentationScopeInfo: InstrumentationScopeInfo(name: "scope"),
+                                          timestamp: Date(),
+                                          observedTimestamp: Date.distantPast,
+                                          spanContext: spanContext,
+                                          severity: .fatal,
+                                          body: testBody,
+                                          attributes: ["event.name":AttributeValue.string("name"), "event.domain": AttributeValue.string("domain")])
         
         let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
         let exporter = OtlpHttpLogExporter(endpoint: endpoint)
@@ -58,7 +57,5 @@ class OtlpHttpLogRecordExporterTests: XCTestCase {
         })
         
         XCTAssertNoThrow(try testServer.receiveEnd())
-        
-        exporter.shutdown()
     }
 }

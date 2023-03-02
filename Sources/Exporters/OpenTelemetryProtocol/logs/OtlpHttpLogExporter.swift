@@ -46,6 +46,7 @@ public class OtlpHttpLogExporter : OtlpHttpExporterBase, LogRecordExporter {
                 exporterResult = ExportResult.failure
             }
         }
+        
         return exporterResult
     }
 }

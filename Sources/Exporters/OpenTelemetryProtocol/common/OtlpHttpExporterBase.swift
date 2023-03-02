@@ -33,8 +33,6 @@ public class OtlpHttpExporterBase {
         return request
     }
     
-    
     public func shutdown() {
     }
-    
 }
