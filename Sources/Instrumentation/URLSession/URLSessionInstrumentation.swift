@@ -65,7 +65,7 @@ public class URLSessionInstrumentation {
             #selector(URLSessionDataDelegate.urlSession(_:dataTask:didBecome:) as (URLSessionDataDelegate) -> ((URLSession, URLSessionDataTask, URLSessionStreamTask) -> Void)?)
         ]
 #endif
-        let classes = InstrumentationUtils.objc_getClassList()
+        let classes = configuration.delegateClassesToInstrument ?? InstrumentationUtils.objc_getClassList()
         let selectorsCount = selectors.count
         DispatchQueue.concurrentPerform(iterations: classes.count) { iteration in
             let theClass: AnyClass = classes[iteration]
