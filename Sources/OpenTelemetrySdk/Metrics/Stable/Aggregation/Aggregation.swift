@@ -5,16 +5,15 @@
 
 import Foundation
 
+public protocol Aggregation : AggregatorFactory {}
 
-typealias DefaultAggregationSelector = (InstrumentType) -> Aggregation
-
-public class Aggregation {
+public class Aggregations {
     static func drop() -> Aggregation {
-        
+        DropAggregation.instance
     }
     
     static func defaultAggregation() -> Aggregation {
-        
+        DefaultAggregation.instance
     }
     
     static func sum() -> Aggregation {
@@ -25,8 +24,8 @@ public class Aggregation {
         
     }
     
-    static func explicitBucketHistogram() {
-        
+    static func explicitBucketHistogram() -> Aggregation {
+        ExplicitBucketHistogramAggregation.instance
     }
     
     static func explicitBucketHistogram(buckets: [Double]) {
@@ -37,7 +36,7 @@ public class Aggregation {
         
     }
     
-    static func base2ExponentialBucketHistogram(int maxBuckets, int maxScale) {
+    static func base2ExponentialBucketHistogram(maxBuckets: Int, maxScale: Int) {
         
     }
 }

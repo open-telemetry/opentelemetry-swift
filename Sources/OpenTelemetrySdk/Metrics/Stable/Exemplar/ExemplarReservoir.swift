@@ -6,17 +6,16 @@
 import Foundation
 import OpenTelemetryApi
 
-public protocol ExemplarReservoirProtocol {
-    associatedtype T : ExemplarData
+public protocol ExemplarReservoir {
     func offerDoubleMeasurement(value: Double, attributes: [String: AttributeValue])
     func offerLongMeasurement(value: Int, attributes: [String: AttributeValue])
-    func collectAndReset(attribute: [String: AttributeValue]) -> [T]
+    func collectAndReset(attribute: [String: AttributeValue]) -> [ExemplarData]
 }
 
-public class ExemplarReservoir<T : ExemplarData> : ExemplarReservoirProtocol {
+public class AnyExemplarReservoir : ExemplarReservoir {
    
-    public func collectAndReset(attribute: [String : AttributeValue]) -> [T] {
-        return [T]()
+    public func collectAndReset(attribute: [String : AttributeValue]) -> [ExemplarData] {
+        return [AnyExemplarData]()
     }
     
     
@@ -29,23 +28,10 @@ public class ExemplarReservoir<T : ExemplarData> : ExemplarReservoirProtocol {
     }
     
     
-    static func filter<T:ExemplarData>(filter: ExemplarFilter, original : ExemplarReservoir<T>) -> ExemplarReservoir<T> {
-        return FilteredExemplarReservoir<T>(filter: filter, reservoir: original)
-    }
-    
-    static func doubleNoSamples() -> ExemplarReservoir<ImmutableDoubleExemplarData> {
-        return NoopExemplarReservoir<ImmutableDoubleExemplarData>()
-    }
-    
-    static func longNoSamples() -> ExemplarReservoir<ImmutableLongExemplarData> {
-        return NoopExemplarReservoir<ImmutableLongExemplarData>()
-    }
-    
-    
 }
 
 
-public class NoopExemplarReservoir<T : ExemplarData> : ExemplarReservoir<T> {
+public class NoopExemplarReservoir : AnyExemplarReservoir {
     public override func offerDoubleMeasurement(value: Double, attributes: [String : OpenTelemetryApi.AttributeValue]) {
         // noop
     }
@@ -54,22 +40,35 @@ public class NoopExemplarReservoir<T : ExemplarData> : ExemplarReservoir<T> {
         // noop
     }
     
-    public override func collectAndReset(attribute: [String : AttributeValue]) -> [T] {
-        return [T]()
+    public override func collectAndReset(attribute: [String : AttributeValue]) -> [ExemplarData] {
+        return [ExemplarData]()
     }
     
     
 }
 
+public class ExemplarReservoirCollection {
+    
+    static func doubleNoSamples() -> AnyExemplarReservoir {
+        return NoopExemplarReservoir()
+    }
+    
+    static func longNoSamples() -> AnyExemplarReservoir {
+        return NoopExemplarReservoir()
+    }
+
+    
+    
+}
 
 
-public class FixedSizedExemplarReservoir<T : ExemplarData> : ExemplarReservoir<T> {
+public class FixedSizedExemplarReservoir : AnyExemplarReservoir {
     let storage : [ReservoirCell]
     let reservoirCellSelector : ReservoirCellSelector
-    let mapAndResetCell : (ReservoirCell, [String:AttributeValue])-> T?
+    let mapAndResetCell : (ReservoirCell, [String:AttributeValue]) ->  ExemplarData?
     var hasMeasurements = false
     
-    init(clock: Clock, size: Int, reservoirCellSelector: ReservoirCellSelector, mapAndResetCell: @escaping (ReservoirCell, [String : AttributeValue]) -> T) {
+    init(clock: Clock, size: Int, reservoirCellSelector: ReservoirCellSelector, mapAndResetCell: @escaping (ReservoirCell, [String : AttributeValue]) -> ExemplarData?) {
         storage = [ReservoirCell]()
         self.reservoirCellSelector = reservoirCellSelector
         self.mapAndResetCell = mapAndResetCell
@@ -97,8 +96,8 @@ public class FixedSizedExemplarReservoir<T : ExemplarData> : ExemplarReservoir<T
         }
     }
     
-    override public func collectAndReset(attribute: [String : AttributeValue]) -> [T] {
-       var results = [T]()
+    override public func collectAndReset(attribute: [String : AttributeValue]) -> [ExemplarData] {
+       var results = [ExemplarData]()
         if !hasMeasurements {
             return results
         }
@@ -114,20 +113,20 @@ public class FixedSizedExemplarReservoir<T : ExemplarData> : ExemplarReservoir<T
     
 }
 
-public class RandomFixedSizedExemplarReservoir<T: ExemplarData> : FixedSizedExemplarReservoir<T> {
+public class RandomFixedSizedExemplarReservoir : FixedSizedExemplarReservoir {
     
-    private init(clock: Clock, size: Int, mapAndResetCell: @escaping (ReservoirCell, [String : AttributeValue]) -> T) {
+    private init(clock: Clock, size: Int, mapAndResetCell: @escaping (ReservoirCell, [String : AttributeValue]) -> ExemplarData?) {
         super.init(clock:clock, size: size, reservoirCellSelector: RandomCellSelector() , mapAndResetCell : mapAndResetCell)
     }
     
-    static func createLong(clock: Clock, size : Int) -> RandomFixedSizedExemplarReservoir<ImmutableLongExemplarData> {
+    static func createLong(clock: Clock, size : Int) -> RandomFixedSizedExemplarReservoir {
         
-        return RandomFixedSizedExemplarReservoir<ImmutableLongExemplarData>(clock: clock, size: size, mapAndResetCell: unsafeBitCast(ReservoirCell.getAndResetLong, to: ((ReservoirCell, [String: AttributeValue]) -> ImmutableLongExemplarData).self))
+        return RandomFixedSizedExemplarReservoir(clock: clock, size: size, mapAndResetCell: unsafeBitCast(ReservoirCell.getAndResetLong, to: ((ReservoirCell, [String: AttributeValue]) -> ImmutableLongExemplarData).self))
         
     }
     
-    static func createDouble(clock: Clock, size : Int) -> RandomFixedSizedExemplarReservoir<ImmutableDoubleExemplarData> {
-        return RandomFixedSizedExemplarReservoir<ImmutableDoubleExemplarData>(clock: clock, size: size, mapAndResetCell: unsafeBitCast(ReservoirCell.getAndResetDouble, to: ((ReservoirCell, [String: AttributeValue]) -> ImmutableDoubleExemplarData).self))
+    static func createDouble(clock: Clock, size : Int) -> RandomFixedSizedExemplarReservoir {
+        return RandomFixedSizedExemplarReservoir(clock: clock, size: size, mapAndResetCell: unsafeBitCast(ReservoirCell.getAndResetDouble, to: ((ReservoirCell, [String: AttributeValue]) -> ImmutableDoubleExemplarData).self))
 
     }
     

@@ -12,7 +12,7 @@ public class ViewBuilder {
     
     private var description : String?
     
-    private var aggregation : Aggregation = Aggregation.defaultAggregation()
+    private var aggregation : Aggregation = Aggregations.defaultAggregation()
     
 //    private var processor : AttributesProcessor = AttributesProcessor.noop()
     

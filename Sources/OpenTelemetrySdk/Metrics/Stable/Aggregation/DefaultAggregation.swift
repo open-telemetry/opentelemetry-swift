@@ -7,15 +7,27 @@ import Foundation
 
 
 public class DefaultAggregation : Aggregation, AggregatorFactory {
+    public private(set) static var instance = DefaultAggregation()
     
-    public func isCompatible(with descriptor: InstrumentDescriptor) {
-        
+    public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> any StableAggregator {
+        resolve(for: descriptor).createAggregator(descriptor: descriptor, exemplarFilter: exemplarFilter)
     }
     
-    private static let instance = defaultAggregation()
+    public func isCompatible(with descriptor: InstrumentDescriptor) -> Bool {
+        resolve(for: descriptor).isCompatible(with: descriptor)
+    }
     
-    public static func get() -> Aggregation {
-        return instance
+    private func resolve(for instrument: InstrumentDescriptor) -> AggregatorFactory {
+        switch(instrument.type) {
+        case .counter, .upDownCounter, .observableCounter, .observableUpDownCounter:
+                return SumAggregation.instance
+        case .histogram:
+            return ExplicitBucketHistogramAggregation.instance
+        case .observableGauge:
+            return StableLastAggregation.instance
+            }
+        
+        return DropAggregation.instance
     }
     
     

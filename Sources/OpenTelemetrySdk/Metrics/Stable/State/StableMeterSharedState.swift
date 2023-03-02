@@ -8,7 +8,7 @@ import Foundation
 class StableMeterSharedState {
     let meterLock = Lock()
     public private(set) var meterRegistry = [StableMeterSdk]()
-    public private(set) var viewRegistry = StableViewRegistry()
+    public private(set) var readerStorageRegisteries = [RegisteredReader: MetricStorage]()
     var resource: Resource
 
     init(resource: Resource) {

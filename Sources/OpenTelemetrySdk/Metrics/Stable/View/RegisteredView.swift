@@ -9,11 +9,11 @@ import Foundation
 public struct RegisteredView {
     public private(set) var selector : InstrumentSelector
     public private(set) var view : StableView
-//    public private(set) var viewAttributesProcessor : AttributesProcessor
+    public private(set) var attributeProcessor : AttributeProcessor
     
-    internal init(selector: InstrumentSelector, view: StableView){ //, viewAttributesProcessor: AttributesProcessor) {
+    internal init(selector: InstrumentSelector, view: StableView, attributeProcessor: AttributeProcessor) {
         self.selector = selector
         self.view = view
-//        self.viewAttributesProcessor = viewAttributesProcessor
+        self.attributeProcessor = attributeProcessor
     }
 }

@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 class StableMeterSdk : StableMeter {
     func counterBuilder(name: String) -> OpenTelemetryApi.LongCounterBuilder {
-        
+        return LongCounterMeterBuilderSdk()
     }
     
     func upDownCounterBuilder(name: String) -> OpenTelemetryApi.LongUpDownCounterBuilder {

@@ -6,7 +6,6 @@
 import Foundation
 import OpenTelemetryApi
 
-public protocol ValueAtQuantile {
-    func quantile() -> Double
-    func value() -> Double
+public class AsynchronousMetricStorage : MetricStorage {
+    
 }

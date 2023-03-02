@@ -6,8 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 class StableMetricReaderSdk : StableMetricReader {
-
-    let exporter : MetricExporter
+    let exporter : StableMetricExporter
     let sharedState : StableMeterSharedState
     let exportInterval : TimeInterval
     let exportTimeout : TimeInterval
@@ -23,7 +22,7 @@ class StableMetricReaderSdk : StableMetricReader {
         return true
     }
 
-    init(exporter: MetricExporter, sharedState: StableMeterSharedState, exportInterval: TimeInterval = 60.0, exportTimeout: TimeInterval = 30.0) {
+    init(exporter: StableMetricExporter, sharedState: StableMeterSharedState, exportInterval: TimeInterval = 60.0, exportTimeout: TimeInterval = 30.0) {
         self.sharedState = sharedState
         self.exporter = exporter
         self.exportInterval = exportInterval
@@ -37,6 +36,15 @@ class StableMetricReaderSdk : StableMetricReader {
     func shutdown() -> Bool {
         fatalError("shutdown() has not been implemented")
     }
+    
+    func getAggregationTemporality(for instrument: InstrumentType) -> AggregationTemporality {
+        exporter.getAggregationTemporality(for: instrument)
+    }
+    
+    func getDefaultAggregation(for instrument: InstrumentType) -> Aggregation {
+        return exporter.getDefaultAggregation(for: instrument)
+    }
+    
 }
 
 

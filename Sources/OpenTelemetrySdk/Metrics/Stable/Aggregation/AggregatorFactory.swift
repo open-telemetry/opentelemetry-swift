@@ -7,6 +7,6 @@ import Foundation
 
 
 public protocol AggregatorFactory {
-    func createAggregator(descriptor : InstrumentDescriptor, exemplarFilter : ExemplarFilter) -> Aggregator
-    func isCompatible(with descriptor: InstrumentDescriptor)
+    func createAggregator(descriptor : InstrumentDescriptor, exemplarFilter : ExemplarFilter) -> any StableAggregator
+    func isCompatible(with descriptor: InstrumentDescriptor) -> Bool
 }

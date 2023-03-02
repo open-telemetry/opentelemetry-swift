@@ -27,7 +27,7 @@ public class StableMeterProviderBuilder {
     }
 
     func registerView(selector : InstrumentSelector, view: StableView) -> Self {
-        registerViews.append(RegisteredView(selector: selector, view: view))
+        registeredViews.append(RegisteredView(selector: selector, view: view, attributeProcessor: view.attributesProcessor))
         return self
     }
 

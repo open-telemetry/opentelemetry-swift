@@ -9,9 +9,9 @@ public class StableViewRegistry {
     private var instrumentDefaultRegisteredView = [InstrumentType : RegisteredView]()
     private var registeredViews = [RegisteredView]()
     
-    init(aggregationSelector : AggregationSelector, registeredViews: [RegisteredView]) {
+    init(aggregationSelector : DefaultAggregationSelector, registeredViews: [RegisteredView]) {
         for type in  InstrumentType.allCases {
-            instrumentDefaultRegisteredView[type] = RegisteredView(selector: InstrumentSelector.builder().setInstrument(name: "*").build(), view: StableView.builder().withAggregation(aggregation: aggregationSelector.selector(type)).build())
+            instrumentDefaultRegisteredView[type] = RegisteredView(selector: InstrumentSelector.builder().setInstrument(name: "*").build(), view: StableView.builder().withAggregation(aggregation: aggregationSelector.getDefaultAggregation(for: type)).build())
         }
         self.registeredViews = registeredViews
     }

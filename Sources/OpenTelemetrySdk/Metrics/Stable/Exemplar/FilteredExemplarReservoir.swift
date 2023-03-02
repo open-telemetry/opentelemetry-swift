@@ -6,11 +6,11 @@
 import Foundation
 import OpenTelemetryApi
 
-public class FilteredExemplarReservoir<T : ExemplarData> : ExemplarReservoir<T> {
+public class FilteredExemplarReservoir: AnyExemplarReservoir {
     let exemplarFilter : ExemplarFilter
-    let reservoir : ExemplarReservoir<T>
+    let reservoir : AnyExemplarReservoir
     
-    init(filter: ExemplarFilter, reservoir: ExemplarReservoir<T>) {
+    init(filter: ExemplarFilter, reservoir: AnyExemplarReservoir) {
         self.exemplarFilter = filter
         self.reservoir = reservoir
     }
@@ -27,7 +27,7 @@ public class FilteredExemplarReservoir<T : ExemplarData> : ExemplarReservoir<T> 
         }
     }
     
-    public override func collectAndReset(attribute: [String : OpenTelemetryApi.AttributeValue]) -> [T] {
+    public override func collectAndReset(attribute: [String : OpenTelemetryApi.AttributeValue]) -> [ExemplarData] {
         return reservoir.collectAndReset(attribute: attribute)
     }
 }

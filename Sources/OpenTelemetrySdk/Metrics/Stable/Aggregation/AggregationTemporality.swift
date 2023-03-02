@@ -5,22 +5,35 @@
 
 import Foundation
 
+public protocol AggregationTemporalitySelectorProtocol {
+    func getAggregationTemporality(for instrument: InstrumentType) -> AggregationTemporality
+}
 
-typealias AggregationTemporalitySelector = (InstrumentType) -> AggregationTemporality
+public class AggregationTemporalitySelector : AggregationTemporalitySelectorProtocol {
+    public func getAggregationTemporality(for instrument: InstrumentType) -> AggregationTemporality {
+        return aggregationTemporalitySelector(instrument)
+    }
+    
+    init(aggregationTemporalitySelector: @escaping (InstrumentType) -> AggregationTemporality) {
+        self.aggregationTemporalitySelector = aggregationTemporalitySelector
+    }
+    
+    public var aggregationTemporalitySelector: (InstrumentType) -> AggregationTemporality
+}
 
 public enum AggregationTemporality {
     case delta
     case cumulative
     
     static func alwaysCumulative() -> AggregationTemporalitySelector {
-        return  { (type: InstrumentType) -> AggregationTemporality in
+        return  AggregationTemporalitySelector() { (type) in
             .cumulative
         }
         
     }
     
     static func deltaPreferred() -> AggregationTemporalitySelector {
-        return { (type: InstrumentType) -> AggregationTemporality in
+        return  AggregationTemporalitySelector() { type in
             switch(type) {
             case .upDownCounter, .observableUpDownCounter:
                 return .cumulative

@@ -8,12 +8,12 @@ import OpenTelemetryApi
 
 
 public class DropAggregation : Aggregation, AggregatorFactory {
-
     
     public private(set) static var instance = DropAggregation()
     
-    public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter:  ExemplarFilter) -> Aggregator<T,U> {
-        Aggregator.drop()
+    public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter:  ExemplarFilter) -> any StableAggregator  {
+        
+        return DropAggregator()
     }
 
     public func isCompatible(with descriptor: InstrumentDescriptor) -> Bool {
