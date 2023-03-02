@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if !os(watchOS)
+
 import Foundation
 
 @testable import JaegerExporter
@@ -290,3 +292,5 @@ class AdapterTests: XCTestCase {
         XCTAssertTrue(found)
     }
 }
+
+#endif

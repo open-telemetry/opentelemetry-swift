@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if os(macOS) || os(iOS) || targetEnvironment(macCatalyst)
+
 import XCTest
 
 #if os(iOS)
@@ -36,3 +38,5 @@ class DeviceTests: XCTestCase {
     class ProcessInfoMock: ProcessInfo {}
     #endif
 }
+
+#endif

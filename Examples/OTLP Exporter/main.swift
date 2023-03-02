@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if os(macOS)
+
 import Foundation
 import GRPC
 import NIO
@@ -111,3 +113,5 @@ for _ in 1...3000 {
     exampleMeasure.record(value: 750, labelset: meter.getLabelSet(labels: labels1))
     sleep(1)
 }
+
+#endif
