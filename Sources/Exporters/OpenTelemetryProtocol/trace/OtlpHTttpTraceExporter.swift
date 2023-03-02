@@ -10,20 +10,14 @@ public func defaultOltpHttpTracesEndpoint() -> URL {
     URL(string: "http://localhost:4318/v1/traces")!
 }
 
-public class OtlpHttpTraceExporter: SpanExporter {
-    let endpoint: URL
-    private let httpClient: HTTPClient
+public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
     var pendingSpans: [SpanData] = []
-     
-    public init(endpoint: URL = defaultOltpHttpTracesEndpoint(), useSession: URLSession? = nil) {
-        self.endpoint = endpoint
-        if let providedSession = useSession {
-            self.httpClient = HTTPClient(session: providedSession)
-        } else {
-            self.httpClient = HTTPClient()
-        }
-    }
     
+    override
+    public init(endpoint: URL = defaultOltpHttpTracesEndpoint(), useSession: URLSession? = nil) {
+        super.init(endpoint: endpoint, useSession: useSession)
+    }
+     
     public func export(spans: [SpanData]) -> SpanExporterResultCode {
         pendingSpans.append(contentsOf: spans)
         return self.flush()
@@ -37,11 +31,7 @@ public class OtlpHttpTraceExporter: SpanExporter {
             $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
         }
         
-        var request = URLRequest(url: endpoint)
-        request.httpMethod = "POST"
-        request.httpBody = try? body.serializedData()
-        request.setValue("application/x-protobuf", forHTTPHeaderField: "Content-Type")
-                
+        let request = createRequest(body: body, endpoint: endpoint)
         httpClient.send(request: request) { result in
             switch result {
             case .success(_):
@@ -52,8 +42,5 @@ public class OtlpHttpTraceExporter: SpanExporter {
             }
         }
         return exporterResult
-    }
-
-    public func shutdown() {
     }
 }

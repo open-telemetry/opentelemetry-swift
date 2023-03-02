@@ -10,18 +10,12 @@ public func defaultOltpHTTPMetricsEndpoint() -> URL {
     URL(string: "http://localhost:4318/v1/metrics")!
 }
 
-public class OtlpHttpMetricExporter: MetricExporter {
-    let endpoint: URL
-    private let httpClient: HTTPClient
+public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
     var pendingMetrics: [Metric] = []
     
+    override
     public init(endpoint: URL = defaultOltpHTTPMetricsEndpoint(), useSession: URLSession? = nil) {
-        self.endpoint = endpoint
-        if let providedSession = useSession {
-            self.httpClient = HTTPClient(session: providedSession)
-        } else {
-            self.httpClient = HTTPClient()
-        }
+        super.init(endpoint: endpoint, useSession: useSession)
     }
     
     public func export(metrics: [Metric], shouldCancel: (() -> Bool)?) -> MetricExporterResultCode {
@@ -39,11 +33,7 @@ public class OtlpHttpMetricExporter: MetricExporter {
                 $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(metricDataList: metrics)
             }
 
-        var request = URLRequest(url: endpoint)
-        request.httpMethod = "POST"
-        request.httpBody = try? body.serializedData()
-        request.setValue("application/x-protobuf", forHTTPHeaderField: "Content-Type")
-        
+        let request = createRequest(body: body, endpoint: endpoint)
         httpClient.send(request: request) { result in
             switch result {
             case .success(_):
@@ -54,10 +44,5 @@ public class OtlpHttpMetricExporter: MetricExporter {
             }
         }
         return exporterResult
-    }
-    
-    
-    public func shutdown() {
-        
     }
 }
