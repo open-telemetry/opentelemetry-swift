@@ -55,13 +55,6 @@ class OtlpHttpTraceExporterTests: XCTestCase {
     // This is not a thorough test of HTTPClient, but just enough to keep code coverage happy.
     // There is a more complete test as part of the DataDog exporter test
     func testHttpClient() {
-        let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-        let testServer = NIOHTTP1TestServer(group: group)
-        defer {
-            XCTAssertNoThrow(try testServer.stop())
-            XCTAssertNoThrow(try group.syncShutdownGracefully())
-        }
-
         let endpoint = URL(string: "http://localhost:\(testServer.serverPort)/some-route")!
         let httpClient = HTTPClient()
         var request = URLRequest(url: endpoint)
@@ -89,6 +82,12 @@ class OtlpHttpTraceExporterTests: XCTestCase {
         // Make the server send a response to the client.
         XCTAssertNoThrow(try testServer.writeOutbound(.head(.init(version: .http1_1, status: .imATeapot))))
         XCTAssertNoThrow(try testServer.writeOutbound(.end(nil)))
+    }
+    
+    func testFlush() {
+        let endpoint = URL(string: "http://localhost:\(testServer.serverPort)/v1/traces")!
+        let exporter = OtlpHttpTraceExporter(endpoint: endpoint)
+        XCTAssertEqual(SpanExporterResultCode.success, exporter.flush())
     }
     
     private func generateFakeSpan(endpointName: String = "/api/endpoint") -> SpanData {

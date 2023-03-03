@@ -58,4 +58,20 @@ class OtlpHttpLogRecordExporterTests: XCTestCase {
         
         XCTAssertNoThrow(try testServer.receiveEnd())
     }
+    
+    // TODO: for this and the other httpexporters, see if there is some way to really test this.  As writtne these tests
+    // won't really do much as there are no pending spans
+    func testFlush() {
+        let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
+        let exporter = OtlpHttpLogExporter(endpoint: endpoint)
+        XCTAssertEqual(ExportResult.success, exporter.flush())
+    }
+    
+    func testForceFlush() {
+        let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
+        let exporter = OtlpHttpLogExporter(endpoint: endpoint)
+        XCTAssertEqual(ExportResult.success, exporter.forceFlush())
+    }
+    
+    
 }

@@ -20,28 +20,47 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
     
     public func export(metrics: [Metric], shouldCancel: (() -> Bool)?) -> MetricExporterResultCode {
         pendingMetrics.append(contentsOf: metrics)
-        return self.flush()
+        let sendingMetrics = pendingMetrics
+        pendingMetrics = []
+        let body = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
+            $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(metricDataList: sendingMetrics)
+        }
+
+        let request = createRequest(body: body, endpoint: endpoint)
+        httpClient.send(request: request) { [weak self] result in
+            switch result {
+            case .success(_):
+                break
+            case .failure(let error):
+                self?.pendingMetrics.append(contentsOf: sendingMetrics)
+                print(error)
+            }
+        }
+        
+        return .success
     }
 
     public func flush() -> MetricExporterResultCode {
         var exporterResult: MetricExporterResultCode = .success
 
-        let metrics = pendingMetrics
-        pendingMetrics = []
-        let body = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest
-            .with {
-                $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(metricDataList: metrics)
+        if !pendingMetrics.isEmpty {
+            let body = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
+                $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(metricDataList: pendingMetrics)
             }
-
-        let request = createRequest(body: body, endpoint: endpoint)
-        httpClient.send(request: request) { result in
-            switch result {
-            case .success(_):
-                exporterResult = MetricExporterResultCode.success
-            case .failure(let error):
-                print("ERROR: \(error)")
-                exporterResult = MetricExporterResultCode.failureNotRetryable // FIXME how do I know what type of failure?
+            
+            let semaphore = DispatchSemaphore(value: 0)
+            let request = createRequest(body: body, endpoint: endpoint)
+            httpClient.send(request: request) { result in
+                switch result {
+                case .success(_):
+                    break
+                case .failure(let error):
+                    print(error)
+                    exporterResult = MetricExporterResultCode.failureNotRetryable
+                }
+                semaphore.signal()
             }
+            semaphore.wait()
         }
         return exporterResult
     }

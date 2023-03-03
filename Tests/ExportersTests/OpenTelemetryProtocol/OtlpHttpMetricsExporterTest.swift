@@ -98,6 +98,12 @@ class OtlpHttpMetricsExporterTest: XCTestCase {
         // TODO: if we can turn contents back into [Metric], look at OtlpMetricExporterTests for additional checks
     }
     
+    func testFlush() {
+        let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
+        let exporter = OtlpHttpMetricExporter(endpoint: endpoint)
+        XCTAssertEqual(MetricExporterResultCode.success, exporter.flush())
+    }
+    
     func generateSumMetric(description: String = "description") -> Metric {
         let scope = InstrumentationScopeInfo(name: "lib", version: "semver:0.0.0")
         var metric = Metric(namespace: "namespace", name: "metric", desc: description, type: .doubleSum, resource: Resource(), instrumentationScopeInfo: scope)

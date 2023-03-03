@@ -20,7 +20,25 @@ public class OtlpHttpLogExporter : OtlpHttpExporterBase, LogRecordExporter {
     
     public func export(logRecords: [OpenTelemetrySdk.ReadableLogRecord]) -> OpenTelemetrySdk.ExportResult {
         pendingLogRecords.append(contentsOf: logRecords)
-        return self.flush()
+        let sendingLogRecords = pendingLogRecords
+        pendingLogRecords = []
+        
+        let body = Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest.with { request in
+            request.resourceLogs = LogRecordAdapter.toProtoResourceRecordLog(logRecordList: sendingLogRecords)
+        }
+        
+        let request = createRequest(body: body, endpoint: endpoint)
+        httpClient.send(request: request) { [weak self] result in
+            switch result {
+            case .success(_):
+                break
+            case .failure(let error):
+                self?.pendingLogRecords.append(contentsOf: sendingLogRecords)
+                print(error)
+            }
+        }
+        
+        return .success
     }
 
     public func forceFlush() -> OpenTelemetrySdk.ExportResult {
@@ -28,23 +46,26 @@ public class OtlpHttpLogExporter : OtlpHttpExporterBase, LogRecordExporter {
     }
     
     public func flush() -> ExportResult {
-        var exporterResult: ExportResult = .failure
-        let logRecords = pendingLogRecords
-        pendingLogRecords = []
-            
-        let body = Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest.with { request in
-            request.resourceLogs = LogRecordAdapter.toProtoResourceRecordLog(logRecordList: logRecords)
-        }
+        var exporterResult: ExportResult = .success
         
-        let request = createRequest(body: body, endpoint: endpoint)
-        httpClient.send(request: request) { result in
-            switch result {
-            case .success(_):
-                exporterResult = ExportResult.success
-            case .failure(let error):
-                print(error)
-                exporterResult = ExportResult.failure
+        if !pendingLogRecords.isEmpty {
+            let body = Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest.with { request in
+                request.resourceLogs = LogRecordAdapter.toProtoResourceRecordLog(logRecordList: pendingLogRecords)
             }
+            let semaphore = DispatchSemaphore(value: 0)
+            let request = createRequest(body: body, endpoint: endpoint)
+            
+            httpClient.send(request: request) { result in
+                switch result {
+                case .success(_):
+                    exporterResult = ExportResult.success
+                case .failure(let error):
+                    print(error)
+                    exporterResult = ExportResult.failure
+                }
+                semaphore.signal()
+            }
+            semaphore.wait()
         }
         
         return exporterResult
