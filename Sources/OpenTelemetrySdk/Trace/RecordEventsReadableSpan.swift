@@ -242,7 +242,10 @@ public class RecordEventsReadableSpan: ReadableSpan {
             }
 
             if value == nil {
-                attributes.removeValueForKey(key: key)
+                if attributes.removeValueForKey(key: key) != nil {
+                    totalAttributeCount -= 1
+                }
+                return
             }
             totalAttributeCount += 1
             if attributes[key] == nil, totalAttributeCount > maxNumberOfAttributes {
