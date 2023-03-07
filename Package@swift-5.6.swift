@@ -30,6 +30,7 @@ let package = Package(
         .library(name: "NetworkStatus", type: .static, targets: ["NetworkStatus"]),
         .executable(name: "simpleExporter", targets: ["SimpleExporter"]),
         .executable(name: "OTLPExporter", targets: ["OTLPExporter"]),
+        .executable(name: "OTLPHTTPExporter", targets: ["OTLPHTTPExporter"]),
         .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
     ],
     dependencies: [
@@ -146,7 +147,10 @@ let package = Package(
                     dependencies: ["PrometheusExporter"],
                     path: "Tests/ExportersTests/Prometheus"),
         .testTarget(name: "OpenTelemetryProtocolExporterTests",
-                    dependencies: ["OpenTelemetryProtocolExporter"],
+                    dependencies: ["OpenTelemetryProtocolExporter",
+                                .product(name: "NIO", package: "swift-nio"),
+                                .product(name: "NIOHTTP1", package: "swift-nio"),
+                                .product(name: "NIOTestUtils", package: "swift-nio")],
                     path: "Tests/ExportersTests/OpenTelemetryProtocol"),
         .testTarget(name: "InMemoryExporterTests",
                     dependencies: ["InMemoryExporter"],
@@ -174,6 +178,12 @@ let package = Package(
             name: "OTLPExporter",
             dependencies: ["OpenTelemetrySdk", "OpenTelemetryProtocolExporter", "StdoutExporter", "ZipkinExporter", "ResourceExtension", "SignPostIntegration"],
             path: "Examples/OTLP Exporter",
+            exclude: ["README.md"]
+        ),
+        .executableTarget(
+            name: "OTLPHTTPExporter",
+            dependencies: ["OpenTelemetrySdk", "OpenTelemetryProtocolExporter", "StdoutExporter", "ZipkinExporter", "ResourceExtension", "SignPostIntegration"],
+            path: "Examples/OTLP HTTP Exporter",
             exclude: ["README.md"]
         ),
         .executableTarget(
