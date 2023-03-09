@@ -41,3 +41,7 @@ docker run --rm \
   -Denum=ResourceAttributes \
 
 cd "$ROOT_DIR"
+
+
+# update spec version reported by library
+sed -E -i '' 's/public static var version = ".+"/public static var version = "'$SPEC_VERSION\"/ ${ROOT_DIR}/Sources/OpenTelemetryApi/OpenTelemetry.swift
