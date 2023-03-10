@@ -17,7 +17,7 @@ class RawHistogramMetricSdkBase<T> : RawHistogramMetric {
         // noop
     }
     
-    private let bindUnbindLock = Lock()
+    let bindUnbindLock = Lock()
     public private(set) var boundInstruments = [LabelSet: BoundRawHistogramMetricSdkBase<T>]()
     let metricName : String
     

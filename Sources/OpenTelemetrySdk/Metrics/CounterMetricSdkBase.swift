@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 
 class CounterMetricSdkBase<T>: CounterMetric {
-    private let bindUnbindLock = Lock()
+    let bindUnbindLock = Lock()
     public private(set) var boundInstruments = [LabelSet: BoundCounterMetricSdkBase<T>]()
     let metricName: String
 
