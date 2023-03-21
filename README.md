@@ -39,20 +39,20 @@ or
 Official documentation for the library can be found in the official opentelemetry [documentation  page](https://opentelemetry.io/docs/instrumentation/swift/), including:
 
  * Documentation about installation and [manual instrumentation](https://opentelemetry.io/docs/instrumentation/swift/manual/)
-    
+   
 * [Libraries](https://opentelemetry.io/docs/instrumentation/swift/libraries/) that provide automatic instrumentation
 
 ## Current status
 
 ### API and SDK
 
-Tracing and Baggage should be considered stable
+Tracing and Baggage are considered stable
+
+Logs are considered beta quality
 
 Metrics is implemented using an outdated spec, is fully functional but will change in the future
 
-Logs are currently in development
-
-### Supported exporters, importers and instrumentation libraries
+### Supported exporters and importers
 
 #### Traces
 * Exporters: Stdout, Jaeger, Zipkin, Datadog and OpenTelemetry (OTLP) collector
@@ -62,7 +62,12 @@ Logs are currently in development
 * Exporters: Prometheus, Datadog, and OpenTelemetry (OTLP) collector
 * Importers: SwiftMetricsShim
 
-#### Instrumentation libraries
+#### Logs 
+* Exporters: OpenTelemetry (OTLP) collector
+
+> **_NOTE:_** OTLP exporters are supported both in GRPC and HTTP/JSON, only GRPC is production ready, HTTP/JSON is still experimental
+
+### Instrumentation libraries
 * URLSession
 * NetworkStatus
 * SDKResourceExtension
@@ -79,5 +84,3 @@ The package includes some example projects with basic functionality:
 - `Simple Exporter` - Shows the Jaeger an Stdout exporters in action using a MultiSpanExporter. Can be easily modified for other exporters
 - `Prometheus Sample` - Shows the Prometheus exporter reporting metrics to a Prometheus instance
 - `OTLP Exporter` - Shows the OTLP exporter reporting traces to Zipkin and metrics to a Prometheus via the otel-collector
-
-
