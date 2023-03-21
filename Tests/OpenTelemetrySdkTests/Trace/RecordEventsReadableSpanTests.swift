@@ -235,14 +235,24 @@ class RecordEventsReadableSpanTest: XCTestCase {
         let spanData = span.toSpanData()
         XCTAssertEqual(spanData.events.count, 2)
     }
-    
+
     func testWithInitializedAttributes() {
-        
-        let attributes =  ["hello" : AttributeValue.string("world")]
-        
+        let attributes = ["hello": AttributeValue.string("world")]
+
         let span = createTestSpan(attributes: attributes)
-        
+
         XCTAssertEqual(attributes.count, span.totalAttributeCount, "total attributes not counted properly")
+        XCTAssertEqual(span.toSpanData().attributes.count, span.totalAttributeCount, "total attributes not counted properly")
+
+    }
+
+    func testRemovingAttributes() {
+        let attributes = ["remove": AttributeValue.string("me")]
+        let span = createTestSpan(attributes: attributes)
+        span.setAttribute(key: "keep", value: "me")
+        span.setAttribute(key: "remove", value: nil)
+        XCTAssertEqual(1, span.totalAttributeCount, "total attributes not counted properly")
+        XCTAssertEqual(span.toSpanData().attributes.count, span.totalAttributeCount, "total attributes not counted properly")
     }
 
     func testDroppingAttributes() {
