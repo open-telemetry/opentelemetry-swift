@@ -65,7 +65,7 @@ Metrics is implemented using an outdated spec, is fully functional but will chan
 #### Logs 
 * Exporters: OpenTelemetry (OTLP) collector
 
-> **_NOTE:_** OTLP exporters are supported both in GRPC and HTTP/JSON, only GRPC is production ready, HTTP/JSON is still experimental
+> **_NOTE:_** OTLP exporters are supported both in GRPC and HTTP, only GRPC is production ready, HTTP is still experimental
 
 ### Instrumentation libraries
 * URLSession
