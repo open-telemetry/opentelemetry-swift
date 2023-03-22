@@ -31,7 +31,7 @@ let package = Package(
         .executable(name: "simpleExporter", targets: ["SimpleExporter"]),
         .executable(name: "OTLPExporter", targets: ["OTLPExporter"]),
         .executable(name: "OTLPHTTPExporter", targets: ["OTLPHTTPExporter"]),
-        .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
+        .executable(name: "loggingTracer", targets: ["LoggingTracer"])
     ],
     dependencies: [
         .package(url: "https://github.com/undefinedlabs/opentracing-objc", from: "0.5.2"),
@@ -57,7 +57,7 @@ let package = Package(
         .target(name: "NetworkStatus",
                 dependencies: [
                     "OpenTelemetryApi",
-                    .product(name: "Reachability", package: "Reachability.swift", condition: .when(platforms: [.iOS, .macOS, .macCatalyst, .linux]))
+                    .product(name: "Reachability", package: "Reachability.swift", condition: .when(platforms: [.iOS, .macOS, .tvOS, .macCatalyst, .linux]))
                 ],
                 path: "Sources/Instrumentation/NetworkStatus",
                 linkerSettings: [.linkedFramework("CoreTelephony", .when(platforms: [.iOS], configuration: nil))]),
@@ -80,7 +80,7 @@ let package = Package(
         .target(name: "JaegerExporter",
                 dependencies: [
                     "OpenTelemetrySdk",
-                    .product(name: "Thrift", package: "Thrift-Swift", condition: .when(platforms: [.iOS, .macOS, .macCatalyst, .linux]))
+                    .product(name: "Thrift", package: "Thrift-Swift", condition: .when(platforms: [.iOS, .macOS, .tvOS, .macCatalyst, .linux]))
                 ],
                 path: "Sources/Exporters/Jaeger"),
         .target(name: "ZipkinExporter",
@@ -111,7 +111,7 @@ let package = Package(
         .testTarget(name: "NetworkStatusTests",
                     dependencies: [
                         "NetworkStatus",
-                        .product(name: "Reachability", package: "Reachability.swift", condition: .when(platforms: [.iOS, .macOS, .macCatalyst, .linux]))
+                        .product(name: "Reachability", package: "Reachability.swift", condition: .when(platforms: [.iOS, .macOS, .tvOS, .macCatalyst, .linux]))
                     ],
                     path: "Tests/InstrumentationTests/NetworkStatusTests"),
         .testTarget(name: "OpenTelemetryApiTests",
@@ -148,9 +148,9 @@ let package = Package(
                     path: "Tests/ExportersTests/Prometheus"),
         .testTarget(name: "OpenTelemetryProtocolExporterTests",
                     dependencies: ["OpenTelemetryProtocolExporter",
-                                .product(name: "NIO", package: "swift-nio"),
-                                .product(name: "NIOHTTP1", package: "swift-nio"),
-                                .product(name: "NIOTestUtils", package: "swift-nio")],
+                                   .product(name: "NIO", package: "swift-nio"),
+                                   .product(name: "NIOHTTP1", package: "swift-nio"),
+                                   .product(name: "NIOTestUtils", package: "swift-nio")],
                     path: "Tests/ExportersTests/OpenTelemetryProtocol"),
         .testTarget(name: "InMemoryExporterTests",
                     dependencies: ["InMemoryExporter"],
@@ -203,6 +203,6 @@ let package = Package(
             dependencies: ["URLSessionInstrumentation", "StdoutExporter"],
             path: "Examples/Network Sample",
             exclude: ["README.md"]
-        ),
+        )
     ]
 )
