@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 
 class RawCounterMetricSdkBase<T> : RawCounterMetric {
-    private let bindUnbindLock = Lock()
+    let bindUnbindLock = Lock()
     public private(set) var boundInstruments = [LabelSet: BoundRawCounterMetricSdkBase<T>]()
     let metricName : String
     

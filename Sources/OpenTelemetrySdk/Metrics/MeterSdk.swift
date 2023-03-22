@@ -7,15 +7,12 @@ import Foundation
 import OpenTelemetryApi
 
 public extension Meter {
-    func addMetric(name: String, type: AggregationType, data: [MetricData]) {
-        //noop
+    func addMetric(name _: String, type _: AggregationType, data _: [MetricData]) {
+        // noop
     }
 }
 
 class MeterSdk: Meter {
-
-
-    
     fileprivate let collectLock = Lock()
     fileprivate let rawMetricLock = Lock()
     let meterName: String
@@ -39,7 +36,7 @@ class MeterSdk: Meter {
     var doubleObservers = [String: DoubleObserverMetricSdk]()
 
     var metrics = [Metric]()
-    
+
     init(meterSharedState: MeterSharedState, instrumentationScopeInfo: InstrumentationScopeInfo) {
         meterName = instrumentationScopeInfo.name
         resource = meterSharedState.resource
@@ -58,46 +55,47 @@ class MeterSdk: Meter {
             metrics.append(metric)
         }
     }
-    
+
     func collect() {
         collectLock.withLockVoid {
             var boundInstrumentsToRemove = [LabelSet]()
 
-
             // process raw metrics
             var checkpointMetrics = [Metric]()
             rawMetricLock.withLockVoid {
-               checkpointMetrics = metrics
+                checkpointMetrics = metrics
                 metrics = [Metric]()
             }
             checkpointMetrics.forEach {
                 metricProcessor.process(metric: $0)
             }
-            
+
             intCounters.forEach { counter in
                 let metricName = counter.key
                 let counterInstrument = counter.value
 
                 var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.intSum, resource: resource, instrumentationScopeInfo: instrumentationScopeInfo)
 
-                counterInstrument.boundInstruments.forEach { boundInstrument in
-                    let labelSet = boundInstrument.key
-                    let aggregator = boundInstrument.value.getAggregator()
-                    aggregator.checkpoint()
+                counterInstrument.bindUnbindLock.withLockVoid {
+                    counterInstrument.boundInstruments.forEach { boundInstrument in
+                        let labelSet = boundInstrument.key
+                        let aggregator = boundInstrument.value.getAggregator()
+                        aggregator.checkpoint()
 
-                    var metricData = aggregator.toMetricData()
-                    metricData.labels = labelSet.labels
-                    metric.data.append(metricData)
-                    boundInstrument.value.statusLock.withLockVoid {
-                        switch boundInstrument.value.status {
-                        case .updatePending:
-                            boundInstrument.value.status = .noPendingUpdate
-                        case .noPendingUpdate:
-                            boundInstrument.value.status = .candidateForRemoval
-                        case .candidateForRemoval:
-                            boundInstrumentsToRemove.append(labelSet)
-                        case .bound:
-                            break
+                        var metricData = aggregator.toMetricData()
+                        metricData.labels = labelSet.labels
+                        metric.data.append(metricData)
+                        boundInstrument.value.statusLock.withLockVoid {
+                            switch boundInstrument.value.status {
+                            case .updatePending:
+                                boundInstrument.value.status = .noPendingUpdate
+                            case .noPendingUpdate:
+                                boundInstrument.value.status = .candidateForRemoval
+                            case .candidateForRemoval:
+                                boundInstrumentsToRemove.append(labelSet)
+                            case .bound:
+                                break
+                            }
                         }
                     }
                 }
@@ -115,25 +113,27 @@ class MeterSdk: Meter {
 
                 var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.doubleSum, resource: resource, instrumentationScopeInfo: instrumentationScopeInfo)
 
-                counterInstrument.boundInstruments.forEach { boundInstrument in
-                    let labelSet = boundInstrument.key
-                    let aggregator = boundInstrument.value.getAggregator()
-                    aggregator.checkpoint()
+                counterInstrument.bindUnbindLock.withLockVoid {
+                    counterInstrument.boundInstruments.forEach { boundInstrument in
+                        let labelSet = boundInstrument.key
+                        let aggregator = boundInstrument.value.getAggregator()
+                        aggregator.checkpoint()
 
-                    var metricData = aggregator.toMetricData()
-                    metricData.labels = labelSet.labels
-                    metric.data.append(metricData)
+                        var metricData = aggregator.toMetricData()
+                        metricData.labels = labelSet.labels
+                        metric.data.append(metricData)
 
-                    boundInstrument.value.statusLock.withLockVoid {
-                        switch boundInstrument.value.status {
-                        case .updatePending:
-                            boundInstrument.value.status = .noPendingUpdate
-                        case .noPendingUpdate:
-                            boundInstrument.value.status = .candidateForRemoval
-                        case .candidateForRemoval:
-                            boundInstrumentsToRemove.append(labelSet)
-                        case .bound:
-                            break
+                        boundInstrument.value.statusLock.withLockVoid {
+                            switch boundInstrument.value.status {
+                            case .updatePending:
+                                boundInstrument.value.status = .noPendingUpdate
+                            case .noPendingUpdate:
+                                boundInstrument.value.status = .candidateForRemoval
+                            case .candidateForRemoval:
+                                boundInstrumentsToRemove.append(labelSet)
+                            case .bound:
+                                break
+                            }
                         }
                     }
                 }
@@ -174,7 +174,7 @@ class MeterSdk: Meter {
                 }
                 metricProcessor.process(metric: metric)
             }
-            
+
             intHistogram.forEach { histogram in
                 let metricName = histogram.key
                 let measureInstrument = histogram.value
@@ -189,7 +189,7 @@ class MeterSdk: Meter {
                 }
                 metricProcessor.process(metric: metric)
             }
-            
+
             doubleHistogram.forEach { histogram in
                 let metricName = histogram.key
                 let measureInstrument = histogram.value
@@ -262,129 +262,125 @@ class MeterSdk: Meter {
                 metricProcessor.process(metric: metric)
             }
 
-
-            
             rawDoubleHistogram.forEach {
                 histogram in
-                    let name = histogram.key
-                    let instrument = histogram.value
-                
-                    var metric = Metric(namespace: meterName, name: name, desc: meterName + name, type: .doubleHistogram, resource: resource, instrumentationScopeInfo: instrumentationScopeInfo)
-                
-                instrument.boundInstruments.forEach { boundInstrument in
-                    let labelSet = boundInstrument.key
-                    let counter = boundInstrument.value
-                    
-                    counter.checkpoint()
-                    var metricData = counter.getMetrics()
-                    for (index, _) in metricData.enumerated() {
+                let name = histogram.key
+                let instrument = histogram.value
+
+                var metric = Metric(namespace: meterName, name: name, desc: meterName + name, type: .doubleHistogram, resource: resource, instrumentationScopeInfo: instrumentationScopeInfo)
+
+                instrument.bindUnbindLock.withLockVoid {
+                    instrument.boundInstruments.forEach { boundInstrument in
+                        let labelSet = boundInstrument.key
+                        let counter = boundInstrument.value
+
+                        counter.checkpoint()
+                        var metricData = counter.getMetrics()
+                        for (index, _) in metricData.enumerated() {
                             metricData[index].labels = labelSet.labels
-                    }
-                    
-                    metric.data.append(contentsOf: metricData)
-                    
-                    
-    
-                    boundInstrument.value.statusLock.withLockVoid {
-                        switch boundInstrument.value.status {
-                        case .updatePending:
-                            boundInstrument.value.status = .noPendingUpdate
-                        case .noPendingUpdate:
-                            boundInstrument.value.status = .candidateForRemoval
-                        case .candidateForRemoval:
-                            boundInstrumentsToRemove.append(labelSet)
-                        case .bound:
-                            break
+                        }
+
+                        metric.data.append(contentsOf: metricData)
+
+                        boundInstrument.value.statusLock.withLockVoid {
+                            switch boundInstrument.value.status {
+                            case .updatePending:
+                                boundInstrument.value.status = .noPendingUpdate
+                            case .noPendingUpdate:
+                                boundInstrument.value.status = .candidateForRemoval
+                            case .candidateForRemoval:
+                                boundInstrumentsToRemove.append(labelSet)
+                            case .bound:
+                                break
+                            }
                         }
                     }
                 }
                 metricProcessor.process(metric: metric)
 
                 boundInstrumentsToRemove.forEach { boundInstrument in
-                    instrument.unBind(labelSet:boundInstrument)
+                    instrument.unBind(labelSet: boundInstrument)
                 }
                 boundInstrumentsToRemove.removeAll()
             }
-            
+
             rawIntHistogram.forEach { histogram in
                 let name = histogram.key
                 let instrument = histogram.value
                 var metric = Metric(namespace: meterName, name: name, desc: meterName + name, type: .intHistogram, resource: resource, instrumentationScopeInfo: instrumentationScopeInfo)
-        
-                instrument.boundInstruments.forEach { boundInstrument in
-                    let labelSet = boundInstrument.key
-                    let counter = boundInstrument.value
-                    
-                    counter.checkpoint()
-                    var metricData = counter.getMetrics()
-                    for (index, _) in metricData.enumerated() {
+                instrument.bindUnbindLock.withLockVoid {
+                    instrument.boundInstruments.forEach { boundInstrument in
+                        let labelSet = boundInstrument.key
+                        let counter = boundInstrument.value
+
+                        counter.checkpoint()
+                        var metricData = counter.getMetrics()
+                        for (index, _) in metricData.enumerated() {
                             metricData[index].labels = labelSet.labels
-                    }
-                    
-                    metric.data.append(contentsOf: metricData)
-                    
-                    
-    
-                    boundInstrument.value.statusLock.withLockVoid {
-                        switch boundInstrument.value.status {
-                        case .updatePending:
-                            boundInstrument.value.status = .noPendingUpdate
-                        case .noPendingUpdate:
-                            boundInstrument.value.status = .candidateForRemoval
-                        case .candidateForRemoval:
-                            boundInstrumentsToRemove.append(labelSet)
-                        case .bound:
-                            break
+                        }
+
+                        metric.data.append(contentsOf: metricData)
+
+                        boundInstrument.value.statusLock.withLockVoid {
+                            switch boundInstrument.value.status {
+                            case .updatePending:
+                                boundInstrument.value.status = .noPendingUpdate
+                            case .noPendingUpdate:
+                                boundInstrument.value.status = .candidateForRemoval
+                            case .candidateForRemoval:
+                                boundInstrumentsToRemove.append(labelSet)
+                            case .bound:
+                                break
+                            }
                         }
                     }
                 }
                 metricProcessor.process(metric: metric)
 
                 boundInstrumentsToRemove.forEach { boundInstrument in
-                    instrument.unBind(labelSet:boundInstrument)
+                    instrument.unBind(labelSet: boundInstrument)
                 }
                 boundInstrumentsToRemove.removeAll()
-                
             }
-            
+
             rawIntCounters.forEach {
                 counter in
                 let name = counter.key
                 let instrument = counter.value
-                
+
                 var metric = Metric(namespace: meterName, name: name, desc: meterName + name, type: .intSum, resource: resource, instrumentationScopeInfo: instrumentationScopeInfo)
-                
-                instrument.boundInstruments.forEach { boundInstrument in
-                    let labelSet = boundInstrument.key
-                    let counter = boundInstrument.value
-                    
-                    counter.checkpoint()
-                    var metricData = counter.getMetrics()
-                    for (index, _) in metricData.enumerated() {
+
+                instrument.bindUnbindLock.withLockVoid {
+                    instrument.boundInstruments.forEach { boundInstrument in
+                        let labelSet = boundInstrument.key
+                        let counter = boundInstrument.value
+
+                        counter.checkpoint()
+                        var metricData = counter.getMetrics()
+                        for (index, _) in metricData.enumerated() {
                             metricData[index].labels = labelSet.labels
-                    }
-                    
-                    metric.data.append(contentsOf: metricData)
-                    
-                    
-    
-                    boundInstrument.value.statusLock.withLockVoid {
-                        switch boundInstrument.value.status {
-                        case .updatePending:
-                            boundInstrument.value.status = .noPendingUpdate
-                        case .noPendingUpdate:
-                            boundInstrument.value.status = .candidateForRemoval
-                        case .candidateForRemoval:
-                            boundInstrumentsToRemove.append(labelSet)
-                        case .bound:
-                            break
+                        }
+
+                        metric.data.append(contentsOf: metricData)
+
+                        boundInstrument.value.statusLock.withLockVoid {
+                            switch boundInstrument.value.status {
+                            case .updatePending:
+                                boundInstrument.value.status = .noPendingUpdate
+                            case .noPendingUpdate:
+                                boundInstrument.value.status = .candidateForRemoval
+                            case .candidateForRemoval:
+                                boundInstrumentsToRemove.append(labelSet)
+                            case .bound:
+                                break
+                            }
                         }
                     }
                 }
                 metricProcessor.process(metric: metric)
 
                 boundInstrumentsToRemove.forEach { boundInstrument in
-                    instrument.unBind(labelSet:boundInstrument)
+                    instrument.unBind(labelSet: boundInstrument)
                 }
                 boundInstrumentsToRemove.removeAll()
             }
@@ -393,44 +389,44 @@ class MeterSdk: Meter {
                 counter in
                 let name = counter.key
                 let instrument = counter.value
-                
+
                 var metric = Metric(namespace: meterName, name: name, desc: meterName + name, type: .intSum, resource: resource, instrumentationScopeInfo: instrumentationScopeInfo)
-                
-                instrument.boundInstruments.forEach { boundInstrument in
-                    let labelSet = boundInstrument.key
-                    let counter = boundInstrument.value
-                    
-                    counter.checkpoint()
-                    var metricData = counter.getMetrics()
-                    for (index, _) in metricData.enumerated() {
+
+                instrument.bindUnbindLock.withLockVoid {
+                    instrument.boundInstruments.forEach { boundInstrument in
+                        let labelSet = boundInstrument.key
+                        let counter = boundInstrument.value
+
+                        counter.checkpoint()
+                        var metricData = counter.getMetrics()
+                        for (index, _) in metricData.enumerated() {
                             metricData[index].labels = labelSet.labels
-                    }
-                    
-                    metric.data.append(contentsOf: metricData)
-                    
-                    
-    
-                    boundInstrument.value.statusLock.withLockVoid {
-                        switch boundInstrument.value.status {
-                        case .updatePending:
-                            boundInstrument.value.status = .noPendingUpdate
-                        case .noPendingUpdate:
-                            boundInstrument.value.status = .candidateForRemoval
-                        case .candidateForRemoval:
-                            boundInstrumentsToRemove.append(labelSet)
-                        case .bound:
-                            break
+                        }
+
+                        metric.data.append(contentsOf: metricData)
+
+                        boundInstrument.value.statusLock.withLockVoid {
+                            switch boundInstrument.value.status {
+                            case .updatePending:
+                                boundInstrument.value.status = .noPendingUpdate
+                            case .noPendingUpdate:
+                                boundInstrument.value.status = .candidateForRemoval
+                            case .candidateForRemoval:
+                                boundInstrumentsToRemove.append(labelSet)
+                            case .bound:
+                                break
+                            }
                         }
                     }
                 }
                 metricProcessor.process(metric: metric)
 
                 boundInstrumentsToRemove.forEach { boundInstrument in
-                    instrument.unBind(labelSet:boundInstrument)
+                    instrument.unBind(labelSet: boundInstrument)
                 }
                 boundInstrumentsToRemove.removeAll()
             }
-            
+
             doubleObservers.forEach { observer in
                 let metricName = observer.key
                 let observerInstrument = observer.value
@@ -516,32 +512,31 @@ class MeterSdk: Meter {
         }
         return AnyMeasureMetric<Double>(measure!)
     }
-    
+
     func createRawDoubleCounter(name: String) -> AnyRawCounterMetric<Double> {
         var measure = rawDoubleCounters[name]
         if measure == nil {
             measure = RawCounterMetricSdk<Double>(name: name)
-            
+
             collectLock.withLockVoid {
                 rawDoubleCounters[name] = measure!
             }
         }
         return AnyRawCounterMetric<Double>(measure!)
     }
-    
+
     func createRawIntCounter(name: String) -> AnyRawCounterMetric<Int> {
         var measure = rawIntCounters[name]
         if measure == nil {
             measure = RawCounterMetricSdk<Int>(name: name)
-            
+
             collectLock.withLockVoid {
                 rawIntCounters[name] = measure!
             }
         }
         return AnyRawCounterMetric<Int>(measure!)
     }
-    
-    
+
     func createRawDoubleHistogram(name: String) -> AnyRawHistogramMetric<Double> {
         var histogram = rawDoubleHistogram[name]
         if histogram == nil {
@@ -552,7 +547,7 @@ class MeterSdk: Meter {
         }
         return AnyRawHistogramMetric<Double>(histogram!)
     }
-    
+
     func createRawIntHistogram(name: String) -> AnyRawHistogramMetric<Int> {
         var histogram = rawIntHistogram[name]
         if histogram == nil {
@@ -563,10 +558,8 @@ class MeterSdk: Meter {
         }
         return AnyRawHistogramMetric<Int>(histogram!)
     }
-    
-    
-    
-    func createIntHistogram(name: String, explicitBoundaries: Array<Int>? = nil, absolute: Bool) -> AnyHistogramMetric<Int> {
+
+    func createIntHistogram(name: String, explicitBoundaries: [Int]? = nil, absolute _: Bool) -> AnyHistogramMetric<Int> {
         var histogram = intHistogram[name]
         if histogram == nil {
             histogram = HistogramMetricSdk<Int>(name: name, explicitBoundaries: explicitBoundaries)
@@ -576,8 +569,8 @@ class MeterSdk: Meter {
         }
         return AnyHistogramMetric<Int>(histogram!)
     }
-    
-    func createDoubleHistogram(name: String, explicitBoundaries: Array<Double>? = nil, absolute: Bool) -> AnyHistogramMetric<Double> {
+
+    func createDoubleHistogram(name: String, explicitBoundaries: [Double]? = nil, absolute _: Bool) -> AnyHistogramMetric<Double> {
         var histogram = doubleHistogram[name]
         if histogram == nil {
             histogram = HistogramMetricSdk<Double>(name: name, explicitBoundaries: explicitBoundaries)
@@ -587,7 +580,6 @@ class MeterSdk: Meter {
         }
         return AnyHistogramMetric<Double>(histogram!)
     }
-    
 
     func createIntObserver(name: String, absolute _: Bool, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric {
         var observer = intObservers[name]
