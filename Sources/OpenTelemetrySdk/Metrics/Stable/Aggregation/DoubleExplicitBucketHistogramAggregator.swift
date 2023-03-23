@@ -6,20 +6,18 @@
 import Foundation
 import OpenTelemetryApi
 
+public enum HistogramAggregatorError : Error {
+    case unsupportedOperation(String)
+}
 
 public class DoubleExplicitBucketHistogramAggregator : StableAggregator {
     
-    
-    enum HistogramAggregatorError : Error {
-        case unsupportedOperation(String)
-    }
-    
+
     class Handle : AggregatorHandle {
         
         let lock = Lock()
         
         internal init(boundries : [Double], exemplarReservoir: AnyExemplarReservoir) {
-            super.init(exemplarReservoir: exemplarReservoir)
             self.boundries = boundries
             
             self.sum = 0
@@ -27,6 +25,8 @@ public class DoubleExplicitBucketHistogramAggregator : StableAggregator {
             self.max = -1
             self.count = 0
             self.counts = Array(repeating: 0, count: boundries.count + 1)
+            super.init(exemplarReservoir: exemplarReservoir)
+
         }
         
         private var boundries : [Double]
@@ -36,7 +36,7 @@ public class DoubleExplicitBucketHistogramAggregator : StableAggregator {
         private var count : Int
         private var counts : [Int]
         
-        override func doAggregateThenMaybeReset(startEpochNano: Int, endEpochNano: Int, attributes: [String : AttributeValue], exemplars: [ExemplarData], reset: Bool) -> PointData {
+        override func doAggregateThenMaybeReset(startEpochNano: UInt64, endEpochNano: UInt64, attributes: [String : AttributeValue], exemplars: [ExemplarData], reset: Bool) -> AnyPointData {
             
             lock.lock()
             defer {
@@ -90,13 +90,14 @@ public class DoubleExplicitBucketHistogramAggregator : StableAggregator {
     
     public init(boundries: [Double], reservoirSupplier :  @escaping () -> AnyExemplarReservoir) {
         self.boundries = boundries
+        self.reservoirSupplier = reservoirSupplier
     }
     
-    public func diff(previousCumulative: PointData, currentCumulative: PointData) throws -> PointData {
+    public func diff(previousCumulative: AnyPointData, currentCumulative: AnyPointData) throws -> AnyPointData {
         throw HistogramAggregatorError.unsupportedOperation("This aggregator does not support diff.")
     }
     
-    public func toPoint(measurement: Measurement) throws -> PointData {
+    public func toPoint(measurement: Measurement) throws -> AnyPointData {
         throw HistogramAggregatorError.unsupportedOperation("This aggregator does not support toPoint.")
     }
     
@@ -104,7 +105,7 @@ public class DoubleExplicitBucketHistogramAggregator : StableAggregator {
         return Handle(boundries: self.boundries, exemplarReservoir: self.reservoirSupplier())
     }
     
-    public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [PointData], temporality: AggregationTemporality) -> StableMetricData {
+    public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [AnyPointData], temporality: AggregationTemporality) -> StableMetricData {
         StableMetricData.createHistogram(resource: resource, instrumentationScopeInfo: scope, name: descriptor.name, description: descriptor.description, unit: descriptor.instrument.unit, data: StableHistogramData(aggregationTemporality: temporality, points: points as! [HistogramPointData]))
     }
 }

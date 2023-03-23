@@ -32,3 +32,16 @@ public protocol HistogramPointDataProtocol : AnyPointData {
 }
 
 
+//public protocol ExponentialHistogramPointData : AnyPointData {
+//    var scale : Int { get }
+//    var sum : Double { get }
+//    var count : Int { get }
+//    var zeroCount : Int { get }
+//    var hasMin : Bool { get }
+//    var hasMax : Bool { get }
+//    var max :  Double { get }
+//    var positiveBuckets : ExponentialHistogramBuckets { get }
+//    var negativeBuckets : ExponentialHistogramBuckets { get }
+//    
+//}
+

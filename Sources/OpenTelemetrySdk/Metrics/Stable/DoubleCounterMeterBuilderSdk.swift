@@ -7,10 +7,10 @@ import Foundation
 import OpenTelemetryApi
 
 public struct DoubleCounterMeterBuilderSdk : DoubleCounterBuilder, InstrumentBuilder {
+    var meterSharedState: StableMeterSharedState
+    
     var meterProviderSharedState: MeterProviderSharedState
-    
-    var meterSharedState: MeterSharedState
-    
+        
     let type: InstrumentType = .counter
     
     let valueType: InstrumentValueType = .double
@@ -21,7 +21,7 @@ public struct DoubleCounterMeterBuilderSdk : DoubleCounterBuilder, InstrumentBui
     
     var instrumentName: String
     
-    init(meterProviderSharedState : MeterProviderSharedState, meterSharedState : MeterSharedState, name : String, description: String, unit: String) {
+    init(meterProviderSharedState : MeterProviderSharedState, meterSharedState : StableMeterSharedState, name : String, description: String, unit: String) {
         self.meterProviderSharedState = meterProviderSharedState
         self.meterSharedState = meterSharedState
         self.unit = unit
@@ -30,11 +30,11 @@ public struct DoubleCounterMeterBuilderSdk : DoubleCounterBuilder, InstrumentBui
     }
     
     public func build() -> OpenTelemetryApi.DoubleCounter {
-
+        buildSynchronousInstrument(DoubleCounterSdk.init)
     }
     
-    public func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableDoubleMeasurement) -> Void) -> OpenTelemetryApi.ObservableDoubleCounter {
-        
+    mutating public func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableDoubleMeasurement) -> Void) -> OpenTelemetryApi.ObservableDoubleCounter {
+        registerDoubleAsynchronousInstrument(type: .counter, updater: callback)
     }
     
 

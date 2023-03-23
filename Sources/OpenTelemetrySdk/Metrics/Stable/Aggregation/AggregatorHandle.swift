@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 
 internal protocol AggregatorHandleProtocol {
-    func doAggregateThenMaybeReset(startEpochNano: Int, endEpochNano: Int, attributes: [String: AttributeValue], reset: Bool) -> PointData
+    func doAggregateThenMaybeReset(startEpochNano: Int, endEpochNano: Int, attributes: [String: AttributeValue], reset: Bool) -> AnyPointData
     func doRecordLong(value: Int)
     func doRecordDouble(value: Double)
 }
@@ -22,7 +22,7 @@ public class AggregatorHandle {
         self.exemplarReservoir = exemplarReservoir
     }
     
-    public func aggregateThenMaybeReset(startEpochNano: Int, endEpochNano: Int, attributes : [String: AttributeValue], reset: Bool) -> PointData {
+    public func aggregateThenMaybeReset(startEpochNano: UInt64, endEpochNano: UInt64, attributes : [String: AttributeValue], reset: Bool) -> AnyPointData {
         doAggregateThenMaybeReset(startEpochNano: startEpochNano, endEpochNano: endEpochNano, attributes: attributes, exemplars: exemplarReservoir.collectAndReset(attribute: attributes), reset: reset)
     }
     
@@ -49,6 +49,6 @@ public class AggregatorHandle {
     
     internal func doRecordLong(value: Int) { fatalError()}
 
-    internal func doAggregateThenMaybeReset(startEpochNano: Int, endEpochNano: Int, attributes: [String: AttributeValue],exemplars: [ExemplarData], reset: Bool) -> PointData {fatalError()}
+    internal func doAggregateThenMaybeReset(startEpochNano: UInt64, endEpochNano: UInt64, attributes: [String: AttributeValue],exemplars: [ExemplarData], reset: Bool) -> AnyPointData {fatalError()}
 
 }

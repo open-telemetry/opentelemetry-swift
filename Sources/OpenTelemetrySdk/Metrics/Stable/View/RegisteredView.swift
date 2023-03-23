@@ -6,7 +6,7 @@
 import Foundation
 
 
-public struct RegisteredView {
+public class RegisteredView {
     public private(set) var selector : InstrumentSelector
     public private(set) var view : StableView
     public private(set) var attributeProcessor : AttributeProcessor

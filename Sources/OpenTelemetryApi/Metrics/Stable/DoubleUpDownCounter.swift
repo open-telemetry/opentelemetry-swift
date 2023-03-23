@@ -6,7 +6,6 @@
 import Foundation
 
 public protocol DoubleUpDownCounter {
-
-    func add(value: Double)
-    func add(value: Double, attributes: [String: AttributeValue])
+    mutating func add(value: Double)
+    mutating func add(value: Double, attributes: [String: AttributeValue])
 }

@@ -6,8 +6,8 @@
 import Foundation
 import OpenTelemetryApi
 
-public struct MeterProviderSharedState {
-    public  init(clock: Clock, resource: Resource, startEpochNanos: Int, exemplarFilter: ExemplarFilter) {
+public class MeterProviderSharedState {
+    public  init(clock: Clock, resource: Resource, startEpochNanos: UInt64, exemplarFilter: ExemplarFilter) {
         self.clock = clock
         self.resource = resource
         self.startEpochNanos = startEpochNanos
@@ -16,6 +16,6 @@ public struct MeterProviderSharedState {
     
     public private(set) var clock : Clock
     public private(set) var resource : Resource
-    public private(set) var startEpochNanos : Int
+    public private(set) var startEpochNanos : UInt64
     public private(set) var exemplarFilter : ExemplarFilter
 }

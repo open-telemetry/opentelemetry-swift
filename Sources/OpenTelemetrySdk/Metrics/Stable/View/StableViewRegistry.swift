@@ -11,7 +11,7 @@ public class StableViewRegistry {
     
     init(aggregationSelector : DefaultAggregationSelector, registeredViews: [RegisteredView]) {
         for type in  InstrumentType.allCases {
-            instrumentDefaultRegisteredView[type] = RegisteredView(selector: InstrumentSelector.builder().setInstrument(name: "*").build(), view: StableView.builder().withAggregation(aggregation: aggregationSelector.getDefaultAggregation(for: type)).build())
+            instrumentDefaultRegisteredView[type] = RegisteredView(selector: InstrumentSelector.builder().setInstrument(name: "*").build(), view: StableView.builder().withAggregation(aggregation: aggregationSelector.getDefaultAggregation(for: type)).build(), attributeProcessor: NoopAttributeProcessor.noop)
         }
         self.registeredViews = registeredViews
     }

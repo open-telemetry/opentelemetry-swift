@@ -15,11 +15,14 @@ public protocol StableMetricReader : AggregationTemporalitySelectorProtocol, Def
     /// force flush handler from meter provider
     ///
     /// - Returns: success
-    func forceFlush() -> Bool
+    func forceFlush() -> ExportResult
     
     ///
     /// Provides a way to do any cleanup.
     /// - Returns: success
-    func shutdown() -> Bool
+    func shutdown() -> ExportResult
+    
+    
+    func register(registration: CollectionRegistration)
 }
 

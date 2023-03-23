@@ -17,26 +17,26 @@ public class Aggregations {
     }
     
     static func sum() -> Aggregation {
-        
+        SumAggregation.instance
     }
     
     static func lastValue() -> Aggregation {
-        
+        LastValueAggregation.instance
     }
     
     static func explicitBucketHistogram() -> Aggregation {
         ExplicitBucketHistogramAggregation.instance
     }
     
-    static func explicitBucketHistogram(buckets: [Double]) {
-        
+    static func explicitBucketHistogram(buckets: [Double]) -> Aggregation {
+        ExplicitBucketHistogramAggregation(bucketBoundries:  buckets)
     }
     
     static func base2ExponentialBucketHistogram() {
-        
+        // todo
     }
     
     static func base2ExponentialBucketHistogram(maxBuckets: Int, maxScale: Int) {
-        
+        // todo
     }
 }

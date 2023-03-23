@@ -10,32 +10,9 @@ enum MetricStoreError : Error {
     case maxCardinality
 }
 
-public protocol SynchronousMetricStorage : MetricStorage, WritableMetricStorage {}
+typealias SynchronousMetricStorageProtocol = MetricStorage & WritableMetricStorage
 
-public extension SynchronousMetricStorage {
-    static func empty() -> Self {
-        return EmptyMetricStorage.instance as! Self
-    }
-    
-    static func create(registeredReader : RegisteredReader,
-                       registeredView : RegisteredView,
-                       descriptor : InstrumentDescriptor,
-                       exemplarFilter: ExemplarFilter) -> any SynchronousMetricStorage {
-        let metricDescriptor = MetricDescriptor(view: registeredView.view, instrument: descriptor)
-        let aggregator = registeredView.view.aggregation.createAggregator(descriptor: descriptor, exemplarFilter: exemplarFilter)
-        if type(of: aggregator) == DropAggregator.self {
-            return empty()
-        }
-        
-        return DefaultSynchronousMetricStorage(registeredReader: registeredReader, metricDescriptor: metricDescriptor, aggregator: aggregator, attributeProcessor: registeredView.attributeProcessor)
-    }
-    
-    
-}
-
-class DefaultSynchronousMetricStorage : SynchronousMetricStorage {
-    
-    static private let MAX_CARDINALITY = 2_000
+public struct SynchronousMetricStorage: SynchronousMetricStorageProtocol {
     
     let registeredReader : RegisteredReader
     public private(set) var metricDescriptor: MetricDescriptor
@@ -45,8 +22,21 @@ class DefaultSynchronousMetricStorage : SynchronousMetricStorage {
     let attributeProcessor : AttributeProcessor
     var aggregatorHandlePool = [AggregatorHandle]()
     
-    static func == (lhs: DefaultSynchronousMetricStorage, rhs: DefaultSynchronousMetricStorage) -> Bool {
+    static func empty() -> SynchronousMetricStorageProtocol {
+        return EmptyMetricStorage.instance
+    }
     
+    static func create(registeredReader : RegisteredReader,
+                       registeredView : RegisteredView,
+                       descriptor : InstrumentDescriptor,
+                       exemplarFilter: ExemplarFilter) -> SynchronousMetricStorageProtocol {
+        let metricDescriptor = MetricDescriptor(view: registeredView.view, instrument: descriptor)
+        let aggregator = registeredView.view.aggregation.createAggregator(descriptor: descriptor, exemplarFilter: exemplarFilter)
+        if type(of: aggregator) == DropAggregator.self {
+            return empty()
+        }
+        
+        return SynchronousMetricStorage(registeredReader: registeredReader, metricDescriptor: metricDescriptor, aggregator: aggregator, attributeProcessor: registeredView.attributeProcessor)
     }
     
     init(registeredReader: RegisteredReader, metricDescriptor: MetricDescriptor, aggregator: StableAggregator, attributeProcessor: AttributeProcessor) {
@@ -57,12 +47,12 @@ class DefaultSynchronousMetricStorage : SynchronousMetricStorage {
         self.attributeProcessor = attributeProcessor
     }
     
-    private func getAggregatorHandle(attributes: [String: AttributeValue]) throws -> AggregatorHandle {
+    private mutating func getAggregatorHandle(attributes: [String: AttributeValue]) throws -> AggregatorHandle {
         let processedAttributes = attributeProcessor.process(incoming: attributes)
         if let handle = aggregatorHandles[processedAttributes] {
             return handle
         }
-        if aggregatorHandles.count >= Self.MAX_CARDINALITY {
+        if aggregatorHandles.count >= MetricStorageConstants.MAX_CARDINALITY {
             // error
             throw MetricStoreError.maxCardinality
         }
@@ -76,11 +66,11 @@ class DefaultSynchronousMetricStorage : SynchronousMetricStorage {
         }
     }
     
-    public func collect(resource: Resource, scope: InstrumentationScopeInfo, startEpochNanos: Int, epochNanos: Int) -> StableMetricData {
+    public mutating func collect(resource: Resource, scope: InstrumentationScopeInfo, startEpochNanos: UInt64, epochNanos: UInt64) -> StableMetricData {
         let reset = aggregatorTemporality == .delta
         let start = reset ? registeredReader.lastCollectedEpochNanos : startEpochNanos
         
-        var points = [PointData]()
+        var points = [AnyPointData]()
         
         aggregatorHandles.forEach { key, value in
             let point = value.aggregateThenMaybeReset(startEpochNano: start, endEpochNano: epochNanos, attributes: key, reset: reset)
@@ -101,23 +91,23 @@ class DefaultSynchronousMetricStorage : SynchronousMetricStorage {
         false
     }
     
-    public func recordLong(value: Int, attributes: [String : OpenTelemetryApi.AttributeValue]) {
+    public mutating func recordLong(value: Int, attributes: [String : OpenTelemetryApi.AttributeValue]) {
         do {
             let handle = try getAggregatorHandle(attributes: attributes)
             handle.recordLong(value: value, attributes: attributes)
         } catch MetricStoreError.maxCardinality {
-            print("max cardinality (\(Self.MAX_CARDINALITY)) reached for metric store. Discarding recorded value \"\(value)\" with attributes: \(attributes)")
+            print("max cardinality (\(MetricStorageConstants.MAX_CARDINALITY)) reached for metric store. Discarding recorded value \"\(value)\" with attributes: \(attributes)")
         } catch {
             // todo : record error
         }
     }
     
-    public func recordDouble(value: Double, attributes: [String : OpenTelemetryApi.AttributeValue]) {
+    public mutating func recordDouble(value: Double, attributes: [String : OpenTelemetryApi.AttributeValue]) {
         do {
             let handle = try getAggregatorHandle(attributes: attributes)
             handle.recordDouble(value: value, attributes: attributes)
         } catch MetricStoreError.maxCardinality {
-                print("max cardinality (\(Self.MAX_CARDINALITY)) reached for metric store. Discarding recorded value \"\(value)\" with attributes: \(attributes)")
+                print("max cardinality (\(MetricStorageConstants.MAX_CARDINALITY)) reached for metric store. Discarding recorded value \"\(value)\" with attributes: \(attributes)")
         } catch {
           //todo : error
         }

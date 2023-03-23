@@ -6,9 +6,5 @@
 import Foundation
 
 public protocol LongHistogramBuilder {
-    func setDescription(description: String) -> Self
-
-    func setUnit(unit: String) -> Self
-
     func build() -> LongHistogram
 }

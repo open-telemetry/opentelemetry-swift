@@ -12,8 +12,7 @@ public struct MetricDescriptor : Hashable {
     public private(set) var description : String
     public private(set) var view : StableView
     public private(set) var instrument : InstrumentDescriptor
-    
-    
+        
     init(name: String, description: String, unit: String) {
         self.init(view: StableView.builder().build(), instrument: InstrumentDescriptor(name: name, description: description, unit: unit, type: .observableGauge, valueType: .double))
     }

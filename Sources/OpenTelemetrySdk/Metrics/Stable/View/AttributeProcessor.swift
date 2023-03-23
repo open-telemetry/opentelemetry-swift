@@ -30,7 +30,7 @@ public class AttributeProcessor : AttributeProcessorProtocol {
         return incoming
     }
     
-    static func filterByKeyName(nameFilter : (String) -> Bool) -> AttributeProcessor {
+    static func filterByKeyName( nameFilter : @escaping (String) -> Bool) -> AttributeProcessor {
         return SimpleAttributeProcessor { attributes in
             attributes.filter { key, value in
                 nameFilter(key)
@@ -53,7 +53,8 @@ internal class SimpleAttributeProcessor : AttributeProcessor {
     
     let attributeProcessor : ([String: AttributeValue]) -> [String:AttributeValue]
     
-    init(attributeProcessor : ([String: AttributeValue]) -> [String: AttributeValue]) {
+    init(attributeProcessor : @escaping ([String: AttributeValue]) -> [String: AttributeValue]) {
+        self.attributeProcessor = attributeProcessor
         
     }
     
@@ -91,7 +92,7 @@ public class JoinedAttributeProcessor : AttributeProcessor {
         return JoinedAttributeProcessor(newProcessors)
     }
     
-    let processors = [AttributeProcessor]()
+    var processors = [AttributeProcessor]()
     init(_ processors : [AttributeProcessor]) {
         self.processors = processors
     }

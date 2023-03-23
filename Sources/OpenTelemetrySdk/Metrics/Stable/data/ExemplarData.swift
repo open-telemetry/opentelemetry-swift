@@ -39,27 +39,25 @@ public class AnyDoubleExemplarData : AnyExemplarData, DoubleExemplarData {
     public var value: Double
 
     internal init(value: Double, epochNanos: UInt64, filteredAttributes: [String:AttributeValue], spanContext: SpanContext? = nil) {
-        super.init(epochNanos: epochNanos, filteredAttributes: filteredAttributes, spanContext:spanContext)
         self.value = value
+        super.init(epochNanos: epochNanos, filteredAttributes: filteredAttributes, spanContext:spanContext)
     }
 }
 
 public class ImmutableDoubleExemplarData : AnyExemplarData, DoubleExemplarData {
     public var value : Double
     internal init(filteredAttributes: [String : AttributeValue], recordTimeNanos: UInt64, spanContext: SpanContext? = nil, value: Double) {
-        self.filteredAttributes = filteredAttributes
-        self.epochNanos = recordTimeNanos
-        self.spanContext = spanContext
         self.value = value
+        super.init(epochNanos: recordTimeNanos, filteredAttributes: filteredAttributes, spanContext: spanContext)
+
     }
 }
 
 public class ImmutableLongExemplarData : AnyExemplarData, LongExemplarData {
     public var value : Int
     internal init(filteredAttributes: [String : AttributeValue], recordTimeNanos: UInt64, spanContext: SpanContext? = nil, value: Int) {
-        self.filteredAttributes = filteredAttributes
-        self.epochNanos = recordTimeNanos
-        self.spanContext = spanContext
         self.value = value
+        super.init(epochNanos: recordTimeNanos, filteredAttributes: filteredAttributes, spanContext: spanContext)
+
     }
 }

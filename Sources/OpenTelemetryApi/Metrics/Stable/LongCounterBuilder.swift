@@ -11,5 +11,5 @@ public protocol LongCounterBuilder {
 
     func build() -> LongCounter
 
-    func buildWithCallback(_ callback: @escaping (ObservableLongMeasurement) -> Void) -> ObservableLongCounter
+    mutating func buildWithCallback(_ callback: @escaping (ObservableLongMeasurement) -> Void) -> ObservableLongCounter
 }

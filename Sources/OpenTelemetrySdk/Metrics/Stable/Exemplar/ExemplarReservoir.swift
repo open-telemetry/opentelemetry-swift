@@ -63,7 +63,7 @@ public class ExemplarReservoirCollection {
 
 
 public class FixedSizedExemplarReservoir : AnyExemplarReservoir {
-    let storage : [ReservoirCell]
+    var storage : [ReservoirCell]
     let reservoirCellSelector : ReservoirCellSelector
     let mapAndResetCell : (ReservoirCell, [String:AttributeValue]) ->  ExemplarData?
     var hasMeasurements = false

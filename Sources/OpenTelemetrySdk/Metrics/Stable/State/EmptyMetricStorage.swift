@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public class EmptyMetricStorage : SynchronousMetricStorage {
+public class EmptyMetricStorage : SynchronousMetricStorageProtocol  {
     public func recordLong(value: Int, attributes: [String : OpenTelemetryApi.AttributeValue]) {
     }
     
@@ -17,7 +17,7 @@ public class EmptyMetricStorage : SynchronousMetricStorage {
     
     public var metricDescriptor: MetricDescriptor = MetricDescriptor(name: "", description: "", unit: "")
     
-    public func collect(resource: Resource, scope: InstrumentationScopeInfo, startEpochNanos: Int, epochNanos: Int) -> StableMetricData {
+    public func collect(resource: Resource, scope: InstrumentationScopeInfo, startEpochNanos: UInt64, epochNanos: UInt64) -> StableMetricData {
         StableMetricData.empty
     }
     

@@ -26,7 +26,7 @@ public class AggregationSelector : DefaultAggregationSelector {
     
     static func defaultSelector() -> AggregationResolver {
         return { instrumentType in
-            return Aggregation.defaultAggregation()
+            return Aggregations.defaultAggregation()
         }
     }
     func with(instrumentType : InstrumentType, aggregation : Aggregation) -> AggregationResolver {

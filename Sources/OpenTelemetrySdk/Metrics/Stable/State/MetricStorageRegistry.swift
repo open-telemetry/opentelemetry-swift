@@ -11,6 +11,10 @@ public struct MetricStorageRegistry {
     private var registry = [MetricDescriptor : MetricStorage]()
     
     
+    func getStorages() -> [MetricStorage] {
+        return Array(registry.values)
+    }
+    
     mutating func register(newStorage : MetricStorage) -> MetricStorage {
         let descriptor = newStorage.metricDescriptor
         lock.lock()

@@ -6,9 +6,6 @@
 import Foundation
 
 public protocol DoubleGaugeBuilder {
-    func setDescription(description: String) -> Self
-    func setUnit(unit: String) -> Self
-
     func ofLongs() -> LongGaugeBuilder
-    func buildWithCallback(_ callback: (ObservableDoubleMeasurement)->Void) -> ObservableDoubleGauge
+    mutating func buildWithCallback(_ callback: @escaping (ObservableDoubleMeasurement)->Void) -> ObservableDoubleGauge
 }

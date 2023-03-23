@@ -14,7 +14,7 @@ public class ViewBuilder {
     
     private var aggregation : Aggregation = Aggregations.defaultAggregation()
     
-//    private var processor : AttributesProcessor = AttributesProcessor.noop()
+    private var processor : AttributeProcessor = NoopAttributeProcessor.noop
     
     public func withName(name: String) -> Self {
         self.name = name
@@ -31,17 +31,17 @@ public class ViewBuilder {
         return self
     }
     
-//    public func addAttributeFilter( keyFilter: (String) -> Bool ) {
-//        addAttributeProcessor(processor: AttributesProcessor.filterByKeyName(keyFilter))
-//    }
+    public func addAttributeFilter( keyFilter: @escaping (String) -> Bool ) -> Self {
+        addAttributeProcessor(processor: AttributeProcessor.filterByKeyName(nameFilter: keyFilter))
+    }
     
-//    public func addAttributeProcessor(processor: AttributesProcessor) -> Self {
-//        self.processor = self.processor.then(processor: processor)
-//        return self
-//    }
+    public func addAttributeProcessor(processor: AttributeProcessor) -> Self {
+        self.processor = self.processor.then(other: processor)
+        return self
+    }
 
     public func build() -> StableView {
-        return StableView(name: name, description: description, aggregation: aggregation) //, attributesProcessor: processor)
+        return StableView(name: name, description: description, aggregation: aggregation, attributeProcessor: processor)
     }
 }
 

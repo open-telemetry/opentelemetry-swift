@@ -8,7 +8,8 @@ import OpenTelemetryApi
 
 public class SumAggregation : Aggregation, AggregatorFactory {
    
-    
+    public private(set) static var instance = SumAggregation()
+
     public func isCompatible(with descriptor: InstrumentDescriptor) -> Bool {
         switch (descriptor.type) {
         case .counter,.observableUpDownCounter,.observableCounter,.upDownCounter,.histogram:
@@ -18,14 +19,20 @@ public class SumAggregation : Aggregation, AggregatorFactory {
         }
     }
     
-    public private(set) static var instance = SumAggregation()
     
     public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> any StableAggregator {
         switch(descriptor.valueType) {
         case .long:
-            return
+            return LongSumAggregator(descriptor: descriptor, reservoirSupplier: {
+                FilteredExemplarReservoir(filter: exemplarFilter,
+                                          reservoir: RandomFixedSizedExemplarReservoir.createLong(clock: MillisClock(), size: 2))
+            })
         case .double:
-            return 
+            return DoubleSumAggregator(instrumentDescriptor: descriptor, reservoirSupplier: {
+                FilteredExemplarReservoir(filter: exemplarFilter,
+                                          reservoir: RandomFixedSizedExemplarReservoir.createDouble(clock: MillisClock(), size: 2))
+
+            })
         }
     }
 }

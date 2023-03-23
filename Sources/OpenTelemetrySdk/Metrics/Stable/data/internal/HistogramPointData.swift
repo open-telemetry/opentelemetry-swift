@@ -9,17 +9,16 @@ import OpenTelemetryApi
 public class HistogramPointData : AnyPointData, HistogramPointDataProtocol {
     
     
-    internal init(startEpochNanos : Int, endEpochNanos: Int, attributes: [String: AttributeValue], exemplars: [ExemplarData], sum: Double, count: Int, min: Double, max: Double, boundries: [Double], counts: [Int], hasMin: Bool, hasMax: Bool) {
-        super.init(startEpochNanos: startEpochNanos, endEpochNanos: endEpochNanos, attributes: attributes, exemplars: exemplars)
+    internal init(startEpochNanos : UInt64, endEpochNanos: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], sum: Double, count: Int, min: Double, max: Double, boundries: [Double], counts: [Int], hasMin: Bool, hasMax: Bool) {
         self.sum = sum
         self.count = count
         self.min = min
         self.max = max
         self.boundries = boundries
         self.counts = counts
-        self.exemplars = exemplars
         self.hasMin = hasMin
         self.hasMax = hasMax
+        super.init(startEpochNanos: startEpochNanos, endEpochNanos: endEpochNanos, attributes: attributes, exemplars: exemplars)
     }
     
     public var sum: Double

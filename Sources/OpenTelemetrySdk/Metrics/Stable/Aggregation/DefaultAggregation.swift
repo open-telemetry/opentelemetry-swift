@@ -24,8 +24,8 @@ public class DefaultAggregation : Aggregation, AggregatorFactory {
         case .histogram:
             return ExplicitBucketHistogramAggregation.instance
         case .observableGauge:
-            return StableLastAggregation.instance
-            }
+            return LastValueAggregation.instance
+        }
         
         return DropAggregation.instance
     }

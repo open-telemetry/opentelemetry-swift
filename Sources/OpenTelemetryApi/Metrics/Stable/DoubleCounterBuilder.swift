@@ -8,5 +8,5 @@ import Foundation
 public protocol DoubleCounterBuilder {
     func build() -> DoubleCounter
 
-    func buildWithCallback(_ callback: @escaping (ObservableDoubleMeasurement) -> Void) -> ObservableDoubleCounter
+    mutating func buildWithCallback(_ callback: @escaping (ObservableDoubleMeasurement) -> Void) -> ObservableDoubleCounter
 }

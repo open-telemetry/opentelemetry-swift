@@ -18,7 +18,9 @@ public class ExplicitBucketHistogramAggregation : Aggregation, AggregatorFactory
     }
     
     public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> any StableAggregator {
-        
+        DoubleExplicitBucketHistogramAggregator(boundries: bucketBoundries) {
+            FilteredExemplarReservoir(filter: exemplarFilter, reservoir: HistogramExemplarReservoir(clock: MillisClock(), boundries: self.bucketBoundries)) // todo: inject correct clock
+        }
     }
     
     public func isCompatible(with descriptor: InstrumentDescriptor) -> Bool {

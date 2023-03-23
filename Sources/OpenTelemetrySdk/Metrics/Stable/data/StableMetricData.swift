@@ -19,13 +19,13 @@ public enum MetricDataType {
 
 
 public struct StableMetricData {
-    public static let empty = StableMetricData(resource: Resource.empty, instrumentationScopeInfo: InstrumentationScopeInfo(), name: "", description: "", unit: "", type: .Summary, data: StableMetricData.Data(points: [PointData]()))
+    public static let empty = StableMetricData(resource: Resource.empty, instrumentationScopeInfo: InstrumentationScopeInfo(), name: "", description: "", unit: "", type: .Summary, data: StableMetricData.Data(points: [AnyPointData]()))
     public class Data {
-        internal init(points: [PointData]) {
+        internal init(points: [AnyPointData]) {
             self.points = points
         }
         
-        public private(set) var points : [PointData]
+        public private(set) var points : [AnyPointData]
     }
     internal init(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, type: MetricDataType, data: StableMetricData.Data) {
         self.resource = resource
@@ -48,9 +48,31 @@ public struct StableMetricData {
 
 extension StableMetricData {
     
+
+    static func createExponentialHistogram(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, data: StableGaugeData) -> StableMetricData {
+        StableMetricData(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: description, unit: unit, type: .ExponentialHistogram, data: data)
+    }
+    
+    static func createDoubleGauge(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, data: StableGaugeData) -> StableMetricData {
+        StableMetricData(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: description, unit: unit, type: .DoubleGauge, data: data)
+    }
+
+    static func createLongGauge(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, data: StableGaugeData) -> StableMetricData {
+        StableMetricData(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: description, unit: unit, type: .LongGauge, data: data)
+    }
+    
+    static func createDoubleSum(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, data: StableSumData) -> StableMetricData {
+        StableMetricData(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: description, unit: unit, type: .DoubleSum, data: data)
+    }
+    
+    static func createLongSum(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, data: StableSumData) -> StableMetricData {
+        StableMetricData(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: description, unit: unit, type: .LongSum, data: data)
+    }
+    
     static func createHistogram(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, data: StableHistogramData) -> StableMetricData {
         StableMetricData(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: description, unit: unit, type: .Histogram, data:data)
     }
+    
     func isEmpty() -> Bool {
         return data.points.isEmpty
     }
@@ -68,7 +90,32 @@ extension StableMetricData {
 public class StableHistogramData : StableMetricData.Data {
     public private(set) var aggregationTemporality : AggregationTemporality
     init(aggregationTemporality: AggregationTemporality, points : [HistogramPointData]) {
-        super.init(points: points)
         self.aggregationTemporality = aggregationTemporality
+        super.init(points: points)
     }
+}
+
+public class StableGaugeData : StableMetricData.Data {
+    public private(set) var aggregationTemporality : AggregationTemporality
+    init(aggregationTemporality : AggregationTemporality, points: [AnyPointData]) {
+        self.aggregationTemporality = aggregationTemporality
+        super.init(points: points)
+    }
+}
+
+public class StableExponentialHistogramData : StableMetricData.Data {
+    public private(set) var aggregationTemporality : AggregationTemporality
+    init(aggregationTemporality : AggregationTemporality, points: [AnyPointData]) {
+        self.aggregationTemporality = aggregationTemporality
+        super.init(points: points)
+    }
+}
+
+public class StableSumData : StableMetricData.Data {
+    public private(set) var aggregationTemporality : AggregationTemporality
+    init(aggregationTemporality : AggregationTemporality, points: [AnyPointData]) {
+        self.aggregationTemporality = aggregationTemporality
+        super.init(points: points)
+    }
+    
 }
