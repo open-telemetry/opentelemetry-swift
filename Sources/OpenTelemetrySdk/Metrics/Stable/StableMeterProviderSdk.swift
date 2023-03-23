@@ -17,7 +17,7 @@ public class StableMeterProviderSdk : StableMeterProvider {
     var registeredReaders = [RegisteredReader]()
     var registeredViews = [RegisteredView]()
     
-    var componentRegistery : ComponentRegistry<StableMeterSdk>
+    var componentRegistery : ComponentRegistry<StableMeterSdk>!
     
     public func get(name: String) -> OpenTelemetryApi.StableMeter {
         meterBuilder(name: name).build()
@@ -53,12 +53,10 @@ public class StableMeterProviderSdk : StableMeterProvider {
         
         meterProviderSharedState = MeterProviderSharedState(clock: clock, resource: resource, startEpochNanos: startEpochNano, exemplarFilter: exemplarFilter)
         
-        weak var weakself : StableMeterProviderSdk?
-        componentRegistery = ComponentRegistry {[weakself] scope  in
-            StableMeterSdk(meterProviderSharedState: &weakself!.meterProviderSharedState, instrumentScope: scope, registeredReaders: &weakself!.registeredReaders)
+        componentRegistery = ComponentRegistry { scope  in
+            StableMeterSdk(meterProviderSharedState: &self.meterProviderSharedState, instrumentScope: scope, registeredReaders: &self.registeredReaders)
         }
         
-        weakself = self
         
         for registeredReader in registeredReaders  {
             let producer = LeasedMetricProducer(registry: componentRegistery, sharedState: meterProviderSharedState, registeredReader: registeredReader)
@@ -66,7 +64,7 @@ public class StableMeterProviderSdk : StableMeterProvider {
             registeredReader.lastCollectedEpochNanos = startEpochNano
         }
     }
-
+    
     public func shutdown() -> ExportResult {
         readerLock.lock()
         defer {
