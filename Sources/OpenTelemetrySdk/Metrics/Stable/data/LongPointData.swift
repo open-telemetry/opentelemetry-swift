@@ -14,7 +14,7 @@ public protocol DoublePointData : AnyPointData {
 }
 
 public protocol SummaryPointData : AnyPointData {
-    var count : Int { get }
+    var count : UInt64 { get }
     var sum : Double { get }
     var values : [ValueAtQuantile] { get }
 }
@@ -22,7 +22,7 @@ public protocol SummaryPointData : AnyPointData {
 
 public protocol HistogramPointDataProtocol : AnyPointData {
     var sum : Double { get }
-    var count : Int { get }
+    var count : UInt64 { get }
     var min : Double { get }
     var max : Double { get }
     var boundries : [Double] { get }

@@ -16,27 +16,27 @@ public class StableMeterProviderBuilder {
         
     }
     
-    func setClock(clock : Clock) -> Self {
+    public func setClock(clock : Clock) -> Self {
         self.clock = clock
         return self
     }
 
-    func setResource(resource: Resource) -> Self {
+    public func setResource(resource: Resource) -> Self {
         self.resource = resource
         return self
     }
 
-    func registerView(selector : InstrumentSelector, view: StableView) -> Self {
+    public func registerView(selector : InstrumentSelector, view: StableView) -> Self {
         registeredViews.append(RegisteredView(selector: selector, view: view, attributeProcessor: view.attributeProcessor))
         return self
     }
 
-    func registerMetricReader(reader: StableMetricReader) -> Self {
+    public func registerMetricReader(reader: StableMetricReader) -> Self {
         metricReaders.append(reader)
         return self
     }
 
-    func build() -> StableMeterProviderSdk {
+    public func build() -> StableMeterProviderSdk {
         StableMeterProviderSdk(registeredViews: registeredViews, metricReaders: metricReaders, clock: clock, resource: resource, exemplarFilter: exemplarFilter)
     }
 }

@@ -25,14 +25,14 @@ public enum AggregationTemporality {
     case delta
     case cumulative
     
-    static func alwaysCumulative() -> AggregationTemporalitySelector {
+    public static func alwaysCumulative() -> AggregationTemporalitySelector {
         return  AggregationTemporalitySelector() { (type) in
             .cumulative
         }
         
     }
     
-    static func deltaPreferred() -> AggregationTemporalitySelector {
+    public static func deltaPreferred() -> AggregationTemporalitySelector {
         return  AggregationTemporalitySelector() { type in
             switch(type) {
             case .upDownCounter, .observableUpDownCounter:

@@ -14,6 +14,8 @@ public protocol DefaultAggregationSelector {
 }
 public class AggregationSelector : DefaultAggregationSelector {
     
+    public static let instance = AggregationSelector()
+    
     public let selector : AggregationResolver
     
     init(selector: @escaping AggregationResolver = AggregationSelector.defaultSelector())  {
@@ -24,12 +26,12 @@ public class AggregationSelector : DefaultAggregationSelector {
         return selector(instrument)
     }
     
-    static func defaultSelector() -> AggregationResolver {
+    static public func defaultSelector() -> AggregationResolver {
         return { instrumentType in
             return Aggregations.defaultAggregation()
         }
     }
-    func with(instrumentType : InstrumentType, aggregation : Aggregation) -> AggregationResolver {
+    public func with(instrumentType : InstrumentType, aggregation : Aggregation) -> AggregationResolver {
         return { instrumentType1 in
             if instrumentType == instrumentType1 {
                 return aggregation

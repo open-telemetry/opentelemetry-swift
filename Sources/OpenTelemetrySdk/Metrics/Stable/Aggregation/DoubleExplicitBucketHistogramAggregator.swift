@@ -33,7 +33,7 @@ public class DoubleExplicitBucketHistogramAggregator : StableAggregator {
         private var sum : Double
         private var min : Double
         private var max : Double
-        private var count : Int
+        private var count : UInt64
         private var counts : [Int]
         
         override func doAggregateThenMaybeReset(startEpochNano: UInt64, endEpochNano: UInt64, attributes: [String : AttributeValue], exemplars: [ExemplarData], reset: Bool) -> AnyPointData {

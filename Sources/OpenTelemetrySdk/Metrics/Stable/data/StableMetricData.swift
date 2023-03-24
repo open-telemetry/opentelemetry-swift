@@ -16,17 +16,26 @@ public enum MetricDataType {
     case ExponentialHistogram
 }
 
-
-
 public struct StableMetricData {
+    public private(set) var resource : Resource
+    public private(set) var instrumentationScopeInfo : InstrumentationScopeInfo
+    public private(set) var name : String
+    public private(set) var description : String
+    public private(set) var unit : String
+    public private(set) var type : MetricDataType
+    public private(set) var data : Data
+    
     public static let empty = StableMetricData(resource: Resource.empty, instrumentationScopeInfo: InstrumentationScopeInfo(), name: "", description: "", unit: "", type: .Summary, data: StableMetricData.Data(points: [AnyPointData]()))
+   
+    
     public class Data {
+        public private(set) var points : [AnyPointData]
+
         internal init(points: [AnyPointData]) {
             self.points = points
         }
-        
-        public private(set) var points : [AnyPointData]
     }
+    
     internal init(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, type: MetricDataType, data: StableMetricData.Data) {
         self.resource = resource
         self.instrumentationScopeInfo = instrumentationScopeInfo
@@ -37,18 +46,9 @@ public struct StableMetricData {
         self.data = data
     }
     
-    var resource : Resource
-    var instrumentationScopeInfo : InstrumentationScopeInfo
-    var name : String
-    var description : String
-    var unit : String
-    var type : MetricDataType
-    var data : Data
 }
 
 extension StableMetricData {
-    
-
     static func createExponentialHistogram(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, data: StableGaugeData) -> StableMetricData {
         StableMetricData(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: description, unit: unit, type: .ExponentialHistogram, data: data)
     }
@@ -86,7 +86,6 @@ extension StableMetricData {
     }
 }
 
-
 public class StableHistogramData : StableMetricData.Data {
     public private(set) var aggregationTemporality : AggregationTemporality
     init(aggregationTemporality: AggregationTemporality, points : [HistogramPointData]) {
@@ -114,6 +113,14 @@ public class StableExponentialHistogramData : StableMetricData.Data {
 public class StableSumData : StableMetricData.Data {
     public private(set) var aggregationTemporality : AggregationTemporality
     init(aggregationTemporality : AggregationTemporality, points: [AnyPointData]) {
+        self.aggregationTemporality = aggregationTemporality
+        super.init(points: points)
+    }
+}
+
+public class StableSummaryData : StableMetricData.Data {
+    public private(set) var aggregationTemporality : AggregationTemporality
+    init(aggregationTemporality : AggregationTemporality, points: [SummaryPointData]) {
         self.aggregationTemporality = aggregationTemporality
         super.init(points: points)
     }

@@ -12,4 +12,11 @@ class StableMeterProviderSdkTests : XCTestCase {
     func testDefaultGet() {
         XCTAssert(meterProvider.get(name: "test") is StableMeterSdk)
     }
+    
+    func testGetSameInstanceForName_WithoutVersion() {
+        XCTAssert(meterProvider.get(name: "test") as AnyObject === meterProvider.get(name: "test") as AnyObject)
+        XCTAssert(meterProvider.get(name: "test") as AnyObject === meterProvider.meterBuilder(name: "test").build() as AnyObject)
+    }
+    
+    
 }

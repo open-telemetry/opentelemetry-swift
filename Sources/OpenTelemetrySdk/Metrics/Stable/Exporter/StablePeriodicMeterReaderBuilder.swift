@@ -8,11 +8,18 @@ import Foundation
 public struct StablePeriodicMetricReaderBuilder {
     var exporter : StableMetricExporter
     var exporterInterval : TimeInterval  = 1.0
-    var exportTimeout : TimeInterval
 
-    func build(sharedState: StableMeterSharedState) -> StablePeriodicMetricReaderSdk {
+    init(exporter : StableMetricExporter) {
+        self.exporter = exporter
+    }
+    
+    mutating public func setInterval(timeInterval: TimeInterval) -> Self {
+        self.exporterInterval = timeInterval
+        return self
+    }
+    
+    public func build() -> StablePeriodicMetricReaderSdk {
         return StablePeriodicMetricReaderSdk(exporter: exporter,
-                sharedState: sharedState,
                 exportInterval: exporterInterval)
     }
 }

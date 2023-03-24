@@ -5,11 +5,10 @@
 
 import Foundation
 import OpenTelemetryApi
-class StablePeriodicMetricReaderSdk : StableMetricReader {
+public class StablePeriodicMetricReaderSdk : StableMetricReader {
 
     
     let exporter : StableMetricExporter
-    let sharedState : StableMeterSharedState
     let exportInterval : TimeInterval
     let scheduleQueue = DispatchQueue(label: "org.opentelemetry.StablePeriodicMetricReaderSdk.scheduleQueue")
     let scheduleTimer : DispatchSourceTimer
@@ -17,8 +16,7 @@ class StablePeriodicMetricReaderSdk : StableMetricReader {
     
 
 
-    init(exporter: StableMetricExporter, sharedState: StableMeterSharedState, exportInterval: TimeInterval = 60.0) {
-        self.sharedState = sharedState
+    init(exporter: StableMetricExporter, exportInterval: TimeInterval = 60.0) {
         self.exporter = exporter
         self.exportInterval = exportInterval
         scheduleTimer = DispatchSource.makeTimerSource(flags: DispatchSource.TimerFlags(), queue: scheduleQueue)
@@ -35,7 +33,7 @@ class StablePeriodicMetricReaderSdk : StableMetricReader {
     
     
     
-    func register(registration: CollectionRegistration) {
+   public func register(registration: CollectionRegistration) {
         if let newProducer = registration as? MetricProducer {
             metricProduce = newProducer
             start()
@@ -50,7 +48,7 @@ class StablePeriodicMetricReaderSdk : StableMetricReader {
         scheduleTimer.activate()
     }
     
-    func forceFlush() -> ExportResult {
+    public func forceFlush() -> ExportResult {
         doRun()
     }
 
@@ -64,7 +62,7 @@ class StablePeriodicMetricReaderSdk : StableMetricReader {
 
     }
 
-    func shutdown() -> ExportResult {
+    public func shutdown() -> ExportResult {
         scheduleTimer.suspend()
         if !scheduleTimer.isCancelled {
             scheduleTimer.cancel()
@@ -73,11 +71,11 @@ class StablePeriodicMetricReaderSdk : StableMetricReader {
         return exporter.shutdown()
     }
     
-    func getAggregationTemporality(for instrument: InstrumentType) -> AggregationTemporality {
+    public func getAggregationTemporality(for instrument: InstrumentType) -> AggregationTemporality {
         exporter.getAggregationTemporality(for: instrument)
     }
     
-    func getDefaultAggregation(for instrument: InstrumentType) -> Aggregation {
+    public func getDefaultAggregation(for instrument: InstrumentType) -> Aggregation {
         return exporter.getDefaultAggregation(for: instrument)
     }
     
