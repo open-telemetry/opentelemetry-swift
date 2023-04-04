@@ -45,11 +45,14 @@ class OtlpHttpLogRecordExporterTests: XCTestCase {
         
         let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
         let exporter = OtlpHttpLogExporter(endpoint: endpoint)
-        
         let _ = exporter.export(logRecords: [logRecord])
         
         // TODO: Use protobuf to verify that we have received the correct Log records      
-        XCTAssertNoThrow(try testServer.receiveHead())
+        XCTAssertNoThrow(try testServer.receiveHeadAndVerify { head in
+            let otelVersion = Headers.getUserAgentHeader()
+            XCTAssertTrue(head.headers.contains(name: Constants.HTTP.userAgent))
+            XCTAssertEqual(otelVersion, head.headers.first(name: Constants.HTTP.userAgent))
+        })
         XCTAssertNoThrow(try testServer.receiveBodyAndVerify() { body in
             var contentsBuffer = ByteBuffer(buffer: body)
             let contents = contentsBuffer.readString(length: contentsBuffer.readableBytes)!

@@ -25,6 +25,7 @@ class OtlpHttpTraceExporterTests: XCTestCase {
     override func tearDown() {
         XCTAssertNoThrow(try testServer.stop())
         XCTAssertNoThrow(try group.syncShutdownGracefully())
+
     }
     
     // This is a somewhat hacky solution to verifying that the spans got across correctly.  It simply looks for the metric
@@ -41,7 +42,11 @@ class OtlpHttpTraceExporterTests: XCTestCase {
         spans.append(generateFakeSpan(endpointName: endpointName2))
         let _ = exporter.export(spans: spans)
 
-        XCTAssertNoThrow(try testServer.receiveHead())
+        XCTAssertNoThrow(try testServer.receiveHeadAndVerify { head in
+            let otelVersion = Headers.getUserAgentHeader()
+            XCTAssertTrue(head.headers.contains(name: Constants.HTTP.userAgent))
+            XCTAssertEqual(otelVersion, head.headers.first(name: Constants.HTTP.userAgent))
+        })
         XCTAssertNoThrow(try testServer.receiveBodyAndVerify() { body in
             var contentsBuffer = ByteBuffer(buffer: body)
             let contents = contentsBuffer.readString(length: contentsBuffer.readableBytes)!
