@@ -4,6 +4,9 @@
  */
 
 import Foundation
+#if !os(macOS)
+import UIKit
+#endif
 
 enum InstrumentationUtils {
     static func objc_getClassList() -> [AnyClass] {
@@ -47,5 +50,22 @@ enum InstrumentationUtils {
             f(i, ptr.pointee)
             ptr = ptr.successor()
         }
+    }
+
+    static func usesUndocumentedAsyncAwaitMethods() -> Bool {
+#if os(macOS)
+        let os = ProcessInfo.processInfo.operatingSystemVersion
+        if os.majorVersion >= 13 {
+            return true
+        }
+#else
+        let version = UIDevice.current.systemVersion
+        if let versionNumber = Double(version),
+           versionNumber >= 16.0
+        {
+            return true
+        }
+#endif
+        return false
     }
 }

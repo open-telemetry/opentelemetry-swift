@@ -105,7 +105,9 @@ public class URLSessionInstrumentation {
         injectTaskDidCompleteWithErrorIntoDelegateClass(cls: cls)
         injectRespondsToSelectorIntoDelegateClass(cls: cls)
         // For future use
-        // injectTaskDidFinishCollectingMetricsIntoDelegateClass(cls: cls)
+        if InstrumentationUtils.usesUndocumentedAsyncAwaitMethods() {
+            injectTaskDidFinishCollectingMetricsIntoDelegateClass(cls: cls)
+        }
 
         // Data tasks
         injectDataTaskDidBecomeDownloadTaskIntoDelegateClass(cls: cls)
@@ -549,17 +551,44 @@ public class URLSessionInstrumentation {
         let taskId = self.idKeyForTask(task)
         if (self.requestMap[taskId]?.request) != nil {
             /// Code for instrumenting colletion should be written here
+            var requestState: NetworkRequestState?
+            queue.sync {
+                requestState = requestMap[taskId]
+                if requestState != nil {
+                    requestMap[taskId] = nil
+                }
+            }
+            if let error = task.error {
+                let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
+                URLSessionLogger.logError(error, dataOrFile: requestState?.dataProcessed, statusCode: status, instrumentation: self, sessionTaskId: taskId)
+            } else if let response = task.response {
+                URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed, instrumentation: self, sessionTaskId: taskId)
+            }
         }
     }
 
-    private func urlSessionTaskWillResume(_ session: URLSessionTask) {
-        let taskId = self.idKeyForTask(session)
-        if let request = session.currentRequest {
+    private func urlSessionTaskWillResume(_ task: URLSessionTask) {
+        let taskId = self.idKeyForTask(task)
+        if let request = task.currentRequest {
             queue.sync {
                 if requestMap[taskId] == nil {
                     requestMap[taskId] = NetworkRequestState()
                 }
                 requestMap[taskId]?.setRequest(request)
+            }
+
+            if InstrumentationUtils.usesUndocumentedAsyncAwaitMethods() {
+                let instrumentedRequest = URLSessionLogger.processAndLogRequest(request, sessionTaskId: taskId, instrumentation: self, shouldInjectHeaders: true)
+                task.setValue(instrumentedRequest, forKey: "currentRequest")
+                self.setIdKey(value: taskId, for: task)
+
+                if #available(iOS 16.0, *) {
+                    let basePriority = Task.basePriority
+                    //If not inside a Task basePriority is nil
+                    if basePriority != nil && task.delegate == nil {
+                        task.delegate = FakeDelegate()
+                    }
+                }
             }
         }
     }
@@ -584,5 +613,11 @@ public class URLSessionInstrumentation {
             state = NetworkRequestState()
             requestMap[id] = state
         }
+    }
+}
+
+class FakeDelegate: NSObject, URLSessionTaskDelegate {
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        let a = 0
     }
 }
