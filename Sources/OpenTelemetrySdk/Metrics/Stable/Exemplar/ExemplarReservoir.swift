@@ -121,12 +121,17 @@ public class RandomFixedSizedExemplarReservoir : FixedSizedExemplarReservoir {
     
     static func createLong(clock: Clock, size : Int) -> RandomFixedSizedExemplarReservoir {
         
-        return RandomFixedSizedExemplarReservoir(clock: clock, size: size, mapAndResetCell: unsafeBitCast(ReservoirCell.getAndResetLong, to: ((ReservoirCell, [String: AttributeValue]) -> ImmutableLongExemplarData).self))
+        return RandomFixedSizedExemplarReservoir(clock: clock, size: size, mapAndResetCell: { cell, attributes in
+            cell.getAndResetLong(pointAttributes: attributes)
+        })
         
     }
     
     static func createDouble(clock: Clock, size : Int) -> RandomFixedSizedExemplarReservoir {
-        return RandomFixedSizedExemplarReservoir(clock: clock, size: size, mapAndResetCell: unsafeBitCast(ReservoirCell.getAndResetDouble, to: ((ReservoirCell, [String: AttributeValue]) -> ImmutableDoubleExemplarData).self))
+        return RandomFixedSizedExemplarReservoir(clock: clock, size: size, mapAndResetCell: { cell, attributes in
+            return cell.getAndResetDouble(pointAttributes: attributes)
+        })
+                                             
 
     }
     
