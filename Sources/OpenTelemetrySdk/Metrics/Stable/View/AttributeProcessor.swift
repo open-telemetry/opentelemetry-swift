@@ -11,7 +11,7 @@ public protocol AttributeProcessorProtocol  {
 }
 public class AttributeProcessor : AttributeProcessorProtocol {
     
-    func then(other : AttributeProcessor) -> AttributeProcessor {
+    public func then(other : AttributeProcessor) -> AttributeProcessor {
         if type(of: other) == NoopAttributeProcessor.self {
             return self
         }
@@ -30,7 +30,7 @@ public class AttributeProcessor : AttributeProcessorProtocol {
         return incoming
     }
     
-    static func filterByKeyName( nameFilter : @escaping (String) -> Bool) -> AttributeProcessor {
+    public static func filterByKeyName( nameFilter : @escaping (String) -> Bool) -> AttributeProcessor {
         return SimpleAttributeProcessor { attributes in
             attributes.filter { key, value in
                 nameFilter(key)
@@ -38,7 +38,7 @@ public class AttributeProcessor : AttributeProcessorProtocol {
         }
     }
     
-    static func append(attributes: [String : AttributeValue]) -> AttributeProcessor {
+    public static func append(attributes: [String : AttributeValue]) -> AttributeProcessor {
         SimpleAttributeProcessor { incoming in
             incoming.merging(attributes) { a, b in
                 b
