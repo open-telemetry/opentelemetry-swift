@@ -5,7 +5,7 @@
 
 import Foundation
 
-public struct StablePeriodicMetricReaderBuilder {
+public class StablePeriodicMetricReaderBuilder {
     public private(set) var exporter : StableMetricExporter
     public private(set) var exporterInterval : TimeInterval  = 1.0
 
@@ -13,7 +13,7 @@ public struct StablePeriodicMetricReaderBuilder {
         self.exporter = exporter
     }
     
-    mutating public func setInterval(timeInterval: TimeInterval) -> Self {
+    public func setInterval(timeInterval: TimeInterval) -> Self {
         self.exporterInterval = timeInterval
         return self
     }
