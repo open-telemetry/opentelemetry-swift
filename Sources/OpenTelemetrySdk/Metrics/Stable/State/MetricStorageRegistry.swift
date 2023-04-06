@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public struct MetricStorageRegistry {
+public class MetricStorageRegistry {
     private var lock = Lock()
     private var registry = [MetricDescriptor : MetricStorage]()
     
@@ -15,7 +15,7 @@ public struct MetricStorageRegistry {
         return Array(registry.values)
     }
     
-    mutating func register(newStorage : MetricStorage) -> MetricStorage {
+    func register(newStorage : MetricStorage) -> MetricStorage {
         let descriptor = newStorage.metricDescriptor
         lock.lock()
         defer {

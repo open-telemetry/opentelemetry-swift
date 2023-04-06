@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public struct CallbackRegistration {
+public class CallbackRegistration {
     var observableMeasurements = [StableObservableMeasurementSdk]()
     var callback : ()->()
     var instrumentDescriptors : [InstrumentDescriptor]
@@ -23,7 +23,7 @@ public struct CallbackRegistration {
         }.isEmpty
     }
     
-    public mutating func execute(reader : RegisteredReader, startEpochNanos : UInt64, epochNanos : UInt64) {
+    public func execute(reader : RegisteredReader, startEpochNanos : UInt64, epochNanos : UInt64) {
         if !hasStorages {
             return
         }
