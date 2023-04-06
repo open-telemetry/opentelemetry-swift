@@ -41,7 +41,7 @@ extension InstrumentBuilder {
         
     }
     
-    mutating func registerDoubleAsynchronousInstrument(type : InstrumentType, updater: @escaping (ObservableDoubleMeasurement)-> Void) -> ObservableInstrumentSdk {
+    func registerDoubleAsynchronousInstrument(type : InstrumentType, updater: @escaping (ObservableDoubleMeasurement)-> Void) -> ObservableInstrumentSdk {
         let sdkObservableMeasurement = buildObservableMeasurement(type: type)
         let callbackRegistration = CallbackRegistration.init(observableMeasurements: [sdkObservableMeasurement]) {
             updater(sdkObservableMeasurement)
@@ -50,7 +50,7 @@ extension InstrumentBuilder {
         return ObservableInstrumentSdk(meterSharedState: meterSharedState, callbackRegistration: callbackRegistration)
     }
     
-    mutating func registerLongAsynchronousInstrument(type: InstrumentType, updater: @escaping (ObservableLongMeasurement)->Void ) -> ObservableInstrumentSdk {
+    func registerLongAsynchronousInstrument(type: InstrumentType, updater: @escaping (ObservableLongMeasurement)->Void ) -> ObservableInstrumentSdk {
         let sdkObservableMeasurement = buildObservableMeasurement(type: type)
         let callbackRegistration = CallbackRegistration(observableMeasurements: [sdkObservableMeasurement], callback: {
             updater(sdkObservableMeasurement)
