@@ -9,7 +9,7 @@ public struct StablePeriodicMetricReaderBuilder {
     var exporter : StableMetricExporter
     var exporterInterval : TimeInterval  = 1.0
 
-    init(exporter : StableMetricExporter) {
+    public init(exporter : StableMetricExporter) {
         self.exporter = exporter
     }
     
