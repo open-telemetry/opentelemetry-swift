@@ -12,6 +12,10 @@ public class MetricStorageRegistry {
     
     
     func getStorages() -> [MetricStorage] {
+        lock.lock()
+        defer {
+            lock.unlock()
+        }
         return Array(registry.values)
     }
     
