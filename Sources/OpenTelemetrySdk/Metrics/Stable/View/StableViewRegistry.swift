@@ -22,7 +22,7 @@ public class StableViewRegistry {
                 return false
             }
             
-            if let instrumentName = view.selector.instrumentName, instrumentName.range(of: descriptor.name, options: .regularExpression) == nil {
+            if let instrumentName = view.selector.instrumentName, descriptor.name.range(of: instrumentName, options: .regularExpression) == nil {
                 return false
             }
             if let meterName = view.selector.meterName, meterName != meterScope.name {
