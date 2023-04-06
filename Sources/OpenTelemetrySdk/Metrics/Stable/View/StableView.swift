@@ -18,7 +18,7 @@ public class StableView {
         self.attributeProcessor = attributeProcessor
     }
 
-    static func builder() -> ViewBuilder {
+    static public func builder() -> ViewBuilder {
         return ViewBuilder()
     }
 
