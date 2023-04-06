@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public struct LongCounterSdk : LongCounter, Instrument {
+public class LongCounterSdk : LongCounter, Instrument {
     
     public var instrumentDescriptor: InstrumentDescriptor
     private var storage : WritableMetricStorage
@@ -16,11 +16,11 @@ public struct LongCounterSdk : LongCounter, Instrument {
         self.instrumentDescriptor = descriptor
     }
     
-    public mutating func add(value: Int) {
+    public func add(value: Int) {
         add(value: value, attribute: [String: AttributeValue]())
     }
     
-    public mutating func add(value: Int, attribute: [String : OpenTelemetryApi.AttributeValue]) {
+    public func add(value: Int, attribute: [String : OpenTelemetryApi.AttributeValue]) {
         if value < 0 {
             //todo : error log
             return
