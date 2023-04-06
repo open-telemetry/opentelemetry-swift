@@ -8,8 +8,9 @@ import OpenTelemetryApi
 
 public class HistogramExemplarReservoir : FixedSizedExemplarReservoir {
     init(clock: Clock, boundries : [Double]) {
-        // unsafeBitCast(ReservoirCell.getAndResetDouble, to: ((ReservoirCell, [String: AttributeValue]) -> ImmutableDoubleExemplarData).self)
-        super.init(clock: clock, size: boundries.count + 1, reservoirCellSelector: HistogramCellSelector(boundries: boundries), mapAndResetCell: unsafeBitCast(ReservoirCell.getAndResetDouble, to: ((ReservoirCell, [String: AttributeValue])-> ImmutableDoubleExemplarData).self))
+        super.init(clock: clock, size: boundries.count + 1, reservoirCellSelector: HistogramCellSelector(boundries: boundries), mapAndResetCell: { cell, attributes in
+            return cell.getAndResetDouble(pointAttributes: attributes)
+        })
     }
     
     override public func offerLongMeasurement(value: Int, attributes: [String : AttributeValue]) {
