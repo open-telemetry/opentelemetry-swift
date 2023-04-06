@@ -5,7 +5,7 @@
 
 import Foundation
 
-struct StableMeterSharedState {
+class StableMeterSharedState {
     let meterLock = Lock()
     public private(set) var meterRegistry = [StableMeterSdk]()
     public private(set) var readerStorageRegisteries = [RegisteredReader: MetricStorageRegistry]()
@@ -24,7 +24,7 @@ struct StableMeterSharedState {
     }
     
 
-    mutating func add(meter: StableMeterSdk) {
+    func add(meter: StableMeterSdk) {
         meterLock.lock()
         defer{
             meterLock.unlock()
@@ -32,7 +32,7 @@ struct StableMeterSharedState {
         meterRegistry.append(meter)
     }
     
-    mutating func removeCallback(callback: CallbackRegistration) {
+    func removeCallback(callback: CallbackRegistration) {
         callbackLock.withLockVoid {
             callbackRegistration.removeAll(where: { c in
                 c as AnyObject  === callback as AnyObject
@@ -40,7 +40,7 @@ struct StableMeterSharedState {
         }
     }
     
-    mutating func registerCallback(callback: CallbackRegistration) {
+    func registerCallback(callback: CallbackRegistration) {
         callbackLock.withLockVoid {
             callbackRegistration.append(callback)
         }
