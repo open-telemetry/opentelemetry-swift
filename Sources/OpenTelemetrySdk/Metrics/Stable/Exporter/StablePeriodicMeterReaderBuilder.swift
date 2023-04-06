@@ -6,8 +6,8 @@
 import Foundation
 
 public struct StablePeriodicMetricReaderBuilder {
-    var exporter : StableMetricExporter
-    var exporterInterval : TimeInterval  = 1.0
+    public private(set) var exporter : StableMetricExporter
+    public private(set) var exporterInterval : TimeInterval  = 1.0
 
     public init(exporter : StableMetricExporter) {
         self.exporter = exporter
