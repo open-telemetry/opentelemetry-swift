@@ -12,7 +12,7 @@ enum MetricStoreError : Error {
 
 typealias SynchronousMetricStorageProtocol = MetricStorage & WritableMetricStorage
 
-public struct SynchronousMetricStorage: SynchronousMetricStorageProtocol {
+public class SynchronousMetricStorage: SynchronousMetricStorageProtocol {
     
     let registeredReader : RegisteredReader
     public private(set) var metricDescriptor: MetricDescriptor
@@ -47,7 +47,7 @@ public struct SynchronousMetricStorage: SynchronousMetricStorageProtocol {
         self.attributeProcessor = attributeProcessor
     }
     
-    private mutating func getAggregatorHandle(attributes: [String: AttributeValue]) throws -> AggregatorHandle {
+    private func getAggregatorHandle(attributes: [String: AttributeValue]) throws -> AggregatorHandle {
         let processedAttributes = attributeProcessor.process(incoming: attributes)
         if let handle = aggregatorHandles[processedAttributes] {
             return handle
@@ -66,7 +66,7 @@ public struct SynchronousMetricStorage: SynchronousMetricStorageProtocol {
         }
     }
     
-    public mutating func collect(resource: Resource, scope: InstrumentationScopeInfo, startEpochNanos: UInt64, epochNanos: UInt64) -> StableMetricData {
+    public  func collect(resource: Resource, scope: InstrumentationScopeInfo, startEpochNanos: UInt64, epochNanos: UInt64) -> StableMetricData {
         let reset = aggregatorTemporality == .delta
         let start = reset ? registeredReader.lastCollectedEpochNanos : startEpochNanos
         
@@ -91,7 +91,7 @@ public struct SynchronousMetricStorage: SynchronousMetricStorageProtocol {
         false
     }
     
-    public mutating func recordLong(value: Int, attributes: [String : OpenTelemetryApi.AttributeValue]) {
+    public  func recordLong(value: Int, attributes: [String : OpenTelemetryApi.AttributeValue]) {
         do {
             let handle = try getAggregatorHandle(attributes: attributes)
             handle.recordLong(value: value, attributes: attributes)
@@ -102,7 +102,7 @@ public struct SynchronousMetricStorage: SynchronousMetricStorageProtocol {
         }
     }
     
-    public mutating func recordDouble(value: Double, attributes: [String : OpenTelemetryApi.AttributeValue]) {
+    public func recordDouble(value: Double, attributes: [String : OpenTelemetryApi.AttributeValue]) {
         do {
             let handle = try getAggregatorHandle(attributes: attributes)
             handle.recordDouble(value: value, attributes: attributes)
