@@ -8,7 +8,8 @@ import Logging
 import GRPC
 import NIO
 import OpenTelemetryApi
-@testable import OpenTelemetryProtocolExporter
+import OpenTelemetryProtocolExporterCommon
+@testable import OpenTelemetryProtocolExporterGrpc
 @testable import OpenTelemetrySdk
 import XCTest
 
@@ -155,9 +156,9 @@ class OtlpLogRecordExporterTests: XCTestCase {
 
 
 class FakeLogCollector: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceProvider  {
-    var interceptors: OpenTelemetryProtocolExporter.Opentelemetry_Proto_Collector_Logs_V1_LogsServiceServerInterceptorFactoryProtocol?
+    var interceptors: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceServerInterceptorFactoryProtocol?
     
-    func export(request: OpenTelemetryProtocolExporter.Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, context: GRPC.StatusOnlyCallContext) -> NIOCore.EventLoopFuture<OpenTelemetryProtocolExporter.Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse> {
+    func export(request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, context: GRPC.StatusOnlyCallContext) -> NIOCore.EventLoopFuture<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse> {
         receivedLogs.append(contentsOf: request.resourceLogs)
         if returnedStatus != GRPCStatus.ok {
             return context.eventLoop.makeFailedFuture(returnedStatus)

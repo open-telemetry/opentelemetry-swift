@@ -8,7 +8,8 @@ import Logging
 import GRPC
 import NIO
 import OpenTelemetryApi
-@testable import OpenTelemetryProtocolExporter
+import OpenTelemetryProtocolExporterCommon
+@testable import OpenTelemetryProtocolExporterGrpc
 @testable import OpenTelemetrySdk
 import XCTest
 

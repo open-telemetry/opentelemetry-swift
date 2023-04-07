@@ -9,7 +9,7 @@ import NIO
 import NIOHTTP1
 import NIOTestUtils
 import OpenTelemetryApi
-@testable import OpenTelemetryProtocolExporter
+@testable import OpenTelemetryProtocolExporterHttp
 @testable import OpenTelemetrySdk
 import XCTest
 

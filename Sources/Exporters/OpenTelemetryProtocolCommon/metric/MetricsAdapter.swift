@@ -6,8 +6,8 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
-struct MetricsAdapter {
-    static func toProtoResourceMetrics(metricDataList: [Metric]) -> [Opentelemetry_Proto_Metrics_V1_ResourceMetrics] {
+public struct MetricsAdapter {
+    public static func toProtoResourceMetrics(metricDataList: [Metric]) -> [Opentelemetry_Proto_Metrics_V1_ResourceMetrics] {
         let resourceAndScopeMap = groupByResouceAndScope(metricDataList: metricDataList)
         var resourceMetrics = [Opentelemetry_Proto_Metrics_V1_ResourceMetrics]()
 
@@ -45,7 +45,7 @@ struct MetricsAdapter {
         return results
     }
 
-    static func toProtoMetric(metric: Metric) -> Opentelemetry_Proto_Metrics_V1_Metric? {
+    public static func toProtoMetric(metric: Metric) -> Opentelemetry_Proto_Metrics_V1_Metric? {
         var protoMetric = Opentelemetry_Proto_Metrics_V1_Metric()
         protoMetric.name = metric.name
         protoMetric.unit = "unit"

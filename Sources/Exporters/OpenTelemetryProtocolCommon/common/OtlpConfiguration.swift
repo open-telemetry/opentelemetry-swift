@@ -5,8 +5,6 @@
 
 import Foundation
 
-
-
 public struct OtlpConfiguration {
     public static let DefaultTimeoutInterval : TimeInterval = TimeInterval(10)
 
@@ -23,8 +21,8 @@ public struct OtlpConfiguration {
     // let endpoint : URL? = URL(string: "https://localhost:4317")
     // let certificateFile
     // let compression
-    let headers : [(String,String)]?
-    let timeout : TimeInterval
+    public let headers : [(String,String)]?
+    public let timeout : TimeInterval
 
     public init(timeout : TimeInterval  = OtlpConfiguration.DefaultTimeoutInterval, headers: [(String,String)]? = nil) {
         self.headers = headers

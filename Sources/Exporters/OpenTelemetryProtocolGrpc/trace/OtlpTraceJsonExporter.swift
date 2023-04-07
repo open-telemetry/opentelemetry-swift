@@ -5,6 +5,7 @@
 
 import Foundation
 import OpenTelemetrySdk
+import OpenTelemetryProtocolExporterCommon
 
 public class OtlpTraceJsonExporter: SpanExporter {
     
