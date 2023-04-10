@@ -18,17 +18,17 @@ class SpansExporterTests: XCTestCase {
     }
 
     func testWhenExportSpanIsCalled_thenTraceIsUploaded() throws {
-        if #available(watchOS 3.0, *) {
-            throw XCTSkip("Test is flaky on watchOS")
-        }
+#if os(watchOS)
+        throw XCTSkip("Test is flaky on watchOS")
+#endif
 
         var tracesSent = false
         let expec = expectation(description: "traces received")
         let server = HttpTestServer(url: URL(string: "http://localhost:33333"),
                                     config: HttpTestServerConfig(tracesReceivedCallback: {
-                                        tracesSent = true
-                                        expec.fulfill()
-                                    },
+                                                                     tracesSent = true
+                                                                     expec.fulfill()
+                                                                 },
                                                                  logsReceivedCallback: nil))
         let sem = DispatchSemaphore(value: 0)
         DispatchQueue.global(qos: .default).async {

@@ -10,10 +10,9 @@ extension DataUploadStatus: EquatableInTests {}
 
 class DataUploaderTests: XCTestCase {
     func testWhenUploadCompletesWithSuccess_itReturnsExpectedUploadStatus() throws {
-        if #available(watchOS 3.0, *) {
-            throw XCTSkip("Implementation needs to be updated for watchOS to make this test pass")
-        }
-
+#if os(watchOS)
+        throw XCTSkip("Implementation needs to be updated for watchOS to make this test pass")
+#endif
         // Given
         let randomResponse: HTTPURLResponse = .mockResponseWith(statusCode: (100 ... 599).randomElement()!)
         let randomRequestIDOrNil: String? = Bool.random() ? .mockRandom() : nil
@@ -38,9 +37,9 @@ class DataUploaderTests: XCTestCase {
     }
 
     func testWhenUploadCompletesWithFailure_itReturnsExpectedUploadStatus() throws {
-        if #available(watchOS 3.0, *) {
-            throw XCTSkip("Implementation needs to be updated for watchOS to make this test pass")
-        }
+#if os(watchOS)
+        throw XCTSkip("Implementation needs to be updated for watchOS to make this test pass")
+#endif
 
         // Given
         let randomErrorDescription: String = .mockRandom()

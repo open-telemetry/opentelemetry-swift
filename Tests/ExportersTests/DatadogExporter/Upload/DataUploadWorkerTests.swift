@@ -37,9 +37,9 @@ class DataUploadWorkerTests: XCTestCase {
     // MARK: - Data Uploads
 
     func testItUploadsAllData() throws {
-        if #available(watchOS 3.0, *) {
-            throw XCTSkip("Implementation needs to be updated for watchOS to make this test pass")
-        }
+#if os(watchOS)
+        throw XCTSkip("Implementation needs to be updated for watchOS to make this test pass")
+#endif
 
         let server = ServerMock(delivery: .success(response: .mockResponseWith(statusCode: 200)))
         let dataUploader = DataUploader(
@@ -159,9 +159,9 @@ class DataUploadWorkerTests: XCTestCase {
     }
 
     func testWhenBatchFails_thenIntervalIncreases() throws {
-        if #available(watchOS 3.0, *) {
-            throw XCTSkip("Implementation needs to be updated for watchOS to make this test pass")
-        }
+#if os(watchOS)
+        throw XCTSkip("Implementation needs to be updated for watchOS to make this test pass")
+#endif
 
         let delayChangeExpectation = expectation(description: "Upload delay is increased")
         let mockDelay = MockDelay { command in
@@ -195,9 +195,9 @@ class DataUploadWorkerTests: XCTestCase {
     }
 
     func testWhenBatchSucceeds_thenIntervalDecreases() throws {
-        if #available(watchOS 3.0, *) {
-            throw XCTSkip("Implementation needs to be updated for watchOS to make this test pass")
-        }
+#if os(watchOS)
+        throw XCTSkip("Implementation needs to be updated for watchOS to make this test pass")
+#endif
 
         let delayChangeExpectation = expectation(description: "Upload delay is decreased")
         let mockDelay = MockDelay { command in
@@ -257,9 +257,9 @@ class DataUploadWorkerTests: XCTestCase {
     }
 
     func testItFlushesAllData() throws {
-        if #available(watchOS 3.0, *) {
-            throw XCTSkip("Implementation needs to be updated for watchOS to make this test pass")
-        }
+#if os(watchOS)
+        throw XCTSkip("Implementation needs to be updated for watchOS to make this test pass")
+#endif
 
         let server = ServerMock(delivery: .success(response: .mockResponseWith(statusCode: 200)))
         let dataUploader = DataUploader(

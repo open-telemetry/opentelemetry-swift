@@ -226,7 +226,7 @@ class ActivityContextManagerTests: XCTestCase {
         }
         span1.end()
         XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === nil)
-        await waitForExpectations(timeout: 30)
+        await fulfillment(of: [expec], timeout: 30)
     }
 
     @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
@@ -258,7 +258,7 @@ class ActivityContextManagerTests: XCTestCase {
             XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === span1)
             expec.fulfill()
         }
-        await waitForExpectations(timeout: 30)
+        await fulfillment(of: [expec], timeout: 30)
         span1.end()
         XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === nil)
     }
@@ -316,7 +316,8 @@ class ActivityContextManagerTests: XCTestCase {
         }
 
         XCTAssert(ActivityContextManager.instance.getCurrentContextValue(forKey: .span) === parent)
-        await waitForExpectations(timeout: 5, handler: nil)
+        await fulfillment(of: [expectation1, expectation2], timeout: 30, enforceOrder: false)
+
         parent.end()
         XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === nil)
     }
