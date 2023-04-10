@@ -466,7 +466,7 @@ class URLSessionInstrumentationTests: XCTestCase {
             XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
         }
 
-        @available(macOS 12, iOS 15.0, tvOS 15.0, *)
+    @available(macOS 12, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
         public func testDownloadTaskWithUrlBlockAsync() async throws {
             let url = URL(string: "http://localhost:33333/success")!
 
@@ -476,7 +476,7 @@ class URLSessionInstrumentationTests: XCTestCase {
             XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
         }
 
-        @available(macOS 12, iOS 15.0, tvOS 15.0, *)
+        @available(macOS 12, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
         public func testDownloadTaskWithRequestBlockAsync() async throws {
             let url = URL(string: "http://localhost:33333/success")!
             let request = URLRequest(url: url)
@@ -520,7 +520,7 @@ class URLSessionInstrumentationTests: XCTestCase {
             XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
         }
 
-        @available(macOS 12, iOS 15.0, tvOS 15.0, *)
+        @available(macOS 12, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
         public func testDownloadTaskWithUrlDelegateAsync() async throws {
             let url = URL(string: "http://localhost:33333/success")!
 
@@ -530,7 +530,7 @@ class URLSessionInstrumentationTests: XCTestCase {
             XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
         }
 
-        @available(macOS 12, iOS 15.0, tvOS 15.0, *)
+        @available(macOS 12, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
         public func testDownloadTaskWithRequestDelegateAsync() async throws {
             let url = URL(string: "http://localhost:33333/success")!
             let request = URLRequest(url: url)
