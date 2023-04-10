@@ -23,13 +23,20 @@ public class OtlpMetricExporter: MetricExporter {
         self.channel = channel
         self.config = config
         self.metricClient = Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient(channel: self.channel)
+        let userAgentHeader = (Constants.HTTP.userAgent, Headers.getUserAgentHeader())
         if let headers = envVarHeaders {
-            callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
+            var updatedHeaders = headers
+            updatedHeaders.append(userAgentHeader)
+            callOptions = CallOptions(customMetadata: HPACKHeaders(updatedHeaders), logger: logger)
         } else if let headers = config.headers {
-            callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
+            var updatedHeaders = headers
+            updatedHeaders.append(userAgentHeader)
+            callOptions = CallOptions(customMetadata: HPACKHeaders(updatedHeaders), logger: logger)
         }
         else {
-            callOptions = CallOptions(logger: logger)
+            var headers = [(String, String)]()
+            headers.append(userAgentHeader)
+            callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
         }
     }
     

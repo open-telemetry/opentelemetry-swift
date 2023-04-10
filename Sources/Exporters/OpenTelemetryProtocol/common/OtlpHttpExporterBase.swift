@@ -25,6 +25,7 @@ public class OtlpHttpExporterBase {
         do {
             request.httpMethod = "POST"
             request.httpBody = try body.serializedData()
+            request.setValue(Headers.getUserAgentHeader(), forHTTPHeaderField: Constants.HTTP.userAgent)
             request.setValue("application/x-protobuf", forHTTPHeaderField: "Content-Type")
         } catch {
             print("Error serializing body: \(error)")

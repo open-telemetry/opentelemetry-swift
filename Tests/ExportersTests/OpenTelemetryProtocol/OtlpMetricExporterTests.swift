@@ -61,6 +61,8 @@ class OtlpMetricExproterTests: XCTestCase {
     func testConfigHeadersIsNil_whenDefaultInitCalled() throws {
         let exporter = OtlpMetricExporter(channel: channel)
         XCTAssertNil(exporter.config.headers)
+
+        verifyUserAgentIsSet(exporter: exporter)
     }
 
     func testConfigHeadersAreSet_whenInitCalledWithCustomConfig() throws {
@@ -70,12 +72,16 @@ class OtlpMetricExproterTests: XCTestCase {
         XCTAssertEqual(exporter.config.headers?[0].0, "FOO")
         XCTAssertEqual(exporter.config.headers?[0].1, "BAR")
         XCTAssertEqual("BAR", exporter.callOptions?.customMetadata.first(name: "FOO"))
+
+        verifyUserAgentIsSet(exporter: exporter)
     }
 
     func testConfigHeadersAreSet_whenInitCalledWithExplicitHeaders() throws {
         let exporter = OtlpMetricExporter(channel: channel, envVarHeaders: [("FOO", "BAR")])
         XCTAssertNil(exporter.config.headers)
         XCTAssertEqual("BAR", exporter.callOptions?.customMetadata.first(name: "FOO"))
+
+        verifyUserAgentIsSet(exporter: exporter)
     }
 
     func testGaugeExport() {
@@ -167,6 +173,18 @@ class OtlpMetricExproterTests: XCTestCase {
         metric.data.append(data)
         return metric
     }
+
+    func verifyUserAgentIsSet(exporter: OtlpMetricExporter) {
+        if let callOptions = exporter.callOptions {
+            let customMetadata = callOptions.customMetadata
+            let userAgent = Headers.getUserAgentHeader()
+            if customMetadata.contains(name: Constants.HTTP.userAgent) && customMetadata.first(name: Constants.HTTP.userAgent) == userAgent {
+                return
+            }
+        }
+        XCTFail("User-Agent header was not set correctly")
+    }
+
 }
 
 class FakeMetricCollector: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceProvider {

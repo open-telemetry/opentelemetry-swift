@@ -24,13 +24,20 @@ public class OtlpLogExporter : LogRecordExporter {
         self.channel = channel
         logClient = Opentelemetry_Proto_Collector_Logs_V1_LogsServiceNIOClient(channel: channel)
         self.config = config
+        let userAgentHeader = (Constants.HTTP.userAgent, Headers.getUserAgentHeader())
         if let headers = envVarHeaders {
-            callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
+            var updatedHeaders = headers
+            updatedHeaders.append(userAgentHeader)
+            callOptions = CallOptions(customMetadata: HPACKHeaders(updatedHeaders), logger: logger)
         } else if let headers = config.headers {
-            callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
+            var updatedHeaders = headers
+            updatedHeaders.append(userAgentHeader)
+            callOptions = CallOptions(customMetadata: HPACKHeaders(updatedHeaders), logger: logger)
         }
         else {
-            callOptions = CallOptions(logger: logger)
+            var headers = [(String, String)]()
+            headers.append(userAgentHeader)
+            callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
         }
     }
 
