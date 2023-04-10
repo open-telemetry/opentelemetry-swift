@@ -21,13 +21,19 @@ public class OtlpTraceExporter: SpanExporter {
         self.channel = channel
         traceClient = Opentelemetry_Proto_Collector_Trace_V1_TraceServiceNIOClient(channel: channel)
         self.config = config
+        let userAgentHeader = (Constants.HTTP.userAgent, Headers.getUserAgentHeader())
         if let headers = envVarHeaders {
-            callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
+            var updatedHeaders = headers
+            updatedHeaders.append(userAgentHeader)
+            callOptions = CallOptions(customMetadata: HPACKHeaders(updatedHeaders), logger: logger)
         } else if let headers = config.headers {
+            var updatedHeaders = headers
+            updatedHeaders.append(userAgentHeader)
+            callOptions = CallOptions(customMetadata: HPACKHeaders(updatedHeaders), logger: logger)
+        } else {
+            var headers = [(String, String)]()
+            headers.append(userAgentHeader)
             callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
-        }
-        else {
-            callOptions = CallOptions(logger: logger)
         }
     }
 
