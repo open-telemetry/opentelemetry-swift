@@ -6,7 +6,7 @@
 #if os(macOS)
 import Foundation
 import SystemConfiguration
-#elseif os(iOS) || targetEnvironment(macCatalyst)
+#elseif os(iOS) || targetEnvironment(macCatalyst) || os(tvOS)
 import UIKit
 #elseif os(watchOS)
 import WatchKit
@@ -23,7 +23,8 @@ internal class Device {
     init(
         model: String,
         osName: String,
-        osVersion: String) {
+        osVersion: String)
+    {
         self.model = model
         self.osName = osName
         self.osVersion = osVersion
@@ -36,6 +37,7 @@ internal class Device {
             osName: uiDevice.systemName,
             osVersion: uiDevice.systemVersion)
     }
+
     #elseif os(macOS)
     convenience init(processInfo: ProcessInfo) {
         self.init(
@@ -64,8 +66,7 @@ internal class Device {
         return Device(
             model: device.model,
             osName: device.systemName,
-            osVersion: device.systemVersion
-        )
+            osVersion: device.systemVersion)
         #endif
     }
 }
