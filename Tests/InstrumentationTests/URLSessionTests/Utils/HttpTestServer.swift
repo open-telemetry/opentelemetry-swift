@@ -97,6 +97,7 @@ internal class HttpTestServer {
                         _ = channel.writeAndFlush(endpart).flatMap {
                             channel.close()
                         }
+                        break
                     } else if request.uri.unicodeScalars.starts(with: "/forbidden".unicodeScalars) {
                         let channel = context.channel
 
@@ -111,14 +112,17 @@ internal class HttpTestServer {
                         _ = channel.writeAndFlush(endpart).flatMap {
                             channel.close()
                         }
+                        break
                     } else if request.uri.unicodeScalars.starts(with: "/error".unicodeScalars) {
                         let channel = context.channel
                         config?.errorCallback?()
                         _ = channel.close()
+                        break
                     }
                 case .body:
                     break
-                case .end: break
+                case .end:
+                    break
             }
         }
 
