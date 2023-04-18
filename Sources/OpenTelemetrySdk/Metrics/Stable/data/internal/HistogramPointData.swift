@@ -10,12 +10,12 @@ public class HistogramPointData : AnyPointData, HistogramPointDataProtocol {
     
     
     
-    internal init(startEpochNanos : UInt64, endEpochNanos: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], sum: Double, count: UInt64, min: Double, max: Double, boundries: [Double], counts: [Int], hasMin: Bool, hasMax: Bool) {
+    internal init(startEpochNanos : UInt64, endEpochNanos: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], sum: Double, count: UInt64, min: Double, max: Double, boundaries: [Double], counts: [Int], hasMin: Bool, hasMax: Bool) {
         self.sum = sum
         self.count = count
         self.min = min
         self.max = max
-        self.boundries = boundries
+        self.boundaries = boundaries
         self.counts = counts
         self.hasMin = hasMin
         self.hasMax = hasMax
@@ -30,7 +30,7 @@ public class HistogramPointData : AnyPointData, HistogramPointDataProtocol {
     
     public var max: Double
     
-    public var boundries: [Double]
+    public var boundaries: [Double]
     
     public var counts: [Int]
         

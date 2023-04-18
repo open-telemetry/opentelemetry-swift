@@ -29,7 +29,7 @@ public class Aggregations {
     }
     
     public static func explicitBucketHistogram(buckets: [Double]) -> Aggregation {
-        ExplicitBucketHistogramAggregation(bucketBoundries:  buckets)
+        ExplicitBucketHistogramAggregation(bucketBoundaries:  buckets)
     }
     
     static func base2ExponentialBucketHistogram() {

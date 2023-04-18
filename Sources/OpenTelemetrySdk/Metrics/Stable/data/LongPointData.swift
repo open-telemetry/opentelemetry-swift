@@ -25,7 +25,7 @@ public protocol HistogramPointDataProtocol : AnyPointData {
     var count : UInt64 { get }
     var min : Double { get }
     var max : Double { get }
-    var boundries : [Double] { get }
+    var boundaries : [Double] { get }
     var counts : [Int] { get }
     var hasMin : Bool { get }
     var hasMax : Bool { get }

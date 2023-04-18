@@ -147,7 +147,7 @@ struct MetricsAdapter {
                 injectPointData(protoHistogramPoint: &protoDataPoint, pointData: histogramData)
                 protoDataPoint.sum = Double(histogramData.sum)
                 protoDataPoint.count = UInt64(histogramData.count)
-                protoDataPoint.explicitBounds = histogramData.boundries.map {Double($0)}
+                protoDataPoint.explicitBounds = histogramData.boundaries.map {Double($0)}
                 protoDataPoint.bucketCounts = histogramData.counts.map{UInt64($0)}
                 protoMetric.histogram.aggregationTemporality = .cumulative
                 protoMetric.histogram.dataPoints.append(protoDataPoint)

@@ -7,19 +7,19 @@ import Foundation
 import OpenTelemetryApi
 
 public class ExplicitBucketHistogramAggregation : Aggregation, AggregatorFactory {
-    public private(set) static var DEFAULT_BOUNDRIES : [Double] = [0,5,10,25,50,75,100,250,500,750,1_000,2_500,5_000,7_500]
-    public private(set) static var instance = ExplicitBucketHistogramAggregation(bucketBoundries: DEFAULT_BOUNDRIES)
+    public private(set) static var DEFAULT_BOUNDARIES : [Double] = [0,5,10,25,50,75,100,250,500,750,1_000,2_500,5_000,7_500]
+    public private(set) static var instance = ExplicitBucketHistogramAggregation(bucketBoundaries: DEFAULT_BOUNDARIES)
     
     
-    private let bucketBoundries : [Double]
+    private let bucketBoundaries : [Double]
     
-    init(bucketBoundries : [Double]) {
-        self.bucketBoundries = bucketBoundries
+    init(bucketBoundaries : [Double]) {
+        self.bucketBoundaries = bucketBoundaries
     }
     
     public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> any StableAggregator {
-        DoubleExplicitBucketHistogramAggregator(boundries: bucketBoundries) {
-            FilteredExemplarReservoir(filter: exemplarFilter, reservoir: HistogramExemplarReservoir(clock: MillisClock(), boundries: self.bucketBoundries)) // todo: inject correct clock
+        DoubleExplicitBucketHistogramAggregator(boundaries: bucketBoundaries) {
+            FilteredExemplarReservoir(filter: exemplarFilter, reservoir: HistogramExemplarReservoir(clock: MillisClock(), boundaries: self.bucketBoundaries)) // todo: inject correct clock
         }
     }
     

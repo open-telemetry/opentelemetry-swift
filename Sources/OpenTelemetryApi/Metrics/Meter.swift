@@ -61,12 +61,12 @@ public protocol Meter {
     @available(*,deprecated)
     func createDoubleHistogram(name: String, explicitBoundaries: Array<Double>?, absolute: Bool) -> AnyHistogramMetric<Double>
 
-        // Creates a double histogram given the name, boundries, counts, and start and end dates.
+        // Creates a double histogram given the name, boundaries, counts, and start and end dates.
         /// - Parameters:
         ///   - name: The name of the measure.
         func createRawDoubleHistogram(name: String) -> AnyRawHistogramMetric<Double>
     
-        // Creates a Int histogram given the name, boundries, counts, and start and end dates.
+        // Creates a Int histogram given the name, boundaries, counts, and start and end dates.
         /// - Parameters:
         ///   - name: The name of the measure.
         func createRawIntHistogram(name: String) -> AnyRawHistogramMetric<Int>

@@ -7,8 +7,8 @@ import Foundation
 import OpenTelemetryApi
 
 public class HistogramExemplarReservoir : FixedSizedExemplarReservoir {
-    init(clock: Clock, boundries : [Double]) {
-        super.init(clock: clock, size: boundries.count + 1, reservoirCellSelector: HistogramCellSelector(boundries: boundries), mapAndResetCell: { cell, attributes in
+    init(clock: Clock, boundaries : [Double]) {
+        super.init(clock: clock, size: boundaries.count + 1, reservoirCellSelector: HistogramCellSelector(boundaries: boundaries), mapAndResetCell: { cell, attributes in
             return cell.getAndResetDouble(pointAttributes: attributes)
         })
     }
@@ -18,10 +18,10 @@ public class HistogramExemplarReservoir : FixedSizedExemplarReservoir {
     }
     
     class HistogramCellSelector : ReservoirCellSelector {
-        private var boundries : [Double]
+        private var boundaries : [Double]
         
-        init(boundries: [Double]) { 
-            self.boundries = boundries
+        init(boundaries: [Double]) { 
+            self.boundaries = boundaries
         }
         
         func reservoirCellIndex(for cells: [ReservoirCell], value: Int, attributes: [String : OpenTelemetryApi.AttributeValue]) -> Int {
@@ -29,12 +29,12 @@ public class HistogramExemplarReservoir : FixedSizedExemplarReservoir {
         }
         
         func reservoirCellIndex(for cells: [ReservoirCell], value: Double, attributes: [String : OpenTelemetryApi.AttributeValue]) -> Int {
-            if let index = boundries.firstIndex(where: { boundry in
+            if let index = boundaries.firstIndex(where: { boundry in
                 value <= boundry
             }) {
                 return index
             }
-            return boundries.count
+            return boundaries.count
         }
         
         func reset() {

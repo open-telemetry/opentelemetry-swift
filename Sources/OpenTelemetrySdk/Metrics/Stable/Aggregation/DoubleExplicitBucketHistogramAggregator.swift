@@ -17,19 +17,19 @@ public class DoubleExplicitBucketHistogramAggregator : StableAggregator {
         
         let lock = Lock()
         
-        internal init(boundries : [Double], exemplarReservoir: AnyExemplarReservoir) {
-            self.boundries = boundries
+        internal init(boundaries : [Double], exemplarReservoir: AnyExemplarReservoir) {
+            self.boundaries = boundaries
             
             self.sum = 0
             self.min = Double.greatestFiniteMagnitude
             self.max = -1
             self.count = 0
-            self.counts = Array(repeating: 0, count: boundries.count + 1)
+            self.counts = Array(repeating: 0, count: boundaries.count + 1)
             super.init(exemplarReservoir: exemplarReservoir)
 
         }
         
-        private var boundries : [Double]
+        private var boundaries : [Double]
         private var sum : Double
         private var min : Double
         private var max : Double
@@ -42,14 +42,14 @@ public class DoubleExplicitBucketHistogramAggregator : StableAggregator {
             defer {
                 lock.unlock()
             }
-            let pointData =  HistogramPointData(startEpochNanos: startEpochNano, endEpochNanos: endEpochNano, attributes: attributes, exemplars: exemplars, sum: sum, count: count, min: min, max: max, boundries: boundries, counts: counts, hasMin: count > 0, hasMax: count > 0)
+            let pointData =  HistogramPointData(startEpochNanos: startEpochNano, endEpochNanos: endEpochNano, attributes: attributes, exemplars: exemplars, sum: sum, count: count, min: min, max: max, boundaries: boundaries, counts: counts, hasMin: count > 0, hasMax: count > 0)
             
             if (reset) {
                 sum = 0
                 min = Double.greatestFiniteMagnitude
                 max = -1
                 count = 0
-                counts = Array(repeating: 0, count: boundries.count + 1)
+                counts = Array(repeating: 0, count: boundaries.count + 1)
             }
             
             return pointData
@@ -66,14 +66,14 @@ public class DoubleExplicitBucketHistogramAggregator : StableAggregator {
                 lock.unlock()
             }
             var bucketIndex = -1
-            for (index, boundry) in boundries.enumerated() {
+            for (index, boundry) in boundaries.enumerated() {
                 if value <= boundry {
                     bucketIndex = index
                     break
                 }
             }
             if bucketIndex == -1 {
-                bucketIndex = boundries.count
+                bucketIndex = boundaries.count
             }
             
             sum += value
@@ -85,11 +85,11 @@ public class DoubleExplicitBucketHistogramAggregator : StableAggregator {
         
     }
     
-    private let boundries : [Double]
+    private let boundaries : [Double]
     private let reservoirSupplier : () -> AnyExemplarReservoir
     
-    public init(boundries: [Double], reservoirSupplier :  @escaping () -> AnyExemplarReservoir) {
-        self.boundries = boundries
+    public init(boundaries: [Double], reservoirSupplier :  @escaping () -> AnyExemplarReservoir) {
+        self.boundaries = boundaries
         self.reservoirSupplier = reservoirSupplier
     }
     
@@ -102,7 +102,7 @@ public class DoubleExplicitBucketHistogramAggregator : StableAggregator {
     }
     
     public func createHandle() -> AggregatorHandle {
-        return Handle(boundries: self.boundries, exemplarReservoir: self.reservoirSupplier())
+        return Handle(boundaries: self.boundaries, exemplarReservoir: self.reservoirSupplier())
     }
     
     public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [AnyPointData], temporality: AggregationTemporality) -> StableMetricData {
