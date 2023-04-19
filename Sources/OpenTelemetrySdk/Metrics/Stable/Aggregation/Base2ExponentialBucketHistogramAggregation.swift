@@ -6,7 +6,7 @@
 //import Foundation
 //import OpenTelemetryApi
 //
-//public class Base2ExponentialBucketHistogramAggregation : Aggregation, AggregatorFactory {
+//public class Base2ExponentialBucketHistogramAggregation : Aggregation {
 //    private static let defaultMaxBuckets = 160
 //    private static let defaultMaxScale = 20
 //    

@@ -5,7 +5,7 @@
 
 import Foundation
 
-public protocol AggregatorFactory {
+public protocol Aggregation {
     func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> StableAggregator
     func isCompatible(with descriptor: InstrumentDescriptor) -> Bool
 }

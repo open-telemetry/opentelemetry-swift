@@ -1,20 +1,19 @@
 //
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 
 import Foundation
 import OpenTelemetryApi
 
-
 public class ViewBuilder {
-    private var name : String?
+    private var name: String?
     
-    private var description : String?
+    private var description: String?
     
-    private var aggregation : Aggregation = Aggregations.defaultAggregation()
+    private var aggregation: Aggregation = Aggregations.defaultAggregation()
     
-    private var processor : AttributeProcessor = NoopAttributeProcessor.noop
+    private var processor: AttributeProcessor = NoopAttributeProcessor.noop
     
     public func withName(name: String) -> Self {
         self.name = name
@@ -31,7 +30,7 @@ public class ViewBuilder {
         return self
     }
     
-    public func addAttributeFilter( keyFilter: @escaping (String) -> Bool ) -> Self {
+    public func addAttributeFilter(keyFilter: @escaping (String) -> Bool) -> Self {
         addAttributeProcessor(processor: AttributeProcessor.filterByKeyName(nameFilter: keyFilter))
     }
     
@@ -44,5 +43,3 @@ public class ViewBuilder {
         return StableView(name: name, description: description, aggregation: aggregation, attributeProcessor: processor)
     }
 }
-
-

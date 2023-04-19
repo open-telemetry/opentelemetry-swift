@@ -8,7 +8,7 @@ import OpenTelemetryApi
 
 public class ExemplarReservoir {
     public func collectAndReset(attribute: [String: AttributeValue]) -> [ExemplarData] {
-        return [AnyExemplarData]()
+        return [ExemplarData]()
     }
     
     public func offerDoubleMeasurement(value: Double, attributes: [String: OpenTelemetryApi.AttributeValue]) {}

@@ -1,13 +1,11 @@
 //
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 
 import Foundation
 
-public protocol Aggregation : AggregatorFactory {}
-
-public class Aggregations {
+public enum Aggregations {
     public static func drop() -> Aggregation {
         DropAggregation.instance
     }
@@ -29,7 +27,7 @@ public class Aggregations {
     }
     
     public static func explicitBucketHistogram(buckets: [Double]) -> Aggregation {
-        ExplicitBucketHistogramAggregation(bucketBoundaries:  buckets)
+        ExplicitBucketHistogramAggregation(bucketBoundaries: buckets)
     }
     
     static func base2ExponentialBucketHistogram() {
