@@ -1,12 +1,12 @@
 //
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 
 import Foundation
 import OpenTelemetryApi
 
-public class ImmutableLongPointData : AnyPointData, LongPointData {
+public class LongPointData: PointData {
     public var value: Int
     
     internal init(startEpochNanos: UInt64, endEpochNanos: UInt64, attributes: [String : AttributeValue], exemplars: [ExemplarData], value: Int) {
@@ -15,8 +15,8 @@ public class ImmutableLongPointData : AnyPointData, LongPointData {
         
     }
     
-    static func -(left : ImmutableLongPointData, right: ImmutableLongPointData) -> Self {
-        return ImmutableLongPointData(startEpochNanos: left.startEpochNanos, endEpochNanos: left.endEpochNanos, attributes: left.attributes, exemplars: left.exemplars, value: left.value - right.value) as! Self
+    static func -(left : LongPointData, right: LongPointData) -> Self {
+        return LongPointData(startEpochNanos: left.startEpochNanos, endEpochNanos: left.endEpochNanos, attributes: left.attributes, exemplars: left.exemplars, value: left.value - right.value) as! Self
     }
     
 }

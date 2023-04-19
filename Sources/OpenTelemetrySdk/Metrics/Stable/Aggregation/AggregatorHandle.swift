@@ -1,28 +1,25 @@
 //
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 
 import Foundation
 import OpenTelemetryApi
 
 internal protocol AggregatorHandleProtocol {
-    func doAggregateThenMaybeReset(startEpochNano: Int, endEpochNano: Int, attributes: [String: AttributeValue], reset: Bool) -> AnyPointData
+    func doAggregateThenMaybeReset(startEpochNano: Int, endEpochNano: Int, attributes: [String: AttributeValue], reset: Bool) -> PointData
     func doRecordLong(value: Int)
     func doRecordDouble(value: Double)
 }
 
-
 public class AggregatorHandle {
-
-    
-    let exemplarReservoir : AnyExemplarReservoir
+    let exemplarReservoir: AnyExemplarReservoir
  
     internal init(exemplarReservoir: AnyExemplarReservoir) {
         self.exemplarReservoir = exemplarReservoir
     }
     
-    public func aggregateThenMaybeReset(startEpochNano: UInt64, endEpochNano: UInt64, attributes : [String: AttributeValue], reset: Bool) -> AnyPointData {
+    public func aggregateThenMaybeReset(startEpochNano: UInt64, endEpochNano: UInt64, attributes: [String: AttributeValue], reset: Bool) -> PointData {
         doAggregateThenMaybeReset(startEpochNano: startEpochNano, endEpochNano: endEpochNano, attributes: attributes, exemplars: exemplarReservoir.collectAndReset(attribute: attributes), reset: reset)
     }
     
@@ -35,7 +32,6 @@ public class AggregatorHandle {
         doRecordLong(value: value)
     }
     
-    
     public func recordDouble(value: Double, attributes: [String: AttributeValue]) {
         exemplarReservoir.offerDoubleMeasurement(value: value, attributes: attributes)
         recordDouble(value: value)
@@ -45,10 +41,9 @@ public class AggregatorHandle {
         doRecordDouble(value: value)
     }
     
-    internal func doRecordDouble(value: Double) { fatalError() } // todo: better way to force subclass override
+    internal func doRecordDouble(value: Double) { fatalError() } // TODO: better way to force subclass override
     
-    internal func doRecordLong(value: Int) { fatalError()}
+    internal func doRecordLong(value: Int) { fatalError() }
 
-    internal func doAggregateThenMaybeReset(startEpochNano: UInt64, endEpochNano: UInt64, attributes: [String: AttributeValue],exemplars: [ExemplarData], reset: Bool) -> AnyPointData {fatalError()}
-
+    internal func doAggregateThenMaybeReset(startEpochNano: UInt64, endEpochNano: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], reset: Bool) -> PointData { fatalError() }
 }
