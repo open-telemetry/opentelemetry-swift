@@ -14,7 +14,7 @@ public class DoubleExplicitBucketHistogramAggregator: StableAggregator {
     class Handle: AggregatorHandle {
         let lock = Lock()
         
-        internal init(boundaries: [Double], exemplarReservoir: AnyExemplarReservoir) {
+        internal init(boundaries: [Double], exemplarReservoir: ExemplarReservoir) {
             self.boundaries = boundaries
             
             self.sum = 0
@@ -79,9 +79,9 @@ public class DoubleExplicitBucketHistogramAggregator: StableAggregator {
     }
     
     private let boundaries: [Double]
-    private let reservoirSupplier: () -> AnyExemplarReservoir
+    private let reservoirSupplier: () -> ExemplarReservoir
     
-    public init(boundaries: [Double], reservoirSupplier: @escaping () -> AnyExemplarReservoir) {
+    public init(boundaries: [Double], reservoirSupplier: @escaping () -> ExemplarReservoir) {
         self.boundaries = boundaries
         self.reservoirSupplier = reservoirSupplier
     }

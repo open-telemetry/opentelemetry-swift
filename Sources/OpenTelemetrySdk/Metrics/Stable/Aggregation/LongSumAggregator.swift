@@ -7,9 +7,9 @@ import Foundation
 import OpenTelemetryApi
 
 public class LongSumAggregator: SumAggregator, StableAggregator {
-    private let reservoirSupplier: () -> AnyExemplarReservoir
+    private let reservoirSupplier: () -> ExemplarReservoir
 
-    init(descriptor: InstrumentDescriptor, reservoirSupplier: @escaping () -> AnyExemplarReservoir) {
+    init(descriptor: InstrumentDescriptor, reservoirSupplier: @escaping () -> ExemplarReservoir) {
         self.reservoirSupplier = reservoirSupplier
         super.init(instrumentDescriptor: descriptor)
     }

@@ -7,9 +7,9 @@ import Foundation
 import OpenTelemetryApi
 
 public class DoubleLastValueAggregator: StableAggregator {
-    private var resevoirSupplier: () -> AnyExemplarReservoir
+    private var resevoirSupplier: () -> ExemplarReservoir
     
-    internal init(resevoirSupplier: @escaping () -> AnyExemplarReservoir) {
+    internal init(resevoirSupplier: @escaping () -> ExemplarReservoir) {
         self.resevoirSupplier = resevoirSupplier
     }
     

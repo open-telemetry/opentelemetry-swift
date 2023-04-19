@@ -13,9 +13,9 @@ internal protocol AggregatorHandleProtocol {
 }
 
 public class AggregatorHandle {
-    let exemplarReservoir: AnyExemplarReservoir
+    let exemplarReservoir: ExemplarReservoir
  
-    internal init(exemplarReservoir: AnyExemplarReservoir) {
+    internal init(exemplarReservoir: ExemplarReservoir) {
         self.exemplarReservoir = exemplarReservoir
     }
     

@@ -6,11 +6,11 @@
 import Foundation
 import OpenTelemetryApi
 
-public class FilteredExemplarReservoir: AnyExemplarReservoir {
+public class FilteredExemplarReservoir: ExemplarReservoir {
     let exemplarFilter : ExemplarFilter
-    let reservoir : AnyExemplarReservoir
+    let reservoir : ExemplarReservoir
     
-    init(filter: ExemplarFilter, reservoir: AnyExemplarReservoir) {
+    init(filter: ExemplarFilter, reservoir: ExemplarReservoir) {
         self.exemplarFilter = filter
         self.reservoir = reservoir
     }
