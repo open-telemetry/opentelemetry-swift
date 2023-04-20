@@ -6,17 +6,15 @@
 import Foundation
 import OpenTelemetryApi
 public class StableMeterProviderBuilder {
-    public private(set) var clock : Clock = MillisClock()
-    public private(set) var resource : Resource = Resource()
+    public private(set) var clock: Clock = MillisClock()
+    public private(set) var resource: Resource = .init()
     public private(set) var metricReaders = [StableMetricReader]()
     public private(set) var registeredViews = [RegisteredView]()
-    public private(set) var exemplarFilter : ExemplarFilter = AlwaysOnFilter()
+    public private(set) var exemplarFilter: ExemplarFilter = AlwaysOnFilter()
 
-    public init() {
-        
-    }
-    
-    public func setClock(clock : Clock) -> Self {
+    public init() {}
+
+    public func setClock(clock: Clock) -> Self {
         self.clock = clock
         return self
     }
@@ -26,7 +24,7 @@ public class StableMeterProviderBuilder {
         return self
     }
 
-    public func registerView(selector : InstrumentSelector, view: StableView) -> Self {
+    public func registerView(selector: InstrumentSelector, view: StableView) -> Self {
         registeredViews.append(RegisteredView(selector: selector, view: view, attributeProcessor: view.attributeProcessor))
         return self
     }

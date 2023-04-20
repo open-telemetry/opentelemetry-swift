@@ -1,22 +1,21 @@
 //
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 
 import Foundation
 import OpenTelemetryApi
 
-public class AsynchronousMetricStorage : MetricStorage {
-    
-    public private(set) var registeredReader : RegisteredReader
+public class AsynchronousMetricStorage: MetricStorage {
+    public private(set) var registeredReader: RegisteredReader
     public private(set) var metricDescriptor: MetricDescriptor
-    private var aggregationTemporality : AggregationTemporality
-    private var aggregator : StableAggregator
-    private var attributeProcessor : AttributeProcessor
-    private var points = [[String:AttributeValue]: AnyPointData]()
-    private var lastPoints = [[String:AttributeValue]: AnyPointData]()
+    private var aggregationTemporality: AggregationTemporality
+    private var aggregator: StableAggregator
+    private var attributeProcessor: AttributeProcessor
+    private var points = [[String: AttributeValue]: PointData]()
+    private var lastPoints = [[String: AttributeValue]: PointData]()
 
-    static func create(registeredReader : RegisteredReader, registeredView : RegisteredView, instrumentDescriptor: InstrumentDescriptor) -> AsynchronousMetricStorage {
+    static func create(registeredReader: RegisteredReader, registeredView: RegisteredView, instrumentDescriptor: InstrumentDescriptor) -> AsynchronousMetricStorage {
         let view = registeredView.view
         let metricDescriptor = MetricDescriptor(view: view, instrument: instrumentDescriptor)
         
@@ -28,7 +27,8 @@ public class AsynchronousMetricStorage : MetricStorage {
     init(registeredReader: RegisteredReader,
          metricDescriptor: MetricDescriptor,
          aggregator: StableAggregator,
-         attributeProcessor: AttributeProcessor) {
+         attributeProcessor: AttributeProcessor)
+    {
         self.registeredReader = registeredReader
         self.metricDescriptor = metricDescriptor
         self.aggregationTemporality = registeredReader.reader.getAggregationTemporality(for: metricDescriptor.instrument.type)
@@ -41,29 +41,29 @@ public class AsynchronousMetricStorage : MetricStorage {
         let start = aggregationTemporality == AggregationTemporality.delta ? registeredReader.lastCollectedEpochNanos : measurement.startEpochNano
         var newMeasurement = measurement.hasDoubleValue ? Measurement.doubleMeasurement(startEpochNano: start, endEpochNano: measurement.epochNano, value: measurement.doubleValue, attributes: measurement.attributes) : Measurement.longMeasurement(startEpochNano: start, endEpochNano: measurement.epochNano, value: measurement.longValue, attributes: measurement.attributes)
         do {
-           try recordPoint(point:aggregator.toPoint(measurement: newMeasurement))
-        } catch HistogramAggregatorError.unsupportedOperation(let error) {
-            //todo: log error
+            try recordPoint(point: aggregator.toPoint(measurement: newMeasurement))
+        } catch let HistogramAggregatorError.unsupportedOperation(error) {
+            // TODO: log error
         } catch {
-            // todo : log default error
+            // TODO: log default error
         }
     }
     
-    private func recordPoint(point : AnyPointData) {
+    private func recordPoint(point: PointData) {
         let attributes = point.attributes
         if points.count >= MetricStorageConstants.MAX_CARDINALITY {
-            // todo : log error
+            // TODO: log error
             return
         }
         if let _ = points[attributes] {
-            //todo: error multiple values for same attributes
+            // TODO: error multiple values for same attributes
             return
         }
         points[attributes] = point
     }
     
     public func collect(resource: Resource, scope: InstrumentationScopeInfo, startEpochNanos: UInt64, epochNanos: UInt64) -> StableMetricData {
-        var result : [[String: AttributeValue] : AnyPointData]
+        var result: [[String: AttributeValue]: PointData]
         if aggregationTemporality == .delta {
             var points = self.points
             var lastPoints = self.lastPoints
@@ -85,7 +85,7 @@ public class AsynchronousMetricStorage : MetricStorage {
         } else {
             result = points
         }
-        points = [[String:AttributeValue] : AnyPointData]()
+        points = [[String: AttributeValue]: PointData]()
         return aggregator.toMetricData(resource: resource, scope: scope, descriptor: metricDescriptor, points: Array(result.values), temporality: aggregationTemporality)
     }
     

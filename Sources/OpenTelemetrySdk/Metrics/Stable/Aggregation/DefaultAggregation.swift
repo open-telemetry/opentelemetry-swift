@@ -1,12 +1,11 @@
 //
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 
 import Foundation
 
-
-public class DefaultAggregation : Aggregation, AggregatorFactory {
+public class DefaultAggregation: Aggregation {
     public private(set) static var instance = DefaultAggregation()
     
     public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> any StableAggregator {
@@ -17,19 +16,14 @@ public class DefaultAggregation : Aggregation, AggregatorFactory {
         resolve(for: descriptor).isCompatible(with: descriptor)
     }
     
-    private func resolve(for instrument: InstrumentDescriptor) -> AggregatorFactory {
-        switch(instrument.type) {
+    private func resolve(for instrument: InstrumentDescriptor) -> Aggregation {
+        switch instrument.type {
         case .counter, .upDownCounter, .observableCounter, .observableUpDownCounter:
-                return SumAggregation.instance
+            return SumAggregation.instance
         case .histogram:
             return ExplicitBucketHistogramAggregation.instance
         case .observableGauge:
             return LastValueAggregation.instance
         }
-        
-        return DropAggregation.instance
     }
-    
-    
-    
 }

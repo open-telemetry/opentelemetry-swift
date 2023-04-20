@@ -6,10 +6,9 @@
 import Foundation
 import OpenTelemetryApi
 
-public class MeterProviderError : Error {
-}
+public class MeterProviderError: Error {}
 
-public class StableMeterProviderSdk : StableMeterProvider {
+public class StableMeterProviderSdk: StableMeterProvider {
     private static let defaultMeterName = "unknown"
     private let readerLock = Lock()
     var meterProviderSharedState: MeterProviderSharedState
@@ -17,16 +16,15 @@ public class StableMeterProviderSdk : StableMeterProvider {
     var registeredReaders = [RegisteredReader]()
     var registeredViews = [RegisteredView]()
     
-    var componentRegistery : ComponentRegistry<StableMeterSdk>!
+    var componentRegistery: ComponentRegistry<StableMeterSdk>!
     
-    public func get(name: String) -> OpenTelemetryApi.StableMeter {
+    public func get(name: String) -> StableMeter {
         meterBuilder(name: name).build()
     }
     
-    public func meterBuilder(name: String) -> OpenTelemetryApi.MeterBuilder {
-        if (registeredReaders.isEmpty) {
-            // todo: noop meter provider builder
-
+    public func meterBuilder(name: String) -> MeterBuilder {
+        if registeredReaders.isEmpty {
+            // TODO: noop meter provider builder
         }
         var name = name
         if name.isEmpty {
@@ -43,22 +41,22 @@ public class StableMeterProviderSdk : StableMeterProvider {
     init(registeredViews: [RegisteredView],
          metricReaders: [StableMetricReader],
          clock: Clock,
-         resource : Resource,
-         exemplarFilter : ExemplarFilter) {
+         resource: Resource,
+         exemplarFilter: ExemplarFilter)
+    {
         let startEpochNano = Date().timeIntervalSince1970.toNanoseconds
         self.registeredViews = registeredViews
         self.registeredReaders = metricReaders.map { reader in
-            return RegisteredReader(reader: reader, registry: StableViewRegistry(aggregationSelector: reader, registeredViews: registeredViews))
+            RegisteredReader(reader: reader, registry: StableViewRegistry(aggregationSelector: reader, registeredViews: registeredViews))
         }
         
         meterProviderSharedState = MeterProviderSharedState(clock: clock, resource: resource, startEpochNanos: startEpochNano, exemplarFilter: exemplarFilter)
         
-        componentRegistery = ComponentRegistry { scope  in
+        componentRegistery = ComponentRegistry { scope in
             StableMeterSdk(meterProviderSharedState: &self.meterProviderSharedState, instrumentScope: scope, registeredReaders: &self.registeredReaders)
         }
         
-        
-        for registeredReader in registeredReaders  {
+        for registeredReader in registeredReaders {
             let producer = LeasedMetricProducer(registry: componentRegistery, sharedState: meterProviderSharedState, registeredReader: registeredReader)
             registeredReader.reader.register(registration: producer)
             registeredReader.lastCollectedEpochNanos = startEpochNano
@@ -71,9 +69,9 @@ public class StableMeterProviderSdk : StableMeterProvider {
             readerLock.unlock()
         }
         do {
-           try registeredReaders.forEach() { reader in
-             guard reader.reader.shutdown() == .success else {
-                    //todo throw better error
+            try registeredReaders.forEach { reader in
+                guard reader.reader.shutdown() == .success else {
+                    // todo throw better error
                     throw MeterProviderError()
                 }
             }
@@ -88,23 +86,23 @@ public class StableMeterProviderSdk : StableMeterProvider {
         defer {
             readerLock.unlock()
         }
-       do {
-           try registeredReaders.forEach() { reader in
-               guard reader.reader.forceFlush() == .success else {
-                   //todo: throw better error
-                   throw MeterProviderError()
-               }
-           }
-       } catch {
-           return .failure
+        do {
+            try registeredReaders.forEach { reader in
+                guard reader.reader.forceFlush() == .success else {
+                    // TODO: throw better error
+                    throw MeterProviderError()
+                }
+            }
+        } catch {
+            return .failure
         }
         return .success
     }
 
-    private class LeasedMetricProducer : MetricProducer {
-        private let registry : ComponentRegistry<StableMeterSdk>
-        private var sharedState : MeterProviderSharedState
-        private var registeredReader : RegisteredReader
+    private class LeasedMetricProducer: MetricProducer {
+        private let registry: ComponentRegistry<StableMeterSdk>
+        private var sharedState: MeterProviderSharedState
+        private var registeredReader: RegisteredReader
         
         init(registry: ComponentRegistry<StableMeterSdk>, sharedState: MeterProviderSharedState, registeredReader: RegisteredReader) {
             self.registry = registry
@@ -124,4 +122,3 @@ public class StableMeterProviderSdk : StableMeterProvider {
         }
     }
 }
-

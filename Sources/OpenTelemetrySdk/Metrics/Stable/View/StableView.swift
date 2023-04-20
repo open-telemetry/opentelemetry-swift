@@ -7,10 +7,10 @@ import Foundation
 import OpenTelemetryApi
 
 public class StableView {
-    public private(set) var name : String?
-    public private(set) var description : String?
-    public private(set) var aggregation : Aggregation
-    public private(set) var attributeProcessor : AttributeProcessor
+    public private(set) var name: String?
+    public private(set) var description: String?
+    public private(set) var aggregation: Aggregation
+    public private(set) var attributeProcessor: AttributeProcessor
     init(name: String?, description: String?, aggregation: Aggregation, attributeProcessor: AttributeProcessor) {
         self.name = name
         self.description = description
@@ -18,8 +18,7 @@ public class StableView {
         self.attributeProcessor = attributeProcessor
     }
 
-    static public func builder() -> ViewBuilder {
+    public static func builder() -> ViewBuilder {
         return ViewBuilder()
     }
-
 }

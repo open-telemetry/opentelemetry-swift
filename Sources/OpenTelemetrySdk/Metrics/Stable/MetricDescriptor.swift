@@ -1,17 +1,15 @@
 //
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 
 import Foundation
 
-
-public struct MetricDescriptor : Hashable {
-    
-    public private(set) var name : String
-    public private(set) var description : String
-    public private(set) var view : StableView
-    public private(set) var instrument : InstrumentDescriptor
+public struct MetricDescriptor: Hashable {
+    public private(set) var name: String
+    public private(set) var description: String
+    public private(set) var view: StableView
+    public private(set) var instrument: InstrumentDescriptor
         
     init(name: String, description: String, unit: String) {
         self.init(view: StableView.builder().build(), instrument: InstrumentDescriptor(name: name, description: description, unit: unit, type: .observableGauge, valueType: .double))
@@ -37,16 +35,15 @@ public struct MetricDescriptor : Hashable {
         return String(describing: view.aggregation)
     }
     
-    
     public static func == (lhs: MetricDescriptor, rhs: MetricDescriptor) -> Bool {
         return lhs.name == rhs.name &&
-        lhs.description == rhs.description &&
-        lhs.aggregationName() == rhs.aggregationName() &&
-        lhs.instrument.name == rhs.instrument.name &&
-        lhs.instrument.description == rhs.instrument.description &&
-        lhs.instrument.unit == rhs.instrument.unit &&
-        lhs.instrument.type == rhs.instrument.type &&
-        lhs.instrument.valueType == rhs.instrument.valueType
+            lhs.description == rhs.description &&
+            lhs.aggregationName() == rhs.aggregationName() &&
+            lhs.instrument.name == rhs.instrument.name &&
+            lhs.instrument.description == rhs.instrument.description &&
+            lhs.instrument.unit == rhs.instrument.unit &&
+            lhs.instrument.type == rhs.instrument.type &&
+            lhs.instrument.valueType == rhs.instrument.valueType
     }
     
     public func hash(into hasher: inout Hasher) {

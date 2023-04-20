@@ -1,42 +1,40 @@
 //
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 
 import Foundation
 import OpenTelemetryApi
 
-
 public class DoubleSumAggregator: SumAggregator, StableAggregator {
-    private let reservoirSupplier : () -> AnyExemplarReservoir
+    private let reservoirSupplier: () -> ExemplarReservoir
 
-    
-    public func diff(previousCumulative: AnyPointData, currentCumulative: AnyPointData) throws -> AnyPointData {
+    public func diff(previousCumulative: PointData, currentCumulative: PointData) throws -> PointData {
         currentCumulative - previousCumulative
     }
     
-    public func toPoint(measurement: Measurement) throws -> AnyPointData {
-        ImmutableDoublePointData(startEpochNanos: measurement.startEpochNano, endEpochNanos: measurement.epochNano, attributes: measurement.attributes, exemplars: [ExemplarData](), value: measurement.doubleValue)
+    public func toPoint(measurement: Measurement) throws -> PointData {
+        DoublePointData(startEpochNanos: measurement.startEpochNano, endEpochNanos: measurement.epochNano, attributes: measurement.attributes, exemplars: [ExemplarData](), value: measurement.doubleValue)
     }
     
     public func createHandle() -> AggregatorHandle {
         Handle(exemplarReservoir: reservoirSupplier())
     }
     
-    public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [AnyPointData], temporality: AggregationTemporality) -> StableMetricData {
-        StableMetricData.createDoubleSum(resource: resource, instrumentationScopeInfo: scope, name:descriptor.instrument.name , description: descriptor.instrument.description, unit:descriptor.instrument.unit, data: StableSumData(aggregationTemporality: temporality, points: points as! [ImmutableDoublePointData]))
+    public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [PointData], temporality: AggregationTemporality) -> StableMetricData {
+        StableMetricData.createDoubleSum(resource: resource, instrumentationScopeInfo: scope, name: descriptor.instrument.name, description: descriptor.instrument.description, unit: descriptor.instrument.unit, data: StableSumData(aggregationTemporality: temporality, points: points as! [DoublePointData]))
     }
     
-    init(instrumentDescriptor: InstrumentDescriptor, reservoirSupplier : @escaping () -> AnyExemplarReservoir) {
+    init(instrumentDescriptor: InstrumentDescriptor, reservoirSupplier: @escaping () -> ExemplarReservoir) {
         self.reservoirSupplier = reservoirSupplier
         super.init(instrumentDescriptor: instrumentDescriptor)
     }
     
     private class Handle: AggregatorHandle {
-        var sum : Double = 0
+        var sum: Double = 0
         var sumLock = Lock()
         
-        override func doAggregateThenMaybeReset(startEpochNano: UInt64, endEpochNano: UInt64, attributes: [String : AttributeValue], exemplars: [ExemplarData], reset: Bool) -> AnyPointData {
+        override func doAggregateThenMaybeReset(startEpochNano: UInt64, endEpochNano: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], reset: Bool) -> PointData {
             var value = 0.0
             sumLock.withLockVoid {
                 if reset {
@@ -47,7 +45,7 @@ public class DoubleSumAggregator: SumAggregator, StableAggregator {
                 }
             }
             
-            return ImmutableDoublePointData(startEpochNanos: startEpochNano, endEpochNanos: endEpochNano, attributes: attributes, exemplars: exemplars, value: value)
+            return DoublePointData(startEpochNanos: startEpochNano, endEpochNanos: endEpochNano, attributes: attributes, exemplars: exemplars, value: value)
         }
         
         override func doRecordDouble(value: Double) {
@@ -56,5 +54,4 @@ public class DoubleSumAggregator: SumAggregator, StableAggregator {
             }
         }
     }
-
 }
