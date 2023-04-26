@@ -57,7 +57,7 @@ public class SynchronousMetricStorage: SynchronousMetricStorageProtocol {
             throw MetricStoreError.maxCardinality
         }
         
-        var newHandle = aggregatorHandlePool.isEmpty ? aggregator.createHandle() : aggregatorHandlePool.remove(at: 0)
+        let newHandle = aggregatorHandlePool.isEmpty ? aggregator.createHandle() : aggregatorHandlePool.remove(at: 0)
         if let existingHandle = aggregatorHandles[processedAttributes] {
             return existingHandle
         } else {

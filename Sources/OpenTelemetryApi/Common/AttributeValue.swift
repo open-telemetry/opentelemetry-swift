@@ -61,7 +61,37 @@ public enum AttributeValue: Equatable, CustomStringConvertible, Hashable {
     }
 }
 
-internal struct AttributeValueExplicitCodable : Codable {
+public extension AttributeValue {
+    init(_ value: String) {
+        self = .string(value)
+    }
+    
+    init(_ value: Bool) {
+        self = .bool(value)
+    }
+    
+    init(_ value: Int) {
+        self = .int(value)
+    }
+    
+    init(_ value: Double) {
+        self = .double(value)
+    }
+    
+    init(_ value: [String]) {
+        self = .stringArray(value)
+    }
+    
+    init(_ value: [Int]) {
+        self = .intArray(value)
+    }
+    
+    init(_ value: [Double]) {
+        self = .doubleArray(value)
+    }
+}
+
+internal struct AttributeValueExplicitCodable: Codable {
     let attributeValue: AttributeValue
     
     enum CodingKeys: String, CodingKey {
@@ -122,32 +152,31 @@ internal struct AttributeValueExplicitCodable : Codable {
     }
 
     public func encode(to encoder: Encoder) throws {
-        
         var container = encoder.container(keyedBy: CodingKeys.self)
         
         switch self.attributeValue {
-        case .string(let value):
+        case let .string(value):
             var nestedContainer = container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .string)
             try nestedContainer.encode(value, forKey: .associatedValue)
-        case .bool(let value):
+        case let .bool(value):
             var nestedContainer = container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .bool)
             try nestedContainer.encode(value, forKey: .associatedValue)
-        case .int(let value):
+        case let .int(value):
             var nestedContainer = container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .int)
             try nestedContainer.encode(value, forKey: .associatedValue)
-        case .double(let value):
+        case let .double(value):
             var nestedContainer = container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .double)
             try nestedContainer.encode(value, forKey: .associatedValue)
-        case .stringArray(let value):
+        case let .stringArray(value):
             var nestedContainer = container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .stringArray)
             try nestedContainer.encode(value, forKey: .associatedValue)
-        case .boolArray(let value):
+        case let .boolArray(value):
             var nestedContainer = container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .boolArray)
             try nestedContainer.encode(value, forKey: .associatedValue)
-        case .intArray(let value):
+        case let .intArray(value):
             var nestedContainer = container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .intArray)
             try nestedContainer.encode(value, forKey: .associatedValue)
-        case .doubleArray(let value):
+        case let .doubleArray(value):
             var nestedContainer = container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .doubleArray)
             try nestedContainer.encode(value, forKey: .associatedValue)
         }
@@ -157,11 +186,10 @@ internal struct AttributeValueExplicitCodable : Codable {
 #if swift(>=5.5)
 // swift 5.5 supports synthesizing Codable for enums with associated values
 // see https://github.com/apple/swift-evolution/blob/main/proposals/0295-codable-synthesis-for-enums-with-associated-values.md
-extension AttributeValue: Codable { }
+extension AttributeValue: Codable {}
 #else
 // for older swift versions use a forward compatible explicit Codable implementation
 extension AttributeValue: Codable {
-         
     public init(from decoder: Decoder) throws {
         let explicitDecoded = try AttributeValueExplicitCodable(from: decoder)
         

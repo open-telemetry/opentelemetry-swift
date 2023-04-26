@@ -16,7 +16,7 @@ public enum MetricDataType {
     case ExponentialHistogram
 }
 
-public struct StableMetricData {
+public struct StableMetricData: Equatable {
     public private(set) var resource: Resource
     public private(set) var instrumentationScopeInfo: InstrumentationScopeInfo
     public private(set) var name: String
@@ -27,11 +27,15 @@ public struct StableMetricData {
 
     public static let empty = StableMetricData(resource: Resource.empty, instrumentationScopeInfo: InstrumentationScopeInfo(), name: "", description: "", unit: "", type: .Summary, data: StableMetricData.Data(points: [PointData]()))
 
-    public class Data {
+    public class Data: Equatable {
         public private(set) var points: [PointData]
 
         internal init(points: [PointData]) {
             self.points = points
+        }
+
+        public static func == (lhs: StableMetricData.Data, rhs: StableMetricData.Data) -> Bool {
+            return lhs.points == rhs.points
         }
     }
 
@@ -43,6 +47,16 @@ public struct StableMetricData {
         self.unit = unit
         self.type = type
         self.data = data
+    }
+
+    public static func == (lhs: StableMetricData, rhs: StableMetricData) -> Bool {
+        return lhs.resource == rhs.resource &&
+            lhs.instrumentationScopeInfo == rhs.instrumentationScopeInfo &&
+            lhs.name == rhs.name &&
+            lhs.description == rhs.description &&
+            lhs.unit == rhs.unit &&
+            lhs.type == rhs.type &&
+            lhs.data.points == rhs.data.points
     }
 }
 

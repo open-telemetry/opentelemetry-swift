@@ -38,7 +38,7 @@ public class ReservoirCell {
     }
     
     func getAndResetLong(pointAttributes: [String: AttributeValue]) -> LongExemplarData {
-        let result = LongExemplarData(filteredAttributes: filtered(attributes, pointAttributes), recordTimeNanos: recordTime, spanContext: spanContext, value: longValue)
+        let result = LongExemplarData(value: longValue, epochNanos: recordTime, filteredAttributes: filtered(attributes, pointAttributes), spanContext: spanContext)
         reset()
         return result
     }

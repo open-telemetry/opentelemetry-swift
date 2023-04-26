@@ -48,7 +48,7 @@ class StableMeterSharedState {
     
     func registerSynchronousMetricStorage(instrument: InstrumentDescriptor, meterProviderSharedState: MeterProviderSharedState) -> WritableMetricStorage {
         var registeredStorages = [SynchronousMetricStorage]()
-        for var (reader, registry) in readerStorageRegisteries {
+        for (reader, registry) in readerStorageRegisteries {
             for registeredView in reader.registry.findViews(descriptor: instrument, meterScope: instrumentationScope) {
                 if type(of: registeredView.view.aggregation) == DropAggregator.self {
                     continue
@@ -64,7 +64,7 @@ class StableMeterSharedState {
     
     func registerObservableMeasurement(instrumentDescriptor: InstrumentDescriptor) -> StableObservableMeasurementSdk {
         var registeredStorages = [AsynchronousMetricStorage]()
-        for var (reader, registry) in readerStorageRegisteries {
+        for (reader, registry) in readerStorageRegisteries {
             for registeredView in reader.registry.findViews(descriptor: instrumentDescriptor, meterScope: instrumentationScope) {
                 if type(of: registeredView.view.aggregation) == DropAggregator.self {
                     continue
@@ -87,7 +87,7 @@ class StableMeterSharedState {
         defer {
             self.collectionLock.unlock()
         }
-        for var callbackRegistration in currentRegisteredCallbacks {
+        for callbackRegistration in currentRegisteredCallbacks {
             callbackRegistration.execute(reader: registeredReader, startEpochNanos: meterProviderSharedState.startEpochNanos, epochNanos: epochNanos)
         }
         var result = [StableMetricData]()
