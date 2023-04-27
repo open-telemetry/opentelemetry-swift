@@ -45,6 +45,7 @@ public class ReservoirCell {
     
     func getAndResetDouble(pointAttributes: [String: AttributeValue]) -> DoubleExemplarData {
         let result = DoubleExemplarData(value: doubleValue, epochNanos: recordTime, filteredAttributes: filtered(attributes, pointAttributes), spanContext: spanContext)
+        reset()
         return result
     }
     
