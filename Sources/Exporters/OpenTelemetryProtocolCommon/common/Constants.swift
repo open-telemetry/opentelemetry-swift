@@ -6,7 +6,7 @@
 import Foundation
 
 public enum Constants {
-    enum HTTP {
-        static let userAgent = "User-Agent"
+    public enum HTTP {
+        public static let userAgent = "User-Agent"
     }
 }
