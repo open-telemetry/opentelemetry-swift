@@ -7,8 +7,8 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
-struct CommonAdapter {
-    static func toProtoAttribute(key: String, attributeValue: AttributeValue) -> Opentelemetry_Proto_Common_V1_KeyValue {
+public struct CommonAdapter {
+    public static func toProtoAttribute(key: String, attributeValue: AttributeValue) -> Opentelemetry_Proto_Common_V1_KeyValue {
         var keyValue = Opentelemetry_Proto_Common_V1_KeyValue()
         keyValue.key = key
         switch attributeValue {
@@ -48,7 +48,7 @@ struct CommonAdapter {
         return keyValue
     }
     
-    static func toProtoInstrumentationScope(instrumentationScopeInfo: InstrumentationScopeInfo) -> Opentelemetry_Proto_Common_V1_InstrumentationScope {
+    public static func toProtoInstrumentationScope(instrumentationScopeInfo: InstrumentationScopeInfo) -> Opentelemetry_Proto_Common_V1_InstrumentationScope {
         
         var instrumentationScope = Opentelemetry_Proto_Common_V1_InstrumentationScope()
         instrumentationScope.name = instrumentationScopeInfo.name

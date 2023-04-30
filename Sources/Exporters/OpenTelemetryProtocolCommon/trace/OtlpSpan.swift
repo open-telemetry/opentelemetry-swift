@@ -6,7 +6,7 @@
 import Foundation
 
 // Model class
-struct OtlpSpan: Codable {
+public struct OtlpSpan: Codable {
     var resourceSpans: [ResourceSpan]?
     
     struct ResourceSpan: Codable {

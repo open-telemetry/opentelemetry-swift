@@ -4,6 +4,7 @@
 //
 
 import OpenTelemetrySdk
+import OpenTelemetryProtocolExporterCommon
 import Foundation
 
 public func defaultOltpHTTPMetricsEndpoint() -> URL {

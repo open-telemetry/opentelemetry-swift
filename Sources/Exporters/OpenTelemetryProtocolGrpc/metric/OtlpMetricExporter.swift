@@ -10,6 +10,7 @@ import NIO
 import NIOHPACK
 import OpenTelemetryApi
 import OpenTelemetrySdk
+import OpenTelemetryProtocolExporterCommon
 
 public class OtlpMetricExporter: MetricExporter {
     let channel: GRPCChannel
