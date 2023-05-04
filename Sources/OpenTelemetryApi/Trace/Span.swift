@@ -119,11 +119,8 @@ public extension Span {
     ///   - hostName: Hostr name.
     ///   - port: Port number.
     func putHttpHostAttribute(string hostName: String, int port: Int) {
-        if port == 80 || port == 443 {
-            setAttribute(key: .httpHost, value: hostName)
-        } else {
-            setAttribute(key: .httpHost, value: "\(hostName):\(port)")
-        }
+        setAttribute(key: .netHostName, value: hostName)
+        setAttribute(key: .netHostPort, value: port)
     }
 
     /// Helper method that populates span properties from http status code
