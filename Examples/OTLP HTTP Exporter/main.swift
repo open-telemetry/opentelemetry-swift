@@ -6,11 +6,8 @@
 #if os(macOS)
 
 import Foundation
-import GRPC
-import NIO
-import NIOSSL
 import OpenTelemetryApi
-import OpenTelemetryProtocolExporter
+import OpenTelemetryProtocolExporterHttp
 import OpenTelemetrySdk
 import ResourceExtension
 import SignPostIntegration

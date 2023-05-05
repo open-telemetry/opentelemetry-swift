@@ -290,14 +290,19 @@ public class RecordEventsReadableSpan: ReadableSpan {
     }
 
     public func end(time: Date) {
-        internalStatusQueue.sync(flags: .barrier) {
+        let alreadyEnded = internalStatusQueue.sync(flags: .barrier) { () -> Bool in
             if internalEnd {
-                return
-
-            } else {
-                internalEnd = true
+                return true
             }
+
+            internalEnd = true
+            return false
         }
+
+        if alreadyEnded {
+            return
+        }
+
         eventsSyncLock.withLockVoid {
             attributesSyncLock.withLockVoid {
                 isRecording = false

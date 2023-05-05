@@ -5,6 +5,7 @@
 
 import Foundation
 import OpenTelemetrySdk
+import OpenTelemetryProtocolExporterCommon
 
 public func defaultOltpHttpTracesEndpoint() -> URL {
     URL(string: "http://localhost:4318/v1/traces")!

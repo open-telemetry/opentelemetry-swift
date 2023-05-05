@@ -18,9 +18,9 @@ class DatadogExporterTests: XCTestCase {
     }
 
     func testWhenExportSpanIsCalled_thenTraceAndLogsAreUploaded() throws {
-        if #available(watchOS 3.0, *) {
-            throw XCTSkip("Test is flaky on watchOS")
-        }
+#if os(watchOS)
+        throw XCTSkip("Test is flaky on watchOS")
+#endif
 
         var logsSent = false
         var tracesSent = false
@@ -99,9 +99,9 @@ class DatadogExporterTests: XCTestCase {
     }
 
     func testWhenExportMetricIsCalled_thenMetricsAreUploaded() throws {
-        if #available(watchOS 3.0, *) {
-            throw XCTSkip("Test is flaky on watchOS")
-        }
+#if os(watchOS)
+        throw XCTSkip("Test is flaky on watchOS")
+#endif
 
         var metricsSent = false
         let expecMetrics = expectation(description: "metrics received")

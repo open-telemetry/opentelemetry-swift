@@ -5,7 +5,7 @@
 
 import Foundation
 import OpenTelemetryApi
-@testable import OpenTelemetryProtocolExporter
+@testable import OpenTelemetryProtocolExporterCommon
 import OpenTelemetrySdk
 import XCTest
 
