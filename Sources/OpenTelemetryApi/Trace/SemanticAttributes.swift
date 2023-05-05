@@ -8,6 +8,247 @@ import Foundation
 
 public enum SemanticAttributes: String {
     /**
+    The type of the exception (its fully-qualified class name, if applicable). The dynamic type of the exception should be preferred over the static type in languages that support it.
+
+    ~~~
+    // Examples
+    attributes[.exceptionType] = "java.net.ConnectException"
+    attributes[.exceptionType] = "OSError"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case exceptionType = "exception.type"
+    /**
+    The exception message.
+
+    ~~~
+    // Examples
+    attributes[.exceptionMessage] = "Division by zero"
+    attributes[.exceptionMessage] = "Can't convert 'int' object to str implicitly"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case exceptionMessage = "exception.message"
+    /**
+    A stacktrace as a string in the natural representation for the language runtime. The representation is to be determined and documented by each language SIG.
+
+    ~~~
+    // Examples
+    attributes[.exceptionStacktrace] = "Exception in thread \"main\" java.lang.RuntimeException: Test exception\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\n at com.example.GenerateTrace.main(GenerateTrace.java:5)"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case exceptionStacktrace = "exception.stacktrace"
+    /**
+    HTTP request method.
+
+    ~~~
+    // Examples
+    attributes[.httpMethod] = "GET"
+    attributes[.httpMethod] = "POST"
+    attributes[.httpMethod] = "HEAD"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case httpMethod = "http.method"
+    /**
+    [HTTP response status code](https://tools.ietf.org/html/rfc7231#section-6).
+
+    ~~~
+    // Examplesattributes[.httpStatusCode] = 200
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case httpStatusCode = "http.status_code"
+    /**
+    Application layer protocol used. The value SHOULD be normalized to lowercase.
+
+    ~~~
+    // Examples
+    attributes[.netProtocolName] = "http"
+    attributes[.netProtocolName] = "spdy"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case netProtocolName = "net.protocol.name"
+    /**
+    Version of the application layer protocol used. See note below.
+
+    ~~~
+    // Examples
+    attributes[.netProtocolVersion] = "1.0"
+    attributes[.netProtocolVersion] = "1.1"
+    attributes[.netProtocolVersion] = "2.0"
+    ~~~
+
+    - Note: `net.protocol.version` refers to the version of the protocol used and might be different from the protocol client's version. If the HTTP client used has a version of `0.27.2`, but sends HTTP version `1.1`, this attribute should be set to `1.1`.
+    - Requires: Value type should be `String`
+    */
+    case netProtocolVersion = "net.protocol.version"
+    /**
+    Host identifier of the ["URI origin"](https://www.rfc-editor.org/rfc/rfc9110.html#name-uri-origin) HTTP request is sent to.
+
+    ~~~
+    // Examples
+    attributes[.netPeerName] = "example.com"
+    ~~~
+
+    - Note: Determined by using the first of the following that applies
+
+      - Host identifier of the [request target](https://www.rfc-editor.org/rfc/rfc9110.html#target.resource)
+        if it's sent in absolute-form
+      - Host identifier of the `Host` header
+
+      SHOULD NOT be set if capturing it would require an extra DNS lookup.
+    - Requires: Value type should be `String`
+    */
+    case netPeerName = "net.peer.name"
+    /**
+    Port identifier of the ["URI origin"](https://www.rfc-editor.org/rfc/rfc9110.html#name-uri-origin) HTTP request is sent to.
+
+    ~~~
+    // Examplesattributes[.netPeerPort] = 80attributes[.netPeerPort] = 8080attributes[.netPeerPort] = 443
+    ~~~
+
+    - Note: When [request target](https://www.rfc-editor.org/rfc/rfc9110.html#target.resource) is absolute URI, `net.peer.name` MUST match URI port identifier, otherwise it MUST match `Host` header port identifier.
+    - Requires: Value type should be `Int`
+    */
+    case netPeerPort = "net.peer.port"
+    /**
+    The URI scheme identifying the used protocol.
+
+    ~~~
+    // Examples
+    attributes[.httpScheme] = "http"
+    attributes[.httpScheme] = "https"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case httpScheme = "http.scheme"
+    /**
+    The matched route (path template in the format used by the respective server framework). See note below.
+
+    ~~~
+    // Examples
+    attributes[.httpRoute] = "/users/:userID?"
+    attributes[.httpRoute] = "{controller}/{action}/{id?}"
+    ~~~
+
+    - Note: MUST NOT be populated when this is not supported by the HTTP server framework as the route attribute should have low-cardinality and the URI path can NOT substitute it.
+      SHOULD include the [application root](/specification/trace/semantic_conventions/http.md#http-server-definitions) if there is one.
+    - Requires: Value type should be `String`
+    */
+    case httpRoute = "http.route"
+    /**
+    Name of the local HTTP server that received the request.
+
+    ~~~
+    // Examples
+    attributes[.netHostName] = "localhost"
+    ~~~
+
+    - Note: Determined by using the first of the following that applies
+
+      - The [primary server name](/specification/trace/semantic_conventions/http.md#http-server-definitions) of the matched virtual host. MUST only
+        include host identifier.
+      - Host identifier of the [request target](https://www.rfc-editor.org/rfc/rfc9110.html#target.resource)
+        if it's sent in absolute-form.
+      - Host identifier of the `Host` header
+
+      SHOULD NOT be set if only IP address is available and capturing name would require a reverse DNS lookup.
+    - Requires: Value type should be `String`
+    */
+    case netHostName = "net.host.name"
+    /**
+    Port of the local HTTP server that received the request.
+
+    ~~~
+    // Examplesattributes[.netHostPort] = 8080
+    ~~~
+
+    - Note: Determined by using the first of the following that applies
+
+      - Port identifier of the [primary server host](/specification/trace/semantic_conventions/http.md#http-server-definitions) of the matched virtual host.
+      - Port identifier of the [request target](https://www.rfc-editor.org/rfc/rfc9110.html#target.resource)
+        if it's sent in absolute-form.
+      - Port identifier of the `Host` header.
+    - Requires: Value type should be `Int`
+    */
+    case netHostPort = "net.host.port"
+    /**
+    The name identifies the event.
+
+    ~~~
+    // Examples
+    attributes[.eventName] = "click"
+    attributes[.eventName] = "exception"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case eventName = "event.name"
+    /**
+    The domain identifies the business context for the events.
+
+    - Note: Events across different domains may have same `event.name`, yet be
+      unrelated events.
+    - Requires: Value should be one of [`SemanticAttributes.EventDomainValues`](x-source-tag://otelEventDomainValues) (of type `String`)
+    */
+    case eventDomain = "event.domain"
+    /**
+    A unique identifier for the Log Record.
+
+    ~~~
+    // Examples
+    attributes[.logRecordUid] = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+    ~~~
+
+    - Note: If an id is provided, other log records with the same id will be considered duplicates and can be removed safely. This means, that two distinguishable log records MUST have different values.
+      The id MAY be an [Universally Unique Lexicographically Sortable Identifier (ULID)](https://github.com/ulid/spec), but other identifiers (e.g. UUID) may be used as needed.
+    - Requires: Value type should be `String`
+    */
+    case logRecordUid = "log.record.uid"
+    /**
+    The unique identifier of the feature flag.
+
+    ~~~
+    // Examples
+    attributes[.featureFlagKey] = "logo-color"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case featureFlagKey = "feature_flag.key"
+    /**
+    The name of the service provider that performs the flag evaluation.
+
+    ~~~
+    // Examples
+    attributes[.featureFlagProviderName] = "Flag Manager"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case featureFlagProviderName = "feature_flag.provider_name"
+    /**
+    SHOULD be a semantic identifier for a value. If one is unavailable, a stringified version of the value can be used.
+
+    ~~~
+    // Examples
+    attributes[.featureFlagVariant] = "red"
+    attributes[.featureFlagVariant] = "true"
+    attributes[.featureFlagVariant] = "on"
+    ~~~
+
+    - Note: A semantic identifier, commonly referred to as a variant, provides a means
+      for referring to a value without including the value itself. This can
+      provide additional context for understanding the meaning behind a value.
+      For example, the variant `red` maybe be used for the value `#c05543`.
+
+      A stringified version of the value can be used in situations where a
+      semantic identifier is unavailable. String representation of the value
+      should be determined by the implementer.
+    - Requires: Value type should be `String`
+    */
+    case featureFlagVariant = "feature_flag.variant"
+    /**
     The full invoked ARN as provided on the `Context` passed to the function (`Lambda-Runtime-Invoked-Function-Arn` header on the `/runtime/invocation/next` applicable).
 
     ~~~
@@ -15,10 +256,71 @@ public enum SemanticAttributes: String {
     attributes[.awsLambdaInvokedArn] = "arn:aws:lambda:us-east-1:123456:function:myfunction:myalias"
     ~~~
 
-    - Note: This may be different from `faas.id` if an alias is involved.
+    - Note: This may be different from `cloud.resource_id` if an alias is involved.
     - Requires: Value type should be `String`
     */
     case awsLambdaInvokedArn = "aws.lambda.invoked_arn"
+    /**
+    The [event_id](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md#id) uniquely identifies the event.
+
+    ~~~
+    // Examples
+    attributes[.cloudeventsEventId] = "123e4567-e89b-12d3-a456-426614174000"
+    attributes[.cloudeventsEventId] = "0001"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case cloudeventsEventId = "cloudevents.event_id"
+    /**
+    The [source](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md#source-1) identifies the context in which an event happened.
+
+    ~~~
+    // Examples
+    attributes[.cloudeventsEventSource] = "https://github.com/cloudevents"
+    attributes[.cloudeventsEventSource] = "/cloudevents/spec/pull/123"
+    attributes[.cloudeventsEventSource] = "my-service"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case cloudeventsEventSource = "cloudevents.event_source"
+    /**
+    The [version of the CloudEvents specification](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md#specversion) which the event uses.
+
+    ~~~
+    // Examples
+    attributes[.cloudeventsEventSpecVersion] = "1.0"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case cloudeventsEventSpecVersion = "cloudevents.event_spec_version"
+    /**
+    The [event_type](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md#type) contains a value describing the type of event related to the originating occurrence.
+
+    ~~~
+    // Examples
+    attributes[.cloudeventsEventType] = "com.github.pull_request.opened"
+    attributes[.cloudeventsEventType] = "com.example.object.deleted.v2"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case cloudeventsEventType = "cloudevents.event_type"
+    /**
+    The [subject](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md#subject) of the event in the context of the event producer (identified by source).
+
+    ~~~
+    // Examples
+    attributes[.cloudeventsEventSubject] = "mynewfile.jpg"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case cloudeventsEventSubject = "cloudevents.event_subject"
+    /**
+    Parent-child Reference type.
+
+    - Note: The causal relationship between a child Span and a parent Span.
+    - Requires: Value should be one of [`SemanticAttributes.OpentracingRefTypeValues`](x-source-tag://otelOpentracingRefTypeValues) (of type `String`)
+    */
+    case opentracingRefType = "opentracing.ref_type"
     /**
     An identifier for the database management system (DBMS) product being used. See below for a list of well-known identifiers.
     - Requires: Value should be one of [`SemanticAttributes.DbSystemValues`](x-source-tag://otelDbSystemValues) (of type `String`)
@@ -57,7 +359,7 @@ public enum SemanticAttributes: String {
     */
     case dbJdbcDriverClassname = "db.jdbc.driver_classname"
     /**
-    If no [tech-specific attribute](#call-level-attributes-for-specific-technologies) is defined, this attribute is used to report the name of the database being accessed. For commands that switch the database, this should be set to the target database (even if the command fails).
+    This attribute is used to report the name of the database being accessed. For commands that switch the database, this should be set to the target database (even if the command fails).
 
     ~~~
     // Examples
@@ -65,7 +367,7 @@ public enum SemanticAttributes: String {
     attributes[.dbName] = "main"
     ~~~
 
-    - Note: In some SQL databases, the database name to be used is called "schema name".
+    - Note: In some SQL databases, the database name to be used is called "schema name". In case there are multiple layers that could be considered for database name (e.g. Oracle instance name and schema name), the database name to be used is the more specific layer (e.g. Oracle schema name).
     - Requires: Value type should be `String`
     */
     case dbName = "db.name"
@@ -77,8 +379,6 @@ public enum SemanticAttributes: String {
     attributes[.dbStatement] = "SELECT * FROM wuser_table"
     attributes[.dbStatement] = "SET mykey \"WuValue\""
     ~~~
-
-    - Note: The value may be sanitized to exclude sensitive information.
     - Requires: Value type should be `String`
     */
     case dbStatement = "db.statement"
@@ -97,34 +397,46 @@ public enum SemanticAttributes: String {
     */
     case dbOperation = "db.operation"
     /**
-    Remote hostname or similar, see note below.
+    Remote socket peer address: IPv4 or IPv6 for internet protocols, path for local communication, [etc](https://man7.org/linux/man-pages/man7/address_families.7.html).
 
     ~~~
     // Examples
-    attributes[.netPeerName] = "example.com"
+    attributes[.netSockPeerAddr] = "127.0.0.1"
+    attributes[.netSockPeerAddr] = "/tmp/mysql.sock"
     ~~~
     - Requires: Value type should be `String`
     */
-    case netPeerName = "net.peer.name"
+    case netSockPeerAddr = "net.sock.peer.addr"
     /**
-    Remote address of the peer (dotted decimal for IPv4 or [RFC5952](https://tools.ietf.org/html/rfc5952) for IPv6).
+    Remote socket peer port.
 
     ~~~
-    // Examples
-    attributes[.netPeerIp] = "127.0.0.1"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case netPeerIp = "net.peer.ip"
-    /**
-    Remote port number.
-
-    ~~~
-    // Examplesattributes[.netPeerPort] = 80attributes[.netPeerPort] = 8080attributes[.netPeerPort] = 443
+    // Examplesattributes[.netSockPeerPort] = 16456
     ~~~
     - Requires: Value type should be `Int`
     */
-    case netPeerPort = "net.peer.port"
+    case netSockPeerPort = "net.sock.peer.port"
+    /**
+    Protocol [address family](https://man7.org/linux/man-pages/man7/address_families.7.html) which is used for communication.
+
+    ~~~
+    // Examples
+    attributes[.netSockFamily] = "inet6"
+    attributes[.netSockFamily] = "bluetooth"
+    ~~~
+    - Requires: Value should be one of [`SemanticAttributes.NetSockFamilyValues`](x-source-tag://otelNetSockFamilyValues) (of type `String`)
+    */
+    case netSockFamily = "net.sock.family"
+    /**
+    Remote socket peer name.
+
+    ~~~
+    // Examples
+    attributes[.netSockPeerName] = "proxy.example.com"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case netSockPeerName = "net.sock.peer.name"
     /**
     Transport protocol used. See note below.
     - Requires: Value should be one of [`SemanticAttributes.NetTransportValues`](x-source-tag://otelNetTransportValues) (of type `String`)
@@ -143,16 +455,6 @@ public enum SemanticAttributes: String {
     */
     case dbMssqlInstanceName = "db.mssql.instance_name"
     /**
-    The name of the keyspace being accessed. To be used instead of the generic `db.name` attribute.
-
-    ~~~
-    // Examples
-    attributes[.dbCassandraKeyspace] = "mykeyspace"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case dbCassandraKeyspace = "db.cassandra.keyspace"
-    /**
     The fetch size used for paging, i.e. how many rows will be returned at once.
 
     ~~~
@@ -167,7 +469,7 @@ public enum SemanticAttributes: String {
     */
     case dbCassandraConsistencyLevel = "db.cassandra.consistency_level"
     /**
-    The name of the primary table that the operation is acting upon, including the schema name (if applicable).
+    The name of the primary table that the operation is acting upon, including the keyspace name (if applicable).
 
     ~~~
     // Examples
@@ -213,16 +515,6 @@ public enum SemanticAttributes: String {
     */
     case dbCassandraCoordinatorDc = "db.cassandra.coordinator.dc"
     /**
-    The [HBase namespace](https://hbase.apache.org/book.html#_namespace) being accessed. To be used instead of the generic `db.name` attribute.
-
-    ~~~
-    // Examples
-    attributes[.dbHbaseNamespace] = "default"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case dbHbaseNamespace = "db.hbase.namespace"
-    /**
     The index of the database being accessed as used in the [`SELECT` command](https://redis.io/commands/select), provided as an integer. To be used instead of the generic `db.name` attribute.
 
     ~~~
@@ -243,7 +535,7 @@ public enum SemanticAttributes: String {
     */
     case dbMongodbCollection = "db.mongodb.collection"
     /**
-    The name of the primary table that the operation is acting upon, including the schema name (if applicable).
+    The name of the primary table that the operation is acting upon, including the database name (if applicable).
 
     ~~~
     // Examples
@@ -256,74 +548,151 @@ public enum SemanticAttributes: String {
     */
     case dbSqlTable = "db.sql.table"
     /**
-    The type of the exception (its fully-qualified class name, if applicable). The dynamic type of the exception should be preferred over the static type in languages that support it.
+    Unique Cosmos client instance id.
 
     ~~~
     // Examples
-    attributes[.exceptionType] = "java.net.ConnectException"
-    attributes[.exceptionType] = "OSError"
+    attributes[.dbCosmosdbClientId] = "3ba4827d-4422-483f-b59f-85b74211c11d"
     ~~~
     - Requires: Value type should be `String`
     */
-    case exceptionType = "exception.type"
+    case dbCosmosdbClientId = "db.cosmosdb.client_id"
     /**
-    The exception message.
+    CosmosDB Operation Type.
+    - Requires: Value should be one of [`SemanticAttributes.DbCosmosdbOperationTypeValues`](x-source-tag://otelDbCosmosdbOperationTypeValues) (of type `String`)
+    */
+    case dbCosmosdbOperationType = "db.cosmosdb.operation_type"
+    /**
+    Full user-agent string is generated by Cosmos DB SDK.
 
     ~~~
     // Examples
-    attributes[.exceptionMessage] = "Division by zero"
-    attributes[.exceptionMessage] = "Can't convert 'int' object to str implicitly"
+    attributes[.userAgentOriginal] = "cosmos-netstandard-sdk/3.23.0\|3.23.1\|1\|X64\|Linux 5.4.0-1098-azure 104 18\|.NET Core 3.1.32\|S\|"
     ~~~
+
+    - Note: The user-agent value is generated by SDK which is a combination of<br> `sdk_version` : Current version of SDK. e.g. 'cosmos-netstandard-sdk/3.23.0'<br> `direct_pkg_version` : Direct package version used by Cosmos DB SDK. e.g. '3.23.1'<br> `number_of_client_instances` : Number of cosmos client instances created by the application. e.g. '1'<br> `type_of_machine_architecture` : Machine architecture. e.g. 'X64'<br> `operating_system` : Operating System. e.g. 'Linux 5.4.0-1098-azure 104 18'<br> `runtime_framework` : Runtime Framework. e.g. '.NET Core 3.1.32'<br> `failover_information` : Generated key to determine if region failover enabled.
+         Format Reg-{D (Disabled discovery)}-S(application region)|L(List of preferred regions)|N(None, user did not configure it).
+         Default value is "NS".
     - Requires: Value type should be `String`
     */
-    case exceptionMessage = "exception.message"
+    case userAgentOriginal = "user_agent.original"
     /**
-    A stacktrace as a string in the natural representation for the language runtime. The representation is to be determined and documented by each language SIG.
+    Cosmos client connection mode.
+    - Requires: Value should be one of [`SemanticAttributes.DbCosmosdbConnectionModeValues`](x-source-tag://otelDbCosmosdbConnectionModeValues) (of type `String`)
+    */
+    case dbCosmosdbConnectionMode = "db.cosmosdb.connection_mode"
+    /**
+    Cosmos DB container name.
 
     ~~~
     // Examples
-    attributes[.exceptionStacktrace] = "Exception in thread \"main\" java.lang.RuntimeException: Test exception\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\n at com.example.GenerateTrace.main(GenerateTrace.java:5)"
+    attributes[.dbCosmosdbContainer] = "anystring"
     ~~~
     - Requires: Value type should be `String`
     */
-    case exceptionStacktrace = "exception.stacktrace"
+    case dbCosmosdbContainer = "db.cosmosdb.container"
     /**
-    SHOULD be set to true if the exception event is recorded at a point where it is known that the exception is escaping the scope of the span.
-
-    - Note: An exception is considered to have escaped (or left) the scope of a span,
-      if that span is ended while the exception is still logically "in flight".
-      This may be actually "in flight" in some languages (e.g. if the exception
-      is passed to a Context manager's `__exit__` method in Python) but will
-      usually be caught at the point of recording the exception in most languages.
-
-      It is usually not possible to determine at the point where an exception is thrown
-      whether it will escape the scope of a span.
-      However, it is trivial to know that an exception
-      will escape, if one checks for an active exception just before ending the span,
-      as done in the [example above](#exception-end-example).
-
-      It follows that an exception may still escape the scope of the span
-      even if the `exception.escaped` attribute was not set or set to false,
-      since the event might have been recorded at a time where it was not
-      clear whether the exception will escape.
-    - Requires: Value type should be `Bool`
+    Request payload size in bytes.
+    - Requires: Value type should be `Int`
     */
-    case exceptionEscaped = "exception.escaped"
+    case dbCosmosdbRequestContentLength = "db.cosmosdb.request_content_length"
     /**
-    Type of the trigger on which the function is executed.
+    Cosmos DB status code.
+
+    ~~~
+    // Examplesattributes[.dbCosmosdbStatusCode] = 200attributes[.dbCosmosdbStatusCode] = 201
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case dbCosmosdbStatusCode = "db.cosmosdb.status_code"
+    /**
+    Cosmos DB sub status code.
+
+    ~~~
+    // Examplesattributes[.dbCosmosdbSubStatusCode] = 1000attributes[.dbCosmosdbSubStatusCode] = 1002
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case dbCosmosdbSubStatusCode = "db.cosmosdb.sub_status_code"
+    /**
+    RU consumed for that operation.
+
+    ~~~
+    // Examplesattributes[.dbCosmosdbRequestCharge] = 46.18attributes[.dbCosmosdbRequestCharge] = 1.0
+    ~~~
+    - Requires: Value type should be `double`
+    */
+    case dbCosmosdbRequestCharge = "db.cosmosdb.request_charge"
+    /**
+    Name of the code, either "OK" or "ERROR". MUST NOT be set if the status code is UNSET.
+    - Requires: Value should be one of [`SemanticAttributes.OtelStatusCodeValues`](x-source-tag://otelOtelStatusCodeValues) (of type `String`)
+    */
+    case otelStatusCode = "otel.status_code"
+    /**
+    Description of the Status if it has a value, otherwise not set.
+
+    ~~~
+    // Examples
+    attributes[.otelStatusDescription] = "resource not found"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case otelStatusDescription = "otel.status_description"
+    /**
+    Type of the trigger which caused this function invocation.
+
+    - Note: For the server/consumer span on the incoming side,
+      `faas.trigger` MUST be set.
+
+      Clients invoking FaaS instances usually cannot set `faas.trigger`,
+      since they would typically need to look in the payload to determine
+      the event type. If clients set it, it should be the same as the
+      trigger that corresponding incoming would have (i.e., this has
+      nothing to do with the underlying transport used to make the API
+      call to invoke the lambda, which is often HTTP).
     - Requires: Value should be one of [`SemanticAttributes.FaasTriggerValues`](x-source-tag://otelFaasTriggerValues) (of type `String`)
     */
     case faasTrigger = "faas.trigger"
     /**
-    The execution ID of the current function execution.
+    The invocation ID of the current function invocation.
 
     ~~~
     // Examples
-    attributes[.faasExecution] = "af9d5aa4-a685-4c5f-a22b-444f80b3cc28"
+    attributes[.faasInvocationId] = "af9d5aa4-a685-4c5f-a22b-444f80b3cc28"
     ~~~
     - Requires: Value type should be `String`
     */
-    case faasExecution = "faas.execution"
+    case faasInvocationId = "faas.invocation_id"
+    /**
+    Cloud provider-specific native identifier of the monitored cloud resource (e.g. an [ARN](https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html) on AWS, a [fully qualified resource ID](https://learn.microsoft.com/en-us/rest/api/resources/resources/get-by-id) on Azure, a [full resource name](https://cloud.google.com/apis/design/resource_names#full_resource_name) on GCP).
+
+    ~~~
+    // Examples
+    attributes[.cloudResourceId] = "arn:aws:lambda:REGION:ACCOUNT_ID:function:my-function"
+    attributes[.cloudResourceId] = "//run.googleapis.com/projects/PROJECT_ID/locations/LOCATION_ID/services/SERVICE_ID"
+    attributes[.cloudResourceId] = "/subscriptions/<SUBSCIPTION_GUID>/resourceGroups/<RG>/providers/Microsoft.Web/sites/<FUNCAPP>/functions/<FUNC>"
+    ~~~
+
+    - Note: On some cloud providers, it may not be possible to determine the full ID at startup,
+      so it may be necessary to set `cloud.resource_id` as a span attribute instead.
+
+      The exact value to use for `cloud.resource_id` depends on the cloud provider.
+      The following well-known definitions MUST be used if you set this attribute and they apply:
+
+      * **AWS Lambda:** The function [ARN](https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html).
+        Take care not to use the "invoked ARN" directly but replace any
+        [alias suffix](https://docs.aws.amazon.com/lambda/latest/dg/configuration-aliases.html)
+        with the resolved function version, as the same runtime instance may be invokable with
+        multiple different aliases.
+      * **GCP:** The [URI of the resource](https://cloud.google.com/iam/docs/full-resource-names)
+      * **Azure:** The [Fully Qualified Resource ID](https://docs.microsoft.com/en-us/rest/api/resources/resources/get-by-id) of the invoked function,
+        *not* the function app, having the form
+        `/subscriptions/<SUBSCIPTION_GUID>/resourceGroups/<RG>/providers/Microsoft.Web/sites/<FUNCAPP>/functions/<FUNC>`.
+        This means that a span attribute MUST be used, as an Azure function app can host multiple functions that would usually share
+        a TracerProvider.
+    - Requires: Value type should be `String`
+    */
+    case cloudResourceId = "cloud.resource_id"
     /**
     The name of the source on which the triggering operation was performed. For example, in Cloud Storage or S3 corresponds to the bucket name, and in Cosmos DB to the database name.
 
@@ -362,146 +731,15 @@ public enum SemanticAttributes: String {
     */
     case faasDocumentName = "faas.document.name"
     /**
-    HTTP request method.
-
-    ~~~
-    // Examples
-    attributes[.httpMethod] = "GET"
-    attributes[.httpMethod] = "POST"
-    attributes[.httpMethod] = "HEAD"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case httpMethod = "http.method"
-    /**
-    Full HTTP request URL in the form `scheme://host[:port]/path?query[#fragment]`. Usually the fragment is not transmitted over HTTP, but if it is known, it should be included nevertheless.
-
-    ~~~
-    // Examples
-    attributes[.httpUrl] = "https://www.foo.bar/search?q=OpenTelemetry#SemConv"
-    ~~~
-
-    - Note: `http.url` MUST NOT contain credentials passed via URL in form of `https://username:password@www.example.com/`. In such case the attribute's value should be `https://www.example.com/`.
-    - Requires: Value type should be `String`
-    */
-    case httpUrl = "http.url"
-    /**
     The full request target as passed in a HTTP request line or equivalent.
 
     ~~~
     // Examples
-    attributes[.httpTarget] = "/path/12314/?q=ddds#123"
+    attributes[.httpTarget] = "/users/12314/?q=ddds"
     ~~~
     - Requires: Value type should be `String`
     */
     case httpTarget = "http.target"
-    /**
-    The value of the [HTTP host header](https://tools.ietf.org/html/rfc7230#section-5.4). An empty Host header should also be reported, see note.
-
-    ~~~
-    // Examples
-    attributes[.httpHost] = "www.example.org"
-    ~~~
-
-    - Note: When the header is present but empty the attribute SHOULD be set to the empty string. Note that this is a valid situation that is expected in certain cases, according the aforementioned [section of RFC 7230](https://tools.ietf.org/html/rfc7230#section-5.4). When the header is not set the attribute MUST NOT be set.
-    - Requires: Value type should be `String`
-    */
-    case httpHost = "http.host"
-    /**
-    The URI scheme identifying the used protocol.
-
-    ~~~
-    // Examples
-    attributes[.httpScheme] = "http"
-    attributes[.httpScheme] = "https"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case httpScheme = "http.scheme"
-    /**
-    [HTTP response status code](https://tools.ietf.org/html/rfc7231#section-6).
-
-    ~~~
-    // Examplesattributes[.httpStatusCode] = 200
-    ~~~
-    - Requires: Value type should be `Int`
-    */
-    case httpStatusCode = "http.status_code"
-    /**
-    Kind of HTTP protocol used.
-
-    - Note: If `net.transport` is not specified, it can be assumed to be `IP.TCP` except if `http.flavor` is `QUIC`, in which case `IP.UDP` is assumed.
-    - Requires: Value should be one of [`SemanticAttributes.HttpFlavorValues`](x-source-tag://otelHttpFlavorValues) (of type `String`)
-    */
-    case httpFlavor = "http.flavor"
-    /**
-    Value of the [HTTP User-Agent](https://tools.ietf.org/html/rfc7231#section-5.5.3) header sent by the client.
-
-    ~~~
-    // Examples
-    attributes[.httpUserAgent] = "CERN-LineMode/2.15 libwww/2.17b3"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case httpUserAgent = "http.user_agent"
-    /**
-    The size of the request payload body in bytes. This is the number of bytes transferred excluding headers and is often, but not always, present as the [Content-Length](https://tools.ietf.org/html/rfc7230#section-3.3.2) header. For requests using transport encoding, this should be the compressed size.
-
-    ~~~
-    // Examplesattributes[.httpRequestContentLength] = 3495
-    ~~~
-    - Requires: Value type should be `Int`
-    */
-    case httpRequestContentLength = "http.request_content_length"
-    /**
-    The size of the uncompressed request payload body after transport decoding. Not set if transport encoding not used.
-
-    ~~~
-    // Examplesattributes[.httpRequestContentLengthUncompressed] = 5493
-    ~~~
-    - Requires: Value type should be `Int`
-    */
-    case httpRequestContentLengthUncompressed = "http.request_content_length_uncompressed"
-    /**
-    The size of the response payload body in bytes. This is the number of bytes transferred excluding headers and is often, but not always, present as the [Content-Length](https://tools.ietf.org/html/rfc7230#section-3.3.2) header. For requests using transport encoding, this should be the compressed size.
-
-    ~~~
-    // Examplesattributes[.httpResponseContentLength] = 3495
-    ~~~
-    - Requires: Value type should be `Int`
-    */
-    case httpResponseContentLength = "http.response_content_length"
-    /**
-    The size of the uncompressed response payload body after transport decoding. Not set if transport encoding not used.
-
-    ~~~
-    // Examplesattributes[.httpResponseContentLengthUncompressed] = 5493
-    ~~~
-    - Requires: Value type should be `Int`
-    */
-    case httpResponseContentLengthUncompressed = "http.response_content_length_uncompressed"
-    /**
-    The primary server name of the matched virtual host. This should be obtained via configuration. If no such configuration can be obtained, this attribute MUST NOT be set ( `net.host.name` should be used instead).
-
-    ~~~
-    // Examples
-    attributes[.httpServerName] = "example.com"
-    ~~~
-
-    - Note: `http.url` is usually not readily available on the server side but would have to be assembled in a cumbersome and sometimes lossy process from other information (see e.g. open-telemetry/opentelemetry-python/pull/148). It is thus preferred to supply the raw data that is available.
-    - Requires: Value type should be `String`
-    */
-    case httpServerName = "http.server_name"
-    /**
-    The matched route (path template).
-
-    ~~~
-    // Examples
-    attributes[.httpRoute] = "/users/:userID?"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case httpRoute = "http.route"
     /**
     The IP address of the original client behind all proxies, if known (e.g. from [X-Forwarded-For](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For)).
 
@@ -510,49 +748,165 @@ public enum SemanticAttributes: String {
     attributes[.httpClientIp] = "83.164.160.102"
     ~~~
 
-    - Note: This is not necessarily the same as `net.peer.ip`, which would
+    - Note: This is not necessarily the same as `net.sock.peer.addr`, which would
       identify the network-level peer, which may be a proxy.
 
       This attribute should be set when a source of information different
-      from the one used for `net.peer.ip`, is available even if that other
-      source just confirms the same value as `net.peer.ip`.
-      Rationale: For `net.peer.ip`, one typically does not know if it
+      from the one used for `net.sock.peer.addr`, is available even if that other
+      source just confirms the same value as `net.sock.peer.addr`.
+      Rationale: For `net.sock.peer.addr`, one typically does not know if it
       comes from a proxy, reverse proxy, or the actual client. Setting
-      `http.client_ip` when it's the same as `net.peer.ip` means that
+      `http.client_ip` when it's the same as `net.sock.peer.addr` means that
       one is at least somewhat confident that the address is not that of
       the closest proxy.
     - Requires: Value type should be `String`
     */
     case httpClientIp = "http.client_ip"
     /**
-    Like `net.peer.ip` but for the host IP. Useful in case of a multi-IP host.
+    Local socket address. Useful in case of a multi-IP host.
 
     ~~~
     // Examples
-    attributes[.netHostIp] = "192.168.0.1"
+    attributes[.netSockHostAddr] = "192.168.0.1"
     ~~~
     - Requires: Value type should be `String`
     */
-    case netHostIp = "net.host.ip"
+    case netSockHostAddr = "net.sock.host.addr"
     /**
-    Like `net.peer.port` but for the host port.
+    Local socket port number.
 
     ~~~
-    // Examplesattributes[.netHostPort] = 35555
+    // Examplesattributes[.netSockHostPort] = 35555
     ~~~
     - Requires: Value type should be `Int`
     */
-    case netHostPort = "net.host.port"
+    case netSockHostPort = "net.sock.host.port"
     /**
-    Local hostname or similar, see note below.
+    A string identifying the messaging system.
 
     ~~~
     // Examples
-    attributes[.netHostName] = "localhost"
+    attributes[.messagingSystem] = "kafka"
+    attributes[.messagingSystem] = "rabbitmq"
+    attributes[.messagingSystem] = "rocketmq"
+    attributes[.messagingSystem] = "activemq"
+    attributes[.messagingSystem] = "AmazonSQS"
     ~~~
     - Requires: Value type should be `String`
     */
-    case netHostName = "net.host.name"
+    case messagingSystem = "messaging.system"
+    /**
+    A string identifying the kind of messaging operation as defined in the [Operation names](#operation-names) section above.
+
+    - Note: If a custom value is used, it MUST be of low cardinality.
+    - Requires: Value should be one of [`SemanticAttributes.MessagingOperationValues`](x-source-tag://otelMessagingOperationValues) (of type `String`)
+    */
+    case messagingOperation = "messaging.operation"
+    /**
+    The number of messages sent, received, or processed in the scope of the batching operation.
+
+    ~~~
+    // Examplesattributes[.messagingBatchMessageCount] = 0attributes[.messagingBatchMessageCount] = 1attributes[.messagingBatchMessageCount] = 2
+    ~~~
+
+    - Note: Instrumentations SHOULD NOT set `messaging.batch.message_count` on spans that operate with a single message. When a messaging client library supports both batch and single-message API for the same operation, instrumentations SHOULD use `messaging.batch.message_count` for batching APIs and SHOULD NOT use it for single-message APIs.
+    - Requires: Value type should be `Int`
+    */
+    case messagingBatchMessageCount = "messaging.batch.message_count"
+    /**
+    A value used by the messaging system as an identifier for the message, represented as a string.
+
+    ~~~
+    // Examples
+    attributes[.messagingMessageId] = "452a7c7c7c7048c2f887f61572b18fc2"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case messagingMessageId = "messaging.message.id"
+    /**
+    The [conversation ID](#conversations) identifying the conversation to which the message belongs, represented as a string. Sometimes called "Correlation ID".
+
+    ~~~
+    // Examples
+    attributes[.messagingMessageConversationId] = "MyConversationId"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case messagingMessageConversationId = "messaging.message.conversation_id"
+    /**
+    The (uncompressed) size of the message payload in bytes. Also use this attribute if it is unknown whether the compressed or uncompressed payload size is reported.
+
+    ~~~
+    // Examplesattributes[.messagingMessagePayloadSizeBytes] = 2738
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case messagingMessagePayloadSizeBytes = "messaging.message.payload_size_bytes"
+    /**
+    The compressed size of the message payload in bytes.
+
+    ~~~
+    // Examplesattributes[.messagingMessagePayloadCompressedSizeBytes] = 2048
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case messagingMessagePayloadCompressedSizeBytes = "messaging.message.payload_compressed_size_bytes"
+    /**
+    A string containing the function invocation time in the [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format expressed in [UTC](https://www.w3.org/TR/NOTE-datetime).
+
+    ~~~
+    // Examples
+    attributes[.faasTime] = "2020-01-23T13:47:06Z"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case faasTime = "faas.time"
+    /**
+    A string containing the schedule period as [Cron Expression](https://docs.oracle.com/cd/E12058_01/doc/doc.1014/e12030/cron_expressions.htm).
+
+    ~~~
+    // Examples
+    attributes[.faasCron] = "0/5 * * * ? *"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case faasCron = "faas.cron"
+    /**
+    A boolean that is true if the serverless function is executed for the first time (aka cold-start).
+    - Requires: Value type should be `Bool`
+    */
+    case faasColdstart = "faas.coldstart"
+    /**
+    The name of the invoked function.
+
+    ~~~
+    // Examples
+    attributes[.faasInvokedName] = "my-function"
+    ~~~
+
+    - Note: SHOULD be equal to the `faas.name` resource attribute of the invoked function.
+    - Requires: Value type should be `String`
+    */
+    case faasInvokedName = "faas.invoked_name"
+    /**
+    The cloud provider of the invoked function.
+
+    - Note: SHOULD be equal to the `cloud.provider` resource attribute of the invoked function.
+    - Requires: Value should be one of [`SemanticAttributes.FaasInvokedProviderValues`](x-source-tag://otelFaasInvokedProviderValues) (of type `String`)
+    */
+    case faasInvokedProvider = "faas.invoked_provider"
+    /**
+    The cloud region of the invoked function.
+
+    ~~~
+    // Examples
+    attributes[.faasInvokedRegion] = "eu-central-1"
+    ~~~
+
+    - Note: SHOULD be equal to the `cloud.region` resource attribute of the invoked function.
+    - Requires: Value type should be `String`
+    */
+    case faasInvokedRegion = "faas.invoked_region"
     /**
     The internet connection type currently being used by the host.
 
@@ -613,166 +967,6 @@ public enum SemanticAttributes: String {
     - Requires: Value type should be `String`
     */
     case netHostCarrierIcc = "net.host.carrier.icc"
-    /**
-    A string identifying the messaging system.
-
-    ~~~
-    // Examples
-    attributes[.messagingSystem] = "kafka"
-    attributes[.messagingSystem] = "rabbitmq"
-    attributes[.messagingSystem] = "activemq"
-    attributes[.messagingSystem] = "AmazonSQS"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case messagingSystem = "messaging.system"
-    /**
-    The message destination name. This might be equal to the span name but is required nevertheless.
-
-    ~~~
-    // Examples
-    attributes[.messagingDestination] = "MyQueue"
-    attributes[.messagingDestination] = "MyTopic"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case messagingDestination = "messaging.destination"
-    /**
-    The kind of message destination.
-    - Requires: Value should be one of [`SemanticAttributes.MessagingDestinationKindValues`](x-source-tag://otelMessagingDestinationKindValues) (of type `String`)
-    */
-    case messagingDestinationKind = "messaging.destination_kind"
-    /**
-    A boolean that is true if the message destination is temporary.
-    - Requires: Value type should be `Bool`
-    */
-    case messagingTempDestination = "messaging.temp_destination"
-    /**
-    The name of the transport protocol.
-
-    ~~~
-    // Examples
-    attributes[.messagingProtocol] = "AMQP"
-    attributes[.messagingProtocol] = "MQTT"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case messagingProtocol = "messaging.protocol"
-    /**
-    The version of the transport protocol.
-
-    ~~~
-    // Examples
-    attributes[.messagingProtocolVersion] = "0.9.1"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case messagingProtocolVersion = "messaging.protocol_version"
-    /**
-    Connection string.
-
-    ~~~
-    // Examples
-    attributes[.messagingUrl] = "tibjmsnaming://localhost:7222"
-    attributes[.messagingUrl] = "https://queue.amazonaws.com/80398EXAMPLE/MyQueue"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case messagingUrl = "messaging.url"
-    /**
-    A value used by the messaging system as an identifier for the message, represented as a string.
-
-    ~~~
-    // Examples
-    attributes[.messagingMessageId] = "452a7c7c7c7048c2f887f61572b18fc2"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case messagingMessageId = "messaging.message_id"
-    /**
-    The [conversation ID](#conversations) identifying the conversation to which the message belongs, represented as a string. Sometimes called "Correlation ID".
-
-    ~~~
-    // Examples
-    attributes[.messagingConversationId] = "MyConversationId"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case messagingConversationId = "messaging.conversation_id"
-    /**
-    The (uncompressed) size of the message payload in bytes. Also use this attribute if it is unknown whether the compressed or uncompressed payload size is reported.
-
-    ~~~
-    // Examplesattributes[.messagingMessagePayloadSizeBytes] = 2738
-    ~~~
-    - Requires: Value type should be `Int`
-    */
-    case messagingMessagePayloadSizeBytes = "messaging.message_payload_size_bytes"
-    /**
-    The compressed size of the message payload in bytes.
-
-    ~~~
-    // Examplesattributes[.messagingMessagePayloadCompressedSizeBytes] = 2048
-    ~~~
-    - Requires: Value type should be `Int`
-    */
-    case messagingMessagePayloadCompressedSizeBytes = "messaging.message_payload_compressed_size_bytes"
-    /**
-    A string containing the function invocation time in the [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format expressed in [UTC](https://www.w3.org/TR/NOTE-datetime).
-
-    ~~~
-    // Examples
-    attributes[.faasTime] = "2020-01-23T13:47:06Z"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case faasTime = "faas.time"
-    /**
-    A string containing the schedule period as [Cron Expression](https://docs.oracle.com/cd/E12058_01/doc/doc.1014/e12030/cron_expressions.htm).
-
-    ~~~
-    // Examples
-    attributes[.faasCron] = "0/5 * * * ? *"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case faasCron = "faas.cron"
-    /**
-    A boolean that is true if the serverless function is executed for the first time (aka cold-start).
-    - Requires: Value type should be `Bool`
-    */
-    case faasColdstart = "faas.coldstart"
-    /**
-    The name of the invoked function.
-
-    ~~~
-    // Examples
-    attributes[.faasInvokedName] = "my-function"
-    ~~~
-
-    - Note: SHOULD be equal to the `faas.name` resource attribute of the invoked function.
-    - Requires: Value type should be `String`
-    */
-    case faasInvokedName = "faas.invoked_name"
-    /**
-    The cloud provider of the invoked function.
-
-    - Note: SHOULD be equal to the `cloud.provider` resource attribute of the invoked function.
-    - Requires: Value should be one of [`SemanticAttributes.FaasInvokedProviderValues`](x-source-tag://otelFaasInvokedProviderValues) (of type `String`)
-    */
-    case faasInvokedProvider = "faas.invoked_provider"
-    /**
-    The cloud region of the invoked function.
-
-    ~~~
-    // Examples
-    attributes[.faasInvokedRegion] = "eu-central-1"
-    ~~~
-
-    - Note: SHOULD be equal to the `cloud.region` resource attribute of the invoked function.
-    - Requires: Value type should be `String`
-    */
-    case faasInvokedRegion = "faas.invoked_region"
     /**
     The [`service.name`](../../resource/semantic_conventions/README.md#service) of the remote service. SHOULD be equal to the actual `service.name` resource attribute of the remote service if any.
 
@@ -872,13 +1066,63 @@ public enum SemanticAttributes: String {
     */
     case codeLineno = "code.lineno"
     /**
+    The column number in `code.filepath` best representing the operation. It SHOULD point within the code unit named in `code.function`.
+
+    ~~~
+    // Examplesattributes[.codeColumn] = 16
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case codeColumn = "code.column"
+    /**
+    The size of the request payload body in bytes. This is the number of bytes transferred excluding headers and is often, but not always, present as the [Content-Length](https://www.rfc-editor.org/rfc/rfc9110.html#field.content-length) header. For requests using transport encoding, this should be the compressed size.
+
+    ~~~
+    // Examplesattributes[.httpRequestContentLength] = 3495
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case httpRequestContentLength = "http.request_content_length"
+    /**
+    The size of the response payload body in bytes. This is the number of bytes transferred excluding headers and is often, but not always, present as the [Content-Length](https://www.rfc-editor.org/rfc/rfc9110.html#field.content-length) header. For requests using transport encoding, this should be the compressed size.
+
+    ~~~
+    // Examplesattributes[.httpResponseContentLength] = 3495
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case httpResponseContentLength = "http.response_content_length"
+    /**
+    Full HTTP request URL in the form `scheme://host[:port]/path?query[#fragment]`. Usually the fragment is not transmitted over HTTP, but if it is known, it should be included nevertheless.
+
+    ~~~
+    // Examples
+    attributes[.httpUrl] = "https://www.foo.bar/search?q=OpenTelemetry#SemConv"
+    ~~~
+
+    - Note: `http.url` MUST NOT contain credentials passed via URL in form of `https://username:password@www.example.com/`. In such case the attribute's value should be `https://www.example.com/`.
+    - Requires: Value type should be `String`
+    */
+    case httpUrl = "http.url"
+    /**
+    The ordinal number of request resending attempt (for any reason, including redirects).
+
+    ~~~
+    // Examplesattributes[.httpResendCount] = 3
+    ~~~
+
+    - Note: The resend count SHOULD be updated each time an HTTP request gets resent by the client, regardless of what was the cause of the resending (e.g. redirection, authorization failure, 503 Server Unavailable, network issues, or any other).
+    - Requires: Value type should be `Int`
+    */
+    case httpResendCount = "http.resend_count"
+    /**
     The value `aws-api`.
 
     ~~~
     // Examples
     attributes[.rpcSystem] = "aws-api"
     ~~~
-    - Requires: Value type should be `String`
+    - Requires: Value should be one of [`SemanticAttributes.RpcSystemValues`](x-source-tag://otelRpcSystemValues) (of type `String`)
     */
     case rpcSystem = "rpc.system"
     /**
@@ -907,6 +1151,17 @@ public enum SemanticAttributes: String {
     - Requires: Value type should be `String`
     */
     case rpcMethod = "rpc.method"
+    /**
+    The AWS request ID as returned in the response headers `x-amz-request-id` or `x-amz-requestid`.
+
+    ~~~
+    // Examples
+    attributes[.awsRequestId] = "79b9da39-b7ae-508a-a6bc-864b2829c622"
+    attributes[.awsRequestId] = "C9ER4AJX75574TDJ"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case awsRequestId = "aws.request_id"
     /**
     The keys in the `RequestItems` object field.
 
@@ -1107,12 +1362,218 @@ public enum SemanticAttributes: String {
     */
     case awsDynamodbGlobalSecondaryIndexUpdates = "aws.dynamodb.global_secondary_index_updates"
     /**
-    A string identifying the kind of message consumption as defined in the [Operation names](#operation-names) section above. If the operation is "send", this attribute MUST NOT be set, since the operation can be inferred from the span kind in that case.
-    - Requires: Value should be one of [`SemanticAttributes.MessagingOperationValues`](x-source-tag://otelMessagingOperationValues) (of type `String`)
+    The S3 bucket name the request refers to. Corresponds to the `--bucket` parameter of the [S3 API](https://docs.aws.amazon.com/cli/latest/reference/s3api/index.html) operations.
+
+    ~~~
+    // Examples
+    attributes[.awsS3Bucket] = "some-bucket-name"
+    ~~~
+
+    - Note: The `bucket` attribute is applicable to all S3 operations that reference a bucket, i.e. that require the bucket name as a mandatory parameter.
+      This applies to almost all S3 operations except `list-buckets`.
+    - Requires: Value type should be `String`
     */
-    case messagingOperation = "messaging.operation"
+    case awsS3Bucket = "aws.s3.bucket"
     /**
-    The identifier for the consumer receiving a message. For Kafka, set it to `{messaging.kafka.consumer_group} - {messaging.kafka.client_id}`, if both are present, or only `messaging.kafka.consumer_group`. For brokers, such as RabbitMQ and Artemis, set it to the `client_id` of the client consuming the message.
+    The S3 object key the request refers to. Corresponds to the `--key` parameter of the [S3 API](https://docs.aws.amazon.com/cli/latest/reference/s3api/index.html) operations.
+
+    ~~~
+    // Examples
+    attributes[.awsS3Key] = "someFile.yml"
+    ~~~
+
+    - Note: The `key` attribute is applicable to all object-related S3 operations, i.e. that require the object key as a mandatory parameter.
+      This applies in particular to the following operations:
+
+      - [copy-object](https://docs.aws.amazon.com/cli/latest/reference/s3api/copy-object.html)
+      - [delete-object](https://docs.aws.amazon.com/cli/latest/reference/s3api/delete-object.html)
+      - [get-object](https://docs.aws.amazon.com/cli/latest/reference/s3api/get-object.html)
+      - [head-object](https://docs.aws.amazon.com/cli/latest/reference/s3api/head-object.html)
+      - [put-object](https://docs.aws.amazon.com/cli/latest/reference/s3api/put-object.html)
+      - [restore-object](https://docs.aws.amazon.com/cli/latest/reference/s3api/restore-object.html)
+      - [select-object-content](https://docs.aws.amazon.com/cli/latest/reference/s3api/select-object-content.html)
+      - [abort-multipart-upload](https://docs.aws.amazon.com/cli/latest/reference/s3api/abort-multipart-upload.html)
+      - [complete-multipart-upload](https://docs.aws.amazon.com/cli/latest/reference/s3api/complete-multipart-upload.html)
+      - [create-multipart-upload](https://docs.aws.amazon.com/cli/latest/reference/s3api/create-multipart-upload.html)
+      - [list-parts](https://docs.aws.amazon.com/cli/latest/reference/s3api/list-parts.html)
+      - [upload-part](https://docs.aws.amazon.com/cli/latest/reference/s3api/upload-part.html)
+      - [upload-part-copy](https://docs.aws.amazon.com/cli/latest/reference/s3api/upload-part-copy.html).
+    - Requires: Value type should be `String`
+    */
+    case awsS3Key = "aws.s3.key"
+    /**
+    The source object (in the form `bucket`/`key`) for the copy operation.
+
+    ~~~
+    // Examples
+    attributes[.awsS3CopySource] = "someFile.yml"
+    ~~~
+
+    - Note: The `copy_source` attribute applies to S3 copy operations and corresponds to the `--copy-source` parameter
+      of the [copy-object operation within the S3 API](https://docs.aws.amazon.com/cli/latest/reference/s3api/copy-object.html).
+      This applies in particular to the following operations:
+
+      - [copy-object](https://docs.aws.amazon.com/cli/latest/reference/s3api/copy-object.html)
+      - [upload-part-copy](https://docs.aws.amazon.com/cli/latest/reference/s3api/upload-part-copy.html).
+    - Requires: Value type should be `String`
+    */
+    case awsS3CopySource = "aws.s3.copy_source"
+    /**
+    Upload ID that identifies the multipart upload.
+
+    ~~~
+    // Examples
+    attributes[.awsS3UploadId] = "dfRtDYWFbkRONycy.Yxwh66Yjlx.cph0gtNBtJ"
+    ~~~
+
+    - Note: The `upload_id` attribute applies to S3 multipart-upload operations and corresponds to the `--upload-id` parameter
+      of the [S3 API](https://docs.aws.amazon.com/cli/latest/reference/s3api/index.html) multipart operations.
+      This applies in particular to the following operations:
+
+      - [abort-multipart-upload](https://docs.aws.amazon.com/cli/latest/reference/s3api/abort-multipart-upload.html)
+      - [complete-multipart-upload](https://docs.aws.amazon.com/cli/latest/reference/s3api/complete-multipart-upload.html)
+      - [list-parts](https://docs.aws.amazon.com/cli/latest/reference/s3api/list-parts.html)
+      - [upload-part](https://docs.aws.amazon.com/cli/latest/reference/s3api/upload-part.html)
+      - [upload-part-copy](https://docs.aws.amazon.com/cli/latest/reference/s3api/upload-part-copy.html).
+    - Requires: Value type should be `String`
+    */
+    case awsS3UploadId = "aws.s3.upload_id"
+    /**
+    The delete request container that specifies the objects to be deleted.
+
+    ~~~
+    // Examples
+    attributes[.awsS3Delete] = "Objects=[{Key=string,VersionId=string},{Key=string,VersionId=string}],Quiet=boolean"
+    ~~~
+
+    - Note: The `delete` attribute is only applicable to the [delete-object](https://docs.aws.amazon.com/cli/latest/reference/s3api/delete-object.html) operation.
+      The `delete` attribute corresponds to the `--delete` parameter of the
+      [delete-objects operation within the S3 API](https://docs.aws.amazon.com/cli/latest/reference/s3api/delete-objects.html).
+    - Requires: Value type should be `String`
+    */
+    case awsS3Delete = "aws.s3.delete"
+    /**
+    The part number of the part being uploaded in a multipart-upload operation. This is a positive integer between 1 and 10,000.
+
+    ~~~
+    // Examplesattributes[.awsS3PartNumber] = 3456
+    ~~~
+
+    - Note: The `part_number` attribute is only applicable to the [upload-part](https://docs.aws.amazon.com/cli/latest/reference/s3api/upload-part.html)
+      and [upload-part-copy](https://docs.aws.amazon.com/cli/latest/reference/s3api/upload-part-copy.html) operations.
+      The `part_number` attribute corresponds to the `--part-number` parameter of the
+      [upload-part operation within the S3 API](https://docs.aws.amazon.com/cli/latest/reference/s3api/upload-part.html).
+    - Requires: Value type should be `Int`
+    */
+    case awsS3PartNumber = "aws.s3.part_number"
+    /**
+    The name of the operation being executed.
+
+    ~~~
+    // Examples
+    attributes[.graphqlOperationName] = "findBookById"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case graphqlOperationName = "graphql.operation.name"
+    /**
+    The type of the operation being executed.
+
+    ~~~
+    // Examples
+    attributes[.graphqlOperationType] = "query"
+    attributes[.graphqlOperationType] = "mutation"
+    attributes[.graphqlOperationType] = "subscription"
+    ~~~
+    - Requires: Value should be one of [`SemanticAttributes.GraphqlOperationTypeValues`](x-source-tag://otelGraphqlOperationTypeValues) (of type `String`)
+    */
+    case graphqlOperationType = "graphql.operation.type"
+    /**
+    The GraphQL document being executed.
+
+    ~~~
+    // Examples
+    attributes[.graphqlDocument] = "query findBookById { bookById(id: ?) { name } }"
+    ~~~
+
+    - Note: The value may be sanitized to exclude sensitive information.
+    - Requires: Value type should be `String`
+    */
+    case graphqlDocument = "graphql.document"
+    /**
+    The message destination name.
+
+    ~~~
+    // Examples
+    attributes[.messagingDestinationName] = "MyQueue"
+    attributes[.messagingDestinationName] = "MyTopic"
+    ~~~
+
+    - Note: Destination name SHOULD uniquely identify a specific queue, topic or other entity within the broker. If
+      the broker does not have such notion, the destination name SHOULD uniquely identify the broker.
+    - Requires: Value type should be `String`
+    */
+    case messagingDestinationName = "messaging.destination.name"
+    /**
+    The message source name.
+
+    ~~~
+    // Examples
+    attributes[.messagingSourceName] = "MyQueue"
+    attributes[.messagingSourceName] = "MyTopic"
+    ~~~
+
+    - Note: Source name SHOULD uniquely identify a specific queue, topic, or other entity within the broker. If
+      the broker does not have such notion, the source name SHOULD uniquely identify the broker.
+    - Requires: Value type should be `String`
+    */
+    case messagingSourceName = "messaging.source.name"
+    /**
+    Low cardinality representation of the messaging destination name.
+
+    ~~~
+    // Examples
+    attributes[.messagingDestinationTemplate] = "/customers/{customerId}"
+    ~~~
+
+    - Note: Destination names could be constructed from templates. An example would be a destination name involving a user name or product id. Although the destination name in this case is of high cardinality, the underlying template is of low cardinality and can be effectively used for grouping and aggregation.
+    - Requires: Value type should be `String`
+    */
+    case messagingDestinationTemplate = "messaging.destination.template"
+    /**
+    A boolean that is true if the message destination is temporary and might not exist anymore after messages are processed.
+    - Requires: Value type should be `Bool`
+    */
+    case messagingDestinationTemporary = "messaging.destination.temporary"
+    /**
+    A boolean that is true if the message destination is anonymous (could be unnamed or have auto-generated name).
+    - Requires: Value type should be `Bool`
+    */
+    case messagingDestinationAnonymous = "messaging.destination.anonymous"
+    /**
+    Low cardinality representation of the messaging source name.
+
+    ~~~
+    // Examples
+    attributes[.messagingSourceTemplate] = "/customers/{customerId}"
+    ~~~
+
+    - Note: Source names could be constructed from templates. An example would be a source name involving a user name or product id. Although the source name in this case is of high cardinality, the underlying template is of low cardinality and can be effectively used for grouping and aggregation.
+    - Requires: Value type should be `String`
+    */
+    case messagingSourceTemplate = "messaging.source.template"
+    /**
+    A boolean that is true if the message source is temporary and might not exist anymore after messages are processed.
+    - Requires: Value type should be `Bool`
+    */
+    case messagingSourceTemporary = "messaging.source.temporary"
+    /**
+    A boolean that is true if the message source is anonymous (could be unnamed or have auto-generated name).
+    - Requires: Value type should be `Bool`
+    */
+    case messagingSourceAnonymous = "messaging.source.anonymous"
+    /**
+    The identifier for the consumer receiving a message. For Kafka, set it to `{messaging.kafka.consumer.group} - {messaging.kafka.client_id}`, if both are present, or only `messaging.kafka.consumer.group`. For brokers, such as RabbitMQ and Artemis, set it to the `client_id` of the client consuming the message.
 
     ~~~
     // Examples
@@ -1120,19 +1581,19 @@ public enum SemanticAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case messagingConsumerId = "messaging.consumer_id"
+    case messagingConsumerId = "messaging.consumer.id"
     /**
     RabbitMQ message routing key.
 
     ~~~
     // Examples
-    attributes[.messagingRabbitmqRoutingKey] = "myKey"
+    attributes[.messagingRabbitmqDestinationRoutingKey] = "myKey"
     ~~~
     - Requires: Value type should be `String`
     */
-    case messagingRabbitmqRoutingKey = "messaging.rabbitmq.routing_key"
+    case messagingRabbitmqDestinationRoutingKey = "messaging.rabbitmq.destination.routing_key"
     /**
-    Message keys in Kafka are used for grouping alike messages to ensure they're processed on the same partition. They differ from `messaging.message_id` in that they're not unique. If the key is `null`, the attribute MUST NOT be set.
+    Message keys in Kafka are used for grouping alike messages to ensure they're processed on the same partition. They differ from `messaging.message.id` in that they're not unique. If the key is `null`, the attribute MUST NOT be set.
 
     ~~~
     // Examples
@@ -1142,7 +1603,7 @@ public enum SemanticAttributes: String {
     - Note: If the key type is not string, it's string representation has to be supplied for the attribute. If the key has no unambiguous, canonical string form, don't include its value.
     - Requires: Value type should be `String`
     */
-    case messagingKafkaMessageKey = "messaging.kafka.message_key"
+    case messagingKafkaMessageKey = "messaging.kafka.message.key"
     /**
     Name of the Kafka Consumer Group that is handling the message. Only applies to consumers, not producers.
 
@@ -1152,7 +1613,7 @@ public enum SemanticAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case messagingKafkaConsumerGroup = "messaging.kafka.consumer_group"
+    case messagingKafkaConsumerGroup = "messaging.kafka.consumer.group"
     /**
     Client Id for the Consumer or Producer that is handling the message.
 
@@ -1167,16 +1628,121 @@ public enum SemanticAttributes: String {
     Partition the message is sent to.
 
     ~~~
-    // Examplesattributes[.messagingKafkaPartition] = 2
+    // Examplesattributes[.messagingKafkaDestinationPartition] = 2
     ~~~
     - Requires: Value type should be `Int`
     */
-    case messagingKafkaPartition = "messaging.kafka.partition"
+    case messagingKafkaDestinationPartition = "messaging.kafka.destination.partition"
+    /**
+    Partition the message is received from.
+
+    ~~~
+    // Examplesattributes[.messagingKafkaSourcePartition] = 2
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case messagingKafkaSourcePartition = "messaging.kafka.source.partition"
+    /**
+    The offset of a record in the corresponding Kafka partition.
+
+    ~~~
+    // Examplesattributes[.messagingKafkaMessageOffset] = 42
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case messagingKafkaMessageOffset = "messaging.kafka.message.offset"
     /**
     A boolean that is true if the message is a tombstone.
     - Requires: Value type should be `Bool`
     */
-    case messagingKafkaTombstone = "messaging.kafka.tombstone"
+    case messagingKafkaMessageTombstone = "messaging.kafka.message.tombstone"
+    /**
+    Namespace of RocketMQ resources, resources in different namespaces are individual.
+
+    ~~~
+    // Examples
+    attributes[.messagingRocketmqNamespace] = "myNamespace"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case messagingRocketmqNamespace = "messaging.rocketmq.namespace"
+    /**
+    Name of the RocketMQ producer/consumer group that is handling the message. The client type is identified by the SpanKind.
+
+    ~~~
+    // Examples
+    attributes[.messagingRocketmqClientGroup] = "myConsumerGroup"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case messagingRocketmqClientGroup = "messaging.rocketmq.client_group"
+    /**
+    The unique identifier for each client.
+
+    ~~~
+    // Examples
+    attributes[.messagingRocketmqClientId] = "myhost@8742@s8083jm"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case messagingRocketmqClientId = "messaging.rocketmq.client_id"
+    /**
+    The timestamp in milliseconds that the delay message is expected to be delivered to consumer.
+
+    ~~~
+    // Examplesattributes[.messagingRocketmqMessageDeliveryTimestamp] = 1665987217045
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case messagingRocketmqMessageDeliveryTimestamp = "messaging.rocketmq.message.delivery_timestamp"
+    /**
+    The delay time level for delay message, which determines the message delay time.
+
+    ~~~
+    // Examplesattributes[.messagingRocketmqMessageDelayTimeLevel] = 3
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case messagingRocketmqMessageDelayTimeLevel = "messaging.rocketmq.message.delay_time_level"
+    /**
+    It is essential for FIFO message. Messages that belong to the same message group are always processed one by one within the same consumer group.
+
+    ~~~
+    // Examples
+    attributes[.messagingRocketmqMessageGroup] = "myMessageGroup"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case messagingRocketmqMessageGroup = "messaging.rocketmq.message.group"
+    /**
+    Type of message.
+    - Requires: Value should be one of [`SemanticAttributes.MessagingRocketmqMessageTypeValues`](x-source-tag://otelMessagingRocketmqMessageTypeValues) (of type `String`)
+    */
+    case messagingRocketmqMessageType = "messaging.rocketmq.message.type"
+    /**
+    The secondary classifier of message besides topic.
+
+    ~~~
+    // Examples
+    attributes[.messagingRocketmqMessageTag] = "tagA"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case messagingRocketmqMessageTag = "messaging.rocketmq.message.tag"
+    /**
+    Key(s) of message, another way to mark message besides message id.
+
+    ~~~
+    // Examplesattributes[.messagingRocketmqMessageKeys] = keyAattributes[.messagingRocketmqMessageKeys] = keyB
+    ~~~
+    - Requires: Value type should be `[String]`
+    */
+    case messagingRocketmqMessageKeys = "messaging.rocketmq.message.keys"
+    /**
+    Model of message consumption. This only applies to consumer spans.
+    - Requires: Value should be one of [`SemanticAttributes.MessagingRocketmqConsumptionModelValues`](x-source-tag://otelMessagingRocketmqConsumptionModelValues) (of type `String`)
+    */
+    case messagingRocketmqConsumptionModel = "messaging.rocketmq.consumption_model"
     /**
     The [numeric status code](https://github.com/grpc/grpc/blob/v1.33.2/doc/statuscodes.md) of the gRPC request.
     - Requires: Value should be one of [`SemanticAttributes.RpcGrpcStatusCodeValues`](x-source-tag://otelRpcGrpcStatusCodeValues) (of type `Int`)
@@ -1247,6 +1813,33 @@ public enum SemanticAttributes: String {
     - Requires: Value type should be `Int`
     */
     case messageUncompressedSize = "message.uncompressed_size"
+    /**
+    The [error codes](https://connect.build/docs/protocol/#error-codes) of the Connect request. Error codes are always string values.
+    - Requires: Value should be one of [`SemanticAttributes.RpcConnectRpcErrorCodeValues`](x-source-tag://otelRpcConnectRpcErrorCodeValues) (of type `String`)
+    */
+    case rpcConnectRpcErrorCode = "rpc.connect_rpc.error_code"
+    /**
+    SHOULD be set to true if the exception event is recorded at a point where it is known that the exception is escaping the scope of the span.
+
+    - Note: An exception is considered to have escaped (or left) the scope of a span,
+      if that span is ended while the exception is still logically "in flight".
+      This may be actually "in flight" in some languages (e.g. if the exception
+      is passed to a Context manager's `__exit__` method in Python) but will
+      usually be caught at the point of recording the exception in most languages.
+
+      It is usually not possible to determine at the point where an exception is thrown
+      whether it will escape the scope of a span.
+      However, it is trivial to know that an exception
+      will escape, if one checks for an active exception just before ending the span,
+      as done in the [example above](#recording-an-exception).
+
+      It follows that an exception may still escape the scope of the span
+      even if the `exception.escaped` attribute was not set or set to false,
+      since the event might have been recorded at a time where it was not
+      clear whether the exception will escape.
+    - Requires: Value type should be `Bool`
+    */
+    case exceptionEscaped = "exception.escaped"
 
     // MARK: - Manual Definitions
     // Some definitions have not yet been added to the YAML which generates this script.
@@ -1256,6 +1849,50 @@ public enum SemanticAttributes: String {
     An exception event **MUST** be called "exception" as per the [specification](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/exceptions.md).
     */
     case exception = "exception";
+    
+    /**
+    The domain identifies the business context for the events.
+    */
+    /// - Tag: otelEventDomainValues
+    public struct EventDomainValues: CustomStringConvertible {
+        /**
+        Events from browser apps.
+        */
+        public static let browser = EventDomainValues("browser")
+        /**
+        Events from mobile apps.
+        */
+        public static let device = EventDomainValues("device")
+        /**
+        Events from Kubernetes.
+        */
+        public static let k8s = EventDomainValues("k8s")
+
+        internal let value: String
+
+        public init(_ customValue: String) {
+            self.value = customValue
+        }
+
+        public var description: String {
+            return value
+        }
+    }
+    
+    /**
+    Parent-child Reference type.
+    */
+    /// - Tag: otelOpentracingRefTypeValues
+    public enum OpentracingRefTypeValues: String {
+        /**
+        The parent Span depends on the child Span in some capacity.
+        */
+        case child_of = "child_of"
+        /**
+        The parent Span does not depend in any way on the result of the child Span.
+        */
+        case follows_from = "follows_from"
+    }
     
     /**
     An identifier for the database management system (DBMS) product being used. See below for a list of well-known identifiers.
@@ -1270,6 +1907,10 @@ public enum SemanticAttributes: String {
         Microsoft SQL Server.
         */
         public static let mssql = DbSystemValues("mssql")
+        /**
+        Microsoft SQL Server Compact.
+        */
+        public static let mssqlcompact = DbSystemValues("mssqlcompact")
         /**
         MySQL.
         */
@@ -1450,6 +2091,51 @@ public enum SemanticAttributes: String {
         CockroachDB.
         */
         public static let cockroachdb = DbSystemValues("cockroachdb")
+        /**
+        OpenSearch.
+        */
+        public static let opensearch = DbSystemValues("opensearch")
+        /**
+        ClickHouse.
+        */
+        public static let clickhouse = DbSystemValues("clickhouse")
+        /**
+        Cloud Spanner.
+        */
+        public static let spanner = DbSystemValues("spanner")
+        /**
+        Trino.
+        */
+        public static let trino = DbSystemValues("trino")
+
+        internal let value: String
+
+        public init(_ customValue: String) {
+            self.value = customValue
+        }
+
+        public var description: String {
+            return value
+        }
+    }
+    
+    /**
+    Protocol [address family](https://man7.org/linux/man-pages/man7/address_families.7.html) which is used for communication.
+    */
+    /// - Tag: otelNetSockFamilyValues
+    public struct NetSockFamilyValues: CustomStringConvertible {
+        /**
+        IPv4 address.
+        */
+        public static let inet = NetSockFamilyValues("inet")
+        /**
+        IPv6 address.
+        */
+        public static let inet6 = NetSockFamilyValues("inet6")
+        /**
+        Unix domain socket path.
+        */
+        public static let unix = NetSockFamilyValues("unix")
 
         internal let value: String
 
@@ -1466,35 +2152,37 @@ public enum SemanticAttributes: String {
     Transport protocol used. See note below.
     */
     /// - Tag: otelNetTransportValues
-    public enum NetTransportValues: String {
+    public struct NetTransportValues: CustomStringConvertible {
         /**
         ip_tcp.
         */
-        case ip_tcp = "ip_tcp"
+        public static let ipTcp = NetTransportValues("ip_tcp")
         /**
         ip_udp.
         */
-        case ip_udp = "ip_udp"
-        /**
-        Another IP-based protocol.
-        */
-        case ip = "ip"
-        /**
-        Unix Domain socket. See below.
-        */
-        case unix = "unix"
+        public static let ipUdp = NetTransportValues("ip_udp")
         /**
         Named or anonymous pipe. See note below.
         */
-        case pipe = "pipe"
+        public static let pipe = NetTransportValues("pipe")
         /**
         In-process communication.
         */
-        case inproc = "inproc"
+        public static let inproc = NetTransportValues("inproc")
         /**
         Something else (non IP-based).
         */
-        case other = "other"
+        public static let other = NetTransportValues("other")
+
+        internal let value: String
+
+        public init(_ customValue: String) {
+            self.value = customValue
+        }
+
+        public var description: String {
+            return value
+        }
     }
     
     /**
@@ -1549,7 +2237,114 @@ public enum SemanticAttributes: String {
     }
     
     /**
-    Type of the trigger on which the function is executed.
+    CosmosDB Operation Type.
+    */
+    /// - Tag: otelDbCosmosdbOperationTypeValues
+    public struct DbCosmosdbOperationTypeValues: CustomStringConvertible {
+        /**
+        invalid.
+        */
+        public static let invalid = DbCosmosdbOperationTypeValues("Invalid")
+        /**
+        create.
+        */
+        public static let create = DbCosmosdbOperationTypeValues("Create")
+        /**
+        patch.
+        */
+        public static let patch = DbCosmosdbOperationTypeValues("Patch")
+        /**
+        read.
+        */
+        public static let read = DbCosmosdbOperationTypeValues("Read")
+        /**
+        read_feed.
+        */
+        public static let readFeed = DbCosmosdbOperationTypeValues("ReadFeed")
+        /**
+        delete.
+        */
+        public static let delete = DbCosmosdbOperationTypeValues("Delete")
+        /**
+        replace.
+        */
+        public static let replace = DbCosmosdbOperationTypeValues("Replace")
+        /**
+        execute.
+        */
+        public static let execute = DbCosmosdbOperationTypeValues("Execute")
+        /**
+        query.
+        */
+        public static let query = DbCosmosdbOperationTypeValues("Query")
+        /**
+        head.
+        */
+        public static let head = DbCosmosdbOperationTypeValues("Head")
+        /**
+        head_feed.
+        */
+        public static let headFeed = DbCosmosdbOperationTypeValues("HeadFeed")
+        /**
+        upsert.
+        */
+        public static let upsert = DbCosmosdbOperationTypeValues("Upsert")
+        /**
+        batch.
+        */
+        public static let batch = DbCosmosdbOperationTypeValues("Batch")
+        /**
+        query_plan.
+        */
+        public static let queryPlan = DbCosmosdbOperationTypeValues("QueryPlan")
+        /**
+        execute_javascript.
+        */
+        public static let executeJavascript = DbCosmosdbOperationTypeValues("ExecuteJavaScript")
+
+        internal let value: String
+
+        public init(_ customValue: String) {
+            self.value = customValue
+        }
+
+        public var description: String {
+            return value
+        }
+    }
+    
+    /**
+    Cosmos client connection mode.
+    */
+    /// - Tag: otelDbCosmosdbConnectionModeValues
+    public enum DbCosmosdbConnectionModeValues: String {
+        /**
+        Gateway (HTTP) connections mode.
+        */
+        case gateway = "gateway"
+        /**
+        Direct connection.
+        */
+        case direct = "direct"
+    }
+    
+    /**
+    Name of the code, either "OK" or "ERROR". MUST NOT be set if the status code is UNSET.
+    */
+    /// - Tag: otelOtelStatusCodeValues
+    public enum OtelStatusCodeValues: String {
+        /**
+        The operation has been validated by an Application developer or Operator to have completed successfully.
+        */
+        case ok = "OK"
+        /**
+        The operation contains an error.
+        */
+        case error = "ERROR"
+    }
+    
+    /**
+    Type of the trigger which caused this function invocation.
     */
     /// - Tag: otelFaasTriggerValues
     public enum FaasTriggerValues: String {
@@ -1605,30 +2400,59 @@ public enum SemanticAttributes: String {
     }
     
     /**
-    Kind of HTTP protocol used.
+    A string identifying the kind of messaging operation as defined in the [Operation names](#operation-names) section above.
     */
-    /// - Tag: otelHttpFlavorValues
-    public struct HttpFlavorValues: CustomStringConvertible {
+    /// - Tag: otelMessagingOperationValues
+    public struct MessagingOperationValues: CustomStringConvertible {
         /**
-        HTTP 1.0.
+        publish.
         */
-        public static let http10 = HttpFlavorValues("1.0")
+        public static let publish = MessagingOperationValues("publish")
         /**
-        HTTP 1.1.
+        receive.
         */
-        public static let http11 = HttpFlavorValues("1.1")
+        public static let receive = MessagingOperationValues("receive")
         /**
-        HTTP 2.
+        process.
         */
-        public static let http20 = HttpFlavorValues("2.0")
+        public static let process = MessagingOperationValues("process")
+
+        internal let value: String
+
+        public init(_ customValue: String) {
+            self.value = customValue
+        }
+
+        public var description: String {
+            return value
+        }
+    }
+    
+    /**
+    The cloud provider of the invoked function.
+    */
+    /// - Tag: otelFaasInvokedProviderValues
+    public struct FaasInvokedProviderValues: CustomStringConvertible {
         /**
-        SPDY protocol.
+        Alibaba Cloud.
         */
-        public static let spdy = HttpFlavorValues("SPDY")
+        public static let alibabaCloud = FaasInvokedProviderValues("alibaba_cloud")
         /**
-        QUIC protocol.
+        Amazon Web Services.
         */
-        public static let quic = HttpFlavorValues("QUIC")
+        public static let aws = FaasInvokedProviderValues("aws")
+        /**
+        Microsoft Azure.
+        */
+        public static let azure = FaasInvokedProviderValues("azure")
+        /**
+        Google Cloud Platform.
+        */
+        public static let gcp = FaasInvokedProviderValues("gcp")
+        /**
+        Tencent Cloud.
+        */
+        public static let tencentCloud = FaasInvokedProviderValues("tencent_cloud")
 
         internal let value: String
 
@@ -1780,41 +2604,30 @@ public enum SemanticAttributes: String {
     }
     
     /**
-    The kind of message destination.
+    The value `aws-api`.
     */
-    /// - Tag: otelMessagingDestinationKindValues
-    public enum MessagingDestinationKindValues: String {
+    /// - Tag: otelRpcSystemValues
+    public struct RpcSystemValues: CustomStringConvertible {
         /**
-        A message sent to a queue.
+        gRPC.
         */
-        case queue = "queue"
+        public static let grpc = RpcSystemValues("grpc")
         /**
-        A message sent to a topic.
+        Java RMI.
         */
-        case topic = "topic"
-    }
-    
-    /**
-    The cloud provider of the invoked function.
-    */
-    /// - Tag: otelFaasInvokedProviderValues
-    public struct FaasInvokedProviderValues: CustomStringConvertible {
+        public static let javaRmi = RpcSystemValues("java_rmi")
         /**
-        Alibaba Cloud.
+        .NET WCF.
         */
-        public static let alibabaCloud = FaasInvokedProviderValues("alibaba_cloud")
+        public static let dotnetWcf = RpcSystemValues("dotnet_wcf")
         /**
-        Amazon Web Services.
+        Apache Dubbo.
         */
-        public static let aws = FaasInvokedProviderValues("aws")
+        public static let apacheDubbo = RpcSystemValues("apache_dubbo")
         /**
-        Microsoft Azure.
+        Connect RPC.
         */
-        public static let azure = FaasInvokedProviderValues("azure")
-        /**
-        Google Cloud Platform.
-        */
-        public static let gcp = FaasInvokedProviderValues("gcp")
+        public static let connectRpc = RpcSystemValues("connect_rpc")
 
         internal let value: String
 
@@ -1828,18 +2641,60 @@ public enum SemanticAttributes: String {
     }
     
     /**
-    A string identifying the kind of message consumption as defined in the [Operation names](#operation-names) section above. If the operation is "send", this attribute MUST NOT be set, since the operation can be inferred from the span kind in that case.
+    The type of the operation being executed.
     */
-    /// - Tag: otelMessagingOperationValues
-    public enum MessagingOperationValues: String {
+    /// - Tag: otelGraphqlOperationTypeValues
+    public enum GraphqlOperationTypeValues: String {
         /**
-        receive.
+        GraphQL query.
         */
-        case receive = "receive"
+        case query = "query"
         /**
-        process.
+        GraphQL mutation.
         */
-        case process = "process"
+        case mutation = "mutation"
+        /**
+        GraphQL subscription.
+        */
+        case subscription = "subscription"
+    }
+    
+    /**
+    Type of message.
+    */
+    /// - Tag: otelMessagingRocketmqMessageTypeValues
+    public enum MessagingRocketmqMessageTypeValues: String {
+        /**
+        Normal message.
+        */
+        case normal = "normal"
+        /**
+        FIFO message.
+        */
+        case fifo = "fifo"
+        /**
+        Delay message.
+        */
+        case delay = "delay"
+        /**
+        Transaction message.
+        */
+        case transaction = "transaction"
+    }
+    
+    /**
+    Model of message consumption. This only applies to consumer spans.
+    */
+    /// - Tag: otelMessagingRocketmqConsumptionModelValues
+    public enum MessagingRocketmqConsumptionModelValues: String {
+        /**
+        Clustering consumption model.
+        */
+        case clustering = "clustering"
+        /**
+        Broadcasting consumption model.
+        */
+        case broadcasting = "broadcasting"
     }
     
     /**
@@ -1930,6 +2785,77 @@ public enum SemanticAttributes: String {
         received.
         */
         case received = "RECEIVED"
+    }
+    
+    /**
+    The [error codes](https://connect.build/docs/protocol/#error-codes) of the Connect request. Error codes are always string values.
+    */
+    /// - Tag: otelRpcConnectRpcErrorCodeValues
+    public enum RpcConnectRpcErrorCodeValues: String {
+        /**
+        cancelled.
+        */
+        case cancelled = "cancelled"
+        /**
+        unknown.
+        */
+        case unknown = "unknown"
+        /**
+        invalid_argument.
+        */
+        case invalid_argument = "invalid_argument"
+        /**
+        deadline_exceeded.
+        */
+        case deadline_exceeded = "deadline_exceeded"
+        /**
+        not_found.
+        */
+        case not_found = "not_found"
+        /**
+        already_exists.
+        */
+        case already_exists = "already_exists"
+        /**
+        permission_denied.
+        */
+        case permission_denied = "permission_denied"
+        /**
+        resource_exhausted.
+        */
+        case resource_exhausted = "resource_exhausted"
+        /**
+        failed_precondition.
+        */
+        case failed_precondition = "failed_precondition"
+        /**
+        aborted.
+        */
+        case aborted = "aborted"
+        /**
+        out_of_range.
+        */
+        case out_of_range = "out_of_range"
+        /**
+        unimplemented.
+        */
+        case unimplemented = "unimplemented"
+        /**
+        internal.
+        */
+        case `internal` = "internal"
+        /**
+        unavailable.
+        */
+        case unavailable = "unavailable"
+        /**
+        data_loss.
+        */
+        case data_loss = "data_loss"
+        /**
+        unauthenticated.
+        */
+        case unauthenticated = "unauthenticated"
     }
     
 }

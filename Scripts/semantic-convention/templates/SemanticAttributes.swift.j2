@@ -46,7 +46,7 @@ public enum {{enum}}: String {
     {%- endif %}
     {%- if attribute.note %}
 
-    - Note: {{attribute.note | to_doc_brief | indent(6, True, indentfirst=False)}}.
+    - Note: {{attribute.note | to_doc_brief | indent(6, False)}}.
     {%- endif %}
     {%- if attribute.deprecated %}
 
