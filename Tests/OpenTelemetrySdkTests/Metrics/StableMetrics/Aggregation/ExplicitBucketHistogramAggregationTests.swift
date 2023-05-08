@@ -26,7 +26,7 @@ class ExplicitBucketHistogramAggregationTests: XCTestCase {
 
         let compatibleDescriptor1 = InstrumentDescriptor(name: "test", description: "test", unit: "unit", type: .counter, valueType: .double)
         let compatibleDescriptor2 = InstrumentDescriptor(name: "test", description: "test", unit: "unit", type: .histogram, valueType: .double)
-        let incompatibleDescriptor = InstrumentDescriptor(name: "test", description: "test", unit: "unit", type: .counter, valueType: .double)
+        let incompatibleDescriptor = InstrumentDescriptor(name: "test", description: "test", unit: "unit", type: .observableGauge, valueType: .double)
 
         XCTAssertTrue(aggregation.isCompatible(with: compatibleDescriptor1))
         XCTAssertTrue(aggregation.isCompatible(with: compatibleDescriptor2))
