@@ -6,6 +6,11 @@
 import Foundation
 
 public protocol LogRecordBuilder {
+    /// set the timestamp on which the event ocurred
+    ///
+    /// - Parameter timestamp: the Date object
+    /// - Returns: self
+    func setTimestamp(_ timestamp: Date) -> Self
 
     /// set the timestamp that the log was observed
     ///
