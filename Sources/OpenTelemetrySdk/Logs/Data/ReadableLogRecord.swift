@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public struct ReadableLogRecord {
+public struct ReadableLogRecord : Codable {
     public init(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, timestamp: Date, observedTimestamp: Date? = nil, spanContext: SpanContext? = nil, severity: Severity? = nil, body: String? = nil, attributes: [String : AttributeValue]) {
         self.resource = resource
         self.instrumentationScopeInfo = instrumentationScopeInfo
@@ -27,3 +27,5 @@ public struct ReadableLogRecord {
     public private(set) var body: String?
     public private(set) var attributes : [String: AttributeValue]
 }
+
+
