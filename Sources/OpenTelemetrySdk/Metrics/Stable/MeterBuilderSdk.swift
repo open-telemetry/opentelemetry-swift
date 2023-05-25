@@ -28,7 +28,7 @@ public class MeterBuilderSdk : MeterBuilder {
         return self
     }
     
-    public func build() -> OpenTelemetryApi.StableMeter {
+    public func build() -> StableMeter {
         return registry.get(name: instrumentationScopeName, version: instrumentationVersion, schemaUrl: schemaUrl)
     }
     

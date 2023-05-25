@@ -13,7 +13,7 @@ public class InstrumentSelector {
     let meterVersion : String?
     let meterSchemaUrl : String?
     
-    static func builder() -> InstrumentSelectorBuilder {
+    static public func builder() -> InstrumentSelectorBuilder {
         return InstrumentSelectorBuilder()
     }
     
