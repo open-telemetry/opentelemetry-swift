@@ -39,7 +39,7 @@ public class AsynchronousMetricStorage: MetricStorage {
     func record(measurement: Measurement) {
         let processedAttributes = attributeProcessor.process(incoming: measurement.attributes)
         let start = aggregationTemporality == AggregationTemporality.delta ? registeredReader.lastCollectedEpochNanos : measurement.startEpochNano
-        var newMeasurement = measurement.hasDoubleValue ? Measurement.doubleMeasurement(startEpochNano: start, endEpochNano: measurement.epochNano, value: measurement.doubleValue, attributes: measurement.attributes) : Measurement.longMeasurement(startEpochNano: start, endEpochNano: measurement.epochNano, value: measurement.longValue, attributes: measurement.attributes)
+        let newMeasurement = measurement.hasDoubleValue ? Measurement.doubleMeasurement(startEpochNano: start, endEpochNano: measurement.epochNano, value: measurement.doubleValue, attributes: processedAttributes) : Measurement.longMeasurement(startEpochNano: start, endEpochNano: measurement.epochNano, value: measurement.longValue, attributes: processedAttributes)
         do {
             try recordPoint(point: aggregator.toPoint(measurement: newMeasurement))
         } catch let HistogramAggregatorError.unsupportedOperation(error) {

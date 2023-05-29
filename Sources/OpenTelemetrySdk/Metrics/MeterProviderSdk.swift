@@ -6,7 +6,8 @@
 import Foundation
 import OpenTelemetryApi
 
-@available(*, deprecated, renamed: "StableMeterProviderSdk")
+// Phase 2
+//@available(*, deprecated, renamed: "StableMeterProviderSdk")
 public class MeterProviderSdk: MeterProvider {
     private let lock = Lock()
     public static let defaultPushInterval: TimeInterval = 60

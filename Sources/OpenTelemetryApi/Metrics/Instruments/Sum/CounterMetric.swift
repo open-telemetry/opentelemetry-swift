@@ -6,7 +6,8 @@
 import Foundation
 
 /// Counter instrument.
-@available(*,deprecated)
+// Phase 2
+//@available(*,deprecated)
 public protocol CounterMetric {
     associatedtype T
 
