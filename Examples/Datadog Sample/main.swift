@@ -3,13 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if os(macOS)
+
 import DatadogExporter
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
-#if !os(macOS)
-import UIKit
-#endif
 
 let apikeyOrClientToken = ""
 
@@ -25,11 +24,7 @@ let instrumentationScopeVersion = "semver:0.1.0"
 var tracer: Tracer
 tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion)
 
-#if os(macOS)
 let hostName = Host.current().localizedName
-#else
-let hostName = UIDevice.current.name
-#endif
 
 let exporterConfiguration = ExporterConfiguration(
     serviceName: "Opentelemetry exporter Example",
@@ -120,3 +115,5 @@ func testMetrics() {
         sleep(1)
     }
 }
+
+#endif

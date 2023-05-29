@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if !os(watchOS)
+
 import Foundation
 import OpenTelemetrySdk
 import Thrift
@@ -32,3 +34,5 @@ public class JaegerSpanExporter: SpanExporter {
     public func shutdown() {
     }
 }
+
+#endif

@@ -5,7 +5,8 @@
 
 import XCTest
 import OpenTelemetryApi
-@testable import OpenTelemetryProtocolExporter
+@testable import OpenTelemetryProtocolExporterGrpc
+@testable import OpenTelemetryProtocolExporterCommon
 @testable import OpenTelemetrySdk
 
 final class MetricsAdapterTest: XCTestCase {

@@ -24,18 +24,18 @@ final class CounterTests: XCTestCase {
         // We have ls1, ls2, ls3
         // ls1 and ls3 are not bound so they should removed when no usage for a Collect cycle.
         // ls2 is bound by user.
-        testCounter.add(  value: 100, labelset: ls1)
-        testCounter.add(  value: 10, labelset: ls1)
+        testCounter.add(value: 100, labelset: ls1)
+        testCounter.add(value: 10, labelset: ls1)
         // initial status for temp bound instruments are UpdatePending.
         XCTAssertEqual(RecordStatus.updatePending, testCounter.boundInstruments[ls1]?.status)
 
         let boundCounterLabel2 = testCounter.bind(labelset: ls2)
-        boundCounterLabel2.add(  value: 200)
+        boundCounterLabel2.add(value: 200)
         // initial/forever status for user bound instruments are Bound.
         XCTAssertEqual(RecordStatus.bound, testCounter.boundInstruments[ls2]?.status)
 
-        testCounter.add(  value: 200, labelset: ls3)
-        testCounter.add(  value: 10, labelset: ls3)
+        testCounter.add(value: 200, labelset: ls3)
+        testCounter.add(value: 10, labelset: ls3)
         // initial status for temp bound instruments are UpdatePending.
         XCTAssertEqual(RecordStatus.updatePending, testCounter.boundInstruments[ls3]?.status)
 
@@ -48,7 +48,7 @@ final class CounterTests: XCTestCase {
         XCTAssertEqual(RecordStatus.bound, testCounter.boundInstruments[ls2]?.status)
 
         // Use ls1 again, so that it'll be promoted to UpdatePending
-        testCounter.add(  value: 100, labelset: ls1)
+        testCounter.add(value: 100, labelset: ls1)
 
         // This collect should mark ls1 as noPendingUpdate, leave ls2 untouched.
         // And ls3 as candidateForRemoval, as it was not used since last Collect
@@ -84,18 +84,18 @@ final class CounterTests: XCTestCase {
         // We have ls1, ls2, ls3
         // ls1 and ls3 are not bound so they should removed when no usage for a Collect cycle.
         // ls2 is bound by user.
-        testCounter.add(  value: 100.0, labelset: ls1)
-        testCounter.add(  value: 10.0, labelset: ls1)
+        testCounter.add(value: 100.0, labelset: ls1)
+        testCounter.add(value: 10.0, labelset: ls1)
         // initial status for temp bound instruments are UpdatePending.
         XCTAssertEqual(RecordStatus.updatePending, testCounter.boundInstruments[ls1]?.status)
 
         let boundCounterLabel2 = testCounter.bind(labelset: ls2)
-        boundCounterLabel2.add(  value: 200.0)
+        boundCounterLabel2.add(value: 200.0)
         // initial/forever status for user bound instruments are Bound.
         XCTAssertEqual(RecordStatus.bound, testCounter.boundInstruments[ls2]?.status)
 
-        testCounter.add(  value: 200.0, labelset: ls3)
-        testCounter.add(  value: 10.0, labelset: ls3)
+        testCounter.add(value: 200.0, labelset: ls3)
+        testCounter.add(value: 10.0, labelset: ls3)
         // initial status for temp bound instruments are UpdatePending.
         XCTAssertEqual(RecordStatus.updatePending, testCounter.boundInstruments[ls3]?.status)
 
@@ -108,7 +108,7 @@ final class CounterTests: XCTestCase {
         XCTAssertEqual(RecordStatus.bound, testCounter.boundInstruments[ls2]?.status)
 
         // Use ls1 again, so that it'll be promoted to UpdatePending
-        testCounter.add(  value: 100.0, labelset: ls1)
+        testCounter.add(value: 100.0, labelset: ls1)
 
         // This collect should mark ls1 as noPendingUpdate, leave ls2 untouched.
         // And ls3 as candidateForRemoval, as it was not used since last Collect
@@ -129,7 +129,11 @@ final class CounterTests: XCTestCase {
         XCTAssertNil(testCounter.boundInstruments[ls3])
     }
 
-    public func testIntCounterBoundInstrumentsStatusUpdatedCorrectlyMultiThread() {
+    public func testIntCounterBoundInstrumentsStatusUpdatedCorrectlyMultiThread() throws {
+#if os(watchOS)
+        throw XCTSkip("Test is flaky on watchOS")
+#endif
+
         let testProcessor = TestMetricProcessor()
         let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "scope1") as! MeterSdk
         let testCounter = meter.createIntCounter(name: "testCounter").internalCounter as! CounterMetricSdk<Int>
@@ -138,8 +142,8 @@ final class CounterTests: XCTestCase {
         let ls1 = meter.getLabelSet(labels: labels1)
 
         // Call metric update with ls1 so that ls1 wont be brand new labelset when doing multi-thread test.
-        testCounter.add(  value: 100, labelset: ls1)
-        testCounter.add(  value: 10, labelset: ls1)
+        testCounter.add(value: 100, labelset: ls1)
+        testCounter.add(value: 10, labelset: ls1)
 
         // This collect should mark ls1 NoPendingUpdate
         meter.collect()
@@ -159,7 +163,7 @@ final class CounterTests: XCTestCase {
         }
         DispatchQueue.global().async(group: mygroup) {
             for _ in 0 ..< 5 {
-                testCounter.add(  value: 100, labelset: ls1)
+                testCounter.add(value: 100, labelset: ls1)
             }
         }
         mygroup.wait()

@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if !os(watchOS)
+
 import Foundation
 import os
 import OpenTelemetryApi
@@ -30,3 +32,5 @@ public class SignPostIntegration: SpanProcessor {
     public func shutdown() {}
     public func forceFlush(timeout: TimeInterval? = nil) {}
 }
+
+#endif

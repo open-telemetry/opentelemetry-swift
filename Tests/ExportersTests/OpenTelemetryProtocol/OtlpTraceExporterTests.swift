@@ -8,7 +8,8 @@ import Logging
 import GRPC
 import NIO
 import OpenTelemetryApi
-@testable import OpenTelemetryProtocolExporter
+import OpenTelemetryProtocolExporterCommon
+@testable import OpenTelemetryProtocolExporterGrpc
 @testable import OpenTelemetrySdk
 import XCTest
 
@@ -63,9 +64,22 @@ class OtlpTraceExporterTests: XCTestCase {
         XCTAssertEqual(logger.label, "my.grpc.logger")
     }
 
+    func verifyUserAgentIsSet(exporter: OtlpTraceExporter) {
+        if let callOptions = exporter.callOptions {
+            let customMetadata = callOptions.customMetadata
+            let userAgent = Headers.getUserAgentHeader()
+            if customMetadata.contains(name: Constants.HTTP.userAgent) && customMetadata.first(name: Constants.HTTP.userAgent) == userAgent {
+                return
+            }
+        }
+        XCTFail("User-Agent header was not set correctly")
+    }
+
     func testConfigHeadersIsNil_whenDefaultInitCalled() throws {
         let exporter = OtlpTraceExporter(channel: channel)
         XCTAssertNil(exporter.config.headers)
+
+        verifyUserAgentIsSet(exporter: exporter)
     }
 
     func testConfigHeadersAreSet_whenInitCalledWithCustomConfig() throws {
@@ -75,12 +89,16 @@ class OtlpTraceExporterTests: XCTestCase {
         XCTAssertEqual(exporter.config.headers?[0].0, "FOO")
         XCTAssertEqual(exporter.config.headers?[0].1, "BAR")
         XCTAssertEqual("BAR", exporter.callOptions?.customMetadata.first(name: "FOO"))
+
+        verifyUserAgentIsSet(exporter: exporter)
     }
 
     func testConfigHeadersAreSet_whenInitCalledWithExplicitHeaders() throws {
         let exporter = OtlpTraceExporter(channel: channel, envVarHeaders: [("FOO", "BAR")])
         XCTAssertNil(exporter.config.headers)
         XCTAssertEqual("BAR", exporter.callOptions?.customMetadata.first(name: "FOO"))
+
+        verifyUserAgentIsSet(exporter: exporter)
     }
 
     func testExportMultipleSpans() {

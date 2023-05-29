@@ -15,7 +15,7 @@ public class LogRecordBuilderSdk : EventBuilder {
     private var limits : LogLimits
     private var instrumentationScope : InstrumentationScopeInfo
     private var includeSpanContext : Bool
-    
+    private var timestamp: Date?
     private var observedTimestamp : Date?
     private var body : String?
     private var severity: Severity?
@@ -31,7 +31,12 @@ public class LogRecordBuilderSdk : EventBuilder {
         self.instrumentationScope = instrumentationScope
         attributes = AttributesDictionary(capacity: sharedState.logLimits.maxAttributeCount, valueLengthLimit: sharedState.logLimits.maxAttributeLength)
     }
-    
+
+    public func setTimestamp(_ timestamp: Date) -> Self {
+        self.timestamp = timestamp
+        return self
+    }
+
     public func setObservedTimestamp(_ observed: Date) -> Self {
         self.observedTimestamp = observed
         return self
@@ -68,7 +73,7 @@ public class LogRecordBuilderSdk : EventBuilder {
         
         sharedState.activeLogRecordProcessor.onEmit(logRecord: ReadableLogRecord(resource: sharedState.resource,
                                                                                  instrumentationScopeInfo: instrumentationScope,
-                                                                                 timestamp: sharedState.clock.now,
+                                                                                 timestamp: timestamp ?? sharedState.clock.now,
                                                                                  observedTimestamp: observedTimestamp,
                                                                                  spanContext: spanContext,
                                                                                  severity: severity,

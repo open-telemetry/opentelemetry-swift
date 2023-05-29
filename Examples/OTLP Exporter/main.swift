@@ -3,12 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if os(macOS)
+
 import Foundation
 import GRPC
 import NIO
 import NIOSSL
 import OpenTelemetryApi
-import OpenTelemetryProtocolExporter
+import OpenTelemetryProtocolExporterGrpc
 import OpenTelemetrySdk
 import ResourceExtension
 import SignPostIntegration
@@ -87,6 +89,8 @@ let meterProvider = MeterProviderSdk(metricProcessor: processor, metricExporter:
 OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
 
 
+let labels1 = ["dim1": "value1"]
+
 var meter = meterProvider.get(instrumentationName: "otlp_example_meter'")
 var exampleCounter = meter.createIntCounter(name: "otlp_example_counter")
 var exampleMeasure = meter.createIntMeasure(name: "otlp_example_measure")
@@ -98,11 +102,9 @@ var exampleObserver = meter.createIntObserver(name: "otlp_example_observation") 
             task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
         }
     }
-    labels1 = ["dim1": "value1"]
     observer.observe(value: Int(taskInfo.resident_size), labels: labels1)
 }
 
-var labels1 = ["dim1": "value1"]
 for _ in 1...3000 {
     exampleCounter.add(value: 1, labelset: meter.getLabelSet(labels: labels1))
     exampleMeasure.record(value: 100, labelset: meter.getLabelSet(labels: labels1))
@@ -111,3 +113,5 @@ for _ in 1...3000 {
     exampleMeasure.record(value: 750, labelset: meter.getLabelSet(labels: labels1))
     sleep(1)
 }
+
+#endif
