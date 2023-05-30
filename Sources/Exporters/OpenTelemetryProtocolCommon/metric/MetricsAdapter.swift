@@ -6,7 +6,30 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
-public struct MetricsAdapter {
+public enum MetricsAdapter {
+    public static func toProtoResourceMetrics(stableMetricData: [StableMetricData]) -> [Opentelemetry_Proto_Metrics_V1_ResourceMetrics] {
+        let resourceAndScopeMap = groupByResouceAndScope(stableMetricData: stableMetricData)
+
+        var resourceMetrics = [Opentelemetry_Proto_Metrics_V1_ResourceMetrics]()
+        resourceAndScopeMap.forEach { resMap in
+            var instrumentationScopeMetrics = [Opentelemetry_Proto_Metrics_V1_ScopeMetrics]()
+            resMap.value.forEach { instScope in
+                var protoInst = Opentelemetry_Proto_Metrics_V1_ScopeMetrics()
+                protoInst.scope =
+                    CommonAdapter.toProtoInstrumentationScope(instrumentationScopeInfo: instScope.key)
+                instScope.value.forEach {
+                    protoInst.metrics.append($0)
+                }
+                instrumentationScopeMetrics.append(protoInst)
+            }
+            var resourceMetric = Opentelemetry_Proto_Metrics_V1_ResourceMetrics()
+            resourceMetric.resource = ResourceAdapter.toProtoResource(resource: resMap.key)
+            resourceMetric.scopeMetrics.append(contentsOf: instrumentationScopeMetrics)
+            resourceMetrics.append(resourceMetric)
+        }
+        return resourceMetrics
+    }
+
     public static func toProtoResourceMetrics(metricDataList: [Metric]) -> [Opentelemetry_Proto_Metrics_V1_ResourceMetrics] {
         let resourceAndScopeMap = groupByResouceAndScope(metricDataList: metricDataList)
         var resourceMetrics = [Opentelemetry_Proto_Metrics_V1_ResourceMetrics]()
@@ -15,7 +38,7 @@ public struct MetricsAdapter {
             var instrumentationScopeMetrics = [Opentelemetry_Proto_Metrics_V1_ScopeMetrics]()
             resMap.value.forEach { instScope in
                 var protoInst =
-                Opentelemetry_Proto_Metrics_V1_ScopeMetrics()
+                    Opentelemetry_Proto_Metrics_V1_ScopeMetrics()
                 protoInst.scope =
                     CommonAdapter.toProtoInstrumentationScope(instrumentationScopeInfo: instScope.key)
                 instScope.value.forEach {
@@ -32,6 +55,17 @@ public struct MetricsAdapter {
         return resourceMetrics
     }
 
+    private static func groupByResouceAndScope(stableMetricData: [StableMetricData]) -> [Resource: [InstrumentationScopeInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]] {
+        var results = [Resource: [InstrumentationScopeInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]]()
+
+        stableMetricData.forEach {
+            if let metric = toProtoMetric(stableMetric: $0) {
+                results[$0.resource, default: [InstrumentationScopeInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]()][$0.instrumentationScopeInfo, default: [Opentelemetry_Proto_Metrics_V1_Metric]()].append(metric)
+            }
+        }
+        return results
+    }
+
     private static func groupByResouceAndScope(metricDataList: [Metric]) -> [Resource: [InstrumentationScopeInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]] {
         var results = [Resource: [InstrumentationScopeInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]]()
 
@@ -43,6 +77,151 @@ public struct MetricsAdapter {
         }
 
         return results
+    }
+
+    public static func toProtoMetric(stableMetric: StableMetricData) -> Opentelemetry_Proto_Metrics_V1_Metric? {
+        var protoMetric = Opentelemetry_Proto_Metrics_V1_Metric()
+        protoMetric.name = stableMetric.name
+        protoMetric.unit = stableMetric.unit
+        protoMetric.description_p = stableMetric.description
+        if stableMetric.data.points.isEmpty { return nil }
+
+        stableMetric.data.points.forEach {
+            switch stableMetric.type {
+            case .LongGauge:
+                guard let gaugeData = $0 as? LongPointData else {
+                    break
+                }
+                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_NumberDataPoint()
+                injectPointData(protoNumberPoint: &protoDataPoint, pointData: gaugeData)
+                protoDataPoint.value = .asInt(Int64(gaugeData.value))
+                protoMetric.gauge.dataPoints.append(protoDataPoint)
+            case .LongSum:
+                guard let gaugeData = $0 as? LongPointData else {
+                    break
+                }
+                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_NumberDataPoint()
+                injectPointData(protoNumberPoint: &protoDataPoint, pointData: gaugeData)
+                protoDataPoint.value = .asInt(Int64(gaugeData.value))
+                protoMetric.sum.aggregationTemporality = .cumulative
+                protoMetric.sum.dataPoints.append(protoDataPoint)
+            case .DoubleGauge:
+                guard let gaugeData = $0 as? DoublePointData else {
+                    break
+                }
+                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_NumberDataPoint()
+                injectPointData(protoNumberPoint: &protoDataPoint, pointData: gaugeData)
+                protoDataPoint.value = .asDouble(gaugeData.value)
+                protoMetric.gauge.dataPoints.append(protoDataPoint)
+            case .DoubleSum:
+                guard let gaugeData = $0 as? DoublePointData else {
+                    break
+                }
+                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_NumberDataPoint()
+                injectPointData(protoNumberPoint: &protoDataPoint, pointData: gaugeData)
+                protoDataPoint.value = .asDouble(gaugeData.value)
+                protoMetric.sum.aggregationTemporality = .cumulative
+                protoMetric.sum.dataPoints.append(protoDataPoint)
+            case .Summary:
+                guard let summaryData = $0 as? SummaryPointData else {
+                    break
+                }
+                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_SummaryDataPoint()
+                injectPointData(protoSummaryPoint: &protoDataPoint, pointData: summaryData)
+                protoDataPoint.sum = summaryData.sum
+                protoDataPoint.count = summaryData.count
+                summaryData.values.forEach {
+                    var quantile = Opentelemetry_Proto_Metrics_V1_SummaryDataPoint.ValueAtQuantile()
+                    quantile.quantile = $0.quantile()
+                    quantile.value = $0.value()
+                    protoDataPoint.quantileValues.append(quantile)
+                }
+                protoMetric.summary.dataPoints.append(protoDataPoint)
+            case .Histogram:
+                guard let histogramData = $0 as? HistogramPointData else {
+                    break
+                }
+                var protoDataPoint = Opentelemetry_Proto_Metrics_V1_HistogramDataPoint()
+                injectPointData(protoHistogramPoint: &protoDataPoint, pointData: histogramData)
+                protoDataPoint.sum = Double(histogramData.sum)
+                protoDataPoint.count = UInt64(histogramData.count)
+                protoDataPoint.explicitBounds = histogramData.boundaries.map { Double($0) }
+                protoDataPoint.bucketCounts = histogramData.counts.map { UInt64($0) }
+                protoMetric.histogram.aggregationTemporality = .cumulative
+                protoMetric.histogram.dataPoints.append(protoDataPoint)
+            case .ExponentialHistogram:
+                // TODO: implement
+                break
+            }
+        }
+        return protoMetric
+    }
+
+    static func injectPointData(protoHistogramPoint protoPoint: inout Opentelemetry_Proto_Metrics_V1_HistogramDataPoint, pointData: PointData) {
+        protoPoint.timeUnixNano = pointData.endEpochNanos
+        protoPoint.startTimeUnixNano = pointData.startEpochNanos
+
+        pointData.attributes.forEach {
+            protoPoint.attributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
+        }
+
+        pointData.exemplars.forEach {
+            var protoExemplar = Opentelemetry_Proto_Metrics_V1_Exemplar()
+            protoExemplar.timeUnixNano = $0.epochNanos
+
+            $0.filteredAttributes.forEach {
+                protoExemplar.filteredAttributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
+            }
+            if let spanContext = $0.spanContext {
+                protoExemplar.spanID = TraceProtoUtils.toProtoSpanId(spanId: spanContext.spanId)
+                protoExemplar.traceID = TraceProtoUtils.toProtoTraceId(traceId: spanContext.traceId)
+            }
+        }
+    }
+
+    static func injectPointData(protoSummaryPoint protoPoint: inout Opentelemetry_Proto_Metrics_V1_SummaryDataPoint, pointData: PointData) {
+        protoPoint.timeUnixNano = pointData.endEpochNanos
+        protoPoint.startTimeUnixNano = pointData.startEpochNanos
+
+        pointData.attributes.forEach {
+            protoPoint.attributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
+        }
+
+        pointData.exemplars.forEach {
+            var protoExemplar = Opentelemetry_Proto_Metrics_V1_Exemplar()
+            protoExemplar.timeUnixNano = $0.epochNanos
+
+            $0.filteredAttributes.forEach {
+                protoExemplar.filteredAttributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
+            }
+            if let spanContext = $0.spanContext {
+                protoExemplar.spanID = TraceProtoUtils.toProtoSpanId(spanId: spanContext.spanId)
+                protoExemplar.traceID = TraceProtoUtils.toProtoTraceId(traceId: spanContext.traceId)
+            }
+        }
+    }
+
+    static func injectPointData(protoNumberPoint protoPoint: inout Opentelemetry_Proto_Metrics_V1_NumberDataPoint, pointData: PointData) {
+        protoPoint.timeUnixNano = pointData.endEpochNanos
+        protoPoint.startTimeUnixNano = pointData.startEpochNanos
+
+        pointData.attributes.forEach {
+            protoPoint.attributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
+        }
+
+        pointData.exemplars.forEach {
+            var protoExemplar = Opentelemetry_Proto_Metrics_V1_Exemplar()
+            protoExemplar.timeUnixNano = $0.epochNanos
+
+            $0.filteredAttributes.forEach {
+                protoExemplar.filteredAttributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
+            }
+            if let spanContext = $0.spanContext {
+                protoExemplar.spanID = TraceProtoUtils.toProtoSpanId(spanId: spanContext.spanId)
+                protoExemplar.traceID = TraceProtoUtils.toProtoTraceId(traceId: spanContext.traceId)
+            }
+            protoPoint.exemplars.append(protoExemplar)
+        }
     }
 
     public static func toProtoMetric(metric: Metric) -> Opentelemetry_Proto_Metrics_V1_Metric? {
@@ -179,14 +358,14 @@ public struct MetricsAdapter {
                 protoDataPoint.timeUnixNano = histogramData.timestamp.timeIntervalSince1970.toNanoseconds
                 protoDataPoint.explicitBounds = histogramData.buckets.boundaries.map { Double($0) }
                 protoDataPoint.bucketCounts = histogramData.buckets.counts.map { UInt64($0) }
-                
+
                 histogramData.labels.forEach {
                     var kvp = Opentelemetry_Proto_Common_V1_KeyValue()
                     kvp.key = $0.key
                     kvp.value.stringValue = $0.value
                     protoDataPoint.attributes.append(kvp)
                 }
-                
+
                 protoMetric.histogram.aggregationTemporality = .cumulative
                 protoMetric.histogram.dataPoints.append(protoDataPoint)
             case .doubleHistogram:
@@ -200,14 +379,14 @@ public struct MetricsAdapter {
                 protoDataPoint.timeUnixNano = histogramData.timestamp.timeIntervalSince1970.toNanoseconds
                 protoDataPoint.explicitBounds = histogramData.buckets.boundaries.map { Double($0) }
                 protoDataPoint.bucketCounts = histogramData.buckets.counts.map { UInt64($0) }
-                
+
                 histogramData.labels.forEach {
                     var kvp = Opentelemetry_Proto_Common_V1_KeyValue()
                     kvp.key = $0.key
                     kvp.value.stringValue = $0.value
                     protoDataPoint.attributes.append(kvp)
                 }
-                
+
                 protoMetric.histogram.aggregationTemporality = .cumulative
                 protoMetric.histogram.dataPoints.append(protoDataPoint)
             }
