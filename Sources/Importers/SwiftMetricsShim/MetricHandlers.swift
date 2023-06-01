@@ -13,7 +13,7 @@ class SwiftCounterMetric: CounterHandler, SwiftMetric {
     let counter: AnyCounterMetric<Int>
     let labels: [String: String]
     
-    required init(name: String, labels: [String: String], meter: Meter) {
+    required init(name: String, labels: [String: String], meter: OpenTelemetryApi.Meter) {
         metricName = name
         counter = meter.createIntCounter(name: name, monotonic: true)
         self.labels = labels
@@ -36,7 +36,7 @@ class SwiftGaugeMetric: RecorderHandler, SwiftMetric {
     let counter: AnyCounterMetric<Double>
     let labels: [String: String]
     
-    required init(name: String, labels: [String: String], meter: Meter) {
+    required init(name: String, labels: [String: String], meter: OpenTelemetryApi.Meter) {
         metricName = name
         counter = meter.createDoubleCounter(name: name, monotonic: false)
         self.labels = labels
@@ -59,7 +59,7 @@ class SwiftHistogramMetric: RecorderHandler, SwiftMetric {
     let measure: AnyMeasureMetric<Double>
     let labels: [String: String]
     
-    required init(name: String, labels: [String: String], meter: Meter) {
+    required init(name: String, labels: [String: String], meter: OpenTelemetryApi.Meter) {
         metricName = name
         measure = meter.createDoubleMeasure(name: name)
         self.labels = labels
@@ -82,7 +82,7 @@ class SwiftSummaryMetric: TimerHandler, SwiftMetric {
     let measure: AnyMeasureMetric<Double>
     let labels: [String: String]
     
-    required init(name: String, labels: [String: String], meter: Meter) {
+    required init(name: String, labels: [String: String], meter: OpenTelemetryApi.Meter) {
         metricName = name
         measure = meter.createDoubleMeasure(name: name)
         self.labels = labels
@@ -97,7 +97,7 @@ class SwiftSummaryMetric: TimerHandler, SwiftMetric {
 protocol SwiftMetric {
     var metricName: String { get }
     var metricType: MetricType { get }
-    init(name: String, labels: [String: String], meter: Meter)
+    init(name: String, labels: [String: String], meter: OpenTelemetryApi.Meter)
 }
 
 enum MetricType: String {
