@@ -213,6 +213,10 @@ let package = Package(
             exclude: ["README.md"]
         ),
         .executableTarget(
+          name: "LogsSample",
+          dependencies: ["OpenTelemetrySdk", "OpenTelemetryProtocolExporterGrpc", .product(name: "GRPC", package: "grpc-swift")],
+          path: "Examples/Logs Sample"),
+        .executableTarget(
             name: "NetworkSample",
             dependencies: ["URLSessionInstrumentation", "StdoutExporter"],
             path: "Examples/Network Sample",
