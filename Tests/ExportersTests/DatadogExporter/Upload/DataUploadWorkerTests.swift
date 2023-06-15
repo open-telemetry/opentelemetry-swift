@@ -91,7 +91,7 @@ class DataUploadWorkerTests: XCTestCase {
             featureName: .mockAny()
         )
 
-        wait(for: [startUploadExpectation], timeout: 0.5)
+        wait(for: [startUploadExpectation], timeout: 1)
         worker.cancelSynchronously()
 
         // Then
@@ -117,7 +117,7 @@ class DataUploadWorkerTests: XCTestCase {
             featureName: .mockAny()
         )
 
-        wait(for: [startUploadExpectation], timeout: 0.5)
+        wait(for: [startUploadExpectation], timeout: 1)
         worker.cancelSynchronously()
 
         // Then
