@@ -65,7 +65,7 @@ public class AsynchronousMetricStorage: MetricStorage {
     public func collect(resource: Resource, scope: InstrumentationScopeInfo, startEpochNanos: UInt64, epochNanos: UInt64) -> StableMetricData {
         var result: [[String: AttributeValue]: PointData]
         if aggregationTemporality == .delta {
-            var points = self.points
+            let points = self.points
             var lastPoints = self.lastPoints
             lastPoints = lastPoints.filter { element in
                 points[element.key] == nil // remove if points does not contain key
