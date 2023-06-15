@@ -37,10 +37,9 @@ class DataUploadWorkerTests: XCTestCase {
     // MARK: - Data Uploads
 
     func testItUploadsAllData() throws {
-#if os(watchOS)
+        #if os(watchOS)
         throw XCTSkip("Implementation needs to be updated for watchOS to make this test pass")
-#endif
-
+        #else
         let server = ServerMock(delivery: .success(response: .mockResponseWith(statusCode: 200)))
         let dataUploader = DataUploader(
             httpClient: HTTPClient(session: server.getInterceptedURLSession()),
@@ -70,6 +69,7 @@ class DataUploadWorkerTests: XCTestCase {
         worker.cancelSynchronously()
 
         XCTAssertEqual(try temporaryDirectory.files().count, 0)
+        #endif
     }
 
     func testGivenDataToUpload_whenUploadFinishesAndDoesNotNeedToBeRetried_thenDataIsDeleted() {
@@ -159,10 +159,9 @@ class DataUploadWorkerTests: XCTestCase {
     }
 
     func testWhenBatchFails_thenIntervalIncreases() throws {
-#if os(watchOS)
+        #if os(watchOS)
         throw XCTSkip("Implementation needs to be updated for watchOS to make this test pass")
-#endif
-
+        #else
         let delayChangeExpectation = expectation(description: "Upload delay is increased")
         let mockDelay = MockDelay { command in
             if case .increase = command {
@@ -192,13 +191,13 @@ class DataUploadWorkerTests: XCTestCase {
         server.waitFor(requestsCompletion: 1)
         waitForExpectations(timeout: 1, handler: nil)
         worker.cancelSynchronously()
+        #endif
     }
 
     func testWhenBatchSucceeds_thenIntervalDecreases() throws {
-#if os(watchOS)
+        #if os(watchOS)
         throw XCTSkip("Implementation needs to be updated for watchOS to make this test pass")
-#endif
-
+        #else
         let delayChangeExpectation = expectation(description: "Upload delay is decreased")
         let mockDelay = MockDelay { command in
             if case .decrease = command {
@@ -228,6 +227,7 @@ class DataUploadWorkerTests: XCTestCase {
         server.waitFor(requestsCompletion: 1)
         waitForExpectations(timeout: 2, handler: nil)
         worker.cancelSynchronously()
+        #endif
     }
 
     // MARK: - Tearing Down
@@ -257,10 +257,9 @@ class DataUploadWorkerTests: XCTestCase {
     }
 
     func testItFlushesAllData() throws {
-#if os(watchOS)
+        #if os(watchOS)
         throw XCTSkip("Implementation needs to be updated for watchOS to make this test pass")
-#endif
-
+        #else
         let server = ServerMock(delivery: .success(response: .mockResponseWith(statusCode: 200)))
         let dataUploader = DataUploader(
             httpClient: HTTPClient(session: server.getInterceptedURLSession()),
@@ -292,6 +291,7 @@ class DataUploadWorkerTests: XCTestCase {
         XCTAssertTrue(recordedRequests.contains { $0.httpBody == #"[{"k3":"v3"}]"#.utf8Data })
 
         worker.cancelSynchronously()
+        #endif
     }
 }
 

@@ -196,9 +196,8 @@ class URLSessionInstrumentationTests: XCTestCase {
 
     public func testConfigurationCallbacksCalledWhenForbidden() throws {
         #if os(watchOS)
-            throw XCTSkip("Implementation needs to be updated for watchOS to make this test pass")
-        #endif
-
+        throw XCTSkip("Implementation needs to be updated for watchOS to make this test pass")
+        #else
         let request = URLRequest(url: URL(string: "http://localhost:33333/forbidden")!)
         let task = URLSession.shared.dataTask(with: request) { data, _, _ in
             if let data = data {
@@ -218,6 +217,7 @@ class URLSessionInstrumentationTests: XCTestCase {
         XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
         XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
         XCTAssertFalse(URLSessionInstrumentationTests.checker.receivedErrorCalled)
+        #endif
     }
 
     public func testConfigurationCallbacksCalledWhenError() {
@@ -411,8 +411,8 @@ class URLSessionInstrumentationTests: XCTestCase {
         @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
         public func testConfigurationCallbacksCalledWhenForbiddenAsync() async throws {
             #if os(watchOS)
-                throw XCTSkip("Implementation needs to be updated for watchOS to make this test pass")
-            #endif
+            throw XCTSkip("Implementation needs to be updated for watchOS to make this test pass")
+            #else
             let request = URLRequest(url: URL(string: "http://localhost:33333/forbidden")!)
             let (data, _) = try await URLSession.shared.data(for: request)
             let string = String(decoding: data, as: UTF8.self)
@@ -425,6 +425,7 @@ class URLSessionInstrumentationTests: XCTestCase {
             XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
             XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
             XCTAssertFalse(URLSessionInstrumentationTests.checker.receivedErrorCalled)
+            #endif
         }
 
         @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)

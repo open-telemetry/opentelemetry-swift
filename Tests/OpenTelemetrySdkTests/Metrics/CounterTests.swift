@@ -130,10 +130,9 @@ final class CounterTests: XCTestCase {
     }
 
     public func testIntCounterBoundInstrumentsStatusUpdatedCorrectlyMultiThread() throws {
-#if os(watchOS)
+        #if os(watchOS)
         throw XCTSkip("Test is flaky on watchOS")
-#endif
-
+        #else
         let testProcessor = TestMetricProcessor()
         let meter = MeterProviderSdk(metricProcessor: testProcessor, metricExporter: NoopMetricExporter()).get(instrumentationName: "scope1") as! MeterSdk
         let testCounter = meter.createIntCounter(name: "testCounter").internalCounter as! CounterMetricSdk<Int>
@@ -179,6 +178,7 @@ final class CounterTests: XCTestCase {
         }
         // 610 = 110 from initial update, 500 from the multi-thread test case.
         XCTAssertEqual(610, sum)
+        #endif
     }
 
     public func testDoubleCounterBoundInstrumentsStatusUpdatedCorrectlyMultiThread() {
