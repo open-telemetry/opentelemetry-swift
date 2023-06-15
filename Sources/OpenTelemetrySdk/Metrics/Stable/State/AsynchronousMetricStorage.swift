@@ -42,7 +42,7 @@ public class AsynchronousMetricStorage: MetricStorage {
         let newMeasurement = measurement.hasDoubleValue ? Measurement.doubleMeasurement(startEpochNano: start, endEpochNano: measurement.epochNano, value: measurement.doubleValue, attributes: processedAttributes) : Measurement.longMeasurement(startEpochNano: start, endEpochNano: measurement.epochNano, value: measurement.longValue, attributes: processedAttributes)
         do {
             try recordPoint(point: aggregator.toPoint(measurement: newMeasurement))
-        } catch let HistogramAggregatorError.unsupportedOperation(error) {
+        } catch HistogramAggregatorError.unsupportedOperation {
             // TODO: log error
         } catch {
             // TODO: log default error

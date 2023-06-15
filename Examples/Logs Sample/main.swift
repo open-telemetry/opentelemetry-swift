@@ -18,7 +18,7 @@ func configure() {
       eventLoopGroup: MultiThreadedEventLoopGroup(numberOfThreads: 1))
 
       
-  OtlpLogExporter(channel: ClientConnection(configuration: configuration))
+  _ = OtlpLogExporter(channel: ClientConnection(configuration: configuration))
   
       OpenTelemetry.registerLoggerProvider(loggerProvider: LoggerProviderBuilder().with(processors: [
         BatchLogRecordProcessor(logRecordExporter:OtlpLogExporter(channel: ClientConnection(configuration: configuration)))]).build())
