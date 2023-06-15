@@ -147,7 +147,7 @@ class URLSessionLogger {
         }
         instrumentation.configuration.injectCustomHeaders?(&request, span)
         var instrumentedRequest = request
-        objc_setAssociatedObject(instrumentedRequest, &URLSessionInstrumentation.instrumentedKey, true, .OBJC_ASSOCIATION_COPY_NONATOMIC)
+        objc_setAssociatedObject(instrumentedRequest, URLSessionInstrumentation.instrumentedKey, true, .OBJC_ASSOCIATION_COPY_NONATOMIC)
         var traceHeaders = tracePropagationHTTPHeaders(span: span, textMapPropagator: OpenTelemetry.instance.propagators.textMapPropagator)
         if let originalHeaders = request.allHTTPHeaderFields {
             traceHeaders.merge(originalHeaders) { _, new in new }
