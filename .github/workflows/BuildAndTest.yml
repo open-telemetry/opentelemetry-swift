@@ -4,44 +4,55 @@ on: [push, pull_request, workflow_dispatch]
 
 jobs:
   macOS:
-    runs-on: macOS-latest
+    strategy:
+      matrix:
+        swift-version: [5.2, 5.6, 5.8]
+        include:
+          - swift-version: 5.2
+            xcode-version: 11.7
+            macos-version: 11
+          - swift-version: 5.6
+            xcode-version: 13.3
+            macos-version: 12
+          - swift-version: 5.8
+            xcode-version: 14.3
+            macos-version: 13
+    name: macOS ${{ matrix.macos-version }} / Swift ${{ matrix.swift-version }} / Xcode ${{ matrix.xcode-version }}
+    runs-on: macOS-${{ matrix.macos-version }}
     steps:
-    - uses: actions/checkout@v2
-    - name: Build and Test for macOS
-      run: swift test --enable-code-coverage
-    - name: Upload Code coverage
-      run: |
-        curl -Os https://uploader.codecov.io/latest/macos/codecov
-        chmod +x codecov
-        xcrun llvm-cov export -ignore-filename-regex="pb\.swift|grpc\.swift" -format="lcov" .build/debug/opentelemetry-swiftPackageTests.xctest/Contents/MacOS/opentelemetry-swiftPackageTests -instr-profile .build/debug/codecov/default.profdata > .build/debug/codecov/coverage_report.lcov
-        ./codecov -f .build/debug/codecov/coverage_report.lcov
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ matrix.xcode-version }}
+      - uses: actions/checkout@v2
+      - name: Build and test for macOS
+        run: swift test --enable-code-coverage
   iOS:
     runs-on: macOS-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Install Homebrew kegs
-      run: make setup-brew
-    - name: Build for iOS
-      run: make build-for-testing-ios
-    - name: Test for iOS
-      run: make test-without-building-ios
+      - uses: actions/checkout@v2
+      - name: Install Homebrew kegs
+        run: make setup-brew
+      - name: Build for iOS
+        run: make build-for-testing-ios
+      - name: Test for iOS
+        run: make test-without-building-ios
   tvOS:
     runs-on: macOS-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Install Homebrew kegs
-      run: make setup-brew
-    - name: Build for tvOS
-      run: make build-for-testing-tvos
-    - name: Test for tvOS
-      run: make test-without-building-tvos
+      - uses: actions/checkout@v2
+      - name: Install Homebrew kegs
+        run: make setup-brew
+      - name: Build for tvOS
+        run: make build-for-testing-tvos
+      - name: Test for tvOS
+        run: make test-without-building-tvos
   watchOS:
     runs-on: macOS-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Install Homebrew kegs
-      run: make setup-brew
-    - name: Build for watchOS
-      run: make build-for-testing-watchos
-    - name: Test for watchOS
-      run: make test-without-building-watchos
+      - uses: actions/checkout@v2
+      - name: Install Homebrew kegs
+        run: make setup-brew
+      - name: Build for watchOS
+        run: make build-for-testing-watchos
+      - name: Test for watchOS
+        run: make test-without-building-watchos
