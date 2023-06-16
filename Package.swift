@@ -193,7 +193,7 @@ let package = Package(
                 path: "Examples/Datadog Sample",
                 exclude: ["README.md"]),
         .target(name: "StableMetricSample",
-                dependencies: ["OpenTelemetrySdk", "OpenTelemetryApi", "OpenTelemetryProtocolExporter", .product(name: "GRPC", package:  "grpc-swift")],
+                dependencies: ["OpenTelemetrySdk", "OpenTelemetryApi", "OpenTelemetryProtocolExporterGrpc", .product(name: "GRPC", package:  "grpc-swift")],
                 path: "Examples/Stable Metric Sample",
                 exclude: ["README.md"]),
         .target(name: "NetworkSample",
