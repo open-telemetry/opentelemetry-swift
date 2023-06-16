@@ -9,6 +9,7 @@ import XCTest
 class EncodableValueTests: XCTestCase {
     func testItEncodesDifferentEncodableValues() throws {
         let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
 
         XCTAssertEqual(
             try encoder.encode(EncodingContainer(EncodableValue("string"))).utf8String,
@@ -42,29 +43,30 @@ class EncodableValueTests: XCTestCase {
 class JSONStringEncodableValueTests: XCTestCase {
     func testItEncodesDifferentEncodableValuesAsString() throws {
         let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
 
         XCTAssertEqual(
             try encoder.encode(
-                EncodingContainer(JSONStringEncodableValue("string", encodedUsing: JSONEncoder()))
+                EncodingContainer(JSONStringEncodableValue("string", encodedUsing: encoder))
             ).utf8String,
             #"{"value":"string"}"#
         )
         XCTAssertEqual(
             try encoder.encode(
-                EncodingContainer(JSONStringEncodableValue(123, encodedUsing: JSONEncoder()))
+                EncodingContainer(JSONStringEncodableValue(123, encodedUsing: encoder))
             ).utf8String,
             #"{"value":"123"}"#
         )
         XCTAssertEqual(
             try encoder.encode(
-                EncodingContainer(JSONStringEncodableValue(["a", "b", "c"], encodedUsing: JSONEncoder()))
+                EncodingContainer(JSONStringEncodableValue(["a", "b", "c"], encodedUsing: encoder))
             ).utf8String,
             #"{"value":"[\"a\",\"b\",\"c\"]"}"#
         )
         XCTAssertEqual(
             try encoder.encode(
                 EncodingContainer(
-                    JSONStringEncodableValue(URL(string: "https://example.com/image.png")!, encodedUsing: JSONEncoder())
+                    JSONStringEncodableValue(URL(string: "https://example.com/image.png")!, encodedUsing: encoder)
                 )
             ).utf8String,
             #"{"value":"https:\/\/example.com\/image.png"}"#
@@ -75,7 +77,7 @@ class JSONStringEncodableValueTests: XCTestCase {
         }
         XCTAssertEqual(
             try encoder.encode(
-                EncodingContainer(JSONStringEncodableValue(Foo(), encodedUsing: JSONEncoder()))
+                EncodingContainer(JSONStringEncodableValue(Foo(), encodedUsing: encoder))
             ).utf8String,
             #"{"value":"{\"bar\":\"bar_\",\"bizz\":\"bizz_\"}"}"#
         )
