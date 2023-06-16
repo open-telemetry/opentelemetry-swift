@@ -6,36 +6,66 @@ XCODEBUILD_OPTIONS_IOS=\
 	-scheme $(PROJECT_NAME) \
 	-workspace .
 
+XCODEBUILD_OPTIONS_TVOS=\
+	-configuration Debug \
+	-destination platform='tvOS Simulator,name=Apple TV 4K (3rd generation),OS=latest' \
+	-scheme $(PROJECT_NAME) \
+	-workspace .
+
 XCODEBUILD_OPTIONS_WATCHOS=\
 	-configuration Debug \
 	-destination platform='watchOS Simulator,name=Apple Watch Series 8 (45mm),OS=latest' \
 	-scheme $(PROJECT_NAME) \
 	-workspace .
 
-.PHONY: setup_brew
-setup_brew:
+.PHONY: setup-brew
+setup-brew:
 	brew update && brew install xcbeautify
 
-.PHONY: build_ios
-build_ios:
+.PHONY: build-ios
+build-ios:
 	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_IOS) build | xcbeautify
 
-.PHONY: build_for_testing_ios
-build_for_testing_ios:
+.PHONY: build-tvos
+build-tvos:
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_TVOS) build | xcbeautify
+
+.PHONY: build-watchos
+build-watchos:
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_IOS) build | xcbeautify
+
+.PHONY: build-for-testing-ios
+build-for-testing-ios:
 	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_IOS) build-for-testing | xcbeautify
 
-.PHONY: build_for_testing_watchos
-build_for_testing_watchos:
+.PHONY: build-for-testing-tvos
+build-for-testing-tvos:
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_TVOS) build-for-testing | xcbeautify
+
+.PHONY: build-for-testing-watchos
+build-for-testing-watchos:
 	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_WATCHOS) build-for-testing | xcbeautify
 
-.PHONY: test_ios
-test_ios:
+.PHONY: test-ios
+test-ios:
 	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_IOS) test | xcbeautify
 
-.PHONY: test_without_building_ios
-test_without_building_ios:
+.PHONY: test-tvos
+test-tvos:
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_TVOS) test | xcbeautify
+
+.PHONY: test-watchos
+test-watchos:
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_WATCHOS) test | xcbeautify
+
+.PHONY: test-without-building-ios
+test-without-building-ios:
 	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_IOS) test-without-building | xcbeautify
 
-.PHONY: test_without_building_watchos
-test_without_building_watchos:
+.PHONY: test-without-building-tvos
+test-without-building-tvos:
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_TVOS) test-without-building | xcbeautify
+
+.PHONY: test-without-building-watchos
+test-without-building-watchos:
 	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_WATCHOS) test-without-building | xcbeautify

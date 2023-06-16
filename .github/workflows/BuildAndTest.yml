@@ -20,18 +20,28 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install Homebrew kegs
-      run: make setup_brew
+      run: make setup-brew
     - name: Build for iOS
-      run: make build_for_testing_ios
+      run: make build-for-testing-ios
     - name: Test for iOS
-      run: make test_without_building_ios
+      run: make test-without-building-ios
+  tvOS:
+    runs-on: macOS-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Homebrew kegs
+      run: make setup-brew
+    - name: Build for tvOS
+      run: make build-for-testing-tvos
+    - name: Test for tvOS
+      run: make test-without-building-tvos
   watchOS:
     runs-on: macOS-latest
     steps:
     - uses: actions/checkout@v2
     - name: Install Homebrew kegs
-      run: make setup_brew
+      run: make setup-brew
     - name: Build for watchOS
-      run: make build_for_testing_watchos
+      run: make build-for-testing-watchos
     - name: Test for watchOS
-      run: make test_without_building_watchos
+      run: make test-without-building-watchos
