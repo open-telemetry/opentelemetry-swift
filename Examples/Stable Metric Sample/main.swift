@@ -7,7 +7,7 @@
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
-import OpenTelemetryProtocolExporter
+import OpenTelemetryProtocolExporterGrpc
 import GRPC
 import NIO
 import NIOHPACK
