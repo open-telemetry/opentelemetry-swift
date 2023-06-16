@@ -549,21 +549,26 @@ public class URLSessionInstrumentation {
 
     private func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
         let taskId = self.idKeyForTask(task)
-        if (self.requestMap[taskId]?.request) != nil {
-            /// Code for instrumenting colletion should be written here
-            var requestState: NetworkRequestState?
-            queue.sync {
-                requestState = requestMap[taskId]
-                if requestState != nil {
-                    requestMap[taskId] = nil
-                }
+
+        var requestState: NetworkRequestState?
+        queue.sync {
+            requestState = requestMap[taskId]
+
+            if requestState?.request != nil {
+                requestMap[taskId] = nil
             }
-            if let error = task.error {
-                let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
-                URLSessionLogger.logError(error, dataOrFile: requestState?.dataProcessed, statusCode: status, instrumentation: self, sessionTaskId: taskId)
-            } else if let response = task.response {
-                URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed, instrumentation: self, sessionTaskId: taskId)
-            }
+        }
+
+        guard requestState?.request != nil else {
+            return
+        }
+
+        /// Code for instrumenting colletion should be written here
+        if let error = task.error {
+            let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
+            URLSessionLogger.logError(error, dataOrFile: requestState?.dataProcessed, statusCode: status, instrumentation: self, sessionTaskId: taskId)
+        } else if let response = task.response {
+            URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed, instrumentation: self, sessionTaskId: taskId)
         }
     }
 
