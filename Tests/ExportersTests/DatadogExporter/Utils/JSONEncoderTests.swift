@@ -22,7 +22,7 @@ class JSONEncoderTests: XCTestCase {
             EncodingContainer(URL(string: "https://example.com/foo")!)
         )
 
-        if #available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
+        if #available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
             XCTAssertEqual(encodedURL.utf8String, #"{"value":"https://example.com/foo"}"#)
         } else {
             XCTAssertEqual(encodedURL.utf8String, #"{"value":"https:\/\/example.com\/foo"}"#)
