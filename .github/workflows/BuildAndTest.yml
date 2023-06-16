@@ -5,6 +5,7 @@ on: [push, pull_request, workflow_dispatch]
 jobs:
   macOS:
     strategy:
+      fail-fast: false
       matrix:
         swift-version: [5.2, 5.6, 5.8]
         include:
