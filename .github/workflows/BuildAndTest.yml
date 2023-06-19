@@ -24,6 +24,7 @@ jobs:
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: ${{ matrix.xcode-version }}
+      - run: swift --version
       - uses: actions/checkout@v2
       - name: Build and test for macOS
         run: swift test --enable-code-coverage
