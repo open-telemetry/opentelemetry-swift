@@ -583,6 +583,7 @@ public class URLSessionInstrumentation {
             }
 
             if InstrumentationUtils.usesUndocumentedAsyncAwaitMethods {
+                #if swift(>=5.7)
                 if #available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *) {
                     guard Task.basePriority != nil else {
                         return
@@ -596,6 +597,7 @@ public class URLSessionInstrumentation {
                         task.delegate = FakeDelegate()
                     }
                 }
+                #endif
             }
         }
     }
