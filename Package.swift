@@ -38,10 +38,10 @@ let package = Package(
         .package(name: "Thrift", url: "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1"),
         .package(name: "swift-nio", url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
         .package(name: "grpc-swift", url: "https://github.com/grpc/grpc-swift.git", from: "1.0.0"),
-        .package(name: "swift-protobuf", url: "https://github.com/apple/swift-protobuf.git", from: "1.20.2"),
+        .package(name: "SwiftProtobuf", url: "https://github.com/apple/swift-protobuf.git", from: "1.20.2"),
         .package(name: "swift-log", url: "https://github.com/apple/swift-log.git", from: "1.4.4"),
         .package(name: "swift-metrics", url: "https://github.com/apple/swift-metrics.git", from: "2.1.1"),
-        .package(name: "Reachability.swift", url: "https://github.com/ashleymills/Reachability.swift", from: "5.1.0")
+        .package(name: "Reachability", url: "https://github.com/ashleymills/Reachability.swift", from: "5.1.0")
     ],
     targets: [
         .target(name: "OpenTelemetryApi",
@@ -59,7 +59,7 @@ let package = Package(
         .target(name: "NetworkStatus",
                 dependencies: [
                     "OpenTelemetryApi",
-                    .product(name: "Reachability", package: "Reachability.swift")
+                    "Reachability"
                 ],
                 path: "Sources/Instrumentation/NetworkStatus",
                 linkerSettings: [.linkedFramework("CoreTelephony", .when(platforms: [.iOS], configuration: nil))]),
@@ -92,7 +92,7 @@ let package = Package(
         .target(name: "OpenTelemetryProtocolExporterCommon",
                 dependencies: ["OpenTelemetrySdk",
                                .product(name: "Logging", package: "swift-log"),
-                               .product(name: "SwiftProtobuf", package: "swift-protobuf")],
+                               "SwiftProtobuf"],
                 path: "Sources/Exporters/OpenTelemetryProtocolCommon"),
         .target(name: "OpenTelemetryProtocolExporterHttp",
                 dependencies: ["OpenTelemetrySdk",
@@ -117,7 +117,7 @@ let package = Package(
                 dependencies: ["OpenTelemetrySdk"],
                 path: "Sources/Exporters/Persistence"),
         .testTarget(name: "NetworkStatusTests",
-                    dependencies: ["NetworkStatus", .product(name: "Reachability", package: "Reachability.swift")],
+                    dependencies: ["NetworkStatus", "Reachability"],
                     path: "Tests/InstrumentationTests/NetworkStatusTests"),
         .testTarget(name: "OpenTelemetryApiTests",
                     dependencies: ["OpenTelemetryApi"],
