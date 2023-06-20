@@ -36,3 +36,31 @@ class DefaultLoggerProviderTests : XCTestCase {
     }
     
 }
+
+#if swift(<5.4)
+// Available from Xcode 12.5+ (Swift 5.4)
+// https://xcodereleases.com
+private extension XCTestCase {
+    // https://developer.apple.com/documentation/xctest/3727243-xctassertidentical
+    func XCTAssertIdentical(
+        _ expression1: @autoclosure () throws -> AnyObject?,
+        _ expression2: @autoclosure () throws -> AnyObject?,
+        _ message: @autoclosure () -> String = "",
+        file: StaticString = #file,
+        line: UInt = #line
+    ) {
+        XCTAssertTrue(try expression1() === expression2(), message(), file: file, line: line)
+    }
+
+    // https://developer.apple.com/documentation/xctest/3727244-xctassertnotidentical
+    func XCTAssertNotIdentical(
+        _ expression1: @autoclosure () throws -> AnyObject?,
+        _ expression2: @autoclosure () throws -> AnyObject?,
+        _ message: @autoclosure () -> String = "",
+        file: StaticString = #file,
+        line: UInt = #line
+    ) {
+        XCTAssertFalse(try expression1() === expression2(), message(), file: file, line: line)
+    }
+}
+#endif
