@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 
 
-public struct DoubleHistogramMeterBuilderSdk : DoubleHistogramBuilder, InstrumentBuilder {
+public class DoubleHistogramMeterBuilderSdk : DoubleHistogramBuilder, InstrumentBuilder {
     var meterProviderSharedState: MeterProviderSharedState
     
     var meterSharedState: StableMeterSharedState

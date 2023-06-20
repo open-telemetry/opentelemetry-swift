@@ -5,9 +5,9 @@
 
 import Foundation
 
-public protocol DoubleUpDownCounterBuilder {
+public protocol DoubleUpDownCounterBuilder : AnyObject {
     func build() -> DoubleUpDownCounter
-    mutating func buildWithCallback(_ callback: @escaping (ObservableDoubleMeasurement) -> Void) -> ObservableDoubleUpDownCounter
+    func buildWithCallback(_ callback: @escaping (ObservableDoubleMeasurement) -> Void) -> ObservableDoubleUpDownCounter
 
 }
 

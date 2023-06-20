@@ -5,8 +5,6 @@
 
 import Foundation
 
-
-
 public class InstrumentSelectorBuilder {
     var instrumentType : InstrumentType?
     var instrumentName : String = "*"

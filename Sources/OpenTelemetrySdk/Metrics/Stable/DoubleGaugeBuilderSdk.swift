@@ -6,8 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public struct DoubleGaugeBuilderSdk : DoubleGaugeBuilder, InstrumentBuilder {
-
+public class DoubleGaugeBuilderSdk : DoubleGaugeBuilder, InstrumentBuilder {
     
     var meterProviderSharedState: MeterProviderSharedState
     
@@ -34,7 +33,7 @@ public struct DoubleGaugeBuilderSdk : DoubleGaugeBuilder, InstrumentBuilder {
         swapBuilder(LongGaugeBuilderSdk.init)
     }
     
-    mutating public func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableDoubleMeasurement) -> Void) -> OpenTelemetryApi.ObservableDoubleGauge {
+    public func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableDoubleMeasurement) -> Void) -> OpenTelemetryApi.ObservableDoubleGauge {
         registerDoubleAsynchronousInstrument(type: type, updater: callback)
     }
     

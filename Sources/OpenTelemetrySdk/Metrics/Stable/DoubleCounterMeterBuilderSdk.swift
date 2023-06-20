@@ -7,7 +7,8 @@ import Foundation
 import OpenTelemetryApi
 
 public class DoubleCounterMeterBuilderSdk : DoubleCounterBuilder, InstrumentBuilder {
-    var meterSharedState: StableMeterSharedState
+    
+  var meterSharedState: StableMeterSharedState
     
     var meterProviderSharedState: MeterProviderSharedState
         

@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public struct LongHistogramMeterSdk : LongHistogram, Instrument {
+public class LongHistogramMeterSdk : LongHistogram, Instrument {
 
     public var instrumentDescriptor: InstrumentDescriptor
     private var storage : WritableMetricStorage
@@ -16,11 +16,11 @@ public struct LongHistogramMeterSdk : LongHistogram, Instrument {
         self.instrumentDescriptor = descriptor
     }
     
-    public mutating func record(value: Int) {
+    public func record(value: Int) {
         record(value: value, attributes: [String:AttributeValue]())
     }
     
-    public mutating func record(value: Int, attributes: [String : OpenTelemetryApi.AttributeValue]) {
+    public func record(value: Int, attributes: [String : OpenTelemetryApi.AttributeValue]) {
         if value < 0 {
             // todo : log error
             return

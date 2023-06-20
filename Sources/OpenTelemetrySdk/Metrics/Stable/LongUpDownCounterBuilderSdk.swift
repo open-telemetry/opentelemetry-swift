@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-struct LongUpDownCounterBuilderSdk : LongUpDownCounterBuilder, InstrumentBuilder {
+public class LongUpDownCounterBuilderSdk : LongUpDownCounterBuilder, InstrumentBuilder {
     
     var instrumentName: String
     
@@ -28,15 +28,15 @@ struct LongUpDownCounterBuilderSdk : LongUpDownCounterBuilder, InstrumentBuilder
         self.instrumentName = name
     }
     
-    func ofDoubles() -> OpenTelemetryApi.DoubleUpDownCounterBuilder {
+    public func ofDoubles() -> OpenTelemetryApi.DoubleUpDownCounterBuilder {
         swapBuilder(DoubleUpDownCounterBuilderSdk.init)
     }
     
-    func build() -> OpenTelemetryApi.LongUpDownCounter {
+    public func build() -> OpenTelemetryApi.LongUpDownCounter {
         buildSynchronousInstrument(LongUpDownCounterSdk.init)
     }
     
-    mutating func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableLongMeasurement) -> Void) -> OpenTelemetryApi.ObservableLongUpDownCounter {
+    public func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableLongMeasurement) -> Void) -> OpenTelemetryApi.ObservableLongUpDownCounter {
         registerLongAsynchronousInstrument(type: type, updater: callback)
     }
     

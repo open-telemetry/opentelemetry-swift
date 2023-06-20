@@ -5,13 +5,13 @@
 
 import Foundation
 
-public protocol LongCounterBuilder {
+public protocol LongCounterBuilder : AnyObject {
 
     func ofDoubles() -> DoubleCounterBuilder
 
     func build() -> LongCounter
 
-    mutating func buildWithCallback(_ callback: @escaping (ObservableLongMeasurement) -> Void) -> ObservableLongCounter
+    func buildWithCallback(_ callback: @escaping (ObservableLongMeasurement) -> Void) -> ObservableLongCounter
 }
 
 

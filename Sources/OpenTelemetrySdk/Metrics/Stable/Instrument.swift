@@ -7,10 +7,8 @@ import Foundation
 
 
 public protocol Instrument : Equatable {
-    var instrumentDescriptor : InstrumentDescriptor { get }
-    
+    var instrumentDescriptor : InstrumentDescriptor { get }    
 }
-
 
 extension Instrument {
      public static func == (lhs: Self, rhs: Self) -> Bool {
