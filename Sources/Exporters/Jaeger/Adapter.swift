@@ -95,32 +95,35 @@ final class Adapter {
         var vBool: Bool?
         var vLong: Int64?
 
-        switch attrib {
-        case let .string(value):
-            vType = .string
-            vStr = value
-        case let .bool(value):
-            vType = .bool
-            vBool = value
-        case let .int(value):
-            vType = .long
-            vLong = Int64(value)
-        case let .double(value):
-            vType = .double
-            vDouble = value
-        case let .stringArray(value):
-            vType = .string
-            vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
-        case let .boolArray(value):
-            vType = .string
-            vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
-        case let .intArray(value):
-            vType = .string
-            vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
-        case let .doubleArray(value):
-            vType = .string
-            vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
-        }
+      switch attrib {
+      case let .string(value):
+        vType = .string
+        vStr = value
+      case let .bool(value):
+        vType = .bool
+        vBool = value
+      case let .int(value):
+        vType = .long
+        vLong = Int64(value)
+      case let .double(value):
+        vType = .double
+        vDouble = value
+      case let .stringArray(value):
+        vType = .string
+        vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
+      case let .boolArray(value):
+        vType = .string
+        vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
+      case let .intArray(value):
+        vType = .string
+        vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
+      case let .doubleArray(value):
+        vType = .string
+        vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
+      case let .set(value):
+        vType = .string
+        vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
+      }
         return Tag(key: key, vType: vType, vStr: vStr, vDouble: vDouble, vBool: vBool, vLong: vLong, vBinary: nil)
     }
 

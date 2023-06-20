@@ -63,7 +63,11 @@ public class LogRecordBuilderSdk : EventBuilder {
         return self
     }
     
-    
+  public func setData(_ attributes: [String : AttributeValue]) -> Self {
+    self.attributes["event.data"] = AttributeValue(AttributeSet(labels: attributes))
+    return self
+  }
+  
     public func emit() {
         
         

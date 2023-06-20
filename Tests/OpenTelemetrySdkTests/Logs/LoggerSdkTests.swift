@@ -12,17 +12,18 @@ public class LoggerSdkTests : XCTestCase {
     
     public override class func tearDown() {
     }
-    
+  
     func testEventBuilder() {
         let processor = LogRecordProcessorMock()
         let sharedState = LoggerSharedState(resource: Resource(), logLimits: LogLimits(), processors: [processor], clock: MillisClock())
         let logger = LoggerSdk(sharedState: sharedState, instrumentationScope: InstrumentationScopeInfo(name: "test"), eventDomain: "Test")
 
-        logger.eventBuilder(name: "myEvent").emit()
+      logger.eventBuilder(name: "myEvent").setData(["test":AttributeValue("data")]).emit()
 
         XCTAssertTrue(processor.onEmitCalled)
         XCTAssertEqual(processor.onEmitCalledLogRecord?.attributes["event.name"]?.description, "myEvent")
         XCTAssertEqual(processor.onEmitCalledLogRecord?.attributes["event.domain"]?.description, "Test")
+        XCTAssertEqual(processor.onEmitCalledLogRecord?.attributes["event.data"]?.description, "[\"test\": data]")
     }
 
     func testEventBuilderNoDomain() {
@@ -96,8 +97,6 @@ public class LoggerSdkTests : XCTestCase {
         XCTAssertEqual(processor.onEmitCalledLogRecord?.spanContext?.traceId.idLo, 16)
         
         OpenTelemetry.instance.contextProvider.removeContextForSpan(span)
-
-
     }
 
 }

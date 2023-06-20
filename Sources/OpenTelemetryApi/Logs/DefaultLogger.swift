@@ -61,6 +61,10 @@ public class DefaultLogger : Logger {
             return self
         }
 
+      func setData(_ attributes: [String : AttributeValue]) -> Self {
+        return self
+      }
+      
         func emit() {
 
         }

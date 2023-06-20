@@ -44,6 +44,10 @@ public struct CommonAdapter {
                 anyValue.doubleValue = $0
                 return anyValue
             }
+        case let .set(value):
+          keyValue.value.kvlistValue.values = value.labels.map({
+            return toProtoAttribute(key: $0, attributeValue: $1)
+          })
         }
         return keyValue
     }

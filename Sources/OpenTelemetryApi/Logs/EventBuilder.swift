@@ -12,4 +12,5 @@ import Foundation
 /// Obtain an Logger.eventBuilder(name: String), add properties using the stters, and emit
 /// the LogRecord by calling `emit()`
 public protocol EventBuilder : LogRecordBuilder {
+  func setData(_ attributes: [String:AttributeValue]) -> Self 
 }

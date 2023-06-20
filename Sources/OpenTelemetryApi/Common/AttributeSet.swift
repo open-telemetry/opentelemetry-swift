@@ -5,7 +5,7 @@
 
 import Foundation
 
-open class AttributeSet : Hashable {
+open class AttributeSet : Hashable, Codable {
     public private(set) var labels: [String: AttributeValue]
 
     /// Empty LabelSet.
