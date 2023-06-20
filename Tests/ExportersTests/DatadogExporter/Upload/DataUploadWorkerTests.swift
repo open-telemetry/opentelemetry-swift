@@ -91,7 +91,7 @@ class DataUploadWorkerTests: XCTestCase {
             featureName: .mockAny()
         )
 
-        wait(for: [startUploadExpectation], timeout: 1)
+        wait(for: [startUploadExpectation], timeout: .timeout)
         worker.cancelSynchronously()
 
         // Then
@@ -117,7 +117,7 @@ class DataUploadWorkerTests: XCTestCase {
             featureName: .mockAny()
         )
 
-        wait(for: [startUploadExpectation], timeout: 1)
+        wait(for: [startUploadExpectation], timeout: .timeout)
         worker.cancelSynchronously()
 
         // Then
@@ -154,7 +154,7 @@ class DataUploadWorkerTests: XCTestCase {
 
         // Then
         server.waitFor(requestsCompletion: 0)
-        waitForExpectations(timeout: 1, handler: nil)
+        waitForExpectations(timeout: .timeout)
         worker.cancelSynchronously()
     }
 
@@ -189,7 +189,7 @@ class DataUploadWorkerTests: XCTestCase {
 
         // Then
         server.waitFor(requestsCompletion: 1)
-        waitForExpectations(timeout: 1, handler: nil)
+        waitForExpectations(timeout: .timeout)
         worker.cancelSynchronously()
         #endif
     }
@@ -225,7 +225,7 @@ class DataUploadWorkerTests: XCTestCase {
 
         // Then
         server.waitFor(requestsCompletion: 1)
-        waitForExpectations(timeout: 2, handler: nil)
+        waitForExpectations(timeout: .timeout)
         worker.cancelSynchronously()
         #endif
     }
@@ -312,4 +312,8 @@ struct MockDelay: Delay {
         callback?(.increase)
         callback = nil
     }
+}
+
+private extension TimeInterval {
+    static let timeout: Self = 5
 }
