@@ -36,7 +36,7 @@ let package = Package(
     dependencies: [
         .package(name: "Opentracing", url: "https://github.com/undefinedlabs/opentracing-objc", from: "0.5.2"),
         .package(name: "Thrift", url: "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1"),
-        .package(name: "swift-nio", url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
+        .package(name: "swift-nio", url: "https://github.com/apple/swift-nio.git", .exact("2.39.1")),
         .package(name: "grpc-swift", url: "https://github.com/grpc/grpc-swift.git", from: "1.0.0"),
         .package(name: "SwiftProtobuf", url: "https://github.com/apple/swift-protobuf.git", from: "1.20.2"),
         .package(name: "swift-log", url: "https://github.com/apple/swift-log.git", from: "1.4.4"),
