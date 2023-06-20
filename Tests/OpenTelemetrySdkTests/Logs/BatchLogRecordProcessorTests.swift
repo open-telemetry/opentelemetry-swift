@@ -46,6 +46,7 @@ class BatchLogRecordProcessorTests : XCTestCase {
         let processor = BatchLogRecordProcessor(logRecordExporter: waitingExporter,scheduleDelay: 10000,maxQueueSize: maxQueueSize, maxExportBatchSize: maxQueueSize/2)
         let loggerProvider = LoggerProviderBuilder().with(processors: [processor]).build()
         _ = loggerProvider.get(instrumentationScopeName: "BatchLogRecordProcessorTest")
+        #warning("Unfinished test")
     }
     
     func testForceExport() {
