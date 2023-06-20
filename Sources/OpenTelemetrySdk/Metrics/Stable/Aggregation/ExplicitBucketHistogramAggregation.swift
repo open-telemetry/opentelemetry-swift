@@ -16,7 +16,7 @@ public class ExplicitBucketHistogramAggregation: Aggregation {
         self.bucketBoundaries = bucketBoundaries
     }
     
-    public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> any StableAggregator {
+    public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> StableAggregator {
         DoubleExplicitBucketHistogramAggregator(boundaries: bucketBoundaries) {
             FilteredExemplarReservoir(filter: exemplarFilter, reservoir: HistogramExemplarReservoir(clock: MillisClock(), boundaries: self.bucketBoundaries)) // TODO: inject correct clock
         }

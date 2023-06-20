@@ -8,7 +8,7 @@ import Foundation
 public class DefaultAggregation: Aggregation {
     public private(set) static var instance = DefaultAggregation()
     
-    public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> any StableAggregator {
+    public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> StableAggregator {
         resolve(for: descriptor).createAggregator(descriptor: descriptor, exemplarFilter: exemplarFilter)
     }
     
