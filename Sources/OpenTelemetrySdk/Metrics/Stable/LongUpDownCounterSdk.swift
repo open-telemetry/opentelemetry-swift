@@ -15,7 +15,6 @@ public class LongUpDownCounterSdk : LongUpDownCounter, Instrument {
         self.storage = storage
     }
     
-
     public func add(value: Int) {
         add(value: value, attributes: [String: AttributeValue]())
     }

@@ -85,5 +85,4 @@ public class LogRecordBuilderSdk: EventBuilder {
         body: body,
         attributes: attributes.attributes))
   }
-
 }

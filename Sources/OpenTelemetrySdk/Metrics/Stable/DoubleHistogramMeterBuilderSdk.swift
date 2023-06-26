@@ -6,7 +6,6 @@
 import Foundation
 import OpenTelemetryApi
 
-
 public class DoubleHistogramMeterBuilderSdk : DoubleHistogramBuilder, InstrumentBuilder {
     var meterProviderSharedState: MeterProviderSharedState
     
@@ -31,10 +30,6 @@ public class DoubleHistogramMeterBuilderSdk : DoubleHistogramBuilder, Instrument
         self.unit = ""
         self.instrumentName = name
     }
-    
-
-    
-    
 
     public func ofLongs() -> OpenTelemetryApi.LongHistogramBuilder {
         swapBuilder(LongHistogramMeterBuilderSdk.init)
