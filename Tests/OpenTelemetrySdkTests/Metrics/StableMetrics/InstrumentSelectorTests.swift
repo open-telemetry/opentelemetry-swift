@@ -17,7 +17,7 @@ public class InstrumentSelectorTests : XCTestCase {
     XCTAssertNil(defaultInstrumentSelector.meterName)
     XCTAssertNil(defaultInstrumentSelector.meterVersion)
     XCTAssertNil(defaultInstrumentSelector.meterSchemaUrl)
-    XCTAssertEqual("*", defaultInstrumentSelector.instrumentName)
+    XCTAssertEqual(".*", defaultInstrumentSelector.instrumentName)
   }
   
   func testInstrumentSelector() {

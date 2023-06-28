@@ -11,7 +11,7 @@ public class LongCounterSdk : LongCounter, Instrument {
     public var instrumentDescriptor: InstrumentDescriptor
     private var storage : WritableMetricStorage
     
-    init(descriptor : InstrumentDescriptor, storage: inout WritableMetricStorage) {
+    init(descriptor : InstrumentDescriptor, storage: WritableMetricStorage) {
         self.storage = storage
         self.instrumentDescriptor = descriptor
     }
@@ -35,7 +35,7 @@ public struct DoubleCounterSdk : DoubleCounter, Instrument {
     public var instrumentDescriptor: InstrumentDescriptor
     private var storage: WritableMetricStorage
     
-    init(descriptor: InstrumentDescriptor, storage: inout WritableMetricStorage) {
+    init(descriptor: InstrumentDescriptor, storage: WritableMetricStorage) {
         self.storage = storage
         self.instrumentDescriptor = descriptor
     }

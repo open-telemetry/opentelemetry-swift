@@ -13,8 +13,7 @@ class BuilderTests : XCTestCase {
     let meter = meterProvider.meterBuilder(name: "meter").build()
     XCTAssertTrue(type(of:meter) == DefaultStableMeter.self)
     XCTAssertNotNil(meter.counterBuilder(name: "counter").ofDoubles().build())
-    
-    
+    XCTAssertNotNil(meter.counterBuilder(name: "counter").build())
     XCTAssertNotNil(meter.gaugeBuilder(name: "gauge").buildWithCallback({ _ in }))
     XCTAssertNotNil(meter.gaugeBuilder(name: "gauge").ofLongs().buildWithCallback({ _ in }))
     XCTAssertNotNil(meter.histogramBuilder(name: "histogram").build())
@@ -22,5 +21,7 @@ class BuilderTests : XCTestCase {
     XCTAssertNotNil(meter.upDownCounterBuilder(name: "updown").build())
     XCTAssertNotNil(meter.upDownCounterBuilder(name: "updown").ofDoubles().build())
     XCTAssertNotNil(meter.upDownCounterBuilder(name: "updown").buildWithCallback({ _ in }))
+    
+
   }
 }

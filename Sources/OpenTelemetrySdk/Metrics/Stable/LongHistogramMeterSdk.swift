@@ -11,7 +11,7 @@ public class LongHistogramMeterSdk : LongHistogram, Instrument {
     public var instrumentDescriptor: InstrumentDescriptor
     private var storage : WritableMetricStorage
     
-    init(descriptor : InstrumentDescriptor, storage: inout WritableMetricStorage) {
+    init(descriptor : InstrumentDescriptor, storage: WritableMetricStorage) {
         self.storage = storage
         self.instrumentDescriptor = descriptor
     }

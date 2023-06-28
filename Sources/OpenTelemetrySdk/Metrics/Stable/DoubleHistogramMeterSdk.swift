@@ -10,7 +10,7 @@ public class DoubleHistogramMeterSdk : DoubleHistogram, Instrument {
     public var instrumentDescriptor: InstrumentDescriptor
     public var storage : WritableMetricStorage
 
-    init(instrumentDescriptor : InstrumentDescriptor, storage: inout WritableMetricStorage) {
+    init(instrumentDescriptor : InstrumentDescriptor, storage: WritableMetricStorage) {
         self.instrumentDescriptor = instrumentDescriptor
         self.storage = storage
     }
@@ -20,7 +20,7 @@ public class DoubleHistogramMeterSdk : DoubleHistogram, Instrument {
     }
     
     public func record(value: Double, attributes: [String : OpenTelemetryApi.AttributeValue]) {
-        
+       //TODO: implement
     }
         
 }

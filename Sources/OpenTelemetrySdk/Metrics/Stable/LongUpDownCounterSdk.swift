@@ -10,7 +10,7 @@ public class LongUpDownCounterSdk : LongUpDownCounter, Instrument {
     public private(set) var instrumentDescriptor: InstrumentDescriptor
     var storage : WritableMetricStorage
     
-    init(instrumentDescriptor: InstrumentDescriptor, storage: inout WritableMetricStorage){
+    init(instrumentDescriptor: InstrumentDescriptor, storage: WritableMetricStorage){
         self.instrumentDescriptor = instrumentDescriptor
         self.storage = storage
     }

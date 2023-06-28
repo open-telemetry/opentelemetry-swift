@@ -31,6 +31,10 @@ public class StablePeriodicMetricReaderSdk : StableMetricReader {
         }
     }
     
+  deinit {
+    _ = shutdown()
+    scheduleTimer.activate()
+  }
     
     
    public func register(registration: CollectionRegistration) {

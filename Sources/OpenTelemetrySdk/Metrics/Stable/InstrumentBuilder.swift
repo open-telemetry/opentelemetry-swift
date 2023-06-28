@@ -33,12 +33,11 @@ extension InstrumentBuilder {
     
     
     // todo : Is it necessary to use inout for writableMetricStorage?
-    public func buildSynchronousInstrument<T : Instrument>(_ instrumentFactory: (InstrumentDescriptor, inout WritableMetricStorage) -> T) ->  T {
-        let descriptor = InstrumentDescriptor(name: instrumentName, description: description, unit: unit, type: type, valueType: valueType)
-        var storage = meterSharedState.registerSynchronousMetricStorage(instrument: descriptor, meterProviderSharedState: meterProviderSharedState)
-        return instrumentFactory(descriptor,&storage)
-        
-    }
+  public func buildSynchronousInstrument<T : Instrument>(_ instrumentFactory: (InstrumentDescriptor, WritableMetricStorage) -> T) ->  T {
+      let descriptor = InstrumentDescriptor(name: instrumentName, description: description, unit: unit, type: type, valueType: valueType)
+      let storage = meterSharedState.registerSynchronousMetricStorage(instrument: descriptor, meterProviderSharedState: meterProviderSharedState)
+      return instrumentFactory(descriptor, storage)
+  }
     
     public func registerDoubleAsynchronousInstrument(type : InstrumentType, updater: @escaping (ObservableDoubleMeasurement)-> Void) -> ObservableInstrumentSdk {
         let sdkObservableMeasurement = buildObservableMeasurement(type: type)
