@@ -8,7 +8,7 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 
 public struct SpanAdapter {
-    public static func toProtoResourceSpans(spanDataList: [SpanData]) -> [Opentelemetry_Proto_Trace_V1_ResourceSpans] {
+    static func toProtoResourceSpans(spanDataList: [SpanData]) -> [Opentelemetry_Proto_Trace_V1_ResourceSpans] {
         let resourceAndScopeMap = groupByResourceAndScope(spanDataList: spanDataList)
         var resourceSpans = [Opentelemetry_Proto_Trace_V1_ResourceSpans]()
         resourceAndScopeMap.forEach { resMap in
@@ -39,7 +39,7 @@ public struct SpanAdapter {
         return result
     }
 
-    public static func toProtoSpan(spanData: SpanData) -> Opentelemetry_Proto_Trace_V1_Span {
+    static func toProtoSpan(spanData: SpanData) -> Opentelemetry_Proto_Trace_V1_Span {
         var protoSpan = Opentelemetry_Proto_Trace_V1_Span()
         protoSpan.traceID = TraceProtoUtils.toProtoTraceId(traceId: spanData.traceId)
         protoSpan.spanID = TraceProtoUtils.toProtoSpanId(spanId: spanData.spanId)

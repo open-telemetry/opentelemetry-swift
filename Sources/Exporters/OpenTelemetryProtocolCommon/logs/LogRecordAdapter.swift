@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 public class LogRecordAdapter {
-    public static func toProtoResourceRecordLog(logRecordList: [ReadableLogRecord]) -> [Opentelemetry_Proto_Logs_V1_ResourceLogs] {
+    static func toProtoResourceRecordLog(logRecordList: [ReadableLogRecord]) -> [Opentelemetry_Proto_Logs_V1_ResourceLogs] {
        let resourceAndScopeMap = groupByResourceAndScope(logRecordList: logRecordList)
         var resourceLogs = [Opentelemetry_Proto_Logs_V1_ResourceLogs]()
          resourceAndScopeMap.forEach { resMap in
@@ -28,7 +28,7 @@ public class LogRecordAdapter {
         return resourceLogs
     }
 
-        public static func groupByResourceAndScope(logRecordList: [ReadableLogRecord]) -> [Resource:[InstrumentationScopeInfo:[Opentelemetry_Proto_Logs_V1_LogRecord]]] {
+        internal static func groupByResourceAndScope(logRecordList: [ReadableLogRecord]) -> [Resource:[InstrumentationScopeInfo:[Opentelemetry_Proto_Logs_V1_LogRecord]]] {
             var result = [Resource:[InstrumentationScopeInfo: [Opentelemetry_Proto_Logs_V1_LogRecord]]]()
             logRecordList.forEach { logRecord in
                 result[logRecord.resource, default:[InstrumentationScopeInfo: [Opentelemetry_Proto_Logs_V1_LogRecord]]()][logRecord.instrumentationScopeInfo,default:[Opentelemetry_Proto_Logs_V1_LogRecord]()].append(toProtoLogRecord(logRecord: logRecord))
@@ -36,7 +36,7 @@ public class LogRecordAdapter {
             return result
         }
 
-    public static func toProtoLogRecord(logRecord: ReadableLogRecord) -> Opentelemetry_Proto_Logs_V1_LogRecord {
+    static func toProtoLogRecord(logRecord: ReadableLogRecord) -> Opentelemetry_Proto_Logs_V1_LogRecord {
         var protoLogRecord = Opentelemetry_Proto_Logs_V1_LogRecord()
         
         if let observedTimestamp = logRecord.observedTimestamp {

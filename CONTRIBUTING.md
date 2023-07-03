@@ -140,7 +140,7 @@ From within opentelemetry-proto:
 
 ```shell
 # collect the proto definitions:
-PROTO_FILES=($(ls ../opentelemetry/proto/*/*/*/*.proto ../opentelemetry/proto/*/*/*.proto))
+PROTO_FILES=($(ls opentelemetry/proto/*/*/*/*.proto opentelemetry/proto/*/*/*.proto))
 # generate swift proto files
 for file in "${PROTO_FILES[@]}"
 do

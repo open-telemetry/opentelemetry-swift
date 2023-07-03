@@ -7,7 +7,7 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 
 public enum MetricsAdapter {
-    public static func toProtoResourceMetrics(stableMetricData: [StableMetricData]) -> [Opentelemetry_Proto_Metrics_V1_ResourceMetrics] {
+    static func toProtoResourceMetrics(stableMetricData: [StableMetricData]) -> [Opentelemetry_Proto_Metrics_V1_ResourceMetrics] {
         let resourceAndScopeMap = groupByResouceAndScope(stableMetricData: stableMetricData)
 
         var resourceMetrics = [Opentelemetry_Proto_Metrics_V1_ResourceMetrics]()
@@ -30,7 +30,7 @@ public enum MetricsAdapter {
         return resourceMetrics
     }
 
-    public static func toProtoResourceMetrics(metricDataList: [Metric]) -> [Opentelemetry_Proto_Metrics_V1_ResourceMetrics] {
+    static func toProtoResourceMetrics(metricDataList: [Metric]) -> [Opentelemetry_Proto_Metrics_V1_ResourceMetrics] {
         let resourceAndScopeMap = groupByResouceAndScope(metricDataList: metricDataList)
         var resourceMetrics = [Opentelemetry_Proto_Metrics_V1_ResourceMetrics]()
 
@@ -79,7 +79,7 @@ public enum MetricsAdapter {
         return results
     }
 
-    public static func toProtoMetric(stableMetric: StableMetricData) -> Opentelemetry_Proto_Metrics_V1_Metric? {
+    static func toProtoMetric(stableMetric: StableMetricData) -> Opentelemetry_Proto_Metrics_V1_Metric? {
         var protoMetric = Opentelemetry_Proto_Metrics_V1_Metric()
         protoMetric.name = stableMetric.name
         protoMetric.unit = stableMetric.unit
@@ -224,7 +224,7 @@ public enum MetricsAdapter {
         }
     }
 
-    public static func toProtoMetric(metric: Metric) -> Opentelemetry_Proto_Metrics_V1_Metric? {
+    static func toProtoMetric(metric: Metric) -> Opentelemetry_Proto_Metrics_V1_Metric? {
         var protoMetric = Opentelemetry_Proto_Metrics_V1_Metric()
         protoMetric.name = metric.name
         protoMetric.unit = "unit"
