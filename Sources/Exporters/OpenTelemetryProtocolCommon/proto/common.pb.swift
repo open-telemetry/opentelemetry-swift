@@ -37,16 +37,16 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 /// AnyValue is used to represent any type of attribute value. AnyValue may contain a
 /// primitive value such as a string or integer or it may contain an arbitrary nested
 /// object containing arrays, key-value lists and primitives.
-public struct Opentelemetry_Proto_Common_V1_AnyValue {
+struct Opentelemetry_Proto_Common_V1_AnyValue {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// The value is one of the listed fields. It is valid for all values to be unspecified
   /// in which case this AnyValue is considered to be "empty".
-  public var value: Opentelemetry_Proto_Common_V1_AnyValue.OneOf_Value? = nil
+  var value: Opentelemetry_Proto_Common_V1_AnyValue.OneOf_Value? = nil
 
-  public var stringValue: String {
+  var stringValue: String {
     get {
       if case .stringValue(let v)? = value {return v}
       return String()
@@ -54,7 +54,7 @@ public struct Opentelemetry_Proto_Common_V1_AnyValue {
     set {value = .stringValue(newValue)}
   }
 
-  public var boolValue: Bool {
+  var boolValue: Bool {
     get {
       if case .boolValue(let v)? = value {return v}
       return false
@@ -62,7 +62,7 @@ public struct Opentelemetry_Proto_Common_V1_AnyValue {
     set {value = .boolValue(newValue)}
   }
 
-  public var intValue: Int64 {
+  var intValue: Int64 {
     get {
       if case .intValue(let v)? = value {return v}
       return 0
@@ -70,7 +70,7 @@ public struct Opentelemetry_Proto_Common_V1_AnyValue {
     set {value = .intValue(newValue)}
   }
 
-  public var doubleValue: Double {
+  var doubleValue: Double {
     get {
       if case .doubleValue(let v)? = value {return v}
       return 0
@@ -78,7 +78,7 @@ public struct Opentelemetry_Proto_Common_V1_AnyValue {
     set {value = .doubleValue(newValue)}
   }
 
-  public var arrayValue: Opentelemetry_Proto_Common_V1_ArrayValue {
+  var arrayValue: Opentelemetry_Proto_Common_V1_ArrayValue {
     get {
       if case .arrayValue(let v)? = value {return v}
       return Opentelemetry_Proto_Common_V1_ArrayValue()
@@ -86,7 +86,7 @@ public struct Opentelemetry_Proto_Common_V1_AnyValue {
     set {value = .arrayValue(newValue)}
   }
 
-  public var kvlistValue: Opentelemetry_Proto_Common_V1_KeyValueList {
+  var kvlistValue: Opentelemetry_Proto_Common_V1_KeyValueList {
     get {
       if case .kvlistValue(let v)? = value {return v}
       return Opentelemetry_Proto_Common_V1_KeyValueList()
@@ -94,7 +94,7 @@ public struct Opentelemetry_Proto_Common_V1_AnyValue {
     set {value = .kvlistValue(newValue)}
   }
 
-  public var bytesValue: Data {
+  var bytesValue: Data {
     get {
       if case .bytesValue(let v)? = value {return v}
       return Data()
@@ -102,11 +102,11 @@ public struct Opentelemetry_Proto_Common_V1_AnyValue {
     set {value = .bytesValue(newValue)}
   }
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  var unknownFields = SwiftProtobuf.UnknownStorage()
 
   /// The value is one of the listed fields. It is valid for all values to be unspecified
   /// in which case this AnyValue is considered to be "empty".
-  public enum OneOf_Value: Equatable {
+  enum OneOf_Value: Equatable {
     case stringValue(String)
     case boolValue(Bool)
     case intValue(Int64)
@@ -116,7 +116,7 @@ public struct Opentelemetry_Proto_Common_V1_AnyValue {
     case bytesValue(Data)
 
   #if !swift(>=4.1)
-    public static func ==(lhs: Opentelemetry_Proto_Common_V1_AnyValue.OneOf_Value, rhs: Opentelemetry_Proto_Common_V1_AnyValue.OneOf_Value) -> Bool {
+    static func ==(lhs: Opentelemetry_Proto_Common_V1_AnyValue.OneOf_Value, rhs: Opentelemetry_Proto_Common_V1_AnyValue.OneOf_Value) -> Bool {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
@@ -155,22 +155,22 @@ public struct Opentelemetry_Proto_Common_V1_AnyValue {
   #endif
   }
 
-  public init() {}
+  init() {}
 }
 
 /// ArrayValue is a list of AnyValue messages. We need ArrayValue as a message
 /// since oneof in AnyValue does not allow repeated fields.
-public struct Opentelemetry_Proto_Common_V1_ArrayValue {
+struct Opentelemetry_Proto_Common_V1_ArrayValue {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// Array of values. The array may be empty (contain 0 elements).
-  public var values: [Opentelemetry_Proto_Common_V1_AnyValue] = []
+  var values: [Opentelemetry_Proto_Common_V1_AnyValue] = []
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  init() {}
 }
 
 /// KeyValueList is a list of KeyValue messages. We need KeyValueList as a message
@@ -178,7 +178,7 @@ public struct Opentelemetry_Proto_Common_V1_ArrayValue {
 /// a list of KeyValue messages (e.g. in Span) we use `repeated KeyValue` directly to
 /// avoid unnecessary extra wrapping (which slows down the protocol). The 2 approaches
 /// are semantically equivalent.
-public struct Opentelemetry_Proto_Common_V1_KeyValueList {
+struct Opentelemetry_Proto_Common_V1_KeyValueList {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -187,57 +187,60 @@ public struct Opentelemetry_Proto_Common_V1_KeyValueList {
   /// contain 0 elements).
   /// The keys MUST be unique (it is not allowed to have more than one
   /// value with the same key).
-  public var values: [Opentelemetry_Proto_Common_V1_KeyValue] = []
+  var values: [Opentelemetry_Proto_Common_V1_KeyValue] = []
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  init() {}
 }
 
 /// KeyValue is a key-value pair that is used to store Span attributes, Link
 /// attributes, etc.
-public struct Opentelemetry_Proto_Common_V1_KeyValue {
+struct Opentelemetry_Proto_Common_V1_KeyValue {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var key: String = String()
+  var key: String = String()
 
-  public var value: Opentelemetry_Proto_Common_V1_AnyValue {
+  var value: Opentelemetry_Proto_Common_V1_AnyValue {
     get {return _value ?? Opentelemetry_Proto_Common_V1_AnyValue()}
     set {_value = newValue}
   }
   /// Returns true if `value` has been explicitly set.
-  public var hasValue: Bool {return self._value != nil}
+  var hasValue: Bool {return self._value != nil}
   /// Clears the value of `value`. Subsequent reads from it will return its default value.
-  public mutating func clearValue() {self._value = nil}
+  mutating func clearValue() {self._value = nil}
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  init() {}
 
   fileprivate var _value: Opentelemetry_Proto_Common_V1_AnyValue? = nil
 }
 
 /// InstrumentationScope is a message representing the instrumentation scope information
 /// such as the fully qualified name and version. 
-public struct Opentelemetry_Proto_Common_V1_InstrumentationScope {
+struct Opentelemetry_Proto_Common_V1_InstrumentationScope {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// An empty instrumentation scope name means the name is unknown.
-  public var name: String = String()
+  var name: String = String()
 
-  public var version: String = String()
+  var version: String = String()
 
-  public var attributes: [Opentelemetry_Proto_Common_V1_KeyValue] = []
+  /// Additional attributes that describe the scope. [Optional].
+  /// Attribute keys MUST be unique (it is not allowed to have more than one
+  /// attribute with the same key).
+  var attributes: [Opentelemetry_Proto_Common_V1_KeyValue] = []
 
-  public var droppedAttributesCount: UInt32 = 0
+  var droppedAttributesCount: UInt32 = 0
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  init() {}
 }
 
 #if swift(>=5.5) && canImport(_Concurrency)
@@ -254,8 +257,8 @@ extension Opentelemetry_Proto_Common_V1_InstrumentationScope: @unchecked Sendabl
 fileprivate let _protobuf_package = "opentelemetry.proto.common.v1"
 
 extension Opentelemetry_Proto_Common_V1_AnyValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".AnyValue"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  static let protoMessageName: String = _protobuf_package + ".AnyValue"
+  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "string_value"),
     2: .standard(proto: "bool_value"),
     3: .standard(proto: "int_value"),
@@ -265,7 +268,7 @@ extension Opentelemetry_Proto_Common_V1_AnyValue: SwiftProtobuf.Message, SwiftPr
     7: .standard(proto: "bytes_value"),
   ]
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -342,7 +345,7 @@ extension Opentelemetry_Proto_Common_V1_AnyValue: SwiftProtobuf.Message, SwiftPr
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -381,7 +384,7 @@ extension Opentelemetry_Proto_Common_V1_AnyValue: SwiftProtobuf.Message, SwiftPr
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Opentelemetry_Proto_Common_V1_AnyValue, rhs: Opentelemetry_Proto_Common_V1_AnyValue) -> Bool {
+  static func ==(lhs: Opentelemetry_Proto_Common_V1_AnyValue, rhs: Opentelemetry_Proto_Common_V1_AnyValue) -> Bool {
     if lhs.value != rhs.value {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -389,12 +392,12 @@ extension Opentelemetry_Proto_Common_V1_AnyValue: SwiftProtobuf.Message, SwiftPr
 }
 
 extension Opentelemetry_Proto_Common_V1_ArrayValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ArrayValue"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  static let protoMessageName: String = _protobuf_package + ".ArrayValue"
+  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "values"),
   ]
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -406,14 +409,14 @@ extension Opentelemetry_Proto_Common_V1_ArrayValue: SwiftProtobuf.Message, Swift
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.values.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.values, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Opentelemetry_Proto_Common_V1_ArrayValue, rhs: Opentelemetry_Proto_Common_V1_ArrayValue) -> Bool {
+  static func ==(lhs: Opentelemetry_Proto_Common_V1_ArrayValue, rhs: Opentelemetry_Proto_Common_V1_ArrayValue) -> Bool {
     if lhs.values != rhs.values {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -421,12 +424,12 @@ extension Opentelemetry_Proto_Common_V1_ArrayValue: SwiftProtobuf.Message, Swift
 }
 
 extension Opentelemetry_Proto_Common_V1_KeyValueList: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".KeyValueList"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  static let protoMessageName: String = _protobuf_package + ".KeyValueList"
+  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "values"),
   ]
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -438,14 +441,14 @@ extension Opentelemetry_Proto_Common_V1_KeyValueList: SwiftProtobuf.Message, Swi
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.values.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.values, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Opentelemetry_Proto_Common_V1_KeyValueList, rhs: Opentelemetry_Proto_Common_V1_KeyValueList) -> Bool {
+  static func ==(lhs: Opentelemetry_Proto_Common_V1_KeyValueList, rhs: Opentelemetry_Proto_Common_V1_KeyValueList) -> Bool {
     if lhs.values != rhs.values {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -453,13 +456,13 @@ extension Opentelemetry_Proto_Common_V1_KeyValueList: SwiftProtobuf.Message, Swi
 }
 
 extension Opentelemetry_Proto_Common_V1_KeyValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".KeyValue"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  static let protoMessageName: String = _protobuf_package + ".KeyValue"
+  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "key"),
     2: .same(proto: "value"),
   ]
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -472,7 +475,7 @@ extension Opentelemetry_Proto_Common_V1_KeyValue: SwiftProtobuf.Message, SwiftPr
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -486,7 +489,7 @@ extension Opentelemetry_Proto_Common_V1_KeyValue: SwiftProtobuf.Message, SwiftPr
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Opentelemetry_Proto_Common_V1_KeyValue, rhs: Opentelemetry_Proto_Common_V1_KeyValue) -> Bool {
+  static func ==(lhs: Opentelemetry_Proto_Common_V1_KeyValue, rhs: Opentelemetry_Proto_Common_V1_KeyValue) -> Bool {
     if lhs.key != rhs.key {return false}
     if lhs._value != rhs._value {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -495,15 +498,15 @@ extension Opentelemetry_Proto_Common_V1_KeyValue: SwiftProtobuf.Message, SwiftPr
 }
 
 extension Opentelemetry_Proto_Common_V1_InstrumentationScope: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".InstrumentationScope"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  static let protoMessageName: String = _protobuf_package + ".InstrumentationScope"
+  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "name"),
     2: .same(proto: "version"),
     3: .same(proto: "attributes"),
     4: .standard(proto: "dropped_attributes_count"),
   ]
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -518,7 +521,7 @@ extension Opentelemetry_Proto_Common_V1_InstrumentationScope: SwiftProtobuf.Mess
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.name.isEmpty {
       try visitor.visitSingularStringField(value: self.name, fieldNumber: 1)
     }
@@ -534,7 +537,7 @@ extension Opentelemetry_Proto_Common_V1_InstrumentationScope: SwiftProtobuf.Mess
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Opentelemetry_Proto_Common_V1_InstrumentationScope, rhs: Opentelemetry_Proto_Common_V1_InstrumentationScope) -> Bool {
+  static func ==(lhs: Opentelemetry_Proto_Common_V1_InstrumentationScope, rhs: Opentelemetry_Proto_Common_V1_InstrumentationScope) -> Bool {
     if lhs.name != rhs.name {return false}
     if lhs.version != rhs.version {return false}
     if lhs.attributes != rhs.attributes {return false}

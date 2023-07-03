@@ -34,7 +34,7 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-public struct Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest {
+struct Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -44,14 +44,14 @@ public struct Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest {
   /// element. Intermediary nodes (such as OpenTelemetry Collector) that receive
   /// data from multiple origins typically batch the data before forwarding further and
   /// in that case this array will contain multiple elements.
-  public var resourceLogs: [Opentelemetry_Proto_Logs_V1_ResourceLogs] = []
+  var resourceLogs: [Opentelemetry_Proto_Logs_V1_ResourceLogs] = []
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  init() {}
 }
 
-public struct Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse {
+struct Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -71,23 +71,23 @@ public struct Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse {
   /// A `partial_success` message with an empty value (rejected_<signal> = 0 and
   /// `error_message` = "") is equivalent to it not being set/present. Senders
   /// SHOULD interpret it the same way as in the full success case.
-  public var partialSuccess: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsPartialSuccess {
+  var partialSuccess: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsPartialSuccess {
     get {return _partialSuccess ?? Opentelemetry_Proto_Collector_Logs_V1_ExportLogsPartialSuccess()}
     set {_partialSuccess = newValue}
   }
   /// Returns true if `partialSuccess` has been explicitly set.
-  public var hasPartialSuccess: Bool {return self._partialSuccess != nil}
+  var hasPartialSuccess: Bool {return self._partialSuccess != nil}
   /// Clears the value of `partialSuccess`. Subsequent reads from it will return its default value.
-  public mutating func clearPartialSuccess() {self._partialSuccess = nil}
+  mutating func clearPartialSuccess() {self._partialSuccess = nil}
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  init() {}
 
   fileprivate var _partialSuccess: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsPartialSuccess? = nil
 }
 
-public struct Opentelemetry_Proto_Collector_Logs_V1_ExportLogsPartialSuccess {
+struct Opentelemetry_Proto_Collector_Logs_V1_ExportLogsPartialSuccess {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -96,7 +96,7 @@ public struct Opentelemetry_Proto_Collector_Logs_V1_ExportLogsPartialSuccess {
   ///
   /// A `rejected_<signal>` field holding a `0` value indicates that the
   /// request was fully accepted.
-  public var rejectedLogRecords: Int64 = 0
+  var rejectedLogRecords: Int64 = 0
 
   /// A developer-facing human-readable message in English. It should be used
   /// either to explain why the server rejected parts of the data during a partial
@@ -105,11 +105,11 @@ public struct Opentelemetry_Proto_Collector_Logs_V1_ExportLogsPartialSuccess {
   ///
   /// error_message is an optional field. An error_message with an empty value
   /// is equivalent to it not being set.
-  public var errorMessage: String = String()
+  var errorMessage: String = String()
 
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
+  var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public init() {}
+  init() {}
 }
 
 #if swift(>=5.5) && canImport(_Concurrency)
@@ -123,12 +123,12 @@ extension Opentelemetry_Proto_Collector_Logs_V1_ExportLogsPartialSuccess: @unche
 fileprivate let _protobuf_package = "opentelemetry.proto.collector.logs.v1"
 
 extension Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ExportLogsServiceRequest"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  static let protoMessageName: String = _protobuf_package + ".ExportLogsServiceRequest"
+  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "resource_logs"),
   ]
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -140,14 +140,14 @@ extension Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest: SwiftP
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.resourceLogs.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.resourceLogs, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, rhs: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest) -> Bool {
+  static func ==(lhs: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, rhs: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest) -> Bool {
     if lhs.resourceLogs != rhs.resourceLogs {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -155,12 +155,12 @@ extension Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest: SwiftP
 }
 
 extension Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ExportLogsServiceResponse"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  static let protoMessageName: String = _protobuf_package + ".ExportLogsServiceResponse"
+  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "partial_success"),
   ]
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -172,7 +172,7 @@ extension Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse: Swift
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -183,7 +183,7 @@ extension Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse: Swift
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse, rhs: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse) -> Bool {
+  static func ==(lhs: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse, rhs: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse) -> Bool {
     if lhs._partialSuccess != rhs._partialSuccess {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -191,13 +191,13 @@ extension Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse: Swift
 }
 
 extension Opentelemetry_Proto_Collector_Logs_V1_ExportLogsPartialSuccess: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ExportLogsPartialSuccess"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  static let protoMessageName: String = _protobuf_package + ".ExportLogsPartialSuccess"
+  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "rejected_log_records"),
     2: .standard(proto: "error_message"),
   ]
 
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -210,7 +210,7 @@ extension Opentelemetry_Proto_Collector_Logs_V1_ExportLogsPartialSuccess: SwiftP
     }
   }
 
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.rejectedLogRecords != 0 {
       try visitor.visitSingularInt64Field(value: self.rejectedLogRecords, fieldNumber: 1)
     }
@@ -220,7 +220,7 @@ extension Opentelemetry_Proto_Collector_Logs_V1_ExportLogsPartialSuccess: SwiftP
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsPartialSuccess, rhs: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsPartialSuccess) -> Bool {
+  static func ==(lhs: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsPartialSuccess, rhs: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsPartialSuccess) -> Bool {
     if lhs.rejectedLogRecords != rhs.rejectedLogRecords {return false}
     if lhs.errorMessage != rhs.errorMessage {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}

@@ -114,6 +114,60 @@ merge. You'll probably get some feedback from these fine folks which helps to
 make the project that much better. Respond to the feedback and work with your
 reviewer(s) to resolve any issues.
 
+### Generating OTLP protobuf files
+Occasionally, the opentelementry protocol's protobuf definitions are updated and need to be regenerated for the OTLP exproters. This is documentation on how to accomplish that for this project. Other projects can regenerate their otlp protobuf files using the [Open Telemetry build tools][build-tools].
+
+#### Requirements
+- [protoc]
+- [grpc-swift]
+- [opentelemetry-proto]
+
+##### Install protoc
+```asciidoc
+$ brew install protobuf
+$ protoc --version  # Ensure compiler version is 3+
+```
+##### Installing grpc-swift
+```
+ brew install swift-protobuf grpc-swift
+ ```
+
+##### Generating otlp protobuf files
+
+Clone [opentelemetry-proto]
+
+From within opentelemetry-proto:
+
+```shell
+# collect the proto definitions:
+PROTO_FILES=($(ls ../opentelemetry/proto/*/*/*/*.proto ../opentelemetry/proto/*/*/*.proto))
+# generate swift proto files
+for file in "${PROTO_FILES[@]}"
+do
+  protoc --swift_out=./out ${file}
+done
+
+# genearate GRPC swift proto files
+protoc --swift_out=./out --grpc-swift_out=./out opentelemetry/proto/collector/trace/v1/trace_service.proto
+protoc --swift_out=./out --grpc-swift_out=./out opentelemetry/proto/collector/metrics/v1/metrics_service.proto
+protoc --swift_out=./out --grpc-swift_out=./out opentelemetry/proto/collector/logs/v1/logs_service.proto
+```
+
+Replace the generated files in `Sources/Exporters/OpenTelemetryProtocolCommon/proto` & `Sources/Exporters/OpenTelemetryGrpc/proto`:
+###### `OpenTelemetryProtocolGrpc/proto` file list
+`logs_service.grpc.swift`
+`metrics_serivce.grpc.swift`
+`trace_service.grpc.swift`
+
+###### `OpenTelemetryProtocolCommon/proto`
+`common.pb.swift`
+`logs.pb.swift`
+`logs_service.pb.swift`
+`metrics.pb.swift`
+`metrics_services.pb.swift`
+`resource.pb.swift`
+`trace.pb.swift`
+`trace_service.pb.swift`
 
 [cncf-cla]: https://identity.linuxfoundation.org/projects/cncf
 [github-draft]: https://github.blog/2019-02-14-introducing-draft-pull-requests/
@@ -122,3 +176,7 @@ reviewer(s) to resolve any issues.
 [otel-github-workflow]: https://github.com/open-telemetry/community/blob/master/CONTRIBUTING.md#github-workflow
 [otel-lib-guidelines]: https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/library-guidelines.md
 [otel-specification]: https://github.com/open-telemetry/opentelemetry-specification
+[grpc-swift]: https://github.com/grpc/grpc-swift
+[opentelemetry-proto]: https://github.com/open-telemetry/opentelemetry-proto
+[protoc]: https://grpc.io/docs/protoc-installation/
+[build-tools]: https://github.com/open-telemetry/build-tools
