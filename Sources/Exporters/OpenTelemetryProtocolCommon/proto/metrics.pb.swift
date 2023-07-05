@@ -149,33 +149,36 @@ extension Opentelemetry_Proto_Metrics_V1_AggregationTemporality: CaseIterable {
 /// enum is a bit-mask.  To test the presence of a single flag in the flags of
 /// a data point, for example, use an expression like:
 ///
-///   (point.flags & FLAG_NO_RECORDED_VALUE) == FLAG_NO_RECORDED_VALUE
+///   (point.flags & DATA_POINT_FLAGS_NO_RECORDED_VALUE_MASK) == DATA_POINT_FLAGS_NO_RECORDED_VALUE_MASK
 public enum Opentelemetry_Proto_Metrics_V1_DataPointFlags: SwiftProtobuf.Enum {
   public typealias RawValue = Int
-  case flagNone // = 0
+
+  /// The zero value for the enum. Should not be used for comparisons.
+  /// Instead use bitwise "and" with the appropriate mask as shown above.
+  case doNotUse // = 0
 
   /// This DataPoint is valid but has no recorded value.  This value
   /// SHOULD be used to reflect explicitly missing data in a series, as
   /// for an equivalent to the Prometheus "staleness marker".
-  case flagNoRecordedValue // = 1
+  case noRecordedValueMask // = 1
   case UNRECOGNIZED(Int)
 
   public init() {
-    self = .flagNone
+    self = .doNotUse
   }
 
   public init?(rawValue: Int) {
     switch rawValue {
-    case 0: self = .flagNone
-    case 1: self = .flagNoRecordedValue
+    case 0: self = .doNotUse
+    case 1: self = .noRecordedValueMask
     default: self = .UNRECOGNIZED(rawValue)
     }
   }
 
   public var rawValue: Int {
     switch self {
-    case .flagNone: return 0
-    case .flagNoRecordedValue: return 1
+    case .doNotUse: return 0
+    case .noRecordedValueMask: return 1
     case .UNRECOGNIZED(let i): return i
     }
   }
@@ -187,8 +190,8 @@ public enum Opentelemetry_Proto_Metrics_V1_DataPointFlags: SwiftProtobuf.Enum {
 extension Opentelemetry_Proto_Metrics_V1_DataPointFlags: CaseIterable {
   // The compiler won't synthesize support with the UNRECOGNIZED case.
   public static var allCases: [Opentelemetry_Proto_Metrics_V1_DataPointFlags] = [
-    .flagNone,
-    .flagNoRecordedValue,
+    .doNotUse,
+    .noRecordedValueMask,
   ]
 }
 
@@ -898,6 +901,14 @@ public struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint {
   /// Clears the value of `max`. Subsequent reads from it will return its default value.
   public mutating func clearMax() {self._max = nil}
 
+  /// ZeroThreshold may be optionally set to convey the width of the zero
+  /// region. Where the zero region is defined as the closed interval
+  /// [-ZeroThreshold, ZeroThreshold].
+  /// When ZeroThreshold is 0, zero count bucket stores values that cannot be
+  /// expressed using the standard exponential formula as well as values that
+  /// have been rounded to zero.
+  public var zeroThreshold: Double = 0
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   /// Buckets are a set of bucket counts, encoded in a contiguous array
@@ -912,9 +923,9 @@ public struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint {
     /// Note: This uses a varint encoding as a simple form of compression.
     public var offset: Int32 = 0
 
-    /// Count is an array of counts, where count[i] carries the count
-    /// of the bucket at index (offset+i).  count[i] is the count of
-    /// values greater than base^(offset+i) and less or equal to than
+    /// bucket_counts is an array of count values, where bucket_counts[i] carries
+    /// the count of the bucket at index (offset+i). bucket_counts[i] is the count
+    /// of values greater than base^(offset+i) and less than or equal to
     /// base^(offset+i+1).
     ///
     /// Note: By contrast, the explicit HistogramDataPoint uses
@@ -1137,8 +1148,8 @@ extension Opentelemetry_Proto_Metrics_V1_AggregationTemporality: SwiftProtobuf._
 
 extension Opentelemetry_Proto_Metrics_V1_DataPointFlags: SwiftProtobuf._ProtoNameProviding {
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "FLAG_NONE"),
-    1: .same(proto: "FLAG_NO_RECORDED_VALUE"),
+    0: .same(proto: "DATA_POINT_FLAGS_DO_NOT_USE"),
+    1: .same(proto: "DATA_POINT_FLAGS_NO_RECORDED_VALUE_MASK"),
   ]
 }
 
@@ -1793,6 +1804,7 @@ extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint: SwiftPro
     11: .same(proto: "exemplars"),
     12: .same(proto: "min"),
     13: .same(proto: "max"),
+    14: .standard(proto: "zero_threshold"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -1814,6 +1826,7 @@ extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint: SwiftPro
       case 11: try { try decoder.decodeRepeatedMessageField(value: &self.exemplars) }()
       case 12: try { try decoder.decodeSingularDoubleField(value: &self._min) }()
       case 13: try { try decoder.decodeSingularDoubleField(value: &self._max) }()
+      case 14: try { try decoder.decodeSingularDoubleField(value: &self.zeroThreshold) }()
       default: break
       }
     }
@@ -1863,6 +1876,9 @@ extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint: SwiftPro
     try { if let v = self._max {
       try visitor.visitSingularDoubleField(value: v, fieldNumber: 13)
     } }()
+    if self.zeroThreshold != 0 {
+      try visitor.visitSingularDoubleField(value: self.zeroThreshold, fieldNumber: 14)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -1880,6 +1896,7 @@ extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint: SwiftPro
     if lhs.exemplars != rhs.exemplars {return false}
     if lhs._min != rhs._min {return false}
     if lhs._max != rhs._max {return false}
+    if lhs.zeroThreshold != rhs.zeroThreshold {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

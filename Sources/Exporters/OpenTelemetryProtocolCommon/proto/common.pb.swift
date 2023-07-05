@@ -231,6 +231,9 @@ public struct Opentelemetry_Proto_Common_V1_InstrumentationScope {
 
   public var version: String = String()
 
+  /// Additional attributes that describe the scope. [Optional].
+  /// Attribute keys MUST be unique (it is not allowed to have more than one
+  /// attribute with the same key).
   public var attributes: [Opentelemetry_Proto_Common_V1_KeyValue] = []
 
   public var droppedAttributesCount: UInt32 = 0

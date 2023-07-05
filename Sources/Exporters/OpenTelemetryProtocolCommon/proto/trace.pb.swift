@@ -132,21 +132,17 @@ public struct Opentelemetry_Proto_Trace_V1_Span {
   // methods supported on all messages.
 
   /// A unique identifier for a trace. All spans from the same trace share
-  /// the same `trace_id`. The ID is a 16-byte array. An ID with all zeroes
-  /// is considered invalid.
-  ///
-  /// This field is semantically required. Receiver should generate new
-  /// random trace_id if empty or invalid trace_id was received.
+  /// the same `trace_id`. The ID is a 16-byte array. An ID with all zeroes OR
+  /// of length other than 16 bytes is considered invalid (empty string in OTLP/JSON
+  /// is zero-length and thus is also invalid).
   ///
   /// This field is required.
   public var traceID: Data = Data()
 
   /// A unique identifier for a span within a trace, assigned when the span
-  /// is created. The ID is an 8-byte array. An ID with all zeroes is considered
-  /// invalid.
-  ///
-  /// This field is semantically required. Receiver should generate new
-  /// random span_id if empty or invalid span_id was received.
+  /// is created. The ID is an 8-byte array. An ID with all zeroes OR of length
+  /// other than 8 bytes is considered invalid (empty string in OTLP/JSON
+  /// is zero-length and thus is also invalid).
   ///
   /// This field is required.
   public var spanID: Data = Data()
@@ -199,8 +195,8 @@ public struct Opentelemetry_Proto_Trace_V1_Span {
   ///
   ///     "/http/user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36"
   ///     "/http/server_latency": 300
-  ///     "abc.com/myattribute": true
-  ///     "abc.com/score": 10.239
+  ///     "example.com/myattribute": true
+  ///     "example.com/score": 10.239
   ///
   /// The OpenTelemetry API specification further restricts the allowed value types:
   /// https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/common/README.md#attribute

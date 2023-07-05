@@ -169,29 +169,38 @@ extension Opentelemetry_Proto_Logs_V1_SeverityNumber: CaseIterable {
 
 #endif  // swift(>=4.2)
 
-/// Masks for LogRecord.flags field.
+/// LogRecordFlags is defined as a protobuf 'uint32' type and is to be used as
+/// bit-fields. Each non-zero value defined in this enum is a bit-mask.
+/// To extract the bit-field, for example, use an expression like:
+///
+///   (logRecord.flags & LOG_RECORD_FLAGS_TRACE_FLAGS_MASK)
 public enum Opentelemetry_Proto_Logs_V1_LogRecordFlags: SwiftProtobuf.Enum {
   public typealias RawValue = Int
-  case logRecordFlagUnspecified // = 0
-  case logRecordFlagTraceFlagsMask // = 255
+
+  /// The zero value for the enum. Should not be used for comparisons.
+  /// Instead use bitwise "and" with the appropriate mask as shown above.
+  case doNotUse // = 0
+
+  /// Bits 0-7 are used for trace flags.
+  case traceFlagsMask // = 255
   case UNRECOGNIZED(Int)
 
   public init() {
-    self = .logRecordFlagUnspecified
+    self = .doNotUse
   }
 
   public init?(rawValue: Int) {
     switch rawValue {
-    case 0: self = .logRecordFlagUnspecified
-    case 255: self = .logRecordFlagTraceFlagsMask
+    case 0: self = .doNotUse
+    case 255: self = .traceFlagsMask
     default: self = .UNRECOGNIZED(rawValue)
     }
   }
 
   public var rawValue: Int {
     switch self {
-    case .logRecordFlagUnspecified: return 0
-    case .logRecordFlagTraceFlagsMask: return 255
+    case .doNotUse: return 0
+    case .traceFlagsMask: return 255
     case .UNRECOGNIZED(let i): return i
     }
   }
@@ -203,8 +212,8 @@ public enum Opentelemetry_Proto_Logs_V1_LogRecordFlags: SwiftProtobuf.Enum {
 extension Opentelemetry_Proto_Logs_V1_LogRecordFlags: CaseIterable {
   // The compiler won't synthesize support with the UNRECOGNIZED case.
   public static var allCases: [Opentelemetry_Proto_Logs_V1_LogRecordFlags] = [
-    .logRecordFlagUnspecified,
-    .logRecordFlagTraceFlagsMask,
+    .doNotUse,
+    .traceFlagsMask,
   ]
 }
 
@@ -359,19 +368,34 @@ public struct Opentelemetry_Proto_Logs_V1_LogRecord {
   /// defined in W3C Trace Context specification. 24 most significant bits are reserved
   /// and must be set to 0. Readers must not assume that 24 most significant bits
   /// will be zero and must correctly mask the bits when reading 8-bit trace flag (use
-  /// flags & TRACE_FLAGS_MASK). [Optional].
+  /// flags & LOG_RECORD_FLAGS_TRACE_FLAGS_MASK). [Optional].
   public var flags: UInt32 = 0
 
   /// A unique identifier for a trace. All logs from the same trace share
-  /// the same `trace_id`. The ID is a 16-byte array. An ID with all zeroes
-  /// is considered invalid. Can be set for logs that are part of request processing
-  /// and have an assigned trace id. [Optional].
+  /// the same `trace_id`. The ID is a 16-byte array. An ID with all zeroes OR
+  /// of length other than 16 bytes is considered invalid (empty string in OTLP/JSON
+  /// is zero-length and thus is also invalid).
+  ///
+  /// This field is optional.
+  ///
+  /// The receivers SHOULD assume that the log record is not associated with a
+  /// trace if any of the following is true:
+  ///   - the field is not present,
+  ///   - the field contains an invalid value.
   public var traceID: Data = Data()
 
   /// A unique identifier for a span within a trace, assigned when the span
-  /// is created. The ID is an 8-byte array. An ID with all zeroes is considered
-  /// invalid. Can be set for logs that are part of a particular processing span.
-  /// If span_id is present trace_id SHOULD be also present. [Optional].
+  /// is created. The ID is an 8-byte array. An ID with all zeroes OR of length
+  /// other than 8 bytes is considered invalid (empty string in OTLP/JSON
+  /// is zero-length and thus is also invalid).
+  ///
+  /// This field is optional. If the sender specifies a valid span_id then it SHOULD also
+  /// specify a valid trace_id.
+  ///
+  /// The receivers SHOULD assume that the log record is not associated with a
+  /// span if any of the following is true:
+  ///   - the field is not present,
+  ///   - the field contains an invalid value.
   public var spanID: Data = Data()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -426,8 +450,8 @@ extension Opentelemetry_Proto_Logs_V1_SeverityNumber: SwiftProtobuf._ProtoNamePr
 
 extension Opentelemetry_Proto_Logs_V1_LogRecordFlags: SwiftProtobuf._ProtoNameProviding {
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "LOG_RECORD_FLAG_UNSPECIFIED"),
-    255: .same(proto: "LOG_RECORD_FLAG_TRACE_FLAGS_MASK"),
+    0: .same(proto: "LOG_RECORD_FLAGS_DO_NOT_USE"),
+    255: .same(proto: "LOG_RECORD_FLAGS_TRACE_FLAGS_MASK"),
   ]
 }
 
