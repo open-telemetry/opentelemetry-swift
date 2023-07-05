@@ -115,7 +115,7 @@ make the project that much better. Respond to the feedback and work with your
 reviewer(s) to resolve any issues.
 
 ### Generating OTLP protobuf files
-Occasionally, the opentelementry protocol's protobuf definitions are updated and need to be regenerated for the OTLP exproters. This is documentation on how to accomplish that for this project. Other projects can regenerate their otlp protobuf files using the [Open Telemetry build tools][build-tools].
+Occasionally, the opentelemetry protocol's protobuf definitions are updated and need to be regenerated for the OTLP exporters. This is documentation on how to accomplish that for this project. Other projects can regenerate their otlp protobuf files using the [Open Telemetry build tools][build-tools].
 
 #### Requirements
 - [protoc]
