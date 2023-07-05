@@ -30,7 +30,7 @@ public enum MetricsAdapter {
         return resourceMetrics
     }
 
-    static func toProtoResourceMetrics(metricDataList: [Metric]) -> [Opentelemetry_Proto_Metrics_V1_ResourceMetrics] {
+   public static func toProtoResourceMetrics(metricDataList: [Metric]) -> [Opentelemetry_Proto_Metrics_V1_ResourceMetrics] {
         let resourceAndScopeMap = groupByResouceAndScope(metricDataList: metricDataList)
         var resourceMetrics = [Opentelemetry_Proto_Metrics_V1_ResourceMetrics]()
 

@@ -144,13 +144,13 @@ PROTO_FILES=($(ls opentelemetry/proto/*/*/*/*.proto opentelemetry/proto/*/*/*.pr
 # generate swift proto files
 for file in "${PROTO_FILES[@]}"
 do
-  protoc --swift_out=./out ${file}
+  protoc --swift_opt=Visibility=Public --swift_out=./out ${file}
 done
 
 # genearate GRPC swift proto files
-protoc --swift_out=./out --grpc-swift_out=./out opentelemetry/proto/collector/trace/v1/trace_service.proto
-protoc --swift_out=./out --grpc-swift_out=./out opentelemetry/proto/collector/metrics/v1/metrics_service.proto
-protoc --swift_out=./out --grpc-swift_out=./out opentelemetry/proto/collector/logs/v1/logs_service.proto
+protoc --swift_opt=Visibility=Public --grpc-swift_opt=Visibility=Public  --swift_out=./out --grpc-swift_out=./out opentelemetry/proto/collector/trace/v1/trace_service.proto
+protoc --swift_opt=Visibility=Public --grpc-swift_opt=Visibility=Public --swift_out=./out --grpc-swift_out=./out opentelemetry/proto/collector/metrics/v1/metrics_service.proto
+protoc --swift_opt=Visibility=Public --grpc-swift_opt=Visibility=Public --swift_out=./out --grpc-swift_out=./out opentelemetry/proto/collector/logs/v1/logs_service.proto
 ```
 
 Replace the generated files in `Sources/Exporters/OpenTelemetryProtocolCommon/proto` & `Sources/Exporters/OpenTelemetryGrpc/proto`:

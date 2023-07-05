@@ -35,8 +35,8 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 }
 
 /// Possible values for LogRecord.SeverityNumber.
-enum Opentelemetry_Proto_Logs_V1_SeverityNumber: SwiftProtobuf.Enum {
-  typealias RawValue = Int
+public enum Opentelemetry_Proto_Logs_V1_SeverityNumber: SwiftProtobuf.Enum {
+  public typealias RawValue = Int
 
   /// UNSPECIFIED is the default SeverityNumber, it MUST NOT be used.
   case unspecified // = 0
@@ -66,11 +66,11 @@ enum Opentelemetry_Proto_Logs_V1_SeverityNumber: SwiftProtobuf.Enum {
   case fatal4 // = 24
   case UNRECOGNIZED(Int)
 
-  init() {
+  public init() {
     self = .unspecified
   }
 
-  init?(rawValue: Int) {
+  public init?(rawValue: Int) {
     switch rawValue {
     case 0: self = .unspecified
     case 1: self = .trace
@@ -101,7 +101,7 @@ enum Opentelemetry_Proto_Logs_V1_SeverityNumber: SwiftProtobuf.Enum {
     }
   }
 
-  var rawValue: Int {
+  public var rawValue: Int {
     switch self {
     case .unspecified: return 0
     case .trace: return 1
@@ -138,7 +138,7 @@ enum Opentelemetry_Proto_Logs_V1_SeverityNumber: SwiftProtobuf.Enum {
 
 extension Opentelemetry_Proto_Logs_V1_SeverityNumber: CaseIterable {
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static var allCases: [Opentelemetry_Proto_Logs_V1_SeverityNumber] = [
+  public static var allCases: [Opentelemetry_Proto_Logs_V1_SeverityNumber] = [
     .unspecified,
     .trace,
     .trace2,
@@ -174,8 +174,8 @@ extension Opentelemetry_Proto_Logs_V1_SeverityNumber: CaseIterable {
 /// To extract the bit-field, for example, use an expression like:
 ///
 ///   (logRecord.flags & LOG_RECORD_FLAGS_TRACE_FLAGS_MASK)
-enum Opentelemetry_Proto_Logs_V1_LogRecordFlags: SwiftProtobuf.Enum {
-  typealias RawValue = Int
+public enum Opentelemetry_Proto_Logs_V1_LogRecordFlags: SwiftProtobuf.Enum {
+  public typealias RawValue = Int
 
   /// The zero value for the enum. Should not be used for comparisons.
   /// Instead use bitwise "and" with the appropriate mask as shown above.
@@ -185,11 +185,11 @@ enum Opentelemetry_Proto_Logs_V1_LogRecordFlags: SwiftProtobuf.Enum {
   case traceFlagsMask // = 255
   case UNRECOGNIZED(Int)
 
-  init() {
+  public init() {
     self = .doNotUse
   }
 
-  init?(rawValue: Int) {
+  public init?(rawValue: Int) {
     switch rawValue {
     case 0: self = .doNotUse
     case 255: self = .traceFlagsMask
@@ -197,7 +197,7 @@ enum Opentelemetry_Proto_Logs_V1_LogRecordFlags: SwiftProtobuf.Enum {
     }
   }
 
-  var rawValue: Int {
+  public var rawValue: Int {
     switch self {
     case .doNotUse: return 0
     case .traceFlagsMask: return 255
@@ -211,7 +211,7 @@ enum Opentelemetry_Proto_Logs_V1_LogRecordFlags: SwiftProtobuf.Enum {
 
 extension Opentelemetry_Proto_Logs_V1_LogRecordFlags: CaseIterable {
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static var allCases: [Opentelemetry_Proto_Logs_V1_LogRecordFlags] = [
+  public static var allCases: [Opentelemetry_Proto_Logs_V1_LogRecordFlags] = [
     .doNotUse,
     .traceFlagsMask,
   ]
@@ -229,7 +229,7 @@ extension Opentelemetry_Proto_Logs_V1_LogRecordFlags: CaseIterable {
 ///
 /// When new fields are added into this message, the OTLP request MUST be updated
 /// as well.
-struct Opentelemetry_Proto_Logs_V1_LogsData {
+public struct Opentelemetry_Proto_Logs_V1_LogsData {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -239,46 +239,46 @@ struct Opentelemetry_Proto_Logs_V1_LogsData {
   /// one element. Intermediary nodes that receive data from multiple origins
   /// typically batch the data before forwarding further and in that case this
   /// array will contain multiple elements.
-  var resourceLogs: [Opentelemetry_Proto_Logs_V1_ResourceLogs] = []
+  public var resourceLogs: [Opentelemetry_Proto_Logs_V1_ResourceLogs] = []
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 }
 
 /// A collection of ScopeLogs from a Resource.
-struct Opentelemetry_Proto_Logs_V1_ResourceLogs {
+public struct Opentelemetry_Proto_Logs_V1_ResourceLogs {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// The resource for the logs in this message.
   /// If this field is not set then resource info is unknown.
-  var resource: Opentelemetry_Proto_Resource_V1_Resource {
+  public var resource: Opentelemetry_Proto_Resource_V1_Resource {
     get {return _resource ?? Opentelemetry_Proto_Resource_V1_Resource()}
     set {_resource = newValue}
   }
   /// Returns true if `resource` has been explicitly set.
-  var hasResource: Bool {return self._resource != nil}
+  public var hasResource: Bool {return self._resource != nil}
   /// Clears the value of `resource`. Subsequent reads from it will return its default value.
-  mutating func clearResource() {self._resource = nil}
+  public mutating func clearResource() {self._resource = nil}
 
   /// A list of ScopeLogs that originate from a resource.
-  var scopeLogs: [Opentelemetry_Proto_Logs_V1_ScopeLogs] = []
+  public var scopeLogs: [Opentelemetry_Proto_Logs_V1_ScopeLogs] = []
 
   /// This schema_url applies to the data in the "resource" field. It does not apply
   /// to the data in the "scope_logs" field which have their own schema_url field.
-  var schemaURL: String = String()
+  public var schemaURL: String = String()
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 
   fileprivate var _resource: Opentelemetry_Proto_Resource_V1_Resource? = nil
 }
 
 /// A collection of Logs produced by a Scope.
-struct Opentelemetry_Proto_Logs_V1_ScopeLogs {
+public struct Opentelemetry_Proto_Logs_V1_ScopeLogs {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -286,31 +286,31 @@ struct Opentelemetry_Proto_Logs_V1_ScopeLogs {
   /// The instrumentation scope information for the logs in this message.
   /// Semantically when InstrumentationScope isn't set, it is equivalent with
   /// an empty instrumentation scope name (unknown).
-  var scope: Opentelemetry_Proto_Common_V1_InstrumentationScope {
+  public var scope: Opentelemetry_Proto_Common_V1_InstrumentationScope {
     get {return _scope ?? Opentelemetry_Proto_Common_V1_InstrumentationScope()}
     set {_scope = newValue}
   }
   /// Returns true if `scope` has been explicitly set.
-  var hasScope: Bool {return self._scope != nil}
+  public var hasScope: Bool {return self._scope != nil}
   /// Clears the value of `scope`. Subsequent reads from it will return its default value.
-  mutating func clearScope() {self._scope = nil}
+  public mutating func clearScope() {self._scope = nil}
 
   /// A list of log records.
-  var logRecords: [Opentelemetry_Proto_Logs_V1_LogRecord] = []
+  public var logRecords: [Opentelemetry_Proto_Logs_V1_LogRecord] = []
 
   /// This schema_url applies to all logs in the "logs" field.
-  var schemaURL: String = String()
+  public var schemaURL: String = String()
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 
   fileprivate var _scope: Opentelemetry_Proto_Common_V1_InstrumentationScope? = nil
 }
 
 /// A log record according to OpenTelemetry Log Data Model:
 /// https://github.com/open-telemetry/oteps/blob/main/text/logs/0097-log-data-model.md
-struct Opentelemetry_Proto_Logs_V1_LogRecord {
+public struct Opentelemetry_Proto_Logs_V1_LogRecord {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -318,7 +318,7 @@ struct Opentelemetry_Proto_Logs_V1_LogRecord {
   /// time_unix_nano is the time when the event occurred.
   /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January 1970.
   /// Value of 0 indicates unknown or missing timestamp.
-  var timeUnixNano: UInt64 = 0
+  public var timeUnixNano: UInt64 = 0
 
   /// Time when the event was observed by the collection system.
   /// For events that originate in OpenTelemetry (e.g. using OpenTelemetry Logging SDK)
@@ -335,41 +335,41 @@ struct Opentelemetry_Proto_Logs_V1_LogRecord {
   ///
   /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January 1970.
   /// Value of 0 indicates unknown or missing timestamp.
-  var observedTimeUnixNano: UInt64 = 0
+  public var observedTimeUnixNano: UInt64 = 0
 
   /// Numerical value of the severity, normalized to values described in Log Data Model.
   /// [Optional].
-  var severityNumber: Opentelemetry_Proto_Logs_V1_SeverityNumber = .unspecified
+  public var severityNumber: Opentelemetry_Proto_Logs_V1_SeverityNumber = .unspecified
 
   /// The severity text (also known as log level). The original string representation as
   /// it is known at the source. [Optional].
-  var severityText: String = String()
+  public var severityText: String = String()
 
   /// A value containing the body of the log record. Can be for example a human-readable
   /// string message (including multi-line) describing the event in a free form or it can
   /// be a structured data composed of arrays and maps of other values. [Optional].
-  var body: Opentelemetry_Proto_Common_V1_AnyValue {
+  public var body: Opentelemetry_Proto_Common_V1_AnyValue {
     get {return _body ?? Opentelemetry_Proto_Common_V1_AnyValue()}
     set {_body = newValue}
   }
   /// Returns true if `body` has been explicitly set.
-  var hasBody: Bool {return self._body != nil}
+  public var hasBody: Bool {return self._body != nil}
   /// Clears the value of `body`. Subsequent reads from it will return its default value.
-  mutating func clearBody() {self._body = nil}
+  public mutating func clearBody() {self._body = nil}
 
   /// Additional attributes that describe the specific event occurrence. [Optional].
   /// Attribute keys MUST be unique (it is not allowed to have more than one
   /// attribute with the same key).
-  var attributes: [Opentelemetry_Proto_Common_V1_KeyValue] = []
+  public var attributes: [Opentelemetry_Proto_Common_V1_KeyValue] = []
 
-  var droppedAttributesCount: UInt32 = 0
+  public var droppedAttributesCount: UInt32 = 0
 
   /// Flags, a bit field. 8 least significant bits are the trace flags as
   /// defined in W3C Trace Context specification. 24 most significant bits are reserved
   /// and must be set to 0. Readers must not assume that 24 most significant bits
   /// will be zero and must correctly mask the bits when reading 8-bit trace flag (use
   /// flags & LOG_RECORD_FLAGS_TRACE_FLAGS_MASK). [Optional].
-  var flags: UInt32 = 0
+  public var flags: UInt32 = 0
 
   /// A unique identifier for a trace. All logs from the same trace share
   /// the same `trace_id`. The ID is a 16-byte array. An ID with all zeroes OR
@@ -382,7 +382,7 @@ struct Opentelemetry_Proto_Logs_V1_LogRecord {
   /// trace if any of the following is true:
   ///   - the field is not present,
   ///   - the field contains an invalid value.
-  var traceID: Data = Data()
+  public var traceID: Data = Data()
 
   /// A unique identifier for a span within a trace, assigned when the span
   /// is created. The ID is an 8-byte array. An ID with all zeroes OR of length
@@ -396,11 +396,11 @@ struct Opentelemetry_Proto_Logs_V1_LogRecord {
   /// span if any of the following is true:
   ///   - the field is not present,
   ///   - the field contains an invalid value.
-  var spanID: Data = Data()
+  public var spanID: Data = Data()
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 
   fileprivate var _body: Opentelemetry_Proto_Common_V1_AnyValue? = nil
 }
@@ -419,7 +419,7 @@ extension Opentelemetry_Proto_Logs_V1_LogRecord: @unchecked Sendable {}
 fileprivate let _protobuf_package = "opentelemetry.proto.logs.v1"
 
 extension Opentelemetry_Proto_Logs_V1_SeverityNumber: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     0: .same(proto: "SEVERITY_NUMBER_UNSPECIFIED"),
     1: .same(proto: "SEVERITY_NUMBER_TRACE"),
     2: .same(proto: "SEVERITY_NUMBER_TRACE2"),
@@ -449,19 +449,19 @@ extension Opentelemetry_Proto_Logs_V1_SeverityNumber: SwiftProtobuf._ProtoNamePr
 }
 
 extension Opentelemetry_Proto_Logs_V1_LogRecordFlags: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     0: .same(proto: "LOG_RECORD_FLAGS_DO_NOT_USE"),
     255: .same(proto: "LOG_RECORD_FLAGS_TRACE_FLAGS_MASK"),
   ]
 }
 
 extension Opentelemetry_Proto_Logs_V1_LogsData: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".LogsData"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".LogsData"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "resource_logs"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -473,14 +473,14 @@ extension Opentelemetry_Proto_Logs_V1_LogsData: SwiftProtobuf.Message, SwiftProt
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.resourceLogs.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.resourceLogs, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Opentelemetry_Proto_Logs_V1_LogsData, rhs: Opentelemetry_Proto_Logs_V1_LogsData) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Logs_V1_LogsData, rhs: Opentelemetry_Proto_Logs_V1_LogsData) -> Bool {
     if lhs.resourceLogs != rhs.resourceLogs {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -488,14 +488,14 @@ extension Opentelemetry_Proto_Logs_V1_LogsData: SwiftProtobuf.Message, SwiftProt
 }
 
 extension Opentelemetry_Proto_Logs_V1_ResourceLogs: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ResourceLogs"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".ResourceLogs"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "resource"),
     2: .standard(proto: "scope_logs"),
     3: .standard(proto: "schema_url"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -509,7 +509,7 @@ extension Opentelemetry_Proto_Logs_V1_ResourceLogs: SwiftProtobuf.Message, Swift
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -526,7 +526,7 @@ extension Opentelemetry_Proto_Logs_V1_ResourceLogs: SwiftProtobuf.Message, Swift
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Opentelemetry_Proto_Logs_V1_ResourceLogs, rhs: Opentelemetry_Proto_Logs_V1_ResourceLogs) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Logs_V1_ResourceLogs, rhs: Opentelemetry_Proto_Logs_V1_ResourceLogs) -> Bool {
     if lhs._resource != rhs._resource {return false}
     if lhs.scopeLogs != rhs.scopeLogs {return false}
     if lhs.schemaURL != rhs.schemaURL {return false}
@@ -536,14 +536,14 @@ extension Opentelemetry_Proto_Logs_V1_ResourceLogs: SwiftProtobuf.Message, Swift
 }
 
 extension Opentelemetry_Proto_Logs_V1_ScopeLogs: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ScopeLogs"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".ScopeLogs"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "scope"),
     2: .standard(proto: "log_records"),
     3: .standard(proto: "schema_url"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -557,7 +557,7 @@ extension Opentelemetry_Proto_Logs_V1_ScopeLogs: SwiftProtobuf.Message, SwiftPro
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -574,7 +574,7 @@ extension Opentelemetry_Proto_Logs_V1_ScopeLogs: SwiftProtobuf.Message, SwiftPro
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Opentelemetry_Proto_Logs_V1_ScopeLogs, rhs: Opentelemetry_Proto_Logs_V1_ScopeLogs) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Logs_V1_ScopeLogs, rhs: Opentelemetry_Proto_Logs_V1_ScopeLogs) -> Bool {
     if lhs._scope != rhs._scope {return false}
     if lhs.logRecords != rhs.logRecords {return false}
     if lhs.schemaURL != rhs.schemaURL {return false}
@@ -584,8 +584,8 @@ extension Opentelemetry_Proto_Logs_V1_ScopeLogs: SwiftProtobuf.Message, SwiftPro
 }
 
 extension Opentelemetry_Proto_Logs_V1_LogRecord: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".LogRecord"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".LogRecord"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "time_unix_nano"),
     11: .standard(proto: "observed_time_unix_nano"),
     2: .standard(proto: "severity_number"),
@@ -598,7 +598,7 @@ extension Opentelemetry_Proto_Logs_V1_LogRecord: SwiftProtobuf.Message, SwiftPro
     10: .standard(proto: "span_id"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -619,7 +619,7 @@ extension Opentelemetry_Proto_Logs_V1_LogRecord: SwiftProtobuf.Message, SwiftPro
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -657,7 +657,7 @@ extension Opentelemetry_Proto_Logs_V1_LogRecord: SwiftProtobuf.Message, SwiftPro
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Opentelemetry_Proto_Logs_V1_LogRecord, rhs: Opentelemetry_Proto_Logs_V1_LogRecord) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Logs_V1_LogRecord, rhs: Opentelemetry_Proto_Logs_V1_LogRecord) -> Bool {
     if lhs.timeUnixNano != rhs.timeUnixNano {return false}
     if lhs.observedTimeUnixNano != rhs.observedTimeUnixNano {return false}
     if lhs.severityNumber != rhs.severityNumber {return false}

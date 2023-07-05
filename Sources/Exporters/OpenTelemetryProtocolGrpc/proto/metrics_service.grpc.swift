@@ -32,7 +32,7 @@ import SwiftProtobuf
 /// central collector.
 ///
 /// Usage: instantiate `Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClient`, then call methods of this protocol to make API calls.
-internal protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientProtocol: GRPCClient {
+public protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientProtocol: GRPCClient {
   var serviceName: String { get }
   var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol? { get }
 
@@ -43,7 +43,7 @@ internal protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientP
 }
 
 extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientProtocol {
-  internal var serviceName: String {
+  public var serviceName: String {
     return "opentelemetry.proto.collector.metrics.v1.MetricsService"
   }
 
@@ -54,7 +54,7 @@ extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientProtocol 
   ///   - request: Request to send to Export.
   ///   - callOptions: Call options.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  internal func export(
+  public func export(
     _ request: Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest,
     callOptions: CallOptions? = nil
   ) -> UnaryCall<Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest, Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse> {
@@ -71,16 +71,16 @@ extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientProtocol 
 extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClient: @unchecked Sendable {}
 
 @available(*, deprecated, renamed: "Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient")
-internal final class Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientProtocol {
+public final class Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientProtocol {
   private let lock = Lock()
   private var _defaultCallOptions: CallOptions
   private var _interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol?
-  internal let channel: GRPCChannel
-  internal var defaultCallOptions: CallOptions {
+  public let channel: GRPCChannel
+  public var defaultCallOptions: CallOptions {
     get { self.lock.withLock { return self._defaultCallOptions } }
     set { self.lock.withLockVoid { self._defaultCallOptions = newValue } }
   }
-  internal var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol? {
+  public var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol? {
     get { self.lock.withLock { return self._interceptors } }
     set { self.lock.withLockVoid { self._interceptors = newValue } }
   }
@@ -91,7 +91,7 @@ internal final class Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClie
   ///   - channel: `GRPCChannel` to the service host.
   ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
   ///   - interceptors: A factory providing interceptors for each RPC.
-  internal init(
+  public init(
     channel: GRPCChannel,
     defaultCallOptions: CallOptions = CallOptions(),
     interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol? = nil
@@ -102,10 +102,10 @@ internal final class Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClie
   }
 }
 
-internal struct Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientProtocol {
-  internal var channel: GRPCChannel
-  internal var defaultCallOptions: CallOptions
-  internal var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol?
+public struct Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientProtocol {
+  public var channel: GRPCChannel
+  public var defaultCallOptions: CallOptions
+  public var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol?
 
   /// Creates a client for the opentelemetry.proto.collector.metrics.v1.MetricsService service.
   ///
@@ -113,7 +113,7 @@ internal struct Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient
   ///   - channel: `GRPCChannel` to the service host.
   ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
   ///   - interceptors: A factory providing interceptors for each RPC.
-  internal init(
+  public init(
     channel: GRPCChannel,
     defaultCallOptions: CallOptions = CallOptions(),
     interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol? = nil
@@ -128,7 +128,7 @@ internal struct Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient
 /// instrumented with OpenTelemetry and a collector, or between a collector and a
 /// central collector.
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-internal protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncClientProtocol: GRPCClient {
+public protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncClientProtocol: GRPCClient {
   static var serviceDescriptor: GRPCServiceDescriptor { get }
   var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol? { get }
 
@@ -140,15 +140,15 @@ internal protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncCl
 
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncClientProtocol {
-  internal static var serviceDescriptor: GRPCServiceDescriptor {
+  public static var serviceDescriptor: GRPCServiceDescriptor {
     return Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientMetadata.serviceDescriptor
   }
 
-  internal var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol? {
+  public var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol? {
     return nil
   }
 
-  internal func makeExportCall(
+  public func makeExportCall(
     _ request: Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest,
     callOptions: CallOptions? = nil
   ) -> GRPCAsyncUnaryCall<Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest, Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse> {
@@ -163,7 +163,7 @@ extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncClientProt
 
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncClientProtocol {
-  internal func export(
+  public func export(
     _ request: Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest,
     callOptions: CallOptions? = nil
   ) async throws -> Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse {
@@ -177,12 +177,12 @@ extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncClientProt
 }
 
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-internal struct Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncClientProtocol {
-  internal var channel: GRPCChannel
-  internal var defaultCallOptions: CallOptions
-  internal var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol?
+public struct Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncClientProtocol {
+  public var channel: GRPCChannel
+  public var defaultCallOptions: CallOptions
+  public var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol?
 
-  internal init(
+  public init(
     channel: GRPCChannel,
     defaultCallOptions: CallOptions = CallOptions(),
     interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol? = nil
@@ -193,14 +193,14 @@ internal struct Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncClie
   }
 }
 
-internal protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol: Sendable {
+public protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientInterceptorFactoryProtocol: Sendable {
 
   /// - Returns: Interceptors to use when invoking 'export'.
   func makeExportInterceptors() -> [ClientInterceptor<Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest, Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse>]
 }
 
-internal enum Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientMetadata {
-  internal static let serviceDescriptor = GRPCServiceDescriptor(
+public enum Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientMetadata {
+  public static let serviceDescriptor = GRPCServiceDescriptor(
     name: "MetricsService",
     fullName: "opentelemetry.proto.collector.metrics.v1.MetricsService",
     methods: [
@@ -208,8 +208,8 @@ internal enum Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientMetad
     ]
   )
 
-  internal enum Methods {
-    internal static let export = GRPCMethodDescriptor(
+  public enum Methods {
+    public static let export = GRPCMethodDescriptor(
       name: "Export",
       path: "/opentelemetry.proto.collector.metrics.v1.MetricsService/Export",
       type: GRPCCallType.unary
@@ -222,7 +222,7 @@ internal enum Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientMetad
 /// central collector.
 ///
 /// To build a server, implement a class that conforms to this protocol.
-internal protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceProvider: CallHandlerProvider {
+public protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceProvider: CallHandlerProvider {
   var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerInterceptorFactoryProtocol? { get }
 
   /// For performance reasons, it is recommended to keep this RPC
@@ -231,13 +231,13 @@ internal protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceProvide
 }
 
 extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceProvider {
-  internal var serviceName: Substring {
+  public var serviceName: Substring {
     return Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerMetadata.serviceDescriptor.fullName[...]
   }
 
   /// Determines, calls and returns the appropriate request handler, depending on the request's method.
   /// Returns nil for methods not handled by this service.
-  internal func handle(
+  public func handle(
     method name: Substring,
     context: CallHandlerContext
   ) -> GRPCServerHandlerProtocol? {
@@ -263,7 +263,7 @@ extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceProvider {
 ///
 /// To implement a server, implement an object which conforms to this protocol.
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
-internal protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncProvider: CallHandlerProvider, Sendable {
+public protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncProvider: CallHandlerProvider, Sendable {
   static var serviceDescriptor: GRPCServiceDescriptor { get }
   var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerInterceptorFactoryProtocol? { get }
 
@@ -277,19 +277,19 @@ internal protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncPr
 
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncProvider {
-  internal static var serviceDescriptor: GRPCServiceDescriptor {
+  public static var serviceDescriptor: GRPCServiceDescriptor {
     return Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerMetadata.serviceDescriptor
   }
 
-  internal var serviceName: Substring {
+  public var serviceName: Substring {
     return Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerMetadata.serviceDescriptor.fullName[...]
   }
 
-  internal var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerInterceptorFactoryProtocol? {
+  public var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerInterceptorFactoryProtocol? {
     return nil
   }
 
-  internal func handle(
+  public func handle(
     method name: Substring,
     context: CallHandlerContext
   ) -> GRPCServerHandlerProtocol? {
@@ -309,15 +309,15 @@ extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncProvider {
   }
 }
 
-internal protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerInterceptorFactoryProtocol: Sendable {
+public protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerInterceptorFactoryProtocol: Sendable {
 
   /// - Returns: Interceptors to use when handling 'export'.
   ///   Defaults to calling `self.makeInterceptors()`.
   func makeExportInterceptors() -> [ServerInterceptor<Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest, Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse>]
 }
 
-internal enum Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerMetadata {
-  internal static let serviceDescriptor = GRPCServiceDescriptor(
+public enum Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerMetadata {
+  public static let serviceDescriptor = GRPCServiceDescriptor(
     name: "MetricsService",
     fullName: "opentelemetry.proto.collector.metrics.v1.MetricsService",
     methods: [
@@ -325,8 +325,8 @@ internal enum Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerMetad
     ]
   )
 
-  internal enum Methods {
-    internal static let export = GRPCMethodDescriptor(
+  public enum Methods {
+    public static let export = GRPCMethodDescriptor(
       name: "Export",
       path: "/opentelemetry.proto.collector.metrics.v1.MetricsService/Export",
       type: GRPCCallType.unary

@@ -37,8 +37,8 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 /// AggregationTemporality defines how a metric aggregator reports aggregated
 /// values. It describes how those values relate to the time interval over
 /// which they are aggregated.
-enum Opentelemetry_Proto_Metrics_V1_AggregationTemporality: SwiftProtobuf.Enum {
-  typealias RawValue = Int
+public enum Opentelemetry_Proto_Metrics_V1_AggregationTemporality: SwiftProtobuf.Enum {
+  public typealias RawValue = Int
 
   /// UNSPECIFIED is the default AggregationTemporality, it MUST not be used.
   case unspecified // = 0
@@ -107,11 +107,11 @@ enum Opentelemetry_Proto_Metrics_V1_AggregationTemporality: SwiftProtobuf.Enum {
   case cumulative // = 2
   case UNRECOGNIZED(Int)
 
-  init() {
+  public init() {
     self = .unspecified
   }
 
-  init?(rawValue: Int) {
+  public init?(rawValue: Int) {
     switch rawValue {
     case 0: self = .unspecified
     case 1: self = .delta
@@ -120,7 +120,7 @@ enum Opentelemetry_Proto_Metrics_V1_AggregationTemporality: SwiftProtobuf.Enum {
     }
   }
 
-  var rawValue: Int {
+  public var rawValue: Int {
     switch self {
     case .unspecified: return 0
     case .delta: return 1
@@ -135,7 +135,7 @@ enum Opentelemetry_Proto_Metrics_V1_AggregationTemporality: SwiftProtobuf.Enum {
 
 extension Opentelemetry_Proto_Metrics_V1_AggregationTemporality: CaseIterable {
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static var allCases: [Opentelemetry_Proto_Metrics_V1_AggregationTemporality] = [
+  public static var allCases: [Opentelemetry_Proto_Metrics_V1_AggregationTemporality] = [
     .unspecified,
     .delta,
     .cumulative,
@@ -150,8 +150,8 @@ extension Opentelemetry_Proto_Metrics_V1_AggregationTemporality: CaseIterable {
 /// a data point, for example, use an expression like:
 ///
 ///   (point.flags & DATA_POINT_FLAGS_NO_RECORDED_VALUE_MASK) == DATA_POINT_FLAGS_NO_RECORDED_VALUE_MASK
-enum Opentelemetry_Proto_Metrics_V1_DataPointFlags: SwiftProtobuf.Enum {
-  typealias RawValue = Int
+public enum Opentelemetry_Proto_Metrics_V1_DataPointFlags: SwiftProtobuf.Enum {
+  public typealias RawValue = Int
 
   /// The zero value for the enum. Should not be used for comparisons.
   /// Instead use bitwise "and" with the appropriate mask as shown above.
@@ -163,11 +163,11 @@ enum Opentelemetry_Proto_Metrics_V1_DataPointFlags: SwiftProtobuf.Enum {
   case noRecordedValueMask // = 1
   case UNRECOGNIZED(Int)
 
-  init() {
+  public init() {
     self = .doNotUse
   }
 
-  init?(rawValue: Int) {
+  public init?(rawValue: Int) {
     switch rawValue {
     case 0: self = .doNotUse
     case 1: self = .noRecordedValueMask
@@ -175,7 +175,7 @@ enum Opentelemetry_Proto_Metrics_V1_DataPointFlags: SwiftProtobuf.Enum {
     }
   }
 
-  var rawValue: Int {
+  public var rawValue: Int {
     switch self {
     case .doNotUse: return 0
     case .noRecordedValueMask: return 1
@@ -189,7 +189,7 @@ enum Opentelemetry_Proto_Metrics_V1_DataPointFlags: SwiftProtobuf.Enum {
 
 extension Opentelemetry_Proto_Metrics_V1_DataPointFlags: CaseIterable {
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static var allCases: [Opentelemetry_Proto_Metrics_V1_DataPointFlags] = [
+  public static var allCases: [Opentelemetry_Proto_Metrics_V1_DataPointFlags] = [
     .doNotUse,
     .noRecordedValueMask,
   ]
@@ -207,7 +207,7 @@ extension Opentelemetry_Proto_Metrics_V1_DataPointFlags: CaseIterable {
 ///
 /// When new fields are added into this message, the OTLP request MUST be updated
 /// as well.
-struct Opentelemetry_Proto_Metrics_V1_MetricsData {
+public struct Opentelemetry_Proto_Metrics_V1_MetricsData {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -217,46 +217,46 @@ struct Opentelemetry_Proto_Metrics_V1_MetricsData {
   /// one element. Intermediary nodes that receive data from multiple origins
   /// typically batch the data before forwarding further and in that case this
   /// array will contain multiple elements.
-  var resourceMetrics: [Opentelemetry_Proto_Metrics_V1_ResourceMetrics] = []
+  public var resourceMetrics: [Opentelemetry_Proto_Metrics_V1_ResourceMetrics] = []
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 }
 
 /// A collection of ScopeMetrics from a Resource.
-struct Opentelemetry_Proto_Metrics_V1_ResourceMetrics {
+public struct Opentelemetry_Proto_Metrics_V1_ResourceMetrics {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// The resource for the metrics in this message.
   /// If this field is not set then no resource info is known.
-  var resource: Opentelemetry_Proto_Resource_V1_Resource {
+  public var resource: Opentelemetry_Proto_Resource_V1_Resource {
     get {return _resource ?? Opentelemetry_Proto_Resource_V1_Resource()}
     set {_resource = newValue}
   }
   /// Returns true if `resource` has been explicitly set.
-  var hasResource: Bool {return self._resource != nil}
+  public var hasResource: Bool {return self._resource != nil}
   /// Clears the value of `resource`. Subsequent reads from it will return its default value.
-  mutating func clearResource() {self._resource = nil}
+  public mutating func clearResource() {self._resource = nil}
 
   /// A list of metrics that originate from a resource.
-  var scopeMetrics: [Opentelemetry_Proto_Metrics_V1_ScopeMetrics] = []
+  public var scopeMetrics: [Opentelemetry_Proto_Metrics_V1_ScopeMetrics] = []
 
   /// This schema_url applies to the data in the "resource" field. It does not apply
   /// to the data in the "scope_metrics" field which have their own schema_url field.
-  var schemaURL: String = String()
+  public var schemaURL: String = String()
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 
   fileprivate var _resource: Opentelemetry_Proto_Resource_V1_Resource? = nil
 }
 
 /// A collection of Metrics produced by an Scope.
-struct Opentelemetry_Proto_Metrics_V1_ScopeMetrics {
+public struct Opentelemetry_Proto_Metrics_V1_ScopeMetrics {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -264,24 +264,24 @@ struct Opentelemetry_Proto_Metrics_V1_ScopeMetrics {
   /// The instrumentation scope information for the metrics in this message.
   /// Semantically when InstrumentationScope isn't set, it is equivalent with
   /// an empty instrumentation scope name (unknown).
-  var scope: Opentelemetry_Proto_Common_V1_InstrumentationScope {
+  public var scope: Opentelemetry_Proto_Common_V1_InstrumentationScope {
     get {return _scope ?? Opentelemetry_Proto_Common_V1_InstrumentationScope()}
     set {_scope = newValue}
   }
   /// Returns true if `scope` has been explicitly set.
-  var hasScope: Bool {return self._scope != nil}
+  public var hasScope: Bool {return self._scope != nil}
   /// Clears the value of `scope`. Subsequent reads from it will return its default value.
-  mutating func clearScope() {self._scope = nil}
+  public mutating func clearScope() {self._scope = nil}
 
   /// A list of metrics that originate from an instrumentation library.
-  var metrics: [Opentelemetry_Proto_Metrics_V1_Metric] = []
+  public var metrics: [Opentelemetry_Proto_Metrics_V1_Metric] = []
 
   /// This schema_url applies to all metrics in the "metrics" field.
-  var schemaURL: String = String()
+  public var schemaURL: String = String()
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 
   fileprivate var _scope: Opentelemetry_Proto_Common_V1_InstrumentationScope? = nil
 }
@@ -371,27 +371,27 @@ struct Opentelemetry_Proto_Metrics_V1_ScopeMetrics {
 /// to support correct rate calculation.  Although it may be omitted
 /// when the start time is truly unknown, setting StartTimeUnixNano is
 /// strongly encouraged.
-struct Opentelemetry_Proto_Metrics_V1_Metric {
+public struct Opentelemetry_Proto_Metrics_V1_Metric {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// name of the metric, including its DNS name prefix. It must be unique.
-  var name: String = String()
+  public var name: String = String()
 
   /// description of the metric, which can be used in documentation.
-  var description_p: String = String()
+  public var description_p: String = String()
 
   /// unit in which the metric value is reported. Follows the format
   /// described by http://unitsofmeasure.org/ucum.html.
-  var unit: String = String()
+  public var unit: String = String()
 
   /// Data determines the aggregation type (if any) of the metric, what is the
   /// reported value type for the data points, as well as the relatationship to
   /// the time interval over which they are reported.
-  var data: Opentelemetry_Proto_Metrics_V1_Metric.OneOf_Data? = nil
+  public var data: Opentelemetry_Proto_Metrics_V1_Metric.OneOf_Data? = nil
 
-  var gauge: Opentelemetry_Proto_Metrics_V1_Gauge {
+  public var gauge: Opentelemetry_Proto_Metrics_V1_Gauge {
     get {
       if case .gauge(let v)? = data {return v}
       return Opentelemetry_Proto_Metrics_V1_Gauge()
@@ -399,7 +399,7 @@ struct Opentelemetry_Proto_Metrics_V1_Metric {
     set {data = .gauge(newValue)}
   }
 
-  var sum: Opentelemetry_Proto_Metrics_V1_Sum {
+  public var sum: Opentelemetry_Proto_Metrics_V1_Sum {
     get {
       if case .sum(let v)? = data {return v}
       return Opentelemetry_Proto_Metrics_V1_Sum()
@@ -407,7 +407,7 @@ struct Opentelemetry_Proto_Metrics_V1_Metric {
     set {data = .sum(newValue)}
   }
 
-  var histogram: Opentelemetry_Proto_Metrics_V1_Histogram {
+  public var histogram: Opentelemetry_Proto_Metrics_V1_Histogram {
     get {
       if case .histogram(let v)? = data {return v}
       return Opentelemetry_Proto_Metrics_V1_Histogram()
@@ -415,7 +415,7 @@ struct Opentelemetry_Proto_Metrics_V1_Metric {
     set {data = .histogram(newValue)}
   }
 
-  var exponentialHistogram: Opentelemetry_Proto_Metrics_V1_ExponentialHistogram {
+  public var exponentialHistogram: Opentelemetry_Proto_Metrics_V1_ExponentialHistogram {
     get {
       if case .exponentialHistogram(let v)? = data {return v}
       return Opentelemetry_Proto_Metrics_V1_ExponentialHistogram()
@@ -423,7 +423,7 @@ struct Opentelemetry_Proto_Metrics_V1_Metric {
     set {data = .exponentialHistogram(newValue)}
   }
 
-  var summary: Opentelemetry_Proto_Metrics_V1_Summary {
+  public var summary: Opentelemetry_Proto_Metrics_V1_Summary {
     get {
       if case .summary(let v)? = data {return v}
       return Opentelemetry_Proto_Metrics_V1_Summary()
@@ -431,12 +431,12 @@ struct Opentelemetry_Proto_Metrics_V1_Metric {
     set {data = .summary(newValue)}
   }
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   /// Data determines the aggregation type (if any) of the metric, what is the
   /// reported value type for the data points, as well as the relatationship to
   /// the time interval over which they are reported.
-  enum OneOf_Data: Equatable {
+  public enum OneOf_Data: Equatable {
     case gauge(Opentelemetry_Proto_Metrics_V1_Gauge)
     case sum(Opentelemetry_Proto_Metrics_V1_Sum)
     case histogram(Opentelemetry_Proto_Metrics_V1_Histogram)
@@ -444,7 +444,7 @@ struct Opentelemetry_Proto_Metrics_V1_Metric {
     case summary(Opentelemetry_Proto_Metrics_V1_Summary)
 
   #if !swift(>=4.1)
-    static func ==(lhs: Opentelemetry_Proto_Metrics_V1_Metric.OneOf_Data, rhs: Opentelemetry_Proto_Metrics_V1_Metric.OneOf_Data) -> Bool {
+    public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_Metric.OneOf_Data, rhs: Opentelemetry_Proto_Metrics_V1_Metric.OneOf_Data) -> Bool {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
@@ -475,7 +475,7 @@ struct Opentelemetry_Proto_Metrics_V1_Metric {
   #endif
   }
 
-  init() {}
+  public init() {}
 }
 
 /// Gauge represents the type of a scalar metric that always exports the
@@ -487,73 +487,73 @@ struct Opentelemetry_Proto_Metrics_V1_Metric {
 /// aggregation, regardless of aggregation temporalities. Therefore,
 /// AggregationTemporality is not included. Consequently, this also means
 /// "StartTimeUnixNano" is ignored for all data points.
-struct Opentelemetry_Proto_Metrics_V1_Gauge {
+public struct Opentelemetry_Proto_Metrics_V1_Gauge {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var dataPoints: [Opentelemetry_Proto_Metrics_V1_NumberDataPoint] = []
+  public var dataPoints: [Opentelemetry_Proto_Metrics_V1_NumberDataPoint] = []
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 }
 
 /// Sum represents the type of a scalar metric that is calculated as a sum of all
 /// reported measurements over a time interval.
-struct Opentelemetry_Proto_Metrics_V1_Sum {
+public struct Opentelemetry_Proto_Metrics_V1_Sum {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var dataPoints: [Opentelemetry_Proto_Metrics_V1_NumberDataPoint] = []
+  public var dataPoints: [Opentelemetry_Proto_Metrics_V1_NumberDataPoint] = []
 
   /// aggregation_temporality describes if the aggregator reports delta changes
   /// since last report time, or cumulative changes since a fixed start time.
-  var aggregationTemporality: Opentelemetry_Proto_Metrics_V1_AggregationTemporality = .unspecified
+  public var aggregationTemporality: Opentelemetry_Proto_Metrics_V1_AggregationTemporality = .unspecified
 
   /// If "true" means that the sum is monotonic.
-  var isMonotonic: Bool = false
+  public var isMonotonic: Bool = false
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 }
 
 /// Histogram represents the type of a metric that is calculated by aggregating
 /// as a Histogram of all reported measurements over a time interval.
-struct Opentelemetry_Proto_Metrics_V1_Histogram {
+public struct Opentelemetry_Proto_Metrics_V1_Histogram {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var dataPoints: [Opentelemetry_Proto_Metrics_V1_HistogramDataPoint] = []
+  public var dataPoints: [Opentelemetry_Proto_Metrics_V1_HistogramDataPoint] = []
 
   /// aggregation_temporality describes if the aggregator reports delta changes
   /// since last report time, or cumulative changes since a fixed start time.
-  var aggregationTemporality: Opentelemetry_Proto_Metrics_V1_AggregationTemporality = .unspecified
+  public var aggregationTemporality: Opentelemetry_Proto_Metrics_V1_AggregationTemporality = .unspecified
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 }
 
 /// ExponentialHistogram represents the type of a metric that is calculated by aggregating
 /// as a ExponentialHistogram of all reported double measurements over a time interval.
-struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogram {
+public struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogram {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var dataPoints: [Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint] = []
+  public var dataPoints: [Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint] = []
 
   /// aggregation_temporality describes if the aggregator reports delta changes
   /// since last report time, or cumulative changes since a fixed start time.
-  var aggregationTemporality: Opentelemetry_Proto_Metrics_V1_AggregationTemporality = .unspecified
+  public var aggregationTemporality: Opentelemetry_Proto_Metrics_V1_AggregationTemporality = .unspecified
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 }
 
 /// Summary metric data are used to convey quantile summaries,
@@ -562,21 +562,21 @@ struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogram {
 /// data type. These data points cannot always be merged in a meaningful way.
 /// While they can be useful in some applications, histogram data points are
 /// recommended for new applications.
-struct Opentelemetry_Proto_Metrics_V1_Summary {
+public struct Opentelemetry_Proto_Metrics_V1_Summary {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var dataPoints: [Opentelemetry_Proto_Metrics_V1_SummaryDataPoint] = []
+  public var dataPoints: [Opentelemetry_Proto_Metrics_V1_SummaryDataPoint] = []
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 }
 
 /// NumberDataPoint is a single data point in a timeseries that describes the
 /// time-varying scalar value of a metric.
-struct Opentelemetry_Proto_Metrics_V1_NumberDataPoint {
+public struct Opentelemetry_Proto_Metrics_V1_NumberDataPoint {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -585,26 +585,26 @@ struct Opentelemetry_Proto_Metrics_V1_NumberDataPoint {
   /// where this point belongs. The list may be empty (may contain 0 elements).
   /// Attribute keys MUST be unique (it is not allowed to have more than one
   /// attribute with the same key).
-  var attributes: [Opentelemetry_Proto_Common_V1_KeyValue] = []
+  public var attributes: [Opentelemetry_Proto_Common_V1_KeyValue] = []
 
   /// StartTimeUnixNano is optional but strongly encouraged, see the
   /// the detailed comments above Metric.
   ///
   /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
   /// 1970.
-  var startTimeUnixNano: UInt64 = 0
+  public var startTimeUnixNano: UInt64 = 0
 
   /// TimeUnixNano is required, see the detailed comments above Metric.
   ///
   /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
   /// 1970.
-  var timeUnixNano: UInt64 = 0
+  public var timeUnixNano: UInt64 = 0
 
   /// The value itself.  A point is considered invalid when one of the recognized
   /// value fields is not present inside this oneof.
-  var value: Opentelemetry_Proto_Metrics_V1_NumberDataPoint.OneOf_Value? = nil
+  public var value: Opentelemetry_Proto_Metrics_V1_NumberDataPoint.OneOf_Value? = nil
 
-  var asDouble: Double {
+  public var asDouble: Double {
     get {
       if case .asDouble(let v)? = value {return v}
       return 0
@@ -612,7 +612,7 @@ struct Opentelemetry_Proto_Metrics_V1_NumberDataPoint {
     set {value = .asDouble(newValue)}
   }
 
-  var asInt: Int64 {
+  public var asInt: Int64 {
     get {
       if case .asInt(let v)? = value {return v}
       return 0
@@ -622,22 +622,22 @@ struct Opentelemetry_Proto_Metrics_V1_NumberDataPoint {
 
   /// (Optional) List of exemplars collected from
   /// measurements that were used to form the data point
-  var exemplars: [Opentelemetry_Proto_Metrics_V1_Exemplar] = []
+  public var exemplars: [Opentelemetry_Proto_Metrics_V1_Exemplar] = []
 
   /// Flags that apply to this specific data point.  See DataPointFlags
   /// for the available flags and their meaning.
-  var flags: UInt32 = 0
+  public var flags: UInt32 = 0
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   /// The value itself.  A point is considered invalid when one of the recognized
   /// value fields is not present inside this oneof.
-  enum OneOf_Value: Equatable {
+  public enum OneOf_Value: Equatable {
     case asDouble(Double)
     case asInt(Int64)
 
   #if !swift(>=4.1)
-    static func ==(lhs: Opentelemetry_Proto_Metrics_V1_NumberDataPoint.OneOf_Value, rhs: Opentelemetry_Proto_Metrics_V1_NumberDataPoint.OneOf_Value) -> Bool {
+    public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_NumberDataPoint.OneOf_Value, rhs: Opentelemetry_Proto_Metrics_V1_NumberDataPoint.OneOf_Value) -> Bool {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
@@ -656,7 +656,7 @@ struct Opentelemetry_Proto_Metrics_V1_NumberDataPoint {
   #endif
   }
 
-  init() {}
+  public init() {}
 }
 
 /// HistogramDataPoint is a single data point in a timeseries that describes the
@@ -669,7 +669,7 @@ struct Opentelemetry_Proto_Metrics_V1_NumberDataPoint {
 /// If the histogram does not contain the distribution of values, then both
 /// "explicit_bounds" and "bucket_counts" must be omitted and only "count" and
 /// "sum" are known.
-struct Opentelemetry_Proto_Metrics_V1_HistogramDataPoint {
+public struct Opentelemetry_Proto_Metrics_V1_HistogramDataPoint {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -678,25 +678,25 @@ struct Opentelemetry_Proto_Metrics_V1_HistogramDataPoint {
   /// where this point belongs. The list may be empty (may contain 0 elements).
   /// Attribute keys MUST be unique (it is not allowed to have more than one
   /// attribute with the same key).
-  var attributes: [Opentelemetry_Proto_Common_V1_KeyValue] = []
+  public var attributes: [Opentelemetry_Proto_Common_V1_KeyValue] = []
 
   /// StartTimeUnixNano is optional but strongly encouraged, see the
   /// the detailed comments above Metric.
   ///
   /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
   /// 1970.
-  var startTimeUnixNano: UInt64 = 0
+  public var startTimeUnixNano: UInt64 = 0
 
   /// TimeUnixNano is required, see the detailed comments above Metric.
   ///
   /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
   /// 1970.
-  var timeUnixNano: UInt64 = 0
+  public var timeUnixNano: UInt64 = 0
 
   /// count is the number of values in the population. Must be non-negative. This
   /// value must be equal to the sum of the "count" fields in buckets if a
   /// histogram is provided.
-  var count: UInt64 = 0
+  public var count: UInt64 = 0
 
   /// sum of the values in the population. If count is zero then this field
   /// must be zero.
@@ -706,14 +706,14 @@ struct Opentelemetry_Proto_Metrics_V1_HistogramDataPoint {
   /// Negative events *can* be recorded, but sum should not be filled out when
   /// doing so.  This is specifically to enforce compatibility w/ OpenMetrics,
   /// see: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#histogram
-  var sum: Double {
+  public var sum: Double {
     get {return _sum ?? 0}
     set {_sum = newValue}
   }
   /// Returns true if `sum` has been explicitly set.
-  var hasSum: Bool {return self._sum != nil}
+  public var hasSum: Bool {return self._sum != nil}
   /// Clears the value of `sum`. Subsequent reads from it will return its default value.
-  mutating func clearSum() {self._sum = nil}
+  public mutating func clearSum() {self._sum = nil}
 
   /// bucket_counts is an optional field contains the count values of histogram
   /// for each bucket.
@@ -722,7 +722,7 @@ struct Opentelemetry_Proto_Metrics_V1_HistogramDataPoint {
   ///
   /// The number of elements in bucket_counts array must be by one greater than
   /// the number of elements in explicit_bounds array.
-  var bucketCounts: [UInt64] = []
+  public var bucketCounts: [UInt64] = []
 
   /// explicit_bounds specifies buckets with explicitly defined bounds for values.
   ///
@@ -737,39 +737,39 @@ struct Opentelemetry_Proto_Metrics_V1_HistogramDataPoint {
   /// Histogram buckets are inclusive of their upper boundary, except the last
   /// bucket where the boundary is at infinity. This format is intentionally
   /// compatible with the OpenMetrics histogram definition.
-  var explicitBounds: [Double] = []
+  public var explicitBounds: [Double] = []
 
   /// (Optional) List of exemplars collected from
   /// measurements that were used to form the data point
-  var exemplars: [Opentelemetry_Proto_Metrics_V1_Exemplar] = []
+  public var exemplars: [Opentelemetry_Proto_Metrics_V1_Exemplar] = []
 
   /// Flags that apply to this specific data point.  See DataPointFlags
   /// for the available flags and their meaning.
-  var flags: UInt32 = 0
+  public var flags: UInt32 = 0
 
   /// min is the minimum value over (start_time, end_time].
-  var min: Double {
+  public var min: Double {
     get {return _min ?? 0}
     set {_min = newValue}
   }
   /// Returns true if `min` has been explicitly set.
-  var hasMin: Bool {return self._min != nil}
+  public var hasMin: Bool {return self._min != nil}
   /// Clears the value of `min`. Subsequent reads from it will return its default value.
-  mutating func clearMin() {self._min = nil}
+  public mutating func clearMin() {self._min = nil}
 
   /// max is the maximum value over (start_time, end_time].
-  var max: Double {
+  public var max: Double {
     get {return _max ?? 0}
     set {_max = newValue}
   }
   /// Returns true if `max` has been explicitly set.
-  var hasMax: Bool {return self._max != nil}
+  public var hasMax: Bool {return self._max != nil}
   /// Clears the value of `max`. Subsequent reads from it will return its default value.
-  mutating func clearMax() {self._max = nil}
+  public mutating func clearMax() {self._max = nil}
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 
   fileprivate var _sum: Double? = nil
   fileprivate var _min: Double? = nil
@@ -780,7 +780,7 @@ struct Opentelemetry_Proto_Metrics_V1_HistogramDataPoint {
 /// time-varying values of a ExponentialHistogram of double values. A ExponentialHistogram contains
 /// summary statistics for a population of values, it may optionally contain the
 /// distribution of those values across a set of buckets.
-struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint {
+public struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -789,25 +789,25 @@ struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint {
   /// where this point belongs. The list may be empty (may contain 0 elements).
   /// Attribute keys MUST be unique (it is not allowed to have more than one
   /// attribute with the same key).
-  var attributes: [Opentelemetry_Proto_Common_V1_KeyValue] = []
+  public var attributes: [Opentelemetry_Proto_Common_V1_KeyValue] = []
 
   /// StartTimeUnixNano is optional but strongly encouraged, see the
   /// the detailed comments above Metric.
   ///
   /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
   /// 1970.
-  var startTimeUnixNano: UInt64 = 0
+  public var startTimeUnixNano: UInt64 = 0
 
   /// TimeUnixNano is required, see the detailed comments above Metric.
   ///
   /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
   /// 1970.
-  var timeUnixNano: UInt64 = 0
+  public var timeUnixNano: UInt64 = 0
 
   /// count is the number of values in the population. Must be
   /// non-negative. This value must be equal to the sum of the "bucket_counts"
   /// values in the positive and negative Buckets plus the "zero_count" field.
-  var count: UInt64 = 0
+  public var count: UInt64 = 0
 
   /// sum of the values in the population. If count is zero then this field
   /// must be zero.
@@ -817,14 +817,14 @@ struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint {
   /// Negative events *can* be recorded, but sum should not be filled out when
   /// doing so.  This is specifically to enforce compatibility w/ OpenMetrics,
   /// see: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#histogram
-  var sum: Double {
+  public var sum: Double {
     get {return _sum ?? 0}
     set {_sum = newValue}
   }
   /// Returns true if `sum` has been explicitly set.
-  var hasSum: Bool {return self._sum != nil}
+  public var hasSum: Bool {return self._sum != nil}
   /// Clears the value of `sum`. Subsequent reads from it will return its default value.
-  mutating func clearSum() {self._sum = nil}
+  public mutating func clearSum() {self._sum = nil}
 
   /// scale describes the resolution of the histogram.  Boundaries are
   /// located at powers of the base, where:
@@ -841,7 +841,7 @@ struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint {
   ///
   /// scale is not restricted by the protocol, as the permissible
   /// values depend on the range of the data.
-  var scale: Int32 = 0
+  public var scale: Int32 = 0
 
   /// zero_count is the count of values that are either exactly zero or
   /// within the region considered zero by the instrumentation at the
@@ -851,55 +851,55 @@ struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint {
   ///
   /// Implementations MAY consider the zero bucket to have probability
   /// mass equal to (zero_count / count).
-  var zeroCount: UInt64 = 0
+  public var zeroCount: UInt64 = 0
 
   /// positive carries the positive range of exponential bucket counts.
-  var positive: Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.Buckets {
+  public var positive: Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.Buckets {
     get {return _positive ?? Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.Buckets()}
     set {_positive = newValue}
   }
   /// Returns true if `positive` has been explicitly set.
-  var hasPositive: Bool {return self._positive != nil}
+  public var hasPositive: Bool {return self._positive != nil}
   /// Clears the value of `positive`. Subsequent reads from it will return its default value.
-  mutating func clearPositive() {self._positive = nil}
+  public mutating func clearPositive() {self._positive = nil}
 
   /// negative carries the negative range of exponential bucket counts.
-  var negative: Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.Buckets {
+  public var negative: Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.Buckets {
     get {return _negative ?? Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.Buckets()}
     set {_negative = newValue}
   }
   /// Returns true if `negative` has been explicitly set.
-  var hasNegative: Bool {return self._negative != nil}
+  public var hasNegative: Bool {return self._negative != nil}
   /// Clears the value of `negative`. Subsequent reads from it will return its default value.
-  mutating func clearNegative() {self._negative = nil}
+  public mutating func clearNegative() {self._negative = nil}
 
   /// Flags that apply to this specific data point.  See DataPointFlags
   /// for the available flags and their meaning.
-  var flags: UInt32 = 0
+  public var flags: UInt32 = 0
 
   /// (Optional) List of exemplars collected from
   /// measurements that were used to form the data point
-  var exemplars: [Opentelemetry_Proto_Metrics_V1_Exemplar] = []
+  public var exemplars: [Opentelemetry_Proto_Metrics_V1_Exemplar] = []
 
   /// min is the minimum value over (start_time, end_time].
-  var min: Double {
+  public var min: Double {
     get {return _min ?? 0}
     set {_min = newValue}
   }
   /// Returns true if `min` has been explicitly set.
-  var hasMin: Bool {return self._min != nil}
+  public var hasMin: Bool {return self._min != nil}
   /// Clears the value of `min`. Subsequent reads from it will return its default value.
-  mutating func clearMin() {self._min = nil}
+  public mutating func clearMin() {self._min = nil}
 
   /// max is the maximum value over (start_time, end_time].
-  var max: Double {
+  public var max: Double {
     get {return _max ?? 0}
     set {_max = newValue}
   }
   /// Returns true if `max` has been explicitly set.
-  var hasMax: Bool {return self._max != nil}
+  public var hasMax: Bool {return self._max != nil}
   /// Clears the value of `max`. Subsequent reads from it will return its default value.
-  mutating func clearMax() {self._max = nil}
+  public mutating func clearMax() {self._max = nil}
 
   /// ZeroThreshold may be optionally set to convey the width of the zero
   /// region. Where the zero region is defined as the closed interval
@@ -907,13 +907,13 @@ struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint {
   /// When ZeroThreshold is 0, zero count bucket stores values that cannot be
   /// expressed using the standard exponential formula as well as values that
   /// have been rounded to zero.
-  var zeroThreshold: Double = 0
+  public var zeroThreshold: Double = 0
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   /// Buckets are a set of bucket counts, encoded in a contiguous array
   /// of counts.
-  struct Buckets {
+  public struct Buckets {
     // SwiftProtobuf.Message conformance is added in an extension below. See the
     // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
     // methods supported on all messages.
@@ -921,7 +921,7 @@ struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint {
     /// Offset is the bucket index of the first entry in the bucket_counts array.
     /// 
     /// Note: This uses a varint encoding as a simple form of compression.
-    var offset: Int32 = 0
+    public var offset: Int32 = 0
 
     /// bucket_counts is an array of count values, where bucket_counts[i] carries
     /// the count of the bucket at index (offset+i). bucket_counts[i] is the count
@@ -932,14 +932,14 @@ struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint {
     /// fixed64.  This field is expected to have many buckets,
     /// especially zeros, so uint64 has been selected to ensure
     /// varint encoding.
-    var bucketCounts: [UInt64] = []
+    public var bucketCounts: [UInt64] = []
 
-    var unknownFields = SwiftProtobuf.UnknownStorage()
+    public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-    init() {}
+    public init() {}
   }
 
-  init() {}
+  public init() {}
 
   fileprivate var _sum: Double? = nil
   fileprivate var _positive: Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.Buckets? = nil
@@ -950,7 +950,7 @@ struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint {
 
 /// SummaryDataPoint is a single data point in a timeseries that describes the
 /// time-varying values of a Summary metric.
-struct Opentelemetry_Proto_Metrics_V1_SummaryDataPoint {
+public struct Opentelemetry_Proto_Metrics_V1_SummaryDataPoint {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -959,23 +959,23 @@ struct Opentelemetry_Proto_Metrics_V1_SummaryDataPoint {
   /// where this point belongs. The list may be empty (may contain 0 elements).
   /// Attribute keys MUST be unique (it is not allowed to have more than one
   /// attribute with the same key).
-  var attributes: [Opentelemetry_Proto_Common_V1_KeyValue] = []
+  public var attributes: [Opentelemetry_Proto_Common_V1_KeyValue] = []
 
   /// StartTimeUnixNano is optional but strongly encouraged, see the
   /// the detailed comments above Metric.
   ///
   /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
   /// 1970.
-  var startTimeUnixNano: UInt64 = 0
+  public var startTimeUnixNano: UInt64 = 0
 
   /// TimeUnixNano is required, see the detailed comments above Metric.
   ///
   /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
   /// 1970.
-  var timeUnixNano: UInt64 = 0
+  public var timeUnixNano: UInt64 = 0
 
   /// count is the number of values in the population. Must be non-negative.
-  var count: UInt64 = 0
+  public var count: UInt64 = 0
 
   /// sum of the values in the population. If count is zero then this field
   /// must be zero.
@@ -985,17 +985,17 @@ struct Opentelemetry_Proto_Metrics_V1_SummaryDataPoint {
   /// Negative events *can* be recorded, but sum should not be filled out when
   /// doing so.  This is specifically to enforce compatibility w/ OpenMetrics,
   /// see: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#summary
-  var sum: Double = 0
+  public var sum: Double = 0
 
   /// (Optional) list of values at different quantiles of the distribution calculated
   /// from the current snapshot. The quantiles must be strictly increasing.
-  var quantileValues: [Opentelemetry_Proto_Metrics_V1_SummaryDataPoint.ValueAtQuantile] = []
+  public var quantileValues: [Opentelemetry_Proto_Metrics_V1_SummaryDataPoint.ValueAtQuantile] = []
 
   /// Flags that apply to this specific data point.  See DataPointFlags
   /// for the available flags and their meaning.
-  var flags: UInt32 = 0
+  public var flags: UInt32 = 0
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   /// Represents the value at a given quantile of a distribution.
   ///
@@ -1005,33 +1005,33 @@ struct Opentelemetry_Proto_Metrics_V1_SummaryDataPoint {
   ///
   /// See the following issue for more context:
   /// https://github.com/open-telemetry/opentelemetry-proto/issues/125
-  struct ValueAtQuantile {
+  public struct ValueAtQuantile {
     // SwiftProtobuf.Message conformance is added in an extension below. See the
     // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
     // methods supported on all messages.
 
     /// The quantile of a distribution. Must be in the interval
     /// [0.0, 1.0].
-    var quantile: Double = 0
+    public var quantile: Double = 0
 
     /// The value at the given quantile of a distribution.
     ///
     /// Quantile values must NOT be negative.
-    var value: Double = 0
+    public var value: Double = 0
 
-    var unknownFields = SwiftProtobuf.UnknownStorage()
+    public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-    init() {}
+    public init() {}
   }
 
-  init() {}
+  public init() {}
 }
 
 /// A representation of an exemplar, which is a sample input measurement.
 /// Exemplars also hold information about the environment when the measurement
 /// was recorded, for example the span and trace ID of the active span when the
 /// exemplar was recorded.
-struct Opentelemetry_Proto_Metrics_V1_Exemplar {
+public struct Opentelemetry_Proto_Metrics_V1_Exemplar {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -1039,20 +1039,20 @@ struct Opentelemetry_Proto_Metrics_V1_Exemplar {
   /// The set of key/value pairs that were filtered out by the aggregator, but
   /// recorded alongside the original measurement. Only key/value pairs that were
   /// filtered out by the aggregator should be included
-  var filteredAttributes: [Opentelemetry_Proto_Common_V1_KeyValue] = []
+  public var filteredAttributes: [Opentelemetry_Proto_Common_V1_KeyValue] = []
 
   /// time_unix_nano is the exact time when this exemplar was recorded
   ///
   /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January
   /// 1970.
-  var timeUnixNano: UInt64 = 0
+  public var timeUnixNano: UInt64 = 0
 
   /// The value of the measurement that was recorded. An exemplar is
   /// considered invalid when one of the recognized value fields is not present
   /// inside this oneof.
-  var value: Opentelemetry_Proto_Metrics_V1_Exemplar.OneOf_Value? = nil
+  public var value: Opentelemetry_Proto_Metrics_V1_Exemplar.OneOf_Value? = nil
 
-  var asDouble: Double {
+  public var asDouble: Double {
     get {
       if case .asDouble(let v)? = value {return v}
       return 0
@@ -1060,7 +1060,7 @@ struct Opentelemetry_Proto_Metrics_V1_Exemplar {
     set {value = .asDouble(newValue)}
   }
 
-  var asInt: Int64 {
+  public var asInt: Int64 {
     get {
       if case .asInt(let v)? = value {return v}
       return 0
@@ -1071,24 +1071,24 @@ struct Opentelemetry_Proto_Metrics_V1_Exemplar {
   /// (Optional) Span ID of the exemplar trace.
   /// span_id may be missing if the measurement is not recorded inside a trace
   /// or if the trace is not sampled.
-  var spanID: Data = Data()
+  public var spanID: Data = Data()
 
   /// (Optional) Trace ID of the exemplar trace.
   /// trace_id may be missing if the measurement is not recorded inside a trace
   /// or if the trace is not sampled.
-  var traceID: Data = Data()
+  public var traceID: Data = Data()
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   /// The value of the measurement that was recorded. An exemplar is
   /// considered invalid when one of the recognized value fields is not present
   /// inside this oneof.
-  enum OneOf_Value: Equatable {
+  public enum OneOf_Value: Equatable {
     case asDouble(Double)
     case asInt(Int64)
 
   #if !swift(>=4.1)
-    static func ==(lhs: Opentelemetry_Proto_Metrics_V1_Exemplar.OneOf_Value, rhs: Opentelemetry_Proto_Metrics_V1_Exemplar.OneOf_Value) -> Bool {
+    public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_Exemplar.OneOf_Value, rhs: Opentelemetry_Proto_Metrics_V1_Exemplar.OneOf_Value) -> Bool {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
@@ -1107,7 +1107,7 @@ struct Opentelemetry_Proto_Metrics_V1_Exemplar {
   #endif
   }
 
-  init() {}
+  public init() {}
 }
 
 #if swift(>=5.5) && canImport(_Concurrency)
@@ -1139,7 +1139,7 @@ extension Opentelemetry_Proto_Metrics_V1_Exemplar.OneOf_Value: @unchecked Sendab
 fileprivate let _protobuf_package = "opentelemetry.proto.metrics.v1"
 
 extension Opentelemetry_Proto_Metrics_V1_AggregationTemporality: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     0: .same(proto: "AGGREGATION_TEMPORALITY_UNSPECIFIED"),
     1: .same(proto: "AGGREGATION_TEMPORALITY_DELTA"),
     2: .same(proto: "AGGREGATION_TEMPORALITY_CUMULATIVE"),
@@ -1147,19 +1147,19 @@ extension Opentelemetry_Proto_Metrics_V1_AggregationTemporality: SwiftProtobuf._
 }
 
 extension Opentelemetry_Proto_Metrics_V1_DataPointFlags: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     0: .same(proto: "DATA_POINT_FLAGS_DO_NOT_USE"),
     1: .same(proto: "DATA_POINT_FLAGS_NO_RECORDED_VALUE_MASK"),
   ]
 }
 
 extension Opentelemetry_Proto_Metrics_V1_MetricsData: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".MetricsData"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".MetricsData"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "resource_metrics"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1171,14 +1171,14 @@ extension Opentelemetry_Proto_Metrics_V1_MetricsData: SwiftProtobuf.Message, Swi
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.resourceMetrics.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.resourceMetrics, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Opentelemetry_Proto_Metrics_V1_MetricsData, rhs: Opentelemetry_Proto_Metrics_V1_MetricsData) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_MetricsData, rhs: Opentelemetry_Proto_Metrics_V1_MetricsData) -> Bool {
     if lhs.resourceMetrics != rhs.resourceMetrics {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -1186,14 +1186,14 @@ extension Opentelemetry_Proto_Metrics_V1_MetricsData: SwiftProtobuf.Message, Swi
 }
 
 extension Opentelemetry_Proto_Metrics_V1_ResourceMetrics: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ResourceMetrics"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".ResourceMetrics"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "resource"),
     2: .standard(proto: "scope_metrics"),
     3: .standard(proto: "schema_url"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1207,7 +1207,7 @@ extension Opentelemetry_Proto_Metrics_V1_ResourceMetrics: SwiftProtobuf.Message,
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1224,7 +1224,7 @@ extension Opentelemetry_Proto_Metrics_V1_ResourceMetrics: SwiftProtobuf.Message,
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Opentelemetry_Proto_Metrics_V1_ResourceMetrics, rhs: Opentelemetry_Proto_Metrics_V1_ResourceMetrics) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_ResourceMetrics, rhs: Opentelemetry_Proto_Metrics_V1_ResourceMetrics) -> Bool {
     if lhs._resource != rhs._resource {return false}
     if lhs.scopeMetrics != rhs.scopeMetrics {return false}
     if lhs.schemaURL != rhs.schemaURL {return false}
@@ -1234,14 +1234,14 @@ extension Opentelemetry_Proto_Metrics_V1_ResourceMetrics: SwiftProtobuf.Message,
 }
 
 extension Opentelemetry_Proto_Metrics_V1_ScopeMetrics: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ScopeMetrics"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".ScopeMetrics"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "scope"),
     2: .same(proto: "metrics"),
     3: .standard(proto: "schema_url"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1255,7 +1255,7 @@ extension Opentelemetry_Proto_Metrics_V1_ScopeMetrics: SwiftProtobuf.Message, Sw
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1272,7 +1272,7 @@ extension Opentelemetry_Proto_Metrics_V1_ScopeMetrics: SwiftProtobuf.Message, Sw
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Opentelemetry_Proto_Metrics_V1_ScopeMetrics, rhs: Opentelemetry_Proto_Metrics_V1_ScopeMetrics) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_ScopeMetrics, rhs: Opentelemetry_Proto_Metrics_V1_ScopeMetrics) -> Bool {
     if lhs._scope != rhs._scope {return false}
     if lhs.metrics != rhs.metrics {return false}
     if lhs.schemaURL != rhs.schemaURL {return false}
@@ -1282,8 +1282,8 @@ extension Opentelemetry_Proto_Metrics_V1_ScopeMetrics: SwiftProtobuf.Message, Sw
 }
 
 extension Opentelemetry_Proto_Metrics_V1_Metric: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".Metric"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".Metric"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "name"),
     2: .same(proto: "description"),
     3: .same(proto: "unit"),
@@ -1294,7 +1294,7 @@ extension Opentelemetry_Proto_Metrics_V1_Metric: SwiftProtobuf.Message, SwiftPro
     11: .same(proto: "summary"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1373,7 +1373,7 @@ extension Opentelemetry_Proto_Metrics_V1_Metric: SwiftProtobuf.Message, SwiftPro
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1413,7 +1413,7 @@ extension Opentelemetry_Proto_Metrics_V1_Metric: SwiftProtobuf.Message, SwiftPro
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Opentelemetry_Proto_Metrics_V1_Metric, rhs: Opentelemetry_Proto_Metrics_V1_Metric) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_Metric, rhs: Opentelemetry_Proto_Metrics_V1_Metric) -> Bool {
     if lhs.name != rhs.name {return false}
     if lhs.description_p != rhs.description_p {return false}
     if lhs.unit != rhs.unit {return false}
@@ -1424,12 +1424,12 @@ extension Opentelemetry_Proto_Metrics_V1_Metric: SwiftProtobuf.Message, SwiftPro
 }
 
 extension Opentelemetry_Proto_Metrics_V1_Gauge: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".Gauge"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".Gauge"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "data_points"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1441,14 +1441,14 @@ extension Opentelemetry_Proto_Metrics_V1_Gauge: SwiftProtobuf.Message, SwiftProt
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.dataPoints.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.dataPoints, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Opentelemetry_Proto_Metrics_V1_Gauge, rhs: Opentelemetry_Proto_Metrics_V1_Gauge) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_Gauge, rhs: Opentelemetry_Proto_Metrics_V1_Gauge) -> Bool {
     if lhs.dataPoints != rhs.dataPoints {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -1456,14 +1456,14 @@ extension Opentelemetry_Proto_Metrics_V1_Gauge: SwiftProtobuf.Message, SwiftProt
 }
 
 extension Opentelemetry_Proto_Metrics_V1_Sum: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".Sum"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".Sum"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "data_points"),
     2: .standard(proto: "aggregation_temporality"),
     3: .standard(proto: "is_monotonic"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1477,7 +1477,7 @@ extension Opentelemetry_Proto_Metrics_V1_Sum: SwiftProtobuf.Message, SwiftProtob
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.dataPoints.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.dataPoints, fieldNumber: 1)
     }
@@ -1490,7 +1490,7 @@ extension Opentelemetry_Proto_Metrics_V1_Sum: SwiftProtobuf.Message, SwiftProtob
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Opentelemetry_Proto_Metrics_V1_Sum, rhs: Opentelemetry_Proto_Metrics_V1_Sum) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_Sum, rhs: Opentelemetry_Proto_Metrics_V1_Sum) -> Bool {
     if lhs.dataPoints != rhs.dataPoints {return false}
     if lhs.aggregationTemporality != rhs.aggregationTemporality {return false}
     if lhs.isMonotonic != rhs.isMonotonic {return false}
@@ -1500,13 +1500,13 @@ extension Opentelemetry_Proto_Metrics_V1_Sum: SwiftProtobuf.Message, SwiftProtob
 }
 
 extension Opentelemetry_Proto_Metrics_V1_Histogram: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".Histogram"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".Histogram"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "data_points"),
     2: .standard(proto: "aggregation_temporality"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1519,7 +1519,7 @@ extension Opentelemetry_Proto_Metrics_V1_Histogram: SwiftProtobuf.Message, Swift
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.dataPoints.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.dataPoints, fieldNumber: 1)
     }
@@ -1529,7 +1529,7 @@ extension Opentelemetry_Proto_Metrics_V1_Histogram: SwiftProtobuf.Message, Swift
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Opentelemetry_Proto_Metrics_V1_Histogram, rhs: Opentelemetry_Proto_Metrics_V1_Histogram) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_Histogram, rhs: Opentelemetry_Proto_Metrics_V1_Histogram) -> Bool {
     if lhs.dataPoints != rhs.dataPoints {return false}
     if lhs.aggregationTemporality != rhs.aggregationTemporality {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -1538,13 +1538,13 @@ extension Opentelemetry_Proto_Metrics_V1_Histogram: SwiftProtobuf.Message, Swift
 }
 
 extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogram: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ExponentialHistogram"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".ExponentialHistogram"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "data_points"),
     2: .standard(proto: "aggregation_temporality"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1557,7 +1557,7 @@ extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogram: SwiftProtobuf.Mes
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.dataPoints.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.dataPoints, fieldNumber: 1)
     }
@@ -1567,7 +1567,7 @@ extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogram: SwiftProtobuf.Mes
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Opentelemetry_Proto_Metrics_V1_ExponentialHistogram, rhs: Opentelemetry_Proto_Metrics_V1_ExponentialHistogram) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_ExponentialHistogram, rhs: Opentelemetry_Proto_Metrics_V1_ExponentialHistogram) -> Bool {
     if lhs.dataPoints != rhs.dataPoints {return false}
     if lhs.aggregationTemporality != rhs.aggregationTemporality {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -1576,12 +1576,12 @@ extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogram: SwiftProtobuf.Mes
 }
 
 extension Opentelemetry_Proto_Metrics_V1_Summary: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".Summary"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".Summary"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "data_points"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1593,14 +1593,14 @@ extension Opentelemetry_Proto_Metrics_V1_Summary: SwiftProtobuf.Message, SwiftPr
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.dataPoints.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.dataPoints, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Opentelemetry_Proto_Metrics_V1_Summary, rhs: Opentelemetry_Proto_Metrics_V1_Summary) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_Summary, rhs: Opentelemetry_Proto_Metrics_V1_Summary) -> Bool {
     if lhs.dataPoints != rhs.dataPoints {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -1608,8 +1608,8 @@ extension Opentelemetry_Proto_Metrics_V1_Summary: SwiftProtobuf.Message, SwiftPr
 }
 
 extension Opentelemetry_Proto_Metrics_V1_NumberDataPoint: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".NumberDataPoint"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".NumberDataPoint"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     7: .same(proto: "attributes"),
     2: .standard(proto: "start_time_unix_nano"),
     3: .standard(proto: "time_unix_nano"),
@@ -1619,7 +1619,7 @@ extension Opentelemetry_Proto_Metrics_V1_NumberDataPoint: SwiftProtobuf.Message,
     8: .same(proto: "flags"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1651,7 +1651,7 @@ extension Opentelemetry_Proto_Metrics_V1_NumberDataPoint: SwiftProtobuf.Message,
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1680,7 +1680,7 @@ extension Opentelemetry_Proto_Metrics_V1_NumberDataPoint: SwiftProtobuf.Message,
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Opentelemetry_Proto_Metrics_V1_NumberDataPoint, rhs: Opentelemetry_Proto_Metrics_V1_NumberDataPoint) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_NumberDataPoint, rhs: Opentelemetry_Proto_Metrics_V1_NumberDataPoint) -> Bool {
     if lhs.attributes != rhs.attributes {return false}
     if lhs.startTimeUnixNano != rhs.startTimeUnixNano {return false}
     if lhs.timeUnixNano != rhs.timeUnixNano {return false}
@@ -1693,8 +1693,8 @@ extension Opentelemetry_Proto_Metrics_V1_NumberDataPoint: SwiftProtobuf.Message,
 }
 
 extension Opentelemetry_Proto_Metrics_V1_HistogramDataPoint: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".HistogramDataPoint"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".HistogramDataPoint"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     9: .same(proto: "attributes"),
     2: .standard(proto: "start_time_unix_nano"),
     3: .standard(proto: "time_unix_nano"),
@@ -1708,7 +1708,7 @@ extension Opentelemetry_Proto_Metrics_V1_HistogramDataPoint: SwiftProtobuf.Messa
     12: .same(proto: "max"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1730,7 +1730,7 @@ extension Opentelemetry_Proto_Metrics_V1_HistogramDataPoint: SwiftProtobuf.Messa
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1771,7 +1771,7 @@ extension Opentelemetry_Proto_Metrics_V1_HistogramDataPoint: SwiftProtobuf.Messa
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Opentelemetry_Proto_Metrics_V1_HistogramDataPoint, rhs: Opentelemetry_Proto_Metrics_V1_HistogramDataPoint) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_HistogramDataPoint, rhs: Opentelemetry_Proto_Metrics_V1_HistogramDataPoint) -> Bool {
     if lhs.attributes != rhs.attributes {return false}
     if lhs.startTimeUnixNano != rhs.startTimeUnixNano {return false}
     if lhs.timeUnixNano != rhs.timeUnixNano {return false}
@@ -1789,8 +1789,8 @@ extension Opentelemetry_Proto_Metrics_V1_HistogramDataPoint: SwiftProtobuf.Messa
 }
 
 extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ExponentialHistogramDataPoint"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".ExponentialHistogramDataPoint"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "attributes"),
     2: .standard(proto: "start_time_unix_nano"),
     3: .standard(proto: "time_unix_nano"),
@@ -1807,7 +1807,7 @@ extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint: SwiftPro
     14: .standard(proto: "zero_threshold"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1832,7 +1832,7 @@ extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint: SwiftPro
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1882,7 +1882,7 @@ extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint: SwiftPro
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint, rhs: Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint, rhs: Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint) -> Bool {
     if lhs.attributes != rhs.attributes {return false}
     if lhs.startTimeUnixNano != rhs.startTimeUnixNano {return false}
     if lhs.timeUnixNano != rhs.timeUnixNano {return false}
@@ -1903,13 +1903,13 @@ extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint: SwiftPro
 }
 
 extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.Buckets: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.protoMessageName + ".Buckets"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.protoMessageName + ".Buckets"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "offset"),
     2: .standard(proto: "bucket_counts"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1922,7 +1922,7 @@ extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.Buckets: 
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.offset != 0 {
       try visitor.visitSingularSInt32Field(value: self.offset, fieldNumber: 1)
     }
@@ -1932,7 +1932,7 @@ extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.Buckets: 
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.Buckets, rhs: Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.Buckets) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.Buckets, rhs: Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.Buckets) -> Bool {
     if lhs.offset != rhs.offset {return false}
     if lhs.bucketCounts != rhs.bucketCounts {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -1941,8 +1941,8 @@ extension Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.Buckets: 
 }
 
 extension Opentelemetry_Proto_Metrics_V1_SummaryDataPoint: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".SummaryDataPoint"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".SummaryDataPoint"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     7: .same(proto: "attributes"),
     2: .standard(proto: "start_time_unix_nano"),
     3: .standard(proto: "time_unix_nano"),
@@ -1952,7 +1952,7 @@ extension Opentelemetry_Proto_Metrics_V1_SummaryDataPoint: SwiftProtobuf.Message
     8: .same(proto: "flags"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1970,7 +1970,7 @@ extension Opentelemetry_Proto_Metrics_V1_SummaryDataPoint: SwiftProtobuf.Message
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.startTimeUnixNano != 0 {
       try visitor.visitSingularFixed64Field(value: self.startTimeUnixNano, fieldNumber: 2)
     }
@@ -1995,7 +1995,7 @@ extension Opentelemetry_Proto_Metrics_V1_SummaryDataPoint: SwiftProtobuf.Message
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Opentelemetry_Proto_Metrics_V1_SummaryDataPoint, rhs: Opentelemetry_Proto_Metrics_V1_SummaryDataPoint) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_SummaryDataPoint, rhs: Opentelemetry_Proto_Metrics_V1_SummaryDataPoint) -> Bool {
     if lhs.attributes != rhs.attributes {return false}
     if lhs.startTimeUnixNano != rhs.startTimeUnixNano {return false}
     if lhs.timeUnixNano != rhs.timeUnixNano {return false}
@@ -2009,13 +2009,13 @@ extension Opentelemetry_Proto_Metrics_V1_SummaryDataPoint: SwiftProtobuf.Message
 }
 
 extension Opentelemetry_Proto_Metrics_V1_SummaryDataPoint.ValueAtQuantile: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = Opentelemetry_Proto_Metrics_V1_SummaryDataPoint.protoMessageName + ".ValueAtQuantile"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = Opentelemetry_Proto_Metrics_V1_SummaryDataPoint.protoMessageName + ".ValueAtQuantile"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "quantile"),
     2: .same(proto: "value"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -2028,7 +2028,7 @@ extension Opentelemetry_Proto_Metrics_V1_SummaryDataPoint.ValueAtQuantile: Swift
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.quantile != 0 {
       try visitor.visitSingularDoubleField(value: self.quantile, fieldNumber: 1)
     }
@@ -2038,7 +2038,7 @@ extension Opentelemetry_Proto_Metrics_V1_SummaryDataPoint.ValueAtQuantile: Swift
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Opentelemetry_Proto_Metrics_V1_SummaryDataPoint.ValueAtQuantile, rhs: Opentelemetry_Proto_Metrics_V1_SummaryDataPoint.ValueAtQuantile) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_SummaryDataPoint.ValueAtQuantile, rhs: Opentelemetry_Proto_Metrics_V1_SummaryDataPoint.ValueAtQuantile) -> Bool {
     if lhs.quantile != rhs.quantile {return false}
     if lhs.value != rhs.value {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -2047,8 +2047,8 @@ extension Opentelemetry_Proto_Metrics_V1_SummaryDataPoint.ValueAtQuantile: Swift
 }
 
 extension Opentelemetry_Proto_Metrics_V1_Exemplar: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".Exemplar"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+  public static let protoMessageName: String = _protobuf_package + ".Exemplar"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     7: .standard(proto: "filtered_attributes"),
     2: .standard(proto: "time_unix_nano"),
     3: .standard(proto: "as_double"),
@@ -2057,7 +2057,7 @@ extension Opentelemetry_Proto_Metrics_V1_Exemplar: SwiftProtobuf.Message, SwiftP
     5: .standard(proto: "trace_id"),
   ]
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -2088,7 +2088,7 @@ extension Opentelemetry_Proto_Metrics_V1_Exemplar: SwiftProtobuf.Message, SwiftP
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -2114,7 +2114,7 @@ extension Opentelemetry_Proto_Metrics_V1_Exemplar: SwiftProtobuf.Message, SwiftP
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Opentelemetry_Proto_Metrics_V1_Exemplar, rhs: Opentelemetry_Proto_Metrics_V1_Exemplar) -> Bool {
+  public static func ==(lhs: Opentelemetry_Proto_Metrics_V1_Exemplar, rhs: Opentelemetry_Proto_Metrics_V1_Exemplar) -> Bool {
     if lhs.filteredAttributes != rhs.filteredAttributes {return false}
     if lhs.timeUnixNano != rhs.timeUnixNano {return false}
     if lhs.value != rhs.value {return false}
