@@ -25,6 +25,7 @@ import GRPC
 import NIO
 import NIOConcurrencyHelpers
 import SwiftProtobuf
+import OpenTelemetryProtocolExporterCommon
 
 
 /// Service that can be used to push metrics between one Application

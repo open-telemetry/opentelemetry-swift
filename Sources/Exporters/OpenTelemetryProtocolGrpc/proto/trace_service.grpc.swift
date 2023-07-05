@@ -25,7 +25,7 @@ import GRPC
 import NIO
 import NIOConcurrencyHelpers
 import SwiftProtobuf
-
+import OpenTelemetryProtocolExporterCommon
 
 /// Service that can be used to push spans between one Application instrumented with
 /// OpenTelemetry and a collector, or between a collector and a central collector (in this

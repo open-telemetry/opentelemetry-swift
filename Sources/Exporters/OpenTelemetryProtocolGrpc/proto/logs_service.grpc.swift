@@ -25,7 +25,7 @@ import GRPC
 import NIO
 import NIOConcurrencyHelpers
 import SwiftProtobuf
-
+import OpenTelemetryProtocolExporterCommon
 
 /// Service that can be used to push logs between one Application instrumented with
 /// OpenTelemetry and an collector, or between an collector and a central collector (in this

@@ -7,7 +7,7 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 
 public enum MetricsAdapter {
-    static func toProtoResourceMetrics(stableMetricData: [StableMetricData]) -> [Opentelemetry_Proto_Metrics_V1_ResourceMetrics] {
+    public static func toProtoResourceMetrics(stableMetricData: [StableMetricData]) -> [Opentelemetry_Proto_Metrics_V1_ResourceMetrics] {
         let resourceAndScopeMap = groupByResouceAndScope(stableMetricData: stableMetricData)
 
         var resourceMetrics = [Opentelemetry_Proto_Metrics_V1_ResourceMetrics]()
