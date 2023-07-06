@@ -5,7 +5,7 @@
 
 import Foundation
 
-public protocol MeterBuilder {
+public protocol MeterBuilder : AnyObject {
 
     /// Assign an OpenTelemetry schema URL to the resulting Meter
     ///

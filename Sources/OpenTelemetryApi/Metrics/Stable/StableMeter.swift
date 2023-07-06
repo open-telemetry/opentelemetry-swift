@@ -9,15 +9,10 @@ import Foundation
 /// Replaces Meter class. After a deprecation period StableMeter will be renamed to Meter
 ///
 public protocol StableMeter {
-
     func counterBuilder(name : String) -> LongCounterBuilder
-
     func upDownCounterBuilder(name: String) -> LongUpDownCounterBuilder
-
     func histogramBuilder(name: String) -> DoubleHistogramBuilder
-
     func gaugeBuilder(name: String) -> DoubleGaugeBuilder
-
 }
 
 

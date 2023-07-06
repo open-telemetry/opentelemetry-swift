@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public struct LongHistogramMeterBuilderSdk : LongHistogramBuilder, InstrumentBuilder {
+public class LongHistogramMeterBuilderSdk : LongHistogramBuilder, InstrumentBuilder {
     
     var meterProviderSharedState: MeterProviderSharedState
     

@@ -6,8 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-
-protocol InstrumentBuilder {
+protocol InstrumentBuilder : AnyObject {
     var meterProviderSharedState : MeterProviderSharedState { get }
     var meterSharedState : StableMeterSharedState { get set }
     var type : InstrumentType { get }
@@ -17,13 +16,13 @@ protocol InstrumentBuilder {
     var instrumentName : String { get }
 }
 extension InstrumentBuilder {
-    mutating func setUnit(_ units: String) -> Self {
+    public func setUnit(_ units: String) -> Self {
         // todo : validate unit 
         self.unit = unit
         return self
     }
     
-    mutating func setDescription(_ description: String) -> Self {
+    public func setDescription(_ description: String) -> Self {
         self.description = description
         return self
     }
@@ -34,14 +33,13 @@ extension InstrumentBuilder {
     
     
     // todo : Is it necessary to use inout for writableMetricStorage?
-    func buildSynchronousInstrument<T : Instrument>(_ instrumentFactory: (InstrumentDescriptor, inout WritableMetricStorage) -> T) ->  T {
-        let descriptor = InstrumentDescriptor(name: instrumentName, description: description, unit: unit, type: type, valueType: valueType)
-        var storage = meterSharedState.registerSynchronousMetricStorage(instrument: descriptor, meterProviderSharedState: meterProviderSharedState)
-        return instrumentFactory(descriptor,&storage)
-        
-    }
+  public func buildSynchronousInstrument<T : Instrument>(_ instrumentFactory: (InstrumentDescriptor, WritableMetricStorage) -> T) ->  T {
+      let descriptor = InstrumentDescriptor(name: instrumentName, description: description, unit: unit, type: type, valueType: valueType)
+      let storage = meterSharedState.registerSynchronousMetricStorage(instrument: descriptor, meterProviderSharedState: meterProviderSharedState)
+      return instrumentFactory(descriptor, storage)
+  }
     
-    func registerDoubleAsynchronousInstrument(type : InstrumentType, updater: @escaping (ObservableDoubleMeasurement)-> Void) -> ObservableInstrumentSdk {
+    public func registerDoubleAsynchronousInstrument(type : InstrumentType, updater: @escaping (ObservableDoubleMeasurement)-> Void) -> ObservableInstrumentSdk {
         let sdkObservableMeasurement = buildObservableMeasurement(type: type)
         let callbackRegistration = CallbackRegistration.init(observableMeasurements: [sdkObservableMeasurement]) {
             updater(sdkObservableMeasurement)
@@ -50,7 +48,7 @@ extension InstrumentBuilder {
         return ObservableInstrumentSdk(meterSharedState: meterSharedState, callbackRegistration: callbackRegistration)
     }
     
-    func registerLongAsynchronousInstrument(type: InstrumentType, updater: @escaping (ObservableLongMeasurement)->Void ) -> ObservableInstrumentSdk {
+    public func registerLongAsynchronousInstrument(type: InstrumentType, updater: @escaping (ObservableLongMeasurement)->Void ) -> ObservableInstrumentSdk {
         let sdkObservableMeasurement = buildObservableMeasurement(type: type)
         let callbackRegistration = CallbackRegistration(observableMeasurements: [sdkObservableMeasurement], callback: {
             updater(sdkObservableMeasurement)
@@ -59,7 +57,7 @@ extension InstrumentBuilder {
         return ObservableInstrumentSdk(meterSharedState: meterSharedState, callbackRegistration: callbackRegistration)
     }
     
-    func buildObservableMeasurement(type: InstrumentType) -> StableObservableMeasurementSdk {
+    public func buildObservableMeasurement(type: InstrumentType) -> StableObservableMeasurementSdk {
         let descriptor = InstrumentDescriptor(name: instrumentName, description: description, unit: unit, type: type, valueType: valueType)
         return meterSharedState.registerObservableMeasurement(instrumentDescriptor: descriptor)
     }

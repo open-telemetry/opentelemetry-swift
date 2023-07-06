@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public struct StableObservableMeasurementSdk : ObservableLongMeasurement, ObservableDoubleMeasurement {
+public class StableObservableMeasurementSdk : ObservableLongMeasurement, ObservableDoubleMeasurement {
     private var insturmentScope : InstrumentationScopeInfo
     public private(set) var descriptor : InstrumentDescriptor
     public private(set) var storages : [AsynchronousMetricStorage]
@@ -21,13 +21,13 @@ public struct StableObservableMeasurementSdk : ObservableLongMeasurement, Observ
         self.storages = storages
     }
     
-    mutating func setActiveReader(reader: RegisteredReader, startEpochNanos : UInt64, epochNanos : UInt64) {
+    func setActiveReader(reader: RegisteredReader, startEpochNanos : UInt64, epochNanos : UInt64) {
         activeReader = reader
         self.startEpochNanos = startEpochNanos
         self.epochNanos = epochNanos
     }
     
-    mutating public func clearActiveReader() {
+    public func clearActiveReader() {
         activeReader = nil
     }
     public func record(value: Int) {

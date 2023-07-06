@@ -10,10 +10,13 @@ class StableMeterSdk : StableMeter {
     var meterSharedState : StableMeterSharedState
     public private(set) var instrumentationScopeInfo: InstrumentationScopeInfo
 
-    init(meterProviderSharedState : inout MeterProviderSharedState, instrumentScope: InstrumentationScopeInfo, registeredReaders : inout [RegisteredReader]) {
+    init(meterProviderSharedState : inout MeterProviderSharedState,
+         instrumentScope: InstrumentationScopeInfo,
+         registeredReaders : inout [RegisteredReader]) {
         self.instrumentationScopeInfo = instrumentScope
         self.meterProviderSharedState = meterProviderSharedState
-        self.meterSharedState = StableMeterSharedState(instrumentationScope: instrumentScope, registeredReaders: registeredReaders)
+        self.meterSharedState = StableMeterSharedState(instrumentationScope: instrumentScope,
+                                                       registeredReaders: registeredReaders)
     }
     
     func counterBuilder(name: String) -> OpenTelemetryApi.LongCounterBuilder {
@@ -23,15 +26,21 @@ class StableMeterSdk : StableMeter {
     }
     
     func upDownCounterBuilder(name: String) -> OpenTelemetryApi.LongUpDownCounterBuilder {
-        return LongUpDownCounterBuilderSdk(meterProviderSharedState: &meterProviderSharedState, meterSharedState: &meterSharedState, name: name)
+        return LongUpDownCounterBuilderSdk(meterProviderSharedState: &meterProviderSharedState,
+                                           meterSharedState: &meterSharedState,
+                                           name: name)
     }
     
     func histogramBuilder(name: String) -> OpenTelemetryApi.DoubleHistogramBuilder {
-        return DoubleHistogramMeterBuilderSdk(meterProviderSharedState: &meterProviderSharedState, meterSharedState: &meterSharedState, name: name)
+        return DoubleHistogramMeterBuilderSdk(meterProviderSharedState: &meterProviderSharedState,
+                                              meterSharedState: &meterSharedState,
+                                              name: name)
     }
         
     func gaugeBuilder(name: String) -> OpenTelemetryApi.DoubleGaugeBuilder {
-        DoubleGaugeBuilderSdk(meterProviderSharedState: &meterProviderSharedState, meterSharedState: &meterSharedState, name: name)
+        DoubleGaugeBuilderSdk(meterProviderSharedState: &meterProviderSharedState,
+                              meterSharedState: &meterSharedState,
+                              name: name)
     }
     
     fileprivate let collectLock = Lock()

@@ -24,7 +24,7 @@ public class StableMeterProviderSdk: StableMeterProvider {
     
     public func meterBuilder(name: String) -> MeterBuilder {
         if registeredReaders.isEmpty {
-            // TODO: noop meter provider builder
+          return DefaultStableMeterProvider.noop()
         }
         var name = name
         if name.isEmpty {

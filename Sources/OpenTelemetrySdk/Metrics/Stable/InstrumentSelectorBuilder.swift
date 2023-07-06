@@ -5,11 +5,9 @@
 
 import Foundation
 
-
-
 public class InstrumentSelectorBuilder {
     var instrumentType : InstrumentType?
-    var instrumentName : String = "*"
+    var instrumentName : String = ".*"
     var meterName : String?
     var meterVersion : String?
     var meterSchemaUrl : String?

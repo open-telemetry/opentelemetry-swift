@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-struct DoubleUpDownCounterBuilderSdk : DoubleUpDownCounterBuilder, InstrumentBuilder {
+public class DoubleUpDownCounterBuilderSdk : DoubleUpDownCounterBuilder, InstrumentBuilder {
     var meterSharedState: StableMeterSharedState
     
     var meterProviderSharedState: MeterProviderSharedState
@@ -29,11 +29,11 @@ struct DoubleUpDownCounterBuilderSdk : DoubleUpDownCounterBuilder, InstrumentBui
         self.instrumentName  = name
     }
     
-    func build() -> OpenTelemetryApi.DoubleUpDownCounter {
+    public func build() -> OpenTelemetryApi.DoubleUpDownCounter {
         buildSynchronousInstrument(DoubleUpDownCounterSdk.init)
     }
     
-    mutating func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableDoubleMeasurement) -> Void) -> OpenTelemetryApi.ObservableDoubleUpDownCounter {
+    public func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableDoubleMeasurement) -> Void) -> OpenTelemetryApi.ObservableDoubleUpDownCounter {
         registerDoubleAsynchronousInstrument(type: type, updater: callback)
     }
     

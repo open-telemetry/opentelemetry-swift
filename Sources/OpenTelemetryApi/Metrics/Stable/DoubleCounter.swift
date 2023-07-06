@@ -7,6 +7,5 @@ import Foundation
 
 public protocol DoubleCounter {
     mutating func add(value: Double)
-
     mutating func add(value: Double, attributes: [String: AttributeValue])
 }

@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public struct LongCounterMeterBuilderSdk : LongCounterBuilder, InstrumentBuilder {
+public class LongCounterMeterBuilderSdk : LongCounterBuilder, InstrumentBuilder {
     
     var meterProviderSharedState: MeterProviderSharedState
     
@@ -22,7 +22,7 @@ public struct LongCounterMeterBuilderSdk : LongCounterBuilder, InstrumentBuilder
     
     var instrumentName: String
     
-    init(meterProviderSharedState: inout MeterProviderSharedState, meterSharedState: inout StableMeterSharedState, name: String) {
+    internal init(meterProviderSharedState: inout MeterProviderSharedState, meterSharedState: inout StableMeterSharedState, name: String) {
         self.meterProviderSharedState = meterProviderSharedState
         self.meterSharedState = meterSharedState
         self.instrumentName = name
@@ -39,7 +39,7 @@ public struct LongCounterMeterBuilderSdk : LongCounterBuilder, InstrumentBuilder
         return buildSynchronousInstrument(LongCounterSdk.init)
     }
     
-    public mutating func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableLongMeasurement) -> Void) -> OpenTelemetryApi.ObservableLongCounter {
+    public func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableLongMeasurement) -> Void) -> OpenTelemetryApi.ObservableLongCounter {
         registerLongAsynchronousInstrument(type: type, updater: callback)
     }
     
