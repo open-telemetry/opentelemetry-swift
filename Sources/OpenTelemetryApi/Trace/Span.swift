@@ -111,6 +111,40 @@ public extension Span {
     func setAttribute(key: SemanticAttributes, value: Bool) {
         return setAttribute(key: key.rawValue, value: AttributeValue.bool(value))
     }
+
+    /// Makes `self` the active span for the duration of the closure
+    @discardableResult
+    func withActive<T>(_ action: () throws -> T) rethrows -> T {
+        try OpenTelemetry.instance.contextProvider.withActiveSpan(self, action)
+    }
+
+    /// Makes `self` the active span for the duration of the closure
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+    @discardableResult
+    func withActive<T>(_ action: () async throws -> T) async rethrows -> T {
+        try await OpenTelemetry.instance.contextProvider.withActiveSpan(self, action)
+    }
+
+    /// Makes `self` the active span for the duration of the closure, ending the span when the closure exits (even if an error is thrown)
+    @discardableResult
+    func withActiveEnd<T>(_ action: () throws -> T) rethrows -> T {
+        defer {
+            self.end()
+        }
+
+        return try self.withActive(action)
+    }
+
+    /// Makes `self` the active span for the duration of the closure, ending the span when the closure exits (even if an error is thrown)
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+    @discardableResult
+    func withActiveEnd<T>(_ action: () async throws -> T) async rethrows -> T {
+        defer {
+            self.end()
+        }
+
+        return try await self.withActive(action)
+    }
 }
 
 public extension Span {

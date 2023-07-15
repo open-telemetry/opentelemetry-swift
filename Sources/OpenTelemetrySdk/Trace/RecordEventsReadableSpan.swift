@@ -309,7 +309,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
             }
         }
         endTime = time
-        OpenTelemetry.instance.contextProvider.removeContextForSpan(self)
+        _ = OpenTelemetry.instance.contextProvider.tryRemoveContextForSpan(self)
         spanProcessor.onEnd(span: self)
     }
 

@@ -152,7 +152,7 @@ class SpanBuilderSdk: SpanBuilder {
                                                              totalRecordedLinks: totalNumberOfLinksAdded,
                                                              startTime: startTime)
         if startAsActive {
-            OpenTelemetry.instance.contextProvider.setActiveSpan(createdSpan)
+            _ = OpenTelemetry.instance.contextProvider.trySetActiveSpan(createdSpan)
         }
         return createdSpan
     }

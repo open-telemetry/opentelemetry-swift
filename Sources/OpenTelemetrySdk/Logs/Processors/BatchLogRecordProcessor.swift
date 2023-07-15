@@ -86,7 +86,7 @@ private class BatchWorker : Thread {
     
     override func main() {
         repeat {
-            autoreleasepool {
+            maybeAutoreleasepool {
                 var logRecordsCopy : [ReadableLogRecord]
                 cond.lock()
                 if logRecordList.count < maxExportBatchSize {
@@ -138,6 +138,6 @@ private class BatchWorker : Thread {
             willExportCallback?(&logRecordToExport)
             _ = logRecordExporter.export(logRecords: logRecordToExport)
         }
-        }
     }
+}
 

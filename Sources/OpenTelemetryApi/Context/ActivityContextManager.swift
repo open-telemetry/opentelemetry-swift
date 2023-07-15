@@ -4,6 +4,7 @@
  */
 
 import Foundation
+#if canImport(os.activity)
 import os.activity
 
 // Bridging Obj-C variabled defined as c-macroses. See `activity.h` header.
@@ -14,23 +15,25 @@ private let OS_ACTIVITY_CURRENT = unsafeBitCast(dlsym(UnsafeMutableRawPointer(bi
                                                                       _ parent: Unmanaged<AnyObject>?,
                                                                       _ flags: os_activity_flag_t) -> AnyObject!
 
-class ActivityContextManager: ContextManager {
-    static let instance = ActivityContextManager()
+public class ActivityContextManager: ManualContextManager {
+    public static let instance = ActivityContextManager()
 
     let rlock = NSRecursiveLock()
 
     class ScopeElement {
-        init(scope: os_activity_scope_state_s) {
+        init(scope: os_activity_scope_state_s, identifier: os_activity_id_t) {
             self.scope = scope
+            self.identifier = identifier
         }
 
         var scope: os_activity_scope_state_s
+        var identifier: os_activity_id_t
     }
 
     var objectScope = NSMapTable<AnyObject, ScopeElement>(keyOptions: .weakMemory, valueOptions: .strongMemory)
     var contextMap = [os_activity_id_t: [String: AnyObject]]()
 
-    func getCurrentContextValue(forKey key: OpenTelemetryContextKeys) -> AnyObject? {
+    public func getCurrentContextValue(forKey key: OpenTelemetryContextKeys) -> AnyObject? {
         var parentIdent: os_activity_id_t = 0
         let activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, &parentIdent)
         var contextValue: AnyObject?
@@ -44,7 +47,7 @@ class ActivityContextManager: ContextManager {
         return contextValue
     }
 
-    func setCurrentContextValue(forKey key: OpenTelemetryContextKeys, value: AnyObject) {
+    public func setCurrentContextValue(forKey key: OpenTelemetryContextKeys, value: AnyObject) {
         var parentIdent: os_activity_id_t = 0
         var activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, &parentIdent)
         rlock.lock()
@@ -52,7 +55,7 @@ class ActivityContextManager: ContextManager {
             var scope: os_activity_scope_state_s
             (activityIdent, scope) = createActivityContext()
             contextMap[activityIdent] = [String: AnyObject]()
-            objectScope.setObject(ScopeElement(scope: scope), forKey: value)
+            objectScope.setObject(ScopeElement(scope: scope, identifier: activityIdent), forKey: value)
         }
         contextMap[activityIdent]?[key.rawValue] = value
         rlock.unlock()
@@ -67,18 +70,57 @@ class ActivityContextManager: ContextManager {
         return (currentActivityId, activityState)
     }
 
-    func removeContextValue(forKey key: OpenTelemetryContextKeys, value: AnyObject) {
-        let activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, nil)
+    public func removeContextValue(forKey key: OpenTelemetryContextKeys, value: AnyObject) {
         rlock.lock()
-        contextMap[activityIdent]?[key.rawValue] = nil
-        if contextMap[activityIdent]?.isEmpty ?? false {
-            contextMap[activityIdent] = nil
+        defer {
+            rlock.unlock()
         }
-        rlock.unlock()
-        if let scope = objectScope.object(forKey: value) {
-            var scope = scope.scope
-            os_activity_scope_leave(&scope)
-            objectScope.removeObject(forKey: value)
+
+        guard let scope = objectScope.object(forKey: value) else {
+            return
         }
+
+        contextMap[scope.identifier]?[key.rawValue] = nil
+        if contextMap[scope.identifier]?.isEmpty ?? false {
+            contextMap[scope.identifier] = nil
+        }
+
+        os_activity_scope_leave(&scope.scope)
+        objectScope.removeObject(forKey: value)
+    }
+
+//    func removeContextValue(forKey key: OpenTelemetryContextKeys, value: AnyObject) {
+//        let activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, nil)
+//        rlock.lock()
+//        contextMap[activityIdent]?[key.rawValue] = nil
+//        if contextMap[activityIdent]?.isEmpty ?? false {
+//            contextMap[activityIdent] = nil
+//        }
+//        rlock.unlock()
+//        if let scope = objectScope.object(forKey: value) {
+//            var scope = scope.scope
+//            os_activity_scope_leave(&scope)
+//            objectScope.removeObject(forKey: value)
+//        }
+//    }
+
+    public func withActiveContext<T>(key: OpenTelemetryContextKeys, value: AnyObject, _ action: () throws -> T) rethrows -> T {
+        self.setCurrentContextValue(forKey: key, value: value)
+        defer {
+            self.removeContextValue(forKey: key, value: value)
+        }
+
+        return try action()
+    }
+
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+    public func withActiveContext<T>(key: OpenTelemetryContextKeys, value: AnyObject, _ action: () async throws -> T) async rethrows -> T {
+        self.setCurrentContextValue(forKey: key, value: value)
+        defer {
+            self.removeContextValue(forKey: key, value: value)
+        }
+
+        return try await action()
     }
 }
+#endif

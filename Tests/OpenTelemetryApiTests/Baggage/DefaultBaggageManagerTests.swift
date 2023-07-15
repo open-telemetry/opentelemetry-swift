@@ -5,6 +5,7 @@
 
 @testable import OpenTelemetryApi
 import XCTest
+import OpenTelemetryTestUtils
 
 private let key = EntryKey(name: "key")!
 private let value = EntryValue(string: "value")!
@@ -23,7 +24,46 @@ class TestBaggage: Baggage {
     }
 }
 
-class DefaultBaggageManagerTests: XCTestCase {
+#if canImport(os.activity)
+class DefaultBaggageManagerTestsActivity: DefaultBaggageManagerTestsServiceContext {
+    override class var contextManager: ContextManager {
+        ActivityContextManager()
+    }
+
+    // This test can't succeed without the os.activity based context propagator since it uses a dispatch queue
+    func testWithContextUsingWrap() {
+        let expec = expectation(description: "testWithContextUsingWrap")
+        let semaphore = DispatchSemaphore(value: 0)
+
+        OpenTelemetry.instance.contextProvider.withActiveBaggage(baggage) {
+            XCTAssertTrue(defaultBaggageManager.getCurrentBaggage() === baggage)
+
+            let semaphore2 = DispatchSemaphore(value: 0)
+            DispatchQueue.global().async {
+                XCTAssert(self.defaultBaggageManager.getCurrentBaggage() === self.baggage)
+                semaphore2.signal()
+                semaphore.wait()
+                XCTAssertNil(self.defaultBaggageManager.getCurrentBaggage())
+                expec.fulfill()
+            }
+            semaphore2.wait()
+        }
+        XCTAssertNil(defaultBaggageManager.getCurrentBaggage())
+        semaphore.signal()
+        waitForExpectations(timeout: 30) { error in
+            if let error = error {
+                print("Error: \(error.localizedDescription)")
+            }
+        }
+    }
+}
+#endif
+
+class DefaultBaggageManagerTestsServiceContext: ContextManagerTestCase {
+    override class var contextManager: ContextManager {
+        ServiceContextManager()
+    }
+
     let defaultBaggageManager = DefaultBaggageManager.instance
     let baggage = TestBaggage()
 
@@ -47,33 +87,9 @@ class DefaultBaggageManagerTests: XCTestCase {
 
     func testWithContext() {
         XCTAssertNil(defaultBaggageManager.getCurrentBaggage())
-        OpenTelemetry.instance.contextProvider.setActiveBaggage(baggage)
-        XCTAssertTrue(defaultBaggageManager.getCurrentBaggage() === baggage)
-        OpenTelemetry.instance.contextProvider.removeContextForBaggage(baggage)
-        XCTAssertNil(defaultBaggageManager.getCurrentBaggage())
-    }
-
-    func testWithContextUsingWrap() {
-        let expec = expectation(description: "testWithContextUsingWrap")
-        OpenTelemetry.instance.contextProvider.setActiveBaggage(baggage)
-        XCTAssertTrue(defaultBaggageManager.getCurrentBaggage() === baggage)
-        let semaphore = DispatchSemaphore(value: 0)
-        let semaphore2 = DispatchSemaphore(value: 0)
-        DispatchQueue.global().async {
-            XCTAssert(self.defaultBaggageManager.getCurrentBaggage() === self.baggage)
-            semaphore2.signal()
-            semaphore.wait()
-            XCTAssertNil(self.defaultBaggageManager.getCurrentBaggage())
-            expec.fulfill()
+        OpenTelemetry.instance.contextProvider.withActiveBaggage(baggage) {
+            XCTAssertTrue(defaultBaggageManager.getCurrentBaggage() === baggage)
         }
-        semaphore2.wait()
-        OpenTelemetry.instance.contextProvider.removeContextForBaggage(baggage)
         XCTAssertNil(defaultBaggageManager.getCurrentBaggage())
-        semaphore.signal()
-        waitForExpectations(timeout: 30) { error in
-            if let error = error {
-                print("Error: \(error.localizedDescription)")
-            }
-        }
     }
 }

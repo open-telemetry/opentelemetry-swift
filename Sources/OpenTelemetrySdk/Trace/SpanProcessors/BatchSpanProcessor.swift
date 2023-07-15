@@ -98,7 +98,7 @@ private class BatchWorker: Thread {
 
     override func main() {
         repeat {
-            autoreleasepool {
+            maybeAutoreleasepool {
                 var spansCopy: [ReadableSpan]
                 cond.lock()
                 if spanList.count < maxExportBatchSize {
@@ -150,4 +150,13 @@ private class BatchWorker: Thread {
             spanExporter.export(spans: spansToExport)
         }
     }
+}
+
+/// Invokes the closure inside an autorelease pool if Objective-C is available. If not, the closure is called directly instead.
+func maybeAutoreleasepool<Result>(invoking body: () throws -> Result) rethrows -> Result {
+#if canImport(ObjectiveC)
+    try autoreleasepool(invoking: body)
+#else
+    try body()
+#endif
 }

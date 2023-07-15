@@ -103,6 +103,9 @@ public protocol SpanBuilder: AnyObject {
     @discardableResult func setStartTime(time: Date) -> Self
 
     /// Sets the Span as the active Span in the current context when started.
+    ///
+    /// - Note: If the current context manager does not support manual context sets, this method will do nothing. Prefer using the closure based APIs like `withStartedActive` when possible.
+    ///
     /// - Parameter active: If the span will be set as the activeSpan
     @discardableResult func setActive(_ active: Bool) -> Self
 
@@ -129,5 +132,34 @@ public extension SpanBuilder {
 
     @discardableResult func setAttribute(key: String, value: Bool) -> Self {
         return setAttribute(key: key, value: AttributeValue.bool(value))
+    }
+
+    /// Builds and starts a span,  setting it as active for the duration of the closure. The span is ended when when the closure exits (even if an error is thrown).
+    ///
+    /// This ignores `setActive`.
+    @discardableResult
+    func withStartedActive<T>(_ action: (Span) throws -> T) rethrows -> T {
+        let span = self.startSpan()
+
+        defer {
+            span.end()
+        }
+
+        return try OpenTelemetry.instance.contextProvider.withActiveSpan(span, { try action(span) })
+    }
+
+    /// Makes `self` the active span for the duration of the closure, ending the span when the closure exits (even if an error is thrown)
+    ///
+    /// This ignores `setActive`.
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+    @discardableResult
+    func withStartedActive<T>(_ action: (Span) async throws -> T) async rethrows -> T {
+        let span = self.startSpan()
+
+        defer {
+            span.end()
+        }
+
+        return try await OpenTelemetry.instance.contextProvider.withActiveSpan(span, { try await action(span) })
     }
 }

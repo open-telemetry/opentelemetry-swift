@@ -43,21 +43,22 @@ if #available(macOS 10.14, *), #available(iOS 12.0, *) {
 func createSpans() {
     let parentSpan1 = tracer.spanBuilder(spanName: "Main").setSpanKind(spanKind: .client).startSpan()
     parentSpan1.setAttribute(key: sampleKey, value: sampleValue)
-    OpenTelemetry.instance.contextProvider.setActiveSpan(parentSpan1)
-    for _ in 1...3 {
-        doWork()
+    OpenTelemetry.instance.contextProvider.withActiveSpan(parentSpan1) {
+        for _ in 1...3 {
+            doWork()
+        }
+        Thread.sleep(forTimeInterval: 0.5)
+
+        tracer.spanBuilder(spanName: "Another").setSpanKind(spanKind: .client).withStartedActive() { parentSpan2 in
+            parentSpan2.setAttribute(key: sampleKey, value: sampleValue)
+            // do more Work
+            for _ in 1...3 {
+                doWork()
+            }
+            Thread.sleep(forTimeInterval: 0.5)
+        }
     }
-    Thread.sleep(forTimeInterval: 0.5)
-    
-    let parentSpan2 = tracer.spanBuilder(spanName: "Another").setSpanKind(spanKind: .client).setActive(true).startSpan()
-    parentSpan2.setAttribute(key: sampleKey, value: sampleValue)
-    // do more Work
-    for _ in 1...3 {
-        doWork()
-    }
-    Thread.sleep(forTimeInterval: 0.5)
-    
-    parentSpan2.end()
+
     parentSpan1.end()
 }
 

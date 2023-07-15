@@ -3,13 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import OpenTelemetryApi
+@testable import OpenTelemetryApi
 import OpenTelemetrySdk
 import Opentracing
 @testable import OpenTracingShim
 import XCTest
+import OpenTelemetryTestUtils
 
-class TracerShimTests: XCTestCase {
+class TracerShimTests: ContextManagerTestCase {
+    override class var contextManager: ContextManager { ActivityContextManager.instance }
     let tracerProviderSdk = TracerProviderSdk()
     var tracer: Tracer!
     var telemetryInfo: TelemetryInfo!

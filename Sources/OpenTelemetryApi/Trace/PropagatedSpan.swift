@@ -15,7 +15,7 @@ class PropagatedSpan: Span {
     var context: SpanContext
 
     func end() {
-        OpenTelemetry.instance.contextProvider.removeContextForSpan(self)
+        _ = OpenTelemetry.instance.contextProvider.tryRemoveContextForSpan(self)
     }
 
     func end(time: Date) {

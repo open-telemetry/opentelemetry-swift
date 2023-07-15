@@ -76,7 +76,7 @@ class FileTests: XCTestCase {
         try file.delete()
 
         XCTAssertThrowsError(try file.append(data: .mock(ofSize: 5))) { error in
-            XCTAssertEqual((error as NSError).localizedDescription, "The file “file” doesn’t exist.")
+            XCTAssert((error as NSError).localizedDescription.contains("doesn’t exist"))
         }
     }
 
@@ -86,7 +86,7 @@ class FileTests: XCTestCase {
         try file.delete()
 
         XCTAssertThrowsError(try file.read()) { error in
-            XCTAssertEqual((error as NSError).localizedDescription, "The file “file” doesn’t exist.")
+            XCTAssert((error as NSError).localizedDescription.contains("doesn’t exist"))
         }
     }
 }

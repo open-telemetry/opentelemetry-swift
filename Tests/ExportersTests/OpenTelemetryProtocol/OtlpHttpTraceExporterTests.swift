@@ -13,6 +13,9 @@ import OpenTelemetryProtocolExporterCommon
 @testable import OpenTelemetryProtocolExporterHttp
 @testable import OpenTelemetrySdk
 import XCTest
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 class OtlpHttpTraceExporterTests: XCTestCase {
     var testServer: NIOHTTP1TestServer!

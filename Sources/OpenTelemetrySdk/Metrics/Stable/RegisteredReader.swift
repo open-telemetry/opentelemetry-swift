@@ -5,17 +5,17 @@
 
 import Foundation
 import OpenTelemetryApi
-
+import Atomics
 
 public class RegisteredReader : Equatable, Hashable {
-    private(set) static var id_counter : Int32 = 0
+    private(set) static var id_counter = ManagedAtomic<Int32>(0)
     public let id : Int32
     public let reader : StableMetricReader
     public let registry : StableViewRegistry
     public var lastCollectedEpochNanos : UInt64 = 0
     
     internal init(reader: StableMetricReader, registry: StableViewRegistry) {
-        id = OSAtomicIncrement32(&Self.id_counter)
+        id = Self.id_counter.loadThenWrappingIncrement(ordering: .relaxed)
         self.reader = reader
         self.registry = registry
     }

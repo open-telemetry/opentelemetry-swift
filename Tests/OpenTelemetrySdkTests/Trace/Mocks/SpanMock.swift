@@ -21,7 +21,7 @@ class SpanMock: Span {
     var status: Status = .unset
 
     func end() {
-        OpenTelemetry.instance.contextProvider.removeContextForSpan(self)
+        _ = OpenTelemetry.instance.contextProvider.tryRemoveContextForSpan(self)
     }
 
     func end(time: Date) { end() }

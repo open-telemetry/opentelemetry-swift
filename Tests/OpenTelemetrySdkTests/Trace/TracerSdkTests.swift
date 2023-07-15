@@ -41,8 +41,10 @@ class TracerSdkTests: XCTestCase {
 
     func testGetCurrentSpan_WithSpan() {
         XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
-        OpenTelemetry.instance.contextProvider.setActiveSpan(span)
-        XCTAssertTrue(OpenTelemetry.instance.contextProvider.activeSpan === span)
+        OpenTelemetry.instance.contextProvider.withActiveSpan(span) {
+            XCTAssertTrue(OpenTelemetry.instance.contextProvider.activeSpan === span)
+        }
+
         span.end()
         XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
     }

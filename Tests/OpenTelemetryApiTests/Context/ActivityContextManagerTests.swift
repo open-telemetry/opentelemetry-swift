@@ -5,8 +5,12 @@
 
 @testable import OpenTelemetryApi
 import XCTest
+import OpenTelemetryTestUtils
 
-class ActivityContextManagerTests: XCTestCase {
+#if canImport(os.activity)
+class ActivityContextManagerTests: ContextManagerTestCase {
+    override class var contextManager: ContextManager { ActivityContextManager.instance }
+    
     let defaultTracer = DefaultTracer.instance
     let firstBytes: [UInt8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, UInt8(ascii: "a")]
 
@@ -19,6 +23,42 @@ class ActivityContextManagerTests: XCTestCase {
 
     override func tearDown() {
         XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === nil)
+    }
+
+    func testUnbalancedRemoves() {
+        let parent = defaultTracer.spanBuilder(spanName: "testUnbalancedRemoves").startSpan()
+
+        // Parent span is made active
+        ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: parent)
+        let child = defaultTracer.spanBuilder(spanName: "child").startSpan()
+        // Child span was never made active, but an attempt is being made to remove it from the context
+        ActivityContextManager.instance.removeContextValue(forKey: .span, value: child)
+
+        // This should have no effect on the active parent span
+        XCTAssertIdentical(ActivityContextManager.instance.getCurrentContextValue(forKey: .span), parent)
+        // end generally tries to remove from context as well, which should again have no effect on the active parent
+        child.end()
+        XCTAssertIdentical(ActivityContextManager.instance.getCurrentContextValue(forKey: .span), parent)
+
+        // Ending the parent span should behave as usual, leaving no active spans
+        parent.end()
+        XCTAssertNil(ActivityContextManager.instance.getCurrentContextValue(forKey: .span))
+    }
+
+    func testInterleaved() {
+        let parent = defaultTracer.spanBuilder(spanName: "testUnbalancedRemoves").startSpan()
+
+        ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: parent)
+        let child = defaultTracer.spanBuilder(spanName: "child").startSpan()
+        ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: child)
+
+        // Is there an expected "correct" behavior for ending parent spans before child spans?
+        // Currently assuming the parent span should be removed and the child span should remain active
+        XCTAssertIdentical(ActivityContextManager.instance.getCurrentContextValue(forKey: .span), child)
+        parent.end()
+        XCTAssertIdentical(ActivityContextManager.instance.getCurrentContextValue(forKey: .span), child)
+        child.end()
+        XCTAssertNil(ActivityContextManager.instance.getCurrentContextValue(forKey: .span))
     }
 
     func testStartAndEndSpanInAsyncQueue() {
@@ -322,3 +362,4 @@ class ActivityContextManagerTests: XCTestCase {
     }
     #endif
 }
+#endif
