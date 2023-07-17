@@ -16,17 +16,20 @@ var tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "Con
 let span1 = tracer.spanBuilder(spanName: "Main (span1)").startSpan()
 OpenTelemetry.instance.contextProvider.withActiveSpan(span1) {
     let semaphore = DispatchSemaphore(value: 0)
-    // COLE: This doesn't behave the same with the activity manager as it does with the service context manager
+
+    let state = OpenTelemetry.instance.contextProvider.getCurrentState()
     DispatchQueue.global().async {
-        let span2 = tracer.spanBuilder(spanName: "Main (span2)").startSpan()
-        OpenTelemetry.instance.contextProvider.withActiveSpan(span2) {
-            OpenTelemetry.instance.contextProvider.activeSpan?.setAttribute(key: "myAttribute", value: "myValue")
-            sleep(1)
+        // Note: Restoring state here isn't necessary for the activity based context manager, activities are tracked across DispatchQueues
+        state.withRestoredState {
+            let span2 = tracer.spanBuilder(spanName: "Main (span2)").startSpan()
+            OpenTelemetry.instance.contextProvider.withActiveSpan(span2) {
+                OpenTelemetry.instance.contextProvider.activeSpan?.setAttribute(key: "myAttribute", value: "myValue")
+                sleep(1)
+            }
+
+            span2.end()
+            semaphore.signal()
         }
-
-        span2.end()
-        semaphore.signal()
-
     }
     span1.end()
 

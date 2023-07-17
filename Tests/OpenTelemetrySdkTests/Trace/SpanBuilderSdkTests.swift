@@ -6,10 +6,12 @@
 @testable import OpenTelemetryApi
 @testable import OpenTelemetrySdk
 import XCTest
+import OpenTelemetryTestUtils
 
 #if canImport(os.activity)
 import os.activity
 
+private let dso = UnsafeMutableRawPointer(mutating: #dsohandle)
 // Bridging Obj-C variabled defined as c-macroses. See `activity.h` header.
 private let OS_ACTIVITY_CURRENT = unsafeBitCast(dlsym(UnsafeMutableRawPointer(bitPattern: -2), "_os_activity_current"),
                                                 to: os_activity_t.self)
@@ -17,11 +19,70 @@ private let OS_ACTIVITY_CURRENT = unsafeBitCast(dlsym(UnsafeMutableRawPointer(bi
                                                                       _ description: UnsafePointer<Int8>,
                                                                       _ parent: Unmanaged<AnyObject>?,
                                                                       _ flags: os_activity_flag_t) -> AnyObject!
+class SpanBuilderSdkTestActivity: SpanBuilderSdkTestServiceContext {
+    override class var contextManager: ContextManager { ActivityContextManager.instance }
+
+    func testSpanRestorationInContextWithExtraActivities() {
+        var activity1State = os_activity_scope_state_s()
+        let activity1 = _os_activity_create(dso, "Activity-1", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
+        os_activity_scope_enter(activity1, &activity1State)
+
+        XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
+        tracerSdk.spanBuilder(spanName: spanName).withStartedActive { parent in
+            var activity2State = os_activity_scope_state_s()
+            let activity2 = _os_activity_create(dso, "Activity-2", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
+            os_activity_scope_enter(activity2, &activity2State)
+
+            XCTAssertEqual(parent.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
+            tracerSdk.spanBuilder(spanName: spanName).withStartedActive { span in
+                let span = span as! RecordEventsReadableSpan
+                var activity3State = os_activity_scope_state_s()
+                let activity3 = _os_activity_create(dso, "Activity-3", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
+                os_activity_scope_enter(activity3, &activity3State)
+
+                XCTAssertEqual(span.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
+                os_activity_scope_leave(&activity3State)
+            }
+
+            os_activity_scope_leave(&activity2State)
+            XCTAssertEqual(parent.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
+        }
+
+        os_activity_scope_leave(&activity1State)
+        XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
+    }
+
+
+    func testSpanRestorationInContextWithExtraActivitiesBlocks() {
+        let activity1 = _os_activity_create(dso, "Activity-1", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
+        os_activity_apply(activity1) {
+            XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
+            let parent = tracerSdk.spanBuilder(spanName: spanName).startSpan()
+            OpenTelemetry.instance.contextProvider.withActiveSpan(parent) {
+                let activity2 = _os_activity_create(dso, "Activity-2", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
+                os_activity_apply(activity2) {
+                    XCTAssertEqual(parent.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
+                    let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
+                    OpenTelemetry.instance.contextProvider.withActiveSpan(span) {
+                        let activity3 = _os_activity_create(dso, "Activity-3", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
+                        os_activity_apply(activity3) {
+                            XCTAssertEqual(span.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
+                        }
+                    }
+                    span.end()
+                }
+                XCTAssertEqual(parent.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
+            }
+
+            parent.end()
+        }
+        XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
+    }
+}
 #endif
 
-private let dso = UnsafeMutableRawPointer(mutating: #dsohandle)
-
-class SpanBuilderSdkTest: XCTestCase {
+class SpanBuilderSdkTestServiceContext: ContextManagerTestCase {
+    override class var contextManager: ContextManager { ServiceContextManager() }
     let spanName = "span_name"
     let sampledSpanContext = SpanContext.create(traceId: TraceId(idHi: 1000, idLo: 1000),
                                                 spanId: SpanId(id: 3000),
@@ -165,7 +226,7 @@ class SpanBuilderSdkTest: XCTestCase {
             }
 
             var attributes: [String: AttributeValue] {
-                return [SpanBuilderSdkTest.samplerAttributeName: AttributeValue.string("bar")]
+                return [SpanBuilderSdkTestServiceContext.samplerAttributeName: AttributeValue.string("bar")]
             }
         }
 
@@ -175,10 +236,10 @@ class SpanBuilderSdkTest: XCTestCase {
                                                    tracer: tracerSdk,
                                                    spanName: spanName,
                                                    sampler: sampler,
-                                                   attributes: [SpanBuilderSdkTest.samplerAttributeName: AttributeValue.string("none")])
+                                                   attributes: [Self.samplerAttributeName: AttributeValue.string("none")])
             .startSpan() as! RecordEventsReadableSpan
         XCTAssertTrue(span.context.traceFlags.sampled)
-        XCTAssertTrue(span.toSpanData().attributes.keys.contains(SpanBuilderSdkTest.samplerAttributeName))
+        XCTAssertTrue(span.toSpanData().attributes.keys.contains(Self.samplerAttributeName))
         span.end()
     }
 
@@ -286,63 +347,4 @@ class SpanBuilderSdkTest: XCTestCase {
         parent.end()
         XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
     }
-
-#if canImport(os.activity)
-    func testSpanRestorationInContextWithExtraActivities() {
-        var activity1State = os_activity_scope_state_s()
-        let activity1 = _os_activity_create(dso, "Activity-1", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
-        os_activity_scope_enter(activity1, &activity1State)
-
-        XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
-        tracerSdk.spanBuilder(spanName: spanName).withStartedActive { parent in
-            var activity2State = os_activity_scope_state_s()
-            let activity2 = _os_activity_create(dso, "Activity-2", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
-            os_activity_scope_enter(activity2, &activity2State)
-
-            XCTAssertEqual(parent.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
-            tracerSdk.spanBuilder(spanName: spanName).withStartedActive { span in
-                let span = span as! RecordEventsReadableSpan
-                var activity3State = os_activity_scope_state_s()
-                let activity3 = _os_activity_create(dso, "Activity-3", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
-                os_activity_scope_enter(activity3, &activity3State)
-
-                XCTAssertEqual(span.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
-                os_activity_scope_leave(&activity3State)
-            }
-
-            os_activity_scope_leave(&activity2State)
-            XCTAssertEqual(parent.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
-        }
-
-        os_activity_scope_leave(&activity1State)
-        XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
-    }
-
-
-    func testSpanRestorationInContextWithExtraActivitiesBlocks() {
-        let activity1 = _os_activity_create(dso, "Activity-1", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
-        os_activity_apply(activity1) {
-            XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
-            let parent = tracerSdk.spanBuilder(spanName: spanName).startSpan()
-            OpenTelemetry.instance.contextProvider.withActiveSpan(parent) {
-                let activity2 = _os_activity_create(dso, "Activity-2", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
-                os_activity_apply(activity2) {
-                    XCTAssertEqual(parent.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
-                    let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
-                    OpenTelemetry.instance.contextProvider.withActiveSpan(span) {
-                        let activity3 = _os_activity_create(dso, "Activity-3", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
-                        os_activity_apply(activity3) {
-                            XCTAssertEqual(span.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
-                        }
-                    }
-                    span.end()
-                }
-                XCTAssertEqual(parent.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
-            }
-
-            parent.end()
-        }
-        XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
-    }
-#endif
 }

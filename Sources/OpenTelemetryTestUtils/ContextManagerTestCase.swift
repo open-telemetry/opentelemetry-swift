@@ -12,6 +12,29 @@ import XCTest
 ///
 /// This allows tests to be reused without being manually copy and pasted.
 open class ContextManagerTestCase: XCTestCase {
+    static let lock = NSLock()
+    static var originalManagers = [ObjectIdentifier: ContextManager]()
+
+    open class var originalManager: ContextManager? {
+        get {
+            self.lock.lock()
+            defer {
+                self.lock.unlock()
+            }
+
+            return self.originalManagers[ObjectIdentifier(self)]
+        }
+
+        set {
+            self.lock.lock()
+            defer {
+                self.lock.unlock()
+            }
+
+            self.originalManagers[ObjectIdentifier(self)] = newValue
+        }
+    }
+
     /// Each subclass should override this property and return the context manager to run the tests with.
     open class var contextManager: ContextManager {
         DefaultContextManager()
@@ -19,7 +42,17 @@ open class ContextManagerTestCase: XCTestCase {
 
     open override class func setUp() {
         super.setUp()
+        self.originalManager = OpenTelemetry.instance.contextProvider.contextManager
         OpenTelemetry.registerContextManager(contextManager: self.contextManager)
+    }
+
+    open override class func tearDown() {
+        super.tearDown()
+        guard let manager = self.originalManager else {
+            return
+        }
+
+        OpenTelemetry.registerContextManager(contextManager: manager)
     }
 }
 

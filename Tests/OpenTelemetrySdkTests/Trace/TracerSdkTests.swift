@@ -6,8 +6,17 @@
 import OpenTelemetryApi
 @testable import OpenTelemetrySdk
 import XCTest
+import OpenTelemetryTestUtils
 
-class TracerSdkTests: XCTestCase {
+#if canImport(os.activity)
+class TracerSdkTestsActivity: TracerSdkTestsServiceContext {
+    override class var contextManager: ContextManager { ActivityContextManager.instance }
+}
+#endif
+
+class TracerSdkTestsServiceContext: ContextManagerTestCase {
+    override class var contextManager: ContextManager { ServiceContextManager() }
+
     let spanName = "span_name"
     let instrumentationScopeName = "TracerSdkTest"
     let instrumentationScopeVersion = "semver:0.2.0"

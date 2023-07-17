@@ -19,9 +19,6 @@ class LoggerSdkTestsActivity: LoggerSdkTestsServiceContext {
 public class LoggerSdkTestsServiceContext: ContextManagerTestCase {
     public override class var contextManager: ContextManager { ServiceContextManager() }
 
-    public override class func tearDown() {
-    }
-
     func testEventBuilder() {
         let processor = LogRecordProcessorMock()
         let sharedState = LoggerSharedState(

@@ -36,3 +36,26 @@ public protocol BaggageBuilder: AnyObject {
     /// Creates a Baggage from this builder. 
     func build() -> Baggage
 }
+
+extension BaggageBuilder {
+    /// Builds and starts a span,  setting it as active for the duration of the closure. The span is ended when when the closure exits (even if an error is thrown).
+    ///
+    /// This ignores `setActive`.
+    @discardableResult
+    func withActive<T>(_ action: (Baggage) throws -> T) rethrows -> T {
+        let baggage = self.build()
+
+        return try OpenTelemetry.instance.contextProvider.withActiveBaggage(baggage, { try action(baggage) })
+    }
+
+    /// Makes `self` the active span for the duration of the closure, ending the span when the closure exits (even if an error is thrown)
+    ///
+    /// This ignores `setActive`.
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+    @discardableResult
+    func withActive<T>(_ action: (Baggage) async throws -> T) async rethrows -> T {
+        let baggage = self.build()
+
+        return try await OpenTelemetry.instance.contextProvider.withActiveBaggage(baggage, { try await action(baggage) })
+    }
+}

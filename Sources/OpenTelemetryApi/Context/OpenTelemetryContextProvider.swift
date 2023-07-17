@@ -105,6 +105,100 @@ public struct OpenTelemetryContextProvider {
     public func withActiveBaggage<T>(_ baggage: Baggage, _ action: () async throws -> T) async rethrows -> T {
         try await contextManager.withActiveContext(key: .baggage, value: baggage, action)
     }
+
+    public func getCurrentState() -> State {
+        State(contextManager: self.contextManager, span: self.activeSpan, baggage: self.activeBaggage)
+    }
+
+    /// Attempts to restore the given state to the current context.
+    ///
+    /// Prefer the closure based `withRestoredState` method when possible, as they support any context manager.
+    ///
+    /// - Returns: `true` if the set was successful, `false` if the manager doesn't support the operation
+    public func tryRestoreState(_ state: State) -> Bool {
+        state.tryRestoreState()
+    }
+
+    /// Restores the given state for the duration of the closure
+    @discardableResult
+    public func withRestoredState<T>(_ state: State, _ action: () throws -> T) rethrows -> T {
+        try state.withRestoredState(action)
+    }
+
+    /// Restores the given state for the duration of the closure
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+    @discardableResult
+    public func withRestoredState<T>(_ state: State, _ action: () async throws -> T) async rethrows -> T {
+        try await state.withRestoredState(action)
+    }
+
+    /// Represents the current state at the moment of construction. The state can be restored to context, for example when running work on a new thread where context normally wouldn't be inherited.
+    public struct State {
+        let contextManager: ContextManager
+        public let span: Span?
+        public let baggage: Baggage?
+
+        /// Attempts to restore this state to the current context.
+        ///
+        /// Prefer the closure based `withRestoredState` method when possible, as they support any context manager.
+        ///
+        /// - Returns: `true` if the set was successful, `false` if the manager doesn't support the operation
+        public func tryRestoreState() -> Bool {
+            guard let contextManager = contextManager as? ManualContextManager else {
+                return false
+            }
+
+            if let baggage = self.baggage {
+                contextManager.setCurrentContextValue(forKey: .baggage, value: baggage)
+            }
+            if let span = self.span {
+                contextManager.setCurrentContextValue(forKey: .span, value: span)
+            }
+
+            return true
+        }
+
+        /// Restores this state for the duration of the closure
+        @discardableResult
+        public func withRestoredState<T>(_ action: () throws -> T) rethrows -> T {
+            func baggageSet(_ action: () throws -> T) rethrows -> T {
+                if let baggage = self.baggage {
+                    return try contextManager.withActiveContext(key: .baggage, value: baggage, action)
+                } else {
+                    return try action()
+                }
+            }
+
+            if let span = self.span {
+                return try contextManager.withActiveContext(key: .span, value: span) {
+                    try baggageSet(action)
+                }
+            } else {
+                return try baggageSet(action)
+            }
+        }
+
+        /// Sets this state for the duration of the closure
+        @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+        @discardableResult
+        public func withRestoredState<T>(_ action: () async throws -> T) async rethrows -> T {
+            func baggageSet(_ action: () async throws -> T) async rethrows -> T {
+                if let baggage = self.baggage {
+                    return try await contextManager.withActiveContext(key: .baggage, value: baggage, action)
+                } else {
+                    return try await action()
+                }
+            }
+
+            if let span = self.span {
+                return try await contextManager.withActiveContext(key: .span, value: span) {
+                    try await baggageSet(action)
+                }
+            } else {
+                return try await baggageSet(action)
+            }
+        }
+    }
 }
 
 enum OpenTelemetryContextError: Error {

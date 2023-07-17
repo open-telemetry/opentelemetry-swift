@@ -9,6 +9,8 @@ import ServiceContextModule
 /// A context manager based on the `ServiceContext` abstraction, which uses Task local values.
 @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 public class ServiceContextManager: ContextManager {
+    public init() { }
+    
     public func getCurrentContextValue(forKey key: OpenTelemetryContextKeys) -> AnyObject? {
         switch key {
         case .baggage:

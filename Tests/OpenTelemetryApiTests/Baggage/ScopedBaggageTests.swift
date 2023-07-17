@@ -5,8 +5,17 @@
 
 @testable import OpenTelemetryApi
 import XCTest
+import OpenTelemetryTestUtils
 
-class ScopedBaggageTests: XCTestCase {
+#if canImport(os.activity)
+class ScopedBaggageTestsActivity: ScopedBaggageTestsServiceContext {
+    override class var contextManager: ContextManager { ActivityContextManager.instance }
+}
+#endif
+
+class ScopedBaggageTestsServiceContext: ContextManagerTestCase {
+    override class var contextManager: ContextManager { ServiceContextManager() }
+    
     let key1 = EntryKey(name: "key 1")!
     let key2 = EntryKey(name: "key 2")!
     let key3 = EntryKey(name: "key 3")!
