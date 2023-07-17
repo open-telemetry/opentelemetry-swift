@@ -89,21 +89,6 @@ public class ActivityContextManager: ManualContextManager {
         objectScope.removeObject(forKey: value)
     }
 
-//    func removeContextValue(forKey key: OpenTelemetryContextKeys, value: AnyObject) {
-//        let activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, nil)
-//        rlock.lock()
-//        contextMap[activityIdent]?[key.rawValue] = nil
-//        if contextMap[activityIdent]?.isEmpty ?? false {
-//            contextMap[activityIdent] = nil
-//        }
-//        rlock.unlock()
-//        if let scope = objectScope.object(forKey: value) {
-//            var scope = scope.scope
-//            os_activity_scope_leave(&scope)
-//            objectScope.removeObject(forKey: value)
-//        }
-//    }
-
     public func withActiveContext<T>(key: OpenTelemetryContextKeys, value: AnyObject, _ action: () throws -> T) rethrows -> T {
         self.setCurrentContextValue(forKey: key, value: value)
         defer {
