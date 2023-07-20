@@ -8,14 +8,17 @@ import XCTest
 import OpenTelemetryTestUtils
 
 #if canImport(os.activity)
-class ScopedBaggageTestsActivity: ScopedBaggageTestsServiceContext {
+class ScopedBaggageTestsActivity: ScopedBaggageTestsBase {
     override class var contextManager: ContextManager { ActivityContextManager.instance }
 }
 #endif
 
-class ScopedBaggageTestsServiceContext: ContextManagerTestCase {
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+class ScopedBaggageTestsServiceContext: ScopedBaggageTestsBase {
     override class var contextManager: ContextManager { ServiceContextManager() }
-    
+}
+
+class ScopedBaggageTestsBase: ContextManagerTestCase {
     let key1 = EntryKey(name: "key 1")!
     let key2 = EntryKey(name: "key 2")!
     let key3 = EntryKey(name: "key 3")!
@@ -35,12 +38,14 @@ class ScopedBaggageTestsServiceContext: ContextManagerTestCase {
         }
     }
 
-    func testEmptyBaggage() {
+    func testEmptyBaggage() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let defaultBaggage = baggageManager.getCurrentBaggage()
         XCTAssertNil(defaultBaggage)
     }
 
-    func testCreateBuilderFromCurrentEntries() {
+    func testCreateBuilderFromCurrentEntries() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let baggage = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()
         OpenTelemetry.instance.contextProvider.withActiveBaggage(baggage) {
             let newEntries = baggageManager.baggageBuilder().put(key: key2, value: value2, metadata: metadataTest).build()
@@ -50,7 +55,8 @@ class ScopedBaggageTestsServiceContext: ContextManagerTestCase {
         }
     }
 
-    func testSetCurrentEntriesWithBuilder() {
+    func testSetCurrentEntriesWithBuilder() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         XCTAssertNil(baggageManager.getCurrentBaggage())
         let baggage = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()
         OpenTelemetry.instance.contextProvider.withActiveBaggage(baggage) {
@@ -60,7 +66,8 @@ class ScopedBaggageTestsServiceContext: ContextManagerTestCase {
         XCTAssertNil(baggageManager.getCurrentBaggage())
     }
 
-    func testAddToCurrentEntriesWithBuilder() {
+    func testAddToCurrentEntriesWithBuilder() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let outerBaggage = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()
         OpenTelemetry.instance.contextProvider.withActiveBaggage(outerBaggage) {
             let innerBaggage = baggageManager.baggageBuilder().put(key: key2, value: value2, metadata: metadataTest).build()
@@ -75,7 +82,8 @@ class ScopedBaggageTestsServiceContext: ContextManagerTestCase {
         }
     }
 
-    func testMultiScopeBaggageWithMetadata() {
+    func testMultiScopeBaggageWithMetadata() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let baggage1 = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest)
             .put(key: key2, value: value2, metadata: metadataTest)
             .build()
@@ -95,7 +103,8 @@ class ScopedBaggageTestsServiceContext: ContextManagerTestCase {
         }
     }
 
-    func testSetNoParent_doesNotInheritContext() {
+    func testSetNoParent_doesNotInheritContext() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         XCTAssertNil(baggageManager.getCurrentBaggage())
         let baggage = baggageManager.baggageBuilder().put(key: key1, value: value1, metadata: metadataTest).build()
         OpenTelemetry.instance.contextProvider.withActiveBaggage(baggage) {

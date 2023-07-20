@@ -25,7 +25,7 @@ class TestBaggage: Baggage {
 }
 
 #if canImport(os.activity)
-class DefaultBaggageManagerTestsActivity: DefaultBaggageManagerTestsServiceContext {
+class DefaultBaggageManagerTestsActivity: DefaultBaggageManagerTestsBase {
     override class var contextManager: ContextManager {
         ActivityContextManager()
     }
@@ -59,11 +59,14 @@ class DefaultBaggageManagerTestsActivity: DefaultBaggageManagerTestsServiceConte
 }
 #endif
 
-class DefaultBaggageManagerTestsServiceContext: ContextManagerTestCase {
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+class DefaultBaggageManagerTestsServiceContext: DefaultBaggageManagerTestsBase {
     override class var contextManager: ContextManager {
         ServiceContextManager()
     }
+}
 
+class DefaultBaggageManagerTestsBase: ContextManagerTestCase {
     let defaultBaggageManager = DefaultBaggageManager.instance
     let baggage = TestBaggage()
 
@@ -71,21 +74,25 @@ class DefaultBaggageManagerTestsServiceContext: ContextManagerTestCase {
         XCTAssertNil(defaultBaggageManager.getCurrentBaggage(), "Test must clean baggage context")
     }
 
-    func testBuilderMethod() {
+    func testBuilderMethod() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let builder = defaultBaggageManager.baggageBuilder()
         XCTAssertEqual(builder.build().getEntries().count, 0)
     }
 
-    func testGetCurrentContext_DefaultContext() {
+    func testGetCurrentContext_DefaultContext() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         XCTAssertTrue(defaultBaggageManager.getCurrentBaggage() === nil)
     }
 
-    func testGetCurrentContext_ContextSetToNil() {
+    func testGetCurrentContext_ContextSetToNil() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let baggage = defaultBaggageManager.getCurrentBaggage()
         XCTAssertNil(baggage)
     }
 
-    func testWithContext() {
+    func testWithContext() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         XCTAssertNil(defaultBaggageManager.getCurrentBaggage())
         OpenTelemetry.instance.contextProvider.withActiveBaggage(baggage) {
             XCTAssertTrue(defaultBaggageManager.getCurrentBaggage() === baggage)

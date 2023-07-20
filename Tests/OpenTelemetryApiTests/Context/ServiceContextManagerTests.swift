@@ -7,6 +7,7 @@
 import XCTest
 import OpenTelemetryTestUtils
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 class ServiceContextManagerTests: ContextManagerTestCase {
     static let provider = OpenTelemetryContextProvider(contextManager: ServiceContextManager())
     override class var contextManager: ContextManager { self.provider.contextManager }

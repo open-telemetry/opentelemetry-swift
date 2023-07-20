@@ -17,14 +17,17 @@ private func createRandomPropagatedSpan() -> PropagatedSpan {
 }
 
 #if canImport(os.activity)
-class DefaultTracerTestsActivity: DefaultTracerTestsServiceContext {
+class DefaultTracerTestsActivity: DefaultTracerTestsBase {
     override class var contextManager: ContextManager { ActivityContextManager() }
 }
 #endif
 
-class DefaultTracerTestsServiceContext: ContextManagerTestCase {
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+class DefaultTracerTestsServiceContext: DefaultTracerTestsBase {
     override class var contextManager: ContextManager { ServiceContextManager() }
+}
 
+class DefaultTracerTestsBase: ContextManagerTestCase {
     let defaultTracer = DefaultTracer.instance
     let spanName = "MySpanName"
     let firstBytes: [UInt8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, UInt8(ascii: "a")]
@@ -42,11 +45,13 @@ class DefaultTracerTestsServiceContext: ContextManagerTestCase {
         XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan, "Test must clean span context")
     }
 
-    func testDefaultGetCurrentSpan() {
+    func testDefaultGetCurrentSpan() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan is PropagatedSpan?)
     }
 
-    func testGetCurrentSpan_WithSpan() {
+    func testGetCurrentSpan_WithSpan() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan == nil)
         let span = createRandomPropagatedSpan()
         OpenTelemetry.instance.contextProvider.withActiveSpan(span) {
@@ -58,11 +63,13 @@ class DefaultTracerTestsServiceContext: ContextManagerTestCase {
         XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan == nil)
     }
 
-    func testDefaultSpanBuilderWithName() {
+    func testDefaultSpanBuilderWithName() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         XCTAssert(defaultTracer.spanBuilder(spanName: spanName).startSpan() is PropagatedSpan)
     }
 
-    func testTestInProcessContext() {
+    func testTestInProcessContext() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let span = defaultTracer.spanBuilder(spanName: spanName).startSpan()
         OpenTelemetry.instance.contextProvider.withActiveSpan(span) {
             XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === span)
@@ -79,19 +86,22 @@ class DefaultTracerTestsServiceContext: ContextManagerTestCase {
         XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan == nil)
     }
 
-    func testTestSpanContextPropagationExplicitParent() {
+    func testTestSpanContextPropagationExplicitParent() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let span = defaultTracer.spanBuilder(spanName: spanName).setParent(spanContext).startSpan()
         XCTAssert(span.context == spanContext)
     }
 
-    func testTestSpanContextPropagation() {
+    func testTestSpanContextPropagation() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let parent = PropagatedSpan(context: spanContext)
 
         let span = defaultTracer.spanBuilder(spanName: spanName).setParent(parent).startSpan()
         XCTAssert(span.context == spanContext)
     }
 
-    func testTestSpanContextPropagationCurrentSpan() {
+    func testTestSpanContextPropagationCurrentSpan() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let parent = PropagatedSpan(context: spanContext)
         OpenTelemetry.instance.contextProvider.withActiveSpan(parent) {
             let span = defaultTracer.spanBuilder(spanName: spanName).startSpan()

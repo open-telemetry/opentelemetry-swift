@@ -19,40 +19,40 @@ private let OS_ACTIVITY_CURRENT = unsafeBitCast(dlsym(UnsafeMutableRawPointer(bi
                                                                       _ description: UnsafePointer<Int8>,
                                                                       _ parent: Unmanaged<AnyObject>?,
                                                                       _ flags: os_activity_flag_t) -> AnyObject!
-class SpanBuilderSdkTestActivity: SpanBuilderSdkTestServiceContext {
+class SpanBuilderSdkTestActivity: SpanBuilderSdkTestBase {
     override class var contextManager: ContextManager { ActivityContextManager.instance }
-
+    
     func testSpanRestorationInContextWithExtraActivities() {
         var activity1State = os_activity_scope_state_s()
         let activity1 = _os_activity_create(dso, "Activity-1", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
         os_activity_scope_enter(activity1, &activity1State)
-
+        
         XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
         tracerSdk.spanBuilder(spanName: spanName).withStartedActive { parent in
             var activity2State = os_activity_scope_state_s()
             let activity2 = _os_activity_create(dso, "Activity-2", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
             os_activity_scope_enter(activity2, &activity2State)
-
+            
             XCTAssertEqual(parent.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
             tracerSdk.spanBuilder(spanName: spanName).withStartedActive { span in
                 let span = span as! RecordEventsReadableSpan
                 var activity3State = os_activity_scope_state_s()
                 let activity3 = _os_activity_create(dso, "Activity-3", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
                 os_activity_scope_enter(activity3, &activity3State)
-
+                
                 XCTAssertEqual(span.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
                 os_activity_scope_leave(&activity3State)
             }
-
+            
             os_activity_scope_leave(&activity2State)
             XCTAssertEqual(parent.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
         }
-
+        
         os_activity_scope_leave(&activity1State)
         XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
     }
-
-
+    
+    
     func testSpanRestorationInContextWithExtraActivitiesBlocks() {
         let activity1 = _os_activity_create(dso, "Activity-1", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
         os_activity_apply(activity1) {
@@ -73,7 +73,7 @@ class SpanBuilderSdkTestActivity: SpanBuilderSdkTestServiceContext {
                 }
                 XCTAssertEqual(parent.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
             }
-
+            
             parent.end()
         }
         XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
@@ -81,8 +81,12 @@ class SpanBuilderSdkTestActivity: SpanBuilderSdkTestServiceContext {
 }
 #endif
 
-class SpanBuilderSdkTestServiceContext: ContextManagerTestCase {
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+class SpanBuilderSdkTestServiceContext: SpanBuilderSdkTestBase {
     override class var contextManager: ContextManager { ServiceContextManager() }
+}
+
+class SpanBuilderSdkTestBase: ContextManagerTestCase {
     let spanName = "span_name"
     let sampledSpanContext = SpanContext.create(traceId: TraceId(idHi: 1000, idLo: 1000),
                                                 spanId: SpanId(id: 3000),
@@ -90,12 +94,13 @@ class SpanBuilderSdkTestServiceContext: ContextManagerTestCase {
                                                 traceState: TraceState())
     var tracerSdkFactory = TracerProviderSdk()
     var tracerSdk: Tracer!
-
+    
     override func setUp() {
         tracerSdk = tracerSdkFactory.get(instrumentationName: "SpanBuilderSdkTest")
     }
-
-    func testAddLink() {
+    
+    func testAddLink() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         // Verify methods do not crash.
         let spanBuilder = tracerSdk.spanBuilder(spanName: spanName) as! SpanBuilderSdk
         spanBuilder.addLink(SpanData.Link(context: PropagatedSpan().context))
@@ -105,8 +110,9 @@ class SpanBuilderSdkTestServiceContext: ContextManagerTestCase {
         XCTAssertEqual(span.toSpanData().links.count, 3)
         span.end()
     }
-
-    func testTruncateLink() {
+    
+    func testTruncateLink() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let maxNumberOfLinks = 8
         let spanLimits = tracerSdkFactory.getActiveSpanLimits().settingLinkCountLimit(UInt(maxNumberOfLinks))
         tracerSdkFactory.updateActiveSpanLimits(spanLimits)
@@ -126,15 +132,16 @@ class SpanBuilderSdkTestServiceContext: ContextManagerTestCase {
         span.end()
         tracerSdkFactory.updateActiveSpanLimits(SpanLimits())
     }
-
-    func testSetAttribute() {
+    
+    func testSetAttribute() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let spanBuilder = tracerSdk.spanBuilder(spanName: spanName)
         spanBuilder.setAttribute(key: "string", value: "value")
         spanBuilder.setAttribute(key: "long", value: 12345)
         spanBuilder.setAttribute(key: "double", value: 0.12345)
         spanBuilder.setAttribute(key: "boolean", value: true)
         spanBuilder.setAttribute(key: "stringAttribute", value: AttributeValue.string("attrvalue"))
-
+        
         let span = spanBuilder.startSpan() as! RecordEventsReadableSpan
         let attrs = span.toSpanData().attributes
         XCTAssertEqual(attrs.count, 5)
@@ -145,8 +152,9 @@ class SpanBuilderSdkTestServiceContext: ContextManagerTestCase {
         XCTAssertEqual(attrs["stringAttribute"], AttributeValue.string("attrvalue"))
         span.end()
     }
-
-    func testSetAttribute_emptyArrayAttributeValue() {
+    
+    func testSetAttribute_emptyArrayAttributeValue() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let spanBuilder = tracerSdk.spanBuilder(spanName: spanName)
         spanBuilder.setAttribute(key: "stringArrayAttribute", value: AttributeValue.stringArray([String]()))
         spanBuilder.setAttribute(key: "boolArrayAttribute", value: AttributeValue.boolArray([Bool]()))
@@ -155,8 +163,9 @@ class SpanBuilderSdkTestServiceContext: ContextManagerTestCase {
         let span = spanBuilder.startSpan() as! RecordEventsReadableSpan
         XCTAssertEqual(span.toSpanData().attributes.count, 4)
     }
-
-    func testDroppingAttributes() {
+    
+    func testDroppingAttributes() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let maxNumberOfAttrs = 8
         let spanLimits = tracerSdkFactory.getActiveSpanLimits().settingAttributeCountLimit(UInt(maxNumberOfAttrs))
         tracerSdkFactory.updateActiveSpanLimits(spanLimits)
@@ -173,37 +182,42 @@ class SpanBuilderSdkTestServiceContext: ContextManagerTestCase {
         span.end()
         tracerSdkFactory.updateActiveSpanLimits(SpanLimits())
     }
-
-    func testRecordEvents_default() {
+    
+    func testRecordEvents_default() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
         XCTAssertTrue(span.isRecording)
         span.end()
     }
-
-    func testKind_default() {
+    
+    func testKind_default() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
         XCTAssertEqual(span.kind, SpanKind.internal)
         span.end()
     }
-
-    func testKind() {
+    
+    func testKind() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let span = tracerSdk.spanBuilder(spanName: spanName).setSpanKind(spanKind: .consumer).startSpan() as! RecordEventsReadableSpan
         XCTAssertEqual(span.kind, SpanKind.consumer)
     }
-
-    func testSampler() {
+    
+    func testSampler() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let span = TestUtils.createSpanWithSampler(tracerSdkFactory: tracerSdkFactory,
                                                    tracer: tracerSdk, spanName: spanName,
                                                    sampler: Samplers.alwaysOff)
             .startSpan()
-
+        
         XCTAssertFalse(span.context.traceFlags.sampled)
         span.end()
     }
-
+    
     static let samplerAttributeName = "sampler-attribute"
-
-    func testSampler_decisionAttributes() {
+    
+    func testSampler_decisionAttributes() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         class TestSampler: Sampler {
             var decision: Decision
             func shouldSample(parentContext: SpanContext?,
@@ -215,21 +229,21 @@ class SpanBuilderSdkTestServiceContext: ContextManagerTestCase {
             {
                 return decision
             }
-
+            
             var description: String { return "TestSampler" }
             init(decision: Decision) { self.decision = decision }
         }
-
+        
         class TestDecision: Decision {
             var isSampled: Bool {
                 return true
             }
-
+            
             var attributes: [String: AttributeValue] {
                 return [SpanBuilderSdkTestServiceContext.samplerAttributeName: AttributeValue.string("bar")]
             }
         }
-
+        
         let decision = TestDecision()
         let sampler = TestSampler(decision: decision)
         let span = TestUtils.createSpanWithSampler(tracerSdkFactory: tracerSdkFactory,
@@ -242,8 +256,9 @@ class SpanBuilderSdkTestServiceContext: ContextManagerTestCase {
         XCTAssertTrue(span.toSpanData().attributes.keys.contains(Self.samplerAttributeName))
         span.end()
     }
-
-    func testSampledViaParentLinks() {
+    
+    func testSampledViaParentLinks() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let span = TestUtils.createSpanWithSampler(tracerSdkFactory: tracerSdkFactory,
                                                    tracer: tracerSdk, spanName: spanName,
                                                    sampler: Samplers.traceIdRatio(ratio: 0.0))
@@ -252,8 +267,9 @@ class SpanBuilderSdkTestServiceContext: ContextManagerTestCase {
         XCTAssertTrue(span.context.traceFlags.sampled)
         span.end()
     }
-
-    func testNoParent() {
+    
+    func testNoParent() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         tracerSdk.spanBuilder(spanName: spanName).withStartedActive { parent in
             let span = tracerSdk.spanBuilder(spanName: spanName).setNoParent().startSpan()
             XCTAssertNotEqual(span.context.traceId, parent.context.traceId)
@@ -263,8 +279,9 @@ class SpanBuilderSdkTestServiceContext: ContextManagerTestCase {
             span.end()
         }
     }
-
-    func testNoParent_override() {
+    
+    func testNoParent_override() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let parent = tracerSdk.spanBuilder(spanName: spanName).startSpan()
         let span = tracerSdk.spanBuilder(spanName: spanName).setNoParent().setParent(parent).startSpan() as! RecordEventsReadableSpan
         XCTAssertEqual(span.context.traceId, parent.context.traceId)
@@ -275,8 +292,9 @@ class SpanBuilderSdkTestServiceContext: ContextManagerTestCase {
         span.end()
         parent.end()
     }
-
-    func testOverrideNoParent_remoteParent() {
+    
+    func testOverrideNoParent_remoteParent() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let parent = tracerSdk.spanBuilder(spanName: spanName).startSpan()
         let span = tracerSdk.spanBuilder(spanName: spanName).setNoParent().setParent(parent.context).startSpan() as! RecordEventsReadableSpan
         XCTAssertEqual(span.context.traceId, parent.context.traceId)
@@ -284,8 +302,9 @@ class SpanBuilderSdkTestServiceContext: ContextManagerTestCase {
         span.end()
         parent.end()
     }
-
-    func testParentCurrentSpan() {
+    
+    func testParentCurrentSpan() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         tracerSdk.spanBuilder(spanName: spanName).withStartedActive { parent in
             let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
             XCTAssertEqual(span.context.traceId, parent.context.traceId)
@@ -293,16 +312,18 @@ class SpanBuilderSdkTestServiceContext: ContextManagerTestCase {
             span.end()
         }
     }
-
-    func testParent_invalidContext() {
+    
+    func testParent_invalidContext() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let parent = PropagatedSpan()
         let span = tracerSdk.spanBuilder(spanName: spanName).setParent(parent.context).startSpan() as! RecordEventsReadableSpan
         XCTAssertNotEqual(span.context.traceId, parent.context.traceId)
         XCTAssertNil(span.parentContext?.spanId)
         span.end()
     }
-
-    func testParentEnvironmentContext() {
+    
+    func testParentEnvironmentContext() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         setenv("TRACEPARENT", "00-ff000000000000000000000000000041-ff00000000000041-01", 1)
         let providerWithEnv = TracerProviderSdk()
         let tracerAux = providerWithEnv.get(instrumentationName: "SpanBuilderWithEnvTest")
@@ -312,25 +333,28 @@ class SpanBuilderSdkTestServiceContext: ContextManagerTestCase {
             XCTAssertEqual(parent.context.traceId.hexString, "ff000000000000000000000000000041")
             span.end()
         }
-
+        
         unsetenv("TRACEPARENT")
     }
-
-    func testParent_timestampConverter() {
+    
+    func testParent_timestampConverter() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let parent = tracerSdk.spanBuilder(spanName: spanName).startSpan()
         let span = tracerSdk.spanBuilder(spanName: spanName).setParent(parent).startSpan() as! RecordEventsReadableSpan
         XCTAssert(span.clock === (parent as! RecordEventsReadableSpan).clock)
         parent.end()
     }
-
-    func testParentCurrentSpan_timestampConverter() {
+    
+    func testParentCurrentSpan_timestampConverter() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         tracerSdk.spanBuilder(spanName: spanName).withStartedActive { parent in
             let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
             XCTAssert(span.clock === (parent as! RecordEventsReadableSpan).clock)
         }
     }
-
-    func testSpanRestorationInContext() {
+    
+    func testSpanRestorationInContext() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
         let parent = tracerSdk.spanBuilder(spanName: spanName).startSpan()
         OpenTelemetry.instance.contextProvider.withActiveSpan(parent) {
@@ -339,11 +363,11 @@ class SpanBuilderSdkTestServiceContext: ContextManagerTestCase {
             OpenTelemetry.instance.contextProvider.withActiveSpan(span) {
                 XCTAssertEqual(span.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
             }
-
+            
             span.end()
             XCTAssertEqual(parent.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
         }
-
+        
         parent.end()
         XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
     }

@@ -11,15 +11,19 @@ import XCTest
 import OpenTelemetryTestUtils
 
 #if canImport(os.activity)
-class LoggerSdkTestsActivity: LoggerSdkTestsServiceContext {
+class LoggerSdkTestsActivity: LoggerSdkTestsBase {
     override class var contextManager: ContextManager { ActivityContextManager() }
 }
 #endif
 
-public class LoggerSdkTestsServiceContext: ContextManagerTestCase {
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+public class LoggerSdkTestsServiceContext: LoggerSdkTestsBase {
     public override class var contextManager: ContextManager { ServiceContextManager() }
+}
 
-    func testEventBuilder() {
+public class LoggerSdkTestsBase: ContextManagerTestCase {
+    func testEventBuilder() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let processor = LogRecordProcessorMock()
         let sharedState = LoggerSharedState(
             resource: Resource(), logLimits: LogLimits(), processors: [processor], clock: MillisClock())
@@ -37,7 +41,8 @@ public class LoggerSdkTestsServiceContext: ContextManagerTestCase {
             processor.onEmitCalledLogRecord?.attributes["event.data"]?.description, "[\"test\": data]")
     }
 
-    func testEventBuilderNoDomain() {
+    func testEventBuilderNoDomain() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let processor = LogRecordProcessorMock()
         let sharedState = LoggerSharedState(
             resource: Resource(), logLimits: LogLimits(), processors: [processor], clock: MillisClock())
@@ -51,7 +56,8 @@ public class LoggerSdkTestsServiceContext: ContextManagerTestCase {
         XCTAssertNil(processor.onEmitCalledLogRecord)
     }
 
-    func testNewEventDomain() {
+    func testNewEventDomain() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let processor = LogRecordProcessorMock()
         let sharedState = LoggerSharedState(
             resource: Resource(), logLimits: LogLimits(), processors: [processor], clock: MillisClock())
@@ -79,7 +85,8 @@ public class LoggerSdkTestsServiceContext: ContextManagerTestCase {
 
     }
 
-    func testContextPropogation() {
+    func testContextPropogation() throws {
+        try XCTSkipIf(Self.contextManager is DefaultContextManager)
         let processor = LogRecordProcessorMock()
         let sharedState = LoggerSharedState(
             resource: Resource(), logLimits: LogLimits(), processors: [processor], clock: MillisClock())
