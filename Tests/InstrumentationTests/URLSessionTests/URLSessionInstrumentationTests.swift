@@ -82,6 +82,7 @@ class URLSessionInstrumentationTests: XCTestCase {
     static var semaphore: DispatchSemaphore!
     var sessionDelegate: SessionDelegate!
     static var instrumentation: URLSessionInstrumentation!
+    static var baggage: Baggage!
 
     static let server = HttpTestServer(url: URL(string: "http://localhost:33333"), config: nil)
 
@@ -89,10 +90,10 @@ class URLSessionInstrumentationTests: XCTestCase {
         OpenTelemetry.registerPropagators(textPropagators: [W3CTraceContextPropagator()], baggagePropagator: W3CBaggagePropagator())
         OpenTelemetry.registerTracerProvider(tracerProvider: TracerProviderSdk())
 
-        let baggageBuilder = OpenTelemetry.instance.baggageManager.baggageBuilder()
-        baggageBuilder.put(key: EntryKey(name: "foo")!, value: EntryValue(string: "bar")!, metadata: nil)
+        baggage = DefaultBaggageManager.instance.baggageBuilder()
+            .put(key: EntryKey(name: "foo")!, value: EntryValue(string: "bar")!, metadata: nil)
+            .build()
 
-        let baggage = baggageBuilder.build()
         OpenTelemetry.instance.contextProvider.setActiveBaggage(baggage)
 
         let sem = DispatchSemaphore(value: 0)
@@ -110,6 +111,7 @@ class URLSessionInstrumentationTests: XCTestCase {
 
     override class func tearDown() {
         server.stop()
+        OpenTelemetry.instance.contextProvider.removeContextForBaggage(baggage)
     }
 
     override func setUp() {
