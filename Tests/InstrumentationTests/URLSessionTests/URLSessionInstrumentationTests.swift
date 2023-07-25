@@ -82,11 +82,20 @@ class URLSessionInstrumentationTests: XCTestCase {
     static var semaphore: DispatchSemaphore!
     var sessionDelegate: SessionDelegate!
     static var instrumentation: URLSessionInstrumentation!
+    static var baggage: Baggage!
 
     static let server = HttpTestServer(url: URL(string: "http://localhost:33333"), config: nil)
 
     override class func setUp() {
+        OpenTelemetry.registerPropagators(textPropagators: [W3CTraceContextPropagator()], baggagePropagator: W3CBaggagePropagator())
         OpenTelemetry.registerTracerProvider(tracerProvider: TracerProviderSdk())
+
+        baggage = DefaultBaggageManager.instance.baggageBuilder()
+            .put(key: EntryKey(name: "foo")!, value: EntryValue(string: "bar")!, metadata: nil)
+            .build()
+
+        OpenTelemetry.instance.contextProvider.setActiveBaggage(baggage)
+
         let sem = DispatchSemaphore(value: 0)
         DispatchQueue.global(qos: .default).async {
             do {
@@ -102,6 +111,7 @@ class URLSessionInstrumentationTests: XCTestCase {
 
     override class func tearDown() {
         server.stop()
+        OpenTelemetry.instance.contextProvider.removeContextForBaggage(baggage)
     }
 
     override func setUp() {
@@ -240,20 +250,30 @@ class URLSessionInstrumentationTests: XCTestCase {
         XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedErrorCalled)
     }
 
-    public func testShouldInstrumentRequest() {
+    public func testShouldInstrumentRequest() throws {
         let request1 = URLRequest(url: URL(string: "http://defaultName.com")!)
         let request2 = URLRequest(url: URL(string: "http://dontinstrument.com")!)
 
-        URLSessionLogger.processAndLogRequest(request1, sessionTaskId: "111", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
-        URLSessionLogger.processAndLogRequest(request2, sessionTaskId: "222", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
+        let processedRequest1 = try XCTUnwrap(URLSessionLogger.processAndLogRequest(request1, sessionTaskId: "111", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true))
+        let processedRequest2 = URLSessionLogger.processAndLogRequest(request2, sessionTaskId: "222", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
+
+        // `processedRequest2` is expected to be nil, because its URL was marked as not to be instrumented.
+        XCTAssertNil(processedRequest2)
 
         XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInstrumentCalled)
 
+        let processedHeaders1 = try XCTUnwrap(processedRequest1.allHTTPHeaderFields)
+
+        // headers injected from `TextMapPropagator` implementation
+        XCTAssertTrue(processedHeaders1.contains(where: { $0.key == W3CTraceContextPropagator.traceparent }))
+
+        // headers injected from `TextMapBaggagePropagator` implementation
+        XCTAssertTrue(processedHeaders1.contains(where: { $0.key == W3CBaggagePropagator.headerBaggage && $0.value == "foo=bar" }))
+
         XCTAssertEqual(1, URLSessionLogger.runningSpans.count)
-        XCTAssertNotNil(URLSessionLogger.runningSpans["111"])
-        if let span = URLSessionLogger.runningSpans["111"] {
-            XCTAssertEqual("HTTP GET", span.name)
-        }
+
+        let span = try XCTUnwrap(URLSessionLogger.runningSpans["111"])
+        XCTAssertEqual("HTTP GET", span.name)
     }
 
     public func testDataTaskWithRequestBlock() {
@@ -388,8 +408,6 @@ class URLSessionInstrumentationTests: XCTestCase {
         XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
         XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
     }
-
-    
     
     #if swift(>=5.5.2)
         @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
