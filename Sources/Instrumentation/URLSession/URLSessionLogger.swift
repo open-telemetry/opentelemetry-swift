@@ -148,7 +148,8 @@ class URLSessionLogger {
         instrumentation.configuration.injectCustomHeaders?(&request, span)
         var instrumentedRequest = request
         objc_setAssociatedObject(instrumentedRequest, &URLSessionInstrumentation.instrumentedKey, true, .OBJC_ASSOCIATION_COPY_NONATOMIC)
-        var traceHeaders = tracePropagationHTTPHeaders(span: span, textMapPropagator: OpenTelemetry.instance.propagators.textMapPropagator)
+        let propagators = OpenTelemetry.instance.propagators
+        var traceHeaders = tracePropagationHTTPHeaders(span: span, textMapPropagator: propagators.textMapPropagator, textMapBaggagePropagator: propagators.textMapBaggagePropagator)
         if let originalHeaders = request.allHTTPHeaderFields {
             traceHeaders.merge(originalHeaders) { _, new in new }
         }
@@ -156,7 +157,7 @@ class URLSessionLogger {
         return instrumentedRequest
     }
 
-    private static func tracePropagationHTTPHeaders(span: Span?, textMapPropagator: TextMapPropagator) -> [String: String] {
+    private static func tracePropagationHTTPHeaders(span: Span?, textMapPropagator: TextMapPropagator, textMapBaggagePropagator: TextMapBaggagePropagator) -> [String: String] {
         var headers = [String: String]()
 
         struct HeaderSetter: Setter {
@@ -169,6 +170,10 @@ class URLSessionLogger {
             return headers
         }
         textMapPropagator.inject(spanContext: currentSpan.context, carrier: &headers, setter: HeaderSetter())
+
+        if let baggage = OpenTelemetry.instance.contextProvider.activeBaggage {
+            textMapBaggagePropagator.inject(baggage: baggage, carrier: &headers, setter: HeaderSetter())
+        }
         return headers
     }
 }
