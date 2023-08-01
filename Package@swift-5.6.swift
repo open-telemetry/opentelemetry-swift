@@ -9,7 +9,7 @@ let package = Package(
         .macOS(.v10_13),
         .iOS(.v11),
         .tvOS(.v11),
-        .watchOS(.v3)
+        .watchOS(.v5)
     ],
     products: [
         .library(name: "OpenTelemetryApi", type: .static, targets: ["OpenTelemetryApi"]),
