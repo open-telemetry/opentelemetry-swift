@@ -74,11 +74,11 @@ class ActivityContextManager: ContextManager {
         if contextMap[activityIdent]?.isEmpty ?? false {
             contextMap[activityIdent] = nil
         }
-        rlock.unlock()
         if let scope = objectScope.object(forKey: value) {
             var scope = scope.scope
             os_activity_scope_leave(&scope)
             objectScope.removeObject(forKey: value)
         }
+        rlock.unlock()
     }
 }
