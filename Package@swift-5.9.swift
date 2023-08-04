@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "opentelemetry-swift",
     platforms: [
-        .macOS(.v10_13),
+        .macOS(.v10_15),
         .iOS(.v13),
         .tvOS(.v13),
         .watchOS(.v5)
