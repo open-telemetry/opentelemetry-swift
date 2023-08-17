@@ -6,7 +6,10 @@
 import Foundation
 
 public enum Constants {
-    public enum HTTP {
-        public static let userAgent = "User-Agent"
-    }
+  public enum OTLP {
+    public static let version = "0.20.0"
+  }
+  public enum HTTP {
+    public static let userAgent = "User-Agent"
+  }
 }
