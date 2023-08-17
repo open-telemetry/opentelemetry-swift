@@ -30,6 +30,8 @@ public class URLSessionInstrumentation {
     private let queue = DispatchQueue(label: "io.opentelemetry.ddnetworkinstrumentation")
 
     static var instrumentedKey = "io.opentelemetry.instrumentedCall"
+    
+    static let avAssetDownloadTask: AnyClass? = NSClassFromString("__NSCFBackgroundAVAssetDownloadTask")
 
     public private(set) var tracer: Tracer
 
@@ -572,8 +574,8 @@ public class URLSessionInstrumentation {
 
     private func urlSessionTaskWillResume(_ task: URLSessionTask) {
         // AV Asset Tasks cannot be auto instrumented, they dont include request attributes, skip them
-        if let avAssetDownloadTask = NSClassFromString("__NSCFBackgroundAVAssetDownloadTask"),
-           task.isKind(of: avAssetDownloadTask) {
+        if let avAssetTaskClass = Self.avAssetDownloadTask,
+           task.isKind(of: avAssetTaskClass) {
             return
         }
         
