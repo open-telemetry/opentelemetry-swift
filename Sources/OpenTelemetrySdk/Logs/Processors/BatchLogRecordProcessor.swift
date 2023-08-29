@@ -97,7 +97,7 @@ private class BatchWorker : Thread {
                 logRecordsCopy = logRecordList
                 logRecordList.removeAll()
                 cond.unlock()
-                self.exportBatch(logRecordList: logRecordsCopy, explicitTimeout: nil)
+                self.exportBatch(logRecordList: logRecordsCopy, explicitTimeout: exportTimeout)
             }
         } while true
     }
@@ -114,7 +114,7 @@ private class BatchWorker : Thread {
     
     
     public func shutdown() {
-        forceFlush(explicitTimeout: nil)
+        forceFlush(explicitTimeout: exportTimeout)
         _ = logRecordExporter.shutdown()
     }
     
