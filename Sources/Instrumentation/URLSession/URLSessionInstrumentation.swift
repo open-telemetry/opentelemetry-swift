@@ -16,7 +16,7 @@ struct NetworkRequestState {
     }
 
     mutating func setData(_ data: URLRequest) {
-        self.request = data
+        request = data
     }
 }
 
@@ -30,6 +30,8 @@ public class URLSessionInstrumentation {
     private let queue = DispatchQueue(label: "io.opentelemetry.ddnetworkinstrumentation")
 
     static var instrumentedKey = "io.opentelemetry.instrumentedCall"
+    
+    static let avAssetDownloadTask: AnyClass? = NSClassFromString("__NSCFBackgroundAVAssetDownloadTask")
 
     public private(set) var tracer: Tracer
 
@@ -44,27 +46,27 @@ public class URLSessionInstrumentation {
     public init(configuration: URLSessionInstrumentationConfiguration) {
         self.configuration = configuration
         tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "NSURLSession", instrumentationVersion: "0.0.1")
-        self.injectInNSURLClasses()
+        injectInNSURLClasses()
     }
 
     private func injectInNSURLClasses() {
-#if swift(<5.7)
-        let selectors = [
-            #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:)),
-            #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:completionHandler:)),
-            #selector(URLSessionDataDelegate.urlSession(_:task:didCompleteWithError:)),
-            #selector(URLSessionDataDelegate.urlSession(_:dataTask:didBecome:)! as (URLSessionDataDelegate) -> (URLSession, URLSessionDataTask, URLSessionDownloadTask) -> Void),
-            #selector(URLSessionDataDelegate.urlSession(_:dataTask:didBecome:)! as (URLSessionDataDelegate) -> (URLSession, URLSessionDataTask, URLSessionStreamTask) -> Void)
-        ]
-#else
-        let selectors = [
-            #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:)),
-            #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:completionHandler:)),
-            #selector(URLSessionDataDelegate.urlSession(_:task:didCompleteWithError:)),
-            #selector(URLSessionDataDelegate.urlSession(_:dataTask:didBecome:) as (URLSessionDataDelegate) -> ((URLSession, URLSessionDataTask, URLSessionDownloadTask) -> Void)?),
-            #selector(URLSessionDataDelegate.urlSession(_:dataTask:didBecome:) as (URLSessionDataDelegate) -> ((URLSession, URLSessionDataTask, URLSessionStreamTask) -> Void)?)
-        ]
-#endif
+        #if swift(<5.7)
+            let selectors = [
+                #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:)),
+                #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:completionHandler:)),
+                #selector(URLSessionDataDelegate.urlSession(_:task:didCompleteWithError:)),
+                #selector(URLSessionDataDelegate.urlSession(_:dataTask:didBecome:)! as (URLSessionDataDelegate) -> (URLSession, URLSessionDataTask, URLSessionDownloadTask) -> Void),
+                #selector(URLSessionDataDelegate.urlSession(_:dataTask:didBecome:)! as (URLSessionDataDelegate) -> (URLSession, URLSessionDataTask, URLSessionStreamTask) -> Void),
+            ]
+        #else
+            let selectors = [
+                #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:)),
+                #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:completionHandler:)),
+                #selector(URLSessionDataDelegate.urlSession(_:task:didCompleteWithError:)),
+                #selector(URLSessionDataDelegate.urlSession(_:dataTask:didBecome:) as (URLSessionDataDelegate) -> ((URLSession, URLSessionDataTask, URLSessionDownloadTask) -> Void)?),
+                #selector(URLSessionDataDelegate.urlSession(_:dataTask:didBecome:) as (URLSessionDataDelegate) -> ((URLSession, URLSessionDataTask, URLSessionStreamTask) -> Void)?),
+            ]
+        #endif
         let classes = configuration.delegateClassesToInstrument ?? InstrumentationUtils.objc_getClassList()
         let selectorsCount = selectors.count
         DispatchQueue.concurrentPerform(iterations: classes.count) { iteration in
@@ -75,8 +77,8 @@ public class URLSessionInstrumentation {
             guard let methodList = class_copyMethodList(theClass, &methodCount) else { return }
             defer { free(methodList) }
 
-            for j in 0..<selectorsCount {
-                for i in 0..<Int(methodCount) {
+            for j in 0 ..< selectorsCount {
+                for i in 0 ..< Int(methodCount) {
                     if method_getName(methodList[i]) == selectors[j] {
                         selectorFound = true
                         injectIntoDelegateClass(cls: theClass)
@@ -121,7 +123,7 @@ public class URLSessionInstrumentation {
             #selector(URLSession.uploadTask(withStreamedRequest:)),
             #selector(URLSession.downloadTask(with:) as (URLSession) -> (URLRequest) -> URLSessionDownloadTask),
             #selector(URLSession.downloadTask(with:) as (URLSession) -> (URL) -> URLSessionDownloadTask),
-            #selector(URLSession.downloadTask(withResumeData:))
+            #selector(URLSession.downloadTask(withResumeData:)),
         ].forEach {
             let selector = $0
             guard let original = class_getInstanceMethod(cls, selector) else {
@@ -168,7 +170,7 @@ public class URLSessionInstrumentation {
         let cls = URLSession.self
         [
             #selector(URLSession.uploadTask(with:from:)),
-            #selector(URLSession.uploadTask(with:fromFile:))
+            #selector(URLSession.uploadTask(with:fromFile:)),
         ].forEach {
             let selector = $0
             guard let original = class_getInstanceMethod(cls, selector) else {
@@ -197,7 +199,7 @@ public class URLSessionInstrumentation {
             #selector(URLSession.dataTask(with:completionHandler:) as (URLSession) -> (URL, @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask),
             #selector(URLSession.downloadTask(with:completionHandler:) as (URLSession) -> (URLRequest, @escaping (URL?, URLResponse?, Error?) -> Void) -> URLSessionDownloadTask),
             #selector(URLSession.downloadTask(with:completionHandler:) as (URLSession) -> (URL, @escaping (URL?, URLResponse?, Error?) -> Void) -> URLSessionDownloadTask),
-            #selector(URLSession.downloadTask(withResumeData:completionHandler:))
+            #selector(URLSession.downloadTask(withResumeData:completionHandler:)),
         ].forEach {
             let selector = $0
             guard let original = class_getInstanceMethod(cls, selector) else {
@@ -261,8 +263,7 @@ public class URLSessionInstrumentation {
                 } else {
                     task = castedIMP(session, selector, argument, completionBlock)
                     if objc_getAssociatedObject(argument, &idKey) == nil,
-                       let currentRequest = task.currentRequest
-                    {
+                       let currentRequest = task.currentRequest {
                         URLSessionLogger.processAndLogRequest(currentRequest, sessionTaskId: sessionTaskId, instrumentation: self, shouldInjectHeaders: false)
                     }
                 }
@@ -278,7 +279,7 @@ public class URLSessionInstrumentation {
         let cls = URLSession.self
         [
             #selector(URLSession.uploadTask(with:from:completionHandler:)),
-            #selector(URLSession.uploadTask(with:fromFile:completionHandler:))
+            #selector(URLSession.uploadTask(with:fromFile:completionHandler:)),
         ].forEach {
             let selector = $0
             guard let original = class_getInstanceMethod(cls, selector) else {
@@ -333,8 +334,7 @@ public class URLSessionInstrumentation {
         }
 
         if let cfURLSession = NSClassFromString("__NSCFURLSessionTask"),
-           let method = class_getInstanceMethod(cfURLSession, NSSelectorFromString("resume"))
-        {
+           let method = class_getInstanceMethod(cfURLSession, NSSelectorFromString("resume")) {
             methodsToSwizzle.append(method)
         }
 
@@ -471,11 +471,11 @@ public class URLSessionInstrumentation {
     }
 
     private func injectDataTaskDidBecomeDownloadTaskIntoDelegateClass(cls: AnyClass) {
-#if swift(<5.7)
-        let selector = #selector(URLSessionDataDelegate.urlSession(_:dataTask:didBecome:)! as (URLSessionDataDelegate) -> (URLSession, URLSessionDataTask, URLSessionDownloadTask) -> Void)
-#else
-        let selector = #selector(URLSessionDataDelegate.urlSession(_:dataTask:didBecome:) as (URLSessionDataDelegate) -> ((URLSession, URLSessionDataTask, URLSessionDownloadTask) -> Void)?)
-#endif
+        #if swift(<5.7)
+            let selector = #selector(URLSessionDataDelegate.urlSession(_:dataTask:didBecome:)! as (URLSessionDataDelegate) -> (URLSession, URLSessionDataTask, URLSessionDownloadTask) -> Void)
+        #else
+            let selector = #selector(URLSessionDataDelegate.urlSession(_:dataTask:didBecome:) as (URLSessionDataDelegate) -> ((URLSession, URLSessionDataTask, URLSessionDownloadTask) -> Void)?)
+        #endif
         guard let original = class_getInstanceMethod(cls, selector) else {
             return
         }
@@ -582,7 +582,13 @@ public class URLSessionInstrumentation {
     }
 
     private func urlSessionTaskWillResume(_ task: URLSessionTask) {
-        let taskId = self.idKeyForTask(task)
+        // AV Asset Tasks cannot be auto instrumented, they dont include request attributes, skip them
+        if let avAssetTaskClass = Self.avAssetDownloadTask,
+           task.isKind(of: avAssetTaskClass) {
+            return
+        }
+        
+        let taskId = idKeyForTask(task)
         if let request = task.currentRequest {
             queue.sync {
                 if requestMap[taskId] == nil {
