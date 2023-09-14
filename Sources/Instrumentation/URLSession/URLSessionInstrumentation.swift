@@ -556,7 +556,7 @@ public class URLSessionInstrumentation {
     }
 
     private func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
-        guard let taskId = objc_getAssociatedObject(dataTask, &idKey) as? String else {
+        guard let taskId = objc_getAssociatedObject(task, &idKey) as? String else {
             return
         }
         var requestState: NetworkRequestState?
