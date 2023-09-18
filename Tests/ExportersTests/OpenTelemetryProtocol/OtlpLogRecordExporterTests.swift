@@ -86,16 +86,12 @@ class OtlpLogRecordExporterTests: XCTestCase {
     
     func testImplicitGrpcLoggingConfig() throws {
         let exporter = OtlpLogExporter(channel: channel)
-        guard let logger = exporter.callOptions?.logger else {
-            throw "Missing logger"
-        }
+        let logger = exporter.callOptions.logger
         XCTAssertEqual(logger.label, "io.grpc")
     }
     func testExplicitGrpcLoggingConfig() throws {
         let exporter = OtlpLogExporter(channel: channel, logger: Logger(label: "my.grpc.logger"))
-        guard let logger = exporter.callOptions?.logger else {
-            throw "Missing logger"
-        }
+        let logger = exporter.callOptions.logger  
         XCTAssertEqual(logger.label, "my.grpc.logger")
     }
     
@@ -110,13 +106,13 @@ class OtlpLogRecordExporterTests: XCTestCase {
         XCTAssertNotNil(exporter.config.headers)
         XCTAssertEqual(exporter.config.headers?[0].0, "FOO")
         XCTAssertEqual(exporter.config.headers?[0].1, "BAR")
-        XCTAssertEqual("BAR", exporter.callOptions?.customMetadata.first(name: "FOO"))
+        XCTAssertEqual("BAR", exporter.callOptions.customMetadata.first(name: "FOO"))
     }
 
     func testConfigHeadersAreSet_whenInitCalledWithExplicitHeaders() throws {
         let exporter = OtlpLogExporter(channel: channel, envVarHeaders: [("FOO", "BAR")])
         XCTAssertNil(exporter.config.headers)
-        XCTAssertEqual("BAR", exporter.callOptions?.customMetadata.first(name: "FOO"))
+        XCTAssertEqual("BAR", exporter.callOptions.customMetadata.first(name: "FOO"))
     }
     
     func testExportAfterShutdown() {
