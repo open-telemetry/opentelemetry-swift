@@ -34,14 +34,14 @@ let package = Package(
         .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
     ],
     dependencies: [
-        .package(name: "Opentracing", url: "https://github.com/undefinedlabs/opentracing-objc", from: "0.5.2"),
-        .package(name: "Thrift", url: "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1"),
-        .package(name: "swift-nio", url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
-        .package(name: "grpc-swift", url: "https://github.com/grpc/grpc-swift.git", from: "1.0.0"),
-        .package(name: "swift-protobuf", url: "https://github.com/apple/swift-protobuf.git", from: "1.20.2"),
-        .package(name: "swift-log", url: "https://github.com/apple/swift-log.git", from: "1.4.4"),
-        .package(name: "swift-metrics", url: "https://github.com/apple/swift-metrics.git", from: "2.1.1"),
-        .package(name: "Reachability.swift", url: "https://github.com/ashleymills/Reachability.swift", from: "5.1.0")
+        .package(name: "Opentracing", url: "https://github.com/undefinedlabs/opentracing-objc", exact: "0.5.2"),
+        .package(name: "Thrift", url: "https://github.com/undefinedlabs/Thrift-Swift", exact: "1.1.1"),
+        .package(name: "swift-nio", url: "https://github.com/apple/swift-nio.git", exact: "2.0.0"),
+        .package(name: "grpc-swift", url: "https://github.com/grpc/grpc-swift.git", exact: "1.0.0"),
+        .package(name: "swift-protobuf", url: "https://github.com/apple/swift-protobuf.git", exact: "1.20.2"),
+        .package(name: "swift-log", url: "https://github.com/apple/swift-log.git", exact: "1.4.4"),
+        .package(name: "swift-metrics", url: "https://github.com/apple/swift-metrics.git", exact: "2.1.1"),
+        .package(name: "Reachability.swift", url: "https://github.com/ashleymills/Reachability.swift", exact: "5.1.0")
     ],
     targets: [
         .target(name: "OpenTelemetryApi",

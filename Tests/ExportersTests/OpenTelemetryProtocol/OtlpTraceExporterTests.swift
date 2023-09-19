@@ -50,28 +50,23 @@ class OtlpTraceExporterTests: XCTestCase {
 
     func testImplicitGrpcLoggingConfig() throws {
         let exporter = OtlpTraceExporter(channel: channel)
-        guard let logger = exporter.callOptions?.logger else {
-            throw "Missing logger"
-        }
-        XCTAssertEqual(logger.label, "io.grpc")
+        let logger = exporter.callOptions.logger
     }
 
     func testExplicitGrpcLoggingConfig() throws {
         let exporter = OtlpTraceExporter(channel: channel, logger: Logger(label: "my.grpc.logger"))
-        guard let logger = exporter.callOptions?.logger else {
-            throw "Missing logger"
-        }
+        let logger = exporter.callOptions.logger
         XCTAssertEqual(logger.label, "my.grpc.logger")
     }
 
     func verifyUserAgentIsSet(exporter: OtlpTraceExporter) {
-        if let callOptions = exporter.callOptions {
-            let customMetadata = callOptions.customMetadata
-            let userAgent = Headers.getUserAgentHeader()
-            if customMetadata.contains(name: Constants.HTTP.userAgent) && customMetadata.first(name: Constants.HTTP.userAgent) == userAgent {
-                return
-            }
+        let callOptions = exporter.callOptions
+        let customMetadata = callOptions.customMetadata
+        let userAgent = Headers.getUserAgentHeader()
+        if customMetadata.contains(name: Constants.HTTP.userAgent) && customMetadata.first(name: Constants.HTTP.userAgent) == userAgent {
+            return
         }
+        
         XCTFail("User-Agent header was not set correctly")
     }
 
@@ -88,7 +83,7 @@ class OtlpTraceExporterTests: XCTestCase {
         XCTAssertNotNil(exporter.config.headers)
         XCTAssertEqual(exporter.config.headers?[0].0, "FOO")
         XCTAssertEqual(exporter.config.headers?[0].1, "BAR")
-        XCTAssertEqual("BAR", exporter.callOptions?.customMetadata.first(name: "FOO"))
+        XCTAssertEqual("BAR", exporter.callOptions.customMetadata.first(name: "FOO"))
 
         verifyUserAgentIsSet(exporter: exporter)
     }
@@ -96,7 +91,7 @@ class OtlpTraceExporterTests: XCTestCase {
     func testConfigHeadersAreSet_whenInitCalledWithExplicitHeaders() throws {
         let exporter = OtlpTraceExporter(channel: channel, envVarHeaders: [("FOO", "BAR")])
         XCTAssertNil(exporter.config.headers)
-        XCTAssertEqual("BAR", exporter.callOptions?.customMetadata.first(name: "FOO"))
+        XCTAssertEqual("BAR", exporter.callOptions.customMetadata.first(name: "FOO"))
 
         verifyUserAgentIsSet(exporter: exporter)
     }

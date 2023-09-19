@@ -134,7 +134,9 @@ private class BatchWorker: Thread {
       self?.exportAction(spanList: spanList)
     }
     let timeoutTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-    timeoutTimer.setEventHandler { exportOperation.cancel() }
+    timeoutTimer.setEventHandler {
+      exportOperation.cancel()
+    }
     let maxTimeOut = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, exportTimeout)
     timeoutTimer.schedule(deadline: .now() + .milliseconds(Int(maxTimeOut.toMilliseconds)), leeway: .milliseconds(1))
     timeoutTimer.activate()
