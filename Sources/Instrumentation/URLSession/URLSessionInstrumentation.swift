@@ -497,8 +497,10 @@ public class URLSessionInstrumentation {
     // URLSessionTask methods
     private func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
         guard configuration.shouldRecordPayload?(session) ?? false else { return }
+        guard let taskId = objc_getAssociatedObject(dataTask, &idKey) as? String else {
+            return
+        }
         let dataCopy = data
-        let taskId = idKeyForTask(dataTask)
         queue.sync {
             if (requestMap[taskId]?.request) != nil {
                 createRequestState(for: taskId)
@@ -512,7 +514,9 @@ public class URLSessionInstrumentation {
 
     private func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
         guard configuration.shouldRecordPayload?(session) ?? false else { return }
-        let taskId = idKeyForTask(dataTask)
+        guard let taskId = objc_getAssociatedObject(dataTask, &idKey) as? String else {
+            return
+        }
         queue.sync {
             if (requestMap[taskId]?.request) != nil {
                 createRequestState(for: taskId)
@@ -526,7 +530,9 @@ public class URLSessionInstrumentation {
     }
 
     private func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        let taskId = idKeyForTask(task)
+        guard let taskId = objc_getAssociatedObject(task, &idKey) as? String else {
+            return
+        }
         var requestState: NetworkRequestState?
         queue.sync {
             requestState = requestMap[taskId]
@@ -543,13 +549,16 @@ public class URLSessionInstrumentation {
     }
 
     private func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didBecome downloadTask: URLSessionDownloadTask) {
-        let id = idKeyForTask(dataTask)
-        setIdKey(value: id, for: downloadTask)
+        guard let taskId = objc_getAssociatedObject(dataTask, &idKey) as? String else {
+            return
+        }
+        self.setIdKey(value: taskId, for: downloadTask)
     }
 
     private func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
-        let taskId = idKeyForTask(task)
-
+        guard let taskId = objc_getAssociatedObject(task, &idKey) as? String else {
+            return
+        }
         var requestState: NetworkRequestState?
         queue.sync {
             requestState = requestMap[taskId]
