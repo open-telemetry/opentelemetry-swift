@@ -16,7 +16,7 @@ public class OtlpTraceExporter: SpanExporter {
     let channel: GRPCChannel
     var traceClient: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceNIOClient
     let config : OtlpConfiguration
-    var callOptions : CallOptions? = nil
+    var callOptions : CallOptions
 
     public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration(), logger: Logging.Logger = Logging.Logger(label: "io.grpc", factory: { _ in SwiftLogNoOpLogHandler() }), envVarHeaders: [(String,String)]? = EnvVarHeaders.attributes) {
         self.channel = channel
@@ -44,7 +44,7 @@ public class OtlpTraceExporter: SpanExporter {
         }
 
         if config.timeout > 0 {
-            traceClient.defaultCallOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(config.timeout.toNanoseconds)))
+           callOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(config.timeout.toNanoseconds)))
         }
 
         let export = traceClient.export(exportRequest, callOptions: callOptions)
