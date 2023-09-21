@@ -12,11 +12,11 @@ public class NoopLogRecordProcessor : LogRecordProcessor {
     
     public func onEmit(logRecord: ReadableLogRecord) { }
     
-    public func forceFlush() -> ExportResult {
+  public func forceFlush(explicitTimeout: TimeInterval? = nil) -> ExportResult {
         .success
     }
     
-    public func shutdown() -> ExportResult {
+  public func shutdown(explicitTimeout: TimeInterval? = nil) -> ExportResult {
         .success
     }
     

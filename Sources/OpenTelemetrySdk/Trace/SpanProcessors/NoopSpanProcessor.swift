@@ -7,16 +7,16 @@ import Foundation
 import OpenTelemetryApi
 
 struct NoopSpanProcessor: SpanProcessor {
-    init() {}
+  init() {}
 
-    let isStartRequired = false
-    let isEndRequired = false
+  let isStartRequired = false
+  let isEndRequired = false
 
-    func onStart(parentContext: SpanContext?, span: ReadableSpan) {}
+  func onStart(parentContext: SpanContext?, span: ReadableSpan) {}
 
-    func onEnd(span: ReadableSpan) {}
+  func onEnd(span: ReadableSpan) {}
 
-    func shutdown() {}
+  func shutdown(explicitTimeout: TimeInterval? = nil) {}
 
-    func forceFlush(timeout: TimeInterval? = nil) {}
+  func forceFlush(timeout: TimeInterval? = nil) {}
 }

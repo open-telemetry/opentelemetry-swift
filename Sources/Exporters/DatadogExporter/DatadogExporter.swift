@@ -19,7 +19,7 @@ public class DatadogExporter: SpanExporter, MetricExporter {
         metricsExporter = try MetricsExporter(config: configuration)
     }
 
-    public func export(spans: [SpanData]) -> SpanExporterResultCode {
+    public func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
         spans.forEach {
             if $0.traceFlags.sampled || configuration.exportUnsampledSpans {
                 spansExporter?.exportSpan(span: $0)
@@ -38,7 +38,7 @@ public class DatadogExporter: SpanExporter, MetricExporter {
         return .success
     }
 
-    public func flush() -> SpanExporterResultCode {
+    public func flush(explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
         spansExporter?.tracesStorage.writer.queue.sync {}
         logsExporter?.logsStorage.writer.queue.sync {}
         metricsExporter?.metricsStorage.writer.queue.sync {}
@@ -49,7 +49,7 @@ public class DatadogExporter: SpanExporter, MetricExporter {
         return .success
     }
 
-    public func shutdown() {
+    public func shutdown(explicitTimeout: TimeInterval?) {
         _ = self.flush()
     }
 

@@ -15,10 +15,11 @@ public class ZipkinTraceExporter: SpanExporter {
         localEndPoint = ZipkinTraceExporter.getLocalZipkinEndpoint(name: options.serviceName)
     }
 
-    public func export(spans: [SpanData]) -> SpanExporterResultCode {
+  public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
         guard let url = URL(string: self.options.endpoint) else { return .failure }
 
-        var request = URLRequest(url: url)
+    var request = URLRequest(url: url)
+    request.timeoutInterval = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, options.timeoutSeconds)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         options.additionalHeaders.forEach {
@@ -50,11 +51,11 @@ public class ZipkinTraceExporter: SpanExporter {
         return status
     }
 
-    public func flush() -> SpanExporterResultCode {
+  public func flush(explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
         return .success
     }
 
-    public func shutdown() {
+    public func shutdown(explicitTimeout: TimeInterval? = nil) {
     }
 
     func encodeSpans(spans: [SpanData]) -> [ZipkinSpan] {

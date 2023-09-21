@@ -1,38 +1,36 @@
 //
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 
 import Foundation
 
 public class MultiLogRecordExporter : LogRecordExporter {
-    var logRecordExporters : [LogRecordExporter]
-
-    public init(logRecordExporters: [LogRecordExporter]) {
-        self.logRecordExporters = logRecordExporters
+  var logRecordExporters : [LogRecordExporter]
+  
+  public init(logRecordExporters: [LogRecordExporter]) {
+    self.logRecordExporters = logRecordExporters
+  }
+  
+  public func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval? = nil) -> ExportResult {
+    var result = ExportResult.success
+    logRecordExporters.forEach {
+      result.mergeResultCode(newResultCode: $0.export(logRecords: logRecords, explicitTimeout: explicitTimeout))
     }
-    
-    public func export(logRecords: [ReadableLogRecord]) -> ExportResult {
-        var result = ExportResult.success
-        logRecordExporters.forEach {
-            result.mergeResultCode(newResultCode: $0.export(logRecords: logRecords))
-        }
-        return result
+    return result
+  }
+  
+  public func shutdown(explicitTimeout: TimeInterval? = nil) {
+    logRecordExporters.forEach {
+      $0.shutdown(explicitTimeout: explicitTimeout)
     }
-    
-    public func shutdown() {
-        logRecordExporters.forEach {
-            $0.shutdown()
-        }
+  }
+  
+  public func forceFlush(explicitTimeout: TimeInterval? = nil) -> ExportResult {
+    var result = ExportResult.success
+    logRecordExporters.forEach {
+      result.mergeResultCode(newResultCode: $0.forceFlush(explicitTimeout: explicitTimeout))
     }
-    
-    public func forceFlush() -> ExportResult {
-        var result = ExportResult.success
-        logRecordExporters.forEach {
-            result.mergeResultCode(newResultCode: $0.forceFlush())
-        }
-        return result
-    }
-    
-    
+    return result
+  }
 }
