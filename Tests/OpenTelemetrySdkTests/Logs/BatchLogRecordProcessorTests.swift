@@ -35,7 +35,7 @@ class BatchLogRecordProcessorTests : XCTestCase {
         logger.logRecordBuilder().emit()
         logger.logRecordBuilder().emit()
         let exported = waitingExporter.waitForExport()
-        waitingExporter.shutdown()
+        waitingExporter.shutdown(explicitTimeout: nil)
         XCTAssertEqual(exported?.count, 6)
         XCTAssertGreaterThanOrEqual(waitingExporter.exporter.exportCalledTimes, 3)
     }
@@ -113,7 +113,7 @@ class BlockingLogRecordExporter: LogRecordExporter {
     
     var state : State = .waitToBlock
     
-    func export(logRecords: [ReadableLogRecord]) -> ExportResult {
+  func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval?) -> ExportResult {
         cond.lock()
         while state != .unblocked {
             state = .blocked
@@ -130,11 +130,11 @@ class BlockingLogRecordExporter: LogRecordExporter {
         }
         cond.unlock()
     }
-    func forceFlush() -> ExportResult {
+    func forceFlush(explicitTimeout: TimeInterval?) -> ExportResult {
         return .success
     }
     
-    func shutdown() {
+    func shutdown(explicitTimeout: TimeInterval?) {
     
     }
     
@@ -169,21 +169,21 @@ class WaitingLogRecordExporter: LogRecordExporter {
         return ret
     }
     
-    func export(logRecords: [ReadableLogRecord]) -> ExportResult {
+    func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval?) -> ExportResult {
         cond.lock()
         logRecordList.append(contentsOf: logRecords)
-        let status = exporter.export(logRecords: logRecords)
+        let status = exporter.export(logRecords: logRecords, explicitTimeout: explicitTimeout)
 
         cond.unlock()
         cond.broadcast()
         return status
     }
     
-    func forceFlush() -> ExportResult {
-        exporter.forceFlush()
+    func forceFlush(explicitTimeout: TimeInterval?) -> ExportResult {
+        exporter.forceFlush(explicitTimeout: explicitTimeout)
     }
-    func shutdown() {
+    func shutdown(explicitTimeout: TimeInterval?) {
         shutDownCalled = true
-        exporter.shutdown()
+        exporter.shutdown(explicitTimeout: explicitTimeout)
     }
 }

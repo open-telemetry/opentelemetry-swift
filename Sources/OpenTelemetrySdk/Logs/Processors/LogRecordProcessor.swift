@@ -15,10 +15,10 @@ public protocol LogRecordProcessor {
     /// Processes all span events that have not yet been processes
     ///
     /// - returns whether the task was successful
-    func forceFlush() -> ExportResult
+  func forceFlush(explicitTimeout: TimeInterval?) -> ExportResult
     
     /// Processes all span events that have not yet been processes anc closes used resources
     ///
     /// - returns whether the task was successful
-    func shutdown() -> ExportResult
+  func shutdown(explicitTimeout: TimeInterval?) -> ExportResult
 }

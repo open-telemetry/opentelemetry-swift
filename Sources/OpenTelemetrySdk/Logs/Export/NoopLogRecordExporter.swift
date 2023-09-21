@@ -8,15 +8,15 @@ import Foundation
 public class NoopLogRecordExporter : LogRecordExporter {
     public static let instance = NoopLogRecordExporter()
 
-    public func export(logRecords: [ReadableLogRecord]) -> ExportResult {
+  public func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval? = nil) -> ExportResult {
         .success
     }
 
-    public func shutdown() {
+  public func shutdown(explicitTimeout: TimeInterval? = nil) {
 
     }
 
-    public func forceFlush() -> ExportResult {
+  public func forceFlush(explicitTimeout: TimeInterval? = nil) -> ExportResult {
         .success
     }
 }

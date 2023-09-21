@@ -8,6 +8,7 @@ import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterCommon
 
 public class OtlpTraceJsonExporter: SpanExporter {
+
     
     // MARK: - Variables declaration
     private var exportedSpans = [OtlpSpan]()
@@ -18,7 +19,7 @@ public class OtlpTraceJsonExporter: SpanExporter {
         exportedSpans
     }
     
-    public func export(spans: [SpanData]) -> SpanExporterResultCode {
+  public func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
         guard isRunning else { return .failure }
         
         let exportRequest = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
@@ -39,7 +40,7 @@ public class OtlpTraceJsonExporter: SpanExporter {
         }
     }
     
-    public func flush() -> SpanExporterResultCode {
+  public func flush(explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
         guard isRunning else { return .failure }
         return .success
     }
@@ -48,7 +49,7 @@ public class OtlpTraceJsonExporter: SpanExporter {
         exportedSpans.removeAll()
     }
     
-    public func shutdown() {
+    public func shutdown(explicitTimeout: TimeInterval?) {
         exportedSpans.removeAll()
         isRunning = false
     }

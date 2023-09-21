@@ -23,7 +23,7 @@ class MultiSpanProcessorTest: XCTestCase {
         let multiSpanProcessor = MultiSpanProcessor(spanProcessors: [SpanProcessor]())
         multiSpanProcessor.onStart(parentContext: nil, span: readableSpan)
         multiSpanProcessor.onEnd(span: readableSpan)
-        multiSpanProcessor.shutdown()
+        multiSpanProcessor.shutdown(explicitTimeout: nil)
     }
 
     func testOneSpanProcessor() {
@@ -34,7 +34,7 @@ class MultiSpanProcessorTest: XCTestCase {
         XCTAssert(spanProcessor1.onEndCalledSpan === readableSpan)
         multiSpanProcessor.forceFlush()
         XCTAssertTrue(spanProcessor1.forceFlushCalled)
-        multiSpanProcessor.shutdown()
+        multiSpanProcessor.shutdown(explicitTimeout: nil)
         XCTAssertTrue(spanProcessor1.shutdownCalled)
     }
 
@@ -53,7 +53,7 @@ class MultiSpanProcessorTest: XCTestCase {
         XCTAssertFalse(spanProcessor1.onEndCalled)
         multiSpanProcessor.forceFlush()
         XCTAssertTrue(spanProcessor1.forceFlushCalled)
-        multiSpanProcessor.shutdown()
+        multiSpanProcessor.shutdown(explicitTimeout: nil)
         XCTAssertTrue(spanProcessor1.shutdownCalled)
     }
 
@@ -72,7 +72,7 @@ class MultiSpanProcessorTest: XCTestCase {
         XCTAssertTrue(spanProcessor1.forceFlushCalled)
         XCTAssertTrue(spanProcessor2.forceFlushCalled)
 
-        multiSpanProcessor.shutdown()
+        multiSpanProcessor.shutdown(explicitTimeout: nil)
         XCTAssertTrue(spanProcessor1.shutdownCalled)
         XCTAssertTrue(spanProcessor2.shutdownCalled)
     }

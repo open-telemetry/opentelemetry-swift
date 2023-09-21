@@ -16,7 +16,7 @@ public class InMemoryExporter: SpanExporter {
         return finishedSpanItems
     }
 
-    public func export(spans: [SpanData]) -> SpanExporterResultCode {
+  public func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
         guard isRunning else {
             return .failure
         }
@@ -25,7 +25,7 @@ public class InMemoryExporter: SpanExporter {
         return .success
     }
 
-    public func flush() -> SpanExporterResultCode {
+  public func flush(explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
         guard isRunning else {
             return .failure
         }
@@ -37,7 +37,7 @@ public class InMemoryExporter: SpanExporter {
         finishedSpanItems.removeAll()
     }
 
-    public func shutdown() {
+  public func shutdown(explicitTimeout: TimeInterval?) {
         finishedSpanItems.removeAll()
         isRunning = false
     }

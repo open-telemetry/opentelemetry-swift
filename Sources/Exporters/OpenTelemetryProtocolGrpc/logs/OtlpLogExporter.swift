@@ -42,13 +42,13 @@ public class OtlpLogExporter : LogRecordExporter {
         }
     }
 
-    public func export(logRecords: [ReadableLogRecord]) -> ExportResult {
+    public func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval?) -> ExportResult {
         let logRequest = Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest.with { request in
             request.resourceLogs = LogRecordAdapter.toProtoResourceRecordLog(logRecordList: logRecords)
         }
-      
-        if config.timeout > 0 {
-          callOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(config.timeout.toNanoseconds)))
+      let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+        if timeout > 0 {
+          callOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(timeout.toNanoseconds)))
         }
 
       
@@ -61,11 +61,11 @@ public class OtlpLogExporter : LogRecordExporter {
         }
     }
 
-    public func shutdown() {
+    public func shutdown(explicitTimeout: TimeInterval?) {
         _ = channel.close()
     }
 
-    public func forceFlush() -> ExportResult {
+    public func forceFlush(explicitTimeout: TimeInterval?) -> ExportResult {
         .success
     }
 }

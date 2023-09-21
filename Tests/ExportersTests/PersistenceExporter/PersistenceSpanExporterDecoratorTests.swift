@@ -12,29 +12,29 @@ class PersistenceSpanExporterDecoratorTests: XCTestCase {
     private let temporaryDirectory = obtainUniqueTemporaryDirectory()
 
     class SpanExporterMock: SpanExporter {
-        let onExport: ([SpanData]) -> SpanExporterResultCode
-        let onFlush: () -> SpanExporterResultCode
-        let onShutdown: () -> Void
+      let onExport: ([SpanData], TimeInterval?) -> SpanExporterResultCode
+        let onFlush: (TimeInterval?) -> SpanExporterResultCode
+        let onShutdown: (TimeInterval?) -> Void
         
-        init(onExport: @escaping ([SpanData]) -> SpanExporterResultCode,
-             onFlush: @escaping () -> SpanExporterResultCode = { .success },
-             onShutdown: @escaping () -> Void = {})
+        init(onExport: @escaping ([SpanData], TimeInterval?) -> SpanExporterResultCode,
+             onFlush: @escaping (TimeInterval?) -> SpanExporterResultCode = {_ in .success },
+             onShutdown: @escaping (TimeInterval?) -> Void = {_ in})
         {
             self.onExport = onExport
             self.onFlush = onFlush
             self.onShutdown = onShutdown
         }
 
-        @discardableResult func export(spans: [SpanData]) -> SpanExporterResultCode {
-            return onExport(spans)
+      @discardableResult func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
+            return onExport(spans, explicitTimeout)
         }
         
-        func flush() -> SpanExporterResultCode {
-            return onFlush()
+        func flush(explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
+            return onFlush(explicitTimeout)
         }
                 
-        func shutdown() {
-            onShutdown()
+        func shutdown(explicitTimeout: TimeInterval?) {
+            onShutdown(explicitTimeout)
         }
     }
     
@@ -52,7 +52,7 @@ class PersistenceSpanExporterDecoratorTests: XCTestCase {
         let spansExportExpectation = self.expectation(description: "spans exported")
         let exporterShutdownExpectation = self.expectation(description: "exporter shut down")
         
-        let mockSpanExporter = SpanExporterMock(onExport: { spans in
+        let mockSpanExporter = SpanExporterMock(onExport: { spans, _ in
             spans.forEach { span in
                 if span.name == "SimpleSpan",
                    span.events.count == 1,
@@ -63,7 +63,7 @@ class PersistenceSpanExporterDecoratorTests: XCTestCase {
             }
             
             return .success
-        }, onShutdown: {
+        }, onShutdown: { _ in
             exporterShutdownExpectation.fulfill()
         })
                 

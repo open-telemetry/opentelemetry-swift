@@ -8,7 +8,7 @@ import Foundation
 // a protocol for an exporter of `Data` to which a `DataExportWorker` can delegate persisted
 // data export
 internal protocol DataExporter {
-    func export(data: Data) -> DataExportStatus
+  func export(data: Data, explicitTimeout: TimeInterval?) -> DataExportStatus
 }
 
 // a protocol needed for mocking `DataExportWorker`
@@ -52,7 +52,7 @@ internal class DataExportWorker: DataExportWorkerProtocol {
             let nextBatch = isSystemReady ? self.fileReader.readNextBatch() : nil
             if let batch = nextBatch {
                 // Export batch
-                let exportStatus = self.dataExporter.export(data: batch.data)
+                let exportStatus = self.dataExporter.export(data: batch.data, explicitTimeout: nil)
 
                 // Delete or keep batch depending on the export status
                 if exportStatus.needsRetry {
@@ -86,7 +86,7 @@ internal class DataExportWorker: DataExportWorkerProtocol {
     internal func flush() -> Bool {
         let success = queue.sync {
             self.fileReader.onRemainingBatches {
-                let exportStatus = self.dataExporter.export(data: $0.data)
+                let exportStatus = self.dataExporter.export(data: $0.data, explicitTimeout: nil)
                 if !exportStatus.needsRetry {
                     self.fileReader.markBatchAsRead($0)
                 }

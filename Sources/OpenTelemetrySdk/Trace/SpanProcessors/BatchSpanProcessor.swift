@@ -15,6 +15,8 @@ import OpenTelemetryApi
 /// exports the spans to wake up and start a new export cycle.
 /// This batchSpanProcessor can cause high contention in a very high traffic service.
 public struct BatchSpanProcessor: SpanProcessor {
+
+  
   fileprivate var worker: BatchWorker
   
   public init(spanExporter: SpanExporter, scheduleDelay: TimeInterval = 5, exportTimeout: TimeInterval = 30,
@@ -41,7 +43,7 @@ public struct BatchSpanProcessor: SpanProcessor {
     worker.addSpan(span: span)
   }
   
-  public func shutdown() {
+  public func shutdown(explicitTimeout: TimeInterval? = nil) {
     worker.cancel()
     worker.shutdown()
   }
@@ -130,14 +132,15 @@ private class BatchWorker: Thread {
   }
   
   private func exportBatch(spanList: [ReadableSpan], explicitTimeout: TimeInterval?) {
+    let maxTimeOut = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, exportTimeout)
     let exportOperation = BlockOperation { [weak self] in
-      self?.exportAction(spanList: spanList)
+      self?.exportAction(spanList: spanList, explicitTimeout: maxTimeOut)
     }
     let timeoutTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
     timeoutTimer.setEventHandler {
       exportOperation.cancel()
     }
-    let maxTimeOut = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, exportTimeout)
+    
     timeoutTimer.schedule(deadline: .now() + .milliseconds(Int(maxTimeOut.toMilliseconds)), leeway: .milliseconds(1))
     timeoutTimer.activate()
     queue.addOperation(exportOperation)
@@ -145,11 +148,11 @@ private class BatchWorker: Thread {
     timeoutTimer.cancel()
   }
   
-  private func exportAction(spanList: [ReadableSpan]) {
+  private func exportAction(spanList: [ReadableSpan], explicitTimeout: TimeInterval?) {
     stride(from: 0, to: spanList.endIndex, by: maxExportBatchSize).forEach {
       var spansToExport = spanList[$0 ..< min($0 + maxExportBatchSize, spanList.count)].map { $0.toSpanData() }
       willExportCallback?(&spansToExport)
-      spanExporter.export(spans: spansToExport)
+      spanExporter.export(spans: spansToExport, explicitTimeout: explicitTimeout)
     }
   }
 }

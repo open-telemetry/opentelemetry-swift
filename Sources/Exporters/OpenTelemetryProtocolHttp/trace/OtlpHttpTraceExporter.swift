@@ -12,14 +12,16 @@ public func defaultOltpHttpTracesEndpoint() -> URL {
 }
 
 public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
-    var pendingSpans: [SpanData] = []
 
+  
+    var pendingSpans: [SpanData] = []
     override
-    public init(endpoint: URL = defaultOltpHttpTracesEndpoint(), useSession: URLSession? = nil) {
-        super.init(endpoint: endpoint, useSession: useSession)
+  public init(endpoint: URL = defaultOltpHttpTracesEndpoint(), config: OtlpConfiguration = OtlpConfiguration(),
+ useSession: URLSession? = nil,  envVarHeaders: [(String,String)]? = EnvVarHeaders.attributes) {
+    super.init(endpoint: endpoint, config: config, useSession: useSession)
     }
 
-    public func export(spans: [SpanData]) -> SpanExporterResultCode {
+  public func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
         pendingSpans.append(contentsOf: spans)
         let sendingSpans = pendingSpans
         pendingSpans = []
@@ -27,7 +29,17 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
         let body = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
             $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
         }
-        let request = createRequest(body: body, endpoint: endpoint)
+        var request = createRequest(body: body, endpoint: endpoint)
+    if let headers = envVarHeaders {
+      headers.forEach { (key, value) in
+        request.addValue(value, forHTTPHeaderField: key)
+      }
+
+    } else if let headers = config.headers {
+      headers.forEach { (key, value) in
+        request.addValue(value, forHTTPHeaderField: key)
+      }
+    }
         httpClient.send(request: request) { [weak self] result in
             switch result {
             case .success:
@@ -40,7 +52,7 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
         return .success
     }
 
-    public func flush() -> SpanExporterResultCode {
+  public func flush(explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
         var resultValue: SpanExporterResultCode = .success
         if !pendingSpans.isEmpty {
             let body = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {

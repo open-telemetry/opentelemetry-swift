@@ -30,7 +30,7 @@ public protocol SpanProcessor {
 
     /// Called when TracerSdk.shutdown() is called.
     /// Implementations must ensure that all span events are processed before returning
-    mutating func shutdown()
+  mutating func shutdown(explicitTimeout: TimeInterval?)
 
     /// Processes all span events that have not yet been processed.
     /// This method is executed synchronously on the calling thread
@@ -39,8 +39,11 @@ public protocol SpanProcessor {
 }
 
 extension SpanProcessor {
-    func forceFlush() {
-        return forceFlush(timeout: nil)
-    }
+  func forceFlush() {
+    return forceFlush(timeout: nil)
+  }
+  mutating func shutdown() {
+    return shutdown(explicitTimeout: nil)
+  }
 }
 

@@ -205,7 +205,7 @@ class BlockingSpanExporter: SpanExporter {
 
     var state: State = .waitToBlock
 
-    func export(spans: [SpanData]) -> SpanExporterResultCode {
+  func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
         cond.lock()
         while state != .unblocked {
             state = .blocked
@@ -225,11 +225,11 @@ class BlockingSpanExporter: SpanExporter {
         cond.unlock()
     }
 
-    func flush() -> SpanExporterResultCode {
+  func flush(explicitTimeout:TimeInterval?) -> SpanExporterResultCode {
         return .success
     }
 
-    func shutdown() {}
+  func shutdown(explicitTimeout: TimeInterval?) {}
 
     fileprivate func unblock() {
         cond.lock()
@@ -263,7 +263,7 @@ class WaitingSpanExporter: SpanExporter {
         return ret
     }
 
-    func export(spans: [SpanData]) -> SpanExporterResultCode {
+  func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
         cond.lock()
         spanDataList.append(contentsOf: spans)
         cond.unlock()
@@ -271,11 +271,11 @@ class WaitingSpanExporter: SpanExporter {
         return .success
     }
 
-    func flush() -> SpanExporterResultCode {
+  func flush(explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
         return .success
     }
 
-    func shutdown() {
+  func shutdown(explicitTimeout: TimeInterval?) {
         shutdownCalled = true
     }
 }

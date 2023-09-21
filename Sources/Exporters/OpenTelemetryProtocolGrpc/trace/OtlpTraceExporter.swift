@@ -13,6 +13,7 @@ import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterCommon
 
 public class OtlpTraceExporter: SpanExporter {
+  
     let channel: GRPCChannel
     var traceClient: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceNIOClient
     let config : OtlpConfiguration
@@ -38,31 +39,32 @@ public class OtlpTraceExporter: SpanExporter {
         }
     }
 
-    public func export(spans: [SpanData]) -> SpanExporterResultCode {
-        let exportRequest = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
-            $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
-        }
 
-        if config.timeout > 0 {
-           callOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(config.timeout.toNanoseconds)))
-        }
-
-        let export = traceClient.export(exportRequest, callOptions: callOptions)
-
-        do {
-            // wait() on the response to stop the program from exiting before the response is received.
-            _ = try export.response.wait()
-            return .success
-        } catch {
-            return .failure
-        }
+  public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
+    let exportRequest = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
+      $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
     }
+    let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+      if timeout > 0 {
+        callOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(timeout.toNanoseconds)))
+      }
 
-    public func flush() -> SpanExporterResultCode {
+      let export = traceClient.export(exportRequest, callOptions: callOptions)
+
+      do {
+          // wait() on the response to stop the program from exiting before the response is received.
+          _ = try export.response.wait()
+          return .success
+      } catch {
+          return .failure
+      }
+  }
+
+  public func flush(explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
         return .success
     }
 
-    public func shutdown() {
+  public func shutdown(explicitTimeout: TimeInterval?) {
         _ = channel.close()
     }
 }

@@ -42,7 +42,7 @@ class LoggerSharedState {
         if hasBeenShutdown {
             return
         }
-        _ = activeLogRecordProcessor.shutdown()
+        _ = activeLogRecordProcessor.shutdown(explicitTimeout: nil)
         hasBeenShutdown = true
     }
     

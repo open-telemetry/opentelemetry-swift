@@ -78,10 +78,10 @@ class OtlpLogRecordExporterTests: XCTestCase {
                                                      attributes: ["event.name":AttributeValue.string("name"), "event.domain": AttributeValue.string("domain")])
         
         let exporter = OtlpLogExporter(channel: channel)
-        let result = exporter.export(logRecords: [logRecord])
+        let result = exporter.export(logRecords: [logRecord], explicitTimeout: nil)
         XCTAssertEqual(result, ExportResult.success)
         XCTAssertEqual(fakeCollector.receivedLogs, LogRecordAdapter.toProtoResourceRecordLog(logRecordList: [logRecord]))
-        exporter.shutdown()
+        exporter.shutdown(explicitTimeout: nil)
     }
     
     func testImplicitGrpcLoggingConfig() throws {
@@ -125,8 +125,8 @@ class OtlpLogRecordExporterTests: XCTestCase {
                                                      body: "Hello, world",
                                                      attributes: ["event.name":AttributeValue.string("name"), "event.domain": AttributeValue.string("domain")])
         let exporter = OtlpLogExporter(channel: channel)
-        exporter.shutdown()
-        let result = exporter.export(logRecords: [logRecord])
+        exporter.shutdown(explicitTimeout: nil)
+        let result = exporter.export(logRecords: [logRecord], explicitTimeout: nil)
         XCTAssertEqual(result, ExportResult.failure)
     }
 
@@ -142,9 +142,9 @@ class OtlpLogRecordExporterTests: XCTestCase {
                                                      body: "Hello, world",
                                                      attributes: ["event.name":AttributeValue.string("name"),
                                                                   "event.domain": AttributeValue.string("domain")])
-        let result = exporter.export(logRecords: [logRecord])
+        let result = exporter.export(logRecords: [logRecord], explicitTimeout: nil)
         XCTAssertEqual(result, ExportResult.failure)
-        exporter.shutdown()
+        exporter.shutdown(explicitTimeout: nil)
     }
     
 }

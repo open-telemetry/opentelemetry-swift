@@ -16,7 +16,7 @@ class MultiLogRecordProcessorTest : XCTestCase {
     func testEmpty() {
         let multiLog = MultiLogRecordProcessor(logRecordProcessors: [LogRecordProcessor]())
         multiLog.onEmit(logRecord: readableLogRecord)
-        _ = multiLog.shutdown()
+        _ = multiLog.shutdown(explicitTimeout: nil)
     }
     
     func testMultiProcessor() {
@@ -26,12 +26,12 @@ class MultiLogRecordProcessorTest : XCTestCase {
         XCTAssertTrue(processor1.onEmitCalled)
         XCTAssertTrue(processor2.onEmitCalled)
         
-        _ = multiLog.forceFlush()
+        _ = multiLog.forceFlush(explicitTimeout: nil)
         
         XCTAssertTrue(processor1.forceFlushCalled)
         XCTAssertTrue(processor2.forceFlushCalled)
         
-        _ = multiLog.shutdown()
+        _ = multiLog.shutdown(explicitTimeout: nil)
         
         XCTAssertTrue(processor1.shutdownCalled)
         XCTAssertTrue(processor2.shutdownCalled)

@@ -8,14 +8,15 @@ import XCTest
 
 class PersistenceExporterDecoratorTests: XCTestCase {
     
-    class DecoratedExporterMock<T>: DecoratedExporter {
+  class DecoratedExporterMock<T>: DecoratedExporter {
+
         typealias SignalType = T
         let exporter: ([T]) -> DataExportStatus
         init(exporter: @escaping ([T]) -> DataExportStatus) {
             self.exporter = exporter
         }
         
-        func export(values: [T]) -> DataExportStatus {
+        func export(values: [T], explicitTimeout: TimeInterval?) -> DataExportStatus {
             return exporter(values)
         }
     }
@@ -101,7 +102,7 @@ class PersistenceExporterDecoratorTests: XCTestCase {
         
         _ = createPersistenceExporter(worker: &worker) as PersistenceExporter<FailingCodableMock>
                         
-        let result = worker.dataExporter?.export(data: Data())
+        let result = worker.dataExporter?.export(data: Data(),explicitTimeout: nil)
         
         XCTAssertNotNil(result)
         XCTAssertFalse(result!.needsRetry)
@@ -160,7 +161,7 @@ class PersistenceExporterDecoratorTests: XCTestCase {
         
         fileWriter.onWrite = { _, data in
             if let dataExporter = worker.dataExporter {
-                XCTAssertFalse(dataExporter.export(data: data).needsRetry)
+                XCTAssertFalse(dataExporter.export(data: data, explicitTimeout: nil).needsRetry)
             }
         }
         
@@ -207,7 +208,7 @@ class PersistenceExporterDecoratorTests: XCTestCase {
         try exporter.export(values: ["v3"])
         
         if let dataExporter = worker.dataExporter {
-            XCTAssertFalse(dataExporter.export(data: writtenData).needsRetry)
+            XCTAssertFalse(dataExporter.export(data: writtenData, explicitTimeout: nil).needsRetry)
         }
         
         waitForExpectations(timeout: 1, handler: nil)

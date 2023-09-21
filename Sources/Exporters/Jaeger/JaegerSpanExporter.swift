@@ -18,20 +18,20 @@ public class JaegerSpanExporter: SpanExporter {
         self.collectorAddress = collectorAddress
     }
 
-    public func export(spans: [SpanData]) -> SpanExporterResultCode {
+  public func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
         var spanList = TList<Span>()
         spanList.append(contentsOf: Adapter.toJaeger(spans: spans))
         let batch = Batch(process: process, spans: spanList)
-        let sender = Sender(host: collectorAddress)
+    let sender = Sender(host: collectorAddress)
         let success = sender.sendBatch(batch: batch)
         return success ? SpanExporterResultCode.success : SpanExporterResultCode.failure
     }
 
-    public func flush() -> SpanExporterResultCode {
+    public func flush(explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
         return .success
     }
 
-    public func shutdown() {
+    public func shutdown(explicitTimeout: TimeInterval?) {
     }
 }
 

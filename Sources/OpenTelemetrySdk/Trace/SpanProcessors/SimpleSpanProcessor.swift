@@ -26,13 +26,13 @@ public struct SimpleSpanProcessor: SpanProcessor {
         let span = span.toSpanData()
         let spanExporterAux = self.spanExporter
         processorQueue.async {
-            spanExporterAux.export(spans: [span])
+            _ = spanExporterAux.export(spans: [span])
         }
     }
 
-    public func shutdown() {
+  public func shutdown(explicitTimeout: TimeInterval? = nil) {
         processorQueue.sync {
-            spanExporter.shutdown()
+          spanExporter.shutdown(explicitTimeout: explicitTimeout)
         }
     }
 

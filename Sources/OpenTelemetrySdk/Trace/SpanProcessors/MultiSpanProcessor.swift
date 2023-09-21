@@ -45,9 +45,9 @@ public struct MultiSpanProcessor: SpanProcessor {
         }
     }
 
-    public func shutdown() {
+  public func shutdown(explicitTimeout:TimeInterval? = nil) {
         for var processor in spanProcessorsAll {
-            processor.shutdown()
+            processor.shutdown(explicitTimeout: explicitTimeout)
         }
     }
 

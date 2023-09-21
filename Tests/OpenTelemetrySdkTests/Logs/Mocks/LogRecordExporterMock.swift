@@ -15,17 +15,17 @@ class LogRecordExporterMock : LogRecordExporter {
     var forceFlushCalledTimes : Int = 0
     var returnValue: ExportResult = .success
     
-    func export(logRecords: [OpenTelemetrySdk.ReadableLogRecord]) -> OpenTelemetrySdk.ExportResult {
+    func export(logRecords: [OpenTelemetrySdk.ReadableLogRecord], explicitTimeout: TimeInterval?) -> OpenTelemetrySdk.ExportResult {
         exportCalledTimes += 1
         exportCalledData = logRecords
         return returnValue
     }
     
-    func shutdown() {
+  func shutdown(explicitTimeout: TimeInterval?) {
         shutdownCalledTimes += 1
     }
     
-    func forceFlush() -> OpenTelemetrySdk.ExportResult {
+    func forceFlush(explicitTimeout: TimeInterval?) -> OpenTelemetrySdk.ExportResult {
         forceFlushCalledTimes += 1
         return returnValue
     }

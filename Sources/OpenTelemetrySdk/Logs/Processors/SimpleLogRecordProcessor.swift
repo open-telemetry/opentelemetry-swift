@@ -14,15 +14,15 @@ public class SimpleLogRecordProcessor : LogRecordProcessor {
     }
     
     public func onEmit(logRecord: ReadableLogRecord) {
-        _ = logRecordExporter.export(logRecords: [logRecord])
+        _ = logRecordExporter.export(logRecords: [logRecord], explicitTimeout: nil)
     }
     
-    public func forceFlush() -> ExportResult {
-        return logRecordExporter.forceFlush()
+  public func forceFlush(explicitTimeout: TimeInterval? = nil) -> ExportResult {
+        return logRecordExporter.forceFlush(explicitTimeout: explicitTimeout)
     }
     
-    public func shutdown() -> ExportResult {
-         logRecordExporter.shutdown()
+  public func shutdown(explicitTimeout: TimeInterval? = nil) -> ExportResult {
+         logRecordExporter.shutdown(explicitTimeout: explicitTimeout)
         return .success
     }
     

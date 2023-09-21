@@ -13,7 +13,7 @@ public class InMemoryLogRecordExporter : LogRecordExporter {
         return finishedLogRecords
     }
     
-    public func export(logRecords: [ReadableLogRecord]) -> ExportResult {
+  public func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval? = nil) -> ExportResult {
         guard isRunning else {
             return .failure
         }
@@ -21,12 +21,12 @@ public class InMemoryLogRecordExporter : LogRecordExporter {
         return .success
     }
 
-    public func shutdown() {
+  public func shutdown(explicitTimeout: TimeInterval? = nil) {
         finishedLogRecords.removeAll()
         isRunning = false
     }
 
-    public func forceFlush() -> ExportResult {
+    public func forceFlush(explicitTimeout: TimeInterval? = nil) -> ExportResult {
         guard isRunning else {
             return .failure
         }

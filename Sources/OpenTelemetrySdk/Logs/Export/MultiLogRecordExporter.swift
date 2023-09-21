@@ -12,27 +12,25 @@ public class MultiLogRecordExporter : LogRecordExporter {
         self.logRecordExporters = logRecordExporters
     }
     
-    public func export(logRecords: [ReadableLogRecord]) -> ExportResult {
+    public func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval? = nil) -> ExportResult {
         var result = ExportResult.success
         logRecordExporters.forEach {
-            result.mergeResultCode(newResultCode: $0.export(logRecords: logRecords))
+            result.mergeResultCode(newResultCode: $0.export(logRecords: logRecords, explicitTimeout: explicitTimeout))
         }
         return result
     }
     
-    public func shutdown() {
+    public func shutdown(explicitTimeout: TimeInterval? = nil) {
         logRecordExporters.forEach {
-            $0.shutdown()
+          $0.shutdown(explicitTimeout: explicitTimeout)
         }
     }
     
-    public func forceFlush() -> ExportResult {
+    public func forceFlush(explicitTimeout: TimeInterval? = nil) -> ExportResult {
         var result = ExportResult.success
         logRecordExporters.forEach {
-            result.mergeResultCode(newResultCode: $0.forceFlush())
+          result.mergeResultCode(newResultCode: $0.forceFlush(explicitTimeout: explicitTimeout))
         }
         return result
     }
-    
-    
 }

@@ -7,6 +7,7 @@ import Foundation
 import OpenTelemetryApi
 
 public class BatchLogRecordProcessor : LogRecordProcessor {
+
     
     fileprivate var worker : BatchWorker
     
@@ -20,20 +21,19 @@ public class BatchLogRecordProcessor : LogRecordProcessor {
         worker.emit(logRecord: logRecord)
     }
     
-    public func forceFlush() -> ExportResult {
-        forceFlush(timeout: nil)
+  public func forceFlush(explicitTimeout: TimeInterval?) -> ExportResult {
+        forceFlush(timeout: explicitTimeout)
         return .success
     }
     
-    public func forceFlush(timeout: TimeInterval?) {
+    public func forceFlush(timeout: TimeInterval? = nil) {
         worker.forceFlush(explicitTimeout: timeout)
-
     }
 
     
-    public func shutdown() -> ExportResult {
+  public func shutdown(explicitTimeout: TimeInterval? = nil) -> ExportResult {
         worker.cancel()
-        worker.shutdown()
+        worker.shutdown(explicitTimeout: explicitTimeout)
         return .success
     }
 }
@@ -113,14 +113,15 @@ private class BatchWorker : Thread {
     }
     
     
-    public func shutdown() {
-        forceFlush(explicitTimeout: exportTimeout)
-        _ = logRecordExporter.shutdown()
+  public func shutdown(explicitTimeout: TimeInterval?) {
+    let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, exportTimeout)
+    forceFlush(explicitTimeout: timeout)
+    _ = logRecordExporter.shutdown(explicitTimeout: timeout)
     }
     
     private func exportBatch(logRecordList: [ReadableLogRecord], explicitTimeout: TimeInterval?) {
         let exportOperation = BlockOperation { [weak self] in
-            self?.exportAction(logRecordList : logRecordList)
+            self?.exportAction(logRecordList : logRecordList, explicitTimeout: explicitTimeout)
         }
         let timeoutTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
         timeoutTimer.setEventHandler { exportOperation.cancel() }
@@ -132,11 +133,11 @@ private class BatchWorker : Thread {
         timeoutTimer.cancel()
     }
     
-    private func exportAction(logRecordList: [ReadableLogRecord])  {
+  private func exportAction(logRecordList: [ReadableLogRecord], explicitTimeout: TimeInterval?)  {
         stride(from: 0, to: logRecordList.endIndex, by: maxExportBatchSize).forEach {
             var logRecordToExport = logRecordList[$0 ..< min($0 + maxExportBatchSize, logRecordList.count)].map {$0}
             willExportCallback?(&logRecordToExport)
-            _ = logRecordExporter.export(logRecords: logRecordToExport)
+            _ = logRecordExporter.export(logRecords: logRecordToExport, explicitTimeout: explicitTimeout)
         }
         }
     }

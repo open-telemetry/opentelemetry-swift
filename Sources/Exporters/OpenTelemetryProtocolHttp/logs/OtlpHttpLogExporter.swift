@@ -12,14 +12,17 @@ public func defaultOltpHttpLoggingEndpoint() -> URL {
 }
 
 public class OtlpHttpLogExporter : OtlpHttpExporterBase, LogRecordExporter {
+
     var pendingLogRecords: [ReadableLogRecord] = []
     
-    override
-    public init(endpoint: URL = defaultOltpHttpLoggingEndpoint(), useSession: URLSession? = nil) {
-        super.init(endpoint: endpoint, useSession: useSession)
+    override public init(endpoint: URL = defaultOltpHttpLoggingEndpoint(),
+                         config: OtlpConfiguration = OtlpConfiguration(),
+                         useSession: URLSession? = nil,
+                         envVarHeaders: [(String,String)]? = EnvVarHeaders.attributes){
+      super.init(endpoint: endpoint, config: config, useSession: useSession, envVarHeaders: envVarHeaders)
     }
     
-    public func export(logRecords: [OpenTelemetrySdk.ReadableLogRecord]) -> OpenTelemetrySdk.ExportResult {
+  public func export(logRecords: [OpenTelemetrySdk.ReadableLogRecord], explicitTimeout: TimeInterval? = nil) -> OpenTelemetrySdk.ExportResult {
         pendingLogRecords.append(contentsOf: logRecords)
         let sendingLogRecords = pendingLogRecords
         pendingLogRecords = []
@@ -28,7 +31,8 @@ public class OtlpHttpLogExporter : OtlpHttpExporterBase, LogRecordExporter {
             request.resourceLogs = LogRecordAdapter.toProtoResourceRecordLog(logRecordList: sendingLogRecords)
         }
         
-        let request = createRequest(body: body, endpoint: endpoint)
+        var request = createRequest(body: body, endpoint: endpoint)
+    request.timeoutInterval = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude , config.timeout)
         httpClient.send(request: request) { [weak self] result in
             switch result {
             case .success(_):
@@ -42,11 +46,11 @@ public class OtlpHttpLogExporter : OtlpHttpExporterBase, LogRecordExporter {
         return .success
     }
 
-    public func forceFlush() -> OpenTelemetrySdk.ExportResult {
-        self.flush()
+  public func forceFlush(explicitTimeout: TimeInterval? = nil) -> ExportResult {
+        self.flush(explicitTimeout: explicitTimeout)
     }
     
-    public func flush() -> ExportResult {
+  public func flush(explicitTimeout: TimeInterval? = nil) -> ExportResult {
         var exporterResult: ExportResult = .success
         
         if !pendingLogRecords.isEmpty {
@@ -54,8 +58,9 @@ public class OtlpHttpLogExporter : OtlpHttpExporterBase, LogRecordExporter {
                 request.resourceLogs = LogRecordAdapter.toProtoResourceRecordLog(logRecordList: pendingLogRecords)
             }
             let semaphore = DispatchSemaphore(value: 0)
-            let request = createRequest(body: body, endpoint: endpoint)
-            
+            var request = createRequest(body: body, endpoint: endpoint)
+            request.timeoutInterval = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude , config.timeout)
+
             httpClient.send(request: request) { result in
                 switch result {
                 case .success(_):

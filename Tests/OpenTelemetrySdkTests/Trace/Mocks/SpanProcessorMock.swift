@@ -32,7 +32,7 @@ class SpanProcessorMock: SpanProcessor {
         onEndCalledSpan = span
     }
 
-    func shutdown() {
+    func shutdown(explicitTimeout: TimeInterval?) {
         shutdownCalledTimes += 1
     }
 

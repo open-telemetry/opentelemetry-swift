@@ -15,8 +15,8 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
     var pendingMetrics: [Metric] = []
     
     override
-    public init(endpoint: URL = defaultOltpHTTPMetricsEndpoint(), useSession: URLSession? = nil) {
-        super.init(endpoint: endpoint, useSession: useSession)
+  public init(endpoint: URL = defaultOltpHTTPMetricsEndpoint(), config : OtlpConfiguration = OtlpConfiguration(), useSession: URLSession? = nil, envVarHeaders: [(String,String)]? = EnvVarHeaders.attributes) {
+    super.init(endpoint: endpoint, config: config, useSession: useSession, envVarHeaders: envVarHeaders)
     }
     
     public func export(metrics: [Metric], shouldCancel: (() -> Bool)?) -> MetricExporterResultCode {

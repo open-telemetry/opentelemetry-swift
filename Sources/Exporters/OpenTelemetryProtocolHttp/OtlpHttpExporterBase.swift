@@ -10,9 +10,14 @@ import OpenTelemetryProtocolExporterCommon
 public class OtlpHttpExporterBase {
     let endpoint: URL
     let httpClient: HTTPClient
-    
-    public init(endpoint: URL, useSession: URLSession? = nil) {
-        self.endpoint = endpoint
+  let envVarHeaders : [(String,String)]?
+
+  let config : OtlpConfiguration
+    public init(endpoint: URL, config: OtlpConfiguration = OtlpConfiguration(), useSession: URLSession? = nil, envVarHeaders: [(String,String)]? = EnvVarHeaders.attributes) {
+      self.envVarHeaders = envVarHeaders
+
+      self.endpoint = endpoint
+      self.config = config
         if let providedSession = useSession {
             self.httpClient = HTTPClient(session: providedSession)
         } else {
@@ -35,6 +40,6 @@ public class OtlpHttpExporterBase {
         return request
     }
     
-    public func shutdown() {
+  public func shutdown(explicitTimeout: TimeInterval?) {
     }
 }

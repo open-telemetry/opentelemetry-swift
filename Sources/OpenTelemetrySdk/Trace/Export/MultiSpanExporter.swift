@@ -16,25 +16,25 @@ public class MultiSpanExporter: SpanExporter {
         self.spanExporters = spanExporters
     }
 
-    public func export(spans: [SpanData]) -> SpanExporterResultCode {
+  public func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
         var currentResultCode = SpanExporterResultCode.success
         for exporter in spanExporters {
-            currentResultCode.mergeResultCode(newResultCode: exporter.export(spans: spans))
+            currentResultCode.mergeResultCode(newResultCode: exporter.export(spans: spans, explicitTimeout: explicitTimeout))
         }
         return currentResultCode
     }
 
-    public func flush() -> SpanExporterResultCode {
+  public func flush(explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
         var currentResultCode = SpanExporterResultCode.success
         for exporter in spanExporters {
-            currentResultCode.mergeResultCode(newResultCode: exporter.flush())
+            currentResultCode.mergeResultCode(newResultCode: exporter.flush(explicitTimeout: explicitTimeout))
         }
         return currentResultCode
     }
 
-    public func shutdown() {
+  public func shutdown(explicitTimeout: TimeInterval?) {
         for exporter in spanExporters {
-            exporter.shutdown()
+          exporter.shutdown(explicitTimeout:explicitTimeout)
         }
     }
 }

@@ -125,11 +125,12 @@ class RelativeDateProvider: DateProvider {
 }
 
 struct DataExporterMock: DataExporter {
+  
     let exportStatus: DataExportStatus
 
     var onExport: ((Data) -> Void)? = nil
 
-    func export(data: Data) -> DataExportStatus {
+    func export(data: Data, explicitTimeout: TimeInterval?) -> DataExportStatus {
         onExport?(data)
         return exportStatus
     }

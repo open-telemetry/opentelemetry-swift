@@ -23,12 +23,12 @@ class LogRecordProcessorMock : LogRecordProcessor {
         onEmitCalledLogRecord = logRecord
     }
     
-    func forceFlush() -> OpenTelemetrySdk.ExportResult {
+    func forceFlush(explicitTimeout: TimeInterval?) -> OpenTelemetrySdk.ExportResult {
         forceFlushCalledTimes += 1
         return .success
     }
     
-    func shutdown() -> OpenTelemetrySdk.ExportResult {
+    func shutdown(explicitTimeout: TimeInterval?) -> OpenTelemetrySdk.ExportResult {
         shutdownCalledTimes += 1
         return .success
     }

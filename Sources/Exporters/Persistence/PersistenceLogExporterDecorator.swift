@@ -11,6 +11,7 @@ import OpenTelemetrySdk
 public class PersistenceLogExporterDecorator: LogRecordExporter {
 
   struct LogRecordDecoratedExporter: DecoratedExporter {
+
     typealias SignalType = ReadableLogRecord
 
     private let logRecordExporter: LogRecordExporter
@@ -19,8 +20,8 @@ public class PersistenceLogExporterDecorator: LogRecordExporter {
       self.logRecordExporter = logRecordExporter
     }
 
-    func export(values: [ReadableLogRecord]) -> DataExportStatus {
-      let result = logRecordExporter.export(logRecords: values)
+    func export(values: [ReadableLogRecord], explicitTimeout: TimeInterval? = nil) -> DataExportStatus {
+      let result = logRecordExporter.export(logRecords: values, explicitTimeout: explicitTimeout)
       return DataExportStatus(needsRetry: result == .failure)
     }
   }
@@ -42,7 +43,7 @@ public class PersistenceLogExporterDecorator: LogRecordExporter {
     self.logRecordExporter = logRecordExporter
   }
 
-  public func export(logRecords: [ReadableLogRecord]) -> ExportResult {
+  public func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval?) -> ExportResult {
     do {
       try persistenceExporter.export(values: logRecords)
       return .success
@@ -51,14 +52,14 @@ public class PersistenceLogExporterDecorator: LogRecordExporter {
     }
   }
 
-  public func shutdown() {
+  public func shutdown(explicitTimeout: TimeInterval?) {
     persistenceExporter.flush()
-    logRecordExporter.shutdown()
+    logRecordExporter.shutdown(explicitTimeout: explicitTimeout)
   }
 
-  public func forceFlush() -> ExportResult {
+  public func forceFlush(explicitTimeout: TimeInterval?) -> ExportResult {
     persistenceExporter.flush()
-    return logRecordExporter.forceFlush()
+    return logRecordExporter.forceFlush(explicitTimeout: explicitTimeout)
 
   }
 }

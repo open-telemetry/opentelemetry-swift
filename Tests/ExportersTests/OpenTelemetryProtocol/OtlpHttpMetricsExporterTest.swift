@@ -33,7 +33,7 @@ class OtlpHttpMetricsExporterTest: XCTestCase {
     func testShutdown() {
         let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
         let exporter = OtlpHttpMetricExporter(endpoint: endpoint)
-        XCTAssertNoThrow(exporter.shutdown())
+        XCTAssertNoThrow(exporter.shutdown(explicitTimeout: nil))
     }
     
     // This test and testGaugeExport() are somewhat hacky solutions to verifying that the metrics got across correctly.  It
