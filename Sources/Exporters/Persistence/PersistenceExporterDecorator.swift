@@ -10,7 +10,7 @@ import OpenTelemetrySdk
 protocol DecoratedExporter {
   associatedtype SignalType
 
-  func export(values: [SignalType], explicitTimeout: TimeInterval?) -> DataExportStatus
+  func export(values: [SignalType]) -> DataExportStatus
 }
 
 // a generic decorator of `DecoratedExporter` adding filesystem persistence of batches of `[T.SignalType]`.
@@ -25,7 +25,7 @@ internal class PersistenceExporterDecorator<T> where T: DecoratedExporter, T.Sig
       self.decoratedExporter = decoratedExporter
     }
 
-    func export(data: Data, explicitTimeout: TimeInterval?) -> DataExportStatus {
+    func export(data: Data) -> DataExportStatus {
       // decode batches of `[T.SignalType]` from the raw data.
       // the data is made of batches of comma-suffixed JSON arrays, so in order to utilize
       // `JSONDecoder`, add a "[" prefix and "null]" suffix making the data a valid
@@ -41,7 +41,7 @@ internal class PersistenceExporterDecorator<T> where T: DecoratedExporter, T.Sig
           from: arrayData
         ).compactMap { $0 }.flatMap { $0 }
 
-        return decoratedExporter.export(values: exportables, explicitTimeout: explicitTimeout)
+        return decoratedExporter.export(values: exportables)
       } catch {
         return DataExportStatus(needsRetry: false)
       }

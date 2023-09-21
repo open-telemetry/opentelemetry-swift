@@ -10,7 +10,7 @@ import OpenTelemetrySdk
 // specialization of `PersistenceExporterDecorator` for `SpanExporter`.
 public class PersistenceSpanExporterDecorator: SpanExporter {
 
-    struct SpanDecoratedExporter: DecoratedExporter {
+  struct SpanDecoratedExporter: DecoratedExporter {
         typealias SignalType = SpanData
         
         private let spanExporter: SpanExporter
@@ -19,8 +19,8 @@ public class PersistenceSpanExporterDecorator: SpanExporter {
             self.spanExporter = spanExporter
         }
 
-      func export(values: [SpanData], explicitTimeout: TimeInterval?) -> DataExportStatus {
-            _ = spanExporter.export(spans: values, explicitTimeout: explicitTimeout)
+      func export(values: [SpanData]) -> DataExportStatus {
+            _ = spanExporter.export(spans: values)
             return DataExportStatus(needsRetry: false)
         }
     }

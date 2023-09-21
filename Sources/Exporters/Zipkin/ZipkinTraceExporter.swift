@@ -51,11 +51,11 @@ public class ZipkinTraceExporter: SpanExporter {
         return status
     }
 
-  public func flush(explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
+  public func flush(explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
         return .success
     }
 
-    public func shutdown(explicitTimeout: TimeInterval?) {
+    public func shutdown(explicitTimeout: TimeInterval? = nil) {
     }
 
     func encodeSpans(spans: [SpanData]) -> [ZipkinSpan] {

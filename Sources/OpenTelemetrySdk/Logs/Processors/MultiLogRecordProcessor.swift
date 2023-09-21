@@ -9,7 +9,7 @@ import OpenTelemetryApi
 public class MultiLogRecordProcessor : LogRecordProcessor {
     var logRecordProcessors = [LogRecordProcessor]()
 
-  public func forceFlush(explicitTimeout: TimeInterval?) -> ExportResult {
+  public func forceFlush(explicitTimeout: TimeInterval? = nil) -> ExportResult {
         var result : ExportResult = .success
         logRecordProcessors.forEach {
           result.mergeResultCode(newResultCode: $0.forceFlush(explicitTimeout: explicitTimeout))
@@ -17,7 +17,7 @@ public class MultiLogRecordProcessor : LogRecordProcessor {
         return result
     }
     
-  public func shutdown(explicitTimeout: TimeInterval?) -> ExportResult {
+  public func shutdown(explicitTimeout: TimeInterval? = nil) -> ExportResult {
         var result : ExportResult = .success
         logRecordProcessors.forEach {
           result.mergeResultCode(newResultCode: $0.shutdown(explicitTimeout: explicitTimeout))

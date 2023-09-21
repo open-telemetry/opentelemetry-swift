@@ -35,7 +35,7 @@ class BatchLogRecordProcessorTests : XCTestCase {
         logger.logRecordBuilder().emit()
         logger.logRecordBuilder().emit()
         let exported = waitingExporter.waitForExport()
-        waitingExporter.shutdown(explicitTimeout: nil)
+        waitingExporter.shutdown()
         XCTAssertEqual(exported?.count, 6)
         XCTAssertGreaterThanOrEqual(waitingExporter.exporter.exportCalledTimes, 3)
     }

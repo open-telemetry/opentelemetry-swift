@@ -14,7 +14,7 @@ public class StdoutExporter: SpanExporter {
         self.isDebug = isDebug
     }
 
-    public func export(spans: [SpanData]) -> SpanExporterResultCode {
+  public func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
         let jsonEncoder = JSONEncoder()
         for span in spans {
             if isDebug {
@@ -51,11 +51,11 @@ public class StdoutExporter: SpanExporter {
         return .success
     }
 
-    public func flush() -> SpanExporterResultCode {
+  public func flush(explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
         return .success
     }
 
-    public func shutdown() {}
+    public func shutdown(explicitTimeout: TimeInterval?) {}
 }
 
 private struct SpanExporterData {
