@@ -8,6 +8,269 @@ import Foundation
 
 public enum SemanticAttributes: String {
     /**
+    Client address - unix domain socket name, IPv4 or IPv6 address.
+
+    ~~~
+    // Examples
+    attributes[.clientAddress] = "/tmp/my.sock"
+    attributes[.clientAddress] = "10.1.2.80"
+    ~~~
+
+    - Note: When observed from the server side, and when communicating through an intermediary, `client.address` SHOULD represent client address behind any intermediaries (e.g. proxies) if it's available.
+    - Requires: Value type should be `String`
+    */
+    case clientAddress = "client.address"
+    /**
+    Client port number.
+
+    ~~~
+    // Examplesattributes[.clientPort] = 65123
+    ~~~
+
+    - Note: When observed from the server side, and when communicating through an intermediary, `client.port` SHOULD represent client port behind any intermediaries (e.g. proxies) if it's available.
+    - Requires: Value type should be `Int`
+    */
+    case clientPort = "client.port"
+    /**
+    Immediate client peer address - unix domain socket name, IPv4 or IPv6 address.
+
+    ~~~
+    // Examples
+    attributes[.clientSocketAddress] = "/tmp/my.sock"
+    attributes[.clientSocketAddress] = "127.0.0.1"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case clientSocketAddress = "client.socket.address"
+    /**
+    Immediate client peer port number.
+
+    ~~~
+    // Examplesattributes[.clientSocketPort] = 35555
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case clientSocketPort = "client.socket.port"
+    /**
+    Deprecated, use `http.request.method` instead.
+
+    ~~~
+    // Examples
+    attributes[.httpMethod] = "GET"
+    attributes[.httpMethod] = "POST"
+    attributes[.httpMethod] = "HEAD"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case httpMethod = "http.method"
+    /**
+    Deprecated, use `http.response.status_code` instead.
+
+    ~~~
+    // Examplesattributes[.httpStatusCode] = 200
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case httpStatusCode = "http.status_code"
+    /**
+    Deprecated, use `url.scheme` instead.
+
+    ~~~
+    // Examples
+    attributes[.httpScheme] = "http"
+    attributes[.httpScheme] = "https"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case httpScheme = "http.scheme"
+    /**
+    Deprecated, use `url.full` instead.
+
+    ~~~
+    // Examples
+    attributes[.httpUrl] = "https://www.foo.bar/search?q=OpenTelemetry#SemConv"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case httpUrl = "http.url"
+    /**
+    Deprecated, use `url.path` and `url.query` instead.
+
+    ~~~
+    // Examples
+    attributes[.httpTarget] = "/search?q=OpenTelemetry#SemConv"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case httpTarget = "http.target"
+    /**
+    Deprecated, use `http.request.body.size` instead.
+
+    ~~~
+    // Examplesattributes[.httpRequestContentLength] = 3495
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case httpRequestContentLength = "http.request_content_length"
+    /**
+    Deprecated, use `http.response.body.size` instead.
+
+    ~~~
+    // Examplesattributes[.httpResponseContentLength] = 3495
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case httpResponseContentLength = "http.response_content_length"
+    /**
+    Deprecated, use `server.socket.domain` on client spans.
+
+    ~~~
+    // Examples
+    attributes[.netSockPeerName] = "/var/my.sock"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case netSockPeerName = "net.sock.peer.name"
+    /**
+    Deprecated, use `server.socket.address` on client spans and `client.socket.address` on server spans.
+
+    ~~~
+    // Examples
+    attributes[.netSockPeerAddr] = "192.168.0.1"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case netSockPeerAddr = "net.sock.peer.addr"
+    /**
+    Deprecated, use `server.socket.port` on client spans and `client.socket.port` on server spans.
+
+    ~~~
+    // Examplesattributes[.netSockPeerPort] = 65531
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case netSockPeerPort = "net.sock.peer.port"
+    /**
+    Deprecated, use `server.address` on client spans and `client.address` on server spans.
+
+    ~~~
+    // Examples
+    attributes[.netPeerName] = "example.com"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case netPeerName = "net.peer.name"
+    /**
+    Deprecated, use `server.port` on client spans and `client.port` on server spans.
+
+    ~~~
+    // Examplesattributes[.netPeerPort] = 8080
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case netPeerPort = "net.peer.port"
+    /**
+    Deprecated, use `server.address`.
+
+    ~~~
+    // Examples
+    attributes[.netHostName] = "example.com"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case netHostName = "net.host.name"
+    /**
+    Deprecated, use `server.port`.
+
+    ~~~
+    // Examplesattributes[.netHostPort] = 8080
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case netHostPort = "net.host.port"
+    /**
+    Deprecated, use `server.socket.address`.
+
+    ~~~
+    // Examples
+    attributes[.netSockHostAddr] = "/var/my.sock"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case netSockHostAddr = "net.sock.host.addr"
+    /**
+    Deprecated, use `server.socket.port`.
+
+    ~~~
+    // Examplesattributes[.netSockHostPort] = 8080
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case netSockHostPort = "net.sock.host.port"
+    /**
+    Deprecated, use `network.transport`.
+    - Requires: Value should be one of [`SemanticAttributes.NetTransportValues`](x-source-tag://otelNetTransportValues) (of type `String`)
+    */
+    case netTransport = "net.transport"
+    /**
+    Deprecated, use `network.protocol.name`.
+
+    ~~~
+    // Examples
+    attributes[.netProtocolName] = "amqp"
+    attributes[.netProtocolName] = "http"
+    attributes[.netProtocolName] = "mqtt"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case netProtocolName = "net.protocol.name"
+    /**
+    Deprecated, use `network.protocol.version`.
+
+    ~~~
+    // Examples
+    attributes[.netProtocolVersion] = "3.1.1"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case netProtocolVersion = "net.protocol.version"
+    /**
+    Deprecated, use `network.transport` and `network.type`.
+    - Requires: Value should be one of [`SemanticAttributes.NetSockFamilyValues`](x-source-tag://otelNetSockFamilyValues) (of type `String`)
+    */
+    case netSockFamily = "net.sock.family"
+    /**
+    The domain name of the destination system.
+
+    ~~~
+    // Examples
+    attributes[.destinationDomain] = "foo.example.com"
+    ~~~
+
+    - Note: This value may be a host name, a fully qualified domain name, or another host naming format.
+    - Requires: Value type should be `String`
+    */
+    case destinationDomain = "destination.domain"
+    /**
+    Peer address, for example IP address or UNIX socket name.
+
+    ~~~
+    // Examples
+    attributes[.destinationAddress] = "10.5.3.2"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case destinationAddress = "destination.address"
+    /**
+    Peer port number.
+
+    ~~~
+    // Examplesattributes[.destinationPort] = 3389attributes[.destinationPort] = 2888
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case destinationPort = "destination.port"
+    /**
     The type of the exception (its fully-qualified class name, if applicable). The dynamic type of the exception should be preferred over the static type in languages that support it.
 
     ~~~
@@ -44,53 +307,69 @@ public enum SemanticAttributes: String {
 
     ~~~
     // Examples
-    attributes[.httpMethod] = "GET"
-    attributes[.httpMethod] = "POST"
-    attributes[.httpMethod] = "HEAD"
+    attributes[.httpRequestMethod] = "GET"
+    attributes[.httpRequestMethod] = "POST"
+    attributes[.httpRequestMethod] = "HEAD"
     ~~~
-    - Requires: Value type should be `String`
+
+    - Note: HTTP request method value SHOULD be "known" to the instrumentation.
+      By default, this convention defines "known" methods as the ones listed in [RFC9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-methods)
+      and the PATCH method defined in [RFC5789](https://www.rfc-editor.org/rfc/rfc5789.html).
+
+      If the HTTP request method is not known to instrumentation, it MUST set the `http.request.method` attribute to `_OTHER` and, except if reporting a metric, MUST
+      set the exact method received in the request line as value of the `http.request.method_original` attribute.
+
+      If the HTTP instrumentation could end up converting valid HTTP request methods to `_OTHER`, then it MUST provide a way to override
+      the list of known HTTP methods. If this override is done via environment variable, then the environment variable MUST be named
+      OTEL_INSTRUMENTATION_HTTP_KNOWN_METHODS and support a comma-separated list of case-sensitive known HTTP methods
+      (this list MUST be a full override of the default known method, it is not a list of known methods in addition to the defaults).
+
+      HTTP method names are case-sensitive and `http.request.method` attribute value MUST match a known HTTP method name exactly.
+      Instrumentations for specific web frameworks that consider HTTP methods to be case insensitive, SHOULD populate a canonical equivalent.
+      Tracing instrumentations that do so, MUST also set `http.request.method_original` to the original value.
+    - Requires: Value should be one of [`SemanticAttributes.HttpRequestMethodValues`](x-source-tag://otelHttpRequestMethodValues) (of type `String`)
     */
-    case httpMethod = "http.method"
+    case httpRequestMethod = "http.request.method"
     /**
     [HTTP response status code](https://tools.ietf.org/html/rfc7231#section-6).
 
     ~~~
-    // Examplesattributes[.httpStatusCode] = 200
+    // Examplesattributes[.httpResponseStatusCode] = 200
     ~~~
     - Requires: Value type should be `Int`
     */
-    case httpStatusCode = "http.status_code"
+    case httpResponseStatusCode = "http.response.status_code"
     /**
-    Application layer protocol used. The value SHOULD be normalized to lowercase.
+    [OSI Application Layer](https://osi-model.com/application-layer/) or non-OSI equivalent. The value SHOULD be normalized to lowercase.
 
     ~~~
     // Examples
-    attributes[.netProtocolName] = "http"
-    attributes[.netProtocolName] = "spdy"
+    attributes[.networkProtocolName] = "http"
+    attributes[.networkProtocolName] = "spdy"
     ~~~
     - Requires: Value type should be `String`
     */
-    case netProtocolName = "net.protocol.name"
+    case networkProtocolName = "network.protocol.name"
     /**
     Version of the application layer protocol used. See note below.
 
     ~~~
     // Examples
-    attributes[.netProtocolVersion] = "1.0"
-    attributes[.netProtocolVersion] = "1.1"
-    attributes[.netProtocolVersion] = "2.0"
+    attributes[.networkProtocolVersion] = "1.0"
+    attributes[.networkProtocolVersion] = "1.1"
+    attributes[.networkProtocolVersion] = "2.0"
     ~~~
 
-    - Note: `net.protocol.version` refers to the version of the protocol used and might be different from the protocol client's version. If the HTTP client used has a version of `0.27.2`, but sends HTTP version `1.1`, this attribute should be set to `1.1`.
+    - Note: `network.protocol.version` refers to the version of the protocol used and might be different from the protocol client's version. If the HTTP client used has a version of `0.27.2`, but sends HTTP version `1.1`, this attribute should be set to `1.1`.
     - Requires: Value type should be `String`
     */
-    case netProtocolVersion = "net.protocol.version"
+    case networkProtocolVersion = "network.protocol.version"
     /**
     Host identifier of the ["URI origin"](https://www.rfc-editor.org/rfc/rfc9110.html#name-uri-origin) HTTP request is sent to.
 
     ~~~
     // Examples
-    attributes[.netPeerName] = "example.com"
+    attributes[.serverAddress] = "example.com"
     ~~~
 
     - Note: Determined by using the first of the following that applies
@@ -102,29 +381,18 @@ public enum SemanticAttributes: String {
       SHOULD NOT be set if capturing it would require an extra DNS lookup.
     - Requires: Value type should be `String`
     */
-    case netPeerName = "net.peer.name"
+    case serverAddress = "server.address"
     /**
     Port identifier of the ["URI origin"](https://www.rfc-editor.org/rfc/rfc9110.html#name-uri-origin) HTTP request is sent to.
 
     ~~~
-    // Examplesattributes[.netPeerPort] = 80attributes[.netPeerPort] = 8080attributes[.netPeerPort] = 443
+    // Examplesattributes[.serverPort] = 80attributes[.serverPort] = 8080attributes[.serverPort] = 443
     ~~~
 
-    - Note: When [request target](https://www.rfc-editor.org/rfc/rfc9110.html#target.resource) is absolute URI, `net.peer.name` MUST match URI port identifier, otherwise it MUST match `Host` header port identifier.
+    - Note: When [request target](https://www.rfc-editor.org/rfc/rfc9110.html#target.resource) is absolute URI, `server.port` MUST match URI port identifier, otherwise it MUST match `Host` header port identifier.
     - Requires: Value type should be `Int`
     */
-    case netPeerPort = "net.peer.port"
-    /**
-    The URI scheme identifying the used protocol.
-
-    ~~~
-    // Examples
-    attributes[.httpScheme] = "http"
-    attributes[.httpScheme] = "https"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case httpScheme = "http.scheme"
+    case serverPort = "server.port"
     /**
     The matched route (path template in the format used by the respective server framework). See note below.
 
@@ -135,46 +403,21 @@ public enum SemanticAttributes: String {
     ~~~
 
     - Note: MUST NOT be populated when this is not supported by the HTTP server framework as the route attribute should have low-cardinality and the URI path can NOT substitute it.
-      SHOULD include the [application root](/specification/trace/semantic_conventions/http.md#http-server-definitions) if there is one.
+      SHOULD include the [application root](/docs/http/http-spans.md#http-server-definitions) if there is one.
     - Requires: Value type should be `String`
     */
     case httpRoute = "http.route"
     /**
-    Name of the local HTTP server that received the request.
+    The [URI scheme](https://www.rfc-editor.org/rfc/rfc3986#section-3.1) component identifying the used protocol.
 
     ~~~
     // Examples
-    attributes[.netHostName] = "localhost"
+    attributes[.urlScheme] = "http"
+    attributes[.urlScheme] = "https"
     ~~~
-
-    - Note: Determined by using the first of the following that applies
-
-      - The [primary server name](/specification/trace/semantic_conventions/http.md#http-server-definitions) of the matched virtual host. MUST only
-        include host identifier.
-      - Host identifier of the [request target](https://www.rfc-editor.org/rfc/rfc9110.html#target.resource)
-        if it's sent in absolute-form.
-      - Host identifier of the `Host` header
-
-      SHOULD NOT be set if only IP address is available and capturing name would require a reverse DNS lookup.
     - Requires: Value type should be `String`
     */
-    case netHostName = "net.host.name"
-    /**
-    Port of the local HTTP server that received the request.
-
-    ~~~
-    // Examplesattributes[.netHostPort] = 8080
-    ~~~
-
-    - Note: Determined by using the first of the following that applies
-
-      - Port identifier of the [primary server host](/specification/trace/semantic_conventions/http.md#http-server-definitions) of the matched virtual host.
-      - Port identifier of the [request target](https://www.rfc-editor.org/rfc/rfc9110.html#target.resource)
-        if it's sent in absolute-form.
-      - Port identifier of the `Host` header.
-    - Requires: Value type should be `Int`
-    */
-    case netHostPort = "net.host.port"
+    case urlScheme = "url.scheme"
     /**
     The name identifies the event.
 
@@ -248,6 +491,137 @@ public enum SemanticAttributes: String {
     - Requires: Value type should be `String`
     */
     case featureFlagVariant = "feature_flag.variant"
+    /**
+    The stream associated with the log. See below for a list of well-known values.
+    - Requires: Value should be one of [`SemanticAttributes.LogIostreamValues`](x-source-tag://otelLogIostreamValues) (of type `String`)
+    */
+    case logIostream = "log.iostream"
+    /**
+    The basename of the file.
+
+    ~~~
+    // Examples
+    attributes[.logFileName] = "audit.log"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case logFileName = "log.file.name"
+    /**
+    The full path to the file.
+
+    ~~~
+    // Examples
+    attributes[.logFilePath] = "/var/log/mysql/audit.log"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case logFilePath = "log.file.path"
+    /**
+    The basename of the file, with symlinks resolved.
+
+    ~~~
+    // Examples
+    attributes[.logFileNameResolved] = "uuid.log"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case logFileNameResolved = "log.file.name_resolved"
+    /**
+    The full path to the file, with symlinks resolved.
+
+    ~~~
+    // Examples
+    attributes[.logFilePathResolved] = "/var/lib/docker/uuid.log"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case logFilePathResolved = "log.file.path_resolved"
+    /**
+    Physical server IP address or Unix socket address. If set from the client, should simply use the socket's peer address, and not attempt to find any actual server IP (i.e., if set from client, this may represent some proxy server instead of the logical server).
+
+    ~~~
+    // Examples
+    attributes[.serverSocketAddress] = "10.5.3.2"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case serverSocketAddress = "server.socket.address"
+    /**
+    Name of the buffer pool.
+
+    ~~~
+    // Examples
+    attributes[.pool] = "mapped"
+    attributes[.pool] = "direct"
+    ~~~
+
+    - Note: Pool names are generally obtained via [BufferPoolMXBean#getName()](https://docs.oracle.com/en/java/javase/11/docs/api/java.management/java/lang/management/BufferPoolMXBean.html#getName()).
+    - Requires: Value type should be `String`
+    */
+    case pool = "pool"
+    /**
+    The type of memory.
+
+    ~~~
+    // Examples
+    attributes[.type] = "heap"
+    attributes[.type] = "non_heap"
+    ~~~
+    - Requires: Value should be one of [`SemanticAttributes.TypeValues`](x-source-tag://otelTypeValues) (of type `String`)
+    */
+    case type = "type"
+    /**
+    The domain name of an immediate peer.
+
+    ~~~
+    // Examples
+    attributes[.serverSocketDomain] = "proxy.example.com"
+    ~~~
+
+    - Note: Typically observed from the client side, and represents a proxy or other intermediary domain name.
+    - Requires: Value type should be `String`
+    */
+    case serverSocketDomain = "server.socket.domain"
+    /**
+    Physical server port.
+
+    ~~~
+    // Examplesattributes[.serverSocketPort] = 16456
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case serverSocketPort = "server.socket.port"
+    /**
+    The domain name of the source system.
+
+    ~~~
+    // Examples
+    attributes[.sourceDomain] = "foo.example.com"
+    ~~~
+
+    - Note: This value may be a host name, a fully qualified domain name, or another host naming format.
+    - Requires: Value type should be `String`
+    */
+    case sourceDomain = "source.domain"
+    /**
+    Source address, for example IP address or Unix socket name.
+
+    ~~~
+    // Examples
+    attributes[.sourceAddress] = "10.5.3.2"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case sourceAddress = "source.address"
+    /**
+    Source port number.
+
+    ~~~
+    // Examplesattributes[.sourcePort] = 3389attributes[.sourcePort] = 2888
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case sourcePort = "source.port"
     /**
     The full invoked ARN as provided on the `Context` passed to the function (`Lambda-Runtime-Invoked-Function-Arn` header on the `/runtime/invocation/next` applicable).
 
@@ -397,51 +771,27 @@ public enum SemanticAttributes: String {
     */
     case dbOperation = "db.operation"
     /**
-    Remote socket peer address: IPv4 or IPv6 for internet protocols, path for local communication, [etc](https://man7.org/linux/man-pages/man7/address_families.7.html).
+    [OSI Transport Layer](https://osi-model.com/transport-layer/) or [Inter-process Communication method](https://en.wikipedia.org/wiki/Inter-process_communication). The value SHOULD be normalized to lowercase.
 
     ~~~
     // Examples
-    attributes[.netSockPeerAddr] = "127.0.0.1"
-    attributes[.netSockPeerAddr] = "/tmp/mysql.sock"
+    attributes[.networkTransport] = "tcp"
+    attributes[.networkTransport] = "udp"
     ~~~
-    - Requires: Value type should be `String`
+    - Requires: Value should be one of [`SemanticAttributes.NetworkTransportValues`](x-source-tag://otelNetworkTransportValues) (of type `String`)
     */
-    case netSockPeerAddr = "net.sock.peer.addr"
+    case networkTransport = "network.transport"
     /**
-    Remote socket peer port.
-
-    ~~~
-    // Examplesattributes[.netSockPeerPort] = 16456
-    ~~~
-    - Requires: Value type should be `Int`
-    */
-    case netSockPeerPort = "net.sock.peer.port"
-    /**
-    Protocol [address family](https://man7.org/linux/man-pages/man7/address_families.7.html) which is used for communication.
+    [OSI Network Layer](https://osi-model.com/network-layer/) or non-OSI equivalent. The value SHOULD be normalized to lowercase.
 
     ~~~
     // Examples
-    attributes[.netSockFamily] = "inet6"
-    attributes[.netSockFamily] = "bluetooth"
+    attributes[.networkType] = "ipv4"
+    attributes[.networkType] = "ipv6"
     ~~~
-    - Requires: Value should be one of [`SemanticAttributes.NetSockFamilyValues`](x-source-tag://otelNetSockFamilyValues) (of type `String`)
+    - Requires: Value should be one of [`SemanticAttributes.NetworkTypeValues`](x-source-tag://otelNetworkTypeValues) (of type `String`)
     */
-    case netSockFamily = "net.sock.family"
-    /**
-    Remote socket peer name.
-
-    ~~~
-    // Examples
-    attributes[.netSockPeerName] = "proxy.example.com"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case netSockPeerName = "net.sock.peer.name"
-    /**
-    Transport protocol used. See note below.
-    - Requires: Value should be one of [`SemanticAttributes.NetTransportValues`](x-source-tag://otelNetTransportValues) (of type `String`)
-    */
-    case netTransport = "net.transport"
+    case networkType = "network.type"
     /**
     The Microsoft SQL Server [instance name](https://docs.microsoft.com/en-us/sql/connect/jdbc/building-the-connection-url?view=sql-server-ver15) connecting to. This name is used to determine the port of a named instance.
 
@@ -450,7 +800,7 @@ public enum SemanticAttributes: String {
     attributes[.dbMssqlInstanceName] = "MSSQLSERVER"
     ~~~
 
-    - Note: If setting a `db.mssql.instance_name`, `net.peer.port` is no longer required (but still recommended if non-standard).
+    - Note: If setting a `db.mssql.instance_name`, `server.port` is no longer required (but still recommended if non-standard).
     - Requires: Value type should be `String`
     */
     case dbMssqlInstanceName = "db.mssql.instance_name"
@@ -534,6 +884,20 @@ public enum SemanticAttributes: String {
     - Requires: Value type should be `String`
     */
     case dbMongodbCollection = "db.mongodb.collection"
+    /**
+    Absolute URL describing a network resource according to [RFC3986](https://www.rfc-editor.org/rfc/rfc3986).
+
+    ~~~
+    // Examples
+    attributes[.urlFull] = "https://localhost:9200/index/_search?q=user.id:kimchy"
+    ~~~
+
+    - Note: For network calls, URL usually has `scheme://host[:port][path][?query][#fragment]` format, where the fragment is not transmitted over HTTP, but if it is known, it should be included nevertheless.
+      `url.full` MUST NOT contain credentials passed via URL in form of `https://username:password@www.example.com/`. In such case username and password should be redacted and attribute's value should be `https://REDACTED:REDACTED@www.example.com/`.
+      `url.full` SHOULD capture the absolute URL when it is available (or can be reconstructed) and SHOULD NOT be validated or modified except for sanitizing purposes.
+    - Requires: Value type should be `String`
+    */
+    case urlFull = "url.full"
     /**
     The name of the primary table that the operation is acting upon, including the database name (if applicable).
 
@@ -731,56 +1095,29 @@ public enum SemanticAttributes: String {
     */
     case faasDocumentName = "faas.document.name"
     /**
-    The full request target as passed in a HTTP request line or equivalent.
+    The [URI path](https://www.rfc-editor.org/rfc/rfc3986#section-3.3) component.
 
     ~~~
     // Examples
-    attributes[.httpTarget] = "/users/12314/?q=ddds"
+    attributes[.urlPath] = "/search"
     ~~~
+
+    - Note: When missing, the value is assumed to be `/`.
     - Requires: Value type should be `String`
     */
-    case httpTarget = "http.target"
+    case urlPath = "url.path"
     /**
-    The IP address of the original client behind all proxies, if known (e.g. from [X-Forwarded-For](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For)).
+    The [URI query](https://www.rfc-editor.org/rfc/rfc3986#section-3.4) component.
 
     ~~~
     // Examples
-    attributes[.httpClientIp] = "83.164.160.102"
+    attributes[.urlQuery] = "q=OpenTelemetry"
     ~~~
 
-    - Note: This is not necessarily the same as `net.sock.peer.addr`, which would
-      identify the network-level peer, which may be a proxy.
-
-      This attribute should be set when a source of information different
-      from the one used for `net.sock.peer.addr`, is available even if that other
-      source just confirms the same value as `net.sock.peer.addr`.
-      Rationale: For `net.sock.peer.addr`, one typically does not know if it
-      comes from a proxy, reverse proxy, or the actual client. Setting
-      `http.client_ip` when it's the same as `net.sock.peer.addr` means that
-      one is at least somewhat confident that the address is not that of
-      the closest proxy.
+    - Note: Sensitive content provided in query string SHOULD be scrubbed when instrumentations can identify it.
     - Requires: Value type should be `String`
     */
-    case httpClientIp = "http.client_ip"
-    /**
-    Local socket address. Useful in case of a multi-IP host.
-
-    ~~~
-    // Examples
-    attributes[.netSockHostAddr] = "192.168.0.1"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case netSockHostAddr = "net.sock.host.addr"
-    /**
-    Local socket port number.
-
-    ~~~
-    // Examplesattributes[.netSockHostPort] = 35555
-    ~~~
-    - Requires: Value type should be `Int`
-    */
-    case netSockHostPort = "net.sock.host.port"
+    case urlQuery = "url.query"
     /**
     A string identifying the messaging system.
 
@@ -813,6 +1150,53 @@ public enum SemanticAttributes: String {
     - Requires: Value type should be `Int`
     */
     case messagingBatchMessageCount = "messaging.batch.message_count"
+    /**
+    A unique identifier for the client that consumes or produces a message.
+
+    ~~~
+    // Examples
+    attributes[.messagingClientId] = "client-5"
+    attributes[.messagingClientId] = "myhost@8742@s8083jm"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case messagingClientId = "messaging.client_id"
+    /**
+    The message destination name.
+
+    ~~~
+    // Examples
+    attributes[.messagingDestinationName] = "MyQueue"
+    attributes[.messagingDestinationName] = "MyTopic"
+    ~~~
+
+    - Note: Destination name SHOULD uniquely identify a specific queue, topic or other entity within the broker. If
+      the broker does not have such notion, the destination name SHOULD uniquely identify the broker.
+    - Requires: Value type should be `String`
+    */
+    case messagingDestinationName = "messaging.destination.name"
+    /**
+    Low cardinality representation of the messaging destination name.
+
+    ~~~
+    // Examples
+    attributes[.messagingDestinationTemplate] = "/customers/{customerId}"
+    ~~~
+
+    - Note: Destination names could be constructed from templates. An example would be a destination name involving a user name or product id. Although the destination name in this case is of high cardinality, the underlying template is of low cardinality and can be effectively used for grouping and aggregation.
+    - Requires: Value type should be `String`
+    */
+    case messagingDestinationTemplate = "messaging.destination.template"
+    /**
+    A boolean that is true if the message destination is temporary and might not exist anymore after messages are processed.
+    - Requires: Value type should be `Bool`
+    */
+    case messagingDestinationTemporary = "messaging.destination.temporary"
+    /**
+    A boolean that is true if the message destination is anonymous (could be unnamed or have auto-generated name).
+    - Requires: Value type should be `Bool`
+    */
+    case messagingDestinationAnonymous = "messaging.destination.anonymous"
     /**
     A value used by the messaging system as an identifier for the message, represented as a string.
 
@@ -908,67 +1292,67 @@ public enum SemanticAttributes: String {
     */
     case faasInvokedRegion = "faas.invoked_region"
     /**
-    The internet connection type currently being used by the host.
+    The internet connection type.
 
     ~~~
     // Examples
-    attributes[.netHostConnectionType] = "wifi"
+    attributes[.networkConnectionType] = "wifi"
     ~~~
-    - Requires: Value should be one of [`SemanticAttributes.NetHostConnectionTypeValues`](x-source-tag://otelNetHostConnectionTypeValues) (of type `String`)
+    - Requires: Value should be one of [`SemanticAttributes.NetworkConnectionTypeValues`](x-source-tag://otelNetworkConnectionTypeValues) (of type `String`)
     */
-    case netHostConnectionType = "net.host.connection.type"
+    case networkConnectionType = "network.connection.type"
     /**
     This describes more details regarding the connection.type. It may be the type of cell technology connection, but it could be used for describing details about a wifi connection.
 
     ~~~
     // Examples
-    attributes[.netHostConnectionSubtype] = "LTE"
+    attributes[.networkConnectionSubtype] = "LTE"
     ~~~
-    - Requires: Value should be one of [`SemanticAttributes.NetHostConnectionSubtypeValues`](x-source-tag://otelNetHostConnectionSubtypeValues) (of type `String`)
+    - Requires: Value should be one of [`SemanticAttributes.NetworkConnectionSubtypeValues`](x-source-tag://otelNetworkConnectionSubtypeValues) (of type `String`)
     */
-    case netHostConnectionSubtype = "net.host.connection.subtype"
+    case networkConnectionSubtype = "network.connection.subtype"
     /**
     The name of the mobile carrier.
 
     ~~~
     // Examples
-    attributes[.netHostCarrierName] = "sprint"
+    attributes[.networkCarrierName] = "sprint"
     ~~~
     - Requires: Value type should be `String`
     */
-    case netHostCarrierName = "net.host.carrier.name"
+    case networkCarrierName = "network.carrier.name"
     /**
     The mobile carrier country code.
 
     ~~~
     // Examples
-    attributes[.netHostCarrierMcc] = "310"
+    attributes[.networkCarrierMcc] = "310"
     ~~~
     - Requires: Value type should be `String`
     */
-    case netHostCarrierMcc = "net.host.carrier.mcc"
+    case networkCarrierMcc = "network.carrier.mcc"
     /**
     The mobile carrier network code.
 
     ~~~
     // Examples
-    attributes[.netHostCarrierMnc] = "001"
+    attributes[.networkCarrierMnc] = "001"
     ~~~
     - Requires: Value type should be `String`
     */
-    case netHostCarrierMnc = "net.host.carrier.mnc"
+    case networkCarrierMnc = "network.carrier.mnc"
     /**
     The ISO 3166-1 alpha-2 2-character country code associated with the mobile carrier network.
 
     ~~~
     // Examples
-    attributes[.netHostCarrierIcc] = "DE"
+    attributes[.networkCarrierIcc] = "DE"
     ~~~
     - Requires: Value type should be `String`
     */
-    case netHostCarrierIcc = "net.host.carrier.icc"
+    case networkCarrierIcc = "network.carrier.icc"
     /**
-    The [`service.name`](../../resource/semantic_conventions/README.md#service) of the remote service. SHOULD be equal to the actual `service.name` resource attribute of the remote service if any.
+    The [`service.name`](/docs/resource/README.md#service) of the remote service. SHOULD be equal to the actual `service.name` resource attribute of the remote service if any.
 
     ~~~
     // Examples
@@ -1075,35 +1459,35 @@ public enum SemanticAttributes: String {
     */
     case codeColumn = "code.column"
     /**
+    Original HTTP method sent by the client in the request line.
+
+    ~~~
+    // Examples
+    attributes[.httpRequestMethodOriginal] = "GeT"
+    attributes[.httpRequestMethodOriginal] = "ACL"
+    attributes[.httpRequestMethodOriginal] = "foo"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case httpRequestMethodOriginal = "http.request.method_original"
+    /**
     The size of the request payload body in bytes. This is the number of bytes transferred excluding headers and is often, but not always, present as the [Content-Length](https://www.rfc-editor.org/rfc/rfc9110.html#field.content-length) header. For requests using transport encoding, this should be the compressed size.
 
     ~~~
-    // Examplesattributes[.httpRequestContentLength] = 3495
+    // Examplesattributes[.httpRequestBodySize] = 3495
     ~~~
     - Requires: Value type should be `Int`
     */
-    case httpRequestContentLength = "http.request_content_length"
+    case httpRequestBodySize = "http.request.body.size"
     /**
     The size of the response payload body in bytes. This is the number of bytes transferred excluding headers and is often, but not always, present as the [Content-Length](https://www.rfc-editor.org/rfc/rfc9110.html#field.content-length) header. For requests using transport encoding, this should be the compressed size.
 
     ~~~
-    // Examplesattributes[.httpResponseContentLength] = 3495
+    // Examplesattributes[.httpResponseBodySize] = 3495
     ~~~
     - Requires: Value type should be `Int`
     */
-    case httpResponseContentLength = "http.response_content_length"
-    /**
-    Full HTTP request URL in the form `scheme://host[:port]/path?query[#fragment]`. Usually the fragment is not transmitted over HTTP, but if it is known, it should be included nevertheless.
-
-    ~~~
-    // Examples
-    attributes[.httpUrl] = "https://www.foo.bar/search?q=OpenTelemetry#SemConv"
-    ~~~
-
-    - Note: `http.url` MUST NOT contain credentials passed via URL in form of `https://username:password@www.example.com/`. In such case the attribute's value should be `https://www.example.com/`.
-    - Requires: Value type should be `String`
-    */
-    case httpUrl = "http.url"
+    case httpResponseBodySize = "http.response.body.size"
     /**
     The ordinal number of request resending attempt (for any reason, including redirects).
 
@@ -1501,88 +1885,6 @@ public enum SemanticAttributes: String {
     */
     case graphqlDocument = "graphql.document"
     /**
-    The message destination name.
-
-    ~~~
-    // Examples
-    attributes[.messagingDestinationName] = "MyQueue"
-    attributes[.messagingDestinationName] = "MyTopic"
-    ~~~
-
-    - Note: Destination name SHOULD uniquely identify a specific queue, topic or other entity within the broker. If
-      the broker does not have such notion, the destination name SHOULD uniquely identify the broker.
-    - Requires: Value type should be `String`
-    */
-    case messagingDestinationName = "messaging.destination.name"
-    /**
-    The message source name.
-
-    ~~~
-    // Examples
-    attributes[.messagingSourceName] = "MyQueue"
-    attributes[.messagingSourceName] = "MyTopic"
-    ~~~
-
-    - Note: Source name SHOULD uniquely identify a specific queue, topic, or other entity within the broker. If
-      the broker does not have such notion, the source name SHOULD uniquely identify the broker.
-    - Requires: Value type should be `String`
-    */
-    case messagingSourceName = "messaging.source.name"
-    /**
-    Low cardinality representation of the messaging destination name.
-
-    ~~~
-    // Examples
-    attributes[.messagingDestinationTemplate] = "/customers/{customerId}"
-    ~~~
-
-    - Note: Destination names could be constructed from templates. An example would be a destination name involving a user name or product id. Although the destination name in this case is of high cardinality, the underlying template is of low cardinality and can be effectively used for grouping and aggregation.
-    - Requires: Value type should be `String`
-    */
-    case messagingDestinationTemplate = "messaging.destination.template"
-    /**
-    A boolean that is true if the message destination is temporary and might not exist anymore after messages are processed.
-    - Requires: Value type should be `Bool`
-    */
-    case messagingDestinationTemporary = "messaging.destination.temporary"
-    /**
-    A boolean that is true if the message destination is anonymous (could be unnamed or have auto-generated name).
-    - Requires: Value type should be `Bool`
-    */
-    case messagingDestinationAnonymous = "messaging.destination.anonymous"
-    /**
-    Low cardinality representation of the messaging source name.
-
-    ~~~
-    // Examples
-    attributes[.messagingSourceTemplate] = "/customers/{customerId}"
-    ~~~
-
-    - Note: Source names could be constructed from templates. An example would be a source name involving a user name or product id. Although the source name in this case is of high cardinality, the underlying template is of low cardinality and can be effectively used for grouping and aggregation.
-    - Requires: Value type should be `String`
-    */
-    case messagingSourceTemplate = "messaging.source.template"
-    /**
-    A boolean that is true if the message source is temporary and might not exist anymore after messages are processed.
-    - Requires: Value type should be `Bool`
-    */
-    case messagingSourceTemporary = "messaging.source.temporary"
-    /**
-    A boolean that is true if the message source is anonymous (could be unnamed or have auto-generated name).
-    - Requires: Value type should be `Bool`
-    */
-    case messagingSourceAnonymous = "messaging.source.anonymous"
-    /**
-    The identifier for the consumer receiving a message. For Kafka, set it to `{messaging.kafka.consumer.group} - {messaging.kafka.client_id}`, if both are present, or only `messaging.kafka.consumer.group`. For brokers, such as RabbitMQ and Artemis, set it to the `client_id` of the client consuming the message.
-
-    ~~~
-    // Examples
-    attributes[.messagingConsumerId] = "mygroup - client-6"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case messagingConsumerId = "messaging.consumer.id"
-    /**
     RabbitMQ message routing key.
 
     ~~~
@@ -1615,16 +1917,6 @@ public enum SemanticAttributes: String {
     */
     case messagingKafkaConsumerGroup = "messaging.kafka.consumer.group"
     /**
-    Client Id for the Consumer or Producer that is handling the message.
-
-    ~~~
-    // Examples
-    attributes[.messagingKafkaClientId] = "client-5"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case messagingKafkaClientId = "messaging.kafka.client_id"
-    /**
     Partition the message is sent to.
 
     ~~~
@@ -1633,15 +1925,6 @@ public enum SemanticAttributes: String {
     - Requires: Value type should be `Int`
     */
     case messagingKafkaDestinationPartition = "messaging.kafka.destination.partition"
-    /**
-    Partition the message is received from.
-
-    ~~~
-    // Examplesattributes[.messagingKafkaSourcePartition] = 2
-    ~~~
-    - Requires: Value type should be `Int`
-    */
-    case messagingKafkaSourcePartition = "messaging.kafka.source.partition"
     /**
     The offset of a record in the corresponding Kafka partition.
 
@@ -1676,16 +1959,6 @@ public enum SemanticAttributes: String {
     - Requires: Value type should be `String`
     */
     case messagingRocketmqClientGroup = "messaging.rocketmq.client_group"
-    /**
-    The unique identifier for each client.
-
-    ~~~
-    // Examples
-    attributes[.messagingRocketmqClientId] = "myhost@8742@s8083jm"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case messagingRocketmqClientId = "messaging.rocketmq.client_id"
     /**
     The timestamp in milliseconds that the delay message is expected to be delivered to consumer.
 
@@ -1840,6 +2113,16 @@ public enum SemanticAttributes: String {
     - Requires: Value type should be `Bool`
     */
     case exceptionEscaped = "exception.escaped"
+    /**
+    The [URI fragment](https://www.rfc-editor.org/rfc/rfc3986#section-3.5) component.
+
+    ~~~
+    // Examples
+    attributes[.urlFragment] = "SemConv"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case urlFragment = "url.fragment"
 
     // MARK: - Manual Definitions
     // Some definitions have not yet been added to the YAML which generates this script.
@@ -1849,6 +2132,129 @@ public enum SemanticAttributes: String {
     An exception event **MUST** be called "exception" as per the [specification](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/exceptions.md).
     */
     case exception = "exception";
+    
+    /**
+    Deprecated, use `network.transport`.
+    */
+    /// - Tag: otelNetTransportValues
+    public struct NetTransportValues: CustomStringConvertible {
+        /**
+        ip_tcp.
+        */
+        public static let ipTcp = NetTransportValues("ip_tcp")
+        /**
+        ip_udp.
+        */
+        public static let ipUdp = NetTransportValues("ip_udp")
+        /**
+        Named or anonymous pipe.
+        */
+        public static let pipe = NetTransportValues("pipe")
+        /**
+        In-process communication.
+        */
+        public static let inproc = NetTransportValues("inproc")
+        /**
+        Something else (non IP-based).
+        */
+        public static let other = NetTransportValues("other")
+
+        internal let value: String
+
+        public init(_ customValue: String) {
+            self.value = customValue
+        }
+
+        public var description: String {
+            return value
+        }
+    }
+    
+    /**
+    Deprecated, use `network.transport` and `network.type`.
+    */
+    /// - Tag: otelNetSockFamilyValues
+    public struct NetSockFamilyValues: CustomStringConvertible {
+        /**
+        IPv4 address.
+        */
+        public static let inet = NetSockFamilyValues("inet")
+        /**
+        IPv6 address.
+        */
+        public static let inet6 = NetSockFamilyValues("inet6")
+        /**
+        Unix domain socket path.
+        */
+        public static let unix = NetSockFamilyValues("unix")
+
+        internal let value: String
+
+        public init(_ customValue: String) {
+            self.value = customValue
+        }
+
+        public var description: String {
+            return value
+        }
+    }
+    
+    /**
+    HTTP request method.
+    */
+    /// - Tag: otelHttpRequestMethodValues
+    public struct HttpRequestMethodValues: CustomStringConvertible {
+        /**
+        CONNECT method.
+        */
+        public static let connect = HttpRequestMethodValues("CONNECT")
+        /**
+        DELETE method.
+        */
+        public static let delete = HttpRequestMethodValues("DELETE")
+        /**
+        GET method.
+        */
+        public static let get = HttpRequestMethodValues("GET")
+        /**
+        HEAD method.
+        */
+        public static let head = HttpRequestMethodValues("HEAD")
+        /**
+        OPTIONS method.
+        */
+        public static let options = HttpRequestMethodValues("OPTIONS")
+        /**
+        PATCH method.
+        */
+        public static let patch = HttpRequestMethodValues("PATCH")
+        /**
+        POST method.
+        */
+        public static let post = HttpRequestMethodValues("POST")
+        /**
+        PUT method.
+        */
+        public static let put = HttpRequestMethodValues("PUT")
+        /**
+        TRACE method.
+        */
+        public static let trace = HttpRequestMethodValues("TRACE")
+        /**
+        Any HTTP method that the instrumentation has no prior knowledge of.
+        */
+        public static let other = HttpRequestMethodValues("_OTHER")
+
+        internal let value: String
+
+        public init(_ customValue: String) {
+            self.value = customValue
+        }
+
+        public var description: String {
+            return value
+        }
+    }
     
     /**
     The domain identifies the business context for the events.
@@ -1877,6 +2283,36 @@ public enum SemanticAttributes: String {
         public var description: String {
             return value
         }
+    }
+    
+    /**
+    The stream associated with the log. See below for a list of well-known values.
+    */
+    /// - Tag: otelLogIostreamValues
+    public enum LogIostreamValues: String {
+        /**
+        Logs from stdout stream.
+        */
+        case stdout = "stdout"
+        /**
+        Events from stderr stream.
+        */
+        case stderr = "stderr"
+    }
+    
+    /**
+    The type of memory.
+    */
+    /// - Tag: otelTypeValues
+    public enum TypeValues: String {
+        /**
+        Heap memory.
+        */
+        case heap = "heap"
+        /**
+        Non-heap memory.
+        */
+        case non_heap = "non_heap"
     }
     
     /**
@@ -2120,22 +2556,26 @@ public enum SemanticAttributes: String {
     }
     
     /**
-    Protocol [address family](https://man7.org/linux/man-pages/man7/address_families.7.html) which is used for communication.
+    [OSI Transport Layer](https://osi-model.com/transport-layer/) or [Inter-process Communication method](https://en.wikipedia.org/wiki/Inter-process_communication). The value SHOULD be normalized to lowercase.
     */
-    /// - Tag: otelNetSockFamilyValues
-    public struct NetSockFamilyValues: CustomStringConvertible {
+    /// - Tag: otelNetworkTransportValues
+    public struct NetworkTransportValues: CustomStringConvertible {
         /**
-        IPv4 address.
+        TCP.
         */
-        public static let inet = NetSockFamilyValues("inet")
+        public static let tcp = NetworkTransportValues("tcp")
         /**
-        IPv6 address.
+        UDP.
         */
-        public static let inet6 = NetSockFamilyValues("inet6")
+        public static let udp = NetworkTransportValues("udp")
         /**
-        Unix domain socket path.
+        Named or anonymous pipe. See note below.
         */
-        public static let unix = NetSockFamilyValues("unix")
+        public static let pipe = NetworkTransportValues("pipe")
+        /**
+        Unix domain socket.
+        */
+        public static let unix = NetworkTransportValues("unix")
 
         internal let value: String
 
@@ -2149,30 +2589,18 @@ public enum SemanticAttributes: String {
     }
     
     /**
-    Transport protocol used. See note below.
+    [OSI Network Layer](https://osi-model.com/network-layer/) or non-OSI equivalent. The value SHOULD be normalized to lowercase.
     */
-    /// - Tag: otelNetTransportValues
-    public struct NetTransportValues: CustomStringConvertible {
+    /// - Tag: otelNetworkTypeValues
+    public struct NetworkTypeValues: CustomStringConvertible {
         /**
-        ip_tcp.
+        IPv4.
         */
-        public static let ipTcp = NetTransportValues("ip_tcp")
+        public static let ipv4 = NetworkTypeValues("ipv4")
         /**
-        ip_udp.
+        IPv6.
         */
-        public static let ipUdp = NetTransportValues("ip_udp")
-        /**
-        Named or anonymous pipe. See note below.
-        */
-        public static let pipe = NetTransportValues("pipe")
-        /**
-        In-process communication.
-        */
-        public static let inproc = NetTransportValues("inproc")
-        /**
-        Something else (non IP-based).
-        */
-        public static let other = NetTransportValues("other")
+        public static let ipv6 = NetworkTypeValues("ipv6")
 
         internal let value: String
 
@@ -2466,30 +2894,30 @@ public enum SemanticAttributes: String {
     }
     
     /**
-    The internet connection type currently being used by the host.
+    The internet connection type.
     */
-    /// - Tag: otelNetHostConnectionTypeValues
-    public struct NetHostConnectionTypeValues: CustomStringConvertible {
+    /// - Tag: otelNetworkConnectionTypeValues
+    public struct NetworkConnectionTypeValues: CustomStringConvertible {
         /**
         wifi.
         */
-        public static let wifi = NetHostConnectionTypeValues("wifi")
+        public static let wifi = NetworkConnectionTypeValues("wifi")
         /**
         wired.
         */
-        public static let wired = NetHostConnectionTypeValues("wired")
+        public static let wired = NetworkConnectionTypeValues("wired")
         /**
         cell.
         */
-        public static let cell = NetHostConnectionTypeValues("cell")
+        public static let cell = NetworkConnectionTypeValues("cell")
         /**
         unavailable.
         */
-        public static let unavailable = NetHostConnectionTypeValues("unavailable")
+        public static let unavailable = NetworkConnectionTypeValues("unavailable")
         /**
         unknown.
         */
-        public static let unknown = NetHostConnectionTypeValues("unknown")
+        public static let unknown = NetworkConnectionTypeValues("unknown")
 
         internal let value: String
 
@@ -2505,92 +2933,92 @@ public enum SemanticAttributes: String {
     /**
     This describes more details regarding the connection.type. It may be the type of cell technology connection, but it could be used for describing details about a wifi connection.
     */
-    /// - Tag: otelNetHostConnectionSubtypeValues
-    public struct NetHostConnectionSubtypeValues: CustomStringConvertible {
+    /// - Tag: otelNetworkConnectionSubtypeValues
+    public struct NetworkConnectionSubtypeValues: CustomStringConvertible {
         /**
         GPRS.
         */
-        public static let gprs = NetHostConnectionSubtypeValues("gprs")
+        public static let gprs = NetworkConnectionSubtypeValues("gprs")
         /**
         EDGE.
         */
-        public static let edge = NetHostConnectionSubtypeValues("edge")
+        public static let edge = NetworkConnectionSubtypeValues("edge")
         /**
         UMTS.
         */
-        public static let umts = NetHostConnectionSubtypeValues("umts")
+        public static let umts = NetworkConnectionSubtypeValues("umts")
         /**
         CDMA.
         */
-        public static let cdma = NetHostConnectionSubtypeValues("cdma")
+        public static let cdma = NetworkConnectionSubtypeValues("cdma")
         /**
         EVDO Rel. 0.
         */
-        public static let evdo0 = NetHostConnectionSubtypeValues("evdo_0")
+        public static let evdo0 = NetworkConnectionSubtypeValues("evdo_0")
         /**
         EVDO Rev. A.
         */
-        public static let evdoA = NetHostConnectionSubtypeValues("evdo_a")
+        public static let evdoA = NetworkConnectionSubtypeValues("evdo_a")
         /**
         CDMA2000 1XRTT.
         */
-        public static let cdma20001xrtt = NetHostConnectionSubtypeValues("cdma2000_1xrtt")
+        public static let cdma20001xrtt = NetworkConnectionSubtypeValues("cdma2000_1xrtt")
         /**
         HSDPA.
         */
-        public static let hsdpa = NetHostConnectionSubtypeValues("hsdpa")
+        public static let hsdpa = NetworkConnectionSubtypeValues("hsdpa")
         /**
         HSUPA.
         */
-        public static let hsupa = NetHostConnectionSubtypeValues("hsupa")
+        public static let hsupa = NetworkConnectionSubtypeValues("hsupa")
         /**
         HSPA.
         */
-        public static let hspa = NetHostConnectionSubtypeValues("hspa")
+        public static let hspa = NetworkConnectionSubtypeValues("hspa")
         /**
         IDEN.
         */
-        public static let iden = NetHostConnectionSubtypeValues("iden")
+        public static let iden = NetworkConnectionSubtypeValues("iden")
         /**
         EVDO Rev. B.
         */
-        public static let evdoB = NetHostConnectionSubtypeValues("evdo_b")
+        public static let evdoB = NetworkConnectionSubtypeValues("evdo_b")
         /**
         LTE.
         */
-        public static let lte = NetHostConnectionSubtypeValues("lte")
+        public static let lte = NetworkConnectionSubtypeValues("lte")
         /**
         EHRPD.
         */
-        public static let ehrpd = NetHostConnectionSubtypeValues("ehrpd")
+        public static let ehrpd = NetworkConnectionSubtypeValues("ehrpd")
         /**
         HSPAP.
         */
-        public static let hspap = NetHostConnectionSubtypeValues("hspap")
+        public static let hspap = NetworkConnectionSubtypeValues("hspap")
         /**
         GSM.
         */
-        public static let gsm = NetHostConnectionSubtypeValues("gsm")
+        public static let gsm = NetworkConnectionSubtypeValues("gsm")
         /**
         TD-SCDMA.
         */
-        public static let tdScdma = NetHostConnectionSubtypeValues("td_scdma")
+        public static let tdScdma = NetworkConnectionSubtypeValues("td_scdma")
         /**
         IWLAN.
         */
-        public static let iwlan = NetHostConnectionSubtypeValues("iwlan")
+        public static let iwlan = NetworkConnectionSubtypeValues("iwlan")
         /**
         5G NR (New Radio).
         */
-        public static let nr = NetHostConnectionSubtypeValues("nr")
+        public static let nr = NetworkConnectionSubtypeValues("nr")
         /**
         5G NRNSA (New Radio Non-Standalone).
         */
-        public static let nrnsa = NetHostConnectionSubtypeValues("nrnsa")
+        public static let nrnsa = NetworkConnectionSubtypeValues("nrnsa")
         /**
         LTE CA.
         */
-        public static let lteCa = NetHostConnectionSubtypeValues("lte_ca")
+        public static let lteCa = NetworkConnectionSubtypeValues("lte_ca")
 
         internal let value: String
 

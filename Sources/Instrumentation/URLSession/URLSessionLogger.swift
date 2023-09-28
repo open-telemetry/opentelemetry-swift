@@ -61,6 +61,10 @@ class URLSessionLogger {
         if let port = request.url?.port {
             attributes[SemanticAttributes.netPeerPort.rawValue] = AttributeValue.int(port)
         }
+        
+        if let bodySize = request.httpBody?.count {
+            attributes[SemanticAttributes.httpRequestBodySize.rawValue] = AttributeValue.int(bodySize)
+        }
 
         var spanName = "HTTP " + (request.httpMethod ?? "")
         if let customSpanName = instrumentation.configuration.nameSpan?(request) {
@@ -113,7 +117,7 @@ class URLSessionLogger {
 
         if let contentLengthHeader = httpResponse.value(forHTTPHeaderField: "Content-Length"),
            let contentLength = Int(contentLengthHeader) {
-            span.setAttribute(key: SemanticAttributes.httpResponseContentLength.rawValue,
+            span.setAttribute(key: SemanticAttributes.httpResponseBodySize.rawValue,
                               value: AttributeValue.int(contentLength))
         }
 
