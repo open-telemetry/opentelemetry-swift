@@ -107,8 +107,15 @@ class URLSessionLogger {
         }
 
         let statusCode = httpResponse.statusCode
-        span.setAttribute(key: SemanticAttributes.httpStatusCode.rawValue, value: AttributeValue.int(statusCode))
+        span.setAttribute(key: SemanticAttributes.httpStatusCode.rawValue, 
+                          value: AttributeValue.int(statusCode))
         span.status = statusForStatusCode(code: statusCode)
+
+        if let contentLengthHeader = httpResponse.value(forHTTPHeaderField: "Content-Length"),
+           let contentLength = Int(contentLengthHeader) {
+            span.setAttribute(key: SemanticAttributes.httpResponseContentLength.rawValue,
+                              value: AttributeValue.int(contentLength))
+        }
 
         instrumentation.configuration.receivedResponse?(response, dataOrFile, span)
         span.end()
