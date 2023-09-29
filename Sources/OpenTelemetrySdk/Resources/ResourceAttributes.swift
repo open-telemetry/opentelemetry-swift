@@ -254,6 +254,48 @@ public enum ResourceAttributes: String {
     */
     case awsLogStreamArns = "aws.log.stream.arns"
     /**
+    The name of the Cloud Run [execution](https://cloud.google.com/run/docs/managing/job-executions) being run for the Job, as set by the [`CLOUD_RUN_EXECUTION`](https://cloud.google.com/run/docs/container-contract#jobs-env-vars) environment variable.
+
+    ~~~
+    // Examples
+    attributes[.gcpCloudRunJobExecution] = "job-name-xxxx"
+    attributes[.gcpCloudRunJobExecution] = "sample-job-mdw84"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case gcpCloudRunJobExecution = "gcp.cloud_run.job.execution"
+    /**
+    The index for a task within an execution as provided by the [`CLOUD_RUN_TASK_INDEX`](https://cloud.google.com/run/docs/container-contract#jobs-env-vars) environment variable.
+
+    ~~~
+    // Examplesattributes[.gcpCloudRunJobTaskIndex] = 0attributes[.gcpCloudRunJobTaskIndex] = 1
+    ~~~
+    - Requires: Value type should be `Int`
+    */
+    case gcpCloudRunJobTaskIndex = "gcp.cloud_run.job.task_index"
+    /**
+    The instance name of a GCE instance. This is the value provided by `host.name`, the visible name of the instance in the Cloud Console UI, and the prefix for the default hostname of the instance as defined by the [default internal DNS name](https://cloud.google.com/compute/docs/internal-dns#instance-fully-qualified-domain-names).
+
+    ~~~
+    // Examples
+    attributes[.gcpGceInstanceName] = "instance-1"
+    attributes[.gcpGceInstanceName] = "my-vm-name"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case gcpGceInstanceName = "gcp.gce.instance.name"
+    /**
+    The hostname of a GCE instance. This is the full value of the default or [custom hostname](https://cloud.google.com/compute/docs/instances/custom-hostname-vm).
+
+    ~~~
+    // Examples
+    attributes[.gcpGceInstanceHostname] = "my-host1234.example.com"
+    attributes[.gcpGceInstanceHostname] = "sample-vm.us-west1-b.c.my-project.internal"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case gcpGceInstanceHostname = "gcp.gce.instance.hostname"
+    /**
     Time and date the release was created.
 
     ~~~
@@ -336,6 +378,51 @@ public enum ResourceAttributes: String {
     */
     case containerImageTag = "container.image.tag"
     /**
+    Runtime specific image identifier. Usually a hash algorithm followed by a UUID.
+
+    ~~~
+    // Examples
+    attributes[.containerImageId] = "sha256:19c92d0a00d1b66d897bceaa7319bee0dd38a10a851c60bcec9474aa3f01e50f"
+    ~~~
+
+    - Note: Docker defines a sha256 of the image id; `container.image.id` corresponds to the `Image` field from the Docker container inspect [API](https://docs.docker.com/engine/api/v1.43/#tag/Container/operation/ContainerInspect) endpoint.
+      K8s defines a link to the container registry repository with digest `"imageID": "registry.azurecr.io /namespace/service/dockerfile@sha256:bdeabd40c3a8a492eaf9e8e44d0ebbb84bac7ee25ac0cf8a7159d25f62555625"`.
+      OCI defines a digest of manifest.
+    - Requires: Value type should be `String`
+    */
+    case containerImageId = "container.image.id"
+    /**
+    The command used to run the container (i.e. the command name).
+
+    ~~~
+    // Examples
+    attributes[.containerCommand] = "otelcontribcol"
+    ~~~
+
+    - Note: If using embedded credentials or sensitive data, it is recommended to remove them to prevent potential leakage.
+    - Requires: Value type should be `String`
+    */
+    case containerCommand = "container.command"
+    /**
+    The full command run by the container as a single string representing the full command. [2].
+
+    ~~~
+    // Examples
+    attributes[.containerCommandLine] = "otelcontribcol --config config.yaml"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case containerCommandLine = "container.command_line"
+    /**
+    All the command arguments (including the command/executable itself) run by the container. [2].
+
+    ~~~
+    // Examplesattributes[.containerCommandArgs] = otelcontribcol, --config, config.yaml
+    ~~~
+    - Requires: Value type should be `[String]`
+    */
+    case containerCommandArgs = "container.command_args"
+    /**
     Name of the [deployment environment](https://en.wikipedia.org/wiki/Deployment_environment) (aka deployment tier).
 
     ~~~
@@ -409,7 +496,7 @@ public enum ResourceAttributes: String {
     - Note: This is the name of the function as configured/deployed on the FaaS
       platform and is usually different from the name of the callback
       function (which may be stored in the
-      [`code.namespace`/`code.function`](../../trace/semantic_conventions/span-general.md#source-code-attributes)
+      [`code.namespace`/`code.function`](/docs/general/general-attributes.md#source-code-attributes)
       span attributes).
 
       For some cloud providers, the above definition is ambiguous. The following
@@ -438,7 +525,7 @@ public enum ResourceAttributes: String {
 
       * **AWS Lambda:** The [function version](https://docs.aws.amazon.com/lambda/latest/dg/configuration-versions.html)
         (an integer represented as a decimal string).
-      * **Google Cloud Run:** The [revision](https://cloud.google.com/run/docs/managing/revisions)
+      * **Google Cloud Run (Services):** The [revision](https://cloud.google.com/run/docs/managing/revisions)
         (i.e., the function name plus the revision suffix).
       * **Google Cloud Functions:** The value of the
         [`K_REVISION` environment variable](https://cloud.google.com/functions/docs/env-var#runtime_environment_variables_set_automatically).
@@ -516,7 +603,7 @@ public enum ResourceAttributes: String {
     */
     case hostImageName = "host.image.name"
     /**
-    VM image ID. For Cloud, this value is from the provider.
+    VM image ID or host OS image ID. For Cloud, this value is from the provider.
 
     ~~~
     // Examples
@@ -526,7 +613,7 @@ public enum ResourceAttributes: String {
     */
     case hostImageId = "host.image.id"
     /**
-    The version string of the VM image as defined in [Version Attributes](README.md#version-attributes).
+    The version string of the VM image or host OS as defined in [Version Attributes](README.md#version-attributes).
 
     ~~~
     // Examples
@@ -545,6 +632,39 @@ public enum ResourceAttributes: String {
     - Requires: Value type should be `String`
     */
     case k8sClusterName = "k8s.cluster.name"
+    /**
+    A pseudo-ID for the cluster, set to the UID of the `kube-system` namespace.
+
+    ~~~
+    // Examples
+    attributes[.k8sClusterUid] = "218fc5a9-a5f1-4b54-aa05-46717d0ab26d"
+    ~~~
+
+    - Note: K8s does not have support for obtaining a cluster ID. If this is ever
+      added, we will recommend collecting the `k8s.cluster.uid` through the
+      official APIs. In the meantime, we are able to use the `uid` of the
+      `kube-system` namespace as a proxy for cluster ID. Read on for the
+      rationale.
+
+      Every object created in a K8s cluster is assigned a distinct UID. The
+      `kube-system` namespace is used by Kubernetes itself and will exist
+      for the lifetime of the cluster. Using the `uid` of the `kube-system`
+      namespace is a reasonable proxy for the K8s ClusterID as it will only
+      change if the cluster is rebuilt. Furthermore, Kubernetes UIDs are
+      UUIDs as standardized by
+      [ISO/IEC 9834-8 and ITU-T X.667](https://www.itu.int/ITU-T/studygroups/com17/oid.html).
+      Which states:
+
+      > If generated according to one of the mechanisms defined in Rec.
+        ITU-T X.667 | ISO/IEC 9834-8, a UUID is either guaranteed to be
+        different from all other UUIDs generated before 3603 A.D., or is
+        extremely likely to be different (depending on the mechanism chosen).
+
+      Therefore, UIDs between clusters should be extremely unlikely to
+      conflict.
+    - Requires: Value type should be `String`
+    */
+    case k8sClusterUid = "k8s.cluster.uid"
     /**
     The name of the Node.
 
@@ -763,7 +883,7 @@ public enum ResourceAttributes: String {
     */
     case osName = "os.name"
     /**
-    The version string of the operating system as defined in [Version Attributes](../../resource/semantic_conventions/README.md#version-attributes).
+    The version string of the operating system as defined in [Version Attributes](/docs/resource/README.md#version-attributes).
 
     ~~~
     // Examples
@@ -893,6 +1013,17 @@ public enum ResourceAttributes: String {
     */
     case serviceName = "service.name"
     /**
+    The version string of the service API or implementation. The format is not defined by these conventions.
+
+    ~~~
+    // Examples
+    attributes[.serviceVersion] = "2.0.0"
+    attributes[.serviceVersion] = "a01dbef8a"
+    ~~~
+    - Requires: Value type should be `String`
+    */
+    case serviceVersion = "service.version"
+    /**
     A namespace for `service.name`.
 
     ~~~
@@ -918,22 +1049,19 @@ public enum ResourceAttributes: String {
     */
     case serviceInstanceId = "service.instance.id"
     /**
-    The version string of the service API or implementation.
-
-    ~~~
-    // Examples
-    attributes[.serviceVersion] = "2.0.0"
-    ~~~
-    - Requires: Value type should be `String`
-    */
-    case serviceVersion = "service.version"
-    /**
     The name of the telemetry SDK as defined above.
 
     ~~~
     // Examples
     attributes[.telemetrySdkName] = "opentelemetry"
     ~~~
+
+    - Note: The OpenTelemetry SDK MUST set the `telemetry.sdk.name` attribute to `opentelemetry`.
+      If another SDK, like a fork or a vendor-provided implementation, is used, this SDK MUST set the
+      `telemetry.sdk.name` attribute to the fully-qualified class or module name of this SDK's main entry point
+      or another suitable identifier depending on the language.
+      The identifier `opentelemetry` is reserved and MUST NOT be used in this case.
+      All custom identifiers SHOULD be stable across different versions of an implementation.
     - Requires: Value type should be `String`
     */
     case telemetrySdkName = "telemetry.sdk.name"
@@ -1147,6 +1275,10 @@ public enum ResourceAttributes: String {
         Azure Red Hat OpenShift.
         */
         public static let azureOpenshift = CloudPlatformValues("azure_openshift")
+        /**
+        Google Bare Metal Solution (BMS).
+        */
+        public static let gcpBareMetalSolution = CloudPlatformValues("gcp_bare_metal_solution")
         /**
         Google Cloud Compute Engine (GCE).
         */
@@ -1366,13 +1498,17 @@ public enum ResourceAttributes: String {
         */
         public static let ruby = TelemetrySdkLanguageValues("ruby")
         /**
-        webjs.
+        rust.
         */
-        public static let webjs = TelemetrySdkLanguageValues("webjs")
+        public static let rust = TelemetrySdkLanguageValues("rust")
         /**
         swift.
         */
         public static let swift = TelemetrySdkLanguageValues("swift")
+        /**
+        webjs.
+        */
+        public static let webjs = TelemetrySdkLanguageValues("webjs")
 
         internal let value: String
 
