@@ -6,4 +6,5 @@
 import Foundation
 
 public protocol ObservableLongCounter {
+    func close()
 }
