@@ -66,9 +66,13 @@ public class DefaultStableMeter : StableMeter {
     }
   }
   
-  private struct NoopObservableLongGauge : ObservableLongGauge {}
+  private struct NoopObservableLongGauge : ObservableLongGauge {
+      func close() {}
+  }
   
-  private struct NoopObservableDoubleGauge : ObservableDoubleGauge {}
+  private struct NoopObservableDoubleGauge : ObservableDoubleGauge {
+      func close() {}
+  }
   
   private class NoopDoubleUpDownCounterBuilder : DoubleUpDownCounterBuilder {
     func build() -> DoubleUpDownCounter {

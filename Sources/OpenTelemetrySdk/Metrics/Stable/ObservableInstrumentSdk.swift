@@ -16,4 +16,7 @@ public struct ObservableInstrumentSdk : ObservableDoubleCounter, ObservableLongC
     }
     
     // todo: Java implementation uses closeables to remove this from the meterSharedState.callback Registation. investigate alternative?
+    public func close() {
+        meterSharedState.removeCallback(callback: callbackRegistration)
+    }
 }
