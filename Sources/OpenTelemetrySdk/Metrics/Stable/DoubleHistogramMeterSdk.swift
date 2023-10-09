@@ -20,7 +20,10 @@ public class DoubleHistogramMeterSdk : DoubleHistogram, Instrument {
     }
     
     public func record(value: Double, attributes: [String : OpenTelemetryApi.AttributeValue]) {
-       //TODO: implement
+        if value < 0 {
+            // todo : log error
+            return
+        }
+        storage.recordDouble(value: value, attributes: attributes)
     }
-        
 }
