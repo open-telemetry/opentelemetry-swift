@@ -1,34 +1,32 @@
 //
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 
 import Foundation
 import OpenTelemetryApi
 
-public class LongCounterMeterBuilderSdk : LongCounterBuilder, InstrumentBuilder {
-    
+public class LongCounterMeterBuilderSdk: LongCounterBuilder, InstrumentBuilder {
     var meterProviderSharedState: MeterProviderSharedState
     
     var meterSharedState: StableMeterSharedState
     
-    var type: InstrumentType
+    let type: InstrumentType = .counter
     
-    var valueType: InstrumentValueType
+    let valueType: InstrumentValueType = .long
+    
+    var instrumentName: String
     
     var description: String = ""
     
     var unit: String = ""
     
-    var instrumentName: String
-    
-    internal init(meterProviderSharedState: inout MeterProviderSharedState, meterSharedState: inout StableMeterSharedState, name: String) {
+    init(meterProviderSharedState: inout MeterProviderSharedState,
+         meterSharedState: inout StableMeterSharedState,
+         name: String) {
         self.meterProviderSharedState = meterProviderSharedState
         self.meterSharedState = meterSharedState
         self.instrumentName = name
-        type = .counter
-        valueType = .long
-        
     }
     
     public func ofDoubles() -> OpenTelemetryApi.DoubleCounterBuilder {
@@ -39,10 +37,8 @@ public class LongCounterMeterBuilderSdk : LongCounterBuilder, InstrumentBuilder 
         return buildSynchronousInstrument(LongCounterSdk.init)
     }
     
-    public func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableLongMeasurement) -> Void) -> OpenTelemetryApi.ObservableLongCounter {
-        registerLongAsynchronousInstrument(type: type, updater: callback)
+    public func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableLongMeasurement) -> Void)
+        -> OpenTelemetryApi.ObservableLongCounter {
+        registerLongAsynchronousInstrument(type: .observableCounter, updater: callback)
     }
-    
-    
 }
-
