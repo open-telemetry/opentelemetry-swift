@@ -22,7 +22,7 @@ public class LongHistogramMeterSdk : LongHistogram, Instrument {
     
     public func record(value: Int, attributes: [String : OpenTelemetryApi.AttributeValue]) {
         if value < 0 {
-            // todo : log error
+            print("Histograms can only record non-negative values. Instrument \(instrumentDescriptor.name) has recorded a negative value.")
             return
         }
         storage.recordLong(value: value, attributes: attributes)
