@@ -66,9 +66,13 @@ public class DefaultStableMeter : StableMeter {
     }
   }
   
-  private struct NoopObservableLongGauge : ObservableLongGauge {}
+  private struct NoopObservableLongGauge : ObservableLongGauge {
+      func close() {}
+  }
   
-  private struct NoopObservableDoubleGauge : ObservableDoubleGauge {}
+  private struct NoopObservableDoubleGauge : ObservableDoubleGauge {
+      func close() {}
+  }
   
   private class NoopDoubleUpDownCounterBuilder : DoubleUpDownCounterBuilder {
     func build() -> DoubleUpDownCounter {
@@ -80,7 +84,9 @@ public class DefaultStableMeter : StableMeter {
     }
   }
   
-  private struct NoopObservableDoubleUpDownCounter : ObservableDoubleUpDownCounter {}
+  private struct NoopObservableDoubleUpDownCounter : ObservableDoubleUpDownCounter {
+      func close() {}
+  }
   
   private struct NoopDoubleUpDownCounter : DoubleUpDownCounter {
     mutating func add(value: Double) {}
@@ -103,7 +109,9 @@ public class DefaultStableMeter : StableMeter {
     mutating func record(value: Int, attributes: [String : AttributeValue]) {}
   }
   
-  private class NoopObservableLongUpDownCounter : ObservableLongUpDownCounter {}
+  private class NoopObservableLongUpDownCounter : ObservableLongUpDownCounter {
+      func close() {}
+  }
   
   private class NoopDoubleHistogram : DoubleHistogram {
     func record(value: Double) {}
@@ -139,8 +147,13 @@ public class DefaultStableMeter : StableMeter {
     }
   }
   
-  private class NoopObservableLongCounter : ObservableLongCounter {}
-  private class NoopObservableDoubleCounter: ObservableDoubleCounter {}
+  private class NoopObservableLongCounter : ObservableLongCounter {
+      func close() {}
+  }
+    
+  private class NoopObservableDoubleCounter: ObservableDoubleCounter {
+      func close() {}
+  }
 
   private class StableNoopDoubleCounterBuilder : DoubleCounterBuilder {
     func build() -> DoubleCounter {
