@@ -35,7 +35,7 @@ final class MetricsAdapterTest: XCTestCase {
         let pointValue = Int.random(in: 1...999)
         let point:PointData = LongPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: pointValue)
         let sumData = StableSumData(aggregationTemporality: .cumulative, points: [point])
-        let metricData = StableMetricData.createLongSum(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: description, unit: unit, data: sumData)
+        let metricData = StableMetricData.createLongSum(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: description, unit: unit, isMonotonic: true, data: sumData)
 
         let result = MetricsAdapter.toProtoMetric(stableMetric: metricData)
         guard let value = result?.sum.dataPoints as? [Opentelemetry_Proto_Metrics_V1_NumberDataPoint] else {
@@ -46,6 +46,7 @@ final class MetricsAdapterTest: XCTestCase {
         }
 
         XCTAssertEqual(value.first?.asInt, Int64(pointValue))
+        XCTAssertEqual(result?.sum.isMonotonic, true)
     }
 
     func testToProtoResourceMetricsWithDoubleGuage() throws {
@@ -69,7 +70,7 @@ final class MetricsAdapterTest: XCTestCase {
         let pointValue: Double = Double.random(in: 1...999)
         let point:PointData = DoublePointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: pointValue)
         let sumData = StableSumData(aggregationTemporality: .cumulative, points: [point])
-        let metricData = StableMetricData.createDoubleSum(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: description, unit: unit, data: sumData)
+        let metricData = StableMetricData.createDoubleSum(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: description, unit: unit, isMonotonic: false, data: sumData)
 
         let result = MetricsAdapter.toProtoMetric(stableMetric: metricData)
         guard let value = result?.sum.dataPoints as? [Opentelemetry_Proto_Metrics_V1_NumberDataPoint] else {
@@ -80,6 +81,7 @@ final class MetricsAdapterTest: XCTestCase {
         }
 
         XCTAssertEqual(value.first?.asDouble, pointValue)
+        XCTAssertEqual(result?.sum.isMonotonic, false)
     }
 
     func testToProtoResourceMetricsWithHistogram() throws {
