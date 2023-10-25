@@ -67,7 +67,7 @@ public struct SpanAdapter {
     return protoSpan
   }
   
-  static func toProtoSpanKind(kind: SpanKind) -> Opentelemetry_Proto_Trace_V1_Span.SpanKind {
+  public static func toProtoSpanKind(kind: SpanKind) -> Opentelemetry_Proto_Trace_V1_Span.SpanKind {
     switch kind {
     case .internal:
       return Opentelemetry_Proto_Trace_V1_Span.SpanKind.internal
@@ -82,7 +82,7 @@ public struct SpanAdapter {
     }
   }
   
-  static func toProtoSpanEvent(event: SpanData.Event) -> Opentelemetry_Proto_Trace_V1_Span.Event {
+  public static func toProtoSpanEvent(event: SpanData.Event) -> Opentelemetry_Proto_Trace_V1_Span.Event {
     var protoEvent = Opentelemetry_Proto_Trace_V1_Span.Event()
     protoEvent.name = event.name
     protoEvent.timeUnixNano = event.timestamp.timeIntervalSince1970.toNanoseconds
@@ -92,7 +92,7 @@ public struct SpanAdapter {
     return protoEvent
   }
   
-  static func toProtoSpanLink(link: SpanData.Link) -> Opentelemetry_Proto_Trace_V1_Span.Link {
+   public static func toProtoSpanLink(link: SpanData.Link) -> Opentelemetry_Proto_Trace_V1_Span.Link {
     var protoLink = Opentelemetry_Proto_Trace_V1_Span.Link()
     protoLink.traceID = TraceProtoUtils.toProtoTraceId(traceId: link.context.traceId)
     protoLink.spanID = TraceProtoUtils.toProtoSpanId(spanId: link.context.spanId)
@@ -102,7 +102,7 @@ public struct SpanAdapter {
     return protoLink
   }
   
-  static func toStatusProto(status: Status) -> Opentelemetry_Proto_Trace_V1_Status {
+  public static func toStatusProto(status: Status) -> Opentelemetry_Proto_Trace_V1_Status {
     var statusProto = Opentelemetry_Proto_Trace_V1_Status()
     switch status {
     case .ok:
