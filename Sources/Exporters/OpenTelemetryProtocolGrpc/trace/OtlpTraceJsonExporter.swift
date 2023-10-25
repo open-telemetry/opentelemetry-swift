@@ -15,7 +15,7 @@ public class OtlpTraceJsonExporter: SpanExporter {
   private var isRunning: Bool = true
   
   // MARK: - Json Exporter helper methods
-  func getExportedSpans() -> [OtlpSpan] {
+  public func getExportedSpans() -> [OtlpSpan] {
     exportedSpans
   }
   
