@@ -13,27 +13,35 @@ public func defaultOltpHTTPMetricsEndpoint() -> URL {
 
 public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
   var pendingMetrics: [Metric] = []
-  
+  let dispatchQueue = DispatchQueue(label: "OtlpHttpMetricExporter Queue")
+
   override
   public init(endpoint: URL = defaultOltpHTTPMetricsEndpoint(), config : OtlpConfiguration = OtlpConfiguration(), useSession: URLSession? = nil, envVarHeaders: [(String,String)]? = EnvVarHeaders.attributes) {
     super.init(endpoint: endpoint, config: config, useSession: useSession, envVarHeaders: envVarHeaders)
   }
   
   public func export(metrics: [Metric], shouldCancel: (() -> Bool)?) -> MetricExporterResultCode {
-    pendingMetrics.append(contentsOf: metrics)
-    let sendingMetrics = pendingMetrics
-    pendingMetrics = []
+    var sendingMetrics: [Metric]!
+    dispatchQueue.sync {
+      pendingMetrics.append(contentsOf: metrics)
+      sendingMetrics = pendingMetrics
+      pendingMetrics = []
+    }
+    
     let body = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
       $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(metricDataList: sendingMetrics)
     }
     
     let request = createRequest(body: body, endpoint: endpoint)
     httpClient.send(request: request) { [weak self] result in
+      guard let self = self else { return }
       switch result {
       case .success(_):
         break
       case .failure(let error):
-        self?.pendingMetrics.append(contentsOf: sendingMetrics)
+        self.dispatchQueue.sync { [weak self] in
+          self?.pendingMetrics.append(contentsOf: sendingMetrics)
+        }
         print(error)
       }
     }
@@ -43,7 +51,10 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
   
   public func flush() -> MetricExporterResultCode {
     var exporterResult: MetricExporterResultCode = .success
-    
+    var pendingMetrics: [Metric]!
+    dispatchQueue.sync {
+      pendingMetrics = self.pendingMetrics
+    }
     if !pendingMetrics.isEmpty {
       let body = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
         $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(metricDataList: pendingMetrics)
