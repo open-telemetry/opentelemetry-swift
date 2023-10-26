@@ -17,17 +17,19 @@ class StableMetricDataTests: XCTestCase {
 
     func testStableMetricDataCreation() {
         let type = MetricDataType.Summary
-        let data = StableMetricData.Data(points: emptyPointData)
+        let data = StableMetricData.Data(aggregationTemporality: .delta, points: emptyPointData)
 
-        let metricData = StableMetricData(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, type: type, data: data)
-
+        let metricData = StableMetricData(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, type: type, isMonotonic: false, data: data)
+		
         assertCommon(metricData)
         XCTAssertEqual(metricData.type, type)
         XCTAssertEqual(metricData.data, data)
+        XCTAssertEqual(metricData.data.aggregationTemporality, .delta)
+        XCTAssertEqual(metricData.isMonotonic, false)
     }
 
     func testEmptyStableMetricData() {
-        XCTAssertEqual(StableMetricData.empty, StableMetricData(resource: Resource.empty, instrumentationScopeInfo: InstrumentationScopeInfo(), name: "", description: "", unit: "", type: .Summary, data: StableMetricData.Data(points: [PointData]())))
+        XCTAssertEqual(StableMetricData.empty, StableMetricData(resource: Resource.empty, instrumentationScopeInfo: InstrumentationScopeInfo(), name: "", description: "", unit: "", type: .Summary, isMonotonic: false, data: StableMetricData.Data(aggregationTemporality: .cumulative, points: [PointData]())))
     }
 
     func testCreateExponentialHistogram() {
@@ -39,6 +41,8 @@ class StableMetricDataTests: XCTestCase {
         assertCommon(metricData)
         XCTAssertEqual(metricData.type, type)
         XCTAssertEqual(metricData.data, histogramData)
+        XCTAssertEqual(metricData.data.aggregationTemporality, .delta)
+        XCTAssertEqual(metricData.isMonotonic, false)
     }
 
     func testCreateHistogram() {
@@ -60,6 +64,8 @@ class StableMetricDataTests: XCTestCase {
         assertCommon(metricData)
         XCTAssertEqual(metricData.type, type)
         XCTAssertEqual(metricData.data, histogramData)
+        XCTAssertEqual(metricData.data.aggregationTemporality, .cumulative)
+        XCTAssertEqual(metricData.isMonotonic, false)
 
         XCTAssertFalse(metricData.isEmpty())
 
@@ -79,6 +85,8 @@ class StableMetricDataTests: XCTestCase {
         assertCommon(metricData)
         XCTAssertEqual(metricData.type, type)
         XCTAssertEqual(metricData.data.points.first, point)
+        XCTAssertEqual(metricData.data.aggregationTemporality, .cumulative)
+        XCTAssertEqual(metricData.isMonotonic, false)
     }
 
     func testCreateDoubleSum() {
@@ -87,11 +95,13 @@ class StableMetricDataTests: XCTestCase {
 
         let point:PointData = DoublePointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: d)
         let sumData = StableSumData(aggregationTemporality: .cumulative, points: [point])
-        let metricData = StableMetricData.createDoubleSum(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, data: sumData)
+        let metricData = StableMetricData.createDoubleSum(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, isMonotonic: true, data: sumData)
 
         assertCommon(metricData)
         XCTAssertEqual(metricData.type, type)
         XCTAssertEqual(metricData.data.points.first, point)
+        XCTAssertEqual(metricData.data.aggregationTemporality, .cumulative)
+        XCTAssertEqual(metricData.isMonotonic, true)
     }
 
     func testCreateLongGuage() {
@@ -104,6 +114,8 @@ class StableMetricDataTests: XCTestCase {
         assertCommon(metricData)
         XCTAssertEqual(metricData.type, type)
         XCTAssertEqual(metricData.data.points.first, point)
+        XCTAssertEqual(metricData.data.aggregationTemporality, .cumulative)
+        XCTAssertEqual(metricData.isMonotonic, false)
     }
 
     func testCreateLongSum() {
@@ -111,11 +123,13 @@ class StableMetricDataTests: XCTestCase {
         let point:PointData = LongPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: 55)
         let sumData = StableSumData(aggregationTemporality: .cumulative, points: [point])
 
-        let metricData = StableMetricData.createLongSum(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, data: sumData)
+        let metricData = StableMetricData.createLongSum(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, isMonotonic: true, data: sumData)
 
         assertCommon(metricData)
         XCTAssertEqual(metricData.type, type)
         XCTAssertEqual(metricData.data.points.first, point)
+        XCTAssertEqual(metricData.data.aggregationTemporality, .cumulative)
+        XCTAssertEqual(metricData.isMonotonic, true)
     }
 
 
