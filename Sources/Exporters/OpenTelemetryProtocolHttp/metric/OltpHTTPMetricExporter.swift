@@ -13,7 +13,7 @@ public func defaultOltpHTTPMetricsEndpoint() -> URL {
 
 public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
   var pendingMetrics: [Metric] = []
-  let dispatchQueue = DispatchQueue(label: "OtlpHttpMetricExporter Queue")
+  private let exporterLock = Lock()
 
   override
   public init(endpoint: URL = defaultOltpHTTPMetricsEndpoint(), config : OtlpConfiguration = OtlpConfiguration(), useSession: URLSession? = nil, envVarHeaders: [(String,String)]? = EnvVarHeaders.attributes) {
@@ -21,8 +21,8 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
   }
   
   public func export(metrics: [Metric], shouldCancel: (() -> Bool)?) -> MetricExporterResultCode {
-    var sendingMetrics: [Metric]!
-    dispatchQueue.sync {
+    var sendingMetrics: [Metric] = []
+    exporterLock.withLockVoid {
       pendingMetrics.append(contentsOf: metrics)
       sendingMetrics = pendingMetrics
       pendingMetrics = []
@@ -33,13 +33,12 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
     }
     
     let request = createRequest(body: body, endpoint: endpoint)
-    httpClient.send(request: request) { [weak self] result in
-      guard let self = self else { return }
+    httpClient.send(request: request) { [weak self, exporterLock] result in
       switch result {
       case .success(_):
         break
       case .failure(let error):
-        self.dispatchQueue.sync { [weak self] in
+        exporterLock.withLockVoid {
           self?.pendingMetrics.append(contentsOf: sendingMetrics)
         }
         print(error)
@@ -52,7 +51,7 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
   public func flush() -> MetricExporterResultCode {
     var exporterResult: MetricExporterResultCode = .success
     var pendingMetrics: [Metric]!
-    dispatchQueue.sync {
+    exporterLock.withLockVoid {
       pendingMetrics = self.pendingMetrics
     }
     if !pendingMetrics.isEmpty {

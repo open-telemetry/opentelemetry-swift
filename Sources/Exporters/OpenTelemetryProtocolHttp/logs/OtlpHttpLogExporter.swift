@@ -14,7 +14,7 @@ public func defaultOltpHttpLoggingEndpoint() -> URL {
 public class OtlpHttpLogExporter : OtlpHttpExporterBase, LogRecordExporter {
   
   var pendingLogRecords: [ReadableLogRecord] = []
-  let dispatchQueue = DispatchQueue(label: "OtlpHttpLogExporter Queue")
+  private let exporterLock = Lock()
 
   override public init(endpoint: URL = defaultOltpHttpLoggingEndpoint(),
                        config: OtlpConfiguration = OtlpConfiguration(),
@@ -24,8 +24,8 @@ public class OtlpHttpLogExporter : OtlpHttpExporterBase, LogRecordExporter {
   }
   
   public func export(logRecords: [OpenTelemetrySdk.ReadableLogRecord], explicitTimeout: TimeInterval? = nil) -> OpenTelemetrySdk.ExportResult {
-  var sendingLogRecords: [ReadableLogRecord]!
-    dispatchQueue.sync {
+  var sendingLogRecords: [ReadableLogRecord] = []
+    exporterLock.withLockVoid {
       pendingLogRecords.append(contentsOf: logRecords)
       sendingLogRecords = pendingLogRecords
       pendingLogRecords = []
@@ -37,13 +37,12 @@ public class OtlpHttpLogExporter : OtlpHttpExporterBase, LogRecordExporter {
     
     var request = createRequest(body: body, endpoint: endpoint)
     request.timeoutInterval = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude , config.timeout)
-    httpClient.send(request: request) { [weak self] result in
-      guard let self = self else { return }
+    httpClient.send(request: request) { [weak self, exporterLock] result in
       switch result {
       case .success(_):
         break
       case .failure(let error):
-        self.dispatchQueue.sync { [weak self] in
+        exporterLock.withLockVoid {
           self?.pendingLogRecords.append(contentsOf: sendingLogRecords)
         }
         print(error)
@@ -60,7 +59,7 @@ public class OtlpHttpLogExporter : OtlpHttpExporterBase, LogRecordExporter {
   public func flush(explicitTimeout: TimeInterval? = nil) -> ExportResult {
     var exporterResult: ExportResult = .success
     var pendingLogRecords: [ReadableLogRecord]!
-    dispatchQueue.sync {
+    exporterLock.withLockVoid {
       pendingLogRecords = self.pendingLogRecords
     }
     if !pendingLogRecords.isEmpty {

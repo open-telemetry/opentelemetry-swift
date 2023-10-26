@@ -15,7 +15,7 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
   
   
   var pendingSpans: [SpanData] = []
-  let dispatchQueue = DispatchQueue(label: "OtlpHttpTraceExporter Queue")
+  private let exporterLock = Lock()
 
   override
   public init(endpoint: URL = defaultOltpHttpTracesEndpoint(), config: OtlpConfiguration = OtlpConfiguration(),
@@ -24,8 +24,8 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
   }
   
   public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
-    var sendingSpans: [SpanData]!
-    dispatchQueue.sync {
+    var sendingSpans: [SpanData] = []
+    exporterLock.withLockVoid {
         pendingSpans.append(contentsOf: spans)
         sendingSpans = pendingSpans
         pendingSpans = []
@@ -45,13 +45,12 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
         request.addValue(value, forHTTPHeaderField: key)
       }
     }
-    httpClient.send(request: request) { [weak self] result in
-      guard let self = self else { return }
+    httpClient.send(request: request) { [weak self, exporterLock] result in
       switch result {
       case .success:
         break
       case .failure(let error):
-        self.dispatchQueue.sync { [weak self] in
+        exporterLock.withLockVoid {
             self?.pendingSpans.append(contentsOf: sendingSpans)
         }
         print(error)
@@ -63,7 +62,7 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
   public func flush(explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
     var resultValue: SpanExporterResultCode = .success
     var pendingSpans: [SpanData]!
-    dispatchQueue.sync {
+    exporterLock.withLockVoid {
         pendingSpans = self.pendingSpans
     }
     if !pendingSpans.isEmpty {
