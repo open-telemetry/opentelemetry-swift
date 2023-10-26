@@ -6,6 +6,77 @@
 #if !os(watchOS)
 
 import Foundation
+
+
+#if swift(>=5.9)
+import Network
+public class NetworkMonitor : NetworkMonitorProtocol {
+    let monitor = NWPathMonitor()
+    var connection : Connection = .unavailable
+    let lock = NSLock()
+
+    deinit {
+        monitor.cancel()
+    }
+    
+    init() {
+        let pathHandler = { (path: NWPath) in
+            let availableInterfaces = path.availableInterfaces
+            let wifiInterface = self.getWifiInterface(interfaces: availableInterfaces)
+            let cellInterface = self.getCellInterface(interfaces: availableInterfaces)
+            var availableInterface : Connection = .unavailable
+            if let _ = cellInterface {
+                availableInterface = .cellular
+            }
+            if let _ = wifiInterface {
+                availableInterface = .wifi
+            }
+            self.lock.lock()
+            switch path.status {
+            case .requiresConnection, .satisfied:
+                self.connection = availableInterface
+            case .unsatisfied:
+                self.connection = .unavailable
+            @unknown default:
+                fatalError()
+            }
+            self.lock.unlock()
+
+        }
+        monitor.pathUpdateHandler = pathHandler
+    }
+    public func getConnection() -> Connection {
+        lock.lock()
+        defer {
+            lock.unlock()
+        }
+        return connection
+        
+    }
+    
+    func getCellInterface(interfaces: [NWInterface]) -> NWInterface? {
+        var foundInterface : NWInterface? = nil
+        interfaces.forEach { interface in
+            if interface.type == .cellular {
+                foundInterface = interface
+            }
+        }
+        return foundInterface
+    }
+    func getWifiInterface(interfaces: [NWInterface]) -> NWInterface? {
+        var foundInterface : NWInterface? = nil
+        interfaces.forEach { interface in
+            if interface.type == .wifi {
+                foundInterface = interface
+            }
+        }
+        return foundInterface
+    }
+}
+
+
+
+#else
 import Reachability
 
 public class NetworkMonitor: NetworkMonitorProtocol {
@@ -31,5 +102,5 @@ public class NetworkMonitor: NetworkMonitorProtocol {
         }
     }
 }
-
+#endif
 #endif
