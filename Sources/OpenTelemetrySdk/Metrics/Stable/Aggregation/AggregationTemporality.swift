@@ -14,7 +14,7 @@ public class AggregationTemporalitySelector : AggregationTemporalitySelectorProt
         return aggregationTemporalitySelector(instrument)
     }
     
-    init(aggregationTemporalitySelector: @escaping (InstrumentType) -> AggregationTemporality) {
+    public init(aggregationTemporalitySelector: @escaping (InstrumentType) -> AggregationTemporality) {
         self.aggregationTemporalitySelector = aggregationTemporalitySelector
     }
     
@@ -30,6 +30,12 @@ public enum AggregationTemporality {
             .cumulative
         }
         
+    }
+  
+    public static func alwaysDelta() -> AggregationTemporalitySelector {
+        return AggregationTemporalitySelector() { (type) in
+            .delta
+        }
     }
     
     public static func deltaPreferred() -> AggregationTemporalitySelector {

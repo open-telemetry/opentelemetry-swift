@@ -27,7 +27,7 @@ public class LongSumAggregator: SumAggregator, StableAggregator {
     }
     
     public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [PointData], temporality: AggregationTemporality) -> StableMetricData {
-        StableMetricData.createLongSum(resource: resource, instrumentationScopeInfo: scope, name: descriptor.instrument.name, description: descriptor.instrument.description, unit: descriptor.instrument.unit, data: StableSumData(aggregationTemporality: temporality, points: points as! [LongPointData]))
+        StableMetricData.createLongSum(resource: resource, instrumentationScopeInfo: scope, name: descriptor.instrument.name, description: descriptor.instrument.description, unit: descriptor.instrument.unit, isMonotonic: self.isMonotonic, data: StableSumData(aggregationTemporality: temporality, points: points as! [LongPointData]))
     }
     
     private class Handle: AggregatorHandle {
