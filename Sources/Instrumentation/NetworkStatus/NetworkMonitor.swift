@@ -20,7 +20,7 @@ public class NetworkMonitor : NetworkMonitorProtocol {
         monitor.cancel()
     }
     
-    init() {
+    public init() throws {
         let pathHandler = { (path: NWPath) in
             let availableInterfaces = path.availableInterfaces
             let wifiInterface = self.getWifiInterface(interfaces: availableInterfaces)
