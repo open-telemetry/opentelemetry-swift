@@ -11,7 +11,7 @@ import Network
 public class NetworkStatus {
     public private(set) var networkInfo: CTTelephonyNetworkInfo
     public private(set) var networkMonitor: NetworkMonitorProtocol
-    public convenience init() throws {
+    public convenience init() {
         self.init(with: NetworkMonitor())
     }
 
