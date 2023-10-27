@@ -50,7 +50,7 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
   
   public func flush() -> MetricExporterResultCode {
     var exporterResult: MetricExporterResultCode = .success
-    var pendingMetrics: [Metric]!
+    var pendingMetrics: [Metric] = []
     exporterLock.withLockVoid {
       pendingMetrics = self.pendingMetrics
     }

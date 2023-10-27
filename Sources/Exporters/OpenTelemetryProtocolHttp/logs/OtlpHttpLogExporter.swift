@@ -58,7 +58,7 @@ public class OtlpHttpLogExporter : OtlpHttpExporterBase, LogRecordExporter {
   
   public func flush(explicitTimeout: TimeInterval? = nil) -> ExportResult {
     var exporterResult: ExportResult = .success
-    var pendingLogRecords: [ReadableLogRecord]!
+    var pendingLogRecords: [ReadableLogRecord] = []
     exporterLock.withLockVoid {
       pendingLogRecords = self.pendingLogRecords
     }

@@ -61,7 +61,7 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
   
   public func flush(explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
     var resultValue: SpanExporterResultCode = .success
-    var pendingSpans: [SpanData]!
+    var pendingSpans: [SpanData] = []
     exporterLock.withLockVoid {
         pendingSpans = self.pendingSpans
     }

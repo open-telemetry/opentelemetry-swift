@@ -16,7 +16,8 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
   var defaultAggregationSelector: DefaultAggregationSelector
   
   var pendingMetrics: [StableMetricData] = []
-  
+  private let exporterLock = Lock()
+
   // MARK: - Init
   
   public init(endpoint: URL, config: OtlpConfiguration = OtlpConfiguration(), aggregationTemporalitySelector: AggregationTemporalitySelector = AggregationTemporality.alwaysCumulative(), defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector.instance, useSession: URLSession? = nil, envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
@@ -31,20 +32,26 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
   // MARK: - StableMetricsExporter
   
   public func export(metrics : [StableMetricData]) -> ExportResult {
-    pendingMetrics.append(contentsOf: metrics)
-    let sendingMetrics = pendingMetrics
-    pendingMetrics = []
+    var sendingMetrics: [StableMetricData] = []
+    exporterLock.withLockVoid {
+      pendingMetrics.append(contentsOf: metrics)
+      sendingMetrics = pendingMetrics
+      pendingMetrics = []
+    }
+
     let body = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
       $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(stableMetricData: sendingMetrics)
     }
     
     let request = createRequest(body: body, endpoint: endpoint)
-    httpClient.send(request: request) { [weak self] result in
+    httpClient.send(request: request) { [weak self, exporterLock] result in
       switch result {
       case .success(_):
         break
       case .failure(let error):
-        self?.pendingMetrics.append(contentsOf: sendingMetrics)
+        exporterLock.withLockVoid {
+          self?.pendingMetrics.append(contentsOf: sendingMetrics)
+        }
         print(error)
       }
     }
@@ -54,7 +61,10 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
   
   public func flush() -> ExportResult {
     var exporterResult: ExportResult = .success
-    
+    var pendingMetrics: [StableMetricData] = []
+    exporterLock.withLockVoid {
+      pendingMetrics = self.pendingMetrics
+    }
     if !pendingMetrics.isEmpty {
       let body = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
         $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(stableMetricData: pendingMetrics)
