@@ -13,6 +13,7 @@ import Network
 public class NetworkMonitor : NetworkMonitorProtocol {
     let monitor = NWPathMonitor()
     var connection : Connection = .unavailable
+    let monitorQueue = DispatchQueue(label: "OTel-Network-Monitor")
     let lock = NSLock()
 
     deinit {
@@ -44,6 +45,7 @@ public class NetworkMonitor : NetworkMonitorProtocol {
 
         }
         monitor.pathUpdateHandler = pathHandler
+        monitor.start(queue: monitorQueue)
     }
     public func getConnection() -> Connection {
         lock.lock()
