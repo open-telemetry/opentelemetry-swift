@@ -42,7 +42,6 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.20.2"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.4.4"),
         .package(url: "https://github.com/apple/swift-metrics.git", from: "2.1.1"),
-        .package(url: "https://github.com/ashleymills/Reachability.swift", from: "5.1.0")
     ],
     targets: [
         .target(name: "OpenTelemetryApi",
@@ -60,7 +59,6 @@ let package = Package(
         .target(name: "NetworkStatus",
                 dependencies: [
                     "OpenTelemetryApi",
-                    .product(name: "Reachability", package: "Reachability.swift", condition: .when(platforms: [.iOS, .macOS, .tvOS, .macCatalyst, .linux]))
                 ],
                 path: "Sources/Instrumentation/NetworkStatus",
                 linkerSettings: [.linkedFramework("CoreTelephony", .when(platforms: [.iOS], configuration: nil))]),
@@ -124,7 +122,6 @@ let package = Package(
         .testTarget(name: "NetworkStatusTests",
                     dependencies: [
                         "NetworkStatus",
-                        .product(name: "Reachability", package: "Reachability.swift", condition: .when(platforms: [.iOS, .macOS, .tvOS, .macCatalyst, .linux]))
                     ],
                     path: "Tests/InstrumentationTests/NetworkStatusTests"),
         .testTarget(name: "OpenTelemetryApiTests",
