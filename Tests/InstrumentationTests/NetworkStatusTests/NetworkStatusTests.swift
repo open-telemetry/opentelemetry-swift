@@ -7,7 +7,7 @@
     import CoreTelephony
     import Foundation
     @testable import NetworkStatus
-    import Reachability
+
     import XCTest
 
     class MockNetworkMonitor: NetworkMonitorProtocol {
