@@ -62,7 +62,7 @@ enum InstrumentationUtils {
         }
 #elseif os(watchOS)
         let version = WKInterfaceDevice.current().systemVersion
-        if versionNumber >= "9.0"
+        if version >= "9.0"
         {
             return true
         }
