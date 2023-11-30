@@ -5,7 +5,6 @@
 
 import Foundation
 import OpenTelemetryApi
-import SwiftProtobuf
 
 /// Resource represents a resource, which capture identifying information about the entities
 /// for which signals (stats or traces) are reported.
@@ -21,7 +20,7 @@ public struct Resource: Equatable, Hashable, Codable {
         self.init(attributes: [ResourceAttributes.serviceName.rawValue: AttributeValue.string("unknown_service:\(executableName)"),
                                ResourceAttributes.telemetrySdkName.rawValue: AttributeValue.string("opentelemetry"),
                                ResourceAttributes.telemetrySdkLanguage.rawValue: AttributeValue.string("swift"),
-                               ResourceAttributes.telemetrySdkVersion.rawValue: AttributeValue.string(SwiftProtobuf.Version.versionString)]
+                               ResourceAttributes.telemetrySdkVersion.rawValue: AttributeValue.string(Resource.OTEL_SWIFT_SDK_VERSION)]
         )
     }
 
