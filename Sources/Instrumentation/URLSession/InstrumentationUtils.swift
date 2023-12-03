@@ -5,9 +5,9 @@
 
 import Foundation
 #if os(iOS) || os(tvOS)
-import UIKit
+    import UIKit
 #elseif os(watchOS)
-import WatchKit
+    import WatchKit
 #endif
 
 enum InstrumentationUtils {
@@ -53,28 +53,4 @@ enum InstrumentationUtils {
             ptr = ptr.successor()
         }
     }
-
-    static var usesUndocumentedAsyncAwaitMethods: Bool = {
-#if os(macOS)
-        let os = ProcessInfo.processInfo.operatingSystemVersion
-        if os.majorVersion >= 13 {
-            return true
-        }
-#elseif os(watchOS)
-        let version = WKInterfaceDevice.current().systemVersion
-        if let versionNumber = Double(version),
-           versionNumber >= 9.0
-        {
-            return true
-        }
-#else
-        let version = UIDevice.current.systemVersion
-        if let versionNumber = Double(version),
-           versionNumber >= 16.0
-        {
-            return true
-        }
-#endif
-        return false
-    }()
 }
