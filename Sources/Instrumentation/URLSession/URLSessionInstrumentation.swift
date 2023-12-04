@@ -30,7 +30,7 @@ public class URLSessionInstrumentation {
     private let queue = DispatchQueue(label: "io.opentelemetry.ddnetworkinstrumentation")
 
     static var instrumentedKey = "io.opentelemetry.instrumentedCall"
-    
+
     static let avAssetDownloadTask: AnyClass? = NSClassFromString("__NSCFBackgroundAVAssetDownloadTask")
 
     public private(set) var tracer: Tracer
@@ -107,7 +107,7 @@ public class URLSessionInstrumentation {
         injectTaskDidCompleteWithErrorIntoDelegateClass(cls: cls)
         injectRespondsToSelectorIntoDelegateClass(cls: cls)
         // For future use
-        if InstrumentationUtils.usesUndocumentedAsyncAwaitMethods {
+        if #available(OSX 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *) {
             injectTaskDidFinishCollectingMetricsIntoDelegateClass(cls: cls)
         }
 
@@ -552,7 +552,7 @@ public class URLSessionInstrumentation {
         guard let taskId = objc_getAssociatedObject(dataTask, &idKey) as? String else {
             return
         }
-        self.setIdKey(value: taskId, for: downloadTask)
+        setIdKey(value: taskId, for: downloadTask)
     }
 
     private func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
@@ -587,7 +587,7 @@ public class URLSessionInstrumentation {
            task.isKind(of: avAssetTaskClass) {
             return
         }
-        
+
         let taskId = idKeyForTask(task)
         if let request = task.currentRequest {
             queue.sync {
@@ -597,19 +597,17 @@ public class URLSessionInstrumentation {
                 requestMap[taskId]?.setRequest(request)
             }
 
-            if InstrumentationUtils.usesUndocumentedAsyncAwaitMethods {
-                if #available(OSX 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *) {
-                    guard Task.basePriority != nil else {
-                        return
-                    }
-                    let instrumentedRequest = URLSessionLogger.processAndLogRequest(request, sessionTaskId: taskId, instrumentation: self, shouldInjectHeaders: true)
-                    task.setValue(instrumentedRequest, forKey: "currentRequest")
-                    self.setIdKey(value: taskId, for: task)
+            if #available(OSX 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *) {
+                guard Task.basePriority != nil else {
+                    return
+                }
+                let instrumentedRequest = URLSessionLogger.processAndLogRequest(request, sessionTaskId: taskId, instrumentation: self, shouldInjectHeaders: true)
+                task.setValue(instrumentedRequest, forKey: "currentRequest")
+                self.setIdKey(value: taskId, for: task)
 
-                    // If not inside a Task basePriority is nil
-                    if task.delegate == nil {
-                        task.delegate = FakeDelegate()
-                    }
+                // If not inside a Task basePriority is nil
+                if task.delegate == nil {
+                    task.delegate = FakeDelegate()
                 }
             }
         }
