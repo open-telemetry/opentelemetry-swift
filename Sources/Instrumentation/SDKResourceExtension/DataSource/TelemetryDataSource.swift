@@ -16,8 +16,7 @@ public class TelemetryDataSource: ITelemetryDataSource {
         "opentelemetry"
     }
 
-    public var version: String? {
-        // This may not work if this agent is statically built
-     Resource.OTEL_SWIFT_SDK_VERSION
+    public var version: String {
+        Resource.OTEL_SWIFT_SDK_VERSION
     }
 }
