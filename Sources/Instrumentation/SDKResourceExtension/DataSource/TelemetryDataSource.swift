@@ -16,7 +16,7 @@ public class TelemetryDataSource: ITelemetryDataSource {
         "opentelemetry"
     }
 
-    public var version: String {
+    public var version: String? {
         Resource.OTEL_SWIFT_SDK_VERSION
     }
 }
