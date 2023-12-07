@@ -18,6 +18,6 @@ public class TelemetryDataSource: ITelemetryDataSource {
 
     public var version: String? {
         // This may not work if this agent is statically built
-        Bundle(for: type(of: self)).infoDictionary?["CFBundleShortVersionString"] as? String
+        Bundle(for: type(of: self)).infoDictionary?[Resource.OTEL_SWIFT_SDK_VERSION] as? String
     }
 }
