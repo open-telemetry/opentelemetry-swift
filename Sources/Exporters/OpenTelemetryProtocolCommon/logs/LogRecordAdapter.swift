@@ -46,8 +46,7 @@ public class LogRecordAdapter {
     protoLogRecord.timeUnixNano = logRecord.timestamp.timeIntervalSince1970.toNanoseconds
     
     if let body = logRecord.body, !body.description.isEmpty {
-      var protoBody = Opentelemetry_Proto_Common_V1_AnyValue()
-      protoLogRecord.body = protoBody
+      protoLogRecord.body = Opentelemetry_Proto_Common_V1_AnyValue()
     }
     
     
