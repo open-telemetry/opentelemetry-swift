@@ -34,7 +34,7 @@ public protocol LogRecordBuilder {
     ///
     /// - Parameter body: string value of the log
     /// - Returns: self
-    func setBody(_ body: String) -> Self
+    func setBody(_ body: AttributeValue) -> Self
 
     /// set attributes assoicated with the log.
     ///
