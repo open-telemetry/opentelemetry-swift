@@ -6,6 +6,7 @@
 import Foundation
 import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterCommon
+import NIOConcurrencyHelpers
 
 public func defaultOltpHttpLoggingEndpoint() -> URL {
   URL(string: "http://localhost:4318/v1/logs")!
@@ -14,7 +15,7 @@ public func defaultOltpHttpLoggingEndpoint() -> URL {
 public class OtlpHttpLogExporter : OtlpHttpExporterBase, LogRecordExporter {
   
   var pendingLogRecords: [ReadableLogRecord] = []
-  
+  private let exporterLock = Lock()
   override public init(endpoint: URL = defaultOltpHttpLoggingEndpoint(),
                        config: OtlpConfiguration = OtlpConfiguration(),
                        useSession: URLSession? = nil,
@@ -24,8 +25,13 @@ public class OtlpHttpLogExporter : OtlpHttpExporterBase, LogRecordExporter {
   
   public func export(logRecords: [OpenTelemetrySdk.ReadableLogRecord], explicitTimeout: TimeInterval? = nil) -> OpenTelemetrySdk.ExportResult {
     pendingLogRecords.append(contentsOf: logRecords)
-    let sendingLogRecords = pendingLogRecords
-    pendingLogRecords = []
+    var sendingLogRecords: [ReadableLogRecord] = []
+    
+    exporterLock.withLockVoid {
+      pendingLogRecords.append(contentsOf: logRecords)
+      sendingLogRecords = pendingLogRecords
+      pendingLogRecords = []
+    }
     
     let body = Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest.with { request in
       request.resourceLogs = LogRecordAdapter.toProtoResourceRecordLog(logRecordList: sendingLogRecords)
@@ -38,7 +44,9 @@ public class OtlpHttpLogExporter : OtlpHttpExporterBase, LogRecordExporter {
       case .success(_):
         break
       case .failure(let error):
-        self?.pendingLogRecords.append(contentsOf: sendingLogRecords)
+        self?.exporterLock.withLockVoid {
+          self?.pendingLogRecords.append(contentsOf: sendingLogRecords)
+        }
         print(error)
       }
     }
@@ -52,6 +60,10 @@ public class OtlpHttpLogExporter : OtlpHttpExporterBase, LogRecordExporter {
   
   public func flush(explicitTimeout: TimeInterval? = nil) -> ExportResult {
     var exporterResult: ExportResult = .success
+    var pendingLogRecords: [ReadableLogRecord] = []
+    exporterLock.withLockVoid {
+      pendingLogRecords = self.pendingLogRecords
+    }
     
     if !pendingLogRecords.isEmpty {
       let body = Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest.with { request in
