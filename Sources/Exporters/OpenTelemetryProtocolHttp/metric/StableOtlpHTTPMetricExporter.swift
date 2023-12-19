@@ -6,6 +6,7 @@
 import Foundation
 import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterCommon
+import NIO
 import NIOConcurrencyHelpers
 
 public func defaultStableOtlpHTTPMetricsEndpoint() -> URL {
@@ -17,7 +18,7 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
   var defaultAggregationSelector: DefaultAggregationSelector
   
   var pendingMetrics: [StableMetricData] = []
-  private let exporterLock = Lock()
+  private let exporterLock = NIOLock()
   
   // MARK: - Init
   
