@@ -68,7 +68,6 @@ class ActivityContextManager: ContextManager {
     }
 
     func removeContextValue(forKey key: OpenTelemetryContextKeys, value: AnyObject) {
-        let activityIdent = os_activity_get_identifier(OS_ACTIVITY_CURRENT, nil)
         rlock.lock()
         
         for (activityKey, activity) in contextMap where value === activity[key.rawValue] {
