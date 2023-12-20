@@ -74,7 +74,7 @@ class OtlpLogRecordExporterTests: XCTestCase {
                                       observedTimestamp: Date.distantPast,
                                       spanContext: spanContext,
                                       severity: .fatal,
-                                      body: "Hello, world",
+                                      body: AttributeValue.string("Hello, world"),
                                       attributes: ["event.name":AttributeValue.string("name"), "event.domain": AttributeValue.string("domain")])
     
     let exporter = OtlpLogExporter(channel: channel)
@@ -122,7 +122,7 @@ class OtlpLogRecordExporterTests: XCTestCase {
                                       observedTimestamp: Date.distantPast,
                                       spanContext: spanContext,
                                       severity: .fatal,
-                                      body: "Hello, world",
+                                      body: AttributeValue.string("Hello, world"),
                                       attributes: ["event.name":AttributeValue.string("name"), "event.domain": AttributeValue.string("domain")])
     let exporter = OtlpLogExporter(channel: channel)
     exporter.shutdown()
@@ -139,7 +139,7 @@ class OtlpLogRecordExporterTests: XCTestCase {
                                       observedTimestamp: Date.distantPast,
                                       spanContext: spanContext,
                                       severity: .fatal,
-                                      body: "Hello, world",
+                                      body: AttributeValue.string("Hello, world"),
                                       attributes: ["event.name":AttributeValue.string("name"),
                                                    "event.domain": AttributeValue.string("domain")])
     let result = exporter.export(logRecords: [logRecord])

@@ -53,7 +53,7 @@ public class DefaultLogger: Logger {
       return self
     }
 
-    func setBody(_ body: String) -> Self {
+    func setBody(_ body: AttributeValue) -> Self {
       return self
     }
 
