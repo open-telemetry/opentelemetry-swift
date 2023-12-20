@@ -308,6 +308,45 @@ class ActivityContextManagerTests: XCTestCase {
         XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === nil)
     }
 
+
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
+    func testRemoveContextValuesFromSpan() {
+        
+        //Create a span
+        let span1 = defaultTracer.spanBuilder(spanName: "span1").startSpan()
+        ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: span1)
+        XCTAssert(ActivityContextManager.instance.getCurrentContextValue(forKey: .span) === span1)
+        
+        //Add it to one parent in one thread
+        let parent1 = defaultTracer.spanBuilder(spanName: "parent1").startSpan()
+        ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: parent1)
+        XCTAssert(ActivityContextManager.instance.getCurrentContextValue(forKey: .span) === parent1)
+        
+        DispatchQueue.global().async {
+            let activeSpan = ActivityContextManager.instance.getCurrentContextValue(forKey: .span)
+            XCTAssert(activeSpan === parent1)
+            ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: span1)
+            parent1.end()
+        }
+
+        //Add it to another parent in another thread
+        let parent2 = defaultTracer.spanBuilder(spanName: "parent2").startSpan()
+        ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: parent2)
+        XCTAssert(ActivityContextManager.instance.getCurrentContextValue(forKey: .span) === parent2)
+        
+        DispatchQueue.global().async {
+            let activeSpan = ActivityContextManager.instance.getCurrentContextValue(forKey: .span)
+            XCTAssert(activeSpan === parent2)
+            ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: span1)
+            parent2.end()
+        }
+        
+        //remove all the contexts from the span and check if the Context is nil
+        sleep(1)
+        ActivityContextManager.instance.removeContextValue(forKey: .span, value: span1)
+        XCTAssert(ActivityContextManager.instance.getCurrentContextValue(forKey: .span) === nil)
+    }
+    
     @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
     func testActiveSpanIsKeptPerTaskAsync() async {
         let expectation1 = self.expectation(description: "firstSpan created")
