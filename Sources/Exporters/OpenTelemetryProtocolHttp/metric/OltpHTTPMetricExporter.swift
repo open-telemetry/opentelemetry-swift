@@ -13,6 +13,7 @@ public func defaultOltpHTTPMetricsEndpoint() -> URL {
 
 public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
   var pendingMetrics: [Metric] = []
+  private let exporterLock = Lock()
   
   override
   public init(endpoint: URL = defaultOltpHTTPMetricsEndpoint(), config : OtlpConfiguration = OtlpConfiguration(), useSession: URLSession? = nil, envVarHeaders: [(String,String)]? = EnvVarHeaders.attributes) {
@@ -20,9 +21,12 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
   }
   
   public func export(metrics: [Metric], shouldCancel: (() -> Bool)?) -> MetricExporterResultCode {
-    pendingMetrics.append(contentsOf: metrics)
-    let sendingMetrics = pendingMetrics
-    pendingMetrics = []
+    var sendingMetrics: [Metric] = []
+    exporterLock.withLockVoid {
+      pendingMetrics.append(contentsOf: metrics)
+      sendingMetrics = pendingMetrics
+      pendingMetrics = []
+    }
     let body = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
       $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(metricDataList: sendingMetrics)
     }
@@ -33,7 +37,9 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
       case .success(_):
         break
       case .failure(let error):
-        self?.pendingMetrics.append(contentsOf: sendingMetrics)
+        self?.exporterLock.withLockVoid {
+          self?.pendingMetrics.append(contentsOf: sendingMetrics)
+        }
         print(error)
       }
     }
