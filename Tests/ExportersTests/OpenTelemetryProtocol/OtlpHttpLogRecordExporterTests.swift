@@ -34,7 +34,7 @@ class OtlpHttpLogRecordExporterTests: XCTestCase {
     }
     
     func testExport() {
-        let testBody = AttributeValue.string("Hello world " + String(Int.random(in: 1...100)))
+        let testBody = AttributeValue.string("Helloworld" + String(Int.random(in: 1...100)))
         let logRecord = ReadableLogRecord(resource: Resource(),
                                           instrumentationScopeInfo: InstrumentationScopeInfo(name: "scope"),
                                           timestamp: Date(),
@@ -57,7 +57,7 @@ class OtlpHttpLogRecordExporterTests: XCTestCase {
         XCTAssertNoThrow(try testServer.receiveBodyAndVerify() { body in
             var contentsBuffer = ByteBuffer(buffer: body)
             let contents = contentsBuffer.readString(length: contentsBuffer.readableBytes)!
-            XCTAssertTrue(testBody.description.contains(contents))
+          XCTAssertTrue(contents.description.contains(testBody.description))
         })
         
         XCTAssertNoThrow(try testServer.receiveEnd())

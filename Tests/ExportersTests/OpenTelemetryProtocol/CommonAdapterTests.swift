@@ -53,4 +53,47 @@ class CommonAdapterTests: XCTestCase {
         XCTAssertEqual(instrumentationScope.name, "name")
         XCTAssertEqual(instrumentationScope.version, "")
     }
+  
+  func testToProtoAnyValue() {
+    
+    let anyStringValue = CommonAdapter.toProtoAnyValue(attributeValue: AttributeValue.string("hello,world"))
+    XCTAssertEqual(anyStringValue.stringValue, "hello,world")
+    
+    let anyBoolValue = CommonAdapter.toProtoAnyValue(attributeValue: AttributeValue.bool(false))
+    XCTAssertFalse(anyBoolValue.boolValue)
+    
+    let anyIntValue = CommonAdapter.toProtoAnyValue(attributeValue: AttributeValue.int(12))
+    XCTAssertEqual(anyIntValue.intValue, 12)
+    
+    let anyDoubleValue = CommonAdapter.toProtoAnyValue(attributeValue: AttributeValue.double(3.14))
+    XCTAssertEqual(anyDoubleValue.doubleValue, 3.14)
+  
+    let anyStringArrayValue = CommonAdapter.toProtoAnyValue(attributeValue: AttributeValue.stringArray(["hello"]))
+    
+    XCTAssertEqual(anyStringArrayValue.arrayValue.values.count, 1)
+    XCTAssertTrue(anyStringArrayValue.arrayValue.values[0].stringValue == "hello")
+   
+    let anyBoolArrayValue = CommonAdapter.toProtoAnyValue(attributeValue: AttributeValue.boolArray([true]))
+    
+    XCTAssertEqual(anyBoolArrayValue.arrayValue.values.count, 1)
+    XCTAssertTrue(anyBoolArrayValue.arrayValue.values[0].boolValue)
+    
+    let anyIntArrayValue = CommonAdapter.toProtoAnyValue(attributeValue: AttributeValue.intArray([1]))
+    XCTAssertEqual(anyIntArrayValue.arrayValue.values.count, 1)
+    XCTAssertTrue(anyIntArrayValue.arrayValue.values[0].intValue == 1)
+    
+    let anyDoubleArrayValue = CommonAdapter.toProtoAnyValue(attributeValue: AttributeValue.doubleArray([3.14]))
+    XCTAssertEqual(anyDoubleArrayValue.arrayValue.values.count, 1)
+    XCTAssertTrue(anyDoubleArrayValue.arrayValue.values[0].doubleValue == 3.14)
+    
+    let anySetValue = CommonAdapter.toProtoAnyValue(attributeValue: AttributeValue.set(AttributeSet(labels: ["Hello": AttributeValue.string("world")])))
+    XCTAssertTrue(anySetValue.kvlistValue.values.count == 1)
+    XCTAssertTrue(anySetValue.kvlistValue.values[0].key == "Hello")
+    XCTAssertTrue(anySetValue.kvlistValue.values[0].value.stringValue == "world")
+
+    
+    
+
+    
+  }
 }
