@@ -16,6 +16,7 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
   var defaultAggregationSelector: DefaultAggregationSelector
   
   var pendingMetrics: [StableMetricData] = []
+  private let exporterLock = Lock()
   
   // MARK: - Init
   
@@ -31,9 +32,12 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
   // MARK: - StableMetricsExporter
   
   public func export(metrics : [StableMetricData]) -> ExportResult {
-    pendingMetrics.append(contentsOf: metrics)
-    let sendingMetrics = pendingMetrics
-    pendingMetrics = []
+    var sendingMetrics: [StableMetricData] = []
+    exporterLock.withLockVoid {
+      pendingMetrics.append(contentsOf: metrics)
+      sendingMetrics = pendingMetrics
+      pendingMetrics = []
+    }
     let body = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
       $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(stableMetricData: sendingMetrics)
     }
@@ -44,7 +48,9 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
       case .success(_):
         break
       case .failure(let error):
-        self?.pendingMetrics.append(contentsOf: sendingMetrics)
+        self?.exporterLock.withLockVoid {
+          self?.pendingMetrics.append(contentsOf: sendingMetrics)
+        }
         print(error)
       }
     }
@@ -54,7 +60,10 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
   
   public func flush() -> ExportResult {
     var exporterResult: ExportResult = .success
-    
+    var pendingMetrics: [StableMetricData] = []
+    exporterLock.withLockVoid {
+      pendingMetrics = self.pendingMetrics
+    }
     if !pendingMetrics.isEmpty {
       let body = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
         $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(stableMetricData: pendingMetrics)

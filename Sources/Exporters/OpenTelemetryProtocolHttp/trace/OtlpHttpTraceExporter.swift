@@ -15,6 +15,7 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
   
   
   var pendingSpans: [SpanData] = []
+  private let exporterLock = Lock()
   override
   public init(endpoint: URL = defaultOltpHttpTracesEndpoint(), config: OtlpConfiguration = OtlpConfiguration(),
               useSession: URLSession? = nil,  envVarHeaders: [(String,String)]? = EnvVarHeaders.attributes) {
@@ -22,12 +23,15 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
   }
   
   public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
-    pendingSpans.append(contentsOf: spans)
-    let sendingSpans = pendingSpans
-    pendingSpans = []
+    var sendingSpans: [SpanData] = []
+    exporterLock.withLockVoid {
+      pendingSpans.append(contentsOf: spans)
+      sendingSpans = pendingSpans
+      pendingSpans = []
+    }
     
     let body = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
-      $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
+      $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: sendingSpans)
     }
     var request = createRequest(body: body, endpoint: endpoint)
     if let headers = envVarHeaders {
@@ -45,7 +49,9 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
       case .success:
         break
       case .failure(let error):
-        self?.pendingSpans.append(contentsOf: sendingSpans)
+        self?.exporterLock.withLockVoid {
+          self?.pendingSpans.append(contentsOf: sendingSpans)
+        }
         print(error)
       }
     }
@@ -54,6 +60,10 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
   
   public func flush(explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
     var resultValue: SpanExporterResultCode = .success
+    var pendingSpans: [SpanData] = []
+    exporterLock.withLockVoid {
+      pendingSpans = self.pendingSpans
+    }
     if !pendingSpans.isEmpty {
       let body = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
         $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: pendingSpans)
