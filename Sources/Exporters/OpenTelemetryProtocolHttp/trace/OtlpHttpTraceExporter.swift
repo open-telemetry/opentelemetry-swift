@@ -6,8 +6,6 @@
 import Foundation
 import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterCommon
-import NIO
-import NIOConcurrencyHelpers
 
 public func defaultOltpHttpTracesEndpoint() -> URL {
   URL(string: "http://localhost:4318/v1/traces")!
@@ -17,7 +15,7 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
   
   
   var pendingSpans: [SpanData] = []
-  private let exporterLock = NIOLock()
+  private let exporterLock = Lock()
   override
   public init(endpoint: URL = defaultOltpHttpTracesEndpoint(), config: OtlpConfiguration = OtlpConfiguration(),
               useSession: URLSession? = nil,  envVarHeaders: [(String,String)]? = EnvVarHeaders.attributes) {

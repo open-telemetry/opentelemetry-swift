@@ -6,8 +6,6 @@
 import Foundation
 import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterCommon
-import NIO
-import NIOConcurrencyHelpers
 
 public func defaultOltpHttpLoggingEndpoint() -> URL {
   URL(string: "http://localhost:4318/v1/logs")!
@@ -16,7 +14,7 @@ public func defaultOltpHttpLoggingEndpoint() -> URL {
 public class OtlpHttpLogExporter : OtlpHttpExporterBase, LogRecordExporter {
   
   var pendingLogRecords: [ReadableLogRecord] = []
-  private let exporterLock = NIOLock()
+  private let exporterLock = Lock()
   override public init(endpoint: URL = defaultOltpHttpLoggingEndpoint(),
                        config: OtlpConfiguration = OtlpConfiguration(),
                        useSession: URLSession? = nil,

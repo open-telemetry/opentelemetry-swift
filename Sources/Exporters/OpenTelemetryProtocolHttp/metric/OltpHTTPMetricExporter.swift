@@ -6,9 +6,6 @@
 import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterCommon
 import Foundation
-import NIO
-import NIOConcurrencyHelpers
-
 
 public func defaultOltpHTTPMetricsEndpoint() -> URL {
   URL(string: "http://localhost:4318/v1/metrics")!
@@ -16,7 +13,7 @@ public func defaultOltpHTTPMetricsEndpoint() -> URL {
 
 public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
   var pendingMetrics: [Metric] = []
-  private let exporterLock = NIOLock()
+  private let exporterLock = Lock()
   
   override
   public init(endpoint: URL = defaultOltpHTTPMetricsEndpoint(), config : OtlpConfiguration = OtlpConfiguration(), useSession: URLSession? = nil, envVarHeaders: [(String,String)]? = EnvVarHeaders.attributes) {
