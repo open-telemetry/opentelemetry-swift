@@ -308,6 +308,47 @@ class ActivityContextManagerTests: XCTestCase {
         XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === nil)
     }
 
+
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
+    func testRemoveContextValuesFromSpan() {
+        
+        //Create a span
+        let span1 = defaultTracer.spanBuilder(spanName: "span1").startSpan()
+        ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: span1)
+        XCTAssert(ActivityContextManager.instance.getCurrentContextValue(forKey: .span) === span1)
+        
+        //Add it to one parent in one thread
+        DispatchQueue.global().async {
+            let parent1 = self.defaultTracer.spanBuilder(spanName: "parent1").startSpan()
+            ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: parent1)
+            XCTAssert(ActivityContextManager.instance.getCurrentContextValue(forKey: .span) === parent1)
+            
+            let activeSpan = ActivityContextManager.instance.getCurrentContextValue(forKey: .span)
+            XCTAssert(activeSpan === parent1)
+            ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: span1)
+            parent1.end()
+        }
+
+        //Add it to another parent in another thread
+        DispatchQueue.global().async {
+            let parent2 = self.defaultTracer.spanBuilder(spanName: "parent2").startSpan()
+            ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: parent2)
+            XCTAssert(ActivityContextManager.instance.getCurrentContextValue(forKey: .span) === parent2)
+            
+            let activeSpan = ActivityContextManager.instance.getCurrentContextValue(forKey: .span)
+            XCTAssert(activeSpan === parent2)
+            ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: span1)
+            parent2.end()
+        }
+        
+        sleep(1)
+        // Remove all the contexts from the span and check if the Context is nil
+        // Ending the span will remove all the context associated with it, dont need to call removeContextValue explicitly
+        // ActivityContextManager.instance.removeContextValue(forKey: .span, value: span1)
+        span1.end()
+        XCTAssert(ActivityContextManager.instance.getCurrentContextValue(forKey: .span) === nil)
+    }
+    
     @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
     func testActiveSpanIsKeptPerTaskAsync() async {
         let expectation1 = self.expectation(description: "firstSpan created")
