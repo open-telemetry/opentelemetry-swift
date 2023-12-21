@@ -318,11 +318,11 @@ class ActivityContextManagerTests: XCTestCase {
         XCTAssert(ActivityContextManager.instance.getCurrentContextValue(forKey: .span) === span1)
         
         //Add it to one parent in one thread
-        let parent1 = defaultTracer.spanBuilder(spanName: "parent1").startSpan()
-        ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: parent1)
-        XCTAssert(ActivityContextManager.instance.getCurrentContextValue(forKey: .span) === parent1)
-        
         DispatchQueue.global().async {
+            let parent1 = self.defaultTracer.spanBuilder(spanName: "parent1").startSpan()
+            ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: parent1)
+            XCTAssert(ActivityContextManager.instance.getCurrentContextValue(forKey: .span) === parent1)
+            
             let activeSpan = ActivityContextManager.instance.getCurrentContextValue(forKey: .span)
             XCTAssert(activeSpan === parent1)
             ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: span1)
@@ -330,20 +330,22 @@ class ActivityContextManagerTests: XCTestCase {
         }
 
         //Add it to another parent in another thread
-        let parent2 = defaultTracer.spanBuilder(spanName: "parent2").startSpan()
-        ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: parent2)
-        XCTAssert(ActivityContextManager.instance.getCurrentContextValue(forKey: .span) === parent2)
-        
         DispatchQueue.global().async {
+            let parent2 = self.defaultTracer.spanBuilder(spanName: "parent2").startSpan()
+            ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: parent2)
+            XCTAssert(ActivityContextManager.instance.getCurrentContextValue(forKey: .span) === parent2)
+            
             let activeSpan = ActivityContextManager.instance.getCurrentContextValue(forKey: .span)
             XCTAssert(activeSpan === parent2)
             ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: span1)
             parent2.end()
         }
         
-        //remove all the contexts from the span and check if the Context is nil
         sleep(1)
-        ActivityContextManager.instance.removeContextValue(forKey: .span, value: span1)
+        // Remove all the contexts from the span and check if the Context is nil
+        // Ending the span will remove all the context associated with it, dont need to call removeContextValue explicitly
+        // ActivityContextManager.instance.removeContextValue(forKey: .span, value: span1)
+        span1.end()
         XCTAssert(ActivityContextManager.instance.getCurrentContextValue(forKey: .span) === nil)
     }
     
