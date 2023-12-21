@@ -43,7 +43,7 @@ class LogRecordAdapterTests : XCTestCase {
                                           observedTimestamp: Date.distantPast,
                                           spanContext: spanContext,
                                           severity: .fatal,
-                                          body: "Hello, world",
+                                          body: AttributeValue.string("Hello, world"),
                                           attributes: ["event.name":AttributeValue.string("name"), "event.domain": AttributeValue.string("domain")])
         
         let protoLog = LogRecordAdapter.toProtoLogRecord(logRecord: logRecord)

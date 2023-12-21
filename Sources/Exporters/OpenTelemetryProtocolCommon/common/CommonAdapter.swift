@@ -54,6 +54,49 @@ public struct CommonAdapter {
     return keyValue
   }
   
+  public static func toProtoAnyValue(attributeValue: AttributeValue) -> Opentelemetry_Proto_Common_V1_AnyValue {
+    var anyValue = Opentelemetry_Proto_Common_V1_AnyValue()
+    switch attributeValue {
+    case let .string(value):
+      anyValue.stringValue = value
+    case let .bool(value):
+      anyValue.boolValue = value
+    case let .int(value):
+      anyValue.intValue = Int64(value)
+    case let .double(value):
+      anyValue.doubleValue = value
+    case let .stringArray(value):
+      anyValue.arrayValue.values = value.map {
+        var anyValue = Opentelemetry_Proto_Common_V1_AnyValue()
+        anyValue.stringValue = $0
+        return anyValue
+      }
+    case let .boolArray(value):
+      anyValue.arrayValue.values = value.map {
+        var anyValue = Opentelemetry_Proto_Common_V1_AnyValue()
+        anyValue.boolValue = $0
+        return anyValue
+      }
+    case let .intArray(value):
+      anyValue.arrayValue.values = value.map {
+        var anyValue = Opentelemetry_Proto_Common_V1_AnyValue()
+        anyValue.intValue = Int64($0)
+        return anyValue
+      }
+    case let .doubleArray(value):
+      anyValue.arrayValue.values = value.map {
+        var anyValue = Opentelemetry_Proto_Common_V1_AnyValue()
+        anyValue.doubleValue = $0
+        return anyValue
+      }
+    case let .set(value):
+      anyValue.kvlistValue.values = value.labels.map({
+        return toProtoAttribute(key: $0, attributeValue: $1)
+      })
+    }
+    return anyValue
+  }
+  
   public static func toProtoInstrumentationScope(instrumentationScopeInfo: InstrumentationScopeInfo)
   -> Opentelemetry_Proto_Common_V1_InstrumentationScope
   {
