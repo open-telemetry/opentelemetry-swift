@@ -9,6 +9,8 @@ import CoreTelephony
 import Foundation
 import Network
 import OpenTelemetryApi
+import OpenTelemetrySdk
+
 public class NetworkStatusInjector {
     private var netstat: NetworkStatus
 
@@ -18,27 +20,27 @@ public class NetworkStatusInjector {
 
     public func inject(span: Span) {
         let (type, subtype, carrier) = netstat.status()
-        span.setAttribute(key: "net.host.connection.type", value: AttributeValue.string(type))
+      span.setAttribute(key: SemanticAttributes.networkConnectionType.rawValue, value: AttributeValue.string(type))
 
         if let subtype: String = subtype {
-            span.setAttribute(key: "net.host.connection.subtype", value: AttributeValue.string(subtype))
+          span.setAttribute(key: SemanticAttributes.networkConnectionSubtype.rawValue, value: AttributeValue.string(subtype))
         }
 
         if let carrierInfo: CTCarrier = carrier {
             if let carrierName = carrierInfo.carrierName {
-                span.setAttribute(key: "net.host.carrier.name", value: AttributeValue.string(carrierName))
+              span.setAttribute(key: SemanticAttributes.networkCarrierName.rawValue, value: AttributeValue.string(carrierName))
             }
 
             if let isoCountryCode = carrierInfo.isoCountryCode {
-                span.setAttribute(key: "net.host.carrier.icc", value: AttributeValue.string(isoCountryCode))
+              span.setAttribute(key: SemanticAttributes.networkCarrierIcc.rawValue, value: AttributeValue.string(isoCountryCode))
             }
 
             if let mobileCountryCode = carrierInfo.mobileCountryCode {
-                span.setAttribute(key: "net.host.carrier.mcc", value: AttributeValue.string(mobileCountryCode))
+              span.setAttribute(key: SemanticAttributes.networkCarrierMcc.rawValue, value: AttributeValue.string(mobileCountryCode))
             }
 
             if let mobileNetworkCode = carrierInfo.mobileNetworkCode {
-                span.setAttribute(key: "net.host.carrier.mnc", value: AttributeValue.string(mobileNetworkCode))
+              span.setAttribute(key: SemanticAttributes.networkCarrierMnc.rawValue, value: AttributeValue.string(mobileNetworkCode))
             }
         }
     }
