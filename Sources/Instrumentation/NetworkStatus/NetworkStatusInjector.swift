@@ -9,7 +9,6 @@ import CoreTelephony
 import Foundation
 import Network
 import OpenTelemetryApi
-import OpenTelemetrySdk
 
 public class NetworkStatusInjector {
     private var netstat: NetworkStatus
