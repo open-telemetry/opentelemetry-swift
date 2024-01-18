@@ -17,5 +17,4 @@ jobs:
       id: tag_version
       run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
     - name: Update version
-      run:
-
+      run: sh Scripts/updateVersion.sh $GITHUB_TOKEN ${{ steps.tag_version.outputs.VERSION }}
