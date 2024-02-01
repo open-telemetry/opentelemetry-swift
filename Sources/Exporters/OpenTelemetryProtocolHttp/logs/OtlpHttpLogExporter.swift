@@ -22,9 +22,7 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter {
     }
 
     public func export(logRecords: [OpenTelemetrySdk.ReadableLogRecord], explicitTimeout: TimeInterval? = nil) -> OpenTelemetrySdk.ExportResult {
-        pendingLogRecords.append(contentsOf: logRecords)
         var sendingLogRecords: [ReadableLogRecord] = []
-
         exporterLock.withLockVoid {
             pendingLogRecords.append(contentsOf: logRecords)
             sendingLogRecords = pendingLogRecords
