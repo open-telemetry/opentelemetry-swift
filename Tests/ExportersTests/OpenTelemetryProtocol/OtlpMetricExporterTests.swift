@@ -4,8 +4,8 @@
  */
 
 import Foundation
-import Logging
 import GRPC
+import Logging
 import NIO
 import OpenTelemetryApi
 import OpenTelemetryProtocolExporterCommon
@@ -185,7 +185,6 @@ class OtlpMetricExproterTests: XCTestCase {
         }
         XCTFail("User-Agent header was not set correctly")
     }
-
 }
 
 class FakeMetricCollector: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceProvider {
@@ -194,8 +193,7 @@ class FakeMetricCollector: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServi
     var receivedMetrics = [Opentelemetry_Proto_Metrics_V1_ResourceMetrics]()
     var returnedStatus = GRPCStatus.ok
     func export(request: Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest, context: StatusOnlyCallContext) ->
-        EventLoopFuture<Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse>
-    {
+        EventLoopFuture<Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse> {
         receivedMetrics.append(contentsOf: request.resourceMetrics)
         if returnedStatus != GRPCStatus.ok {
             return context.eventLoop.makeFailedFuture(returnedStatus)

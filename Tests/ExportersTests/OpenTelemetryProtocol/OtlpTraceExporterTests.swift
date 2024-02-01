@@ -4,8 +4,8 @@
  */
 
 import Foundation
-import Logging
 import GRPC
+import Logging
 import NIO
 import OpenTelemetryApi
 import OpenTelemetryProtocolExporterCommon
@@ -66,7 +66,7 @@ class OtlpTraceExporterTests: XCTestCase {
         if customMetadata.contains(name: Constants.HTTP.userAgent) && customMetadata.first(name: Constants.HTTP.userAgent) == userAgent {
             return
         }
-        
+
         XCTFail("User-Agent header was not set correctly")
     }
 
@@ -169,7 +169,7 @@ class OtlpTraceExporterTests: XCTestCase {
 class FakeCollector: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceProvider {
     var receivedSpans = [Opentelemetry_Proto_Trace_V1_ResourceSpans]()
     var returnedStatus = GRPCStatus.ok
-    var interceptors: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceServerInterceptorFactoryProtocol? = nil
+    var interceptors: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceServerInterceptorFactoryProtocol?
 
     func export(request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse> {
         receivedSpans.append(contentsOf: request.resourceSpans)
