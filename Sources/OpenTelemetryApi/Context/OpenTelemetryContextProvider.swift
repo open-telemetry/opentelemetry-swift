@@ -32,7 +32,7 @@ public struct OpenTelemetryContextProvider {
     }
 
     /// Sets the span as the activeSpan for the current context
-    /// - Parameter baggage: the Correlation Context to be set to the current contex
+    /// - Parameter baggage: the Correlation Context to be set to the current context
     public func setActiveBaggage(_ baggage: Baggage) {
         contextManager.setCurrentContextValue(forKey: OpenTelemetryContextKeys.baggage, value: baggage)
     }

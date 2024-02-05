@@ -16,7 +16,7 @@ public class StableMeterProviderSdk: StableMeterProvider {
     var registeredReaders = [RegisteredReader]()
     var registeredViews = [RegisteredView]()
     
-    var componentRegistery: ComponentRegistry<StableMeterSdk>!
+    var componentRegistry: ComponentRegistry<StableMeterSdk>!
     
     public func get(name: String) -> StableMeter {
         meterBuilder(name: name).build()
@@ -31,7 +31,7 @@ public class StableMeterProviderSdk: StableMeterProvider {
             name = Self.defaultMeterName
         }
         
-        return MeterBuilderSdk(registry: componentRegistery, instrumentationScopeName: name)
+        return MeterBuilderSdk(registry: componentRegistry, instrumentationScopeName: name)
     }
     
     public static func builder() -> StableMeterProviderBuilder {
@@ -52,12 +52,12 @@ public class StableMeterProviderSdk: StableMeterProvider {
         
         meterProviderSharedState = MeterProviderSharedState(clock: clock, resource: resource, startEpochNanos: startEpochNano, exemplarFilter: exemplarFilter)
         
-        componentRegistery = ComponentRegistry { scope in
+        componentRegistry = ComponentRegistry { scope in
             StableMeterSdk(meterProviderSharedState: &self.meterProviderSharedState, instrumentScope: scope, registeredReaders: &self.registeredReaders)
         }
         
         for registeredReader in registeredReaders {
-            let producer = LeasedMetricProducer(registry: componentRegistery, sharedState: meterProviderSharedState, registeredReader: registeredReader)
+            let producer = LeasedMetricProducer(registry: componentRegistry, sharedState: meterProviderSharedState, registeredReader: registeredReader)
             registeredReader.reader.register(registration: producer)
             registeredReader.lastCollectedEpochNanos = startEpochNano
         }

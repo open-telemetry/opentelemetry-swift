@@ -10,7 +10,7 @@ import Foundation
 public enum SpanKind: String, Equatable, Codable {
     /// Default value. Indicates that the span is used internally.
     case `internal`
-    /// ndicates that the span covers server-side handling of an RPC or other remote request.
+    /// Indicates that the span covers server-side handling of an RPC or other remote request.
     case server
     /// Indicates that the span covers the client-side wrapper around an RPC or other remote request.
     case client

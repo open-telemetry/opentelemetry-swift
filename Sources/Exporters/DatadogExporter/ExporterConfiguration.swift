@@ -26,7 +26,7 @@ public struct ExporterConfiguration {
     var payloadCompression: Bool
 
     var source: String
-    /// This conditon will be evaluated before trying to upload data
+    /// This condition will be evaluated before trying to upload data
     /// Can be used to avoid reporting when no connection
     var uploadCondition: () -> Bool
     /// Performance preset for reporting

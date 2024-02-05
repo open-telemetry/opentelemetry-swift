@@ -572,7 +572,7 @@ public class URLSessionInstrumentation {
             return
         }
 
-        /// Code for instrumenting colletion should be written here
+        /// Code for instrumenting collection should be written here
         if let error = task.error {
             let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
             URLSessionLogger.logError(error, dataOrFile: requestState?.dataProcessed, statusCode: status, instrumentation: self, sessionTaskId: taskId)

@@ -2,7 +2,7 @@
 
 This package captures the network calls produced by URLSession.
 
-This instrumentation relies on the global tracer provider in the `OpenTelementry` object. Custom global tracer providers must be initialized and set prior to initializing this instrumentation. 
+This instrumentation relies on the global tracer provider in the `OpenTelemetry` object. Custom global tracer providers must be initialized and set prior to initializing this instrumentation. 
 
 ## Usage 
 

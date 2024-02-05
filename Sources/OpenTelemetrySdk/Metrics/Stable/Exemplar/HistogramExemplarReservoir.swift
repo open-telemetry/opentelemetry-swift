@@ -29,8 +29,8 @@ public class HistogramExemplarReservoir : FixedSizedExemplarReservoir {
         }
         
         func reservoirCellIndex(for cells: [ReservoirCell], value: Double, attributes: [String : OpenTelemetryApi.AttributeValue]) -> Int {
-            if let index = boundaries.firstIndex(where: { boundry in
-                value <= boundry
+            if let index = boundaries.firstIndex(where: { boundary in
+                value <= boundary
             }) {
                 return index
             }

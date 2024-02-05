@@ -77,7 +77,7 @@ internal struct DDLog: Encodable {
         self.environment = configuration.environment
         self.loggerName = attributes.removeValue(forKey: "loggerName")?.description ?? "logger"
         self.loggerVersion = "1.0" // loggerVersion
-        self.threadName = attributes.removeValue(forKey: "threadName")?.description ?? "unkown"
+        self.threadName = attributes.removeValue(forKey: "threadName")?.description ?? "unknown"
         self.applicationVersion = configuration.version
 
         let userAttributes: [String: Encodable] = attributes.mapValues {

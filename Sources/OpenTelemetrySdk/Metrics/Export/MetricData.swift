@@ -133,9 +133,9 @@ extension HistogramData: Codable where T: Codable {
         try container.encode(timestamp, forKey: .timestamp)
         try container.encode(labels, forKey: .labels)
         
-        var bucketsCountainer = container.nestedContainer(keyedBy: BucketsCodingKeys.self, forKey: .buckets)
-        try bucketsCountainer.encode(buckets.boundaries, forKey: .boundaries)
-        try bucketsCountainer.encode(buckets.counts, forKey: .counts)
+        var bucketsContainer = container.nestedContainer(keyedBy: BucketsCodingKeys.self, forKey: .buckets)
+        try bucketsContainer.encode(buckets.boundaries, forKey: .boundaries)
+        try bucketsContainer.encode(buckets.counts, forKey: .counts)
         
         try container.encode(count, forKey: .count)
         try container.encode(sum, forKey: .sum)

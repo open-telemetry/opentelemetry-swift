@@ -60,8 +60,8 @@ public class DoubleExplicitBucketHistogramAggregator: StableAggregator {
                 lock.unlock()
             }
             var bucketIndex = -1
-            for (index, boundry) in boundaries.enumerated() {
-                if value <= boundry {
+            for (index, boundary) in boundaries.enumerated() {
+                if value <= boundary {
                     bucketIndex = index
                     break
                 }

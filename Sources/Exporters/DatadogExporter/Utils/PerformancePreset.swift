@@ -40,7 +40,7 @@ internal protocol UploadPerformancePreset {
     /// At runtime, the upload interval ranges from `minUploadDelay` to `maxUploadDelay` depending
     /// on delivery success or failure.
     var defaultUploadDelay: TimeInterval { get }
-    /// Mininum  interval of data upload (in seconds).
+    /// Minimum interval of data upload (in seconds).
     var minUploadDelay: TimeInterval { get }
     /// Maximum interval of data upload (in seconds).
     var maxUploadDelay: TimeInterval { get }

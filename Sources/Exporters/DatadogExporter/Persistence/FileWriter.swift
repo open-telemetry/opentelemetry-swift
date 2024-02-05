@@ -6,7 +6,7 @@
 import Foundation
 
 internal final class FileWriter {
-    /// Data writting format.
+    /// Data writing format.
     private let dataFormat: DataFormat
     /// Orchestrator producing reference to writable file.
     private let orchestrator: FilesOrchestrator

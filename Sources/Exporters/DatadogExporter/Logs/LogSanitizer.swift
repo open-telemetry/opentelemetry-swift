@@ -24,8 +24,8 @@ internal struct LogSanitizer {
         /// Allowed first character of a tag name (given as ASCII values ranging from lowercased `a` to `z`) .
         /// Tags with name starting with different character will be dropped.
         static let allowedTagNameFirstCharacterASCIIRange: [UInt8] = Array(97 ... 122)
-        /// Maximum lenght of the tag.
-        /// Tags exceeting this lenght will be trunkated.
+        /// Maximum length of the tag.
+        /// Tags exceeting this length will be trunkated.
         static let maxTagLength: Int = 200
         /// Tag keys reserved for Datadog.
         /// If any of those is used by user, the tag will be ignored.

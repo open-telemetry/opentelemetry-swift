@@ -44,7 +44,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
     public private(set) var links = [SpanData.Link]()
     /// Number of links recorded.
     public private(set) var totalRecordedLinks: Int
-    /// Max number of attibutes per span.
+    /// Max number of attributes per span.
     public private(set) var maxNumberOfAttributes: Int
     /// Max number of attributes per event.
     public private(set) var maxNumberOfAttributesPerEvent: Int
