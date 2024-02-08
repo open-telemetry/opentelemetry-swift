@@ -15,14 +15,14 @@ public class StableOtlpMetricExporter: StableMetricExporter {
     public func getAggregationTemporality(for instrument: OpenTelemetrySdk.InstrumentType) -> OpenTelemetrySdk.AggregationTemporality {
         return aggregationTemporalitySelector.getAggregationTemporality(for: instrument)
     }
-    
+
     let channel: GRPCChannel
     var metricClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient
     let config: OtlpConfiguration
     var callOptions: CallOptions?
     var aggregationTemporalitySelector: AggregationTemporalitySelector
     var defaultAggregationSelector: DefaultAggregationSelector
-    
+
     public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration(), aggregationTemporalitySelector: AggregationTemporalitySelector = AggregationTemporality.alwaysCumulative(),
                 defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector.instance,
                 logger: Logging.Logger = Logging.Logger(label: "io.grpc", factory: { _ in SwiftLogNoOpLogHandler() }), envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes)
@@ -31,7 +31,7 @@ public class StableOtlpMetricExporter: StableMetricExporter {
         self.aggregationTemporalitySelector = aggregationTemporalitySelector
         self.channel = channel
         self.config = config
-        self.metricClient = Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient(channel: self.channel)
+        metricClient = Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient(channel: self.channel)
         if let headers = envVarHeaders {
             callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
         } else if let headers = config.headers {
@@ -40,7 +40,7 @@ public class StableOtlpMetricExporter: StableMetricExporter {
             callOptions = CallOptions(logger: logger)
         }
     }
-    
+
     public func export(metrics: [OpenTelemetrySdk.StableMetricData]) -> OpenTelemetrySdk.ExportResult {
         let exportRequest = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
             $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(stableMetricData: metrics)
@@ -56,14 +56,14 @@ public class StableOtlpMetricExporter: StableMetricExporter {
             return .failure
         }
     }
-    
+
     public func flush() -> OpenTelemetrySdk.ExportResult {
         return .success
     }
-    
+
     public func shutdown() -> OpenTelemetrySdk.ExportResult {
         _ = channel.close()
-        
+
         return .success
     }
 }
