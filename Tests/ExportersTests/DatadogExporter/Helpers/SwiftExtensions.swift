@@ -7,7 +7,7 @@ import Foundation
 import XCTest
 
 /*
- Set of general extensions over standard types for writting more readable tests.
+ Set of general extensions over standard types for writing more readable tests.
  Extensiosn using Datadog domain objects should be put in `DatadogExtensions.swift`.
  */
 
@@ -70,7 +70,7 @@ extension InputStream {
             let bytesRead = self.read(buffer, maxLength: expectedSize)
 
             guard bytesRead >= 0 else {
-                fatalError("Stream error occured.")
+                fatalError("Stream error occurred.")
             }
 
             if bytesRead == 0 {

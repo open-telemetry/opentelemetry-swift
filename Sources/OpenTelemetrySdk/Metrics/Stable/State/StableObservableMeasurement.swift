@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 
 public class StableObservableMeasurementSdk : ObservableLongMeasurement, ObservableDoubleMeasurement {
-    private var insturmentScope : InstrumentationScopeInfo
+    private var instrumentScope : InstrumentationScopeInfo
     public private(set) var descriptor : InstrumentDescriptor
     public private(set) var storages : [AsynchronousMetricStorage]
     private var activeReader : RegisteredReader?
@@ -16,7 +16,7 @@ public class StableObservableMeasurementSdk : ObservableLongMeasurement, Observa
     var epochNanos : UInt64 = 0
     
     init(insturmentScope: InstrumentationScopeInfo, descriptor: InstrumentDescriptor, storages: [AsynchronousMetricStorage]) {
-        self.insturmentScope = insturmentScope
+        self.instrumentScope = insturmentScope
         self.descriptor = descriptor
         self.storages = storages
     }

@@ -8,7 +8,7 @@ import OpenTelemetrySdk
 
 public enum MetricsAdapter {
   public static func toProtoResourceMetrics(stableMetricData: [StableMetricData]) -> [Opentelemetry_Proto_Metrics_V1_ResourceMetrics] {
-    let resourceAndScopeMap = groupByResouceAndScope(stableMetricData: stableMetricData)
+    let resourceAndScopeMap = groupByResourceAndScope(stableMetricData: stableMetricData)
     
     var resourceMetrics = [Opentelemetry_Proto_Metrics_V1_ResourceMetrics]()
     resourceAndScopeMap.forEach { resMap in
@@ -31,7 +31,7 @@ public enum MetricsAdapter {
   }
   
   public static func toProtoResourceMetrics(metricDataList: [Metric]) -> [Opentelemetry_Proto_Metrics_V1_ResourceMetrics] {
-    let resourceAndScopeMap = groupByResouceAndScope(metricDataList: metricDataList)
+    let resourceAndScopeMap = groupByResourceAndScope(metricDataList: metricDataList)
     var resourceMetrics = [Opentelemetry_Proto_Metrics_V1_ResourceMetrics]()
     
     resourceAndScopeMap.forEach { resMap in
@@ -55,7 +55,7 @@ public enum MetricsAdapter {
     return resourceMetrics
   }
   
-  private static func groupByResouceAndScope(stableMetricData: [StableMetricData]) -> [Resource: [InstrumentationScopeInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]] {
+  private static func groupByResourceAndScope(stableMetricData: [StableMetricData]) -> [Resource: [InstrumentationScopeInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]] {
     var results = [Resource: [InstrumentationScopeInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]]()
     
     stableMetricData.forEach {
@@ -66,7 +66,7 @@ public enum MetricsAdapter {
     return results
   }
   
-  private static func groupByResouceAndScope(metricDataList: [Metric]) -> [Resource: [InstrumentationScopeInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]] {
+  private static func groupByResourceAndScope(metricDataList: [Metric]) -> [Resource: [InstrumentationScopeInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]] {
     var results = [Resource: [InstrumentationScopeInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]]()
     
     metricDataList.forEach {

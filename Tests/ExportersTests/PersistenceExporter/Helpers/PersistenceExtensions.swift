@@ -7,7 +7,7 @@
 import Foundation
 
 /*
- Set of Persistence domain extensions over standard types for writting more readable tests.
+ Set of Persistence domain extensions over standard types for writing more readable tests.
  Domain agnostic extensions should be put in `SwiftExtensions.swift`.
  */
 

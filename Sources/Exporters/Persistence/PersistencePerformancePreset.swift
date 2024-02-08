@@ -40,7 +40,7 @@ internal protocol ExportPerformancePreset {
     /// At runtime, the export interval ranges from `minExportDelay` to `maxExportDelay` depending
     /// on delivery success or failure.
     var defaultExportDelay: TimeInterval { get }
-    /// Mininum  interval of data export (in seconds).
+    /// Minimum interval of data export (in seconds).
     var minExportDelay: TimeInterval { get }
     /// Maximum interval of data export (in seconds).
     var maxExportDelay: TimeInterval { get }

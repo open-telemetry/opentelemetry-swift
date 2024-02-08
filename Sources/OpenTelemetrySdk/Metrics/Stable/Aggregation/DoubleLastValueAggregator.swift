@@ -7,10 +7,10 @@ import Foundation
 import OpenTelemetryApi
 
 public class DoubleLastValueAggregator: StableAggregator {
-    private var resevoirSupplier: () -> ExemplarReservoir
+    private var reservoirSupplier: () -> ExemplarReservoir
     
-    internal init(resevoirSupplier: @escaping () -> ExemplarReservoir) {
-        self.resevoirSupplier = resevoirSupplier
+    internal init(reservoirSupplier: @escaping () -> ExemplarReservoir) {
+        self.reservoirSupplier = reservoirSupplier
     }
     
     public func diff(previousCumulative: PointData, currentCumulative: PointData) throws -> PointData {
@@ -22,7 +22,7 @@ public class DoubleLastValueAggregator: StableAggregator {
     }
     
     public func createHandle() -> AggregatorHandle {
-        Handle(exemplarReservoir: resevoirSupplier())
+        Handle(exemplarReservoir: reservoirSupplier())
     }
     
     public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [PointData], temporality: AggregationTemporality) -> StableMetricData {

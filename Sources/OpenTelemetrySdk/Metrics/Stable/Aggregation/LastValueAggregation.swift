@@ -12,11 +12,11 @@ public class LastValueAggregation: Aggregation {
     public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> StableAggregator {
         switch descriptor.valueType {
         case .double:
-            return DoubleLastValueAggregator(resevoirSupplier: {
+            return DoubleLastValueAggregator(reservoirSupplier: {
                 FilteredExemplarReservoir(filter: exemplarFilter, reservoir: RandomFixedSizedExemplarReservoir.createDouble(clock: MillisClock(), size: 2))
             })
         case .long:
-            return LongLastValueAggregator(resevoirSupplier: {
+            return LongLastValueAggregator(reservoirSupplier: {
                 FilteredExemplarReservoir(filter: exemplarFilter, reservoir: RandomFixedSizedExemplarReservoir.createLong(clock: MillisClock(), size: 2))
             })
         }

@@ -71,7 +71,7 @@ class FileTests: XCTestCase {
         XCTAssertEqual(try file.size(), 15)
     }
 
-    func testWhenIOExceptionHappens_itThrowsWhenWritting() throws {
+    func testWhenIOExceptionHappens_itThrowsWhenWriting() throws {
         let file = try temporaryDirectory.createFile(named: "file")
         try file.delete()
 

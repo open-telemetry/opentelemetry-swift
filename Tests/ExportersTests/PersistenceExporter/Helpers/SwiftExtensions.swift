@@ -7,7 +7,7 @@ import Foundation
 import XCTest
 
 /*
- Set of general extensions over standard types for writting more readable tests.
+ Set of general extensions over standard types for writing more readable tests.
  Extensiosn using Persistence domain objects should be put in `PersistenceExtensions.swift`.
  */
 

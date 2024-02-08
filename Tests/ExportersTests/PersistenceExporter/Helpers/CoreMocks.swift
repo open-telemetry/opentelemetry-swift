@@ -30,7 +30,7 @@ struct StoragePerformanceMock: StoragePerformancePreset {
   static let writeEachObjectToNewFileAndReadAllFiles = StoragePerformanceMock(
     maxFileSize: .max,
     maxDirectorySize: .max,
-    maxFileAgeForWrite: 0, // always return new file for writting
+    maxFileAgeForWrite: 0, // always return new file for writing
     minFileAgeForRead: readAllFiles.minFileAgeForRead,
     maxFileAgeForRead: readAllFiles.maxFileAgeForRead,
     maxObjectsInFile: 1, // write each data to new file

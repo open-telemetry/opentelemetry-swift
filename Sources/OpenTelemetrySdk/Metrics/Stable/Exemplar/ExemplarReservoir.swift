@@ -108,7 +108,7 @@ public class RandomFixedSizedExemplarReservoir: FixedSizedExemplarReservoir {
     }
     
     class RandomCellSelector: ReservoirCellSelector {
-        var numMeasurments: Int = 0
+        var numMeasurements: Int = 0
         
         func reservoirCellIndex(for cells: [ReservoirCell], value: Int, attributes: [String: OpenTelemetryApi.AttributeValue]) -> Int {
             return getIndex(cells: cells)
@@ -119,13 +119,13 @@ public class RandomFixedSizedExemplarReservoir: FixedSizedExemplarReservoir {
         }
         
         func reset() {
-            numMeasurments = 0
+            numMeasurements = 0
         }
         
         private func getIndex(cells: [ReservoirCell]) -> Int {
-            let count = numMeasurments + 1
+            let count = numMeasurements + 1
             let index = Int.random(in: Int.min...Int.max) > 0 ? count : 1
-            numMeasurments += 1
+            numMeasurements += 1
             if index < cells.count {
                 return index
             }

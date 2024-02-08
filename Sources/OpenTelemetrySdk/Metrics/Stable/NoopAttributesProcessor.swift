@@ -7,11 +7,11 @@ import Foundation
 import OpenTelemetryApi
 
 
-class NoopAttributesProccessor : AttributeProcessorProtocol {
+class NoopAttributesProcessor : AttributeProcessorProtocol {
 
   func process(incoming attributes: [String : OpenTelemetryApi.AttributeValue]) ->  [String: OpenTelemetryApi.AttributeValue] {
         return attributes
     }
 
-    public static let noop = NoopAttributesProccessor()
+    public static let noop = NoopAttributesProcessor()
 }
