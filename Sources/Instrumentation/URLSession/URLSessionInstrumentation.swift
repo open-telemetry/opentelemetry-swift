@@ -353,6 +353,7 @@ public class URLSessionInstrumentation {
             var originalIMP: IMP?
             let block: @convention(block) (URLSessionTask) -> Void = { anyTask in
                 self.urlSessionTaskWillResume(anyTask)
+                guard anyTask.currentRequest != nil else { return }
                 let key = String(theMethod.hashValue)
                 objc_setAssociatedObject(anyTask, key, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
                 let castedIMP = unsafeBitCast(originalIMP, to: (@convention(c) (Any) -> Void).self)
