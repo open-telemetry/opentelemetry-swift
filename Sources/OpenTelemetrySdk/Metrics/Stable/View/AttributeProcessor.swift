@@ -6,12 +6,12 @@
 import Foundation
 import OpenTelemetryApi
 
-public protocol AttributeProcessorProtocol  {
+public protocol AttributeProcessor  {
     func process(incoming : [String: AttributeValue]) -> [String: AttributeValue]
 }
-public class AttributeProcessor : AttributeProcessorProtocol {
-    
-    public func then(other : AttributeProcessor) -> AttributeProcessor {
+
+public extension AttributeProcessor {
+    func then(other : AttributeProcessor) -> AttributeProcessor {
         if type(of: other) == NoopAttributeProcessor.self {
             return self
         }
@@ -19,18 +19,29 @@ public class AttributeProcessor : AttributeProcessorProtocol {
             return other
         }
         
-        if type(of: other) == JoinedAttributeProcessor.self {
-            return (other as! JoinedAttributeProcessor).prepend(processor:self)
+        if let joined = self as? JoinedAttributeProcessor {
+            return joined.append(processor:other)
         }
+        if let joined = other as? JoinedAttributeProcessor {
+            return joined.prepend(processor:self)
+        }
+
         return JoinedAttributeProcessor([self, other])
     }
+}
+
+public class SimpleAttributeProcessor : AttributeProcessor {
+    let attributeProcessor : ([String: AttributeValue]) -> [String:AttributeValue]
     
-    
-    public func process(incoming: [String : AttributeValue]) -> [String : AttributeValue] {
-        return incoming
+    init(attributeProcessor : @escaping ([String: AttributeValue]) -> [String: AttributeValue]) {
+        self.attributeProcessor = attributeProcessor
     }
     
-    public static func filterByKeyName( nameFilter : @escaping (String) -> Bool) -> AttributeProcessor {
+    public func process(incoming: [String : AttributeValue]) -> [String : AttributeValue] {
+        return attributeProcessor(incoming)
+    }
+    
+    static func filterByKeyName( nameFilter : @escaping (String) -> Bool) -> AttributeProcessor {
         return SimpleAttributeProcessor { attributes in
             attributes.filter { key, value in
                 nameFilter(key)
@@ -38,37 +49,19 @@ public class AttributeProcessor : AttributeProcessorProtocol {
         }
     }
     
-    public static func append(attributes: [String : AttributeValue]) -> AttributeProcessor {
+    static func append(attributes: [String : AttributeValue]) -> AttributeProcessor {
         SimpleAttributeProcessor { incoming in
             incoming.merging(attributes) { a, b in
                 b
             }
         }
     }
-    
-    
-}
-
-internal class SimpleAttributeProcessor : AttributeProcessor {
-    
-    let attributeProcessor : ([String: AttributeValue]) -> [String:AttributeValue]
-    
-    init(attributeProcessor : @escaping ([String: AttributeValue]) -> [String: AttributeValue]) {
-        self.attributeProcessor = attributeProcessor
-        
-    }
-    
-    override func process(incoming: [String : OpenTelemetryApi.AttributeValue]) -> [String : OpenTelemetryApi.AttributeValue] {
-        return attributeProcessor(incoming)
-    }
-    
-    
 }
 
 
 public class JoinedAttributeProcessor : AttributeProcessor {
     
-    override public func process(incoming: [String : OpenTelemetryApi.AttributeValue]) -> [String : OpenTelemetryApi.AttributeValue] {
+    public func process(incoming: [String : AttributeValue]) -> [String : AttributeValue] {
         var result = incoming
         for processor in processors {
             result = processor.process(incoming: result)
@@ -76,17 +69,17 @@ public class JoinedAttributeProcessor : AttributeProcessor {
         return result
     }
     
-    override public func then(other: AttributeProcessor) -> AttributeProcessor {
+    public func append(processor: AttributeProcessor) -> JoinedAttributeProcessor {
         var newList = processors
-        if let otherJoined = other as? JoinedAttributeProcessor {
-            newList.append(contentsOf: otherJoined.processors)
+        if let joinedProcessor = processor as? JoinedAttributeProcessor {
+            newList.append(contentsOf: joinedProcessor.processors)
         } else {
-            newList.append(other)
+            newList.append(processor)
         }
         return JoinedAttributeProcessor(newList)
     }
     
-    public func prepend(processor: AttributeProcessor) -> AttributeProcessor {
+    public func prepend(processor: AttributeProcessor) -> JoinedAttributeProcessor {
         var newProcessors = [processor]
         newProcessors.append(contentsOf: processors)
         return JoinedAttributeProcessor(newProcessors)
@@ -101,8 +94,8 @@ public class JoinedAttributeProcessor : AttributeProcessor {
 
 public class NoopAttributeProcessor : AttributeProcessor {
     static let noop = NoopAttributeProcessor()
-    private override init() {}
-    override public func process(incoming: [String : AttributeValue]) -> [String : AttributeValue] {
+    private init() {}
+    public func process(incoming: [String : AttributeValue]) -> [String : AttributeValue] {
         return incoming
     }
 }
