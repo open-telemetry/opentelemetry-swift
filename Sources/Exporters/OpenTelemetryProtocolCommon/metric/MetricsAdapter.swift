@@ -152,11 +152,56 @@ public enum MetricsAdapter {
         protoMetric.histogram.aggregationTemporality = stableMetric.data.aggregationTemporality.convertToProtoEnum()
         protoMetric.histogram.dataPoints.append(protoDataPoint)
       case .ExponentialHistogram:
-        // TODO: implement
-        break
+        guard let exponentialHistogramData = $0 as? ExponentialHistogramPointData else {
+          break
+        }
+        var protoDataPoint = Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint()
+        injectPointData(protoExponentialHistogramPoint: &protoDataPoint, pointData: exponentialHistogramData)
+        protoDataPoint.scale = Int32(exponentialHistogramData.scale)
+        protoDataPoint.sum = Double(exponentialHistogramData.sum)
+        protoDataPoint.count = UInt64(exponentialHistogramData.count)
+        protoDataPoint.zeroCount = UInt64(exponentialHistogramData.zeroCount)
+        protoDataPoint.max = exponentialHistogramData.max
+        protoDataPoint.min = exponentialHistogramData.min
+
+        var positiveBuckets = Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.Buckets()
+        positiveBuckets.offset = Int32(exponentialHistogramData.positiveBuckets.offset)
+        positiveBuckets.bucketCounts = exponentialHistogramData.positiveBuckets.bucketCounts.map { UInt64($0) }
+
+        var negativeBuckets = Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint.Buckets()
+        negativeBuckets.offset = Int32(exponentialHistogramData.negativeBuckets.offset)
+        negativeBuckets.bucketCounts = exponentialHistogramData.negativeBuckets.bucketCounts.map { UInt64($0) }
+
+        protoDataPoint.positive = positiveBuckets
+        protoDataPoint.negative = negativeBuckets
+
+        protoMetric.exponentialHistogram.aggregationTemporality = stableMetric.data.aggregationTemporality.convertToProtoEnum()
+        protoMetric.exponentialHistogram.dataPoints.append(protoDataPoint)
       }
     }
     return protoMetric
+  }
+	
+  static func injectPointData(protoExponentialHistogramPoint protoPoint: inout Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint, pointData: PointData) {
+    protoPoint.timeUnixNano = pointData.endEpochNanos
+    protoPoint.startTimeUnixNano = pointData.startEpochNanos
+
+    pointData.attributes.forEach {
+      protoPoint.attributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
+    }
+
+    pointData.exemplars.forEach {
+      var protoExemplar = Opentelemetry_Proto_Metrics_V1_Exemplar()
+      protoExemplar.timeUnixNano = $0.epochNanos
+
+      $0.filteredAttributes.forEach {
+        protoExemplar.filteredAttributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
+      }
+      if let spanContext = $0.spanContext {
+        protoExemplar.spanID = TraceProtoUtils.toProtoSpanId(spanId: spanContext.spanId)
+        protoExemplar.traceID = TraceProtoUtils.toProtoTraceId(traceId: spanContext.traceId)
+      }
+    }
   }
   
   static func injectPointData(protoHistogramPoint protoPoint: inout Opentelemetry_Proto_Metrics_V1_HistogramDataPoint, pointData: PointData) {

@@ -35,10 +35,13 @@ public class AggregationsTests: XCTestCase {
     }
 
     func testBase2ExponentialBucketHistogram() {
-        // TODO: write test case
+        XCTAssert(Aggregations.base2ExponentialBucketHistogram() === Base2ExponentialHistogramAggregation.instance)
     }
 
     func testBase2ExponentialBucketHistogramWithMaxBucketsAndMaxScale() {
-        // TODO: write test case
+        let aggregation = Aggregations.base2ExponentialBucketHistogram(maxBuckets: 150, maxScale: 10) as? Base2ExponentialHistogramAggregation
+        XCTAssertEqual(aggregation?.maxBuckets, 150)
+        XCTAssertEqual(aggregation?.maxScale, 10)
     }
 }
+
