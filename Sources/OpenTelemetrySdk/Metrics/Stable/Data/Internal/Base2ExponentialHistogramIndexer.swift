@@ -9,19 +9,13 @@ import OpenTelemetryApi
 public class Base2ExponentialHistogramIndexer {
     private static var cache = [Int: Base2ExponentialHistogramIndexer]()
     private static var cacheLock = Lock()
-    private static let LOG_BASE2_E = 1.0 / log(2)
-    private static let EXPONENT_BIT_MASK : Int = 0x7FF0_0000_0000_0000
-    private static let SIGNIFICAND_BIT_MASK : Int = 0xF_FFFF_FFFF_FFFF
-    private static let EXPONENT_BIAS : Int = 1023
-    private static let SIGNIFICAND_WIDTH : Int  = 52
-    private static let EXPONENT_WIDTH : Int = 11
 
     private let scale : Int
     private let scaleFactor : Double
 
     init(scale: Int) {
         self.scale = scale
-        self.scaleFactor = Self.computeScaleFactor(scale: scale)
+        scaleFactor = Self.computeScaleFactor(scale: scale)
     }
 
     func get(_ scale: Int) -> Base2ExponentialHistogramIndexer {
@@ -55,12 +49,12 @@ public class Base2ExponentialHistogramIndexer {
 
     func mapToIndexScaleZero(_ value : Double) -> Int {
         let raw = value.bitPattern
-        var rawExponent = (Int(raw) & Self.EXPONENT_BIT_MASK) >> Self.SIGNIFICAND_WIDTH   // does  `value.exponentBitPattern` work here?
-        let rawSignificand = Int(raw) & Self.SIGNIFICAND_BIT_MASK // does  `value.significandBitPattern` work here?
+        var rawExponent = Int((Int64(raw) & Int64(0x7FF0_0000_0000_0000)) >> Int.significandWidth)
+        let rawSignificand = Int(Int64(raw) & Int64(0xF_FFFF_FFFF_FFFF))
         if rawExponent == 0 {
-            rawExponent -= (rawSignificand - 1).leadingZeroBitCount - Self.EXPONENT_WIDTH - 1
+            rawExponent -= (rawSignificand - 1).leadingZeroBitCount - Int.exponentWidth - 1
         }
-        let ieeeExponent = rawExponent - Self.EXPONENT_BIAS
+        let ieeeExponent = rawExponent - Int.exponentBias
         if rawSignificand == 0 {
             return ieeeExponent - 1
         }
@@ -68,7 +62,16 @@ public class Base2ExponentialHistogramIndexer {
     }
 
     static func computeScaleFactor(scale: Int) -> Double {
-        Self.LOG_BASE2_E * pow(2.0, Double(scale))
+        Double.logBase2E * pow(2.0, Double(scale))
     }
 }
 
+extension Int {
+    static let exponentBias = 1023
+    static let significandWidth = 52
+    static let exponentWidth = 11
+}
+
+extension Double {
+    static let logBase2E = 1.0 / log(2)
+}

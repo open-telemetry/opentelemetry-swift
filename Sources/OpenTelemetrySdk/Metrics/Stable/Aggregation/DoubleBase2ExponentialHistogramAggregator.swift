@@ -26,7 +26,7 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
     }
 
     public func createHandle() -> AggregatorHandle {
-        return Handle(maxBuckets: self.maxBuckets, maxScale: self.maxScale, exemplarReservoir: self.reservoirSupplier())
+        return Handle(maxBuckets: maxBuckets, maxScale: maxScale, exemplarReservoir: reservoirSupplier())
     }
 
     public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [PointData], temporality: AggregationTemporality) -> StableMetricData {
@@ -73,15 +73,15 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
             }
             
             let pointData = ExponentialHistogramPointData(
-                scale: self.scale,
-                sum: self.sum,
-                zeroCount: Int64(self.zeroCount),
-                hasMin: self.count > 0,
-                hasMax: self.count > 0,
-                min: self.min,
-                max: self.max,
-                positiveBuckets: resolveBuckets(buckets: self.positiveBuckets, scale: self.scale, reset: reset),
-                negativeBuckets: resolveBuckets(buckets: self.negativeBuckets, scale: self.scale, reset: reset),
+                scale: scale,
+                sum: sum,
+                zeroCount: Int64(zeroCount),
+                hasMin: count > 0,
+                hasMax: count > 0,
+                min: min,
+                max: max,
+                positiveBuckets: resolveBuckets(buckets: positiveBuckets, scale: scale, reset: reset),
+                negativeBuckets: resolveBuckets(buckets: negativeBuckets, scale: scale, reset: reset),
                 startEpochNanos: startEpochNano,
                 epochNanos: endEpochNano,
                 attributes: attributes,
@@ -89,12 +89,12 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
             )
             
             if reset {
-                self.sum = 0
-                self.zeroCount = 0
-                self.min = Double.greatestFiniteMagnitude
-                self.max = -1
-                self.count = 0
-                self.scale = self.maxScale
+                sum = 0
+                zeroCount = 0
+                min = Double.greatestFiniteMagnitude
+                max = -1
+                count = 0
+                scale = maxScale
             }
             
             return pointData
@@ -124,15 +124,15 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
                 if let positiveBuckets = self.positiveBuckets {
                     buckets = positiveBuckets
                 } else {
-                    buckets = DoubleBase2ExponentialHistogramBuckets(scale: self.scale, maxBuckets: self.maxBuckets)
-                    self.positiveBuckets = buckets
+                    buckets = DoubleBase2ExponentialHistogramBuckets(scale: scale, maxBuckets: maxBuckets)
+                    positiveBuckets = buckets
                 }
             } else {
-                if let negativeBuckets = self.negativeBuckets {
+                if let negativeBuckets = negativeBuckets {
                     buckets = negativeBuckets
                 } else {
-                    buckets = DoubleBase2ExponentialHistogramBuckets(scale: self.scale, maxBuckets: self.maxBuckets)
-                    self.negativeBuckets = buckets
+                    buckets = DoubleBase2ExponentialHistogramBuckets(scale: scale, maxBuckets: maxBuckets)
+                    negativeBuckets = buckets
                 }
             }
             
@@ -150,20 +150,20 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
             let copy = buckets.copy() as! DoubleBase2ExponentialHistogramBuckets
             
             if reset {
-                buckets.clear(scale: self.maxScale)
+                buckets.clear(scale: maxScale)
             }
             
             return copy
         }
 
         func downScale(by: Int) {
-            if let positiveBuckets = self.positiveBuckets {
+            if let positiveBuckets = positiveBuckets {
                 positiveBuckets.downscale(by: by)
                 scale = positiveBuckets.scale
                 
             }
             
-            if let negativeBuckets = self.negativeBuckets {
+            if let negativeBuckets = negativeBuckets {
                 negativeBuckets.downscale(by: by)
                 scale = negativeBuckets.scale
             }

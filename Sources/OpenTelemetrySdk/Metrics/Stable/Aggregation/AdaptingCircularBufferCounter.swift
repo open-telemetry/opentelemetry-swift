@@ -15,46 +15,45 @@ class AdaptingCircularBufferCounter: NSCopying {
         return copy
     }
 
-    private static let NULL_INDEX: Int = Int.min
-    public private(set) var endIndex = NULL_INDEX
-    public private(set) var startIndex = NULL_INDEX
-    private var baseIndex = NULL_INDEX
+	public private(set) var endIndex = Int.nullIndex
+    public private(set) var startIndex = Int.nullIndex
+    private var baseIndex = Int.nullIndex
     private var backing: AdaptingIntegerArray
     private let maxSize: Int
 
     init(maxSize: Int) {
-        self.backing = AdaptingIntegerArray(size: maxSize)
+        backing = AdaptingIntegerArray(size: maxSize)
         self.maxSize = maxSize
     }
 
     @discardableResult func increment(index: Int, delta: Int64) -> Bool{
-        if self.baseIndex == Int.min {
-            self.startIndex = index
-            self.endIndex = index
-            self.baseIndex = index
-            self.backing.increment(index: 0, count: delta)
+        if baseIndex == Int.min {
+            startIndex = index
+            endIndex = index
+            baseIndex = index
+            backing.increment(index: 0, count: delta)
             return true
         }
 
-        if index > self.endIndex {
-            if (index - self.startIndex + 1) > self.backing.length() {
+        if index > endIndex {
+            if (index - startIndex + 1) > backing.length() {
                 return false
             }
-            self.endIndex = index
-        } else if index < self.startIndex {
-            if (self.endIndex - index + 1) > self.backing.length() {
+            endIndex = index
+        } else if index < startIndex {
+            if (endIndex - index + 1) > backing.length() {
                 return false
             }
             self.startIndex = index
         }
 
         let realIndex = toBufferIndex(index: index)
-        self.backing.increment(index: realIndex, count: delta)
+        backing.increment(index: realIndex, count: delta)
         return true
     }
 
     func get(index: Int) -> Int64 {
-        if (index < self.startIndex || index > self.endIndex) {
+        if (index < startIndex || index > endIndex) {
             return 0
         } else {
             return backing.get(index: toBufferIndex(index: index))
@@ -62,7 +61,7 @@ class AdaptingCircularBufferCounter: NSCopying {
     }
 
     func isEmpty() -> Bool {
-        return baseIndex == Self.NULL_INDEX
+        return baseIndex == Int.nullIndex
     }
 
     func getMaxSize() -> Int {
@@ -70,14 +69,14 @@ class AdaptingCircularBufferCounter: NSCopying {
     }
 
     func clear() {
-        self.backing.clear()
-        self.baseIndex = Self.NULL_INDEX
-        self.startIndex = Self.NULL_INDEX
-        self.endIndex = Self.NULL_INDEX
+        backing.clear()
+        baseIndex = Int.nullIndex
+        startIndex = Int.nullIndex
+        endIndex = Int.nullIndex
     }
 
     private func toBufferIndex(index: Int) -> Int {
-        var result = index - self.baseIndex
+        var result = index - baseIndex
         if (result >= backing.length()) {
             result -= backing.length()
         } else if (result < 0) {
@@ -85,4 +84,8 @@ class AdaptingCircularBufferCounter: NSCopying {
         }
         return result
     }
+}
+
+extension Int {
+	static let nullIndex = Int.min
 }

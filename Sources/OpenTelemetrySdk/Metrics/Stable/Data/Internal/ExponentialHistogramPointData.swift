@@ -19,7 +19,21 @@ public class ExponentialHistogramPointData: PointData {
     public var positiveBuckets: ExponentialHistogramBuckets
     public var negativeBuckets: ExponentialHistogramBuckets
 
-    public init(scale: Int, sum: Double, zeroCount: Int64, hasMin: Bool, hasMax: Bool, min: Double, max: Double, positiveBuckets: ExponentialHistogramBuckets, negativeBuckets: ExponentialHistogramBuckets, startEpochNanos: UInt64, epochNanos: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData]) {
+    public init(
+		scale: Int, 
+		sum: Double,
+		zeroCount: Int64,
+		hasMin: Bool,
+		hasMax: Bool,
+		min: Double,
+		max: Double,
+		positiveBuckets: ExponentialHistogramBuckets,
+		negativeBuckets: ExponentialHistogramBuckets,
+		startEpochNanos: UInt64,
+		epochNanos: UInt64,
+		attributes: [String: AttributeValue], 
+		exemplars: [ExemplarData]
+	) {
         
         self.scale = scale
         self.sum = sum
