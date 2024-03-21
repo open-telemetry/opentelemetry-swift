@@ -30,8 +30,13 @@ public class ViewBuilder {
         return self
     }
     
+    public func withAttributeProcessor(processor: AttributeProcessor) -> Self {
+        self.processor = processor
+        return self
+    }
+
     public func addAttributeFilter(keyFilter: @escaping (String) -> Bool) -> Self {
-        addAttributeProcessor(processor: AttributeProcessor.filterByKeyName(nameFilter: keyFilter))
+        addAttributeProcessor(processor: SimpleAttributeProcessor.filterByKeyName(nameFilter: keyFilter))
     }
     
     public func addAttributeProcessor(processor: AttributeProcessor) -> Self {
