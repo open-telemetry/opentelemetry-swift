@@ -4,7 +4,7 @@ on: [push, pull_request, workflow_dispatch]
 
 jobs:
   macOS:
-    runs-on: macOS-latest
+    runs-on: macos-14
     steps:
     - uses: actions/checkout@v2
     - name: Build and Test for macOS
@@ -16,7 +16,7 @@ jobs:
         xcrun llvm-cov export -ignore-filename-regex="pb\.swift|grpc\.swift" -format="lcov" .build/debug/opentelemetry-swiftPackageTests.xctest/Contents/MacOS/opentelemetry-swiftPackageTests -instr-profile .build/debug/codecov/default.profdata > .build/debug/codecov/coverage_report.lcov
         ./codecov -f .build/debug/codecov/coverage_report.lcov
   iOS:
-    runs-on: macOS-latest
+    runs-on: macos-14
     steps:
     - uses: actions/checkout@v2
     - name: Install Homebrew kegs
@@ -26,7 +26,7 @@ jobs:
     - name: Test for iOS
       run: make test-without-building-ios
   tvOS:
-    runs-on: macOS-latest
+    runs-on: macos-14
     steps:
     - uses: actions/checkout@v2
     - name: Install Homebrew kegs
@@ -36,7 +36,7 @@ jobs:
     - name: Test for tvOS
       run: make test-without-building-tvos
   watchOS:
-    runs-on: macOS-latest
+    runs-on: macos-14
     steps:
     - uses: actions/checkout@v2
     - name: Install Homebrew kegs
