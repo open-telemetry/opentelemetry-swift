@@ -20,7 +20,7 @@ class StableMetricDataTests: XCTestCase {
         let data = StableMetricData.Data(aggregationTemporality: .delta, points: emptyPointData)
 
         let metricData = StableMetricData(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, type: type, isMonotonic: false, data: data)
-		
+
         assertCommon(metricData)
         XCTAssertEqual(metricData.type, type)
         XCTAssertEqual(metricData.data, data)
@@ -72,6 +72,39 @@ class StableMetricDataTests: XCTestCase {
         let hpd = metricData.getHistogramData()
         XCTAssertNotNil(hpd)
         XCTAssertEqual(1, hpd.count)
+    }
+    
+    func testCreateExponentialHistogramData() {
+        let type = MetricDataType.ExponentialHistogram
+        let positivieBuckets = DoubleBase2ExponentialHistogramBuckets(scale: 20, maxBuckets: 160)
+        positivieBuckets.downscale(by: 20)
+        positivieBuckets.record(value: 10.0)
+        positivieBuckets.record(value: 40.0)
+        positivieBuckets.record(value: 90.0)
+        positivieBuckets.record(value: 100.0)
+        
+        let negativeBuckets = DoubleBase2ExponentialHistogramBuckets(scale: 20, maxBuckets: 160)
+        
+        let expHistogramPointData = ExponentialHistogramPointData(scale: 20, sum: 240.0, zeroCount: 0, hasMin: true, hasMax: true, min: 10.0, max: 100.0, positiveBuckets: positivieBuckets, negativeBuckets: negativeBuckets, startEpochNanos: 0, epochNanos: 1, attributes: [:], exemplars: [])
+        
+        let points = [expHistogramPointData]
+        let histogramData = StableExponentialHistogramData(aggregationTemporality: .delta, points: points)
+        let metricData = StableMetricData.createExponentialHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, data: histogramData)
+        
+        assertCommon(metricData)
+        XCTAssertEqual(metricData.type, type)
+        XCTAssertEqual(metricData.data, histogramData)
+        XCTAssertEqual(metricData.data.aggregationTemporality, .delta)
+        XCTAssertEqual(metricData.isMonotonic, false)
+        
+        XCTAssertFalse(metricData.isEmpty())
+        let histogramMetricData = metricData.data.points.first as! ExponentialHistogramPointData
+        XCTAssertEqual(histogramMetricData.scale, 20)
+        XCTAssertEqual(histogramMetricData.sum, 240)
+        XCTAssertEqual(histogramMetricData.count, 4)
+        XCTAssertEqual(histogramMetricData.min, 10)
+        XCTAssertEqual(histogramMetricData.max, 100)
+        XCTAssertEqual(histogramMetricData.zeroCount, 0)
     }
 
     func testCreateDoubleGuage() {
@@ -131,9 +164,6 @@ class StableMetricDataTests: XCTestCase {
         XCTAssertEqual(metricData.data.aggregationTemporality, .cumulative)
         XCTAssertEqual(metricData.isMonotonic, true)
     }
-
-
-
 
     func assertCommon(_ metricData: StableMetricData) {
         XCTAssertEqual(metricData.resource, resource)

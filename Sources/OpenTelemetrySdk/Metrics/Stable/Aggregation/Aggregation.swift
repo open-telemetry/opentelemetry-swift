@@ -30,11 +30,11 @@ public enum Aggregations {
         ExplicitBucketHistogramAggregation(bucketBoundaries: buckets)
     }
     
-    static func base2ExponentialBucketHistogram() {
-        // todo
+    static func base2ExponentialBucketHistogram() -> Aggregation {
+        Base2ExponentialHistogramAggregation.instance
     }
     
-    static func base2ExponentialBucketHistogram(maxBuckets: Int, maxScale: Int) {
-        // todo
+    static func base2ExponentialBucketHistogram(maxBuckets: Int, maxScale: Int) -> Aggregation {
+        Base2ExponentialHistogramAggregation(maxBuckets: maxBuckets, maxScale: maxScale)
     }
 }
