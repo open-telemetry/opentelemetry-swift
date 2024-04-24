@@ -42,7 +42,8 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
       $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(stableMetricData: sendingMetrics)
     }
     
-    let request = createRequest(body: body, endpoint: endpoint)
+    var request = createRequest(body: body, endpoint: endpoint)
+    request.timeoutInterval = min(TimeInterval.greatestFiniteMagnitude, config.timeout)
     httpClient.send(request: request) { [weak self] result in
       switch result {
       case .success(_):
