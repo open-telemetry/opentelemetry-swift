@@ -70,7 +70,8 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
         $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(stableMetricData: pendingMetrics)
       }
       let semaphore = DispatchSemaphore(value: 0)
-      let request = createRequest(body: body, endpoint: endpoint)
+      var request = createRequest(body: body, endpoint: endpoint)
+      request.timeoutInterval = min(TimeInterval.greatestFiniteMagnitude, config.timeout)
       httpClient.send(request: request) { result in
         switch result {
         case .success(_):
