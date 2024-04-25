@@ -31,7 +31,17 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
       $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(metricDataList: sendingMetrics)
     }
     
-    let request = createRequest(body: body, endpoint: endpoint)
+    var request = createRequest(body: body, endpoint: endpoint)
+    if let headers = envVarHeaders {
+        headers.forEach { key, value in
+            request.addValue(value, forHTTPHeaderField: key)
+        }
+
+    } else if let headers = config.headers {
+        headers.forEach { key, value in
+            request.addValue(value, forHTTPHeaderField: key)
+        }
+    }
     httpClient.send(request: request) { [weak self] result in
       switch result {
       case .success(_):
