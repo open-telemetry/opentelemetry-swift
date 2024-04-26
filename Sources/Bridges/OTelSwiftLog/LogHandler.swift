@@ -20,7 +20,7 @@ struct OTelLogHandler: LogHandler {
     
     // Define the log level for this handler
     public var logLevel: Logger.Level = .info
-    var scope: instrumentationScopeName // Property to store instrumentation scope name
+    var scope: instrumentationScope // Property to store instrumentation scope name
     var loggerProvider : LoggerProvider  // Property to set LoggerProvider
     var logger: Logger 
 
