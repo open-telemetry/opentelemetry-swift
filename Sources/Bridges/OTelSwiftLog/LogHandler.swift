@@ -57,12 +57,11 @@ struct OTelLogHandler: LogHandler {
         // otelattributes.merge(metadataAttributes?) { (_, new) in new }
         // otelattributes.merge(metadataAttributes1) { (_, new) in new } 
 
-        logger.logRecordBuilder
-            .setSeverity(convertSeverity(level: level))
-            .setSpanContext(OpenTelemetry.instance.contextProvider.activeSpan?.context)
-            .setBody(AttributeValue.string(message))
-            .setAttributes(otelattribute)
-            .Emit()
+        logger.logRecordBuilder.setSeverity(convertSeverity(level: level))
+        .setSpanContext(OpenTelemetry.instance.contextProvider.activeSpan?.context)
+        .setBody(AttributeValue.string(message))
+        .setAttributes(otelattribute)
+        .emit()
     }
     
 
