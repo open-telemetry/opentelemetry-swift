@@ -18,13 +18,32 @@ public struct InstrumentationScope{
 
 // Define a custom log handler
 struct OTelLogHandler: LogHandler {
-    
-    // Define the log level for this handler
-    public var logLevel: Logging.Logger.Level = .info
     private var scope: InstrumentationScope // Property to store instrumentation scope name
     private var loggerProvider : LoggerProvider  // Property to set LoggerProvider
     private var logger: OpenTelemetryApi.Logger 
 
+    // Define the log level for this handler
+    private var _logLevel: Logging.Logger.Level = .info
+    public var logLevel: Logging.Logger.Level{
+        get {
+            return self._logLevel 
+        }
+        set {
+            self._logLevel = newValue
+        }
+    }
+
+    // Define metadata for this handler
+    public var metadata: Logging.Logger.Metadata = [:]
+    public subscript(metadataKey key: String) -> Logging.Logger.Metadata.Value? {
+        get {
+            return self.metadata[key]
+        }
+        set {
+            self.metadata[key] = newValue
+        }
+    }
+    
     // should default logger provider be a noop? or the sdk implementation?
     public init(scope: InstrumentationScope? = InstrumentationScope(name: bridgename, version: version), 
         loggerProvider: LoggerProvider? = OpenTelemetrySdk.LoggerProviderSdk) {
@@ -71,16 +90,7 @@ struct OTelLogHandler: LogHandler {
         .emit()
     }
 
-    // part  of LogHandler protocol
-    var metadata: Logging.Logger.Metadata = [:]
-    subscript(metadataKey key: String) -> Logging.Logger.Metadata.Value? {
-        get {
-            return metadata[key]
-        }
-        set {
-            metadata[key] = newValue
-        }
-    }
+
 
 }
 
