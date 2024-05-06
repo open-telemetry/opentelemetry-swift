@@ -83,9 +83,9 @@ struct OTelLogHandler: LogHandler {
         otelattributes.merge(structMetadata) { _, new in new }
 
         // Build the log record and emit it
-        self.logger.logRecordBuilder.setSeverity(convertSeverity(level: level))
+        self.logger.logRecordBuilder().setSeverity(convertSeverity(level: level))
         .setSpanContext(OpenTelemetry.instance.contextProvider.activeSpan?.context) 
-        .setBody(AttributeValue.string(message))
+        .setBody(AttributeValue.string(message.description))
         .setAttributes(otelattributes)
         .emit()
     }
@@ -141,13 +141,17 @@ func convertMetadata(_ metadata: Logging.Logger.Metadata) -> [String: AttributeV
 // Function to recursively convert nested dictionaries to AttributeValue
 func convertToAttributeValue(_ value: Logging.Logger.Metadata.Value) -> AttributeValue {
     switch value {
-    case let nestedDictionary as Logging.Logger.Metadata:
+    case .dictionary(let nestedDictionary):
         // If value is a nested dictionary, recursively convert it
         var nestedAttributes: [String: AttributeValue] = [:]
         for (nestedKey, nestedValue) in nestedDictionary {
             nestedAttributes[nestedKey] = convertToAttributeValue(nestedValue)
         }
         return AttributeValue.set(AttributeSet(labels: nestedAttributes))
+    case .array(let nestedArray):
+        // If value is a nested array, recursively convert it
+        let nestedValues = nestedArray.map { convertToAttributeValue($0) }
+        return AttributeValue.array(nestedValues)        
     default:
         // For non-dictionary values, use AttributeValue initializer directly
         return AttributeValue(value)
