@@ -304,6 +304,22 @@ class URLSessionInstrumentationTests: XCTestCase {
         XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
     }
 
+    public func testDataTaskWithUrlBlock_doesNotCrashWhenResumed_whenDataTaskIsRunning() {
+        let url = URL(string: "http://localhost:33333/success")!
+        let dataTask = URLSession.shared.dataTask(with: url) { _, _, _ in
+            URLSessionInstrumentationTests.semaphore.signal()
+        }
+
+        dataTask.resume()
+        Task.detached {
+            dataTask.resume()
+        }
+
+        URLSessionInstrumentationTests.semaphore.wait()
+        XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
+        XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
+    }
+
     public func testDownloadTaskWithUrlBlock() {
         let url = URL(string: "http://localhost:33333/success")!
 
