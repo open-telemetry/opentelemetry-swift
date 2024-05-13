@@ -45,12 +45,12 @@ struct OTelLogHandler: LogHandler {
     }
     
     // should default logger provider be a noop? or the sdk implementation?
-    public init(scope: InstrumentationScope? = InstrumentationScope(name: bridgename, version: version), 
-        loggerProvider: LoggerProvider? = OpenTelemetrySdk.LoggerProviderSdk) {
+    public init(scope: InstrumentationScope = InstrumentationScope(name: bridgename, version: version),
+        loggerProvider: LoggerProvider = OpenTelemetrySdk.LoggerProviderSdk()) {
 
         self.scope = scope
-        self.loggerProvider = LoggerProvider
-        let loggerBuilder = self.loggerProvider.loggerBuilder(instrumentationScope.name)
+        self.loggerProvider = loggerProvider
+        let loggerBuilder = self.loggerProvider.loggerBuilder(instrumentationScopeName: scope.name)
             .configure(with: scope)
         self.logger = loggerBuilder.build()
     }
@@ -69,7 +69,7 @@ struct OTelLogHandler: LogHandler {
             "source": AttributeValue.string(source),
             "file": AttributeValue.string(file),
             "function": AttributeValue.string(function),
-            "line": AttributeValue.int(line),
+            "line": AttributeValue.int(Int(line)),
         ]
 
         // Convert metadata from the method parameter to AttributeValue and assign it to otelattributes
@@ -139,7 +139,7 @@ func convertMetadata(_ metadata: Logging.Logger.Metadata) -> [String: AttributeV
 }
 
 // Function to recursively convert nested dictionaries to AttributeValue
-func convertToAttributeValue(_ value: Logging.Logger.Metadata.Value) -> AttributeValue {
+func convertToAttributeValue(_ value: Logging.Logger.Metadata.Value) -> AttributeValue? {
     switch value {
     case .dictionary(let nestedDictionary):
         // If value is a nested dictionary, recursively convert it
@@ -151,14 +151,24 @@ func convertToAttributeValue(_ value: Logging.Logger.Metadata.Value) -> Attribut
     case .array(let nestedArray):
         // If value is a nested array, recursively convert it
         let nestedValues = nestedArray.map { convertToAttributeValue($0) }
-        return AttributeValue.array(nestedValues)        
+        if let tempArray = nestedValues as? [String] {
+            return AttributeValue.stringArray(tempArray)
+        } else if let tempArray = nestedValues as? [Int] {
+            return AttributeValue.intArray(tempArray)
+        } else if let tempArray = nestedValues as? [Double] {
+            return AttributeValue.doubleArray(tempArray)
+        } else if let tempArray = nestedValues as? [Bool] {
+            return AttributeValue.boolArray(tempArray)
+        } else {
+            return nil
+        }
     default:
         // For non-dictionary values, use AttributeValue initializer directly
         return AttributeValue(value)
     }
 }    
 
-func convertSeverity(level: Logging.Logger.level) -> OpenTelemetryApi.Severity{
+func convertSeverity(level: Logging.Logger.Level) -> OpenTelemetryApi.Severity{
     switch level {
         case .trace:
             return OpenTelemetryApi.Severity.trace
