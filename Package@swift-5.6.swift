@@ -17,7 +17,6 @@ let package = Package(
         .library(name: "ResourceExtension", type: .static, targets: ["ResourceExtension"]),
         .library(name: "URLSessionInstrumentation", type: .static, targets: ["URLSessionInstrumentation"]),
         .library(name: "SignPostIntegration", type: .static, targets: ["SignPostIntegration"]),
-        .library(name: "OpenTracingShim-experimental", type: .static, targets: ["OpenTracingShim"]),
         .library(name: "SwiftMetricsShim", type: .static, targets: ["SwiftMetricsShim"]),
         .library(name: "JaegerExporter", type: .static, targets: ["JaegerExporter"]),
         .library(name: "ZipkinExporter", type: .static, targets: ["ZipkinExporter"]),
@@ -35,7 +34,6 @@ let package = Package(
         .executable(name: "loggingTracer", targets: ["LoggingTracer"])
     ],
     dependencies: [
-        .package(url: "https://github.com/undefinedlabs/opentracing-objc", from: "0.5.2"),
         .package(url: "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
         .package(url: "https://github.com/grpc/grpc-swift.git", from: "1.0.0"),
@@ -43,10 +41,13 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-log.git", from: "1.4.4"),
         .package(url: "https://github.com/apple/swift-metrics.git", from: "2.1.1"),
         .package(url: "https://github.com/ashleymills/Reachability.swift", from: "5.1.0")
+        .package(url: "https://github.com/apple/swift-service-context.git", from: "1.0.0")
     ],
     targets: [
         .target(name: "OpenTelemetryApi",
-                dependencies: []),
+                dependencies: [
+                    .product(name: "ServiceContextModule", package: "swift-service-context")
+                ]),
         .target(name: "OpenTelemetrySdk",
                 dependencies: ["OpenTelemetryApi"]),
         .target(name: "ResourceExtension",
@@ -67,13 +68,6 @@ let package = Package(
         .target(name: "SignPostIntegration",
                 dependencies: ["OpenTelemetrySdk"],
                 path: "Sources/Instrumentation/SignPostIntegration",
-                exclude: ["README.md"]),
-        .target(name: "OpenTracingShim",
-                dependencies: [
-                    "OpenTelemetrySdk",
-                    .product(name: "Opentracing", package: "opentracing-objc")
-                ],
-                path: "Sources/Importers/OpenTracingShim",
                 exclude: ["README.md"]),
         .target(name: "SwiftMetricsShim",
                 dependencies: ["OpenTelemetrySdk",
@@ -142,10 +136,6 @@ let package = Package(
                                    .product(name: "NIO", package: "swift-nio"),
                                    .product(name: "NIOHTTP1", package: "swift-nio")],
                     path: "Tests/InstrumentationTests/URLSessionTests"),
-        .testTarget(name: "OpenTracingShimTests",
-                    dependencies: ["OpenTracingShim",
-                                   "OpenTelemetrySdk"],
-                    path: "Tests/ImportersTests/OpenTracingShim"),
         .testTarget(name: "SwiftMetricsShimTests",
                     dependencies: ["SwiftMetricsShim",
                                    "OpenTelemetrySdk"],

@@ -10,15 +10,6 @@
       }
     },
     {
-      "identity" : "opentracing-objc",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/undefinedlabs/opentracing-objc",
-      "state" : {
-        "revision" : "18c1a35ca966236cee0c5a714a51a73ff33384c1",
-        "version" : "0.5.2"
-      }
-    },
-    {
       "identity" : "swift-atomics",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-atomics.git",
@@ -106,6 +97,15 @@
       "state" : {
         "revision" : "88c7d15e1242fdb6ecbafbc7926426a19be1e98a",
         "version" : "1.20.2"
+      }
+    },
+    {
+      "identity" : "swift-service-context",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-service-context.git",
+      "state" : {
+        "revision" : "ce0141c8f123132dbd02fd45fea448018762df1b",
+        "version" : "1.0.0"
       }
     },
     {

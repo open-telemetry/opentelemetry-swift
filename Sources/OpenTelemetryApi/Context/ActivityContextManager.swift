@@ -4,6 +4,7 @@
  */
 
 import Foundation
+#if canImport(os.activity)
 import os.activity
 
 // Bridging Obj-C variabled defined as c-macroses. See `activity.h` header.
@@ -84,3 +85,17 @@ class ActivityContextManager: ContextManager {
         rlock.unlock()
     }
 }
+#else
+class ActivityContextManager: ContextManager {
+    func getCurrentContextValue(forKey: OpenTelemetryContextKeys) -> AnyObject? {
+        return nil
+    }
+    func setCurrentContextValue(forKey: OpenTelemetryContextKeys, value: AnyObject) {
+        // noop
+    }
+
+    func removeContextValue(forKey: OpenTelemetryContextKeys, value: AnyObject) {
+        // noop
+    }
+}
+#endif
