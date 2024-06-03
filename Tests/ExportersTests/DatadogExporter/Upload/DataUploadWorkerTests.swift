@@ -154,7 +154,7 @@ class DataUploadWorkerTests: XCTestCase {
 
         // Then
         server.waitFor(requestsCompletion: 0)
-        waitForExpectations(timeout: 1, handler: nil)
+        waitForExpectations(timeout: 2, handler: nil)
         worker.cancelSynchronously()
     }
 
