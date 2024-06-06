@@ -45,7 +45,8 @@ let package = Package(
     ],
     targets: [
         .target(name: "OpenTelemetryApi",
-                dependencies: []),
+                dependencies: [],
+                swiftSettings: [.unsafeFlags(["-enable-library-evolution"])]),
         .target(name: "OpenTelemetrySdk",
                 dependencies: ["OpenTelemetryApi"]),
         .target(name: "OTelSwiftLog",

@@ -123,7 +123,7 @@ class DataExportWorkerTests: XCTestCase {
         // When
         let fileReader = FileReaderMock()
         let mockDataExporter = DataExporterMock(exportStatus: .mockWith(needsRetry: false))
-        
+
         let worker = DataExportWorker(
             fileReader: fileReader,
             dataExporter: mockDataExporter,

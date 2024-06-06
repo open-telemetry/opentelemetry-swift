@@ -20,6 +20,8 @@ public class SynchronousMetricStorage: SynchronousMetricStorageProtocol {
     var aggregatorHandles = [[String: AttributeValue]: AggregatorHandle]()
     let attributeProcessor: AttributeProcessor
     var aggregatorHandlePool = [AggregatorHandle]()
+    private let aggregatorHandlesQueue = DispatchQueue(label: "org.opentelemetry.SynchronousMetricStorage.aggregatorHandlesQueue", attributes: .concurrent)
+
     
     static func empty() -> SynchronousMetricStorageProtocol {
         return EmptyMetricStorage.instance
@@ -48,22 +50,24 @@ public class SynchronousMetricStorage: SynchronousMetricStorageProtocol {
     }
     
     private func getAggregatorHandle(attributes: [String: AttributeValue]) throws -> AggregatorHandle {
-        let processedAttributes = attributeProcessor.process(incoming: attributes)
-        if let handle = aggregatorHandles[processedAttributes] {
-            return handle
-        }
-        if aggregatorHandles.count >= MetricStorageConstants.MAX_CARDINALITY {
-            // error
-            throw MetricStoreError.maxCardinality
-        }
-        
-        let newHandle = aggregatorHandlePool.isEmpty ? aggregator.createHandle() : aggregatorHandlePool.remove(at: 0)
-        if let existingHandle = aggregatorHandles[processedAttributes] {
-            return existingHandle
-        } else {
+        var aggregatorHandle: AggregatorHandle!
+        try aggregatorHandlesQueue.sync {
+            let processedAttributes = attributeProcessor.process(incoming: attributes)
+            if let handle = aggregatorHandles[processedAttributes] {
+                aggregatorHandle = handle
+                return
+            }
+            
+            guard aggregatorHandles.count < MetricStorageConstants.MAX_CARDINALITY  else {
+                throw MetricStoreError.maxCardinality
+            }
+            
+            let newHandle = aggregatorHandlePool.isEmpty ? aggregator.createHandle() : aggregatorHandlePool.remove(at: 0)
             aggregatorHandles[processedAttributes] = newHandle
-            return newHandle
+            aggregatorHandle = newHandle
         }
+        return aggregatorHandle
+
     }
     
     public func collect(resource: Resource, scope: InstrumentationScopeInfo, startEpochNanos: UInt64, epochNanos: UInt64) -> StableMetricData {
@@ -72,13 +76,15 @@ public class SynchronousMetricStorage: SynchronousMetricStorageProtocol {
         
         var points = [PointData]()
         
-        aggregatorHandles.forEach { key, value in
-            let point = value.aggregateThenMaybeReset(startEpochNano: start, endEpochNano: epochNanos, attributes: key, reset: reset)
-            if reset {
-                aggregatorHandles.removeValue(forKey: key)
-                aggregatorHandlePool.append(value)
+        aggregatorHandlesQueue.sync(flags: .barrier) {
+            aggregatorHandles.forEach { key, value in
+                let point = value.aggregateThenMaybeReset(startEpochNano: start, endEpochNano: epochNanos, attributes: key, reset: reset)
+                if reset {
+                    aggregatorHandles.removeValue(forKey: key)
+                    aggregatorHandlePool.append(value)
+                }
+                points.append(point)
             }
-            points.append(point)
         }
         
         if points.isEmpty {
