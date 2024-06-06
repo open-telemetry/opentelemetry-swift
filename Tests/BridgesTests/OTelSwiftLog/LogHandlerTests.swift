@@ -23,7 +23,7 @@ final class OTelLogHandlerTests: XCTestCase {
         var logHandler = OTelLogHandler()
         logHandler.metadata = ["key": "value"]
         XCTAssertEqual(logHandler.metadata["key"], "value")
-        logHandler["anotherKey"] = "anotherValue"
+        logHandler[metadataKey:"anotherKey"] = "anotherValue"
         XCTAssertEqual(logHandler.metadata["anotherKey"], "anotherValue")
     }
 
