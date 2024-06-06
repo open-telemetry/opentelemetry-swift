@@ -83,11 +83,15 @@ struct OTelLogHandler: LogHandler {
         otelattributes.merge(structMetadata) { _, new in new }
 
         // Build the log record and emit it
-        self.logger.logRecordBuilder().setSeverity(convertSeverity(level: level))
-        .setSpanContext(OpenTelemetry.instance.contextProvider.activeSpan?.context) 
+        let event = self.logger.logRecordBuilder().setSeverity(convertSeverity(level: level))
         .setBody(AttributeValue.string(message.description))
         .setAttributes(otelattributes)
-        .emit()
+      
+      if let context = OpenTelemetry.instance.contextProvider.activeSpan?.context {
+          _ = event.setSpanContext(context)
+      }
+        event.emit()
+
     }
 
 
