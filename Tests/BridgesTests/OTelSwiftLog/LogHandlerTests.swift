@@ -38,6 +38,3 @@ final class OTelLogHandlerTests: XCTestCase {
         XCTAssertEqual(convertSeverity(level: .critical), OpenTelemetryApi.Severity.error2)
     }
 }
-
-// Run the tests
-OTelLogHandlerTests.defaultTestSuite.run()
