@@ -18,7 +18,7 @@ public struct InstrumentationScope{
 
 // Define a custom log handler
 struct OTelLogHandler: LogHandler {
-    private var scope: InstrumentationScope // Property to store instrumentation scope name
+    public private(set) var scope: InstrumentationScope // Property to store instrumentation scope name
     private var loggerProvider : LoggerProvider  // Property to set LoggerProvider
     private var logger: OpenTelemetryApi.Logger 
 
