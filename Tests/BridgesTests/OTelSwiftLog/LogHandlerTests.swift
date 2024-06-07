@@ -27,6 +27,39 @@ final class OTelLogHandlerTests: XCTestCase {
         XCTAssertEqual(logHandler.metadata["anotherKey"], "anotherValue")
     }
 
+     func testConvertToAttributeValue() {
+        //string test
+        let attributeValueString = convertToAttributeValue(Logging.Logger.Metadata.Value(stringLiteral: "HelloWorld"))
+        XCTAssertEqual(attributeValueString, AttributeValue.string("HelloWorld"))
+      
+      
+      let attributeValueInt = convertToAttributeValue(Logging.Logger.Metadata.Value.stringConvertible(100))
+        XCTAssertEqual(attributeValueInt, AttributeValue.string("100"))
+
+      let attributeValueDictionary = convertToAttributeValue(Logger.Metadata.Value.dictionary(["myAttributes":Logger.Metadata.Value.dictionary([:])]))
+      XCTAssertEqual(attributeValueDictionary, AttributeValue.set(AttributeSet(labels: ["myAttributes": AttributeValue.set(AttributeSet(labels: [:]))])))
+      
+      let attributeValueEmptyArray =
+      convertToAttributeValue(Logger.Metadata.Value.array([]))
+      XCTAssertEqual(attributeValueEmptyArray, AttributeValue.stringArray([]))
+      
+      let attributeValueArray =
+      convertToAttributeValue(Logger.Metadata.Value.array([Logger.Metadata.Value.stringConvertible(100),
+                                                           Logger.Metadata.Value.string("string"),
+                                                           Logger.Metadata.Value.array([]),
+                                                           Logger.Metadata.Value.dictionary([:])]))
+
+      // is this the expected behavior?
+      XCTAssertEqual(attributeValueArray, nil)
+      
+      let attributeValueStringArray = convertToAttributeValue(Logger.Metadata.Value.array(
+        [Logger.Metadata.Value.stringConvertible(100),
+         Logger.Metadata.Value.string("string"),
+         Logger.Metadata.Value.stringConvertible(true)
+      ]))
+      
+      XCTAssertEqual(attributeValueStringArray, AttributeValue.stringArray(["100", "string", "true"]))
+    }
     
     func testConvertSeverity() {
         XCTAssertEqual(convertSeverity(level: .trace), OpenTelemetryApi.Severity.trace)
