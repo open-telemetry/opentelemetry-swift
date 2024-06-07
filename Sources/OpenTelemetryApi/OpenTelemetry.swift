@@ -4,6 +4,9 @@
  */
 
 import Foundation
+#if canImport(os.log)
+import os.log
+#endif
 
 /// This class provides a static global accessor for telemetry objects Tracer, Meter
 ///  and BaggageManager.
@@ -33,6 +36,8 @@ public struct OpenTelemetry {
 
     /// registered manager or default via  DefaultBaggageManager.instance.
     public private(set) var contextProvider: OpenTelemetryContextProvider
+    
+    public private(set) var feedbackHandler: ((String) -> Void)?
 
     private init() {
         stableMeterProvider = nil
@@ -40,7 +45,18 @@ public struct OpenTelemetry {
         meterProvider = DefaultMeterProvider.instance
         loggerProvider = DefaultLoggerProvider.instance
         baggageManager = DefaultBaggageManager.instance
-        contextProvider = OpenTelemetryContextProvider(contextManager: ActivityContextManager.instance)
+#if canImport(os.activity)
+        let manager = ActivityContextManager.instance
+#elseif canImport(_Concurrency)
+        let manager = TaskLocalContextManager.instance
+#endif
+        contextProvider = OpenTelemetryContextProvider(contextManager: manager)
+
+#if canImport(os.activity)
+        feedbackHandler = { message in
+            os_log("%{public}s", message)
+        }
+#endif
     }
 
     public static func registerStableMeterProvider(meterProvider: StableMeterProvider) {
@@ -69,5 +85,9 @@ public struct OpenTelemetry {
 
     public static func registerContextManager(contextManager: ContextManager) {
         instance.contextProvider.contextManager = contextManager
+    }
+
+    public static func registerFeedbackHandler(_ handler: @escaping (String) -> Void) {
+        instance.feedbackHandler = handler
     }
 }

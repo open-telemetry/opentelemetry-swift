@@ -66,4 +66,19 @@ class PropagatedSpanBuilder: SpanBuilder {
     func setActive(_ active: Bool) -> Self {
         return self
     }
+
+#if canImport(_Concurrency)
+    /// Starts a new Span for the duration of the passed closure
+    public func withActiveSpan<T>(_ operation: (any SpanBase) async throws -> T) async throws -> T {
+        if spanContext == nil, !isRootSpan {
+            spanContext = OpenTelemetry.instance.contextProvider.activeSpan?.context
+        }
+        let span = PropagatedSpan(name: spanName,
+                              context: spanContext ?? SpanContext.create(traceId: TraceId.random(),
+                                                                         spanId: SpanId.random(),
+                                                                         traceFlags: TraceFlags(),
+                                                                         traceState: TraceState()))
+        return try await operation(span)
+    }
+#endif
 }

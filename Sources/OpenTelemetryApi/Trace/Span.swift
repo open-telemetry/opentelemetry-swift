@@ -5,10 +5,7 @@
 
 import Foundation
 
-/// An interface that represents a span. It has an associated SpanContext.
-/// Spans are created by the SpanBuilder.startSpan method.
-/// Span must be ended by calling end().
-public protocol Span: AnyObject, CustomStringConvertible {
+public protocol SpanBase: AnyObject, CustomStringConvertible {
     /// Type of span.
     /// Can be used to specify additional relationships between spans in addition to a parent/child relationship.
     var kind: SpanKind { get }
@@ -60,7 +57,12 @@ public protocol Span: AnyObject, CustomStringConvertible {
     ///   - attributes: Dictionary of attributes name/value pairs associated with the Event
     ///   - timestamp: the explicit event timestamp in nanos since epoch
     func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Date)
+}
 
+/// An interface that represents a span. It has an associated SpanContext.
+/// Spans are created by the SpanBuilder.startSpan method.
+/// Span must be ended by calling end().
+public protocol Span: SpanBase {
     /// End the span.
     func end()
 
@@ -69,17 +71,17 @@ public protocol Span: AnyObject, CustomStringConvertible {
     func end(time: Date)
 }
 
-public extension Span {
+public extension SpanBase {
     func hash(into hasher: inout Hasher) {
         hasher.combine(context.spanId)
     }
 
-    static func == (lhs: Span, rhs: Span) -> Bool {
+    static func == (lhs: SpanBase, rhs: SpanBase) -> Bool {
         return lhs.context.spanId == rhs.context.spanId
     }
 }
 
-public extension Span {
+public extension SpanBase {
     func setAttribute(key: String, value: String) {
         return setAttribute(key: key, value: AttributeValue.string(value))
     }

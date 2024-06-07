@@ -105,7 +105,7 @@ class SpanBuilderSdk: SpanBuilder {
         return self
     }
 
-    func startSpan() -> Span {
+    func prepareSpan() -> Span {
         var parentContext = getParentContext(parentType: parentType, explicitParent: parent, remoteParent: remoteParent)
         let traceId: TraceId
         let spanId = tracerSharedState.idGenerator.generateSpanId()
@@ -137,7 +137,7 @@ class SpanBuilderSdk: SpanBuilder {
 
         attributes.updateValues(attributes: samplingDecision.attributes)
 
-        let createdSpan = RecordEventsReadableSpan.startSpan(context: spanContext,
+        return RecordEventsReadableSpan.startSpan(context: spanContext,
                                                              name: spanName,
                                                              instrumentationScopeInfo: instrumentationScopeInfo,
                                                              kind: spanKind,
@@ -151,11 +151,29 @@ class SpanBuilderSdk: SpanBuilder {
                                                              links: links,
                                                              totalRecordedLinks: totalNumberOfLinksAdded,
                                                              startTime: startTime)
+    }
+
+    func startSpan() -> Span {
+        let createdSpan = self.prepareSpan()
+
         if startAsActive {
             OpenTelemetry.instance.contextProvider.setActiveSpan(createdSpan)
         }
         return createdSpan
     }
+
+    #if canImport(_Concurrency)
+    public func withActiveSpan<T>(_ operation: (any SpanBase) async throws -> T) async throws -> T {
+        let createdSpan = self.prepareSpan()
+        defer {
+            createdSpan.end()
+        }
+
+        return try await OpenTelemetry.instance.contextProvider.withActiveSpan(createdSpan) {
+            try await operation(createdSpan)
+        }
+    }
+    #endif
 
     private static func getClock(parent: Span?, clock: Clock) -> Clock {
         if let parentRecordEventSpan = parent as? RecordEventsReadableSpan {

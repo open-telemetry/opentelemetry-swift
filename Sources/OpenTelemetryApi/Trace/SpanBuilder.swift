@@ -5,7 +5,7 @@
 
 import Foundation
 
-public protocol SpanBuilder: AnyObject {
+public protocol SpanBuilderBase: AnyObject {
     /// Sets the parent Span to use. If not set, the value of OpenTelemetryContext.activeSpan
     /// at startSpan() time will be used as parent.
     ///
@@ -102,6 +102,13 @@ public protocol SpanBuilder: AnyObject {
     /// - Parameter startTimestamp: the explicit start timestamp of the newly created Span in nanos since epoch.
     @discardableResult func setStartTime(time: Date) -> Self
 
+    #if canImport(_Concurrency)
+    /// Starts a new Span for the duration of the passed closure
+    func withActiveSpan<T>(_ operation: (any SpanBase) async throws -> T) async throws -> T
+    #endif
+}
+
+public protocol SpanBuilder: SpanBuilderBase {
     /// Sets the Span as the active Span in the current context when started.
     /// - Parameter active: If the span will be set as the activeSpan
     @discardableResult func setActive(_ active: Bool) -> Self
@@ -115,6 +122,16 @@ public protocol SpanBuilder: AnyObject {
 }
 
 public extension SpanBuilder {
+#if canImport(_Concurrency)
+    func withActiveSpan<T>(_ operation: (any SpanBase) async throws -> T) async throws -> T {
+        let span = self.startSpan()
+        defer {
+            span.end()
+        }
+        return try await operation(span)
+    }
+#endif
+
     @discardableResult func setAttribute(key: String, value: String) -> Self {
         return setAttribute(key: key, value: AttributeValue.string(value))
     }

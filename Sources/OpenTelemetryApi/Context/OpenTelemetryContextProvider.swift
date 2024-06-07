@@ -4,7 +4,6 @@
  */
 
 import Foundation
-import os.activity
 
 /// Keys used by Opentelemetry to store values in the Context
 public enum OpenTelemetryContextKeys: String {
@@ -13,7 +12,11 @@ public enum OpenTelemetryContextKeys: String {
 }
 
 public struct OpenTelemetryContextProvider {
+#if swift(>=5.9)
+    package var contextManager: ContextManager
+#else
     var contextManager: ContextManager
+#endif
 
     /// Returns the Span from the current context
     public var activeSpan: Span? {
@@ -44,4 +47,14 @@ public struct OpenTelemetryContextProvider {
     public func removeContextForBaggage(_ baggage: Baggage) {
         contextManager.removeContextValue(forKey: OpenTelemetryContextKeys.baggage, value: baggage)
     }
+
+#if canImport(_Concurrency)
+    public func withActiveSpan<T>(_ span: SpanBase, _ operation: () async throws -> T) async throws -> T {
+        try await contextManager.withCurrentContextValue(forKey: .span, value: span, operation)
+    }
+
+    public func withActiveBaggage<T>(_ span: Baggage, _ operation: () async throws -> T) async throws -> T {
+        try await contextManager.withCurrentContextValue(forKey: .baggage, value: span, operation)
+    }
+#endif
 }

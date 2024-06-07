@@ -12,4 +12,8 @@ public class DefaultTracer: Tracer {
     public func spanBuilder(spanName: String) -> SpanBuilder {
         return PropagatedSpanBuilder(tracer: self, spanName: spanName)
     }
+
+    public func spanBuilderBase(spanName: String) -> SpanBuilderBase {
+        return PropagatedSpanBuilder(tracer: self, spanName: spanName)
+    }
 }
