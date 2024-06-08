@@ -90,4 +90,26 @@ public struct OpenTelemetry {
     public static func registerFeedbackHandler(_ handler: @escaping (String) -> Void) {
         instance.feedbackHandler = handler
     }
+
+    static func withContextManager<T>(_ manager: ContextManager, _ operation: () async throws -> T) async rethrows -> T {
+        let old = self.instance.contextProvider.contextManager
+        defer {
+            self.registerContextManager(contextManager: old)
+        }
+
+        self.registerContextManager(contextManager: manager)
+
+        return try await operation()
+    }
+
+    static func withContextManager<T>(_ manager: ContextManager, _ operation: () throws -> T) rethrows -> T {
+        let old = self.instance.contextProvider.contextManager
+        defer {
+            self.registerContextManager(contextManager: old)
+        }
+
+        self.registerContextManager(contextManager: manager)
+
+        return try operation()
+    }
 }

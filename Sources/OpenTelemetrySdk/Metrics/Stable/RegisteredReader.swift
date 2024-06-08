@@ -7,17 +7,6 @@ import Foundation
 import OpenTelemetryApi
 import Atomics
 
-struct Ids {
-    static var generator = Int32.AtomicRepresentation(0)
-
-    func nextId() -> Int32 {
-        withUnsafeMutablePointer(to: &Self.generator) { ptr in
-            let atomic = UnsafeAtomic<Int32>(at: ptr)
-            return atomic.wrappingIncrementThenLoad(ordering: .relaxed)
-        }
-    }
-}
-
 public class RegisteredReader : Equatable, Hashable {
     private(set) static var id_counter = ManagedAtomic<Int32>(0)
     public let id : Int32

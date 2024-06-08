@@ -85,7 +85,7 @@ class ActivityContextManager: ContextManager {
         rlock.unlock()
     }
 
-    func withCurrentContextValue<T>(forKey key: OpenTelemetryContextKeys, value: AnyObject?, _ operation: () async throws -> T) async throws -> T {
+    func withCurrentContextValue<T>(forKey key: OpenTelemetryContextKeys, value: AnyObject?, _ operation: () async throws -> T) async rethrows -> T {
         var oldValue: AnyObject?
         if let value {
             self.setCurrentContextValue(forKey: key, value: value)
@@ -110,6 +110,33 @@ class ActivityContextManager: ContextManager {
         }
 
         return try await operation()
+    }
+
+    func withCurrentContextValue<T>(forKey key: OpenTelemetryContextKeys, value: AnyObject?, _ operation: () throws -> T) rethrows -> T {
+        var oldValue: AnyObject?
+        if let value {
+            self.setCurrentContextValue(forKey: key, value: value)
+        } else {
+            // Remove the current value for the key for the duration of the closure
+            oldValue = self.getCurrentContextValue(forKey: key)
+            if let oldValue {
+                self.removeContextValue(forKey: key, value: oldValue)
+            }
+        }
+
+        defer {
+            if let value {
+                // Remove the given value from the context after the closure finishes
+                self.removeContextValue(forKey: key, value: value)
+            } else {
+                // Restore the previous value for the key after the closure exits
+                if let oldValue {
+                    self.setCurrentContextValue(forKey: key, value: oldValue)
+                }
+            }
+        }
+
+        return try operation()
     }
 }
 #endif

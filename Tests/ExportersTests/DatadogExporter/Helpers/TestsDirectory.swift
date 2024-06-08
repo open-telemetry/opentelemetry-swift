@@ -12,7 +12,7 @@ import XCTest
 func obtainUniqueTemporaryDirectory() -> Directory {
     let subdirectoryName = "com.datadoghq.ios-sdk-tests-\(UUID().uuidString)"
     let osTemporaryDirectoryURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent(subdirectoryName, isDirectory: true)
-    print("💡 Obtained temporary directory URL: \(osTemporaryDirectoryURL)")
+//    print("💡 Obtained temporary directory URL: \(osTemporaryDirectoryURL)")
     return Directory(url: osTemporaryDirectoryURL)
 }
 

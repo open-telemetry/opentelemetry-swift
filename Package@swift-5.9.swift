@@ -9,7 +9,7 @@ let package = Package(
         .macOS(.v10_15),
         .iOS(.v13),
         .tvOS(.v13),
-        .watchOS(.v5)
+        .watchOS(.v6)
     ],
     products: [
         .library(name: "OpenTelemetryApi", type: .static, targets: ["OpenTelemetryApi"]),
@@ -24,8 +24,6 @@ let package = Package(
         .executable(name: "loggingTracer", targets: ["LoggingTracer"])
     ],
     dependencies: [
-        .package(url: "https://github.com/undefinedlabs/opentracing-objc", from: "0.5.2"),
-        .package(url: "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
         .package(url: "https://github.com/grpc/grpc-swift.git", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.20.2"),
@@ -41,6 +39,8 @@ let package = Package(
                 dependencies: ["OpenTelemetryApi", .product(name: "Atomics", package: "swift-atomics")]),
         .target(name: "OpenTelemetryConcurrency",
                dependencies: ["OpenTelemetryApi"]),
+        .target(name: "OpenTelemetryTestUtils",
+               dependencies: ["OpenTelemetryApi", "OpenTelemetrySdk"]),
         .target(name: "SwiftMetricsShim",
                 dependencies: ["OpenTelemetrySdk",
                                .product(name: "CoreMetrics", package: "swift-metrics")],
@@ -75,11 +75,13 @@ let package = Package(
                 dependencies: ["OpenTelemetrySdk"],
                 path: "Sources/Exporters/Persistence"),
         .testTarget(name: "OpenTelemetryApiTests",
-                    dependencies: ["OpenTelemetryApi"],
+                    dependencies: ["OpenTelemetryApi", "OpenTelemetryTestUtils"],
                     path: "Tests/OpenTelemetryApiTests"),
         .testTarget(name: "OpenTelemetrySdkTests",
                     dependencies: ["OpenTelemetryApi",
-                                   "OpenTelemetrySdk"],
+                                   "OpenTelemetrySdk",
+                                  "OpenTelemetryConcurrency",
+                                  "OpenTelemetryTestUtils"],
                     path: "Tests/OpenTelemetrySdkTests"),
         .testTarget(name: "SwiftMetricsShimTests",
                     dependencies: ["SwiftMetricsShim",
@@ -116,6 +118,9 @@ let package = Package(
 extension Package {
     func addPlatformSpecific() -> Self {
 #if canImport(ObjectiveC)
+        self.dependencies.append(
+            .package(url: "https://github.com/undefinedlabs/opentracing-objc", from: "0.5.2")
+        )
         self.products.append(
             .library(name: "OpenTracingShim-experimental", type: .static, targets: ["OpenTracingShim"])
         )
@@ -135,6 +140,9 @@ extension Package {
 #endif
 
 #if !os(Linux)
+        self.dependencies.append(
+            .package(url: "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1")
+        )
         self.products.append(contentsOf: [
             .library(name: "JaegerExporter", type: .static, targets: ["JaegerExporter"]),
             .executable(name: "simpleExporter", targets: ["SimpleExporter"]),

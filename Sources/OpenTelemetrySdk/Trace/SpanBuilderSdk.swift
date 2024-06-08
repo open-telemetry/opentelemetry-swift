@@ -162,8 +162,19 @@ class SpanBuilderSdk: SpanBuilder {
         return createdSpan
     }
 
+    public func withActiveSpan<T>(_ operation: (any SpanBase) throws -> T) rethrows -> T {
+        let createdSpan = self.prepareSpan()
+        defer {
+            createdSpan.end()
+        }
+
+        return try OpenTelemetry.instance.contextProvider.withActiveSpan(createdSpan) {
+            try operation(createdSpan)
+        }
+    }
+
     #if canImport(_Concurrency)
-    public func withActiveSpan<T>(_ operation: (any SpanBase) async throws -> T) async throws -> T {
+    public func withActiveSpan<T>(_ operation: (any SpanBase) async throws -> T) async rethrows -> T {
         let createdSpan = self.prepareSpan()
         defer {
             createdSpan.end()

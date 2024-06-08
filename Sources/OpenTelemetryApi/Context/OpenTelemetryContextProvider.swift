@@ -48,12 +48,22 @@ public struct OpenTelemetryContextProvider {
         contextManager.removeContextValue(forKey: OpenTelemetryContextKeys.baggage, value: baggage)
     }
 
+    /// Sets `span` as the active span for the duration of the given closure. While the span will no longer be active after the closure exits, this method does **not** end the span.
+    public func withActiveSpan<T>(_ span: SpanBase, _ operation: () throws -> T) rethrows -> T {
+        try contextManager.withCurrentContextValue(forKey: .span, value: span, operation)
+    }
+
+    public func withActiveBaggage<T>(_ span: Baggage, _ operation: () throws -> T) rethrows -> T {
+        try contextManager.withCurrentContextValue(forKey: .baggage, value: span, operation)
+    }
+
 #if canImport(_Concurrency)
-    public func withActiveSpan<T>(_ span: SpanBase, _ operation: () async throws -> T) async throws -> T {
+    /// Sets `span` as the active span for the duration of the given closure. While the span will no longer be active after the closure exits, this method does **not** end the span.
+    public func withActiveSpan<T>(_ span: SpanBase, _ operation: () async throws -> T) async rethrows -> T {
         try await contextManager.withCurrentContextValue(forKey: .span, value: span, operation)
     }
 
-    public func withActiveBaggage<T>(_ span: Baggage, _ operation: () async throws -> T) async throws -> T {
+    public func withActiveBaggage<T>(_ span: Baggage, _ operation: () async throws -> T) async rethrows -> T {
         try await contextManager.withCurrentContextValue(forKey: .baggage, value: span, operation)
     }
 #endif

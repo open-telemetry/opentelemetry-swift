@@ -102,10 +102,13 @@ public protocol SpanBuilderBase: AnyObject {
     /// - Parameter startTimestamp: the explicit start timestamp of the newly created Span in nanos since epoch.
     @discardableResult func setStartTime(time: Date) -> Self
 
-    #if canImport(_Concurrency)
     /// Starts a new Span for the duration of the passed closure
-    func withActiveSpan<T>(_ operation: (any SpanBase) async throws -> T) async throws -> T
-    #endif
+    func withActiveSpan<T>(_ operation: (any SpanBase) throws -> T) rethrows -> T
+
+#if canImport(_Concurrency)
+    /// Starts a new Span for the duration of the passed closure
+    func withActiveSpan<T>(_ operation: (any SpanBase) async throws -> T) async rethrows -> T
+#endif
 }
 
 public protocol SpanBuilder: SpanBuilderBase {
@@ -122,8 +125,16 @@ public protocol SpanBuilder: SpanBuilderBase {
 }
 
 public extension SpanBuilder {
+    func withActiveSpan<T>(_ operation: (any SpanBase) throws -> T) rethrows -> T {
+        let span = self.startSpan()
+        defer {
+            span.end()
+        }
+        return try operation(span)
+    }
+
 #if canImport(_Concurrency)
-    func withActiveSpan<T>(_ operation: (any SpanBase) async throws -> T) async throws -> T {
+    func withActiveSpan<T>(_ operation: (any SpanBase) async throws -> T) async rethrows -> T {
         let span = self.startSpan()
         defer {
             span.end()

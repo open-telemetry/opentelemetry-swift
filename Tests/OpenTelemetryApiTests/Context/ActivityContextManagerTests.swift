@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if canImport(os.activity)
 @testable import OpenTelemetryApi
 import XCTest
 
@@ -379,3 +380,4 @@ class ActivityContextManagerTests: XCTestCase {
     }
     #endif
 }
+#endif

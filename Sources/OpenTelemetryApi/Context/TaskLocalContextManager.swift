@@ -23,11 +23,18 @@ public class TaskLocalContextManager: ContextManager {
 
     public func removeContextValue(forKey: OpenTelemetryContextKeys, value: AnyObject) {}
 
-    public func withCurrentContextValue<T>(forKey key: OpenTelemetryContextKeys, value: AnyObject?, _ operation: () async throws -> T) async throws -> T {
+    public func withCurrentContextValue<T>(forKey key: OpenTelemetryContextKeys, value: AnyObject?, _ operation: () async throws -> T) async rethrows -> T {
         var context = Self.context
         context[key.rawValue] = value
 
         return try await Self.$context.withValue(context, operation: operation)
+    }
+
+    public func withCurrentContextValue<T>(forKey key: OpenTelemetryContextKeys, value: AnyObject?, _ operation: () throws -> T) rethrows -> T {
+        var context = Self.context
+        context[key.rawValue] = value
+
+        return try Self.$context.withValue(context, operation: operation)
     }
 }
 #endif

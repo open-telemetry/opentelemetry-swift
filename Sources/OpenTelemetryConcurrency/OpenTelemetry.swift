@@ -7,10 +7,31 @@ import Foundation
 import OpenTelemetryApi
 
 #if swift(<5.9)
+// We use the `package` keyword to access some properties in OpenTelemetryApi, which was introduced in 5.9.
 #error("Swift 5.9 or greater is required for this OpenTelemetryConcurrency")
 #else
 
 typealias _OpenTelemetry = OpenTelemetryApi.OpenTelemetry
+
+/// A wrapper type which provides a span builder just like `Tracer`, returns a type of `SpanBuilderBase` to hide APIs on `SpanBuilder` that aren't correctly usable when using a structured concurrency based context manager.
+public struct TracerWrapper {
+    /// The inner `Tracer` used to construct a span builder. Be careful when accessing this property, as it may make it easier to use API's that don't function properly with your configuration.
+    public let inner: Tracer
+
+    public func spanBuilder(spanName: String) -> SpanBuilderBase {
+        self.inner.spanBuilder(spanName: spanName)
+    }
+}
+
+/// A wrapper type which provides a `Tracer` just like `TracerProvider`, but wraps it in a `TracerWrapper` to hide APIs on `SpanBuilder` that aren't correctly usable when using a structured concurrency based context manager.
+public struct TracerProviderWrapper {
+    /// The inner `TracerProvider` used to construct a `Tracer`. Be careful when accessing this property, as it may make it easier to use API's that don't function properly with your configuration.
+    public let inner: TracerProvider
+
+    public func get(instrumentationName: String, instrumentationVersion: String?) -> TracerWrapper {
+        TracerWrapper(inner: self.inner.get(instrumentationName: instrumentationName, instrumentationVersion: instrumentationVersion))
+    }
+}
 
 public struct OpenTelemetry {
     public static var version: String { _OpenTelemetry.version }
@@ -18,8 +39,8 @@ public struct OpenTelemetry {
     public static var instance = OpenTelemetry()
 
     /// Registered tracerProvider or default via DefaultTracerProvider.instance.
-    public var tracerProvider: TracerProviderBase {
-        _OpenTelemetry.instance.tracerProvider
+    public var tracerProvider: TracerProviderWrapper {
+        TracerProviderWrapper(inner: _OpenTelemetry.instance.tracerProvider)
     }
 
     /// Registered MeterProvider or default via DefaultMeterProvider.instance.
@@ -95,11 +116,21 @@ public struct OpenTelemetryContextProvider {
         return contextManager.getCurrentContextValue(forKey: OpenTelemetryContextKeys.baggage) as? Baggage
     }
 
-    public func withActiveSpan<T>(_ span: Span, _ operation: () async throws -> T) async throws -> T {
+    /// Sets `span` as the active span for the duration of the given closure. While the span will no longer be active after the closure exits, this method does **not** end the span.
+    public func withActiveSpan<T>(_ span: SpanBase, _ operation: () throws -> T) rethrows -> T {
+        try self.contextManager.withCurrentContextValue(forKey: .span, value: span, operation)
+    }
+
+    public func withActiveBaggage<T>(_ baggage: Baggage, _ operation: () throws -> T) rethrows -> T {
+        try self.contextManager.withCurrentContextValue(forKey: .baggage, value: baggage, operation)
+    }
+
+    /// Sets `span` as the active span for the duration of the given closure. While the span will no longer be active after the closure exits, this method does **not** end the span.
+    public func withActiveSpan<T>(_ span: SpanBase, _ operation: () async throws -> T) async rethrows -> T {
         try await self.contextManager.withCurrentContextValue(forKey: .span, value: span, operation)
     }
 
-    public func withActiveBaggage<T>(_ baggage: Baggage, _ operation: () async throws -> T) async throws -> T {
+    public func withActiveBaggage<T>(_ baggage: Baggage, _ operation: () async throws -> T) async rethrows -> T {
         try await self.contextManager.withCurrentContextValue(forKey: .baggage, value: baggage, operation)
     }
 }
