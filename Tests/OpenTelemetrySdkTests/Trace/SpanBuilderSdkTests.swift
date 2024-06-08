@@ -11,7 +11,7 @@ import OpenTelemetryTestUtils
 
 private let dso = UnsafeMutableRawPointer(mutating: #dsohandle)
 
-class SpanBuilderSdkTestInfo: OpenTelemetryTestCase {
+class SpanBuilderSdkTestInfo: OpenTelemetryContextTestCase {
     let spanName = "span_name"
     let sampledSpanContext = SpanContext.create(traceId: TraceId(idHi: 1000, idLo: 1000),
                                                 spanId: SpanId(id: 3000),

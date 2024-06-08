@@ -16,7 +16,7 @@ private func createRandomPropagatedSpan() -> PropagatedSpan {
                                                       traceState: TraceState()))
 }
 
-class DefaultTracerTestsInfo: OpenTelemetryTestCase {
+class DefaultTracerTestsInfo: OpenTelemetryContextTestCase {
     let defaultTracer = DefaultTracer.instance
     let spanName = "MySpanName"
     let firstBytes: [UInt8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, UInt8(ascii: "a")]

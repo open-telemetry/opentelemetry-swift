@@ -7,7 +7,7 @@
 import XCTest
 import OpenTelemetryTestUtils
 
-class ScopedBaggageTestsInfo: OpenTelemetryTestCase {
+class ScopedBaggageTestsInfo: OpenTelemetryContextTestCase {
     let key1 = EntryKey(name: "key 1")!
     let key2 = EntryKey(name: "key 2")!
     let key3 = EntryKey(name: "key 3")!

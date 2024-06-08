@@ -11,7 +11,7 @@ import OpenTelemetryConcurrency
 
 private typealias OpenTelemetry = OpenTelemetryConcurrency.OpenTelemetry
 
-final class ConcurrencyTests: OpenTelemetryTestCase {
+final class ConcurrencyTests: OpenTelemetryContextTestCase {
     var oldTracerProvider: TracerProvider?
 
     override func setUp() async throws {

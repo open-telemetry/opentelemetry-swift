@@ -9,7 +9,7 @@ import XCTest
 import OpenTelemetryTestUtils
 @testable import OpenTelemetrySdk
 
-public class LoggerSdkTests: OpenTelemetryTestCase {
+public class LoggerSdkTests: OpenTelemetryContextTestCase {
     func testEventBuilder() {
         let processor = LogRecordProcessorMock()
         let sharedState = LoggerSharedState(
@@ -119,7 +119,7 @@ public class LoggerSdkTests: OpenTelemetryTestCase {
 
 }
 
-final class LoggerSdkTestsImperative: OpenTelemetryTestCase {
+final class LoggerSdkTestsImperative: OpenTelemetryContextTestCase {
     override var contextManagers: [any ContextManager] {
         Self.imperativeContextManagers()
     }

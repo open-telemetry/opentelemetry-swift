@@ -15,10 +15,10 @@ typealias OpenTelemetry = OpenTelemetryApi.OpenTelemetry
 /// A test case which runs its tests under (potentially) multiple context managers.
 ///
 /// This is implemented by running the test method multiple times, once for each context manager the test case supports. If a test case doesn't have any supported managers on the current platform, a "skipping" message is printed and the test execution is stopped.
-open class OpenTelemetryTestCase: XCTestCase {
+open class OpenTelemetryContextTestCase: XCTestCase {
     /// The context managers the test case supports. By default all available context managers will be used. Override this method to customize which managers are selected for this test case.
     open var contextManagers: [any ContextManager] {
-        OpenTelemetryTestCase.allContextManagers()
+        OpenTelemetryContextTestCase.allContextManagers()
     }
 
     private var cachedManagers: [any ContextManager]?

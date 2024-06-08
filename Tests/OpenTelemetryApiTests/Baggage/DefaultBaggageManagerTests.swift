@@ -24,7 +24,7 @@ class TestBaggage: Baggage {
     }
 }
 
-class DefaultBaggageManagerTestsInfo: OpenTelemetryTestCase {
+class DefaultBaggageManagerTestsInfo: OpenTelemetryContextTestCase {
     let defaultBaggageManager = DefaultBaggageManager.instance
     let baggage = TestBaggage()
 
