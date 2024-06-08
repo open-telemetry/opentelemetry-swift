@@ -5,6 +5,9 @@
 
 import Foundation
 
+/// A base protocol for `SpanBuilder` which encapsulates all of the functionality that is correct in both imperative and structured API modes. Functionality which is only guarenteed to work in the imperative mode exists on `SpanBuilder`.
+///
+/// Note that it is never correct to only implement `SpanBuilderBase`, `SpanBuilder` should always be implemented for any span builder type as well.
 public protocol SpanBuilderBase: AnyObject {
     /// Sets the parent Span to use. If not set, the value of OpenTelemetryContext.activeSpan
     /// at startSpan() time will be used as parent.

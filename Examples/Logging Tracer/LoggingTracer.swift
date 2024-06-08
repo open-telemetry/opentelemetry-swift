@@ -31,14 +31,6 @@ class LoggingTracer: Tracer {
             return LoggingSpan(name: name, kind: .client)
         }
 
-#if canImport(_Concurrency)
-        /// Starts a new Span for the duration of the passed closure
-        func withActiveSpan<T>(_ operation: (any SpanBase) async throws -> T) async throws -> T {
-            let span = LoggingSpan(name: name, kind: .client)
-            return try await operation(span)
-        }
-#endif
-
         func setParent(_ parent: Span) -> Self {
             spanContext = parent.context
             return self

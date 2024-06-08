@@ -37,6 +37,7 @@ public struct OpenTelemetry {
     /// registered manager or default via  DefaultBaggageManager.instance.
     public private(set) var contextProvider: OpenTelemetryContextProvider
     
+    /// Allow customizing how warnings and informative messages about usages of OpenTelemetry are relayed back to the developer.
     public private(set) var feedbackHandler: ((String) -> Void)?
 
     private init() {
@@ -52,7 +53,7 @@ public struct OpenTelemetry {
 #endif
         contextProvider = OpenTelemetryContextProvider(contextManager: manager)
 
-#if canImport(os.activity)
+#if canImport(os.log)
         feedbackHandler = { message in
             os_log("%{public}s", message)
         }
@@ -87,6 +88,7 @@ public struct OpenTelemetry {
         instance.contextProvider.contextManager = contextManager
     }
 
+    /// Register a function to be called when the library has warnings or informative messages to relay back to the developer
     public static func registerFeedbackHandler(_ handler: @escaping (String) -> Void) {
         instance.feedbackHandler = handler
     }
