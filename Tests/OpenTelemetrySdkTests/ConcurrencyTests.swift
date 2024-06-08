@@ -26,7 +26,7 @@ final class ConcurrencyTests: OpenTelemetryTestCase {
     }
 
     func testBasicSpan() {
-        // Can't use `startSpan` or `setActive` here since we're using `OpenTelemetryConcurrency.OpenTelemetry` instead of `OpenTelemetryApi.OpenTelemetry`
+        // Attempting to use `startSpan` or `setActive` here will cause a build error since we're using `OpenTelemetryConcurrency.OpenTelemetry` instead of `OpenTelemetryApi.OpenTelemetry`
         OpenTelemetry.instance.tracerProvider
             .get(instrumentationName: "test", instrumentationVersion: nil)
             .spanBuilder(spanName: "basic")

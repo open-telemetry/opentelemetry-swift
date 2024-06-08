@@ -12,42 +12,11 @@ typealias ConcurrentOpenTelemetry = OpenTelemetryConcurrency.OpenTelemetry
 #endif
 typealias OpenTelemetry = OpenTelemetryApi.OpenTelemetry
 
+/// A test case which runs its tests under (potentially) multiple context managers.
+///
+/// This is implemented by running the test method multiple times, once for each context manager the test case supports. If a test case doesn't have any supported managers on the current platform, a "skipping" message is printed and the test execution is stopped.
 open class OpenTelemetryTestCase: XCTestCase {
-    public static func imperativeContextManagers() -> [ContextManager] {
-        var managers = [ContextManager]()
-#if canImport(os.activity)
-        managers.append(ActivityContextManager.instance)
-#endif
-        return managers
-    }
-
-    public static func concurrencyContextManagers() -> [ContextManager] {
-        var managers = [ContextManager]()
-#if canImport(_Concurrency)
-        managers.append(TaskLocalContextManager.instance)
-#endif
-        return managers
-    }
-
-    public static func allContextManagers() -> [ContextManager] {
-        var managers = [ContextManager]()
-#if canImport(os.activity)
-        managers.append(ActivityContextManager.instance)
-#endif
-#if canImport(_Concurrency)
-        managers.append(TaskLocalContextManager.instance)
-#endif
-        return managers
-    }
-
-#if canImport(os.activity)
-    public static func activityContextManagers() -> [ContextManager] {
-        var managers = [ContextManager]()
-        managers.append(ActivityContextManager.instance)
-        return managers
-    }
-#endif
-
+    /// The context managers the test case supports. By default all available context managers will be used. Override this method to customize which managers are selected for this test case.
     open var contextManagers: [any ContextManager] {
         OpenTelemetryTestCase.allContextManagers()
     }
@@ -57,6 +26,7 @@ open class OpenTelemetryTestCase: XCTestCase {
     open override func perform(_ run: XCTestRun) {
         self.cachedManagers = self.contextManagers
         if self.cachedManagers!.isEmpty {
+            // Bail out before any other output is printed by the testing system to avoid confusion.
             print("Skipping Test Case '\(self.name)' due to no applicable context managers")
             return
         }
@@ -66,12 +36,15 @@ open class OpenTelemetryTestCase: XCTestCase {
 
     open override func invokeTest() {
         for manager in self.cachedManagers! {
+            // Install the desired context manager temporarily and re-run the test method.
             OpenTelemetry.withContextManager(manager) {
                 super.invokeTest()
             }
         }
     }
 
+    // Ensure we print out which context manager was in use when a failure is encountered.
+    // Non-Apple platforms don't have access to `record(XCTIssue)` so we need to support both the new and old style method to avoid a deprecation warning on Apple platforms.
 #if canImport(ObjectiveC)
     open override func record(_ issue: XCTIssue) {
         super.record(XCTIssue(
@@ -91,6 +64,45 @@ open class OpenTelemetryTestCase: XCTestCase {
             atLine: lineNumber,
             expected: expected
         )
+    }
+#endif
+
+    /// Context managers that can be used with the imperative style
+    public static func imperativeContextManagers() -> [ContextManager] {
+        var managers = [ContextManager]()
+#if canImport(os.activity)
+        managers.append(ActivityContextManager.instance)
+#endif
+        return managers
+    }
+
+    /// Context managers that can move context between related tasks when using structured concurrency
+    public static func concurrencyContextManagers() -> [ContextManager] {
+        var managers = [ContextManager]()
+#if canImport(_Concurrency)
+        managers.append(TaskLocalContextManager.instance)
+#endif
+        return managers
+    }
+
+    /// All context managers supported on the current platform
+    public static func allContextManagers() -> [ContextManager] {
+        var managers = [ContextManager]()
+#if canImport(os.activity)
+        managers.append(ActivityContextManager.instance)
+#endif
+#if canImport(_Concurrency)
+        managers.append(TaskLocalContextManager.instance)
+#endif
+        return managers
+    }
+
+#if canImport(os.activity)
+    /// Context managers that use the `os.activity` system for tracking context
+    public static func activityContextManagers() -> [ContextManager] {
+        var managers = [ContextManager]()
+        managers.append(ActivityContextManager.instance)
+        return managers
     }
 #endif
 }
