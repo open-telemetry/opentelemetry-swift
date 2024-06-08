@@ -29,14 +29,13 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.20.2"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.4.4"),
         .package(url: "https://github.com/apple/swift-metrics.git", from: "2.1.1"),
-        .package(url: "https://github.com/apple/swift-atomics.git", .upToNextMajor(from: "1.2.0"))
     ],
     targets: [
         .target(name: "OpenTelemetryApi",
                 dependencies: [],
                 swiftSettings: [.unsafeFlags(["-enable-library-evolution"])]),
         .target(name: "OpenTelemetrySdk",
-                dependencies: ["OpenTelemetryApi", .product(name: "Atomics", package: "swift-atomics")]),
+                dependencies: ["OpenTelemetryApi"].withAtomicsIfNeeded()),
         .target(name: "OpenTelemetryConcurrency",
                dependencies: ["OpenTelemetryApi"]),
         .target(name: "OpenTelemetryTestUtils",
@@ -115,8 +114,26 @@ let package = Package(
     ]
 ).addPlatformSpecific()
 
+
+extension [Target.Dependency] {
+    func withAtomicsIfNeeded() -> [Target.Dependency] {
+    #if canImport(Darwin)
+        return self
+    #else
+        var dependencies = self
+        dependencies.append(.product(name: "Atomics", package: "swift-atomics"))
+        return dependencies
+    #endif
+    }
+}
+
 extension Package {
     func addPlatformSpecific() -> Self {
+#if !canImport(Darwin)
+        self.dependencies.append(
+            .package(url: "https://github.com/apple/swift-atomics.git", .upToNextMajor(from: "1.2.0"))
+        )
+#endif
 #if canImport(ObjectiveC)
         self.dependencies.append(
             .package(url: "https://github.com/undefinedlabs/opentracing-objc", from: "0.5.2")
@@ -139,7 +156,7 @@ extension Package {
         ])
 #endif
 
-#if !os(Linux)
+#if canImport(Darwin)
         self.dependencies.append(
             .package(url: "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1")
         )

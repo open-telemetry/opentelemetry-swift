@@ -86,18 +86,18 @@ private class BatchWorker : Thread {
   
   override func main() {
     repeat {
-        maybeAutoreleasepool {
-        var logRecordsCopy : [ReadableLogRecord]
-        cond.lock()
-        if logRecordList.count < maxExportBatchSize {
-          repeat {
-            cond.wait(until: Date().addingTimeInterval(scheduleDelay))
-          } while logRecordList.isEmpty
-        }
-        logRecordsCopy = logRecordList
-        logRecordList.removeAll()
-        cond.unlock()
-        self.exportBatch(logRecordList: logRecordsCopy, explicitTimeout: exportTimeout)
+        autoreleasepool {
+          var logRecordsCopy : [ReadableLogRecord]
+          cond.lock()
+          if logRecordList.count < maxExportBatchSize {
+            repeat {
+              cond.wait(until: Date().addingTimeInterval(scheduleDelay))
+            } while logRecordList.isEmpty
+          }
+          logRecordsCopy = logRecordList
+          logRecordList.removeAll()
+          cond.unlock()
+          self.exportBatch(logRecordList: logRecordsCopy, explicitTimeout: exportTimeout)
       }
     } while true
   }

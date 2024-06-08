@@ -22,7 +22,7 @@ public class StablePeriodicMetricReaderSdk : StableMetricReader {
         scheduleTimer = DispatchSource.makeTimerSource(flags: DispatchSource.TimerFlags(), queue: scheduleQueue)
         
         scheduleTimer.setEventHandler { [weak self] in
-            maybeAutoreleasepool {
+            autoreleasepool {
                 guard let self = self else {
                     return
                 }
