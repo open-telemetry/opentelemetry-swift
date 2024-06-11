@@ -7,21 +7,20 @@ import Logging
 let bridgeName: String = "OTelSwiftLog"
 let version: String = "1.0.0"
 
-// Define a custom log handler
+/// A  custom log handler to translate swift logs into otel logs
 struct OTelLogHandler: LogHandler {
-  private var loggerProvider : LoggerProvider  // Property to set LoggerProvider
-  private var logger: OpenTelemetryApi.Logger
   
-  // Define the log level for this handler
-  private var _logLevel: Logging.Logger.Level = .info
-  public var logLevel: Logging.Logger.Level{
-    get {
-      return self._logLevel
-    }
-    set {
-      self._logLevel = newValue
-    }
-  }
+  /// Get or set the configured log level.
+  ///
+  /// - note: `LogHandler`s must treat the log level as a value type. This means that the change in metadata must
+  ///         only affect this very `LogHandler`. It is acceptable to provide some form of global log level override
+  ///         that means a change in log level on a particular `LogHandler` might not be reflected in any
+  ///        `LogHandler`.
+  public var logLevel: Logging.Logger.Level = .info
+  
+  /// loggerProvider to use for the bridge.
+  private var loggerProvider : LoggerProvider
+  private var logger: OpenTelemetryApi.Logger
   
   // Define metadata for this handler
   public var metadata: Logging.Logger.Metadata = [:]
@@ -34,7 +33,10 @@ struct OTelLogHandler: LogHandler {
     }
   }
   
-  // should default logger provider be a noop? or the sdk implementation?
+/// create a new OtelLogHandler
+///  - Parameter loggerProvider: The logger provider to use in the bridge. Defaults to the global logger provider.
+///  - Parameter includeTraceContext : boolean flag used for the logger builder
+///  - Parameter attributes: attributes to apply to the logger builder
   public init(loggerProvider: LoggerProvider = OpenTelemetrySdk.LoggerProviderSdk(),
               includeTraceContext : Bool = true,
               attributes: [String:AttributeValue] = [String:AttributeValue]()) {
