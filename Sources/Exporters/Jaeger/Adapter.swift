@@ -107,6 +107,34 @@
       return tags
     }
 
+    
+    static func processAttributeArray(data: AttributeArray) -> [String] {
+      var processedValues = [String]()
+      data.values.forEach { item in
+        switch item {
+        case let .string(value):
+          processedValues.append("\"\(value)\"")
+        case let .bool(value):
+          processedValues.append(value.description)
+        case let .int(value):
+          processedValues.append(Int64(value).description)
+        case let .double(value):
+          processedValues.append(value.description)
+        case let .array(value):
+          let array = processAttributeArray(data: value)
+          if let json = try? String(data: JSONEncoder().encode(array), encoding: .utf8) {
+            processedValues.append(json)
+          }     
+        case let .set(value):
+          if let json = try? String(data: JSONEncoder().encode(value), encoding: .utf8) {
+            processedValues.append(json)
+          }
+        }
+      }
+      return processedValues
+    }
+    
+    
     static func toJaegerTag(key: String, attrib: AttributeValue) -> Tag {
       let key = key
       var vType: TagType
@@ -128,18 +156,9 @@
       case let .double(value):
         vType = .double
         vDouble = value
-      case let .stringArray(value):
+      case let .array(value):
         vType = .string
-        vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
-      case let .boolArray(value):
-        vType = .string
-        vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
-      case let .intArray(value):
-        vType = .string
-        vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
-      case let .doubleArray(value):
-        vType = .string
-        vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
+        vStr = "[\(processAttributeArray(data: value).joined(separator: ", "))]"
       case let .set(value):
         vType = .string
         vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)

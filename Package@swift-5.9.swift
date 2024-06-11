@@ -29,6 +29,7 @@ let package = Package(
         .library(name: "InMemoryExporter", type: .static, targets: ["InMemoryExporter"]),
         .library(name: "DatadogExporter", type: .static, targets: ["DatadogExporter"]),
         .library(name: "NetworkStatus", type: .static, targets: ["NetworkStatus"]),
+        .library(name: "OTelSwiftLog", type: .static, targets: ["OTelSwiftLog"]),
         .executable(name: "simpleExporter", targets: ["SimpleExporter"]),
         .executable(name: "OTLPExporter", targets: ["OTLPExporter"]),
         .executable(name: "OTLPHTTPExporter", targets: ["OTLPHTTPExporter"]),
@@ -72,8 +73,8 @@ let package = Package(
                 exclude: ["README.md"]),
         .target(name: "OpenTracingShim",
                 dependencies: [
-                    "OpenTelemetrySdk",
-                    .product(name: "Opentracing", package: "opentracing-objc")
+                  "OpenTelemetrySdk",
+                  .product(name: "Opentracing", package: "opentracing-objc")
                 ],
                 path: "Sources/Importers/OpenTracingShim",
                 exclude: ["README.md"]),
@@ -135,8 +136,7 @@ let package = Package(
                     dependencies: ["OpenTelemetryApi"],
                     path: "Tests/OpenTelemetryApiTests"),
         .testTarget(name: "OpenTelemetrySdkTests",
-                    dependencies: ["OpenTelemetryApi",
-                                   "OpenTelemetrySdk"],
+                    dependencies: ["OpenTelemetrySdk"],
                     path: "Tests/OpenTelemetrySdkTests"),
         .testTarget(name: "ResourceExtensionTests",
                     dependencies: ["ResourceExtension", "OpenTelemetrySdk"],

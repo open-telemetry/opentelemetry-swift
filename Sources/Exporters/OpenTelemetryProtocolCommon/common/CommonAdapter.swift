@@ -22,33 +22,13 @@ public struct CommonAdapter {
       keyValue.value.intValue = Int64(value)
     case let .double(value):
       keyValue.value.doubleValue = value
-    case let .stringArray(value):
-      keyValue.value.arrayValue.values = value.map {
-        var anyValue = Opentelemetry_Proto_Common_V1_AnyValue()
-        anyValue.stringValue = $0
-        return anyValue
-      }
-    case let .boolArray(value):
-      keyValue.value.arrayValue.values = value.map {
-        var anyValue = Opentelemetry_Proto_Common_V1_AnyValue()
-        anyValue.boolValue = $0
-        return anyValue
-      }
-    case let .intArray(value):
-      keyValue.value.arrayValue.values = value.map {
-        var anyValue = Opentelemetry_Proto_Common_V1_AnyValue()
-        anyValue.intValue = Int64($0)
-        return anyValue
-      }
-    case let .doubleArray(value):
-      keyValue.value.arrayValue.values = value.map {
-        var anyValue = Opentelemetry_Proto_Common_V1_AnyValue()
-        anyValue.doubleValue = $0
-        return anyValue
-      }
     case let .set(value):
       keyValue.value.kvlistValue.values = value.labels.map({
         return toProtoAttribute(key: $0, attributeValue: $1)
+      })
+    case let .array(value):
+      keyValue.value.arrayValue.values = value.values.map({
+        return toProtoAnyValue(attributeValue: $0)
       })
     }
     return keyValue
@@ -65,33 +45,13 @@ public struct CommonAdapter {
       anyValue.intValue = Int64(value)
     case let .double(value):
       anyValue.doubleValue = value
-    case let .stringArray(value):
-      anyValue.arrayValue.values = value.map {
-        var anyValue = Opentelemetry_Proto_Common_V1_AnyValue()
-        anyValue.stringValue = $0
-        return anyValue
-      }
-    case let .boolArray(value):
-      anyValue.arrayValue.values = value.map {
-        var anyValue = Opentelemetry_Proto_Common_V1_AnyValue()
-        anyValue.boolValue = $0
-        return anyValue
-      }
-    case let .intArray(value):
-      anyValue.arrayValue.values = value.map {
-        var anyValue = Opentelemetry_Proto_Common_V1_AnyValue()
-        anyValue.intValue = Int64($0)
-        return anyValue
-      }
-    case let .doubleArray(value):
-      anyValue.arrayValue.values = value.map {
-        var anyValue = Opentelemetry_Proto_Common_V1_AnyValue()
-        anyValue.doubleValue = $0
-        return anyValue
-      }
     case let .set(value):
       anyValue.kvlistValue.values = value.labels.map({
         return toProtoAttribute(key: $0, attributeValue: $1)
+      })
+    case let .array(value):
+      anyValue.arrayValue.values = value.values.map({
+        return toProtoAnyValue(attributeValue: $0)
       })
     }
     return anyValue

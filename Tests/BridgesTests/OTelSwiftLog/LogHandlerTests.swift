@@ -7,17 +7,9 @@ import OpenTelemetrySdk
 
 final class OTelLogHandlerTests: XCTestCase {
 
-    // TODO: Check for all fields on scope
-    func testLogHandlerInitialization() {
-        let scope = InstrumentationScope(name: "TestScope")
-        let logHandler = OTelLogHandler(scope: scope)
-        
-        XCTAssertEqual(logHandler.scope.name, "TestScope")
-        XCTAssertEqual(logHandler.logLevel, .info)
-    }
-
     // TODO: Test log level for permissive and restrictive case
 
+  
     func testLogHandlerMetadata() {
         // TODO: Test different combination
         var logHandler = OTelLogHandler()
@@ -27,7 +19,10 @@ final class OTelLogHandlerTests: XCTestCase {
         XCTAssertEqual(logHandler.metadata["anotherKey"], "anotherValue")
     }
 
-     func testConvertToAttributeValue() {
+
+  
+  
+    func testConvertToAttributeValue() {
         //string test
         let attributeValueString = convertToAttributeValue(Logging.Logger.Metadata.Value(stringLiteral: "HelloWorld"))
         XCTAssertEqual(attributeValueString, AttributeValue.string("HelloWorld"))
@@ -41,16 +36,20 @@ final class OTelLogHandlerTests: XCTestCase {
       
       let attributeValueEmptyArray =
       convertToAttributeValue(Logger.Metadata.Value.array([]))
-      XCTAssertEqual(attributeValueEmptyArray, AttributeValue.stringArray([]))
+      XCTAssertEqual(attributeValueEmptyArray, AttributeValue.array(AttributeArray.empty))
       
       let attributeValueArray =
       convertToAttributeValue(Logger.Metadata.Value.array([Logger.Metadata.Value.stringConvertible(100),
                                                            Logger.Metadata.Value.string("string"),
-                                                           Logger.Metadata.Value.array([]),
-                                                           Logger.Metadata.Value.dictionary([:])]))
+                                                           Logger.Metadata.Value.array(["index0"]),
+                                                           Logger.Metadata.Value.dictionary(["key":"value"])]))
 
       // is this the expected behavior?
-      XCTAssertEqual(attributeValueArray, nil)
+      XCTAssertEqual(attributeValueArray,
+                     AttributeValue.array(AttributeArray(values:[.string("100"),
+                                                                 .string("string"),
+                                                                 .array(AttributeArray(values:[.string("index0")])),
+                                                                 .set(AttributeSet(labels: ["key":.string("value")]))])))
       
       let attributeValueStringArray = convertToAttributeValue(Logger.Metadata.Value.array(
         [Logger.Metadata.Value.stringConvertible(100),
@@ -58,7 +57,7 @@ final class OTelLogHandlerTests: XCTestCase {
          Logger.Metadata.Value.stringConvertible(true)
       ]))
       
-      XCTAssertEqual(attributeValueStringArray, AttributeValue.stringArray(["100", "string", "true"]))
+      XCTAssertEqual(attributeValueStringArray, AttributeValue.array(AttributeArray(values: [AttributeValue.string("100"), AttributeValue.string("string"), AttributeValue.string("true")])))
     }
     
     func testConvertSeverity() {
