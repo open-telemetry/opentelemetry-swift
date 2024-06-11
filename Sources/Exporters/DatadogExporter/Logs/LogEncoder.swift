@@ -90,13 +90,7 @@ internal struct DDLog: Encodable {
                     return value
                 case let .double(value):
                     return value
-                case let .stringArray(value):
-                    return value
-                case let .boolArray(value):
-                    return value
-                case let .intArray(value):
-                    return value
-                case let .doubleArray(value):
+                case let .array(value):
                     return value
                 case let .set(value):
                     return value
