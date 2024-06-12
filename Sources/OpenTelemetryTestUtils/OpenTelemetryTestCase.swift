@@ -6,10 +6,6 @@
 @testable import OpenTelemetryApi
 @testable import OpenTelemetrySdk
 import XCTest
-#if canImport(_Concurrency)
-@testable import OpenTelemetryConcurrency
-typealias ConcurrentOpenTelemetry = OpenTelemetryConcurrency.OpenTelemetry
-#endif
 typealias OpenTelemetry = OpenTelemetryApi.OpenTelemetry
 
 /// A test case which runs its tests under (potentially) multiple context managers.

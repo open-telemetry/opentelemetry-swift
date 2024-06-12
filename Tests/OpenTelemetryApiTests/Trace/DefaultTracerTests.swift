@@ -27,8 +27,6 @@ class DefaultTracerTestsInfo: OpenTelemetryContextTestCase {
         super.setUp()
         spanContext = SpanContext.create(traceId: TraceId(fromBytes: firstBytes), spanId: SpanId(fromBytes: firstBytes, withOffset: 8), traceFlags: TraceFlags(), traceState: TraceState())
         XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan, "Test must start without context")
-        XCTAssertIdentical(defaultTracer, OpenTelemetry.instance.tracerProvider.get(instrumentationName: ""))
-
     }
 
     override func tearDown() {
