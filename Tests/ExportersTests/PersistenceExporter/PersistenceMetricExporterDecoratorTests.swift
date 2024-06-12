@@ -48,25 +48,7 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
                        metricData.labels ==  ["labelKey": "labelValue"]
                     {
                         metricsExportExpectation.fulfill()
-                    } else {
-                        if let metricData = metric.data[0] as? SumData<Int> {
-                            if metricData.sum == 100 {
-                                if metricData.labels == ["labelKey": "labelValue"] {
-                                    print("what")
-                                } else {
-                                    print(metricData.labels)
-                                }
-                            } else {
-                                print(metricData.sum)
-                            }
-                        } else {
-                            print(metric.data[0])
-                        }
                     }
-
-                } else {
-                    print("Metric info: \(metric.name) \(metric.namespace) \(metric.data.count)")
-                }
             }
             
             return .success
