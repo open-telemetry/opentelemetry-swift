@@ -9,11 +9,25 @@ import XCTest
 
 /// Creates `Directory` pointing to unique subfolder in `/var/folders/`.
 /// Does not create the subfolder - it must be later created with `.create()`.
-func obtainUniqueTemporaryDirectory() -> Directory {
-    let subdirectoryName = "com.datadoghq.ios-sdk-tests-\(UUID().uuidString)"
-    let osTemporaryDirectoryURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent(subdirectoryName, isDirectory: true)
-//    print("💡 Obtained temporary directory URL: \(osTemporaryDirectoryURL)")
-    return Directory(url: osTemporaryDirectoryURL)
+@propertyWrapper class UniqueTemporaryDirectory {
+    private let directory: Directory
+    private var printedDir = false
+
+    var wrappedValue: Directory {
+        if printedDir == false {
+            printedDir = true
+            // Printing this message during initialization breaks `swift test --filter...` on platforms without Objective-C support, so we do it on first access instead
+            print("💡 Obtained temporary directory URL: \(directory.url)")
+        }
+
+        return directory
+    }
+
+    init() {
+        let subdirectoryName = "com.datadoghq.ios-sdk-tests-\(UUID().uuidString)"
+        let osTemporaryDirectoryURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent(subdirectoryName, isDirectory: true)
+        self.directory = Directory(url: osTemporaryDirectoryURL)
+    }
 }
 
 /// `Directory` pointing to subfolder in `/var/folders/`.

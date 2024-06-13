@@ -5,11 +5,11 @@
 
 import Foundation
 
-/// A base protocol for `Span` which encapsulates all of the functionality that is correct in both imperative and structured API modes. Functionality which is only guarenteed to work in the imperative mode exists on `Span`. 
+/// A base protocol for `Span` which encapsulates all of the functionality that is correct in both the imperative and structured APIs. Functionality which is only guarenteed to work as intended in the imperative APIs exists on `Span`.
 ///
 /// If an API only provides a `SpanBase`, the span will be ended automatically at the end of the scope the span was provided. It is generally acceptable to end the span early anyway by casting to `Span`, however the span may still be active until the end of the scope the span was provided in depending on which context manager is in use.
 ///
-/// Note that it is never correct to only implement `SpanBase`, `Span` should always be implemented for any span type as well.
+/// - Warning: It is never correct to only implement `SpanBase`, `Span` should always be implemented for any span type as well.
 public protocol SpanBase: AnyObject, CustomStringConvertible {
     /// Type of span.
     /// Can be used to specify additional relationships between spans in addition to a parent/child relationship.

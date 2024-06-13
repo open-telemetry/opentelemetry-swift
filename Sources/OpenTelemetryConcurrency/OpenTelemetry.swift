@@ -33,6 +33,19 @@ public struct TracerProviderWrapper {
     }
 }
 
+/// The main interface for interacting with OpenTelemetry types.
+///
+/// This type proxies its implementation to the `OpenTelemetryApi.OpenTelemetry` type, wrapping some of the results in new types to hide APIs that will not function correctly when using a context manager based on structured concurrency.
+///
+/// If you import this module and `OpenTelemetryApi` you will not be able to reference the `OpenTelemetry` type normally, because the names intentionally conflict. You can resolve this error with a typealias
+///
+/// ```swift
+/// import OpenTelemetryApi
+/// import OpenTelemetryConcurrency
+///
+/// // This typealias will be preferred over the name in either package, so you only have to refer to the module name once
+/// typealias OpenTelemetry = OpenTelemetryConcurrency.OpenTelemetry
+/// ```
 public struct OpenTelemetry {
     public static var version: String { _OpenTelemetry.version }
 
@@ -70,6 +83,7 @@ public struct OpenTelemetry {
         OpenTelemetryContextProvider(contextManager: _OpenTelemetry.instance.contextProvider.contextManager)
     }
 
+    /// On platforms that support the original default context manager, it is prefered over the structured concurrency context manager when initializing OpenTelemetry. Call this method to register the default structured concurrency context manager instead.
     public static func registerDefaultConcurrencyContextManager() {
         _OpenTelemetry.registerContextManager(contextManager: TaskLocalContextManager.instance)
     }
@@ -116,7 +130,7 @@ public struct OpenTelemetryContextProvider {
         return contextManager.getCurrentContextValue(forKey: OpenTelemetryContextKeys.baggage) as? Baggage
     }
 
-    /// Sets `span` as the active span for the duration of the given closure. While the span will no longer be active after the closure exits, this method does **not** end the span.
+    /// Sets `span` as the active span for the duration of the given closure. While the span will no longer be active after the closure exits, this method does **not** end the span. Prefer `SpanBuilderBase.withActiveSpan` which handles starting, activating, and ending the span.
     public func withActiveSpan<T>(_ span: SpanBase, _ operation: () throws -> T) rethrows -> T {
         try self.contextManager.withCurrentContextValue(forKey: .span, value: span, operation)
     }
@@ -125,7 +139,7 @@ public struct OpenTelemetryContextProvider {
         try self.contextManager.withCurrentContextValue(forKey: .baggage, value: baggage, operation)
     }
 
-    /// Sets `span` as the active span for the duration of the given closure. While the span will no longer be active after the closure exits, this method does **not** end the span.
+    /// Sets `span` as the active span for the duration of the given closure. While the span will no longer be active after the closure exits, this method does **not** end the span. Prefer `SpanBuilderBase.withActiveSpan` which handles starting, activating, and ending the span.
     public func withActiveSpan<T>(_ span: SpanBase, _ operation: () async throws -> T) async rethrows -> T {
         try await self.contextManager.withCurrentContextValue(forKey: .span, value: span, operation)
     }

@@ -6,6 +6,11 @@
 import Foundation
 
 #if canImport(_Concurrency)
+/// A context manager utilizing a task local for tracking active context.
+///
+/// Unlike the `os.activity` context manager, this class does not handle setting and removing context manually. You must always use the closure based APIs for setting active context when using this manager. The `OpenTelemetryConcurrency` module assists with this by hiding the imperative APIs by default.
+///
+/// - Note: This restriction means this class is not suitable for dynamic context injection. If you require dynamic context injection, you will need a custom context manager.
 public class TaskLocalContextManager: ContextManager {
 #if swift(>=5.9)
     package static let instance = TaskLocalContextManager()

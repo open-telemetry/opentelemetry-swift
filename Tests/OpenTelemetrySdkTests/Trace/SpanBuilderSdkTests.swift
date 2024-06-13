@@ -9,8 +9,6 @@
 import XCTest
 import OpenTelemetryTestUtils
 
-private let dso = UnsafeMutableRawPointer(mutating: #dsohandle)
-
 class SpanBuilderSdkTestInfo: OpenTelemetryContextTestCase {
     let spanName = "span_name"
     let sampledSpanContext = SpanContext.create(traceId: TraceId(idHi: 1000, idLo: 1000),
@@ -323,6 +321,8 @@ private let OS_ACTIVITY_CURRENT = unsafeBitCast(dlsym(UnsafeMutableRawPointer(bi
                                                                       _ description: UnsafePointer<Int8>,
                                                                       _ parent: Unmanaged<AnyObject>?,
                                                                       _ flags: os_activity_flag_t) -> AnyObject!
+
+private let dso = UnsafeMutableRawPointer(mutating: #dsohandle)
 
 final class SpanBuilderSdkTestActivity: SpanBuilderSdkTestInfo {
     override var contextManagers: [any ContextManager] {

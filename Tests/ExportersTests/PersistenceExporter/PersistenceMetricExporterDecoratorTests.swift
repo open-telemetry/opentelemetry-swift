@@ -9,7 +9,7 @@ import OpenTelemetrySdk
 import XCTest
 
 class PersistenceMetricExporterDecoratorTests: XCTestCase {
-    private let temporaryDirectory = obtainUniqueTemporaryDirectory()
+    @UniqueTemporaryDirectory private var temporaryDirectory: Directory
 
     class MetricExporterMock: MetricExporter {
         
@@ -42,15 +42,15 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
                 if metric.name == "MyCounter" &&
                     metric.namespace == "MyMeter" &&
                     metric.data.count == 1 {
-                    
+
                     if let metricData = metric.data[0] as? SumData<Int>,
                        metricData.sum == 100,
                        metricData.labels ==  ["labelKey": "labelValue"]
                     {
                         metricsExportExpectation.fulfill()
                     }
+                }
             }
-            
             return .success
         })
                 

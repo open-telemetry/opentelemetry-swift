@@ -50,6 +50,8 @@ public struct OpenTelemetry {
         let manager = ActivityContextManager.instance
 #elseif canImport(_Concurrency)
         let manager = TaskLocalContextManager.instance
+#else
+#error("No default ContextManager is supported on the target platform")
 #endif
         contextProvider = OpenTelemetryContextProvider(contextManager: manager)
 
@@ -93,6 +95,7 @@ public struct OpenTelemetry {
         instance.feedbackHandler = handler
     }
 
+    /// A utility method for testing which sets the context manager for the duration of the closure, and then reverts it before the method returns
     static func withContextManager<T>(_ manager: ContextManager, _ operation: () throws -> T) rethrows -> T {
         let old = self.instance.contextProvider.contextManager
         defer {

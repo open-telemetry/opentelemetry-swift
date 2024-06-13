@@ -5,9 +5,14 @@
 
 #if canImport(os.activity)
 @testable import OpenTelemetryApi
+import OpenTelemetryTestUtils
 import XCTest
 
-class ActivityContextManagerTests: XCTestCase {
+class ActivityContextManagerTests: OpenTelemetryContextTestCase {
+    override var contextManagers: [any ContextManager] {
+        Self.activityContextManagers()
+    }
+
     let defaultTracer = DefaultTracer.instance
     let firstBytes: [UInt8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, UInt8(ascii: "a")]
 
