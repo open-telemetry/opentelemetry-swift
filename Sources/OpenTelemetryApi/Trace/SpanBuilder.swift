@@ -135,7 +135,7 @@ public protocol SpanBuilder: SpanBuilderBase {
     @discardableResult func setActive(_ active: Bool) -> Self
 }
 
-public extension SpanBuilder {
+public extension SpanBuilderBase {
     func withStartedSpan<T>(_ operation: (any SpanBase) throws -> T) rethrows -> T {
         let span = self.startSpan()
         defer {
