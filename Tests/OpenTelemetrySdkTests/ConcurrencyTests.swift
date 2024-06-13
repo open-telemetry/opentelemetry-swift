@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if canImport(_Concurrency)
 import OpenTelemetryTestUtils
 import XCTest
 import OpenTelemetrySdk
@@ -13,6 +14,10 @@ private typealias OpenTelemetry = OpenTelemetryConcurrency.OpenTelemetry
 
 final class ConcurrencyTests: OpenTelemetryContextTestCase {
     var oldTracerProvider: TracerProvider?
+
+    var tracer: TracerWrapper {
+        OpenTelemetry.instance.tracerProvider.get(instrumentationName: "ConcurrencyTests", instrumentationVersion: nil)
+    }
 
     override func setUp() async throws {
         try await super.setUp()
@@ -26,9 +31,8 @@ final class ConcurrencyTests: OpenTelemetryContextTestCase {
     }
 
     func testBasicSpan() {
-        // Attempting to use `startSpan` or `setActive` here will cause a build error since we're using `OpenTelemetryConcurrency.OpenTelemetry` instead of `OpenTelemetryApi.OpenTelemetry`
-        OpenTelemetry.instance.tracerProvider
-            .get(instrumentationName: "test", instrumentationVersion: nil)
+        // Attempting to use `setActive` here will cause a build error since we're using `OpenTelemetryConcurrency.OpenTelemetry` instead of `OpenTelemetryApi.OpenTelemetry`
+        tracer
             .spanBuilder(spanName: "basic")
             .withActiveSpan { span in
                 XCTAssertIdentical(OpenTelemetry.instance.contextProvider.activeSpan, span)
@@ -36,4 +40,31 @@ final class ConcurrencyTests: OpenTelemetryContextTestCase {
 
         XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
     }
+
+    func testDetachedTask() async {
+        await tracer
+            .spanBuilder(spanName: "basic")
+            .withActiveSpan { span in
+                await Task.detached {
+                    // Detached task doesn't inherit context
+                    XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
+                    let detached = self.tracer.spanBuilder(spanName: "detached").startSpan()
+                    XCTAssertNil((detached as! RecordEventsReadableSpan).parentContext)
+                }.value
+            }
+    }
+
+    func testTask() async {
+        await tracer
+            .spanBuilder(spanName: "basic")
+            .withActiveSpan { span in
+                await Task {
+                    XCTAssertIdentical(OpenTelemetry.instance.contextProvider.activeSpan, span)
+                    let attached = self.tracer.spanBuilder(spanName: "attached").startSpan()
+                    XCTAssertEqual((attached as! RecordEventsReadableSpan).parentContext, (span as! RecordEventsReadableSpan).context)
+                }.value
+            }
+    }
 }
+
+#endif

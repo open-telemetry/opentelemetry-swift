@@ -21,7 +21,8 @@ let package = Package(
         .library(name: "OpenTelemetryProtocolExporterHTTP", type: .static, targets: ["OpenTelemetryProtocolExporterHttp"]),
         .library(name: "PersistenceExporter", type: .static, targets: ["PersistenceExporter"]),
         .library(name: "InMemoryExporter", type: .static, targets: ["InMemoryExporter"]),
-        .executable(name: "loggingTracer", targets: ["LoggingTracer"])
+        .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
+        .executable(name: "ConcurrencyContext", targets: ["ConcurrencyContext"])
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
@@ -110,6 +111,11 @@ let package = Package(
           name: "LogsSample",
           dependencies: ["OpenTelemetrySdk", "OpenTelemetryProtocolExporterGrpc", .product(name: "GRPC", package: "grpc-swift")],
           path: "Examples/Logs Sample"),
+        .executableTarget(
+            name: "ConcurrencyContext",
+            dependencies: ["OpenTelemetrySdk", "OpenTelemetryConcurrency", "StdoutExporter"],
+            path: "Examples/ConcurrencyContext"
+        ),
     ]
 ).addPlatformSpecific()
 
