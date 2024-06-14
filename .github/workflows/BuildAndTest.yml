@@ -50,7 +50,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install swiftly
-        run: curl -L https://swiftlang.github.io/swiftly/swiftly-install.sh | bash -s -- --disable-confirmation
+        run: curl -L https://swiftlang.github.io/swiftly/swiftly-install.sh | bash
       - name: Install swift
         run: swiftly install 5.10.1
       - name: Build tests for Linux
