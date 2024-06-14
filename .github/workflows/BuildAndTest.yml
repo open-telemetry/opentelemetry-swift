@@ -50,5 +50,7 @@ jobs:
     container: swift:5.10
     steps:
       - uses: actions/checkout@v2
-      - name: Build and Test for macOS
+      - name: Build tests for Linux
+        run: swift build --build-tests
+      - name: Run tests for Linux
         run: swift test
