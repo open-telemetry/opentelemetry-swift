@@ -19,15 +19,15 @@ final class ConcurrencyTests: OpenTelemetryContextTestCase {
         OpenTelemetry.instance.tracerProvider.get(instrumentationName: "ConcurrencyTests", instrumentationVersion: nil)
     }
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         oldTracerProvider = OpenTelemetry.instance.tracerProvider.inner
         OpenTelemetry.registerTracerProvider(tracerProvider: TracerProviderSdk())
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         OpenTelemetry.registerTracerProvider(tracerProvider: self.oldTracerProvider!)
-        super.tearDown()
+        try await super.tearDown()
     }
 
     func testBasicSpan() {
