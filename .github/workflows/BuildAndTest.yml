@@ -47,9 +47,12 @@ jobs:
       run: make test-without-building-watchos
   linux:
     runs-on: ubuntu-latest
-    container: swift:5.10
     steps:
       - uses: actions/checkout@v2
+      - name: Install swiftly
+        run: curl -L https://swiftlang.github.io/swiftly/swiftly-install.sh | bash
+      - name: Install swift
+        run: swiftly install 5.10.1
       - name: Build tests for Linux
         run: swift build --build-tests
       - name: Run tests for Linux
