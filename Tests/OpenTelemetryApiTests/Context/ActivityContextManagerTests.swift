@@ -19,12 +19,14 @@ class ActivityContextManagerTests: OpenTelemetryContextTestCase {
     var spanContext: SpanContext!
 
     override func setUp() {
+        super.setUp()
         spanContext = SpanContext.create(traceId: TraceId(fromBytes: firstBytes), spanId: SpanId(fromBytes: firstBytes, withOffset: 8), traceFlags: TraceFlags(), traceState: TraceState())
         XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === nil)
     }
 
     override func tearDown() {
         XCTAssert(OpenTelemetry.instance.contextProvider.activeSpan === nil)
+        super.tearDown()
     }
 
     func testStartAndEndSpanInAsyncQueue() {
