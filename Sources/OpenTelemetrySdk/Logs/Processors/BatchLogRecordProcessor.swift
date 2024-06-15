@@ -99,7 +99,7 @@ private class BatchWorker : Thread {
           cond.unlock()
           self.exportBatch(logRecordList: logRecordsCopy, explicitTimeout: exportTimeout)
       }
-    } while true
+    } while !self.isCancelled
   }
   
   public func forceFlush(explicitTimeout: TimeInterval? = nil) {

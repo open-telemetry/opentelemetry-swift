@@ -113,7 +113,7 @@ private class BatchWorker: Thread {
           cond.unlock()
           self.exportBatch(spanList: spansCopy, explicitTimeout: self.exportTimeout)
       }
-    } while true
+    } while !self.isCancelled
   }
   
   func shutdown() {
