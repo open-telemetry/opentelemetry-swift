@@ -69,3 +69,8 @@ test-without-building-tvos:
 .PHONY: test-without-building-watchos
 test-without-building-watchos:
 	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_WATCHOS) test-without-building | xcbeautify
+
+
+.PHONY: generate-xcframework
+generate-xcframework:
+	./Scripts/generate_xcframework.sh OpenTelemetryApi
