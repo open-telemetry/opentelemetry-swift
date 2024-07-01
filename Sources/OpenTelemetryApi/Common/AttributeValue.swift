@@ -11,6 +11,10 @@ public enum AttributeValue: Equatable, CustomStringConvertible, Hashable {
   case bool(Bool)
   case int(Int)
   case double(Double)
+  @available(*, deprecated, message: "replaced by .array(AttributeArray)") case stringArray([String])
+  @available(*, deprecated, message: "replaced by .array(AttributeArray)") case boolArray([Bool])
+  @available(*, deprecated, message: "replaced by .array(AttributeArray)") case intArray([Int])
+  @available(*, deprecated, message: "replaced by .array(AttributeArray)") case doubleArray([Double])
   case array(AttributeArray)
   case set(AttributeSet)
 
@@ -24,11 +28,20 @@ public enum AttributeValue: Equatable, CustomStringConvertible, Hashable {
       return String(value)
     case let .double(value):
       return String(value)
+    case let .stringArray(value):
+      return value.description
+    case let .boolArray(value):
+      return value.description
+    case let .intArray(value):
+      return value.description
+    case let .doubleArray(value):
+      return value.description
     case let .array(value):
       return value.description
     case let .set(value):
       return value.labels.description
     }
+
   }
 
   public init?(_ value: Any) {
@@ -41,6 +54,14 @@ public enum AttributeValue: Equatable, CustomStringConvertible, Hashable {
       self = .int(val)
     case let val as Double:
       self = .double(val)
+    case let val as [String]:
+      self = .array(AttributeArray(values: val.map {AttributeValue.string($0)}))
+    case let val as [Bool]:
+      self = .array(AttributeArray(values: val.map { AttributeValue.bool($0)}))
+    case let val as [Int]:
+      self = .array(AttributeArray(values: val.map { AttributeValue.int($0)}))
+    case let val as [Double]:
+      self = .array(AttributeArray(values: val.map { AttributeValue.double($0)}))
     case let val as AttributeArray:
       self = .array(val)
     case let val as AttributeSet:
@@ -187,6 +208,18 @@ internal struct AttributeValueExplicitCodable: Codable {
         keyedBy: AssociatedValueCodingKeys.self, forKey: .set)
       try nestedContainer.encode(value, forKey: .associatedValue)
     case let .array(value):
+      var nestedContainer = container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .array)
+      try nestedContainer.encode(value, forKey: .associatedValue)
+    case let .stringArray(value):
+      var nestedContainer = container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .array)
+      try nestedContainer.encode(value, forKey: .associatedValue)
+    case let .boolArray(value):
+      var nestedContainer = container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .array)
+      try nestedContainer.encode(value, forKey: .associatedValue)
+    case let .intArray(value):
+      var nestedContainer = container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .array)
+      try nestedContainer.encode(value, forKey: .associatedValue)
+    case let .doubleArray(value):
       var nestedContainer = container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .array)
       try nestedContainer.encode(value, forKey: .associatedValue)
     }

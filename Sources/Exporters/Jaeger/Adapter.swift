@@ -124,8 +124,24 @@
           let array = processAttributeArray(data: value)
           if let json = try? String(data: JSONEncoder().encode(array), encoding: .utf8) {
             processedValues.append(json)
-          }     
+          }
         case let .set(value):
+          if let json = try? String(data: JSONEncoder().encode(value), encoding: .utf8) {
+            processedValues.append(json)
+          }
+        case let .stringArray(value):
+          if let json = try? String(data: JSONEncoder().encode(value), encoding: .utf8) {
+            processedValues.append(json)
+          }
+        case let .boolArray(value):
+          if let json = try? String(data: JSONEncoder().encode(value), encoding: .utf8) {
+            processedValues.append(json)
+          }
+        case let .intArray(value):
+          if let json = try? String(data: JSONEncoder().encode(value), encoding: .utf8) {
+            processedValues.append(json)
+          }
+        case let .doubleArray(value):
           if let json = try? String(data: JSONEncoder().encode(value), encoding: .utf8) {
             processedValues.append(json)
           }
@@ -156,6 +172,18 @@
       case let .double(value):
         vType = .double
         vDouble = value
+      case let .stringArray(value):
+        vType = .string
+        vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
+      case let .boolArray(value):
+        vType = .string
+        vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
+      case let .intArray(value):
+        vType = .string
+        vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
+      case let .doubleArray(value):
+        vType = .string
+        vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
       case let .array(value):
         vType = .string
         vStr = "[\(processAttributeArray(data: value).joined(separator: ", "))]"
