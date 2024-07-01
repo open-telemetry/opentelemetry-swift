@@ -64,7 +64,7 @@ class BatchLogRecordProcessorTests : XCTestCase {
     
     func testShutdownFlushes() {
         let waitingExporter = WaitingLogRecordExporter(numberToWaitFor: 1)
-        let processor = BatchLogRecordProcessor(logRecordExporter: waitingExporter,scheduleDelay: 0)
+        let processor = BatchLogRecordProcessor(logRecordExporter: waitingExporter, scheduleDelay: 0.1)
         let loggerProvider = LoggerProviderBuilder().with(processors: [processor]).build()
         let logger = loggerProvider.get(instrumentationScopeName: "BatchLogRecordProcessorTest")
 

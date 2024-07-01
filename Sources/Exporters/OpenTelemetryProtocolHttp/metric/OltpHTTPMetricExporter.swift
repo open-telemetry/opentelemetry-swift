@@ -6,6 +6,9 @@
 import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterCommon
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 public func defaultOltpHTTPMetricsEndpoint() -> URL {
   URL(string: "http://localhost:4318/v1/metrics")!

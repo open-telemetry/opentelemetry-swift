@@ -8,11 +8,18 @@ import Foundation
 import XCTest
 
 class ComponentRegistryTests : XCTestCase {
-    
-    
+    /// On Linux, casting `String` to `AnyObject` doesn't seem to have the same behavior as on Apple platforms (presumably related to NSString bridging). Wrapping the string with a class type gets the expected behavior on both platforms
+    class StringBox {
+        var value: String
+
+        init(_ value: String) {
+            self.value = value
+        }
+    }
+
     func testComponentRegistry() {
-        let registry = ComponentRegistry<String> { instrumentationScope in
-            return instrumentationScope.name + (instrumentationScope.version ?? "") + (instrumentationScope.schemaUrl ?? "")
+        let registry = ComponentRegistry<StringBox> { instrumentationScope in
+            return StringBox(instrumentationScope.name + (instrumentationScope.version ?? "") + (instrumentationScope.schemaUrl ?? ""))
         }
         
         let item1 = registry.get(name: "one")

@@ -7,7 +7,7 @@
 import XCTest
 
 class DataUploadWorkerTests: XCTestCase {
-    private let temporaryDirectory = obtainUniqueTemporaryDirectory()
+    @UniqueTemporaryDirectory private var temporaryDirectory: Directory
 
     lazy var dateProvider = RelativeDateProvider(advancingBySeconds: 1)
     lazy var orchestrator = FilesOrchestrator(

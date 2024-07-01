@@ -4,6 +4,7 @@
  */
 
 import Foundation
+#if canImport(os.activity)
 import os.activity
 
 // Bridging Obj-C variabled defined as c-macroses. See `activity.h` header.
@@ -14,7 +15,7 @@ private let OS_ACTIVITY_CURRENT = unsafeBitCast(dlsym(UnsafeMutableRawPointer(bi
                                                                       _ parent: Unmanaged<AnyObject>?,
                                                                       _ flags: os_activity_flag_t) -> AnyObject!
 
-class ActivityContextManager: ContextManager {
+class ActivityContextManager: ImperativeContextManager {
     static let instance = ActivityContextManager()
 
     let rlock = NSRecursiveLock()
@@ -84,3 +85,4 @@ class ActivityContextManager: ContextManager {
         rlock.unlock()
     }
 }
+#endif

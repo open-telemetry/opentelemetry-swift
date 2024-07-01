@@ -8,7 +8,7 @@ import XCTest
 
 class FilesOrchestratorTests: XCTestCase {
     private let performance: PersistencePerformancePreset = .default
-    private let temporaryDirectory = obtainUniqueTemporaryDirectory()
+    @UniqueTemporaryDirectory private var temporaryDirectory: Directory
 
     override func setUp() {
         super.setUp()

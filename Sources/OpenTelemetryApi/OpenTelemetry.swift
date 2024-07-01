@@ -4,6 +4,9 @@
  */
 
 import Foundation
+#if canImport(os.log)
+import os.log
+#endif
 
 /// This class provides a static global accessor for telemetry objects Tracer, Meter
 ///  and BaggageManager.
@@ -33,6 +36,9 @@ public struct OpenTelemetry {
 
     /// registered manager or default via  DefaultBaggageManager.instance.
     public private(set) var contextProvider: OpenTelemetryContextProvider
+    
+    /// Allow customizing how warnings and informative messages about usages of OpenTelemetry are relayed back to the developer.
+    public private(set) var feedbackHandler: ((String) -> Void)?
 
     private init() {
         stableMeterProvider = nil
@@ -40,7 +46,20 @@ public struct OpenTelemetry {
         meterProvider = DefaultMeterProvider.instance
         loggerProvider = DefaultLoggerProvider.instance
         baggageManager = DefaultBaggageManager.instance
-        contextProvider = OpenTelemetryContextProvider(contextManager: ActivityContextManager.instance)
+#if canImport(os.activity)
+        let manager = ActivityContextManager.instance
+#elseif canImport(_Concurrency)
+        let manager = TaskLocalContextManager.instance
+#else
+#error("No default ContextManager is supported on the target platform")
+#endif
+        contextProvider = OpenTelemetryContextProvider(contextManager: manager)
+
+#if canImport(os.log)
+        feedbackHandler = { message in
+            os_log("%{public}s", message)
+        }
+#endif
     }
 
     public static func registerStableMeterProvider(meterProvider: StableMeterProvider) {
@@ -69,5 +88,22 @@ public struct OpenTelemetry {
 
     public static func registerContextManager(contextManager: ContextManager) {
         instance.contextProvider.contextManager = contextManager
+    }
+
+    /// Register a function to be called when the library has warnings or informative messages to relay back to the developer
+    public static func registerFeedbackHandler(_ handler: @escaping (String) -> Void) {
+        instance.feedbackHandler = handler
+    }
+
+    /// A utility method for testing which sets the context manager for the duration of the closure, and then reverts it before the method returns
+    static func withContextManager<T>(_ manager: ContextManager, _ operation: () throws -> T) rethrows -> T {
+        let old = self.instance.contextProvider.contextManager
+        defer {
+            self.registerContextManager(contextManager: old)
+        }
+
+        self.registerContextManager(contextManager: manager)
+
+        return try operation()
     }
 }

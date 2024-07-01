@@ -4,6 +4,9 @@
  */
 
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 import OpenTelemetrySdk
 @testable import PrometheusExporter
 import XCTest

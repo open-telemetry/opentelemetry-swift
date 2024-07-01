@@ -181,7 +181,7 @@ class BatchSpansProcessorTests: XCTestCase {
     let waitingSpanExporter = WaitingSpanExporter(numberToWaitFor: 1)
     
     // Set the export delay to zero, for no timeout, in order to confirm the #flush() below works
-    tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(spanExporter: waitingSpanExporter, scheduleDelay: 0))
+      tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(spanExporter: waitingSpanExporter, scheduleDelay: 0.1))
     
     let span2 = createSampledEndedSpan(spanName: spanName2)
     
