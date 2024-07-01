@@ -30,6 +30,22 @@ public struct CommonAdapter {
       keyValue.value.arrayValue.values = value.values.map({
         return toProtoAnyValue(attributeValue: $0)
       })
+    case let .stringArray(value):
+      keyValue.value.arrayValue.values = value.map({
+        return toProtoAnyValue(attributeValue: .string($0))
+      })
+    case let .boolArray(value):
+      keyValue.value.arrayValue.values = value.map({
+        return toProtoAnyValue(attributeValue: .bool($0))
+      })
+    case let .intArray(value):
+      keyValue.value.arrayValue.values = value.map({
+        return toProtoAnyValue(attributeValue: .int($0))
+      })
+    case let .doubleArray(value):
+      keyValue.value.arrayValue.values = value.map({
+        return toProtoAnyValue(attributeValue: .double($0))
+      })
     }
     return keyValue
   }
@@ -52,6 +68,22 @@ public struct CommonAdapter {
     case let .array(value):
       anyValue.arrayValue.values = value.values.map({
         return toProtoAnyValue(attributeValue: $0)
+      })
+    case let .stringArray(value):
+      anyValue.arrayValue.values = value.map({
+        return toProtoAnyValue(attributeValue: .string($0))
+      })
+    case let .boolArray(value):
+      anyValue.arrayValue.values = value.map({
+        return toProtoAnyValue(attributeValue: .bool($0))
+      })
+    case let .intArray(value):
+      anyValue.arrayValue.values = value.map({
+        return toProtoAnyValue(attributeValue: .int($0))
+      })
+    case let .doubleArray(value):
+      anyValue.arrayValue.values = value.map({
+        return toProtoAnyValue(attributeValue: .double($0))
       })
     }
     return anyValue
