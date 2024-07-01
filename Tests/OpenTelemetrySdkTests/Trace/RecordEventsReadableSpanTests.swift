@@ -190,38 +190,35 @@ class RecordEventsReadableSpanTest: XCTestCase {
         span.setAttribute(key: "LongKey", value: 1000)
         span.setAttribute(key: "DoubleKey", value: 10.0)
         span.setAttribute(key: "BooleanKey", value: false)
-        span.setAttribute(key: "ArrayStringKey", value: AttributeValue.stringArray(["StringVal", "", "StringVal2"]))
-        span.setAttribute(key: "ArrayLongKey", value: AttributeValue.intArray([1, 2, 3, 4, 5]))
-        span.setAttribute(key: "ArrayDoubleKey", value: AttributeValue.doubleArray([0.1, 2.3, 4.5, 6.7, 8.9]))
-        span.setAttribute(key: "ArrayBoolKey", value: AttributeValue.boolArray([true, false, false, true]))
-        span.setAttribute(key: "EmptyArrayStringKey", value: AttributeValue.stringArray([String]()))
-        span.setAttribute(key: "EmptyArrayLongKey", value: AttributeValue.intArray([Int]()))
-        span.setAttribute(key: "EmptyArrayDoubleKey", value: AttributeValue.doubleArray([Double]()))
-        span.setAttribute(key: "EmptyArrayBooleanKey", value: AttributeValue.boolArray([Bool]()))
+        span.setAttribute(key: "ArrayStringKey", value: AttributeValue.array(AttributeArray(values:[.string("StringVal"), .string(""), .string("StringVal2")])))
+        span.setAttribute(key: "ArrayLongKey", value: AttributeValue.array(AttributeArray(values:[.int(1), .int(2), .int(3), .int(4), .int(5)])))
+        span.setAttribute(key: "ArrayDoubleKey", value: AttributeValue.array(AttributeArray(values:[.double(0.1),.double(2.3), .double(4.5), .double(6.7), .double(8.9)])))
+        span.setAttribute(key: "ArrayBoolKey", value: AttributeValue.array(AttributeArray(values:[.bool(true), .bool(false), .bool(false), .bool(true)])))
+        span.setAttribute(key: "EmptyArrayStringKey", value: AttributeValue.array(AttributeArray.empty))
         span.end()
         let spanData = span.toSpanData()
-        XCTAssertEqual(spanData.attributes.count, 14)
+        XCTAssertEqual(spanData.attributes.count, 11)
         XCTAssert({
-            if case let AttributeValue.stringArray(array) = spanData.attributes["ArrayStringKey"]! {
-                return array.count == 3
+            if case let AttributeValue.array(array) = spanData.attributes["ArrayStringKey"]! {
+              return array.values.count == 3
             }
             return false
         }())
         XCTAssert({
-            if case let AttributeValue.intArray(array) = spanData.attributes["ArrayLongKey"]! {
-                return array.count == 5
+            if case let AttributeValue.array(array) = spanData.attributes["ArrayLongKey"]! {
+                return array.values.count == 5
             }
             return false
         }())
         XCTAssert({
-            if case let AttributeValue.doubleArray(array) = spanData.attributes["ArrayDoubleKey"]! {
-                return array.count == 5
+            if case let AttributeValue.array(array) = spanData.attributes["ArrayDoubleKey"]! {
+                return array.values.count == 5
             }
             return false
         }())
         XCTAssert({
-            if case let AttributeValue.boolArray(array) = spanData.attributes["ArrayBoolKey"]! {
-                return array.count == 4
+            if case let AttributeValue.array(array) = spanData.attributes["ArrayBoolKey"]! {
+                return array.values.count == 4
             }
             return false
         }())

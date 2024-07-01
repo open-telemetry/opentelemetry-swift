@@ -125,10 +125,10 @@ class AdapterTests: XCTestCase {
         let valueD = AttributeValue.double(1.0)
         let valueI = AttributeValue.int(2)
         let valueS = AttributeValue.string("foobar")
-        let valueArrayB = AttributeValue.boolArray([true, false])
-        let valueArrayD = AttributeValue.doubleArray([1.2, 4.5])
-        let valueArrayI = AttributeValue.intArray([12345, 67890])
-        let valueArrayS = AttributeValue.stringArray(["foobar", "barfoo"])
+        let valueArrayB = AttributeValue([true, false])
+        let valueArrayD = AttributeValue([1.2, 4.5])
+        let valueArrayI = AttributeValue([12345, 67890])
+        let valueArrayS = AttributeValue(["foobar", "barfoo"])
 
         // test
         let kvB = Adapter.toJaegerTag(key: "valueB", attrib: valueB)
@@ -149,13 +149,13 @@ class AdapterTests: XCTestCase {
         XCTAssertEqual(TagType.long, kvI.vType)
         XCTAssertEqual("foobar", kvS.vStr)
         XCTAssertEqual(TagType.string, kvS.vType)
-        XCTAssertEqual("[true,false]", kvArrayB.vStr)
+        XCTAssertEqual("[true, false]", kvArrayB.vStr)
         XCTAssertEqual(TagType.string, kvArrayB.vType)
-        XCTAssertEqual("[1.2,4.5]", kvArrayD.vStr)
+        XCTAssertEqual("[1.2, 4.5]", kvArrayD.vStr)
         XCTAssertEqual(TagType.string, kvArrayD.vType)
-        XCTAssertEqual("[12345,67890]", kvArrayI.vStr)
+        XCTAssertEqual("[12345, 67890]", kvArrayI.vStr)
         XCTAssertEqual(TagType.string, kvArrayI.vType)
-        XCTAssertEqual("[\"foobar\",\"barfoo\"]", kvArrayS.vStr)
+        XCTAssertEqual("[\"foobar\", \"barfoo\"]", kvArrayS.vStr)
         XCTAssertEqual(TagType.string, kvArrayS.vType)
     }
 

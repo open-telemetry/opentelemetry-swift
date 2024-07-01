@@ -12,9 +12,9 @@ class MetricCodableTests: XCTestCase {
     let resource = Resource(attributes: ["string": .string("string"),
                                          "int": .int(5),
                                          "bool": .bool(true),
-                                         "stringArray": .stringArray(["string1", "string2"]),
-                                         "intArray": .intArray([1, 2, 3]),
-                                         "boolArray": .boolArray([true, false])])
+                                         "stringArray": .array(AttributeArray(values:[.string("string1"),.string("string2")])),
+                                         "intArray": .array(AttributeArray(values:[.int(1),.int(2),.int(3)])),
+                                         "boolArray": .array(AttributeArray(values:[.bool(true), .bool(false)]))])
     
     private func generateDoubleSumMetric() -> Metric {
         var metric = Metric(namespace: "namespace", name: "metric", desc: "description", type: .doubleSum, resource: resource, instrumentationScopeInfo: scope)

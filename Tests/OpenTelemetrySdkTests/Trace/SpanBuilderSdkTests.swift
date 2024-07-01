@@ -83,10 +83,10 @@ class SpanBuilderSdkTest: XCTestCase {
 
     func testSetAttribute_emptyArrayAttributeValue() {
         let spanBuilder = tracerSdk.spanBuilder(spanName: spanName)
-        spanBuilder.setAttribute(key: "stringArrayAttribute", value: AttributeValue.stringArray([String]()))
-        spanBuilder.setAttribute(key: "boolArrayAttribute", value: AttributeValue.boolArray([Bool]()))
-        spanBuilder.setAttribute(key: "longArrayAttribute", value: AttributeValue.intArray([Int]()))
-        spanBuilder.setAttribute(key: "doubleArrayAttribute", value: AttributeValue.doubleArray([Double]()))
+      spanBuilder.setAttribute(key: "stringArrayAttribute", value: AttributeValue.array(AttributeArray.empty))
+        spanBuilder.setAttribute(key: "boolArrayAttribute", value: AttributeValue.array(AttributeArray.empty))
+        spanBuilder.setAttribute(key: "longArrayAttribute", value: AttributeValue.array(AttributeArray.empty))
+        spanBuilder.setAttribute(key: "doubleArrayAttribute", value: AttributeValue.array(AttributeArray.empty))
         let span = spanBuilder.startSpan() as! RecordEventsReadableSpan
         XCTAssertEqual(span.toSpanData().attributes.count, 4)
     }
