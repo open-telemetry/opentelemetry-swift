@@ -20,7 +20,7 @@ public class SynchronousMetricStorage: SynchronousMetricStorageProtocol {
     var aggregatorHandles = [[String: AttributeValue]: AggregatorHandle]()
     let attributeProcessor: AttributeProcessor
     var aggregatorHandlePool = [AggregatorHandle]()
-    private let aggregatorHandlesQueue = DispatchQueue(label: "org.opentelemetry.SynchronousMetricStorage.aggregatorHandlesQueue", attributes: .concurrent)
+    private let aggregatorHandlesQueue = DispatchQueue(label: "org.opentelemetry.SynchronousMetricStorage.aggregatorHandlesQueue")
 
     
     static func empty() -> SynchronousMetricStorageProtocol {
@@ -76,7 +76,7 @@ public class SynchronousMetricStorage: SynchronousMetricStorageProtocol {
         
         var points = [PointData]()
         
-        aggregatorHandlesQueue.sync(flags: .barrier) {
+        aggregatorHandlesQueue.sync {
             aggregatorHandles.forEach { key, value in
                 let point = value.aggregateThenMaybeReset(startEpochNano: start, endEpochNano: epochNanos, attributes: key, reset: reset)
                 if reset {
