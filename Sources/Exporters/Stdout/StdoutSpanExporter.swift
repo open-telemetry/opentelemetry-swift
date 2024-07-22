@@ -7,7 +7,9 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
-public class StdoutExporter: SpanExporter {
+typealias StdoutExporter=StdoutSpanExporter
+
+public class StdoutSpanExporter: SpanExporter {
     let isDebug: Bool
 
     public init(isDebug: Bool = false) {
