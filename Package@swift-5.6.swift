@@ -29,6 +29,7 @@ let package = Package(
         .library(name: "InMemoryExporter", type: .static, targets: ["InMemoryExporter"]),
         .library(name: "DatadogExporter", type: .static, targets: ["DatadogExporter"]),
         .library(name: "NetworkStatus", type: .static, targets: ["NetworkStatus"]),
+        .library(name: "OTelSwiftLog", type: .static, targets: ["OTelSwiftLog"]),
         .executable(name: "simpleExporter", targets: ["SimpleExporter"]),
         .executable(name: "OTLPExporter", targets: ["OTLPExporter"]),
         .executable(name: "OTLPHTTPExporter", targets: ["OTLPHTTPExporter"]),
@@ -55,6 +56,10 @@ let package = Package(
                 dependencies: ["OpenTelemetrySdk"],
                 path: "Sources/Instrumentation/SDKResourceExtension",
                 exclude: ["README.md"]),
+        .target(name: "OTelSwiftLog",
+                dependencies: ["OpenTelemetryApi",
+                               .product(name: "Logging", package: "swift-log")],
+                path: "Sources/Bridges/OTelSwiftLog"),
         .target(name: "URLSessionInstrumentation",
                 dependencies: ["OpenTelemetrySdk", "NetworkStatus"],
                 path: "Sources/Instrumentation/URLSession",
@@ -72,8 +77,8 @@ let package = Package(
                 exclude: ["README.md"]),
         .target(name: "OpenTracingShim",
                 dependencies: [
-                    "OpenTelemetrySdk",
-                    .product(name: "Opentracing", package: "opentracing-objc")
+                  "OpenTelemetrySdk",
+                  .product(name: "Opentracing", package: "opentracing-objc")
                 ],
                 path: "Sources/Importers/OpenTracingShim",
                 exclude: ["README.md"]),
@@ -123,6 +128,9 @@ let package = Package(
         .target(name: "PersistenceExporter",
                 dependencies: ["OpenTelemetrySdk"],
                 path: "Sources/Exporters/Persistence"),
+        .testTarget(name: "OTelSwiftLogTests",
+                    dependencies: ["OTelSwiftLog"],
+                    path: "Tests/BridgesTests/OTelSwiftLog"),
         .testTarget(name: "NetworkStatusTests",
                     dependencies: [
                         "NetworkStatus",
@@ -147,7 +155,7 @@ let package = Package(
                     path: "Tests/InstrumentationTests/URLSessionTests"),
         .testTarget(name: "OpenTracingShimTests",
                     dependencies: ["OpenTracingShim",
-                                   "OpenTelemetrySdk"],
+                                           "OpenTelemetrySdk"],
                     path: "Tests/ImportersTests/OpenTracingShim"),
         .testTarget(name: "SwiftMetricsShimTests",
                     dependencies: ["SwiftMetricsShim",

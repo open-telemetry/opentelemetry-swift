@@ -2,7 +2,7 @@ PROJECT_NAME="opentelemetry-swift-Package"
 
 XCODEBUILD_OPTIONS_IOS=\
 	-configuration Debug \
-	-destination platform='iOS Simulator,name=iPhone 14,OS=latest' \
+	-destination platform='iOS Simulator,name=iPhone 15,OS=latest' \
 	-scheme $(PROJECT_NAME) \
 	-workspace .
 
