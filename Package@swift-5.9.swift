@@ -63,7 +63,7 @@ let package = Package(
                     "OpenTelemetryApi",
                 ],
                 path: "Sources/Instrumentation/NetworkStatus",
-                linkerSettings: [.linkedFramework("CoreTelephony", .when(platforms: [.iOS], configuration: nil))]),
+                linkerSettings: [.linkedFramework("CoreTelephony", .when(platforms: [.iOS]))]),
         .target(name: "SignPostIntegration",
                 dependencies: ["OpenTelemetrySdk"],
                 path: "Sources/Instrumentation/SignPostIntegration",
