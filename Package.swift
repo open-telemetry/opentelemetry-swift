@@ -52,7 +52,7 @@ let package = Package(
         .target(name: "OpenTelemetryTestUtils",
                dependencies: ["OpenTelemetryApi", "OpenTelemetrySdk"]),
         .target(name: "OTelSwiftLog",
-                dependencies: ["OpenTelemetryApigi",
+                dependencies: ["OpenTelemetryApi",
                               .product(name: "Logging", package: "swift-log")],
                 path: "Sources/Bridges/OTelSwiftLog"),
         .target(name: "ResourceExtension",
