@@ -68,21 +68,21 @@ class CommonAdapterTests: XCTestCase {
     let anyDoubleValue = CommonAdapter.toProtoAnyValue(attributeValue: AttributeValue.double(3.14))
     XCTAssertEqual(anyDoubleValue.doubleValue, 3.14)
   
-    let anyStringArrayValue = CommonAdapter.toProtoAnyValue(attributeValue: AttributeValue.stringArray(["hello"]))
+    let anyStringArrayValue = CommonAdapter.toProtoAnyValue(attributeValue: AttributeValue(["hello"]))
     
     XCTAssertEqual(anyStringArrayValue.arrayValue.values.count, 1)
     XCTAssertTrue(anyStringArrayValue.arrayValue.values[0].stringValue == "hello")
    
-    let anyBoolArrayValue = CommonAdapter.toProtoAnyValue(attributeValue: AttributeValue.boolArray([true]))
+    let anyBoolArrayValue = CommonAdapter.toProtoAnyValue(attributeValue: AttributeValue([true]))
     
     XCTAssertEqual(anyBoolArrayValue.arrayValue.values.count, 1)
     XCTAssertTrue(anyBoolArrayValue.arrayValue.values[0].boolValue)
     
-    let anyIntArrayValue = CommonAdapter.toProtoAnyValue(attributeValue: AttributeValue.intArray([1]))
+    let anyIntArrayValue = CommonAdapter.toProtoAnyValue(attributeValue: AttributeValue([1]))
     XCTAssertEqual(anyIntArrayValue.arrayValue.values.count, 1)
     XCTAssertTrue(anyIntArrayValue.arrayValue.values[0].intValue == 1)
     
-    let anyDoubleArrayValue = CommonAdapter.toProtoAnyValue(attributeValue: AttributeValue.doubleArray([3.14]))
+    let anyDoubleArrayValue = CommonAdapter.toProtoAnyValue(attributeValue: AttributeValue([3.14]))
     XCTAssertEqual(anyDoubleArrayValue.arrayValue.values.count, 1)
     XCTAssertTrue(anyDoubleArrayValue.arrayValue.values[0].doubleValue == 3.14)
     
