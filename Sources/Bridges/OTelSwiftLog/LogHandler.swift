@@ -1,6 +1,5 @@
 import Foundation
 import OpenTelemetryApi
-import OpenTelemetrySdk
 import Logging
 
 // let the bridgename be the url of the package?
@@ -37,7 +36,7 @@ struct OTelLogHandler: LogHandler {
 ///  - Parameter loggerProvider: The logger provider to use in the bridge. Defaults to the global logger provider.
 ///  - Parameter includeTraceContext : boolean flag used for the logger builder
 ///  - Parameter attributes: attributes to apply to the logger builder
-  public init(loggerProvider: LoggerProvider = OpenTelemetrySdk.LoggerProviderSdk(),
+  public init(loggerProvider: LoggerProvider = OpenTelemetryApi.DefaultLoggerProvider.instance,
               includeTraceContext : Bool = true,
               attributes: [String:AttributeValue] = [String:AttributeValue]()) {
     
