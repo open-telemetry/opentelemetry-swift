@@ -8,7 +8,7 @@ import XCTest
 
 class FileTests: XCTestCase {
     private let fileManager = FileManager.default
-    private let temporaryDirectory = obtainUniqueTemporaryDirectory()
+    @UniqueTemporaryDirectory private var temporaryDirectory: Directory
 
     override func setUp() {
         super.setUp()
@@ -76,7 +76,7 @@ class FileTests: XCTestCase {
         try file.delete()
 
         XCTAssertThrowsError(try file.append(data: .mock(ofSize: 5))) { error in
-            XCTAssertEqual((error as NSError).localizedDescription, "The file “file” doesn’t exist.")
+            XCTAssertTrue((error as NSError).localizedDescription.contains("doesn’t exist."))
         }
     }
 
@@ -86,7 +86,7 @@ class FileTests: XCTestCase {
         try file.delete()
 
         XCTAssertThrowsError(try file.read()) { error in
-            XCTAssertEqual((error as NSError).localizedDescription, "The file “file” doesn’t exist.")
+            XCTAssertTrue((error as NSError).localizedDescription.contains("doesn’t exist."))
         }
     }
 }

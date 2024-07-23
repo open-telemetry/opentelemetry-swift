@@ -5,10 +5,12 @@
 
 import Foundation
 
-/// An interface that represents a span. It has an associated SpanContext.
-/// Spans are created by the SpanBuilder.startSpan method.
-/// Span must be ended by calling end().
-public protocol Span: AnyObject, CustomStringConvertible {
+/// A base protocol for `Span` which encapsulates all of the functionality that is correct in both the imperative and structured APIs. Functionality which is only guarenteed to work as intended in the imperative APIs exists on `Span`.
+///
+/// If an API only provides a `SpanBase`, the span will be ended automatically at the end of the scope the span was provided. It is generally acceptable to end the span early anyway by casting to `Span`, however the span may still be active until the end of the scope the span was provided in depending on which context manager is in use.
+///
+/// - Warning: It is never correct to only implement `SpanBase`, `Span` should always be implemented for any span type as well.
+public protocol SpanBase: AnyObject, CustomStringConvertible {
     /// Type of span.
     /// Can be used to specify additional relationships between spans in addition to a parent/child relationship.
     var kind: SpanKind { get }
@@ -60,7 +62,12 @@ public protocol Span: AnyObject, CustomStringConvertible {
     ///   - attributes: Dictionary of attributes name/value pairs associated with the Event
     ///   - timestamp: the explicit event timestamp in nanos since epoch
     func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Date)
+}
 
+/// An interface that represents a span. It has an associated SpanContext.
+/// Spans are created by the SpanBuilder.startSpan method.
+/// Span must be ended by calling end().
+public protocol Span: SpanBase {
     /// End the span.
     func end()
 
@@ -69,17 +76,17 @@ public protocol Span: AnyObject, CustomStringConvertible {
     func end(time: Date)
 }
 
-public extension Span {
+public extension SpanBase {
     func hash(into hasher: inout Hasher) {
         hasher.combine(context.spanId)
     }
 
-    static func == (lhs: Span, rhs: Span) -> Bool {
+    static func == (lhs: SpanBase, rhs: SpanBase) -> Bool {
         return lhs.context.spanId == rhs.context.spanId
     }
 }
 
-public extension Span {
+public extension SpanBase {
     func setAttribute(key: String, value: String) {
         return setAttribute(key: key, value: AttributeValue.string(value))
     }

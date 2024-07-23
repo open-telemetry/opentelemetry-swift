@@ -1,7 +1,6 @@
 import XCTest
 import Logging
 import OpenTelemetryApi
-import OpenTelemetrySdk
 
 @testable import OTelSwiftLog 
 

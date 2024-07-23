@@ -7,8 +7,8 @@ let package = Package(
     name: "opentelemetry-swift",
     platforms: [
         .macOS(.v10_13),
-        .iOS(.v11),
-        .tvOS(.v11)
+        .iOS(.v12),
+        .tvOS(.v12)
     ],
     products: [
         .library(name: "OpenTelemetryApi", type: .static, targets: ["OpenTelemetryApi"]),
@@ -28,29 +28,31 @@ let package = Package(
         .library(name: "InMemoryExporter", type: .static, targets: ["InMemoryExporter"]),
         .library(name: "DatadogExporter", type: .static, targets: ["DatadogExporter"]),
         .library(name: "NetworkStatus", type: .static, targets: ["NetworkStatus"]),
-        .library(name: "OTelSwiftLog" type: .static, targets: ["OTelSwiftLog"])
+        .library(name: "OTelSwiftLog", type: .static, targets: ["OTelSwiftLog"]),
         .executable(name: "simpleExporter", targets: ["SimpleExporter"]),
         .executable(name: "OTLPExporter", targets: ["OTLPExporter"]),
         .executable(name: "OTLPHTTPExporter", targets: ["OTLPHTTPExporter"]),
         .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
     ],
     dependencies: [
-        .package(name: "Opentracing", url: "https://github.com/undefinedlabs/opentracing-objc", exact: "0.5.2"),
-        .package(name: "Thrift", url: "https://github.com/undefinedlabs/Thrift-Swift", exact: "1.1.1"),
-        .package(name: "swift-nio", url: "https://github.com/apple/swift-nio.git", exact: "2.0.0"),
-        .package(name: "grpc-swift", url: "https://github.com/grpc/grpc-swift.git", exact: "1.0.0"),
-        .package(name: "swift-protobuf", url: "https://github.com/apple/swift-protobuf.git", exact: "1.20.2"),
-        .package(name: "swift-log", url: "https://github.com/apple/swift-log.git", exact: "1.4.4"),
-        .package(name: "swift-metrics", url: "https://github.com/apple/swift-metrics.git", exact: "2.1.1"),
-        .package(name: "Reachability.swift", url: "https://github.com/ashleymills/Reachability.swift", exact: "5.1.0")
+        .package(url: "https://github.com/undefinedlabs/opentracing-objc", exact: "0.5.2"),
+        .package(url: "https://github.com/undefinedlabs/Thrift-Swift", exact: "1.1.1"),
+        .package(url: "https://github.com/apple/swift-nio.git", exact: "2.0.0"),
+        .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.0.0"),
+        .package(url: "https://github.com/apple/swift-protobuf.git", exact: "1.20.2"),
+        .package(url: "https://github.com/apple/swift-log.git", exact: "1.4.4"),
+        .package(url: "https://github.com/apple/swift-metrics.git", exact: "2.1.1"),
+        .package(url: "https://github.com/ashleymills/Reachability.swift", exact: "5.1.0")
     ],
     targets: [
         .target(name: "OpenTelemetryApi",
                 dependencies: []),
         .target(name: "OpenTelemetrySdk",
                 dependencies: ["OpenTelemetryApi"]),
+        .target(name: "OpenTelemetryTestUtils",
+               dependencies: ["OpenTelemetryApi", "OpenTelemetrySdk"]),
         .target(name: "OTelSwiftLog",
-                dependencies: ["OpenTelemetryApigi",
+                dependencies: ["OpenTelemetryApi",
                               .product(name: "Logging", package: "swift-log")],
                 path: "Sources/Bridges/OTelSwiftLog"),
         .target(name: "ResourceExtension",
@@ -67,7 +69,7 @@ let package = Package(
                     .product(name: "Reachability", package: "Reachability.swift")
                 ],
                 path: "Sources/Instrumentation/NetworkStatus",
-                linkerSettings: [.linkedFramework("CoreTelephony", .when(platforms: [.iOS], configuration: nil))]),
+                linkerSettings: [.linkedFramework("CoreTelephony", .when(platforms: [.iOS]))]),
         .target(name: "SignPostIntegration",
                 dependencies: ["OpenTelemetrySdk"],
                 path: "Sources/Instrumentation/SignPostIntegration",
@@ -128,7 +130,7 @@ let package = Package(
                     dependencies: ["NetworkStatus", .product(name: "Reachability", package: "Reachability.swift")],
                     path: "Tests/InstrumentationTests/NetworkStatusTests"),
         .testTarget(name: "OpenTelemetryApiTests",
-                    dependencies: ["OpenTelemetryApi"],
+                    dependencies: ["OpenTelemetryApi", "OpenTelemetryTestUtils"],
                     path: "Tests/OpenTelemetryApiTests"),
         .testTarget(name: "OpenTelemetrySdkTests",
                     dependencies: ["OpenTelemetrySdk"],

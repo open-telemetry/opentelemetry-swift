@@ -4,6 +4,9 @@
 // 
 
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 import Logging
 import NIO
 import NIOHTTP1

@@ -4,6 +4,9 @@
  */
 
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// Client for sending requests over HTTP.
 internal final class HTTPClient {
