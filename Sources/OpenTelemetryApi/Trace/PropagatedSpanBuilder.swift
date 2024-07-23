@@ -66,4 +66,22 @@ class PropagatedSpanBuilder: SpanBuilder {
     func setActive(_ active: Bool) -> Self {
         return self
     }
+
+    func withActiveSpan<T>(_ operation: (any SpanBase) throws -> T) rethrows -> T {
+        let span = self.startSpan()
+        defer {
+            span.end()
+        }
+        return try operation(span)
+    }
+
+#if canImport(_Concurrency)
+    func withActiveSpan<T>(_ operation: (any SpanBase) async throws -> T) async rethrows -> T {
+        let span = self.startSpan()
+        defer {
+            span.end()
+        }
+        return try await operation(span)
+    }
+#endif
 }

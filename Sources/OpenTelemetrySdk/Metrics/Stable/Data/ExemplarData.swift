@@ -38,7 +38,7 @@ public final class DoubleExemplarData: ExemplarData {
 
     override func isEqual(to other: ExemplarData) -> Bool {
         return self.value == (other as! DoubleExemplarData).value &&
-            (self as ExemplarData).isEqual(to: other)
+            super.isEqual(to: other)
     }
 }
 
@@ -51,6 +51,6 @@ public final class LongExemplarData: ExemplarData {
 
     override func isEqual(to other: ExemplarData) -> Bool {
         return self.value == (other as! LongExemplarData).value &&
-            (self as ExemplarData).isEqual(to: other)
+            super.isEqual(to: other)
     }
 }

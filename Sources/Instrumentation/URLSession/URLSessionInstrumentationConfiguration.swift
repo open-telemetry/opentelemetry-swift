@@ -6,6 +6,9 @@
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 public typealias DataOrFile = Any
 public typealias SessionTaskId = String
