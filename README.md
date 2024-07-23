@@ -100,7 +100,7 @@ We are also available in the [#otel-swift](https://cloud-native.slack.com/archiv
 
 #### Maintainers ([@open-telemetry/swift-maintainers](https://github.com/orgs/open-telemetry/teams/swift-maintainers))
 
-- [Ignacio Bonaforte](https://github.com/nachob), Crowdstrike
+- [Ignacio Bonaforte](https://github.com/nachob), Independent
 - [Bryce Buchanan](https://github.com/bryce-b), Elastic
 
 *Find more about the maintainer role in the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#maintainer).*
