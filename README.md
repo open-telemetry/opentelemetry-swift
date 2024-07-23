@@ -88,7 +88,34 @@ The package includes some example projects with basic functionality:
 * `OTLP Exporter` - Shows the OTLP exporter reporting traces to Zipkin and metrics to a Prometheus via the otel-collector
 
 ## Contributing
-
+We'd love your help!. Use tags [help wanted][help wanted] and
+[good first issue][good first issues] to get started with the project. 
 For an overview of how to contribute, see the contributing guide in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-We are also available in the [#otel-swift](https://cloud-native.slack.com/archives/C01NCHR19SB) channel in the [CNCF slack](https://slack.cncf.io/). Please join us there for further discussions.
+We have a weekly SIG meeting! See the [community page](https://github.com/open-telemetry/community#swift-sdk) for meeting details and notes.
+
+We are also available in the [#otel-swift](https://cloud-native.slack.com/archives/C01NCHR19SB) channel in the [CNCF slack](https://slack.cncf.io/). Please join us there for OTel Swift discussions.
+
+### Community members
+
+#### Maintainers ([@open-telemetry/swift-maintainers](https://github.com/orgs/open-telemetry/teams/swift-maintainers))
+
+- [Ignacio Bonaforte](https://github.com/nachob), Crowdstrike
+- [Bryce Buchanan](https://github.com/bryce-b), Elastic
+
+*Find more about the maintainer role in the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#maintainer).*
+
+#### Approvers ([@open-telemetry/swift-approvers](https://github.com/orgs/open-telemetry/teams/swift-approvers))
+
+- [Vinod Vidiyer](https://github.com/vvydier)), Independent
+- [Austin Emmons](https://github.com/atreat), Independent
+
+*Find more about the approver role in the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#approver).*
+
+#### Triager ([@open-telemetry/swift-triagers](https://github.com/orgs/open-telemetry/teams/swift-triagers))
+
+- [Alolita Sharma](https://github.com/alolita), Apple
+
+*Find more about the triager role in the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#triager).*
+
+
