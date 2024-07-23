@@ -51,7 +51,7 @@ func simpleNetworkCallWithDelegate() {
 }
 
 
-let spanProcessor = SimpleSpanProcessor(spanExporter: StdoutExporter(isDebug: true))
+let spanProcessor = SimpleSpanProcessor(spanExporter: StdoutSpanExporter(isDebug: true))
 OpenTelemetry.registerTracerProvider(tracerProvider:
     TracerProviderBuilder()
         .add(spanProcessor: spanProcessor)
