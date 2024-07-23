@@ -21,13 +21,8 @@ let package = Package(
         .library(name: "OpenTelemetryProtocolExporterHTTP", type: .static, targets: ["OpenTelemetryProtocolExporterHttp"]),
         .library(name: "PersistenceExporter", type: .static, targets: ["PersistenceExporter"]),
         .library(name: "InMemoryExporter", type: .static, targets: ["InMemoryExporter"]),
-        .library(name: "DatadogExporter", type: .static, targets: ["DatadogExporter"]),
-        .library(name: "NetworkStatus", type: .static, targets: ["NetworkStatus"]),
         .library(name: "OTelSwiftLog", type: .static, targets: ["OTelSwiftLog"]),
         .executable(name: "ConcurrencyContext", targets: ["ConcurrencyContext"]),
-        .executable(name: "simpleExporter", targets: ["SimpleExporter"]),
-        .executable(name: "OTLPExporter", targets: ["OTLPExporter"]),
-        .executable(name: "OTLPHTTPExporter", targets: ["OTLPHTTPExporter"]),
         .executable(name: "loggingTracer", targets: ["LoggingTracer"])
     ],
     dependencies: [
