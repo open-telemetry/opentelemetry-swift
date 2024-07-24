@@ -141,7 +141,7 @@ public extension Span {
         case 200 ..< 400:
             newStatus = .ok
         case 400 ..< 600:
-            newStatus = .error(description: description)
+            newStatus = .error(description: reasonPhrase)
         default:
             newStatus = .unset
         }
