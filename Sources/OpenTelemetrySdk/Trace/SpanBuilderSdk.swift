@@ -174,6 +174,7 @@ class SpanBuilderSdk: SpanBuilder {
     }
 
     #if canImport(_Concurrency)
+    @available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
     public func withActiveSpan<T>(_ operation: (any SpanBase) async throws -> T) async rethrows -> T {
         let createdSpan = self.prepareSpan()
         defer {
