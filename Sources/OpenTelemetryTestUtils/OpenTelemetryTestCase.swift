@@ -76,7 +76,7 @@ open class OpenTelemetryContextTestCase: XCTestCase {
     public static func concurrencyContextManagers() -> [ContextManager] {
         var managers = [ContextManager]()
 #if canImport(_Concurrency)
-        if #available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
+        if #available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
             managers.append(TaskLocalContextManager.instance)
         }
 #endif
@@ -90,7 +90,7 @@ open class OpenTelemetryContextTestCase: XCTestCase {
         managers.append(ActivityContextManager.instance)
 #endif
 #if canImport(_Concurrency)
-        if #available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
+        if #available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
             managers.append(TaskLocalContextManager.instance)
         }
 #endif

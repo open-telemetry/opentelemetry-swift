@@ -110,7 +110,7 @@ public protocol SpanBuilderBase: AnyObject {
 
 #if canImport(_Concurrency)
     /// Starts a new Span and makes it active for the duration of the passed closure. The span will be ended before this method returns.
-    @available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
     func withActiveSpan<T>(_ operation: (any SpanBase) async throws -> T) async rethrows -> T
 #endif
 
@@ -126,7 +126,7 @@ public protocol SpanBuilderBase: AnyObject {
 
 #if canImport(_Concurrency)
     /// Starts a new Span. The span will be ended before this method returns.
-    @available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
     func withStartedSpan<T>(_ operation: (any SpanBase) async throws -> T) async rethrows -> T
 #endif
 }
@@ -148,7 +148,7 @@ public extension SpanBuilderBase {
     }
 
 #if canImport(_Concurrency)
-    @available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
     func withStartedSpan<T>(_ operation: (any SpanBase) async throws -> T) async rethrows -> T {
         let span = self.startSpan()
         defer {

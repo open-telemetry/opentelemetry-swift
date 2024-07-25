@@ -14,7 +14,7 @@ public protocol ContextManager: AnyObject {
     func withCurrentContextValue<T>(forKey: OpenTelemetryContextKeys, value: AnyObject?, _ operation: () throws -> T) rethrows -> T
 #if canImport(_Concurrency)
     /// Updates the current context value with the given key for the duration of the passed closure. If `value` is non-`nil` the key is set to that value. If `value` is `nil` the key is removed from the current context for the duration of the closure.
-    @available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
     func withCurrentContextValue<T>(forKey: OpenTelemetryContextKeys, value: AnyObject?, _ operation: () async throws -> T) async rethrows -> T
 #endif
 }
@@ -23,7 +23,7 @@ public protocol ContextManager: AnyObject {
 public protocol ImperativeContextManager: ContextManager { }
 
 public extension ContextManager where Self: ImperativeContextManager {
-    @available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
     func withCurrentContextValue<T>(forKey key: OpenTelemetryContextKeys, value: AnyObject?, _ operation: () async throws -> T) async rethrows -> T {
         var oldValue: AnyObject?
         if let value {
