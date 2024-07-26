@@ -7,7 +7,7 @@ let bridgeName: String = "OTelSwiftLog"
 let version: String = "1.0.0"
 
 /// A  custom log handler to translate swift logs into otel logs
-struct OTelLogHandler: LogHandler {
+public struct OTelLogHandler: LogHandler {
   
   /// Get or set the configured log level.
   ///
