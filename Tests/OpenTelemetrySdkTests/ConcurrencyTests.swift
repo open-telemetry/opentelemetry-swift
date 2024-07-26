@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if canImport(_Concurrency)
+#if canImport(_Concurrency) && canImport(OpenTelemetryConcurrency)
 import OpenTelemetryTestUtils
 import XCTest
 import OpenTelemetrySdk
