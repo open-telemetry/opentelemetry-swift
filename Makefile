@@ -4,18 +4,24 @@ XCODEBUILD_OPTIONS_IOS=\
 	-configuration Debug \
 	-destination platform='iOS Simulator,name=iPhone 15,OS=latest' \
 	-scheme $(PROJECT_NAME) \
+	-test-iterations 5 \
+    -retry-tests-on-failure \
 	-workspace .
 
 XCODEBUILD_OPTIONS_TVOS=\
 	-configuration Debug \
 	-destination platform='tvOS Simulator,name=Apple TV 4K (3rd generation),OS=latest' \
 	-scheme $(PROJECT_NAME) \
+	-test-iterations 5 \
+    -retry-tests-on-failure \
 	-workspace .
 
 XCODEBUILD_OPTIONS_WATCHOS=\
 	-configuration Debug \
 	-destination platform='watchOS Simulator,name=Apple Watch Series 8 (45mm),OS=latest' \
 	-scheme $(PROJECT_NAME) \
+	-test-iterations 5 \
+    -retry-tests-on-failure \
 	-workspace .
 
 .PHONY: setup-brew
