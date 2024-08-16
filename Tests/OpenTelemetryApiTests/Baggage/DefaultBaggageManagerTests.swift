@@ -60,6 +60,7 @@ class DefaultBaggageManagerTests: DefaultBaggageManagerTestsInfo {
 }
 
 #if canImport(_Concurrency)
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 class DefaultBaggageManagerConcurrency: DefaultBaggageManagerTestsInfo {
     override var contextManagers: [any ContextManager] {
         Self.concurrencyContextManagers()
