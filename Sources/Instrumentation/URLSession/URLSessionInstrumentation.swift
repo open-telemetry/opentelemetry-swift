@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 #if canImport(FoundationNetworking)
-import FoundationNetworking
+    import FoundationNetworking
 #endif
 
 struct NetworkRequestState {
@@ -162,6 +162,11 @@ public class URLSessionInstrumentation {
                     }
                 }
                 self.setIdKey(value: sessionTaskId, for: task)
+
+                // We want to identify background tasks
+                if session.configuration.identifier == nil {
+                    objc_setAssociatedObject(task, "IsBackground", true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+                }
                 return task
             }
             let swizzledIMP = imp_implementationWithBlock(unsafeBitCast(block, to: AnyObject.self))
@@ -590,6 +595,15 @@ public class URLSessionInstrumentation {
         if let avAssetTaskClass = Self.avAssetDownloadTask,
            task.isKind(of: avAssetTaskClass) {
             return
+        }
+
+        // We cannot instrument async background tasks because they crash if you assign a delegate
+        if #available(OSX 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *) {
+            if objc_getAssociatedObject(task, "IsBackground") is Bool {
+                guard Task.basePriority == nil else {
+                    return
+                }
+            }
         }
 
         let taskId = idKeyForTask(task)
