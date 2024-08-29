@@ -13,6 +13,7 @@ let package = Package(
     ],
     products: [
         .library(name: "OpenTelemetryApi", type: .static, targets: ["OpenTelemetryApi"]),
+        .library(name: "OpenTelemetryConcurrency", type: .static, targets: ["OpenTelemetryConcurrency"]),
         .library(name: "OpenTelemetrySdk", type: .static, targets: ["OpenTelemetrySdk"]),
         .library(name: "SwiftMetricsShim", type: .static, targets: ["SwiftMetricsShim"]),
         .library(name: "StdoutExporter", type: .static, targets: ["StdoutExporter"]),
