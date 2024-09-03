@@ -64,6 +64,38 @@ public protocol SpanBase: AnyObject, CustomStringConvertible {
     func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Date)
 }
 
+public protocol SpanExceptionRecorder {
+    /// Adds an exception event to the Span.
+    /// - Parameters:
+    ///   - exception: the exception to be recorded.
+    func recordException(_ exception: SpanException)
+
+    /// Adds an exception event to the Span.
+    /// Use this method to specify an explicit event timestamp. If not called, the implementation
+    /// will use the current timestamp value, which should be the default case.
+    /// - Parameters:
+    ///   - exception: the exception to be recorded.
+    ///   - timestamp: the explicit event timestamp in nanos since epoch.
+    func recordException(_ exception: SpanException, timestamp: Date)
+
+    /// Adds an exception event to the Span, with additional attributes to go alongside the
+    /// default attribuites derived from the exception itself.
+    /// - Parameters:
+    ///   - exception: the exception to be recorded.
+    ///   - attributes: Dictionary of attributes name/value pairs associated with the event.
+    func recordException(_ exception: SpanException, attributes: [String: AttributeValue])
+
+    /// Adds an exception event to the Span, with additional attributes to go alongside the
+    /// default attribuites derived from the exception itself.
+    /// Use this method to specify an explicit event timestamp. If not called, the implementation
+    /// will use the current timestamp value, which should be the default case.
+    /// - Parameters:
+    ///   - exception: the exception to be recorded.
+    ///   - attributes: Dictionary of attributes name/value pairs associated with the event.
+    ///   - timestamp: the explicit event timestamp in nanos since epoch.
+    func recordException(_ exception: SpanException, attributes: [String: AttributeValue], timestamp: Date)
+}
+
 /// An interface that represents a span. It has an associated SpanContext.
 /// Spans are created by the SpanBuilder.startSpan method.
 /// Span must be ended by calling end().
