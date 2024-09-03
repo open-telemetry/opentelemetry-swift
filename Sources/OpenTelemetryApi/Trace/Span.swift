@@ -99,7 +99,7 @@ public protocol SpanExceptionRecorder {
 /// An interface that represents a span. It has an associated SpanContext.
 /// Spans are created by the SpanBuilder.startSpan method.
 /// Span must be ended by calling end().
-public protocol Span: SpanBase {
+public protocol Span: SpanBase, SpanExceptionRecorder {
     /// End the span.
     func end()
 
