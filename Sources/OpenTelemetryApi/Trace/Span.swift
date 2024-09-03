@@ -152,6 +152,29 @@ public extension SpanBase {
     }
 }
 
+public extension SpanExceptionRecorder {
+    /// Adds any Error as an exception event to the Span, with optional additional attributes
+    /// and timestamp.
+    /// If additonal attributes are specified, they are merged with the default attributes
+    /// derived from the error itself.
+    /// If an explicit timestamp is not provided, the implementation will use the current
+    /// timestamp value, which should be the default case.
+    /// - Parameters:
+    ///   - exception: the exception to be recorded.
+    ///   - attributes: Dictionary of attributes name/value pairs associated with the event.
+    ///   - timestamp: the explicit event timestamp in nanos since epoch.
+    func recordException(_ exception: Error, attributes: [String: AttributeValue]? = nil, timestamp: Date? = nil) {
+        let exception = exception as NSError
+
+        switch (attributes, timestamp) {
+        case (.none, .none): recordException(exception)
+        case (.some(let attributes), .none): recordException(exception, attributes: attributes)
+        case (.none, .some(let timestamp)): recordException(exception, timestamp: timestamp)
+        case (.some(let attributes), .some(let timestamp)): recordException(exception, attributes: attributes, timestamp: timestamp)
+        }
+    }
+}
+
 public extension Span {
     /// Helper method that populates span properties from host and port
     /// - Parameters:
