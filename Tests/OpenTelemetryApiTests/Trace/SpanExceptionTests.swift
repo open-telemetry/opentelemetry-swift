@@ -36,7 +36,7 @@ final class SpanExceptionTests: XCTestCase {
         let error = TestCustomNSError(additionalComments: "SpanExceptionTests")
         
         // `Error` can be converted to `NSError`, which automatically makes the cast to
-        // `SpanException` possible since we conform `NSError` to `SpanException`.
+        // `SpanException` possible since `NSError` conforms to `SpanException`.
         let exception = error as SpanException
 
         XCTAssertEqual(exception.type, String(reflecting: error))
