@@ -44,23 +44,23 @@ public protocol SpanBase: AnyObject, CustomStringConvertible {
     /// Use this method to specify an explicit event timestamp. If not called, the implementation
     /// will use the current timestamp value, which should be the default case.
     /// - Parameters:
-    ///   - name: the name of the even
-    ///   - timestamp: the explicit event timestamp in nanos since epoch
+    ///   - name: the name of the event.
+    ///   - timestamp: the explicit event timestamp in nanos since epoch.
     func addEvent(name: String, timestamp: Date)
 
     /// Adds a single Event with the attributes to the Span.
     /// - Parameters:
-    ///   - name: Event name.
-    ///   - attributes: Dictionary of attributes name/value pairs associated with the Event
+    ///   - name: the name of the event.
+    ///   - attributes: Dictionary of attributes name/value pairs associated with the event.
     func addEvent(name: String, attributes: [String: AttributeValue])
 
     /// Adds an event to the Span
     /// Use this method to specify an explicit event timestamp. If not called, the implementation
     /// will use the current timestamp value, which should be the default case.
     /// - Parameters:
-    ///   - name: the name of the even
-    ///   - attributes: Dictionary of attributes name/value pairs associated with the Event
-    ///   - timestamp: the explicit event timestamp in nanos since epoch
+    ///   - name: the name of the event.
+    ///   - attributes: Dictionary of attributes name/value pairs associated with the event
+    ///   - timestamp: the explicit event timestamp in nanos since epoch.
     func addEvent(name: String, attributes: [String: AttributeValue], timestamp: Date)
 }
 
