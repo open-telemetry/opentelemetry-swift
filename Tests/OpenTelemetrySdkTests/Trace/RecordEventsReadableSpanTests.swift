@@ -233,6 +233,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
         XCTAssertEqual(spanData.events.count, 2)
     }
 
+#if !os(Linux)
     func testRecordExceptionWithStackTrace() throws {
         final class TestException: NSException {
             override var callStackSymbols: [String] {
@@ -243,18 +244,18 @@ class RecordEventsReadableSpanTest: XCTestCase {
                 ]
             }
         }
-
+        
         let span = createTestRootSpan()
         let exception = TestException(name: .genericException, reason: "test reason")
         span.recordException(exception)
         span.end()
         let spanData = span.toSpanData()
         XCTAssertEqual(spanData.events.count, 1)
-
+        
         let spanException = exception as SpanException
         let exceptionMessage = try XCTUnwrap(spanException.message)
         let exceptionStackTrace = try XCTUnwrap(spanException.stackTrace)
-
+        
         let exceptionEvent = try XCTUnwrap(spanData.events.first)
         let exceptionAttributes = exceptionEvent.attributes
         XCTAssertEqual(exceptionEvent.name, SemanticAttributes.exception.rawValue)
@@ -263,7 +264,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
         XCTAssertNil(exceptionAttributes[SemanticAttributes.exceptionEscaped.rawValue])
         XCTAssertEqual(exceptionAttributes[SemanticAttributes.exceptionStacktrace.rawValue], .string(exceptionStackTrace.joined(separator: "\n")))
     }
-
+    
     func testRecordExceptionWithoutStackTrace() throws {
         let span = createTestRootSpan()
         let exception = NSException(name: .genericException, reason: "test reason")
@@ -271,10 +272,10 @@ class RecordEventsReadableSpanTest: XCTestCase {
         span.end()
         let spanData = span.toSpanData()
         XCTAssertEqual(spanData.events.count, 1)
-
+        
         let spanException = exception as SpanException
         let exceptionMessage = try XCTUnwrap(spanException.message)
-
+        
         let exceptionEvent = try XCTUnwrap(spanData.events.first)
         let exceptionAttributes = exceptionEvent.attributes
         XCTAssertEqual(exceptionEvent.name, SemanticAttributes.exception.rawValue)
@@ -283,20 +284,20 @@ class RecordEventsReadableSpanTest: XCTestCase {
         XCTAssertNil(exceptionAttributes[SemanticAttributes.exceptionEscaped.rawValue])
         XCTAssertNil(exceptionAttributes[SemanticAttributes.exceptionStacktrace.rawValue])
     }
-
+    
     func testRecordMultipleExceptions() throws {
         let span = createTestRootSpan()
-
+        
         let firstException = NSException(name: .genericException, reason: "test reason")
         span.recordException(firstException)
-
+        
         let secondException = NSError(domain: "test", code: 0)
         span.recordException(secondException)
-
+        
         span.end()
         let spanData = span.toSpanData()
         XCTAssertEqual(spanData.events.count, 2)
-
+        
         let firstSpanException = firstException as SpanException
         let secondSpanException = secondException as SpanException
         let firstExceptionAttributes = try XCTUnwrap(spanData.events.first?.attributes)
@@ -304,10 +305,11 @@ class RecordEventsReadableSpanTest: XCTestCase {
         XCTAssertEqual(firstExceptionAttributes[SemanticAttributes.exceptionType.rawValue], .string(firstSpanException.type))
         XCTAssertEqual(secondExceptionAttributes[SemanticAttributes.exceptionType.rawValue], .string(secondSpanException.type))
     }
+#endif
 
     func testExceptionAttributesOverwriteAdditionalAttributes() throws {
         let span = createTestRootSpan()
-        let exception = NSException(name: .genericException, reason: "test reason")
+        let exception = NSError(domain: "test error", code: 5)
         span.recordException(
             exception,
             attributes: [
@@ -338,7 +340,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
         let maxNumberOfAttributes = 3
         let spanLimits = SpanLimits().settingAttributePerEventCountLimit(UInt(maxNumberOfAttributes))
         let span = createTestSpan(config: spanLimits)
-        let exception = NSException(name: .genericException, reason: "test reason")
+        let exception = NSError(domain: "test error", code: 0)
         let attributes: [String: AttributeValue] = [
             "Additional-Key-1": .string("Additional-Key-1"),
             "Additional-Key-2": .string("Value 2"),

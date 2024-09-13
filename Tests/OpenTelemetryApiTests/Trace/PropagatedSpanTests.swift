@@ -42,10 +42,14 @@ final class PropagatedSpanTest: XCTestCase {
         span.addEvent(name: "event", timestamp: Date(timeIntervalSinceReferenceDate: 0))
         span.addEvent(name: "event", attributes: ["MyBooleanAttributeKey": AttributeValue.bool(true)])
         span.addEvent(name: "event", attributes: ["MyBooleanAttributeKey": AttributeValue.bool(true)], timestamp: Date(timeIntervalSinceReferenceDate: 1.5))
-        span.recordException(NSException(name: .genericException, reason: nil))
         span.recordException(NSError(domain: "test", code: 0), timestamp: Date(timeIntervalSinceReferenceDate: 3))
-        span.recordException(NSException(name: .genericException, reason: nil), attributes: ["MyStringAttributeKey": AttributeValue.string("MyStringAttributeValue")])
         span.recordException(NSError(domain: "test", code: 0), attributes: ["MyBooleanAttributeKey": AttributeValue.bool(true)], timestamp: Date(timeIntervalSinceReferenceDate: 4.5))
+
+#if !os(Linux)
+        span.recordException(NSException(name: .genericException, reason: nil))
+        span.recordException(NSException(name: .genericException, reason: nil), attributes: ["MyStringAttributeKey": AttributeValue.string("MyStringAttributeValue")])
+#endif
+
         span.status = .ok
         span.end()
         span.end(time: Date())

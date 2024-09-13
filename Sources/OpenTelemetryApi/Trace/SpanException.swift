@@ -26,6 +26,7 @@ extension NSError: SpanException {
     }
 }
 
+#if !os(Linux)
 extension NSException: SpanException {
     public var type: String {
         name.rawValue
@@ -39,3 +40,4 @@ extension NSException: SpanException {
         callStackSymbols
     }
 }
+#endif

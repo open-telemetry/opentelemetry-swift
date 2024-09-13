@@ -57,7 +57,8 @@ final class SpanExceptionTests: XCTestCase {
         XCTAssertEqual(exception.message, nsError.localizedDescription)
         XCTAssertNil(exception.stackTrace)
     }
-
+    
+#if !os(Linux)
     func testNSException() {
         final class TestException: NSException {
             override var callStackSymbols: [String] {
@@ -68,13 +69,14 @@ final class SpanExceptionTests: XCTestCase {
                 ]
             }
         }
-
+        
         let exceptionReason = "This is a test exception"
         let nsException = TestException(name: .genericException, reason: exceptionReason)
         let exception = nsException as SpanException
-
+        
         XCTAssertEqual(exception.type, nsException.name.rawValue)
         XCTAssertEqual(exception.message, nsException.reason)
         XCTAssertEqual(exception.stackTrace, nsException.callStackSymbols)
     }
+#endif
 }
