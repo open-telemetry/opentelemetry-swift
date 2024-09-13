@@ -339,15 +339,15 @@ class RecordEventsReadableSpanTest: XCTestCase {
         let spanLimits = SpanLimits().settingAttributePerEventCountLimit(UInt(maxNumberOfAttributes))
         let span = createTestSpan(config: spanLimits)
         let exception = NSException(name: .genericException, reason: "test reason")
-        span.recordException(
-            exception,
-            attributes: [
-                "Additional-Key-1": .string("Additional-Key-1"),
-                "Additional-Key-2": .string("Value 2"),
-                "Additional-Key-3": .string("Value 3"),
-            ]
-        )
+        let attributes: [String: AttributeValue] = [
+            "Additional-Key-1": .string("Additional-Key-1"),
+            "Additional-Key-2": .string("Value 2"),
+            "Additional-Key-3": .string("Value 3"),
+        ]
+
+        span.recordException(exception, attributes: attributes)
         span.end()
+
         let spanData = span.toSpanData()
         XCTAssertEqual(spanData.events.count, 1)
 
@@ -358,14 +358,26 @@ class RecordEventsReadableSpanTest: XCTestCase {
         let exceptionAttributes = exceptionEvent.attributes
 
         // Only 3 attributes per event. Exception events have priority (total of 2), so 1 slot left for additional attributes.
-        // Attributes are added in the order in which their keys appear in the original Dictionary, but are also removed
-        // using the same sequence when overflowing. In this case, `Value 1` and `Value 2` end up discarded.
+        // Attributes are added in the order in which their keys appear in the original Dictionary, and are also removed
+        // using the same sequence when overflowing. However, since the order of key-value pairs in a dictionary is
+        // unpredictable, there are no guarantees to how they are ingested in the first place.
+        //
+        // With that in mind, this test ensures that out of the 3 attributes in the resulting dictionary, 2 are expected due to
+        // prioritization and the remaining 1 matches an entry from the additional attributes. We just can't be sure
+        // which of those entries it will be.
         XCTAssertEqual(exceptionAttributes.count, 3)
         XCTAssertEqual(exceptionAttributes[SemanticAttributes.exceptionMessage.rawValue], .string(exceptionMessage))
         XCTAssertEqual(exceptionAttributes[SemanticAttributes.exceptionType.rawValue], .string(spanException.type))
-        XCTAssertEqual(exceptionAttributes["Additional-Key-3"], .string("Value 3"))
-        XCTAssertNil(exceptionAttributes["Additional-Key-1"])
-        XCTAssertNil(exceptionAttributes["Additional-Key-2"])
+
+        let remainingExceptionAttributeKeys = exceptionAttributes.keys.filter { key in
+            key != SemanticAttributes.exceptionMessage.rawValue &&
+            key != SemanticAttributes.exceptionType.rawValue
+        }
+
+        XCTAssertEqual(remainingExceptionAttributeKeys.count, 1)
+        let remainingKey = try XCTUnwrap(remainingExceptionAttributeKeys.first)
+        XCTAssertNotNil(attributes[remainingKey])
+        XCTAssertEqual(attributes[remainingKey], exceptionAttributes[remainingKey])
     }
 
     func testWithInitializedAttributes() {
