@@ -50,7 +50,7 @@ class StableMeterSharedState {
         var registeredStorages = [SynchronousMetricStorage]()
         for (reader, registry) in readerStorageRegisteries {
             for registeredView in reader.registry.findViews(descriptor: instrument, meterScope: instrumentationScope) {
-                if type(of: registeredView.view.aggregation) == DropAggregator.self {
+                if type(of: registeredView.view.aggregation) == DropAggregation.self {
                     continue
                 }
                 registeredStorages.append(registry.register(newStorage: SynchronousMetricStorage.create(registeredReader: reader, registeredView: registeredView, descriptor: instrument, exemplarFilter:  meterProviderSharedState.exemplarFilter)) as! SynchronousMetricStorage)
@@ -66,7 +66,7 @@ class StableMeterSharedState {
         var registeredStorages = [AsynchronousMetricStorage]()
         for (reader, registry) in readerStorageRegisteries {
             for registeredView in reader.registry.findViews(descriptor: instrumentDescriptor, meterScope: instrumentationScope) {
-                if type(of: registeredView.view.aggregation) == DropAggregator.self {
+                if type(of: registeredView.view.aggregation) == DropAggregation.self {
                     continue
                 }
                 registeredStorages.append(registry.register(newStorage: AsynchronousMetricStorage.create(registeredReader: reader, registeredView: registeredView, instrumentDescriptor: instrumentDescriptor)) as! AsynchronousMetricStorage)
