@@ -327,4 +327,39 @@ public class RecordEventsReadableSpan: ReadableSpan {
     internal func getDroppedLinksCount() -> Int {
         return totalRecordedLinks - links.count
     }
+
+    public func recordException(_ exception: SpanException) {
+        recordException(exception, timestamp: clock.now)
+    }
+
+    public func recordException(_ exception: any SpanException, timestamp: Date) {
+        recordException(exception, attributes: [:], timestamp: timestamp)
+    }
+
+    public func recordException(_ exception: any SpanException, attributes: [String : AttributeValue]) {
+        recordException(exception, attributes: attributes, timestamp: clock.now)
+    }
+
+    public func recordException(_ exception: any SpanException, attributes: [String : AttributeValue], timestamp: Date) {
+        var limitedAttributes = AttributesDictionary(capacity: maxNumberOfAttributesPerEvent)
+        limitedAttributes.updateValues(attributes: attributes)
+        limitedAttributes.updateValues(attributes: exception.eventAttributes)
+        addEvent(event: SpanData.Event(name: SemanticAttributes.exception.rawValue, timestamp: timestamp, attributes: limitedAttributes.attributes))
+    }
+}
+
+extension SpanException {
+    fileprivate var eventAttributes: [String: AttributeValue] {
+        [
+            SemanticAttributes.exceptionType.rawValue: type,
+            SemanticAttributes.exceptionMessage.rawValue: message,
+            SemanticAttributes.exceptionStacktrace.rawValue: stackTrace?.joined(separator: "\n")
+        ].compactMapValues { value in
+            if let value, !value.isEmpty {
+                return .string(value)
+            }
+
+            return nil
+        }
+    }
 }
