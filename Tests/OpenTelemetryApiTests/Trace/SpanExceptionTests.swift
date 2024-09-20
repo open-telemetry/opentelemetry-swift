@@ -19,7 +19,11 @@ final class SpanExceptionTests: XCTestCase {
         // `SpanException` possible since `NSError` conforms to `SpanException`.
         let exception = error as SpanException
 
+#if !os(Linux)
         XCTAssertEqual(exception.type, String(reflecting: error))
+#else
+        XCTAssertEqual(exception.type, String(reflecting: error as NSError))
+#endif
         XCTAssertEqual(exception.message, error.localizedDescription)
         XCTAssertNil(exception.stackTrace)
     }
@@ -39,7 +43,11 @@ final class SpanExceptionTests: XCTestCase {
         // `SpanException` possible since `NSError` conforms to `SpanException`.
         let exception = error as SpanException
 
+#if !os(Linux)
         XCTAssertEqual(exception.type, String(reflecting: error))
+#else
+        XCTAssertEqual(exception.type, String(reflecting: error as NSError))
+#endif
         XCTAssertEqual(exception.message, error.localizedDescription)
         XCTAssertNil(exception.stackTrace)
 
