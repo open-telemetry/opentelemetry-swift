@@ -4,6 +4,9 @@
 ## Jetbrain
 .idea/
 
+# VS Code
+.vscode/
+
 ## User settings
 xcuserdata/
 
