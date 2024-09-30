@@ -1,0 +1,39 @@
+name: Framework Release
+on: 
+  workflow_dispatch:
+    inputs:
+      new_version:
+        description: "New sdk version"
+        required: true
+jobs:
+  Release:
+    runs-on: ubuntu-latest
+    permissions:
+        contents: write
+    steps:
+    - uses: actions/checkout@v4
+      with: 
+        ref: ${{ github.head_ref }}
+    - name: update version file
+      run: |
+       echo '//
+       // Copyright The OpenTelemetry Authors
+       // SPDX-License-Identifier: Apache-2.0
+       //
+       
+       import Foundation
+       
+       extension Resource {
+         public static let OTEL_SWIFT_SDK_VERSION : String = "${{ inputs.new_version }}"
+       }
+       ' > Sources/OpenTelemetrySdk/Version.swift
+    - uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: version bump to ${{inputs.new_version}}
+        tagging_message: 'v${{ inputs.new_version }}'
+    - uses: ncipollo/release-action@v1
+      with: 
+        tag: v${{inputs.new_version}}
+        prerelease: true
+        generateReleaseNotes: true
+
