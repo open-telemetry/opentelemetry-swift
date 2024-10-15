@@ -623,11 +623,6 @@ public class URLSessionInstrumentation {
                 let instrumentedRequest = URLSessionLogger.processAndLogRequest(request, sessionTaskId: taskId, instrumentation: self, shouldInjectHeaders: true)
                 task.setValue(instrumentedRequest, forKey: "currentRequest")
                 self.setIdKey(value: taskId, for: task)
-
-
-                if task.delegate == nil && task.state != .running {
-                    task.delegate = FakeDelegate()
-                }
             }
         }
     }
