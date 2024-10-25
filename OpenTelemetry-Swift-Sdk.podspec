@@ -1,5 +1,5 @@
 Pod::Spec.new do |spec|
-  spec.name = "OpenTelemetrySdk"
+  spec.name = "OpenTelemetry-Swift-Sdk"
   spec.version = "1.10.1"
   spec.summary = "Swift OpenTelemetrySDK"
 
@@ -11,10 +11,10 @@ Pod::Spec.new do |spec|
   spec.source = { :git => "https://github.com/open-telemetry/opentelemetry-swift.git", :tag => spec.version.to_s }
   spec.source_files = "Sources/OpenTelemetrySdk/**/*.swift"
 
-  spec.swift_version = "5.9"
+  spec.swift_version = "5.10"
   spec.ios.deployment_target = "13.0"
   spec.tvos.deployment_target = "13.0"
   spec.watchos.deployment_target = "6.0"
 
-  spec.dependency 'OpenTelemetryApi', spec.version.to_s
+  spec.dependency 'OpenTelemetry-Swift-Api', spec.version.to_s
 end
