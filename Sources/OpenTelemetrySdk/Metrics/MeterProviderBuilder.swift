@@ -6,6 +6,9 @@ import Foundation
 
 import OpenTelemetryApi
 
+
+
+@available(*, deprecated, renamed: "StableMeterProviderBuilder")
 public class MeterProviderBuilder {
     public private(set) var resource : Resource = Resource()
     public private(set) var metricExporter : MetricExporter = NoopMetricExporter()
