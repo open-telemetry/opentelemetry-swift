@@ -12,6 +12,7 @@ import OpenTelemetryApi
 import OpenTelemetryProtocolExporterCommon
 import OpenTelemetrySdk
 
+@available(*, deprecated, renamed: "StableOtlpMetricExporter")
 public class OtlpMetricExporter: MetricExporter {
     let channel: GRPCChannel
     var metricClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient
