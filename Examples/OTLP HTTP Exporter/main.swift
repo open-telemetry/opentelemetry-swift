@@ -23,7 +23,7 @@ let instrumentationScopeName = "OTLPHTTPExporter"
 let instrumentationScopeVersion = "semver:0.1.0"
 
 let otlpHttpTraceExporter = OtlpHttpTraceExporter()
-let stdoutExporter = StdoutExporter()
+let stdoutExporter = StdoutSpanExporter()
 let spanExporter = MultiSpanExporter(spanExporters: [otlpHttpTraceExporter, stdoutExporter])
 
 let spanProcessor = SimpleSpanProcessor(spanExporter: spanExporter)
