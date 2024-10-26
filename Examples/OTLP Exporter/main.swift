@@ -32,7 +32,7 @@ let configuration = ClientConnection.Configuration.default(
 let client = ClientConnection(configuration: configuration)
 
 let otlpTraceExporter = OtlpTraceExporter(channel: client)
-let stdoutExporter = StdoutExporter()
+let stdoutExporter = StdoutSpanExporter()
 let spanExporter = MultiSpanExporter(spanExporters: [otlpTraceExporter, stdoutExporter])
 
 let spanProcessor = SimpleSpanProcessor(spanExporter: spanExporter)

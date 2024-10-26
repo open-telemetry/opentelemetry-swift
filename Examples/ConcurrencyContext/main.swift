@@ -14,7 +14,7 @@ let sampleValue = "sampleValue"
 // On Apple platforms, the default is the activity based context manager. We want to opt-in to the structured concurrency based context manager instead.
 OpenTelemetry.registerDefaultConcurrencyContextManager()
 
-let stdout = StdoutExporter()
+let stdout = StdoutSpanExporter()
 OpenTelemetry.registerTracerProvider(
     tracerProvider: TracerProviderBuilder().add(
         spanProcessor: SimpleSpanProcessor(spanExporter: stdout)
@@ -30,7 +30,7 @@ extension Task where Failure == Never, Success == Never {
 }
 
 func simpleSpan() async throws {
-    let span = tracer.spanBuilder(spanName: "SimpleSpan").setSpanKind(spanKind: .client).startSpan()
+    let span = await tracer.spanBuilder(spanName: "SimpleSpan").setSpanKind(spanKind: .client).startSpan()
     span.setAttribute(key: sampleKey, value: sampleValue)
     try await Task.sleep(seconds: 0.5)
     span.end()
@@ -42,7 +42,7 @@ func childSpan() async throws {
         span.setAttribute(key: sampleKey, value: sampleValue)
         await Task.detached {
             // A detached task doesn't inherit the task local context, so this span won't have a parent.
-            let notAChildSpan = tracer.spanBuilder(spanName: "notAChild").setSpanKind(spanKind: .client).startSpan()
+            let notAChildSpan = await tracer.spanBuilder(spanName: "notAChild").setSpanKind(spanKind: .client).startSpan()
             notAChildSpan.setAttribute(key: sampleKey, value: sampleValue)
             notAChildSpan.end()
         }.value
@@ -50,7 +50,7 @@ func childSpan() async throws {
         try await Task {
             // Normal tasks should still inherit the context.
             try await Task.sleep(seconds: 0.2)
-            let childSpan = tracer.spanBuilder(spanName: "childSpan").setSpanKind(spanKind: .client).startSpan()
+            let childSpan = await tracer.spanBuilder(spanName: "childSpan").setSpanKind(spanKind: .client).startSpan()
             childSpan.setAttribute(key: sampleKey, value: sampleValue)
             try await Task.sleep(seconds: 0.5)
             childSpan.end()

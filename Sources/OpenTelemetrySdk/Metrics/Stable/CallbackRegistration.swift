@@ -27,11 +27,11 @@ public class CallbackRegistration {
         if !hasStorages {
             return
         }
-        for var measurement in observableMeasurements {
+        for measurement in observableMeasurements {
             measurement.setActiveReader(reader: reader, startEpochNanos: startEpochNanos, epochNanos: epochNanos)
         }
         callback()
-        for var measurement in observableMeasurements {
+        for measurement in observableMeasurements {
             measurement.clearActiveReader()
         }
     }

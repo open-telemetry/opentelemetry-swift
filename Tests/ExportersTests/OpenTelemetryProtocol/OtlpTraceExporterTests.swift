@@ -13,7 +13,7 @@ import OpenTelemetryProtocolExporterCommon
 @testable import OpenTelemetrySdk
 import XCTest
 
-extension String: LocalizedError {
+extension Swift.String: LocalizedError {
     public var errorDescription: String? { return self }
 }
 
