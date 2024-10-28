@@ -56,7 +56,7 @@ class BatchLogRecordProcessorTests : XCTestCase {
         for _ in 0 ..< 100 {
             logger.logRecordBuilder().emit()
         }
-        _ = processor.forceFlush()
+        processor.forceFlush()
         let exported = waitingExporter.waitForExport()
         XCTAssertEqual(exported?.count, 100)
         XCTAssertEqual(waitingExporter.exporter.exportCalledTimes, 1)
