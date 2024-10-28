@@ -29,8 +29,8 @@ jobs:
        ' > Sources/OpenTelemetrySdk/Version.swift
     - name: update Podspec
       run: | 
-        sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetryApi.podspec    
-        sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetrySdk.podspec    
+        sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-Api.podspec    
+        sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-Sdk.podspec    
 
     - uses: stefanzweifel/git-auto-commit-action@v5
       with:
