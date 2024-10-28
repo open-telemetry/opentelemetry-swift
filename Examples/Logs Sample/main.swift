@@ -17,9 +17,6 @@ func configure() {
       target: .hostAndPort("localhost", 4317),
       eventLoopGroup: MultiThreadedEventLoopGroup(numberOfThreads: 1))
 
-      
-  OtlpLogExporter(channel: ClientConnection(configuration: configuration))
-  
       OpenTelemetry.registerLoggerProvider(loggerProvider: LoggerProviderBuilder().with(processors: [
         BatchLogRecordProcessor(logRecordExporter:OtlpLogExporter(channel: ClientConnection(configuration: configuration)))]).build())
       

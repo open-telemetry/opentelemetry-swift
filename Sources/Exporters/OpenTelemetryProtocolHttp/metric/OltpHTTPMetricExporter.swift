@@ -14,6 +14,7 @@ public func defaultOltpHTTPMetricsEndpoint() -> URL {
   URL(string: "http://localhost:4318/v1/metrics")!
 }
 
+@available(*, deprecated, renamed: "StableOtlpHTTPMetricExporter")
 public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
   var pendingMetrics: [Metric] = []
   private let exporterLock = Lock()
