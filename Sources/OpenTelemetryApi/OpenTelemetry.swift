@@ -70,6 +70,7 @@ public struct OpenTelemetry {
         instance.tracerProvider = tracerProvider
     }
 
+    @available(*, deprecated, message: "Use registerStableMeterProvider instead.")
     public static func registerMeterProvider(meterProvider: MeterProvider) {
         instance.meterProvider = meterProvider
     }
