@@ -12,7 +12,7 @@ jobs:
       - name: Check if merge is release branch
         id: check-release
         run: |
-          if [[ ${{ github.head_ref }} =~ ^release/(v[0-9]+\.[0-9]+\.[0-9]+$) ]]; then
+          if [[ ${{ github.head_ref }} =~ ^release/([0-9]+\.[0-9]+\.[0-9]+$) ]]; then
             echo "match=true" >> $GITHUB_OUTPUT
             echo "version=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
           fi
@@ -26,9 +26,9 @@ jobs:
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: version bump to ${{ steps.check-release.outputs.version }}
-          tagging_message: 'v${{ steps.check-release.outputs.version }}'
+          tagging_message: '${{ steps.check-release.outputs.version }}'
       - uses: ncipollo/release-action@v1
         with: 
-          tag: v${{ steps.check-release.outputs.version }}
+          tag: ${{ steps.check-release.outputs.version }}
           prerelease: true
           generateReleaseNotes: true
