@@ -192,27 +192,29 @@ public class RecordEventsReadableSpan: ReadableSpan {
     }
 
     public func toSpanData() -> SpanData {
-        attributesSyncLock.withLock {
-            return SpanData(traceId: context.traceId,
-                            spanId: context.spanId,
-                            traceFlags: context.traceFlags,
-                            traceState: context.traceState,
-                            parentSpanId: parentContext?.spanId,
-                            resource: resource,
-                            instrumentationScope: instrumentationScopeInfo,
-                            name: name,
-                            kind: kind,
-                            startTime: startTime,
-                            attributes: attributes.attributes,
-                            events: adaptEvents(),
-                            links: adaptLinks(),
-                            status: status,
-                            endTime: endTime ?? clock.now,
-                            hasRemoteParent: hasRemoteParent,
-                            hasEnded: hasEnded,
-                            totalRecordedEvents: getTotalRecordedEvents(),
-                            totalRecordedLinks: totalRecordedLinks,
-                            totalAttributeCount: totalAttributeCount)
+        eventsSyncLock.withLock {
+            attributesSyncLock.withLock {
+                return SpanData(traceId: context.traceId,
+                                spanId: context.spanId,
+                                traceFlags: context.traceFlags,
+                                traceState: context.traceState,
+                                parentSpanId: parentContext?.spanId,
+                                resource: resource,
+                                instrumentationScope: instrumentationScopeInfo,
+                                name: name,
+                                kind: kind,
+                                startTime: startTime,
+                                attributes: attributes.attributes,
+                                events: adaptEvents(),
+                                links: adaptLinks(),
+                                status: status,
+                                endTime: endTime ?? clock.now,
+                                hasRemoteParent: hasRemoteParent,
+                                hasEnded: hasEnded,
+                                totalRecordedEvents: getTotalRecordedEvents(),
+                                totalRecordedLinks: totalRecordedLinks,
+                                totalAttributeCount: totalAttributeCount)
+            }
         }
     }
 
