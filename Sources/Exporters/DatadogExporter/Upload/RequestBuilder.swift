@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import DataCompression
 import Foundation
 
 /// Builds `URLRequest` for sending data to Datadog.

@@ -30,7 +30,7 @@
 import Foundation
 import Compression
 
-extension Data
+public extension Data
 {
     /// Compresses the data.
     /// - parameter withAlgorithm: Compression algorithm to use. See the `CompressionAlgorithm` type
@@ -247,7 +247,7 @@ extension Data
     
     /// Calculate the Adler32 checksum of the data.
     /// - returns: Adler32 checksum type. Can still be further advanced.
-    func adler32() -> Adler32
+    internal func adler32() -> Adler32
     {
         var res = Adler32()
         res.advance(withChunk: self)
@@ -256,7 +256,7 @@ extension Data
     
     /// Calculate the Crc32 checksum of the data.
     /// - returns: Crc32 checksum type. Can still be further advanced.
-    func crc32() -> Crc32
+    internal func crc32() -> Crc32
     {
         var res = Crc32()
         res.advance(withChunk: self)
