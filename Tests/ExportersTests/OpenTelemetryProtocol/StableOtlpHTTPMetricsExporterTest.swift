@@ -63,7 +63,7 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
     }
 
     let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
-    let exporter = StableOtlpHTTPMetricExporter(endpoint: endpoint)
+    let exporter = StableOtlpHTTPMetricExporter(endpoint: endpoint, config: .init(compression: .none))
     let result = exporter.export(metrics: metrics)
     XCTAssertEqual(result, ExportResult.success)
     
@@ -95,7 +95,7 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
     }
 
     let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
-    let exporter = StableOtlpHTTPMetricExporter(endpoint: endpoint)
+    let exporter = StableOtlpHTTPMetricExporter(endpoint: endpoint, config: .init(compression: .none))
     let result = exporter.export(metrics: metrics)
     XCTAssertEqual(result, ExportResult.success)
     
