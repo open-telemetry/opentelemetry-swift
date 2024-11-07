@@ -28,6 +28,8 @@
 
 
 import Foundation
+// Excluding linux
+#if canImport(Compression)
 import Compression
 
 public extension Data
@@ -514,3 +516,4 @@ fileprivate func perform(_ config: Config, source: UnsafePointer<UInt8>, sourceS
         }
     }
 }
+#endif

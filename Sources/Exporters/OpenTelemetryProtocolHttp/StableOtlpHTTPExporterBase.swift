@@ -51,6 +51,9 @@ public class StableOtlpHTTPExporterBase {
             request.setValue("application/x-protobuf", forHTTPHeaderField: "Content-Type")
             
             var compressedData = rawData
+            
+            // Skip for linux
+#if canImport(Compression)
             switch config.compression {
             case .gzip:
                 if let data = rawData.gzip() {
@@ -67,6 +70,8 @@ public class StableOtlpHTTPExporterBase {
             case .none:
                 break
             }
+#endif
+            
             // Apply final data. Could be compressed or raw
             // but it doesn't matter here
             request.httpBody = compressedData
