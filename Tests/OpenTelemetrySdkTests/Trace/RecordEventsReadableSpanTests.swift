@@ -417,6 +417,21 @@ class RecordEventsReadableSpanTest: XCTestCase {
         XCTAssertEqual(spanData.totalAttributeCount, 2 * maxNumberOfAttributes)
     }
 
+    func testAttributesValueLength() {
+        let maxValueLength = 8
+        let spanLimits = SpanLimits().settingAttributeValueLengthLimit(UInt(maxValueLength))
+        let span = createTestSpan(config: spanLimits)
+        span.setAttribute(key: "max_value_length", value: .string("this is a big text that is longer than \(maxValueLength) characters"))
+        span.end()
+        let spanData = span.toSpanData()
+        if case .string(let value) = spanData.attributes["max_value_length"] {
+            XCTAssertEqual(span.maxValueLengthPerSpanAttribute, maxValueLength)
+            XCTAssertEqual(value, "this is ")
+        } else {
+            XCTFail()
+        }
+    }
+    
     func testDroppingAndAddingAttributes() {
         let maxNumberOfAttributes = 8
         let spanLimits = SpanLimits().settingAttributeCountLimit(UInt(maxNumberOfAttributes))

@@ -21,12 +21,21 @@ public struct SpanLimits: Equatable {
     public private(set) var attributePerEventCountLimit: Int = 128
     /// the global default max number of attributes per Link.
     public private(set) var attributePerLinkCountLimit: Int = 128
+    /// the global default attributes value max length
+    public private(set) var attributeValueLengthLimit: Int = 1024
+    
     /// Returns the defaultSpanLimits.
     public init() {}
 
     @discardableResult public func settingAttributeCountLimit(_ number: UInt) -> Self {
         var spanLimits = self
         spanLimits.attributeCountLimit = number > 0 ? Int(number) : 0
+        return spanLimits
+    }
+
+    @discardableResult public func settingAttributeValueLengthLimit(_ number: UInt) -> Self {
+        var spanLimits = self
+        spanLimits.attributeValueLengthLimit = number > 0 ? Int(number) : 0
         return spanLimits
     }
 
@@ -56,6 +65,7 @@ public struct SpanLimits: Equatable {
 
     public static func == (lhs: SpanLimits, rhs: SpanLimits) -> Bool {
         return lhs.attributeCountLimit == rhs.attributeCountLimit &&
+            lhs.attributeValueLengthLimit == rhs.attributeValueLengthLimit &&
             lhs.eventCountLimit == rhs.eventCountLimit &&
             lhs.linkCountLimit == rhs.linkCountLimit &&
             lhs.attributePerEventCountLimit == rhs.attributePerEventCountLimit &&
