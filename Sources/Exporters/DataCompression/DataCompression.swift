@@ -28,7 +28,7 @@
 
 
 import Foundation
-// Excluding linux
+
 #if canImport(Compression)
 import Compression
 

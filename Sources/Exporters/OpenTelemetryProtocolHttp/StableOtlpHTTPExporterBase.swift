@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
+#if canImport(Compression)
 import DataCompression
+#endif
 import Foundation
 import OpenTelemetryProtocolExporterCommon
 import SwiftProtobuf
@@ -52,7 +54,6 @@ public class StableOtlpHTTPExporterBase {
             
             var compressedData = rawData
             
-            // Skip for linux
 #if canImport(Compression)
             switch config.compression {
             case .gzip:
