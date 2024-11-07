@@ -46,6 +46,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
     public private(set) var totalRecordedLinks: Int
     /// Max number of attributes per span.
     public private(set) var maxNumberOfAttributes: Int
+    /// Max value length of attribute per span.
+    public private(set) var maxValueLengthPerSpanAttribute: Int
     /// Max number of attributes per event.
     public private(set) var maxNumberOfAttributesPerEvent: Int
 
@@ -140,6 +142,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
         events = ArrayWithCapacity<SpanData.Event>(capacity: spanLimits.eventCountLimit)
         maxNumberOfAttributes = spanLimits.attributeCountLimit
         maxNumberOfAttributesPerEvent = spanLimits.attributePerEventCountLimit
+        maxValueLengthPerSpanAttribute = spanLimits.attributeValueLengthLimit
     }
 
     /// Creates and starts a span with the given configuration.
@@ -251,7 +254,13 @@ public class RecordEventsReadableSpan: ReadableSpan {
             if attributes[key] == nil, totalAttributeCount > maxNumberOfAttributes {
                 return
             }
-            attributes[key] = value
+            /// Process only `string` type value
+            if case .string(let value) = value {
+                let formattedValue = value.count > maxValueLengthPerSpanAttribute ? String(value.prefix(maxValueLengthPerSpanAttribute)) : value
+                attributes[key] = AttributeValue(formattedValue)
+            } else {
+                attributes[key] = value
+            }
         }
     }
 
