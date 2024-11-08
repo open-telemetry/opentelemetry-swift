@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // 
 
+#if canImport(Compression)
+import DataCompression
 import Foundation
 #if canImport(FoundationNetworking)
 import FoundationNetworking
@@ -13,7 +15,6 @@ import NIOHTTP1
 import NIOTestUtils
 import OpenTelemetryApi
 import OpenTelemetryProtocolExporterCommon
-import DataCompression
 @testable import OpenTelemetryProtocolExporterHttp
 @testable import OpenTelemetrySdk
 import XCTest
@@ -128,3 +129,4 @@ class OtlpHttpExporterBaseTests: XCTestCase {
         return testData
     }
 }
+#endif
