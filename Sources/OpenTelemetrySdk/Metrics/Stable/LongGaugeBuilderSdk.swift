@@ -34,7 +34,13 @@ public class LongGaugeBuilderSdk : LongGaugeBuilder, InstrumentBuilder {
         registerLongAsynchronousInstrument(type: type, updater: callback)
     }
     
-
+    public func setDescription(_ description: String) -> LongGaugeBuilder {
+        self.description = description
+        return self
+    }
     
-    
+    public func setUnit(_ unit: String) -> LongGaugeBuilder {
+        self.unit = unit
+        return self
+    }
 }

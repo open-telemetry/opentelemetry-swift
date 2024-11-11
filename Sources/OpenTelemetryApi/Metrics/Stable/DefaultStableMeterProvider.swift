@@ -8,6 +8,8 @@ import Foundation
 public class DefaultStableMeterProvider: StableMeterProvider {
   static let noopMeterBuilder = NoopMeterBuilder()
   
+    public init() {}
+    
   public static func noop() -> MeterBuilder {
     noopMeterBuilder
   }
