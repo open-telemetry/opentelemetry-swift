@@ -45,7 +45,7 @@ class OtlpHttpLogRecordExporterTests: XCTestCase {
                                           attributes: ["event.name":AttributeValue.string("name"), "event.domain": AttributeValue.string("domain")])
         
         let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
-        let exporter = OtlpHttpLogExporter(endpoint: endpoint)
+        let exporter = OtlpHttpLogExporter(endpoint: endpoint, config: .init(compression: .none))
         let _ = exporter.export(logRecords: [logRecord])
         
         // TODO: Use protobuf to verify that we have received the correct Log records      
