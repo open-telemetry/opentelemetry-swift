@@ -20,7 +20,7 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
     override
     public init(endpoint: URL = defaultOltpHttpTracesEndpoint(), config: OtlpConfiguration = OtlpConfiguration(),
                 useSession: URLSession? = nil, envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
-        super.init(endpoint: endpoint, config: config, useSession: useSession)
+        super.init(endpoint: endpoint, config: config, useSession: useSession, envVarHeaders: envVarHeaders)
     }
 
     public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {

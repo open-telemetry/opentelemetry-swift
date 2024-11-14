@@ -50,7 +50,7 @@ class OtlpHttpMetricsExporterTest: XCTestCase {
     }
     
     let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
-    let exporter = OtlpHttpMetricExporter(endpoint: endpoint)
+    let exporter = OtlpHttpMetricExporter(endpoint: endpoint, config: .init(compression: .none))
     let result = exporter.export(metrics: metrics) { () -> Bool in
       false
     }
@@ -83,7 +83,7 @@ class OtlpHttpMetricsExporterTest: XCTestCase {
     }
     
     let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
-    let exporter = OtlpHttpMetricExporter(endpoint: endpoint)
+    let exporter = OtlpHttpMetricExporter(endpoint: endpoint, config: .init(compression: .none))
     
     let result = exporter.export(metrics: metrics) { () -> Bool in
       false

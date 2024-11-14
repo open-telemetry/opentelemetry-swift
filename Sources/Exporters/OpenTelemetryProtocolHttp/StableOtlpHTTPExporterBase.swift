@@ -3,6 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
+#if canImport(Compression)
+import DataCompression
+#endif
 import Foundation
 import OpenTelemetryProtocolExporterCommon
 import SwiftProtobuf
@@ -44,14 +47,38 @@ public class StableOtlpHTTPExporterBase {
         }
 
         do {
+            let rawData = try body.serializedData()
             request.httpMethod = "POST"
-            request.httpBody = try body.serializedData()
             request.setValue(Headers.getUserAgentHeader(), forHTTPHeaderField: Constants.HTTP.userAgent)
             request.setValue("application/x-protobuf", forHTTPHeaderField: "Content-Type")
+            
+            var compressedData = rawData
+            
+#if canImport(Compression)
+            switch config.compression {
+            case .gzip:
+                if let data = rawData.gzip() {
+                    compressedData = data
+                    request.setValue("gzip", forHTTPHeaderField: "Content-Encoding")
+                }
+                
+            case .deflate:
+                if let data = rawData.deflate() {
+                    compressedData = data
+                    request.setValue("deflate", forHTTPHeaderField: "Content-Encoding")
+                }
+                
+            case .none:
+                break
+            }
+#endif
+            
+            // Apply final data. Could be compressed or raw
+            // but it doesn't matter here
+            request.httpBody = compressedData
         } catch {
             print("Error serializing body: \(error)")
         }
-
         return request
     }
 
