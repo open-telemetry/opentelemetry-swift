@@ -37,7 +37,7 @@ class OtlpHttpTraceExporterTests: XCTestCase {
     // It should ideally turn that body into [SpanData] using protobuf and then confirm content
     func testExport() {
         let endpoint = URL(string: "http://localhost:\(testServer.serverPort)/v1/traces")!
-        let exporter = OtlpHttpTraceExporter(endpoint: endpoint)
+        let exporter = OtlpHttpTraceExporter(endpoint: endpoint, config: .init(compression: .none))
         
         var spans: [SpanData] = []
         let endpointName1 = "/api/foo" + String(Int.random(in: 1...100))
