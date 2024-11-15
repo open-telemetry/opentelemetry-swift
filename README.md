@@ -33,6 +33,25 @@ or
 .target(name: "ExampleApp", dependencies: ["OpenTelemetrySdk"]),
 ```
 
+### Cocoapods
+
+As of version 1.11.0, OpenTelemetry-Swift support cocoapods. 
+Two pods are provided: 
+
+- `OpenTelemetry-Swift-Api`
+
+- `OpenTelemetry-Swift-Sdk`
+
+`OpenTelemetry-Swift-Api` is a dependency of `OpenTelemetry-Swift-Sdk`. 
+
+Most users will want to add the following to their pod file:
+
+`pod 'OpenTelemetry-Swift-Sdk'`
+
+This will add both the API and SDK. If you're only interesting in Adding the API add the following: 
+
+`pod 'OpenTelemetry-Swift-Api'`
+
 ## Documentation
 
 Official documentation for the library can be found in the official opentelemetry [documentation  page](https://opentelemetry.io/docs/instrumentation/swift/), including:
