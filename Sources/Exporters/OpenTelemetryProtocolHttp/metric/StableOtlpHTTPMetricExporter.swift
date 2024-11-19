@@ -5,6 +5,7 @@
 
 import Foundation
 import OpenTelemetrySdk
+import OpenTelemetryApi
 import OpenTelemetryProtocolExporterCommon
 #if canImport(FoundationNetworking)
 import FoundationNetworking
@@ -15,11 +16,12 @@ public func defaultStableOtlpHTTPMetricsEndpoint() -> URL {
 }
 
 public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMetricExporter {
-  var aggregationTemporalitySelector: AggregationTemporalitySelector
-  var defaultAggregationSelector: DefaultAggregationSelector
+    var aggregationTemporalitySelector: AggregationTemporalitySelector
+    var defaultAggregationSelector: DefaultAggregationSelector
   
-  var pendingMetrics: [StableMetricData] = []
-  private let exporterLock = Lock()
+    var pendingMetrics: [StableMetricData] = []
+    private let exporterLock = Lock()
+    private var exporterMetrics: ExporterMetrics?
   
   // MARK: - Init
   
@@ -31,6 +33,40 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
     super.init(endpoint: endpoint, config: config, useSession: useSession, envVarHeaders: envVarHeaders)
   }
   
+    /// A `convenience` constructor to provide support for exporter metric using`StableMeterProvider` type
+    /// - Parameters:
+    ///    - endpoint: Exporter endpoint injected as dependency
+    ///    - config: Exporter configuration including type of exporter
+    ///    - meterProvider: Injected `StableMeterProvider` for metric
+    ///    - aggregationTemporalitySelector: aggregator
+    ///    - defaultAggregationSelector: default aggregator
+    ///    - useSession: Overridden `URLSession` if any
+    ///    - envVarHeaders: Extra header key-values
+    convenience public init(
+        endpoint: URL,
+        config: OtlpConfiguration = OtlpConfiguration(),
+        meterProvider: StableMeterProvider,
+        aggregationTemporalitySelector: AggregationTemporalitySelector = AggregationTemporality.alwaysCumulative(),
+        defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector.instance,
+        useSession: URLSession? = nil,
+        envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+            self.init(
+                endpoint: endpoint,
+                config: config,
+                aggregationTemporalitySelector: aggregationTemporalitySelector,
+                defaultAggregationSelector: defaultAggregationSelector,
+                useSession: useSession,
+                envVarHeaders: envVarHeaders
+            )
+            self.exporterMetrics = ExporterMetrics(
+                type: "otlp",
+                meterProvider: meterProvider,
+                exporterName: "metric",
+                transportName: config.exportAsJson ?
+                ExporterMetrics.TransporterType.httpJson :
+                    ExporterMetrics.TransporterType.grpc
+            )
+        }
   
   // MARK: - StableMetricsExporter
   
@@ -44,14 +80,16 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
     let body = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
       $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(stableMetricData: sendingMetrics)
     }
-    
+      self.exporterMetrics?.addSeen(value: sendingMetrics.count)
     var request = createRequest(body: body, endpoint: endpoint)
     request.timeoutInterval = min(TimeInterval.greatestFiniteMagnitude, config.timeout)
     httpClient.send(request: request) { [weak self] result in
       switch result {
       case .success(_):
+          self?.exporterMetrics?.addSuccess(value: sendingMetrics.count)
         break
       case .failure(let error):
+          self?.exporterMetrics?.addFailed(value: sendingMetrics.count)
         self?.exporterLock.withLockVoid {
           self?.pendingMetrics.append(contentsOf: sendingMetrics)
         }
@@ -75,11 +113,13 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
       let semaphore = DispatchSemaphore(value: 0)
       var request = createRequest(body: body, endpoint: endpoint)
       request.timeoutInterval = min(TimeInterval.greatestFiniteMagnitude, config.timeout)
-      httpClient.send(request: request) { result in
+      httpClient.send(request: request) { [weak self] result in
         switch result {
         case .success(_):
+            self?.exporterMetrics?.addSuccess(value: pendingMetrics.count)
           break
         case .failure(let error):
+            self?.exporterMetrics?.addFailed(value: pendingMetrics.count)
           print(error)
           exporterResult = .failure
         }
