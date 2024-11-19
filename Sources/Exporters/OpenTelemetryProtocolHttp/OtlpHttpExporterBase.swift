@@ -14,21 +14,25 @@ import FoundationNetworking
 #endif
 
 public class OtlpHttpExporterBase {
-  let endpoint: URL
-  let httpClient: HTTPClient
-  let envVarHeaders : [(String,String)]?
-  
-  let config : OtlpConfiguration
-  public init(endpoint: URL, config: OtlpConfiguration = OtlpConfiguration(), useSession: URLSession? = nil, envVarHeaders: [(String,String)]? = EnvVarHeaders.attributes) {
-    self.envVarHeaders = envVarHeaders
-    
-    self.endpoint = endpoint
-    self.config = config
-    if let providedSession = useSession {
-      self.httpClient = HTTPClient(session: providedSession)
-    } else {
-      self.httpClient = HTTPClient()
-    }
+    let endpoint: URL
+    let httpClient: HTTPClient
+    let envVarHeaders : [(String,String)]?
+    let config : OtlpConfiguration
+
+  public init(
+    endpoint: URL,
+    config: OtlpConfiguration = OtlpConfiguration(),
+    useSession: URLSession? = nil,
+    envVarHeaders: [(String,String)]? = EnvVarHeaders.attributes
+  ) {
+      self.envVarHeaders = envVarHeaders
+      self.endpoint = endpoint
+      self.config = config
+      if let providedSession = useSession {
+          self.httpClient = HTTPClient(session: providedSession)
+      } else {
+          self.httpClient = HTTPClient()
+      }
   }
   
     public func createRequest(body: Message, endpoint: URL) -> URLRequest {
