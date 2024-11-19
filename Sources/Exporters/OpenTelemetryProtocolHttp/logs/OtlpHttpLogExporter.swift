@@ -6,6 +6,7 @@
 import Foundation
 import OpenTelemetryProtocolExporterCommon
 import OpenTelemetrySdk
+import OpenTelemetryApi
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
@@ -17,13 +18,47 @@ public func defaultOltpHttpLoggingEndpoint() -> URL {
 public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter {
     var pendingLogRecords: [ReadableLogRecord] = []
     private let exporterLock = Lock()
-    override public init(endpoint: URL = defaultOltpHttpLoggingEndpoint(),
-                         config: OtlpConfiguration = OtlpConfiguration(),
-                         useSession: URLSession? = nil,
-                         envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
-        super.init(endpoint: endpoint, config: config, useSession: useSession, envVarHeaders: envVarHeaders)
+    private var exporterMetrics: ExporterMetrics?
+    
+    override public init(
+        endpoint: URL = defaultOltpHttpLoggingEndpoint(),
+        config: OtlpConfiguration = OtlpConfiguration(),
+        useSession: URLSession? = nil,
+        envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes
+    ) {
+        super.init(
+            endpoint: endpoint,
+            config: config,
+            useSession: useSession,
+            envVarHeaders: envVarHeaders
+        )
     }
 
+    /// A `convenience` constructor to provide support for exporter metric using`StableMeterProvider` type
+    /// - Parameters:
+    ///    - endpoint: Exporter endpoint injected as dependency
+    ///    - config: Exporter configuration including type of exporter
+    ///    - meterProvider: Injected `StableMeterProvider` for metric
+    ///    - useSession: Overridden `URLSession` if any
+    ///    - envVarHeaders: Extra header key-values
+    convenience public init(
+        endpoint: URL = defaultOltpHttpLoggingEndpoint(),
+        config: OtlpConfiguration = OtlpConfiguration(),
+        meterProvider: StableMeterProvider,
+        useSession: URLSession? = nil,
+        envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes
+    ) {
+        self.init(endpoint: endpoint, config: config, useSession: useSession, envVarHeaders: envVarHeaders)
+        exporterMetrics = ExporterMetrics(
+            type: "otlp",
+            meterProvider: meterProvider,
+            exporterName: "log",
+            transportName: config.exportAsJson ?
+                ExporterMetrics.TransporterType.httpJson :
+                ExporterMetrics.TransporterType.grpc
+        )
+    }
+    
     public func export(logRecords: [OpenTelemetrySdk.ReadableLogRecord], explicitTimeout: TimeInterval? = nil) -> OpenTelemetrySdk.ExportResult {
         var sendingLogRecords: [ReadableLogRecord] = []
         exporterLock.withLockVoid {
@@ -47,12 +82,15 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter {
                 request.addValue(value, forHTTPHeaderField: key)
             }
         }
+        exporterMetrics?.addSeen(value: sendingLogRecords.count)
         request.timeoutInterval = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
         httpClient.send(request: request) { [weak self] result in
             switch result {
             case .success:
+                self?.exporterMetrics?.addSuccess(value: sendingLogRecords.count)
                 break
             case let .failure(error):
+                self?.exporterMetrics?.addFailed(value: sendingLogRecords.count)
                 self?.exporterLock.withLockVoid {
                     self?.pendingLogRecords.append(contentsOf: sendingLogRecords)
                 }
@@ -90,11 +128,13 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter {
                     request.addValue(value, forHTTPHeaderField: key)
                 }
             }
-            httpClient.send(request: request) { result in
+            httpClient.send(request: request) { [weak self] result in
                 switch result {
                 case .success:
+                    self?.exporterMetrics?.addSuccess(value: pendingLogRecords.count)
                     exporterResult = ExportResult.success
                 case let .failure(error):
+                    self?.exporterMetrics?.addFailed(value: pendingLogRecords.count)
                     print(error)
                     exporterResult = ExportResult.failure
                 }
