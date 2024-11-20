@@ -41,14 +41,4 @@ public class LongCounterMeterBuilderSdk: LongCounterBuilder, InstrumentBuilder {
         -> OpenTelemetryApi.ObservableLongCounter {
         registerLongAsynchronousInstrument(type: .observableCounter, updater: callback)
     }
-    
-    public func setDescription(_ description: String) -> LongCounterBuilder {
-        self.description = description
-        return self
-    }
-    
-    public func setUnit(_ unit: String) -> LongCounterBuilder {
-        self.unit = unit
-        return self
-    }
 }

@@ -85,9 +85,12 @@ private class BatchWorker: Thread {
     var queue: OperationQueue
     
     private var queueSizeGauge: ObservableLongGauge?
-    private var processedSpansCounter: LongCounter
+    private var spanGaugeObserver: ObservableLongGauge?
+    
+    private var processedSpansCounter: LongCounter?
     private let droppedAttrs: [String: AttributeValue]
     private let exportedAttrs: [String: AttributeValue]
+    private let spanGaugeBuilder: LongGaugeBuilder
     init(
         spanExporter: SpanExporter,
         meterProvider: StableMeterProvider,
@@ -110,23 +113,33 @@ private class BatchWorker: Thread {
         queue.maxConcurrentOperationCount = 1
         
         let meter = meterProvider.meterBuilder(name: "io.opentelemetry.sdk.trace").build()
-        self.queueSizeGauge = meter.gaugeBuilder(name: "queueSize")
-            .ofLongs()
-            .setDescription("The number of items queued")
-            .setUnit("1")
-            .buildWithCallback { result in
-                result.record(
-                    value: maxQueueSize,
-                    attributes: [
-                        BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE)
-                    ]
-                )
-            }
+        do {
+            self.queueSizeGauge = try meter.gaugeBuilder(name: "queueSize")
+                .ofLongs()
+                .asLongSdk()
+                .setDescription("The number of items queued")
+                .setUnit("1")
+                .buildWithCallback { result in
+                    result.record(
+                        value: maxQueueSize,
+                        attributes: [
+                            BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE)
+                        ]
+                    )
+                }
+        } catch {}
         
-        processedSpansCounter = meter.counterBuilder(name: "processedSpans")
-            .setUnit("1")
-            .setDescription("The number of spans processed by the BatchSpanProcessor. [dropped=true if they were dropped due to high throughput]")
-            .build()
+        self.spanGaugeBuilder = meter.gaugeBuilder(name: "spanSize")
+            .ofLongs()
+        
+        do {
+            processedSpansCounter = try meter.counterBuilder(name: "processedSpans")
+                .asLongSdk()
+                .setUnit("1")
+                .setDescription("The number of spans processed by the BatchSpanProcessor. [dropped=true if they were dropped due to high throughput]")
+                .build()
+        } catch {}
+        
         droppedAttrs = [
             BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE),
             BatchSpanProcessor.SPAN_PROCESSOR_DROPPED_LABEL: .bool(true)
@@ -137,16 +150,35 @@ private class BatchWorker: Thread {
         ]
     }
   
+    deinit {
+        // Cleanup all gauge observer
+        self.queueSizeGauge?.close()
+        self.spanGaugeObserver?.close()
+    }
+    
   func addSpan(span: ReadableSpan) {
     cond.lock()
     defer { cond.unlock() }
     
     if spanList.count == maxQueueSize {
-        processedSpansCounter.add(value: 1, attribute: droppedAttrs)
+        processedSpansCounter?.add(value: 1, attribute: droppedAttrs)
       return
     }
-    // TODO: Record a gauge for referenced spans.
     spanList.append(span)
+      
+      // If there is any observer before, let's close it
+      self.spanGaugeObserver?.close()
+      // Subscribe to new gauge observer
+      self.spanGaugeObserver = self.spanGaugeBuilder
+          .buildWithCallback { [count = spanList.count] result in
+              result.record(
+                  value: count,
+                  attributes: [
+                      BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE)
+                  ]
+              )
+          }
+
     // Notify the worker thread that at half of the queue is available. It will take
     // time anyway for the thread to wake up.
     if spanList.count >= halfMaxQueueSize {
@@ -211,9 +243,32 @@ private class BatchWorker: Thread {
             let result = spanExporter.export(spans: spansToExport, explicitTimeout: explicitTimeout)
             if result == .success {
                 cond.lock()
-                processedSpansCounter.add(value: spanList.count, attribute: exportedAttrs)
+                processedSpansCounter?.add(value: spanList.count, attribute: exportedAttrs)
                 cond.unlock()
             }
         }
+    }
+}
+
+public enum GuageError: Error {
+    case invalidType
+}
+
+/// Helper function to handle
+extension LongGaugeBuilder {
+    public func asLongSdk() throws -> LongGaugeBuilderSdk {
+        guard let sdkType = self as? LongGaugeBuilderSdk else {
+            throw GuageError.invalidType
+        }
+        return sdkType
+    }
+}
+
+extension LongCounterBuilder {
+    public func asLongSdk() throws -> LongCounterMeterBuilderSdk {
+        guard let sdkType = self as? LongCounterMeterBuilderSdk else {
+            throw GuageError.invalidType
+        }
+        return sdkType
     }
 }

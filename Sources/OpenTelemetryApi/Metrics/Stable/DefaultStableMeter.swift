@@ -61,14 +61,6 @@ public class DefaultStableMeter : StableMeter {
   }
   
     private class NoopLongGaugeBuilder : LongGaugeBuilder {
-        func setUnit(_ unit: String) -> any LongGaugeBuilder {
-            self
-        }
-        
-        func setDescription(_ description: String) -> any LongGaugeBuilder {
-            self
-        }
-        
     func buildWithCallback(_ callback: @escaping (ObservableLongMeasurement) -> Void) -> ObservableLongGauge {
         NoopObservableLongGauge()
     }
@@ -132,25 +124,17 @@ public class DefaultStableMeter : StableMeter {
   }
   
     private class NoopLongCounterBuilder : LongCounterBuilder {
-        func setUnit(_ unit: String) -> any LongCounterBuilder {
-            self
+        func ofDoubles() -> DoubleCounterBuilder {
+          NoopDoubleCounterBuilder()
         }
         
-        func setDescription(_ description: String) -> any LongCounterBuilder {
-            self
+        func build() -> LongCounter {
+          NoopLongCounter()
         }
         
-    func ofDoubles() -> DoubleCounterBuilder {
-      NoopDoubleCounterBuilder()
-    }
-    
-    func build() -> LongCounter {
-      NoopLongCounter()
-    }
-    
-    func buildWithCallback(_ callback: @escaping (ObservableLongMeasurement) -> Void) -> ObservableLongCounter {
-      NoopObservableLongCounter()
-    }
+        func buildWithCallback(_ callback: @escaping (ObservableLongMeasurement) -> Void) -> ObservableLongCounter {
+          NoopObservableLongCounter()
+        }
   }
   
   private class NoopDoubleCounterBuilder : DoubleCounterBuilder {
