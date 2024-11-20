@@ -46,6 +46,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
     public private(set) var totalRecordedLinks: Int
     /// Max number of attributes per span.
     public private(set) var maxNumberOfAttributes: Int
+    /// Max value length of attribute per span.
+    public private(set) var maxValueLengthPerSpanAttribute: Int
     /// Max number of attributes per event.
     public private(set) var maxNumberOfAttributesPerEvent: Int
 
@@ -140,6 +142,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
         events = ArrayWithCapacity<SpanData.Event>(capacity: spanLimits.eventCountLimit)
         maxNumberOfAttributes = spanLimits.attributeCountLimit
         maxNumberOfAttributesPerEvent = spanLimits.attributePerEventCountLimit
+        maxValueLengthPerSpanAttribute = spanLimits.attributeValueLengthLimit
     }
 
     /// Creates and starts a span with the given configuration.
@@ -192,26 +195,28 @@ public class RecordEventsReadableSpan: ReadableSpan {
     }
 
     public func toSpanData() -> SpanData {
-        return SpanData(traceId: context.traceId,
-                        spanId: context.spanId,
-                        traceFlags: context.traceFlags,
-                        traceState: context.traceState,
-                        parentSpanId: parentContext?.spanId,
-                        resource: resource,
-                        instrumentationScope: instrumentationScopeInfo,
-                        name: name,
-                        kind: kind,
-                        startTime: startTime,
-                        attributes: attributes.attributes,
-                        events: adaptEvents(),
-                        links: adaptLinks(),
-                        status: status,
-                        endTime: endTime ?? clock.now,
-                        hasRemoteParent: hasRemoteParent,
-                        hasEnded: hasEnded,
-                        totalRecordedEvents: getTotalRecordedEvents(),
-                        totalRecordedLinks: totalRecordedLinks,
-                        totalAttributeCount: totalAttributeCount)
+        attributesSyncLock.withLock {
+            return SpanData(traceId: context.traceId,
+                            spanId: context.spanId,
+                            traceFlags: context.traceFlags,
+                            traceState: context.traceState,
+                            parentSpanId: parentContext?.spanId,
+                            resource: resource,
+                            instrumentationScope: instrumentationScopeInfo,
+                            name: name,
+                            kind: kind,
+                            startTime: startTime,
+                            attributes: attributes.attributes,
+                            events: adaptEvents(),
+                            links: adaptLinks(),
+                            status: status,
+                            endTime: endTime ?? clock.now,
+                            hasRemoteParent: hasRemoteParent,
+                            hasEnded: hasEnded,
+                            totalRecordedEvents: getTotalRecordedEvents(),
+                            totalRecordedLinks: totalRecordedLinks,
+                            totalAttributeCount: totalAttributeCount)
+        }
     }
 
     private func adaptEvents() -> [SpanData.Event] {
@@ -251,7 +256,13 @@ public class RecordEventsReadableSpan: ReadableSpan {
             if attributes[key] == nil, totalAttributeCount > maxNumberOfAttributes {
                 return
             }
-            attributes[key] = value
+            /// Process only `string` type value
+            if case .string(let value) = value {
+                let formattedValue = value.count > maxValueLengthPerSpanAttribute ? String(value.prefix(maxValueLengthPerSpanAttribute)) : value
+                attributes[key] = AttributeValue(formattedValue)
+            } else {
+                attributes[key] = value
+            }
         }
     }
 
@@ -326,5 +337,40 @@ public class RecordEventsReadableSpan: ReadableSpan {
     /// For testing purposes
     internal func getDroppedLinksCount() -> Int {
         return totalRecordedLinks - links.count
+    }
+
+    public func recordException(_ exception: SpanException) {
+        recordException(exception, timestamp: clock.now)
+    }
+
+    public func recordException(_ exception: any SpanException, timestamp: Date) {
+        recordException(exception, attributes: [:], timestamp: timestamp)
+    }
+
+    public func recordException(_ exception: any SpanException, attributes: [String : AttributeValue]) {
+        recordException(exception, attributes: attributes, timestamp: clock.now)
+    }
+
+    public func recordException(_ exception: any SpanException, attributes: [String : AttributeValue], timestamp: Date) {
+        var limitedAttributes = AttributesDictionary(capacity: maxNumberOfAttributesPerEvent)
+        limitedAttributes.updateValues(attributes: attributes)
+        limitedAttributes.updateValues(attributes: exception.eventAttributes)
+        addEvent(event: SpanData.Event(name: SemanticAttributes.exception.rawValue, timestamp: timestamp, attributes: limitedAttributes.attributes))
+    }
+}
+
+extension SpanException {
+    fileprivate var eventAttributes: [String: AttributeValue] {
+        [
+            SemanticAttributes.exceptionType.rawValue: type,
+            SemanticAttributes.exceptionMessage.rawValue: message,
+            SemanticAttributes.exceptionStacktrace.rawValue: stackTrace?.joined(separator: "\n")
+        ].compactMapValues { value in
+            if let value, !value.isEmpty {
+                return .string(value)
+            }
+
+            return nil
+        }
     }
 }

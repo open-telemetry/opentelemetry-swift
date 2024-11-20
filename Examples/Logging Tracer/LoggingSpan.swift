@@ -72,6 +72,22 @@ class LoggingSpan: Span {
         Logger.log("Span.addEvent(\(name), attributes:\(attributes), timestamp:\(timestamp))")
     }
 
+    public func recordException(_ exception: SpanException) {
+        Logger.log("Span.recordException(\(exception)")
+    }
+
+    public func recordException(_ exception: SpanException, timestamp: Date) {
+        Logger.log("Span.recordException(\(exception), timestamp:\(timestamp))")
+    }
+
+    public func recordException(_ exception: SpanException, attributes: [String : AttributeValue]) {
+        Logger.log("Span.recordException(\(exception), attributes:\(attributes)")
+    }
+
+    public func recordException(_ exception: SpanException, attributes: [String : AttributeValue], timestamp: Date) {
+        Logger.log("Span.recordException(\(exception), attributes:\(attributes), timestamp:\(timestamp))")
+    }
+
     public func end() {
         Logger.log("Span.End, Name: \(name)")
     }
