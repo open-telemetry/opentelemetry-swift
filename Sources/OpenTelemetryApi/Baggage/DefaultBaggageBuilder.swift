@@ -61,6 +61,7 @@ public class DefaultBaggageBuilder: BaggageBuilder {
                 }
             }
         }
+        print("Entries count: \(entries.count)")
         return entries.isEmpty ? EmptyBaggage.instance : DefaultBaggage(entries: combined)
     }
 }

@@ -39,6 +39,9 @@ class URLSessionInstrumentationTests: XCTestCase {
     static var requestCopy: URLRequest!
     static var responseCopy: HTTPURLResponse!
 
+    static var activeBaggage: Baggage!
+    static var defaultBaggage: Baggage!
+
     static var config = URLSessionInstrumentationConfiguration(shouldRecordPayload: nil,
                                                                shouldInstrument: { req in
                                                                    checker.shouldInstrumentCalled = true
@@ -76,13 +79,15 @@ class URLSessionInstrumentationTests: XCTestCase {
                                                                },
                                                                receivedError: { _, _, _, _ in
                                                                    URLSessionInstrumentationTests.checker.receivedErrorCalled = true
+                                                               },
+                                                               defaultBaggageProvider: {
+                                                                   defaultBaggage
                                                                })
 
     static var checker = Check()
     static var semaphore: DispatchSemaphore!
     var sessionDelegate: SessionDelegate!
     static var instrumentation: URLSessionInstrumentation!
-    static var baggage: Baggage!
 
     static let server = HttpTestServer(url: URL(string: "http://localhost:33333"), config: nil)
 
@@ -90,11 +95,15 @@ class URLSessionInstrumentationTests: XCTestCase {
         OpenTelemetry.registerPropagators(textPropagators: [W3CTraceContextPropagator()], baggagePropagator: W3CBaggagePropagator())
         OpenTelemetry.registerTracerProvider(tracerProvider: TracerProviderSdk())
 
-        baggage = DefaultBaggageManager.instance.baggageBuilder()
+        defaultBaggage = DefaultBaggageManager.instance.baggageBuilder()
+            .put(key: EntryKey(name: "bar")!, value: EntryValue(string: "baz")!, metadata: nil)
+            .build()
+
+        activeBaggage = DefaultBaggageManager.instance.baggageBuilder()
             .put(key: EntryKey(name: "foo")!, value: EntryValue(string: "bar")!, metadata: nil)
             .build()
 
-        OpenTelemetry.instance.contextProvider.setActiveBaggage(baggage)
+        OpenTelemetry.instance.contextProvider.setActiveBaggage(activeBaggage)
 
         let sem = DispatchSemaphore(value: 0)
         DispatchQueue.global(qos: .default).async {
@@ -111,7 +120,8 @@ class URLSessionInstrumentationTests: XCTestCase {
 
     override class func tearDown() {
         server.stop()
-        OpenTelemetry.instance.contextProvider.removeContextForBaggage(baggage)
+        defaultBaggage = nil
+        OpenTelemetry.instance.contextProvider.removeContextForBaggage(activeBaggage)
     }
 
     override func setUp() {
@@ -250,7 +260,7 @@ class URLSessionInstrumentationTests: XCTestCase {
         XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedErrorCalled)
     }
 
-    public func testShouldInstrumentRequest() throws {
+    public func testShouldInstrumentRequest_PropagateCombinedActiveAndDefaultBaggages() throws {
         let request1 = URLRequest(url: URL(string: "http://defaultName.com")!)
         let request2 = URLRequest(url: URL(string: "http://dontinstrument.com")!)
 
@@ -268,7 +278,39 @@ class URLSessionInstrumentationTests: XCTestCase {
         XCTAssertTrue(processedHeaders1.contains(where: { $0.key == W3CTraceContextPropagator.traceparent }))
 
         // headers injected from `TextMapBaggagePropagator` implementation
-        XCTAssertTrue(processedHeaders1.contains(where: { $0.key == W3CBaggagePropagator.headerBaggage && $0.value == "foo=bar" }))
+        let baggageHeaderValue = try XCTUnwrap(processedHeaders1[W3CBaggagePropagator.headerBaggage])
+
+        // foo=bar propagated through active baggage defined in `setUp`
+        XCTAssertTrue(baggageHeaderValue.contains("foo=bar"))
+
+        // bar=baz propagated through default baggage provided in `URLSessionInstrumentationConfiguration`
+        XCTAssertTrue(baggageHeaderValue.contains("bar=baz"))
+
+        XCTAssertEqual(1, URLSessionLogger.runningSpans.count)
+
+        let span = try XCTUnwrap(URLSessionLogger.runningSpans["111"])
+        XCTAssertEqual("HTTP GET", span.name)
+    }
+
+    public func testShouldInstrumentRequest_PropagateOnlyActiveBaggage() throws {
+        Self.defaultBaggage = nil
+
+        let request1 = URLRequest(url: URL(string: "http://defaultName.com")!)
+
+        let processedRequest1 = try XCTUnwrap(URLSessionLogger.processAndLogRequest(request1, sessionTaskId: "111", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true))
+
+        XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInstrumentCalled)
+
+        let processedHeaders1 = try XCTUnwrap(processedRequest1.allHTTPHeaderFields)
+
+        // headers injected from `TextMapPropagator` implementation
+        XCTAssertTrue(processedHeaders1.contains(where: { $0.key == W3CTraceContextPropagator.traceparent }))
+
+        // headers injected from `TextMapBaggagePropagator` implementation
+        let baggageHeaderValue = try XCTUnwrap(processedHeaders1[W3CBaggagePropagator.headerBaggage])
+
+        // bar=baz propagated through default baggage provided in `URLSessionInstrumentationConfiguration`
+        XCTAssertEqual(baggageHeaderValue, "foo=bar")
 
         XCTAssertEqual(1, URLSessionLogger.runningSpans.count)
 
