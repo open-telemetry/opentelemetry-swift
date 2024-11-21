@@ -5,6 +5,12 @@
 
 import Foundation
 
+public enum CompressionType {
+    case gzip
+    case deflate
+    case none
+}
+
 public struct OtlpConfiguration {
     public static let DefaultTimeoutInterval : TimeInterval = TimeInterval(10)
 
@@ -23,9 +29,17 @@ public struct OtlpConfiguration {
     // let compression
     public let headers : [(String,String)]?
     public let timeout : TimeInterval
-
-    public init(timeout : TimeInterval  = OtlpConfiguration.DefaultTimeoutInterval, headers: [(String,String)]? = nil) {
+    public let compression: CompressionType
+    public let exportAsJson: Bool
+    public init(
+        timeout : TimeInterval  = OtlpConfiguration.DefaultTimeoutInterval,
+        compression: CompressionType = .gzip,
+        headers: [(String,String)]? = nil,
+        exportAsJson: Bool = true
+    ) {
         self.headers = headers
         self.timeout = timeout
+        self.compression = compression
+        self.exportAsJson = exportAsJson
     }
 }
