@@ -26,16 +26,25 @@ struct NetworkRequestState {
 private var idKey: Void?
 
 public class URLSessionInstrumentation {
-    private var requestMap = [String: NetworkRequestState]()
-
-    var configuration: URLSessionInstrumentationConfiguration
-
-    private let queue = DispatchQueue(label: "io.opentelemetry.ddnetworkinstrumentation")
-
-    static var instrumentedKey = "io.opentelemetry.instrumentedCall"
-
-    static let avAssetDownloadTask: AnyClass? = NSClassFromString("__NSCFBackgroundAVAssetDownloadTask")
-
+  private var requestMap = [String: NetworkRequestState]()
+  
+  var configuration: URLSessionInstrumentationConfiguration
+  
+  private let queue = DispatchQueue(label: "io.opentelemetry.ddnetworkinstrumentation")
+  
+  static var instrumentedKey = "io.opentelemetry.instrumentedCall"
+  
+  static let AVTaskClassList : [AnyClass] = {
+    let names = ["__NSCFBackgroundAVAggregateAssetDownloadTask", "__NSCFBackgroundAVAssetDownloadTask", "__NSCFBackgroundAVAggregateAssetDownloadTaskNoChildTask" ]
+    var classes : [AnyClass] = []
+    for name in names {
+      if let aClass = NSClassFromString(name) {
+        classes.append(aClass)
+      }
+    }
+    return classes
+  }()
+  
     public private(set) var tracer: Tracer
 
     public var startedRequestSpans: [Span] {
@@ -592,9 +601,10 @@ public class URLSessionInstrumentation {
 
     private func urlSessionTaskWillResume(_ task: URLSessionTask) {
         // AV Asset Tasks cannot be auto instrumented, they dont include request attributes, skip them
-        if let avAssetTaskClass = Self.avAssetDownloadTask,
-           task.isKind(of: avAssetTaskClass) {
-            return
+        for aClass in Self.AVTaskClassList {
+            if task.isKind(of: aClass) {
+                return
+            }
         }
 
         // We cannot instrument async background tasks because they crash if you assign a delegate
