@@ -50,7 +50,7 @@ build-for-testing-tvos:
 
 .PHONY: build-for-testing-watchos
 build-for-testing-watchos:
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_WATCHOS) build-for-testing | xcbeautify
+	set -o pipefail && xcodebuild OTHER_LDFLAGS="$(OTHER_LDFLAGS) -fprofile-instr-generate" $(XCODEBUILD_OPTIONS_WATCHOS) build-for-testing | xcbeautify
 
 .PHONY: test-ios
 test-ios:
