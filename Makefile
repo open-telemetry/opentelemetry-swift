@@ -18,7 +18,7 @@ XCODEBUILD_OPTIONS_TVOS=\
 
 XCODEBUILD_OPTIONS_WATCHOS=\
 	-configuration Debug \
-	-destination platform='watchOS Simulator,name=Apple Watch Series 8 (45mm),OS=latest' \
+	-destination platform='watchOS Simulator,name=Apple Watch Series 10 (46mm),OS=latest' \
 	-scheme $(PROJECT_NAME) \
 	-test-iterations 5 \
     -retry-tests-on-failure \
