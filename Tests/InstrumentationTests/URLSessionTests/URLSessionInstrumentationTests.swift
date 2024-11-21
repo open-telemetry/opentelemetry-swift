@@ -260,6 +260,24 @@ class URLSessionInstrumentationTests: XCTestCase {
         XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedErrorCalled)
     }
 
+    public func testShouldInstrumentRequest() throws {
+        let request1 = URLRequest(url: URL(string: "http://defaultName.com")!)
+        let request2 = URLRequest(url: URL(string: "http://dontinstrument.com")!)
+
+        let processedRequest1 = try XCTUnwrap(URLSessionLogger.processAndLogRequest(request1, sessionTaskId: "111", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true))
+        let processedRequest2 = URLSessionLogger.processAndLogRequest(request2, sessionTaskId: "222", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
+
+        // `processedRequest2` is expected to be nil, because its URL was marked as not to be instrumented.
+        XCTAssertNil(processedRequest2)
+
+        XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInstrumentCalled)
+
+        XCTAssertEqual(1, URLSessionLogger.runningSpans.count)
+
+        let span = try XCTUnwrap(URLSessionLogger.runningSpans["111"])
+        XCTAssertEqual("HTTP GET", span.name)
+    }
+
     public func testShouldInstrumentRequest_PropagateCombinedActiveAndDefaultBaggages() throws {
         let request1 = URLRequest(url: URL(string: "http://defaultName.com")!)
         let request2 = URLRequest(url: URL(string: "http://dontinstrument.com")!)
