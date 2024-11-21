@@ -35,14 +35,10 @@ public class URLSessionInstrumentation {
   static var instrumentedKey = "io.opentelemetry.instrumentedCall"
   
   static let AVTaskClassList : [AnyClass] = {
-    let names = ["__NSCFBackgroundAVAggregateAssetDownloadTask", "__NSCFBackgroundAVAssetDownloadTask", "__NSCFBackgroundAVAggregateAssetDownloadTaskNoChildTask" ]
-    var classes : [AnyClass] = []
-    for name in names {
-      if let aClass = NSClassFromString(name) {
-        classes.append(aClass)
-      }
-    }
-    return classes
+    ["__NSCFBackgroundAVAggregateAssetDownloadTask",
+     "__NSCFBackgroundAVAssetDownloadTask",
+     "__NSCFBackgroundAVAggregateAssetDownloadTaskNoChildTask" ]
+      .compactMap { NSClassFromString($0) }
   }()
   
     public private(set) var tracer: Tracer
@@ -601,11 +597,7 @@ public class URLSessionInstrumentation {
 
     private func urlSessionTaskWillResume(_ task: URLSessionTask) {
         // AV Asset Tasks cannot be auto instrumented, they dont include request attributes, skip them
-        for aClass in Self.AVTaskClassList {
-            if task.isKind(of: aClass) {
-                return
-            }
-        }
+      guard !Self.AVTaskClassList.contains(where: {task.isKind(of:$0)}) else { return }
 
         // We cannot instrument async background tasks because they crash if you assign a delegate
         if #available(OSX 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *) {
