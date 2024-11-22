@@ -160,7 +160,14 @@ class URLSessionLogger {
         var instrumentedRequest = request
         objc_setAssociatedObject(instrumentedRequest, URLSessionInstrumentation.instrumentedKey, true, .OBJC_ASSOCIATION_COPY_NONATOMIC)
         let propagators = OpenTelemetry.instance.propagators
-        var traceHeaders = tracePropagationHTTPHeaders(span: span, textMapPropagator: propagators.textMapPropagator, textMapBaggagePropagator: propagators.textMapBaggagePropagator)
+
+        let defaultBaggage = instrumentation.configuration.defaultBaggageProvider?()
+
+        var traceHeaders = tracePropagationHTTPHeaders(span: span,
+                                                       defaultBaggage: defaultBaggage,
+                                                       textMapPropagator: propagators.textMapPropagator,
+                                                       textMapBaggagePropagator: propagators.textMapBaggagePropagator)
+
         if let originalHeaders = request.allHTTPHeaderFields {
             traceHeaders.merge(originalHeaders) { _, new in new }
         }
@@ -168,7 +175,7 @@ class URLSessionLogger {
         return instrumentedRequest
     }
 
-    private static func tracePropagationHTTPHeaders(span: Span?, textMapPropagator: TextMapPropagator, textMapBaggagePropagator: TextMapBaggagePropagator) -> [String: String] {
+    private static func tracePropagationHTTPHeaders(span: Span?, defaultBaggage: Baggage?, textMapPropagator: TextMapPropagator, textMapBaggagePropagator: TextMapBaggagePropagator) -> [String: String] {
         var headers = [String: String]()
 
         struct HeaderSetter: Setter {
@@ -182,9 +189,19 @@ class URLSessionLogger {
         }
         textMapPropagator.inject(spanContext: currentSpan.context, carrier: &headers, setter: HeaderSetter())
 
-        if let baggage = OpenTelemetry.instance.contextProvider.activeBaggage {
-            textMapBaggagePropagator.inject(baggage: baggage, carrier: &headers, setter: HeaderSetter())
+        let baggageBuilder = OpenTelemetry.instance.baggageManager.baggageBuilder()
+
+        if let activeBaggage = OpenTelemetry.instance.contextProvider.activeBaggage {
+            activeBaggage.getEntries().forEach { baggageBuilder.put(key: $0.key, value: $0.value, metadata: $0.metadata) }
         }
+
+        if let defaultBaggage {
+            defaultBaggage.getEntries().forEach { baggageBuilder.put(key: $0.key, value: $0.value, metadata: $0.metadata) }
+        }
+
+        let combinedBaggage = baggageBuilder.build()
+        textMapBaggagePropagator.inject(baggage: combinedBaggage, carrier: &headers, setter: HeaderSetter())
+
         return headers
     }
 }

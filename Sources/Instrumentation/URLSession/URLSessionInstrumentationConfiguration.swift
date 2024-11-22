@@ -24,7 +24,8 @@ public struct URLSessionInstrumentationConfiguration {
                 createdRequest: ((URLRequest, Span) -> Void)? = nil,
                 receivedResponse: ((URLResponse, DataOrFile?, Span) -> Void)? = nil,
                 receivedError: ((Error, DataOrFile?, HTTPStatus, Span) -> Void)? = nil,
-                delegateClassesToInstrument: [AnyClass]? = nil)
+                delegateClassesToInstrument: [AnyClass]? = nil,
+                defaultBaggageProvider: (() -> (Baggage)?)? = nil)
     {
         self.shouldRecordPayload = shouldRecordPayload
         self.shouldInstrument = shouldInstrument
@@ -36,6 +37,7 @@ public struct URLSessionInstrumentationConfiguration {
         self.receivedResponse = receivedResponse
         self.receivedError = receivedError
         self.delegateClassesToInstrument = delegateClassesToInstrument
+        self.defaultBaggageProvider = defaultBaggageProvider
     }
 
     // Instrumentation Callbacks
@@ -73,4 +75,14 @@ public struct URLSessionInstrumentationConfiguration {
     
     ///  The array of URLSession delegate classes that will be instrumented by the library, will autodetect if nil is passed.
     public var delegateClassesToInstrument: [AnyClass]?
+
+    /// Implement this callback to provide a default baggage instance for all instrumented requests.
+    /// The provided baggage is merged with active baggage (if any) to create a combined baggage.
+    /// The combined baggage is then injected into request headers using the configured `TextMapBaggagePropagator`.
+    /// This allows consistent propagation across requests, regardless of the active context.
+    ///
+    /// Note: The injected baggage depends on the propagator in use (e.g., W3C or custom).
+    /// Returns: A `Baggage` instance or `nil` if no default baggage is needed.
+    public let defaultBaggageProvider: (() -> (Baggage)?)?
+
 }
