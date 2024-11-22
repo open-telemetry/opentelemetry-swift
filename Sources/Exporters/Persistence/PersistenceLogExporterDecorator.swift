@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetrySdk
 
 // a persistence exporter decorator for `LogRecords`.
-// specialization of `PersistenceExporterDecorator` for `MetricExporter`.
+// specialization of `PersistenceExporterDecorator` for `LogExporter`.
 public class PersistenceLogExporterDecorator: LogRecordExporter {
 
   struct LogRecordDecoratedExporter: DecoratedExporter {
