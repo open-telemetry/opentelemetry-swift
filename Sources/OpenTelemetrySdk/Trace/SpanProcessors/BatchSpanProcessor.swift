@@ -27,7 +27,7 @@ public struct BatchSpanProcessor: SpanProcessor {
     
     public init(
         spanExporter: SpanExporter,
-        meterProvider: StableMeterProvider,
+        meterProvider: StableMeterProvider? = nil,
         scheduleDelay: TimeInterval = 5,
         exportTimeout: TimeInterval = 30,
         maxQueueSize: Int = 2048,
@@ -73,7 +73,7 @@ public struct BatchSpanProcessor: SpanProcessor {
 /// The list of batched data is protected by a NSCondition which ensures full concurrency.
 private class BatchWorker: Thread {
     let spanExporter: SpanExporter
-    let meterProvider: StableMeterProvider
+    let meterProvider: StableMeterProvider?
     let scheduleDelay: TimeInterval
     let maxQueueSize: Int
     let exportTimeout: TimeInterval
@@ -86,14 +86,11 @@ private class BatchWorker: Thread {
     
     private var queueSizeGauge: ObservableLongGauge?
     private var spanGaugeObserver: ObservableLongGauge?
-    
     private var processedSpansCounter: LongCounter?
-    private let droppedAttrs: [String: AttributeValue]
-    private let exportedAttrs: [String: AttributeValue]
-    private let spanGaugeBuilder: LongGaugeBuilder
+  
     init(
         spanExporter: SpanExporter,
-        meterProvider: StableMeterProvider,
+        meterProvider: StableMeterProvider? = nil,
         scheduleDelay: TimeInterval,
         exportTimeout: TimeInterval,
         maxQueueSize: Int,
@@ -112,47 +109,37 @@ private class BatchWorker: Thread {
         queue.name = "BatchWorker Queue"
         queue.maxConcurrentOperationCount = 1
         
-        let meter = meterProvider.meterBuilder(name: "io.opentelemetry.sdk.trace").build()
-
+      if let meter = meterProvider?.meterBuilder(name: "io.opentelemetry.sdk.trace").build() {
+        
         var longGaugeSdk = meter.gaugeBuilder(name: "queueSize").ofLongs() as? LongGaugeBuilderSdk
         longGaugeSdk = longGaugeSdk?.setDescription("The number of items queued")
         longGaugeSdk = longGaugeSdk?.setUnit("1")
         self.queueSizeGauge = longGaugeSdk?.buildWithCallback { result in
-            result.record(
-                value: maxQueueSize,
-                attributes: [
-                    BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE)
-                ]
-            )
+          result.record(
+            value: maxQueueSize,
+            attributes: [
+              BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE)
+            ]
+          )
         }
-
-        self.spanGaugeBuilder = meter.gaugeBuilder(name: "spanSize")
-            .ofLongs()
-        
+                
         var longCounterSdk = meter.counterBuilder(name: "processedSpans") as? LongCounterMeterBuilderSdk
         longCounterSdk = longCounterSdk?.setUnit("1")
         longCounterSdk = longCounterSdk?.setDescription("The number of spans processed by the BatchSpanProcessor. [dropped=true if they were dropped due to high throughput]")
         processedSpansCounter = longCounterSdk?.build()
         
-        droppedAttrs = [
-            BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE),
-            BatchSpanProcessor.SPAN_PROCESSOR_DROPPED_LABEL: .bool(true)
-        ]
-        exportedAttrs = [
-            BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE),
-            BatchSpanProcessor.SPAN_PROCESSOR_DROPPED_LABEL: .bool(false)
-        ]
-        
         // Subscribe to new gauge observer
-        self.spanGaugeObserver = self.spanGaugeBuilder
-            .buildWithCallback { [count = spanList.count] result in
-                result.record(
-                    value: count,
-                    attributes: [
-                        BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE)
-                    ]
-                )
-            }
+        self.spanGaugeObserver =  meter.gaugeBuilder(name: "spanSize")
+          .ofLongs()
+          .buildWithCallback { [count = spanList.count] result in
+            result.record(
+              value: count,
+              attributes: [
+                BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE)
+              ]
+            )
+          }
+      }
     }
   
     deinit {
@@ -166,7 +153,10 @@ private class BatchWorker: Thread {
     defer { cond.unlock() }
     
     if spanList.count == maxQueueSize {
-        processedSpansCounter?.add(value: 1, attribute: droppedAttrs)
+        processedSpansCounter?.add(value: 1, attribute: [
+          BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE),
+          BatchSpanProcessor.SPAN_PROCESSOR_DROPPED_LABEL: .bool(true)
+        ])
       return
     }
     spanList.append(span)
@@ -235,8 +225,10 @@ private class BatchWorker: Thread {
             let result = spanExporter.export(spans: spansToExport, explicitTimeout: explicitTimeout)
             if result == .success {
                 cond.lock()
-                processedSpansCounter?.add(value: spanList.count, attribute: exportedAttrs)
-                cond.unlock()
+                processedSpansCounter?.add(value: spanList.count, attribute:  [
+                  BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE),
+                  BatchSpanProcessor.SPAN_PROCESSOR_DROPPED_LABEL: .bool(false)])
+              cond.unlock();
             }
         }
     }
