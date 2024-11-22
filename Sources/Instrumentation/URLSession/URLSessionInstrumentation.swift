@@ -26,16 +26,21 @@ struct NetworkRequestState {
 private var idKey: Void?
 
 public class URLSessionInstrumentation {
-    private var requestMap = [String: NetworkRequestState]()
-
-    var configuration: URLSessionInstrumentationConfiguration
-
-    private let queue = DispatchQueue(label: "io.opentelemetry.ddnetworkinstrumentation")
-
-    static var instrumentedKey = "io.opentelemetry.instrumentedCall"
-
-    static let avAssetDownloadTask: AnyClass? = NSClassFromString("__NSCFBackgroundAVAssetDownloadTask")
-
+  private var requestMap = [String: NetworkRequestState]()
+  
+  var configuration: URLSessionInstrumentationConfiguration
+  
+  private let queue = DispatchQueue(label: "io.opentelemetry.ddnetworkinstrumentation")
+  
+  static var instrumentedKey = "io.opentelemetry.instrumentedCall"
+  
+  static let AVTaskClassList : [AnyClass] = {
+    ["__NSCFBackgroundAVAggregateAssetDownloadTask",
+     "__NSCFBackgroundAVAssetDownloadTask",
+     "__NSCFBackgroundAVAggregateAssetDownloadTaskNoChildTask" ]
+      .compactMap { NSClassFromString($0) }
+  }()
+  
     public private(set) var tracer: Tracer
 
     public var startedRequestSpans: [Span] {
@@ -592,10 +597,7 @@ public class URLSessionInstrumentation {
 
     private func urlSessionTaskWillResume(_ task: URLSessionTask) {
         // AV Asset Tasks cannot be auto instrumented, they dont include request attributes, skip them
-        if let avAssetTaskClass = Self.avAssetDownloadTask,
-           task.isKind(of: avAssetTaskClass) {
-            return
-        }
+      guard !Self.AVTaskClassList.contains(where: {task.isKind(of:$0)}) else { return }
 
         // We cannot instrument async background tasks because they crash if you assign a delegate
         if #available(OSX 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *) {
