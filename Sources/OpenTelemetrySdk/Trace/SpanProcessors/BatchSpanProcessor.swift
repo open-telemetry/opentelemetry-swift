@@ -142,6 +142,17 @@ private class BatchWorker: Thread {
             BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE),
             BatchSpanProcessor.SPAN_PROCESSOR_DROPPED_LABEL: .bool(false)
         ]
+        
+        // Subscribe to new gauge observer
+        self.spanGaugeObserver = self.spanGaugeBuilder
+            .buildWithCallback { [count = spanList.count] result in
+                result.record(
+                    value: count,
+                    attributes: [
+                        BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE)
+                    ]
+                )
+            }
     }
   
     deinit {
@@ -160,19 +171,6 @@ private class BatchWorker: Thread {
     }
     spanList.append(span)
       
-      // If there is any observer before, let's close it
-      self.spanGaugeObserver?.close()
-      // Subscribe to new gauge observer
-      self.spanGaugeObserver = self.spanGaugeBuilder
-          .buildWithCallback { [count = spanList.count] result in
-              result.record(
-                  value: count,
-                  attributes: [
-                      BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE)
-                  ]
-              )
-          }
-
     // Notify the worker thread that at half of the queue is available. It will take
     // time anyway for the thread to wake up.
     if spanList.count >= halfMaxQueueSize {
