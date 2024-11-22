@@ -113,32 +113,26 @@ private class BatchWorker: Thread {
         queue.maxConcurrentOperationCount = 1
         
         let meter = meterProvider.meterBuilder(name: "io.opentelemetry.sdk.trace").build()
-        do {
-            self.queueSizeGauge = try meter.gaugeBuilder(name: "queueSize")
-                .ofLongs()
-                .asLongSdk()
-                .setDescription("The number of items queued")
-                .setUnit("1")
-                .buildWithCallback { result in
-                    result.record(
-                        value: maxQueueSize,
-                        attributes: [
-                            BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE)
-                        ]
-                    )
-                }
-        } catch {}
-        
+
+        var longGaugeSdk = meter.gaugeBuilder(name: "queueSize").ofLongs() as? LongGaugeBuilderSdk
+        longGaugeSdk = longGaugeSdk?.setDescription("The number of items queued")
+        longGaugeSdk = longGaugeSdk?.setUnit("1")
+        self.queueSizeGauge = longGaugeSdk?.buildWithCallback { result in
+            result.record(
+                value: maxQueueSize,
+                attributes: [
+                    BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE)
+                ]
+            )
+        }
+
         self.spanGaugeBuilder = meter.gaugeBuilder(name: "spanSize")
             .ofLongs()
         
-        do {
-            processedSpansCounter = try meter.counterBuilder(name: "processedSpans")
-                .asLongSdk()
-                .setUnit("1")
-                .setDescription("The number of spans processed by the BatchSpanProcessor. [dropped=true if they were dropped due to high throughput]")
-                .build()
-        } catch {}
+        var longCounterSdk = meter.counterBuilder(name: "processedSpans") as? LongCounterMeterBuilderSdk
+        longCounterSdk = longCounterSdk?.setUnit("1")
+        longCounterSdk = longCounterSdk?.setDescription("The number of spans processed by the BatchSpanProcessor. [dropped=true if they were dropped due to high throughput]")
+        processedSpansCounter = longCounterSdk?.build()
         
         droppedAttrs = [
             BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE),
@@ -247,28 +241,5 @@ private class BatchWorker: Thread {
                 cond.unlock()
             }
         }
-    }
-}
-
-public enum GuageError: Error {
-    case invalidType
-}
-
-/// Helper function to handle
-extension LongGaugeBuilder {
-    public func asLongSdk() throws -> LongGaugeBuilderSdk {
-        guard let sdkType = self as? LongGaugeBuilderSdk else {
-            throw GuageError.invalidType
-        }
-        return sdkType
-    }
-}
-
-extension LongCounterBuilder {
-    public func asLongSdk() throws -> LongCounterMeterBuilderSdk {
-        guard let sdkType = self as? LongCounterMeterBuilderSdk else {
-            throw GuageError.invalidType
-        }
-        return sdkType
     }
 }
