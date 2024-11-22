@@ -123,18 +123,18 @@ public class DefaultStableMeter : StableMeter {
     func add(value: Int, attribute: [String : AttributeValue]) {}
   }
   
-    private class NoopLongCounterBuilder : LongCounterBuilder {
-        func ofDoubles() -> DoubleCounterBuilder {
-          NoopDoubleCounterBuilder()
-        }
+  private class NoopLongCounterBuilder : LongCounterBuilder {
+    func ofDoubles() -> DoubleCounterBuilder {
+      NoopDoubleCounterBuilder()
+    }
         
-        func build() -> LongCounter {
-          NoopLongCounter()
-        }
+    func build() -> LongCounter {
+      NoopLongCounter()
+    }
         
-        func buildWithCallback(_ callback: @escaping (ObservableLongMeasurement) -> Void) -> ObservableLongCounter {
-          NoopObservableLongCounter()
-        }
+    func buildWithCallback(_ callback: @escaping (ObservableLongMeasurement) -> Void) -> ObservableLongCounter {
+      NoopObservableLongCounter()
+    }
   }
   
   private class NoopDoubleCounterBuilder : DoubleCounterBuilder {
