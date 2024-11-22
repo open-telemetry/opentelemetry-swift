@@ -33,8 +33,4 @@ public class LongGaugeBuilderSdk : LongGaugeBuilder, InstrumentBuilder {
     public func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableLongMeasurement) -> Void) -> OpenTelemetryApi.ObservableLongGauge {
         registerLongAsynchronousInstrument(type: type, updater: callback)
     }
-    
-
-    
-    
 }
