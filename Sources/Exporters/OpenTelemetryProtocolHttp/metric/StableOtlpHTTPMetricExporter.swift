@@ -59,9 +59,9 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
                 envVarHeaders: envVarHeaders
             )
             self.exporterMetrics = ExporterMetrics(
-                type: "otlp",
+                type: "metric",
                 meterProvider: meterProvider,
-                exporterName: "metric",
+                exporterName: "otlp",
                 transportName: config.exportAsJson ?
                 ExporterMetrics.TransporterType.httpJson :
                     ExporterMetrics.TransporterType.grpc
