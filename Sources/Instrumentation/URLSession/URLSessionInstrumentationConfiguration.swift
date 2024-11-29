@@ -76,16 +76,15 @@ public struct URLSessionInstrumentationConfiguration {
     ///  The array of URLSession delegate classes that will be instrumented by the library, will autodetect if nil is passed.
     public var delegateClassesToInstrument: [AnyClass]?
 
-    /// Implement this callback to provide a custom baggage instance for all instrumented requests.
-    /// The provided baggage is merged with active baggage (if any) to create a combined baggage.
-    /// The combined baggage is then injected into request headers using the configured `TextMapBaggagePropagator`.
-    /// This allows consistent propagation across requests, regardless of the active context.
+    /// Provides a baggage instance for instrumented requests that is merged with active baggage (if any).
+    /// The callback can be used to define static baggage for all requests or create dynamic baggage
+    /// based on the provided URLRequest and Span parameters.
     /// 
-    /// The callback provides access to the URLRequest and Span, allowing you to enrich the baggage
-    /// content based on request details or span context.
+    /// The resulting baggage is injected into request headers using the configured `TextMapBaggagePropagator`,
+    /// ensuring consistent propagation across requests, regardless of the active context.
     ///
     /// Note: The injected baggage depends on the propagator in use (e.g., W3C or custom).
-    /// Returns: A `Baggage` instance or `nil` if no default baggage is needed.
+    /// Returns: A `Baggage` instance or `nil` if no baggage is needed.
     public let baggageProvider: ((URLRequest, Span?) -> (Baggage)?)?
 
 }
