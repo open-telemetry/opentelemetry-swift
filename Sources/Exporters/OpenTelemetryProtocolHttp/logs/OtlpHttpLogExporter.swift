@@ -50,9 +50,9 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter {
     ) {
         self.init(endpoint: endpoint, config: config, useSession: useSession, envVarHeaders: envVarHeaders)
         exporterMetrics = ExporterMetrics(
-            type: "otlp",
+            type: "log",
             meterProvider: meterProvider,
-            exporterName: "log",
+            exporterName: "otlp",
             transportName: config.exportAsJson ?
                 ExporterMetrics.TransporterType.httpJson :
                 ExporterMetrics.TransporterType.grpc
