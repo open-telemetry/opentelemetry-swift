@@ -52,9 +52,9 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
     ) {
         self.init(endpoint: endpoint, config: config, useSession: useSession, envVarHeaders: envVarHeaders)
         exporterMetrics = ExporterMetrics(
-            type: "otlp",
+            type: "span",
             meterProvider: meterProvider,
-            exporterName: "span",
+            exporterName: "otlp",
             transportName: config.exportAsJson ?
                 ExporterMetrics.TransporterType.httpJson :
                 ExporterMetrics.TransporterType.grpc
