@@ -222,7 +222,12 @@ private class BatchWorker: Thread {
     stride(from: 0, to: spanList.endIndex, by: maxExportBatchSize).forEach {
       var spansToExport = spanList[$0 ..< min($0 + maxExportBatchSize, spanList.count)].map { $0.toSpanData() }
       willExportCallback?(&spansToExport)
-      let result = spanExporter.export(spans: spansToExport, explicitTimeout: explicitTimeout)
+      var result = spanExporter.export(spans: spansToExport, explicitTimeout: explicitTimeout)
+
+      if result == .success {
+        result = spanExporter.flush(explicitTimeout: explicitTimeout)
+      }
+
       if result == .success {
         cond.lock()
         processedSpansCounter?.add(value: spanList.count, attribute:  [
