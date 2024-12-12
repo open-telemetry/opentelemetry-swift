@@ -40,7 +40,7 @@ class URLSessionInstrumentationTests: XCTestCase {
     static var responseCopy: HTTPURLResponse!
 
     static var activeBaggage: Baggage!
-    static var defaultBaggage: Baggage!
+    static var customBaggage: Baggage!
 
     static var config = URLSessionInstrumentationConfiguration(shouldRecordPayload: nil,
                                                                shouldInstrument: { req in
@@ -80,8 +80,8 @@ class URLSessionInstrumentationTests: XCTestCase {
                                                                receivedError: { _, _, _, _ in
                                                                    URLSessionInstrumentationTests.checker.receivedErrorCalled = true
                                                                },
-                                                               defaultBaggageProvider: {
-                                                                   defaultBaggage
+                                                               baggageProvider: { _, _ in
+                                                                   customBaggage
                                                                })
 
     static var checker = Check()
@@ -95,7 +95,7 @@ class URLSessionInstrumentationTests: XCTestCase {
         OpenTelemetry.registerPropagators(textPropagators: [W3CTraceContextPropagator()], baggagePropagator: W3CBaggagePropagator())
         OpenTelemetry.registerTracerProvider(tracerProvider: TracerProviderSdk())
 
-        defaultBaggage = DefaultBaggageManager.instance.baggageBuilder()
+        customBaggage = DefaultBaggageManager.instance.baggageBuilder()
             .put(key: EntryKey(name: "bar")!, value: EntryValue(string: "baz")!, metadata: nil)
             .build()
 
@@ -120,7 +120,7 @@ class URLSessionInstrumentationTests: XCTestCase {
 
     override class func tearDown() {
         server.stop()
-        defaultBaggage = nil
+        customBaggage = nil
         OpenTelemetry.instance.contextProvider.removeContextForBaggage(activeBaggage)
     }
 
@@ -278,7 +278,7 @@ class URLSessionInstrumentationTests: XCTestCase {
         XCTAssertEqual("HTTP GET", span.name)
     }
 
-    public func testShouldInstrumentRequest_PropagateCombinedActiveAndDefaultBaggages() throws {
+    public func testShouldInstrumentRequest_PropagateCombinedActiveAndCustomBaggages() throws {
         let request1 = URLRequest(url: URL(string: "http://defaultName.com")!)
         let request2 = URLRequest(url: URL(string: "http://dontinstrument.com")!)
 
@@ -301,7 +301,7 @@ class URLSessionInstrumentationTests: XCTestCase {
         // foo=bar propagated through active baggage defined in `setUp`
         XCTAssertTrue(baggageHeaderValue.contains("foo=bar"))
 
-        // bar=baz propagated through default baggage provided in `URLSessionInstrumentationConfiguration`
+        // bar=baz propagated through custom baggage provided in `URLSessionInstrumentationConfiguration`
         XCTAssertTrue(baggageHeaderValue.contains("bar=baz"))
 
         XCTAssertEqual(1, URLSessionLogger.runningSpans.count)
@@ -311,7 +311,7 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
 
     public func testShouldInstrumentRequest_PropagateOnlyActiveBaggage() throws {
-        Self.defaultBaggage = nil
+        Self.customBaggage = nil
 
         let request1 = URLRequest(url: URL(string: "http://defaultName.com")!)
 
