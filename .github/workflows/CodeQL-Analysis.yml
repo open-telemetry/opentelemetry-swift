@@ -1,4 +1,5 @@
-name: "CodeQL Analysis"
+name: CodeQL Analysis
+
 on:
   push:
     branches:
@@ -8,23 +9,18 @@ on:
       - main
 
 jobs:
-  security-scan:
-    name: Run CodeQL Analysis
+  analyze:
+    name: Analyze CodeQL
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up CodeQL
+      - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
         with:
-          languages: 'swift'
+          languages: swift
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v2
-
-      - name: Run CodeQL Analysis
+      - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
-        with:
-          category: security
