@@ -32,3 +32,11 @@ jobs:
           tag: ${{ steps.check-release.outputs.version }}
           prerelease: true
           generateReleaseNotes: true
+      - name: push cocoapods
+        env: 
+          COCOAPODS_TRUNK_TOKEN=${{ secrets.COCOAPODS_TRUNK_TOKEN }}
+        id: cocoapod_trunk_push
+        run: |
+          pod trunk push OpenTelemetry-Swift-Api.podspec --allow-warnings 
+          pod trunk push OpenTelemetry-Swift-Sdk.podspec --allow-warnings --synchronous
+        
