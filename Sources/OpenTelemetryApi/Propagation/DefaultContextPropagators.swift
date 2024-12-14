@@ -67,7 +67,6 @@ public struct DefaultContextPropagators: ContextPropagators {
         }
     }
 
-
     struct NoopTextMapPropagator: TextMapPropagator {
         public var fields = Set<String>()
 

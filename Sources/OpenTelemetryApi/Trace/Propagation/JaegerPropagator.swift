@@ -53,7 +53,7 @@ public class JaegerPropagator: TextMapPropagator {
         var header = headerValue[0]
         if header.lastIndex(of: JaegerPropagator.propagationHeaderDelimiter) == nil {
             guard let decodedHeader = header.removingPercentEncoding,
-                  let _ = decodedHeader.lastIndex(of: JaegerPropagator.propagationHeaderDelimiter)
+                  decodedHeader.lastIndex(of: JaegerPropagator.propagationHeaderDelimiter) != nil
             else {
                 return nil
             }

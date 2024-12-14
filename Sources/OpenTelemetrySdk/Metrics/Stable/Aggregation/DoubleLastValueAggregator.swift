@@ -8,27 +8,27 @@ import OpenTelemetryApi
 
 public class DoubleLastValueAggregator: StableAggregator {
     private var reservoirSupplier: () -> ExemplarReservoir
-    
+
     internal init(reservoirSupplier: @escaping () -> ExemplarReservoir) {
         self.reservoirSupplier = reservoirSupplier
     }
-    
+
     public func diff(previousCumulative: PointData, currentCumulative: PointData) throws -> PointData {
         currentCumulative
     }
-    
+
     public func toPoint(measurement: Measurement) throws -> PointData {
         DoublePointData(startEpochNanos: measurement.startEpochNano, endEpochNanos: measurement.epochNano, attributes: measurement.attributes, exemplars: [ExemplarData](), value: measurement.doubleValue)
     }
-    
+
     public func createHandle() -> AggregatorHandle {
         Handle(exemplarReservoir: reservoirSupplier())
     }
-    
+
     public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [PointData], temporality: AggregationTemporality) -> StableMetricData {
         StableMetricData.createDoubleGauge(resource: resource, instrumentationScopeInfo: scope, name: descriptor.name, description: descriptor.description, unit: descriptor.instrument.unit, data: StableGaugeData(aggregationTemporality: temporality, points: points))
     }
-    
+
     private class Handle: AggregatorHandle {
         private var value: Double = 0
         private var valueLock = Lock()
@@ -42,7 +42,7 @@ public class DoubleLastValueAggregator: StableAggregator {
             }
             return DoublePointData(startEpochNanos: startEpochNano, endEpochNanos: endEpochNano, attributes: attributes, exemplars: exemplars, value: result)
         }
-        
+
         override func doRecordDouble(value: Double) {
             valueLock.withLockVoid {
                 self.value = value

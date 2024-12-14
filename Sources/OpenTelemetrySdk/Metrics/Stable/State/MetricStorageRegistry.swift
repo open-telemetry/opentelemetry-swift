@@ -8,9 +8,8 @@ import OpenTelemetryApi
 
 public class MetricStorageRegistry {
     private var lock = Lock()
-    private var registry = [MetricDescriptor : MetricStorage]()
-    
-    
+    private var registry = [MetricDescriptor: MetricStorage]()
+
     func getStorages() -> [MetricStorage] {
         lock.lock()
         defer {
@@ -18,8 +17,8 @@ public class MetricStorageRegistry {
         }
         return Array(registry.values)
     }
-    
-    func register(newStorage : MetricStorage) -> MetricStorage {
+
+    func register(newStorage: MetricStorage) -> MetricStorage {
         let descriptor = newStorage.metricDescriptor
         lock.lock()
         defer {
@@ -29,22 +28,21 @@ public class MetricStorageRegistry {
             registry[descriptor] = newStorage
             return newStorage
         }
-        
+
         for storage in registry.values {
             if storage as AnyObject === newStorage as AnyObject {
                 continue
             }
-            
+
             let existing = storage.metricDescriptor
-            
+
             if existing.name.lowercased() == descriptor.name.lowercased() && existing != descriptor {
                 // todo: log warning
                 break
-                
+
             }
         }
-        
+
         return storage
     }
 }
-

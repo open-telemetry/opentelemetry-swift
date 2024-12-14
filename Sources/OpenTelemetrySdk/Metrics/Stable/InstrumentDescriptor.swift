@@ -5,14 +5,13 @@
 
 import Foundation
 
+public struct InstrumentDescriptor: Equatable {
+    public let name: String
+    public let description: String
+    public let unit: String
+    public let type: InstrumentType
+    public let valueType: InstrumentValueType
 
-public struct InstrumentDescriptor : Equatable {
-    public let name : String
-    public let description : String
-    public let unit : String
-    public let type : InstrumentType
-    public let valueType : InstrumentValueType
-    
     public init(name: String, description: String, unit: String, type: InstrumentType, valueType: InstrumentValueType) {
         self.name = name
         self.description = description
@@ -20,7 +19,7 @@ public struct InstrumentDescriptor : Equatable {
         self.type = type
         self.valueType = valueType
     }
-    
+
     public static func == (lhs: Self, rhs: Self) -> Bool {
         return lhs.name == rhs.name &&
         lhs.description == rhs.description &&

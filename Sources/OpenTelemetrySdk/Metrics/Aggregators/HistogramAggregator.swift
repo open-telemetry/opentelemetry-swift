@@ -7,70 +7,71 @@ import Foundation
 
 /// Aggregator which calculates histogram (bucket distribution, sum, count) from measures.
 public class HistogramAggregator<T: SignedNumeric & Comparable>: Aggregator<T> {
-    fileprivate var histogram: Histogram<T>
-    fileprivate var pointCheck: Histogram<T>
-    fileprivate var boundaries: Array<T>
-    
-    private let lock = Lock()
-    private let defaultBoundaries: Array<T> = [5, 10, 25, 50, 75, 100, 250, 500, 750, 1_000, 2_500, 5_000, 7_500,
-                                            10_000]
-    
-    public init(explicitBoundaries: Array<T>? = nil) throws {
-        if let explicitBoundaries = explicitBoundaries, explicitBoundaries.count > 0 {
-          // we need to an ordered set to be able to correctly compute count for each
-          // boundary since we'll iterate on each in order.
-          self.boundaries = explicitBoundaries.sorted { $0 < $1 }
-        } else {
-          self.boundaries = defaultBoundaries
-        }
-        
-        self.histogram = Histogram<T>(boundaries: self.boundaries)
-        self.pointCheck = Histogram<T>(boundaries: self.boundaries)
+  fileprivate var histogram: Histogram<T>
+  fileprivate var pointCheck: Histogram<T>
+  fileprivate var boundaries: [T]
+
+  private let lock = Lock()
+  private let defaultBoundaries: [T] = [
+    5, 10, 25, 50, 75, 100, 250, 500, 750, 1_000, 2_500, 5_000, 7_500,
+    10_000
+  ]
+
+  public init(explicitBoundaries: [T]? = nil) throws {
+    if let explicitBoundaries = explicitBoundaries, explicitBoundaries.count > 0 {
+      // we need to an ordered set to be able to correctly compute count for each
+      // boundary since we'll iterate on each in order.
+      self.boundaries = explicitBoundaries.sorted { $0 < $1 }
+    } else {
+      self.boundaries = defaultBoundaries
     }
-    
-    override public func update(value: T) {
-        lock.withLockVoid {
-            self.histogram.count += 1
-            self.histogram.sum += value
-            
-            for i in 0..<self.boundaries.count {
-                if value < self.boundaries[i] {
-                    self.histogram.buckets.counts[i] += 1
-                    return
-                }
-            }
-            // value is above all observed boundaries
-            self.histogram.buckets.counts[self.boundaries.count] += 1
-        }
+
+    self.histogram = Histogram<T>(boundaries: self.boundaries)
+    self.pointCheck = Histogram<T>(boundaries: self.boundaries)
+  }
+
+  override public func update(value: T) {
+    lock.withLockVoid {
+      self.histogram.count += 1
+      self.histogram.sum += value
+
+      for i in 0..<self.boundaries.count where value < self.boundaries[i] {
+        self.histogram.buckets.counts[i] += 1
+        return
+      }
+      // value is above all observed boundaries
+      self.histogram.buckets.counts[self.boundaries.count] += 1
     }
-    
-    override public func checkpoint() {
-        lock.withLockVoid {
-            super.checkpoint()
-            pointCheck = histogram
-            histogram = Histogram<T>(boundaries: self.boundaries)
-        }
+  }
+
+  override public func checkpoint() {
+    lock.withLockVoid {
+      super.checkpoint()
+      pointCheck = histogram
+      histogram = Histogram<T>(boundaries: self.boundaries)
     }
-    
-    public override func toMetricData() -> MetricData {
-        return HistogramData<T>(startTimestamp: lastStart,
-                                timestamp: lastEnd,
-                                buckets: pointCheck.buckets,
-                                count: pointCheck.count,
-                                sum: pointCheck.sum)
+  }
+
+  public override func toMetricData() -> MetricData {
+    return HistogramData<T>(
+      startTimestamp: lastStart,
+      timestamp: lastEnd,
+      buckets: pointCheck.buckets,
+      count: pointCheck.count,
+      sum: pointCheck.sum)
+  }
+
+  public override func getAggregationType() -> AggregationType {
+    if T.self == Double.Type.self {
+      return .doubleHistogram
+    } else {
+      return .intHistogram
     }
-    
-    public override func getAggregationType() -> AggregationType {
-        if T.self == Double.Type.self {
-            return .doubleHistogram
-        } else {
-            return .intHistogram
-        }
-    }
+  }
 }
 
 private struct Histogram<T> where T: SignedNumeric {
-    /*
+  /*
      * Buckets are implemented using two different arrays:
      *  - boundaries: contains every finite bucket boundary, which are inclusive lower bounds
      *  - counts: contains event counts for each bucket
@@ -86,19 +87,20 @@ private struct Histogram<T> where T: SignedNumeric {
      *  counts: [3, 3, 1, 2],
      * }
      */
-    var buckets: (
-        boundaries: Array<T>,
-        counts: Array<Int>
+  var buckets:
+    (
+      boundaries: [T],
+      counts: [Int]
     )
-    var sum: T
-    var count: Int
-    
-    init(boundaries: Array<T>) {
-        sum = 0
-        count = 0
-        buckets = (
-            boundaries: boundaries,
-            counts: Array(repeating: 0, count: boundaries.count + 1)
-        )
-    }
+  var sum: T
+  var count: Int
+
+  init(boundaries: [T]) {
+    sum = 0
+    count = 0
+    buckets = (
+      boundaries: boundaries,
+      counts: Array(repeating: 0, count: boundaries.count + 1)
+    )
+  }
 }

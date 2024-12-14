@@ -9,7 +9,6 @@ import OpenTelemetrySdk
 import StdoutExporter
 import URLSessionInstrumentation
 
-
 func simpleNetworkCall() {
     let url = URL(string: "http://httpbin.org/get")!
     let request = URLRequest(url: url)
@@ -17,8 +16,8 @@ func simpleNetworkCall() {
 
     let task = URLSession.shared.dataTask(with: request) { data, _, _ in
         if let data = data {
-            let string = String(decoding: data, as: UTF8.self)
-            print(string)
+          let string = String(bytes: data, encoding: .utf8)
+            print(string as Any)
         }
         semaphore.signal()
     }
@@ -26,7 +25,6 @@ func simpleNetworkCall() {
 
     semaphore.wait()
 }
-
 
 class SessionDelegate: NSObject, URLSessionDataDelegate, URLSessionTaskDelegate {
     let semaphore = DispatchSemaphore(value: 0)
@@ -39,7 +37,7 @@ let delegate = SessionDelegate()
 
 func simpleNetworkCallWithDelegate() {
 
-    let session = URLSession(configuration: .default, delegate: delegate, delegateQueue:nil)
+    let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
 
     let url = URL(string: "http://httpbin.org/get")!
     let request = URLRequest(url: url)
@@ -49,7 +47,6 @@ func simpleNetworkCallWithDelegate() {
 
     delegate.semaphore.wait()
 }
-
 
 let spanProcessor = SimpleSpanProcessor(spanExporter: StdoutSpanExporter(isDebug: true))
 OpenTelemetry.registerTracerProvider(tracerProvider:

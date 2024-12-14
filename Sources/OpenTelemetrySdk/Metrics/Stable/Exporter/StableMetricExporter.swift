@@ -4,9 +4,9 @@
 // 
 
 import Foundation
-public protocol StableMetricExporter : AggregationTemporalitySelectorProtocol, DefaultAggregationSelector {
+public protocol StableMetricExporter: AggregationTemporalitySelectorProtocol, DefaultAggregationSelector {
 
-    func export(metrics : [StableMetricData]) -> ExportResult
+    func export(metrics: [StableMetricData]) -> ExportResult
     func flush() -> ExportResult
     func shutdown() -> ExportResult
 }

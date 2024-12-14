@@ -44,7 +44,6 @@ OpenTelemetry.registerTracerProvider(tracerProvider:
 
 let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion)
 
-
 if #available(macOS 10.14, *), #available(iOS 12.0, *) {
     let tracerProviderSDK = OpenTelemetry.instance.tracerProvider as? TracerProviderSdk
     tracerProviderSDK?.addSpanProcessor(SignPostIntegration())
@@ -87,7 +86,6 @@ let processor = MetricProcessorSdk()
 let meterProvider = MeterProviderSdk(metricProcessor: processor, metricExporter: otlpMetricExporter, metricPushInterval: 0.1)
 
 OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
-
 
 let labels1 = ["dim1": "value1"]
 

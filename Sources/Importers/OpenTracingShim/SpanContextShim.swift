@@ -54,8 +54,7 @@ extension SpanContextShim: Equatable {
     public static func == (lhs: SpanContextShim, rhs: SpanContextShim) -> Bool {
         if let lbaggage = lhs.baggage, let rbaggage = rhs.baggage {
             return lbaggage == rbaggage && lhs.context == rhs.context
-        }
-        else {
+        } else {
             return lhs.baggage == nil && rhs.baggage == nil && lhs.context == rhs.context
         }
     }

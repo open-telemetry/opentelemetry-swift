@@ -15,7 +15,7 @@ public struct Headers {
       version = String(version.dropFirst(1))
     }
     let userAgent = "OTel-OTLP-Exporter-Swift/\(version)"
-    
+
     return userAgent
   }
 }

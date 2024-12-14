@@ -45,5 +45,3 @@ public protocol LogRecordBuilder {
     /// emits the log record.
     func emit()
 }
-
-

@@ -15,7 +15,8 @@ protocol DecoratedExporter {
 
 // a generic decorator of `DecoratedExporter` adding filesystem persistence of batches of `[T.SignalType]`.
 // `T.SignalType` must conform to `Codable`.
-internal class PersistenceExporterDecorator<T> where T: DecoratedExporter, T.SignalType: Codable {
+internal class PersistenceExporterDecorator<T>
+where T: DecoratedExporter, T.SignalType: Codable {
   // a wrapper of `DecoratedExporter` (T) to add conformance to `DataExporter` that can be
   // used with `DataExportWorker`.
   private class DecoratedDataExporter: DataExporter {
@@ -100,7 +101,8 @@ internal class PersistenceExporterDecorator<T> where T: DecoratedExporter, T.Sig
 
     self.fileWriter = fileWriter
 
-    self.worker = createWorker(DecoratedDataExporter(decoratedExporter: decoratedExporter))
+    self.worker = createWorker(
+      DecoratedDataExporter(decoratedExporter: decoratedExporter))
   }
 
   public func export(values: [T.SignalType]) throws {
@@ -121,8 +123,10 @@ internal class PersistenceExporterDecorator<T> where T: DecoratedExporter, T.Sig
   }
 }
 
+// swiftlint:disable non_optional_string_data_conversion
 private enum JSONDataConstants {
   static let arrayPrefix = "[".data(using: .utf8)!
   static let arraySuffix = "null]".data(using: .utf8)!
   static let arraySeparator = ",".data(using: .utf8)!
 }
+// swiftlint:enable non_optional_string_data_conversion

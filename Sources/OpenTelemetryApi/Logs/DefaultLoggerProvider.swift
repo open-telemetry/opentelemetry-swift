@@ -5,7 +5,7 @@
 
 import Foundation
 
-public class DefaultLoggerProvider : LoggerProvider {
+public class DefaultLoggerProvider: LoggerProvider {
     public static let instance: LoggerProvider = DefaultLoggerProvider()
     fileprivate static let noopBuilderWithDomain = NoopLoggerBuilder(true)
     fileprivate static let noopBuilderNoDomain = NoopLoggerBuilder(false)
@@ -18,20 +18,22 @@ public class DefaultLoggerProvider : LoggerProvider {
         return Self.noopBuilderNoDomain
     }
 }
-
+// swiftlint:disable private_over_fileprivate
 fileprivate class NoopLoggerBuilder: LoggerBuilder {
-    private let hasDomain : Bool
+  // swiftlint:enable private_over_fileprivate
+    private let hasDomain: Bool
 
     fileprivate init(_ hasDomain: Bool) {
         self.hasDomain = hasDomain
     }
-
+  // swiftlint:disable force_cast
     public func setEventDomain(_ eventDomain: String) -> Self {
         if eventDomain.isEmpty {
             return DefaultLoggerProvider.noopBuilderNoDomain as! Self
         }
         return DefaultLoggerProvider.noopBuilderWithDomain as! Self
     }
+  // swiftlint:enable force_cast
 
     public func setSchemaUrl(_ schemaUrl: String) -> Self {
         return self

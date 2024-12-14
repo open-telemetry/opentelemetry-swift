@@ -5,7 +5,7 @@
 
 import Foundation
 
-public enum InstrumentType : CaseIterable {
+public enum InstrumentType: CaseIterable {
     case counter
     case upDownCounter
     case histogram

@@ -34,8 +34,7 @@ public class JaegerBaggagePropagator: TextMapBaggagePropagator {
                 }
 
                 if let key = EntryKey(name: String($0.key.dropFirst(JaegerBaggagePropagator.baggagePrefix.count))),
-                   let value = EntryValue(string: $0.value)
-                {
+                   let value = EntryValue(string: $0.value) {
                     builder.put(key: key, value: value, metadata: nil)
                 }
             } else if $0.key == JaegerBaggagePropagator.baggageHeader {
@@ -45,8 +44,7 @@ public class JaegerBaggagePropagator: TextMapBaggagePropagator {
                         return
                     }
                     if let key = EntryKey(name: String(keyValue[0])),
-                       let value = EntryValue(string: String(keyValue[1]))
-                    {
+                       let value = EntryValue(string: String(keyValue[1])) {
                         builder.put(key: key, value: value, metadata: nil)
                     }
                 }

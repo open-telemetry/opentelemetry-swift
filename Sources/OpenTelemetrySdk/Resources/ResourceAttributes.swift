@@ -7,7 +7,7 @@
 import Foundation
 
 public enum ResourceAttributes: String {
-    /**
+  /**
     Array of brand name and version separated by a space.
 
     ~~~
@@ -17,8 +17,8 @@ public enum ResourceAttributes: String {
     - Note: This value is intended to be taken from the [UA client hints API](https://wicg.github.io/ua-client-hints/#interface) (`navigator.userAgentData.brands`).
     - Requires: Value type should be `[String]`
     */
-    case browserBrands = "browser.brands"
-    /**
+  case browserBrands = "browser.brands"
+  /**
     The platform on which the browser is running.
 
     ~~~
@@ -32,15 +32,15 @@ public enum ResourceAttributes: String {
       The list of possible values is defined in the [W3C User-Agent Client Hints specification](https://wicg.github.io/ua-client-hints/#sec-ch-ua-platform). Note that some (but not all) of these values can overlap with values in the [`os.type` and `os.name` attributes](./os.md). However, for consistency, the values in the `browser.platform` attribute should capture the exact value that the user agent provides.
     - Requires: Value type should be `String`
     */
-    case browserPlatform = "browser.platform"
-    /**
+  case browserPlatform = "browser.platform"
+  /**
     A boolean that is true if the browser is running on a mobile device.
 
     - Note: This value is intended to be taken from the [UA client hints API](https://wicg.github.io/ua-client-hints/#interface) (`navigator.userAgentData.mobile`). If unavailable, this attribute SHOULD be left unset.
     - Requires: Value type should be `Bool`
     */
-    case browserMobile = "browser.mobile"
-    /**
+  case browserMobile = "browser.mobile"
+  /**
     Preferred language of the user using the browser.
 
     ~~~
@@ -54,8 +54,8 @@ public enum ResourceAttributes: String {
     - Note: This value is intended to be taken from the Navigator API `navigator.language`.
     - Requires: Value type should be `String`
     */
-    case browserLanguage = "browser.language"
-    /**
+  case browserLanguage = "browser.language"
+  /**
     Full user-agent string provided by the browser.
 
     ~~~
@@ -66,13 +66,13 @@ public enum ResourceAttributes: String {
     - Note: The user-agent value SHOULD be provided only from browsers that do not have a mechanism to retrieve brands and platform individually from the User-Agent Client Hints API. To retrieve the value, the legacy `navigator.userAgent` API can be used.
     - Requires: Value type should be `String`
     */
-    case userAgentOriginal = "user_agent.original"
-    /**
+  case userAgentOriginal = "user_agent.original"
+  /**
     Name of the cloud provider.
     - Requires: Value should be one of [`ResourceAttributes.CloudProviderValues`](x-source-tag://otelCloudProviderValues) (of type `String`)
     */
-    case cloudProvider = "cloud.provider"
-    /**
+  case cloudProvider = "cloud.provider"
+  /**
     The cloud account ID the resource is assigned to.
 
     ~~~
@@ -82,8 +82,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case cloudAccountId = "cloud.account.id"
-    /**
+  case cloudAccountId = "cloud.account.id"
+  /**
     The geographical region the resource is running.
 
     ~~~
@@ -95,8 +95,8 @@ public enum ResourceAttributes: String {
     - Note: Refer to your provider's docs to see the available regions, for example [Alibaba Cloud regions](https://www.alibabacloud.com/help/doc-detail/40654.htm), [AWS regions](https://aws.amazon.com/about-aws/global-infrastructure/regions_az/), [Azure regions](https://azure.microsoft.com/en-us/global-infrastructure/geographies/), [Google Cloud regions](https://cloud.google.com/about/locations), or [Tencent Cloud regions](https://www.tencentcloud.com/document/product/213/6091).
     - Requires: Value type should be `String`
     */
-    case cloudRegion = "cloud.region"
-    /**
+  case cloudRegion = "cloud.region"
+  /**
     Cloud provider-specific native identifier of the monitored cloud resource (e.g. an [ARN](https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html) on AWS, a [fully qualified resource ID](https://learn.microsoft.com/en-us/rest/api/resources/resources/get-by-id) on Azure, a [full resource name](https://cloud.google.com/apis/design/resource_names#full_resource_name) on GCP).
 
     ~~~
@@ -125,8 +125,8 @@ public enum ResourceAttributes: String {
         a TracerProvider.
     - Requires: Value type should be `String`
     */
-    case cloudResourceId = "cloud.resource_id"
-    /**
+  case cloudResourceId = "cloud.resource_id"
+  /**
     Cloud regions often have multiple, isolated locations known as zones to increase availability. Availability zone represents the zone where the resource is running.
 
     ~~~
@@ -137,15 +137,15 @@ public enum ResourceAttributes: String {
     - Note: Availability zones are called "zones" on Alibaba Cloud and Google Cloud.
     - Requires: Value type should be `String`
     */
-    case cloudAvailabilityZone = "cloud.availability_zone"
-    /**
+  case cloudAvailabilityZone = "cloud.availability_zone"
+  /**
     The cloud platform in use.
 
     - Note: The prefix of the service SHOULD match the one specified in `cloud.provider`.
     - Requires: Value should be one of [`ResourceAttributes.CloudPlatformValues`](x-source-tag://otelCloudPlatformValues) (of type `String`)
     */
-    case cloudPlatform = "cloud.platform"
-    /**
+  case cloudPlatform = "cloud.platform"
+  /**
     The Amazon Resource Name (ARN) of an [ECS container instance](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_instances.html).
 
     ~~~
@@ -154,8 +154,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case awsEcsContainerArn = "aws.ecs.container.arn"
-    /**
+  case awsEcsContainerArn = "aws.ecs.container.arn"
+  /**
     The ARN of an [ECS cluster](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/clusters.html).
 
     ~~~
@@ -164,13 +164,13 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case awsEcsClusterArn = "aws.ecs.cluster.arn"
-    /**
+  case awsEcsClusterArn = "aws.ecs.cluster.arn"
+  /**
     The [launch type](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/launch_types.html) for an ECS task.
     - Requires: Value should be one of [`ResourceAttributes.AwsEcsLaunchtypeValues`](x-source-tag://otelAwsEcsLaunchtypeValues) (of type `String`)
     */
-    case awsEcsLaunchtype = "aws.ecs.launchtype"
-    /**
+  case awsEcsLaunchtype = "aws.ecs.launchtype"
+  /**
     The ARN of an [ECS task definition](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definitions.html).
 
     ~~~
@@ -179,8 +179,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case awsEcsTaskArn = "aws.ecs.task.arn"
-    /**
+  case awsEcsTaskArn = "aws.ecs.task.arn"
+  /**
     The task definition family this task definition is a member of.
 
     ~~~
@@ -189,8 +189,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case awsEcsTaskFamily = "aws.ecs.task.family"
-    /**
+  case awsEcsTaskFamily = "aws.ecs.task.family"
+  /**
     The revision for this task definition.
 
     ~~~
@@ -200,8 +200,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case awsEcsTaskRevision = "aws.ecs.task.revision"
-    /**
+  case awsEcsTaskRevision = "aws.ecs.task.revision"
+  /**
     The ARN of an EKS cluster.
 
     ~~~
@@ -210,8 +210,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case awsEksClusterArn = "aws.eks.cluster.arn"
-    /**
+  case awsEksClusterArn = "aws.eks.cluster.arn"
+  /**
     The name(s) of the AWS log group(s) an application is writing to.
 
     ~~~
@@ -221,8 +221,8 @@ public enum ResourceAttributes: String {
     - Note: Multiple log groups must be supported for cases like multi-container applications, where a single application has sidecar containers, and each write to their own log group.
     - Requires: Value type should be `[String]`
     */
-    case awsLogGroupNames = "aws.log.group.names"
-    /**
+  case awsLogGroupNames = "aws.log.group.names"
+  /**
     The Amazon Resource Name(s) (ARN) of the AWS log group(s).
 
     ~~~
@@ -232,8 +232,8 @@ public enum ResourceAttributes: String {
     - Note: See the [log group ARN format documentation](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/iam-access-control-overview-cwl.html#CWL_ARN_Format).
     - Requires: Value type should be `[String]`
     */
-    case awsLogGroupArns = "aws.log.group.arns"
-    /**
+  case awsLogGroupArns = "aws.log.group.arns"
+  /**
     The name(s) of the AWS log stream(s) an application is writing to.
 
     ~~~
@@ -241,8 +241,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `[String]`
     */
-    case awsLogStreamNames = "aws.log.stream.names"
-    /**
+  case awsLogStreamNames = "aws.log.stream.names"
+  /**
     The ARN(s) of the AWS log stream(s).
 
     ~~~
@@ -252,8 +252,8 @@ public enum ResourceAttributes: String {
     - Note: See the [log stream ARN format documentation](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/iam-access-control-overview-cwl.html#CWL_ARN_Format). One log group can contain several log streams, so these ARNs necessarily identify both a log group and a log stream.
     - Requires: Value type should be `[String]`
     */
-    case awsLogStreamArns = "aws.log.stream.arns"
-    /**
+  case awsLogStreamArns = "aws.log.stream.arns"
+  /**
     The name of the Cloud Run [execution](https://cloud.google.com/run/docs/managing/job-executions) being run for the Job, as set by the [`CLOUD_RUN_EXECUTION`](https://cloud.google.com/run/docs/container-contract#jobs-env-vars) environment variable.
 
     ~~~
@@ -263,8 +263,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case gcpCloudRunJobExecution = "gcp.cloud_run.job.execution"
-    /**
+  case gcpCloudRunJobExecution = "gcp.cloud_run.job.execution"
+  /**
     The index for a task within an execution as provided by the [`CLOUD_RUN_TASK_INDEX`](https://cloud.google.com/run/docs/container-contract#jobs-env-vars) environment variable.
 
     ~~~
@@ -272,8 +272,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `Int`
     */
-    case gcpCloudRunJobTaskIndex = "gcp.cloud_run.job.task_index"
-    /**
+  case gcpCloudRunJobTaskIndex = "gcp.cloud_run.job.task_index"
+  /**
     The instance name of a GCE instance. This is the value provided by `host.name`, the visible name of the instance in the Cloud Console UI, and the prefix for the default hostname of the instance as defined by the [default internal DNS name](https://cloud.google.com/compute/docs/internal-dns#instance-fully-qualified-domain-names).
 
     ~~~
@@ -283,8 +283,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case gcpGceInstanceName = "gcp.gce.instance.name"
-    /**
+  case gcpGceInstanceName = "gcp.gce.instance.name"
+  /**
     The hostname of a GCE instance. This is the full value of the default or [custom hostname](https://cloud.google.com/compute/docs/instances/custom-hostname-vm).
 
     ~~~
@@ -294,8 +294,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case gcpGceInstanceHostname = "gcp.gce.instance.hostname"
-    /**
+  case gcpGceInstanceHostname = "gcp.gce.instance.hostname"
+  /**
     Time and date the release was created.
 
     ~~~
@@ -304,8 +304,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case herokuReleaseCreationTimestamp = "heroku.release.creation_timestamp"
-    /**
+  case herokuReleaseCreationTimestamp = "heroku.release.creation_timestamp"
+  /**
     Commit hash for the current release.
 
     ~~~
@@ -314,8 +314,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case herokuReleaseCommit = "heroku.release.commit"
-    /**
+  case herokuReleaseCommit = "heroku.release.commit"
+  /**
     Unique identifier for the application.
 
     ~~~
@@ -324,8 +324,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case herokuAppId = "heroku.app.id"
-    /**
+  case herokuAppId = "heroku.app.id"
+  /**
     Container name used by container runtime.
 
     ~~~
@@ -334,8 +334,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case containerName = "container.name"
-    /**
+  case containerName = "container.name"
+  /**
     Container ID. Usually a UUID, as for example used to [identify Docker containers](https://docs.docker.com/engine/reference/run/#container-identification). The UUID might be abbreviated.
 
     ~~~
@@ -344,8 +344,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case containerId = "container.id"
-    /**
+  case containerId = "container.id"
+  /**
     The container runtime managing this container.
 
     ~~~
@@ -356,8 +356,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case containerRuntime = "container.runtime"
-    /**
+  case containerRuntime = "container.runtime"
+  /**
     Name of the image the container was built on.
 
     ~~~
@@ -366,8 +366,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case containerImageName = "container.image.name"
-    /**
+  case containerImageName = "container.image.name"
+  /**
     Container image tag.
 
     ~~~
@@ -376,8 +376,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case containerImageTag = "container.image.tag"
-    /**
+  case containerImageTag = "container.image.tag"
+  /**
     Runtime specific image identifier. Usually a hash algorithm followed by a UUID.
 
     ~~~
@@ -390,8 +390,8 @@ public enum ResourceAttributes: String {
       OCI defines a digest of manifest.
     - Requires: Value type should be `String`
     */
-    case containerImageId = "container.image.id"
-    /**
+  case containerImageId = "container.image.id"
+  /**
     The command used to run the container (i.e. the command name).
 
     ~~~
@@ -402,8 +402,8 @@ public enum ResourceAttributes: String {
     - Note: If using embedded credentials or sensitive data, it is recommended to remove them to prevent potential leakage.
     - Requires: Value type should be `String`
     */
-    case containerCommand = "container.command"
-    /**
+  case containerCommand = "container.command"
+  /**
     The full command run by the container as a single string representing the full command. [2].
 
     ~~~
@@ -412,8 +412,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case containerCommandLine = "container.command_line"
-    /**
+  case containerCommandLine = "container.command_line"
+  /**
     All the command arguments (including the command/executable itself) run by the container. [2].
 
     ~~~
@@ -421,8 +421,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `[String]`
     */
-    case containerCommandArgs = "container.command_args"
-    /**
+  case containerCommandArgs = "container.command_args"
+  /**
     Name of the [deployment environment](https://en.wikipedia.org/wiki/Deployment_environment) (aka deployment tier).
 
     ~~~
@@ -432,8 +432,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case deploymentEnvironment = "deployment.environment"
-    /**
+  case deploymentEnvironment = "deployment.environment"
+  /**
     A unique identifier representing the device.
 
     ~~~
@@ -444,8 +444,8 @@ public enum ResourceAttributes: String {
     - Note: The device identifier MUST only be defined using the values outlined below. This value is not an advertising identifier and MUST NOT be used as such. On iOS (Swift or Objective-C), this value MUST be equal to the [vendor identifier](https://developer.apple.com/documentation/uikit/uidevice/1620059-identifierforvendor). On Android (Java or Kotlin), this value MUST be equal to the Firebase Installation ID or a globally unique UUID which is persisted across sessions in your application. More information can be found [here](https://developer.android.com/training/articles/user-data-ids) on best practices and exact implementation details. Caution should be taken when storing personal data or anything which can identify a user. GDPR and data protection laws may apply, ensure you do your own due diligence.
     - Requires: Value type should be `String`
     */
-    case deviceId = "device.id"
-    /**
+  case deviceId = "device.id"
+  /**
     The model identifier for the device.
 
     ~~~
@@ -457,8 +457,8 @@ public enum ResourceAttributes: String {
     - Note: It's recommended this value represents a machine readable version of the model identifier rather than the market or consumer-friendly name of the device.
     - Requires: Value type should be `String`
     */
-    case deviceModelIdentifier = "device.model.identifier"
-    /**
+  case deviceModelIdentifier = "device.model.identifier"
+  /**
     The marketing name for the device model.
 
     ~~~
@@ -470,8 +470,8 @@ public enum ResourceAttributes: String {
     - Note: It's recommended this value represents a human readable version of the device model rather than a machine readable alternative.
     - Requires: Value type should be `String`
     */
-    case deviceModelName = "device.model.name"
-    /**
+  case deviceModelName = "device.model.name"
+  /**
     The name of the device manufacturer.
 
     ~~~
@@ -483,8 +483,8 @@ public enum ResourceAttributes: String {
     - Note: The Android OS provides this field via [Build](https://developer.android.com/reference/android/os/Build#MANUFACTURER). iOS apps SHOULD hardcode the value `Apple`.
     - Requires: Value type should be `String`
     */
-    case deviceManufacturer = "device.manufacturer"
-    /**
+  case deviceManufacturer = "device.manufacturer"
+  /**
     The name of the single function that this runtime instance executes.
 
     ~~~
@@ -511,8 +511,8 @@ public enum ResourceAttributes: String {
         a TracerProvider (see also the `cloud.resource_id` attribute).
     - Requires: Value type should be `String`
     */
-    case faasName = "faas.name"
-    /**
+  case faasName = "faas.name"
+  /**
     The immutable version of the function being executed.
 
     ~~~
@@ -532,8 +532,8 @@ public enum ResourceAttributes: String {
       * **Azure Functions:** Not applicable. Do not set this attribute.
     - Requires: Value type should be `String`
     */
-    case faasVersion = "faas.version"
-    /**
+  case faasVersion = "faas.version"
+  /**
     The execution environment ID as a string, that will be potentially reused for other invocations to the same function/function version.
 
     ~~~
@@ -544,8 +544,8 @@ public enum ResourceAttributes: String {
     - Note: * **AWS Lambda:** Use the (full) log stream name.
     - Requires: Value type should be `String`
     */
-    case faasInstance = "faas.instance"
-    /**
+  case faasInstance = "faas.instance"
+  /**
     The amount of memory available to the serverless function converted to Bytes.
 
     ~~~
@@ -555,8 +555,8 @@ public enum ResourceAttributes: String {
     - Note: It's recommended to set this attribute since e.g. too little memory can easily stop a Java AWS Lambda function from working correctly. On AWS Lambda, the environment variable `AWS_LAMBDA_FUNCTION_MEMORY_SIZE` provides this information (which must be multiplied by 1,048,576).
     - Requires: Value type should be `Int`
     */
-    case faasMaxMemory = "faas.max_memory"
-    /**
+  case faasMaxMemory = "faas.max_memory"
+  /**
     Unique host ID. For Cloud, this must be the instance_id assigned by the cloud provider. For non-containerized systems, this should be the `machine-id`. See the table below for the sources to use to determine the `machine-id` based on operating system.
 
     ~~~
@@ -565,8 +565,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case hostId = "host.id"
-    /**
+  case hostId = "host.id"
+  /**
     Name of the host. On Unix systems, it may contain what the hostname command returns, or the fully qualified hostname, or another name specified by the user.
 
     ~~~
@@ -575,8 +575,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case hostName = "host.name"
-    /**
+  case hostName = "host.name"
+  /**
     Type of host. For Cloud, this must be the machine type.
 
     ~~~
@@ -585,13 +585,13 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case hostType = "host.type"
-    /**
+  case hostType = "host.type"
+  /**
     The CPU architecture the host system is running on.
     - Requires: Value should be one of [`ResourceAttributes.HostArchValues`](x-source-tag://otelHostArchValues) (of type `String`)
     */
-    case hostArch = "host.arch"
-    /**
+  case hostArch = "host.arch"
+  /**
     Name of the VM image or OS install the host was instantiated from.
 
     ~~~
@@ -601,8 +601,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case hostImageName = "host.image.name"
-    /**
+  case hostImageName = "host.image.name"
+  /**
     VM image ID or host OS image ID. For Cloud, this value is from the provider.
 
     ~~~
@@ -611,8 +611,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case hostImageId = "host.image.id"
-    /**
+  case hostImageId = "host.image.id"
+  /**
     The version string of the VM image or host OS as defined in [Version Attributes](README.md#version-attributes).
 
     ~~~
@@ -621,8 +621,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case hostImageVersion = "host.image.version"
-    /**
+  case hostImageVersion = "host.image.version"
+  /**
     The name of the cluster.
 
     ~~~
@@ -631,8 +631,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case k8sClusterName = "k8s.cluster.name"
-    /**
+  case k8sClusterName = "k8s.cluster.name"
+  /**
     A pseudo-ID for the cluster, set to the UID of the `kube-system` namespace.
 
     ~~~
@@ -664,8 +664,8 @@ public enum ResourceAttributes: String {
       conflict.
     - Requires: Value type should be `String`
     */
-    case k8sClusterUid = "k8s.cluster.uid"
-    /**
+  case k8sClusterUid = "k8s.cluster.uid"
+  /**
     The name of the Node.
 
     ~~~
@@ -674,8 +674,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case k8sNodeName = "k8s.node.name"
-    /**
+  case k8sNodeName = "k8s.node.name"
+  /**
     The UID of the Node.
 
     ~~~
@@ -684,8 +684,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case k8sNodeUid = "k8s.node.uid"
-    /**
+  case k8sNodeUid = "k8s.node.uid"
+  /**
     The name of the namespace that the pod is running in.
 
     ~~~
@@ -694,8 +694,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case k8sNamespaceName = "k8s.namespace.name"
-    /**
+  case k8sNamespaceName = "k8s.namespace.name"
+  /**
     The UID of the Pod.
 
     ~~~
@@ -704,8 +704,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case k8sPodUid = "k8s.pod.uid"
-    /**
+  case k8sPodUid = "k8s.pod.uid"
+  /**
     The name of the Pod.
 
     ~~~
@@ -714,8 +714,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case k8sPodName = "k8s.pod.name"
-    /**
+  case k8sPodName = "k8s.pod.name"
+  /**
     The name of the Container from Pod specification, must be unique within a Pod. Container runtime usually uses different globally unique name (`container.name`).
 
     ~~~
@@ -724,8 +724,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case k8sContainerName = "k8s.container.name"
-    /**
+  case k8sContainerName = "k8s.container.name"
+  /**
     Number of times the container was restarted. This attribute can be used to identify a particular container (running or stopped) within a container spec.
 
     ~~~
@@ -733,8 +733,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `Int`
     */
-    case k8sContainerRestartCount = "k8s.container.restart_count"
-    /**
+  case k8sContainerRestartCount = "k8s.container.restart_count"
+  /**
     The UID of the ReplicaSet.
 
     ~~~
@@ -743,8 +743,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case k8sReplicasetUid = "k8s.replicaset.uid"
-    /**
+  case k8sReplicasetUid = "k8s.replicaset.uid"
+  /**
     The name of the ReplicaSet.
 
     ~~~
@@ -753,8 +753,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case k8sReplicasetName = "k8s.replicaset.name"
-    /**
+  case k8sReplicasetName = "k8s.replicaset.name"
+  /**
     The UID of the Deployment.
 
     ~~~
@@ -763,8 +763,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case k8sDeploymentUid = "k8s.deployment.uid"
-    /**
+  case k8sDeploymentUid = "k8s.deployment.uid"
+  /**
     The name of the Deployment.
 
     ~~~
@@ -773,8 +773,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case k8sDeploymentName = "k8s.deployment.name"
-    /**
+  case k8sDeploymentName = "k8s.deployment.name"
+  /**
     The UID of the StatefulSet.
 
     ~~~
@@ -783,8 +783,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case k8sStatefulsetUid = "k8s.statefulset.uid"
-    /**
+  case k8sStatefulsetUid = "k8s.statefulset.uid"
+  /**
     The name of the StatefulSet.
 
     ~~~
@@ -793,8 +793,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case k8sStatefulsetName = "k8s.statefulset.name"
-    /**
+  case k8sStatefulsetName = "k8s.statefulset.name"
+  /**
     The UID of the DaemonSet.
 
     ~~~
@@ -803,8 +803,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case k8sDaemonsetUid = "k8s.daemonset.uid"
-    /**
+  case k8sDaemonsetUid = "k8s.daemonset.uid"
+  /**
     The name of the DaemonSet.
 
     ~~~
@@ -813,8 +813,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case k8sDaemonsetName = "k8s.daemonset.name"
-    /**
+  case k8sDaemonsetName = "k8s.daemonset.name"
+  /**
     The UID of the Job.
 
     ~~~
@@ -823,8 +823,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case k8sJobUid = "k8s.job.uid"
-    /**
+  case k8sJobUid = "k8s.job.uid"
+  /**
     The name of the Job.
 
     ~~~
@@ -833,8 +833,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case k8sJobName = "k8s.job.name"
-    /**
+  case k8sJobName = "k8s.job.name"
+  /**
     The UID of the CronJob.
 
     ~~~
@@ -843,8 +843,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case k8sCronjobUid = "k8s.cronjob.uid"
-    /**
+  case k8sCronjobUid = "k8s.cronjob.uid"
+  /**
     The name of the CronJob.
 
     ~~~
@@ -853,13 +853,13 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case k8sCronjobName = "k8s.cronjob.name"
-    /**
+  case k8sCronjobName = "k8s.cronjob.name"
+  /**
     The operating system type.
     - Requires: Value should be one of [`ResourceAttributes.OsTypeValues`](x-source-tag://otelOsTypeValues) (of type `String`)
     */
-    case osType = "os.type"
-    /**
+  case osType = "os.type"
+  /**
     Human readable (not intended to be parsed) OS version information, like e.g. reported by `ver` or `lsb_release -a` commands.
 
     ~~~
@@ -869,8 +869,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case osDescription = "os.description"
-    /**
+  case osDescription = "os.description"
+  /**
     Human readable operating system name.
 
     ~~~
@@ -881,8 +881,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case osName = "os.name"
-    /**
+  case osName = "os.name"
+  /**
     The version string of the operating system as defined in [Version Attributes](/docs/resource/README.md#version-attributes).
 
     ~~~
@@ -892,8 +892,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case osVersion = "os.version"
-    /**
+  case osVersion = "os.version"
+  /**
     Process identifier (PID).
 
     ~~~
@@ -901,8 +901,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `Int`
     */
-    case processPid = "process.pid"
-    /**
+  case processPid = "process.pid"
+  /**
     Parent Process identifier (PID).
 
     ~~~
@@ -910,8 +910,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `Int`
     */
-    case processParentPid = "process.parent_pid"
-    /**
+  case processParentPid = "process.parent_pid"
+  /**
     The name of the process executable. On Linux based systems, can be set to the `Name` in `proc/[pid]/status`. On Windows, can be set to the base name of `GetProcessImageFileNameW`.
 
     ~~~
@@ -920,8 +920,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case processExecutableName = "process.executable.name"
-    /**
+  case processExecutableName = "process.executable.name"
+  /**
     The full path to the process executable. On Linux based systems, can be set to the target of `proc/[pid]/exe`. On Windows, can be set to the result of `GetProcessImageFileNameW`.
 
     ~~~
@@ -930,8 +930,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case processExecutablePath = "process.executable.path"
-    /**
+  case processExecutablePath = "process.executable.path"
+  /**
     The command used to launch the process (i.e. the command name). On Linux based systems, can be set to the zeroth string in `proc/[pid]/cmdline`. On Windows, can be set to the first parameter extracted from `GetCommandLineW`.
 
     ~~~
@@ -940,8 +940,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case processCommand = "process.command"
-    /**
+  case processCommand = "process.command"
+  /**
     The full command used to launch the process as a single string representing the full command. On Windows, can be set to the result of `GetCommandLineW`. Do not set this if you have to assemble it just for monitoring; use `process.command_args` instead.
 
     ~~~
@@ -950,8 +950,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case processCommandLine = "process.command_line"
-    /**
+  case processCommandLine = "process.command_line"
+  /**
     All the command arguments (including the command/executable itself) as received by the process. On Linux-based systems (and some other Unixoid systems supporting procfs), can be set according to the list of null-delimited strings extracted from `proc/[pid]/cmdline`. For libc-based executables, this would be the full argv vector passed to `main`.
 
     ~~~
@@ -959,8 +959,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `[String]`
     */
-    case processCommandArgs = "process.command_args"
-    /**
+  case processCommandArgs = "process.command_args"
+  /**
     The username of the user that owns the process.
 
     ~~~
@@ -969,8 +969,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case processOwner = "process.owner"
-    /**
+  case processOwner = "process.owner"
+  /**
     The name of the runtime of this process. For compiled native binaries, this SHOULD be the name of the compiler.
 
     ~~~
@@ -979,8 +979,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case processRuntimeName = "process.runtime.name"
-    /**
+  case processRuntimeName = "process.runtime.name"
+  /**
     The version of the runtime of this process, as returned by the runtime without modification.
 
     ~~~
@@ -989,8 +989,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case processRuntimeVersion = "process.runtime.version"
-    /**
+  case processRuntimeVersion = "process.runtime.version"
+  /**
     An additional description about the runtime of the process, for example a specific vendor customization of the runtime environment.
 
     ~~~
@@ -999,8 +999,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case processRuntimeDescription = "process.runtime.description"
-    /**
+  case processRuntimeDescription = "process.runtime.description"
+  /**
     Logical name of the service.
 
     ~~~
@@ -1011,8 +1011,8 @@ public enum ResourceAttributes: String {
     - Note: MUST be the same for all instances of horizontally scaled services. If the value was not specified, SDKs MUST fallback to `unknown_service:` concatenated with [`process.executable.name`](process.md#process), e.g. `unknown_service:bash`. If `process.executable.name` is not available, the value MUST be set to `unknown_service`.
     - Requires: Value type should be `String`
     */
-    case serviceName = "service.name"
-    /**
+  case serviceName = "service.name"
+  /**
     The version string of the service API or implementation. The format is not defined by these conventions.
 
     ~~~
@@ -1022,8 +1022,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case serviceVersion = "service.version"
-    /**
+  case serviceVersion = "service.version"
+  /**
     A namespace for `service.name`.
 
     ~~~
@@ -1034,8 +1034,8 @@ public enum ResourceAttributes: String {
     - Note: A string value having a meaning that helps to distinguish a group of services, for example the team name that owns a group of services. `service.name` is expected to be unique within the same namespace. If `service.namespace` is not specified in the Resource then `service.name` is expected to be unique for all services that have no explicit namespace defined (so the empty/unspecified namespace is simply one more valid namespace). Zero-length namespace string is assumed equal to unspecified namespace.
     - Requires: Value type should be `String`
     */
-    case serviceNamespace = "service.namespace"
-    /**
+  case serviceNamespace = "service.namespace"
+  /**
     The string ID of the service instance.
 
     ~~~
@@ -1047,8 +1047,8 @@ public enum ResourceAttributes: String {
     - Note: MUST be unique for each instance of the same `service.namespace,service.name` pair (in other words `service.namespace,service.name,service.instance.id` triplet MUST be globally unique). The ID helps to distinguish instances of the same service that exist at the same time (e.g. instances of a horizontally scaled service). It is preferable for the ID to be persistent and stay the same for the lifetime of the service instance, however it is acceptable that the ID is ephemeral and changes during important lifetime events for the service (e.g. service restarts). If the service has no inherent unique ID that can be used as the value of this attribute it is recommended to generate a random Version 1 or Version 4 RFC 4122 UUID (services aiming for reproducible UUIDs may also use Version 5, see RFC 4122 for more recommendations).
     - Requires: Value type should be `String`
     */
-    case serviceInstanceId = "service.instance.id"
-    /**
+  case serviceInstanceId = "service.instance.id"
+  /**
     The name of the telemetry SDK as defined above.
 
     ~~~
@@ -1064,13 +1064,13 @@ public enum ResourceAttributes: String {
       All custom identifiers SHOULD be stable across different versions of an implementation.
     - Requires: Value type should be `String`
     */
-    case telemetrySdkName = "telemetry.sdk.name"
-    /**
+  case telemetrySdkName = "telemetry.sdk.name"
+  /**
     The language of the telemetry SDK.
     - Requires: Value should be one of [`ResourceAttributes.TelemetrySdkLanguageValues`](x-source-tag://otelTelemetrySdkLanguageValues) (of type `String`)
     */
-    case telemetrySdkLanguage = "telemetry.sdk.language"
-    /**
+  case telemetrySdkLanguage = "telemetry.sdk.language"
+  /**
     The version string of the telemetry SDK.
 
     ~~~
@@ -1079,8 +1079,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case telemetrySdkVersion = "telemetry.sdk.version"
-    /**
+  case telemetrySdkVersion = "telemetry.sdk.version"
+  /**
     The version string of the auto instrumentation agent, if used.
 
     ~~~
@@ -1089,8 +1089,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case telemetryAutoVersion = "telemetry.auto.version"
-    /**
+  case telemetryAutoVersion = "telemetry.auto.version"
+  /**
     The name of the web engine.
 
     ~~~
@@ -1099,8 +1099,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case webengineName = "webengine.name"
-    /**
+  case webengineName = "webengine.name"
+  /**
     The version of the web engine.
 
     ~~~
@@ -1109,8 +1109,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case webengineVersion = "webengine.version"
-    /**
+  case webengineVersion = "webengine.version"
+  /**
     Additional description of the web engine (e.g. detailed version and edition information).
 
     ~~~
@@ -1119,8 +1119,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case webengineDescription = "webengine.description"
-    /**
+  case webengineDescription = "webengine.description"
+  /**
     The name of the instrumentation scope - (`InstrumentationScope.Name` in OTLP).
 
     ~~~
@@ -1129,8 +1129,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case otelScopeName = "otel.scope.name"
-    /**
+  case otelScopeName = "otel.scope.name"
+  /**
     The version of the instrumentation scope - (`InstrumentationScope.Version` in OTLP).
 
     ~~~
@@ -1139,8 +1139,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case otelScopeVersion = "otel.scope.version"
-    /**
+  case otelScopeVersion = "otel.scope.version"
+  /**
     Deprecated, use the `otel.scope.name` attribute.
 
     ~~~
@@ -1149,8 +1149,8 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case otelLibraryName = "otel.library.name"
-    /**
+  case otelLibraryName = "otel.library.name"
+  /**
     Deprecated, use the `otel.scope.version` attribute.
 
     ~~~
@@ -1159,373 +1159,381 @@ public enum ResourceAttributes: String {
     ~~~
     - Requires: Value type should be `String`
     */
-    case otelLibraryVersion = "otel.library.version"
-    
-    /**
+  case otelLibraryVersion = "otel.library.version"
+
+  /**
     Name of the cloud provider.
     */
-    /// - Tag: otelCloudProviderValues
-    public struct CloudProviderValues: CustomStringConvertible {
-        /**
+  /// - Tag: otelCloudProviderValues
+  public struct CloudProviderValues: CustomStringConvertible {
+    /**
         Alibaba Cloud.
         */
-        public static let alibabaCloud = CloudProviderValues("alibaba_cloud")
-        /**
+    public static let alibabaCloud = CloudProviderValues("alibaba_cloud")
+    /**
         Amazon Web Services.
         */
-        public static let aws = CloudProviderValues("aws")
-        /**
+    public static let aws = CloudProviderValues("aws")
+    /**
         Microsoft Azure.
         */
-        public static let azure = CloudProviderValues("azure")
-        /**
+    public static let azure = CloudProviderValues("azure")
+    /**
         Google Cloud Platform.
         */
-        public static let gcp = CloudProviderValues("gcp")
-        /**
+    public static let gcp = CloudProviderValues("gcp")
+    /**
         Heroku Platform as a Service.
         */
-        public static let heroku = CloudProviderValues("heroku")
-        /**
+    public static let heroku = CloudProviderValues("heroku")
+    /**
         IBM Cloud.
         */
-        public static let ibmCloud = CloudProviderValues("ibm_cloud")
-        /**
+    public static let ibmCloud = CloudProviderValues("ibm_cloud")
+    /**
         Tencent Cloud.
         */
-        public static let tencentCloud = CloudProviderValues("tencent_cloud")
+    public static let tencentCloud = CloudProviderValues("tencent_cloud")
 
-        internal let value: String
+    internal let value: String
 
-        public init(_ customValue: String) {
-            self.value = customValue
-        }
-
-        public var description: String {
-            return value
-        }
+    public init(_ customValue: String) {
+      self.value = customValue
     }
-    
-    /**
+
+    public var description: String {
+      return value
+    }
+  }
+
+  /**
     The cloud platform in use.
     */
-    /// - Tag: otelCloudPlatformValues
-    public struct CloudPlatformValues: CustomStringConvertible {
-        /**
+  /// - Tag: otelCloudPlatformValues
+  public struct CloudPlatformValues: CustomStringConvertible {
+    /**
         Alibaba Cloud Elastic Compute Service.
         */
-        public static let alibabaCloudEcs = CloudPlatformValues("alibaba_cloud_ecs")
-        /**
+    public static let alibabaCloudEcs = CloudPlatformValues("alibaba_cloud_ecs")
+    /**
         Alibaba Cloud Function Compute.
         */
-        public static let alibabaCloudFc = CloudPlatformValues("alibaba_cloud_fc")
-        /**
+    public static let alibabaCloudFc = CloudPlatformValues("alibaba_cloud_fc")
+    /**
         Red Hat OpenShift on Alibaba Cloud.
         */
-        public static let alibabaCloudOpenshift = CloudPlatformValues("alibaba_cloud_openshift")
-        /**
+    public static let alibabaCloudOpenshift = CloudPlatformValues(
+      "alibaba_cloud_openshift")
+    /**
         AWS Elastic Compute Cloud.
         */
-        public static let awsEc2 = CloudPlatformValues("aws_ec2")
-        /**
+    public static let awsEc2 = CloudPlatformValues("aws_ec2")
+    /**
         AWS Elastic Container Service.
         */
-        public static let awsEcs = CloudPlatformValues("aws_ecs")
-        /**
+    public static let awsEcs = CloudPlatformValues("aws_ecs")
+    /**
         AWS Elastic Kubernetes Service.
         */
-        public static let awsEks = CloudPlatformValues("aws_eks")
-        /**
+    public static let awsEks = CloudPlatformValues("aws_eks")
+    /**
         AWS Lambda.
         */
-        public static let awsLambda = CloudPlatformValues("aws_lambda")
-        /**
+    public static let awsLambda = CloudPlatformValues("aws_lambda")
+    /**
         AWS Elastic Beanstalk.
         */
-        public static let awsElasticBeanstalk = CloudPlatformValues("aws_elastic_beanstalk")
-        /**
+    public static let awsElasticBeanstalk = CloudPlatformValues(
+      "aws_elastic_beanstalk")
+    /**
         AWS App Runner.
         */
-        public static let awsAppRunner = CloudPlatformValues("aws_app_runner")
-        /**
+    public static let awsAppRunner = CloudPlatformValues("aws_app_runner")
+    /**
         Red Hat OpenShift on AWS (ROSA).
         */
-        public static let awsOpenshift = CloudPlatformValues("aws_openshift")
-        /**
+    public static let awsOpenshift = CloudPlatformValues("aws_openshift")
+    /**
         Azure Virtual Machines.
         */
-        public static let azureVm = CloudPlatformValues("azure_vm")
-        /**
+    public static let azureVm = CloudPlatformValues("azure_vm")
+    /**
         Azure Container Instances.
         */
-        public static let azureContainerInstances = CloudPlatformValues("azure_container_instances")
-        /**
+    public static let azureContainerInstances = CloudPlatformValues(
+      "azure_container_instances")
+    /**
         Azure Kubernetes Service.
         */
-        public static let azureAks = CloudPlatformValues("azure_aks")
-        /**
+    public static let azureAks = CloudPlatformValues("azure_aks")
+    /**
         Azure Functions.
         */
-        public static let azureFunctions = CloudPlatformValues("azure_functions")
-        /**
+    public static let azureFunctions = CloudPlatformValues("azure_functions")
+    /**
         Azure App Service.
         */
-        public static let azureAppService = CloudPlatformValues("azure_app_service")
-        /**
+    public static let azureAppService = CloudPlatformValues("azure_app_service")
+    /**
         Azure Red Hat OpenShift.
         */
-        public static let azureOpenshift = CloudPlatformValues("azure_openshift")
-        /**
+    public static let azureOpenshift = CloudPlatformValues("azure_openshift")
+    /**
         Google Bare Metal Solution (BMS).
         */
-        public static let gcpBareMetalSolution = CloudPlatformValues("gcp_bare_metal_solution")
-        /**
+    public static let gcpBareMetalSolution = CloudPlatformValues(
+      "gcp_bare_metal_solution")
+    /**
         Google Cloud Compute Engine (GCE).
         */
-        public static let gcpComputeEngine = CloudPlatformValues("gcp_compute_engine")
-        /**
+    public static let gcpComputeEngine = CloudPlatformValues(
+      "gcp_compute_engine")
+    /**
         Google Cloud Run.
         */
-        public static let gcpCloudRun = CloudPlatformValues("gcp_cloud_run")
-        /**
+    public static let gcpCloudRun = CloudPlatformValues("gcp_cloud_run")
+    /**
         Google Cloud Kubernetes Engine (GKE).
         */
-        public static let gcpKubernetesEngine = CloudPlatformValues("gcp_kubernetes_engine")
-        /**
+    public static let gcpKubernetesEngine = CloudPlatformValues(
+      "gcp_kubernetes_engine")
+    /**
         Google Cloud Functions (GCF).
         */
-        public static let gcpCloudFunctions = CloudPlatformValues("gcp_cloud_functions")
-        /**
+    public static let gcpCloudFunctions = CloudPlatformValues(
+      "gcp_cloud_functions")
+    /**
         Google Cloud App Engine (GAE).
         */
-        public static let gcpAppEngine = CloudPlatformValues("gcp_app_engine")
-        /**
+    public static let gcpAppEngine = CloudPlatformValues("gcp_app_engine")
+    /**
         Red Hat OpenShift on Google Cloud.
         */
-        public static let gcpOpenshift = CloudPlatformValues("gcp_openshift")
-        /**
+    public static let gcpOpenshift = CloudPlatformValues("gcp_openshift")
+    /**
         Red Hat OpenShift on IBM Cloud.
         */
-        public static let ibmCloudOpenshift = CloudPlatformValues("ibm_cloud_openshift")
-        /**
+    public static let ibmCloudOpenshift = CloudPlatformValues(
+      "ibm_cloud_openshift")
+    /**
         Tencent Cloud Cloud Virtual Machine (CVM).
         */
-        public static let tencentCloudCvm = CloudPlatformValues("tencent_cloud_cvm")
-        /**
+    public static let tencentCloudCvm = CloudPlatformValues("tencent_cloud_cvm")
+    /**
         Tencent Cloud Elastic Kubernetes Service (EKS).
         */
-        public static let tencentCloudEks = CloudPlatformValues("tencent_cloud_eks")
-        /**
+    public static let tencentCloudEks = CloudPlatformValues("tencent_cloud_eks")
+    /**
         Tencent Cloud Serverless Cloud Function (SCF).
         */
-        public static let tencentCloudScf = CloudPlatformValues("tencent_cloud_scf")
+    public static let tencentCloudScf = CloudPlatformValues("tencent_cloud_scf")
 
-        internal let value: String
+    internal let value: String
 
-        public init(_ customValue: String) {
-            self.value = customValue
-        }
-
-        public var description: String {
-            return value
-        }
+    public init(_ customValue: String) {
+      self.value = customValue
     }
-    
-    /**
+
+    public var description: String {
+      return value
+    }
+  }
+
+  /**
     The [launch type](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/launch_types.html) for an ECS task.
     */
-    /// - Tag: otelAwsEcsLaunchtypeValues
-    public enum AwsEcsLaunchtypeValues: String {
-        /**
+  /// - Tag: otelAwsEcsLaunchtypeValues
+  public enum AwsEcsLaunchtypeValues: String {
+    /**
         ec2.
         */
-        case ec2 = "ec2"
-        /**
+    case ec2
+    /**
         fargate.
         */
-        case fargate = "fargate"
-    }
-    
-    /**
+    case fargate
+  }
+
+  /**
     The CPU architecture the host system is running on.
     */
-    /// - Tag: otelHostArchValues
-    public struct HostArchValues: CustomStringConvertible {
-        /**
+  /// - Tag: otelHostArchValues
+  public struct HostArchValues: CustomStringConvertible {
+    /**
         AMD64.
         */
-        public static let amd64 = HostArchValues("amd64")
-        /**
+    public static let amd64 = HostArchValues("amd64")
+    /**
         ARM32.
         */
-        public static let arm32 = HostArchValues("arm32")
-        /**
+    public static let arm32 = HostArchValues("arm32")
+    /**
         ARM64.
         */
-        public static let arm64 = HostArchValues("arm64")
-        /**
+    public static let arm64 = HostArchValues("arm64")
+    /**
         Itanium.
         */
-        public static let ia64 = HostArchValues("ia64")
-        /**
+    public static let ia64 = HostArchValues("ia64")
+    /**
         32-bit PowerPC.
         */
-        public static let ppc32 = HostArchValues("ppc32")
-        /**
+    public static let ppc32 = HostArchValues("ppc32")
+    /**
         64-bit PowerPC.
         */
-        public static let ppc64 = HostArchValues("ppc64")
-        /**
+    public static let ppc64 = HostArchValues("ppc64")
+    /**
         IBM z/Architecture.
         */
-        public static let s390x = HostArchValues("s390x")
-        /**
+    public static let s390x = HostArchValues("s390x")
+    /**
         32-bit x86.
         */
-        public static let x86 = HostArchValues("x86")
+    public static let x86 = HostArchValues("x86")
 
-        internal let value: String
+    internal let value: String
 
-        public init(_ customValue: String) {
-            self.value = customValue
-        }
-
-        public var description: String {
-            return value
-        }
+    public init(_ customValue: String) {
+      self.value = customValue
     }
-    
-    /**
+
+    public var description: String {
+      return value
+    }
+  }
+
+  /**
     The operating system type.
     */
-    /// - Tag: otelOsTypeValues
-    public struct OsTypeValues: CustomStringConvertible {
-        /**
+  /// - Tag: otelOsTypeValues
+  public struct OsTypeValues: CustomStringConvertible {
+    /**
         Microsoft Windows.
         */
-        public static let windows = OsTypeValues("windows")
-        /**
+    public static let windows = OsTypeValues("windows")
+    /**
         Linux.
         */
-        public static let linux = OsTypeValues("linux")
-        /**
+    public static let linux = OsTypeValues("linux")
+    /**
         Apple Darwin.
         */
-        public static let darwin = OsTypeValues("darwin")
-        /**
+    public static let darwin = OsTypeValues("darwin")
+    /**
         FreeBSD.
         */
-        public static let freebsd = OsTypeValues("freebsd")
-        /**
+    public static let freebsd = OsTypeValues("freebsd")
+    /**
         NetBSD.
         */
-        public static let netbsd = OsTypeValues("netbsd")
-        /**
+    public static let netbsd = OsTypeValues("netbsd")
+    /**
         OpenBSD.
         */
-        public static let openbsd = OsTypeValues("openbsd")
-        /**
+    public static let openbsd = OsTypeValues("openbsd")
+    /**
         DragonFly BSD.
         */
-        public static let dragonflybsd = OsTypeValues("dragonflybsd")
-        /**
+    public static let dragonflybsd = OsTypeValues("dragonflybsd")
+    /**
         HP-UX (Hewlett Packard Unix).
         */
-        public static let hpux = OsTypeValues("hpux")
-        /**
+    public static let hpux = OsTypeValues("hpux")
+    /**
         AIX (Advanced Interactive eXecutive).
         */
-        public static let aix = OsTypeValues("aix")
-        /**
+    public static let aix = OsTypeValues("aix")
+    /**
         SunOS, Oracle Solaris.
         */
-        public static let solaris = OsTypeValues("solaris")
-        /**
+    public static let solaris = OsTypeValues("solaris")
+    /**
         IBM z/OS.
         */
-        public static let zOs = OsTypeValues("z_os")
+    public static let zOs = OsTypeValues("z_os")
 
-        internal let value: String
+    internal let value: String
 
-        public init(_ customValue: String) {
-            self.value = customValue
-        }
-
-        public var description: String {
-            return value
-        }
+    public init(_ customValue: String) {
+      self.value = customValue
     }
-    
-    /**
+
+    public var description: String {
+      return value
+    }
+  }
+
+  /**
     The language of the telemetry SDK.
     */
-    /// - Tag: otelTelemetrySdkLanguageValues
-    public struct TelemetrySdkLanguageValues: CustomStringConvertible {
-        /**
+  /// - Tag: otelTelemetrySdkLanguageValues
+  public struct TelemetrySdkLanguageValues: CustomStringConvertible {
+    /**
         cpp.
         */
-        public static let cpp = TelemetrySdkLanguageValues("cpp")
-        /**
+    public static let cpp = TelemetrySdkLanguageValues("cpp")
+    /**
         dotnet.
         */
-        public static let dotnet = TelemetrySdkLanguageValues("dotnet")
-        /**
+    public static let dotnet = TelemetrySdkLanguageValues("dotnet")
+    /**
         erlang.
         */
-        public static let erlang = TelemetrySdkLanguageValues("erlang")
-        /**
+    public static let erlang = TelemetrySdkLanguageValues("erlang")
+    /**
         go.
         */
-        public static let go = TelemetrySdkLanguageValues("go")
-        /**
+    public static let go = TelemetrySdkLanguageValues("go")
+    /**
         java.
         */
-        public static let java = TelemetrySdkLanguageValues("java")
-        /**
+    public static let java = TelemetrySdkLanguageValues("java")
+    /**
         nodejs.
         */
-        public static let nodejs = TelemetrySdkLanguageValues("nodejs")
-        /**
+    public static let nodejs = TelemetrySdkLanguageValues("nodejs")
+    /**
         php.
         */
-        public static let php = TelemetrySdkLanguageValues("php")
-        /**
+    public static let php = TelemetrySdkLanguageValues("php")
+    /**
         python.
         */
-        public static let python = TelemetrySdkLanguageValues("python")
-        /**
+    public static let python = TelemetrySdkLanguageValues("python")
+    /**
         ruby.
         */
-        public static let ruby = TelemetrySdkLanguageValues("ruby")
-        /**
+    public static let ruby = TelemetrySdkLanguageValues("ruby")
+    /**
         rust.
         */
-        public static let rust = TelemetrySdkLanguageValues("rust")
-        /**
+    public static let rust = TelemetrySdkLanguageValues("rust")
+    /**
         swift.
         */
-        public static let swift = TelemetrySdkLanguageValues("swift")
-        /**
+    public static let swift = TelemetrySdkLanguageValues("swift")
+    /**
         webjs.
         */
-        public static let webjs = TelemetrySdkLanguageValues("webjs")
+    public static let webjs = TelemetrySdkLanguageValues("webjs")
 
-        internal let value: String
+    internal let value: String
 
-        public init(_ customValue: String) {
-            self.value = customValue
-        }
-
-        public var description: String {
-            return value
-        }
+    public init(_ customValue: String) {
+      self.value = customValue
     }
-    
+
+    public var description: String {
+      return value
+    }
+  }
+
 }
-public func ==(left: ResourceAttributes, right: String) -> Bool {
-    return left.rawValue == right
+public func == (left: ResourceAttributes, right: String) -> Bool {
+  return left.rawValue == right
 }
 
-public func ==(left: String, right: ResourceAttributes) -> Bool {
-    return left == right.rawValue
+public func == (left: String, right: ResourceAttributes) -> Bool {
+  return left == right.rawValue
 }

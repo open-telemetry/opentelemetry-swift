@@ -5,6 +5,5 @@
 
 import Foundation
 
-
 // Stubbed protocol for support of custom MetricReaders in the future
 public protocol CollectionRegistration {}

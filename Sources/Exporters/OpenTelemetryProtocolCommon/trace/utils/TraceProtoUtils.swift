@@ -14,7 +14,7 @@ struct TraceProtoUtils {
     spanId.copyBytesTo(dest: &spanIdData, destOffset: 0)
     return spanIdData
   }
-  
+
   static func toProtoTraceId(traceId: TraceId) -> Data {
     var traceIdData = Data(count: TraceId.size)
     traceId.copyBytesTo(dest: &traceIdData, destOffset: 0)

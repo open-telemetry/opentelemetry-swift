@@ -30,7 +30,7 @@ extension sockaddr_storage {
 
     init(sa: UnsafeMutablePointer<sockaddr>, saLen: socklen_t) {
         var ss = sockaddr_storage()
-        withUnsafeMutableBytes(of: &ss) { ssPtr -> Void in
+        withUnsafeMutableBytes(of: &ss) { ssPtr in
             let addrBuf = UnsafeRawBufferPointer(start: sa, count: Int(saLen))
             assert(addrBuf.count <= MemoryLayout<sockaddr_storage>.size)
             ssPtr.copyMemory(from: addrBuf)

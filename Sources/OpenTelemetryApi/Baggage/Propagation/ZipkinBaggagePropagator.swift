@@ -33,8 +33,7 @@ public class ZipkinBaggagePropagator: TextMapBaggagePropagator {
                 }
 
                 if let key = EntryKey(name: String($0.key.dropFirst(ZipkinBaggagePropagator.baggagePrefix.count))),
-                   let value = EntryValue(string: $0.value)
-                {
+                   let value = EntryValue(string: $0.value) {
                     builder.put(key: key, value: value, metadata: nil)
                 }
             }

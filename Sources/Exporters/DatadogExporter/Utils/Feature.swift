@@ -18,11 +18,6 @@ internal struct FeatureStorage {
     let writer: FileWriter
     /// Reads data from files.
     let reader: FileReader
-
-    init(writer: FileWriter, reader: FileReader) {
-        self.writer = writer
-        self.reader = reader
-    }
 }
 
 internal struct FeatureUpload {

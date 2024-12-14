@@ -9,7 +9,7 @@ import OpenTelemetryApi
 internal class BoundHistogramMetricSdk<T: SignedNumeric & Comparable>: BoundHistogramMetricSdkBase<T> {
     private var histogramAggregator: HistogramAggregator<T>
 
-    override init(explicitBoundaries: Array<T>? = nil) {
+    override init(explicitBoundaries: [T]? = nil) {
         self.histogramAggregator = try! HistogramAggregator(explicitBoundaries: explicitBoundaries)
         super.init(explicitBoundaries: explicitBoundaries)
     }

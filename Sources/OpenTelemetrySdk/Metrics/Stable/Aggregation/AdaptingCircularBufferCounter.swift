@@ -26,7 +26,7 @@ class AdaptingCircularBufferCounter: NSCopying {
         self.maxSize = maxSize
     }
 
-    @discardableResult func increment(index: Int, delta: Int64) -> Bool{
+    @discardableResult func increment(index: Int, delta: Int64) -> Bool {
         if baseIndex == Int.min {
             startIndex = index
             endIndex = index
@@ -53,7 +53,7 @@ class AdaptingCircularBufferCounter: NSCopying {
     }
 
     func get(index: Int) -> Int64 {
-        if (index < startIndex || index > endIndex) {
+        if index < startIndex || index > endIndex {
             return 0
         } else {
             return backing.get(index: toBufferIndex(index: index))
@@ -77,9 +77,9 @@ class AdaptingCircularBufferCounter: NSCopying {
 
     private func toBufferIndex(index: Int) -> Int {
         var result = index - baseIndex
-        if (result >= backing.length()) {
+        if result >= backing.length() {
             result -= backing.length()
-        } else if (result < 0) {
+        } else if result < 0 {
             result += backing.length()
         }
         return result

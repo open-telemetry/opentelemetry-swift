@@ -100,76 +100,76 @@ extension SpanExporterData: Encodable {
         case duration
         case attributes
     }
-    
+
     enum TraceFlagsCodingKeys: String, CodingKey {
         case sampled
     }
-    
+
     enum TraceStateCodingKeys: String, CodingKey {
         case entries
     }
-    
+
     enum TraceStateEntryCodingKeys: String, CodingKey {
         case key
         case value
     }
-    
+
     struct AttributesCodingKeys: CodingKey {
         var stringValue: String
         var intValue: Int?
-        
+
         init?(intValue: Int) {
             self.stringValue = "\(intValue)"
             self.intValue = intValue
         }
-        
+
         init?(stringValue: String) {
             self.stringValue = stringValue
         }
     }
-    
+
     enum AttributeValueCodingKeys: String, CodingKey {
         case description
     }
-    
+
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        
+
         try container.encode(span, forKey: .span)
         try container.encode(traceId, forKey: .traceId)
         try container.encode(spanId, forKey: .spanId)
         try container.encode(spanKind, forKey: .spanKind)
-        
+
         var traceFlagsContainer = container.nestedContainer(keyedBy: TraceFlagsCodingKeys.self, forKey: .traceFlags)
         try traceFlagsContainer.encode(traceFlags.sampled, forKey: .sampled)
-        
+
         var traceStateContainer = container.nestedContainer(keyedBy: TraceStateCodingKeys.self, forKey: .traceState)
         var traceStateEntriesContainer = traceStateContainer.nestedUnkeyedContainer(forKey: .entries)
-        
+
         try traceState.entries.forEach { entry in
             var traceStateEntryContainer = traceStateEntriesContainer.nestedContainer(keyedBy: TraceStateEntryCodingKeys.self)
-            
+
             try traceStateEntryContainer.encode(entry.key, forKey: .key)
             try traceStateEntryContainer.encode(entry.value, forKey: .value)
-        }        
-        
+        }
+
         try container.encodeIfPresent(parentSpanId, forKey: .parentSpanId)
         try container.encode(start, forKey: .start)
         try container.encode(duration, forKey: .duration)
-        
+
         var attributesContainer = container.nestedContainer(keyedBy: AttributesCodingKeys.self, forKey: .attributes)
-        
+
         try attributes.forEach { attribute in
-            
+
             if let attributeValueCodingKey = AttributesCodingKeys(stringValue: attribute.key) {
                 var attributeValueContainer = attributesContainer.nestedContainer(keyedBy: AttributeValueCodingKeys.self, forKey: attributeValueCodingKey)
-                
+
                 try attributeValueContainer.encode(attribute.value.description, forKey: .description)
             } else {
                 // this should never happen
                 let encodingContext = EncodingError.Context(codingPath: attributesContainer.codingPath,
                                                             debugDescription: "Failed to create coding key")
-                
+
                 throw EncodingError.invalidValue(attribute, encodingContext)
             }
         }
