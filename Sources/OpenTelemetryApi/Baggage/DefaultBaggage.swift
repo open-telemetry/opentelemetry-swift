@@ -33,4 +33,3 @@ public final class DefaultBaggage: Baggage, Equatable {
         return lhs.getEntries().sorted() == rhs.getEntries().sorted()
     }
 }
-

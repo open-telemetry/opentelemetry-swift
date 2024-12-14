@@ -72,8 +72,7 @@ public class TracerShim: OTTracer, BaseShimProtocol {
         if references != nil {
             for object in references! {
                 if let ref = object as? OTReference,
-                   ref.type == TracerShim.OTReferenceChildOf || ref.type == TracerShim.OTReferenceFollowsFrom
-                {
+                   ref.type == TracerShim.OTReferenceChildOf || ref.type == TracerShim.OTReferenceFollowsFrom {
                     parent = ref.referencedContext
                 }
             }
@@ -84,8 +83,7 @@ public class TracerShim: OTTracer, BaseShimProtocol {
     public func inject(_ spanContext: OTSpanContext, format: String, carrier: Any) -> Bool {
         if let contextShim = spanContext as? SpanContextShim,
            let dict = carrier as? NSMutableDictionary,
-           format == OTFormatTextMap || format == OTFormatBinary
-        {
+           format == OTFormatTextMap || format == OTFormatBinary {
             propagation.injectTextFormat(contextShim: contextShim, carrier: dict)
             return true
         } else {
@@ -95,8 +93,7 @@ public class TracerShim: OTTracer, BaseShimProtocol {
 
     public func extract(withFormat format: String, carrier: Any) -> OTSpanContext? {
         if format == OTFormatTextMap || format == OTFormatBinary,
-           let carrier = carrier as? [String: String]
-        {
+           let carrier = carrier as? [String: String] {
             return propagation.extractTextFormat(carrier: carrier)
         } else {
             return nil
@@ -106,8 +103,7 @@ public class TracerShim: OTTracer, BaseShimProtocol {
     public func inject(spanContext: OTSpanContext, format: String, carrier: Any) throws {
         if let contextShim = spanContext as? SpanContextShim,
            let dict = carrier as? NSMutableDictionary,
-           format == OTFormatTextMap || format == OTFormatBinary
-        {
+           format == OTFormatTextMap || format == OTFormatBinary {
             propagation.injectTextFormat(contextShim: contextShim, carrier: dict)
         } else {
             throw InjectError.injectError
@@ -117,8 +113,7 @@ public class TracerShim: OTTracer, BaseShimProtocol {
     public func extractWithFormat(format: String, carrier: Any) throws -> OTSpanContext {
         if format == OTFormatTextMap || format == OTFormatBinary,
            let carrier = carrier as? [String: String],
-           let context = propagation.extractTextFormat(carrier: carrier)
-        {
+           let context = propagation.extractTextFormat(carrier: carrier) {
             return context
         } else {
             throw InjectError.extractError

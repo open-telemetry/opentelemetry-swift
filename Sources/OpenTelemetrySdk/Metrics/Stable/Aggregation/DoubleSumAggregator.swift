@@ -12,28 +12,28 @@ public class DoubleSumAggregator: SumAggregator, StableAggregator {
     public func diff(previousCumulative: PointData, currentCumulative: PointData) throws -> PointData {
         currentCumulative - previousCumulative
     }
-    
+
     public func toPoint(measurement: Measurement) throws -> PointData {
         DoublePointData(startEpochNanos: measurement.startEpochNano, endEpochNanos: measurement.epochNano, attributes: measurement.attributes, exemplars: [ExemplarData](), value: measurement.doubleValue)
     }
-    
+
     public func createHandle() -> AggregatorHandle {
         Handle(exemplarReservoir: reservoirSupplier())
     }
-    
+
     public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [PointData], temporality: AggregationTemporality) -> StableMetricData {
         StableMetricData.createDoubleSum(resource: resource, instrumentationScopeInfo: scope, name: descriptor.instrument.name, description: descriptor.instrument.description, unit: descriptor.instrument.unit, isMonotonic: self.isMonotonic, data: StableSumData(aggregationTemporality: temporality, points: points as! [DoublePointData]))
     }
-    
+
     init(instrumentDescriptor: InstrumentDescriptor, reservoirSupplier: @escaping () -> ExemplarReservoir) {
         self.reservoirSupplier = reservoirSupplier
         super.init(instrumentDescriptor: instrumentDescriptor)
     }
-    
+
     private class Handle: AggregatorHandle {
         var sum: Double = 0
         var sumLock = Lock()
-        
+
         override func doAggregateThenMaybeReset(startEpochNano: UInt64, endEpochNano: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], reset: Bool) -> PointData {
             var value = 0.0
             sumLock.withLockVoid {
@@ -44,10 +44,10 @@ public class DoubleSumAggregator: SumAggregator, StableAggregator {
                     value = sum
                 }
             }
-            
+
             return DoublePointData(startEpochNanos: startEpochNano, endEpochNanos: endEpochNano, attributes: attributes, exemplars: exemplars, value: value)
         }
-        
+
         override func doRecordDouble(value: Double) {
             sumLock.withLockVoid {
                 sum += value

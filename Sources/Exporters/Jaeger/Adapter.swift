@@ -107,7 +107,6 @@
       return tags
     }
 
-    
     static func processAttributeArray(data: AttributeArray) -> [String] {
       var processedValues = [String]()
       data.values.forEach { item in
@@ -149,8 +148,7 @@
       }
       return processedValues
     }
-    
-    
+
     static func toJaegerTag(key: String, attrib: AttributeValue) -> Tag {
       let key = key
       var vType: TagType

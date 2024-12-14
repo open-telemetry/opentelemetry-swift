@@ -20,7 +20,7 @@ internal struct DDLog: Encodable {
     static let traceID = "dd.trace_id"
     static let spanID = "dd.span_id"
   }
-  
+
   enum Status: String, Encodable {
     case debug
     case info
@@ -29,7 +29,7 @@ internal struct DDLog: Encodable {
     case error
     case critical
   }
-  
+
   let date: Date
   let status: Status
   let message: String
@@ -41,12 +41,12 @@ internal struct DDLog: Encodable {
   let applicationVersion: String
   let attributes: LogAttributes
   let tags: [String]?
-  
+
   func encode(to encoder: Encoder) throws {
     let sanitizedLog = LogSanitizer().sanitize(log: self)
     try LogEncoder().encode(sanitizedLog, to: encoder)
   }
-  
+
   internal init(date: Date, status: DDLog.Status, message: String, serviceName: String, environment: String, loggerName: String, loggerVersion: String, threadName: String, applicationVersion: String, attributes: LogAttributes, tags: [String]?) {
     self.date = date
     self.status = status
@@ -60,16 +60,16 @@ internal struct DDLog: Encodable {
     self.attributes = attributes
     self.tags = tags
   }
-  
+
   internal init(event: SpanData.Event, span: SpanData, configuration: ExporterConfiguration) {
     var attributes = event.attributes
-    
+
     // set tracing attributes
     let internalAttributes = [
       TracingAttributes.traceID: "\(span.traceId.rawLowerLong)",
       TracingAttributes.spanID: "\(span.spanId.rawValue)"
     ]
-    
+
     self.date = event.timestamp
     self.status = Status(rawValue: event.attributes["status"]?.description ?? "info") ?? .info
     self.message = attributes.removeValue(forKey: "message")?.description ?? "Span event"
@@ -79,7 +79,7 @@ internal struct DDLog: Encodable {
     self.loggerVersion = "1.0" // loggerVersion
     self.threadName = attributes.removeValue(forKey: "threadName")?.description ?? "unknown"
     self.applicationVersion = configuration.version
-    
+
     let userAttributes: [String: Encodable] = attributes.mapValues {
       switch $0 {
       case let .string(value):
@@ -102,8 +102,7 @@ internal struct DDLog: Encodable {
         return value
       case let .set(value):
         return value
-        
-        
+
       }
     }
     self.attributes = LogAttributes(userAttributes: userAttributes, internalAttributes: internalAttributes)
@@ -120,18 +119,18 @@ internal struct LogEncoder {
     case message
     case serviceName = "service"
     case tags = "ddtags"
-    
+
     // MARK: - Application info
-    
+
     case applicationVersion = "version"
-    
+
     // MARK: - Logger info
-    
+
     case loggerName = "logger.name"
     case loggerVersion = "logger.version"
     case threadName = "logger.thread_name"
   }
-  
+
   /// Coding keys for dynamic `Log` attributes specified by user.
   private struct DynamicCodingKey: CodingKey {
     var stringValue: String
@@ -140,31 +139,31 @@ internal struct LogEncoder {
     init?(intValue: Int) { return nil }
     init(_ string: String) { self.stringValue = string }
   }
-  
+
   func encode(_ log: DDLog, to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: StaticCodingKeys.self)
     try container.encode(log.date, forKey: .date)
     try container.encode(log.status, forKey: .status)
     try container.encode(log.message, forKey: .message)
     try container.encode(log.serviceName, forKey: .serviceName)
-    
+
     // Encode logger info
     try container.encode(log.loggerName, forKey: .loggerName)
     try container.encode(log.loggerVersion, forKey: .loggerVersion)
     try container.encode(log.threadName, forKey: .threadName)
-    
+
     // Encode application info
     try container.encode(log.applicationVersion, forKey: .applicationVersion)
-    
+
     // Encode attributes...
     var attributesContainer = encoder.container(keyedBy: DynamicCodingKey.self)
-    
+
     // ... first, user attributes ...
     let encodableUserAttributes = Dictionary(
       uniqueKeysWithValues: log.attributes.userAttributes.map { name, value in (name, EncodableValue(value)) }
     )
     try encodableUserAttributes.forEach { try attributesContainer.encode($0.value, forKey: DynamicCodingKey($0.key)) }
-    
+
     // ... then, internal attributes:
     if let internalAttributes = log.attributes.internalAttributes {
       let encodableInternalAttributes = Dictionary(
@@ -172,7 +171,7 @@ internal struct LogEncoder {
       )
       try encodableInternalAttributes.forEach { try attributesContainer.encode($0.value, forKey: DynamicCodingKey($0.key)) }
     }
-    
+
     // Encode tags
     var tags = log.tags ?? []
     tags.append("env:\(log.environment)") // include default tag

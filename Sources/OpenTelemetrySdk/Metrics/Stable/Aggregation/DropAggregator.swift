@@ -11,15 +11,15 @@ public class DropAggregator: StableAggregator {
     public func createHandle() -> AggregatorHandle {
         AggregatorHandle(exemplarReservoir: ExemplarReservoirCollection.doubleNoSamples())
     }
-    
+
     public func diff(previousCumulative: PointData, currentCumulative: PointData) -> PointData {
         Self.POINT_DATA
     }
-    
+
     public func toPoint(measurement: Measurement) -> PointData {
         Self.POINT_DATA
     }
-    
+
     public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [PointData], temporality: AggregationTemporality) -> StableMetricData {
         StableMetricData.empty
     }

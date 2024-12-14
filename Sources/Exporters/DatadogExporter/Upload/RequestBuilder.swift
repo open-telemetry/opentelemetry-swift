@@ -32,7 +32,7 @@ internal struct RequestBuilder {
     }
 
     enum ContentEncoding: String {
-        case deflate = "deflate"
+        case deflate
     }
 
     struct HTTPHeader {
@@ -43,7 +43,6 @@ internal struct RequestBuilder {
         static let ddEVPOriginHeaderField = "DD-EVP-ORIGIN"
         static let ddEVPOriginVersionHeaderField = "DD-EVP-ORIGIN-VERSION"
         static let ddRequestIDHeaderField = "DD-REQUEST-ID"
-
 
         enum Value {
             /// If the header's value is constant.

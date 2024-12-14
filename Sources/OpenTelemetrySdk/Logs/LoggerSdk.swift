@@ -6,19 +6,19 @@
 import Foundation
 import OpenTelemetryApi
 
-public class LoggerSdk : OpenTelemetryApi.Logger {
+public class LoggerSdk: OpenTelemetryApi.Logger {
     private let sharedState: LoggerSharedState
-    private let instrumentationScope : InstrumentationScopeInfo
+    private let instrumentationScope: InstrumentationScopeInfo
     private let eventDomain: String?
     private let withTraceContext: Bool
 
-    init(sharedState : LoggerSharedState, instrumentationScope: InstrumentationScopeInfo, eventDomain: String?, withTraceContext: Bool = true) {
+    init(sharedState: LoggerSharedState, instrumentationScope: InstrumentationScopeInfo, eventDomain: String?, withTraceContext: Bool = true) {
         self.sharedState = sharedState
         self.instrumentationScope = instrumentationScope
         self.eventDomain = eventDomain
         self.withTraceContext = withTraceContext
     }
-    
+
     public func eventBuilder(name: String) -> OpenTelemetryApi.EventBuilder {
         guard let eventDomain = self.eventDomain else {
             OpenTelemetry.instance.feedbackHandler?("Events cannot be emitted from Logger without an event domain. Use `LoggerBuilder.setEventDomain(_ domain: String) when obtaining a Logger.")
@@ -27,12 +27,11 @@ public class LoggerSdk : OpenTelemetryApi.Logger {
         return LogRecordBuilderSdk(sharedState: sharedState, instrumentationScope: instrumentationScope, includeSpanContext: true).setAttributes(["event.domain": AttributeValue.string(eventDomain),
                                                                                                                                                   "event.name": AttributeValue.string(name)])
     }
-    
+
     public func logRecordBuilder() -> OpenTelemetryApi.LogRecordBuilder {
         return LogRecordBuilderSdk(sharedState: sharedState, instrumentationScope: instrumentationScope, includeSpanContext: true)
     }
-    
-    
+
     func withEventDomain(domain: String) -> LoggerSdk {
         if eventDomain == domain {
             return self
@@ -40,9 +39,9 @@ public class LoggerSdk : OpenTelemetryApi.Logger {
             return LoggerSdk(sharedState: sharedState, instrumentationScope: instrumentationScope, eventDomain: domain, withTraceContext: withTraceContext)
         }
     }
-    
+
     func withoutTraceContext() -> LoggerSdk {
         return LoggerSdk(sharedState: sharedState, instrumentationScope: instrumentationScope, eventDomain: self.eventDomain, withTraceContext: false)
     }
-    
+
 }

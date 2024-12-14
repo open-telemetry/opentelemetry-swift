@@ -5,7 +5,7 @@
 
 import Foundation
 
-public protocol DoubleHistogramBuilder : AnyObject {
+public protocol DoubleHistogramBuilder: AnyObject {
     func ofLongs() -> LongHistogramBuilder
 
     func build() -> DoubleHistogram

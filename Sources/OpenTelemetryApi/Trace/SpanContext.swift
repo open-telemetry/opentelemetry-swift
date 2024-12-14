@@ -84,7 +84,7 @@ public struct SpanContext: Equatable, CustomStringConvertible, Hashable, Codable
     public var description: String {
         return "SpanContext{traceId=\(traceId), spanId=\(spanId), traceFlags=\(traceFlags)}, isRemote=\(isRemote)"
     }
-    
+
     public func hash(into hasher: inout Hasher) {
         hasher.combine(spanId)
     }

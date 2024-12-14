@@ -18,13 +18,13 @@ public struct NoopMetricData: MetricData {
 }
 
 public struct SumData<T>: MetricData {
-    public init(startTimestamp: Date, timestamp: Date, labels: [String : String] = [String: String](), sum: T) {
+    public init(startTimestamp: Date, timestamp: Date, labels: [String: String] = [String: String](), sum: T) {
         self.startTimestamp = startTimestamp
         self.timestamp = timestamp
         self.labels = labels
         self.sum = sum
     }
-    
+
     public var startTimestamp: Date
     public var timestamp: Date
     public var labels: [String: String] = [String: String]()
@@ -32,7 +32,7 @@ public struct SumData<T>: MetricData {
 }
 
 public struct SummaryData<T>: MetricData {
-    public init(startTimestamp: Date, timestamp: Date, labels: [String : String] = [String: String](), count: Int, sum: T, min: T, max: T) {
+    public init(startTimestamp: Date, timestamp: Date, labels: [String: String] = [String: String](), count: Int, sum: T, min: T, max: T) {
         self.startTimestamp = startTimestamp
         self.timestamp = timestamp
         self.labels = labels
@@ -41,7 +41,7 @@ public struct SummaryData<T>: MetricData {
         self.min = min
         self.max = max
     }
-    
+
     public var startTimestamp: Date
     public var timestamp: Date
     public var labels: [String: String] = [String: String]()
@@ -52,7 +52,7 @@ public struct SummaryData<T>: MetricData {
 }
 
 public struct HistogramData<T>: MetricData {
-    public init(startTimestamp: Date, timestamp: Date, labels: [String : String] = [String: String](), buckets: (boundaries: Array<T>, counts: Array<Int>), count: Int, sum: T) {
+    public init(startTimestamp: Date, timestamp: Date, labels: [String: String] = [String: String](), buckets: (boundaries: Array<T>, counts: Array<Int>), count: Int, sum: T) {
         self.startTimestamp = startTimestamp
         self.timestamp = timestamp
         self.labels = labels
@@ -60,7 +60,7 @@ public struct HistogramData<T>: MetricData {
         self.count = count
         self.sum = sum
     }
-    
+
     public var startTimestamp: Date
     public var timestamp: Date
     public var labels: [String: String] = [String: String]()
@@ -103,40 +103,40 @@ extension HistogramData: Codable where T: Codable {
         case count
         case sum
     }
-    
+
     enum BucketsCodingKeys: String, CodingKey {
         case boundaries
-        case counts        
+        case counts
     }
-    
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        
+
         let startTimestamp = try container.decode(Date.self, forKey: .startTimestamp)
         let timestamp = try container.decode(Date.self, forKey: .timestamp)
         let labels = try container.decode([String: String].self, forKey: .labels)
-        
+
         let bucketsContainer = try container.nestedContainer(keyedBy: BucketsCodingKeys.self, forKey: .buckets)
         let bucketsBoundaries = try bucketsContainer.decode([T].self, forKey: .boundaries)
         let bucketsCounts = try bucketsContainer.decode([Int].self, forKey: .counts)
-        
+
         let count = try container.decode(Int.self, forKey: .count)
         let sum = try container.decode(T.self, forKey: .sum)
-        
+
         self.init(startTimestamp: startTimestamp, timestamp: timestamp, labels: labels, buckets: (boundaries: bucketsBoundaries, counts: bucketsCounts), count: count, sum: sum)
     }
-    
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        
+
         try container.encode(startTimestamp, forKey: .startTimestamp)
         try container.encode(timestamp, forKey: .timestamp)
         try container.encode(labels, forKey: .labels)
-        
+
         var bucketsContainer = container.nestedContainer(keyedBy: BucketsCodingKeys.self, forKey: .buckets)
         try bucketsContainer.encode(buckets.boundaries, forKey: .boundaries)
         try bucketsContainer.encode(buckets.counts, forKey: .counts)
-        
+
         try container.encode(count, forKey: .count)
         try container.encode(sum, forKey: .sum)
     }

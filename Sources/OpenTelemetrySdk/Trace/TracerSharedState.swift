@@ -25,8 +25,7 @@ class TracerSharedState {
          resource: Resource,
          spanLimits: SpanLimits,
          sampler: Sampler,
-         spanProcessors: [SpanProcessor])
-    {
+         spanProcessors: [SpanProcessor]) {
         self.clock = clock
         self.idGenerator = idGenerator
         self.resource = resource

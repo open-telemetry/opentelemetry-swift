@@ -8,9 +8,9 @@ import OpenTelemetryApi
 
 public class CallbackRegistration {
     var observableMeasurements = [StableObservableMeasurementSdk]()
-    var callback : ()->()
-    var instrumentDescriptors : [InstrumentDescriptor]
-    var hasStorages : Bool
+    var callback: () -> Void
+    var instrumentDescriptors: [InstrumentDescriptor]
+    var hasStorages: Bool
     init(observableMeasurements: [StableObservableMeasurementSdk], callback: @escaping () -> Void) {
         self.observableMeasurements = observableMeasurements
         self.callback = callback
@@ -19,11 +19,11 @@ public class CallbackRegistration {
         }
         self.hasStorages = !observableMeasurements.map { measurement in
             measurement.storages
-            
+
         }.isEmpty
     }
-    
-    public func execute(reader : RegisteredReader, startEpochNanos : UInt64, epochNanos : UInt64) {
+
+    public func execute(reader: RegisteredReader, startEpochNanos: UInt64, epochNanos: UInt64) {
         if !hasStorages {
             return
         }
@@ -36,4 +36,3 @@ public class CallbackRegistration {
         }
     }
 }
-

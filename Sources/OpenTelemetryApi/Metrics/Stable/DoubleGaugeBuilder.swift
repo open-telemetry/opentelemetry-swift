@@ -5,7 +5,7 @@
 
 import Foundation
 
-public protocol DoubleGaugeBuilder : AnyObject {
+public protocol DoubleGaugeBuilder: AnyObject {
     func ofLongs() -> LongGaugeBuilder
-    func buildWithCallback(_ callback: @escaping (ObservableDoubleMeasurement)->Void) -> ObservableDoubleGauge
+    func buildWithCallback(_ callback: @escaping (ObservableDoubleMeasurement) -> Void) -> ObservableDoubleGauge
 }

@@ -21,7 +21,7 @@ public class OperatingSystemDataSource: IOperatingSystemDataSource {
     public var type: String {
         ResourceAttributes.OsTypeValues.darwin.description
     }
-    
+
     public var name: String {
         #if os(watchOS)
             return "watchOS"
@@ -31,7 +31,7 @@ public class OperatingSystemDataSource: IOperatingSystemDataSource {
             return UIDevice.current.systemName
         #endif
     }
-    
+
     public var version: String {
         let version = ProcessInfo.processInfo.operatingSystemVersion
         return "\(version.majorVersion).\(version.minorVersion).\(version.patchVersion)"

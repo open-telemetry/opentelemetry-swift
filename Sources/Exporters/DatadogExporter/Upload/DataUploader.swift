@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 import Foundation
 
 /// A type that performs data uploads.

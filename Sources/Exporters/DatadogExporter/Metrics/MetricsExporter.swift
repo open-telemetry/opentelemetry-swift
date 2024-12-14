@@ -48,7 +48,7 @@ internal class MetricsExporter {
                 .ddAPIKeyHeader(apiKey: configuration.apiKey),
                 .ddEVPOriginHeader(source: configuration.source),
                 .ddEVPOriginVersionHeader(version: configuration.version),
-                .ddRequestIDHeader(),
+                .ddRequestIDHeader()
             ]
         )
 

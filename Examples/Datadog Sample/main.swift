@@ -48,7 +48,7 @@ sleep(10)
 
 func testTraces() {
     let spanProcessor = SimpleSpanProcessor(spanExporter: datadogExporter)
-    
+
     OpenTelemetry.registerTracerProvider(tracerProvider:
         TracerProviderBuilder()
             .add(spanProcessor: spanProcessor)

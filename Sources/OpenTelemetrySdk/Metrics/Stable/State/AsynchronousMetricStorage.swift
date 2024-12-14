@@ -18,24 +18,23 @@ public class AsynchronousMetricStorage: MetricStorage {
     static func create(registeredReader: RegisteredReader, registeredView: RegisteredView, instrumentDescriptor: InstrumentDescriptor) -> AsynchronousMetricStorage {
         let view = registeredView.view
         let metricDescriptor = MetricDescriptor(view: view, instrument: instrumentDescriptor)
-        
+
         let aggregator = view.aggregation.createAggregator(descriptor: instrumentDescriptor, exemplarFilter: AlwaysOffFilter())
-        
+
         return AsynchronousMetricStorage(registeredReader: registeredReader, metricDescriptor: metricDescriptor, aggregator: aggregator, attributeProcessor: registeredView.attributeProcessor)
     }
-    
+
     init(registeredReader: RegisteredReader,
          metricDescriptor: MetricDescriptor,
          aggregator: StableAggregator,
-         attributeProcessor: AttributeProcessor)
-    {
+         attributeProcessor: AttributeProcessor) {
         self.registeredReader = registeredReader
         self.metricDescriptor = metricDescriptor
         self.aggregationTemporality = registeredReader.reader.getAggregationTemporality(for: metricDescriptor.instrument.type)
         self.aggregator = aggregator
         self.attributeProcessor = attributeProcessor
     }
-    
+
     func record(measurement: Measurement) {
         let processedAttributes = attributeProcessor.process(incoming: measurement.attributes)
         let start = aggregationTemporality == AggregationTemporality.delta ? registeredReader.lastCollectedEpochNanos : measurement.startEpochNano
@@ -48,20 +47,20 @@ public class AsynchronousMetricStorage: MetricStorage {
             // TODO: log default error
         }
     }
-    
+
     private func recordPoint(point: PointData) {
         let attributes = point.attributes
         if points.count >= MetricStorageConstants.MAX_CARDINALITY {
             // TODO: log error
             return
         }
-        if let _ = points[attributes] {
+        if points[attributes] != nil {
             // TODO: error multiple values for same attributes
             return
         }
         points[attributes] = point
     }
-    
+
     public func collect(resource: Resource, scope: InstrumentationScopeInfo, startEpochNanos: UInt64, epochNanos: UInt64) -> StableMetricData {
         var result: [[String: AttributeValue]: PointData]
         if aggregationTemporality == .delta {
@@ -70,7 +69,7 @@ public class AsynchronousMetricStorage: MetricStorage {
             lastPoints = lastPoints.filter { element in
                 points[element.key] == nil // remove if points does not contain key
             }
-            
+
             result = Dictionary(uniqueKeysWithValues: points.map { k, v in
                 do {
                     if let lastValue = lastPoints[k] {
@@ -88,7 +87,7 @@ public class AsynchronousMetricStorage: MetricStorage {
         points = [[String: AttributeValue]: PointData]()
         return aggregator.toMetricData(resource: resource, scope: scope, descriptor: metricDescriptor, points: Array(result.values), temporality: aggregationTemporality)
     }
-    
+
     public func isEmpty() -> Bool {
         type(of: aggregator) == DropAggregator.self
     }

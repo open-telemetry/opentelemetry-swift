@@ -6,69 +6,68 @@
 import Foundation
 import OpenTelemetryApi
 
-public protocol AttributeProcessor  {
-    func process(incoming : [String: AttributeValue]) -> [String: AttributeValue]
+public protocol AttributeProcessor {
+    func process(incoming: [String: AttributeValue]) -> [String: AttributeValue]
 }
 
 public extension AttributeProcessor {
-    func then(other : AttributeProcessor) -> AttributeProcessor {
+    func then(other: AttributeProcessor) -> AttributeProcessor {
         if type(of: other) == NoopAttributeProcessor.self {
             return self
         }
         if type(of: self) == NoopAttributeProcessor.self {
             return other
         }
-        
+
         if let joined = self as? JoinedAttributeProcessor {
-            return joined.append(processor:other)
+            return joined.append(processor: other)
         }
         if let joined = other as? JoinedAttributeProcessor {
-            return joined.prepend(processor:self)
+            return joined.prepend(processor: self)
         }
 
         return JoinedAttributeProcessor([self, other])
     }
 }
 
-public class SimpleAttributeProcessor : AttributeProcessor {
-    let attributeProcessor : ([String: AttributeValue]) -> [String:AttributeValue]
-    
-    init(attributeProcessor : @escaping ([String: AttributeValue]) -> [String: AttributeValue]) {
+public class SimpleAttributeProcessor: AttributeProcessor {
+    let attributeProcessor: ([String: AttributeValue]) -> [String: AttributeValue]
+
+    init(attributeProcessor: @escaping ([String: AttributeValue]) -> [String: AttributeValue]) {
         self.attributeProcessor = attributeProcessor
     }
-    
-    public func process(incoming: [String : AttributeValue]) -> [String : AttributeValue] {
+
+    public func process(incoming: [String: AttributeValue]) -> [String: AttributeValue] {
         return attributeProcessor(incoming)
     }
-    
-    static func filterByKeyName( nameFilter : @escaping (String) -> Bool) -> AttributeProcessor {
+
+    static func filterByKeyName( nameFilter: @escaping (String) -> Bool) -> AttributeProcessor {
         return SimpleAttributeProcessor { attributes in
-            attributes.filter { key, value in
+            attributes.filter { key, _ in
                 nameFilter(key)
             }
         }
     }
-    
-    static func append(attributes: [String : AttributeValue]) -> AttributeProcessor {
+
+    static func append(attributes: [String: AttributeValue]) -> AttributeProcessor {
         SimpleAttributeProcessor { incoming in
-            incoming.merging(attributes) { a, b in
+            incoming.merging(attributes) { _, b in
                 b
             }
         }
     }
 }
 
+public class JoinedAttributeProcessor: AttributeProcessor {
 
-public class JoinedAttributeProcessor : AttributeProcessor {
-    
-    public func process(incoming: [String : AttributeValue]) -> [String : AttributeValue] {
+    public func process(incoming: [String: AttributeValue]) -> [String: AttributeValue] {
         var result = incoming
         for processor in processors {
             result = processor.process(incoming: result)
         }
         return result
     }
-    
+
     public func append(processor: AttributeProcessor) -> JoinedAttributeProcessor {
         var newList = processors
         if let joinedProcessor = processor as? JoinedAttributeProcessor {
@@ -78,24 +77,24 @@ public class JoinedAttributeProcessor : AttributeProcessor {
         }
         return JoinedAttributeProcessor(newList)
     }
-    
+
     public func prepend(processor: AttributeProcessor) -> JoinedAttributeProcessor {
         var newProcessors = [processor]
         newProcessors.append(contentsOf: processors)
         return JoinedAttributeProcessor(newProcessors)
     }
-    
+
     var processors = [AttributeProcessor]()
-    init(_ processors : [AttributeProcessor]) {
+    init(_ processors: [AttributeProcessor]) {
         self.processors = processors
     }
-    
+
 }
 
-public class NoopAttributeProcessor : AttributeProcessor {
+public class NoopAttributeProcessor: AttributeProcessor {
     static let noop = NoopAttributeProcessor()
     private init() {}
-    public func process(incoming: [String : AttributeValue]) -> [String : AttributeValue] {
+    public func process(incoming: [String: AttributeValue]) -> [String: AttributeValue] {
         return incoming
     }
 }

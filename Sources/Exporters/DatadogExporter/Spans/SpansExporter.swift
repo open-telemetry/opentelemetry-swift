@@ -48,7 +48,7 @@ internal class SpansExporter {
                 .ddAPIKeyHeader(apiKey: config.apiKey),
                 .ddEVPOriginHeader(source: configuration.source),
                 .ddEVPOriginVersionHeader(version: configuration.version),
-                .ddRequestIDHeader(),
+                .ddRequestIDHeader()
             ] + (configuration.payloadCompression ? [RequestBuilder.HTTPHeader.contentEncodingHeader(contentEncoding: .deflate)] : [])
         )
 

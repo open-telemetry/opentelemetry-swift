@@ -11,20 +11,19 @@ public struct ProxyMeter: Meter {
     public func createRawDoubleCounter(name: String) -> AnyRawCounterMetric<Double> {
         return realMeter?.createRawDoubleCounter(name: name) ?? AnyRawCounterMetric<Double>(NoopRawCounterMetric<Double>())
     }
-    
-    
+
     public func createRawIntCounter(name: String) -> AnyRawCounterMetric<Int> {
         return realMeter?.createRawIntCounter(name: name) ?? AnyRawCounterMetric<Int>(NoopRawCounterMetric<Int>())
     }
-    
+
     public func createRawDoubleHistogram(name: String) -> AnyRawHistogramMetric<Double> {
         return realMeter?.createRawDoubleHistogram(name: name) ?? AnyRawHistogramMetric<Double>(NoopRawHistogramMetric<Double>())
     }
-    
+
     public func createRawIntHistogram(name: String) -> AnyRawHistogramMetric<Int> {
         return realMeter?.createRawIntHistogram(name: name) ?? AnyRawHistogramMetric<Int>(NoopRawHistogramMetric<Int>())
     }
-    
+
     private var realMeter: Meter?
 
     public func getLabelSet(labels: [String: String]) -> LabelSet {
@@ -46,12 +45,12 @@ public struct ProxyMeter: Meter {
     public func createDoubleMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Double> {
         return realMeter?.createDoubleMeasure(name: name, absolute: absolute) ?? AnyMeasureMetric<Double>(NoopMeasureMetric<Double>())
     }
-    
-    public func createIntHistogram(name: String, explicitBoundaries: Array<Int>? = nil, absolute: Bool) -> AnyHistogramMetric<Int> {
+
+    public func createIntHistogram(name: String, explicitBoundaries: [Int]? = nil, absolute: Bool) -> AnyHistogramMetric<Int> {
         return realMeter?.createIntHistogram(name: name, explicitBoundaries: explicitBoundaries, absolute: absolute) ?? AnyHistogramMetric<Int>(NoopHistogramMetric<Int>())
     }
-    
-    public func createDoubleHistogram(name: String, explicitBoundaries: Array<Double>?, absolute: Bool) -> AnyHistogramMetric<Double> {
+
+    public func createDoubleHistogram(name: String, explicitBoundaries: [Double]?, absolute: Bool) -> AnyHistogramMetric<Double> {
         return realMeter?.createDoubleHistogram(name: name, explicitBoundaries: explicitBoundaries, absolute: absolute) ?? AnyHistogramMetric<Double>(NoopHistogramMetric<Double>())
     }
 

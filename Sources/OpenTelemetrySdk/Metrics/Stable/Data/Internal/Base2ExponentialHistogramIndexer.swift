@@ -10,8 +10,8 @@ public class Base2ExponentialHistogramIndexer {
     private static var cache = [Int: Base2ExponentialHistogramIndexer]()
     private static var cacheLock = Lock()
 
-    private let scale : Int
-    private let scaleFactor : Double
+    private let scale: Int
+    private let scaleFactor: Double
 
     init(scale: Int) {
         self.scale = scale
@@ -43,11 +43,11 @@ public class Base2ExponentialHistogramIndexer {
         return mapToIndexScaleZero(absValue) >> -scale
     }
 
-    func indexByLogarithm(_ value : Double) -> Int {
+    func indexByLogarithm(_ value: Double) -> Int {
         Int(ceil(log(value) * scaleFactor) - 1)
     }
 
-    func mapToIndexScaleZero(_ value : Double) -> Int {
+    func mapToIndexScaleZero(_ value: Double) -> Int {
         let raw = value.bitPattern
         var rawExponent = Int((Int64(raw) & Int64(0x7FF0_0000_0000_0000)) >> Int.significandWidth)
         let rawSignificand = Int(Int64(raw) & Int64(0xF_FFFF_FFFF_FFFF))

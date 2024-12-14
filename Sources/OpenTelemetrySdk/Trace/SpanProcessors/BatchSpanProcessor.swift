@@ -18,13 +18,13 @@ public struct BatchSpanProcessor: SpanProcessor {
   fileprivate static let SPAN_PROCESSOR_TYPE_LABEL: String = "processorType"
   fileprivate static let SPAN_PROCESSOR_DROPPED_LABEL: String = "dropped"
   fileprivate static let SPAN_PROCESSOR_TYPE_VALUE: String = BatchSpanProcessor.name
-  
+
   fileprivate var worker: BatchWorker
-  
+
   public static var name: String {
     String(describing: Self.self)
   }
-  
+
   public init(
     spanExporter: SpanExporter,
     meterProvider: StableMeterProvider? = nil,
@@ -45,24 +45,24 @@ public struct BatchSpanProcessor: SpanProcessor {
     )
     worker.start()
   }
-  
+
   public let isStartRequired = false
   public let isEndRequired = true
-  
+
   public func onStart(parentContext: SpanContext?, span: ReadableSpan) {}
-  
+
   public func onEnd(span: ReadableSpan) {
     if !span.context.traceFlags.sampled {
       return
     }
     worker.addSpan(span: span)
   }
-  
+
   public func shutdown(explicitTimeout: TimeInterval? = nil) {
     worker.cancel()
     worker.shutdown()
   }
-  
+
   public func forceFlush(timeout: TimeInterval? = nil) {
     worker.forceFlush(explicitTimeout: timeout)
   }
@@ -83,11 +83,11 @@ private class BatchWorker: Thread {
   private let cond = NSCondition()
   var spanList = [ReadableSpan]()
   var queue: OperationQueue
-  
+
   private var queueSizeGauge: ObservableLongGauge?
   private var spanGaugeObserver: ObservableLongGauge?
   private var processedSpansCounter: LongCounter?
-  
+
   init(
     spanExporter: SpanExporter,
     meterProvider: StableMeterProvider? = nil,
@@ -108,9 +108,9 @@ private class BatchWorker: Thread {
     queue = OperationQueue()
     queue.name = "BatchWorker Queue"
     queue.maxConcurrentOperationCount = 1
-    
+
     if let meter = meterProvider?.meterBuilder(name: "io.opentelemetry.sdk.trace").build() {
-      
+
       var longGaugeSdk = meter.gaugeBuilder(name: "queueSize").ofLongs() as? LongGaugeBuilderSdk
       longGaugeSdk = longGaugeSdk?.setDescription("The number of items queued")
       longGaugeSdk = longGaugeSdk?.setUnit("1")
@@ -122,12 +122,12 @@ private class BatchWorker: Thread {
           ]
         )
       }
-      
+
       var longCounterSdk = meter.counterBuilder(name: "processedSpans") as? LongCounterMeterBuilderSdk
       longCounterSdk = longCounterSdk?.setUnit("1")
       longCounterSdk = longCounterSdk?.setDescription("The number of spans processed by the BatchSpanProcessor. [dropped=true if they were dropped due to high throughput]")
       processedSpansCounter = longCounterSdk?.build()
-      
+
       // Subscribe to new gauge observer
       self.spanGaugeObserver =  meter.gaugeBuilder(name: "spanSize")
         .ofLongs()
@@ -141,17 +141,17 @@ private class BatchWorker: Thread {
         }
     }
   }
-  
+
   deinit {
     // Cleanup all gauge observer
     self.queueSizeGauge?.close()
     self.spanGaugeObserver?.close()
   }
-  
+
   func addSpan(span: ReadableSpan) {
     cond.lock()
     defer { cond.unlock() }
-    
+
     if spanList.count == maxQueueSize {
       processedSpansCounter?.add(value: 1, attribute: [
         BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE),
@@ -160,14 +160,14 @@ private class BatchWorker: Thread {
       return
     }
     spanList.append(span)
-    
+
     // Notify the worker thread that at half of the queue is available. It will take
     // time anyway for the thread to wake up.
     if spanList.count >= halfMaxQueueSize {
       cond.broadcast()
     }
   }
-  
+
   override func main() {
     repeat {
       autoreleasepool {
@@ -185,12 +185,12 @@ private class BatchWorker: Thread {
       }
     } while !self.isCancelled
   }
-  
+
   func shutdown() {
     forceFlush(explicitTimeout: self.exportTimeout)
     spanExporter.shutdown()
   }
-  
+
   public func forceFlush(explicitTimeout: TimeInterval? = nil) {
     var spansCopy: [ReadableSpan]
     cond.lock()
@@ -200,7 +200,7 @@ private class BatchWorker: Thread {
     // Execute the batch export outside the synchronized to not block all producers.
     exportBatch(spanList: spansCopy, explicitTimeout: explicitTimeout)
   }
-  
+
   private func exportBatch(spanList: [ReadableSpan], explicitTimeout: TimeInterval? = nil) {
     let maxTimeOut = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, exportTimeout)
     let exportOperation = BlockOperation { [weak self] in
@@ -210,14 +210,14 @@ private class BatchWorker: Thread {
     timeoutTimer.setEventHandler {
       exportOperation.cancel()
     }
-    
+
     timeoutTimer.schedule(deadline: .now() + .milliseconds(Int(maxTimeOut.toMilliseconds)), leeway: .milliseconds(1))
     timeoutTimer.activate()
     queue.addOperation(exportOperation)
     queue.waitUntilAllOperationsAreFinished()
     timeoutTimer.cancel()
   }
-  
+
   private func exportAction(spanList: [ReadableSpan], explicitTimeout: TimeInterval? = nil) {
     stride(from: 0, to: spanList.endIndex, by: maxExportBatchSize).forEach {
       var spansToExport = spanList[$0 ..< min($0 + maxExportBatchSize, spanList.count)].map { $0.toSpanData() }
@@ -225,10 +225,10 @@ private class BatchWorker: Thread {
       let result = spanExporter.export(spans: spansToExport, explicitTimeout: explicitTimeout)
       if result == .success {
         cond.lock()
-        processedSpansCounter?.add(value: spanList.count, attribute:  [
+        processedSpansCounter?.add(value: spanList.count, attribute: [
           BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE),
           BatchSpanProcessor.SPAN_PROCESSOR_DROPPED_LABEL: .bool(false)])
-        cond.unlock();
+        cond.unlock()
       }
     }
   }

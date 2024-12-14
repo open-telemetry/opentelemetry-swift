@@ -71,7 +71,9 @@ public struct W3CTraceContextPropagator: TextMapPropagator {
                                                   traceState: traceState ?? TraceState())
     }
 
-    private func extractTraceparent(traceparent: String?) -> (traceId: TraceId, spanId: SpanId, traceOptions: TraceFlags)? {
+    private func extractTraceparent(traceparent: String?) -> (traceId: TraceId,
+                                                              spanId: SpanId,
+                                                              traceOptions: TraceFlags)? {
         var traceId = TraceId.invalid
         var spanId = SpanId.invalid
         var traceOptions = TraceFlags()
@@ -136,7 +138,8 @@ public struct W3CTraceContextPropagator: TextMapPropagator {
         }
 
         if bestAttempt {
-            if traceparent.count > W3CTraceContextPropagator.traceparentLengthV0 && traceparentArray[W3CTraceContextPropagator.traceparentLengthV0] != W3CTraceContextPropagator.delimiter {
+            if traceparent.count > W3CTraceContextPropagator.traceparentLengthV0 &&
+                traceparentArray[W3CTraceContextPropagator.traceparentLengthV0] != W3CTraceContextPropagator.delimiter {
                 return nil
             }
         }
@@ -150,10 +153,8 @@ public struct W3CTraceContextPropagator: TextMapPropagator {
 
         var entries = [TraceState.Entry]()
 
-        for traceState in traceStatecollection.reversed() {
-            if !TraceStateUtils.appendTraceState(traceStateString: traceState, traceState: &entries) {
+        for traceState in traceStatecollection.reversed() where !TraceStateUtils.appendTraceState(traceStateString: traceState, traceState: &entries) {
                 return nil
-            }
         }
         return TraceState(entries: entries)
     }
