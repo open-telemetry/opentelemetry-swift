@@ -5,9 +5,8 @@
 
 import Foundation
 
-
-public protocol Instrument : Equatable {
-    var instrumentDescriptor : InstrumentDescriptor { get }    
+public protocol Instrument: Equatable {
+    var instrumentDescriptor: InstrumentDescriptor { get }
 }
 
 extension Instrument {
@@ -15,4 +14,3 @@ extension Instrument {
         return lhs.instrumentDescriptor == rhs.instrumentDescriptor
     }
 }
-

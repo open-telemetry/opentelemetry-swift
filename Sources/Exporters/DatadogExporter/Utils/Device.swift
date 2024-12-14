@@ -23,8 +23,7 @@ internal class Device {
     init(
         model: String,
         osName: String,
-        osVersion: String)
-    {
+        osVersion: String) {
         self.model = model
         self.osName = osName
         self.osVersion = osVersion

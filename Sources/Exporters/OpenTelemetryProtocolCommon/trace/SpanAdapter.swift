@@ -21,7 +21,7 @@ public struct SpanAdapter {
         }
         scopeSpans.append(protoInst)
       }
-      
+
       var resourceSpan = Opentelemetry_Proto_Trace_V1_ResourceSpans()
       resourceSpan.resource = ResourceAdapter.toProtoResource(resource: resMap.key)
       resourceSpan.scopeSpans.append(contentsOf: scopeSpans)
@@ -29,7 +29,7 @@ public struct SpanAdapter {
     }
     return resourceSpans
   }
-  
+
   private static func groupByResourceAndScope(spanDataList: [SpanData]) -> [Resource: [InstrumentationScopeInfo: [Opentelemetry_Proto_Trace_V1_Span]]] {
     var result = [Resource: [InstrumentationScopeInfo: [Opentelemetry_Proto_Trace_V1_Span]]]()
     spanDataList.forEach {
@@ -38,7 +38,7 @@ public struct SpanAdapter {
     }
     return result
   }
-  
+
   public static func toProtoSpan(spanData: SpanData) -> Opentelemetry_Proto_Trace_V1_Span {
     var protoSpan = Opentelemetry_Proto_Trace_V1_Span()
     protoSpan.traceID = TraceProtoUtils.toProtoTraceId(traceId: spanData.traceId)
@@ -58,7 +58,7 @@ public struct SpanAdapter {
       protoSpan.events.append(toProtoSpanEvent(event: $0))
     }
     protoSpan.droppedEventsCount = UInt32(spanData.totalRecordedEvents - spanData.events.count)
-    
+
     spanData.links.forEach {
       protoSpan.links.append(toProtoSpanLink(link: $0))
     }
@@ -66,7 +66,7 @@ public struct SpanAdapter {
     protoSpan.status = toStatusProto(status: spanData.status)
     return protoSpan
   }
-  
+
   public static func toProtoSpanKind(kind: SpanKind) -> Opentelemetry_Proto_Trace_V1_Span.SpanKind {
     switch kind {
     case .internal:
@@ -81,7 +81,7 @@ public struct SpanAdapter {
       return Opentelemetry_Proto_Trace_V1_Span.SpanKind.consumer
     }
   }
-  
+
   public static func toProtoSpanEvent(event: SpanData.Event) -> Opentelemetry_Proto_Trace_V1_Span.Event {
     var protoEvent = Opentelemetry_Proto_Trace_V1_Span.Event()
     protoEvent.name = event.name
@@ -91,7 +91,7 @@ public struct SpanAdapter {
     }
     return protoEvent
   }
-  
+
   public static func toProtoSpanLink(link: SpanData.Link) -> Opentelemetry_Proto_Trace_V1_Span.Link {
     var protoLink = Opentelemetry_Proto_Trace_V1_Span.Link()
     protoLink.traceID = TraceProtoUtils.toProtoTraceId(traceId: link.context.traceId)
@@ -101,7 +101,7 @@ public struct SpanAdapter {
     }
     return protoLink
   }
-  
+
   public static func toStatusProto(status: Status) -> Opentelemetry_Proto_Trace_V1_Status {
     var statusProto = Opentelemetry_Proto_Trace_V1_Status()
     switch status {

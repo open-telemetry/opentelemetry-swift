@@ -7,7 +7,7 @@ import Foundation
 
 public class ApplicationDataSource: IApplicationDataSource {
     public init() {}
-    
+
     public var name: String? {
         Bundle.main.infoDictionary?[kCFBundleNameKey as String] as? String
     }

@@ -6,7 +6,7 @@
 import Foundation
 
 struct NetworkUtils {
-    
+
     static func isValidIpv4Address(_ ipToValidate: String) -> Bool {
         var sin = sockaddr_in()
         if ipToValidate.withCString({ cstring in inet_pton(AF_INET, cstring, &sin.sin_addr) }) == 1 {

@@ -13,7 +13,7 @@ internal struct LogSanitizer {
         static let reservedAttributeNames: Set<String> = [
             "host", "message", "status", "service", "source", "ddtags",
             DDLog.TracingAttributes.traceID,
-            DDLog.TracingAttributes.spanID,
+            DDLog.TracingAttributes.spanID
         ]
         /// Maximum number of nested levels in attribute name. E.g. `person.address.street` has 3 levels.
         /// If attribute name exceeds this number, extra levels are escaped by using `_` character (`one.two.(...).nine.ten_eleven_twelve`).
@@ -30,7 +30,7 @@ internal struct LogSanitizer {
         /// Tag keys reserved for Datadog.
         /// If any of those is used by user, the tag will be ignored.
         static let reservedTagKeys: Set<String> = [
-            "host", "device", "source", "service", "env",
+            "host", "device", "source", "service", "env"
         ]
         /// Maximum number of attributes in log.
         /// If this number is exceeded, extra attributes will be ignored.

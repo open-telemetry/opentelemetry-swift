@@ -11,7 +11,7 @@ import PrometheusExporter
 print("Hello Prometheus")
 
 //
-//You should use here your real local address, change it also in the prometheus.yml file
+// You should use here your real local address, change it also in the prometheus.yml file
 let localAddress = "192.168.1.28"
 //
 
@@ -30,7 +30,6 @@ DispatchQueue.global(qos: .default).async {
 
 let processor = MetricProcessorSdk()
 
-
 let meterProvider = MeterProviderSdk(metricProcessor: processor, metricExporter: promExporter, metricPushInterval: 0.1)
 OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
 
@@ -39,7 +38,7 @@ var meter = meterProvider.get(instrumentationName: "MyMeter")
 var testCounter = meter.createIntCounter(name: "MyCounter")
 var testMeasure = meter.createIntMeasure(name: "MyMeasure")
 
-let boundaries: Array<Int> = [5, 10, 25]
+let boundaries: [Int] = [5, 10, 25]
 var testHistogram = meter.createIntHistogram(name: "MyHistogram", explicitBoundaries: boundaries, absolute: true)
 
 var testObserver = meter.createIntObserver(name: "MyObservation") { observer in

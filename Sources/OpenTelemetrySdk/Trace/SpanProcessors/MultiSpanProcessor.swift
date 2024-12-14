@@ -12,7 +12,7 @@ public struct MultiSpanProcessor: SpanProcessor {
   var spanProcessorsStart = [SpanProcessor]()
   var spanProcessorsEnd = [SpanProcessor]()
   var spanProcessorsAll = [SpanProcessor]()
-  
+
   public init(spanProcessors: [SpanProcessor]) {
     spanProcessorsAll = spanProcessors
     spanProcessorsAll.forEach {
@@ -24,33 +24,33 @@ public struct MultiSpanProcessor: SpanProcessor {
       }
     }
   }
-  
+
   public var isStartRequired: Bool {
     return spanProcessorsStart.count > 0
   }
-  
+
   public var isEndRequired: Bool {
     return spanProcessorsEnd.count > 0
   }
-  
+
   public func onStart(parentContext: SpanContext?, span: ReadableSpan) {
     spanProcessorsStart.forEach {
       $0.onStart(parentContext: parentContext, span: span)
     }
   }
-  
+
   public func onEnd(span: ReadableSpan) {
     for var processor in spanProcessorsEnd {
       processor.onEnd(span: span)
     }
   }
-  
-  public func shutdown(explicitTimeout:TimeInterval? = nil) {
+
+  public func shutdown(explicitTimeout: TimeInterval? = nil) {
     for var processor in spanProcessorsAll {
       processor.shutdown(explicitTimeout: explicitTimeout)
     }
   }
-  
+
   public func forceFlush(timeout: TimeInterval? = nil) {
     spanProcessorsAll.forEach {
       $0.forceFlush(timeout: timeout)

@@ -14,7 +14,7 @@ public class DoublePointData: PointData {
         super.init(startEpochNanos: startEpochNanos, endEpochNanos: endEpochNanos, attributes: attributes, exemplars: exemplars)
     }
 
-    static func -(left: DoublePointData, right: DoublePointData) -> Self {
+    static func - (left: DoublePointData, right: DoublePointData) -> Self {
         return DoublePointData(startEpochNanos: left.startEpochNanos, endEpochNanos: left.endEpochNanos, attributes: left.attributes, exemplars: left.exemplars, value: left.value - right.value) as! Self
     }
 }

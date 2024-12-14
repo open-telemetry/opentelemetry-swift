@@ -11,26 +11,25 @@ public protocol ExemplarFilter {
     func shouldSampleMeasurement(value: Double, attributes: [String: AttributeValue]) -> Bool
 }
 
-public struct AlwaysOnFilter : ExemplarFilter {
-    public func shouldSampleMeasurement(value: Double, attributes: [String : OpenTelemetryApi.AttributeValue]) -> Bool {
+public struct AlwaysOnFilter: ExemplarFilter {
+    public func shouldSampleMeasurement(value: Double, attributes: [String: OpenTelemetryApi.AttributeValue]) -> Bool {
         return true
     }
-    
-    public func shouldSampleMeasurement(value: Int, attributes: [String : OpenTelemetryApi.AttributeValue]) -> Bool {
+
+    public func shouldSampleMeasurement(value: Int, attributes: [String: OpenTelemetryApi.AttributeValue]) -> Bool {
         return true
     }
 }
 
-public struct AlwaysOffFilter : ExemplarFilter {
+public struct AlwaysOffFilter: ExemplarFilter {
     public init() {}
-    
-    public func shouldSampleMeasurement(value: Int, attributes: [String : OpenTelemetryApi.AttributeValue]) -> Bool {
+
+    public func shouldSampleMeasurement(value: Int, attributes: [String: OpenTelemetryApi.AttributeValue]) -> Bool {
         false
     }
-    
-    public func shouldSampleMeasurement(value: Double, attributes: [String : OpenTelemetryApi.AttributeValue]) -> Bool {
+
+    public func shouldSampleMeasurement(value: Double, attributes: [String: OpenTelemetryApi.AttributeValue]) -> Bool {
         false
     }
-    
-    
+
 }
