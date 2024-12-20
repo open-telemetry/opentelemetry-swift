@@ -157,11 +157,11 @@ class URLSessionLogger {
             return nil
         }
         instrumentation.configuration.injectCustomHeaders?(&request, span)
+        let customBaggage = instrumentation.configuration.baggageProvider?(&request, span)
+
         var instrumentedRequest = request
         objc_setAssociatedObject(instrumentedRequest, URLSessionInstrumentation.instrumentedKey, true, .OBJC_ASSOCIATION_COPY_NONATOMIC)
         let propagators = OpenTelemetry.instance.propagators
-
-        let customBaggage = instrumentation.configuration.baggageProvider?(request, span)
 
         var traceHeaders = tracePropagationHTTPHeaders(span: span,
                                                        customBaggage: customBaggage,

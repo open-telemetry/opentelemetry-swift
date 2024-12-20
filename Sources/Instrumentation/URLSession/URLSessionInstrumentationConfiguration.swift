@@ -25,7 +25,7 @@ public struct URLSessionInstrumentationConfiguration {
                 receivedResponse: ((URLResponse, DataOrFile?, Span) -> Void)? = nil,
                 receivedError: ((Error, DataOrFile?, HTTPStatus, Span) -> Void)? = nil,
                 delegateClassesToInstrument: [AnyClass]? = nil,
-                baggageProvider: ((URLRequest, Span?) -> (Baggage)?)? = nil)
+                baggageProvider: ((inout URLRequest, Span?) -> (Baggage)?)? = nil)
     {
         self.shouldRecordPayload = shouldRecordPayload
         self.shouldInstrument = shouldInstrument
@@ -85,6 +85,6 @@ public struct URLSessionInstrumentationConfiguration {
     ///
     /// Note: The injected baggage depends on the propagator in use (e.g., W3C or custom).
     /// Returns: A `Baggage` instance or `nil` if no baggage is needed.
-    public let baggageProvider: ((URLRequest, Span?) -> (Baggage)?)?
+    public let baggageProvider: ((inout URLRequest, Span?) -> (Baggage)?)?
 
 }
