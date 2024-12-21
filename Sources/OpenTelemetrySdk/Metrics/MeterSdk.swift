@@ -195,14 +195,18 @@ class MeterSdk: Meter {
                 let metricName = histogram.key
                 let measureInstrument = histogram.value
                 var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName, type: AggregationType.doubleHistogram, resource: resource, instrumentationScopeInfo: instrumentationScopeInfo)
-                measureInstrument.boundInstruments.forEach { boundInstrument in
-                    let labelSet = boundInstrument.key
-                    let aggregator = boundInstrument.value.getAggregator()
-                    aggregator.checkpoint()
-                    var metricData = aggregator.toMetricData()
-                    metricData.labels = labelSet.labels
-                    metric.data.append(metricData)
+
+                measureInstrument.bindUnbindLock.withLock {
+                    measureInstrument.boundInstruments.forEach { boundInstrument in
+                        let labelSet = boundInstrument.key
+                        let aggregator = boundInstrument.value.getAggregator()
+                        aggregator.checkpoint()
+                        var metricData = aggregator.toMetricData()
+                        metricData.labels = labelSet.labels
+                        metric.data.append(metricData)
+                    }
                 }
+
                 metricProcessor.process(metric: metric)
             }
 
