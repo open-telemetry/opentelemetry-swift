@@ -25,7 +25,7 @@ public struct URLSessionInstrumentationConfiguration {
                 receivedResponse: ((URLResponse, DataOrFile?, Span) -> Void)? = nil,
                 receivedError: ((Error, DataOrFile?, HTTPStatus, Span) -> Void)? = nil,
                 delegateClassesToInstrument: [AnyClass]? = nil,
-                defaultBaggageProvider: (() -> (Baggage)?)? = nil)
+                baggageProvider: ((inout URLRequest, Span?) -> (Baggage)?)? = nil)
     {
         self.shouldRecordPayload = shouldRecordPayload
         self.shouldInstrument = shouldInstrument
@@ -37,7 +37,7 @@ public struct URLSessionInstrumentationConfiguration {
         self.receivedResponse = receivedResponse
         self.receivedError = receivedError
         self.delegateClassesToInstrument = delegateClassesToInstrument
-        self.defaultBaggageProvider = defaultBaggageProvider
+        self.baggageProvider = baggageProvider
     }
 
     // Instrumentation Callbacks
@@ -76,13 +76,15 @@ public struct URLSessionInstrumentationConfiguration {
     ///  The array of URLSession delegate classes that will be instrumented by the library, will autodetect if nil is passed.
     public var delegateClassesToInstrument: [AnyClass]?
 
-    /// Implement this callback to provide a default baggage instance for all instrumented requests.
-    /// The provided baggage is merged with active baggage (if any) to create a combined baggage.
-    /// The combined baggage is then injected into request headers using the configured `TextMapBaggagePropagator`.
-    /// This allows consistent propagation across requests, regardless of the active context.
+    /// Provides a baggage instance for instrumented requests that is merged with active baggage (if any).
+    /// The callback can be used to define static baggage for all requests or create dynamic baggage
+    /// based on the provided URLRequest and Span parameters.
+    /// 
+    /// The resulting baggage is injected into request headers using the configured `TextMapBaggagePropagator`,
+    /// ensuring consistent propagation across requests, regardless of the active context.
     ///
     /// Note: The injected baggage depends on the propagator in use (e.g., W3C or custom).
-    /// Returns: A `Baggage` instance or `nil` if no default baggage is needed.
-    public let defaultBaggageProvider: (() -> (Baggage)?)?
+    /// Returns: A `Baggage` instance or `nil` if no baggage is needed.
+    public let baggageProvider: ((inout URLRequest, Span?) -> (Baggage)?)?
 
 }
