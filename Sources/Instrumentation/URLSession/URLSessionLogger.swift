@@ -157,14 +157,14 @@ class URLSessionLogger {
             return nil
         }
         instrumentation.configuration.injectCustomHeaders?(&request, span)
+        let customBaggage = instrumentation.configuration.baggageProvider?(&request, span)
+
         var instrumentedRequest = request
         objc_setAssociatedObject(instrumentedRequest, URLSessionInstrumentation.instrumentedKey, true, .OBJC_ASSOCIATION_COPY_NONATOMIC)
         let propagators = OpenTelemetry.instance.propagators
 
-        let defaultBaggage = instrumentation.configuration.defaultBaggageProvider?()
-
         var traceHeaders = tracePropagationHTTPHeaders(span: span,
-                                                       defaultBaggage: defaultBaggage,
+                                                       customBaggage: customBaggage,
                                                        textMapPropagator: propagators.textMapPropagator,
                                                        textMapBaggagePropagator: propagators.textMapBaggagePropagator)
 
@@ -175,7 +175,7 @@ class URLSessionLogger {
         return instrumentedRequest
     }
 
-    private static func tracePropagationHTTPHeaders(span: Span?, defaultBaggage: Baggage?, textMapPropagator: TextMapPropagator, textMapBaggagePropagator: TextMapBaggagePropagator) -> [String: String] {
+    private static func tracePropagationHTTPHeaders(span: Span?, customBaggage: Baggage?, textMapPropagator: TextMapPropagator, textMapBaggagePropagator: TextMapBaggagePropagator) -> [String: String] {
         var headers = [String: String]()
 
         struct HeaderSetter: Setter {
@@ -195,8 +195,8 @@ class URLSessionLogger {
             activeBaggage.getEntries().forEach { baggageBuilder.put(key: $0.key, value: $0.value, metadata: $0.metadata) }
         }
 
-        if let defaultBaggage {
-            defaultBaggage.getEntries().forEach { baggageBuilder.put(key: $0.key, value: $0.value, metadata: $0.metadata) }
+        if let customBaggage {
+            customBaggage.getEntries().forEach { baggageBuilder.put(key: $0.key, value: $0.value, metadata: $0.metadata) }
         }
 
         let combinedBaggage = baggageBuilder.build()
