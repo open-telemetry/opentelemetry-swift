@@ -39,7 +39,7 @@ let package = Package(
         .package(url: "https://github.com/undefinedlabs/opentracing-objc", exact: "0.5.2"),
         .package(url: "https://github.com/undefinedlabs/Thrift-Swift", exact: "1.1.1"),
         .package(url: "https://github.com/apple/swift-nio.git", exact: "2.0.0"),
-        .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.0.0"),
+        .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.24.2"),
         .package(url: "https://github.com/apple/swift-protobuf.git", exact: "1.20.2"),
         .package(url: "https://github.com/apple/swift-log.git", exact: "1.4.4"),
         .package(url: "https://github.com/apple/swift-metrics.git", exact: "2.1.1"),
