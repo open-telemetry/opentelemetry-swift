@@ -2,6 +2,7 @@
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
+import Foundation
 
 let package = Package(
     name: "opentelemetry-swift",
@@ -33,7 +34,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.20.2"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.4.4"),
         .package(url: "https://github.com/apple/swift-metrics.git", from: "2.1.1"),
-        .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.57.1")
+//        .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.57.1")
     ],
     targets: [
         .target(name: "OpenTelemetryApi",
@@ -291,8 +292,14 @@ extension Package {
     }
 }
 
-for target in package.targets {
-  target.plugins = [
-    .plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins"),
-  ]
+if ProcessInfo.processInfo.environment["OTEL_ENABLE_SWIFTLINT"] != nil {
+  package.dependencies.append(contentsOf: [
+    .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.57.1")
+  ])
+  
+  for target in package.targets {
+    target.plugins = [
+      .plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins"),
+    ]
+  }
 }
