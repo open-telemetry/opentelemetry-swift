@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public enum MetricDataType {
+public enum MetricDataType: Codable {
     case LongGauge
     case DoubleGauge
     case LongSum
@@ -16,7 +16,7 @@ public enum MetricDataType {
     case ExponentialHistogram
 }
 
-public struct StableMetricData: Equatable {
+public struct StableMetricData: Equatable, Encodable {
     public private(set) var resource: Resource
     public private(set) var instrumentationScopeInfo: InstrumentationScopeInfo
     public private(set) var name: String
@@ -28,7 +28,7 @@ public struct StableMetricData: Equatable {
 
     public static let empty = StableMetricData(resource: Resource.empty, instrumentationScopeInfo: InstrumentationScopeInfo(), name: "", description: "", unit: "", type: .Summary, isMonotonic: false, data: StableMetricData.Data(aggregationTemporality: .cumulative, points: [PointData]()))
 
-    public class Data: Equatable {
+    public class Data: Equatable, Encodable {
         public private(set) var points: [PointData]
         public private(set) var aggregationTemporality: AggregationTemporality
 
