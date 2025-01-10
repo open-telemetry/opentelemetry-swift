@@ -2,16 +2,18 @@ name: CodeQL Analysis
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   analyze:
     name: Analyze CodeQL
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
 
     steps:
       - name: Checkout repository
@@ -21,6 +23,13 @@ jobs:
         uses: github/codeql-action/init@v2
         with:
           languages: swift
+          queries: security-and-quality
 
+      # Build the Swift package
+      - name: Build Swift package
+        run: swift build
+        
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:swift"
