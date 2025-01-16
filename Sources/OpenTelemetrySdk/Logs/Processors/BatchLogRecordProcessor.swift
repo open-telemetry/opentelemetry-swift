@@ -1,36 +1,35 @@
 //
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 
 import Foundation
 import OpenTelemetryApi
 
 public class BatchLogRecordProcessor : LogRecordProcessor {
-  
-  
+
   fileprivate var worker : BatchWorker
-  
+
   public init(logRecordExporter: LogRecordExporter, scheduleDelay: TimeInterval = 5, exportTimeout: TimeInterval = 30, maxQueueSize: Int = 2048, maxExportBatchSize: Int = 512, willExportCallback: ((inout [ReadableLogRecord])->Void)? = nil) {
     worker = BatchWorker(logRecordExporter: logRecordExporter, scheduleDelay: scheduleDelay, exportTimeout: exportTimeout, maxQueueSize: maxQueueSize, maxExportBatchSize: maxExportBatchSize, willExportCallback: willExportCallback)
-    
+
     worker.start()
   }
-  
+
   public func onEmit(logRecord: ReadableLogRecord) {
     worker.emit(logRecord: logRecord)
   }
-  
+
   public func forceFlush(explicitTimeout: TimeInterval?) -> ExportResult {
     forceFlush(timeout: explicitTimeout)
     return .success
   }
-  
+
   public func forceFlush(timeout: TimeInterval? = nil) {
     worker.forceFlush(explicitTimeout: timeout)
   }
-  
-  
+
+
   public func shutdown(explicitTimeout: TimeInterval? = nil) -> ExportResult {
     worker.cancel()
     worker.shutdown(explicitTimeout: explicitTimeout)
@@ -38,7 +37,8 @@ public class BatchLogRecordProcessor : LogRecordProcessor {
   }
 }
 
-private class BatchWorker : Thread {
+private class BatchWorker {
+  var thread: Thread!
   let logRecordExporter : LogRecordExporter
   let scheduleDelay : TimeInterval
   let maxQueueSize : Int
@@ -49,14 +49,14 @@ private class BatchWorker : Thread {
   private let cond = NSCondition()
   var logRecordList = [ReadableLogRecord]()
   var queue : OperationQueue
-  
+
   init(logRecordExporter: LogRecordExporter,
        scheduleDelay: TimeInterval,
        exportTimeout: TimeInterval,
        maxQueueSize: Int,
        maxExportBatchSize: Int,
        willExportCallback: ((inout [ReadableLogRecord])->Void)?) {
-    
+
     self.logRecordExporter = logRecordExporter
     self.scheduleDelay = scheduleDelay
     self.exportTimeout = exportTimeout
@@ -67,24 +67,35 @@ private class BatchWorker : Thread {
     queue = OperationQueue()
     queue.name = "BatchWorker Queue"
     queue.maxConcurrentOperationCount = 1
+    self.thread = Thread(block: { [weak self] in
+        self?.main()
+    })
   }
-  
+
+  func start() {
+    self.thread.start()
+  }
+
+  func cancel() {
+    self.thread.cancel()
+  }
+
   func emit(logRecord: ReadableLogRecord) {
     cond.lock()
-    defer { cond.unlock()}
+    defer { cond.unlock() }
     if logRecordList.count == maxQueueSize {
       // TODO: record a counter for dropped logs
       return
     }
-    
+
     // TODO: record a gauge for referenced logs
     logRecordList.append(logRecord)
     if logRecordList.count >= halfMaxQueueSize {
       cond.broadcast()
     }
   }
-  
-  override func main() {
+
+  func main() {
     repeat {
         autoreleasepool {
           var logRecordsCopy : [ReadableLogRecord]
@@ -92,33 +103,33 @@ private class BatchWorker : Thread {
           if logRecordList.count < maxExportBatchSize {
             repeat {
               cond.wait(until: Date().addingTimeInterval(scheduleDelay))
-            } while logRecordList.isEmpty && !self.isCancelled
+            } while logRecordList.isEmpty && !thread.isCancelled
           }
           logRecordsCopy = logRecordList
           logRecordList.removeAll()
           cond.unlock()
           self.exportBatch(logRecordList: logRecordsCopy, explicitTimeout: exportTimeout)
       }
-    } while !self.isCancelled
+    } while !thread.isCancelled
   }
-  
+
   public func forceFlush(explicitTimeout: TimeInterval? = nil) {
     var logRecordsCopy: [ReadableLogRecord]
     cond.lock()
     logRecordsCopy = logRecordList
     logRecordList.removeAll()
     cond.unlock()
-    
+
     exportBatch(logRecordList: logRecordsCopy, explicitTimeout: explicitTimeout)
   }
-  
-  
+
+
   public func shutdown(explicitTimeout: TimeInterval?) {
     let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, exportTimeout)
     forceFlush(explicitTimeout: timeout)
     _ = logRecordExporter.shutdown(explicitTimeout: timeout)
   }
-  
+
   private func exportBatch(logRecordList: [ReadableLogRecord], explicitTimeout: TimeInterval? = nil) {
     let exportOperation = BlockOperation { [weak self] in
       self?.exportAction(logRecordList : logRecordList, explicitTimeout: explicitTimeout)
@@ -132,7 +143,7 @@ private class BatchWorker : Thread {
     queue.waitUntilAllOperationsAreFinished()
     timeoutTimer.cancel()
   }
-  
+
   private func exportAction(logRecordList: [ReadableLogRecord], explicitTimeout: TimeInterval? = nil)  {
     stride(from: 0, to: logRecordList.endIndex, by: maxExportBatchSize).forEach {
       var logRecordToExport = logRecordList[$0 ..< min($0 + maxExportBatchSize, logRecordList.count)].map {$0}
