@@ -16,7 +16,7 @@ let package = Package(
         .library(name: "ResourceExtension", type: .static, targets: ["ResourceExtension"]),
         .library(name: "URLSessionInstrumentation", type: .static, targets: ["URLSessionInstrumentation"]),
         .library(name: "SignPostIntegration", type: .static, targets: ["SignPostIntegration"]),
-        .library(name: " -experimental", type: .static, targets: ["OpenTracingShim"]),
+        .library(name: "OpenTracingShim-experimental", type: .static, targets: ["OpenTracingShim"]),
         .library(name: "SwiftMetricsShim", type: .static, targets: ["SwiftMetricsShim"]),
         .library(name: "JaegerExporter", type: .static, targets: ["JaegerExporter"]),
         .library(name: "ZipkinExporter", type: .static, targets: ["ZipkinExporter"]),
