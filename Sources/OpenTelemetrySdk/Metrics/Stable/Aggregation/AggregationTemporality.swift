@@ -21,7 +21,7 @@ public class AggregationTemporalitySelector: AggregationTemporalitySelectorProto
     public var aggregationTemporalitySelector: (InstrumentType) -> AggregationTemporality
 }
 
-public enum AggregationTemporality {
+public enum AggregationTemporality: Codable {
     case delta
     case cumulative
 
