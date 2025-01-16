@@ -2,6 +2,7 @@ included:
   - "Sources"
 excluded: 
   - "Sources/Exporters/OpenTelemetryProtocolCommon/proto"
+  - ".build"
 disabled_rules:
   - nesting
   - line_length
