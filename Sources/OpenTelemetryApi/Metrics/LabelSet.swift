@@ -6,8 +6,8 @@
 import Foundation
 
 /// Normalized name value pairs of metric labels.
-// Phase 2
-//@available(*, deprecated, message: "LabelSet removed from Metric API in OTEP-90")
+/// Phase 2
+/// @available(*, deprecated, message: "LabelSet removed from Metric API in OTEP-90")
 open class LabelSet: Hashable {
     public private(set) var labels: [String: String]
 

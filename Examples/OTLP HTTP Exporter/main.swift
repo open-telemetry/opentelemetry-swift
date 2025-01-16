@@ -48,7 +48,7 @@ func createSpans() {
         doWork()
     }
     Thread.sleep(forTimeInterval: 0.5)
-    
+
     let parentSpan2 = tracer.spanBuilder(spanName: "Another").setSpanKind(spanKind: .client).setActive(true).startSpan()
     parentSpan2.setAttribute(key: sampleKey, value: sampleValue)
     // do more Work
@@ -56,7 +56,7 @@ func createSpans() {
         doWork()
     }
     Thread.sleep(forTimeInterval: 0.5)
-    
+
     parentSpan2.end()
     parentSpan1.end()
 }
@@ -77,7 +77,6 @@ let processor = MetricProcessorSdk()
 let meterProvider = MeterProviderSdk(metricProcessor: processor, metricExporter: otlpHttpMetricExporter, metricPushInterval: 0.1)
 
 OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
-
 
 var meter = meterProvider.get(instrumentationName: "otlp_example_meter'")
 var exampleCounter = meter.createIntCounter(name: "otlp_example_counter")

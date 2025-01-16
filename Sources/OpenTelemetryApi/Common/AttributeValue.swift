@@ -44,10 +44,13 @@ public enum AttributeValue: Equatable, CustomStringConvertible, Hashable {
 
   }
 
+  // swiftlint:disable cyclomatic_complexity
   public init?(_ value: Any) {
     switch value {
     case is String:
+      // swiftlint:disable force_cast
       self = .string(value as! String)
+      // swiftlint:enable force_cast
     case let val as Bool:
       self = .bool(val)
     case let val as Int:
@@ -70,6 +73,7 @@ public enum AttributeValue: Equatable, CustomStringConvertible, Hashable {
       return nil
     }
   }
+// swiftlint:enable cyclomatic_complexity
 }
 
 extension AttributeValue {
@@ -88,9 +92,8 @@ extension AttributeValue {
   public init(_ value: Double) {
     self = .double(value)
   }
-  
-  public init(_ value: [String])
-  {
+
+  public init(_ value: [String]) {
     self = .array(AttributeArray(values: value.map { element in
       return AttributeValue.string(element)
     }))
@@ -101,19 +104,19 @@ extension AttributeValue {
       return AttributeValue.int(element)
     }))
   }
-  
-  public init(_ value:[Double]) {
+
+  public init(_ value: [Double]) {
     self = .array(AttributeArray(values: value.map { element in
       return AttributeValue.double(element)
     }))
   }
-  
+
   public init(_ value: [Bool]) {
     self = .array(AttributeArray(values: value.map { element in
       return AttributeValue.bool(element)
     }))
   }
-  
+
   public init (_ value: AttributeArray) {
     self = .array(value)
   }

@@ -11,19 +11,15 @@ import Logging
 import GRPC
 import NIO
 
-
 func configure() {
   let configuration = ClientConnection.Configuration.default(
-      target: .hostAndPort("localhost", 4317),
-      eventLoopGroup: MultiThreadedEventLoopGroup(numberOfThreads: 1))
+    target: .hostAndPort("localhost", 4317),
+    eventLoopGroup: MultiThreadedEventLoopGroup(numberOfThreads: 1))
 
-      OpenTelemetry.registerLoggerProvider(loggerProvider: LoggerProviderBuilder().with(processors: [
-        BatchLogRecordProcessor(logRecordExporter:OtlpLogExporter(channel: ClientConnection(configuration: configuration)))]).build())
-      
-  }
+  OpenTelemetry.registerLoggerProvider(loggerProvider: LoggerProviderBuilder().with(processors: [
+    BatchLogRecordProcessor(logRecordExporter: OtlpLogExporter(channel: ClientConnection(configuration: configuration)))]).build())
+}
 
   configure()
-        
+
   let eventProvider = OpenTelemetry.instance.loggerProvider.loggerBuilder(instrumentationScopeName: "myScope").setEventDomain("device").build()
-      
-      

@@ -6,46 +6,43 @@
 import Foundation
 import OpenTelemetryApi
 
-class RawCounterMetricSdkBase<T> : RawCounterMetric {
+class RawCounterMetricSdkBase<T>: RawCounterMetric {
     let bindUnbindLock = Lock()
     public private(set) var boundInstruments = [LabelSet: BoundRawCounterMetricSdkBase<T>]()
-    let metricName : String
-    
+    let metricName: String
+
     init(name: String) {
         metricName = name
     }
-    
-    func record(sum: T, startDate: Date, endDate: Date, labels: [String : String]){
+
+    func record(sum: T, startDate: Date, endDate: Date, labels: [String: String]) {
         // noop
     }
-    
+
     func record(sum: T, startDate: Date, endDate: Date, labelset: LabelSet) {
      // noop
     }
-    
-    
+
     func bind(labelset: LabelSet) -> BoundRawCounterMetric<T> {
         bind(labelset: labelset, isShortLived: false)
     }
-    
-    
+
    internal func bind(labelset: LabelSet, isShortLived: Bool) -> BoundRawCounterMetric<T> {
-        var boundInstrument : BoundRawCounterMetricSdkBase<T>?
+        var boundInstrument: BoundRawCounterMetricSdkBase<T>?
         bindUnbindLock.withLockVoid {
             boundInstrument = boundInstruments[labelset]
-            
+
             if boundInstrument == nil {
                 let status = isShortLived ? RecordStatus.updatePending : RecordStatus.bound
                 boundInstrument = createMetric(recordStatus: status)
                 boundInstruments[labelset] = boundInstrument
             }
         }
-        
+
         boundInstrument!.statusLock.withLockVoid {
             switch boundInstrument!.status {
             case .noPendingUpdate:
                 boundInstrument!.status = .updatePending
-                break;
             case .candidateForRemoval:
                 bindUnbindLock.withLockVoid {
                     boundInstrument!.status = .updatePending
@@ -53,18 +50,17 @@ class RawCounterMetricSdkBase<T> : RawCounterMetric {
                         boundInstruments[labelset] = boundInstrument!
                     }
                 }
-                break;
             case .bound, .updatePending:
-                break;
+                break
             }
         }
         return boundInstrument!
     }
-    
-    func bind(labels: [String : String]) -> BoundRawCounterMetric<T> {
+
+    func bind(labels: [String: String]) -> BoundRawCounterMetric<T> {
         return bind(labelset: LabelSet(labels: labels), isShortLived: false)
     }
-            
+
     internal func unBind(labelSet: LabelSet) {
         bindUnbindLock.withLockVoid {
             if let boundInstrument = boundInstruments[labelSet] {
@@ -76,9 +72,9 @@ class RawCounterMetricSdkBase<T> : RawCounterMetric {
             }
         }
     }
-    
+
     func createMetric(recordStatus: RecordStatus) -> BoundRawCounterMetricSdkBase<T> {
-        //noop
+        // noop
         fatalError()
     }
 }

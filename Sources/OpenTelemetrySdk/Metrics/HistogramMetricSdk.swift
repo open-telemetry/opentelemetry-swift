@@ -9,10 +9,10 @@ import OpenTelemetryApi
 internal class HistogramMetricSdk<T: SignedNumeric & Comparable>: HistogramMetric {
     public private(set) var boundInstruments = [LabelSet: BoundHistogramMetricSdkBase<T>]()
     let metricName: String
-    let explicitBoundaries: Array<T>?
+    let explicitBoundaries: [T]?
     let bindUnbindLock = Lock()
 
-    init(name: String, explicitBoundaries: Array<T>? = nil) {
+    init(name: String, explicitBoundaries: [T]? = nil) {
         metricName = name
         self.explicitBoundaries = explicitBoundaries
     }
@@ -24,7 +24,7 @@ internal class HistogramMetricSdk<T: SignedNumeric & Comparable>: HistogramMetri
                 boundInstrument = createMetric()
                 boundInstruments[labelset] = boundInstrument!
             }
-            
+
             return boundInstrument!
         }
     }

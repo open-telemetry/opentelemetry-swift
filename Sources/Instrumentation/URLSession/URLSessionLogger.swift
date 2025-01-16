@@ -61,7 +61,7 @@ class URLSessionLogger {
         if let port = request.url?.port {
             attributes[SemanticAttributes.netPeerPort.rawValue] = AttributeValue.int(port)
         }
-        
+
         if let bodySize = request.httpBody?.count {
             attributes[SemanticAttributes.httpRequestBodySize.rawValue] = AttributeValue.int(bodySize)
         }
@@ -111,7 +111,7 @@ class URLSessionLogger {
         }
 
         let statusCode = httpResponse.statusCode
-        span.setAttribute(key: SemanticAttributes.httpStatusCode.rawValue, 
+        span.setAttribute(key: SemanticAttributes.httpStatusCode.rawValue,
                           value: AttributeValue.int(statusCode))
         span.status = statusForStatusCode(code: statusCode)
 

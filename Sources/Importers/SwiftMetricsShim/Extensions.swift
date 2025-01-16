@@ -8,6 +8,6 @@ import CoreMetrics
 
 extension Array where Element == (String, String) {
     var dictionary: [String: String] {
-        Dictionary(self, uniquingKeysWith: { lhs, rhs in lhs })
+        Dictionary(self, uniquingKeysWith: { lhs, _ in lhs })
     }
 }

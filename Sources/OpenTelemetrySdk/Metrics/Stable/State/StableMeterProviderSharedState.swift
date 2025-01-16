@@ -13,9 +13,9 @@ public class MeterProviderSharedState {
         self.startEpochNanos = startEpochNanos
         self.exemplarFilter = exemplarFilter
     }
-    
-    public private(set) var clock : Clock
-    public private(set) var resource : Resource
-    public private(set) var startEpochNanos : UInt64
-    public private(set) var exemplarFilter : ExemplarFilter
+
+    public private(set) var clock: Clock
+    public private(set) var resource: Resource
+    public private(set) var startEpochNanos: UInt64
+    public private(set) var exemplarFilter: ExemplarFilter
 }

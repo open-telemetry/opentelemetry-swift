@@ -10,4 +10,3 @@ public protocol Logger {
     func eventBuilder(name: String) -> EventBuilder
     func logRecordBuilder() -> LogRecordBuilder
 }
-

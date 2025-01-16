@@ -11,7 +11,6 @@ import Foundation
 
 import Thrift
 
-
 public protocol Agent {
 
   ///
@@ -28,7 +27,7 @@ public protocol Agent {
 
 }
 
-open class AgentClient : TClient /* , Agent */ {
+open class AgentClient: TClient /* , Agent */ {
 
 }
 
@@ -48,7 +47,7 @@ public protocol AgentAsync {
 
 }
 
-open class AgentAsyncClient<Protocol: TProtocol, Factory: TAsyncTransportFactory> : TAsyncClient<Protocol, Factory> /* , Agent */ {
+open class AgentAsyncClient<Protocol: TProtocol, Factory: TAsyncTransportFactory>: TAsyncClient<Protocol, Factory> /* , Agent */ {
 
 }
 

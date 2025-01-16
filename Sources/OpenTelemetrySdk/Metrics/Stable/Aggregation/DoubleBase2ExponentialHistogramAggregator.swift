@@ -7,8 +7,8 @@ import Foundation
 import OpenTelemetryApi
 
 public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
-    private var reservoirSupplier : () -> ExemplarReservoir
-    private var maxBuckets : Int
+    private var reservoirSupplier: () -> ExemplarReservoir
+    private var maxBuckets: Int
     private var maxScale: Int
 
     init(maxBuckets: Int, maxScale: Int, reservoirSupplier: @escaping () -> ExemplarReservoir) {
@@ -33,9 +33,9 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
         StableMetricData.createExponentialHistogram(resource: resource, instrumentationScopeInfo: scope, name: descriptor.name, description: descriptor.description, unit: descriptor.instrument.unit, data: StableExponentialHistogramData(aggregationTemporality: temporality, points: points))
     }
 
-    class Handle : AggregatorHandle {
+    class Handle: AggregatorHandle {
         let lock = Lock()
-        var maxBuckets : Int
+        var maxBuckets: Int
         var maxScale: Int
 
         var zeroCount: UInt64
@@ -51,14 +51,14 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
         internal init(maxBuckets: Int, maxScale: Int, exemplarReservoir: ExemplarReservoir) {
             self.maxBuckets = maxBuckets
             self.maxScale = maxScale
-            
+
             self.sum = 0
             self.zeroCount = 0
             self.min = Double.greatestFiniteMagnitude
             self.max = -1
             self.count = 0
             self.scale = maxScale
-            
+
             super.init(exemplarReservoir: exemplarReservoir)
         }
 
@@ -66,12 +66,12 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
             doRecordDouble(value: Double(value))
         }
 
-        override func doAggregateThenMaybeReset(startEpochNano: UInt64, endEpochNano: UInt64, attributes: [String : AttributeValue], exemplars: [ExemplarData], reset: Bool) -> PointData {
+        override func doAggregateThenMaybeReset(startEpochNano: UInt64, endEpochNano: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], reset: Bool) -> PointData {
             lock.lock()
             defer {
                 lock.unlock()
             }
-            
+
             let pointData = ExponentialHistogramPointData(
                 scale: scale,
                 sum: sum,
@@ -87,7 +87,7 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
                 attributes: attributes,
                 exemplars: exemplars
             )
-            
+
             if reset {
                 sum = 0
                 zeroCount = 0
@@ -96,7 +96,7 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
                 count = 0
                 scale = maxScale
             }
-            
+
             return pointData
         }
 
@@ -105,17 +105,17 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
             defer {
                 lock.unlock()
             }
-            
+
             if !value.isFinite {
                 return
             }
-            
+
             sum += value
-            
+
             min = Swift.min(min, value)
             max = Swift.max(max, value)
             count += 1
-            
+
             var buckets: DoubleBase2ExponentialHistogramBuckets
             if value == 0.0 {
                 self.zeroCount += 1
@@ -135,7 +135,7 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
                     negativeBuckets = buckets
                 }
             }
-            
+
             if !buckets.record(value: value) {
                 downScale(by: buckets.getScaleReduction(value))
                 buckets.record(value: value)
@@ -146,13 +146,13 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
             guard let buckets = buckets else {
                 return EmptyExponentialHistogramBuckets(scale: scale)
             }
-            
+
             let copy = buckets.copy() as! DoubleBase2ExponentialHistogramBuckets
-            
+
             if reset {
                 buckets.clear(scale: maxScale)
             }
-            
+
             return copy
         }
 
@@ -160,9 +160,9 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
             if let positiveBuckets = positiveBuckets {
                 positiveBuckets.downscale(by: by)
                 scale = positiveBuckets.scale
-                
+
             }
-            
+
             if let negativeBuckets = negativeBuckets {
                 negativeBuckets.downscale(by: by)
                 scale = negativeBuckets.scale
