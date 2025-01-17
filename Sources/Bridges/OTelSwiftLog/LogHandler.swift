@@ -8,7 +8,7 @@ let version: String = "1.0.0"
 
 /// A  custom log handler to translate swift logs into otel logs
 public struct OTelLogHandler: LogHandler {
-  
+
   /// Get or set the configured log level.
   ///
   /// - note: `LogHandler`s must treat the log level as a value type. This means that the change in metadata must
@@ -16,11 +16,11 @@ public struct OTelLogHandler: LogHandler {
   ///         that means a change in log level on a particular `LogHandler` might not be reflected in any
   ///        `LogHandler`.
   public var logLevel: Logging.Logger.Level = .info
-  
+
   /// loggerProvider to use for the bridge.
-  private var loggerProvider : LoggerProvider
+  private var loggerProvider: LoggerProvider
   private var logger: OpenTelemetryApi.Logger
-  
+
   // Define metadata for this handler
   public var metadata: Logging.Logger.Metadata = [:]
   public subscript(metadataKey key: String) -> Logging.Logger.Metadata.Value? {
@@ -31,15 +31,15 @@ public struct OTelLogHandler: LogHandler {
       self.metadata[key] = newValue
     }
   }
-  
+
 /// create a new OtelLogHandler
 ///  - Parameter loggerProvider: The logger provider to use in the bridge. Defaults to the global logger provider.
 ///  - Parameter includeTraceContext : boolean flag used for the logger builder
 ///  - Parameter attributes: attributes to apply to the logger builder
   public init(loggerProvider: LoggerProvider = OpenTelemetryApi.DefaultLoggerProvider.instance,
-              includeTraceContext : Bool = true,
-              attributes: [String:AttributeValue] = [String:AttributeValue]()) {
-    
+              includeTraceContext: Bool = true,
+              attributes: [String: AttributeValue] = [String: AttributeValue]()) {
+
     self.loggerProvider = loggerProvider
     self.logger = self.loggerProvider.loggerBuilder(instrumentationScopeName: bridgeName)
       .setInstrumentationVersion(version)
@@ -49,7 +49,7 @@ public struct OTelLogHandler: LogHandler {
       .setIncludeTraceContext(includeTraceContext)
       .build()
   }
-  
+
   public func log(level: Logging.Logger.Level,
                   message: Logging.Logger.Message,
                   metadata: Logging.Logger.Metadata?,
@@ -57,54 +57,51 @@ public struct OTelLogHandler: LogHandler {
                   file: String,
                   function: String,
                   line: UInt) {
-    
-    
+
     // This converts log atrributes to otel attributes
     var otelattributes: [String: AttributeValue] = [
       "source": AttributeValue.string(source),
       "file": AttributeValue.string(file),
       "function": AttributeValue.string(function),
-      "line": AttributeValue.int(Int(line)),
+      "line": AttributeValue.int(Int(line))
     ]
-    
+
     // Convert metadata from the method parameter to AttributeValue and assign it to otelattributes
     if let metadata = metadata {
       let methodMetadata = convertMetadata(metadata)
       otelattributes.merge(methodMetadata) { _, new in new }
     }
-    
+
     // Convert metadata from the struct property to AttributeValue and merge it with otelattributes
     let structMetadata = convertMetadata(self.metadata)
     otelattributes.merge(structMetadata) { _, new in new }
-    
+
     // Build the log record and emit it
     let event = self.logger.logRecordBuilder().setSeverity(convertSeverity(level: level))
       .setBody(AttributeValue.string(message.description))
       .setAttributes(otelattributes)
-    
+
     if let context = OpenTelemetry.instance.contextProvider.activeSpan?.context {
       _ = event.setSpanContext(context)
     }
     event.emit()
-    
+
   }
-  
-  
-  
+
 }
 
 func convertMetadata(_ metadata: Logging.Logger.Metadata) -> [String: AttributeValue] {
   var convertedAttributes: [String: AttributeValue] = [:]
-  
+
   // Iterate over each key-value pair in the metadata dictionary
   for (key, value) in metadata {
     // Convert each value to AttributeValue
     let attributeValue = convertToAttributeValue(value)
-    
+
     // Store the converted value with its corresponding key in the attributes dictionary
     convertedAttributes[key] = attributeValue
   }
-  
+
   return convertedAttributes
 }
 
@@ -126,11 +123,11 @@ func convertToAttributeValue(_ value: Logging.Logger.Metadata.Value) -> Attribut
     return AttributeValue(str)
   case .stringConvertible(let strConvertable):
     return AttributeValue(strConvertable.description)
-    
+
   }
 }
 
-func convertSeverity(level: Logging.Logger.Level) -> OpenTelemetryApi.Severity{
+func convertSeverity(level: Logging.Logger.Level) -> OpenTelemetryApi.Severity {
   switch level {
   case .trace:
     return OpenTelemetryApi.Severity.trace
@@ -145,6 +142,6 @@ func convertSeverity(level: Logging.Logger.Level) -> OpenTelemetryApi.Severity{
   case .error:
     return OpenTelemetryApi.Severity.error
   case .critical:
-    return OpenTelemetryApi.Severity.error2  //should this be fatal instead?
+    return OpenTelemetryApi.Severity.error2  // should this be fatal instead?
   }
 }

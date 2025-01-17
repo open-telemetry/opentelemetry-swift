@@ -6,11 +6,11 @@
 import Foundation
 import OpenTelemetryApi
 
-public class BatchLogRecordProcessor : LogRecordProcessor {
+public class BatchLogRecordProcessor: LogRecordProcessor {
 
-  fileprivate var worker : BatchWorker
+  fileprivate var worker: BatchWorker
 
-  public init(logRecordExporter: LogRecordExporter, scheduleDelay: TimeInterval = 5, exportTimeout: TimeInterval = 30, maxQueueSize: Int = 2048, maxExportBatchSize: Int = 512, willExportCallback: ((inout [ReadableLogRecord])->Void)? = nil) {
+  public init(logRecordExporter: LogRecordExporter, scheduleDelay: TimeInterval = 5, exportTimeout: TimeInterval = 30, maxQueueSize: Int = 2048, maxExportBatchSize: Int = 512, willExportCallback: ((inout [ReadableLogRecord]) -> Void)? = nil) {
     worker = BatchWorker(logRecordExporter: logRecordExporter, scheduleDelay: scheduleDelay, exportTimeout: exportTimeout, maxQueueSize: maxQueueSize, maxExportBatchSize: maxExportBatchSize, willExportCallback: willExportCallback)
 
     worker.start()
@@ -29,7 +29,6 @@ public class BatchLogRecordProcessor : LogRecordProcessor {
     worker.forceFlush(explicitTimeout: timeout)
   }
 
-
   public func shutdown(explicitTimeout: TimeInterval? = nil) -> ExportResult {
     worker.cancel()
     worker.shutdown(explicitTimeout: explicitTimeout)
@@ -39,23 +38,23 @@ public class BatchLogRecordProcessor : LogRecordProcessor {
 
 private class BatchWorker {
   var thread: Thread!
-  let logRecordExporter : LogRecordExporter
-  let scheduleDelay : TimeInterval
-  let maxQueueSize : Int
-  let maxExportBatchSize : Int
-  let exportTimeout : TimeInterval
-  let willExportCallback: ((inout [ReadableLogRecord])->Void)?
+  let logRecordExporter: LogRecordExporter
+  let scheduleDelay: TimeInterval
+  let maxQueueSize: Int
+  let maxExportBatchSize: Int
+  let exportTimeout: TimeInterval
+  let willExportCallback: ((inout [ReadableLogRecord]) -> Void)?
   let halfMaxQueueSize: Int
   private let cond = NSCondition()
   var logRecordList = [ReadableLogRecord]()
-  var queue : OperationQueue
+  var queue: OperationQueue
 
   init(logRecordExporter: LogRecordExporter,
        scheduleDelay: TimeInterval,
        exportTimeout: TimeInterval,
        maxQueueSize: Int,
        maxExportBatchSize: Int,
-       willExportCallback: ((inout [ReadableLogRecord])->Void)?) {
+       willExportCallback: ((inout [ReadableLogRecord]) -> Void)?) {
 
     self.logRecordExporter = logRecordExporter
     self.scheduleDelay = scheduleDelay
@@ -98,7 +97,7 @@ private class BatchWorker {
   func main() {
     repeat {
         autoreleasepool {
-          var logRecordsCopy : [ReadableLogRecord]
+          var logRecordsCopy: [ReadableLogRecord]
           cond.lock()
           if logRecordList.count < maxExportBatchSize {
             repeat {
@@ -123,7 +122,6 @@ private class BatchWorker {
     exportBatch(logRecordList: logRecordsCopy, explicitTimeout: explicitTimeout)
   }
 
-
   public func shutdown(explicitTimeout: TimeInterval?) {
     let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, exportTimeout)
     forceFlush(explicitTimeout: timeout)
@@ -132,7 +130,7 @@ private class BatchWorker {
 
   private func exportBatch(logRecordList: [ReadableLogRecord], explicitTimeout: TimeInterval? = nil) {
     let exportOperation = BlockOperation { [weak self] in
-      self?.exportAction(logRecordList : logRecordList, explicitTimeout: explicitTimeout)
+      self?.exportAction(logRecordList: logRecordList, explicitTimeout: explicitTimeout)
     }
     let timeoutTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
     timeoutTimer.setEventHandler { exportOperation.cancel() }
@@ -144,7 +142,7 @@ private class BatchWorker {
     timeoutTimer.cancel()
   }
 
-  private func exportAction(logRecordList: [ReadableLogRecord], explicitTimeout: TimeInterval? = nil)  {
+  private func exportAction(logRecordList: [ReadableLogRecord], explicitTimeout: TimeInterval? = nil) {
     stride(from: 0, to: logRecordList.endIndex, by: maxExportBatchSize).forEach {
       var logRecordToExport = logRecordList[$0 ..< min($0 + maxExportBatchSize, logRecordList.count)].map {$0}
       willExportCallback?(&logRecordToExport)
@@ -152,4 +150,3 @@ private class BatchWorker {
     }
   }
 }
-

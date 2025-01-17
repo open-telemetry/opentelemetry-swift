@@ -2,11 +2,12 @@
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
+import Foundation
 
 let package = Package(
     name: "opentelemetry-swift",
     platforms: [
-        .macOS(.v10_15),
+        .macOS(.v12),
         .iOS(.v13),
         .tvOS(.v13),
         .watchOS(.v6),
@@ -273,4 +274,16 @@ extension Package {
 
         return self
     }
+}
+
+if ProcessInfo.processInfo.environment["OTEL_ENABLE_SWIFTLINT"] != nil {
+  package.dependencies.append(contentsOf: [
+    .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.57.1")
+  ])
+  
+  for target in package.targets {
+    target.plugins = [
+      .plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins"),
+    ]
+  }
 }

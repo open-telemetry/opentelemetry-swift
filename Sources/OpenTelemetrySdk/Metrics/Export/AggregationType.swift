@@ -5,7 +5,7 @@
 
 import Foundation
 
-public enum AggregationType : String, Codable {
+public enum AggregationType: String, Codable {
     case intGauge
     case doubleGauge
     case doubleSum

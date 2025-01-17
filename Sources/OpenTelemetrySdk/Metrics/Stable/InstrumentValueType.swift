@@ -5,7 +5,6 @@
 
 import Foundation
 
-
 public enum InstrumentValueType {
     case long
     case double

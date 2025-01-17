@@ -5,7 +5,7 @@
 
 import Foundation
 
-public protocol ObservableDoubleMeasurement  {
+public protocol ObservableDoubleMeasurement {
     func record(value: Double)
-    func record(value : Double, attributes: [String: AttributeValue])
+    func record(value: Double, attributes: [String: AttributeValue])
 }

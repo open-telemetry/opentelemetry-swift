@@ -238,10 +238,10 @@ private class BatchWorker {
       let result = spanExporter.export(spans: spansToExport, explicitTimeout: explicitTimeout)
       if result == .success {
         cond.lock()
-        processedSpansCounter?.add(value: spanList.count, attribute:  [
+        processedSpansCounter?.add(value: spanList.count, attribute: [
           BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE),
           BatchSpanProcessor.SPAN_PROCESSOR_DROPPED_LABEL: .bool(false)])
-        cond.unlock();
+        cond.unlock()
       }
     }
   }

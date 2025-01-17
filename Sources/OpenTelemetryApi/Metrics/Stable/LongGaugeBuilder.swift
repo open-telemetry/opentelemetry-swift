@@ -5,6 +5,6 @@
 
 import Foundation
 
-public protocol LongGaugeBuilder : AnyObject {
+public protocol LongGaugeBuilder: AnyObject {
     func buildWithCallback(_ callback: @escaping (ObservableLongMeasurement) -> Void) -> ObservableLongGauge
 }

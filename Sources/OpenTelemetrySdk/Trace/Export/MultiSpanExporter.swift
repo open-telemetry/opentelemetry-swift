@@ -34,7 +34,7 @@ public class MultiSpanExporter: SpanExporter {
 
   public func shutdown(explicitTimeout: TimeInterval? = nil) {
         for exporter in spanExporters {
-          exporter.shutdown(explicitTimeout:explicitTimeout)
+          exporter.shutdown(explicitTimeout: explicitTimeout)
         }
     }
 }

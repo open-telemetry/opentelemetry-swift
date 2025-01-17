@@ -5,7 +5,7 @@
 
 import Foundation
 
-public protocol MeterBuilder : AnyObject {
+public protocol MeterBuilder: AnyObject {
 
     /// Assign an OpenTelemetry schema URL to the resulting Meter
     ///
@@ -18,7 +18,6 @@ public protocol MeterBuilder : AnyObject {
     /// - Parameter instrumentationVersion: the version of the instrumentation scope.
     /// - Returns: self
     func setInstrumentationVersion(instrumentationVersion: String) -> Self
-
 
     /// gets or creates a Meter
     ///

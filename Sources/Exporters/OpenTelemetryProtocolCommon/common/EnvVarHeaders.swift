@@ -13,9 +13,9 @@ public struct EnvVarHeaders {
 
     ///  This resource information is loaded from the 
     ///  environment variable.
-    public static let attributes : [(String,String)]? = EnvVarHeaders.attributes()
+    public static let attributes: [(String, String)]? = EnvVarHeaders.attributes()
 
-    public static func attributes(for rawEnvAttributes: String? = ProcessInfo.processInfo.environment["OTEL_EXPORTER_OTLP_HEADERS"]) -> [(String,String)]? {
+    public static func attributes(for rawEnvAttributes: String? = ProcessInfo.processInfo.environment["OTEL_EXPORTER_OTLP_HEADERS"]) -> [(String, String)]? {
         parseAttributes(rawEnvAttributes: rawEnvAttributes)
     }
 
@@ -56,10 +56,8 @@ public struct EnvVarHeaders {
             let value = split[1].trimmingCharacters(in: .whitespaces)
             guard isValue(baggage: value) else { return }
 
-            labels.append((key,value))
+            labels.append((key, value))
         }
         return labels.count > 0 ? labels : nil
     }
 }
-
-

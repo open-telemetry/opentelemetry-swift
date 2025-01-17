@@ -2131,8 +2131,8 @@ public enum SemanticAttributes: String {
     /**
     An exception event **MUST** be called "exception" as per the [specification](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/exceptions.md).
     */
-    case exception = "exception";
-    
+    case exception = "exception"
+
     /**
     Deprecated, use `network.transport`.
     */
@@ -2169,7 +2169,7 @@ public enum SemanticAttributes: String {
             return value
         }
     }
-    
+
     /**
     Deprecated, use `network.transport` and `network.type`.
     */
@@ -2198,7 +2198,7 @@ public enum SemanticAttributes: String {
             return value
         }
     }
-    
+
     /**
     HTTP request method.
     */
@@ -2255,7 +2255,7 @@ public enum SemanticAttributes: String {
             return value
         }
     }
-    
+
     /**
     The domain identifies the business context for the events.
     */
@@ -2284,7 +2284,7 @@ public enum SemanticAttributes: String {
             return value
         }
     }
-    
+
     /**
     The stream associated with the log. See below for a list of well-known values.
     */
@@ -2293,13 +2293,13 @@ public enum SemanticAttributes: String {
         /**
         Logs from stdout stream.
         */
-        case stdout = "stdout"
+        case stdout
         /**
         Events from stderr stream.
         */
-        case stderr = "stderr"
+        case stderr
     }
-    
+
     /**
     The type of memory.
     */
@@ -2308,13 +2308,13 @@ public enum SemanticAttributes: String {
         /**
         Heap memory.
         */
-        case heap = "heap"
+        case heap
         /**
         Non-heap memory.
         */
-        case non_heap = "non_heap"
+        case non_heap
     }
-    
+
     /**
     Parent-child Reference type.
     */
@@ -2323,13 +2323,13 @@ public enum SemanticAttributes: String {
         /**
         The parent Span depends on the child Span in some capacity.
         */
-        case child_of = "child_of"
+        case child_of
         /**
         The parent Span does not depend in any way on the result of the child Span.
         */
-        case follows_from = "follows_from"
+        case follows_from
     }
-    
+
     /**
     An identifier for the database management system (DBMS) product being used. See below for a list of well-known identifiers.
     */
@@ -2554,7 +2554,7 @@ public enum SemanticAttributes: String {
             return value
         }
     }
-    
+
     /**
     [OSI Transport Layer](https://osi-model.com/transport-layer/) or [Inter-process Communication method](https://en.wikipedia.org/wiki/Inter-process_communication). The value SHOULD be normalized to lowercase.
     */
@@ -2587,7 +2587,7 @@ public enum SemanticAttributes: String {
             return value
         }
     }
-    
+
     /**
     [OSI Network Layer](https://osi-model.com/network-layer/) or non-OSI equivalent. The value SHOULD be normalized to lowercase.
     */
@@ -2612,7 +2612,7 @@ public enum SemanticAttributes: String {
             return value
         }
     }
-    
+
     /**
     The consistency level of the query. Based on consistency values from [CQL](https://docs.datastax.com/en/cassandra-oss/3.0/cassandra/dml/dmlConfigConsistency.html).
     */
@@ -2621,49 +2621,49 @@ public enum SemanticAttributes: String {
         /**
         all.
         */
-        case all = "all"
+        case all
         /**
         each_quorum.
         */
-        case each_quorum = "each_quorum"
+        case each_quorum
         /**
         quorum.
         */
-        case quorum = "quorum"
+        case quorum
         /**
         local_quorum.
         */
-        case local_quorum = "local_quorum"
+        case local_quorum
         /**
         one.
         */
-        case one = "one"
+        case one
         /**
         two.
         */
-        case two = "two"
+        case two
         /**
         three.
         */
-        case three = "three"
+        case three
         /**
         local_one.
         */
-        case local_one = "local_one"
+        case local_one
         /**
         any.
         */
-        case any = "any"
+        case any
         /**
         serial.
         */
-        case serial = "serial"
+        case serial
         /**
         local_serial.
         */
-        case local_serial = "local_serial"
+        case local_serial
     }
-    
+
     /**
     CosmosDB Operation Type.
     */
@@ -2740,7 +2740,7 @@ public enum SemanticAttributes: String {
             return value
         }
     }
-    
+
     /**
     Cosmos client connection mode.
     */
@@ -2749,13 +2749,13 @@ public enum SemanticAttributes: String {
         /**
         Gateway (HTTP) connections mode.
         */
-        case gateway = "gateway"
+        case gateway
         /**
         Direct connection.
         */
-        case direct = "direct"
+        case direct
     }
-    
+
     /**
     Name of the code, either "OK" or "ERROR". MUST NOT be set if the status code is UNSET.
     */
@@ -2770,7 +2770,7 @@ public enum SemanticAttributes: String {
         */
         case error = "ERROR"
     }
-    
+
     /**
     Type of the trigger which caused this function invocation.
     */
@@ -2779,25 +2779,25 @@ public enum SemanticAttributes: String {
         /**
         A response to some data source operation such as a database or filesystem read/write.
         */
-        case datasource = "datasource"
+        case datasource
         /**
         To provide an answer to an inbound HTTP request.
         */
-        case http = "http"
+        case http
         /**
         A function is set to be executed when messages are sent to a messaging system.
         */
-        case pubsub = "pubsub"
+        case pubsub
         /**
         A function is scheduled to be executed regularly.
         */
-        case timer = "timer"
+        case timer
         /**
         If none of the others apply.
         */
-        case other = "other"
+        case other
     }
-    
+
     /**
     Describes the type of the operation that was performed on the data.
     */
@@ -2826,7 +2826,7 @@ public enum SemanticAttributes: String {
             return value
         }
     }
-    
+
     /**
     A string identifying the kind of messaging operation as defined in the [Operation names](#operation-names) section above.
     */
@@ -2855,7 +2855,7 @@ public enum SemanticAttributes: String {
             return value
         }
     }
-    
+
     /**
     The cloud provider of the invoked function.
     */
@@ -2892,7 +2892,7 @@ public enum SemanticAttributes: String {
             return value
         }
     }
-    
+
     /**
     The internet connection type.
     */
@@ -2929,7 +2929,7 @@ public enum SemanticAttributes: String {
             return value
         }
     }
-    
+
     /**
     This describes more details regarding the connection.type. It may be the type of cell technology connection, but it could be used for describing details about a wifi connection.
     */
@@ -3030,7 +3030,7 @@ public enum SemanticAttributes: String {
             return value
         }
     }
-    
+
     /**
     The value `aws-api`.
     */
@@ -3067,7 +3067,7 @@ public enum SemanticAttributes: String {
             return value
         }
     }
-    
+
     /**
     The type of the operation being executed.
     */
@@ -3076,17 +3076,17 @@ public enum SemanticAttributes: String {
         /**
         GraphQL query.
         */
-        case query = "query"
+        case query
         /**
         GraphQL mutation.
         */
-        case mutation = "mutation"
+        case mutation
         /**
         GraphQL subscription.
         */
-        case subscription = "subscription"
+        case subscription
     }
-    
+
     /**
     Type of message.
     */
@@ -3095,21 +3095,21 @@ public enum SemanticAttributes: String {
         /**
         Normal message.
         */
-        case normal = "normal"
+        case normal
         /**
         FIFO message.
         */
-        case fifo = "fifo"
+        case fifo
         /**
         Delay message.
         */
-        case delay = "delay"
+        case delay
         /**
         Transaction message.
         */
-        case transaction = "transaction"
+        case transaction
     }
-    
+
     /**
     Model of message consumption. This only applies to consumer spans.
     */
@@ -3118,13 +3118,13 @@ public enum SemanticAttributes: String {
         /**
         Clustering consumption model.
         */
-        case clustering = "clustering"
+        case clustering
         /**
         Broadcasting consumption model.
         */
-        case broadcasting = "broadcasting"
+        case broadcasting
     }
-    
+
     /**
     The [numeric status code](https://github.com/grpc/grpc/blob/v1.33.2/doc/statuscodes.md) of the gRPC request.
     */
@@ -3199,7 +3199,7 @@ public enum SemanticAttributes: String {
         */
         case unauthenticated = 16
     }
-    
+
     /**
     Whether this is a received or sent message.
     */
@@ -3214,7 +3214,7 @@ public enum SemanticAttributes: String {
         */
         case received = "RECEIVED"
     }
-    
+
     /**
     The [error codes](https://connect.build/docs/protocol/#error-codes) of the Connect request. Error codes are always string values.
     */
@@ -3223,11 +3223,11 @@ public enum SemanticAttributes: String {
         /**
         cancelled.
         */
-        case cancelled = "cancelled"
+        case cancelled
         /**
         unknown.
         */
-        case unknown = "unknown"
+        case unknown
         /**
         invalid_argument.
         */
@@ -3285,5 +3285,5 @@ public enum SemanticAttributes: String {
         */
         case unauthenticated = "unauthenticated"
     }
-    
+
 }

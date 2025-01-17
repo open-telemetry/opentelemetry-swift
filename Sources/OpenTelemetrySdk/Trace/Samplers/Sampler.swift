@@ -19,7 +19,7 @@ public protocol Sampler: AnyObject, CustomStringConvertible {
                       traceId: TraceId,
                       name: String,
                       kind: SpanKind,
-                      attributes: [String:AttributeValue],
+                      attributes: [String: AttributeValue],
                       parentLinks: [SpanData.Link]) -> Decision
 }
 

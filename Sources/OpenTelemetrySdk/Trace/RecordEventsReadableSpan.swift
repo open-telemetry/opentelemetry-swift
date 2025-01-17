@@ -122,8 +122,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
                  attributes: AttributesDictionary,
                  links: [SpanData.Link],
                  totalRecordedLinks: Int,
-                 startTime: Date?)
-    {
+                 startTime: Date?) {
         self.context = context
         self.internalName = name
         self.instrumentationScopeInfo = instrumentationScopeInfo
@@ -174,8 +173,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
                                  attributes: AttributesDictionary,
                                  links: [SpanData.Link],
                                  totalRecordedLinks: Int,
-                                 startTime: Date?) -> RecordEventsReadableSpan
-    {
+                                 startTime: Date?) -> RecordEventsReadableSpan {
         let span = RecordEventsReadableSpan(context: context,
                                             name: name,
                                             instrumentationScopeInfo: instrumentationScopeInfo,
@@ -347,11 +345,11 @@ public class RecordEventsReadableSpan: ReadableSpan {
         recordException(exception, attributes: [:], timestamp: timestamp)
     }
 
-    public func recordException(_ exception: any SpanException, attributes: [String : AttributeValue]) {
+    public func recordException(_ exception: any SpanException, attributes: [String: AttributeValue]) {
         recordException(exception, attributes: attributes, timestamp: clock.now)
     }
 
-    public func recordException(_ exception: any SpanException, attributes: [String : AttributeValue], timestamp: Date) {
+    public func recordException(_ exception: any SpanException, attributes: [String: AttributeValue], timestamp: Date) {
         var limitedAttributes = AttributesDictionary(capacity: maxNumberOfAttributesPerEvent)
         limitedAttributes.updateValues(attributes: attributes)
         limitedAttributes.updateValues(attributes: exception.eventAttributes)

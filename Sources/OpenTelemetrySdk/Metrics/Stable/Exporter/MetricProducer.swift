@@ -5,15 +5,12 @@
 
 import Foundation
 
-
-public protocol MetricProducer : CollectionRegistration  {
+public protocol MetricProducer: CollectionRegistration {
     func collectAllMetrics() -> [StableMetricData]
 }
 
+public struct NoopMetricProducer: MetricProducer {
 
-public struct NoopMetricProducer  : MetricProducer {
-    
-    
     public func collectAllMetrics() -> [StableMetricData] {
         return [StableMetricData]()
     }

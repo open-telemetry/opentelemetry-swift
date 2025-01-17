@@ -7,13 +7,13 @@ import Foundation
 import OpenTelemetryApi
 
 class LoggerSharedState {
-  var resource : Resource
-  var logLimits : LogLimits
-  var activeLogRecordProcessor : LogRecordProcessor
-  var clock : Clock
+  var resource: Resource
+  var logLimits: LogLimits
+  var activeLogRecordProcessor: LogRecordProcessor
+  var clock: Clock
   var hasBeenShutdown = false
   var registeredLogRecordProcessors = [LogRecordProcessor]()
-  
+
   init(resource: Resource, logLimits: LogLimits, processors: [LogRecordProcessor], clock: Clock) {
     self.resource = resource
     self.logLimits = logLimits
@@ -28,7 +28,7 @@ class LoggerSharedState {
       self.activeLogRecordProcessor = NoopLogRecordProcessor()
     }
   }
-  
+
   func addLogRecordProcessor(_ logRecordProcessor: LogRecordProcessor) {
     registeredLogRecordProcessors.append(logRecordProcessor)
     if registeredLogRecordProcessors.count > 1 {
@@ -37,7 +37,7 @@ class LoggerSharedState {
       activeLogRecordProcessor = registeredLogRecordProcessors[0]
     }
   }
-  
+
   func stop() {
     if hasBeenShutdown {
       return
@@ -45,7 +45,7 @@ class LoggerSharedState {
     _ = activeLogRecordProcessor.shutdown()
     hasBeenShutdown = true
   }
-  
+
   func setLogLimits(limits: LogLimits) {
     self.logLimits = limits
   }

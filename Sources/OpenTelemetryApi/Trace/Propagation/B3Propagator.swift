@@ -42,7 +42,9 @@ public class B3Propagator: TextMapPropagator {
     public func inject<S>(spanContext: SpanContext, carrier: inout [String: String], setter: S) where S: Setter {
         let sampled = spanContext.traceFlags.sampled ? B3Propagator.trueInt : B3Propagator.falseInt
         if singleHeaderInjection {
-            setter.set(carrier: &carrier, key: B3Propagator.combinedHeader, value: "\(spanContext.traceId.hexString)\(B3Propagator.combinedHeaderDelimiter)\(spanContext.spanId.hexString)\(B3Propagator.combinedHeaderDelimiter)\(sampled)")
+            setter.set(carrier: &carrier,
+                       key: B3Propagator.combinedHeader,
+                       value: "\(spanContext.traceId.hexString)\(B3Propagator.combinedHeaderDelimiter)\(spanContext.spanId.hexString)\(B3Propagator.combinedHeaderDelimiter)\(sampled)")
         } else {
             setter.set(carrier: &carrier, key: B3Propagator.traceIdHeader, value: spanContext.traceId.hexString)
             setter.set(carrier: &carrier, key: B3Propagator.spanIdHeader, value: spanContext.spanId.hexString)
