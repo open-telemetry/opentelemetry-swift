@@ -17,17 +17,17 @@ public class ExporterMetrics {
 
     public static let ATTRIBUTE_KEY_TYPE: String = "type"
     public static let ATTRIBUTE_KEY_SUCCESS: String = "success"
-    
+
     private let meterProvider: StableMeterProvider
     private let exporterName: String
     private let transportName: String
     private var seenAttrs: [String: AttributeValue] = [:]
     private var successAttrs: [String: AttributeValue] = [:]
     private var failedAttrs: [String: AttributeValue] = [:]
-    
+
     private var seen: LongCounter?
     private var exported: LongCounter?
-    
+
     /// - Parameters:
     ///    - type: That represent what type of exporter it is. `otlp`
     ///    - meterProvider: Injected `StableMeterProvider` for metric
@@ -51,26 +51,26 @@ public class ExporterMetrics {
         self.failedAttrs = [
             ExporterMetrics.ATTRIBUTE_KEY_SUCCESS: .bool(false)
         ]
-        
+
         self.seen = meter.counterBuilder(name: "\(exporterName).exporter.seen").build()
         self.exported = meter.counterBuilder(name: "\(exporterName).exporter.exported").build()
 
     }
-    
-    public func addSeen(value: Int) -> Void {
+
+    public func addSeen(value: Int) {
         seen?.add(value: value, attribute: seenAttrs)
     }
 
-    public func addSuccess(value: Int) -> Void {
+    public func addSuccess(value: Int) {
         exported?.add(value: value, attribute: successAttrs)
     }
 
-    public func addFailed(value: Int) -> Void {
+    public func addFailed(value: Int) {
         exported?.add(value: value, attribute: failedAttrs)
     }
 
     // MARK: - Private functions
-    
+
     /***
      * Create an instance for recording exporter metrics under the meter
      * "io.opentelemetry.exporters." + exporterName + "-transporterType".
@@ -78,9 +78,9 @@ public class ExporterMetrics {
     private var meter: StableMeter {
         meterProvider.get(name: "io.opentelemetry.exporters.\(exporterName)-\(transportName)")
     }
-    
+
     // MARK: - Static function
-    
+
     public static func makeExporterMetric(
         type: String,
         meterProvider: StableMeterProvider,

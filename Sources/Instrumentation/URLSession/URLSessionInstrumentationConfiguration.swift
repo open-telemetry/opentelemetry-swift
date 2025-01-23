@@ -72,7 +72,7 @@ public struct URLSessionInstrumentationConfiguration {
 
     ///  Called before the span is ended, it allows to add extra information to the Span
     public var receivedError: ((Error, DataOrFile?, HTTPStatus, Span) -> Void)?
-    
+
     ///  The array of URLSession delegate classes that will be instrumented by the library, will autodetect if nil is passed.
     public var delegateClassesToInstrument: [AnyClass]?
 

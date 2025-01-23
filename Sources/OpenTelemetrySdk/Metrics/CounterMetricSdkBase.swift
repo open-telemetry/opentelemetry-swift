@@ -47,7 +47,6 @@ class CounterMetricSdkBase<T>: CounterMetric {
             switch boundInstrument!.status {
             case .noPendingUpdate:
                 boundInstrument!.status = .updatePending
-                break
             case .candidateForRemoval:
                 bindUnbindLock.withLockVoid {
                     boundInstrument!.status = .updatePending

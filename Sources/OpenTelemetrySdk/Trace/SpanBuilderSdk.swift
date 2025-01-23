@@ -38,8 +38,7 @@ class SpanBuilderSdk: SpanBuilder {
     init(spanName: String,
          instrumentationScopeInfo: InstrumentationScopeInfo,
          tracerSharedState: TracerSharedState,
-         spanLimits: SpanLimits)
-    {
+         spanLimits: SpanLimits) {
         self.spanName = spanName
         self.instrumentationScopeInfo = instrumentationScopeInfo
         self.tracerSharedState = tracerSharedState

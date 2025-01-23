@@ -80,6 +80,13 @@ To test from the command line you need `swift` version `5.0+`.
 swift test
 ```
 
+### SwiftLint
+the SwiftLint Xcode plugin can be optionally enabled during development by using an environmental variable when opening the project from the commandline. 
+```
+OTEL_ENABLE_SWIFTLINT=1 open Package.swift
+```
+Note: Xcode must be completely closed before running the above command, close Xcode using `⌘Q` or running `killall xcode` in the commandline.  
+
 ### Make your modifications
 
 Always work in a branch from your fork:

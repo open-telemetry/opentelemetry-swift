@@ -14,11 +14,11 @@ public class DoubleHistogramMeterSdk: DoubleHistogram, Instrument {
         self.instrumentDescriptor = instrumentDescriptor
         self.storage = storage
     }
-    
+
     public func record(value: Double) {
         record(value: value, attributes: [String: AttributeValue]())
     }
-    
+
     public func record(value: Double, attributes: [String: OpenTelemetryApi.AttributeValue]) {
         if value < 0 {
             print("Histograms can only record non-negative values. Instrument \(instrumentDescriptor.name) has recorded a negative value.")

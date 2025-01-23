@@ -16,7 +16,7 @@ public struct SpanId: Equatable, Comparable, Hashable, CustomStringConvertible, 
     var id: UInt64 = invalidId
 
     public static func getSize() -> Int {
-        return size;
+        return size
     }
 
     /// Constructs a SpanId whose representation is specified by a long value.
@@ -50,7 +50,7 @@ public struct SpanId: Equatable, Comparable, Hashable, CustomStringConvertible, 
     ///   - offset: the offset in the buffer where the representation of the SpanId begins.
     init(fromData data: Data, withOffset offset: Int = 0) {
         var id: UInt64 = 0
-        data.withUnsafeBytes { rawPointer -> Void in
+        data.withUnsafeBytes { rawPointer in
             id = rawPointer.load(fromByteOffset: data.startIndex + offset, as: UInt64.self).bigEndian
         }
         self.init(id: id)
@@ -60,7 +60,7 @@ public struct SpanId: Equatable, Comparable, Hashable, CustomStringConvertible, 
     /// - Parameters:
     ///   - data: the buffer from where the representation of the SpanId is copied.
     ///   - offset: the offset in the buffer where the representation of the SpanId begins.
-    public init(fromBytes bytes: Array<UInt8>, withOffset offset: Int = 0) {
+    public init(fromBytes bytes: [UInt8], withOffset offset: Int = 0) {
         self.init(fromData: Data(bytes), withOffset: offset)
     }
 
@@ -92,7 +92,7 @@ public struct SpanId: Equatable, Comparable, Hashable, CustomStringConvertible, 
     /// - Parameters:
     ///   - dest: the destination buffer.
     ///   - destOffset: the starting offset in the destination buffer.
-    public func copyBytesTo(dest: inout Array<UInt8>, destOffset: Int) {
+    public func copyBytesTo(dest: inout [UInt8], destOffset: Int) {
         dest.replaceSubrange(destOffset ..< destOffset + MemoryLayout<UInt64>.size, with: withUnsafeBytes(of: id.bigEndian) { Array($0) })
     }
 

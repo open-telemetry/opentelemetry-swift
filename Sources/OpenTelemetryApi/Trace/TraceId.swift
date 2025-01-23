@@ -50,7 +50,7 @@ public struct TraceId: Comparable, Hashable, CustomStringConvertible, Equatable,
     public init(fromData data: Data) {
         var idHi: UInt64 = 0
         var idLo: UInt64 = 0
-        data.withUnsafeBytes { rawPointer -> Void in
+        data.withUnsafeBytes { rawPointer in
             idHi = rawPointer.load(fromByteOffset: data.startIndex, as: UInt64.self).bigEndian
             idLo = rawPointer.load(fromByteOffset: data.startIndex + MemoryLayout<UInt64>.size, as: UInt64.self).bigEndian
         }

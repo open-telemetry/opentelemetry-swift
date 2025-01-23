@@ -18,8 +18,7 @@ public enum MetricExporterResultCode {
             self = .success
             return
         } else if self == .failureRetryable || self == .success,
-                  newResultCode == .failureRetryable || newResultCode == .success
-        {
+                  newResultCode == .failureRetryable || newResultCode == .success {
             self = .failureRetryable
         }
         self = .failureNotRetryable
@@ -37,10 +36,6 @@ public protocol MetricExporter {
 struct MultiMetricExporter: MetricExporter {
 
     var metricExporters: [MetricExporter]
-
-    init(metricExporters: [MetricExporter]) {
-        self.metricExporters = metricExporters
-    }
 
     func export(metrics: [Metric], shouldCancel: (() -> Bool)?) -> MetricExporterResultCode {
         var currentResultCode = MetricExporterResultCode.success

@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public class ExemplarData: Equatable {
+public class ExemplarData: Equatable, Encodable {
     internal init(epochNanos: UInt64, filteredAttributes: [String: AttributeValue], spanContext: SpanContext? = nil) {
         self.filteredAttributes = filteredAttributes
         self.epochNanos = epochNanos

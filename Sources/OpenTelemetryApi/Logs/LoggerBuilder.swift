@@ -10,7 +10,7 @@ public protocol LoggerBuilder {
     /// Set the event domain of the resulting Logger.
     /// NOTE: Event domain is required to use `Logger.eventBuilder(name: String) -> EventBuilder
     /// The event domain will be included in the event.domain attribute for every event produced
-    //  by the resulting Logger.
+    ///  by the resulting Logger.
     /// - Parameter eventDomain: The event domain, which acts as a namespace for event names.
     ///                          Within a particular event domain, event name defines a particular
     ///                          class or type of event.

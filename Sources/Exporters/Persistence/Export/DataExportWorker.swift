@@ -25,13 +25,13 @@ internal class DataExportWorker: DataExportWorkerProtocol {
   private let dataExporter: DataExporter
   /// Variable system conditions determining if export should be performed.
   private let exportCondition: () -> Bool
-  
+
   /// Delay used to schedule consecutive exports.
   private var delay: Delay
-  
+
   /// Export work scheduled by this worker.
   private var exportWork: DispatchWorkItem?
-  
+
   init(
     fileReader: FileReader,
     dataExporter: DataExporter,
@@ -42,18 +42,18 @@ internal class DataExportWorker: DataExportWorkerProtocol {
     self.exportCondition = exportCondition
     self.dataExporter = dataExporter
     self.delay = delay
-    
+
     let exportWork = DispatchWorkItem { [weak self] in
       guard let self = self else {
         return
       }
-      
+
       let isSystemReady = self.exportCondition()
       let nextBatch = isSystemReady ? self.fileReader.readNextBatch() : nil
       if let batch = nextBatch {
         // Export batch
         let exportStatus = self.dataExporter.export(data: batch.data)
-        
+
         // Delete or keep batch depending on the export status
         if exportStatus.needsRetry {
           self.delay.increase()
@@ -64,23 +64,23 @@ internal class DataExportWorker: DataExportWorkerProtocol {
       } else {
         self.delay.increase()
       }
-      
+
       self.scheduleNextExport(after: self.delay.current)
     }
-    
+
     self.exportWork = exportWork
-    
+
     scheduleNextExport(after: self.delay.current)
   }
-  
+
   private func scheduleNextExport(after delay: TimeInterval) {
     guard let work = exportWork else {
       return
     }
-    
+
     queue.asyncAfter(deadline: .now() + delay, execute: work)
   }
-  
+
   /// This method  gets remaining files at once, and exports them
   /// It assures that periodic exporter cannot read or export the files while the flush is being processed
   internal func flush() -> Bool {
@@ -94,7 +94,7 @@ internal class DataExportWorker: DataExportWorkerProtocol {
     }
     return success
   }
-  
+
   /// Cancels scheduled exports and stops scheduling next ones.
   /// - It does not affect the export that has already begun.
   /// - It blocks the caller thread if called in the middle of export execution.

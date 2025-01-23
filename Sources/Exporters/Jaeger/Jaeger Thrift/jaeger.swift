@@ -11,8 +11,7 @@ import Foundation
 
 import Thrift
 
-
-public enum TagType : TEnum {
+public enum TagType: TEnum {
   case string
   case double
   case bool
@@ -58,7 +57,7 @@ public enum TagType : TEnum {
   }
 }
 
-public enum SpanRefType : TEnum {
+public enum SpanRefType: TEnum {
   case child_of
   case follows_from
   case unknown(Int32)
@@ -111,7 +110,6 @@ public final class Tag {
 
   public var vBinary: Data?
 
-
   public init(key: String, vType: TagType) {
     self.key = key
     self.vType = vType
@@ -135,7 +133,6 @@ public final class Log {
 
   public var fields: TList<Tag>
 
-
   public init(timestamp: Int64, fields: TList<Tag>) {
     self.timestamp = timestamp
     self.fields = fields
@@ -152,7 +149,6 @@ public final class SpanRef {
   public var traceIdHigh: Int64
 
   public var spanId: Int64
-
 
   public init(refType: SpanRefType, traceIdLow: Int64, traceIdHigh: Int64, spanId: Int64) {
     self.refType = refType
@@ -187,7 +183,6 @@ public final class Span {
 
   public var logs: TList<Log>?
 
-
   public init(traceIdLow: Int64, traceIdHigh: Int64, spanId: Int64, parentSpanId: Int64, operationName: String, flags: Int32, startTime: Int64, duration: Int64) {
     self.traceIdLow = traceIdLow
     self.traceIdHigh = traceIdHigh
@@ -221,7 +216,6 @@ public final class Process {
 
   public var tags: TList<Tag>?
 
-
   public init(serviceName: String) {
     self.serviceName = serviceName
   }
@@ -239,7 +233,6 @@ public final class Batch {
 
   public var spans: TList<Span>
 
-
   public init(process: Process, spans: TList<Span>) {
     self.process = process
     self.spans = spans
@@ -250,7 +243,6 @@ public final class Batch {
 public final class BatchSubmitResponse {
 
   public var ok: Bool
-
 
   public init(ok: Bool) {
     self.ok = ok
@@ -269,7 +261,7 @@ public protocol Collector {
 
 }
 
-open class CollectorClient : TClient /* , Collector */ {
+open class CollectorClient: TClient /* , Collector */ {
 
 }
 
@@ -283,7 +275,7 @@ public protocol CollectorAsync {
 
 }
 
-open class CollectorAsyncClient<Protocol: TProtocol, Factory: TAsyncTransportFactory> : TAsyncClient<Protocol, Factory> /* , Collector */ {
+open class CollectorAsyncClient<Protocol: TProtocol, Factory: TAsyncTransportFactory>: TAsyncClient<Protocol, Factory> /* , Collector */ {
 
 }
 

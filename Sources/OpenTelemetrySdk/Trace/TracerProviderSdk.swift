@@ -18,8 +18,7 @@ public class TracerProviderSdk: TracerProvider {
                 resource: Resource = EnvVarResource.get(),
                 spanLimits: SpanLimits = SpanLimits(),
                 sampler: Sampler = Samplers.parentBased(root: Samplers.alwaysOn),
-                spanProcessors: [SpanProcessor] = [])
-    {
+                spanProcessors: [SpanProcessor] = []) {
         pthread_rwlock_init(&tracerLock, nil)
         sharedState = TracerSharedState(clock: clock,
                                         idGenerator: idGenerator,

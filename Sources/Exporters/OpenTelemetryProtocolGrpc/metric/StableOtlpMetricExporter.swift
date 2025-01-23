@@ -25,8 +25,7 @@ public class StableOtlpMetricExporter: StableMetricExporter {
 
     public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration(), aggregationTemporalitySelector: AggregationTemporalitySelector = AggregationTemporality.alwaysCumulative(),
                 defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector.instance,
-                logger: Logging.Logger = Logging.Logger(label: "io.grpc", factory: { _ in SwiftLogNoOpLogHandler() }), envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes)
-    {
+                logger: Logging.Logger = Logging.Logger(label: "io.grpc", factory: { _ in SwiftLogNoOpLogHandler() }), envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
         self.defaultAggregationSelector = defaultAggregationSelector
         self.aggregationTemporalitySelector = aggregationTemporalitySelector
         self.channel = channel

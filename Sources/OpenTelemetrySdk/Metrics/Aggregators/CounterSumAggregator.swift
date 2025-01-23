@@ -26,7 +26,7 @@ public class CounterSumAggregator<T: SignedNumeric>: Aggregator<T> {
     }
 
     public override func toMetricData() -> MetricData {
-        return SumData<T>(startTimestamp: lastStart, timestamp: lastEnd , sum: pointCheck)
+        return SumData<T>(startTimestamp: lastStart, timestamp: lastEnd, sum: pointCheck)
     }
 
     public override func getAggregationType() -> AggregationType {

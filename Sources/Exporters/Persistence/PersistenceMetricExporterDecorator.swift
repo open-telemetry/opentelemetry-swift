@@ -9,43 +9,47 @@ import OpenTelemetrySdk
 // a persistence exporter decorator for `Metric`.
 // specialization of `PersistenceExporterDecorator` for `MetricExporter`.
 public class PersistenceMetricExporterDecorator: MetricExporter {
-    struct MetricDecoratedExporter: DecoratedExporter {
-        typealias SignalType = Metric
-        
-        private let metricExporter: MetricExporter
-        
-        init(metricExporter: MetricExporter) {
-            self.metricExporter = metricExporter
-        }
+  struct MetricDecoratedExporter: DecoratedExporter {
+    typealias SignalType = Metric
 
-      func export(values: [Metric]) -> DataExportStatus {
-            let result = metricExporter.export(metrics: values, shouldCancel: nil)
-            return DataExportStatus(needsRetry: result == .failureRetryable)
-        }
+    private let metricExporter: MetricExporter
+
+    init(metricExporter: MetricExporter) {
+      self.metricExporter = metricExporter
     }
-    
-    private let persistenceExporter: PersistenceExporterDecorator<MetricDecoratedExporter>
-    
-    public init(metricExporter: MetricExporter,
-                storageURL: URL,
-                exportCondition: @escaping () -> Bool = { true },
-                performancePreset: PersistencePerformancePreset = .default) throws
-    {
-        self.persistenceExporter =
-            PersistenceExporterDecorator<MetricDecoratedExporter>(
-                decoratedExporter: MetricDecoratedExporter(metricExporter: metricExporter),
-                storageURL: storageURL,
-                exportCondition: exportCondition,
-                performancePreset: performancePreset)
+
+    func export(values: [Metric]) -> DataExportStatus {
+      let result = metricExporter.export(metrics: values, shouldCancel: nil)
+      return DataExportStatus(needsRetry: result == .failureRetryable)
     }
-        
-    public func export(metrics: [Metric], shouldCancel: (() -> Bool)?) -> MetricExporterResultCode {
-        do {
-            try persistenceExporter.export(values: metrics)
-            
-            return .success
-        } catch {
-            return .failureNotRetryable
-        }
+  }
+
+  private let persistenceExporter:
+    PersistenceExporterDecorator<MetricDecoratedExporter>
+
+  public init(
+    metricExporter: MetricExporter,
+    storageURL: URL,
+    exportCondition: @escaping () -> Bool = { true },
+    performancePreset: PersistencePerformancePreset = .default
+  ) throws {
+    self.persistenceExporter =
+      PersistenceExporterDecorator<MetricDecoratedExporter>(
+        decoratedExporter: MetricDecoratedExporter(
+          metricExporter: metricExporter),
+        storageURL: storageURL,
+        exportCondition: exportCondition,
+        performancePreset: performancePreset)
+  }
+
+  public func export(metrics: [Metric], shouldCancel: (() -> Bool)?)
+    -> MetricExporterResultCode {
+    do {
+      try persistenceExporter.export(values: metrics)
+
+      return .success
+    } catch {
+      return .failureNotRetryable
     }
+  }
 }

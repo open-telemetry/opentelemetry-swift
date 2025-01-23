@@ -11,7 +11,6 @@ public enum ExportResult {
     /// The export operation finished with an error.
     case failure
 
-
     /// Merges the current result code with other result code
     /// - Parameter newResultCode: the result code to merge with
     mutating func mergeResultCode(newResultCode: ExportResult) {
