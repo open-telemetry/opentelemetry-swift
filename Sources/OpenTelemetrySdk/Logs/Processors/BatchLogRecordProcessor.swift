@@ -36,8 +36,7 @@ public class BatchLogRecordProcessor: LogRecordProcessor {
   }
 }
 
-private class BatchWorker {
-  var thread: Thread!
+private class BatchWorker: WorkerThread {
   let logRecordExporter: LogRecordExporter
   let scheduleDelay: TimeInterval
   let maxQueueSize: Int
@@ -66,17 +65,6 @@ private class BatchWorker {
     queue = OperationQueue()
     queue.name = "BatchWorker Queue"
     queue.maxConcurrentOperationCount = 1
-    self.thread = Thread(block: { [weak self] in
-        self?.main()
-    })
-  }
-
-  func start() {
-    self.thread.start()
-  }
-
-  func cancel() {
-    self.thread.cancel()
   }
 
   func emit(logRecord: ReadableLogRecord) {
@@ -94,22 +82,22 @@ private class BatchWorker {
     }
   }
 
-  func main() {
+  override func main() {
     repeat {
-        autoreleasepool {
-          var logRecordsCopy: [ReadableLogRecord]
-          cond.lock()
-          if logRecordList.count < maxExportBatchSize {
-            repeat {
-              cond.wait(until: Date().addingTimeInterval(scheduleDelay))
-            } while logRecordList.isEmpty && !thread.isCancelled
-          }
-          logRecordsCopy = logRecordList
-          logRecordList.removeAll()
-          cond.unlock()
-          self.exportBatch(logRecordList: logRecordsCopy, explicitTimeout: exportTimeout)
+      autoreleasepool {
+        var logRecordsCopy: [ReadableLogRecord]
+        cond.lock()
+        if logRecordList.count < maxExportBatchSize {
+          repeat {
+            cond.wait(until: Date().addingTimeInterval(scheduleDelay))
+          } while logRecordList.isEmpty && !self.isCancelled
+        }
+        logRecordsCopy = logRecordList
+        logRecordList.removeAll()
+        cond.unlock()
+        self.exportBatch(logRecordList: logRecordsCopy, explicitTimeout: exportTimeout)
       }
-    } while !thread.isCancelled
+    } while !self.isCancelled
   }
 
   public func forceFlush(explicitTimeout: TimeInterval? = nil) {

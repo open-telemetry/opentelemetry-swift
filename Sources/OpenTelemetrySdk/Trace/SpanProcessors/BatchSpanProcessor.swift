@@ -71,8 +71,7 @@ public struct BatchSpanProcessor: SpanProcessor {
 /// BatchWorker is a thread that batches multiple spans and calls the registered SpanExporter to export
 /// the data.
 /// The list of batched data is protected by a NSCondition which ensures full concurrency.
-private class BatchWorker {
-  var thread: Thread!
+private class BatchWorker: WorkerThread {
   let spanExporter: SpanExporter
   let meterProvider: StableMeterProvider?
   let scheduleDelay: TimeInterval
@@ -141,24 +140,12 @@ private class BatchWorker {
           )
         }
     }
-
-    self.thread = Thread(block: { [weak self] in
-      self?.main()
-    })
   }
 
   deinit {
     // Cleanup all gauge observer
     self.queueSizeGauge?.close()
     self.spanGaugeObserver?.close()
-  }
-
-  func start() {
-    self.thread.start()
-  }
-
-  func cancel() {
-    self.thread.cancel()
   }
 
   func addSpan(span: ReadableSpan) {
@@ -181,7 +168,7 @@ private class BatchWorker {
     }
   }
 
-  func main() {
+  override func main() {
     repeat {
       autoreleasepool {
         var spansCopy: [ReadableSpan]
@@ -189,14 +176,14 @@ private class BatchWorker {
         if spanList.count < maxExportBatchSize {
           repeat {
             cond.wait(until: Date().addingTimeInterval(scheduleDelay))
-          } while spanList.isEmpty && !thread.isCancelled
+          } while spanList.isEmpty && !self.isCancelled
         }
         spansCopy = spanList
         spanList.removeAll()
         cond.unlock()
         self.exportBatch(spanList: spansCopy, explicitTimeout: self.exportTimeout)
       }
-    } while !thread.isCancelled
+    } while !self.isCancelled
   }
 
   func shutdown() {
