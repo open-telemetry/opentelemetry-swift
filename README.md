@@ -135,6 +135,6 @@ We are also available in the [#otel-swift](https://cloud-native.slack.com/archiv
 
 - [Alolita Sharma](https://github.com/alolita), Apple
 
-
-
 *Find more about the triager role in the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#triager).*
+
+
