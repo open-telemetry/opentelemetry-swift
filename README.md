@@ -126,7 +126,7 @@ We are also available in the [#otel-swift](https://cloud-native.slack.com/archiv
 
 #### Approvers ([@open-telemetry/swift-approvers](https://github.com/orgs/open-telemetry/teams/swift-approvers))
 
-- [Vinod Vidiyer](https://github.com/vvydier)), Independent
+- [Vinod Vydier](https://github.com/vvydier)), Independent
 - [Austin Emmons](https://github.com/atreat), Embrace
 
 *Find more about the approver role in the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).*
