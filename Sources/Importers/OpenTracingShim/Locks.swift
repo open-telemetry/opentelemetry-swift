@@ -33,8 +33,12 @@
 
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
     import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#elseif canImport(Musl)
+import Musl
 #else
-    import Glibc
+#error("Unsupported platform")
 #endif
 
 /// A threading lock based on `libpthread` instead of `libdispatch`.

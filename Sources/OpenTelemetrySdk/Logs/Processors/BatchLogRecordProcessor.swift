@@ -1,7 +1,7 @@
 //
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 
 import Foundation
 import OpenTelemetryApi
@@ -36,7 +36,7 @@ public class BatchLogRecordProcessor: LogRecordProcessor {
   }
 }
 
-private class BatchWorker: Thread {
+private class BatchWorker: WorkerThread {
   let logRecordExporter: LogRecordExporter
   let scheduleDelay: TimeInterval
   let maxQueueSize: Int
@@ -69,7 +69,7 @@ private class BatchWorker: Thread {
 
   func emit(logRecord: ReadableLogRecord) {
     cond.lock()
-    defer { cond.unlock()}
+    defer { cond.unlock() }
     if logRecordList.count == maxQueueSize {
       // TODO: record a counter for dropped logs
       return
@@ -84,18 +84,18 @@ private class BatchWorker: Thread {
 
   override func main() {
     repeat {
-        autoreleasepool {
-          var logRecordsCopy: [ReadableLogRecord]
-          cond.lock()
-          if logRecordList.count < maxExportBatchSize {
-            repeat {
-              cond.wait(until: Date().addingTimeInterval(scheduleDelay))
-            } while logRecordList.isEmpty && !self.isCancelled
-          }
-          logRecordsCopy = logRecordList
-          logRecordList.removeAll()
-          cond.unlock()
-          self.exportBatch(logRecordList: logRecordsCopy, explicitTimeout: exportTimeout)
+      autoreleasepool {
+        var logRecordsCopy: [ReadableLogRecord]
+        cond.lock()
+        if logRecordList.count < maxExportBatchSize {
+          repeat {
+            cond.wait(until: Date().addingTimeInterval(scheduleDelay))
+          } while logRecordList.isEmpty && !self.isCancelled
+        }
+        logRecordsCopy = logRecordList
+        logRecordList.removeAll()
+        cond.unlock()
+        self.exportBatch(logRecordList: logRecordsCopy, explicitTimeout: exportTimeout)
       }
     } while !self.isCancelled
   }
