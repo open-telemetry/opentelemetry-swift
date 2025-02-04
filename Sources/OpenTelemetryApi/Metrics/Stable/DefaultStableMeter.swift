@@ -54,15 +54,35 @@ public class DefaultStableMeter: StableMeter {
       NoopLongGaugeBuilder()
     }
 
+    func build() -> DoubleGauge {
+      NoopDoubleGauge()
+    }
+
     func buildWithCallback(_ callback: @escaping (ObservableDoubleMeasurement) -> Void) -> ObservableDoubleGauge {
       NoopObservableDoubleGauge()
     }
   }
 
-    private class NoopLongGaugeBuilder: LongGaugeBuilder {
+  private class NoopLongGaugeBuilder: LongGaugeBuilder {
+    func build() -> LongGauge {
+        NoopLongGauge()
+    }
+
     func buildWithCallback(_ callback: @escaping (ObservableLongMeasurement) -> Void) -> ObservableLongGauge {
         NoopObservableLongGauge()
     }
+  }
+
+  private struct NoopDoubleGauge: DoubleGauge {
+      func record(value: Double) {}
+
+      func record(value: Double, attributes: [String : AttributeValue]) {}
+  }
+
+  private struct NoopLongGauge: LongGauge {
+      func record(value: Int) {}
+
+      func record(value: Int, attributes: [String : AttributeValue]) {}
   }
 
   private struct NoopObservableLongGauge: ObservableLongGauge {
