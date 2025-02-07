@@ -119,7 +119,7 @@ class BatchLogRecordProcessorTests : XCTestCase {
         }
 
         // After the BatchWorker is shutdown, it will continue waiting for the condition variable to be signaled up to the maxScheduleDelay. Until that point the exporter won't be deallocated.
-        sleep(UInt32(ceil(maxScheduleDelay)))
+        sleep(UInt32(ceil(maxScheduleDelay + 1)))
         // Interestingly, this will always succeed on macOS even if you intentionally create a strong reference cycle between the BatchWorker and the Thread's closure. I assume either calling cancel or the thread exiting releases the closure which breaks the cycle. This is not the case on Linux where the test will fail as expected.
         XCTAssertNil(exporter)
     }
