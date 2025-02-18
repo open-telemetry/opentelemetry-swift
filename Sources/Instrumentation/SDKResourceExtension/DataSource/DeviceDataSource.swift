@@ -34,6 +34,14 @@ public class DeviceDataSource: IDeviceDataSource {
 
             let machine = UnsafeMutablePointer<CChar>.allocate(capacity: desiredLen[0])
             let len: UnsafeMutablePointer<Int>! = UnsafeMutablePointer<Int>.allocate(capacity: 1)
+
+            defer {
+                hwName.deallocate()
+                desiredLen.deallocate()
+                machine.deallocate()
+                len.deallocate()
+            }
+        
             len[0] = desiredLen[0]
 
             let modelRequestError = sysctl(hwName, 2, machine, len, nil, 0)
