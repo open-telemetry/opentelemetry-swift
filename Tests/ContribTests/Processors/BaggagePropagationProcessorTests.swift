@@ -9,9 +9,9 @@ import OpenTelemetrySdk
 import Contrib
 import XCTest
 
-class BaggageSpanProcessorTests: XCTestCase {
+class BaggagePropagationProcessorTests: XCTestCase {
     func testProcessor() {
-        let processor = BaggageSpanProcessor(filter: { $0.key.name == "keepme" })
+        let processor = BaggagePropagationProcessor(filter: { $0.key.name == "keepme" })
         let exporter = InMemoryExporter()
         let simple = SimpleSpanProcessor(spanExporter: exporter)
         OpenTelemetry.registerTracerProvider(

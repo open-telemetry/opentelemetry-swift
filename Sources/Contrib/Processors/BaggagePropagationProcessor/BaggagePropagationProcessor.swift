@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
-public struct BaggageSpanProcessor: SpanProcessor {
+public struct BaggagePropagationProcessor: SpanProcessor {
     public let isStartRequired = true
     public let isEndRequired = false
     public let filter: (Entry) -> Bool
