@@ -11,18 +11,6 @@ import XCTest
 
 class BaggagePropagationProcessorTests: XCTestCase {
     func testProcessor() {
-        let processor = BaggagePropagationProcessor(filter: { $0.key.name == "keepme" })
-        let exporter = InMemoryExporter()
-        let simple = SimpleSpanProcessor(spanExporter: exporter)
-        OpenTelemetry.registerTracerProvider(
-            tracerProvider: TracerProviderBuilder().add(spanProcessor: processor)
-                .add(spanProcessor: simple).build()
-        )
-        let tracer = OpenTelemetry.instance.tracerProvider.get(
-            instrumentationName: "test",
-            instrumentationVersion: "1.0.0"
-        )
-
         guard let key = EntryKey(name: "test-key") else {
             XCTFail()
             return
@@ -37,16 +25,25 @@ class BaggagePropagationProcessorTests: XCTestCase {
             XCTFail()
             return
         }
-
-        let parent = tracer.spanBuilder(spanName: "parent").startSpan()
-
+        
         // create two baggage items, one we will keep and one will
         // be filtered out by the processor
-        let b = OpenTelemetry.instance.baggageManager.baggageBuilder()
+        let b = DefaultBaggageManager.instance.baggageBuilder()
             .put(key: key, value: value, metadata: nil)
             .put(key: keep, value: value, metadata: nil)
             .build()
-        OpenTelemetry.instance.contextProvider.setActiveBaggage(b)
+        
+        var processor = BaggagePropagationProcessor(filter: { $0.key.name == "keepme" })
+        processor.activeBaggage = { b }
+        let exporter = InMemoryExporter()
+        let simple = SimpleSpanProcessor(spanExporter: exporter)
+        let tp = TracerProviderBuilder().add(spanProcessor: processor).add(spanProcessor: simple).build()
+        let tracer = tp.get(
+            instrumentationName: "test",
+            instrumentationVersion: "1.0.0"
+        )
+
+        let parent = tracer.spanBuilder(spanName: "parent").startSpan()
 
         let child = tracer.spanBuilder(spanName: "child").startSpan()
 
