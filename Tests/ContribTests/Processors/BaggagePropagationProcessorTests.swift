@@ -6,7 +6,7 @@
 import InMemoryExporter
 import OpenTelemetryApi
 import OpenTelemetrySdk
-import Contrib
+import BaggagePropagationProcessor
 import XCTest
 
 class BaggagePropagationProcessorTests: XCTestCase {
