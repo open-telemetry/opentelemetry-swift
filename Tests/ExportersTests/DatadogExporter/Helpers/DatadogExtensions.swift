@@ -12,18 +12,18 @@ import Foundation
  */
 
 extension Date {
-    /// Returns name of the logs file createde at this date.
-    var toFileName: String {
-        return fileNameFrom(fileCreationDate: self)
-    }
+  /// Returns name of the logs file createde at this date.
+  var toFileName: String {
+    return fileNameFrom(fileCreationDate: self)
+  }
 }
 
 extension File {
-    func makeReadonly() throws {
-        try FileManager.default.setAttributes([.immutable: true], ofItemAtPath: url.path)
-    }
+  func makeReadonly() throws {
+    try FileManager.default.setAttributes([.immutable: true], ofItemAtPath: url.path)
+  }
 
-    func makeReadWrite() throws {
-        try FileManager.default.setAttributes([.immutable: false], ofItemAtPath: url.path)
-    }
+  func makeReadWrite() throws {
+    try FileManager.default.setAttributes([.immutable: false], ofItemAtPath: url.path)
+  }
 }

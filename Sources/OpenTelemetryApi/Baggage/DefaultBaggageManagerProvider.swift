@@ -7,9 +7,9 @@ import Foundation
 
 /// No-op implementations of BaggageManager.
 public class DefaultBaggageManagerProvider: BaggageManagerProvider {
-    public static var instance = DefaultBaggageManagerProvider()
+  public static var instance = DefaultBaggageManagerProvider()
 
-    public func create() -> BaggageManager {
-        return DefaultBaggageManager.instance
-    }
+  public func create() -> BaggageManager {
+    return DefaultBaggageManager.instance
+  }
 }

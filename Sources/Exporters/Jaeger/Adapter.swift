@@ -37,8 +37,8 @@
 
       let traceHex = span.traceId.hexString
       let secondIndex = traceHex.index(traceHex.startIndex, offsetBy: 16)
-      let traceIdHigh = Int64(traceHex[traceHex.startIndex..<secondIndex], radix: 16) ?? 0
-      let traceIdLow = Int64(traceHex[secondIndex..<traceHex.endIndex], radix: 16) ?? 0
+      let traceIdHigh = Int64(traceHex[traceHex.startIndex ..< secondIndex], radix: 16) ?? 0
+      let traceIdLow = Int64(traceHex[secondIndex ..< traceHex.endIndex], radix: 16) ?? 0
 
       let spanHex = span.spanId.hexString
       let spanId = Int64(spanHex, radix: 16) ?? 0
@@ -228,8 +228,8 @@
     static func toSpanRef(link: SpanData.Link) -> SpanRef {
       let traceHex = link.context.traceId.hexString
       let secondIndex = traceHex.index(traceHex.startIndex, offsetBy: 16)
-      let traceIdHigh = Int64(traceHex[traceHex.startIndex..<secondIndex], radix: 16) ?? 0
-      let traceIdLow = Int64(traceHex[secondIndex..<traceHex.endIndex], radix: 16) ?? 0
+      let traceIdHigh = Int64(traceHex[traceHex.startIndex ..< secondIndex], radix: 16) ?? 0
+      let traceIdLow = Int64(traceHex[secondIndex ..< traceHex.endIndex], radix: 16) ?? 0
 
       let spanHex = link.context.spanId.hexString
       let spanId = Int64(spanHex, radix: 16) ?? 0

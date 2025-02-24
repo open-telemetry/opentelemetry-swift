@@ -23,12 +23,12 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
   private var exporterMetrics: ExporterMetrics?
 
   override
-    public init(
-      endpoint: URL = defaultOltpHTTPMetricsEndpoint(),
-      config: OtlpConfiguration = OtlpConfiguration(),
-      useSession: URLSession? = nil,
-      envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes
-    ) {
+  public init(
+    endpoint: URL = defaultOltpHTTPMetricsEndpoint(),
+    config: OtlpConfiguration = OtlpConfiguration(),
+    useSession: URLSession? = nil,
+    envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes
+  ) {
     super.init(
       endpoint: endpoint,
       config: config,
@@ -74,9 +74,9 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
     }
     let body =
       Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
-      $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(
-        metricDataList: sendingMetrics)
-    }
+        $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(
+          metricDataList: sendingMetrics)
+      }
 
     var request = createRequest(body: body, endpoint: endpoint)
     if let headers = envVarHeaders {
@@ -112,10 +112,10 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
     if !pendingMetrics.isEmpty {
       let body =
         Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest
-        .with {
-          $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(
-            metricDataList: pendingMetrics)
-        }
+          .with {
+            $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(
+              metricDataList: pendingMetrics)
+          }
 
       let semaphore = DispatchSemaphore(value: 0)
       let request = createRequest(body: body, endpoint: endpoint)

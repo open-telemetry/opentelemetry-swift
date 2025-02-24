@@ -7,60 +7,50 @@
 
 #if !os(watchOS)
 
-import Foundation
+  import Foundation
 
-import Thrift
+  import Thrift
 
-public protocol Agent {
+  public protocol Agent {
+    ///
+    /// - Parameters:
+    ///   - spans:
+    /// - Throws:
+    func emitZipkinBatch(spans: TList<Span>) throws
 
-  ///
-  /// - Parameters:
-  ///   - spans: 
-  /// - Throws: 
-  func emitZipkinBatch(spans: TList<Span>) throws
-
-  ///
-  /// - Parameters:
-  ///   - batch: 
-  /// - Throws: 
-  func emitBatch(batch: Batch) throws
-
-}
-
-open class AgentClient: TClient /* , Agent */ {
-
-}
-
-public protocol AgentAsync {
-
-  ///
-  /// - Parameters:
-  ///   - spans: 
-  ///   - completion: TAsyncResult<Void> wrapping return and following Exceptions: 
-  func emitZipkinBatch(spans: TList<Span>, completion: @escaping (TAsyncResult<Void>) -> Void)
-
-  ///
-  /// - Parameters:
-  ///   - batch: 
-  ///   - completion: TAsyncResult<Void> wrapping return and following Exceptions: 
-  func emitBatch(batch: Batch, completion: @escaping (TAsyncResult<Void>) -> Void)
-
-}
-
-open class AgentAsyncClient<Protocol: TProtocol, Factory: TAsyncTransportFactory>: TAsyncClient<Protocol, Factory> /* , Agent */ {
-
-}
-
-open class AgentProcessor /* Agent */ {
-
-  typealias ProcessorHandlerDictionary = [String: (Int32, TProtocol, TProtocol, Agent) throws -> Void]
-
-  public var service: Agent
-
-  public required init(service: Agent) {
-    self.service = service
+    ///
+    /// - Parameters:
+    ///   - batch:
+    /// - Throws:
+    func emitBatch(batch: Batch) throws
   }
 
-}
+  open class AgentClient: TClient /* , Agent */ {}
+
+  public protocol AgentAsync {
+    ///
+    /// - Parameters:
+    ///   - spans:
+    ///   - completion: TAsyncResult<Void> wrapping return and following Exceptions:
+    func emitZipkinBatch(spans: TList<Span>, completion: @escaping (TAsyncResult<Void>) -> Void)
+
+    ///
+    /// - Parameters:
+    ///   - batch:
+    ///   - completion: TAsyncResult<Void> wrapping return and following Exceptions:
+    func emitBatch(batch: Batch, completion: @escaping (TAsyncResult<Void>) -> Void)
+  }
+
+  open class AgentAsyncClient<Protocol: TProtocol, Factory: TAsyncTransportFactory>: TAsyncClient<Protocol, Factory> /* , Agent */ {}
+
+  open class AgentProcessor /* Agent */ {
+    typealias ProcessorHandlerDictionary = [String: (Int32, TProtocol, TProtocol, Agent) throws -> Void]
+
+    public var service: Agent
+
+    public required init(service: Agent) {
+      self.service = service
+    }
+  }
 
 #endif

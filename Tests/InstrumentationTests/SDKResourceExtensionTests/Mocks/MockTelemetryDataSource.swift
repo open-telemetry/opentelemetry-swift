@@ -7,13 +7,13 @@ import Foundation
 @testable import ResourceExtension
 
 class MockTelemetryDataSource: ITelemetryDataSource {
-    var version: String?
-    var name: String
-    var language: String
+  var version: String?
+  var name: String
+  var language: String
 
-    init(name: String, language: String, version: String?) {
-        self.version = version
-        self.name = name
-        self.language = language
-    }
+  init(name: String, language: String, version: String?) {
+    self.version = version
+    self.name = name
+    self.language = language
+  }
 }

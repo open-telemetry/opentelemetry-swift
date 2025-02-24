@@ -12,35 +12,35 @@ import XCTest
  */
 
 extension Optional {
-    struct UnwrappingException: Error {}
+  struct UnwrappingException: Error {}
 
-    func unwrapOrThrow(file: StaticString = #file, line: UInt = #line) throws -> Wrapped {
-        switch self {
-        case .some(let unwrappedValue):
-            return unwrappedValue
-        case .none:
-            XCTFail("Expected value, got `nil`.", file: file, line: line)
-            throw UnwrappingException()
-        }
+  func unwrapOrThrow(file: StaticString = #file, line: UInt = #line) throws -> Wrapped {
+    switch self {
+    case .some(let unwrappedValue):
+      return unwrappedValue
+    case .none:
+      XCTFail("Expected value, got `nil`.", file: file, line: line)
+      throw UnwrappingException()
     }
+  }
 }
 
 extension Date {
-    func secondsAgo(_ seconds: TimeInterval) -> Date {
-        return addingTimeInterval(-seconds)
-    }
+  func secondsAgo(_ seconds: TimeInterval) -> Date {
+    return addingTimeInterval(-seconds)
+  }
 }
 
 extension TimeZone {
-    static var UTC: TimeZone { TimeZone(abbreviation: "UTC")! }
-    static var EET: TimeZone { TimeZone(abbreviation: "EET")! }
-    static func mockAny() -> TimeZone { .EET }
+  static var UTC: TimeZone { TimeZone(abbreviation: "UTC")! }
+  static var EET: TimeZone { TimeZone(abbreviation: "EET")! }
+  static func mockAny() -> TimeZone { .EET }
 }
 
 extension String {
-    var utf8Data: Data { data(using: .utf8)! }
+  var utf8Data: Data { data(using: .utf8)! }
 }
 
 extension Data {
-    var utf8String: String { String(decoding: self, as: UTF8.self) }
+  var utf8String: String { String(decoding: self, as: UTF8.self) }
 }

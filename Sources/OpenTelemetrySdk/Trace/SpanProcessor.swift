@@ -42,6 +42,7 @@ extension SpanProcessor {
   func forceFlush() {
     return forceFlush(timeout: nil)
   }
+
   mutating func shutdown() {
     return shutdown(explicitTimeout: nil)
   }

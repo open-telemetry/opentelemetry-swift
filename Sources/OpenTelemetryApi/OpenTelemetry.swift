@@ -13,7 +13,6 @@ import Foundation
 ///  and BaggageManager.
 ///  The telemetry objects are lazy-loaded singletons resolved via ServiceLoader mechanism.
 public struct OpenTelemetry {
-
   public static var version = "v1.21.0"
 
   public static var instance = OpenTelemetry()
@@ -112,12 +111,12 @@ public struct OpenTelemetry {
   static func withContextManager<T>(
     _ manager: ContextManager, _ operation: () throws -> T
   ) rethrows -> T {
-    let old = self.instance.contextProvider.contextManager
+    let old = instance.contextProvider.contextManager
     defer {
       self.registerContextManager(contextManager: old)
     }
 
-    self.registerContextManager(contextManager: manager)
+    registerContextManager(contextManager: manager)
 
     return try operation()
   }

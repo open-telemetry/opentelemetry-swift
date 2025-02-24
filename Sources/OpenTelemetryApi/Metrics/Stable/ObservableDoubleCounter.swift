@@ -6,5 +6,5 @@
 import Foundation
 
 public protocol ObservableDoubleCounter {
-    func close()
+  func close()
 }

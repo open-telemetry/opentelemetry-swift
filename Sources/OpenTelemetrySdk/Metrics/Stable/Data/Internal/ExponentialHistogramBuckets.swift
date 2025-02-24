@@ -7,8 +7,8 @@ import Foundation
 import OpenTelemetryApi
 
 public protocol ExponentialHistogramBuckets {
-    var scale: Int { get }
-    var offset: Int { get }
-    var bucketCounts: [Int64] { get }
-    var totalCount: Int { get }
+  var scale: Int { get }
+  var offset: Int { get }
+  var bucketCounts: [Int64] { get }
+  var totalCount: Int { get }
 }

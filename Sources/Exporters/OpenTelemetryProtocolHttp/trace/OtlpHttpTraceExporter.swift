@@ -23,11 +23,11 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
   private var exporterMetrics: ExporterMetrics?
 
   override
-    public init(
-      endpoint: URL = defaultOltpHttpTracesEndpoint(),
-      config: OtlpConfiguration = OtlpConfiguration(),
-      useSession: URLSession? = nil,
-      envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+  public init(
+    endpoint: URL = defaultOltpHttpTracesEndpoint(),
+    config: OtlpConfiguration = OtlpConfiguration(),
+    useSession: URLSession? = nil,
+    envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
     super.init(
       endpoint: endpoint,
       config: config,

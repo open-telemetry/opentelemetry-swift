@@ -6,5 +6,5 @@
 import Foundation
 
 public protocol ObservableDoubleGauge {
-    func close()
+  func close()
 }

@@ -70,9 +70,7 @@ internal struct StatusExplicitCodable: Codable {
     case error
   }
 
-  enum EmptyCodingKeys: CodingKey {
-
-  }
+  enum EmptyCodingKeys: CodingKey {}
 
   enum ErrorCodingKeys: String, CodingKey {
     case description
@@ -96,25 +94,24 @@ internal struct StatusExplicitCodable: Codable {
     case .ok:
       _ = try container.nestedContainer(
         keyedBy: EmptyCodingKeys.self, forKey: .ok)
-      self.status = .ok
+      status = .ok
     case .unset:
       _ = try container.nestedContainer(
         keyedBy: EmptyCodingKeys.self, forKey: .unset)
-      self.status = .unset
+      status = .unset
     case .error:
       let nestedContainer = try container.nestedContainer(
         keyedBy: ErrorCodingKeys.self, forKey: .error)
-      self.status = .error(
+      status = .error(
         description: try nestedContainer.decode(
           String.self, forKey: .description))
     }
   }
 
   public func encode(to encoder: Encoder) throws {
-
     var container = encoder.container(keyedBy: CodingKeys.self)
 
-    switch self.status {
+    switch status {
     case .ok:
       _ = container.nestedContainer(keyedBy: EmptyCodingKeys.self, forKey: .ok)
     case .unset:
@@ -135,7 +132,6 @@ internal struct StatusExplicitCodable: Codable {
 #else
   // for older swift versions use a forward compatible explicit Codable implementation
   extension Status: Codable {
-
     public init(from decoder: Decoder) throws {
       let explicitDecoded = try StatusExplicitCodable(from: decoder)
 

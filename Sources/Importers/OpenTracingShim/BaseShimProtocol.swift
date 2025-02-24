@@ -7,23 +7,23 @@ import Foundation
 import OpenTelemetryApi
 
 protocol BaseShimProtocol {
-    var telemetryInfo: TelemetryInfo { get }
+  var telemetryInfo: TelemetryInfo { get }
 }
 
 extension BaseShimProtocol {
-    var tracer: Tracer {
-        return telemetryInfo.tracer
-    }
+  var tracer: Tracer {
+    return telemetryInfo.tracer
+  }
 
-    var spanContextTable: SpanContextShimTable {
-        return telemetryInfo.spanContextTable
-    }
+  var spanContextTable: SpanContextShimTable {
+    return telemetryInfo.spanContextTable
+  }
 
-    var baggageManager: BaggageManager {
-        return telemetryInfo.baggageManager
-    }
+  var baggageManager: BaggageManager {
+    return telemetryInfo.baggageManager
+  }
 
-    var propagators: ContextPropagators {
-        return telemetryInfo.propagators
-    }
+  var propagators: ContextPropagators {
+    return telemetryInfo.propagators
+  }
 }

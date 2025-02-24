@@ -6,7 +6,6 @@
 import Foundation
 
 public protocol LogRecordExporter {
-
   func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval?) -> ExportResult
 
   /// Shutdown the log exporter

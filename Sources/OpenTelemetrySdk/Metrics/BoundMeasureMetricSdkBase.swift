@@ -7,11 +7,11 @@ import Foundation
 import OpenTelemetryApi
 
 class BoundMeasureMetricSdkBase<T>: BoundMeasureMetric<T> {
-    override init() {
-        super.init()
-    }
+  override init() {
+    super.init()
+  }
 
-    func getAggregator() -> Aggregator<T> {
-        fatalError()
-    }
+  func getAggregator() -> Aggregator<T> {
+    fatalError()
+  }
 }

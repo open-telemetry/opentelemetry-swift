@@ -6,5 +6,5 @@
 import Foundation
 
 public protocol BaggageManagerProvider {
-    func create() -> BaggageManager
+  func create() -> BaggageManager
 }

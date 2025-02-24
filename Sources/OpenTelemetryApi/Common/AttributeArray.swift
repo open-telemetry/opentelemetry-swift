@@ -1,7 +1,7 @@
 //
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 
 import Foundation
 
@@ -11,6 +11,7 @@ open class AttributeArray: Hashable, Codable {
   public var description: String {
     values.description
   }
+
   private init() {
     values = [AttributeValue]()
   }

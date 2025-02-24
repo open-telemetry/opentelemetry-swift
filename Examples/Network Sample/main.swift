@@ -10,49 +10,49 @@ import StdoutExporter
 import URLSessionInstrumentation
 
 func simpleNetworkCall() {
-    let url = URL(string: "http://httpbin.org/get")!
-    let request = URLRequest(url: url)
-    let semaphore = DispatchSemaphore(value: 0)
+  let url = URL(string: "http://httpbin.org/get")!
+  let request = URLRequest(url: url)
+  let semaphore = DispatchSemaphore(value: 0)
 
-    let task = URLSession.shared.dataTask(with: request) { data, _, _ in
-        if let data = data {
-          let string = String(bytes: data, encoding: .utf8)
-            print(string as Any)
-        }
-        semaphore.signal()
+  let task = URLSession.shared.dataTask(with: request) { data, _, _ in
+    if let data = data {
+      let string = String(bytes: data, encoding: .utf8)
+      print(string as Any)
     }
-    task.resume()
+    semaphore.signal()
+  }
+  task.resume()
 
-    semaphore.wait()
+  semaphore.wait()
 }
 
 class SessionDelegate: NSObject, URLSessionDataDelegate, URLSessionTaskDelegate {
-    let semaphore = DispatchSemaphore(value: 0)
+  let semaphore = DispatchSemaphore(value: 0)
 
-    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        semaphore.signal()
-    }
+  func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+    semaphore.signal()
+  }
 }
+
 let delegate = SessionDelegate()
 
 func simpleNetworkCallWithDelegate() {
+  let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
 
-    let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+  let url = URL(string: "http://httpbin.org/get")!
+  let request = URLRequest(url: url)
 
-    let url = URL(string: "http://httpbin.org/get")!
-    let request = URLRequest(url: url)
+  let task = session.dataTask(with: request)
+  task.resume()
 
-    let task = session.dataTask(with: request)
-    task.resume()
-
-    delegate.semaphore.wait()
+  delegate.semaphore.wait()
 }
 
 let spanProcessor = SimpleSpanProcessor(spanExporter: StdoutSpanExporter(isDebug: true))
 OpenTelemetry.registerTracerProvider(tracerProvider:
-    TracerProviderBuilder()
-        .add(spanProcessor: spanProcessor)
-        .build()
+  TracerProviderBuilder()
+    .add(spanProcessor: spanProcessor)
+    .build()
 )
 
 let networkInstrumentation = URLSessionInstrumentation(configuration: URLSessionInstrumentationConfiguration())
