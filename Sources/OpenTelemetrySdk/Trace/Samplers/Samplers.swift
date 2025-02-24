@@ -85,7 +85,7 @@ class TraceIdRatioBased: Sampler {
   var idUpperBound: UInt
 
   init(ratio: Double) {
-    self.probability = ratio
+    probability = ratio
     if ratio <= 0.0 {
       idUpperBound = UInt.min
     } else if ratio >= 1.0 {

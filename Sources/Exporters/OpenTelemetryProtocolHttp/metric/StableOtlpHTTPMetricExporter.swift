@@ -34,7 +34,6 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
     useSession: URLSession? = nil,
     envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes
   ) {
-
     self.aggregationTemporalitySelector = aggregationTemporalitySelector
     self.defaultAggregationSelector = defaultAggregationSelector
 
@@ -71,7 +70,7 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
       useSession: useSession,
       envVarHeaders: envVarHeaders
     )
-    self.exporterMetrics = ExporterMetrics(
+    exporterMetrics = ExporterMetrics(
       type: "metric",
       meterProvider: meterProvider,
       exporterName: "otlp",
@@ -92,10 +91,10 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
     }
     let body =
       Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
-      $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(
-        stableMetricData: sendingMetrics)
-    }
-    self.exporterMetrics?.addSeen(value: sendingMetrics.count)
+        $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(
+          stableMetricData: sendingMetrics)
+      }
+    exporterMetrics?.addSeen(value: sendingMetrics.count)
     var request = createRequest(body: body, endpoint: endpoint)
     request.timeoutInterval = min(
       TimeInterval.greatestFiniteMagnitude, config.timeout)
@@ -124,10 +123,10 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
     if !pendingMetrics.isEmpty {
       let body =
         Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest
-        .with {
-          $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(
-            stableMetricData: pendingMetrics)
-        }
+          .with {
+            $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(
+              stableMetricData: pendingMetrics)
+          }
       let semaphore = DispatchSemaphore(value: 0)
       var request = createRequest(body: body, endpoint: endpoint)
       request.timeoutInterval = min(

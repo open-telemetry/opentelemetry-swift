@@ -5,38 +5,38 @@
 
 #if os(macOS) || os(iOS) || targetEnvironment(macCatalyst)
 
-import XCTest
+  import XCTest
 
-#if os(iOS)
-import UIKit
-#else
-import Foundation
-import SystemConfiguration
-#endif
+  #if os(iOS)
+    import UIKit
+  #else
+    import Foundation
+    import SystemConfiguration
+  #endif
 
-@testable import DatadogExporter
+  @testable import DatadogExporter
 
-class DeviceTests: XCTestCase {
+  class DeviceTests: XCTestCase {
     func testWhenRunningOnMobile_itReturnsDevice() {
-        XCTAssertNotNil(Device.current)
+      XCTAssertNotNil(Device.current)
     }
 
     #if os(iOS) && !targetEnvironment(macCatalyst)
-    func testWhenRunningOnMobile_itUsesUIDeviceInfo() {
+      func testWhenRunningOnMobile_itUsesUIDeviceInfo() {
         let uiDevice = UIDeviceMock(
-            model: "model mock",
-            systemName: "system name mock",
-            systemVersion: "system version mock"
+          model: "model mock",
+          systemName: "system name mock",
+          systemVersion: "system version mock"
         )
         let device = Device(uiDevice: uiDevice, processInfo: ProcessInfoMock())
 
         XCTAssertEqual(device.model, uiDevice.model)
         XCTAssertEqual(device.osName, uiDevice.systemName)
         XCTAssertEqual(device.osVersion, uiDevice.systemVersion)
-    }
+      }
 
-    class ProcessInfoMock: ProcessInfo {}
+      class ProcessInfoMock: ProcessInfo {}
     #endif
-}
+  }
 
 #endif

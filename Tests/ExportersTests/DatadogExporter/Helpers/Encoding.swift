@@ -5,9 +5,9 @@
 @testable import DatadogExporter
 
 extension EncodableValue: Equatable {
-    public static func == (lhs: EncodableValue, rhs: EncodableValue) -> Bool {
-        return String(describing: lhs) == String(describing: rhs)
-    }
+  public static func == (lhs: EncodableValue, rhs: EncodableValue) -> Bool {
+    return String(describing: lhs) == String(describing: rhs)
+  }
 }
 
 /// Prior to `iOS13.0`, the `JSONEncoder` supports only object or array as the root type.
@@ -15,9 +15,9 @@ extension EncodableValue: Equatable {
 ///
 /// Reference: https://bugs.swift.org/browse/SR-6163
 struct EncodingContainer<Value: Encodable>: Encodable {
-    let value: Value
+  let value: Value
 
-    init(_ value: Value) {
-        self.value = value
-    }
+  init(_ value: Value) {
+    self.value = value
+  }
 }

@@ -6,7 +6,6 @@
 import Foundation
 
 public enum Severity: Int, Comparable, CustomStringConvertible, Codable {
-
   case trace = 1
   case
     trace2,
@@ -85,6 +84,7 @@ public enum Severity: Int, Comparable, CustomStringConvertible, Codable {
       return "FATAL4"
     }
   }
+
   public static func < (lhs: Severity, rhs: Severity) -> Bool {
     lhs.rawValue < rhs.rawValue
   }

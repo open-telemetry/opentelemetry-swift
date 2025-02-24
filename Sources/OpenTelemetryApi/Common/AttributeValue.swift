@@ -41,7 +41,6 @@ public enum AttributeValue: Equatable, CustomStringConvertible, Hashable {
     case let .set(value):
       return value.labels.description
     }
-
   }
 
   // swiftlint:disable cyclomatic_complexity
@@ -50,7 +49,7 @@ public enum AttributeValue: Equatable, CustomStringConvertible, Hashable {
     case is String:
       // swiftlint:disable force_cast
       self = .string(value as! String)
-      // swiftlint:enable force_cast
+    // swiftlint:enable force_cast
     case let val as Bool:
       self = .bool(val)
     case let val as Int:
@@ -73,55 +72,55 @@ public enum AttributeValue: Equatable, CustomStringConvertible, Hashable {
       return nil
     }
   }
-// swiftlint:enable cyclomatic_complexity
+  // swiftlint:enable cyclomatic_complexity
 }
 
-extension AttributeValue {
-  public init(_ value: String) {
+public extension AttributeValue {
+  init(_ value: String) {
     self = .string(value)
   }
 
-  public init(_ value: Bool) {
+  init(_ value: Bool) {
     self = .bool(value)
   }
 
-  public init(_ value: Int) {
+  init(_ value: Int) {
     self = .int(value)
   }
 
-  public init(_ value: Double) {
+  init(_ value: Double) {
     self = .double(value)
   }
 
-  public init(_ value: [String]) {
+  init(_ value: [String]) {
     self = .array(AttributeArray(values: value.map { element in
       return AttributeValue.string(element)
     }))
   }
 
-  public init(_ value: [Int]) {
+  init(_ value: [Int]) {
     self = .array(AttributeArray(values: value.map { element in
       return AttributeValue.int(element)
     }))
   }
 
-  public init(_ value: [Double]) {
+  init(_ value: [Double]) {
     self = .array(AttributeArray(values: value.map { element in
       return AttributeValue.double(element)
     }))
   }
 
-  public init(_ value: [Bool]) {
+  init(_ value: [Bool]) {
     self = .array(AttributeArray(values: value.map { element in
       return AttributeValue.bool(element)
     }))
   }
 
-  public init (_ value: AttributeArray) {
+  init (_ value: AttributeArray) {
     self = .array(value)
   }
 
-  public init(_ value: AttributeSet) {
+  init(_ value: AttributeSet) {
     self = .set(value)
   }
 }
@@ -160,28 +159,28 @@ internal struct AttributeValueExplicitCodable: Codable {
     case .string:
       let nestedContainer = try container.nestedContainer(
         keyedBy: AssociatedValueCodingKeys.self, forKey: .string)
-      self.attributeValue = .string(
+      attributeValue = .string(
         try nestedContainer.decode(String.self, forKey: .associatedValue))
     case .bool:
       let nestedContainer = try container.nestedContainer(
         keyedBy: AssociatedValueCodingKeys.self, forKey: .bool)
-      self.attributeValue = .bool(try nestedContainer.decode(Bool.self, forKey: .associatedValue))
+      attributeValue = .bool(try nestedContainer.decode(Bool.self, forKey: .associatedValue))
     case .int:
       let nestedContainer = try container.nestedContainer(
         keyedBy: AssociatedValueCodingKeys.self, forKey: .int)
-      self.attributeValue = .int(try nestedContainer.decode(Int.self, forKey: .associatedValue))
+      attributeValue = .int(try nestedContainer.decode(Int.self, forKey: .associatedValue))
     case .double:
       let nestedContainer = try container.nestedContainer(
         keyedBy: AssociatedValueCodingKeys.self, forKey: .double)
-      self.attributeValue = .double(
+      attributeValue = .double(
         try nestedContainer.decode(Double.self, forKey: .associatedValue))
     case .array:
       let nestedContainer = try container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .array)
-      self.attributeValue = .array(try nestedContainer.decode(AttributeArray.self, forKey: .associatedValue))
+      attributeValue = .array(try nestedContainer.decode(AttributeArray.self, forKey: .associatedValue))
     case .set:
       let nestedContainer = try container.nestedContainer(
         keyedBy: AssociatedValueCodingKeys.self, forKey: .set)
-      self.attributeValue = .set(
+      attributeValue = .set(
         try nestedContainer.decode(AttributeSet.self, forKey: .associatedValue))
     }
   }
@@ -189,7 +188,7 @@ internal struct AttributeValueExplicitCodable: Codable {
   public func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
 
-    switch self.attributeValue {
+    switch attributeValue {
     case let .string(value):
       var nestedContainer = container.nestedContainer(
         keyedBy: AssociatedValueCodingKeys.self, forKey: .string)

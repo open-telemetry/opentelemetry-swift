@@ -7,11 +7,11 @@ import Foundation
 import OpenTelemetryApi
 
 class BoundHistogramMetricSdkBase<T>: BoundHistogramMetric<T> {
-    override init(explicitBoundaries: [T]? = nil) {
-        super.init(explicitBoundaries: explicitBoundaries)
-    }
+  override init(explicitBoundaries: [T]? = nil) {
+    super.init(explicitBoundaries: explicitBoundaries)
+  }
 
-    func getAggregator() -> Aggregator<T> {
-        fatalError()
-    }
+  func getAggregator() -> Aggregator<T> {
+    fatalError()
+  }
 }

@@ -6,7 +6,6 @@
 import Foundation
 
 public protocol LogRecordProcessor {
-
   /// Called when a Logger's LogRecordBuilder emits a log record
   ///
   /// - Parameter logRecord: the log record emitted
@@ -24,7 +23,6 @@ public protocol LogRecordProcessor {
 }
 
 public extension LogRecordProcessor {
-
   /// Processes all span events that have not yet been processes
   ///
   /// - returns whether the task was successful

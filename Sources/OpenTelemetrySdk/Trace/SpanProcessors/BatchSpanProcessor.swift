@@ -110,11 +110,10 @@ private class BatchWorker: Thread {
     queue.maxConcurrentOperationCount = 1
 
     if let meter = meterProvider?.meterBuilder(name: "io.opentelemetry.sdk.trace").build() {
-
       var longGaugeSdk = meter.gaugeBuilder(name: "queueSize").ofLongs() as? LongGaugeBuilderSdk
       longGaugeSdk = longGaugeSdk?.setDescription("The number of items queued")
       longGaugeSdk = longGaugeSdk?.setUnit("1")
-      self.queueSizeGauge = longGaugeSdk?.buildWithCallback { result in
+      queueSizeGauge = longGaugeSdk?.buildWithCallback { result in
         result.record(
           value: maxQueueSize,
           attributes: [
@@ -129,7 +128,7 @@ private class BatchWorker: Thread {
       processedSpansCounter = longCounterSdk?.build()
 
       // Subscribe to new gauge observer
-      self.spanGaugeObserver =  meter.gaugeBuilder(name: "spanSize")
+      spanGaugeObserver = meter.gaugeBuilder(name: "spanSize")
         .ofLongs()
         .buildWithCallback { [count = spanList.count] result in
           result.record(
@@ -183,11 +182,11 @@ private class BatchWorker: Thread {
         cond.unlock()
         self.exportBatch(spanList: spansCopy, explicitTimeout: self.exportTimeout)
       }
-    } while !self.isCancelled
+    } while !isCancelled
   }
 
   func shutdown() {
-    forceFlush(explicitTimeout: self.exportTimeout)
+    forceFlush(explicitTimeout: exportTimeout)
     spanExporter.shutdown()
   }
 

@@ -1,7 +1,7 @@
 //
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 
 import Foundation
 import OpenTelemetryApi
@@ -20,6 +20,6 @@ func configure() {
     BatchLogRecordProcessor(logRecordExporter: OtlpLogExporter(channel: ClientConnection(configuration: configuration)))]).build())
 }
 
-  configure()
+configure()
 
-  let eventProvider = OpenTelemetry.instance.loggerProvider.loggerBuilder(instrumentationScopeName: "myScope").setEventDomain("device").build()
+let eventProvider = OpenTelemetry.instance.loggerProvider.loggerBuilder(instrumentationScopeName: "myScope").setEventDomain("device").build()

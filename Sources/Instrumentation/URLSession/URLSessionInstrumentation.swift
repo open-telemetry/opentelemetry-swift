@@ -104,7 +104,7 @@ public class URLSessionInstrumentation {
     #endif
     let classes =
       configuration.delegateClassesToInstrument
-      ?? InstrumentationUtils.objc_getClassList()
+        ?? InstrumentationUtils.objc_getClassList()
     let selectorsCount = selectors.count
     DispatchQueue.concurrentPerform(iterations: classes.count) { iteration in
       let theClass: AnyClass = classes[iteration]
@@ -116,9 +116,9 @@ public class URLSessionInstrumentation {
       }
       defer { free(methodList) }
 
-      for j in 0..<selectorsCount {
-        for i in 0..<Int(methodCount)
-        where method_getName(methodList[i]) == selectors[j] {
+      for j in 0 ..< selectorsCount {
+        for i in 0 ..< Int(methodCount)
+          where method_getName(methodList[i]) == selectors[j] {
           selectorFound = true
           injectIntoDelegateClass(cls: theClass)
         }
@@ -200,7 +200,7 @@ public class URLSessionInstrumentation {
           let sessionTaskId = UUID().uuidString
 
           if let request = argument as? URLRequest,
-            objc_getAssociatedObject(argument, &idKey) == nil {
+             objc_getAssociatedObject(argument, &idKey) == nil {
             let instrumentedRequest = URLSessionLogger.processAndLogRequest(
               request, sessionTaskId: sessionTaskId, instrumentation: self,
               shouldInjectHeaders: true)
@@ -208,7 +208,7 @@ public class URLSessionInstrumentation {
           } else {
             task = castedIMP(session, selector, argument)
             if objc_getAssociatedObject(argument, &idKey) == nil,
-              let currentRequest = task.currentRequest {
+               let currentRequest = task.currentRequest {
               URLSessionLogger.processAndLogRequest(
                 currentRequest, sessionTaskId: sessionTaskId,
                 instrumentation: self, shouldInjectHeaders: false)
@@ -244,20 +244,20 @@ public class URLSessionInstrumentation {
 
       let block:
         @convention(block) (URLSession, URLRequest, AnyObject) -> URLSessionTask =
-          { session, request, argument in
-            let sessionTaskId = UUID().uuidString
-            let castedIMP = unsafeBitCast(
-              originalIMP,
-              to: (@convention(c) (URLSession, Selector, URLRequest, AnyObject)
-                -> URLSessionDataTask).self)
-            let instrumentedRequest = URLSessionLogger.processAndLogRequest(
-              request, sessionTaskId: sessionTaskId, instrumentation: self,
-              shouldInjectHeaders: true)
-            let task = castedIMP(
-              session, selector, instrumentedRequest ?? request, argument)
-            self.setIdKey(value: sessionTaskId, for: task)
-            return task
-          }
+        { session, request, argument in
+          let sessionTaskId = UUID().uuidString
+          let castedIMP = unsafeBitCast(
+            originalIMP,
+            to: (@convention(c) (URLSession, Selector, URLRequest, AnyObject)
+              -> URLSessionDataTask).self)
+          let instrumentedRequest = URLSessionLogger.processAndLogRequest(
+            request, sessionTaskId: sessionTaskId, instrumentation: self,
+            shouldInjectHeaders: true)
+          let task = castedIMP(
+            session, selector, instrumentedRequest ?? request, argument)
+          self.setIdKey(value: sessionTaskId, for: task)
+          return task
+        }
       let swizzledIMP = imp_implementationWithBlock(
         unsafeBitCast(block, to: AnyObject.self))
       originalIMP = method_setImplementation(original, swizzledIMP)
@@ -364,7 +364,7 @@ public class URLSessionInstrumentation {
           }
 
           if let request = argument as? URLRequest,
-            objc_getAssociatedObject(argument, &idKey) == nil {
+             objc_getAssociatedObject(argument, &idKey) == nil {
             let instrumentedRequest = URLSessionLogger.processAndLogRequest(
               request, sessionTaskId: sessionTaskId, instrumentation: self,
               shouldInjectHeaders: true)
@@ -374,7 +374,7 @@ public class URLSessionInstrumentation {
           } else {
             task = castedIMP(session, selector, argument, completionBlock)
             if objc_getAssociatedObject(argument, &idKey) == nil,
-              let currentRequest = task.currentRequest {
+               let currentRequest = task.currentRequest {
               URLSessionLogger.processAndLogRequest(
                 currentRequest, sessionTaskId: sessionTaskId,
                 instrumentation: self, shouldInjectHeaders: false)
@@ -468,8 +468,8 @@ public class URLSessionInstrumentation {
     }
 
     if let cfURLSession = NSClassFromString("__NSCFURLSessionTask"),
-      let method = class_getInstanceMethod(
-        cfURLSession, NSSelectorFromString("resume")) {
+       let method = class_getInstanceMethod(
+         cfURLSession, NSSelectorFromString("resume")) {
       methodsToSwizzle.append(method)
     }
 
@@ -645,8 +645,8 @@ public class URLSessionInstrumentation {
   func injectRespondsToSelectorIntoDelegateClass(cls: AnyClass) {
     let selector = #selector(NSObject.responds(to:))
     guard let original = class_getInstanceMethod(cls, selector),
-      InstrumentationUtils.instanceRespondsAndImplements(
-        cls: cls, selector: selector)
+          InstrumentationUtils.instanceRespondsAndImplements(
+            cls: cls, selector: selector)
     else {
       return
     }

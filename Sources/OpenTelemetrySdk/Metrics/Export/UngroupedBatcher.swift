@@ -8,18 +8,18 @@ import Foundation
 /// Batcher which retains all dimensions/labels.
 @available(*, deprecated, message: "Use MetricProcessorSdk instead")
 public class UngroupedBatcher: MetricProcessor {
-    public init() {}
+  public init() {}
 
-    private var metrics = [Metric]()
+  private var metrics = [Metric]()
 
-    public func finishCollectionCycle() -> [Metric] {
-        defer {
-            self.metrics = [Metric]()
-        }
-        return metrics
+  public func finishCollectionCycle() -> [Metric] {
+    defer {
+      self.metrics = [Metric]()
     }
+    return metrics
+  }
 
-    public func process(metric: Metric) {
-        metrics.append(metric)
-    }
+  public func process(metric: Metric) {
+    metrics.append(metric)
+  }
 }

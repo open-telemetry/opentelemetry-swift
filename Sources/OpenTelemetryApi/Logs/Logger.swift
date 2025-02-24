@@ -6,7 +6,6 @@
 import Foundation
 
 public protocol Logger {
-
-    func eventBuilder(name: String) -> EventBuilder
-    func logRecordBuilder() -> LogRecordBuilder
+  func eventBuilder(name: String) -> EventBuilder
+  func logRecordBuilder() -> LogRecordBuilder
 }

@@ -34,8 +34,7 @@ public class DefaultStableMeterProvider: StableMeterProvider {
     func build() -> StableMeter {
       Self.noopMeter
     }
-
   }
 
-    public static var instance: StableMeterProvider = DefaultStableMeterProvider()
+  public static var instance: StableMeterProvider = DefaultStableMeterProvider()
 }

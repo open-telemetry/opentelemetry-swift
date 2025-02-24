@@ -10,19 +10,19 @@ class MultiSpanExporterTests: XCTestCase {
   var spanExporter1: SpanExporterMock!
   var spanExporter2: SpanExporterMock!
   var spanList: [SpanData]!
-  
+
   override func setUp() {
     spanExporter1 = SpanExporterMock()
     spanExporter2 = SpanExporterMock()
     spanList = [TestUtils.makeBasicSpan()]
   }
-  
+
   func testEmpty() {
     let multiSpanExporter = MultiSpanExporter(spanExporters: [SpanExporter]())
     _ = multiSpanExporter.export(spans: spanList)
     multiSpanExporter.shutdown()
   }
-  
+
   func testOneSpanExporter() {
     let multiSpanExporter = MultiSpanExporter(spanExporters: [spanExporter1])
     spanExporter1.returnValue = .success
@@ -32,7 +32,7 @@ class MultiSpanExporterTests: XCTestCase {
     multiSpanExporter.shutdown()
     XCTAssertEqual(spanExporter1.shutdownCalledTimes, 1)
   }
-  
+
   func testTwoSpanExporter() {
     let multiSpanExporter = MultiSpanExporter(spanExporters: [spanExporter1, spanExporter2])
     spanExporter1.returnValue = .success
@@ -46,7 +46,7 @@ class MultiSpanExporterTests: XCTestCase {
     XCTAssertEqual(spanExporter1.shutdownCalledTimes, 1)
     XCTAssertEqual(spanExporter2.shutdownCalledTimes, 1)
   }
-  
+
   func testTwoSpanExporter_OneReturnFailure() {
     let multiSpanExporter = MultiSpanExporter(spanExporters: [spanExporter1, spanExporter2])
     spanExporter1.returnValue = .success

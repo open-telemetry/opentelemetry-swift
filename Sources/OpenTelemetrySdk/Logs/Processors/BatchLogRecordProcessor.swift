@@ -1,13 +1,12 @@
 //
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 
 import Foundation
 import OpenTelemetryApi
 
 public class BatchLogRecordProcessor: LogRecordProcessor {
-
   fileprivate var worker: BatchWorker
 
   public init(logRecordExporter: LogRecordExporter, scheduleDelay: TimeInterval = 5, exportTimeout: TimeInterval = 30, maxQueueSize: Int = 2048, maxExportBatchSize: Int = 512, willExportCallback: ((inout [ReadableLogRecord]) -> Void)? = nil) {
@@ -54,14 +53,13 @@ private class BatchWorker: Thread {
        maxQueueSize: Int,
        maxExportBatchSize: Int,
        willExportCallback: ((inout [ReadableLogRecord]) -> Void)?) {
-
     self.logRecordExporter = logRecordExporter
     self.scheduleDelay = scheduleDelay
     self.exportTimeout = exportTimeout
     self.maxExportBatchSize = maxExportBatchSize
     self.maxQueueSize = maxQueueSize
     self.willExportCallback = willExportCallback
-    self.halfMaxQueueSize = maxQueueSize >> 1
+    halfMaxQueueSize = maxQueueSize >> 1
     queue = OperationQueue()
     queue.name = "BatchWorker Queue"
     queue.maxConcurrentOperationCount = 1
@@ -84,20 +82,20 @@ private class BatchWorker: Thread {
 
   override func main() {
     repeat {
-        autoreleasepool {
-          var logRecordsCopy: [ReadableLogRecord]
-          cond.lock()
-          if logRecordList.count < maxExportBatchSize {
-            repeat {
-              cond.wait(until: Date().addingTimeInterval(scheduleDelay))
-            } while logRecordList.isEmpty && !self.isCancelled
-          }
-          logRecordsCopy = logRecordList
-          logRecordList.removeAll()
-          cond.unlock()
-          self.exportBatch(logRecordList: logRecordsCopy, explicitTimeout: exportTimeout)
+      autoreleasepool {
+        var logRecordsCopy: [ReadableLogRecord]
+        cond.lock()
+        if logRecordList.count < maxExportBatchSize {
+          repeat {
+            cond.wait(until: Date().addingTimeInterval(scheduleDelay))
+          } while logRecordList.isEmpty && !self.isCancelled
+        }
+        logRecordsCopy = logRecordList
+        logRecordList.removeAll()
+        cond.unlock()
+        self.exportBatch(logRecordList: logRecordsCopy, explicitTimeout: exportTimeout)
       }
-    } while !self.isCancelled
+    } while !isCancelled
   }
 
   public func forceFlush(explicitTimeout: TimeInterval? = nil) {

@@ -12,13 +12,11 @@
   import Thrift
 
   private final class Agent_emitZipkinBatch_args {
-
     fileprivate var spans: TList<Span>
 
     fileprivate init(spans: TList<Span>) {
       self.spans = spans
     }
-
   }
 
   private func == (
@@ -35,7 +33,6 @@
   }
 
   extension Agent_emitZipkinBatch_args: TStruct {
-
     fileprivate static var fieldIds: [String: Int32] {
       return ["spans": 1]
     }
@@ -50,7 +47,6 @@
       var spans: TList<Span>!
 
       fields: while true {
-
         let (_, fieldType, fieldID) = try proto.readFieldBegin()
 
         switch (fieldID, fieldType) {
@@ -68,17 +64,14 @@
 
       return Agent_emitZipkinBatch_args(spans: spans)
     }
-
   }
 
   private final class Agent_emitBatch_args {
-
     fileprivate var batch: Batch
 
     fileprivate init(batch: Batch) {
       self.batch = batch
     }
-
   }
 
   private func == (lhs: Agent_emitBatch_args, rhs: Agent_emitBatch_args) -> Bool {
@@ -92,7 +85,6 @@
   }
 
   extension Agent_emitBatch_args: TStruct {
-
     fileprivate static var fieldIds: [String: Int32] {
       return ["batch": 1]
     }
@@ -105,7 +97,6 @@
       var batch: Batch!
 
       fields: while true {
-
         let (_, fieldType, fieldID) = try proto.readFieldBegin()
 
         switch (fieldID, fieldType) {
@@ -123,11 +114,9 @@
 
       return Agent_emitBatch_args(batch: batch)
     }
-
   }
 
   extension AgentClient: Agent {
-
     private func send_emitZipkinBatch(spans: TList<Span>) throws {
       try outProtocol.writeMessageBegin(
         name: "emitZipkinBatch", type: .oneway, sequenceID: 0)
@@ -153,11 +142,9 @@
       try send_emitBatch(batch: batch)
       try outProtocol.transport.flush()
     }
-
   }
 
   extension AgentAsyncClient: AgentAsync {
-
     private func send_emitZipkinBatch(
       on outProtocol: TProtocol, spans: TList<Span>
     ) throws {
@@ -171,7 +158,6 @@
     public func emitZipkinBatch(
       spans: TList<Span>, completion: @escaping (TAsyncResult<Void>) -> Void
     ) {
-
       let transport = factory.newTransport()
       let proto = Protocol(on: transport)
 
@@ -188,6 +174,7 @@
         completion(.success(Void()))
       }
     }
+
     private func send_emitBatch(on outProtocol: TProtocol, batch: Batch) throws {
       try outProtocol.writeMessageBegin(
         name: "emitBatch", type: .oneway, sequenceID: 0)
@@ -199,7 +186,6 @@
     public func emitBatch(
       batch: Batch, completion: @escaping (TAsyncResult<Void>) -> Void
     ) {
-
       let transport = factory.newTransport()
       let proto = Protocol(on: transport)
 
@@ -220,9 +206,7 @@
   }
 
   extension AgentProcessor: TProcessor {
-
     static let processorHandlers: ProcessorHandlerDictionary = {
-
       var processorHandlers = ProcessorHandlerDictionary()
 
       processorHandlers["emitZipkinBatch"] = { _, inProtocol, _, _ in
@@ -230,14 +214,12 @@
         let args = try Agent_emitZipkinBatch_args.read(from: inProtocol)
 
         try inProtocol.readMessageEnd()
-
       }
       processorHandlers["emitBatch"] = { _, inProtocol, _, _ in
 
         let args = try Agent_emitBatch_args.read(from: inProtocol)
 
         try inProtocol.readMessageEnd()
-
       }
       return processorHandlers
     }()

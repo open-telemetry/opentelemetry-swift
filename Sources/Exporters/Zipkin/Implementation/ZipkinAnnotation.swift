@@ -6,6 +6,6 @@
 import Foundation
 
 struct ZipkinAnnotation: Encodable {
-    var timestamp: UInt64
-    var value: String
+  var timestamp: UInt64
+  var value: String
 }

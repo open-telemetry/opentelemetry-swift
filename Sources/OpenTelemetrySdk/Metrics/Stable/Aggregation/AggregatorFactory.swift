@@ -6,6 +6,6 @@
 import Foundation
 
 public protocol Aggregation: AnyObject {
-    func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> StableAggregator
-    func isCompatible(with descriptor: InstrumentDescriptor) -> Bool
+  func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> StableAggregator
+  func isCompatible(with descriptor: InstrumentDescriptor) -> Bool
 }
