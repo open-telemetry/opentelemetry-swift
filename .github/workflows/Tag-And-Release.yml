@@ -34,7 +34,7 @@ jobs:
           generateReleaseNotes: true
       - name: push cocoapods
         env: 
-          COCOAPODS_TRUNK_TOKEN=${{ secrets.COCOAPODS_TRUNK_TOKEN }}
+          COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
         id: cocoapod_trunk_push
         run: |
           pod trunk push OpenTelemetry-Swift-Api.podspec --allow-warnings 
