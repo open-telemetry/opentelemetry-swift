@@ -71,7 +71,7 @@ public struct BatchSpanProcessor: SpanProcessor {
 /// BatchWorker is a thread that batches multiple spans and calls the registered SpanExporter to export
 /// the data.
 /// The list of batched data is protected by a NSCondition which ensures full concurrency.
-private class BatchWorker: Thread {
+private class BatchWorker: WorkerThread {
   let spanExporter: SpanExporter
   let meterProvider: StableMeterProvider?
   let scheduleDelay: TimeInterval

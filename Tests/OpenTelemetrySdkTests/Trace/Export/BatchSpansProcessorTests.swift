@@ -11,7 +11,7 @@ class BatchSpansProcessorTests: XCTestCase {
   let spanName1 = "MySpanName/1"
   let spanName2 = "MySpanName/2"
   let maxScheduleDelay = 0.5
-  let tracerSdkFactory = TracerProviderSdk()
+  var tracerSdkFactory = TracerProviderSdk()
   var tracer: Tracer!
   let blockingSpanExporter = BlockingSpanExporter()
   var mockServiceHandler = SpanExporterMock()
@@ -226,6 +226,38 @@ class BatchSpansProcessorTests: XCTestCase {
     let exported = waitingSpanExporter.waitForExport()
     XCTAssertEqual(exported, [span2.toSpanData()])
     XCTAssertTrue(waitingSpanExporter.shutdownCalled)
+  }
+
+  func testShutdownNoMemoryCycle() {
+    // A weak reference to the exporter that will be retained by the BatchWorker
+    weak var exporter: WaitingSpanExporter?
+    do {
+      let waitingSpanExporter = WaitingSpanExporter(numberToWaitFor: 2)
+      exporter = waitingSpanExporter
+
+      let batch = BatchSpanProcessor(
+        spanExporter: waitingSpanExporter,
+        meterProvider: DefaultStableMeterProvider.instance,
+        scheduleDelay: maxScheduleDelay
+      )
+
+      tracerSdkFactory.addSpanProcessor(batch)
+      let span1 = createSampledEndedSpan(spanName: spanName1)
+      let span2 = createSampledEndedSpan(spanName: spanName2)
+      let exported = waitingSpanExporter.waitForExport()
+
+      XCTAssertEqual(exported, [span1.toSpanData(), span2.toSpanData()])
+
+      tracerSdkFactory.shutdown()
+      // Both the provider and the tracer retain the exporter, so we need to clear those out in order for the exporter to be deallocated.
+      tracerSdkFactory = TracerProviderSdk()
+      tracer = nil
+    }
+
+    // After the BatchWorker is shutdown, it will continue waiting for the condition variable to be signaled up to the maxScheduleDelay. Until that point the exporter won't be deallocated.
+    sleep(UInt32(ceil(maxScheduleDelay + 1)))
+    // Interestingly, this will always succeed on macOS even if you intentionally create a strong reference cycle between the BatchWorker and the Thread's closure. I assume either calling cancel or the thread exiting releases the closure which breaks the cycle. This is not the case on Linux where the test will fail as expected.
+    XCTAssertNil(exporter)
   }
 }
 
