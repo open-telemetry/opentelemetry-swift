@@ -63,7 +63,7 @@ class OtlpTraceExporterTests: XCTestCase {
     let callOptions = exporter.callOptions
     let customMetadata = callOptions.customMetadata
     let userAgent = Headers.getUserAgentHeader()
-    if customMetadata.contains(name: Constants.HTTP.userAgent) && customMetadata.first(name: Constants.HTTP.userAgent) == userAgent {
+    if customMetadata.contains(name: Constants.HTTP.userAgent), customMetadata.first(name: Constants.HTTP.userAgent) == userAgent {
       return
     }
 

@@ -11,7 +11,7 @@ public struct Headers {
   // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md#user-agent
   public static func getUserAgentHeader() -> String {
     var version = Constants.OTLP.version
-    if !version.isEmpty && version.hasPrefix("v") {
+    if !version.isEmpty, version.hasPrefix("v") {
       version = String(version.dropFirst(1))
     }
     let userAgent = "OTel-OTLP-Exporter-Swift/\(version)"

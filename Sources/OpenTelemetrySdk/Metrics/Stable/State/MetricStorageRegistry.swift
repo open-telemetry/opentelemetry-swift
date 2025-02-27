@@ -36,7 +36,7 @@ public class MetricStorageRegistry {
 
       let existing = storage.metricDescriptor
 
-      if existing.name.lowercased() == descriptor.name.lowercased() && existing != descriptor {
+      if existing.name.lowercased() == descriptor.name.lowercased(), existing != descriptor {
         // todo: log warning
         break
       }

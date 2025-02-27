@@ -133,12 +133,12 @@ public struct W3CTraceContextPropagator: TextMapPropagator {
       traceOptions.setIsSampled(true)
     }
 
-    if !bestAttempt && (traceparent.count != (W3CTraceContextPropagator.versionAndTraceIdAndSpanIdLength + W3CTraceContextPropagator.optionsLength)) {
+    if !bestAttempt, traceparent.count != W3CTraceContextPropagator.versionAndTraceIdAndSpanIdLength + W3CTraceContextPropagator.optionsLength {
       return nil
     }
 
     if bestAttempt {
-      if traceparent.count > W3CTraceContextPropagator.traceparentLengthV0 &&
+      if traceparent.count > W3CTraceContextPropagator.traceparentLengthV0,
         traceparentArray[W3CTraceContextPropagator.traceparentLengthV0] != W3CTraceContextPropagator.delimiter {
         return nil
       }

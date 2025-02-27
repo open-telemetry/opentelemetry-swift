@@ -196,7 +196,7 @@ import Foundation
       }
 
       // Wrong gzip magic or unsupported compression method
-      guard hdr.id1 == 0x1f && hdr.id2 == 0x8b && hdr.cm == 0x08 else { return nil }
+      guard hdr.id1 == 0x1f, hdr.id2 == 0x8b, hdr.cm == 0x08 else { return nil }
 
       let has_crc16: Bool = hdr.flg & 0b00010 != 0
       let has_extra: Bool = hdr.flg & 0b00100 != 0
@@ -212,11 +212,11 @@ import Foundation
           }
         }
         if has_fname {
-          while pos < limit && ptr[pos] != 0x0 { pos += 1 }
+          while pos < limit, ptr[pos] != 0x0 { pos += 1 }
           pos += 1 // skip null byte as well
         }
         if has_cmmnt {
-          while pos < limit && ptr[pos] != 0x0 { pos += 1 }
+          while pos < limit, ptr[pos] != 0x0 { pos += 1 }
           pos += 1 // skip null byte as well
         }
         if has_crc16 {
@@ -438,7 +438,7 @@ import Foundation
 
     if sourceSize > blockLimit {
       bufferSize = blockLimit
-      if config.algorithm == COMPRESSION_LZFSE && config.operation != COMPRESSION_STREAM_ENCODE {
+      if config.algorithm == COMPRESSION_LZFSE, config.operation != COMPRESSION_STREAM_ENCODE {
         // This fixes a bug in Apples lzfse decompressor. it will sometimes fail randomly when the input gets
         // splitted into multiple chunks and the flag is not 0. Even though it should always work with FINALIZE...
         flags = 0
@@ -461,7 +461,7 @@ import Foundation
         stream.dst_ptr = buffer
         stream.dst_size = bufferSize
 
-        if flags == 0 && stream.src_size == 0 { // part of the lzfse bugfix above
+        if flags == 0, stream.src_size == 0 { // part of the lzfse bugfix above
           flags = Int32(COMPRESSION_STREAM_FINALIZE.rawValue)
         }
 

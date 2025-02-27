@@ -65,7 +65,7 @@ public class LogRecordBuilderSdk: EventBuilder {
   }
 
   public func emit() {
-    if spanContext == nil && includeSpanContext {
+    if spanContext == nil, includeSpanContext {
       spanContext = OpenTelemetry.instance.contextProvider.activeSpan?.context
     }
 
