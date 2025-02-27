@@ -36,8 +36,10 @@ public protocol Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientProtocol:
   var serviceName: String { get }
   var interceptors: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientInterceptorFactoryProtocol? { get }
 
-  func export(_ request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest,
-              callOptions: CallOptions?) -> UnaryCall<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse>
+  func export(
+    _ request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest,
+    callOptions: CallOptions?
+  ) -> UnaryCall<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse>
 }
 
 extension Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientProtocol {
@@ -52,12 +54,16 @@ extension Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientProtocol {
   ///   - request: Request to send to Export.
   ///   - callOptions: Call options.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func export(_ request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest,
-                     callOptions: CallOptions? = nil) -> UnaryCall<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse> {
-    return makeUnaryCall(path: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientMetadata.Methods.export.path,
-                         request: request,
-                         callOptions: callOptions ?? defaultCallOptions,
-                         interceptors: interceptors?.makeExportInterceptors() ?? [])
+  public func export(
+    _ request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse> {
+    return self.makeUnaryCall(
+      path: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientMetadata.Methods.export.path,
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeExportInterceptors() ?? []
+    )
   }
 }
 
@@ -71,13 +77,12 @@ public final class Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClient: Open
   private var _interceptors: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientInterceptorFactoryProtocol?
   public let channel: GRPCChannel
   public var defaultCallOptions: CallOptions {
-    get { lock.withLock { return self._defaultCallOptions } }
-    set { lock.withLockVoid { self._defaultCallOptions = newValue } }
+    get { self.lock.withLock { return self._defaultCallOptions } }
+    set { self.lock.withLockVoid { self._defaultCallOptions = newValue } }
   }
-
   public var interceptors: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientInterceptorFactoryProtocol? {
-    get { lock.withLock { return self._interceptors } }
-    set { lock.withLockVoid { self._interceptors = newValue } }
+    get { self.lock.withLock { return self._interceptors } }
+    set { self.lock.withLockVoid { self._interceptors = newValue } }
   }
 
   /// Creates a client for the opentelemetry.proto.collector.logs.v1.LogsService service.
@@ -86,12 +91,14 @@ public final class Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClient: Open
   ///   - channel: `GRPCChannel` to the service host.
   ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
   ///   - interceptors: A factory providing interceptors for each RPC.
-  public init(channel: GRPCChannel,
-              defaultCallOptions: CallOptions = CallOptions(),
-              interceptors: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientInterceptorFactoryProtocol? = nil) {
+  public init(
+    channel: GRPCChannel,
+    defaultCallOptions: CallOptions = CallOptions(),
+    interceptors: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientInterceptorFactoryProtocol? = nil
+  ) {
     self.channel = channel
-    _defaultCallOptions = defaultCallOptions
-    _interceptors = interceptors
+    self._defaultCallOptions = defaultCallOptions
+    self._interceptors = interceptors
   }
 }
 
@@ -106,9 +113,11 @@ public struct Opentelemetry_Proto_Collector_Logs_V1_LogsServiceNIOClient: Opente
   ///   - channel: `GRPCChannel` to the service host.
   ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
   ///   - interceptors: A factory providing interceptors for each RPC.
-  public init(channel: GRPCChannel,
-              defaultCallOptions: CallOptions = CallOptions(),
-              interceptors: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientInterceptorFactoryProtocol? = nil) {
+  public init(
+    channel: GRPCChannel,
+    defaultCallOptions: CallOptions = CallOptions(),
+    interceptors: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientInterceptorFactoryProtocol? = nil
+  ) {
     self.channel = channel
     self.defaultCallOptions = defaultCallOptions
     self.interceptors = interceptors
@@ -123,8 +132,10 @@ public protocol Opentelemetry_Proto_Collector_Logs_V1_LogsServiceAsyncClientProt
   static var serviceDescriptor: GRPCServiceDescriptor { get }
   var interceptors: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientInterceptorFactoryProtocol? { get }
 
-  func makeExportCall(_ request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest,
-                      callOptions: CallOptions?) -> GRPCAsyncUnaryCall<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse>
+  func makeExportCall(
+    _ request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest,
+    callOptions: CallOptions?
+  ) -> GRPCAsyncUnaryCall<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse>
 }
 
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
@@ -137,23 +148,31 @@ extension Opentelemetry_Proto_Collector_Logs_V1_LogsServiceAsyncClientProtocol {
     return nil
   }
 
-  public func makeExportCall(_ request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest,
-                             callOptions: CallOptions? = nil) -> GRPCAsyncUnaryCall<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse> {
-    return makeAsyncUnaryCall(path: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientMetadata.Methods.export.path,
-                              request: request,
-                              callOptions: callOptions ?? defaultCallOptions,
-                              interceptors: interceptors?.makeExportInterceptors() ?? [])
+  public func makeExportCall(
+    _ request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest,
+    callOptions: CallOptions? = nil
+  ) -> GRPCAsyncUnaryCall<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse> {
+    return self.makeAsyncUnaryCall(
+      path: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientMetadata.Methods.export.path,
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeExportInterceptors() ?? []
+    )
   }
 }
 
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension Opentelemetry_Proto_Collector_Logs_V1_LogsServiceAsyncClientProtocol {
-  public func export(_ request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest,
-                     callOptions: CallOptions? = nil) async throws -> Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse {
-    return try await performAsyncUnaryCall(path: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientMetadata.Methods.export.path,
-                                           request: request,
-                                           callOptions: callOptions ?? defaultCallOptions,
-                                           interceptors: interceptors?.makeExportInterceptors() ?? [])
+  public func export(
+    _ request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest,
+    callOptions: CallOptions? = nil
+  ) async throws -> Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse {
+    return try await self.performAsyncUnaryCall(
+      path: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientMetadata.Methods.export.path,
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeExportInterceptors() ?? []
+    )
   }
 }
 
@@ -163,9 +182,11 @@ public struct Opentelemetry_Proto_Collector_Logs_V1_LogsServiceAsyncClient: Open
   public var defaultCallOptions: CallOptions
   public var interceptors: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientInterceptorFactoryProtocol?
 
-  public init(channel: GRPCChannel,
-              defaultCallOptions: CallOptions = CallOptions(),
-              interceptors: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientInterceptorFactoryProtocol? = nil) {
+  public init(
+    channel: GRPCChannel,
+    defaultCallOptions: CallOptions = CallOptions(),
+    interceptors: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientInterceptorFactoryProtocol? = nil
+  ) {
     self.channel = channel
     self.defaultCallOptions = defaultCallOptions
     self.interceptors = interceptors
@@ -173,21 +194,26 @@ public struct Opentelemetry_Proto_Collector_Logs_V1_LogsServiceAsyncClient: Open
 }
 
 public protocol Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientInterceptorFactoryProtocol: Sendable {
+
   /// - Returns: Interceptors to use when invoking 'export'.
   func makeExportInterceptors() -> [ClientInterceptor<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse>]
 }
 
 public enum Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientMetadata {
-  public static let serviceDescriptor = GRPCServiceDescriptor(name: "LogsService",
-                                                              fullName: "opentelemetry.proto.collector.logs.v1.LogsService",
-                                                              methods: [
-                                                                Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientMetadata.Methods.export
-                                                              ])
+  public static let serviceDescriptor = GRPCServiceDescriptor(
+    name: "LogsService",
+    fullName: "opentelemetry.proto.collector.logs.v1.LogsService",
+    methods: [
+      Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientMetadata.Methods.export
+    ]
+  )
 
   public enum Methods {
-    public static let export = GRPCMethodDescriptor(name: "Export",
-                                                    path: "/opentelemetry.proto.collector.logs.v1.LogsService/Export",
-                                                    type: GRPCCallType.unary)
+    public static let export = GRPCMethodDescriptor(
+      name: "Export",
+      path: "/opentelemetry.proto.collector.logs.v1.LogsService/Export",
+      type: GRPCCallType.unary
+    )
   }
 }
 
@@ -211,15 +237,19 @@ extension Opentelemetry_Proto_Collector_Logs_V1_LogsServiceProvider {
 
   /// Determines, calls and returns the appropriate request handler, depending on the request's method.
   /// Returns nil for methods not handled by this service.
-  public func handle(method name: Substring,
-                     context: CallHandlerContext) -> GRPCServerHandlerProtocol? {
+  public func handle(
+    method name: Substring,
+    context: CallHandlerContext
+  ) -> GRPCServerHandlerProtocol? {
     switch name {
     case "Export":
-      return UnaryServerHandler(context: context,
-                                requestDeserializer: ProtobufDeserializer<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest>(),
-                                responseSerializer: ProtobufSerializer<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse>(),
-                                interceptors: interceptors?.makeExportInterceptors() ?? [],
-                                userFunction: export(request:context:))
+      return UnaryServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest>(),
+        responseSerializer: ProtobufSerializer<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse>(),
+        interceptors: self.interceptors?.makeExportInterceptors() ?? [],
+        userFunction: self.export(request:context:)
+      )
 
     default:
       return nil
@@ -239,8 +269,10 @@ public protocol Opentelemetry_Proto_Collector_Logs_V1_LogsServiceAsyncProvider: 
 
   /// For performance reasons, it is recommended to keep this RPC
   /// alive for the entire life of the application.
-  func export(request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest,
-              context: GRPCAsyncServerCallContext) async throws -> Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse
+  func export(
+    request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest,
+    context: GRPCAsyncServerCallContext
+  ) async throws -> Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse
 }
 
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
@@ -257,15 +289,19 @@ extension Opentelemetry_Proto_Collector_Logs_V1_LogsServiceAsyncProvider {
     return nil
   }
 
-  public func handle(method name: Substring,
-                     context: CallHandlerContext) -> GRPCServerHandlerProtocol? {
+  public func handle(
+    method name: Substring,
+    context: CallHandlerContext
+  ) -> GRPCServerHandlerProtocol? {
     switch name {
     case "Export":
-      return GRPCAsyncServerHandler(context: context,
-                                    requestDeserializer: ProtobufDeserializer<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest>(),
-                                    responseSerializer: ProtobufSerializer<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse>(),
-                                    interceptors: interceptors?.makeExportInterceptors() ?? [],
-                                    wrapping: { try await self.export(request: $0, context: $1) })
+      return GRPCAsyncServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest>(),
+        responseSerializer: ProtobufSerializer<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse>(),
+        interceptors: self.interceptors?.makeExportInterceptors() ?? [],
+        wrapping: { try await self.export(request: $0, context: $1) }
+      )
 
     default:
       return nil
@@ -274,21 +310,26 @@ extension Opentelemetry_Proto_Collector_Logs_V1_LogsServiceAsyncProvider {
 }
 
 public protocol Opentelemetry_Proto_Collector_Logs_V1_LogsServiceServerInterceptorFactoryProtocol: Sendable {
+
   /// - Returns: Interceptors to use when handling 'export'.
   ///   Defaults to calling `self.makeInterceptors()`.
   func makeExportInterceptors() -> [ServerInterceptor<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse>]
 }
 
 public enum Opentelemetry_Proto_Collector_Logs_V1_LogsServiceServerMetadata {
-  public static let serviceDescriptor = GRPCServiceDescriptor(name: "LogsService",
-                                                              fullName: "opentelemetry.proto.collector.logs.v1.LogsService",
-                                                              methods: [
-                                                                Opentelemetry_Proto_Collector_Logs_V1_LogsServiceServerMetadata.Methods.export
-                                                              ])
+  public static let serviceDescriptor = GRPCServiceDescriptor(
+    name: "LogsService",
+    fullName: "opentelemetry.proto.collector.logs.v1.LogsService",
+    methods: [
+      Opentelemetry_Proto_Collector_Logs_V1_LogsServiceServerMetadata.Methods.export
+    ]
+  )
 
   public enum Methods {
-    public static let export = GRPCMethodDescriptor(name: "Export",
-                                                    path: "/opentelemetry.proto.collector.logs.v1.LogsService/Export",
-                                                    type: GRPCCallType.unary)
+    public static let export = GRPCMethodDescriptor(
+      name: "Export",
+      path: "/opentelemetry.proto.collector.logs.v1.LogsService/Export",
+      type: GRPCCallType.unary
+    )
   }
 }

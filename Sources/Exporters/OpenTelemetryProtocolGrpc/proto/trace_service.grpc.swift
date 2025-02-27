@@ -36,8 +36,10 @@ public protocol Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientProtoco
   var serviceName: String { get }
   var interceptors: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientInterceptorFactoryProtocol? { get }
 
-  func export(_ request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest,
-              callOptions: CallOptions?) -> UnaryCall<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest, Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse>
+  func export(
+    _ request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest,
+    callOptions: CallOptions?
+  ) -> UnaryCall<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest, Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse>
 }
 
 extension Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientProtocol {
@@ -52,12 +54,16 @@ extension Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientProtocol {
   ///   - request: Request to send to Export.
   ///   - callOptions: Call options.
   /// - Returns: A `UnaryCall` with futures for the metadata, status and response.
-  public func export(_ request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest,
-                     callOptions: CallOptions? = nil) -> UnaryCall<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest, Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse> {
-    return makeUnaryCall(path: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientMetadata.Methods.export.path,
-                         request: request,
-                         callOptions: callOptions ?? defaultCallOptions,
-                         interceptors: interceptors?.makeExportInterceptors() ?? [])
+  public func export(
+    _ request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest, Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse> {
+    return self.makeUnaryCall(
+      path: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientMetadata.Methods.export.path,
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeExportInterceptors() ?? []
+    )
   }
 }
 
@@ -71,13 +77,12 @@ public final class Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClient: Op
   private var _interceptors: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientInterceptorFactoryProtocol?
   public let channel: GRPCChannel
   public var defaultCallOptions: CallOptions {
-    get { lock.withLock { return self._defaultCallOptions } }
-    set { lock.withLockVoid { self._defaultCallOptions = newValue } }
+    get { self.lock.withLock { return self._defaultCallOptions } }
+    set { self.lock.withLockVoid { self._defaultCallOptions = newValue } }
   }
-
   public var interceptors: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientInterceptorFactoryProtocol? {
-    get { lock.withLock { return self._interceptors } }
-    set { lock.withLockVoid { self._interceptors = newValue } }
+    get { self.lock.withLock { return self._interceptors } }
+    set { self.lock.withLockVoid { self._interceptors = newValue } }
   }
 
   /// Creates a client for the opentelemetry.proto.collector.trace.v1.TraceService service.
@@ -86,12 +91,14 @@ public final class Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClient: Op
   ///   - channel: `GRPCChannel` to the service host.
   ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
   ///   - interceptors: A factory providing interceptors for each RPC.
-  public init(channel: GRPCChannel,
-              defaultCallOptions: CallOptions = CallOptions(),
-              interceptors: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientInterceptorFactoryProtocol? = nil) {
+  public init(
+    channel: GRPCChannel,
+    defaultCallOptions: CallOptions = CallOptions(),
+    interceptors: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientInterceptorFactoryProtocol? = nil
+  ) {
     self.channel = channel
-    _defaultCallOptions = defaultCallOptions
-    _interceptors = interceptors
+    self._defaultCallOptions = defaultCallOptions
+    self._interceptors = interceptors
   }
 }
 
@@ -106,9 +113,11 @@ public struct Opentelemetry_Proto_Collector_Trace_V1_TraceServiceNIOClient: Open
   ///   - channel: `GRPCChannel` to the service host.
   ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
   ///   - interceptors: A factory providing interceptors for each RPC.
-  public init(channel: GRPCChannel,
-              defaultCallOptions: CallOptions = CallOptions(),
-              interceptors: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientInterceptorFactoryProtocol? = nil) {
+  public init(
+    channel: GRPCChannel,
+    defaultCallOptions: CallOptions = CallOptions(),
+    interceptors: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientInterceptorFactoryProtocol? = nil
+  ) {
     self.channel = channel
     self.defaultCallOptions = defaultCallOptions
     self.interceptors = interceptors
@@ -123,8 +132,10 @@ public protocol Opentelemetry_Proto_Collector_Trace_V1_TraceServiceAsyncClientPr
   static var serviceDescriptor: GRPCServiceDescriptor { get }
   var interceptors: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientInterceptorFactoryProtocol? { get }
 
-  func makeExportCall(_ request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest,
-                      callOptions: CallOptions?) -> GRPCAsyncUnaryCall<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest, Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse>
+  func makeExportCall(
+    _ request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest,
+    callOptions: CallOptions?
+  ) -> GRPCAsyncUnaryCall<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest, Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse>
 }
 
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
@@ -137,23 +148,31 @@ extension Opentelemetry_Proto_Collector_Trace_V1_TraceServiceAsyncClientProtocol
     return nil
   }
 
-  public func makeExportCall(_ request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest,
-                             callOptions: CallOptions? = nil) -> GRPCAsyncUnaryCall<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest, Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse> {
-    return makeAsyncUnaryCall(path: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientMetadata.Methods.export.path,
-                              request: request,
-                              callOptions: callOptions ?? defaultCallOptions,
-                              interceptors: interceptors?.makeExportInterceptors() ?? [])
+  public func makeExportCall(
+    _ request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest,
+    callOptions: CallOptions? = nil
+  ) -> GRPCAsyncUnaryCall<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest, Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse> {
+    return self.makeAsyncUnaryCall(
+      path: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientMetadata.Methods.export.path,
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeExportInterceptors() ?? []
+    )
   }
 }
 
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension Opentelemetry_Proto_Collector_Trace_V1_TraceServiceAsyncClientProtocol {
-  public func export(_ request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest,
-                     callOptions: CallOptions? = nil) async throws -> Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse {
-    return try await performAsyncUnaryCall(path: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientMetadata.Methods.export.path,
-                                           request: request,
-                                           callOptions: callOptions ?? defaultCallOptions,
-                                           interceptors: interceptors?.makeExportInterceptors() ?? [])
+  public func export(
+    _ request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest,
+    callOptions: CallOptions? = nil
+  ) async throws -> Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse {
+    return try await self.performAsyncUnaryCall(
+      path: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientMetadata.Methods.export.path,
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makeExportInterceptors() ?? []
+    )
   }
 }
 
@@ -163,9 +182,11 @@ public struct Opentelemetry_Proto_Collector_Trace_V1_TraceServiceAsyncClient: Op
   public var defaultCallOptions: CallOptions
   public var interceptors: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientInterceptorFactoryProtocol?
 
-  public init(channel: GRPCChannel,
-              defaultCallOptions: CallOptions = CallOptions(),
-              interceptors: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientInterceptorFactoryProtocol? = nil) {
+  public init(
+    channel: GRPCChannel,
+    defaultCallOptions: CallOptions = CallOptions(),
+    interceptors: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientInterceptorFactoryProtocol? = nil
+  ) {
     self.channel = channel
     self.defaultCallOptions = defaultCallOptions
     self.interceptors = interceptors
@@ -173,21 +194,26 @@ public struct Opentelemetry_Proto_Collector_Trace_V1_TraceServiceAsyncClient: Op
 }
 
 public protocol Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientInterceptorFactoryProtocol: Sendable {
+
   /// - Returns: Interceptors to use when invoking 'export'.
   func makeExportInterceptors() -> [ClientInterceptor<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest, Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse>]
 }
 
 public enum Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientMetadata {
-  public static let serviceDescriptor = GRPCServiceDescriptor(name: "TraceService",
-                                                              fullName: "opentelemetry.proto.collector.trace.v1.TraceService",
-                                                              methods: [
-                                                                Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientMetadata.Methods.export
-                                                              ])
+  public static let serviceDescriptor = GRPCServiceDescriptor(
+    name: "TraceService",
+    fullName: "opentelemetry.proto.collector.trace.v1.TraceService",
+    methods: [
+      Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientMetadata.Methods.export
+    ]
+  )
 
   public enum Methods {
-    public static let export = GRPCMethodDescriptor(name: "Export",
-                                                    path: "/opentelemetry.proto.collector.trace.v1.TraceService/Export",
-                                                    type: GRPCCallType.unary)
+    public static let export = GRPCMethodDescriptor(
+      name: "Export",
+      path: "/opentelemetry.proto.collector.trace.v1.TraceService/Export",
+      type: GRPCCallType.unary
+    )
   }
 }
 
@@ -211,15 +237,19 @@ extension Opentelemetry_Proto_Collector_Trace_V1_TraceServiceProvider {
 
   /// Determines, calls and returns the appropriate request handler, depending on the request's method.
   /// Returns nil for methods not handled by this service.
-  public func handle(method name: Substring,
-                     context: CallHandlerContext) -> GRPCServerHandlerProtocol? {
+  public func handle(
+    method name: Substring,
+    context: CallHandlerContext
+  ) -> GRPCServerHandlerProtocol? {
     switch name {
     case "Export":
-      return UnaryServerHandler(context: context,
-                                requestDeserializer: ProtobufDeserializer<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest>(),
-                                responseSerializer: ProtobufSerializer<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse>(),
-                                interceptors: interceptors?.makeExportInterceptors() ?? [],
-                                userFunction: export(request:context:))
+      return UnaryServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest>(),
+        responseSerializer: ProtobufSerializer<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse>(),
+        interceptors: self.interceptors?.makeExportInterceptors() ?? [],
+        userFunction: self.export(request:context:)
+      )
 
     default:
       return nil
@@ -239,8 +269,10 @@ public protocol Opentelemetry_Proto_Collector_Trace_V1_TraceServiceAsyncProvider
 
   /// For performance reasons, it is recommended to keep this RPC
   /// alive for the entire life of the application.
-  func export(request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest,
-              context: GRPCAsyncServerCallContext) async throws -> Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse
+  func export(
+    request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest,
+    context: GRPCAsyncServerCallContext
+  ) async throws -> Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse
 }
 
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
@@ -257,15 +289,19 @@ extension Opentelemetry_Proto_Collector_Trace_V1_TraceServiceAsyncProvider {
     return nil
   }
 
-  public func handle(method name: Substring,
-                     context: CallHandlerContext) -> GRPCServerHandlerProtocol? {
+  public func handle(
+    method name: Substring,
+    context: CallHandlerContext
+  ) -> GRPCServerHandlerProtocol? {
     switch name {
     case "Export":
-      return GRPCAsyncServerHandler(context: context,
-                                    requestDeserializer: ProtobufDeserializer<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest>(),
-                                    responseSerializer: ProtobufSerializer<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse>(),
-                                    interceptors: interceptors?.makeExportInterceptors() ?? [],
-                                    wrapping: { try await self.export(request: $0, context: $1) })
+      return GRPCAsyncServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest>(),
+        responseSerializer: ProtobufSerializer<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse>(),
+        interceptors: self.interceptors?.makeExportInterceptors() ?? [],
+        wrapping: { try await self.export(request: $0, context: $1) }
+      )
 
     default:
       return nil
@@ -274,21 +310,26 @@ extension Opentelemetry_Proto_Collector_Trace_V1_TraceServiceAsyncProvider {
 }
 
 public protocol Opentelemetry_Proto_Collector_Trace_V1_TraceServiceServerInterceptorFactoryProtocol: Sendable {
+
   /// - Returns: Interceptors to use when handling 'export'.
   ///   Defaults to calling `self.makeInterceptors()`.
   func makeExportInterceptors() -> [ServerInterceptor<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest, Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse>]
 }
 
 public enum Opentelemetry_Proto_Collector_Trace_V1_TraceServiceServerMetadata {
-  public static let serviceDescriptor = GRPCServiceDescriptor(name: "TraceService",
-                                                              fullName: "opentelemetry.proto.collector.trace.v1.TraceService",
-                                                              methods: [
-                                                                Opentelemetry_Proto_Collector_Trace_V1_TraceServiceServerMetadata.Methods.export
-                                                              ])
+  public static let serviceDescriptor = GRPCServiceDescriptor(
+    name: "TraceService",
+    fullName: "opentelemetry.proto.collector.trace.v1.TraceService",
+    methods: [
+      Opentelemetry_Proto_Collector_Trace_V1_TraceServiceServerMetadata.Methods.export
+    ]
+  )
 
   public enum Methods {
-    public static let export = GRPCMethodDescriptor(name: "Export",
-                                                    path: "/opentelemetry.proto.collector.trace.v1.TraceService/Export",
-                                                    type: GRPCCallType.unary)
+    public static let export = GRPCMethodDescriptor(
+      name: "Export",
+      path: "/opentelemetry.proto.collector.trace.v1.TraceService/Export",
+      type: GRPCCallType.unary
+    )
   }
 }
