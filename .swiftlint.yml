@@ -3,7 +3,9 @@ included:
 excluded: 
   - "Sources/Exporters/OpenTelemetryProtocolCommon/proto"
   - ".build"
+  - "Tests"
 disabled_rules:
+  - todo
   - nesting
   - line_length
   - type_body_length
@@ -16,3 +18,4 @@ disabled_rules:
   - function_parameter_count
   - cyclomatic_complexity
   - force_try
+  
