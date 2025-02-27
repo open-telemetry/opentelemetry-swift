@@ -50,7 +50,7 @@ extension Data: AnyMockable {
   }
 }
 
-extension Array where Element == Data {
+extension [Data] {
   /// Returns chunks of mocked data. Accumulative size of all chunks equals `totalSize`.
   static func mockChunksOf(totalSize: UInt64, maxChunkSize: UInt64) -> [Data] {
     var chunks: [Data] = []

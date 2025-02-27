@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
-internal struct LogAttributes {
+struct LogAttributes {
   /// Log attributes received from the user. They are subject for sanitization.
   let userAttributes: [String: Encodable]
   /// Log attributes added internally by the SDK. They are not a subject for sanitization.
@@ -15,8 +15,8 @@ internal struct LogAttributes {
 }
 
 /// `Encodable` representation of log. It gets sanitized before encoding.
-internal struct DDLog: Encodable {
-  internal enum TracingAttributes {
+struct DDLog: Encodable {
+  enum TracingAttributes {
     static let traceID = "dd.trace_id"
     static let spanID = "dd.span_id"
   }
@@ -47,7 +47,7 @@ internal struct DDLog: Encodable {
     try LogEncoder().encode(sanitizedLog, to: encoder)
   }
 
-  internal init(date: Date, status: DDLog.Status, message: String, serviceName: String, environment: String, loggerName: String, loggerVersion: String, threadName: String, applicationVersion: String, attributes: LogAttributes, tags: [String]?) {
+  init(date: Date, status: DDLog.Status, message: String, serviceName: String, environment: String, loggerName: String, loggerVersion: String, threadName: String, applicationVersion: String, attributes: LogAttributes, tags: [String]?) {
     self.date = date
     self.status = status
     self.message = message
@@ -61,7 +61,7 @@ internal struct DDLog: Encodable {
     self.tags = tags
   }
 
-  internal init(event: SpanData.Event, span: SpanData, configuration: ExporterConfiguration) {
+  init(event: SpanData.Event, span: SpanData, configuration: ExporterConfiguration) {
     var attributes = event.attributes
 
     // set tracing attributes
@@ -70,15 +70,15 @@ internal struct DDLog: Encodable {
       TracingAttributes.spanID: "\(span.spanId.rawValue)"
     ]
 
-    self.date = event.timestamp
-    self.status = Status(rawValue: event.attributes["status"]?.description ?? "info") ?? .info
-    self.message = attributes.removeValue(forKey: "message")?.description ?? "Span event"
-    self.serviceName = configuration.serviceName
-    self.environment = configuration.environment
-    self.loggerName = attributes.removeValue(forKey: "loggerName")?.description ?? "logger"
-    self.loggerVersion = "1.0" // loggerVersion
-    self.threadName = attributes.removeValue(forKey: "threadName")?.description ?? "unknown"
-    self.applicationVersion = configuration.version
+    date = event.timestamp
+    status = Status(rawValue: event.attributes["status"]?.description ?? "info") ?? .info
+    message = attributes.removeValue(forKey: "message")?.description ?? "Span event"
+    serviceName = configuration.serviceName
+    environment = configuration.environment
+    loggerName = attributes.removeValue(forKey: "loggerName")?.description ?? "logger"
+    loggerVersion = "1.0" // loggerVersion
+    threadName = attributes.removeValue(forKey: "threadName")?.description ?? "unknown"
+    applicationVersion = configuration.version
 
     let userAttributes: [String: Encodable] = attributes.mapValues {
       switch $0 {
@@ -105,12 +105,12 @@ internal struct DDLog: Encodable {
       }
     }
     self.attributes = LogAttributes(userAttributes: userAttributes, internalAttributes: internalAttributes)
-    self.tags = nil // tags
+    tags = nil // tags
   }
 }
 
 /// Encodes `Log` to given encoder.
-internal struct LogEncoder {
+struct LogEncoder {
   /// Coding keys for permanent `Log` attributes.
   enum StaticCodingKeys: String, CodingKey {
     case date
@@ -136,7 +136,7 @@ internal struct LogEncoder {
     var intValue: Int?
     init?(stringValue: String) { self.stringValue = stringValue }
     init?(intValue: Int) { return nil }
-    init(_ string: String) { self.stringValue = string }
+    init(_ string: String) { stringValue = string }
   }
 
   func encode(_ log: DDLog, to encoder: Encoder) throws {

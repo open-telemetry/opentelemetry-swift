@@ -6,11 +6,11 @@ import Foundation
     var thread: Thread!
 
     var isCancelled: Bool {
-      self.thread.isCancelled
+      thread.isCancelled
     }
 
     init() {
-      self.thread = Thread(block: { [weak self] in
+      thread = Thread(block: { [weak self] in
         self?.main()
       })
     }
@@ -18,11 +18,11 @@ import Foundation
     func main() {}
 
     func start() {
-      self.thread.start()
+      thread.start()
     }
 
     func cancel() {
-      self.thread.cancel()
+      thread.cancel()
     }
   }
 #else

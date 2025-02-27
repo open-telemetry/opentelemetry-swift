@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-internal class RawHistogramMetricSdk<T: SignedNumeric & Comparable>: RawHistogramMetricSdkBase<T> {
+class RawHistogramMetricSdk<T: SignedNumeric & Comparable>: RawHistogramMetricSdkBase<T> {
   override init(name: String) {
     super.init(name: name)
   }

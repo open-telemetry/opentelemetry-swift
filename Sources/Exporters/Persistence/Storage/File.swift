@@ -6,7 +6,7 @@
 import Foundation
 
 /// Provides convenient interface for reading metadata and appending data to the file.
-internal protocol WritableFile {
+protocol WritableFile {
   /// Name of this file.
   var name: String { get }
 
@@ -18,7 +18,7 @@ internal protocol WritableFile {
 }
 
 /// Provides convenient interface for reading contents and metadata of the file.
-internal protocol ReadableFile {
+protocol ReadableFile {
   /// Name of this file.
   var name: String { get }
 
@@ -31,13 +31,13 @@ internal protocol ReadableFile {
 
 /// An immutable `struct` designed to provide optimized and thread safe interface for file manipulation.
 /// It doesn't own the file, which means the file presence is not guaranteed - the file can be deleted by OS at any time (e.g. due to memory pressure).
-internal struct File: WritableFile, ReadableFile {
+struct File: WritableFile, ReadableFile {
   let url: URL
   let name: String
 
   init(url: URL) {
     self.url = url
-    self.name = url.lastPathComponent
+    name = url.lastPathComponent
   }
 
   /// Appends given data at the end of this file.

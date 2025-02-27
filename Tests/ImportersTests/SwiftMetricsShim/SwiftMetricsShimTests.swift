@@ -19,10 +19,8 @@ class SwiftMetricsShimTests: XCTestCase {
     super.setUp()
     testProcessor = TestMetricProcessor()
 
-    meter = MeterProviderSdk(
-      metricProcessor: testProcessor,
-      metricExporter: NoopMetricExporter()
-    ).get(instrumentationName: "SwiftMetricsShimTest") as? MeterSdk
+    meter = MeterProviderSdk(metricProcessor: testProcessor,
+                             metricExporter: NoopMetricExporter()).get(instrumentationName: "SwiftMetricsShimTest") as? MeterSdk
 
     metrics = .init(meter: meter)
     MetricsSystem.bootstrapInternal(metrics)
@@ -119,7 +117,7 @@ class SwiftMetricsShimTests: XCTestCase {
   // MARK: - Test Concurrency
 
   func testConcurrency() throws {
-    DispatchQueue.concurrentPerform(iterations: 5) { iteration in
+    DispatchQueue.concurrentPerform(iterations: 5) { _ in
       let counter = Counter(label: "my_counter")
       counter.increment()
     }

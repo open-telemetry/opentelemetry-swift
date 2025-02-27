@@ -30,19 +30,19 @@ final class StatusTests: XCTestCase {
     let decoder = JSONDecoder()
 
     var status = Status.ok
-    var decodedStatus = try decoder.decode(Status.self, from: try encoder.encode(status))
+    var decodedStatus = try decoder.decode(Status.self, from: encoder.encode(status))
     XCTAssertEqual(status, decodedStatus)
 
     status = Status.unset
-    decodedStatus = try decoder.decode(Status.self, from: try encoder.encode(status))
+    decodedStatus = try decoder.decode(Status.self, from: encoder.encode(status))
     XCTAssertEqual(status, decodedStatus)
 
     status = Status.error(description: "Error")
-    decodedStatus = try decoder.decode(Status.self, from: try encoder.encode(status))
+    decodedStatus = try decoder.decode(Status.self, from: encoder.encode(status))
     XCTAssertEqual(status, decodedStatus)
 
     status = Status.error(description: "")
-    decodedStatus = try decoder.decode(Status.self, from: try encoder.encode(status))
+    decodedStatus = try decoder.decode(Status.self, from: encoder.encode(status))
     XCTAssertEqual(status, decodedStatus)
 
     XCTAssertThrowsError(try decoder.decode(Status.self, from: "".data(using: .utf8)!))
@@ -56,19 +56,19 @@ final class StatusTests: XCTestCase {
     let decoder = JSONDecoder()
 
     var status = StatusExplicitCodable(status: Status.ok)
-    var decodedStatus = try decoder.decode(Status.self, from: try encoder.encode(status))
+    var decodedStatus = try decoder.decode(Status.self, from: encoder.encode(status))
     XCTAssertEqual(status.status, decodedStatus)
 
     status = StatusExplicitCodable(status: Status.unset)
-    decodedStatus = try decoder.decode(Status.self, from: try encoder.encode(status))
+    decodedStatus = try decoder.decode(Status.self, from: encoder.encode(status))
     XCTAssertEqual(status.status, decodedStatus)
 
     status = StatusExplicitCodable(status: Status.error(description: "Error"))
-    decodedStatus = try decoder.decode(Status.self, from: try encoder.encode(status))
+    decodedStatus = try decoder.decode(Status.self, from: encoder.encode(status))
     XCTAssertEqual(status.status, decodedStatus)
 
     status = StatusExplicitCodable(status: Status.error(description: ""))
-    decodedStatus = try decoder.decode(Status.self, from: try encoder.encode(status))
+    decodedStatus = try decoder.decode(Status.self, from: encoder.encode(status))
     XCTAssertEqual(status.status, decodedStatus)
 
     XCTAssertThrowsError(try decoder.decode(StatusExplicitCodable.self, from: "".data(using: .utf8)!))

@@ -99,10 +99,10 @@ final class TraceIdTests: XCTestCase {
     let encoder = JSONEncoder()
     let decoder = JSONDecoder()
 
-    XCTAssertEqual(TraceId.invalid, try decoder.decode(TraceId.self, from: try encoder.encode(TraceId.invalid)))
-    XCTAssertEqual(first, try decoder.decode(TraceId.self, from: try encoder.encode(first)))
-    XCTAssertEqual(second, try decoder.decode(TraceId.self, from: try encoder.encode(second)))
-    XCTAssertEqual(short, try decoder.decode(TraceId.self, from: try encoder.encode(short)))
+    XCTAssertEqual(TraceId.invalid, try decoder.decode(TraceId.self, from: encoder.encode(TraceId.invalid)))
+    XCTAssertEqual(first, try decoder.decode(TraceId.self, from: encoder.encode(first)))
+    XCTAssertEqual(second, try decoder.decode(TraceId.self, from: encoder.encode(second)))
+    XCTAssertEqual(short, try decoder.decode(TraceId.self, from: encoder.encode(short)))
   }
 
   static var allTests = [

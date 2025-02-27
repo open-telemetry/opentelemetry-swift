@@ -15,7 +15,7 @@ protocol DecoratedExporter {
 
 // a generic decorator of `DecoratedExporter` adding filesystem persistence of batches of `[T.SignalType]`.
 // `T.SignalType` must conform to `Codable`.
-internal class PersistenceExporterDecorator<T>
+class PersistenceExporterDecorator<T>
   where T: DecoratedExporter, T.SignalType: Codable {
   // a wrapper of `DecoratedExporter` (T) to add conformance to `DataExporter` that can be
   // used with `DataExportWorker`.
@@ -37,10 +37,8 @@ internal class PersistenceExporterDecorator<T>
 
       do {
         let decoder = JSONDecoder()
-        let exportables = try decoder.decode(
-          [[T.SignalType]?].self,
-          from: arrayData
-        ).compactMap { $0 }.flatMap { $0 }
+        let exportables = try decoder.decode([[T.SignalType]?].self,
+                                             from: arrayData).compactMap { $0 }.flatMap { $0 }
 
         return decoratedExporter.export(values: exportables)
       } catch {
@@ -55,18 +53,14 @@ internal class PersistenceExporterDecorator<T>
 
   private let worker: DataExportWorkerProtocol
 
-  public convenience init(
-    decoratedExporter: T,
-    storageURL: URL,
-    exportCondition: @escaping () -> Bool = { true },
-    performancePreset: PersistencePerformancePreset = .default
-  ) {
+  public convenience init(decoratedExporter: T,
+                          storageURL: URL,
+                          exportCondition: @escaping () -> Bool = { true },
+                          performancePreset: PersistencePerformancePreset = .default) {
     // orchestrate writes and reads over the folder given by `storageURL`
-    let filesOrchestrator = FilesOrchestrator(
-      directory: Directory(url: storageURL),
-      performance: performancePreset,
-      dateProvider: SystemDateProvider()
-    )
+    let filesOrchestrator = FilesOrchestrator(directory: Directory(url: storageURL),
+                                              performance: performancePreset,
+                                              dateProvider: SystemDateProvider())
 
     let fileWriter = OrchestratedFileWriter(
       orchestrator: filesOrchestrator
@@ -76,32 +70,27 @@ internal class PersistenceExporterDecorator<T>
       orchestrator: filesOrchestrator
     )
 
-    self.init(
-      decoratedExporter: decoratedExporter,
-      fileWriter: fileWriter,
-      workerFactory: {
-        DataExportWorker(
-          fileReader: fileReader,
-          dataExporter: $0,
-          exportCondition: exportCondition,
-          delay: DataExportDelay(performance: performancePreset)
-        )
-      },
-      performancePreset: performancePreset)
+    self.init(decoratedExporter: decoratedExporter,
+              fileWriter: fileWriter,
+              workerFactory: {
+                DataExportWorker(fileReader: fileReader,
+                                 dataExporter: $0,
+                                 exportCondition: exportCondition,
+                                 delay: DataExportDelay(performance: performancePreset))
+              },
+              performancePreset: performancePreset)
   }
 
   // internal initializer for testing that accepts a worker factory that allows mocking the worker
-  internal init(
-    decoratedExporter: T,
-    fileWriter: FileWriter,
-    workerFactory createWorker: (DataExporter) -> DataExportWorkerProtocol,
-    performancePreset: PersistencePerformancePreset
-  ) {
+  init(decoratedExporter: T,
+       fileWriter: FileWriter,
+       workerFactory createWorker: (DataExporter) -> DataExportWorkerProtocol,
+       performancePreset: PersistencePerformancePreset) {
     self.performancePreset = performancePreset
 
     self.fileWriter = fileWriter
 
-    self.worker = createWorker(
+    worker = createWorker(
       DecoratedDataExporter(decoratedExporter: decoratedExporter))
   }
 

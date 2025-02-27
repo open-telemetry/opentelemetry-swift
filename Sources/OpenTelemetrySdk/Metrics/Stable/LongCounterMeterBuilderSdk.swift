@@ -26,7 +26,7 @@ public class LongCounterMeterBuilderSdk: LongCounterBuilder, InstrumentBuilder {
        name: String) {
     self.meterProviderSharedState = meterProviderSharedState
     self.meterSharedState = meterSharedState
-    self.instrumentName = name
+    instrumentName = name
   }
 
   public func ofDoubles() -> OpenTelemetryApi.DoubleCounterBuilder {

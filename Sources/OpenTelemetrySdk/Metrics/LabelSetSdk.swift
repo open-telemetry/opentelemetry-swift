@@ -8,7 +8,7 @@ import OpenTelemetryApi
 
 /// LabelSet implementation.
 class LabelSetSdk: LabelSet {
-  internal var labelSetEncoded: String
+  var labelSetEncoded: String
 
   required init(labels: [String: String]) {
     labelSetEncoded = LabelSetSdk.getLabelSetEncoded(labels: labels)

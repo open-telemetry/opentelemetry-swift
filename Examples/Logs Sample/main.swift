@@ -12,12 +12,12 @@ import GRPC
 import NIO
 
 func configure() {
-  let configuration = ClientConnection.Configuration.default(
-    target: .hostAndPort("localhost", 4317),
-    eventLoopGroup: MultiThreadedEventLoopGroup(numberOfThreads: 1))
+  let configuration = ClientConnection.Configuration.default(target: .hostAndPort("localhost", 4317),
+                                                             eventLoopGroup: MultiThreadedEventLoopGroup(numberOfThreads: 1))
 
   OpenTelemetry.registerLoggerProvider(loggerProvider: LoggerProviderBuilder().with(processors: [
-    BatchLogRecordProcessor(logRecordExporter: OtlpLogExporter(channel: ClientConnection(configuration: configuration)))]).build())
+    BatchLogRecordProcessor(logRecordExporter: OtlpLogExporter(channel: ClientConnection(configuration: configuration)))
+  ]).build())
 }
 
 configure()

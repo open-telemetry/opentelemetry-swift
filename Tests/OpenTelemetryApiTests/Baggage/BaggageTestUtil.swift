@@ -6,7 +6,7 @@
 import Foundation
 @testable import OpenTelemetryApi
 
-struct BaggageTestUtil {
+enum BaggageTestUtil {
   static func listToBaggage(entries: [Entry]) -> DefaultBaggage {
     let builder = DefaultBaggage.baggageBuilder()
     for entry in entries {

@@ -10,7 +10,7 @@ public class RegisteredView {
   public private(set) var view: StableView
   public private(set) var attributeProcessor: AttributeProcessor
 
-  internal init(selector: InstrumentSelector, view: StableView, attributeProcessor: AttributeProcessor) {
+  init(selector: InstrumentSelector, view: StableView, attributeProcessor: AttributeProcessor) {
     self.selector = selector
     self.view = view
     self.attributeProcessor = attributeProcessor

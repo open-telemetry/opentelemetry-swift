@@ -22,11 +22,9 @@ class FilesOrchestratorTests: XCTestCase {
 
   /// Configures `FilesOrchestrator` under tests.
   private func configureOrchestrator(using dateProvider: DateProvider) -> FilesOrchestrator {
-    return FilesOrchestrator(
-      directory: temporaryDirectory,
-      performance: performance,
-      dateProvider: dateProvider
-    )
+    return FilesOrchestrator(directory: temporaryDirectory,
+                             performance: performance,
+                             dateProvider: dateProvider)
   }
 
   // MARK: - Writable file tests
@@ -68,10 +66,8 @@ class FilesOrchestratorTests: XCTestCase {
 
   func testGivenDefaultWriteConditions_whenFileHasNoRoomForMore_itCreatesNewFile() throws {
     let orchestrator = configureOrchestrator(using: RelativeDateProvider(advancingBySeconds: 1))
-    let chunkedData: [Data] = .mockChunksOf(
-      totalSize: performance.maxFileSize,
-      maxChunkSize: performance.maxObjectSize
-    )
+    let chunkedData: [Data] = .mockChunksOf(totalSize: performance.maxFileSize,
+                                            maxChunkSize: performance.maxObjectSize)
 
     let file1 = try orchestrator.getWritableFile(writeSize: performance.maxObjectSize)
     try chunkedData.forEach { chunk in try file1.append(data: chunk, synchronized: false) }
@@ -105,8 +101,7 @@ class FilesOrchestratorTests: XCTestCase {
   /// It is important when SDK is used by iOS App and iOS App Extension at the same time.
   func testWhenRequestedFirstTime_eachOrchestratorInstanceCreatesNewWritableFile() throws {
     let orchestrator1 = configureOrchestrator(using: RelativeDateProvider())
-    let orchestrator2 = configureOrchestrator(
-      using: RelativeDateProvider(startingFrom: Date().secondsAgo(0.01)) // simulate time difference
+    let orchestrator2 = configureOrchestrator(using: RelativeDateProvider(startingFrom: Date().secondsAgo(0.01)) // simulate time difference
     )
 
     _ = try orchestrator1.getWritableFile(writeSize: 1)
@@ -119,19 +114,15 @@ class FilesOrchestratorTests: XCTestCase {
   func testWhenFilesDirectorySizeIsBig_itKeepsItUnderLimit_byRemovingOldestFilesFirst() throws {
     let oneMB: UInt64 = 1024 * 1024
 
-    let orchestrator = FilesOrchestrator(
-      directory: temporaryDirectory,
-      performance: StoragePerformanceMock(
-        maxFileSize: oneMB, // 1MB
-        maxDirectorySize: 3 * oneMB, // 3MB,
-        maxFileAgeForWrite: .distantFuture,
-        minFileAgeForRead: .mockAny(),
-        maxFileAgeForRead: .mockAny(),
-        maxObjectsInFile: 1, // create new file each time
-        maxObjectSize: .max
-      ),
-      dateProvider: RelativeDateProvider(advancingBySeconds: 1)
-    )
+    let orchestrator = FilesOrchestrator(directory: temporaryDirectory,
+                                         performance: StoragePerformanceMock(maxFileSize: oneMB, // 1MB
+                                                                             maxDirectorySize: 3 * oneMB, // 3MB,
+                                                                             maxFileAgeForWrite: .distantFuture,
+                                                                             minFileAgeForRead: .mockAny(),
+                                                                             maxFileAgeForRead: .mockAny(),
+                                                                             maxObjectsInFile: 1, // create new file each time
+                                                                             maxObjectSize: .max),
+                                         dateProvider: RelativeDateProvider(advancingBySeconds: 1))
 
     // write 1MB to first file (1MB of directory size in total)
     let file1 = try orchestrator.getWritableFile(writeSize: oneMB)
@@ -212,10 +203,8 @@ class FilesOrchestratorTests: XCTestCase {
 
     dateProvider.advance(bySeconds: 1 + performance.minFileAgeForRead)
 
-    XCTAssertEqual(
-      orchestrator.getReadableFile(excludingFilesNamed: Set(fileNames[0 ... 2]))?.name,
-      fileNames[3]
-    )
+    XCTAssertEqual(orchestrator.getReadableFile(excludingFilesNamed: Set(fileNames[0 ... 2]))?.name,
+                   fileNames[3])
   }
 
   func testGivenDefaultReadConditions_whenFileIsTooOld_itGetsDeleted() throws {

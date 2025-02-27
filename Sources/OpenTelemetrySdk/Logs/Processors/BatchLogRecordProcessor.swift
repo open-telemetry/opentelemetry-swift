@@ -59,7 +59,7 @@ private class BatchWorker: WorkerThread {
     self.maxExportBatchSize = maxExportBatchSize
     self.maxQueueSize = maxQueueSize
     self.willExportCallback = willExportCallback
-    self.halfMaxQueueSize = maxQueueSize >> 1
+    halfMaxQueueSize = maxQueueSize >> 1
     queue = OperationQueue()
     queue.name = "BatchWorker Queue"
     queue.maxConcurrentOperationCount = 1
@@ -95,7 +95,7 @@ private class BatchWorker: WorkerThread {
         cond.unlock()
         self.exportBatch(logRecordList: logRecordsCopy, explicitTimeout: exportTimeout)
       }
-    } while !self.isCancelled
+    } while !isCancelled
   }
 
   public func forceFlush(explicitTimeout: TimeInterval? = nil) {

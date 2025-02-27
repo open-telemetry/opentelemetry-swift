@@ -12,7 +12,7 @@ public enum CompressionType {
 }
 
 public struct OtlpConfiguration {
-  public static let DefaultTimeoutInterval: TimeInterval = TimeInterval(10)
+  public static let DefaultTimeoutInterval: TimeInterval = .init(10)
 
   /*
    * This is a first pass addition to satisfy the OTLP Configuration specification:
@@ -30,12 +30,10 @@ public struct OtlpConfiguration {
   public let timeout: TimeInterval
   public let compression: CompressionType
   public let exportAsJson: Bool
-  public init(
-    timeout: TimeInterval = OtlpConfiguration.DefaultTimeoutInterval,
-    compression: CompressionType = .gzip,
-    headers: [(String, String)]? = nil,
-    exportAsJson: Bool = true
-  ) {
+  public init(timeout: TimeInterval = OtlpConfiguration.DefaultTimeoutInterval,
+              compression: CompressionType = .gzip,
+              headers: [(String, String)]? = nil,
+              exportAsJson: Bool = true) {
     self.headers = headers
     self.timeout = timeout
     self.compression = compression

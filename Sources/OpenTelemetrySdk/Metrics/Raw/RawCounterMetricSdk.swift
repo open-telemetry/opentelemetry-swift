@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-internal class RawCounterMetricSdk<T: SignedNumeric & Comparable>: RawCounterMetricSdkBase<T> {
+class RawCounterMetricSdk<T: SignedNumeric & Comparable>: RawCounterMetricSdkBase<T> {
   override init(name: String) {
     super.init(name: name)
   }

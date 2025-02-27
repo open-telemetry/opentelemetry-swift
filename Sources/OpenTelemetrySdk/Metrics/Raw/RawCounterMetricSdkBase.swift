@@ -27,7 +27,7 @@ class RawCounterMetricSdkBase<T>: RawCounterMetric {
     bind(labelset: labelset, isShortLived: false)
   }
 
-  internal func bind(labelset: LabelSet, isShortLived: Bool) -> BoundRawCounterMetric<T> {
+  func bind(labelset: LabelSet, isShortLived: Bool) -> BoundRawCounterMetric<T> {
     var boundInstrument: BoundRawCounterMetricSdkBase<T>?
     bindUnbindLock.withLockVoid {
       boundInstrument = boundInstruments[labelset]
@@ -61,7 +61,7 @@ class RawCounterMetricSdkBase<T>: RawCounterMetric {
     return bind(labelset: LabelSet(labels: labels), isShortLived: false)
   }
 
-  internal func unBind(labelSet: LabelSet) {
+  func unBind(labelSet: LabelSet) {
     bindUnbindLock.withLockVoid {
       if let boundInstrument = boundInstruments[labelSet] {
         boundInstrument.statusLock.withLockVoid {

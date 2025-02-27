@@ -6,7 +6,7 @@
 @testable import OpenTelemetryApi
 import XCTest
 
-fileprivate func createRandomPropagatedSpan() -> PropagatedSpan {
+private func createRandomPropagatedSpan() -> PropagatedSpan {
   return PropagatedSpan(context: SpanContext.create(traceId: TraceId.random(),
                                                     spanId: SpanId.random(),
                                                     traceFlags: TraceFlags(),

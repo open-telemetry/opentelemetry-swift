@@ -16,7 +16,7 @@ public protocol LogRecordBuilder {
   ///
   /// - Parameter observed: the Date object
   /// - Returns: self
-  func setObservedTimestamp (_ observed: Date) -> Self
+  func setObservedTimestamp(_ observed: Date) -> Self
 
   /// set the span context associated with the log.
   ///

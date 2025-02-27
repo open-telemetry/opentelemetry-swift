@@ -45,7 +45,7 @@ private enum HTTPResponseStatusCode: Int {
 }
 
 /// The status of a single upload attempt.
-internal struct DataUploadStatus {
+struct DataUploadStatus {
   /// If upload needs to be retried (`true`) because its associated data was not delivered but it may succeed
   /// in the next attempt (i.e. it failed due to device leaving signal range or a temporary server unavailability occurred).
   /// If set to `false` then data associated with the upload should be deleted as it does not need any more upload

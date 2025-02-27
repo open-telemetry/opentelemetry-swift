@@ -48,16 +48,16 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
     var positiveBuckets: DoubleBase2ExponentialHistogramBuckets?
     var negativeBuckets: DoubleBase2ExponentialHistogramBuckets?
 
-    internal init(maxBuckets: Int, maxScale: Int, exemplarReservoir: ExemplarReservoir) {
+    init(maxBuckets: Int, maxScale: Int, exemplarReservoir: ExemplarReservoir) {
       self.maxBuckets = maxBuckets
       self.maxScale = maxScale
 
-      self.sum = 0
-      self.zeroCount = 0
+      sum = 0
+      zeroCount = 0
       self.min = Double.greatestFiniteMagnitude
       self.max = -1
-      self.count = 0
-      self.scale = maxScale
+      count = 0
+      scale = maxScale
 
       super.init(exemplarReservoir: exemplarReservoir)
     }
@@ -72,21 +72,19 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
         lock.unlock()
       }
 
-      let pointData = ExponentialHistogramPointData(
-        scale: scale,
-        sum: sum,
-        zeroCount: Int64(zeroCount),
-        hasMin: count > 0,
-        hasMax: count > 0,
-        min: min,
-        max: max,
-        positiveBuckets: resolveBuckets(buckets: positiveBuckets, scale: scale, reset: reset),
-        negativeBuckets: resolveBuckets(buckets: negativeBuckets, scale: scale, reset: reset),
-        startEpochNanos: startEpochNano,
-        epochNanos: endEpochNano,
-        attributes: attributes,
-        exemplars: exemplars
-      )
+      let pointData = ExponentialHistogramPointData(scale: scale,
+                                                    sum: sum,
+                                                    zeroCount: Int64(zeroCount),
+                                                    hasMin: count > 0,
+                                                    hasMax: count > 0,
+                                                    min: min,
+                                                    max: max,
+                                                    positiveBuckets: resolveBuckets(buckets: positiveBuckets, scale: scale, reset: reset),
+                                                    negativeBuckets: resolveBuckets(buckets: negativeBuckets, scale: scale, reset: reset),
+                                                    startEpochNanos: startEpochNano,
+                                                    epochNanos: endEpochNano,
+                                                    attributes: attributes,
+                                                    exemplars: exemplars)
 
       if reset {
         sum = 0
@@ -118,17 +116,17 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
 
       var buckets: DoubleBase2ExponentialHistogramBuckets
       if value == 0.0 {
-        self.zeroCount += 1
+        zeroCount += 1
         return
       } else if value > 0.0 {
-        if let positiveBuckets = self.positiveBuckets {
+        if let positiveBuckets {
           buckets = positiveBuckets
         } else {
           buckets = DoubleBase2ExponentialHistogramBuckets(scale: scale, maxBuckets: maxBuckets)
           positiveBuckets = buckets
         }
       } else {
-        if let negativeBuckets = negativeBuckets {
+        if let negativeBuckets {
           buckets = negativeBuckets
         } else {
           buckets = DoubleBase2ExponentialHistogramBuckets(scale: scale, maxBuckets: maxBuckets)
@@ -143,7 +141,7 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
     }
 
     private func resolveBuckets(buckets: DoubleBase2ExponentialHistogramBuckets?, scale: Int, reset: Bool) -> ExponentialHistogramBuckets {
-      guard let buckets = buckets else {
+      guard let buckets else {
         return EmptyExponentialHistogramBuckets(scale: scale)
       }
 
@@ -157,12 +155,12 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
     }
 
     func downScale(by: Int) {
-      if let positiveBuckets = positiveBuckets {
+      if let positiveBuckets {
         positiveBuckets.downscale(by: by)
         scale = positiveBuckets.scale
       }
 
-      if let negativeBuckets = negativeBuckets {
+      if let negativeBuckets {
         negativeBuckets.downscale(by: by)
         scale = negativeBuckets.scale
       }

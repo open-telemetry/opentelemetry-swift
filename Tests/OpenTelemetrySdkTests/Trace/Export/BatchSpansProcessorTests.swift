@@ -44,10 +44,8 @@ class BatchSpansProcessorTests: XCTestCase {
   }
 
   func testStartEndRequirements() {
-    let spansProcessor = BatchSpanProcessor(
-      spanExporter: WaitingSpanExporter(numberToWaitFor: 0),
-      meterProvider: DefaultStableMeterProvider.instance
-    )
+    let spansProcessor = BatchSpanProcessor(spanExporter: WaitingSpanExporter(numberToWaitFor: 0),
+                                            meterProvider: DefaultStableMeterProvider.instance)
     XCTAssertFalse(spansProcessor.isStartRequired)
     XCTAssertTrue(spansProcessor.isEndRequired)
   }
@@ -55,10 +53,9 @@ class BatchSpansProcessorTests: XCTestCase {
   func testExportDifferentSampledSpans() {
     let waitingSpanExporter = WaitingSpanExporter(numberToWaitFor: 2)
 
-    tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(
-      spanExporter: waitingSpanExporter,
-      meterProvider: DefaultStableMeterProvider.instance,
-      scheduleDelay: maxScheduleDelay)
+    tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(spanExporter: waitingSpanExporter,
+                                                         meterProvider: DefaultStableMeterProvider.instance,
+                                                         scheduleDelay: maxScheduleDelay)
     )
     let span1 = createSampledEndedSpan(spanName: spanName1)
     let span2 = createSampledEndedSpan(spanName: spanName2)
@@ -70,11 +67,10 @@ class BatchSpansProcessorTests: XCTestCase {
   func testExportMoreSpansThanTheBufferSize() {
     let waitingSpanExporter = WaitingSpanExporter(numberToWaitFor: 6)
 
-    tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(
-      spanExporter: waitingSpanExporter,
-      meterProvider: DefaultStableMeterProvider.instance,
-      scheduleDelay: maxScheduleDelay,
-      maxQueueSize: 6, maxExportBatchSize: 2)
+    tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(spanExporter: waitingSpanExporter,
+                                                         meterProvider: DefaultStableMeterProvider.instance,
+                                                         scheduleDelay: maxScheduleDelay,
+                                                         maxQueueSize: 6, maxExportBatchSize: 2)
     )
 
     let span1 = createSampledEndedSpan(spanName: spanName1)
@@ -94,13 +90,11 @@ class BatchSpansProcessorTests: XCTestCase {
 
   func testForceExport() {
     let waitingSpanExporter = WaitingSpanExporter(numberToWaitFor: 1)
-    let batchSpansProcessor = BatchSpanProcessor(
-      spanExporter: waitingSpanExporter,
-      meterProvider: DefaultStableMeterProvider.instance,
-      scheduleDelay: 10,
-      maxQueueSize: 10000,
-      maxExportBatchSize: 2000
-    )
+    let batchSpansProcessor = BatchSpanProcessor(spanExporter: waitingSpanExporter,
+                                                 meterProvider: DefaultStableMeterProvider.instance,
+                                                 scheduleDelay: 10,
+                                                 maxQueueSize: 10000,
+                                                 maxExportBatchSize: 2000)
     tracerSdkFactory.addSpanProcessor(batchSpansProcessor)
 
     for _ in 0 ..< 100 {
@@ -114,10 +108,9 @@ class BatchSpansProcessorTests: XCTestCase {
   func testExportSpansToMultipleServices() {
     let waitingSpanExporter = WaitingSpanExporter(numberToWaitFor: 2)
     let waitingSpanExporter2 = WaitingSpanExporter(numberToWaitFor: 2)
-    tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(
-      spanExporter: MultiSpanExporter(spanExporters: [waitingSpanExporter, waitingSpanExporter2]),
-      meterProvider: DefaultStableMeterProvider.instance,
-      scheduleDelay: maxScheduleDelay))
+    tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(spanExporter: MultiSpanExporter(spanExporters: [waitingSpanExporter, waitingSpanExporter2]),
+                                                         meterProvider: DefaultStableMeterProvider.instance,
+                                                         scheduleDelay: maxScheduleDelay))
 
     let span1 = createSampledEndedSpan(spanName: spanName1)
     let span2 = createSampledEndedSpan(spanName: spanName2)
@@ -131,12 +124,11 @@ class BatchSpansProcessorTests: XCTestCase {
     let maxQueuedSpans = 8
     let waitingSpanExporter = WaitingSpanExporter(numberToWaitFor: maxQueuedSpans)
 
-    tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(
-      spanExporter: MultiSpanExporter(spanExporters: [waitingSpanExporter, blockingSpanExporter]),
-      meterProvider: DefaultStableMeterProvider.instance,
-      scheduleDelay: maxScheduleDelay,
-      maxQueueSize: maxQueuedSpans,
-      maxExportBatchSize: maxQueuedSpans / 2)
+    tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(spanExporter: MultiSpanExporter(spanExporters: [waitingSpanExporter, blockingSpanExporter]),
+                                                         meterProvider: DefaultStableMeterProvider.instance,
+                                                         scheduleDelay: maxScheduleDelay,
+                                                         maxQueueSize: maxQueuedSpans,
+                                                         maxExportBatchSize: maxQueuedSpans / 2)
     )
 
     var spansToExport = [SpanData]()
@@ -189,10 +181,9 @@ class BatchSpansProcessorTests: XCTestCase {
   func testExportNotSampledSpans() {
     let waitingSpanExporter = WaitingSpanExporter(numberToWaitFor: 1)
 
-    tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(
-      spanExporter: waitingSpanExporter,
-      meterProvider: DefaultStableMeterProvider.instance,
-      scheduleDelay: maxScheduleDelay)
+    tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(spanExporter: waitingSpanExporter,
+                                                         meterProvider: DefaultStableMeterProvider.instance,
+                                                         scheduleDelay: maxScheduleDelay)
     )
 
     createNotSampledEndedSpan(spanName: spanName1)
@@ -212,10 +203,9 @@ class BatchSpansProcessorTests: XCTestCase {
     let waitingSpanExporter = WaitingSpanExporter(numberToWaitFor: 1)
 
     // Set the export delay to zero, for no timeout, in order to confirm the #flush() below works
-    tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(
-      spanExporter: waitingSpanExporter,
-      meterProvider: DefaultStableMeterProvider.instance,
-      scheduleDelay: 0.1)
+    tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(spanExporter: waitingSpanExporter,
+                                                         meterProvider: DefaultStableMeterProvider.instance,
+                                                         scheduleDelay: 0.1)
     )
 
     let span2 = createSampledEndedSpan(spanName: spanName2)
@@ -235,11 +225,9 @@ class BatchSpansProcessorTests: XCTestCase {
       let waitingSpanExporter = WaitingSpanExporter(numberToWaitFor: 2)
       exporter = waitingSpanExporter
 
-      let batch = BatchSpanProcessor(
-        spanExporter: waitingSpanExporter,
-        meterProvider: DefaultStableMeterProvider.instance,
-        scheduleDelay: maxScheduleDelay
-      )
+      let batch = BatchSpanProcessor(spanExporter: waitingSpanExporter,
+                                     meterProvider: DefaultStableMeterProvider.instance,
+                                     scheduleDelay: maxScheduleDelay)
 
       tracerSdkFactory.addSpanProcessor(batch)
       let span1 = createSampledEndedSpan(spanName: spanName1)

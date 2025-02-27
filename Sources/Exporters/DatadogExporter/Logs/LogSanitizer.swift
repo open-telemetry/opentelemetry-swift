@@ -6,7 +6,7 @@
 import Foundation
 
 /// Sanitizes `Log` representation received from the user, so it can match Datadog log constraints.
-internal struct LogSanitizer {
+struct LogSanitizer {
   enum Constraints {
     /// Attribute names reserved for Datadog.
     /// If any of those is used by the user, the attribute will be ignored.
@@ -38,19 +38,17 @@ internal struct LogSanitizer {
   }
 
   func sanitize(log: DDLog) -> DDLog {
-    return DDLog(
-      date: log.date,
-      status: log.status,
-      message: log.message,
-      serviceName: log.serviceName,
-      environment: log.environment,
-      loggerName: log.loggerName,
-      loggerVersion: log.loggerVersion,
-      threadName: log.threadName,
-      applicationVersion: log.applicationVersion,
-      attributes: sanitize(attributes: log.attributes),
-      tags: sanitize(tags: log.tags)
-    )
+    return DDLog(date: log.date,
+                 status: log.status,
+                 message: log.message,
+                 serviceName: log.serviceName,
+                 environment: log.environment,
+                 loggerName: log.loggerName,
+                 loggerVersion: log.loggerVersion,
+                 threadName: log.threadName,
+                 applicationVersion: log.applicationVersion,
+                 attributes: sanitize(attributes: log.attributes),
+                 tags: sanitize(tags: log.tags))
   }
 
   // MARK: - Attributes sanitization
@@ -64,10 +62,8 @@ internal struct LogSanitizer {
     let userAttributesLimit = Constraints.maxNumberOfAttributes - (rawAttributes.internalAttributes?.count ?? 0)
     userAttributes = limitToMaxNumberOfAttributes(userAttributes, limit: userAttributesLimit)
 
-    return LogAttributes(
-      userAttributes: userAttributes,
-      internalAttributes: rawAttributes.internalAttributes
-    )
+    return LogAttributes(userAttributes: userAttributes,
+                         internalAttributes: rawAttributes.internalAttributes)
   }
 
   private func removeInvalidAttributes(_ attributes: [String: Encodable]) -> [String: Encodable] {
@@ -132,7 +128,7 @@ internal struct LogSanitizer {
   // MARK: - Tags sanitization
 
   private func sanitize(tags rawTags: [String]?) -> [String]? {
-    if let rawTags = rawTags {
+    if let rawTags {
       let tags = rawTags
         .map { $0.lowercased() }
         .filter { startsWithAllowedCharacter(tag: $0) }

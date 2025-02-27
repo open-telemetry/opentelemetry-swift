@@ -23,25 +23,20 @@ public class DefaultBaggageBuilder: BaggageBuilder {
     return self
   }
 
-  @discardableResult public func put(
-    key: EntryKey, value: EntryValue, metadata: EntryMetadata?
-  ) -> Self {
+  @discardableResult public func put(key: EntryKey, value: EntryValue, metadata: EntryMetadata?) -> Self {
     let entry = Entry(key: key, value: value, metadata: metadata)
     entries[key] = entry
     return self
   }
 
-  @discardableResult public func put(
-    key: String, value: String, metadata: String? = nil
-  ) -> Self {
+  @discardableResult public func put(key: String, value: String, metadata: String? = nil) -> Self {
     guard let entryKey = EntryKey(name: key),
           let entryValue = EntryValue(string: value)
     else {
       return self
     }
-    let entry = Entry(
-      key: entryKey, value: entryValue,
-      metadata: EntryMetadata(metadata: metadata))
+    let entry = Entry(key: entryKey, value: entryValue,
+                      metadata: EntryMetadata(metadata: metadata))
     entries[entryKey] = entry
     return self
   }

@@ -15,7 +15,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
   fileprivate var internalName: String
   public var name: String {
     get {
-      var value: String = ""
+      var value = ""
       internalStatusQueue.sync {
         value = internalName
       }
@@ -124,7 +124,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
                totalRecordedLinks: Int,
                startTime: Date?) {
     self.context = context
-    self.internalName = name
+    internalName = name
     self.instrumentationScopeInfo = instrumentationScopeInfo
     self.parentContext = parentContext
     self.hasRemoteParent = hasRemoteParent
@@ -137,7 +137,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
     self.resource = resource
     self.startTime = startTime ?? clock.now
     self.attributes = attributes
-    self.totalAttributeCount = attributes.count
+    totalAttributeCount = attributes.count
     events = ArrayWithCapacity<SpanData.Event>(capacity: spanLimits.eventCountLimit)
     maxNumberOfAttributes = spanLimits.attributeCountLimit
     maxNumberOfAttributesPerEvent = spanLimits.attributePerEventCountLimit
@@ -255,7 +255,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
         return
       }
       /// Process only `string` type value
-      if case .string(let value) = value {
+      if case let .string(value) = value {
         let formattedValue = value.count > maxValueLengthPerSpanAttribute ? String(value.prefix(maxValueLengthPerSpanAttribute)) : value
         attributes[key] = AttributeValue(formattedValue)
       } else {
@@ -326,14 +326,14 @@ public class RecordEventsReadableSpan: ReadableSpan {
     return "RecordEventsReadableSpan{}"
   }
 
-  internal func getTotalRecordedEvents() -> Int {
+  func getTotalRecordedEvents() -> Int {
     eventsSyncLock.withLock {
       totalRecordedEvents
     }
   }
 
   /// For testing purposes
-  internal func getDroppedLinksCount() -> Int {
+  func getDroppedLinksCount() -> Int {
     return totalRecordedLinks - links.count
   }
 
@@ -357,8 +357,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
   }
 }
 
-extension SpanException {
-  fileprivate var eventAttributes: [String: AttributeValue] {
+private extension SpanException {
+  var eventAttributes: [String: AttributeValue] {
     [
       SemanticAttributes.exceptionType.rawValue: type,
       SemanticAttributes.exceptionMessage.rawValue: message,

@@ -19,13 +19,13 @@ public struct MetricDescriptor: Hashable {
     if let name = view.name {
       self.name = name
     } else {
-      self.name = instrument.name
+      name = instrument.name
     }
 
     if let description = view.description {
       self.description = description
     } else {
-      self.description = instrument.description
+      description = instrument.description
     }
     self.view = view
     self.instrument = instrument

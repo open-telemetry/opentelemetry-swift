@@ -139,7 +139,7 @@ public protocol SpanBuilder: SpanBuilderBase {
 
 public extension SpanBuilderBase {
   func withStartedSpan<T>(_ operation: (any SpanBase) throws -> T) rethrows -> T {
-    let span = self.startSpan()
+    let span = startSpan()
     defer {
       span.end()
     }
@@ -150,7 +150,7 @@ public extension SpanBuilderBase {
   #if canImport(_Concurrency)
     @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
     func withStartedSpan<T>(_ operation: (any SpanBase) async throws -> T) async rethrows -> T {
-      let span = self.startSpan()
+      let span = startSpan()
       defer {
         span.end()
       }

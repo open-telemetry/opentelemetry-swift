@@ -45,7 +45,7 @@ public class StableMeterProviderSdk: StableMeterProvider {
        exemplarFilter: ExemplarFilter) {
     let startEpochNano = Date().timeIntervalSince1970.toNanoseconds
     self.registeredViews = registeredViews
-    self.registeredReaders = metricReaders.map { reader in
+    registeredReaders = metricReaders.map { reader in
       RegisteredReader(reader: reader, registry: StableViewRegistry(aggregationSelector: reader, registeredViews: registeredViews))
     }
 

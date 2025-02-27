@@ -27,7 +27,7 @@ public struct SumData<T>: MetricData {
 
   public var startTimestamp: Date
   public var timestamp: Date
-  public var labels: [String: String] = [String: String]()
+  public var labels: [String: String] = .init()
   public var sum: T
 }
 
@@ -44,7 +44,7 @@ public struct SummaryData<T>: MetricData {
 
   public var startTimestamp: Date
   public var timestamp: Date
-  public var labels: [String: String] = [String: String]()
+  public var labels: [String: String] = .init()
   public var count: Int
   public var sum: T
   public var min: T
@@ -52,7 +52,7 @@ public struct SummaryData<T>: MetricData {
 }
 
 public struct HistogramData<T>: MetricData {
-  public init(startTimestamp: Date, timestamp: Date, labels: [String: String] = [String: String](), buckets: (boundaries: Array<T>, counts: Array<Int>), count: Int, sum: T) {
+  public init(startTimestamp: Date, timestamp: Date, labels: [String: String] = [String: String](), buckets: (boundaries: [T], counts: [Int]), count: Int, sum: T) {
     self.startTimestamp = startTimestamp
     self.timestamp = timestamp
     self.labels = labels
@@ -63,11 +63,9 @@ public struct HistogramData<T>: MetricData {
 
   public var startTimestamp: Date
   public var timestamp: Date
-  public var labels: [String: String] = [String: String]()
-  public var buckets: (
-    boundaries: Array<T>,
-    counts: Array<Int>
-  )
+  public var labels: [String: String] = .init()
+  public var buckets: (boundaries: [T],
+                       counts: [Int])
   public var count: Int
   public var sum: T
 }

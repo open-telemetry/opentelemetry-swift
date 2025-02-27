@@ -26,7 +26,7 @@ import XCTest
   init() {
     let subdirectoryName = "com.datadoghq.ios-sdk-tests-\(UUID().uuidString)"
     let osTemporaryDirectoryURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent(subdirectoryName, isDirectory: true)
-    self.directory = Directory(url: osTemporaryDirectoryURL)
+    directory = Directory(url: osTemporaryDirectoryURL)
   }
 }
 

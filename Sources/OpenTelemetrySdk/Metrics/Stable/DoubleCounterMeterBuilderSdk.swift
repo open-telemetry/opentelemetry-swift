@@ -30,7 +30,7 @@ public class DoubleCounterMeterBuilderSdk: DoubleCounterBuilder, InstrumentBuild
     self.meterSharedState = meterSharedState
     self.unit = unit
     self.description = description
-    self.instrumentName = name
+    instrumentName = name
   }
 
   public func build() -> OpenTelemetryApi.DoubleCounter {

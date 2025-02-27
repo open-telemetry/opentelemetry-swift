@@ -17,7 +17,7 @@ class PushMetricController {
     metricPushTimer = DispatchSource.makeTimerSource(flags: DispatchSource.TimerFlags(), queue: pushMetricQueue)
     metricPushTimer.setEventHandler { [weak self] in
       autoreleasepool {
-        guard let self = self,
+        guard let self,
               let meterProvider = self.meterProvider else {
           return
         }

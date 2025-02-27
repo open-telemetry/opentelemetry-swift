@@ -6,7 +6,7 @@
 import Foundation
 
 /// Type erasure `Encodable` wrapper.
-internal struct EncodableValue: Encodable {
+struct EncodableValue: Encodable {
   let value: Encodable
 
   init(_ value: Encodable) {
@@ -42,7 +42,7 @@ internal struct EncodableValue: Encodable {
 /// * it encodes `Person(name: "foo")` encodable struct as `"{\"name\": \"foo\"}"` JSON string value
 ///
 /// This encoding doesn't happen instantly. Instead, it is deferred to the actual `encoder.encode(jsonStringEncodableValue)` call.
-internal struct JSONStringEncodableValue: Encodable {
+struct JSONStringEncodableValue: Encodable {
   /// Encoder used to encode `encodable` as JSON String value.
   /// It is invoked lazily at `encoder.encode(jsonStringEncodableValue)` so its encoding errors can be propagated in master-type encoding.
   private let jsonEncoder: JSONEncoder
@@ -50,7 +50,7 @@ internal struct JSONStringEncodableValue: Encodable {
 
   init(_ value: Encodable, encodedUsing jsonEncoder: JSONEncoder) {
     self.jsonEncoder = jsonEncoder
-    self.encodable = EncodableValue(value)
+    encodable = EncodableValue(value)
   }
 
   func encode(to encoder: Encoder) throws {
@@ -77,10 +77,8 @@ internal struct JSONStringEncodableValue: Encodable {
         guard subdataStartIndex < subdataEndIndex else {
           // This error should never be thrown, as the `temporaryJsonArrayData` will always contain at
           // least two bytes standing for `[` and `]`. This check is just for sanity.
-          let encodingContext = EncodingError.Context(
-            codingPath: encoder.codingPath,
-            debugDescription: "Cannot safely encode value within a temporary array container."
-          )
+          let encodingContext = EncodingError.Context(codingPath: encoder.codingPath,
+                                                      debugDescription: "Cannot safely encode value within a temporary array container.")
           throw EncodingError.invalidValue(encodable.value, encodingContext)
         }
 

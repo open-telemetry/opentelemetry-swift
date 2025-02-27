@@ -12,8 +12,8 @@ public class Base2ExponentialHistogramAggregation: Aggregation {
 
   public private(set) static var instance = Base2ExponentialHistogramAggregation(maxBuckets: defaultMaxBuckets, maxScale: defaultMaxScale)
 
-  internal let maxBuckets: Int
-  internal let maxScale: Int
+  let maxBuckets: Int
+  let maxScale: Int
 
   public init(maxBuckets: Int, maxScale: Int) {
     self.maxScale = maxScale <= 20 && maxScale >= -10 ? maxScale : Self.defaultMaxScale
@@ -21,7 +21,7 @@ public class Base2ExponentialHistogramAggregation: Aggregation {
   }
 
   public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> StableAggregator {
-    DoubleBase2ExponentialHistogramAggregator(maxBuckets: self.maxBuckets, maxScale: self.maxScale) {
+    DoubleBase2ExponentialHistogramAggregator(maxBuckets: maxBuckets, maxScale: maxScale) {
       FilteredExemplarReservoir(filter: exemplarFilter, reservoir: LongToDoubleExemplarReservoir(reservoir: RandomFixedSizedExemplarReservoir.createDouble(clock: MillisClock(), size: 2)))
     }
   }

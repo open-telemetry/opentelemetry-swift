@@ -154,10 +154,10 @@ final class TraceStateTests: XCTestCase {
     let encoder = JSONEncoder()
     let decoder = JSONDecoder()
 
-    XCTAssertEqual(empty, try decoder.decode(TraceState.self, from: try encoder.encode(empty)))
-    XCTAssertEqual(firstTraceState, try decoder.decode(TraceState.self, from: try encoder.encode(firstTraceState)))
-    XCTAssertEqual(secondTraceState, try decoder.decode(TraceState.self, from: try encoder.encode(secondTraceState)))
-    XCTAssertEqual(multiValueTraceState, try decoder.decode(TraceState.self, from: try encoder.encode(multiValueTraceState)))
+    XCTAssertEqual(empty, try decoder.decode(TraceState.self, from: encoder.encode(empty)))
+    XCTAssertEqual(firstTraceState, try decoder.decode(TraceState.self, from: encoder.encode(firstTraceState)))
+    XCTAssertEqual(secondTraceState, try decoder.decode(TraceState.self, from: encoder.encode(secondTraceState)))
+    XCTAssertEqual(multiValueTraceState, try decoder.decode(TraceState.self, from: encoder.encode(multiValueTraceState)))
   }
 
   static var allTests = [

@@ -10,7 +10,7 @@ import Foundation
 #endif
 
 /// Client for sending requests over HTTP.
-internal final class HTTPClient {
+final class HTTPClient {
   private let session: URLSession
 
   convenience init() {
@@ -28,10 +28,8 @@ internal final class HTTPClient {
     self.session = session
   }
 
-  func send(
-    request: URLRequest,
-    completion: @escaping (Result<HTTPURLResponse, Error>) -> Void
-  ) {
+  func send(request: URLRequest,
+            completion: @escaping (Result<HTTPURLResponse, Error>) -> Void) {
     let task = session.dataTask(with: request) { data, response, error in
       completion(httpClientResult(for: (data, response, error)))
     }
@@ -41,7 +39,7 @@ internal final class HTTPClient {
 
 /// An error returned if `URLSession` response state is inconsistent (like no data, no response and no error).
 /// The code execution in `URLSessionTransport` should never reach its initialization.
-internal struct URLSessionTransportInconsistencyException: Error {}
+struct URLSessionTransportInconsistencyException: Error {}
 
 /// As `URLSession` returns 3-values-tuple for request execution, this function applies consistency constraints and turns
 /// it into only two possible states of `HTTPTransportResult`.
@@ -50,7 +48,7 @@ private func httpClientResult(
 ) -> Result<HTTPURLResponse, Error> {
   let (_, response, error) = urlSessionTaskCompletion
 
-  if let error = error {
+  if let error {
     return .failure(error)
   }
 

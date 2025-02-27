@@ -21,13 +21,13 @@
   extension Tag: CustomStringConvertible {
     public var description: String {
       var desc = "Tag("
-      desc += "key=\(String(describing: self.key)), "
-      desc += "vType=\(String(describing: self.vType)), "
-      desc += "vStr=\(String(describing: self.vStr)), "
-      desc += "vDouble=\(String(describing: self.vDouble)), "
-      desc += "vBool=\(String(describing: self.vBool)), "
-      desc += "vLong=\(String(describing: self.vLong)), "
-      desc += "vBinary=\(String(describing: self.vBinary))"
+      desc += "key=\(String(describing: key)), "
+      desc += "vType=\(String(describing: vType)), "
+      desc += "vStr=\(String(describing: vStr)), "
+      desc += "vDouble=\(String(describing: vDouble)), "
+      desc += "vBool=\(String(describing: vBool)), "
+      desc += "vLong=\(String(describing: vLong)), "
+      desc += "vBinary=\(String(describing: vBinary))"
       return desc
     }
   }
@@ -87,9 +87,8 @@
       try proto.validateValue(key, named: "key")
       try proto.validateValue(vType, named: "vType")
 
-      return Tag(
-        key: key, vType: vType, vStr: vStr, vDouble: vDouble, vBool: vBool,
-        vLong: vLong, vBinary: vBinary)
+      return Tag(key: key, vType: vType, vStr: vStr, vDouble: vDouble, vBool: vBool,
+                 vLong: vLong, vBinary: vBinary)
     }
   }
 
@@ -101,8 +100,8 @@
   extension Log: CustomStringConvertible {
     public var description: String {
       var desc = "Log("
-      desc += "timestamp=\(String(describing: self.timestamp)), "
-      desc += "fields=\(String(describing: self.fields))"
+      desc += "timestamp=\(String(describing: timestamp)), "
+      desc += "fields=\(String(describing: fields))"
       return desc
     }
   }
@@ -157,10 +156,10 @@
   extension SpanRef: CustomStringConvertible {
     public var description: String {
       var desc = "SpanRef("
-      desc += "refType=\(String(describing: self.refType)), "
-      desc += "traceIdLow=\(String(describing: self.traceIdLow)), "
-      desc += "traceIdHigh=\(String(describing: self.traceIdHigh)), "
-      desc += "spanId=\(String(describing: self.spanId))"
+      desc += "refType=\(String(describing: refType)), "
+      desc += "traceIdLow=\(String(describing: traceIdLow)), "
+      desc += "traceIdHigh=\(String(describing: traceIdHigh)), "
+      desc += "spanId=\(String(describing: spanId))"
       return desc
     }
   }
@@ -210,9 +209,8 @@
       try proto.validateValue(traceIdHigh, named: "traceIdHigh")
       try proto.validateValue(spanId, named: "spanId")
 
-      return SpanRef(
-        refType: refType, traceIdLow: traceIdLow, traceIdHigh: traceIdHigh,
-        spanId: spanId)
+      return SpanRef(refType: refType, traceIdLow: traceIdLow, traceIdHigh: traceIdHigh,
+                     spanId: spanId)
     }
   }
 
@@ -229,17 +227,17 @@
   extension Span: CustomStringConvertible {
     public var description: String {
       var desc = "Span("
-      desc += "traceIdLow=\(String(describing: self.traceIdLow)), "
-      desc += "traceIdHigh=\(String(describing: self.traceIdHigh)), "
-      desc += "spanId=\(String(describing: self.spanId)), "
-      desc += "parentSpanId=\(String(describing: self.parentSpanId)), "
-      desc += "operationName=\(String(describing: self.operationName)), "
-      desc += "references=\(String(describing: self.references)), "
-      desc += "flags=\(String(describing: self.flags)), "
-      desc += "startTime=\(String(describing: self.startTime)), "
-      desc += "duration=\(String(describing: self.duration)), "
-      desc += "tags=\(String(describing: self.tags)), "
-      desc += "logs=\(String(describing: self.logs))"
+      desc += "traceIdLow=\(String(describing: traceIdLow)), "
+      desc += "traceIdHigh=\(String(describing: traceIdHigh)), "
+      desc += "spanId=\(String(describing: spanId)), "
+      desc += "parentSpanId=\(String(describing: parentSpanId)), "
+      desc += "operationName=\(String(describing: operationName)), "
+      desc += "references=\(String(describing: references)), "
+      desc += "flags=\(String(describing: flags)), "
+      desc += "startTime=\(String(describing: startTime)), "
+      desc += "duration=\(String(describing: duration)), "
+      desc += "tags=\(String(describing: tags)), "
+      desc += "logs=\(String(describing: logs))"
       return desc
     }
   }
@@ -265,7 +263,8 @@
       return [
         "traceIdLow": 1, "traceIdHigh": 2, "spanId": 3, "parentSpanId": 4,
         "operationName": 5, "references": 6, "flags": 7, "startTime": 8,
-        "duration": 9, "tags": 10, "logs": 11]
+        "duration": 9, "tags": 10, "logs": 11
+      ]
     }
 
     public static var structName: String { return "Span" }
@@ -317,11 +316,10 @@
       try proto.validateValue(startTime, named: "startTime")
       try proto.validateValue(duration, named: "duration")
 
-      return Span(
-        traceIdLow: traceIdLow, traceIdHigh: traceIdHigh, spanId: spanId,
-        parentSpanId: parentSpanId, operationName: operationName,
-        references: references, flags: flags, startTime: startTime,
-        duration: duration, tags: tags, logs: logs)
+      return Span(traceIdLow: traceIdLow, traceIdHigh: traceIdHigh, spanId: spanId,
+                  parentSpanId: parentSpanId, operationName: operationName,
+                  references: references, flags: flags, startTime: startTime,
+                  duration: duration, tags: tags, logs: logs)
     }
   }
 
@@ -333,8 +331,8 @@
   extension Process: CustomStringConvertible {
     public var description: String {
       var desc = "Process("
-      desc += "serviceName=\(String(describing: self.serviceName)), "
-      desc += "tags=\(String(describing: self.tags))"
+      desc += "serviceName=\(String(describing: serviceName)), "
+      desc += "tags=\(String(describing: tags))"
       return desc
     }
   }
@@ -387,8 +385,8 @@
   extension Batch: CustomStringConvertible {
     public var description: String {
       var desc = "Batch("
-      desc += "process=\(String(describing: self.process)), "
-      desc += "spans=\(String(describing: self.spans))"
+      desc += "process=\(String(describing: process)), "
+      desc += "spans=\(String(describing: spans))"
       return desc
     }
   }
@@ -436,13 +434,13 @@
 
   public func == (lhs: BatchSubmitResponse, rhs: BatchSubmitResponse) -> Bool {
     return
-      (lhs.ok == rhs.ok)
+      lhs.ok == rhs.ok
   }
 
   extension BatchSubmitResponse: CustomStringConvertible {
     public var description: String {
       var desc = "BatchSubmitResponse("
-      desc += "ok=\(String(describing: self.ok))"
+      desc += "ok=\(String(describing: ok))"
       return desc
     }
   }
@@ -492,11 +490,9 @@
     }
   }
 
-  private func == (
-    lhs: Collector_submitBatches_args, rhs: Collector_submitBatches_args
-  ) -> Bool {
+  private func == (lhs: Collector_submitBatches_args, rhs: Collector_submitBatches_args) -> Bool {
     return
-      (lhs.batches == rhs.batches)
+      lhs.batches == rhs.batches
   }
 
   extension Collector_submitBatches_args: Hashable {
@@ -548,11 +544,9 @@
     }
   }
 
-  private func == (
-    lhs: Collector_submitBatches_result, rhs: Collector_submitBatches_result
-  ) -> Bool {
+  private func == (lhs: Collector_submitBatches_result, rhs: Collector_submitBatches_result) -> Bool {
     return
-      (lhs.success == rhs.success)
+      lhs.success == rhs.success
   }
 
   extension Collector_submitBatches_result: Hashable {
@@ -596,8 +590,7 @@
 
   extension CollectorClient: Collector {
     private func send_submitBatches(batches: TList<Batch>) throws {
-      try outProtocol.writeMessageBegin(
-        name: "submitBatches", type: .call, sequenceID: 0)
+      try outProtocol.writeMessageBegin(name: "submitBatches", type: .call, sequenceID: 0)
       let args = Collector_submitBatches_args(batches: batches)
       try args.write(to: outProtocol)
       try outProtocol.writeMessageEnd()
@@ -615,9 +608,7 @@
         error: .missingResult(methodName: "submitBatches"))
     }
 
-    public func submitBatches(batches: TList<Batch>) throws -> TList<
-      BatchSubmitResponse
-    > {
+    public func submitBatches(batches: TList<Batch>) throws -> TList<BatchSubmitResponse> {
       try send_submitBatches(batches: batches)
       try outProtocol.transport.flush()
       return try recv_submitBatches()
@@ -625,19 +616,14 @@
   }
 
   extension CollectorAsyncClient: CollectorAsync {
-    private func send_submitBatches(
-      on outProtocol: TProtocol, batches: TList<Batch>
-    ) throws {
-      try outProtocol.writeMessageBegin(
-        name: "submitBatches", type: .call, sequenceID: 0)
+    private func send_submitBatches(on outProtocol: TProtocol, batches: TList<Batch>) throws {
+      try outProtocol.writeMessageBegin(name: "submitBatches", type: .call, sequenceID: 0)
       let args = Collector_submitBatches_args(batches: batches)
       try args.write(to: outProtocol)
       try outProtocol.writeMessageEnd()
     }
 
-    private func recv_submitBatches(on inProtocol: TProtocol) throws -> TList<
-      BatchSubmitResponse
-    > {
+    private func recv_submitBatches(on inProtocol: TProtocol) throws -> TList<BatchSubmitResponse> {
       try inProtocol.readResultMessageBegin()
       let result = try Collector_submitBatches_result.read(from: inProtocol)
       try inProtocol.readMessageEnd()
@@ -649,27 +635,25 @@
         error: .missingResult(methodName: "submitBatches"))
     }
 
-    public func submitBatches(
-      batches: TList<Batch>,
-      completion: @escaping (TAsyncResult<TList<BatchSubmitResponse>>) -> Void
-    ) {
+    public func submitBatches(batches: TList<Batch>,
+                              completion: @escaping (TAsyncResult<TList<BatchSubmitResponse>>) -> Void) {
       let transport = factory.newTransport()
       let proto = Protocol(on: transport)
 
       do {
         try send_submitBatches(on: proto, batches: batches)
-      } catch let error {
+      } catch {
         completion(.error(error))
       }
 
-      transport.flush { (_, error) in
-        if let error = error {
+      transport.flush { _, error in
+        if let error {
           completion(.error(error))
         }
         do {
           let result = try self.recv_submitBatches(on: proto)
           completion(.success(result))
-        } catch let error {
+        } catch {
           completion(.error(error))
         }
       }
@@ -689,10 +673,9 @@
         var result = Collector_submitBatches_result()
         do {
           result.success = try handler.submitBatches(batches: args.batches)
-        } catch let error { throw error }
+        } catch { throw error }
 
-        try outProtocol.writeMessageBegin(
-          name: "submitBatches", type: .reply, sequenceID: sequenceID)
+        try outProtocol.writeMessageBegin(name: "submitBatches", type: .reply, sequenceID: sequenceID)
         try result.write(to: outProtocol)
         try outProtocol.writeMessageEnd()
       }
@@ -703,20 +686,19 @@
       let (messageName, _, sequenceID) = try inProtocol.readMessageBegin()
 
       if let processorHandler = CollectorProcessor.processorHandlers[
-        messageName] {
+        messageName
+      ] {
         do {
           try processorHandler(sequenceID, inProtocol, outProtocol, service)
         } catch let error as TApplicationError {
-          try outProtocol.writeException(
-            messageName: messageName, sequenceID: sequenceID, ex: error)
+          try outProtocol.writeException(messageName: messageName, sequenceID: sequenceID, ex: error)
         }
       } else {
         try inProtocol.skip(type: .struct)
         try inProtocol.readMessageEnd()
         let ex = TApplicationError(
           error: .unknownMethod(methodName: messageName))
-        try outProtocol.writeException(
-          messageName: messageName, sequenceID: sequenceID, ex: ex)
+        try outProtocol.writeException(messageName: messageName, sequenceID: sequenceID, ex: ex)
       }
     }
   }

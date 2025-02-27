@@ -286,8 +286,8 @@
 
     @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
     func testActiveSpanIsKeptPerTask() {
-      let expectation1 = self.expectation(description: "firstSpan created")
-      let expectation2 = self.expectation(description: "secondSpan created")
+      let expectation1 = expectation(description: "firstSpan created")
+      let expectation2 = expectation(description: "secondSpan created")
 
       let parent = defaultTracer.spanBuilder(spanName: "testStartAndEndSpanInAsyncTaskTwice").startSpan()
       ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: parent)
@@ -354,8 +354,8 @@
 
     @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
     func testActiveSpanIsKeptPerTaskAsync() async {
-      let expectation1 = self.expectation(description: "firstSpan created")
-      let expectation2 = self.expectation(description: "secondSpan created")
+      let expectation1 = expectation(description: "firstSpan created")
+      let expectation2 = expectation(description: "secondSpan created")
 
       let parent = defaultTracer.spanBuilder(spanName: "testStartAndEndSpanInAsyncTaskTwice").startSpan()
       ActivityContextManager.instance.setCurrentContextValue(forKey: .span, value: parent)

@@ -66,10 +66,10 @@ public struct AnyRawHistogramMetric<T>: RawHistogramMetric {
 
   private let _bindLabelSet: (LabelSet) -> BoundRawHistogramMetric<T>
   private let _bindLabels: ([String: String]) -> BoundRawHistogramMetric<T>
-  private let _bindRecordLabelSet: (Array<T>, Array<Int>, Date, Date, Int, T, LabelSet) -> Void
-  private let _bindRecordLabels: (Array<T>, Array<Int>, Date, Date, Int, T, [String: String]) -> Void
+  private let _bindRecordLabelSet: ([T], [Int], Date, Date, Int, T, LabelSet) -> Void
+  private let _bindRecordLabels: ([T], [Int], Date, Date, Int, T, [String: String]) -> Void
 
-  public init <U: RawHistogramMetric>(_ histogram: U) where U.T == T {
+  public init<U: RawHistogramMetric>(_ histogram: U) where U.T == T {
     internalHistogram = histogram
     _bindLabelSet = histogram.bind(labelset:)
     _bindLabels = histogram.bind(labels:)

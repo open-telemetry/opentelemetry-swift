@@ -7,8 +7,8 @@ import Foundation
 
 public class LoggerProviderBuilder {
   public private(set) var clock: Clock = MillisClock()
-  public private(set) var resource: Resource = Resource()
-  public private(set) var logLimits: LogLimits = LogLimits()
+  public private(set) var resource: Resource = .init()
+  public private(set) var logLimits: LogLimits = .init()
   public private(set) var logProcessors: [LogRecordProcessor] = []
 
   public init() {}

@@ -12,24 +12,24 @@ public class LastValueAggregator<T: SignedNumeric>: Aggregator<T> {
 
   private let lock = Lock()
 
-  public override func update(value: T) {
+  override public func update(value: T) {
     lock.withLockVoid {
       self.value = value
     }
   }
 
-  public override func checkpoint() {
+  override public func checkpoint() {
     lock.withLockVoid {
       super.checkpoint()
       self.pointCheck = self.value
     }
   }
 
-  public override func toMetricData() -> MetricData {
+  override public func toMetricData() -> MetricData {
     return SumData<T>(startTimestamp: lastStart, timestamp: lastEnd, sum: pointCheck)
   }
 
-  public override func getAggregationType() -> AggregationType {
+  override public func getAggregationType() -> AggregationType {
     if T.self == Double.Type.self {
       return .doubleSum
     } else {

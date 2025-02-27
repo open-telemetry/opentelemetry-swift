@@ -11,8 +11,8 @@ public protocol StableMetricExporter: AggregationTemporalitySelectorProtocol, De
   func shutdown() -> ExportResult
 }
 
-extension StableMetricExporter {
-  public func getDefaultAggregation(for instrument: InstrumentType) -> Aggregation {
+public extension StableMetricExporter {
+  func getDefaultAggregation(for instrument: InstrumentType) -> Aggregation {
     return Aggregations.defaultAggregation()
   }
 }

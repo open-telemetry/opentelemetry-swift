@@ -170,10 +170,8 @@ class LogSanitizerTests: XCTestCase {
 
     let sanitized = LogSanitizer().sanitize(log: log)
 
-    XCTAssertEqual(
-      sanitized.tags,
-      [.mockRepeating(character: "a", times: LogSanitizer.Constraints.maxTagLength)]
-    )
+    XCTAssertEqual(sanitized.tags,
+                   [.mockRepeating(character: "a", times: LogSanitizer.Constraints.maxTagLength)])
   }
 
   func testWhenTagUsesReservedKey_itIsIgnored() {

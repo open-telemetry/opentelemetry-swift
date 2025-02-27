@@ -5,7 +5,7 @@
 
 import Foundation
 
-struct TraceStateUtils {
+enum TraceStateUtils {
   private static let keyMaxSize = 256
   private static let valueMaxSize = 256
   private static let maxKeyValuePairsCount = 32

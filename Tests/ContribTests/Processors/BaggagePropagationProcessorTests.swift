@@ -38,10 +38,8 @@ class BaggagePropagationProcessorTests: XCTestCase {
     let exporter = InMemoryExporter()
     let simple = SimpleSpanProcessor(spanExporter: exporter)
     let tp = TracerProviderBuilder().add(spanProcessor: processor).add(spanProcessor: simple).build()
-    let tracer = tp.get(
-      instrumentationName: "test",
-      instrumentationVersion: "1.0.0"
-    )
+    let tracer = tp.get(instrumentationName: "test",
+                        instrumentationVersion: "1.0.0")
 
     let parent = tracer.spanBuilder(spanName: "parent").startSpan()
 

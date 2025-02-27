@@ -97,11 +97,11 @@ class TestNoopMeter: Meter {
     return AnyMeasureMetric<Double>(NoopMeasureMetric<Double>())
   }
 
-  func createIntHistogram(name: String, explicitBoundaries: Array<Int>? = nil, absolute: Bool) -> AnyHistogramMetric<Int> {
+  func createIntHistogram(name: String, explicitBoundaries: [Int]? = nil, absolute: Bool) -> AnyHistogramMetric<Int> {
     return AnyHistogramMetric<Int>(NoopHistogramMetric<Int>())
   }
 
-  func createDoubleHistogram(name: String, explicitBoundaries: Array<Double>? = nil, absolute: Bool) -> AnyHistogramMetric<Double> {
+  func createDoubleHistogram(name: String, explicitBoundaries: [Double]? = nil, absolute: Bool) -> AnyHistogramMetric<Double> {
     return AnyHistogramMetric<Double>(NoopHistogramMetric<Double>())
   }
 

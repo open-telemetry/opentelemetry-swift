@@ -109,7 +109,7 @@ class StableMetricDataTests: XCTestCase {
 
   func testCreateDoubleGuage() {
     let type = MetricDataType.DoubleGauge
-    let d: Double = 22.22222
+    let d = 22.22222
 
     let point: PointData = DoublePointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: d)
     let guageData = StableGaugeData(aggregationTemporality: .cumulative, points: [point])
@@ -124,7 +124,7 @@ class StableMetricDataTests: XCTestCase {
 
   func testCreateDoubleSum() {
     let type = MetricDataType.DoubleSum
-    let d: Double = 44.4444
+    let d = 44.4444
 
     let point: PointData = DoublePointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: d)
     let sumData = StableSumData(aggregationTemporality: .cumulative, points: [point])

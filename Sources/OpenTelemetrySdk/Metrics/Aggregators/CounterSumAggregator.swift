@@ -25,11 +25,11 @@ public class CounterSumAggregator<T: SignedNumeric>: Aggregator<T> {
     }
   }
 
-  public override func toMetricData() -> MetricData {
+  override public func toMetricData() -> MetricData {
     return SumData<T>(startTimestamp: lastStart, timestamp: lastEnd, sum: pointCheck)
   }
 
-  public override func getAggregationType() -> AggregationType {
+  override public func getAggregationType() -> AggregationType {
     if T.self == Double.Type.self {
       return .doubleSum
     } else {

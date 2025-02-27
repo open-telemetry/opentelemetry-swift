@@ -42,7 +42,7 @@ public class SynchronousMetricStorage: SynchronousMetricStorageProtocol {
   init(registeredReader: RegisteredReader, metricDescriptor: MetricDescriptor, aggregator: StableAggregator, attributeProcessor: AttributeProcessor) {
     self.registeredReader = registeredReader
     self.metricDescriptor = metricDescriptor
-    self.aggregatorTemporality = registeredReader.reader.getAggregationTemporality(for: metricDescriptor.instrument.type)
+    aggregatorTemporality = registeredReader.reader.getAggregationTemporality(for: metricDescriptor.instrument.type)
     self.aggregator = aggregator
     self.attributeProcessor = attributeProcessor
   }

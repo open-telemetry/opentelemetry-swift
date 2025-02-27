@@ -24,10 +24,10 @@ public struct OTelLogHandler: LogHandler {
   public var metadata: Logging.Logger.Metadata = [:]
   public subscript(metadataKey key: String) -> Logging.Logger.Metadata.Value? {
     get {
-      return self.metadata[key]
+      return metadata[key]
     }
     set {
-      self.metadata[key] = newValue
+      metadata[key] = newValue
     }
   }
 
@@ -39,7 +39,7 @@ public struct OTelLogHandler: LogHandler {
               includeTraceContext: Bool = true,
               attributes: [String: AttributeValue] = [String: AttributeValue]()) {
     self.loggerProvider = loggerProvider
-    self.logger = self.loggerProvider.loggerBuilder(instrumentationScopeName: bridgeName)
+    logger = self.loggerProvider.loggerBuilder(instrumentationScopeName: bridgeName)
       .setInstrumentationVersion(version)
       .setEventDomain("device")
       .setIncludeTraceContext(true)
@@ -64,7 +64,7 @@ public struct OTelLogHandler: LogHandler {
     ]
 
     // Convert metadata from the method parameter to AttributeValue and assign it to otelattributes
-    if let metadata = metadata {
+    if let metadata {
       let methodMetadata = convertMetadata(metadata)
       otelattributes.merge(methodMetadata) { _, new in new }
     }
@@ -74,7 +74,7 @@ public struct OTelLogHandler: LogHandler {
     otelattributes.merge(structMetadata) { _, new in new }
 
     // Build the log record and emit it
-    let event = self.logger.logRecordBuilder().setSeverity(convertSeverity(level: level))
+    let event = logger.logRecordBuilder().setSeverity(convertSeverity(level: level))
       .setBody(AttributeValue.string(message.description))
       .setAttributes(otelattributes)
 
@@ -103,20 +103,20 @@ func convertMetadata(_ metadata: Logging.Logger.Metadata) -> [String: AttributeV
 // Function to recursively convert nested dictionaries to AttributeValue
 func convertToAttributeValue(_ value: Logging.Logger.Metadata.Value) -> AttributeValue {
   switch value {
-  case .dictionary(let nestedDictionary):
+  case let .dictionary(nestedDictionary):
     // If value is a nested dictionary, recursively convert it
     var nestedAttributes: [String: AttributeValue] = [:]
     for (nestedKey, nestedValue) in nestedDictionary {
       nestedAttributes[nestedKey] = convertToAttributeValue(nestedValue)
     }
     return AttributeValue.set(AttributeSet(labels: nestedAttributes))
-  case .array(let nestedArray):
+  case let .array(nestedArray):
     // If value is a nested array, recursively convert it
     let nestedValues = nestedArray.map { convertToAttributeValue($0) }
     return AttributeValue.array(AttributeArray(values: nestedValues))
-  case .string(let str):
+  case let .string(str):
     return AttributeValue(str)
-  case .stringConvertible(let strConvertable):
+  case let .stringConvertible(strConvertable):
     return AttributeValue(strConvertable.description)
   }
 }

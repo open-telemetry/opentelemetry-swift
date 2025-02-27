@@ -29,7 +29,7 @@ public class B3Propagator: TextMapPropagator {
 
   /// Creates a new instance of B3Propagator. Default to use multiple headers.
   public init() {
-    self.singleHeaderInjection = false
+    singleHeaderInjection = false
   }
 
   /// Creates a new instance of B3Propagator
@@ -39,7 +39,7 @@ public class B3Propagator: TextMapPropagator {
     self.singleHeaderInjection = singleHeaderInjection
   }
 
-  public func inject<S>(spanContext: SpanContext, carrier: inout [String: String], setter: S) where S: Setter {
+  public func inject(spanContext: SpanContext, carrier: inout [String: String], setter: some Setter) {
     let sampled = spanContext.traceFlags.sampled ? B3Propagator.trueInt : B3Propagator.falseInt
     if singleHeaderInjection {
       setter.set(carrier: &carrier,
@@ -52,7 +52,7 @@ public class B3Propagator: TextMapPropagator {
     }
   }
 
-  public func extract<G>(carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
+  public func extract(carrier: [String: String], getter: some Getter) -> SpanContext? {
     var spanContext: SpanContext?
 
     spanContext = getSpanContextFromSingleHeader(carrier: carrier, getter: getter)
@@ -66,7 +66,7 @@ public class B3Propagator: TextMapPropagator {
     return spanContext
   }
 
-  private func getSpanContextFromSingleHeader<G>(carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
+  private func getSpanContextFromSingleHeader(carrier: [String: String], getter: some Getter) -> SpanContext? {
     guard let value = getter.get(carrier: carrier, key: B3Propagator.combinedHeader), value.count >= 1 else {
       return nil
     }
@@ -94,7 +94,7 @@ public class B3Propagator: TextMapPropagator {
     return buildSpanContext(traceId: traceId, spanId: spanId, sampled: sampled)
   }
 
-  private func getSpanContextFromMultipleHeaders<G>(carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
+  private func getSpanContextFromMultipleHeaders(carrier: [String: String], getter: some Getter) -> SpanContext? {
     guard let traceIdCollection = getter.get(carrier: carrier, key: B3Propagator.traceIdHeader), traceIdCollection.count >= 1, isTraceIdValid(traceIdCollection[0]) else {
       return nil
     }
@@ -115,7 +115,7 @@ public class B3Propagator: TextMapPropagator {
   }
 
   private func buildSpanContext(traceId: String, spanId: String, sampled: String?) -> SpanContext? {
-    if let sampled = sampled {
+    if let sampled {
       let traceFlags = (sampled == B3Propagator.trueInt || sampled == "true") ? B3Propagator.sampledFlags : B3Propagator.notSampledFlags
       let returnContext = SpanContext.createFromRemoteParent(traceId: TraceId(fromHexString: traceId), spanId: SpanId(fromHexString: spanId), traceFlags: traceFlags, traceState: TraceState())
       return returnContext.isValid ? returnContext : nil

@@ -65,9 +65,9 @@ let meter = OpenTelemetry.instance.stableMeterProvider?.meterBuilder(name: "MyMe
 var gaugeBuilder = meter!.gaugeBuilder(name: "Gauge")
 
 // observable gauge
-var observableGauge = gaugeBuilder.buildWithCallback({ ObservableDoubleMeasurement in
+var observableGauge = gaugeBuilder.buildWithCallback { ObservableDoubleMeasurement in
   ObservableDoubleMeasurement.record(value: 1.0, attributes: ["test": AttributeValue.bool(true)])
-})
+}
 
 // gauge
 var gauge = gaugeBuilder.build()

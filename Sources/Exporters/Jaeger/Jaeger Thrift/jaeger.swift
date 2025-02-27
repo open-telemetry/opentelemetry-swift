@@ -41,7 +41,7 @@
       case .bool: return 2
       case .long: return 3
       case .binary: return 4
-      case .unknown(let value): return value
+      case let .unknown(value): return value
       }
     }
 
@@ -81,7 +81,7 @@
       switch self {
       case .child_of: return 0
       case .follows_from: return 1
-      case .unknown(let value): return value
+      case let .unknown(value): return value
       }
     }
 

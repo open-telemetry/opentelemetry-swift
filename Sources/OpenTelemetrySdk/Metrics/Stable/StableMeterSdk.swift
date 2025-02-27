@@ -14,10 +14,10 @@ class StableMeterSdk: StableMeter {
   init(meterProviderSharedState: inout MeterProviderSharedState,
        instrumentScope: InstrumentationScopeInfo,
        registeredReaders: inout [RegisteredReader]) {
-    self.instrumentationScopeInfo = instrumentScope
+    instrumentationScopeInfo = instrumentScope
     self.meterProviderSharedState = meterProviderSharedState
-    self.meterSharedState = StableMeterSharedState(instrumentationScope: instrumentScope,
-                                                   registeredReaders: registeredReaders)
+    meterSharedState = StableMeterSharedState(instrumentationScope: instrumentScope,
+                                              registeredReaders: registeredReaders)
   }
 
   func counterBuilder(name: String) -> OpenTelemetryApi.LongCounterBuilder {

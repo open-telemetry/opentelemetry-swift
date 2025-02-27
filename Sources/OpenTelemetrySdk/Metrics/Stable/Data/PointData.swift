@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 
 public class PointData: Equatable, Encodable {
-  internal init(startEpochNanos: UInt64, endEpochNanos: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData]) {
+  init(startEpochNanos: UInt64, endEpochNanos: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData]) {
     self.startEpochNanos = startEpochNanos
     self.endEpochNanos = endEpochNanos
     self.attributes = attributes
@@ -27,9 +27,9 @@ public class PointData: Equatable, Encodable {
   }
 
   func isEqual(to other: PointData) -> Bool {
-    return self.startEpochNanos == other.startEpochNanos &&
-      self.endEpochNanos == other.endEpochNanos &&
-      self.attributes == other.attributes &&
-      self.exemplars == exemplars
+    return startEpochNanos == other.startEpochNanos &&
+      endEpochNanos == other.endEpochNanos &&
+      attributes == other.attributes &&
+      exemplars == exemplars
   }
 }

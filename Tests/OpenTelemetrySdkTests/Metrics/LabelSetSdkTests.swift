@@ -22,11 +22,11 @@ final class LabelSetSdkTests: XCTestCase {
   }
 
   func testLabelSetEncodingIsSameInDifferentOrder() {
-    let labels1 = ["dim1": "value1", "dim2": "value2", "dim3": "value3" ]
+    let labels1 = ["dim1": "value1", "dim2": "value2", "dim3": "value3"]
     // Construct labelset some labels.
     let labelSet1 = LabelSetSdk(labels: labels1)
 
-    let labels2 = ["dim3": "value3", "dim2": "value2", "dim1": "value1" ]
+    let labels2 = ["dim3": "value3", "dim2": "value2", "dim1": "value1"]
     // Construct another labelset with same labels but in different order.
     let labelSet2 = LabelSetSdk(labels: labels2)
 

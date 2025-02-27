@@ -14,10 +14,10 @@ public class CallbackRegistration {
   init(observableMeasurements: [StableObservableMeasurementSdk], callback: @escaping () -> Void) {
     self.observableMeasurements = observableMeasurements
     self.callback = callback
-    self.instrumentDescriptors = observableMeasurements.map { measurement in
+    instrumentDescriptors = observableMeasurements.map { measurement in
       return measurement.descriptor
     }
-    self.hasStorages = !observableMeasurements.map { measurement in
+    hasStorages = !observableMeasurements.map { measurement in
       measurement.storages
 
     }.isEmpty

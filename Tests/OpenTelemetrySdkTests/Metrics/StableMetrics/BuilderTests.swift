@@ -15,13 +15,13 @@ class BuilderTests: XCTestCase {
     XCTAssertNotNil(meter.counterBuilder(name: "counter").ofDoubles().build())
     XCTAssertNotNil(meter.counterBuilder(name: "counter").build())
     XCTAssertNotNil(meter.gaugeBuilder(name: "gauge").build())
-    XCTAssertNotNil(meter.gaugeBuilder(name: "gauge").buildWithCallback({ _ in }))
+    XCTAssertNotNil(meter.gaugeBuilder(name: "gauge").buildWithCallback { _ in })
     XCTAssertNotNil(meter.gaugeBuilder(name: "gauge").ofLongs().build())
-    XCTAssertNotNil(meter.gaugeBuilder(name: "gauge").ofLongs().buildWithCallback({ _ in }))
+    XCTAssertNotNil(meter.gaugeBuilder(name: "gauge").ofLongs().buildWithCallback { _ in })
     XCTAssertNotNil(meter.histogramBuilder(name: "histogram").build())
     XCTAssertNotNil(meter.histogramBuilder(name: "histogram").ofLongs().build())
     XCTAssertNotNil(meter.upDownCounterBuilder(name: "updown").build())
     XCTAssertNotNil(meter.upDownCounterBuilder(name: "updown").ofDoubles().build())
-    XCTAssertNotNil(meter.upDownCounterBuilder(name: "updown").buildWithCallback({ _ in }))
+    XCTAssertNotNil(meter.upDownCounterBuilder(name: "updown").buildWithCallback { _ in })
   }
 }

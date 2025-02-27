@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-internal protocol AggregatorHandleProtocol {
+protocol AggregatorHandleProtocol {
   func doAggregateThenMaybeReset(startEpochNano: Int, endEpochNano: Int, attributes: [String: AttributeValue], reset: Bool) -> PointData
   func doRecordLong(value: Int)
   func doRecordDouble(value: Double)
@@ -15,7 +15,7 @@ internal protocol AggregatorHandleProtocol {
 public class AggregatorHandle {
   let exemplarReservoir: ExemplarReservoir
 
-  internal init(exemplarReservoir: ExemplarReservoir) {
+  init(exemplarReservoir: ExemplarReservoir) {
     self.exemplarReservoir = exemplarReservoir
   }
 
@@ -41,9 +41,9 @@ public class AggregatorHandle {
     doRecordDouble(value: value)
   }
 
-  internal func doRecordDouble(value: Double) { fatalError() } // TODO: better way to force subclass override
+  func doRecordDouble(value: Double) { fatalError() } // TODO: better way to force subclass override
 
-  internal func doRecordLong(value: Int) { fatalError() }
+  func doRecordLong(value: Int) { fatalError() }
 
-  internal func doAggregateThenMaybeReset(startEpochNano: UInt64, endEpochNano: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], reset: Bool) -> PointData { fatalError() }
+  func doAggregateThenMaybeReset(startEpochNano: UInt64, endEpochNano: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], reset: Bool) -> PointData { fatalError() }
 }

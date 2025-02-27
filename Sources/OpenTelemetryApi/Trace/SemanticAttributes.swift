@@ -558,7 +558,7 @@ public enum SemanticAttributes: String {
    - Note: Pool names are generally obtained via [BufferPoolMXBean#getName()](https://docs.oracle.com/en/java/javase/11/docs/api/java.management/java/lang/management/BufferPoolMXBean.html#getName()).
    - Requires: Value type should be `String`
    */
-  case pool = "pool"
+  case pool
   /**
    The type of memory.
 
@@ -569,7 +569,7 @@ public enum SemanticAttributes: String {
    ~~~
    - Requires: Value should be one of [`SemanticAttributes.TypeValues`](x-source-tag://otelTypeValues) (of type `String`)
    */
-  case type = "type"
+  case type
   /**
    The domain name of an immediate peer.
 
@@ -2132,7 +2132,7 @@ public enum SemanticAttributes: String {
   /**
    An exception event **MUST** be called "exception" as per the [specification](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/exceptions.md).
    */
-  case exception = "exception"
+  case exception
 
   /**
    Deprecated, use `network.transport`.
@@ -2160,10 +2160,10 @@ public enum SemanticAttributes: String {
      */
     public static let other = NetTransportValues("other")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
-      self.value = customValue
+      value = customValue
     }
 
     public var description: String {
@@ -2189,10 +2189,10 @@ public enum SemanticAttributes: String {
      */
     public static let unix = NetSockFamilyValues("unix")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
-      self.value = customValue
+      value = customValue
     }
 
     public var description: String {
@@ -2246,10 +2246,10 @@ public enum SemanticAttributes: String {
      */
     public static let other = HttpRequestMethodValues("_OTHER")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
-      self.value = customValue
+      value = customValue
     }
 
     public var description: String {
@@ -2275,10 +2275,10 @@ public enum SemanticAttributes: String {
      */
     public static let k8s = EventDomainValues("k8s")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
-      self.value = customValue
+      value = customValue
     }
 
     public var description: String {
@@ -2545,10 +2545,10 @@ public enum SemanticAttributes: String {
      */
     public static let trino = DbSystemValues("trino")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
-      self.value = customValue
+      value = customValue
     }
 
     public var description: String {
@@ -2578,10 +2578,10 @@ public enum SemanticAttributes: String {
      */
     public static let unix = NetworkTransportValues("unix")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
-      self.value = customValue
+      value = customValue
     }
 
     public var description: String {
@@ -2603,10 +2603,10 @@ public enum SemanticAttributes: String {
      */
     public static let ipv6 = NetworkTypeValues("ipv6")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
-      self.value = customValue
+      value = customValue
     }
 
     public var description: String {
@@ -2731,10 +2731,10 @@ public enum SemanticAttributes: String {
      */
     public static let executeJavascript = DbCosmosdbOperationTypeValues("ExecuteJavaScript")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
-      self.value = customValue
+      value = customValue
     }
 
     public var description: String {
@@ -2817,10 +2817,10 @@ public enum SemanticAttributes: String {
      */
     public static let delete = FaasDocumentOperationValues("delete")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
-      self.value = customValue
+      value = customValue
     }
 
     public var description: String {
@@ -2846,10 +2846,10 @@ public enum SemanticAttributes: String {
      */
     public static let process = MessagingOperationValues("process")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
-      self.value = customValue
+      value = customValue
     }
 
     public var description: String {
@@ -2883,10 +2883,10 @@ public enum SemanticAttributes: String {
      */
     public static let tencentCloud = FaasInvokedProviderValues("tencent_cloud")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
-      self.value = customValue
+      value = customValue
     }
 
     public var description: String {
@@ -2920,10 +2920,10 @@ public enum SemanticAttributes: String {
      */
     public static let unknown = NetworkConnectionTypeValues("unknown")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
-      self.value = customValue
+      value = customValue
     }
 
     public var description: String {
@@ -3021,10 +3021,10 @@ public enum SemanticAttributes: String {
      */
     public static let lteCa = NetworkConnectionSubtypeValues("lte_ca")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
-      self.value = customValue
+      value = customValue
     }
 
     public var description: String {
@@ -3058,10 +3058,10 @@ public enum SemanticAttributes: String {
      */
     public static let connectRpc = RpcSystemValues("connect_rpc")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
-      self.value = customValue
+      value = customValue
     }
 
     public var description: String {
@@ -3232,58 +3232,58 @@ public enum SemanticAttributes: String {
     /**
      invalid_argument.
      */
-    case invalid_argument = "invalid_argument"
+    case invalid_argument
     /**
      deadline_exceeded.
      */
-    case deadline_exceeded = "deadline_exceeded"
+    case deadline_exceeded
     /**
      not_found.
      */
-    case not_found = "not_found"
+    case not_found
     /**
      already_exists.
      */
-    case already_exists = "already_exists"
+    case already_exists
     /**
      permission_denied.
      */
-    case permission_denied = "permission_denied"
+    case permission_denied
     /**
      resource_exhausted.
      */
-    case resource_exhausted = "resource_exhausted"
+    case resource_exhausted
     /**
      failed_precondition.
      */
-    case failed_precondition = "failed_precondition"
+    case failed_precondition
     /**
      aborted.
      */
-    case aborted = "aborted"
+    case aborted
     /**
      out_of_range.
      */
-    case out_of_range = "out_of_range"
+    case out_of_range
     /**
      unimplemented.
      */
-    case unimplemented = "unimplemented"
+    case unimplemented
     /**
      internal.
      */
-    case `internal` = "internal"
+    case `internal`
     /**
      unavailable.
      */
-    case unavailable = "unavailable"
+    case unavailable
     /**
      data_loss.
      */
-    case data_loss = "data_loss"
+    case data_loss
     /**
      unauthenticated.
      */
-    case unauthenticated = "unauthenticated"
+    case unauthenticated
   }
 }

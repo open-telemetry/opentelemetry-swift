@@ -70,9 +70,9 @@ final class SpanIdTests: XCTestCase {
     let encoder = JSONEncoder()
     let decoder = JSONDecoder()
 
-    XCTAssertEqual(SpanId.invalid, try decoder.decode(SpanId.self, from: try encoder.encode(SpanId.invalid)))
-    XCTAssertEqual(first, try decoder.decode(SpanId.self, from: try encoder.encode(first)))
-    XCTAssertEqual(second, try decoder.decode(SpanId.self, from: try encoder.encode(second)))
+    XCTAssertEqual(SpanId.invalid, try decoder.decode(SpanId.self, from: encoder.encode(SpanId.invalid)))
+    XCTAssertEqual(first, try decoder.decode(SpanId.self, from: encoder.encode(first)))
+    XCTAssertEqual(second, try decoder.decode(SpanId.self, from: encoder.encode(second)))
   }
 
   static var allTests = [

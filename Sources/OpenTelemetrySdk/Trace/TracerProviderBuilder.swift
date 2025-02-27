@@ -9,8 +9,8 @@ import OpenTelemetryApi
 public class TracerProviderBuilder {
   public private(set) var clock: Clock = MillisClock()
   public private(set) var idGenerator: IdGenerator = RandomIdGenerator()
-  public private(set) var resource: Resource = Resource()
-  public private(set) var spanLimits: SpanLimits = SpanLimits()
+  public private(set) var resource: Resource = .init()
+  public private(set) var spanLimits: SpanLimits = .init()
   public private(set) var sampler: Sampler = Samplers.parentBased(root: Samplers.alwaysOn)
   public private(set) var spanProcessors: [SpanProcessor] = []
 

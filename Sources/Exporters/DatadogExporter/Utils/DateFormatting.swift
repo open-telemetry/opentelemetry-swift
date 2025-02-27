@@ -5,7 +5,7 @@
 
 import Foundation
 
-internal protocol DateFormatterType {
+protocol DateFormatterType {
   func string(from date: Date) -> String
 }
 
@@ -14,7 +14,7 @@ extension DateFormatter: DateFormatterType {}
 
 /// Date formatter producing `ISO8601` string representation of a given date.
 /// Should be used to encode dates in messages send to the server.
-internal let iso8601DateFormatter: DateFormatterType = {
+let iso8601DateFormatter: DateFormatterType = {
   // As there is a known crash in iOS 11.0 and 11.1 when using `.withFractionalSeconds` option in `ISO8601DateFormatter`,
   // we use different `DateFormatterType` implementation depending on the OS version. The problem was fixed by Apple in iOS 11.2.
   if #available(iOS 11.2, macOS 10.13, tvOS 11.2, *) {

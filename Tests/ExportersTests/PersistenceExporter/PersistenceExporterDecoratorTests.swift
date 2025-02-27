@@ -30,36 +30,31 @@ class PersistenceExporterDecoratorTests: XCTestCase {
 
   private typealias PersistenceExporter<T: Codable> = PersistenceExporterDecorator<DecoratedExporterMock<T>>
 
-  private func createPersistenceExporter<T: Codable>(
-    fileWriter: FileWriterMock = FileWriterMock(),
-    worker: inout DataExportWorkerMock,
-    decoratedExporter: DecoratedExporterMock<T> = DecoratedExporterMock(exporter: { _ in
-      return DataExportStatus(needsRetry: false)
-    }),
-    storagePerformance: StoragePerformancePreset = StoragePerformanceMock.writeEachObjectToNewFileAndReadAllFiles,
-    synchronousWrite: Bool = true,
-    exportPerformance: ExportPerformancePreset = ExportPerformanceMock.veryQuick
-  ) -> PersistenceExporter<T> {
-    return PersistenceExporterDecorator<DecoratedExporterMock<T>>(
-      decoratedExporter: decoratedExporter,
-      fileWriter: fileWriter,
-      workerFactory: {
-        worker.dataExporter = $0
-        return worker
-      },
-      performancePreset: PersistencePerformancePreset.mockWith(
-        storagePerformance: storagePerformance,
-        synchronousWrite: synchronousWrite,
-        exportPerformance: exportPerformance))
+  private func createPersistenceExporter<T: Codable>(fileWriter: FileWriterMock = FileWriterMock(),
+                                                     worker: inout DataExportWorkerMock,
+                                                     decoratedExporter: DecoratedExporterMock<T> = DecoratedExporterMock(exporter: { _ in
+                                                       return DataExportStatus(needsRetry: false)
+                                                     }),
+                                                     storagePerformance: StoragePerformancePreset = StoragePerformanceMock.writeEachObjectToNewFileAndReadAllFiles,
+                                                     synchronousWrite: Bool = true,
+                                                     exportPerformance: ExportPerformancePreset = ExportPerformanceMock.veryQuick) -> PersistenceExporter<T> {
+    return PersistenceExporterDecorator<DecoratedExporterMock<T>>(decoratedExporter: decoratedExporter,
+                                                                  fileWriter: fileWriter,
+                                                                  workerFactory: {
+                                                                    worker.dataExporter = $0
+                                                                    return worker
+                                                                  },
+                                                                  performancePreset: PersistencePerformancePreset.mockWith(storagePerformance: storagePerformance,
+                                                                                                                           synchronousWrite: synchronousWrite,
+                                                                                                                           exportPerformance: exportPerformance))
   }
 
   func testWhenSetupWithSynchronousWrite_thenWritesAreSynchronous() throws {
     var worker = DataExportWorkerMock()
     let fileWriter = FileWriterMock()
 
-    let exporter: PersistenceExporter<String> = createPersistenceExporter(
-      fileWriter: fileWriter,
-      worker: &worker)
+    let exporter: PersistenceExporter<String> = createPersistenceExporter(fileWriter: fileWriter,
+                                                                          worker: &worker)
 
     fileWriter.onWrite = { writeSync, _ in
       XCTAssertTrue(writeSync)
@@ -72,10 +67,9 @@ class PersistenceExporterDecoratorTests: XCTestCase {
     var worker = DataExportWorkerMock()
     let fileWriter = FileWriterMock()
 
-    let exporter: PersistenceExporter<String> = createPersistenceExporter(
-      fileWriter: fileWriter,
-      worker: &worker,
-      synchronousWrite: false)
+    let exporter: PersistenceExporter<String> = createPersistenceExporter(fileWriter: fileWriter,
+                                                                          worker: &worker,
+                                                                          synchronousWrite: false)
 
     fileWriter.onWrite = { writeSync, _ in
       XCTAssertFalse(writeSync)
@@ -106,15 +100,14 @@ class PersistenceExporterDecoratorTests: XCTestCase {
   }
 
   func testWhenItIsFlushed_thenItFlushesTheWriterAndWorker() {
-    let writerIsFlushedExpectation = self.expectation(description: "FileWriter was flushed")
-    let workerIsFlushedExpectation = self.expectation(description: "DataExportWorker was flushed")
+    let writerIsFlushedExpectation = expectation(description: "FileWriter was flushed")
+    let workerIsFlushedExpectation = expectation(description: "DataExportWorker was flushed")
 
     var worker = DataExportWorkerMock()
     let fileWriter = FileWriterMock()
 
-    let exporter: PersistenceExporter<String> = createPersistenceExporter(
-      fileWriter: fileWriter,
-      worker: &worker)
+    let exporter: PersistenceExporter<String> = createPersistenceExporter(fileWriter: fileWriter,
+                                                                          worker: &worker)
 
     fileWriter.onFlush = {
       writerIsFlushedExpectation.fulfill()
@@ -131,9 +124,9 @@ class PersistenceExporterDecoratorTests: XCTestCase {
   }
 
   func testWhenObjectsDataIsExportedSeparately_thenObjectsAreExported() throws {
-    let v1ExportExpectation = self.expectation(description: "V1 exported")
-    let v2ExportExpectation = self.expectation(description: "V2 exported")
-    let v3ExportExpectation = self.expectation(description: "V3 exported")
+    let v1ExportExpectation = expectation(description: "V1 exported")
+    let v2ExportExpectation = expectation(description: "V2 exported")
+    let v3ExportExpectation = expectation(description: "V3 exported")
 
     let decoratedExporter = DecoratedExporterMock<String>(exporter: { values in
       values.forEach { value in
@@ -151,10 +144,9 @@ class PersistenceExporterDecoratorTests: XCTestCase {
     var worker = DataExportWorkerMock()
     let fileWriter = FileWriterMock()
 
-    let exporter: PersistenceExporter<String> = createPersistenceExporter(
-      fileWriter: fileWriter,
-      worker: &worker,
-      decoratedExporter: decoratedExporter)
+    let exporter: PersistenceExporter<String> = createPersistenceExporter(fileWriter: fileWriter,
+                                                                          worker: &worker,
+                                                                          decoratedExporter: decoratedExporter)
 
     fileWriter.onWrite = { _, data in
       if let dataExporter = worker.dataExporter {
@@ -170,9 +162,9 @@ class PersistenceExporterDecoratorTests: XCTestCase {
   }
 
   func testWhenObjectsDataIsExportedConcatenated_thenObjectsAreExported() throws {
-    let v1ExportExpectation = self.expectation(description: "V1 exported")
-    let v2ExportExpectation = self.expectation(description: "V2 exported")
-    let v3ExportExpectation = self.expectation(description: "V3 exported")
+    let v1ExportExpectation = expectation(description: "V1 exported")
+    let v2ExportExpectation = expectation(description: "V2 exported")
+    let v3ExportExpectation = expectation(description: "V3 exported")
 
     let decoratedExporter = DecoratedExporterMock<String>(exporter: { values in
       values.forEach { value in
@@ -190,10 +182,9 @@ class PersistenceExporterDecoratorTests: XCTestCase {
     var worker = DataExportWorkerMock()
     let fileWriter = FileWriterMock()
 
-    let exporter: PersistenceExporter<String> = createPersistenceExporter(
-      fileWriter: fileWriter,
-      worker: &worker,
-      decoratedExporter: decoratedExporter)
+    let exporter: PersistenceExporter<String> = createPersistenceExporter(fileWriter: fileWriter,
+                                                                          worker: &worker,
+                                                                          decoratedExporter: decoratedExporter)
 
     var writtenData = Data()
     fileWriter.onWrite = { _, data in

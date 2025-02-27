@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public struct MetricStorageConstants {
+public enum MetricStorageConstants {
   static let MAX_CARDINALITY = 2_000
 }
 

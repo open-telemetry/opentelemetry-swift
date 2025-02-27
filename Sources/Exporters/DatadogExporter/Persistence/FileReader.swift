@@ -5,14 +5,14 @@
 
 import Foundation
 
-internal struct Batch {
+struct Batch {
   /// Data read from file, prefixed with `[` and suffixed with `]`.
   let data: Data
   /// File from which `data` was read.
   fileprivate let file: ReadableFile
 }
 
-internal final class FileReader {
+final class FileReader {
   /// Data reading format.
   private let dataFormat: DataFormat
   /// Orchestrator producing reference to readable file.
@@ -28,7 +28,7 @@ internal final class FileReader {
   // MARK: - Reading batches
 
   func readNextBatch() -> Batch? {
-    if let file = orchestrator.getReadableFile(excludingFilesNamed: Set(filesRead.map { $0.name })) {
+    if let file = orchestrator.getReadableFile(excludingFilesNamed: Set(filesRead.map(\.name))) {
       do {
         let fileData = try file.read()
         let batchData = dataFormat.prefixData + fileData + dataFormat.suffixData
@@ -46,7 +46,7 @@ internal final class FileReader {
   /// Currently called from flush method
   func onRemainingBatches(process: (Batch) -> Void) -> Bool {
     do {
-      try orchestrator.getAllFiles(excludingFilesNamed: Set(filesRead.map { $0.name }))?.forEach {
+      try orchestrator.getAllFiles(excludingFilesNamed: Set(filesRead.map(\.name)))?.forEach {
         let fileData = try $0.read()
         let batchData = dataFormat.prefixData + fileData + dataFormat.suffixData
         process(Batch(data: batchData, file: $0))

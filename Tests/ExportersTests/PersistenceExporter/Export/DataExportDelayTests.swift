@@ -7,13 +7,11 @@
 import XCTest
 
 class DataExportDelayTests: XCTestCase {
-  private let mockPerformance = ExportPerformanceMock(
-    initialExportDelay: 3,
-    defaultExportDelay: 5,
-    minExportDelay: 1,
-    maxExportDelay: 20,
-    exportDelayChangeRate: 0.1
-  )
+  private let mockPerformance = ExportPerformanceMock(initialExportDelay: 3,
+                                                      defaultExportDelay: 5,
+                                                      minExportDelay: 1,
+                                                      maxExportDelay: 20,
+                                                      exportDelayChangeRate: 0.1)
 
   func testWhenNotModified_itReturnsInitialDelay() {
     let delay = DataExportDelay(performance: mockPerformance)
@@ -29,11 +27,9 @@ class DataExportDelayTests: XCTestCase {
       delay.decrease()
 
       let nextValue = delay.current
-      XCTAssertEqual(
-        nextValue / previousValue,
-        1.0 - mockPerformance.exportDelayChangeRate,
-        accuracy: 0.1
-      )
+      XCTAssertEqual(nextValue / previousValue,
+                     1.0 - mockPerformance.exportDelayChangeRate,
+                     accuracy: 0.1)
       XCTAssertLessThanOrEqual(nextValue, max(previousValue, mockPerformance.minExportDelay))
 
       previousValue = nextValue
@@ -48,11 +44,9 @@ class DataExportDelayTests: XCTestCase {
       delay.increase()
 
       let nextValue = delay.current
-      XCTAssertEqual(
-        nextValue / previousValue,
-        1.0 + mockPerformance.exportDelayChangeRate,
-        accuracy: 0.1
-      )
+      XCTAssertEqual(nextValue / previousValue,
+                     1.0 + mockPerformance.exportDelayChangeRate,
+                     accuracy: 0.1)
       XCTAssertGreaterThanOrEqual(nextValue, min(previousValue, mockPerformance.maxExportDelay))
       previousValue = nextValue
     }

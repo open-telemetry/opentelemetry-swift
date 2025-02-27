@@ -15,7 +15,7 @@ func simpleNetworkCall() {
   let semaphore = DispatchSemaphore(value: 0)
 
   let task = URLSession.shared.dataTask(with: request) { data, _, _ in
-    if let data = data {
+    if let data {
       let string = String(bytes: data, encoding: .utf8)
       print(string as Any)
     }

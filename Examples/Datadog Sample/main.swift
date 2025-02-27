@@ -26,18 +26,16 @@
 
   let hostName = Host.current().localizedName
 
-  let exporterConfiguration = ExporterConfiguration(
-    serviceName: "Opentelemetry exporter Example",
-    resource: "Opentelemetry exporter",
-    applicationName: "SwiftDatadogSample",
-    applicationVersion: "1.0.0",
-    environment: "test",
-    apiKey: apikeyOrClientToken,
-    endpoint: Endpoint.us1,
-    uploadCondition: { true },
-    performancePreset: .instantDataDelivery,
-    hostName: hostName
-  )
+  let exporterConfiguration = ExporterConfiguration(serviceName: "Opentelemetry exporter Example",
+                                                    resource: "Opentelemetry exporter",
+                                                    applicationName: "SwiftDatadogSample",
+                                                    applicationVersion: "1.0.0",
+                                                    environment: "test",
+                                                    apiKey: apikeyOrClientToken,
+                                                    endpoint: Endpoint.us1,
+                                                    uploadCondition: { true },
+                                                    performancePreset: .instantDataDelivery,
+                                                    hostName: hostName)
 
   let datadogExporter = try! DatadogExporter(config: exporterConfiguration)
 

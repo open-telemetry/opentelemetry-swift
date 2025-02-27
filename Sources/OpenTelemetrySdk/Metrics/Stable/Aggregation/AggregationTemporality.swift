@@ -26,13 +26,13 @@ public enum AggregationTemporality: Codable {
   case cumulative
 
   public static func alwaysCumulative() -> AggregationTemporalitySelector {
-    return AggregationTemporalitySelector { (_) in
+    return AggregationTemporalitySelector { _ in
       .cumulative
     }
   }
 
   public static func alwaysDelta() -> AggregationTemporalitySelector {
-    return AggregationTemporalitySelector { (_) in
+    return AggregationTemporalitySelector { _ in
       .delta
     }
   }

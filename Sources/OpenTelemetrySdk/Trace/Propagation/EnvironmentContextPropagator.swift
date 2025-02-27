@@ -19,14 +19,14 @@ public struct EnvironmentContextPropagator: TextMapPropagator {
 
   public init() {}
 
-  public func inject<S>(spanContext: SpanContext, carrier: inout [String: String], setter: S) where S: Setter {
+  public func inject(spanContext: SpanContext, carrier: inout [String: String], setter: some Setter) {
     var auxCarrier = [String: String]()
     w3cPropagator.inject(spanContext: spanContext, carrier: &auxCarrier, setter: setter)
     carrier[EnvironmentContextPropagator.traceParent] = auxCarrier["traceparent"]
     carrier[EnvironmentContextPropagator.traceState] = auxCarrier["tracestate"]
   }
 
-  public func extract<G>(carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
+  public func extract(carrier: [String: String], getter: some Getter) -> SpanContext? {
     var auxCarrier = [String: String]()
     auxCarrier["traceparent"] = carrier[EnvironmentContextPropagator.traceParent]
     auxCarrier["tracestate"] = carrier[EnvironmentContextPropagator.traceState]

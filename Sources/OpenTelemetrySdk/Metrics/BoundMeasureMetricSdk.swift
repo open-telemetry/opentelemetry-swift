@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-internal class BoundMeasureMetricSdk<T: SignedNumeric & Comparable>: BoundMeasureMetricSdkBase<T> {
+class BoundMeasureMetricSdk<T: SignedNumeric & Comparable>: BoundMeasureMetricSdkBase<T> {
   private var measureAggregator = MeasureMinMaxSumCountAggregator<T>()
 
   override init() {

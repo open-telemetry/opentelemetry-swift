@@ -50,7 +50,7 @@ class OtlpHttpTraceExporterTests: XCTestCase {
       XCTAssertTrue(head.headers.contains(name: Constants.HTTP.userAgent))
       XCTAssertEqual(otelVersion, head.headers.first(name: Constants.HTTP.userAgent))
     })
-    XCTAssertNoThrow(try testServer.receiveBodyAndVerify() { body in
+    XCTAssertNoThrow(try testServer.receiveBodyAndVerify { body in
       var contentsBuffer = ByteBuffer(buffer: body)
       let contents = contentsBuffer.readString(length: contentsBuffer.readableBytes)!
       XCTAssertTrue(contents.contains(endpointName1))
@@ -70,9 +70,9 @@ class OtlpHttpTraceExporterTests: XCTestCase {
 
     httpClient.send(request: request) { result in
       switch result {
-      case .success(let response):
+      case let .success(response):
         XCTAssertEqual(HTTPResponseStatus.imATeapot.code, UInt(response.statusCode))
-      case .failure(let error):
+      case let .failure(error):
         XCTFail("Send failed: \(error)")
       }
     }

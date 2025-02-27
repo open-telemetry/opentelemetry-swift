@@ -6,11 +6,11 @@
 import Foundation
 
 /// Interface for date provider used for files orchestration.
-internal protocol DateProvider {
+protocol DateProvider {
   func currentDate() -> Date
 }
 
-internal struct SystemDateProvider: DateProvider {
+struct SystemDateProvider: DateProvider {
   @inlinable
   func currentDate() -> Date { return Date() }
 }
