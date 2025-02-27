@@ -178,7 +178,7 @@ public class URLSessionInstrumentation {
         let sessionTaskId = UUID().uuidString
 
         if let request = argument as? URLRequest,
-            objc_getAssociatedObject(argument, &idKey) == nil {
+           objc_getAssociatedObject(argument, &idKey) == nil {
           let instrumentedRequest = URLSessionLogger.processAndLogRequest(
             request, sessionTaskId: sessionTaskId, instrumentation: self,
             shouldInjectHeaders: true)
@@ -186,7 +186,7 @@ public class URLSessionInstrumentation {
         } else {
           task = castedIMP(session, selector, argument)
           if objc_getAssociatedObject(argument, &idKey) == nil,
-              let currentRequest = task.currentRequest {
+             let currentRequest = task.currentRequest {
             URLSessionLogger.processAndLogRequest(
               currentRequest, sessionTaskId: sessionTaskId,
               instrumentation: self, shouldInjectHeaders: false)
