@@ -36,14 +36,12 @@ public class URLSessionInstrumentation {
 
   static var instrumentedKey = "io.opentelemetry.instrumentedCall"
 
-  static let AVTaskClassList: [AnyClass] = {
-    [
-      "__NSCFBackgroundAVAggregateAssetDownloadTask",
-      "__NSCFBackgroundAVAssetDownloadTask",
-      "__NSCFBackgroundAVAggregateAssetDownloadTaskNoChildTask"
-    ]
-    .compactMap { NSClassFromString($0) }
-  }()
+  static let AVTaskClassList: [AnyClass] = [
+    "__NSCFBackgroundAVAggregateAssetDownloadTask",
+    "__NSCFBackgroundAVAssetDownloadTask",
+    "__NSCFBackgroundAVAggregateAssetDownloadTaskNoChildTask"
+  ]
+  .compactMap { NSClassFromString($0) }
 
   public private(set) var tracer: Tracer
 

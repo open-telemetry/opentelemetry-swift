@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
-public struct CommonAdapter {
+public enum CommonAdapter {
   public static func toProtoAttribute(key: String, attributeValue: AttributeValue)
     -> Opentelemetry_Proto_Common_V1_KeyValue {
     var keyValue = Opentelemetry_Proto_Common_V1_KeyValue()

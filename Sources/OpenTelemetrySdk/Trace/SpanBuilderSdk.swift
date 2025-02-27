@@ -197,16 +197,15 @@ class SpanBuilderSdk: SpanBuilder {
   private func getParentContext(parentType: ParentType, explicitParent: Span?, remoteParent: SpanContext?) -> SpanContext? {
     let currentSpan = OpenTelemetry.instance.contextProvider.activeSpan
 
-    var parentContext: SpanContext?
-    switch parentType {
+    var parentContext: SpanContext? = switch parentType {
     case .noParent:
-      parentContext = nil
+      nil
     case .currentSpan:
-      parentContext = currentSpan?.context
+      currentSpan?.context
     case .explicitParent:
-      parentContext = explicitParent?.context
+      explicitParent?.context
     case .explicitRemoteParent:
-      parentContext = remoteParent
+      remoteParent
     }
 
     return parentContext ?? tracerSharedState.launchEnvironmentContext

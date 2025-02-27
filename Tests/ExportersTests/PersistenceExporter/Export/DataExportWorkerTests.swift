@@ -148,7 +148,7 @@ class DataExportWorkerTests: XCTestCase {
     exportExpectation.assertForOverFulfill = false
 
     var mockDataExporter = DataExporterMock(exportStatus: .mockWith(needsRetry: true))
-    mockDataExporter.onExport = { data in exportExpectation.fulfill() }
+    mockDataExporter.onExport = { _ in exportExpectation.fulfill() }
 
     // When
     let fileReader = FileReaderMock()
@@ -178,7 +178,7 @@ class DataExportWorkerTests: XCTestCase {
 
     var mockDataExporter = DataExporterMock(exportStatus: .mockWith(needsRetry: false))
 
-    mockDataExporter.onExport = { data in exportExpectation.fulfill() }
+    mockDataExporter.onExport = { _ in exportExpectation.fulfill() }
 
     // When
     let fileReader = FileReaderMock()

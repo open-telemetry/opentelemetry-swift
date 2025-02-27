@@ -189,7 +189,7 @@ class FileReaderMock: FileReader {
     return nil
   }
 
-  func onRemainingBatches(process: (Batch) -> ()) -> Bool {
+  func onRemainingBatches(process: (Batch) -> Void) -> Bool {
     do {
       try files.forEach {
         let fileData = try $0.read()

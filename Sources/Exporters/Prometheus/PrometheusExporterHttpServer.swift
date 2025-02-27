@@ -46,7 +46,6 @@ public class PrometheusExporterHttpServer {
       // Specify backlog and enable SO_REUSEADDR for the server itself
       .serverChannelOption(ChannelOptions.backlog, value: 256)
       .serverChannelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
-
       // Set the handlers that are appled to the accepted Channels
       .childChannelInitializer { channel in
         // Ensure we don't read faster than we can write by adding the BackPressureHandler into the pipeline.
@@ -98,6 +97,7 @@ public class PrometheusExporterHttpServer {
 
       case .body:
         break
+
       case .end: break
       }
     }

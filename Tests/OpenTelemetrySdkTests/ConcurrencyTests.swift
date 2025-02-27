@@ -44,7 +44,7 @@
     func testDetachedTask() async {
       await tracer
         .spanBuilder(spanName: "basic")
-        .withActiveSpan { span in
+        .withActiveSpan { _ in
           await Task.detached {
             // Detached task doesn't inherit context
             XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)

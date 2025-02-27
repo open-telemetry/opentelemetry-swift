@@ -117,7 +117,7 @@ class SwiftMetricsShimTests: XCTestCase {
   // MARK: - Test Concurrency
 
   func testConcurrency() throws {
-    DispatchQueue.concurrentPerform(iterations: 5) { iteration in
+    DispatchQueue.concurrentPerform(iterations: 5) { _ in
       let counter = Counter(label: "my_counter")
       counter.increment()
     }

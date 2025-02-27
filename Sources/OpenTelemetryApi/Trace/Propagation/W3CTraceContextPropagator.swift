@@ -139,7 +139,7 @@ public struct W3CTraceContextPropagator: TextMapPropagator {
 
     if bestAttempt {
       if traceparent.count > W3CTraceContextPropagator.traceparentLengthV0,
-        traceparentArray[W3CTraceContextPropagator.traceparentLengthV0] != W3CTraceContextPropagator.delimiter {
+         traceparentArray[W3CTraceContextPropagator.traceparentLengthV0] != W3CTraceContextPropagator.delimiter {
         return nil
       }
     }

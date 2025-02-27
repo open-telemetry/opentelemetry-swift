@@ -28,8 +28,8 @@ extension InstrumentBuilder {
     return self
   }
 
-  func swapBuilder<T: InstrumentBuilder>(_ builder: (MeterProviderSharedState, StableMeterSharedState, String, String, String ) -> T) -> T {
-    return builder(meterProviderSharedState, meterSharedState, instrumentName, description, unit )
+  func swapBuilder<T: InstrumentBuilder>(_ builder: (MeterProviderSharedState, StableMeterSharedState, String, String, String) -> T) -> T {
+    return builder(meterProviderSharedState, meterSharedState, instrumentName, description, unit)
   }
 
   // todo : Is it necessary to use inout for writableMetricStorage?
@@ -41,14 +41,14 @@ extension InstrumentBuilder {
 
   public func registerDoubleAsynchronousInstrument(type: InstrumentType, updater: @escaping (ObservableDoubleMeasurement) -> Void) -> ObservableInstrumentSdk {
     let sdkObservableMeasurement = buildObservableMeasurement(type: type)
-    let callbackRegistration = CallbackRegistration.init(observableMeasurements: [sdkObservableMeasurement]) {
+    let callbackRegistration = CallbackRegistration(observableMeasurements: [sdkObservableMeasurement]) {
       updater(sdkObservableMeasurement)
     }
     meterSharedState.registerCallback(callback: callbackRegistration)
     return ObservableInstrumentSdk(meterSharedState: meterSharedState, callbackRegistration: callbackRegistration)
   }
 
-  public func registerLongAsynchronousInstrument(type: InstrumentType, updater: @escaping (ObservableLongMeasurement) -> Void ) -> ObservableInstrumentSdk {
+  public func registerLongAsynchronousInstrument(type: InstrumentType, updater: @escaping (ObservableLongMeasurement) -> Void) -> ObservableInstrumentSdk {
     let sdkObservableMeasurement = buildObservableMeasurement(type: type)
     let callbackRegistration = CallbackRegistration(observableMeasurements: [sdkObservableMeasurement], callback: {
       updater(sdkObservableMeasurement)

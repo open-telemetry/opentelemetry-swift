@@ -25,7 +25,8 @@ public class MetricStorageRegistry {
       lock.unlock()
     }
     guard let storage = registry[descriptor] else {
-      registry[descriptor] = newStorage
+      registry[descriptor] = newStorage
+
       return newStorage
     }
 

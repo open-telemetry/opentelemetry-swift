@@ -6,7 +6,7 @@
 import Foundation
 
 /// Internal utility methods for working with attribute keys, attribute values, and metric names
-public struct StringUtils {
+public enum StringUtils {
   /// Determines whether the String contains only printable characters.
   /// - Parameter string: the String to be validated.
   public static func isPrintableString(_ string: String) -> Bool {

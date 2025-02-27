@@ -19,9 +19,7 @@ public class DefaultLoggerProvider: LoggerProvider {
   }
 }
 
-// swiftlint:disable private_over_fileprivate
-fileprivate class NoopLoggerBuilder: LoggerBuilder {
-  // swiftlint:enable private_over_fileprivate
+private class NoopLoggerBuilder: LoggerBuilder {
   private let hasDomain: Bool
 
   fileprivate init(_ hasDomain: Bool) {

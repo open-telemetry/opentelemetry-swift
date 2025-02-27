@@ -38,8 +38,8 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
     let mockMetricExporter = MetricExporterMock(onExport: { metrics in
       metrics.forEach { metric in
         if metric.name == "MyCounter",
-          metric.namespace == "MyMeter",
-          metric.data.count == 1 {
+           metric.namespace == "MyMeter",
+           metric.data.count == 1 {
           if let metricData = metric.data[0] as? SumData<Int>,
              metricData.sum == 100,
              metricData.labels == ["labelKey": "labelValue"] {

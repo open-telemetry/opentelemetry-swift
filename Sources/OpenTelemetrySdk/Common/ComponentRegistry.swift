@@ -11,7 +11,7 @@ class ComponentRegistry<T> {
   private var componentByName = [String: T]()
   private var componentByNameVersion = [String: [String: T]]()
   private var componentByNameSchema = [String: [String: T]]()
-  private var componentByNameVersionSchema = [ String: [String: [String: T]]]()
+  private var componentByNameVersionSchema = [String: [String: [String: T]]]()
   private var allComponents = [T]()
 
   private let builder: (InstrumentationScopeInfo) -> T

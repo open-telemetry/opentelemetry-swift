@@ -162,7 +162,7 @@
         if let error {
           completion(.error(error))
         }
-        completion(.success(Void()))
+        completion(.success(()))
       }
     }
 
@@ -188,7 +188,7 @@
         if let error {
           completion(.error(error))
         }
-        completion(.success(Void()))
+        completion(.success(()))
       }
     }
   }

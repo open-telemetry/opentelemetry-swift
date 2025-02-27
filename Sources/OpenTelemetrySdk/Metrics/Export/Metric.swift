@@ -33,11 +33,11 @@ extension Metric: Equatable {
 
   public static func == (lhs: Metric, rhs: Metric) -> Bool {
     if lhs.namespace == rhs.namespace,
-      lhs.resource == rhs.resource,
-      lhs.instrumentationScopeInfo == rhs.instrumentationScopeInfo,
-      lhs.name == rhs.name,
-      lhs.description == rhs.description,
-      lhs.aggregationType == rhs.aggregationType {
+       lhs.resource == rhs.resource,
+       lhs.instrumentationScopeInfo == rhs.instrumentationScopeInfo,
+       lhs.name == rhs.name,
+       lhs.description == rhs.description,
+       lhs.aggregationType == rhs.aggregationType {
       switch lhs.aggregationType {
       case .doubleGauge:
         return isEqual(type: [SumData<Double>].self, lhs: lhs.data, rhs: rhs.data)

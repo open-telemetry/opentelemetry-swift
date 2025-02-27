@@ -19,7 +19,7 @@ public class InstrumentSelectorBuilder {
     return self
   }
 
-  public func setInstrument( name: String) -> Self {
+  public func setInstrument(name: String) -> Self {
     instrumentName = name
     return self
   }

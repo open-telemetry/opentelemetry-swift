@@ -116,7 +116,7 @@ public extension AttributeValue {
     }))
   }
 
-  init (_ value: AttributeArray) {
+  init(_ value: AttributeArray) {
     self = .array(value)
   }
 

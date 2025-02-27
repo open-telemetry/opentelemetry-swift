@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
-public struct SpanAdapter {
+public enum SpanAdapter {
   public static func toProtoResourceSpans(spanDataList: [SpanData]) -> [Opentelemetry_Proto_Trace_V1_ResourceSpans] {
     let resourceAndScopeMap = groupByResourceAndScope(spanDataList: spanDataList)
     var resourceSpans = [Opentelemetry_Proto_Trace_V1_ResourceSpans]()

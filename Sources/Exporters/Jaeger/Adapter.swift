@@ -10,7 +10,7 @@
   import OpenTelemetrySdk
   import Thrift
 
-  final class Adapter {
+  enum Adapter {
     static let keyError = "error"
     static let keyLogMessage = "message"
     static let keySpanKind = "span.kind"
