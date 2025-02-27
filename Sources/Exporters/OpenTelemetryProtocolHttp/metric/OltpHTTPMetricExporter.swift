@@ -85,7 +85,7 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
       switch result {
       case .success:
         self?.exporterMetrics?.addSuccess(value: sendingMetrics.count)
-      case .failure(let error):
+      case let .failure(error):
         self?.exporterMetrics?.addFailed(value: sendingMetrics.count)
         self?.exporterLock.withLockVoid {
           self?.pendingMetrics.append(contentsOf: sendingMetrics)
@@ -114,7 +114,7 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
         switch result {
         case .success:
           self?.exporterMetrics?.addSuccess(value: count)
-        case .failure(let error):
+        case let .failure(error):
           self?.exporterMetrics?.addFailed(value: count)
           print(error)
           exporterResult = MetricExporterResultCode.failureNotRetryable

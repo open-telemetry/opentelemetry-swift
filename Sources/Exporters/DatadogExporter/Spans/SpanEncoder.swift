@@ -84,7 +84,7 @@ struct DDSpan: Encodable {
       spanData.endTime.timeIntervalSince(spanData.startTime).toNanoseconds
 
     switch spanData.status {
-    case .error(let errorDescription):
+    case let .error(errorDescription):
       error = true
       errorType =
         spanData.attributes["error.type"]?.description ?? errorDescription
@@ -201,16 +201,16 @@ struct SpanEncoder {
     // NOTE: RUMM-299 only string values are supported for `meta.*` attributes
     try span.tags.forEach {
       switch $0.value {
-      case .int(let intValue):
+      case let .int(intValue):
         let metricsKey = "metrics.\($0.key)"
         try container.encode(intValue, forKey: DynamicCodingKey(metricsKey))
-      case .double(let doubleValue):
+      case let .double(doubleValue):
         let metricsKey = "metrics.\($0.key)"
         try container.encode(doubleValue, forKey: DynamicCodingKey(metricsKey))
-      case .string(let stringValue):
+      case let .string(stringValue):
         let metaKey = "meta.\($0.key)"
         try container.encode(stringValue, forKey: DynamicCodingKey(metaKey))
-      case .bool(let boolValue):
+      case let .bool(boolValue):
         let metaKey = "meta.\($0.key)"
         try container.encode(boolValue, forKey: DynamicCodingKey(metaKey))
       default:

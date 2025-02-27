@@ -255,7 +255,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
         return
       }
       /// Process only `string` type value
-      if case .string(let value) = value {
+      if case let .string(value) = value {
         let formattedValue = value.count > maxValueLengthPerSpanAttribute ? String(value.prefix(maxValueLengthPerSpanAttribute)) : value
         attributes[key] = AttributeValue(formattedValue)
       } else {

@@ -168,9 +168,9 @@ public extension SpanExceptionRecorder {
 
     switch (attributes, timestamp) {
     case (.none, .none): recordException(exception)
-    case (.some(let attributes), .none): recordException(exception, attributes: attributes)
-    case (.none, .some(let timestamp)): recordException(exception, timestamp: timestamp)
-    case (.some(let attributes), .some(let timestamp)): recordException(exception, attributes: attributes, timestamp: timestamp)
+    case let (.some(attributes), .none): recordException(exception, attributes: attributes)
+    case let (.none, .some(timestamp)): recordException(exception, timestamp: timestamp)
+    case let (.some(attributes), .some(timestamp)): recordException(exception, attributes: attributes, timestamp: timestamp)
     }
   }
 }

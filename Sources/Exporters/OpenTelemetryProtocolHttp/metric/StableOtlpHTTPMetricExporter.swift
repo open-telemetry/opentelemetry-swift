@@ -92,7 +92,7 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
       switch result {
       case .success:
         self?.exporterMetrics?.addSuccess(value: sendingMetrics.count)
-      case .failure(let error):
+      case let .failure(error):
         self?.exporterMetrics?.addFailed(value: sendingMetrics.count)
         self?.exporterLock.withLockVoid {
           self?.pendingMetrics.append(contentsOf: sendingMetrics)
@@ -124,7 +124,7 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
         switch result {
         case .success:
           self?.exporterMetrics?.addSuccess(value: pendingMetrics.count)
-        case .failure(let error):
+        case let .failure(error):
           self?.exporterMetrics?.addFailed(value: pendingMetrics.count)
           print(error)
           exporterResult = .failure

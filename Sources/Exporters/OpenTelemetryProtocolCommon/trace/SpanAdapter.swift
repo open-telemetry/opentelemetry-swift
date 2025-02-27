@@ -109,7 +109,7 @@ public struct SpanAdapter {
       statusProto.code = .ok
     case .unset:
       statusProto.code = .unset
-    case .error(let description):
+    case let .error(description):
       statusProto.code = .error
       statusProto.message = description
     }

@@ -33,9 +33,9 @@ final class DataUploader: DataUploaderType {
 
     httpClient.send(request: request) { result in
       switch result {
-      case .success(let httpResponse):
+      case let .success(httpResponse):
         uploadStatus = DataUploadStatus(httpResponse: httpResponse, ddRequestID: ddRequestID)
-      case .failure(let error):
+      case let .failure(error):
         uploadStatus = DataUploadStatus(networkError: error)
       }
 

@@ -18,9 +18,9 @@ struct RequestBuilder {
 
     var urlQueryItem: URLQueryItem {
       switch self {
-      case .ddsource(let source):
+      case let .ddsource(source):
         return URLQueryItem(name: "ddsource", value: source)
-      case .ddtags(let tags):
+      case let .ddtags(tags):
         return URLQueryItem(name: "ddtags", value: tags.joined(separator: ","))
       }
     }
@@ -115,9 +115,9 @@ struct RequestBuilder {
     var computedHeaders: [String: () -> String] = [:]
     headers.forEach { header in
       switch header.value {
-      case .constant(let value):
+      case let .constant(value):
         precomputedHeaders[header.field] = value
-      case .dynamic(let value):
+      case let .dynamic(value):
         computedHeaders[header.field] = value
       }
     }

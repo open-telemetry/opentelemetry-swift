@@ -421,7 +421,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
     span.setAttribute(key: "max_value_length", value: .string("this is a big text that is longer than \(maxValueLength) characters"))
     span.end()
     let spanData = span.toSpanData()
-    if case .string(let value) = spanData.attributes["max_value_length"] {
+    if case let .string(value) = spanData.attributes["max_value_length"] {
       XCTAssertEqual(span.maxValueLengthPerSpanAttribute, maxValueLength)
       XCTAssertEqual(value, "this is ")
     } else {

@@ -103,20 +103,20 @@ func convertMetadata(_ metadata: Logging.Logger.Metadata) -> [String: AttributeV
 // Function to recursively convert nested dictionaries to AttributeValue
 func convertToAttributeValue(_ value: Logging.Logger.Metadata.Value) -> AttributeValue {
   switch value {
-  case .dictionary(let nestedDictionary):
+  case let .dictionary(nestedDictionary):
     // If value is a nested dictionary, recursively convert it
     var nestedAttributes: [String: AttributeValue] = [:]
     for (nestedKey, nestedValue) in nestedDictionary {
       nestedAttributes[nestedKey] = convertToAttributeValue(nestedValue)
     }
     return AttributeValue.set(AttributeSet(labels: nestedAttributes))
-  case .array(let nestedArray):
+  case let .array(nestedArray):
     // If value is a nested array, recursively convert it
     let nestedValues = nestedArray.map { convertToAttributeValue($0) }
     return AttributeValue.array(AttributeArray(values: nestedValues))
-  case .string(let str):
+  case let .string(str):
     return AttributeValue(str)
-  case .stringConvertible(let strConvertable):
+  case let .stringConvertible(strConvertable):
     return AttributeValue(strConvertable.description)
   }
 }

@@ -111,7 +111,7 @@ struct StatusExplicitCodable: Codable {
       _ = container.nestedContainer(keyedBy: EmptyCodingKeys.self, forKey: .ok)
     case .unset:
       _ = container.nestedContainer(keyedBy: EmptyCodingKeys.self, forKey: .unset)
-    case .error(let description):
+    case let .error(description):
       var nestedContainer = container.nestedContainer(keyedBy: ErrorCodingKeys.self, forKey: .error)
       try nestedContainer.encode(description, forKey: .description)
     }

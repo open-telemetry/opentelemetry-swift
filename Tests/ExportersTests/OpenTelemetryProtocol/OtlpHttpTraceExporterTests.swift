@@ -70,9 +70,9 @@ class OtlpHttpTraceExporterTests: XCTestCase {
 
     httpClient.send(request: request) { result in
       switch result {
-      case .success(let response):
+      case let .success(response):
         XCTAssertEqual(HTTPResponseStatus.imATeapot.code, UInt(response.statusCode))
-      case .failure(let error):
+      case let .failure(error):
         XCTFail("Send failed: \(error)")
       }
     }
