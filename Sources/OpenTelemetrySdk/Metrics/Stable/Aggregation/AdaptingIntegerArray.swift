@@ -44,7 +44,7 @@ class AdaptingIntegerArray: NSCopying {
   }
 
   func increment(index: Int, count: Int64) {
-    if cellSize == .byte, var byteBacking = self.byteBacking {
+    if cellSize == .byte, var byteBacking = byteBacking {
       let result = Int64(byteBacking[index]) + count
       if result > Int8.max {
         resizeToShort()
@@ -53,7 +53,7 @@ class AdaptingIntegerArray: NSCopying {
         byteBacking[index] = Int8(result)
         self.byteBacking = byteBacking
       }
-    } else if cellSize == .short, var shortBacking = self.shortBacking {
+    } else if cellSize == .short, var shortBacking = shortBacking {
       let result = Int64(shortBacking[index]) + count
       if result > Int16.max {
         resizeToInt()
@@ -62,7 +62,7 @@ class AdaptingIntegerArray: NSCopying {
         shortBacking[index] = Int16(result)
         self.shortBacking = shortBacking
       }
-    } else if cellSize == .int, var intBacking = self.intBacking {
+    } else if cellSize == .int, var intBacking = intBacking {
       let result = Int64(intBacking[index]) + count
       if result > Int32.max {
         resizeToLong()
@@ -71,7 +71,7 @@ class AdaptingIntegerArray: NSCopying {
         intBacking[index] = Int32(result)
         self.intBacking = intBacking
       }
-    } else if cellSize == .long, var longBacking = self.longBacking {
+    } else if cellSize == .long, var longBacking = longBacking {
       let result = longBacking[index] + count
       longBacking[index] = result
       self.longBacking = longBacking
@@ -79,13 +79,13 @@ class AdaptingIntegerArray: NSCopying {
   }
 
   func get(index: Int) -> Int64 {
-    if cellSize == .byte, let byteBacking = self.byteBacking, index < byteBacking.count {
+    if cellSize == .byte, let byteBacking = byteBacking, index < byteBacking.count {
       return Int64(byteBacking[index])
-    } else if cellSize == .short, let shortBacking = self.shortBacking, index < shortBacking.count {
+    } else if cellSize == .short, let shortBacking = shortBacking, index < shortBacking.count {
       return Int64(shortBacking[index])
-    } else if cellSize == .int, let intBacking = self.intBacking, index < intBacking.count {
+    } else if cellSize == .int, let intBacking = intBacking, index < intBacking.count {
       return Int64(intBacking[index])
-    } else if cellSize == .long, let longBacking = self.longBacking, index < longBacking.count {
+    } else if cellSize == .long, let longBacking = longBacking, index < longBacking.count {
       return longBacking[index]
     }
 
@@ -95,13 +95,13 @@ class AdaptingIntegerArray: NSCopying {
   func length() -> Int {
     var length = 0
 
-    if cellSize == .byte, let byteBacking = self.byteBacking {
+    if cellSize == .byte, let byteBacking = byteBacking {
       length = byteBacking.count
-    } else if cellSize == .short, let shortBacking = self.shortBacking {
+    } else if cellSize == .short, let shortBacking = shortBacking {
       length = shortBacking.count
-    } else if cellSize == .int, let intBacking = self.intBacking {
+    } else if cellSize == .int, let intBacking = intBacking {
       length = intBacking.count
-    } else if cellSize == .long, let longBacking = self.longBacking {
+    } else if cellSize == .long, let longBacking = longBacking {
       length = longBacking.count
     }
 

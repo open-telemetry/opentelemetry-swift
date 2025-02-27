@@ -20,7 +20,7 @@ class BlockingMetricExporter: StableMetricExporter {
   let aggregrationTemporality: AggregationTemporality
 
   init(aggregationTemporality: AggregationTemporality) {
-    self.aggregrationTemporality = aggregationTemporality
+    aggregrationTemporality = aggregationTemporality
   }
 
   func export(metrics: [OpenTelemetrySdk.StableMetricData]) -> OpenTelemetrySdk.ExportResult {

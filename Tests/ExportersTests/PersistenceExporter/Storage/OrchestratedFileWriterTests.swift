@@ -20,7 +20,7 @@ class OrchestratedFileWriterTests: XCTestCase {
   }
 
   func testItWritesDataToSingleFile() throws {
-    let expectation = self.expectation(description: "write completed")
+    let expectation = expectation(description: "write completed")
     let writer = OrchestratedFileWriter(
       orchestrator: FilesOrchestrator(
         directory: temporaryDirectory,
@@ -50,8 +50,8 @@ class OrchestratedFileWriterTests: XCTestCase {
   }
 
   func testGivenErrorVerbosity_whenIndividualDataExceedsMaxWriteSize_itDropsDataAndPrintsError() throws {
-    let expectation1 = self.expectation(description: "write completed")
-    let expectation2 = self.expectation(description: "second write completed")
+    let expectation1 = expectation(description: "write completed")
+    let expectation2 = expectation(description: "second write completed")
 
     let writer = OrchestratedFileWriter(
       orchestrator: FilesOrchestrator(

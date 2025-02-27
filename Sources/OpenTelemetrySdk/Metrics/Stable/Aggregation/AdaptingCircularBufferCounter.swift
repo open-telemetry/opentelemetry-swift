@@ -44,7 +44,7 @@ class AdaptingCircularBufferCounter: NSCopying {
       if (endIndex - index + 1) > backing.length() {
         return false
       }
-      self.startIndex = index
+      startIndex = index
     }
 
     let realIndex = toBufferIndex(index: index)

@@ -29,9 +29,9 @@ public class OtlpHttpExporterBase {
     self.endpoint = endpoint
     self.config = config
     if let providedSession = useSession {
-      self.httpClient = HTTPClient(session: providedSession)
+      httpClient = HTTPClient(session: providedSession)
     } else {
-      self.httpClient = HTTPClient()
+      httpClient = HTTPClient()
     }
   }
 

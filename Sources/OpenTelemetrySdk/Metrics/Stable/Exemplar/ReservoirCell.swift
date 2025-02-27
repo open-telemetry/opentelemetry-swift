@@ -33,7 +33,7 @@ public class ReservoirCell {
     self.attributes = attributes
     recordTime = clock.nanoTime
     if let context = OpenTelemetry.instance.contextProvider.activeSpan?.context, context.isValid {
-      self.spanContext = context
+      spanContext = context
     }
   }
 

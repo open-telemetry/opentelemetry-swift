@@ -1198,7 +1198,7 @@ public enum ResourceAttributes: String {
     internal let value: String
 
     public init(_ customValue: String) {
-      self.value = customValue
+      value = customValue
     }
 
     public var description: String {
@@ -1331,7 +1331,7 @@ public enum ResourceAttributes: String {
     internal let value: String
 
     public init(_ customValue: String) {
-      self.value = customValue
+      value = customValue
     }
 
     public var description: String {
@@ -1395,7 +1395,7 @@ public enum ResourceAttributes: String {
     internal let value: String
 
     public init(_ customValue: String) {
-      self.value = customValue
+      value = customValue
     }
 
     public var description: String {
@@ -1456,7 +1456,7 @@ public enum ResourceAttributes: String {
     internal let value: String
 
     public init(_ customValue: String) {
-      self.value = customValue
+      value = customValue
     }
 
     public var description: String {
@@ -1521,7 +1521,7 @@ public enum ResourceAttributes: String {
     internal let value: String
 
     public init(_ customValue: String) {
-      self.value = customValue
+      value = customValue
     }
 
     public var description: String {

@@ -29,7 +29,7 @@ public class B3Propagator: TextMapPropagator {
 
   /// Creates a new instance of B3Propagator. Default to use multiple headers.
   public init() {
-    self.singleHeaderInjection = false
+    singleHeaderInjection = false
   }
 
   /// Creates a new instance of B3Propagator

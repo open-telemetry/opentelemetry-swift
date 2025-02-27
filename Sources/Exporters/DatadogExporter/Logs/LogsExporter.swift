@@ -22,7 +22,7 @@ internal class LogsExporter {
   let logsUpload: FeatureUpload
 
   init(config: ExporterConfiguration) throws {
-    self.configuration = config
+    configuration = config
 
     let filesOrchestrator = FilesOrchestrator(
       directory: try Directory(withSubdirectoryPath: logsDirectory),

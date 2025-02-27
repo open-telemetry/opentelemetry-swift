@@ -95,7 +95,7 @@ extension StableMetricData {
   }
 
   func getHistogramData() -> [HistogramPointData] {
-    if self.type == .Histogram {
+    if type == .Histogram {
       return data.points as! [HistogramPointData]
     }
 

@@ -14,9 +14,9 @@ class StableMeterSdk: StableMeter {
   init(meterProviderSharedState: inout MeterProviderSharedState,
        instrumentScope: InstrumentationScopeInfo,
        registeredReaders: inout [RegisteredReader]) {
-    self.instrumentationScopeInfo = instrumentScope
+    instrumentationScopeInfo = instrumentScope
     self.meterProviderSharedState = meterProviderSharedState
-    self.meterSharedState = StableMeterSharedState(instrumentationScope: instrumentScope,
+    meterSharedState = StableMeterSharedState(instrumentationScope: instrumentScope,
                                                    registeredReaders: registeredReaders)
   }
 

@@ -33,7 +33,7 @@ public class PersistenceMetricExporterDecorator: MetricExporter {
     exportCondition: @escaping () -> Bool = { true },
     performancePreset: PersistencePerformancePreset = .default
   ) throws {
-    self.persistenceExporter =
+    persistenceExporter =
       PersistenceExporterDecorator<MetricDecoratedExporter>(
         decoratedExporter: MetricDecoratedExporter(
           metricExporter: metricExporter),

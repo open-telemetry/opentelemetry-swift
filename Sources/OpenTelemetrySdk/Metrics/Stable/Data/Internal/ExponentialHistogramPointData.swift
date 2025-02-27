@@ -43,7 +43,7 @@ public class ExponentialHistogramPointData: PointData {
     self.positiveBuckets = positiveBuckets
     self.negativeBuckets = negativeBuckets
 
-    self.count = Int(zeroCount) + positiveBuckets.totalCount + negativeBuckets.totalCount
+    count = Int(zeroCount) + positiveBuckets.totalCount + negativeBuckets.totalCount
 
     super.init(startEpochNanos: startEpochNanos, endEpochNanos: epochNanos, attributes: attributes, exemplars: exemplars)
   }

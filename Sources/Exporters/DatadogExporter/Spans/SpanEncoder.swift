@@ -66,42 +66,42 @@ internal struct DDSpan: Encodable {
   }
 
   internal init(spanData: SpanData, configuration: ExporterConfiguration) {
-    self.traceID = spanData.traceId
-    self.spanID = spanData.spanId
-    self.parentID = spanData.parentSpanId
+    traceID = spanData.traceId
+    spanID = spanData.spanId
+    parentID = spanData.parentSpanId
 
     if spanData.attributes["type"] != nil {
-      self.name = spanData.name
+      name = spanData.name
     } else {
-      self.name = spanData.name + "." + spanData.kind.rawValue
+      name = spanData.name + "." + spanData.kind.rawValue
     }
 
-    self.serviceName = configuration.serviceName
-    self.resource =
+    serviceName = configuration.serviceName
+    resource =
       spanData.attributes["resource.name"]?.description ?? spanData.name
-    self.startTime = spanData.startTime.timeIntervalSince1970.toNanoseconds
-    self.duration =
+    startTime = spanData.startTime.timeIntervalSince1970.toNanoseconds
+    duration =
       spanData.endTime.timeIntervalSince(spanData.startTime).toNanoseconds
 
     switch spanData.status {
     case .error(let errorDescription):
-      self.error = true
-      self.errorType =
+      error = true
+      errorType =
         spanData.attributes["error.type"]?.description ?? errorDescription
-      self.errorMessage = spanData.attributes["error.message"]?.description
-      self.errorStack = spanData.attributes["error.stack"]?.description
+      errorMessage = spanData.attributes["error.message"]?.description
+      errorStack = spanData.attributes["error.stack"]?.description
     default:
-      self.error = false
-      self.errorMessage = nil
-      self.errorType = nil
-      self.errorStack = nil
+      error = false
+      errorMessage = nil
+      errorType = nil
+      errorStack = nil
     }
 
     let spanType = spanData.attributes["type"] ?? spanData.attributes["db.type"]
-    self.type = spanType?.description ?? spanData.kind.rawValue
+    type = spanType?.description ?? spanData.kind.rawValue
 
-    self.applicationVersion = configuration.version
-    self.tags = spanData.attributes.filter {
+    applicationVersion = configuration.version
+    tags = spanData.attributes.filter {
       !DDSpan.filteredTagKeys.contains($0.key)
     }.mapValues { $0 }
   }
@@ -144,7 +144,7 @@ internal struct SpanEncoder {
     var intValue: Int?
     init?(stringValue: String) { self.stringValue = stringValue }
     init?(intValue: Int) { return nil }
-    init(_ string: String) { self.stringValue = string }
+    init(_ string: String) { stringValue = string }
   }
 
   func encode(_ span: DDSpan, to encoder: Encoder) throws {

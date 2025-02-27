@@ -37,7 +37,7 @@ internal struct File: WritableFile, ReadableFile {
 
   init(url: URL) {
     self.url = url
-    self.name = url.lastPathComponent
+    name = url.lastPathComponent
   }
 
   /// Appends given data at the end of this file.

@@ -52,12 +52,12 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
       self.maxBuckets = maxBuckets
       self.maxScale = maxScale
 
-      self.sum = 0
-      self.zeroCount = 0
+      sum = 0
+      zeroCount = 0
       self.min = Double.greatestFiniteMagnitude
       self.max = -1
-      self.count = 0
-      self.scale = maxScale
+      count = 0
+      scale = maxScale
 
       super.init(exemplarReservoir: exemplarReservoir)
     }
@@ -118,10 +118,10 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
 
       var buckets: DoubleBase2ExponentialHistogramBuckets
       if value == 0.0 {
-        self.zeroCount += 1
+        zeroCount += 1
         return
       } else if value > 0.0 {
-        if let positiveBuckets = self.positiveBuckets {
+        if let positiveBuckets = positiveBuckets {
           buckets = positiveBuckets
         } else {
           buckets = DoubleBase2ExponentialHistogramBuckets(scale: scale, maxBuckets: maxBuckets)

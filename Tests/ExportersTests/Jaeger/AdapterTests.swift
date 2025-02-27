@@ -205,7 +205,7 @@
     }
 
     func testSpanError() {
-      let attributes = ["error.type": AttributeValue.string(self.name),
+      let attributes = ["error.type": AttributeValue.string(name),
                         "error.message": AttributeValue.string("server error")]
       let startMicroseconds = UInt64(Date().timeIntervalSince1970 * microsecondsInSecond)
       let endMicroseconds = startMicroseconds + 900
@@ -222,7 +222,7 @@
 
       let jaegerSpan = Adapter.toJaeger(span: span)
       let errorType = getTag(tagsList: jaegerSpan.tags, key: "error.type")
-      XCTAssertEqual(self.name, errorType?.vStr)
+      XCTAssertEqual(name, errorType?.vStr)
       let error = getTag(tagsList: jaegerSpan.tags, key: "error")
       XCTAssertNotNil(error)
       XCTAssertEqual(true, error?.vBool)

@@ -36,7 +36,7 @@ public class PersistenceSpanExporterDecorator: SpanExporter {
   ) throws {
     self.spanExporter = spanExporter
 
-    self.persistenceExporter =
+    persistenceExporter =
       PersistenceExporterDecorator<SpanDecoratedExporter>(
         decoratedExporter: SpanDecoratedExporter(spanExporter: spanExporter),
         storageURL: storageURL,

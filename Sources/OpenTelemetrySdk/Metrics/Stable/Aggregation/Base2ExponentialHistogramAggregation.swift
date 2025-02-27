@@ -21,7 +21,7 @@ public class Base2ExponentialHistogramAggregation: Aggregation {
   }
 
   public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> StableAggregator {
-    DoubleBase2ExponentialHistogramAggregator(maxBuckets: self.maxBuckets, maxScale: self.maxScale) {
+    DoubleBase2ExponentialHistogramAggregator(maxBuckets: maxBuckets, maxScale: maxScale) {
       FilteredExemplarReservoir(filter: exemplarFilter, reservoir: LongToDoubleExemplarReservoir(reservoir: RandomFixedSizedExemplarReservoir.createDouble(clock: MillisClock(), size: 2)))
     }
   }

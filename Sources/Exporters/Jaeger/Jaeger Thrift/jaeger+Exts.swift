@@ -21,13 +21,13 @@
   extension Tag: CustomStringConvertible {
     public var description: String {
       var desc = "Tag("
-      desc += "key=\(String(describing: self.key)), "
-      desc += "vType=\(String(describing: self.vType)), "
-      desc += "vStr=\(String(describing: self.vStr)), "
-      desc += "vDouble=\(String(describing: self.vDouble)), "
-      desc += "vBool=\(String(describing: self.vBool)), "
-      desc += "vLong=\(String(describing: self.vLong)), "
-      desc += "vBinary=\(String(describing: self.vBinary))"
+      desc += "key=\(String(describing: key)), "
+      desc += "vType=\(String(describing: vType)), "
+      desc += "vStr=\(String(describing: vStr)), "
+      desc += "vDouble=\(String(describing: vDouble)), "
+      desc += "vBool=\(String(describing: vBool)), "
+      desc += "vLong=\(String(describing: vLong)), "
+      desc += "vBinary=\(String(describing: vBinary))"
       return desc
     }
   }
@@ -101,8 +101,8 @@
   extension Log: CustomStringConvertible {
     public var description: String {
       var desc = "Log("
-      desc += "timestamp=\(String(describing: self.timestamp)), "
-      desc += "fields=\(String(describing: self.fields))"
+      desc += "timestamp=\(String(describing: timestamp)), "
+      desc += "fields=\(String(describing: fields))"
       return desc
     }
   }
@@ -157,10 +157,10 @@
   extension SpanRef: CustomStringConvertible {
     public var description: String {
       var desc = "SpanRef("
-      desc += "refType=\(String(describing: self.refType)), "
-      desc += "traceIdLow=\(String(describing: self.traceIdLow)), "
-      desc += "traceIdHigh=\(String(describing: self.traceIdHigh)), "
-      desc += "spanId=\(String(describing: self.spanId))"
+      desc += "refType=\(String(describing: refType)), "
+      desc += "traceIdLow=\(String(describing: traceIdLow)), "
+      desc += "traceIdHigh=\(String(describing: traceIdHigh)), "
+      desc += "spanId=\(String(describing: spanId))"
       return desc
     }
   }
@@ -229,17 +229,17 @@
   extension Span: CustomStringConvertible {
     public var description: String {
       var desc = "Span("
-      desc += "traceIdLow=\(String(describing: self.traceIdLow)), "
-      desc += "traceIdHigh=\(String(describing: self.traceIdHigh)), "
-      desc += "spanId=\(String(describing: self.spanId)), "
-      desc += "parentSpanId=\(String(describing: self.parentSpanId)), "
-      desc += "operationName=\(String(describing: self.operationName)), "
-      desc += "references=\(String(describing: self.references)), "
-      desc += "flags=\(String(describing: self.flags)), "
-      desc += "startTime=\(String(describing: self.startTime)), "
-      desc += "duration=\(String(describing: self.duration)), "
-      desc += "tags=\(String(describing: self.tags)), "
-      desc += "logs=\(String(describing: self.logs))"
+      desc += "traceIdLow=\(String(describing: traceIdLow)), "
+      desc += "traceIdHigh=\(String(describing: traceIdHigh)), "
+      desc += "spanId=\(String(describing: spanId)), "
+      desc += "parentSpanId=\(String(describing: parentSpanId)), "
+      desc += "operationName=\(String(describing: operationName)), "
+      desc += "references=\(String(describing: references)), "
+      desc += "flags=\(String(describing: flags)), "
+      desc += "startTime=\(String(describing: startTime)), "
+      desc += "duration=\(String(describing: duration)), "
+      desc += "tags=\(String(describing: tags)), "
+      desc += "logs=\(String(describing: logs))"
       return desc
     }
   }
@@ -333,8 +333,8 @@
   extension Process: CustomStringConvertible {
     public var description: String {
       var desc = "Process("
-      desc += "serviceName=\(String(describing: self.serviceName)), "
-      desc += "tags=\(String(describing: self.tags))"
+      desc += "serviceName=\(String(describing: serviceName)), "
+      desc += "tags=\(String(describing: tags))"
       return desc
     }
   }
@@ -387,8 +387,8 @@
   extension Batch: CustomStringConvertible {
     public var description: String {
       var desc = "Batch("
-      desc += "process=\(String(describing: self.process)), "
-      desc += "spans=\(String(describing: self.spans))"
+      desc += "process=\(String(describing: process)), "
+      desc += "spans=\(String(describing: spans))"
       return desc
     }
   }
@@ -442,7 +442,7 @@
   extension BatchSubmitResponse: CustomStringConvertible {
     public var description: String {
       var desc = "BatchSubmitResponse("
-      desc += "ok=\(String(describing: self.ok))"
+      desc += "ok=\(String(describing: ok))"
       return desc
     }
   }

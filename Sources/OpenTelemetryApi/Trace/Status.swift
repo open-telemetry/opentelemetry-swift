@@ -94,15 +94,15 @@ internal struct StatusExplicitCodable: Codable {
     case .ok:
       _ = try container.nestedContainer(
         keyedBy: EmptyCodingKeys.self, forKey: .ok)
-      self.status = .ok
+      status = .ok
     case .unset:
       _ = try container.nestedContainer(
         keyedBy: EmptyCodingKeys.self, forKey: .unset)
-      self.status = .unset
+      status = .unset
     case .error:
       let nestedContainer = try container.nestedContainer(
         keyedBy: ErrorCodingKeys.self, forKey: .error)
-      self.status = .error(
+      status = .error(
         description: try nestedContainer.decode(
           String.self, forKey: .description))
     }
@@ -111,7 +111,7 @@ internal struct StatusExplicitCodable: Codable {
   public func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
 
-    switch self.status {
+    switch status {
     case .ok:
       _ = container.nestedContainer(keyedBy: EmptyCodingKeys.self, forKey: .ok)
     case .unset:

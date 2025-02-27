@@ -70,7 +70,7 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
       useSession: useSession,
       envVarHeaders: envVarHeaders
     )
-    self.exporterMetrics = ExporterMetrics(
+    exporterMetrics = ExporterMetrics(
       type: "metric",
       meterProvider: meterProvider,
       exporterName: "otlp",
@@ -94,7 +94,7 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
         $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(
           stableMetricData: sendingMetrics)
       }
-    self.exporterMetrics?.addSeen(value: sendingMetrics.count)
+    exporterMetrics?.addSeen(value: sendingMetrics.count)
     var request = createRequest(body: body, endpoint: endpoint)
     request.timeoutInterval = min(
       TimeInterval.greatestFiniteMagnitude, config.timeout)

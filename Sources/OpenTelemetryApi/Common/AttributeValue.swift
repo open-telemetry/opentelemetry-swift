@@ -159,28 +159,28 @@ internal struct AttributeValueExplicitCodable: Codable {
     case .string:
       let nestedContainer = try container.nestedContainer(
         keyedBy: AssociatedValueCodingKeys.self, forKey: .string)
-      self.attributeValue = .string(
+      attributeValue = .string(
         try nestedContainer.decode(String.self, forKey: .associatedValue))
     case .bool:
       let nestedContainer = try container.nestedContainer(
         keyedBy: AssociatedValueCodingKeys.self, forKey: .bool)
-      self.attributeValue = .bool(try nestedContainer.decode(Bool.self, forKey: .associatedValue))
+      attributeValue = .bool(try nestedContainer.decode(Bool.self, forKey: .associatedValue))
     case .int:
       let nestedContainer = try container.nestedContainer(
         keyedBy: AssociatedValueCodingKeys.self, forKey: .int)
-      self.attributeValue = .int(try nestedContainer.decode(Int.self, forKey: .associatedValue))
+      attributeValue = .int(try nestedContainer.decode(Int.self, forKey: .associatedValue))
     case .double:
       let nestedContainer = try container.nestedContainer(
         keyedBy: AssociatedValueCodingKeys.self, forKey: .double)
-      self.attributeValue = .double(
+      attributeValue = .double(
         try nestedContainer.decode(Double.self, forKey: .associatedValue))
     case .array:
       let nestedContainer = try container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .array)
-      self.attributeValue = .array(try nestedContainer.decode(AttributeArray.self, forKey: .associatedValue))
+      attributeValue = .array(try nestedContainer.decode(AttributeArray.self, forKey: .associatedValue))
     case .set:
       let nestedContainer = try container.nestedContainer(
         keyedBy: AssociatedValueCodingKeys.self, forKey: .set)
-      self.attributeValue = .set(
+      attributeValue = .set(
         try nestedContainer.decode(AttributeSet.self, forKey: .associatedValue))
     }
   }
@@ -188,7 +188,7 @@ internal struct AttributeValueExplicitCodable: Codable {
   public func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
 
-    switch self.attributeValue {
+    switch attributeValue {
     case let .string(value):
       var nestedContainer = container.nestedContainer(
         keyedBy: AssociatedValueCodingKeys.self, forKey: .string)

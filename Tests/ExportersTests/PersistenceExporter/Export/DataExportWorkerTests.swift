@@ -20,9 +20,9 @@ class DataExportWorkerTests: XCTestCase {
   // MARK: - Data Exports
 
   func testItExportsAllData() {
-    let v1ExportExpectation = self.expectation(description: "V1 exported")
-    let v2ExportExpectation = self.expectation(description: "V2 exported")
-    let v3ExportExpectation = self.expectation(description: "V3 exported")
+    let v1ExportExpectation = expectation(description: "V1 exported")
+    let v2ExportExpectation = expectation(description: "V2 exported")
+    let v3ExportExpectation = expectation(description: "V3 exported")
 
     var mockDataExporter = DataExporterMock(exportStatus: .mockWith(needsRetry: false))
 
@@ -58,7 +58,7 @@ class DataExportWorkerTests: XCTestCase {
   }
 
   func testGivenDataToExport_whenExportFinishesAndDoesNotNeedToBeRetried_thenDataIsDeleted() {
-    let startExportExpectation = self.expectation(description: "Export has started")
+    let startExportExpectation = expectation(description: "Export has started")
 
     var mockDataExporter = DataExporterMock(exportStatus: .mockWith(needsRetry: false))
     mockDataExporter.onExport = { _ in startExportExpectation.fulfill() }
@@ -84,7 +84,7 @@ class DataExportWorkerTests: XCTestCase {
   }
 
   func testGivenDataToExport_whenExportFinishesAndNeedsToBeRetried_thenDataIsPreserved() {
-    let startExportExpectation = self.expectation(description: "Export has started")
+    let startExportExpectation = expectation(description: "Export has started")
 
     var mockDataExporter = DataExporterMock(exportStatus: .mockWith(needsRetry: true))
     mockDataExporter.onExport = { _ in startExportExpectation.fulfill() }
@@ -184,7 +184,7 @@ class DataExportWorkerTests: XCTestCase {
       }
     }
 
-    let exportExpectation = self.expectation(description: "value exported")
+    let exportExpectation = expectation(description: "value exported")
 
     var mockDataExporter = DataExporterMock(exportStatus: .mockWith(needsRetry: false))
 
@@ -232,9 +232,9 @@ class DataExportWorkerTests: XCTestCase {
   }
 
   func testItFlushesAllData() {
-    let v1ExportExpectation = self.expectation(description: "V1 exported")
-    let v2ExportExpectation = self.expectation(description: "V2 exported")
-    let v3ExportExpectation = self.expectation(description: "V3 exported")
+    let v1ExportExpectation = expectation(description: "V1 exported")
+    let v2ExportExpectation = expectation(description: "V2 exported")
+    let v3ExportExpectation = expectation(description: "V3 exported")
 
     var mockDataExporter = DataExporterMock(exportStatus: .mockWith(needsRetry: false))
 

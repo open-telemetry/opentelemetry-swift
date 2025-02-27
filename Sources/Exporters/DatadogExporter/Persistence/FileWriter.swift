@@ -18,7 +18,7 @@ internal final class FileWriter {
   init(dataFormat: DataFormat, orchestrator: FilesOrchestrator) {
     self.dataFormat = dataFormat
     self.orchestrator = orchestrator
-    self.jsonEncoder = JSONEncoder.default()
+    jsonEncoder = JSONEncoder.default()
   }
 
   // MARK: - Writing data

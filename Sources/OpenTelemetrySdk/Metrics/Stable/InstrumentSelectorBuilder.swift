@@ -15,27 +15,27 @@ public class InstrumentSelectorBuilder {
   public init() {}
 
   public func setInstrument(type: InstrumentType) -> Self {
-    self.instrumentType = type
+    instrumentType = type
     return self
   }
 
   public func setInstrument( name: String) -> Self {
-    self.instrumentName = name
+    instrumentName = name
     return self
   }
 
   public func setMeter(name: String) -> Self {
-    self.meterName = name
+    meterName = name
     return self
   }
 
   public func setMeter(version: String) -> Self {
-    self.meterVersion = version
+    meterVersion = version
     return self
   }
 
   public func setMeter(schemaUrl: String) -> Self {
-    self.meterSchemaUrl = schemaUrl
+    meterSchemaUrl = schemaUrl
     return self
   }
 

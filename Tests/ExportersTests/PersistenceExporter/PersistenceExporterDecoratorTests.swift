@@ -106,8 +106,8 @@ class PersistenceExporterDecoratorTests: XCTestCase {
   }
 
   func testWhenItIsFlushed_thenItFlushesTheWriterAndWorker() {
-    let writerIsFlushedExpectation = self.expectation(description: "FileWriter was flushed")
-    let workerIsFlushedExpectation = self.expectation(description: "DataExportWorker was flushed")
+    let writerIsFlushedExpectation = expectation(description: "FileWriter was flushed")
+    let workerIsFlushedExpectation = expectation(description: "DataExportWorker was flushed")
 
     var worker = DataExportWorkerMock()
     let fileWriter = FileWriterMock()
@@ -131,9 +131,9 @@ class PersistenceExporterDecoratorTests: XCTestCase {
   }
 
   func testWhenObjectsDataIsExportedSeparately_thenObjectsAreExported() throws {
-    let v1ExportExpectation = self.expectation(description: "V1 exported")
-    let v2ExportExpectation = self.expectation(description: "V2 exported")
-    let v3ExportExpectation = self.expectation(description: "V3 exported")
+    let v1ExportExpectation = expectation(description: "V1 exported")
+    let v2ExportExpectation = expectation(description: "V2 exported")
+    let v3ExportExpectation = expectation(description: "V3 exported")
 
     let decoratedExporter = DecoratedExporterMock<String>(exporter: { values in
       values.forEach { value in
@@ -170,9 +170,9 @@ class PersistenceExporterDecoratorTests: XCTestCase {
   }
 
   func testWhenObjectsDataIsExportedConcatenated_thenObjectsAreExported() throws {
-    let v1ExportExpectation = self.expectation(description: "V1 exported")
-    let v2ExportExpectation = self.expectation(description: "V2 exported")
-    let v3ExportExpectation = self.expectation(description: "V3 exported")
+    let v1ExportExpectation = expectation(description: "V1 exported")
+    let v2ExportExpectation = expectation(description: "V2 exported")
+    let v3ExportExpectation = expectation(description: "V3 exported")
 
     let decoratedExporter = DecoratedExporterMock<String>(exporter: { values in
       values.forEach { value in

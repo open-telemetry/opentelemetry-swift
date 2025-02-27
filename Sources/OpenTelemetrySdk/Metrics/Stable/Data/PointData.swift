@@ -27,9 +27,9 @@ public class PointData: Equatable, Encodable {
   }
 
   func isEqual(to other: PointData) -> Bool {
-    return self.startEpochNanos == other.startEpochNanos &&
-      self.endEpochNanos == other.endEpochNanos &&
-      self.attributes == other.attributes &&
-      self.exemplars == exemplars
+    return startEpochNanos == other.startEpochNanos &&
+      endEpochNanos == other.endEpochNanos &&
+      attributes == other.attributes &&
+      exemplars == exemplars
   }
 }

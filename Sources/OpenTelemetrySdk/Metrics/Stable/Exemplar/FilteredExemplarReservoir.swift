@@ -11,7 +11,7 @@ public class FilteredExemplarReservoir: ExemplarReservoir {
   let reservoir: ExemplarReservoir
 
   init(filter: ExemplarFilter, reservoir: ExemplarReservoir) {
-    self.exemplarFilter = filter
+    exemplarFilter = filter
     self.reservoir = reservoir
   }
 

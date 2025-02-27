@@ -66,7 +66,7 @@ internal class DataUploadWorker: DataUploadWorkerType {
         self.delay.increase()
       }
 
-      self.scheduleNextUpload(after: self.delay.current)
+      scheduleNextUpload(after: self.delay.current)
     }
 
     self.uploadWork = uploadWork

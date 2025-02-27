@@ -51,7 +51,7 @@ internal final class Lock {
 
   /// Create a new lock.
   public init() {
-    let err = pthread_mutex_init(self.mutex, nil)
+    let err = pthread_mutex_init(mutex, nil)
     precondition(err == 0, "pthread_mutex_init failed with error \(err)")
   }
 
@@ -66,7 +66,7 @@ internal final class Lock {
   /// Whenever possible, consider using `withLock` instead of this method and
   /// `unlock`, to simplify lock handling.
   public func lock() {
-    let err = pthread_mutex_lock(self.mutex)
+    let err = pthread_mutex_lock(mutex)
     precondition(err == 0, "pthread_mutex_lock failed with error \(err)")
   }
 
@@ -75,7 +75,7 @@ internal final class Lock {
   /// Whenever possible, consider using `withLock` instead of this method and
   /// `lock`, to simplify lock handling.
   public func unlock() {
-    let err = pthread_mutex_unlock(self.mutex)
+    let err = pthread_mutex_unlock(mutex)
     precondition(err == 0, "pthread_mutex_unlock failed with error \(err)")
   }
 }
@@ -91,7 +91,7 @@ extension Lock {
   /// - Returns: The value returned by the block.
   @inlinable
   internal func withLock<T>(_ body: () throws -> T) rethrows -> T {
-    self.lock()
+    lock()
     defer {
       self.unlock()
     }
@@ -101,7 +101,7 @@ extension Lock {
   // specialise Void return (for performance)
   @inlinable
   internal func withLockVoid(_ body: () throws -> Void) rethrows {
-    try self.withLock(body)
+    try withLock(body)
   }
 }
 
@@ -115,7 +115,7 @@ internal final class ReadWriteLock {
 
   /// Create a new lock.
   public init() {
-    let err = pthread_rwlock_init(self.rwlock, nil)
+    let err = pthread_rwlock_init(rwlock, nil)
     precondition(err == 0, "pthread_rwlock_init failed with error \(err)")
   }
 
@@ -130,7 +130,7 @@ internal final class ReadWriteLock {
   /// Whenever possible, consider using `withLock` instead of this method and
   /// `unlock`, to simplify lock handling.
   public func lockRead() {
-    let err = pthread_rwlock_rdlock(self.rwlock)
+    let err = pthread_rwlock_rdlock(rwlock)
     precondition(err == 0, "pthread_rwlock_rdlock failed with error \(err)")
   }
 
@@ -139,7 +139,7 @@ internal final class ReadWriteLock {
   /// Whenever possible, consider using `withLock` instead of this method and
   /// `unlock`, to simplify lock handling.
   public func lockWrite() {
-    let err = pthread_rwlock_wrlock(self.rwlock)
+    let err = pthread_rwlock_wrlock(rwlock)
     precondition(err == 0, "pthread_rwlock_wrlock failed with error \(err)")
   }
 
@@ -148,7 +148,7 @@ internal final class ReadWriteLock {
   /// Whenever possible, consider using `withLock` instead of this method and
   /// `lock`, to simplify lock handling.
   public func unlock() {
-    let err = pthread_rwlock_unlock(self.rwlock)
+    let err = pthread_rwlock_unlock(rwlock)
     precondition(err == 0, "pthread_rwlock_unlock failed with error \(err)")
   }
 }
@@ -164,7 +164,7 @@ extension ReadWriteLock {
   /// - Returns: The value returned by the block.
   @inlinable
   internal func withReaderLock<T>(_ body: () throws -> T) rethrows -> T {
-    self.lockRead()
+    lockRead()
     defer {
       self.unlock()
     }
@@ -181,7 +181,7 @@ extension ReadWriteLock {
   /// - Returns: The value returned by the block.
   @inlinable
   internal func withWriterLock<T>(_ body: () throws -> T) rethrows -> T {
-    self.lockWrite()
+    lockWrite()
     defer {
       self.unlock()
     }
@@ -191,12 +191,12 @@ extension ReadWriteLock {
   // specialise Void return (for performance)
   @inlinable
   internal func withReaderLockVoid(_ body: () throws -> Void) rethrows {
-    try self.withReaderLock(body)
+    try withReaderLock(body)
   }
 
   // specialise Void return (for performance)
   @inlinable
   internal func withWriterLockVoid(_ body: () throws -> Void) rethrows {
-    try self.withWriterLock(body)
+    try withWriterLock(body)
   }
 }

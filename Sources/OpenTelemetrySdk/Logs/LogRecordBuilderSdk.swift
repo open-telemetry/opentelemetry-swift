@@ -37,12 +37,12 @@ public class LogRecordBuilderSdk: EventBuilder {
   }
 
   public func setObservedTimestamp(_ observed: Date) -> Self {
-    self.observedTimestamp = observed
+    observedTimestamp = observed
     return self
   }
 
   public func setSpanContext(_ context: OpenTelemetryApi.SpanContext) -> Self {
-    self.spanContext = context
+    spanContext = context
 
     return self
   }

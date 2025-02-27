@@ -34,7 +34,7 @@ public class PersistenceLogExporterDecorator: LogRecordExporter {
     exportCondition: @escaping () -> Bool = { true },
     performancePreset: PersistencePerformancePreset = .default
   ) throws {
-    self.persistenceExporter =
+    persistenceExporter =
       PersistenceExporterDecorator<LogRecordDecoratedExporter>(
         decoratedExporter: LogRecordDecoratedExporter(
           logRecordExporter: logRecordExporter),

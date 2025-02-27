@@ -21,13 +21,13 @@ public class HistogramAggregator<T: SignedNumeric & Comparable>: Aggregator<T> {
     if let explicitBoundaries = explicitBoundaries, explicitBoundaries.count > 0 {
       // we need to an ordered set to be able to correctly compute count for each
       // boundary since we'll iterate on each in order.
-      self.boundaries = explicitBoundaries.sorted { $0 < $1 }
+      boundaries = explicitBoundaries.sorted { $0 < $1 }
     } else {
-      self.boundaries = defaultBoundaries
+      boundaries = defaultBoundaries
     }
 
-    self.histogram = Histogram<T>(boundaries: self.boundaries)
-    self.pointCheck = Histogram<T>(boundaries: self.boundaries)
+    histogram = Histogram<T>(boundaries: boundaries)
+    pointCheck = Histogram<T>(boundaries: boundaries)
   }
 
   override public func update(value: T) {

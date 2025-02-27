@@ -75,15 +75,15 @@ private struct SpanExporterData {
 
   init(span: SpanData) {
     self.span = span.name
-    self.traceId = span.traceId.hexString
-    self.spanId = span.spanId.hexString
-    self.spanKind = span.kind.rawValue
-    self.traceFlags = span.traceFlags
-    self.traceState = span.traceState
-    self.parentSpanId = span.parentSpanId?.hexString ?? SpanId.invalid.hexString
-    self.start = span.startTime
-    self.duration = span.endTime.timeIntervalSince(span.startTime)
-    self.attributes = span.attributes
+    traceId = span.traceId.hexString
+    spanId = span.spanId.hexString
+    spanKind = span.kind.rawValue
+    traceFlags = span.traceFlags
+    traceState = span.traceState
+    parentSpanId = span.parentSpanId?.hexString ?? SpanId.invalid.hexString
+    start = span.startTime
+    duration = span.endTime.timeIntervalSince(span.startTime)
+    attributes = span.attributes
   }
 }
 
@@ -119,7 +119,7 @@ extension SpanExporterData: Encodable {
     var intValue: Int?
 
     init?(intValue: Int) {
-      self.stringValue = "\(intValue)"
+      stringValue = "\(intValue)"
       self.intValue = intValue
     }
 

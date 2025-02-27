@@ -35,7 +35,7 @@ import Foundation
     /// - parameter withAlgorithm: Compression algorithm to use. See the `CompressionAlgorithm` type
     /// - returns: compressed data
     func compress(withAlgorithm algo: CompressionAlgorithm) -> Data? {
-      return self.withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
+      return withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
         let config = (operation: COMPRESSION_STREAM_ENCODE, algorithm: algo.lowLevelType)
         return perform(config, source: sourcePtr, sourceSize: count)
       }
@@ -45,7 +45,7 @@ import Foundation
     /// - parameter withAlgorithm: Compression algorithm to use. See the `CompressionAlgorithm` type
     /// - returns: decompressed data
     func decompress(withAlgorithm algo: CompressionAlgorithm) -> Data? {
-      return self.withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
+      return withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
         let config = (operation: COMPRESSION_STREAM_DECODE, algorithm: algo.lowLevelType)
         return perform(config, source: sourcePtr, sourceSize: count)
       }
@@ -68,7 +68,7 @@ import Foundation
     /// - returns: raw deflated data according to [RFC-1951](https://tools.ietf.org/html/rfc1951).
     /// - note: Fixed at compression level 5 (best trade off between speed and time)
     func deflate() -> Data? {
-      return self.withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
+      return withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
         let config = (operation: COMPRESSION_STREAM_ENCODE, algorithm: COMPRESSION_ZLIB)
         return perform(config, source: sourcePtr, sourceSize: count)
       }
@@ -78,7 +78,7 @@ import Foundation
     /// stream according to [RFC-1951](https://tools.ietf.org/html/rfc1951).
     /// - returns: uncompressed data
     func inflate() -> Data? {
-      return self.withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
+      return withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
         let config = (operation: COMPRESSION_STREAM_DECODE, algorithm: COMPRESSION_ZLIB)
         return perform(config, source: sourcePtr, sourceSize: count)
       }
@@ -90,14 +90,14 @@ import Foundation
     func zip() -> Data? {
       let header = Data([0x78, 0x5e])
 
-      let deflated = self.withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
+      let deflated = withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
         let config = (operation: COMPRESSION_STREAM_ENCODE, algorithm: COMPRESSION_ZLIB)
         return perform(config, source: sourcePtr, sourceSize: count, preload: header)
       }
 
       guard var result = deflated else { return nil }
 
-      var adler = self.adler32().checksum.bigEndian
+      var adler = adler32().checksum.bigEndian
       result.append(Data(bytes: &adler, count: MemoryLayout<UInt32>.size))
 
       return result
@@ -151,7 +151,7 @@ import Foundation
 
       header.append(contentsOf: [0x00, 0x03]) // normal compression level, unix file type
 
-      let deflated = self.withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
+      let deflated = withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
         let config = (operation: COMPRESSION_STREAM_ENCODE, algorithm: COMPRESSION_ZLIB)
         return perform(config, source: sourcePtr, sourceSize: count, preload: header)
       }
@@ -159,7 +159,7 @@ import Foundation
       guard var result = deflated else { return nil }
 
       // append checksum
-      var crc32: UInt32 = self.crc32().checksum.littleEndian
+      var crc32: UInt32 = crc32().checksum.littleEndian
       result.append(Data(bytes: &crc32, count: MemoryLayout<UInt32>.size))
 
       // append size of original data
@@ -401,7 +401,7 @@ import Foundation
 
   fileprivate extension Data {
     func withUnsafeBytes<ResultType, ContentType>(_ body: (UnsafePointer<ContentType>) throws -> ResultType) rethrows -> ResultType {
-      return try self.withUnsafeBytes({ (rawBufferPointer: UnsafeRawBufferPointer) -> ResultType in
+      return try withUnsafeBytes({ (rawBufferPointer: UnsafeRawBufferPointer) -> ResultType in
         return try body(rawBufferPointer.bindMemory(to: ContentType.self).baseAddress!)
       })
     }

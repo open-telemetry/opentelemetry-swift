@@ -21,11 +21,11 @@ internal struct DataUploadDelay: Delay {
   private var delay: TimeInterval
 
   init(performance: UploadPerformancePreset) {
-    self.defaultDelay = performance.defaultUploadDelay
-    self.minDelay = performance.minUploadDelay
-    self.maxDelay = performance.maxUploadDelay
-    self.changeRate = performance.uploadDelayChangeRate
-    self.delay = performance.initialUploadDelay
+    defaultDelay = performance.defaultUploadDelay
+    minDelay = performance.minUploadDelay
+    maxDelay = performance.maxUploadDelay
+    changeRate = performance.uploadDelayChangeRate
+    delay = performance.initialUploadDelay
   }
 
   var current: TimeInterval { delay }

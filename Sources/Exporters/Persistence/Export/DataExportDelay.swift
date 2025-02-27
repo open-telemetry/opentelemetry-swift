@@ -21,11 +21,11 @@ internal struct DataExportDelay: Delay {
   private var delay: TimeInterval
 
   init(performance: ExportPerformancePreset) {
-    self.defaultDelay = performance.defaultExportDelay
-    self.minDelay = performance.minExportDelay
-    self.maxDelay = performance.maxExportDelay
-    self.changeRate = performance.exportDelayChangeRate
-    self.delay = performance.initialExportDelay
+    defaultDelay = performance.defaultExportDelay
+    minDelay = performance.minExportDelay
+    maxDelay = performance.maxExportDelay
+    changeRate = performance.exportDelayChangeRate
+    delay = performance.initialExportDelay
   }
 
   var current: TimeInterval { delay }

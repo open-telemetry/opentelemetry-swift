@@ -153,7 +153,7 @@ class SpanBuilderSdk: SpanBuilder {
   }
 
   func startSpan() -> Span {
-    let createdSpan = self.prepareSpan()
+    let createdSpan = prepareSpan()
 
     if startAsActive {
       OpenTelemetry.instance.contextProvider.setActiveSpan(createdSpan)
@@ -162,7 +162,7 @@ class SpanBuilderSdk: SpanBuilder {
   }
 
   public func withActiveSpan<T>(_ operation: (any SpanBase) throws -> T) rethrows -> T {
-    let createdSpan = self.prepareSpan()
+    let createdSpan = prepareSpan()
     defer {
       createdSpan.end()
     }
@@ -175,7 +175,7 @@ class SpanBuilderSdk: SpanBuilder {
   #if canImport(_Concurrency)
     @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
     public func withActiveSpan<T>(_ operation: (any SpanBase) async throws -> T) async rethrows -> T {
-      let createdSpan = self.prepareSpan()
+      let createdSpan = prepareSpan()
       defer {
         createdSpan.end()
       }

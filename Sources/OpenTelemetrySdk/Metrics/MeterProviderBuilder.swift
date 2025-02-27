@@ -16,17 +16,17 @@ public class MeterProviderBuilder {
   public init() {}
 
   public func with(processor: MetricProcessor) -> Self {
-    self.metricProcessor = processor
+    metricProcessor = processor
     return self
   }
 
   public func with(exporter: MetricExporter) -> Self {
-    self.metricExporter = exporter
+    metricExporter = exporter
     return self
   }
 
   public func with(pushInterval: TimeInterval) -> Self {
-    self.metricPushInterval = pushInterval
+    metricPushInterval = pushInterval
     return self
   }
 

@@ -42,18 +42,18 @@ public class ExporterMetrics {
     self.meterProvider = meterProvider
     self.exporterName = exporterName
     self.transportName = transportName.rawValue
-    self.seenAttrs = [
+    seenAttrs = [
       ExporterMetrics.ATTRIBUTE_KEY_TYPE: .string(type)
     ]
-    self.successAttrs = [
+    successAttrs = [
       ExporterMetrics.ATTRIBUTE_KEY_SUCCESS: .bool(true)
     ]
-    self.failedAttrs = [
+    failedAttrs = [
       ExporterMetrics.ATTRIBUTE_KEY_SUCCESS: .bool(false)
     ]
 
-    self.seen = meter.counterBuilder(name: "\(exporterName).exporter.seen").build()
-    self.exported = meter.counterBuilder(name: "\(exporterName).exporter.exported").build()
+    seen = meter.counterBuilder(name: "\(exporterName).exporter.seen").build()
+    exported = meter.counterBuilder(name: "\(exporterName).exporter.exported").build()
   }
 
   public func addSeen(value: Int) {

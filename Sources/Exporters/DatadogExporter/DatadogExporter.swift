@@ -13,7 +13,7 @@ public class DatadogExporter: SpanExporter, MetricExporter {
   var metricsExporter: MetricsExporter?
 
   public init(config: ExporterConfiguration) throws {
-    self.configuration = config
+    configuration = config
     spansExporter = try SpansExporter(config: configuration)
     logsExporter = try LogsExporter(config: configuration)
     metricsExporter = try MetricsExporter(config: configuration)
@@ -50,7 +50,7 @@ public class DatadogExporter: SpanExporter, MetricExporter {
   }
 
   public func shutdown(explicitTimeout: TimeInterval?) {
-    _ = self.flush()
+    _ = flush()
   }
 
   public func endpointURLs() -> Set<String> {

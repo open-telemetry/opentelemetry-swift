@@ -65,7 +65,7 @@ internal class DataExportWorker: DataExportWorkerProtocol {
         self.delay.increase()
       }
 
-      self.scheduleNextExport(after: self.delay.current)
+      scheduleNextExport(after: self.delay.current)
     }
 
     self.exportWork = exportWork

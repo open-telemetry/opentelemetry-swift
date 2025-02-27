@@ -99,17 +99,17 @@ class ServerMock {
   init(delivery: Delivery) {
     switch delivery {
     case let .success(response: response, data: data):
-      self.mockedResponse = response
-      self.mockedData = data
-      self.mockedError = nil
+      mockedResponse = response
+      mockedData = data
+      mockedError = nil
     case let .failure(error):
-      self.mockedResponse = nil
-      self.mockedData = nil
-      self.mockedError = error
+      mockedResponse = nil
+      mockedData = nil
+      mockedError = error
     }
     precondition(Thread.isMainThread, "`ServerMock` should be initialized on the main thread.")
     precondition(ServerMock.activeInstance == nil, "Only one active instance of `ServerMock` is allowed at a time.")
-    self.queue = DispatchQueue(label: "com.datadoghq.ServerMock-\(urlSessionUUID.uuidString)")
+    queue = DispatchQueue(label: "com.datadoghq.ServerMock-\(urlSessionUUID.uuidString)")
 
     ServerMock.activeInstance = self
   }

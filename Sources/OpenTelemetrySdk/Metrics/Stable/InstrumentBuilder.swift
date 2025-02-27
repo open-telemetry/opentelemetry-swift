@@ -19,7 +19,7 @@ protocol InstrumentBuilder: AnyObject {
 extension InstrumentBuilder {
   public func setUnit(_ units: String) -> Self {
     // todo : validate unit
-    self.unit = unit
+    unit = unit
     return self
   }
 

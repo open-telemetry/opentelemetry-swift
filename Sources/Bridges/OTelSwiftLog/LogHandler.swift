@@ -24,10 +24,10 @@ public struct OTelLogHandler: LogHandler {
   public var metadata: Logging.Logger.Metadata = [:]
   public subscript(metadataKey key: String) -> Logging.Logger.Metadata.Value? {
     get {
-      return self.metadata[key]
+      return metadata[key]
     }
     set {
-      self.metadata[key] = newValue
+      metadata[key] = newValue
     }
   }
 
@@ -39,7 +39,7 @@ public struct OTelLogHandler: LogHandler {
               includeTraceContext: Bool = true,
               attributes: [String: AttributeValue] = [String: AttributeValue]()) {
     self.loggerProvider = loggerProvider
-    self.logger = self.loggerProvider.loggerBuilder(instrumentationScopeName: bridgeName)
+    logger = self.loggerProvider.loggerBuilder(instrumentationScopeName: bridgeName)
       .setInstrumentationVersion(version)
       .setEventDomain("device")
       .setIncludeTraceContext(true)
@@ -74,7 +74,7 @@ public struct OTelLogHandler: LogHandler {
     otelattributes.merge(structMetadata) { _, new in new }
 
     // Build the log record and emit it
-    let event = self.logger.logRecordBuilder().setSeverity(convertSeverity(level: level))
+    let event = logger.logRecordBuilder().setSeverity(convertSeverity(level: level))
       .setBody(AttributeValue.string(message.description))
       .setAttributes(otelattributes)
 

@@ -32,12 +32,12 @@ public extension ContextManager where Self: ImperativeContextManager {
   func withCurrentContextValue<T>(forKey key: OpenTelemetryContextKeys, value: AnyObject?, _ operation: () async throws -> T) async rethrows -> T {
     var oldValue: AnyObject?
     if let value {
-      self.setCurrentContextValue(forKey: key, value: value)
+      setCurrentContextValue(forKey: key, value: value)
     } else {
       // Remove the current value for the key for the duration of the closure
-      oldValue = self.getCurrentContextValue(forKey: key)
+      oldValue = getCurrentContextValue(forKey: key)
       if let oldValue {
-        self.removeContextValue(forKey: key, value: oldValue)
+        removeContextValue(forKey: key, value: oldValue)
       }
     }
 
@@ -59,12 +59,12 @@ public extension ContextManager where Self: ImperativeContextManager {
   func withCurrentContextValue<T>(forKey key: OpenTelemetryContextKeys, value: AnyObject?, _ operation: () throws -> T) rethrows -> T {
     var oldValue: AnyObject?
     if let value {
-      self.setCurrentContextValue(forKey: key, value: value)
+      setCurrentContextValue(forKey: key, value: value)
     } else {
       // Remove the current value for the key for the duration of the closure
-      oldValue = self.getCurrentContextValue(forKey: key)
+      oldValue = getCurrentContextValue(forKey: key)
       if let oldValue {
-        self.removeContextValue(forKey: key, value: oldValue)
+        removeContextValue(forKey: key, value: oldValue)
       }
     }
 

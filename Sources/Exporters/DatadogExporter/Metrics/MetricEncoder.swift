@@ -45,7 +45,7 @@ internal struct MetricEncoder {
     var intValue: Int?
     init?(stringValue: String) { self.stringValue = stringValue }
     init?(intValue: Int) { return nil }
-    init(_ string: String) { self.stringValue = string }
+    init(_ string: String) { stringValue = string }
   }
 
   func encode(_ metric: DDMetric, to encoder: Encoder) throws {

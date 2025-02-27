@@ -17,11 +17,11 @@ public class DoubleExplicitBucketHistogramAggregator: StableAggregator {
     internal init(boundaries: [Double], exemplarReservoir: ExemplarReservoir) {
       self.boundaries = boundaries
 
-      self.sum = 0
+      sum = 0
       self.min = Double.greatestFiniteMagnitude
       self.max = -1
-      self.count = 0
-      self.counts = Array(repeating: 0, count: boundaries.count + 1)
+      count = 0
+      counts = Array(repeating: 0, count: boundaries.count + 1)
       super.init(exemplarReservoir: exemplarReservoir)
     }
 
@@ -93,7 +93,7 @@ public class DoubleExplicitBucketHistogramAggregator: StableAggregator {
   }
 
   public func createHandle() -> AggregatorHandle {
-    return Handle(boundaries: self.boundaries, exemplarReservoir: self.reservoirSupplier())
+    return Handle(boundaries: boundaries, exemplarReservoir: reservoirSupplier())
   }
 
   public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [PointData], temporality: AggregationTemporality) -> StableMetricData {

@@ -22,9 +22,9 @@ public class ExemplarData: Equatable, Encodable {
   }
 
   func isEqual(to other: ExemplarData) -> Bool {
-    return self.epochNanos == other.epochNanos &&
-      self.spanContext == other.spanContext &&
-      self.filteredAttributes == other.filteredAttributes
+    return epochNanos == other.epochNanos &&
+      spanContext == other.spanContext &&
+      filteredAttributes == other.filteredAttributes
   }
 }
 
@@ -37,7 +37,7 @@ public final class DoubleExemplarData: ExemplarData {
   }
 
   override func isEqual(to other: ExemplarData) -> Bool {
-    return self.value == (other as! DoubleExemplarData).value &&
+    return value == (other as! DoubleExemplarData).value &&
       super.isEqual(to: other)
   }
 }
@@ -50,7 +50,7 @@ public final class LongExemplarData: ExemplarData {
   }
 
   override func isEqual(to other: ExemplarData) -> Bool {
-    return self.value == (other as! LongExemplarData).value &&
+    return value == (other as! LongExemplarData).value &&
       super.isEqual(to: other)
   }
 }

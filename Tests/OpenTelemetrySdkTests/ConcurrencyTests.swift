@@ -26,7 +26,7 @@
     }
 
     override func tearDown() async throws {
-      OpenTelemetry.registerTracerProvider(tracerProvider: self.oldTracerProvider!)
+      OpenTelemetry.registerTracerProvider(tracerProvider: oldTracerProvider!)
       try await super.tearDown()
     }
 

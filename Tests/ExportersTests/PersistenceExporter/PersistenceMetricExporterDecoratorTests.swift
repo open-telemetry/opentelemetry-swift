@@ -33,7 +33,7 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
   }
 
   func testWhenExportMetricIsCalled_thenMetricsAreExported() throws {
-    let metricsExportExpectation = self.expectation(description: "metrics exported")
+    let metricsExportExpectation = expectation(description: "metrics exported")
 
     let mockMetricExporter = MetricExporterMock(onExport: { metrics in
       metrics.forEach { metric in

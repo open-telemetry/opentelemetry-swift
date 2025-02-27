@@ -101,7 +101,7 @@ internal class PersistenceExporterDecorator<T>
 
     self.fileWriter = fileWriter
 
-    self.worker = createWorker(
+    worker = createWorker(
       DecoratedDataExporter(decoratedExporter: decoratedExporter))
   }
 

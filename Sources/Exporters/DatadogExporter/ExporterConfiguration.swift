@@ -44,7 +44,7 @@ public struct ExporterConfiguration {
     self.serviceName = serviceName
     self.resource = resource
     self.applicationName = applicationName
-    self.version = applicationVersion
+    version = applicationVersion
     self.environment = environment
     self.apiKey = apiKey
     self.endpoint = endpoint

@@ -48,8 +48,8 @@ class PersistenceSpanExporterDecoratorTests: XCTestCase {
   }
 
   func testWhenExportMetricIsCalled_thenSpansAreExported() throws {
-    let spansExportExpectation = self.expectation(description: "spans exported")
-    let exporterShutdownExpectation = self.expectation(description: "exporter shut down")
+    let spansExportExpectation = expectation(description: "spans exported")
+    let exporterShutdownExpectation = expectation(description: "exporter shut down")
 
     let mockSpanExporter = SpanExporterMock(onExport: { spans, _ in
       spans.forEach { span in

@@ -21,10 +21,10 @@ open class OpenTelemetryContextTestCase: XCTestCase {
   private var cachedManagers: [any ContextManager]?
 
   open override func perform(_ run: XCTestRun) {
-    self.cachedManagers = self.contextManagers
-    if self.cachedManagers!.isEmpty {
+    cachedManagers = contextManagers
+    if cachedManagers!.isEmpty {
       // Bail out before any other output is printed by the testing system to avoid confusion.
-      print("Skipping Test Case '\(self.name)' due to no applicable context managers")
+      print("Skipping Test Case '\(name)' due to no applicable context managers")
       return
     }
 
@@ -32,7 +32,7 @@ open class OpenTelemetryContextTestCase: XCTestCase {
   }
 
   open override func invokeTest() {
-    for manager in self.cachedManagers! {
+    for manager in cachedManagers! {
       // Install the desired context manager temporarily and re-run the test method.
       OpenTelemetry.withContextManager(manager) {
         super.invokeTest()

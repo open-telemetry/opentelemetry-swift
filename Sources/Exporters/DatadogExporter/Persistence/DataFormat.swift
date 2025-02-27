@@ -21,8 +21,8 @@ internal struct DataFormat {
     suffix: String,
     separator: String
   ) {
-    self.prefixData = prefix.data(using: .utf8)! // swiftlint:disable:this force_unwrapping
-    self.suffixData = suffix.data(using: .utf8)! // swiftlint:disable:this force_unwrapping
-    self.separatorData = separator.data(using: .utf8)! // swiftlint:disable:this force_unwrapping
+    prefixData = prefix.data(using: .utf8)! // swiftlint:disable:this force_unwrapping
+    suffixData = suffix.data(using: .utf8)! // swiftlint:disable:this force_unwrapping
+    separatorData = separator.data(using: .utf8)! // swiftlint:disable:this force_unwrapping
   }
 }

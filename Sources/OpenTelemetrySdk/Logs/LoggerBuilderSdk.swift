@@ -30,7 +30,7 @@ public class LoggerBuilderSdk: LoggerBuilder {
   }
 
   public func setInstrumentationVersion(_ instrumentationVersion: String) -> Self {
-    self.instrumentationScopeVersion = instrumentationVersion
+    instrumentationScopeVersion = instrumentationVersion
     return self
   }
 

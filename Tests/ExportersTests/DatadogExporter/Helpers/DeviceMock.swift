@@ -22,12 +22,12 @@
       batteryState: UIDevice.BatteryState = .unknown,
       batteryLevel: Float = 0
     ) {
-      self._model = model
-      self._systemName = systemName
-      self._systemVersion = systemVersion
-      self._isBatteryMonitoringEnabled = isBatteryMonitoringEnabled
-      self._batteryState = batteryState
-      self._batteryLevel = batteryLevel
+      _model = model
+      _systemName = systemName
+      _systemVersion = systemVersion
+      _isBatteryMonitoringEnabled = isBatteryMonitoringEnabled
+      _batteryState = batteryState
+      _batteryLevel = batteryLevel
     }
 
     override var model: String { _model }

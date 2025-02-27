@@ -47,8 +47,8 @@ extension String {
   var utf8Data: Data { data(using: .utf8)! }
 
   func removingPrefix(_ prefix: String) -> String {
-    if self.hasPrefix(prefix) {
-      return String(self.dropFirst(prefix.count))
+    if hasPrefix(prefix) {
+      return String(dropFirst(prefix.count))
     } else {
       fatalError("`\(self)` has no prefix of `\(prefix)`")
     }
@@ -67,7 +67,7 @@ extension InputStream {
 
     let buffer: UnsafeMutablePointer<UInt8> = .allocate(capacity: expectedSize)
     while hasBytesAvailable {
-      let bytesRead = self.read(buffer, maxLength: expectedSize)
+      let bytesRead = read(buffer, maxLength: expectedSize)
 
       guard bytesRead >= 0 else {
         fatalError("Stream error occurred.")

@@ -111,12 +111,12 @@ public struct OpenTelemetry {
   static func withContextManager<T>(
     _ manager: ContextManager, _ operation: () throws -> T
   ) rethrows -> T {
-    let old = self.instance.contextProvider.contextManager
+    let old = instance.contextProvider.contextManager
     defer {
       self.registerContextManager(contextManager: old)
     }
 
-    self.registerContextManager(contextManager: manager)
+    registerContextManager(contextManager: manager)
 
     return try operation()
   }

@@ -74,7 +74,7 @@ class DataUploadWorkerTests: XCTestCase {
 
   func testGivenDataToUpload_whenUploadFinishesAndDoesNotNeedToBeRetried_thenDataIsDeleted() throws {
     throw XCTSkip("unstable test skipped.")
-    let startUploadExpectation = self.expectation(description: "Upload has started")
+    let startUploadExpectation = expectation(description: "Upload has started")
 
     var mockDataUploader = DataUploaderMock(uploadStatus: .mockWith(needsRetry: false))
     mockDataUploader.onUpload = { startUploadExpectation.fulfill() }
@@ -102,7 +102,7 @@ class DataUploadWorkerTests: XCTestCase {
   func testGivenDataToUpload_whenUploadFinishesAndNeedsToBeRetried_thenDataIsPreserved() throws {
     throw XCTSkip("unstable test skipped.")
 
-    let startUploadExpectation = self.expectation(description: "Upload has started")
+    let startUploadExpectation = expectation(description: "Upload has started")
 
     var mockDataUploader = DataUploaderMock(uploadStatus: .mockWith(needsRetry: true))
     mockDataUploader.onUpload = { startUploadExpectation.fulfill() }

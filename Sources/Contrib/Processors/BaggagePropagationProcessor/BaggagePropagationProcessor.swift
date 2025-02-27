@@ -24,7 +24,7 @@ public struct BaggagePropagationProcessor: SpanProcessor {
     span: any ReadableSpan
   ) {
     if let baggage = activeBaggage() {
-      let filteredEntries = baggage.getEntries().filter(self.filter)
+      let filteredEntries = baggage.getEntries().filter(filter)
       for entry in filteredEntries {
         span.setAttribute(key: entry.key.name, value: entry.value.string)
       }
