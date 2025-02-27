@@ -152,7 +152,6 @@ class AttributeValueTest: XCTestCase {
                                                 from: #"{"string":{"_0":"MyStringAttributeValue"}, "int":{"_0":1234}}"#.data(using: .utf8)!))
     }
     
-    #if swift(>=5.5)
     // this test covers forward compatibility of the pre swift 5.5 encoding with post swift 5.5 decoding
     func testAttributeValue_ExplicitCodableForwardCompatibility() throws {
         
@@ -231,5 +230,4 @@ class AttributeValueTest: XCTestCase {
         XCTAssertThrowsError(try decoder.decode(AttributeValueExplicitCodable.self,
                                                 from: #"{"string":{"_0":"MyStringAttributeValue"}, "int":{"_0":1234}}"#.data(using: .utf8)!))
     }
-    #endif
 }

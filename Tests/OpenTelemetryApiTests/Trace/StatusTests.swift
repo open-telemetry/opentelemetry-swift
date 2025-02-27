@@ -15,7 +15,7 @@ final class StatusTests: XCTestCase {
         let statusError = Status.error(description: "Error")
         XCTAssertFalse(statusError.isOk)
     }
-
+    
     func testStatusIsError() {
         let statusOK = Status.ok
         XCTAssertFalse(statusOK.isError)
@@ -50,7 +50,6 @@ final class StatusTests: XCTestCase {
                                                 from: #"{"error":{"description":"Error"}, "ok":{}}"#.data(using: .utf8)!))
     }
     
-    #if swift(>=5.5)
     // this test covers forward compatibility of the pre swift 5.5 encoding with post swift 5.5 decoding
     func testStatusExplicitCodableForwardCompatibility() throws {
         let encoder = JSONEncoder()
@@ -76,5 +75,4 @@ final class StatusTests: XCTestCase {
         XCTAssertThrowsError(try decoder.decode(StatusExplicitCodable.self,
                                                 from: #"{"error":{"description":"Error"}, "ok":{}}"#.data(using: .utf8)!))
     }
-    #endif
 }

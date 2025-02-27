@@ -229,23 +229,4 @@ internal struct AttributeValueExplicitCodable: Codable {
   }
 }
 
-#if swift(>=5.5)
-  // swift 5.5 supports synthesizing Codable for enums with associated values
-  // see https://github.com/apple/swift-evolution/blob/main/proposals/0295-codable-synthesis-for-enums-with-associated-values.md
-  extension AttributeValue: Codable {}
-#else
-  // for older swift versions use a forward compatible explicit Codable implementation
-  extension AttributeValue: Codable {
-    public init(from decoder: Decoder) throws {
-      let explicitDecoded = try AttributeValueExplicitCodable(from: decoder)
-
-      self = explicitDecoded.attributeValue
-    }
-
-    public func encode(to encoder: Encoder) throws {
-      let explicitEncoded = AttributeValueExplicitCodable(attributeValue: self)
-
-      try explicitEncoded.encode(to: encoder)
-    }
-  }
-#endif
+extension AttributeValue: Codable {}

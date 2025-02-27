@@ -128,24 +128,4 @@ internal struct StatusExplicitCodable: Codable {
   }
 }
 
-#if swift(>=5.5)
-  // swift 5.5 supports synthesizing Codable for enums with associated values
-  // see https://github.com/apple/swift-evolution/blob/main/proposals/0295-codable-synthesis-for-enums-with-associated-values.md
-  extension Status: Codable {}
-#else
-  // for older swift versions use a forward compatible explicit Codable implementation
-  extension Status: Codable {
-
-    public init(from decoder: Decoder) throws {
-      let explicitDecoded = try StatusExplicitCodable(from: decoder)
-
-      self = explicitDecoded.status
-    }
-
-    public func encode(to encoder: Encoder) throws {
-      let explicitEncoded = StatusExplicitCodable(status: self)
-
-      try explicitEncoded.encode(to: encoder)
-    }
-  }
-#endif
+extension Status: Codable {}

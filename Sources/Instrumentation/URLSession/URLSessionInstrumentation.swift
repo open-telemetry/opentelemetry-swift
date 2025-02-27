@@ -63,26 +63,6 @@ public class URLSessionInstrumentation {
   }
 
   private func injectInNSURLClasses() {
-    #if swift(<5.7)
-      let selectors = [
-        #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:)),
-        #selector(
-          URLSessionDataDelegate.urlSession(
-            _:dataTask:didReceive:completionHandler:)),
-        #selector(
-          URLSessionDataDelegate.urlSession(_:task:didCompleteWithError:)),
-        #selector(
-          URLSessionDataDelegate.urlSession(_:dataTask:didBecome:)!
-            as (URLSessionDataDelegate) -> (
-              URLSession, URLSessionDataTask, URLSessionDownloadTask
-            ) -> Void),
-        #selector(
-          URLSessionDataDelegate.urlSession(_:dataTask:didBecome:)!
-            as (URLSessionDataDelegate) -> (
-              URLSession, URLSessionDataTask, URLSessionStreamTask
-            ) -> Void)
-      ]
-    #else
       let selectors = [
         #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:)),
         #selector(
@@ -101,7 +81,6 @@ public class URLSessionInstrumentation {
               (URLSession, URLSessionDataTask, URLSessionStreamTask) -> Void
             )?)
       ]
-    #endif
     let classes =
       configuration.delegateClassesToInstrument
       ?? InstrumentationUtils.objc_getClassList()
@@ -671,19 +650,11 @@ public class URLSessionInstrumentation {
   private func injectDataTaskDidBecomeDownloadTaskIntoDelegateClass(
     cls: AnyClass
   ) {
-    #if swift(<5.7)
-      let selector = #selector(
-        URLSessionDataDelegate.urlSession(_:dataTask:didBecome:)!
-          as (URLSessionDataDelegate) -> (
-            URLSession, URLSessionDataTask, URLSessionDownloadTask
-          ) -> Void)
-    #else
       let selector = #selector(
         URLSessionDataDelegate.urlSession(_:dataTask:didBecome:)
           as (URLSessionDataDelegate) -> (
             (URLSession, URLSessionDataTask, URLSessionDownloadTask) -> Void
           )?)
-    #endif
     guard let original = class_getInstanceMethod(cls, selector) else {
       return
     }

@@ -12,11 +12,7 @@ public enum OpenTelemetryContextKeys: String {
 }
 
 public struct OpenTelemetryContextProvider {
-#if swift(>=5.9)
     package var contextManager: ContextManager
-#else
-    var contextManager: ContextManager
-#endif
 
     /// Returns the Span from the current context
     public var activeSpan: Span? {

@@ -1,98 +1,61 @@
-// swift-tools-version:5.2
+// swift-tools-version:5.9
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
+import Foundation
 
 let package = Package(
     name: "opentelemetry-swift",
     platforms: [
-        .macOS(.v10_13),
-        .iOS(.v12),
-        .tvOS(.v12)
+        .macOS(.v12),
+        .iOS(.v13),
+        .tvOS(.v13),
+        .watchOS(.v6),
     ],
     products: [
-        .library(name: "OpenTelemetryApi", type: .static, targets: ["OpenTelemetryApi"]),
-        .library(name: "OpenTelemetrySdk", type: .static, targets: ["OpenTelemetrySdk"]),
-        .library(name: "ResourceExtension", type: .static, targets: ["ResourceExtension"]),
-        .library(name: "URLSessionInstrumentation", type: .static, targets: ["URLSessionInstrumentation"]),
-        .library(name: "SignPostIntegration", type: .static, targets: ["SignPostIntegration"]),
-        .library(name: "OpenTracingShim-experimental", type: .static, targets: ["OpenTracingShim"]),
-        .library(name: "SwiftMetricsShim", type: .static, targets: ["SwiftMetricsShim"]),
-        .library(name: "JaegerExporter", type: .static, targets: ["JaegerExporter"]),
-        .library(name: "ZipkinExporter", type: .static, targets: ["ZipkinExporter"]),
-        .library(name: "StdoutExporter", type: .static, targets: ["StdoutExporter"]),
-        .library(name: "PrometheusExporter", type: .static, targets: ["PrometheusExporter"]),
-        .library(name: "OpenTelemetryProtocolExporter", type: .static, targets: ["OpenTelemetryProtocolExporterGrpc"]),
-        .library(name: "OpenTelemetryProtocolExporterHTTP", type: .static, targets: ["OpenTelemetryProtocolExporterHttp"]),
-        .library(name: "PersistenceExporter", type: .static, targets: ["PersistenceExporter"]),
-        .library(name: "InMemoryExporter", type: .static, targets: ["InMemoryExporter"]),
-        .library(name: "DatadogExporter", type: .static, targets: ["DatadogExporter"]),
-        .library(name: "NetworkStatus", type: .static, targets: ["NetworkStatus"]),
-        .library(name: "OTelSwiftLog", type: .static, targets: ["OTelSwiftLog"]),
+        .library(name: "OpenTelemetryApi", targets: ["OpenTelemetryApi"]),
+        .library(name: "OpenTelemetryConcurrency", targets: ["OpenTelemetryConcurrency"]),
+        .library(name: "OpenTelemetrySdk", targets: ["OpenTelemetrySdk"]),
+        .library(name: "SwiftMetricsShim", targets: ["SwiftMetricsShim"]),
+        .library(name: "StdoutExporter", targets: ["StdoutExporter"]),
+        .library(name: "PrometheusExporter", targets: ["PrometheusExporter"]),
+        .library(name: "OpenTelemetryProtocolExporter", targets: ["OpenTelemetryProtocolExporterGrpc"]),
+        .library(name: "OpenTelemetryProtocolExporterHTTP", targets: ["OpenTelemetryProtocolExporterHttp"]),
+        .library(name: "PersistenceExporter", targets: ["PersistenceExporter"]),
+        .library(name: "InMemoryExporter", targets: ["InMemoryExporter"]),
+        .library(name: "OTelSwiftLog", targets: ["OTelSwiftLog"]),
         .library(name: "DataCompression", type: .static, targets: ["DataCompression"]),
         .library(name: "BaggagePropagationProcessor", targets: ["BaggagePropagationProcessor"]),
-        .executable(name: "simpleExporter", targets: ["SimpleExporter"]),
-        .executable(name: "OTLPExporter", targets: ["OTLPExporter"]),
-        .executable(name: "OTLPHTTPExporter", targets: ["OTLPHTTPExporter"]),
+        .executable(name: "ConcurrencyContext", targets: ["ConcurrencyContext"]),
         .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/undefinedlabs/opentracing-objc", exact: "0.5.2"),
-        .package(url: "https://github.com/undefinedlabs/Thrift-Swift", exact: "1.1.1"),
-        .package(url: "https://github.com/apple/swift-nio.git", exact: "2.0.0"),
+        .package(url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
         .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.24.2"),
-        .package(url: "https://github.com/apple/swift-protobuf.git", exact: "1.20.2"),
-        .package(url: "https://github.com/apple/swift-log.git", exact: "1.4.4"),
-        .package(url: "https://github.com/apple/swift-metrics.git", exact: "2.1.1"),
-        .package(url: "https://github.com/ashleymills/Reachability.swift", exact: "5.1.0")
+        .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.20.2"),
+        .package(url: "https://github.com/apple/swift-log.git", from: "1.4.4"),
+        .package(url: "https://github.com/apple/swift-metrics.git", from: "2.1.1"),
+        .package(url: "https://github.com/apple/swift-atomics.git", from: "1.2.0")
     ],
     targets: [
         .target(name: "OpenTelemetryApi",
                 dependencies: []),
         .target(name: "OpenTelemetrySdk",
+                dependencies: ["OpenTelemetryApi",
+                    .product(name: "Atomics", package: "swift-atomics", condition: .when(platforms: [.linux]))]),
+        .target(name: "OpenTelemetryConcurrency",
                 dependencies: ["OpenTelemetryApi"]),
         .target(name: "OpenTelemetryTestUtils",
-               dependencies: ["OpenTelemetryApi", "OpenTelemetrySdk"]),
+                dependencies: ["OpenTelemetryApi", "OpenTelemetrySdk"]),
         .target(name: "OTelSwiftLog",
                 dependencies: ["OpenTelemetryApi",
-                              .product(name: "Logging", package: "swift-log")],
+                               .product(name: "Logging", package: "swift-log")],
                 path: "Sources/Bridges/OTelSwiftLog"),
-        .target(name: "ResourceExtension",
-                dependencies: ["OpenTelemetrySdk"],
-                path: "Sources/Instrumentation/SDKResourceExtension",
-                exclude: ["README.md"]),
-        .target(name: "URLSessionInstrumentation",
-                dependencies: ["OpenTelemetrySdk", "NetworkStatus"],
-                path: "Sources/Instrumentation/URLSession",
-                exclude: ["README.md"]),
-        .target(name: "NetworkStatus",
-                dependencies: [
-                    "OpenTelemetryApi",
-                    .product(name: "Reachability", package: "Reachability.swift")
-                ],
-                path: "Sources/Instrumentation/NetworkStatus",
-                linkerSettings: [.linkedFramework("CoreTelephony", .when(platforms: [.iOS]))]),
-        .target(name: "SignPostIntegration",
-                dependencies: ["OpenTelemetrySdk"],
-                path: "Sources/Instrumentation/SignPostIntegration",
-                exclude: ["README.md"]),
-        .target(name: "OpenTracingShim",
-                dependencies: ["OpenTelemetrySdk",
-                               "Opentracing"],
-                path: "Sources/Importers/OpenTracingShim",
-                exclude: ["README.md"]),
         .target(name: "SwiftMetricsShim",
                 dependencies: ["OpenTelemetrySdk",
                                .product(name: "CoreMetrics", package: "swift-metrics")],
                 path: "Sources/Importers/SwiftMetricsShim",
                 exclude: ["README.md"]),
-        .target(name: "JaegerExporter",
-                dependencies: ["OpenTelemetrySdk",
-                               .product(name: "Thrift", package: "Thrift")],
-                path: "Sources/Exporters/Jaeger"),
-        .target(name: "ZipkinExporter",
-                dependencies: ["OpenTelemetrySdk"],
-                path: "Sources/Exporters/Zipkin"),
         .target(name: "PrometheusExporter",
                 dependencies: ["OpenTelemetrySdk",
                                .product(name: "NIO", package: "swift-nio"),
@@ -122,11 +85,6 @@ let package = Package(
         .target(name: "InMemoryExporter",
                 dependencies: ["OpenTelemetrySdk"],
                 path: "Sources/Exporters/InMemory"),
-        .target(name: "DatadogExporter",
-                dependencies: ["OpenTelemetrySdk",
-                               "DataCompression"],
-                path: "Sources/Exporters/DatadogExporter",
-                exclude: ["NOTICE", "README.md"]),
         .target(name: "PersistenceExporter",
                 dependencies: ["OpenTelemetrySdk"],
                 path: "Sources/Exporters/Persistence"),
@@ -137,37 +95,18 @@ let package = Package(
         .testTarget(name: "OTelSwiftLogTests",
                     dependencies: ["OTelSwiftLog"],
                     path: "Tests/BridgesTests/OTelSwiftLog"),
-        .testTarget(name: "NetworkStatusTests",
-                    dependencies: ["NetworkStatus", .product(name: "Reachability", package: "Reachability.swift")],
-                    path: "Tests/InstrumentationTests/NetworkStatusTests"),
         .testTarget(name: "OpenTelemetryApiTests",
                     dependencies: ["OpenTelemetryApi", "OpenTelemetryTestUtils"],
                     path: "Tests/OpenTelemetryApiTests"),
         .testTarget(name: "OpenTelemetrySdkTests",
-                    dependencies: ["OpenTelemetrySdk"],
+                    dependencies: ["OpenTelemetrySdk",
+                                   "OpenTelemetryConcurrency",
+                                   "OpenTelemetryTestUtils"],
                     path: "Tests/OpenTelemetrySdkTests"),
-        .testTarget(name: "ResourceExtensionTests",
-                    dependencies: ["ResourceExtension", "OpenTelemetrySdk"],
-                    path: "Tests/InstrumentationTests/SDKResourceExtensionTests"),
-        .testTarget(name: "URLSessionInstrumentationTests",
-                    dependencies: ["URLSessionInstrumentation",
-                                   .product(name: "NIO", package: "swift-nio"),
-                                   .product(name: "NIOHTTP1", package: "swift-nio")],
-                    path: "Tests/InstrumentationTests/URLSessionTests"),
-        .testTarget(name: "OpenTracingShimTests",
-                    dependencies: ["OpenTracingShim",
-                                   "OpenTelemetrySdk"],
-                    path: "Tests/ImportersTests/OpenTracingShim"),
         .testTarget(name: "SwiftMetricsShimTests",
                     dependencies: ["SwiftMetricsShim",
                                    "OpenTelemetrySdk"],
                     path: "Tests/ImportersTests/SwiftMetricsShim"),
-        .testTarget(name: "JaegerExporterTests",
-                    dependencies: ["JaegerExporter"],
-                    path: "Tests/ExportersTests/Jaeger"),
-        .testTarget(name: "ZipkinExporterTests",
-                    dependencies: ["ZipkinExporter"],
-                    path: "Tests/ExportersTests/Zipkin"),
         .testTarget(name: "PrometheusExporterTests",
                     dependencies: ["PrometheusExporter"],
                     path: "Tests/ExportersTests/Prometheus"),
@@ -175,54 +114,184 @@ let package = Package(
                     dependencies: ["OpenTelemetryProtocolExporterGrpc",
                                    "OpenTelemetryProtocolExporterHttp",
                                    "DataCompression",
-                                    .product(name: "NIO", package: "swift-nio"),
-                                    .product(name: "NIOHTTP1", package: "swift-nio"),
-                                    .product(name: "NIOTestUtils", package: "swift-nio")],
+                                   .product(name: "NIO", package: "swift-nio"),
+                                   .product(name: "NIOHTTP1", package: "swift-nio"),
+                                   .product(name: "NIOTestUtils", package: "swift-nio")],
                     path: "Tests/ExportersTests/OpenTelemetryProtocol"),
         .testTarget(name: "InMemoryExporterTests",
                     dependencies: ["InMemoryExporter"],
                     path: "Tests/ExportersTests/InMemory"),
-        .testTarget(name: "DatadogExporterTests",
-                    dependencies: ["DatadogExporter",
-                                   .product(name: "NIO", package: "swift-nio"),
-                                   .product(name: "NIOHTTP1", package: "swift-nio")],
-                    path: "Tests/ExportersTests/DatadogExporter"),
         .testTarget(name: "PersistenceExporterTests",
                     dependencies: ["PersistenceExporter"],
                     path: "Tests/ExportersTests/PersistenceExporter"),
         .testTarget(name: "ContribTests",
                     dependencies: ["BaggagePropagationProcessor",
                                    "InMemoryExporter"]),
-        .target(name: "LoggingTracer",
-                dependencies: ["OpenTelemetryApi"],
-                path: "Examples/Logging Tracer"),
-        .target(name: "SimpleExporter",
-                dependencies: ["JaegerExporter", "StdoutExporter", "ZipkinExporter", "ResourceExtension", "SignPostIntegration"],
-                path: "Examples/Simple Exporter",
-                exclude: ["README.md"]),
-        .target(name: "OTLPExporter",
-                dependencies: ["OpenTelemetryProtocolExporterGrpc", "StdoutExporter", "ZipkinExporter", "ResourceExtension", "SignPostIntegration"],
-                path: "Examples/OTLP Exporter",
-                exclude: ["README.md"]),
-        .target(name: "OTLPHTTPExporter",
-                dependencies: ["OpenTelemetryProtocolExporterHttp", "StdoutExporter", "ZipkinExporter", "ResourceExtension", "SignPostIntegration", "DataCompression"],
-                path: "Examples/OTLP HTTP Exporter",
-                exclude: ["README.md"]),
-        .target(name: "PrometheusSample",
-                dependencies: ["PrometheusExporter"],
-                path: "Examples/Prometheus Sample",
-                exclude: ["README.md"]),
-        .target(name: "DatadogSample",
-                dependencies: ["DatadogExporter"],
-                path: "Examples/Datadog Sample",
-                exclude: ["README.md"]),
-        .target(name: "StableMetricSample",
-                dependencies: ["OpenTelemetryProtocolExporter", .product(name: "GRPC", package:  "grpc-swift")],
-                path: "Examples/Stable Metric Sample",
-                exclude: ["README.md"]),
-        .target(name: "NetworkSample",
-                dependencies: ["URLSessionInstrumentation", "StdoutExporter"],
-                path: "Examples/Network Sample",
-                exclude: ["README.md"]),
+        .executableTarget(
+            name: "LoggingTracer",
+            dependencies: ["OpenTelemetryApi"],
+            path: "Examples/Logging Tracer"
+        ),
+        .executableTarget(
+            name: "LogsSample",
+            dependencies: ["OpenTelemetrySdk", "OpenTelemetryProtocolExporterGrpc", .product(name: "GRPC", package: "grpc-swift")],
+            path: "Examples/Logs Sample"),
+        .executableTarget(
+            name: "ConcurrencyContext",
+            dependencies: ["OpenTelemetrySdk", "OpenTelemetryConcurrency", "StdoutExporter"],
+            path: "Examples/ConcurrencyContext"
+        ),
     ]
-)
+).addPlatformSpecific()
+
+extension Package {
+    func addPlatformSpecific() -> Self {
+        #if canImport(ObjectiveC)
+            dependencies.append(
+                .package(url: "https://github.com/undefinedlabs/opentracing-objc", from: "0.5.2")
+            )
+            products.append(
+                .library(name: "OpenTracingShim-experimental", targets: ["OpenTracingShim"])
+            )
+            targets.append(contentsOf: [
+                .target(name: "OpenTracingShim",
+                        dependencies: [
+                            "OpenTelemetrySdk",
+                            .product(name: "Opentracing", package: "opentracing-objc"),
+                        ],
+                        path: "Sources/Importers/OpenTracingShim",
+                        exclude: ["README.md"]),
+                .testTarget(name: "OpenTracingShimTests",
+                            dependencies: ["OpenTracingShim",
+                                           "OpenTelemetrySdk"],
+                            path: "Tests/ImportersTests/OpenTracingShim"),
+            ])
+        #endif
+
+        #if canImport(Darwin)
+            dependencies.append(
+                .package(url: "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1")
+            )
+            products.append(contentsOf: [
+                .library(name: "JaegerExporter", targets: ["JaegerExporter"]),
+                .executable(name: "simpleExporter", targets: ["SimpleExporter"]),
+                .library(name: "NetworkStatus", targets: ["NetworkStatus"]),
+                .library(name: "URLSessionInstrumentation", targets: ["URLSessionInstrumentation"]),
+                .library(name: "ZipkinExporter", targets: ["ZipkinExporter"]),
+                .executable(name: "OTLPExporter", targets: ["OTLPExporter"]),
+                .executable(name: "OTLPHTTPExporter", targets: ["OTLPHTTPExporter"]),
+                .library(name: "SignPostIntegration", targets: ["SignPostIntegration"]),
+                .library(name: "ResourceExtension", targets: ["ResourceExtension"]),
+                .library(name: "DatadogExporter", targets: ["DatadogExporter"]),
+            ])
+            targets.append(contentsOf: [
+                .target(name: "JaegerExporter",
+                        dependencies: [
+                            "OpenTelemetrySdk",
+                            .product(name: "Thrift", package: "Thrift-Swift", condition: .when(platforms: [.iOS, .macOS, .tvOS, .macCatalyst, .linux])),
+                        ],
+                        path: "Sources/Exporters/Jaeger"),
+                .testTarget(name: "JaegerExporterTests",
+                            dependencies: ["JaegerExporter"],
+                            path: "Tests/ExportersTests/Jaeger"),
+                .executableTarget(
+                    name: "SimpleExporter",
+                    dependencies: ["OpenTelemetrySdk", "JaegerExporter", "StdoutExporter", "ZipkinExporter", "ResourceExtension", "SignPostIntegration"],
+                    path: "Examples/Simple Exporter",
+                    exclude: ["README.md"]
+                ),
+                .target(name: "NetworkStatus",
+                        dependencies: [
+                            "OpenTelemetryApi",
+                        ],
+                        path: "Sources/Instrumentation/NetworkStatus",
+                        linkerSettings: [.linkedFramework("CoreTelephony", .when(platforms: [.iOS]))]),
+                .testTarget(name: "NetworkStatusTests",
+                            dependencies: [
+                                "NetworkStatus",
+                            ],
+                            path: "Tests/InstrumentationTests/NetworkStatusTests"),
+                .target(name: "URLSessionInstrumentation",
+                        dependencies: ["OpenTelemetrySdk", "NetworkStatus"],
+                        path: "Sources/Instrumentation/URLSession",
+                        exclude: ["README.md"]),
+                .testTarget(name: "URLSessionInstrumentationTests",
+                            dependencies: ["URLSessionInstrumentation",
+                                           .product(name: "NIO", package: "swift-nio"),
+                                           .product(name: "NIOHTTP1", package: "swift-nio")],
+                            path: "Tests/InstrumentationTests/URLSessionTests"),
+                .executableTarget(
+                    name: "NetworkSample",
+                    dependencies: ["URLSessionInstrumentation", "StdoutExporter"],
+                    path: "Examples/Network Sample",
+                    exclude: ["README.md"]
+                ),
+                .target(name: "ZipkinExporter",
+                        dependencies: ["OpenTelemetrySdk"],
+                        path: "Sources/Exporters/Zipkin"),
+                .testTarget(name: "ZipkinExporterTests",
+                            dependencies: ["ZipkinExporter"],
+                            path: "Tests/ExportersTests/Zipkin"),
+                .executableTarget(
+                    name: "OTLPExporter",
+                    dependencies: ["OpenTelemetrySdk", "OpenTelemetryProtocolExporterGrpc", "StdoutExporter", "ZipkinExporter", "ResourceExtension", "SignPostIntegration"],
+                    path: "Examples/OTLP Exporter",
+                    exclude: ["README.md"]
+                ),
+                .executableTarget(
+                    name: "OTLPHTTPExporter",
+                    dependencies: ["OpenTelemetrySdk", "OpenTelemetryProtocolExporterHttp", "StdoutExporter", "ZipkinExporter", "ResourceExtension", "SignPostIntegration", "DataCompression"],
+                    path: "Examples/OTLP HTTP Exporter",
+                    exclude: ["README.md"]
+                ),
+                .target(name: "SignPostIntegration",
+                        dependencies: ["OpenTelemetrySdk"],
+                        path: "Sources/Instrumentation/SignPostIntegration",
+                        exclude: ["README.md"]),
+                .target(name: "ResourceExtension",
+                        dependencies: ["OpenTelemetrySdk"],
+                        path: "Sources/Instrumentation/SDKResourceExtension",
+                        exclude: ["README.md"]),
+                .testTarget(name: "ResourceExtensionTests",
+                            dependencies: ["ResourceExtension", "OpenTelemetrySdk"],
+                            path: "Tests/InstrumentationTests/SDKResourceExtensionTests"),
+                .target(name: "DatadogExporter",
+                        dependencies: ["OpenTelemetrySdk",
+                                       "DataCompression"],
+                        path: "Sources/Exporters/DatadogExporter",
+                        exclude: ["NOTICE", "README.md"]),
+                .testTarget(name: "DatadogExporterTests",
+                            dependencies: ["DatadogExporter",
+                                           .product(name: "NIO", package: "swift-nio"),
+                                           .product(name: "NIOHTTP1", package: "swift-nio")],
+                            path: "Tests/ExportersTests/DatadogExporter"),
+                .executableTarget(
+                    name: "DatadogSample",
+                    dependencies: ["DatadogExporter"],
+                    path: "Examples/Datadog Sample",
+                    exclude: ["README.md"]
+                ),
+                .executableTarget(
+                    name: "PrometheusSample",
+                    dependencies: ["OpenTelemetrySdk", "PrometheusExporter"],
+                    path: "Examples/Prometheus Sample",
+                    exclude: ["README.md"]
+                ),
+            ])
+        #endif
+
+        return self
+    }
+}
+
+if ProcessInfo.processInfo.environment["OTEL_ENABLE_SWIFTLINT"] != nil {
+  package.dependencies.append(contentsOf: [
+    .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.57.1")
+  ])
+
+  for target in package.targets {
+    target.plugins = [
+      .plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins"),
+    ]
+  }
+}
