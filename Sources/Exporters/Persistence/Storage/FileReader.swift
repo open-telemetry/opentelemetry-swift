@@ -5,14 +5,14 @@
 
 import Foundation
 
-internal struct Batch {
+struct Batch {
   /// Data read from file
   let data: Data
   /// File from which `data` was read.
   let file: ReadableFile
 }
 
-internal protocol FileReader {
+protocol FileReader {
   func readNextBatch() -> Batch?
 
   func onRemainingBatches(process: (Batch) -> Void) -> Bool
@@ -20,7 +20,7 @@ internal protocol FileReader {
   func markBatchAsRead(_ batch: Batch)
 }
 
-internal final class OrchestratedFileReader: FileReader {
+final class OrchestratedFileReader: FileReader {
   /// Orchestrator producing reference to readable file.
   private let orchestrator: FilesOrchestrator
 

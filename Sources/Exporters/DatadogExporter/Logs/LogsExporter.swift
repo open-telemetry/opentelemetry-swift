@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetrySdk
 
-internal enum LogLevel: Int, Codable {
+enum LogLevel: Int, Codable {
   case debug
   case info
   case notice
@@ -15,7 +15,7 @@ internal enum LogLevel: Int, Codable {
   case critical
 }
 
-internal class LogsExporter {
+class LogsExporter {
   let logsDirectory = "com.otel.datadog.logs/v1"
   let configuration: ExporterConfiguration
   let logsStorage: FeatureStorage

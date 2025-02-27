@@ -13,7 +13,7 @@
 #endif
 
 /// Describes current mobile device.
-internal class Device {
+class Device {
   // MARK: - Info
 
   var model: String

@@ -5,14 +5,14 @@
 
 import Foundation
 
-internal struct Batch {
+struct Batch {
   /// Data read from file, prefixed with `[` and suffixed with `]`.
   let data: Data
   /// File from which `data` was read.
   fileprivate let file: ReadableFile
 }
 
-internal final class FileReader {
+final class FileReader {
   /// Data reading format.
   private let dataFormat: DataFormat
   /// Orchestrator producing reference to readable file.

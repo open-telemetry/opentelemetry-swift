@@ -84,7 +84,7 @@ class ServerMock {
   weak static var activeInstance: ServerMock?
 
   /// An unique identifier of the `URLSession` produced by this instance of `ServerMock`.
-  internal let urlSessionUUID = UUID()
+  let urlSessionUUID = UUID()
   private let queue: DispatchQueue
 
   fileprivate let mockedResponse: HTTPURLResponse?

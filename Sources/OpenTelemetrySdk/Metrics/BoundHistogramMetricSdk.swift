@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-internal class BoundHistogramMetricSdk<T: SignedNumeric & Comparable>: BoundHistogramMetricSdkBase<T> {
+class BoundHistogramMetricSdk<T: SignedNumeric & Comparable>: BoundHistogramMetricSdkBase<T> {
   private var histogramAggregator: HistogramAggregator<T>
 
   override init(explicitBoundaries: [T]? = nil) {

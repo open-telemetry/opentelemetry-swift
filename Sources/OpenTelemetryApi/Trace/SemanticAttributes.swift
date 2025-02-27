@@ -2160,7 +2160,7 @@ public enum SemanticAttributes: String {
      */
     public static let other = NetTransportValues("other")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
       value = customValue
@@ -2189,7 +2189,7 @@ public enum SemanticAttributes: String {
      */
     public static let unix = NetSockFamilyValues("unix")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
       value = customValue
@@ -2246,7 +2246,7 @@ public enum SemanticAttributes: String {
      */
     public static let other = HttpRequestMethodValues("_OTHER")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
       value = customValue
@@ -2275,7 +2275,7 @@ public enum SemanticAttributes: String {
      */
     public static let k8s = EventDomainValues("k8s")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
       value = customValue
@@ -2545,7 +2545,7 @@ public enum SemanticAttributes: String {
      */
     public static let trino = DbSystemValues("trino")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
       value = customValue
@@ -2578,7 +2578,7 @@ public enum SemanticAttributes: String {
      */
     public static let unix = NetworkTransportValues("unix")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
       value = customValue
@@ -2603,7 +2603,7 @@ public enum SemanticAttributes: String {
      */
     public static let ipv6 = NetworkTypeValues("ipv6")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
       value = customValue
@@ -2731,7 +2731,7 @@ public enum SemanticAttributes: String {
      */
     public static let executeJavascript = DbCosmosdbOperationTypeValues("ExecuteJavaScript")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
       value = customValue
@@ -2817,7 +2817,7 @@ public enum SemanticAttributes: String {
      */
     public static let delete = FaasDocumentOperationValues("delete")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
       value = customValue
@@ -2846,7 +2846,7 @@ public enum SemanticAttributes: String {
      */
     public static let process = MessagingOperationValues("process")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
       value = customValue
@@ -2883,7 +2883,7 @@ public enum SemanticAttributes: String {
      */
     public static let tencentCloud = FaasInvokedProviderValues("tencent_cloud")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
       value = customValue
@@ -2920,7 +2920,7 @@ public enum SemanticAttributes: String {
      */
     public static let unknown = NetworkConnectionTypeValues("unknown")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
       value = customValue
@@ -3021,7 +3021,7 @@ public enum SemanticAttributes: String {
      */
     public static let lteCa = NetworkConnectionSubtypeValues("lte_ca")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
       value = customValue
@@ -3058,7 +3058,7 @@ public enum SemanticAttributes: String {
      */
     public static let connectRpc = RpcSystemValues("connect_rpc")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
       value = customValue

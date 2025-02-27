@@ -12,8 +12,8 @@ public class Base2ExponentialHistogramAggregation: Aggregation {
 
   public private(set) static var instance = Base2ExponentialHistogramAggregation(maxBuckets: defaultMaxBuckets, maxScale: defaultMaxScale)
 
-  internal let maxBuckets: Int
-  internal let maxScale: Int
+  let maxBuckets: Int
+  let maxScale: Int
 
   public init(maxBuckets: Int, maxScale: Int) {
     self.maxScale = maxScale <= 20 && maxScale >= -10 ? maxScale : Self.defaultMaxScale

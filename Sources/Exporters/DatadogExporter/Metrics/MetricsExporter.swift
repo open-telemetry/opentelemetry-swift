@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetrySdk
 
-internal class MetricsExporter {
+class MetricsExporter {
   let metricsDirectory = "com.otel.datadog.metrics/v1"
   let configuration: ExporterConfiguration
   let metricsStorage: FeatureStorage

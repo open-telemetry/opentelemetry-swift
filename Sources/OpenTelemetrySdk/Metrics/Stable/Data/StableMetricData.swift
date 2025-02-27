@@ -32,7 +32,7 @@ public struct StableMetricData: Equatable, Encodable {
     public private(set) var points: [PointData]
     public private(set) var aggregationTemporality: AggregationTemporality
 
-    internal init(aggregationTemporality: AggregationTemporality, points: [PointData]) {
+    init(aggregationTemporality: AggregationTemporality, points: [PointData]) {
       self.aggregationTemporality = aggregationTemporality
       self.points = points
     }
@@ -42,7 +42,7 @@ public struct StableMetricData: Equatable, Encodable {
     }
   }
 
-  internal init(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, type: MetricDataType, isMonotonic: Bool, data: StableMetricData.Data) {
+  init(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, type: MetricDataType, isMonotonic: Bool, data: StableMetricData.Data) {
     self.resource = resource
     self.instrumentationScopeInfo = instrumentationScopeInfo
     self.name = name

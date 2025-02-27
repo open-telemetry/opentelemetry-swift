@@ -7,12 +7,12 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
-internal enum Constants {
+enum Constants {
   static let ddsource = "ios"
 }
 
 /// `SpanEnvelope` allows encoding multiple spans sharing the same `traceID` to a single payload.
-internal struct SpanEnvelope: Encodable {
+struct SpanEnvelope: Encodable {
   enum CodingKeys: String, CodingKey {
     case spans
     case environment = "env"
@@ -35,7 +35,7 @@ internal struct SpanEnvelope: Encodable {
 }
 
 /// `Encodable` representation of span.
-internal struct DDSpan: Encodable {
+struct DDSpan: Encodable {
   let traceID: TraceId
   let spanID: SpanId
   let parentID: SpanId?
@@ -65,7 +65,7 @@ internal struct DDSpan: Encodable {
     try SpanEncoder().encode(self, to: encoder)
   }
 
-  internal init(spanData: SpanData, configuration: ExporterConfiguration) {
+  init(spanData: SpanData, configuration: ExporterConfiguration) {
     traceID = spanData.traceId
     spanID = spanData.spanId
     parentID = spanData.parentSpanId
@@ -108,7 +108,7 @@ internal struct DDSpan: Encodable {
 }
 
 /// Encodes `SpanData` to given encoder.
-internal struct SpanEncoder {
+struct SpanEncoder {
   /// Coding keys for permanent `Span` attributes.
   enum StaticCodingKeys: String, CodingKey {
     // MARK: - Attributes

@@ -29,7 +29,7 @@ public class DefaultMeterProvider: MeterProvider {
       : DefaultMeterProvider.proxyMeter
   }
 
-  internal static func reset() {
+  static func reset() {
     DefaultMeterProvider.instance = DefaultMeterProvider()
     DefaultMeterProvider.proxyMeter = ProxyMeter()
     DefaultMeterProvider.initialized = false

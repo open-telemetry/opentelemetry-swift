@@ -15,7 +15,7 @@ protocol DecoratedExporter {
 
 // a generic decorator of `DecoratedExporter` adding filesystem persistence of batches of `[T.SignalType]`.
 // `T.SignalType` must conform to `Codable`.
-internal class PersistenceExporterDecorator<T>
+class PersistenceExporterDecorator<T>
   where T: DecoratedExporter, T.SignalType: Codable {
   // a wrapper of `DecoratedExporter` (T) to add conformance to `DataExporter` that can be
   // used with `DataExportWorker`.
@@ -91,7 +91,7 @@ internal class PersistenceExporterDecorator<T>
   }
 
   // internal initializer for testing that accepts a worker factory that allows mocking the worker
-  internal init(
+  init(
     decoratedExporter: T,
     fileWriter: FileWriter,
     workerFactory createWorker: (DataExporter) -> DataExportWorkerProtocol,

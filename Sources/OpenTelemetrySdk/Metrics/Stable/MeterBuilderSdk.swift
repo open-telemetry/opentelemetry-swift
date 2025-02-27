@@ -12,7 +12,7 @@ public class MeterBuilderSdk: MeterBuilder {
   private var instrumentationVersion: String?
   private var schemaUrl: String?
 
-  internal init(registry: ComponentRegistry<StableMeterSdk>, instrumentationScopeName: String) {
+  init(registry: ComponentRegistry<StableMeterSdk>, instrumentationScopeName: String) {
     self.registry = registry
     self.instrumentationScopeName = instrumentationScopeName
   }

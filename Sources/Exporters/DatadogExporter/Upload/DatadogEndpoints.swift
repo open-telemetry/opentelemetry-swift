@@ -31,7 +31,7 @@ public enum Endpoint {
   @available(*, deprecated, message: "Renamed to us1_fed")
   public static let gov: Endpoint = .us1_fed
 
-  internal var logsURL: URL {
+  var logsURL: URL {
     let endpoint = "api/v2/logs"
     switch self {
     case .us1:
@@ -53,7 +53,7 @@ public enum Endpoint {
     }
   }
 
-  internal var tracesURL: URL {
+  var tracesURL: URL {
     let endpoint = "api/v2/spans"
     switch self {
     case .us1:
@@ -76,7 +76,7 @@ public enum Endpoint {
     }
   }
 
-  internal var metricsURL: URL {
+  var metricsURL: URL {
     let endpoint = "api/v1/series"
     switch self {
     case .us1: return URL(string: "https://api.datadoghq.com/" + endpoint)!

@@ -48,7 +48,7 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
     var positiveBuckets: DoubleBase2ExponentialHistogramBuckets?
     var negativeBuckets: DoubleBase2ExponentialHistogramBuckets?
 
-    internal init(maxBuckets: Int, maxScale: Int, exemplarReservoir: ExemplarReservoir) {
+    init(maxBuckets: Int, maxScale: Int, exemplarReservoir: ExemplarReservoir) {
       self.maxBuckets = maxBuckets
       self.maxScale = maxScale
 

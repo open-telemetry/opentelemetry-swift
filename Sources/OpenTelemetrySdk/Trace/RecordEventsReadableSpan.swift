@@ -326,14 +326,14 @@ public class RecordEventsReadableSpan: ReadableSpan {
     return "RecordEventsReadableSpan{}"
   }
 
-  internal func getTotalRecordedEvents() -> Int {
+  func getTotalRecordedEvents() -> Int {
     eventsSyncLock.withLock {
       totalRecordedEvents
     }
   }
 
   /// For testing purposes
-  internal func getDroppedLinksCount() -> Int {
+  func getDroppedLinksCount() -> Int {
     return totalRecordedLinks - links.count
   }
 

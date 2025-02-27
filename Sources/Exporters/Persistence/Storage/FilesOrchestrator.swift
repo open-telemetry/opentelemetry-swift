@@ -5,7 +5,7 @@
 
 import Foundation
 
-internal class FilesOrchestrator {
+class FilesOrchestrator {
   /// Directory where files are stored.
   private let directory: Directory
   /// Date provider.
@@ -158,7 +158,7 @@ internal class FilesOrchestrator {
 
 /// File creation date is used as file name - timestamp in milliseconds is used for date representation.
 /// This function converts file creation date into file name.
-internal func fileNameFrom(fileCreationDate: Date) -> String {
+func fileNameFrom(fileCreationDate: Date) -> String {
   let milliseconds = fileCreationDate.timeIntervalSinceReferenceDate * 1_000
   let converted = (try? UInt64(withReportingOverflow: milliseconds)) ?? 0
   return String(converted)
@@ -166,7 +166,7 @@ internal func fileNameFrom(fileCreationDate: Date) -> String {
 
 /// File creation date is used as file name - timestamp in milliseconds is used for date representation.
 /// This function converts file name into file creation date.
-internal func fileCreationDateFrom(fileName: String) -> Date {
+func fileCreationDateFrom(fileName: String) -> Date {
   let millisecondsSinceReferenceDate = TimeInterval(UInt64(fileName) ?? 0) / 1_000
   return Date(timeIntervalSinceReferenceDate: TimeInterval(millisecondsSinceReferenceDate))
 }

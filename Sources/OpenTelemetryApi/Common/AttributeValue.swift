@@ -125,7 +125,7 @@ extension AttributeValue {
   }
 }
 
-internal struct AttributeValueExplicitCodable: Codable {
+struct AttributeValueExplicitCodable: Codable {
   let attributeValue: AttributeValue
 
   enum CodingKeys: String, CodingKey {
@@ -141,7 +141,7 @@ internal struct AttributeValueExplicitCodable: Codable {
     case associatedValue = "_0"
   }
 
-  internal init(attributeValue: AttributeValue) {
+  init(attributeValue: AttributeValue) {
     self.attributeValue = attributeValue
   }
 

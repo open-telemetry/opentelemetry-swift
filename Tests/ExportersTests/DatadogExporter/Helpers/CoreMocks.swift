@@ -75,7 +75,7 @@ extension DataFormat {
 /// `DateProvider` mock returning consecutive dates in custom intervals, starting from given reference date.
 class RelativeDateProvider: DateProvider {
   private(set) var date: Date
-  internal let timeInterval: TimeInterval
+  let timeInterval: TimeInterval
   private let queue = DispatchQueue(label: "queue-RelativeDateProvider-\(UUID().uuidString)")
 
   private init(date: Date, timeInterval: TimeInterval) {

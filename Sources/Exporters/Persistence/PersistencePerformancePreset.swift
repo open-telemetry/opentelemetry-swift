@@ -5,7 +5,7 @@
 
 import Foundation
 
-internal protocol StoragePerformancePreset {
+protocol StoragePerformancePreset {
   /// Maximum size of a single file (in bytes).
   /// Each feature (logging, tracing, ...) serializes its objects data to that file for later export.
   /// If last written file is too big to append next data, new file is created.
@@ -32,7 +32,7 @@ internal protocol StoragePerformancePreset {
   var maxObjectSize: UInt64 { get }
 }
 
-internal protocol ExportPerformancePreset {
+protocol ExportPerformancePreset {
   /// First export delay (in seconds).
   /// It is used as a base value until no more files eligible for export are found - then `defaultExportDelay` is used as a new base.
   var initialExportDelay: TimeInterval { get }

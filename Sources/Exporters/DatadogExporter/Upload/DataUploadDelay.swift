@@ -5,14 +5,14 @@
 
 import Foundation
 
-internal protocol Delay {
+protocol Delay {
   var current: TimeInterval { get }
   mutating func decrease()
   mutating func increase()
 }
 
 /// Mutable interval used for periodic data uploads.
-internal struct DataUploadDelay: Delay {
+struct DataUploadDelay: Delay {
   private let defaultDelay: TimeInterval
   private let minDelay: TimeInterval
   private let maxDelay: TimeInterval

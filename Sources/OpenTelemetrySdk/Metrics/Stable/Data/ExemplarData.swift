@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 
 public class ExemplarData: Equatable, Encodable {
-  internal init(epochNanos: UInt64, filteredAttributes: [String: AttributeValue], spanContext: SpanContext? = nil) {
+  init(epochNanos: UInt64, filteredAttributes: [String: AttributeValue], spanContext: SpanContext? = nil) {
     self.filteredAttributes = filteredAttributes
     self.epochNanos = epochNanos
     self.spanContext = spanContext
@@ -31,7 +31,7 @@ public class ExemplarData: Equatable, Encodable {
 public final class DoubleExemplarData: ExemplarData {
   public var value: Double
 
-  internal init(value: Double, epochNanos: UInt64, filteredAttributes: [String: AttributeValue], spanContext: SpanContext? = nil) {
+  init(value: Double, epochNanos: UInt64, filteredAttributes: [String: AttributeValue], spanContext: SpanContext? = nil) {
     self.value = value
     super.init(epochNanos: epochNanos, filteredAttributes: filteredAttributes, spanContext: spanContext)
   }
@@ -44,7 +44,7 @@ public final class DoubleExemplarData: ExemplarData {
 
 public final class LongExemplarData: ExemplarData {
   public var value: Int
-  internal init(value: Int, epochNanos: UInt64, filteredAttributes: [String: AttributeValue], spanContext: SpanContext? = nil) {
+  init(value: Int, epochNanos: UInt64, filteredAttributes: [String: AttributeValue], spanContext: SpanContext? = nil) {
     self.value = value
     super.init(epochNanos: epochNanos, filteredAttributes: filteredAttributes, spanContext: spanContext)
   }

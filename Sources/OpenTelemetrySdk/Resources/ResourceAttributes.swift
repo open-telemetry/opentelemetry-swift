@@ -1195,7 +1195,7 @@ public enum ResourceAttributes: String {
      */
     public static let tencentCloud = CloudProviderValues("tencent_cloud")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
       value = customValue
@@ -1328,7 +1328,7 @@ public enum ResourceAttributes: String {
      */
     public static let tencentCloudScf = CloudPlatformValues("tencent_cloud_scf")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
       value = customValue
@@ -1392,7 +1392,7 @@ public enum ResourceAttributes: String {
      */
     public static let x86 = HostArchValues("x86")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
       value = customValue
@@ -1453,7 +1453,7 @@ public enum ResourceAttributes: String {
      */
     public static let zOs = OsTypeValues("z_os")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
       value = customValue
@@ -1518,7 +1518,7 @@ public enum ResourceAttributes: String {
      */
     public static let webjs = TelemetrySdkLanguageValues("webjs")
 
-    internal let value: String
+    let value: String
 
     public init(_ customValue: String) {
       value = customValue

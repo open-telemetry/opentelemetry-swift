@@ -9,7 +9,7 @@ import OpenTelemetryApi
 public class DoublePointData: PointData {
   public var value: Double
 
-  internal init(startEpochNanos: UInt64, endEpochNanos: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], value: Double) {
+  init(startEpochNanos: UInt64, endEpochNanos: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], value: Double) {
     self.value = value
     super.init(startEpochNanos: startEpochNanos, endEpochNanos: endEpochNanos, attributes: attributes, exemplars: exemplars)
   }

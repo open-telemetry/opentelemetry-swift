@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
-internal struct LogAttributes {
+struct LogAttributes {
   /// Log attributes received from the user. They are subject for sanitization.
   let userAttributes: [String: Encodable]
   /// Log attributes added internally by the SDK. They are not a subject for sanitization.
@@ -15,8 +15,8 @@ internal struct LogAttributes {
 }
 
 /// `Encodable` representation of log. It gets sanitized before encoding.
-internal struct DDLog: Encodable {
-  internal enum TracingAttributes {
+struct DDLog: Encodable {
+  enum TracingAttributes {
     static let traceID = "dd.trace_id"
     static let spanID = "dd.span_id"
   }
@@ -47,7 +47,7 @@ internal struct DDLog: Encodable {
     try LogEncoder().encode(sanitizedLog, to: encoder)
   }
 
-  internal init(date: Date, status: DDLog.Status, message: String, serviceName: String, environment: String, loggerName: String, loggerVersion: String, threadName: String, applicationVersion: String, attributes: LogAttributes, tags: [String]?) {
+  init(date: Date, status: DDLog.Status, message: String, serviceName: String, environment: String, loggerName: String, loggerVersion: String, threadName: String, applicationVersion: String, attributes: LogAttributes, tags: [String]?) {
     self.date = date
     self.status = status
     self.message = message
@@ -61,7 +61,7 @@ internal struct DDLog: Encodable {
     self.tags = tags
   }
 
-  internal init(event: SpanData.Event, span: SpanData, configuration: ExporterConfiguration) {
+  init(event: SpanData.Event, span: SpanData, configuration: ExporterConfiguration) {
     var attributes = event.attributes
 
     // set tracing attributes
@@ -110,7 +110,7 @@ internal struct DDLog: Encodable {
 }
 
 /// Encodes `Log` to given encoder.
-internal struct LogEncoder {
+struct LogEncoder {
   /// Coding keys for permanent `Log` attributes.
   enum StaticCodingKeys: String, CodingKey {
     case date

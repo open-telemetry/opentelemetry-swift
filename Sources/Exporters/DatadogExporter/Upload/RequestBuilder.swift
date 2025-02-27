@@ -9,7 +9,7 @@
 import Foundation
 
 /// Builds `URLRequest` for sending data to Datadog.
-internal struct RequestBuilder {
+struct RequestBuilder {
   enum QueryItem {
     /// `ddsource={source}` query item
     case ddsource(source: String)

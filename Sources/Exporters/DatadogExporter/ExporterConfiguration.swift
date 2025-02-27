@@ -5,7 +5,7 @@
 
 import Foundation
 
-internal struct ExporterError: Error, CustomStringConvertible {
+struct ExporterError: Error, CustomStringConvertible {
   let description: String
 }
 

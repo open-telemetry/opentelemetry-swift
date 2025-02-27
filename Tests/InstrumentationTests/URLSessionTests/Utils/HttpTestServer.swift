@@ -14,7 +14,7 @@ struct HttpTestServerConfig {
   var errorCallback: GenericCallback?
 }
 
-internal class HttpTestServer {
+class HttpTestServer {
   private let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
   private var host: String
   private var port: Int

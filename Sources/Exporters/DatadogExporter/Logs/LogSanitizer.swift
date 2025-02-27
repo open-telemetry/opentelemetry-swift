@@ -6,7 +6,7 @@
 import Foundation
 
 /// Sanitizes `Log` representation received from the user, so it can match Datadog log constraints.
-internal struct LogSanitizer {
+struct LogSanitizer {
   enum Constraints {
     /// Attribute names reserved for Datadog.
     /// If any of those is used by the user, the attribute will be ignored.

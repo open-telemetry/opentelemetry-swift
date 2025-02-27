@@ -5,7 +5,7 @@
 
 import Foundation
 
-internal final class FileWriter {
+final class FileWriter {
   /// Data writing format.
   private let dataFormat: DataFormat
   /// Orchestrator producing reference to writable file.
@@ -13,7 +13,7 @@ internal final class FileWriter {
   /// JSON encoder used to encode data.
   private let jsonEncoder: JSONEncoder
   /// Queue used to synchronize files access (read / write) and perform decoding on background thread.
-  internal let queue = DispatchQueue(label: "com.otel.datadog.filewriter", target: .global(qos: .userInteractive))
+  let queue = DispatchQueue(label: "com.otel.datadog.filewriter", target: .global(qos: .userInteractive))
 
   init(dataFormat: DataFormat, orchestrator: FilesOrchestrator) {
     self.dataFormat = dataFormat

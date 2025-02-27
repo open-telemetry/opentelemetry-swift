@@ -7,18 +7,18 @@ import Foundation
 
 // a protocol for an exporter of `Data` to which a `DataExportWorker` can delegate persisted
 // data export
-internal protocol DataExporter {
+protocol DataExporter {
   func export(data: Data) -> DataExportStatus
 }
 
 // a protocol needed for mocking `DataExportWorker`
-internal protocol DataExportWorkerProtocol {
+protocol DataExportWorkerProtocol {
   func flush() -> Bool
 }
 
-internal class DataExportWorker: DataExportWorkerProtocol {
+class DataExportWorker: DataExportWorkerProtocol {
   /// Queue to execute exports.
-  internal let queue = DispatchQueue(label: "com.otel.persistence.dataExportWorker", target: .global(qos: .utility))
+  let queue = DispatchQueue(label: "com.otel.persistence.dataExportWorker", target: .global(qos: .utility))
   /// File reader providing data to export.
   private let fileReader: FileReader
   /// Data exporter sending data to server.
@@ -83,7 +83,7 @@ internal class DataExportWorker: DataExportWorkerProtocol {
 
   /// This method  gets remaining files at once, and exports them
   /// It assures that periodic exporter cannot read or export the files while the flush is being processed
-  internal func flush() -> Bool {
+  func flush() -> Bool {
     let success = queue.sync {
       self.fileReader.onRemainingBatches {
         let exportStatus = self.dataExporter.export(data: $0.data)
@@ -98,7 +98,7 @@ internal class DataExportWorker: DataExportWorkerProtocol {
   /// Cancels scheduled exports and stops scheduling next ones.
   /// - It does not affect the export that has already begun.
   /// - It blocks the caller thread if called in the middle of export execution.
-  internal func cancelSynchronously() {
+  func cancelSynchronously() {
     queue.sync(flags: .barrier) {
       // This cancellation must be performed on the `queue` to ensure that it is not called
       // in the middle of a `DispatchWorkItem` execution - otherwise, as the pending block would be

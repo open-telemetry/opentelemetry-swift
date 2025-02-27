@@ -7,9 +7,9 @@ import CoreMetrics
 import OpenTelemetryApi
 
 public class OpenTelemetrySwiftMetrics: MetricsFactory {
-  internal let meter: OpenTelemetryApi.Meter
-  internal var metrics = [MetricKey: SwiftMetric]()
-  internal let lock = Lock()
+  let meter: OpenTelemetryApi.Meter
+  var metrics = [MetricKey: SwiftMetric]()
+  let lock = Lock()
 
   public init(meter: OpenTelemetryApi.Meter) {
     self.meter = meter

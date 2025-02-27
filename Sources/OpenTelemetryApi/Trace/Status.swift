@@ -61,7 +61,7 @@ extension Status: CustomStringConvertible {
   }
 }
 
-internal struct StatusExplicitCodable: Codable {
+struct StatusExplicitCodable: Codable {
   let status: Status
 
   enum CodingKeys: String, CodingKey {
@@ -76,7 +76,7 @@ internal struct StatusExplicitCodable: Codable {
     case description
   }
 
-  internal init(status: Status) {
+  init(status: Status) {
     self.status = status
   }
 

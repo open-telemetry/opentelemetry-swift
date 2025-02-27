@@ -139,7 +139,7 @@ class ParentBasedSampler: Sampler {
   private let localParentSampled: Sampler
   private let localParentNotSampled: Sampler
 
-  internal init(
+  init(
     root: Sampler,
     remoteParentSampled: Sampler? = nil,
     remoteParentNotSampled: Sampler? = nil,

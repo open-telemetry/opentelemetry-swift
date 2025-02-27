@@ -14,7 +14,7 @@ public class DoubleExplicitBucketHistogramAggregator: StableAggregator {
   class Handle: AggregatorHandle {
     let lock = Lock()
 
-    internal init(boundaries: [Double], exemplarReservoir: ExemplarReservoir) {
+    init(boundaries: [Double], exemplarReservoir: ExemplarReservoir) {
       self.boundaries = boundaries
 
       sum = 0
@@ -25,12 +25,12 @@ public class DoubleExplicitBucketHistogramAggregator: StableAggregator {
       super.init(exemplarReservoir: exemplarReservoir)
     }
 
-    internal var boundaries: [Double]
-    internal var sum: Double
-    internal var min: Double
-    internal var max: Double
-    internal var count: UInt64
-    internal var counts: [Int]
+    var boundaries: [Double]
+    var sum: Double
+    var min: Double
+    var max: Double
+    var count: UInt64
+    var counts: [Int]
 
     override func doAggregateThenMaybeReset(startEpochNano: UInt64, endEpochNano: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], reset: Bool) -> PointData {
       lock.lock()
@@ -76,7 +76,7 @@ public class DoubleExplicitBucketHistogramAggregator: StableAggregator {
     }
   }
 
-  internal let boundaries: [Double]
+  let boundaries: [Double]
   private let reservoirSupplier: () -> ExemplarReservoir
 
   public init(boundaries: [Double], reservoirSupplier: @escaping () -> ExemplarReservoir) {

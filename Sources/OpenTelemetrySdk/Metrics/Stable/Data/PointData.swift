@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 
 public class PointData: Equatable, Encodable {
-  internal init(startEpochNanos: UInt64, endEpochNanos: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData]) {
+  init(startEpochNanos: UInt64, endEpochNanos: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData]) {
     self.startEpochNanos = startEpochNanos
     self.endEpochNanos = endEpochNanos
     self.attributes = attributes

@@ -6,7 +6,7 @@
 import Foundation
 
 /// Type erasure `Encodable` wrapper.
-internal struct EncodableValue: Encodable {
+struct EncodableValue: Encodable {
   let value: Encodable
 
   init(_ value: Encodable) {
@@ -42,7 +42,7 @@ internal struct EncodableValue: Encodable {
 /// * it encodes `Person(name: "foo")` encodable struct as `"{\"name\": \"foo\"}"` JSON string value
 ///
 /// This encoding doesn't happen instantly. Instead, it is deferred to the actual `encoder.encode(jsonStringEncodableValue)` call.
-internal struct JSONStringEncodableValue: Encodable {
+struct JSONStringEncodableValue: Encodable {
   /// Encoder used to encode `encodable` as JSON String value.
   /// It is invoked lazily at `encoder.encode(jsonStringEncodableValue)` so its encoding errors can be propagated in master-type encoding.
   private let jsonEncoder: JSONEncoder

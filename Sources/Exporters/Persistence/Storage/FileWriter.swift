@@ -13,11 +13,11 @@ protocol FileWriter {
   func flush()
 }
 
-internal final class OrchestratedFileWriter: FileWriter {
+final class OrchestratedFileWriter: FileWriter {
   /// Orchestrator producing reference to writable file.
   private let orchestrator: FilesOrchestrator
   /// Queue used to synchronize files access (read / write) and perform decoding on background thread.
-  internal let queue = DispatchQueue(label: "com.otel.persistence.filewriter", target: .global(qos: .userInteractive))
+  let queue = DispatchQueue(label: "com.otel.persistence.filewriter", target: .global(qos: .userInteractive))
 
   init(orchestrator: FilesOrchestrator) {
     self.orchestrator = orchestrator

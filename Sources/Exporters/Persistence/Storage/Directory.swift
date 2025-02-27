@@ -6,7 +6,7 @@
 import Foundation
 
 /// An abstraction over file system directory where SDK stores its files.
-internal struct Directory {
+struct Directory {
   let url: URL
 
   /// Creates subdirectory with given path under system caches directory.

@@ -6,21 +6,21 @@
 import Foundation
 
 /// Container with dependencies common to all features (Logging, Tracing and RUM).
-internal struct FeaturesCommonDependencies {
+struct FeaturesCommonDependencies {
   let performance: PerformancePreset
   let httpClient: HTTPClient
   let device: Device
   let dateProvider: DateProvider
 }
 
-internal struct FeatureStorage {
+struct FeatureStorage {
   /// Writes data to files.
   let writer: FileWriter
   /// Reads data from files.
   let reader: FileReader
 }
 
-internal struct FeatureUpload {
+struct FeatureUpload {
   /// Uploads data to server.
   let uploader: DataUploadWorkerType
 

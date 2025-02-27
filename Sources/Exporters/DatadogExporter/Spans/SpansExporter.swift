@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetrySdk
 
-internal class SpansExporter {
+class SpansExporter {
   let tracesDirectory = "com.otel.datadog.traces/v1"
   let configuration: ExporterConfiguration
   let tracesStorage: FeatureStorage
