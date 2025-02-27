@@ -29,7 +29,7 @@ public final class DefaultBaggage: Baggage, Equatable {
     return entries[key]??.value
   }
 
-  static public func == (lhs: DefaultBaggage, rhs: DefaultBaggage) -> Bool {
+  public static func == (lhs: DefaultBaggage, rhs: DefaultBaggage) -> Bool {
     return lhs.getEntries().sorted() == rhs.getEntries().sorted()
   }
 }

@@ -38,7 +38,7 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter {
   ///    - meterProvider: Injected `StableMeterProvider` for metric
   ///    - useSession: Overridden `URLSession` if any
   ///    - envVarHeaders: Extra header key-values
-  convenience public init(endpoint: URL = defaultOltpHttpLoggingEndpoint(),
+  public convenience init(endpoint: URL = defaultOltpHttpLoggingEndpoint(),
                           config: OtlpConfiguration = OtlpConfiguration(),
                           meterProvider: StableMeterProvider,
                           useSession: URLSession? = nil,

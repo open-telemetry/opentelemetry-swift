@@ -52,7 +52,7 @@ public class HistogramAggregator<T: SignedNumeric & Comparable>: Aggregator<T> {
     }
   }
 
-  public override func toMetricData() -> MetricData {
+  override public func toMetricData() -> MetricData {
     return HistogramData<T>(startTimestamp: lastStart,
                             timestamp: lastEnd,
                             buckets: pointCheck.buckets,
@@ -60,7 +60,7 @@ public class HistogramAggregator<T: SignedNumeric & Comparable>: Aggregator<T> {
                             sum: pointCheck.sum)
   }
 
-  public override func getAggregationType() -> AggregationType {
+  override public func getAggregationType() -> AggregationType {
     if T.self == Double.Type.self {
       return .doubleHistogram
     } else {

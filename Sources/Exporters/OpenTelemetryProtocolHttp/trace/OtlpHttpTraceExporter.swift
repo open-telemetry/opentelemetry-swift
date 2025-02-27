@@ -40,7 +40,7 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
   ///    - meterProvider: Injected `StableMeterProvider` for metric
   ///    - useSession: Overridden `URLSession` if any
   ///    - envVarHeaders: Extra header key-values
-  convenience public init(endpoint: URL,
+  public convenience init(endpoint: URL,
                           config: OtlpConfiguration,
                           meterProvider: StableMeterProvider,
                           useSession: URLSession? = nil,

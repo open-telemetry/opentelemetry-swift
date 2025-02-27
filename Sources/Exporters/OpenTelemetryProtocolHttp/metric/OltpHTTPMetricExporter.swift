@@ -40,7 +40,7 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
   ///    - meterProvider: Injected `StableMeterProvider` for metric
   ///    - useSession: Overridden `URLSession` if any
   ///    - envVarHeaders: Extra header key-values
-  convenience public init(endpoint: URL = defaultOltpHTTPMetricsEndpoint(),
+  public convenience init(endpoint: URL = defaultOltpHTTPMetricsEndpoint(),
                           config: OtlpConfiguration = OtlpConfiguration(),
                           meterProvider: StableMeterProvider,
                           useSession: URLSession? = nil,

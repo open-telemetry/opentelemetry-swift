@@ -48,7 +48,7 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
   ///    - defaultAggregationSelector: default aggregator
   ///    - useSession: Overridden `URLSession` if any
   ///    - envVarHeaders: Extra header key-values
-  convenience public init(endpoint: URL,
+  public convenience init(endpoint: URL,
                           config: OtlpConfiguration = OtlpConfiguration(),
                           meterProvider: StableMeterProvider,
                           aggregationTemporalitySelector: AggregationTemporalitySelector =
