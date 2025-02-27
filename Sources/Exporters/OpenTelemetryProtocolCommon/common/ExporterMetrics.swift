@@ -10,7 +10,7 @@ import OpenTelemetryApi
 /// The host application can then track different types of exporters, such as `http, grpc, and log`
 public class ExporterMetrics {
   public enum TransporterType: String {
-    case grpc = "grpc"
+    case grpc
     case protoBuf = "http"
     case httpJson = "http-json"
   }
