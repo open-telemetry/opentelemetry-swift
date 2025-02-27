@@ -21,18 +21,14 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter {
   private let exporterLock = Lock()
   private var exporterMetrics: ExporterMetrics?
 
-  override public init(
-    endpoint: URL = defaultOltpHttpLoggingEndpoint(),
-    config: OtlpConfiguration = OtlpConfiguration(),
-    useSession: URLSession? = nil,
-    envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes
-  ) {
-    super.init(
-      endpoint: endpoint,
-      config: config,
-      useSession: useSession,
-      envVarHeaders: envVarHeaders
-    )
+  override public init(endpoint: URL = defaultOltpHttpLoggingEndpoint(),
+                       config: OtlpConfiguration = OtlpConfiguration(),
+                       useSession: URLSession? = nil,
+                       envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+    super.init(endpoint: endpoint,
+               config: config,
+               useSession: useSession,
+               envVarHeaders: envVarHeaders)
   }
 
   /// A `convenience` constructor to provide support for exporter metric using`StableMeterProvider` type
@@ -42,30 +38,23 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter {
   ///    - meterProvider: Injected `StableMeterProvider` for metric
   ///    - useSession: Overridden `URLSession` if any
   ///    - envVarHeaders: Extra header key-values
-  convenience public init(
-    endpoint: URL = defaultOltpHttpLoggingEndpoint(),
-    config: OtlpConfiguration = OtlpConfiguration(),
-    meterProvider: StableMeterProvider,
-    useSession: URLSession? = nil,
-    envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes
-  ) {
-    self.init(
-      endpoint: endpoint, config: config, useSession: useSession,
-      envVarHeaders: envVarHeaders)
-    exporterMetrics = ExporterMetrics(
-      type: "log",
-      meterProvider: meterProvider,
-      exporterName: "otlp",
-      transportName: config.exportAsJson
+  convenience public init(endpoint: URL = defaultOltpHttpLoggingEndpoint(),
+                          config: OtlpConfiguration = OtlpConfiguration(),
+                          meterProvider: StableMeterProvider,
+                          useSession: URLSession? = nil,
+                          envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+    self.init(endpoint: endpoint, config: config, useSession: useSession,
+              envVarHeaders: envVarHeaders)
+    exporterMetrics = ExporterMetrics(type: "log",
+                                      meterProvider: meterProvider,
+                                      exporterName: "otlp",
+                                      transportName: config.exportAsJson
         ? ExporterMetrics.TransporterType.httpJson
-        : ExporterMetrics.TransporterType.grpc
-    )
+        : ExporterMetrics.TransporterType.grpc)
   }
 
-  public func export(
-    logRecords: [OpenTelemetrySdk.ReadableLogRecord],
-    explicitTimeout: TimeInterval? = nil
-  ) -> OpenTelemetrySdk.ExportResult {
+  public func export(logRecords: [OpenTelemetrySdk.ReadableLogRecord],
+                     explicitTimeout: TimeInterval? = nil) -> OpenTelemetrySdk.ExportResult {
     var sendingLogRecords: [ReadableLogRecord] = []
     exporterLock.withLockVoid {
       pendingLogRecords.append(contentsOf: logRecords)
@@ -91,8 +80,7 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter {
       }
     }
     exporterMetrics?.addSeen(value: sendingLogRecords.count)
-    request.timeoutInterval = min(
-      explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+    request.timeoutInterval = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
     httpClient.send(request: request) { [weak self] result in
       switch result {
       case .success:
@@ -128,8 +116,7 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter {
         }
       let semaphore = DispatchSemaphore(value: 0)
       var request = createRequest(body: body, endpoint: endpoint)
-      request.timeoutInterval = min(
-        explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+      request.timeoutInterval = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
       if let headers = envVarHeaders {
         headers.forEach { key, value in
           request.addValue(value, forHTTPHeaderField: key)

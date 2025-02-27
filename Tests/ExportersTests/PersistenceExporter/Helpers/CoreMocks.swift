@@ -17,35 +17,29 @@ struct StoragePerformanceMock: StoragePerformancePreset {
   let maxObjectsInFile: Int
   let maxObjectSize: UInt64
 
-  static let readAllFiles = StoragePerformanceMock(
-    maxFileSize: .max,
-    maxDirectorySize: .max,
-    maxFileAgeForWrite: 0,
-    minFileAgeForRead: -1, // make all files eligible for read
-    maxFileAgeForRead: .distantFuture, // make all files eligible for read
-    maxObjectsInFile: .max,
-    maxObjectSize: .max
-  )
+  static let readAllFiles = StoragePerformanceMock(maxFileSize: .max,
+                                                   maxDirectorySize: .max,
+                                                   maxFileAgeForWrite: 0,
+                                                   minFileAgeForRead: -1, // make all files eligible for read
+                                                   maxFileAgeForRead: .distantFuture, // make all files eligible for read
+                                                   maxObjectsInFile: .max,
+                                                   maxObjectSize: .max)
 
-  static let writeEachObjectToNewFileAndReadAllFiles = StoragePerformanceMock(
-    maxFileSize: .max,
-    maxDirectorySize: .max,
-    maxFileAgeForWrite: 0, // always return new file for writing
-    minFileAgeForRead: readAllFiles.minFileAgeForRead,
-    maxFileAgeForRead: readAllFiles.maxFileAgeForRead,
-    maxObjectsInFile: 1, // write each data to new file
-    maxObjectSize: .max
-  )
+  static let writeEachObjectToNewFileAndReadAllFiles = StoragePerformanceMock(maxFileSize: .max,
+                                                                              maxDirectorySize: .max,
+                                                                              maxFileAgeForWrite: 0, // always return new file for writing
+                                                                              minFileAgeForRead: readAllFiles.minFileAgeForRead,
+                                                                              maxFileAgeForRead: readAllFiles.maxFileAgeForRead,
+                                                                              maxObjectsInFile: 1, // write each data to new file
+                                                                              maxObjectSize: .max)
 
-  static let writeAllObjectsToTheSameFile = StoragePerformanceMock(
-    maxFileSize: .max,
-    maxDirectorySize: .max,
-    maxFileAgeForWrite: .distantFuture,
-    minFileAgeForRead: -1, // make all files eligible for read
-    maxFileAgeForRead: .distantFuture, // make all files eligible for read
-    maxObjectsInFile: .max,
-    maxObjectSize: .max
-  )
+  static let writeAllObjectsToTheSameFile = StoragePerformanceMock(maxFileSize: .max,
+                                                                   maxDirectorySize: .max,
+                                                                   maxFileAgeForWrite: .distantFuture,
+                                                                   minFileAgeForRead: -1, // make all files eligible for read
+                                                                   maxFileAgeForRead: .distantFuture, // make all files eligible for read
+                                                                   maxObjectsInFile: .max,
+                                                                   maxObjectSize: .max)
 }
 
 struct ExportPerformanceMock: ExportPerformancePreset {
@@ -55,13 +49,11 @@ struct ExportPerformanceMock: ExportPerformancePreset {
   let maxExportDelay: TimeInterval
   let exportDelayChangeRate: Double
 
-  static let veryQuick = ExportPerformanceMock(
-    initialExportDelay: 0.05,
-    defaultExportDelay: 0.05,
-    minExportDelay: 0.05,
-    maxExportDelay: 0.05,
-    exportDelayChangeRate: 0
-  )
+  static let veryQuick = ExportPerformanceMock(initialExportDelay: 0.05,
+                                               defaultExportDelay: 0.05,
+                                               minExportDelay: 0.05,
+                                               maxExportDelay: 0.05,
+                                               exportDelayChangeRate: 0)
 }
 
 extension PersistencePerformancePreset {

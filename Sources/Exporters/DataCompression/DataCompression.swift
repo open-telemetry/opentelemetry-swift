@@ -258,11 +258,9 @@ import Foundation
     public init() {}
 
     // C convention function pointer type matching the signature of `libz::crc32`
-    private typealias ZLibCrc32FuncPtr = @convention(c) (
-      _ cks: UInt32,
-      _ buf: UnsafePointer<UInt8>,
-      _ len: UInt32
-    ) -> UInt32
+    private typealias ZLibCrc32FuncPtr = @convention(c) (_ cks: UInt32,
+                                                         _ buf: UnsafePointer<UInt8>,
+                                                         _ len: UInt32) -> UInt32
 
     /// Raw checksum. Updated after a every call to `advance(withChunk:)`
     public var checksum: UInt32 = 0
@@ -347,11 +345,9 @@ import Foundation
     public init() {}
 
     // C convention function pointer type matching the signature of `libz::adler32`
-    private typealias ZLibAdler32FuncPtr = @convention(c) (
-      _ cks: UInt32,
-      _ buf: UnsafePointer<UInt8>,
-      _ len: UInt32
-    ) -> UInt32
+    private typealias ZLibAdler32FuncPtr = @convention(c) (_ cks: UInt32,
+                                                           _ buf: UnsafePointer<UInt8>,
+                                                           _ len: UInt32) -> UInt32
 
     /// Raw checksum. Updated after a every call to `advance(withChunk:)`
     public var checksum: UInt32 = 1

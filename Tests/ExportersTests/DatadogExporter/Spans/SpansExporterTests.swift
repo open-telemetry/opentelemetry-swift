@@ -44,10 +44,9 @@ class SpansExporterTests: XCTestCase {
                                               applicationVersion: "applicationVersion",
                                               environment: "environment",
                                               apiKey: "apikey",
-                                              endpoint: Endpoint.custom(
-                                                tracesURL: URL(string: "http://localhost:33333/traces")!,
-                                                logsURL: URL(string: "http://localhost:33333/logs")!,
-                                                metricsURL: URL(string: "http://localhost:33333/metrics")!),
+                                              endpoint: Endpoint.custom(tracesURL: URL(string: "http://localhost:33333/traces")!,
+                                                                        logsURL: URL(string: "http://localhost:33333/logs")!,
+                                                                        metricsURL: URL(string: "http://localhost:33333/metrics")!),
                                               uploadCondition: { true })
 
     let spansExporter = try SpansExporter(config: configuration)

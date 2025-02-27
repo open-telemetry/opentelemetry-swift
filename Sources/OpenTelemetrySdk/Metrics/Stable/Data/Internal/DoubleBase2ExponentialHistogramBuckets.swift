@@ -9,8 +9,7 @@ import OpenTelemetryApi
 public class DoubleBase2ExponentialHistogramBuckets:
   ExponentialHistogramBuckets, NSCopying {
   public func copy(with zone: NSZone? = nil) -> Any {
-    let copy = DoubleBase2ExponentialHistogramBuckets(
-      scale: scale, maxBuckets: 0)
+    let copy = DoubleBase2ExponentialHistogramBuckets(scale: scale, maxBuckets: 0)
     copy.counts = counts.copy() as! AdaptingCircularBufferCounter
     copy.base2ExponentialHistogramIndexer = base2ExponentialHistogramIndexer
     copy.totalCount = totalCount

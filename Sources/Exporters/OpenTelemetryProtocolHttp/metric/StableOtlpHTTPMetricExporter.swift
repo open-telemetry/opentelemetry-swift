@@ -26,20 +26,17 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
 
   // MARK: - Init
 
-  public init(
-    endpoint: URL, config: OtlpConfiguration = OtlpConfiguration(),
-    aggregationTemporalitySelector: AggregationTemporalitySelector =
+  public init(endpoint: URL, config: OtlpConfiguration = OtlpConfiguration(),
+              aggregationTemporalitySelector: AggregationTemporalitySelector =
       AggregationTemporality.alwaysCumulative(),
-    defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector.instance,
-    useSession: URLSession? = nil,
-    envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes
-  ) {
+              defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector.instance,
+              useSession: URLSession? = nil,
+              envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
     self.aggregationTemporalitySelector = aggregationTemporalitySelector
     self.defaultAggregationSelector = defaultAggregationSelector
 
-    super.init(
-      endpoint: endpoint, config: config, useSession: useSession,
-      envVarHeaders: envVarHeaders)
+    super.init(endpoint: endpoint, config: config, useSession: useSession,
+               envVarHeaders: envVarHeaders)
   }
 
   /// A `convenience` constructor to provide support for exporter metric using`StableMeterProvider` type
@@ -51,33 +48,27 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
   ///    - defaultAggregationSelector: default aggregator
   ///    - useSession: Overridden `URLSession` if any
   ///    - envVarHeaders: Extra header key-values
-  convenience public init(
-    endpoint: URL,
-    config: OtlpConfiguration = OtlpConfiguration(),
-    meterProvider: StableMeterProvider,
-    aggregationTemporalitySelector: AggregationTemporalitySelector =
+  convenience public init(endpoint: URL,
+                          config: OtlpConfiguration = OtlpConfiguration(),
+                          meterProvider: StableMeterProvider,
+                          aggregationTemporalitySelector: AggregationTemporalitySelector =
       AggregationTemporality.alwaysCumulative(),
-    defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector
+                          defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector
       .instance,
-    useSession: URLSession? = nil,
-    envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes
-  ) {
-    self.init(
-      endpoint: endpoint,
-      config: config,
-      aggregationTemporalitySelector: aggregationTemporalitySelector,
-      defaultAggregationSelector: defaultAggregationSelector,
-      useSession: useSession,
-      envVarHeaders: envVarHeaders
-    )
-    exporterMetrics = ExporterMetrics(
-      type: "metric",
-      meterProvider: meterProvider,
-      exporterName: "otlp",
-      transportName: config.exportAsJson
+                          useSession: URLSession? = nil,
+                          envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+    self.init(endpoint: endpoint,
+              config: config,
+              aggregationTemporalitySelector: aggregationTemporalitySelector,
+              defaultAggregationSelector: defaultAggregationSelector,
+              useSession: useSession,
+              envVarHeaders: envVarHeaders)
+    exporterMetrics = ExporterMetrics(type: "metric",
+                                      meterProvider: meterProvider,
+                                      exporterName: "otlp",
+                                      transportName: config.exportAsJson
         ? ExporterMetrics.TransporterType.httpJson
-        : ExporterMetrics.TransporterType.grpc
-    )
+        : ExporterMetrics.TransporterType.grpc)
   }
 
   // MARK: - StableMetricsExporter
@@ -96,8 +87,7 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
       }
     exporterMetrics?.addSeen(value: sendingMetrics.count)
     var request = createRequest(body: body, endpoint: endpoint)
-    request.timeoutInterval = min(
-      TimeInterval.greatestFiniteMagnitude, config.timeout)
+    request.timeoutInterval = min(TimeInterval.greatestFiniteMagnitude, config.timeout)
     httpClient.send(request: request) { [weak self] result in
       switch result {
       case .success:
@@ -129,8 +119,7 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
           }
       let semaphore = DispatchSemaphore(value: 0)
       var request = createRequest(body: body, endpoint: endpoint)
-      request.timeoutInterval = min(
-        TimeInterval.greatestFiniteMagnitude, config.timeout)
+      request.timeoutInterval = min(TimeInterval.greatestFiniteMagnitude, config.timeout)
       httpClient.send(request: request) { [weak self] result in
         switch result {
         case .success:

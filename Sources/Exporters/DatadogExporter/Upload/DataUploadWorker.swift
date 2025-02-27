@@ -30,13 +30,11 @@ class DataUploadWorker: DataUploadWorkerType {
   /// Upload work scheduled by this worker.
   private var uploadWork: DispatchWorkItem?
 
-  init(
-    fileReader: FileReader,
-    dataUploader: DataUploaderType,
-    uploadCondition: @escaping () -> Bool,
-    delay: Delay,
-    featureName: String
-  ) {
+  init(fileReader: FileReader,
+       dataUploader: DataUploaderType,
+       uploadCondition: @escaping () -> Bool,
+       delay: Delay,
+       featureName: String) {
     self.fileReader = fileReader
     self.uploadCondition = uploadCondition
     self.dataUploader = dataUploader

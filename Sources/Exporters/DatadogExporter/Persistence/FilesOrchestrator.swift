@@ -18,11 +18,9 @@ class FilesOrchestrator {
   /// This should correspond with number of objects stored in file, assuming that majority of writes succeed (the difference is negligible).
   private var lastWritableFileUsesCount: Int = 0
 
-  init(
-    directory: Directory,
-    performance: StoragePerformancePreset,
-    dateProvider: DateProvider
-  ) {
+  init(directory: Directory,
+       performance: StoragePerformancePreset,
+       dateProvider: DateProvider) {
     self.directory = directory
     self.performance = performance
     self.dateProvider = dateProvider

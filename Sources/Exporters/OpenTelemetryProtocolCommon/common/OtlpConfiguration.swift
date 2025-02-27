@@ -30,12 +30,10 @@ public struct OtlpConfiguration {
   public let timeout: TimeInterval
   public let compression: CompressionType
   public let exportAsJson: Bool
-  public init(
-    timeout: TimeInterval = OtlpConfiguration.DefaultTimeoutInterval,
-    compression: CompressionType = .gzip,
-    headers: [(String, String)]? = nil,
-    exportAsJson: Bool = true
-  ) {
+  public init(timeout: TimeInterval = OtlpConfiguration.DefaultTimeoutInterval,
+              compression: CompressionType = .gzip,
+              headers: [(String, String)]? = nil,
+              exportAsJson: Bool = true) {
     self.headers = headers
     self.timeout = timeout
     self.compression = compression

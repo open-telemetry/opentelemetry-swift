@@ -53,12 +53,11 @@ public class HistogramAggregator<T: SignedNumeric & Comparable>: Aggregator<T> {
   }
 
   public override func toMetricData() -> MetricData {
-    return HistogramData<T>(
-      startTimestamp: lastStart,
-      timestamp: lastEnd,
-      buckets: pointCheck.buckets,
-      count: pointCheck.count,
-      sum: pointCheck.sum)
+    return HistogramData<T>(startTimestamp: lastStart,
+                            timestamp: lastEnd,
+                            buckets: pointCheck.buckets,
+                            count: pointCheck.count,
+                            sum: pointCheck.sum)
   }
 
   public override func getAggregationType() -> AggregationType {
@@ -88,19 +87,15 @@ private struct Histogram<T> where T: SignedNumeric {
    * }
    */
   var buckets:
-    (
-      boundaries: [T],
-      counts: [Int]
-    )
+    (boundaries: [T],
+     counts: [Int])
   var sum: T
   var count: Int
 
   init(boundaries: [T]) {
     sum = 0
     count = 0
-    buckets = (
-      boundaries: boundaries,
-      counts: Array(repeating: 0, count: boundaries.count + 1)
-    )
+    buckets = (boundaries: boundaries,
+               counts: Array(repeating: 0, count: boundaries.count + 1))
   }
 }

@@ -27,19 +27,16 @@ public class PersistenceMetricExporterDecorator: MetricExporter {
   private let persistenceExporter:
     PersistenceExporterDecorator<MetricDecoratedExporter>
 
-  public init(
-    metricExporter: MetricExporter,
-    storageURL: URL,
-    exportCondition: @escaping () -> Bool = { true },
-    performancePreset: PersistencePerformancePreset = .default
-  ) throws {
+  public init(metricExporter: MetricExporter,
+              storageURL: URL,
+              exportCondition: @escaping () -> Bool = { true },
+              performancePreset: PersistencePerformancePreset = .default) throws {
     persistenceExporter =
-      PersistenceExporterDecorator<MetricDecoratedExporter>(
-        decoratedExporter: MetricDecoratedExporter(
+      PersistenceExporterDecorator<MetricDecoratedExporter>(decoratedExporter: MetricDecoratedExporter(
           metricExporter: metricExporter),
-        storageURL: storageURL,
-        exportCondition: exportCondition,
-        performancePreset: performancePreset)
+                                                            storageURL: storageURL,
+                                                            exportCondition: exportCondition,
+                                                            performancePreset: performancePreset)
   }
 
   public func export(metrics: [Metric], shouldCancel: (() -> Bool)?)

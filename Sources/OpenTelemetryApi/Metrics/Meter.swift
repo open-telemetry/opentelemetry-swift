@@ -27,9 +27,7 @@ public protocol Meter {
   /// - Returns:The counter instance.
   /// Phase 2
   /// @available(*,deprecated, message: "counter instruments are now monotonic only. Use UpDownCounter for non-monotonic.")
-  func createDoubleCounter(name: String, monotonic: Bool) -> AnyCounterMetric<
-    Double
-  >
+  func createDoubleCounter(name: String, monotonic: Bool) -> AnyCounterMetric<Double>
 
   /// Creates Int Measure with given name.
   /// - Parameters:
@@ -47,9 +45,7 @@ public protocol Meter {
   /// - Returns:The measure instance.
   /// Phase 2
   /// @available(*,deprecated)
-  func createDoubleMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<
-    Double
-  >
+  func createDoubleMeasure(name: String, absolute: Bool) -> AnyMeasureMetric<Double>
 
   /// Creates Int Histogram with given name and boundaries.
   /// - Parameters:
@@ -59,9 +55,7 @@ public protocol Meter {
   /// - Returns:The histogram instance.
   /// Phase 2
   /// @available(*,deprecated)
-  func createIntHistogram(
-    name: String, explicitBoundaries: [Int]?, absolute: Bool
-  ) -> AnyHistogramMetric<Int>
+  func createIntHistogram(name: String, explicitBoundaries: [Int]?, absolute: Bool) -> AnyHistogramMetric<Int>
 
   /// Creates Double Histogram with given name and boundaries.
   /// - Parameters:
@@ -71,9 +65,7 @@ public protocol Meter {
   /// - Returns:The histogram instance.
   /// Phase 2
   /// @available(*,deprecated)
-  func createDoubleHistogram(
-    name: String, explicitBoundaries: [Double]?, absolute: Bool
-  ) -> AnyHistogramMetric<Double>
+  func createDoubleHistogram(name: String, explicitBoundaries: [Double]?, absolute: Bool) -> AnyHistogramMetric<Double>
 
   /// Creates a double histogram given the name, boundaries, counts, and start and end dates.
   /// - Parameters:
@@ -97,10 +89,8 @@ public protocol Meter {
   /// - Returns:The observer instance.
   /// Phase 2
   /// @available(*,deprecated)
-  func createIntObserver(
-    name: String, absolute: Bool,
-    callback: @escaping (IntObserverMetric) -> Void
-  ) -> IntObserverMetric
+  func createIntObserver(name: String, absolute: Bool,
+                         callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric
 
   /// Creates Double Observer with given name.
   /// - Parameters:
@@ -110,10 +100,8 @@ public protocol Meter {
   /// - Returns:The observer instance.
   /// Phase 2
   /// @available(*,deprecated)
-  func createDoubleObserver(
-    name: String, absolute: Bool,
-    callback: @escaping (DoubleObserverMetric) -> Void
-  ) -> DoubleObserverMetric
+  func createDoubleObserver(name: String, absolute: Bool,
+                            callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric
 
   /// Creates Double Observable Gauge with given name.
   /// - Parameters:
@@ -122,9 +110,7 @@ public protocol Meter {
   /// - Returns:The gauge instance.
   /// Phase 2
   /// @available(*,deprecated)
-  func createIntObservableGauge(
-    name: String, callback: @escaping (IntObserverMetric) -> Void
-  ) -> IntObserverMetric
+  func createIntObservableGauge(name: String, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric
 
   /// Creates Int Observable Gauge with given name.
   /// - Parameters:
@@ -133,9 +119,7 @@ public protocol Meter {
   ///   - Returns:The gauge instance.
   /// Phase 2
   /// @available(*,deprecated)
-  func createDoubleObservableGauge(
-    name: String, callback: @escaping (DoubleObserverMetric) -> Void
-  ) -> DoubleObserverMetric
+  func createDoubleObservableGauge(name: String, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric
 
   /// Constructs or retrieves the LabelSet from the given dictionary.
   /// - Parameters:
@@ -173,17 +157,13 @@ extension Meter {
 
   // Phase 2
   // @available(*,deprecated)
-  public func createIntObserver(
-    name: String, callback: @escaping (IntObserverMetric) -> Void
-  ) -> IntObserverMetric {
+  public func createIntObserver(name: String, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric {
     return createIntObserver(name: name, absolute: true, callback: callback)
   }
 
   // Phase 2
   // @available(*,deprecated)
-  public func createDoubleObserver(
-    name: String, callback: @escaping (DoubleObserverMetric) -> Void
-  ) -> DoubleObserverMetric {
+  public func createDoubleObserver(name: String, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric {
     return createDoubleObserver(name: name, absolute: true, callback: callback)
   }
 }

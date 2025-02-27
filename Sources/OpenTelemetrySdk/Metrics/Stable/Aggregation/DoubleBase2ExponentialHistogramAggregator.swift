@@ -72,21 +72,19 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
         lock.unlock()
       }
 
-      let pointData = ExponentialHistogramPointData(
-        scale: scale,
-        sum: sum,
-        zeroCount: Int64(zeroCount),
-        hasMin: count > 0,
-        hasMax: count > 0,
-        min: min,
-        max: max,
-        positiveBuckets: resolveBuckets(buckets: positiveBuckets, scale: scale, reset: reset),
-        negativeBuckets: resolveBuckets(buckets: negativeBuckets, scale: scale, reset: reset),
-        startEpochNanos: startEpochNano,
-        epochNanos: endEpochNano,
-        attributes: attributes,
-        exemplars: exemplars
-      )
+      let pointData = ExponentialHistogramPointData(scale: scale,
+                                                    sum: sum,
+                                                    zeroCount: Int64(zeroCount),
+                                                    hasMin: count > 0,
+                                                    hasMax: count > 0,
+                                                    min: min,
+                                                    max: max,
+                                                    positiveBuckets: resolveBuckets(buckets: positiveBuckets, scale: scale, reset: reset),
+                                                    negativeBuckets: resolveBuckets(buckets: negativeBuckets, scale: scale, reset: reset),
+                                                    startEpochNanos: startEpochNano,
+                                                    epochNanos: endEpochNano,
+                                                    attributes: attributes,
+                                                    exemplars: exemplars)
 
       if reset {
         sum = 0

@@ -76,43 +76,34 @@ public struct PerformancePreset: Equatable, StoragePerformancePreset, UploadPerf
 
   /// Performance preset optimized for low runtime impact.
   /// Minimalizes number of data requests send to the server.
-  public static let lowRuntimeImpact = PerformancePreset(
-    // persistence
-    maxFileSize: 4 * 1_024 * 1_024, // 4MB
-    maxDirectorySize: 512 * 1_024 * 1_024, // 512 MB
-    maxFileAgeForWrite: 4.75,
-    minFileAgeForRead: 4.75 + 0.5, // `maxFileAgeForWrite` + 0.5s margin
-    maxFileAgeForRead: 18 * 60 * 60, // 18h
-    maxObjectsInFile: 500,
-    maxObjectSize: 256 * 1_024, // 256KB
-    synchronousWrite: false,
-
-    // upload
-    initialUploadDelay: 5, // postpone to not impact app launch time
-    defaultUploadDelay: 5,
-    minUploadDelay: 1,
-    maxUploadDelay: 20,
-    uploadDelayChangeRate: 0.1
-  )
+  public static let lowRuntimeImpact = PerformancePreset( maxFileSize: 4 * 1_024 * 1_024, // 4MB
+                                                         maxDirectorySize: 512 * 1_024 * 1_024, // 512 MB
+                                                         maxFileAgeForWrite: 4.75,
+                                                         minFileAgeForRead: 4.75 + 0.5, // `maxFileAgeForWrite` + 0.5s margin
+                                                         maxFileAgeForRead: 18 * 60 * 60, // 18h
+                                                         maxObjectsInFile: 500,
+                                                         maxObjectSize: 256 * 1_024, // 256KB
+                                                         synchronousWrite: false,
+                                                         initialUploadDelay: 5, // postpone to not impact app launch time
+                                                         defaultUploadDelay: 5,
+                                                         minUploadDelay: 1,
+                                                         maxUploadDelay: 20,
+                                                         uploadDelayChangeRate: 0.1)
 
   /// Performance preset optimized for instant data delivery.
   /// Minimalizes the time between receiving data form the user and delivering it to the server.
-  public static let instantDataDelivery = PerformancePreset(
-    // persistence
-    maxFileSize: `default`.maxFileSize,
-    maxDirectorySize: `default`.maxDirectorySize,
-    maxFileAgeForWrite: 2.75,
-    minFileAgeForRead: 2.75 + 0.5, // `maxFileAgeForWrite` + 0.5s margin
-    maxFileAgeForRead: `default`.maxFileAgeForRead,
-    maxObjectsInFile: `default`.maxObjectsInFile,
-    maxObjectSize: `default`.maxObjectSize,
-    synchronousWrite: true,
-
-    // upload
-    initialUploadDelay: 0.5, // send quick to have a chance for upload in short-lived app extensions
-    defaultUploadDelay: 3,
-    minUploadDelay: 1,
-    maxUploadDelay: 5,
-    uploadDelayChangeRate: 0.5 // reduce significantly for more uploads in short-lived app extensions
+  public static let instantDataDelivery = PerformancePreset(maxFileSize: `default`.maxFileSize,
+                                                            maxDirectorySize: `default`.maxDirectorySize,
+                                                            maxFileAgeForWrite: 2.75,
+                                                            minFileAgeForRead: 2.75 + 0.5, // `maxFileAgeForWrite` + 0.5s margin
+                                                            maxFileAgeForRead: `default`.maxFileAgeForRead,
+                                                            maxObjectsInFile: `default`.maxObjectsInFile,
+                                                            maxObjectSize: `default`.maxObjectSize,
+                                                            synchronousWrite: true,
+                                                            initialUploadDelay: 0.5, // send quick to have a chance for upload in short-lived app extensions
+                                                            defaultUploadDelay: 3,
+                                                            minUploadDelay: 1,
+                                                            maxUploadDelay: 5,
+                                                            uploadDelayChangeRate: 0.5 // reduce significantly for more uploads in short-lived app extensions
   )
 }

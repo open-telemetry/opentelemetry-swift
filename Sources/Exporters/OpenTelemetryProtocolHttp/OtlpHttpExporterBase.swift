@@ -19,12 +19,10 @@ public class OtlpHttpExporterBase {
   let envVarHeaders: [(String, String)]?
   let config: OtlpConfiguration
 
-  public init(
-    endpoint: URL,
-    config: OtlpConfiguration = OtlpConfiguration(),
-    useSession: URLSession? = nil,
-    envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes
-  ) {
+  public init(endpoint: URL,
+              config: OtlpConfiguration = OtlpConfiguration(),
+              useSession: URLSession? = nil,
+              envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
     self.envVarHeaders = envVarHeaders
     self.endpoint = endpoint
     self.config = config

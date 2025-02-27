@@ -33,12 +33,10 @@ public class ExporterMetrics {
   ///    - meterProvider: Injected `StableMeterProvider` for metric
   ///    - exporterName: Could be `span`, `log` etc
   ///    - transportName: Kind of exporter defined by type `TransporterType`
-  public init(
-    type: String,
-    meterProvider: StableMeterProvider,
-    exporterName: String,
-    transportName: TransporterType
-  ) {
+  public init(type: String,
+              meterProvider: StableMeterProvider,
+              exporterName: String,
+              transportName: TransporterType) {
     self.meterProvider = meterProvider
     self.exporterName = exporterName
     self.transportName = transportName.rawValue
@@ -80,17 +78,13 @@ public class ExporterMetrics {
 
   // MARK: - Static function
 
-  public static func makeExporterMetric(
-    type: String,
-    meterProvider: StableMeterProvider,
-    exporterName: String,
-    transportName: TransporterType
-  ) -> ExporterMetrics {
-    ExporterMetrics(
-      type: type,
-      meterProvider: meterProvider,
-      exporterName: exporterName,
-      transportName: transportName
-    )
+  public static func makeExporterMetric(type: String,
+                                        meterProvider: StableMeterProvider,
+                                        exporterName: String,
+                                        transportName: TransporterType) -> ExporterMetrics {
+    ExporterMetrics(type: type,
+                    meterProvider: meterProvider,
+                    exporterName: exporterName,
+                    transportName: transportName)
   }
 }

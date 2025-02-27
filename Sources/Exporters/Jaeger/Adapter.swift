@@ -60,42 +60,35 @@
         parentSpanId = Int64(spanHex, radix: 16) ?? 0
 
         let refType = SpanRefType.child_of
-        let spanRef = SpanRef(
-          refType: refType, traceIdLow: parentTraceIdLow, traceIdHigh: parentTraceIdHigh,
-          spanId: parentSpanId)
+        let spanRef = SpanRef(refType: refType, traceIdLow: parentTraceIdLow, traceIdHigh: parentTraceIdHigh,
+                              spanId: parentSpanId)
 
         references.append(spanRef)
       }
 
       tags.append(
-        Tag(
-          key: Adapter.keySpanKind, vType: .string, vStr: span.kind.rawValue.uppercased(),
-          vDouble: nil, vBool: nil, vLong: nil, vBinary: nil))
+        Tag(key: Adapter.keySpanKind, vType: .string, vStr: span.kind.rawValue.uppercased(),
+            vDouble: nil, vBool: nil, vLong: nil, vBinary: nil))
       if case let Status.error(description) = span.status {
         tags.append(
-          Tag(
-            key: Adapter.keySpanStatusMessage, vType: .string, vStr: description, vDouble: nil,
-            vBool: nil, vLong: nil, vBinary: nil))
+          Tag(key: Adapter.keySpanStatusMessage, vType: .string, vStr: description, vDouble: nil,
+              vBool: nil, vLong: nil, vBinary: nil))
         tags.append(
-          Tag(
-            key: keyError, vType: .bool, vStr: nil, vDouble: nil, vBool: true, vLong: nil,
-            vBinary: nil))
+          Tag(key: keyError, vType: .bool, vStr: nil, vDouble: nil, vBool: true, vLong: nil,
+              vBinary: nil))
 
       } else {
         tags.append(
-          Tag(
-            key: Adapter.keySpanStatusMessage, vType: .string, vStr: "", vDouble: nil, vBool: nil,
-            vLong: nil, vBinary: nil))
+          Tag(key: Adapter.keySpanStatusMessage, vType: .string, vStr: "", vDouble: nil, vBool: nil,
+              vLong: nil, vBinary: nil))
       }
       tags.append(
-        Tag(
-          key: Adapter.keySpanStatusCode, vType: .long, vStr: nil, vDouble: nil, vBool: nil,
-          vLong: Int64(span.status.code), vBinary: nil))
+        Tag(key: Adapter.keySpanStatusCode, vType: .long, vStr: nil, vDouble: nil, vBool: nil,
+            vLong: Int64(span.status.code), vBinary: nil))
 
-      return Span(
-        traceIdLow: traceIdLow, traceIdHigh: traceIdHigh, spanId: spanId,
-        parentSpanId: parentSpanId, operationName: operationName, references: references, flags: 0,
-        startTime: startTime, duration: duration, tags: tags, logs: logs)
+      return Span(traceIdLow: traceIdLow, traceIdHigh: traceIdHigh, spanId: spanId,
+                  parentSpanId: parentSpanId, operationName: operationName, references: references, flags: 0,
+                  startTime: startTime, duration: duration, tags: tags, logs: logs)
     }
 
     static func toJaegerTags(attributes: [String: AttributeValue]) -> [Tag] {
@@ -189,9 +182,8 @@
         vType = .string
         vStr = try? String(data: JSONEncoder().encode(value), encoding: .utf8)
       }
-      return Tag(
-        key: key, vType: vType, vStr: vStr, vDouble: vDouble, vBool: vBool, vLong: vLong,
-        vBinary: nil)
+      return Tag(key: key, vType: vType, vStr: vStr, vDouble: vDouble, vBool: vBool, vLong: vLong,
+                 vBinary: nil)
     }
 
     static func toJaegerLogs(events: [SpanData.Event]) -> [Log] {
@@ -209,9 +201,8 @@
 
       var tags = TList<Tag>()
       tags.append(
-        Tag(
-          key: Adapter.keyLogMessage, vType: .string, vStr: event.name, vDouble: nil, vBool: nil,
-          vLong: nil, vBinary: nil))
+        Tag(key: Adapter.keyLogMessage, vType: .string, vStr: event.name, vDouble: nil, vBool: nil,
+            vLong: nil, vBinary: nil))
       tags.append(contentsOf: toJaegerTags(attributes: event.attributes))
       return Log(timestamp: timestamp, fields: tags)
     }
@@ -235,8 +226,7 @@
       let spanId = Int64(spanHex, radix: 16) ?? 0
       let refType = SpanRefType.follows_from
 
-      return SpanRef(
-        refType: refType, traceIdLow: traceIdLow, traceIdHigh: traceIdHigh, spanId: spanId)
+      return SpanRef(refType: refType, traceIdLow: traceIdLow, traceIdHigh: traceIdHigh, spanId: spanId)
     }
   }
 

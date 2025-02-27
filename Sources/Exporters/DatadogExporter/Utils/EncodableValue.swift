@@ -77,10 +77,8 @@ struct JSONStringEncodableValue: Encodable {
         guard subdataStartIndex < subdataEndIndex else {
           // This error should never be thrown, as the `temporaryJsonArrayData` will always contain at
           // least two bytes standing for `[` and `]`. This check is just for sanity.
-          let encodingContext = EncodingError.Context(
-            codingPath: encoder.codingPath,
-            debugDescription: "Cannot safely encode value within a temporary array container."
-          )
+          let encodingContext = EncodingError.Context(codingPath: encoder.codingPath,
+                                                      debugDescription: "Cannot safely encode value within a temporary array container.")
           throw EncodingError.invalidValue(encodable.value, encodingContext)
         }
 

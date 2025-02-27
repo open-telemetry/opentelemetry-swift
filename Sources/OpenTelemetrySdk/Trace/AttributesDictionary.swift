@@ -36,9 +36,7 @@ public struct AttributesDictionary {
     }
   }
 
-  @discardableResult public mutating func updateValue(
-    value: AttributeValue, forKey key: String
-  ) -> AttributeValue? {
+  @discardableResult public mutating func updateValue(value: AttributeValue, forKey key: String) -> AttributeValue? {
     var attributedValue = value
     switch value {
     case let .string(v):

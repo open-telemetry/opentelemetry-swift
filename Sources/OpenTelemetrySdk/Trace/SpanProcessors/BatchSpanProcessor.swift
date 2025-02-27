@@ -25,24 +25,20 @@ public struct BatchSpanProcessor: SpanProcessor {
     String(describing: Self.self)
   }
 
-  public init(
-    spanExporter: SpanExporter,
-    meterProvider: StableMeterProvider? = nil,
-    scheduleDelay: TimeInterval = 5,
-    exportTimeout: TimeInterval = 30,
-    maxQueueSize: Int = 2048,
-    maxExportBatchSize: Int = 512,
-    willExportCallback: ((inout [SpanData]) -> Void)? = nil
-  ) {
-    worker = BatchWorker(
-      spanExporter: spanExporter,
-      meterProvider: meterProvider,
-      scheduleDelay: scheduleDelay,
-      exportTimeout: exportTimeout,
-      maxQueueSize: maxQueueSize,
-      maxExportBatchSize: maxExportBatchSize,
-      willExportCallback: willExportCallback
-    )
+  public init(spanExporter: SpanExporter,
+              meterProvider: StableMeterProvider? = nil,
+              scheduleDelay: TimeInterval = 5,
+              exportTimeout: TimeInterval = 30,
+              maxQueueSize: Int = 2048,
+              maxExportBatchSize: Int = 512,
+              willExportCallback: ((inout [SpanData]) -> Void)? = nil) {
+    worker = BatchWorker(spanExporter: spanExporter,
+                         meterProvider: meterProvider,
+                         scheduleDelay: scheduleDelay,
+                         exportTimeout: exportTimeout,
+                         maxQueueSize: maxQueueSize,
+                         maxExportBatchSize: maxExportBatchSize,
+                         willExportCallback: willExportCallback)
     worker.start()
   }
 
@@ -88,15 +84,13 @@ private class BatchWorker: WorkerThread {
   private var spanGaugeObserver: ObservableLongGauge?
   private var processedSpansCounter: LongCounter?
 
-  init(
-    spanExporter: SpanExporter,
-    meterProvider: StableMeterProvider? = nil,
-    scheduleDelay: TimeInterval,
-    exportTimeout: TimeInterval,
-    maxQueueSize: Int,
-    maxExportBatchSize: Int,
-    willExportCallback: ((inout [SpanData]) -> Void)?
-  ) {
+  init(spanExporter: SpanExporter,
+       meterProvider: StableMeterProvider? = nil,
+       scheduleDelay: TimeInterval,
+       exportTimeout: TimeInterval,
+       maxQueueSize: Int,
+       maxExportBatchSize: Int,
+       willExportCallback: ((inout [SpanData]) -> Void)?) {
     self.spanExporter = spanExporter
     self.meterProvider = meterProvider
     self.scheduleDelay = scheduleDelay
@@ -114,12 +108,10 @@ private class BatchWorker: WorkerThread {
       longGaugeSdk = longGaugeSdk?.setDescription("The number of items queued")
       longGaugeSdk = longGaugeSdk?.setUnit("1")
       queueSizeGauge = longGaugeSdk?.buildWithCallback { result in
-        result.record(
-          value: maxQueueSize,
-          attributes: [
-            BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE)
-          ]
-        )
+        result.record(value: maxQueueSize,
+                      attributes: [
+                        BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE)
+                      ])
       }
 
       var longCounterSdk = meter.counterBuilder(name: "processedSpans") as? LongCounterMeterBuilderSdk
@@ -131,12 +123,10 @@ private class BatchWorker: WorkerThread {
       spanGaugeObserver = meter.gaugeBuilder(name: "spanSize")
         .ofLongs()
         .buildWithCallback { [count = spanList.count] result in
-          result.record(
-            value: count,
-            attributes: [
-              BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE)
-            ]
-          )
+          result.record(value: count,
+                        attributes: [
+                          BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE)
+                        ])
         }
     }
   }
@@ -226,7 +216,8 @@ private class BatchWorker: WorkerThread {
         cond.lock()
         processedSpansCounter?.add(value: spanList.count, attribute: [
           BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE),
-          BatchSpanProcessor.SPAN_PROCESSOR_DROPPED_LABEL: .bool(false)])
+          BatchSpanProcessor.SPAN_PROCESSOR_DROPPED_LABEL: .bool(false)
+        ])
         cond.unlock()
       }
     }

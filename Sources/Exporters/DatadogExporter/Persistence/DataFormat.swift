@@ -16,11 +16,9 @@ struct DataFormat {
 
   // MARK: - Initialization
 
-  init(
-    prefix: String,
-    suffix: String,
-    separator: String
-  ) {
+  init(prefix: String,
+       suffix: String,
+       separator: String) {
     prefixData = prefix.data(using: .utf8)! // swiftlint:disable:this force_unwrapping
     suffixData = suffix.data(using: .utf8)! // swiftlint:disable:this force_unwrapping
     separatorData = separator.data(using: .utf8)! // swiftlint:disable:this force_unwrapping

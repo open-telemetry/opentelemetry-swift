@@ -84,27 +84,22 @@ struct StatusExplicitCodable: Codable {
     let container = try decoder.container(keyedBy: CodingKeys.self)
 
     guard container.allKeys.count == 1 else {
-      let context = DecodingError.Context(
-        codingPath: container.codingPath,
-        debugDescription: "Invalid number of keys found, expected one.")
+      let context = DecodingError.Context(codingPath: container.codingPath,
+                                          debugDescription: "Invalid number of keys found, expected one.")
       throw DecodingError.typeMismatch(Status.self, context)
     }
 
     switch container.allKeys.first.unsafelyUnwrapped {
     case .ok:
-      _ = try container.nestedContainer(
-        keyedBy: EmptyCodingKeys.self, forKey: .ok)
+      _ = try container.nestedContainer(keyedBy: EmptyCodingKeys.self, forKey: .ok)
       status = .ok
     case .unset:
-      _ = try container.nestedContainer(
-        keyedBy: EmptyCodingKeys.self, forKey: .unset)
+      _ = try container.nestedContainer(keyedBy: EmptyCodingKeys.self, forKey: .unset)
       status = .unset
     case .error:
-      let nestedContainer = try container.nestedContainer(
-        keyedBy: ErrorCodingKeys.self, forKey: .error)
+      let nestedContainer = try container.nestedContainer(keyedBy: ErrorCodingKeys.self, forKey: .error)
       status = .error(
-        description: try nestedContainer.decode(
-          String.self, forKey: .description))
+        description: try nestedContainer.decode(String.self, forKey: .description))
     }
   }
 
@@ -115,11 +110,9 @@ struct StatusExplicitCodable: Codable {
     case .ok:
       _ = container.nestedContainer(keyedBy: EmptyCodingKeys.self, forKey: .ok)
     case .unset:
-      _ = container.nestedContainer(
-        keyedBy: EmptyCodingKeys.self, forKey: .unset)
+      _ = container.nestedContainer(keyedBy: EmptyCodingKeys.self, forKey: .unset)
     case .error(let description):
-      var nestedContainer = container.nestedContainer(
-        keyedBy: ErrorCodingKeys.self, forKey: .error)
+      var nestedContainer = container.nestedContainer(keyedBy: ErrorCodingKeys.self, forKey: .error)
       try nestedContainer.encode(description, forKey: .description)
     }
   }

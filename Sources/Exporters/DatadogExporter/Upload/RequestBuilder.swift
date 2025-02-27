@@ -63,10 +63,8 @@ struct RequestBuilder {
 
     /// Standard "User-Agent" header.
     static func userAgentHeader(appName: String, appVersion: String, device: Device) -> HTTPHeader {
-      return HTTPHeader(
-        field: userAgentHeaderField,
-        value: .constant("\(appName)/\(appVersion) CFNetwork (\(device.model); \(device.osName)/\(device.osVersion))")
-      )
+      return HTTPHeader(field: userAgentHeaderField,
+                        value: .constant("\(appName)/\(appVersion) CFNetwork (\(device.model); \(device.osName)/\(device.osVersion))"))
     }
 
     /// Standard "Content-Encoding" header.

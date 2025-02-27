@@ -38,19 +38,17 @@ struct LogSanitizer {
   }
 
   func sanitize(log: DDLog) -> DDLog {
-    return DDLog(
-      date: log.date,
-      status: log.status,
-      message: log.message,
-      serviceName: log.serviceName,
-      environment: log.environment,
-      loggerName: log.loggerName,
-      loggerVersion: log.loggerVersion,
-      threadName: log.threadName,
-      applicationVersion: log.applicationVersion,
-      attributes: sanitize(attributes: log.attributes),
-      tags: sanitize(tags: log.tags)
-    )
+    return DDLog(date: log.date,
+                 status: log.status,
+                 message: log.message,
+                 serviceName: log.serviceName,
+                 environment: log.environment,
+                 loggerName: log.loggerName,
+                 loggerVersion: log.loggerVersion,
+                 threadName: log.threadName,
+                 applicationVersion: log.applicationVersion,
+                 attributes: sanitize(attributes: log.attributes),
+                 tags: sanitize(tags: log.tags))
   }
 
   // MARK: - Attributes sanitization
@@ -64,10 +62,8 @@ struct LogSanitizer {
     let userAttributesLimit = Constraints.maxNumberOfAttributes - (rawAttributes.internalAttributes?.count ?? 0)
     userAttributes = limitToMaxNumberOfAttributes(userAttributes, limit: userAttributesLimit)
 
-    return LogAttributes(
-      userAttributes: userAttributes,
-      internalAttributes: rawAttributes.internalAttributes
-    )
+    return LogAttributes(userAttributes: userAttributes,
+                         internalAttributes: rawAttributes.internalAttributes)
   }
 
   private func removeInvalidAttributes(_ attributes: [String: Encodable]) -> [String: Encodable] {

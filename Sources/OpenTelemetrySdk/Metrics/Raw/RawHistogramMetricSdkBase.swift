@@ -7,17 +7,13 @@ import Foundation
 import OpenTelemetryApi
 
 class RawHistogramMetricSdkBase<T>: RawHistogramMetric {
-  func record(
-    explicitBoundaries: [T], counts: [Int], startDate: Date, endDate: Date,
-    count: Int, sum: T, labelset: LabelSet
-  ) {
+  func record(explicitBoundaries: [T], counts: [Int], startDate: Date, endDate: Date,
+              count: Int, sum: T, labelset: LabelSet) {
     // noop
   }
 
-  func record(
-    explicitBoundaries: [T], counts: [Int], startDate: Date, endDate: Date,
-    count: Int, sum: T, labels: [String: String]
-  ) {
+  func record(explicitBoundaries: [T], counts: [Int], startDate: Date, endDate: Date,
+              count: Int, sum: T, labels: [String: String]) {
     // noop
   }
 

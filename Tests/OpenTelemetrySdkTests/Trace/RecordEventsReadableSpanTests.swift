@@ -310,13 +310,11 @@ class RecordEventsReadableSpanTest: XCTestCase {
   func testExceptionAttributesOverwriteAdditionalAttributes() throws {
     let span = createTestRootSpan()
     let exception = NSError(domain: "test error", code: 5)
-    span.recordException(
-      exception,
-      attributes: [
-        SemanticAttributes.exceptionMessage.rawValue: .string("another, different reason"),
-        "This-Key-Should-Not-Get-Overwritten": .string("original-value")
-      ]
-    )
+    span.recordException(exception,
+                         attributes: [
+                           SemanticAttributes.exceptionMessage.rawValue: .string("another, different reason"),
+                           "This-Key-Should-Not-Get-Overwritten": .string("original-value")
+                         ])
     span.end()
     let spanData = span.toSpanData()
     XCTAssertEqual(spanData.events.count, 1)
@@ -546,14 +544,12 @@ class RecordEventsReadableSpanTest: XCTestCase {
     let endTime = clock.now
     let event1 = SpanData.Event(name: "event1", timestamp: firstEventTimeNanos, attributes: event1Attributes)
     let event2 = SpanData.Event(name: "event2", timestamp: secondEventTimeNanos, attributes: event2Attributes)
-    let exceptionEvent = SpanData.Event(
-      name: SemanticAttributes.exception.rawValue,
-      timestamp: exceptionTimeNanos,
-      attributes: [
-        SemanticAttributes.exceptionType.rawValue: .string(exception.type),
-        SemanticAttributes.exceptionMessage.rawValue: .string(exception.message!)
-      ]
-    )
+    let exceptionEvent = SpanData.Event(name: SemanticAttributes.exception.rawValue,
+                                        timestamp: exceptionTimeNanos,
+                                        attributes: [
+                                          SemanticAttributes.exceptionType.rawValue: .string(exception.type),
+                                          SemanticAttributes.exceptionMessage.rawValue: .string(exception.message!)
+                                        ])
     let events = [event1, event2, exceptionEvent]
     let expected = SpanData(traceId: traceId,
                             spanId: spanId,

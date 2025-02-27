@@ -7,9 +7,7 @@ import Foundation
 import OpenTelemetryApi
 
 extension Meter {
-  public func addMetric(
-    name _: String, type _: AggregationType, data _: [MetricData]
-  ) {
+  public func addMetric(name _: String, type _: AggregationType, data _: [MetricData]) {
     // noop
   }
 }
@@ -40,10 +38,8 @@ class MeterSdk: Meter {
 
   var metrics = [Metric]()
 
-  init(
-    meterSharedState: MeterSharedState,
-    instrumentationScopeInfo: InstrumentationScopeInfo
-  ) {
+  init(meterSharedState: MeterSharedState,
+       instrumentationScopeInfo: InstrumentationScopeInfo) {
     meterName = instrumentationScopeInfo.name
     resource = meterSharedState.resource
     metricProcessor = meterSharedState.metricProcessor
@@ -55,9 +51,8 @@ class MeterSdk: Meter {
   }
 
   func addMetric(name: String, type: AggregationType, data: [MetricData]) {
-    var metric = Metric(
-      namespace: meterName, name: name, desc: meterName + name, type: type,
-      resource: resource, instrumentationScopeInfo: instrumentationScopeInfo)
+    var metric = Metric(namespace: meterName, name: name, desc: meterName + name, type: type,
+                        resource: resource, instrumentationScopeInfo: instrumentationScopeInfo)
     metric.data = data
     rawMetricLock.withLockVoid {
       metrics.append(metric)
@@ -82,10 +77,9 @@ class MeterSdk: Meter {
         let metricName = counter.key
         let counterInstrument = counter.value
 
-        var metric = Metric(
-          namespace: meterName, name: metricName, desc: meterName + metricName,
-          type: AggregationType.intSum, resource: resource,
-          instrumentationScopeInfo: instrumentationScopeInfo)
+        var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName,
+                            type: AggregationType.intSum, resource: resource,
+                            instrumentationScopeInfo: instrumentationScopeInfo)
 
         counterInstrument.bindUnbindLock.withLockVoid {
           counterInstrument.boundInstruments.forEach { boundInstrument in
@@ -122,10 +116,9 @@ class MeterSdk: Meter {
         let metricName = counter.key
         let counterInstrument = counter.value
 
-        var metric = Metric(
-          namespace: meterName, name: metricName, desc: meterName + metricName,
-          type: AggregationType.doubleSum, resource: resource,
-          instrumentationScopeInfo: instrumentationScopeInfo)
+        var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName,
+                            type: AggregationType.doubleSum, resource: resource,
+                            instrumentationScopeInfo: instrumentationScopeInfo)
 
         counterInstrument.bindUnbindLock.withLockVoid {
           counterInstrument.boundInstruments.forEach { boundInstrument in
@@ -162,10 +155,9 @@ class MeterSdk: Meter {
       intMeasures.forEach { measure in
         let metricName = measure.key
         let measureInstrument = measure.value
-        var metric = Metric(
-          namespace: meterName, name: metricName, desc: meterName + metricName,
-          type: AggregationType.intSummary, resource: resource,
-          instrumentationScopeInfo: instrumentationScopeInfo)
+        var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName,
+                            type: AggregationType.intSummary, resource: resource,
+                            instrumentationScopeInfo: instrumentationScopeInfo)
         measureInstrument.boundInstruments.forEach { boundInstrument in
           let labelSet = boundInstrument.key
           let aggregator = boundInstrument.value.getAggregator()
@@ -180,10 +172,9 @@ class MeterSdk: Meter {
       doubleMeasures.forEach { measure in
         let metricName = measure.key
         let measureInstrument = measure.value
-        var metric = Metric(
-          namespace: meterName, name: metricName, desc: meterName + metricName,
-          type: AggregationType.doubleSummary, resource: resource,
-          instrumentationScopeInfo: instrumentationScopeInfo)
+        var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName,
+                            type: AggregationType.doubleSummary, resource: resource,
+                            instrumentationScopeInfo: instrumentationScopeInfo)
         measureInstrument.boundInstruments.forEach { boundInstrument in
           let labelSet = boundInstrument.key
           let aggregator = boundInstrument.value.getAggregator()
@@ -198,10 +189,9 @@ class MeterSdk: Meter {
       intHistogram.forEach { histogram in
         let metricName = histogram.key
         let measureInstrument = histogram.value
-        var metric = Metric(
-          namespace: meterName, name: metricName, desc: meterName + metricName,
-          type: AggregationType.intHistogram, resource: resource,
-          instrumentationScopeInfo: instrumentationScopeInfo)
+        var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName,
+                            type: AggregationType.intHistogram, resource: resource,
+                            instrumentationScopeInfo: instrumentationScopeInfo)
         measureInstrument.boundInstruments.forEach { boundInstrument in
           let labelSet = boundInstrument.key
           let aggregator = boundInstrument.value.getAggregator()
@@ -216,10 +206,9 @@ class MeterSdk: Meter {
       doubleHistogram.forEach { histogram in
         let metricName = histogram.key
         let measureInstrument = histogram.value
-        var metric = Metric(
-          namespace: meterName, name: metricName, desc: meterName + metricName,
-          type: AggregationType.doubleHistogram, resource: resource,
-          instrumentationScopeInfo: instrumentationScopeInfo)
+        var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName,
+                            type: AggregationType.doubleHistogram, resource: resource,
+                            instrumentationScopeInfo: instrumentationScopeInfo)
 
         measureInstrument.bindUnbindLock.withLock {
           measureInstrument.boundInstruments.forEach { boundInstrument in
@@ -239,10 +228,9 @@ class MeterSdk: Meter {
         let metricName = gauge.key
         let gaugeInstrument = gauge.value
 
-        var metric = Metric(
-          namespace: meterName, name: metricName, desc: meterName + metricName,
-          type: .intGauge, resource: resource,
-          instrumentationScopeInfo: instrumentationScopeInfo)
+        var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName,
+                            type: .intGauge, resource: resource,
+                            instrumentationScopeInfo: instrumentationScopeInfo)
 
         gaugeInstrument.invokeCallback()
 
@@ -262,10 +250,9 @@ class MeterSdk: Meter {
         let metricName = gauge.key
         let gaugeInstrument = gauge.value
 
-        var metric = Metric(
-          namespace: meterName, name: metricName, desc: meterName + metricName,
-          type: .doubleGauge, resource: resource,
-          instrumentationScopeInfo: instrumentationScopeInfo)
+        var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName,
+                            type: .doubleGauge, resource: resource,
+                            instrumentationScopeInfo: instrumentationScopeInfo)
 
         gaugeInstrument.invokeCallback()
 
@@ -284,10 +271,9 @@ class MeterSdk: Meter {
       intObservers.forEach { observer in
         let metricName = observer.key
         let observerInstrument = observer.value
-        var metric = Metric(
-          namespace: meterName, name: metricName, desc: meterName + metricName,
-          type: AggregationType.intSum, resource: resource,
-          instrumentationScopeInfo: instrumentationScopeInfo)
+        var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName,
+                            type: AggregationType.intSum, resource: resource,
+                            instrumentationScopeInfo: instrumentationScopeInfo)
         observerInstrument.invokeCallback()
 
         observerInstrument.observerHandles.forEach { handle in
@@ -305,10 +291,9 @@ class MeterSdk: Meter {
         let name = histogram.key
         let instrument = histogram.value
 
-        var metric = Metric(
-          namespace: meterName, name: name, desc: meterName + name,
-          type: .doubleHistogram, resource: resource,
-          instrumentationScopeInfo: instrumentationScopeInfo)
+        var metric = Metric(namespace: meterName, name: name, desc: meterName + name,
+                            type: .doubleHistogram, resource: resource,
+                            instrumentationScopeInfo: instrumentationScopeInfo)
 
         instrument.bindUnbindLock.withLockVoid {
           instrument.boundInstruments.forEach { boundInstrument in
@@ -348,10 +333,9 @@ class MeterSdk: Meter {
       rawIntHistogram.forEach { histogram in
         let name = histogram.key
         let instrument = histogram.value
-        var metric = Metric(
-          namespace: meterName, name: name, desc: meterName + name,
-          type: .intHistogram, resource: resource,
-          instrumentationScopeInfo: instrumentationScopeInfo)
+        var metric = Metric(namespace: meterName, name: name, desc: meterName + name,
+                            type: .intHistogram, resource: resource,
+                            instrumentationScopeInfo: instrumentationScopeInfo)
         instrument.bindUnbindLock.withLockVoid {
           instrument.boundInstruments.forEach { boundInstrument in
             let labelSet = boundInstrument.key
@@ -391,10 +375,9 @@ class MeterSdk: Meter {
         let name = counter.key
         let instrument = counter.value
 
-        var metric = Metric(
-          namespace: meterName, name: name, desc: meterName + name,
-          type: .intSum, resource: resource,
-          instrumentationScopeInfo: instrumentationScopeInfo)
+        var metric = Metric(namespace: meterName, name: name, desc: meterName + name,
+                            type: .intSum, resource: resource,
+                            instrumentationScopeInfo: instrumentationScopeInfo)
 
         instrument.bindUnbindLock.withLockVoid {
           instrument.boundInstruments.forEach { boundInstrument in
@@ -435,10 +418,9 @@ class MeterSdk: Meter {
         let name = counter.key
         let instrument = counter.value
 
-        var metric = Metric(
-          namespace: meterName, name: name, desc: meterName + name,
-          type: .intSum, resource: resource,
-          instrumentationScopeInfo: instrumentationScopeInfo)
+        var metric = Metric(namespace: meterName, name: name, desc: meterName + name,
+                            type: .intSum, resource: resource,
+                            instrumentationScopeInfo: instrumentationScopeInfo)
 
         instrument.bindUnbindLock.withLockVoid {
           instrument.boundInstruments.forEach { boundInstrument in
@@ -478,10 +460,9 @@ class MeterSdk: Meter {
       doubleObservers.forEach { observer in
         let metricName = observer.key
         let observerInstrument = observer.value
-        var metric = Metric(
-          namespace: meterName, name: metricName, desc: meterName + metricName,
-          type: AggregationType.doubleSum, resource: resource,
-          instrumentationScopeInfo: instrumentationScopeInfo)
+        var metric = Metric(namespace: meterName, name: metricName, desc: meterName + metricName,
+                            type: AggregationType.doubleSum, resource: resource,
+                            instrumentationScopeInfo: instrumentationScopeInfo)
         observerInstrument.invokeCallback()
 
         observerInstrument.observerHandles.forEach { handle in
@@ -498,9 +479,7 @@ class MeterSdk: Meter {
     }
   }
 
-  func createIntObservableGauge(
-    name: String, callback: @escaping (IntObserverMetric) -> Void
-  ) -> IntObserverMetric {
+  func createIntObservableGauge(name: String, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric {
     var gauge = intGauges[name]
     if gauge == nil {
       gauge = IntObservableGaugeSdk(measurementName: name, callback: callback)
@@ -511,13 +490,10 @@ class MeterSdk: Meter {
     return gauge!
   }
 
-  func createDoubleObservableGauge(
-    name: String, callback: @escaping (DoubleObserverMetric) -> Void
-  ) -> DoubleObserverMetric {
+  func createDoubleObservableGauge(name: String, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric {
     var gauge = doubleGauges[name]
     if gauge == nil {
-      gauge = DoubleObservableGaugeSdk(
-        measurementName: name, callback: callback)
+      gauge = DoubleObservableGaugeSdk(measurementName: name, callback: callback)
       collectLock.withLockVoid {
         doubleGauges[name] = gauge!
       }
@@ -525,9 +501,7 @@ class MeterSdk: Meter {
     return gauge!
   }
 
-  func createIntCounter(name: String, monotonic _: Bool) -> AnyCounterMetric<
-    Int
-  > {
+  func createIntCounter(name: String, monotonic _: Bool) -> AnyCounterMetric<Int> {
     var counter = intCounters[name]
     if counter == nil {
       counter = CounterMetricSdk<Int>(name: name)
@@ -538,9 +512,7 @@ class MeterSdk: Meter {
     return AnyCounterMetric<Int>(counter!)
   }
 
-  func createDoubleCounter(name: String, monotonic _: Bool) -> AnyCounterMetric<
-    Double
-  > {
+  func createDoubleCounter(name: String, monotonic _: Bool) -> AnyCounterMetric<Double> {
     var counter = doubleCounters[name]
     if counter == nil {
       counter = CounterMetricSdk<Double>(name: name)
@@ -562,9 +534,7 @@ class MeterSdk: Meter {
     return AnyMeasureMetric<Int>(measure!)
   }
 
-  func createDoubleMeasure(name: String, absolute _: Bool) -> AnyMeasureMetric<
-    Double
-  > {
+  func createDoubleMeasure(name: String, absolute _: Bool) -> AnyMeasureMetric<Double> {
     var measure = doubleMeasures[name]
     if measure == nil {
       measure = MeasureMetricSdk<Double>(name: name)
@@ -621,13 +591,10 @@ class MeterSdk: Meter {
     return AnyRawHistogramMetric<Int>(histogram!)
   }
 
-  func createIntHistogram(
-    name: String, explicitBoundaries: [Int]? = nil, absolute _: Bool
-  ) -> AnyHistogramMetric<Int> {
+  func createIntHistogram(name: String, explicitBoundaries: [Int]? = nil, absolute _: Bool) -> AnyHistogramMetric<Int> {
     var histogram = intHistogram[name]
     if histogram == nil {
-      histogram = HistogramMetricSdk<Int>(
-        name: name, explicitBoundaries: explicitBoundaries)
+      histogram = HistogramMetricSdk<Int>(name: name, explicitBoundaries: explicitBoundaries)
       collectLock.withLockVoid {
         intHistogram[name] = histogram!
       }
@@ -635,13 +602,10 @@ class MeterSdk: Meter {
     return AnyHistogramMetric<Int>(histogram!)
   }
 
-  func createDoubleHistogram(
-    name: String, explicitBoundaries: [Double]? = nil, absolute _: Bool
-  ) -> AnyHistogramMetric<Double> {
+  func createDoubleHistogram(name: String, explicitBoundaries: [Double]? = nil, absolute _: Bool) -> AnyHistogramMetric<Double> {
     var histogram = doubleHistogram[name]
     if histogram == nil {
-      histogram = HistogramMetricSdk<Double>(
-        name: name, explicitBoundaries: explicitBoundaries)
+      histogram = HistogramMetricSdk<Double>(name: name, explicitBoundaries: explicitBoundaries)
       collectLock.withLockVoid {
         doubleHistogram[name] = histogram!
       }
@@ -649,10 +613,8 @@ class MeterSdk: Meter {
     return AnyHistogramMetric<Double>(histogram!)
   }
 
-  func createIntObserver(
-    name: String, absolute _: Bool,
-    callback: @escaping (IntObserverMetric) -> Void
-  ) -> IntObserverMetric {
+  func createIntObserver(name: String, absolute _: Bool,
+                         callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric {
     var observer = intObservers[name]
     if observer == nil {
       observer = IntObserverMetricSdk(metricName: name, callback: callback)
@@ -663,10 +625,8 @@ class MeterSdk: Meter {
     return observer!
   }
 
-  func createDoubleObserver(
-    name: String, absolute _: Bool,
-    callback: @escaping (DoubleObserverMetric) -> Void
-  ) -> DoubleObserverMetric {
+  func createDoubleObserver(name: String, absolute _: Bool,
+                            callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric {
     var observer = doubleObservers[name]
     if observer == nil {
       observer = DoubleObserverMetricSdk(metricName: name, callback: callback)

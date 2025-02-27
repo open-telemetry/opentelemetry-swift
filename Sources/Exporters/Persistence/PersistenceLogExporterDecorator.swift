@@ -28,25 +28,20 @@ public class PersistenceLogExporterDecorator: LogRecordExporter {
   private let persistenceExporter:
     PersistenceExporterDecorator<LogRecordDecoratedExporter>
 
-  public init(
-    logRecordExporter: LogRecordExporter,
-    storageURL: URL,
-    exportCondition: @escaping () -> Bool = { true },
-    performancePreset: PersistencePerformancePreset = .default
-  ) throws {
+  public init(logRecordExporter: LogRecordExporter,
+              storageURL: URL,
+              exportCondition: @escaping () -> Bool = { true },
+              performancePreset: PersistencePerformancePreset = .default) throws {
     persistenceExporter =
-      PersistenceExporterDecorator<LogRecordDecoratedExporter>(
-        decoratedExporter: LogRecordDecoratedExporter(
+      PersistenceExporterDecorator<LogRecordDecoratedExporter>(decoratedExporter: LogRecordDecoratedExporter(
           logRecordExporter: logRecordExporter),
-        storageURL: storageURL,
-        exportCondition: exportCondition,
-        performancePreset: performancePreset)
+                                                               storageURL: storageURL,
+                                                               exportCondition: exportCondition,
+                                                               performancePreset: performancePreset)
     self.logRecordExporter = logRecordExporter
   }
 
-  public func export(
-    logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval? = nil
-  ) -> ExportResult {
+  public func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval? = nil) -> ExportResult {
     do {
       try persistenceExporter.export(values: logRecords)
       return .success

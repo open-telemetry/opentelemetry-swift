@@ -19,9 +19,7 @@
     }
   }
 
-  private func == (
-    lhs: Agent_emitZipkinBatch_args, rhs: Agent_emitZipkinBatch_args
-  ) -> Bool {
+  private func == (lhs: Agent_emitZipkinBatch_args, rhs: Agent_emitZipkinBatch_args) -> Bool {
     return
       (lhs.spans == rhs.spans)
   }
@@ -118,8 +116,7 @@
 
   extension AgentClient: Agent {
     private func send_emitZipkinBatch(spans: TList<Span>) throws {
-      try outProtocol.writeMessageBegin(
-        name: "emitZipkinBatch", type: .oneway, sequenceID: 0)
+      try outProtocol.writeMessageBegin(name: "emitZipkinBatch", type: .oneway, sequenceID: 0)
       let args = Agent_emitZipkinBatch_args(spans: spans)
       try args.write(to: outProtocol)
       try outProtocol.writeMessageEnd()
@@ -131,8 +128,7 @@
     }
 
     private func send_emitBatch(batch: Batch) throws {
-      try outProtocol.writeMessageBegin(
-        name: "emitBatch", type: .oneway, sequenceID: 0)
+      try outProtocol.writeMessageBegin(name: "emitBatch", type: .oneway, sequenceID: 0)
       let args = Agent_emitBatch_args(batch: batch)
       try args.write(to: outProtocol)
       try outProtocol.writeMessageEnd()
@@ -145,19 +141,14 @@
   }
 
   extension AgentAsyncClient: AgentAsync {
-    private func send_emitZipkinBatch(
-      on outProtocol: TProtocol, spans: TList<Span>
-    ) throws {
-      try outProtocol.writeMessageBegin(
-        name: "emitZipkinBatch", type: .oneway, sequenceID: 0)
+    private func send_emitZipkinBatch(on outProtocol: TProtocol, spans: TList<Span>) throws {
+      try outProtocol.writeMessageBegin(name: "emitZipkinBatch", type: .oneway, sequenceID: 0)
       let args = Agent_emitZipkinBatch_args(spans: spans)
       try args.write(to: outProtocol)
       try outProtocol.writeMessageEnd()
     }
 
-    public func emitZipkinBatch(
-      spans: TList<Span>, completion: @escaping (TAsyncResult<Void>) -> Void
-    ) {
+    public func emitZipkinBatch(spans: TList<Span>, completion: @escaping (TAsyncResult<Void>) -> Void) {
       let transport = factory.newTransport()
       let proto = Protocol(on: transport)
 
@@ -176,16 +167,13 @@
     }
 
     private func send_emitBatch(on outProtocol: TProtocol, batch: Batch) throws {
-      try outProtocol.writeMessageBegin(
-        name: "emitBatch", type: .oneway, sequenceID: 0)
+      try outProtocol.writeMessageBegin(name: "emitBatch", type: .oneway, sequenceID: 0)
       let args = Agent_emitBatch_args(batch: batch)
       try args.write(to: outProtocol)
       try outProtocol.writeMessageEnd()
     }
 
-    public func emitBatch(
-      batch: Batch, completion: @escaping (TAsyncResult<Void>) -> Void
-    ) {
+    public func emitBatch(batch: Batch, completion: @escaping (TAsyncResult<Void>) -> Void) {
       let transport = factory.newTransport()
       let proto = Protocol(on: transport)
 
@@ -230,16 +218,14 @@
         do {
           try processorHandler(sequenceID, inProtocol, outProtocol, service)
         } catch let error as TApplicationError {
-          try outProtocol.writeException(
-            messageName: messageName, sequenceID: sequenceID, ex: error)
+          try outProtocol.writeException(messageName: messageName, sequenceID: sequenceID, ex: error)
         }
       } else {
         try inProtocol.skip(type: .struct)
         try inProtocol.readMessageEnd()
         let ex = TApplicationError(
           error: .unknownMethod(methodName: messageName))
-        try outProtocol.writeException(
-          messageName: messageName, sequenceID: sequenceID, ex: ex)
+        try outProtocol.writeException(messageName: messageName, sequenceID: sequenceID, ex: ex)
       }
     }
   }

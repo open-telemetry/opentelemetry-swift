@@ -149,37 +149,31 @@ struct AttributeValueExplicitCodable: Codable {
     let container = try decoder.container(keyedBy: CodingKeys.self)
 
     guard container.allKeys.count == 1 else {
-      let context = DecodingError.Context(
-        codingPath: container.codingPath,
-        debugDescription: "Invalid number of keys found, expected one.")
+      let context = DecodingError.Context(codingPath: container.codingPath,
+                                          debugDescription: "Invalid number of keys found, expected one.")
       throw DecodingError.typeMismatch(Status.self, context)
     }
 
     switch container.allKeys.first.unsafelyUnwrapped {
     case .string:
-      let nestedContainer = try container.nestedContainer(
-        keyedBy: AssociatedValueCodingKeys.self, forKey: .string)
+      let nestedContainer = try container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .string)
       attributeValue = .string(
         try nestedContainer.decode(String.self, forKey: .associatedValue))
     case .bool:
-      let nestedContainer = try container.nestedContainer(
-        keyedBy: AssociatedValueCodingKeys.self, forKey: .bool)
+      let nestedContainer = try container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .bool)
       attributeValue = .bool(try nestedContainer.decode(Bool.self, forKey: .associatedValue))
     case .int:
-      let nestedContainer = try container.nestedContainer(
-        keyedBy: AssociatedValueCodingKeys.self, forKey: .int)
+      let nestedContainer = try container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .int)
       attributeValue = .int(try nestedContainer.decode(Int.self, forKey: .associatedValue))
     case .double:
-      let nestedContainer = try container.nestedContainer(
-        keyedBy: AssociatedValueCodingKeys.self, forKey: .double)
+      let nestedContainer = try container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .double)
       attributeValue = .double(
         try nestedContainer.decode(Double.self, forKey: .associatedValue))
     case .array:
       let nestedContainer = try container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .array)
       attributeValue = .array(try nestedContainer.decode(AttributeArray.self, forKey: .associatedValue))
     case .set:
-      let nestedContainer = try container.nestedContainer(
-        keyedBy: AssociatedValueCodingKeys.self, forKey: .set)
+      let nestedContainer = try container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .set)
       attributeValue = .set(
         try nestedContainer.decode(AttributeSet.self, forKey: .associatedValue))
     }
@@ -190,24 +184,19 @@ struct AttributeValueExplicitCodable: Codable {
 
     switch attributeValue {
     case let .string(value):
-      var nestedContainer = container.nestedContainer(
-        keyedBy: AssociatedValueCodingKeys.self, forKey: .string)
+      var nestedContainer = container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .string)
       try nestedContainer.encode(value, forKey: .associatedValue)
     case let .bool(value):
-      var nestedContainer = container.nestedContainer(
-        keyedBy: AssociatedValueCodingKeys.self, forKey: .bool)
+      var nestedContainer = container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .bool)
       try nestedContainer.encode(value, forKey: .associatedValue)
     case let .int(value):
-      var nestedContainer = container.nestedContainer(
-        keyedBy: AssociatedValueCodingKeys.self, forKey: .int)
+      var nestedContainer = container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .int)
       try nestedContainer.encode(value, forKey: .associatedValue)
     case let .double(value):
-      var nestedContainer = container.nestedContainer(
-        keyedBy: AssociatedValueCodingKeys.self, forKey: .double)
+      var nestedContainer = container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .double)
       try nestedContainer.encode(value, forKey: .associatedValue)
     case let .set(value):
-      var nestedContainer = container.nestedContainer(
-        keyedBy: AssociatedValueCodingKeys.self, forKey: .set)
+      var nestedContainer = container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .set)
       try nestedContainer.encode(value, forKey: .associatedValue)
     case let .array(value):
       var nestedContainer = container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .array)

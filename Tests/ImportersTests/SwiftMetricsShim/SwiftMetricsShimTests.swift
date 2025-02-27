@@ -19,10 +19,8 @@ class SwiftMetricsShimTests: XCTestCase {
     super.setUp()
     testProcessor = TestMetricProcessor()
 
-    meter = MeterProviderSdk(
-      metricProcessor: testProcessor,
-      metricExporter: NoopMetricExporter()
-    ).get(instrumentationName: "SwiftMetricsShimTest") as? MeterSdk
+    meter = MeterProviderSdk(metricProcessor: testProcessor,
+                             metricExporter: NoopMetricExporter()).get(instrumentationName: "SwiftMetricsShimTest") as? MeterSdk
 
     metrics = .init(meter: meter)
     MetricsSystem.bootstrapInternal(metrics)

@@ -28,10 +28,8 @@ final class HTTPClient {
     self.session = session
   }
 
-  func send(
-    request: URLRequest,
-    completion: @escaping (Result<HTTPURLResponse, Error>) -> Void
-  ) {
+  func send(request: URLRequest,
+            completion: @escaping (Result<HTTPURLResponse, Error>) -> Void) {
     let task = session.dataTask(with: request) { data, response, error in
       completion(httpClientResult(for: (data, response, error)))
     }

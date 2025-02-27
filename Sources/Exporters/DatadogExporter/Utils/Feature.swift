@@ -24,26 +24,20 @@ struct FeatureUpload {
   /// Uploads data to server.
   let uploader: DataUploadWorkerType
 
-  init(
-    featureName: String,
-    storage: FeatureStorage,
-    requestBuilder: RequestBuilder,
-    performance: PerformancePreset,
-    uploadCondition: @escaping () -> Bool
-  ) {
-    let dataUploader = DataUploader(
-      httpClient: HTTPClient(),
-      requestBuilder: requestBuilder
-    )
+  init(featureName: String,
+       storage: FeatureStorage,
+       requestBuilder: RequestBuilder,
+       performance: PerformancePreset,
+       uploadCondition: @escaping () -> Bool) {
+    let dataUploader = DataUploader(httpClient: HTTPClient(),
+                                    requestBuilder: requestBuilder)
 
     self.init(
-      uploader: DataUploadWorker(
-        fileReader: storage.reader,
-        dataUploader: dataUploader,
-        uploadCondition: uploadCondition,
-        delay: DataUploadDelay(performance: performance),
-        featureName: featureName
-      )
+      uploader: DataUploadWorker(fileReader: storage.reader,
+                                 dataUploader: dataUploader,
+                                 uploadCondition: uploadCondition,
+                                 delay: DataUploadDelay(performance: performance),
+                                 featureName: featureName)
     )
   }
 

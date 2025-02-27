@@ -19,10 +19,8 @@ public struct BaggagePropagationProcessor: SpanProcessor {
     self.filter = filter
   }
 
-  public func onStart(
-    parentContext: SpanContext?,
-    span: any ReadableSpan
-  ) {
+  public func onStart(parentContext: SpanContext?,
+                      span: any ReadableSpan) {
     if let baggage = activeBaggage() {
       let filteredEntries = baggage.getEntries().filter(filter)
       for entry in filteredEntries {

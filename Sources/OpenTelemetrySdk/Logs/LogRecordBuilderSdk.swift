@@ -18,17 +18,14 @@ public class LogRecordBuilderSdk: EventBuilder {
   private var attributes: AttributesDictionary
   private var spanContext: SpanContext?
 
-  init(
-    sharedState: LoggerSharedState, instrumentationScope: InstrumentationScopeInfo,
-    includeSpanContext: Bool
-  ) {
+  init(sharedState: LoggerSharedState, instrumentationScope: InstrumentationScopeInfo,
+       includeSpanContext: Bool) {
     self.sharedState = sharedState
     limits = sharedState.logLimits
     self.includeSpanContext = includeSpanContext
     self.instrumentationScope = instrumentationScope
-    attributes = AttributesDictionary(
-      capacity: sharedState.logLimits.maxAttributeCount,
-      valueLengthLimit: sharedState.logLimits.maxAttributeLength)
+    attributes = AttributesDictionary(capacity: sharedState.logLimits.maxAttributeCount,
+                                      valueLengthLimit: sharedState.logLimits.maxAttributeLength)
   }
 
   public func setTimestamp(_ timestamp: Date) -> Self {
@@ -73,14 +70,13 @@ public class LogRecordBuilderSdk: EventBuilder {
     }
 
     sharedState.activeLogRecordProcessor.onEmit(
-      logRecord: ReadableLogRecord(
-        resource: sharedState.resource,
-        instrumentationScopeInfo: instrumentationScope,
-        timestamp: timestamp ?? sharedState.clock.now,
-        observedTimestamp: observedTimestamp,
-        spanContext: spanContext,
-        severity: severity,
-        body: body,
-        attributes: attributes.attributes))
+      logRecord: ReadableLogRecord(resource: sharedState.resource,
+                                   instrumentationScopeInfo: instrumentationScope,
+                                   timestamp: timestamp ?? sharedState.clock.now,
+                                   observedTimestamp: observedTimestamp,
+                                   spanContext: spanContext,
+                                   severity: severity,
+                                   body: body,
+                                   attributes: attributes.attributes))
   }
 }

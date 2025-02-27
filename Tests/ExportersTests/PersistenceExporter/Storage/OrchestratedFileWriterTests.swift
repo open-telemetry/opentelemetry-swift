@@ -22,11 +22,9 @@ class OrchestratedFileWriterTests: XCTestCase {
   func testItWritesDataToSingleFile() throws {
     let expectation = expectation(description: "write completed")
     let writer = OrchestratedFileWriter(
-      orchestrator: FilesOrchestrator(
-        directory: temporaryDirectory,
-        performance: PersistencePerformancePreset.default,
-        dateProvider: SystemDateProvider()
-      )
+      orchestrator: FilesOrchestrator(directory: temporaryDirectory,
+                                      performance: PersistencePerformancePreset.default,
+                                      dateProvider: SystemDateProvider())
     )
 
     var data = Data()
@@ -54,19 +52,16 @@ class OrchestratedFileWriterTests: XCTestCase {
     let expectation2 = expectation(description: "second write completed")
 
     let writer = OrchestratedFileWriter(
-      orchestrator: FilesOrchestrator(
-        directory: temporaryDirectory,
-        performance: StoragePerformanceMock(
-          maxFileSize: .max,
-          maxDirectorySize: .max,
-          maxFileAgeForWrite: .distantFuture,
-          minFileAgeForRead: .mockAny(),
-          maxFileAgeForRead: .mockAny(),
-          maxObjectsInFile: .max,
-          maxObjectSize: 17 // 17 bytes is enough to write {"key1":"value1"} JSON
+      orchestrator: FilesOrchestrator(directory: temporaryDirectory,
+                                      performance: StoragePerformanceMock(maxFileSize: .max,
+                                                                          maxDirectorySize: .max,
+                                                                          maxFileAgeForWrite: .distantFuture,
+                                                                          minFileAgeForRead: .mockAny(),
+                                                                          maxFileAgeForRead: .mockAny(),
+                                                                          maxObjectsInFile: .max,
+                                                                          maxObjectSize: 17 // 17 bytes is enough to write {"key1":"value1"} JSON
         ),
-        dateProvider: SystemDateProvider()
-      )
+                                      dateProvider: SystemDateProvider())
     )
 
     writer.write(data: "value1".utf8Data) // will be written

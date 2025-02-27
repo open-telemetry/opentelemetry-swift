@@ -21,11 +21,9 @@ class OrchestratedFileReaderTests: XCTestCase {
 
   func testItReadsSingleBatch() throws {
     let reader = OrchestratedFileReader(
-      orchestrator: FilesOrchestrator(
-        directory: temporaryDirectory,
-        performance: StoragePerformanceMock.readAllFiles,
-        dateProvider: SystemDateProvider()
-      )
+      orchestrator: FilesOrchestrator(directory: temporaryDirectory,
+                                      performance: StoragePerformanceMock.readAllFiles,
+                                      dateProvider: SystemDateProvider())
     )
     _ = try temporaryDirectory
       .createFile(named: Date.mockAny().toFileName)
@@ -40,11 +38,9 @@ class OrchestratedFileReaderTests: XCTestCase {
   func testItMarksBatchesAsRead() throws {
     let dateProvider = RelativeDateProvider(advancingBySeconds: 60)
     let reader = OrchestratedFileReader(
-      orchestrator: FilesOrchestrator(
-        directory: temporaryDirectory,
-        performance: StoragePerformanceMock.readAllFiles,
-        dateProvider: dateProvider
-      )
+      orchestrator: FilesOrchestrator(directory: temporaryDirectory,
+                                      performance: StoragePerformanceMock.readAllFiles,
+                                      dateProvider: dateProvider)
     )
     let file1 = try temporaryDirectory.createFile(named: dateProvider.currentDate().toFileName)
     try file1.append(data: "1".utf8Data)

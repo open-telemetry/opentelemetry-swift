@@ -44,23 +44,19 @@ open class OpenTelemetryContextTestCase: XCTestCase {
   // Non-Apple platforms don't have access to `record(XCTIssue)` so we need to support both the new and old style method to avoid a deprecation warning on Apple platforms.
   #if canImport(ObjectiveC)
     open override func record(_ issue: XCTIssue) {
-      super.record(XCTIssue(
-        type: issue.type,
-        compactDescription: "\(issue.compactDescription) - with context manager \(OpenTelemetry.instance.contextProvider.contextManager)",
-        detailedDescription: issue.detailedDescription,
-        sourceCodeContext: issue.sourceCodeContext,
-        associatedError: issue.associatedError,
-        attachments: issue.attachments
-      ))
+      super.record(XCTIssue(type: issue.type,
+                            compactDescription: "\(issue.compactDescription) - with context manager \(OpenTelemetry.instance.contextProvider.contextManager)",
+                            detailedDescription: issue.detailedDescription,
+                            sourceCodeContext: issue.sourceCodeContext,
+                            associatedError: issue.associatedError,
+                            attachments: issue.attachments))
     }
   #else
     open override func recordFailure(withDescription description: String, inFile filePath: String, atLine lineNumber: Int, expected: Bool) {
-      super.recordFailure(
-        withDescription: "\(description) - with context manager \(OpenTelemetry.instance.contextProvider.contextManager)",
-        inFile: filePath,
-        atLine: lineNumber,
-        expected: expected
-      )
+      super.recordFailure(withDescription: "\(description) - with context manager \(OpenTelemetry.instance.contextProvider.contextManager)",
+                          inFile: filePath,
+                          atLine: lineNumber,
+                          expected: expected)
     }
   #endif
 

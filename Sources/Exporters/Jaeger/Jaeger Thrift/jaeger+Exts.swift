@@ -87,9 +87,8 @@
       try proto.validateValue(key, named: "key")
       try proto.validateValue(vType, named: "vType")
 
-      return Tag(
-        key: key, vType: vType, vStr: vStr, vDouble: vDouble, vBool: vBool,
-        vLong: vLong, vBinary: vBinary)
+      return Tag(key: key, vType: vType, vStr: vStr, vDouble: vDouble, vBool: vBool,
+                 vLong: vLong, vBinary: vBinary)
     }
   }
 
@@ -210,9 +209,8 @@
       try proto.validateValue(traceIdHigh, named: "traceIdHigh")
       try proto.validateValue(spanId, named: "spanId")
 
-      return SpanRef(
-        refType: refType, traceIdLow: traceIdLow, traceIdHigh: traceIdHigh,
-        spanId: spanId)
+      return SpanRef(refType: refType, traceIdLow: traceIdLow, traceIdHigh: traceIdHigh,
+                     spanId: spanId)
     }
   }
 
@@ -265,7 +263,8 @@
       return [
         "traceIdLow": 1, "traceIdHigh": 2, "spanId": 3, "parentSpanId": 4,
         "operationName": 5, "references": 6, "flags": 7, "startTime": 8,
-        "duration": 9, "tags": 10, "logs": 11]
+        "duration": 9, "tags": 10, "logs": 11
+      ]
     }
 
     public static var structName: String { return "Span" }
@@ -317,11 +316,10 @@
       try proto.validateValue(startTime, named: "startTime")
       try proto.validateValue(duration, named: "duration")
 
-      return Span(
-        traceIdLow: traceIdLow, traceIdHigh: traceIdHigh, spanId: spanId,
-        parentSpanId: parentSpanId, operationName: operationName,
-        references: references, flags: flags, startTime: startTime,
-        duration: duration, tags: tags, logs: logs)
+      return Span(traceIdLow: traceIdLow, traceIdHigh: traceIdHigh, spanId: spanId,
+                  parentSpanId: parentSpanId, operationName: operationName,
+                  references: references, flags: flags, startTime: startTime,
+                  duration: duration, tags: tags, logs: logs)
     }
   }
 
@@ -492,9 +490,7 @@
     }
   }
 
-  private func == (
-    lhs: Collector_submitBatches_args, rhs: Collector_submitBatches_args
-  ) -> Bool {
+  private func == (lhs: Collector_submitBatches_args, rhs: Collector_submitBatches_args) -> Bool {
     return
       (lhs.batches == rhs.batches)
   }
@@ -548,9 +544,7 @@
     }
   }
 
-  private func == (
-    lhs: Collector_submitBatches_result, rhs: Collector_submitBatches_result
-  ) -> Bool {
+  private func == (lhs: Collector_submitBatches_result, rhs: Collector_submitBatches_result) -> Bool {
     return
       (lhs.success == rhs.success)
   }
@@ -596,8 +590,7 @@
 
   extension CollectorClient: Collector {
     private func send_submitBatches(batches: TList<Batch>) throws {
-      try outProtocol.writeMessageBegin(
-        name: "submitBatches", type: .call, sequenceID: 0)
+      try outProtocol.writeMessageBegin(name: "submitBatches", type: .call, sequenceID: 0)
       let args = Collector_submitBatches_args(batches: batches)
       try args.write(to: outProtocol)
       try outProtocol.writeMessageEnd()
@@ -615,9 +608,7 @@
         error: .missingResult(methodName: "submitBatches"))
     }
 
-    public func submitBatches(batches: TList<Batch>) throws -> TList<
-      BatchSubmitResponse
-    > {
+    public func submitBatches(batches: TList<Batch>) throws -> TList<BatchSubmitResponse> {
       try send_submitBatches(batches: batches)
       try outProtocol.transport.flush()
       return try recv_submitBatches()
@@ -625,19 +616,14 @@
   }
 
   extension CollectorAsyncClient: CollectorAsync {
-    private func send_submitBatches(
-      on outProtocol: TProtocol, batches: TList<Batch>
-    ) throws {
-      try outProtocol.writeMessageBegin(
-        name: "submitBatches", type: .call, sequenceID: 0)
+    private func send_submitBatches(on outProtocol: TProtocol, batches: TList<Batch>) throws {
+      try outProtocol.writeMessageBegin(name: "submitBatches", type: .call, sequenceID: 0)
       let args = Collector_submitBatches_args(batches: batches)
       try args.write(to: outProtocol)
       try outProtocol.writeMessageEnd()
     }
 
-    private func recv_submitBatches(on inProtocol: TProtocol) throws -> TList<
-      BatchSubmitResponse
-    > {
+    private func recv_submitBatches(on inProtocol: TProtocol) throws -> TList<BatchSubmitResponse> {
       try inProtocol.readResultMessageBegin()
       let result = try Collector_submitBatches_result.read(from: inProtocol)
       try inProtocol.readMessageEnd()
@@ -649,10 +635,8 @@
         error: .missingResult(methodName: "submitBatches"))
     }
 
-    public func submitBatches(
-      batches: TList<Batch>,
-      completion: @escaping (TAsyncResult<TList<BatchSubmitResponse>>) -> Void
-    ) {
+    public func submitBatches(batches: TList<Batch>,
+                              completion: @escaping (TAsyncResult<TList<BatchSubmitResponse>>) -> Void) {
       let transport = factory.newTransport()
       let proto = Protocol(on: transport)
 
@@ -691,8 +675,7 @@
           result.success = try handler.submitBatches(batches: args.batches)
         } catch let error { throw error }
 
-        try outProtocol.writeMessageBegin(
-          name: "submitBatches", type: .reply, sequenceID: sequenceID)
+        try outProtocol.writeMessageBegin(name: "submitBatches", type: .reply, sequenceID: sequenceID)
         try result.write(to: outProtocol)
         try outProtocol.writeMessageEnd()
       }
@@ -703,20 +686,19 @@
       let (messageName, _, sequenceID) = try inProtocol.readMessageBegin()
 
       if let processorHandler = CollectorProcessor.processorHandlers[
-        messageName] {
+        messageName
+      ] {
         do {
           try processorHandler(sequenceID, inProtocol, outProtocol, service)
         } catch let error as TApplicationError {
-          try outProtocol.writeException(
-            messageName: messageName, sequenceID: sequenceID, ex: error)
+          try outProtocol.writeException(messageName: messageName, sequenceID: sequenceID, ex: error)
         }
       } else {
         try inProtocol.skip(type: .struct)
         try inProtocol.readMessageEnd()
         let ex = TApplicationError(
           error: .unknownMethod(methodName: messageName))
-        try outProtocol.writeException(
-          messageName: messageName, sequenceID: sequenceID, ex: ex)
+        try outProtocol.writeException(messageName: messageName, sequenceID: sequenceID, ex: ex)
       }
     }
   }

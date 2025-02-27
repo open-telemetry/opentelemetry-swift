@@ -28,20 +28,17 @@ public class PersistenceSpanExporterDecorator: SpanExporter {
   private let persistenceExporter:
     PersistenceExporterDecorator<SpanDecoratedExporter>
 
-  public init(
-    spanExporter: SpanExporter,
-    storageURL: URL,
-    exportCondition: @escaping () -> Bool = { true },
-    performancePreset: PersistencePerformancePreset = .default
-  ) throws {
+  public init(spanExporter: SpanExporter,
+              storageURL: URL,
+              exportCondition: @escaping () -> Bool = { true },
+              performancePreset: PersistencePerformancePreset = .default) throws {
     self.spanExporter = spanExporter
 
     persistenceExporter =
-      PersistenceExporterDecorator<SpanDecoratedExporter>(
-        decoratedExporter: SpanDecoratedExporter(spanExporter: spanExporter),
-        storageURL: storageURL,
-        exportCondition: exportCondition,
-        performancePreset: performancePreset)
+      PersistenceExporterDecorator<SpanDecoratedExporter>(decoratedExporter: SpanDecoratedExporter(spanExporter: spanExporter),
+                                                          storageURL: storageURL,
+                                                          exportCondition: exportCondition,
+                                                          performancePreset: performancePreset)
   }
 
   public func export(spans: [SpanData], explicitTimeout: TimeInterval?)

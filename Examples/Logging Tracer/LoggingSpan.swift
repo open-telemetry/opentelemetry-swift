@@ -17,9 +17,9 @@ class LoggingSpan: Span {
     self.name = name
     self.kind = kind
     context = SpanContext.create(traceId: TraceId.random(),
-                                      spanId: SpanId.random(),
-                                      traceFlags: TraceFlags(),
-                                      traceState: TraceState())
+                                 spanId: SpanId.random(),
+                                 traceFlags: TraceFlags(),
+                                 traceState: TraceState())
   }
 
   public var description: String {

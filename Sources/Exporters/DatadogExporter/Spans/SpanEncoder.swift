@@ -149,8 +149,7 @@ struct SpanEncoder {
 
   func encode(_ span: DDSpan, to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: StaticCodingKeys.self)
-    try container.encode(
-      String(format: "%016llx", span.traceID.rawLowerLong), forKey: .traceID)
+    try container.encode(String(format: "%016llx", span.traceID.rawLowerLong), forKey: .traceID)
     try container.encode(span.spanID.hexString, forKey: .spanID)
 
     let parentSpanID = span.parentID ?? SpanId.invalid // 0 is a reserved ID for a root span (ref: DDTracer.java#L600)
@@ -182,9 +181,7 @@ struct SpanEncoder {
   }
 
   /// Encodes default `metrics.*` attributes
-  private func encodeDefaultMetrics(
-    _ span: DDSpan, to container: inout KeyedEncodingContainer<StaticCodingKeys>
-  ) throws {
+  private func encodeDefaultMetrics(_ span: DDSpan, to container: inout KeyedEncodingContainer<StaticCodingKeys>) throws {
     // NOTE: RUMM-299 only numeric values are supported for `metrics.*` attributes
     if span.parentID == nil {
       try container.encode(1, forKey: .isRootSpan)
@@ -193,18 +190,14 @@ struct SpanEncoder {
   }
 
   /// Encodes default `meta.*` attributes
-  private func encodeDefaultMeta(
-    _ span: DDSpan, to container: inout KeyedEncodingContainer<StaticCodingKeys>
-  ) throws {
+  private func encodeDefaultMeta(_ span: DDSpan, to container: inout KeyedEncodingContainer<StaticCodingKeys>) throws {
     // NOTE: RUMM-299 only string values are supported for `meta.*` attributes
     try container.encode(Constants.ddsource, forKey: .source)
     try container.encode(span.applicationVersion, forKey: .applicationVersion)
   }
 
   /// Encodes `meta.*` attributes coming from user
-  private func encodeCustomAttributes(
-    _ span: DDSpan, to container: inout KeyedEncodingContainer<DynamicCodingKey>
-  ) throws {
+  private func encodeCustomAttributes(_ span: DDSpan, to container: inout KeyedEncodingContainer<DynamicCodingKey>) throws {
     // NOTE: RUMM-299 only string values are supported for `meta.*` attributes
     try span.tags.forEach {
       switch $0.value {

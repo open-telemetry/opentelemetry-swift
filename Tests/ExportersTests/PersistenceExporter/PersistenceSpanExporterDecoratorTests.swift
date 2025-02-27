@@ -66,14 +66,12 @@ class PersistenceSpanExporterDecoratorTests: XCTestCase {
     })
 
     let persistenceSpanExporter =
-      try PersistenceSpanExporterDecorator(
-        spanExporter: mockSpanExporter,
-        storageURL: temporaryDirectory.url,
-        exportCondition: { true },
-        performancePreset: PersistencePerformancePreset.mockWith(
-          storagePerformance: StoragePerformanceMock.writeEachObjectToNewFileAndReadAllFiles,
-          synchronousWrite: true,
-          exportPerformance: ExportPerformanceMock.veryQuick))
+      try PersistenceSpanExporterDecorator(spanExporter: mockSpanExporter,
+                                           storageURL: temporaryDirectory.url,
+                                           exportCondition: { true },
+                                           performancePreset: PersistencePerformancePreset.mockWith(storagePerformance: StoragePerformanceMock.writeEachObjectToNewFileAndReadAllFiles,
+                                                                                                    synchronousWrite: true,
+                                                                                                    exportPerformance: ExportPerformanceMock.veryQuick))
 
     let instrumentationScopeName = "SimpleExporter"
     let instrumentationScopeVersion = "semver:0.1.0"

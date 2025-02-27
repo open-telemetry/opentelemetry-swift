@@ -32,12 +32,10 @@ class DataExportWorker: DataExportWorkerProtocol {
   /// Export work scheduled by this worker.
   private var exportWork: DispatchWorkItem?
 
-  init(
-    fileReader: FileReader,
-    dataExporter: DataExporter,
-    exportCondition: @escaping () -> Bool,
-    delay: Delay
-  ) {
+  init(fileReader: FileReader,
+       dataExporter: DataExporter,
+       exportCondition: @escaping () -> Bool,
+       delay: Delay) {
     self.fileReader = fileReader
     self.exportCondition = exportCondition
     self.dataExporter = dataExporter
