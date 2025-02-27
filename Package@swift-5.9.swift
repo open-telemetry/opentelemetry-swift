@@ -25,6 +25,7 @@ let package = Package(
         .library(name: "InMemoryExporter", targets: ["InMemoryExporter"]),
         .library(name: "OTelSwiftLog", targets: ["OTelSwiftLog"]),
         .library(name: "DataCompression", type: .static, targets: ["DataCompression"]),
+        .library(name: "BaggagePropagationProcessor", targets: ["BaggagePropagationProcessor"]),
         .executable(name: "ConcurrencyContext", targets: ["ConcurrencyContext"]),
         .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
     ],
@@ -87,6 +88,10 @@ let package = Package(
         .target(name: "PersistenceExporter",
                 dependencies: ["OpenTelemetrySdk"],
                 path: "Sources/Exporters/Persistence"),
+        .target(name: "BaggagePropagationProcessor",
+                dependencies: ["OpenTelemetryApi",
+                               "OpenTelemetrySdk"],
+                path: "Sources/Contrib/Processors/BaggagePropagationProcessor"),
         .testTarget(name: "OTelSwiftLogTests",
                     dependencies: ["OTelSwiftLog"],
                     path: "Tests/BridgesTests/OTelSwiftLog"),
@@ -119,6 +124,9 @@ let package = Package(
         .testTarget(name: "PersistenceExporterTests",
                     dependencies: ["PersistenceExporter"],
                     path: "Tests/ExportersTests/PersistenceExporter"),
+        .testTarget(name: "ContribTests",
+                    dependencies: ["BaggagePropagationProcessor",
+                                   "InMemoryExporter"]),
         .executableTarget(
             name: "LoggingTracer",
             dependencies: ["OpenTelemetryApi"],
@@ -280,7 +288,7 @@ if ProcessInfo.processInfo.environment["OTEL_ENABLE_SWIFTLINT"] != nil {
   package.dependencies.append(contentsOf: [
     .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.57.1")
   ])
-  
+
   for target in package.targets {
     target.plugins = [
       .plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins"),

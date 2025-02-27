@@ -32,6 +32,10 @@ public class DoubleGaugeBuilderSdk: DoubleGaugeBuilder, InstrumentBuilder {
         swapBuilder(LongGaugeBuilderSdk.init)
     }
 
+    public func build() -> DoubleGauge {
+        return buildSynchronousInstrument(DoubleGaugeSdk.init)
+    }
+
     public func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableDoubleMeasurement) -> Void) -> OpenTelemetryApi.ObservableDoubleGauge {
         registerDoubleAsynchronousInstrument(type: type, updater: callback)
     }

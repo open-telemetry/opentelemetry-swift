@@ -5,6 +5,7 @@
 
 import Foundation
 import OpenTelemetryApi
+
 public class LongGaugeBuilderSdk: LongGaugeBuilder, InstrumentBuilder {
 
     var meterProviderSharedState: MeterProviderSharedState
@@ -27,6 +28,10 @@ public class LongGaugeBuilderSdk: LongGaugeBuilder, InstrumentBuilder {
         self.description = description
         self.meterSharedState = meterSharedState
         self.meterProviderSharedState = meterProviderSharedState
+    }
+
+    public func build() -> OpenTelemetryApi.LongGauge {
+        return buildSynchronousInstrument(LongGaugeSdk.init)
     }
 
     public func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableLongMeasurement) -> Void) -> OpenTelemetryApi.ObservableLongGauge {

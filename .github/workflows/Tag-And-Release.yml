@@ -34,9 +34,14 @@ jobs:
           generateReleaseNotes: true
       - name: push cocoapods
         env: 
-          COCOAPODS_TRUNK_TOKEN=${{ secrets.COCOAPODS_TRUNK_TOKEN }}
+          COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
         id: cocoapod_trunk_push
         run: |
           pod trunk push OpenTelemetry-Swift-Api.podspec --allow-warnings 
           pod trunk push OpenTelemetry-Swift-Sdk.podspec --allow-warnings --synchronous
+          pod trunk push OpenTelemetry-Swift-DataCompression.podspec --allow-warnings --synchronous
+          pod trunk push OpenTelemetry-Swift-Protocol-Exporter-Common.podspec --allow-warnings --synchronous
+          pod trunk push OpenTelemetry-Swift-SdkResourceExtension.podspec --allow-warnings --synchronous
+          pod trunk push OpenTelemetry-Swift-Protocol-Exporter-Http.podspec --allow-warnings --synchronous
+          pod trunk push OpenTelemetry-Swift-StdoutExporter.podspec --allow-warnings --synchronous
         
