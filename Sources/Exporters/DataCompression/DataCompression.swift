@@ -163,7 +163,7 @@ import Foundation
       result.append(Data(bytes: &crc32, count: MemoryLayout<UInt32>.size))
 
       // append size of original data
-      var isize: UInt32 = UInt32(truncatingIfNeeded: count).littleEndian
+      var isize = UInt32(truncatingIfNeeded: count).littleEndian
       result.append(Data(bytes: &isize, count: MemoryLayout<UInt32>.size))
 
       return result
@@ -432,7 +432,7 @@ import Foundation
     defer { compression_stream_destroy(&stream) }
 
     var result = preload
-    var flags: Int32 = Int32(COMPRESSION_STREAM_FINALIZE.rawValue)
+    var flags = Int32(COMPRESSION_STREAM_FINALIZE.rawValue)
     let blockLimit = 64 * 1024
     var bufferSize = Swift.max(sourceSize, 64)
 

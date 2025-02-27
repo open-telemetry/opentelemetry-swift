@@ -15,7 +15,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
   fileprivate var internalName: String
   public var name: String {
     get {
-      var value: String = ""
+      var value = ""
       internalStatusQueue.sync {
         value = internalName
       }

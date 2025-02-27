@@ -12,7 +12,7 @@ public enum CompressionType {
 }
 
 public struct OtlpConfiguration {
-  public static let DefaultTimeoutInterval: TimeInterval = TimeInterval(10)
+  public static let DefaultTimeoutInterval: TimeInterval = .init(10)
 
   /*
    * This is a first pass addition to satisfy the OTLP Configuration specification:

@@ -97,7 +97,7 @@ class OtlpLogRecordExporterTests: XCTestCase {
   }
 
   func testConfigHeadersAreSet_whenInitCalledWithCustomConfig() throws {
-    let config: OtlpConfiguration = OtlpConfiguration(timeout: TimeInterval(10), headers: [("FOO", "BAR")])
+    let config = OtlpConfiguration(timeout: TimeInterval(10), headers: [("FOO", "BAR")])
     let exporter = OtlpLogExporter(channel: channel, config: config)
     XCTAssertNotNil(exporter.config.headers)
     XCTAssertEqual(exporter.config.headers?[0].0, "FOO")

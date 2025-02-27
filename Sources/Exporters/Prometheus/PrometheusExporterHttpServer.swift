@@ -26,7 +26,7 @@ public class PrometheusExporterHttpServer {
       let channel = try serverBootstrap.bind(host: host, port: port).wait()
       print("Listening on \(String(describing: channel.localAddress))...")
       try channel.closeFuture.wait()
-    } catch let error {
+    } catch {
       throw error
     }
   }
@@ -34,7 +34,7 @@ public class PrometheusExporterHttpServer {
   public func stop() {
     do {
       try group.syncShutdownGracefully()
-    } catch let error {
+    } catch {
       print("Error shutting down \(error.localizedDescription)")
       exit(0)
     }

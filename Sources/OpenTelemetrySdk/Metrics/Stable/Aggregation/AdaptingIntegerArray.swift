@@ -123,7 +123,7 @@ class AdaptingIntegerArray: NSCopying {
 
   private func resizeToShort() {
     guard let byteBacking else { return }
-    var tmpShortBacking: [Int16] = [Int16](repeating: Int16(0), count: byteBacking.count)
+    var tmpShortBacking = [Int16](repeating: Int16(0), count: byteBacking.count)
 
     for (index, value) in byteBacking.enumerated() {
       tmpShortBacking[index] = Int16(value)
@@ -135,7 +135,7 @@ class AdaptingIntegerArray: NSCopying {
 
   private func resizeToInt() {
     guard let shortBacking else { return }
-    var tmpIntBacking: [Int32] = [Int32](repeating: Int32(0), count: shortBacking.count)
+    var tmpIntBacking = [Int32](repeating: Int32(0), count: shortBacking.count)
 
     for (index, value) in shortBacking.enumerated() {
       tmpIntBacking[index] = Int32(value)
@@ -147,7 +147,7 @@ class AdaptingIntegerArray: NSCopying {
 
   private func resizeToLong() {
     guard let intBacking else { return }
-    var tmpLongBacking: [Int64] = [Int64](repeating: Int64(0), count: intBacking.count)
+    var tmpLongBacking = [Int64](repeating: Int64(0), count: intBacking.count)
 
     for (index, value) in intBacking.enumerated() {
       tmpLongBacking[index] = Int64(value)

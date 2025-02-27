@@ -22,7 +22,7 @@ public struct SpanLimits: Equatable {
   /// the global default max number of attributes per Link.
   public private(set) var attributePerLinkCountLimit: Int = 128
   /// the global default attributes value max length
-  public private(set) var attributeValueLengthLimit: Int = Int.max
+  public private(set) var attributeValueLengthLimit: Int = .max
 
   /// Returns the defaultSpanLimits.
   public init() {}

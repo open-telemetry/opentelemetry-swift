@@ -642,7 +642,7 @@
 
       do {
         try send_submitBatches(on: proto, batches: batches)
-      } catch let error {
+      } catch {
         completion(.error(error))
       }
 
@@ -653,7 +653,7 @@
         do {
           let result = try self.recv_submitBatches(on: proto)
           completion(.success(result))
-        } catch let error {
+        } catch {
           completion(.error(error))
         }
       }
@@ -673,7 +673,7 @@
         var result = Collector_submitBatches_result()
         do {
           result.success = try handler.submitBatches(batches: args.batches)
-        } catch let error { throw error }
+        } catch { throw error }
 
         try outProtocol.writeMessageBegin(name: "submitBatches", type: .reply, sequenceID: sequenceID)
         try result.write(to: outProtocol)

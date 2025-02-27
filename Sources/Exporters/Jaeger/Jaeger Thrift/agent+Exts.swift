@@ -154,7 +154,7 @@
 
       do {
         try send_emitZipkinBatch(on: proto, spans: spans)
-      } catch let error {
+      } catch {
         completion(.error(error))
       }
 
@@ -179,7 +179,7 @@
 
       do {
         try send_emitBatch(on: proto, batch: batch)
-      } catch let error {
+      } catch {
         completion(.error(error))
       }
 
