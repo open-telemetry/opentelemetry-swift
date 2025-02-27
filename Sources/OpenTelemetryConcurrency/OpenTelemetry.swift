@@ -6,11 +6,6 @@
 import Foundation
 import OpenTelemetryApi
 
-#if swift(<5.9)
-// We use the `package` keyword to access some properties in OpenTelemetryApi, which was introduced in 5.9.
-#error("Swift 5.9 or greater is required for this OpenTelemetryConcurrency")
-#else
-
 typealias _OpenTelemetry = OpenTelemetryApi.OpenTelemetry
 
 /// A wrapper type which provides a span builder just like `Tracer`, returns a type of `SpanBuilderBase` to hide APIs on `SpanBuilder` that aren't correctly usable when using a structured concurrency based context manager.
@@ -148,5 +143,3 @@ public struct OpenTelemetryContextProvider {
         try await self.contextManager.withCurrentContextValue(forKey: .baggage, value: baggage, operation)
     }
 }
-
-#endif

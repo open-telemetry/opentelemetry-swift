@@ -7,7 +7,6 @@
 
 import Foundation
 
-#if swift(>=5.9)
 import Network
 public class NetworkMonitor: NetworkMonitorProtocol {
     let monitor = NWPathMonitor()
@@ -75,31 +74,4 @@ public class NetworkMonitor: NetworkMonitorProtocol {
     }
 }
 
-#else
-import Reachability
-
-public class NetworkMonitor: NetworkMonitorProtocol {
-    var reachability: Reachability
-
-    public init() throws {
-        reachability = try Reachability()
-        try reachability.startNotifier()
-    }
-
-    deinit {
-        reachability.stopNotifier()
-    }
-
-    public func getConnection() -> Connection {
-        switch reachability.connection {
-        case .wifi:
-            return .wifi
-        case .cellular:
-            return .cellular
-        case .unavailable, .none:
-            return .unavailable
-        }
-    }
-}
-#endif
 #endif
