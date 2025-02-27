@@ -7,38 +7,38 @@ import Foundation
 import OpenTelemetryApi
 
 public class DoubleUpDownCounterBuilderSdk: DoubleUpDownCounterBuilder, InstrumentBuilder {
-    var meterSharedState: StableMeterSharedState
+  var meterSharedState: StableMeterSharedState
 
-    var meterProviderSharedState: MeterProviderSharedState
+  var meterProviderSharedState: MeterProviderSharedState
 
-    let type: InstrumentType = .upDownCounter
+  let type: InstrumentType = .upDownCounter
 
-    let valueType: InstrumentValueType = .double
+  let valueType: InstrumentValueType = .double
 
-    var instrumentName: String
+  var instrumentName: String
 
-    var description: String
+  var description: String
 
-    var unit: String
+  var unit: String
 
-    init(meterProviderSharedState: MeterProviderSharedState,
-         meterSharedState: StableMeterSharedState,
-         name: String,
-         description: String,
-         unit: String) {
-        self.meterProviderSharedState = meterProviderSharedState
-        self.meterSharedState = meterSharedState
-        self.unit = unit
-        self.description = description
-        self.instrumentName = name
-    }
+  init(meterProviderSharedState: MeterProviderSharedState,
+       meterSharedState: StableMeterSharedState,
+       name: String,
+       description: String,
+       unit: String) {
+    self.meterProviderSharedState = meterProviderSharedState
+    self.meterSharedState = meterSharedState
+    self.unit = unit
+    self.description = description
+    self.instrumentName = name
+  }
 
-    public func build() -> OpenTelemetryApi.DoubleUpDownCounter {
-        buildSynchronousInstrument(DoubleUpDownCounterSdk.init)
-    }
+  public func build() -> OpenTelemetryApi.DoubleUpDownCounter {
+    buildSynchronousInstrument(DoubleUpDownCounterSdk.init)
+  }
 
-    public func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableDoubleMeasurement) -> Void)
+  public func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableDoubleMeasurement) -> Void)
     -> OpenTelemetryApi.ObservableDoubleUpDownCounter {
-        registerDoubleAsynchronousInstrument(type: .observableUpDownCounter, updater: callback)
-    }
+    registerDoubleAsynchronousInstrument(type: .observableUpDownCounter, updater: callback)
+  }
 }

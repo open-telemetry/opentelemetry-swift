@@ -35,7 +35,7 @@ public class HistogramAggregator<T: SignedNumeric & Comparable>: Aggregator<T> {
       self.histogram.count += 1
       self.histogram.sum += value
 
-      for i in 0..<self.boundaries.count where value < self.boundaries[i] {
+      for i in 0 ..< self.boundaries.count where value < self.boundaries[i] {
         self.histogram.buckets.counts[i] += 1
         return
       }
@@ -72,21 +72,21 @@ public class HistogramAggregator<T: SignedNumeric & Comparable>: Aggregator<T> {
 
 private struct Histogram<T> where T: SignedNumeric {
   /*
-     * Buckets are implemented using two different arrays:
-     *  - boundaries: contains every finite bucket boundary, which are inclusive lower bounds
-     *  - counts: contains event counts for each bucket
-     *
-     * Note that we'll always have n+1 buckets, where n is the number of boundaries.
-     * This is because we need to count events that are below the lowest boundary.
-     *
-     * Example: if we measure the values: [5, 30, 5, 40, 5, 15, 15, 15, 25]
-     *  with the boundaries [ 10, 20, 30 ], we will have the following state:
-     *
-     * buckets: {
-     *  boundaries: [10, 20, 30],
-     *  counts: [3, 3, 1, 2],
-     * }
-     */
+   * Buckets are implemented using two different arrays:
+   *  - boundaries: contains every finite bucket boundary, which are inclusive lower bounds
+   *  - counts: contains event counts for each bucket
+   *
+   * Note that we'll always have n+1 buckets, where n is the number of boundaries.
+   * This is because we need to count events that are below the lowest boundary.
+   *
+   * Example: if we measure the values: [5, 30, 5, 40, 5, 15, 15, 15, 25]
+   *  with the boundaries [ 10, 20, 30 ], we will have the following state:
+   *
+   * buckets: {
+   *  boundaries: [10, 20, 30],
+   *  counts: [3, 3, 1, 2],
+   * }
+   */
   var buckets:
     (
       boundaries: [T],

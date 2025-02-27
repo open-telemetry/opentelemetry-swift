@@ -6,6 +6,6 @@
 import Foundation
 
 public protocol ContextPropagators {
-    var textMapPropagator: TextMapPropagator { get }
-    var textMapBaggagePropagator: TextMapBaggagePropagator { get }
+  var textMapPropagator: TextMapPropagator { get }
+  var textMapBaggagePropagator: TextMapBaggagePropagator { get }
 }

@@ -16,7 +16,7 @@ public enum MetricsAdapter {
       resMap.value.forEach { instScope in
         var protoInst = Opentelemetry_Proto_Metrics_V1_ScopeMetrics()
         protoInst.scope =
-        CommonAdapter.toProtoInstrumentationScope(instrumentationScopeInfo: instScope.key)
+          CommonAdapter.toProtoInstrumentationScope(instrumentationScopeInfo: instScope.key)
         instScope.value.forEach {
           protoInst.metrics.append($0)
         }
@@ -38,9 +38,9 @@ public enum MetricsAdapter {
       var instrumentationScopeMetrics = [Opentelemetry_Proto_Metrics_V1_ScopeMetrics]()
       resMap.value.forEach { instScope in
         var protoInst =
-        Opentelemetry_Proto_Metrics_V1_ScopeMetrics()
+          Opentelemetry_Proto_Metrics_V1_ScopeMetrics()
         protoInst.scope =
-        CommonAdapter.toProtoInstrumentationScope(instrumentationScopeInfo: instScope.key)
+          CommonAdapter.toProtoInstrumentationScope(instrumentationScopeInfo: instScope.key)
         instScope.value.forEach {
           protoInst.metrics.append($0)
         }

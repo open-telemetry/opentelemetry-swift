@@ -35,7 +35,7 @@ public class DefaultBaggageBuilder: BaggageBuilder {
     key: String, value: String, metadata: String? = nil
   ) -> Self {
     guard let entryKey = EntryKey(name: key),
-      let entryValue = EntryValue(string: value)
+          let entryValue = EntryValue(string: value)
     else {
       return self
     }

@@ -9,9 +9,7 @@ import OpenTelemetrySdk
 // a persistence exporter decorator for `LogRecords`.
 // specialization of `PersistenceExporterDecorator` for `LogExporter`.
 public class PersistenceLogExporterDecorator: LogRecordExporter {
-
   struct LogRecordDecoratedExporter: DecoratedExporter {
-
     typealias SignalType = ReadableLogRecord
 
     private let logRecordExporter: LogRecordExporter
@@ -25,6 +23,7 @@ public class PersistenceLogExporterDecorator: LogRecordExporter {
       return DataExportStatus(needsRetry: result == .failure)
     }
   }
+
   private let logRecordExporter: LogRecordExporter
   private let persistenceExporter:
     PersistenceExporterDecorator<LogRecordDecoratedExporter>
@@ -64,6 +63,5 @@ public class PersistenceLogExporterDecorator: LogRecordExporter {
   public func forceFlush(explicitTimeout: TimeInterval? = nil) -> ExportResult {
     persistenceExporter.flush()
     return logRecordExporter.forceFlush(explicitTimeout: explicitTimeout)
-
   }
 }

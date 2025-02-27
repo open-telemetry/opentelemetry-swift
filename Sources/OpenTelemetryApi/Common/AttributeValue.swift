@@ -41,7 +41,6 @@ public enum AttributeValue: Equatable, CustomStringConvertible, Hashable {
     case let .set(value):
       return value.labels.description
     }
-
   }
 
   // swiftlint:disable cyclomatic_complexity
@@ -50,7 +49,7 @@ public enum AttributeValue: Equatable, CustomStringConvertible, Hashable {
     case is String:
       // swiftlint:disable force_cast
       self = .string(value as! String)
-      // swiftlint:enable force_cast
+    // swiftlint:enable force_cast
     case let val as Bool:
       self = .bool(val)
     case let val as Int:
@@ -58,13 +57,13 @@ public enum AttributeValue: Equatable, CustomStringConvertible, Hashable {
     case let val as Double:
       self = .double(val)
     case let val as [String]:
-      self = .array(AttributeArray(values: val.map {AttributeValue.string($0)}))
+      self = .array(AttributeArray(values: val.map { AttributeValue.string($0) }))
     case let val as [Bool]:
-      self = .array(AttributeArray(values: val.map { AttributeValue.bool($0)}))
+      self = .array(AttributeArray(values: val.map { AttributeValue.bool($0) }))
     case let val as [Int]:
-      self = .array(AttributeArray(values: val.map { AttributeValue.int($0)}))
+      self = .array(AttributeArray(values: val.map { AttributeValue.int($0) }))
     case let val as [Double]:
-      self = .array(AttributeArray(values: val.map { AttributeValue.double($0)}))
+      self = .array(AttributeArray(values: val.map { AttributeValue.double($0) }))
     case let val as AttributeArray:
       self = .array(val)
     case let val as AttributeSet:
@@ -73,7 +72,7 @@ public enum AttributeValue: Equatable, CustomStringConvertible, Hashable {
       return nil
     }
   }
-// swiftlint:enable cyclomatic_complexity
+  // swiftlint:enable cyclomatic_complexity
 }
 
 extension AttributeValue {

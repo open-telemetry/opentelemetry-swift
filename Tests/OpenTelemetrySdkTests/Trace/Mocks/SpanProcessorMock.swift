@@ -18,24 +18,24 @@ class SpanProcessorMock: SpanProcessor {
   lazy var shutdownCalled: Bool = { self.shutdownCalledTimes > 0 }()
   var forceFlushCalledTimes = 0
   lazy var forceFlushCalled: Bool = { self.forceFlushCalledTimes > 0 }()
-  
+
   var isStartRequired = true
   var isEndRequired = true
-  
+
   func onStart(parentContext: SpanContext?, span: ReadableSpan) {
     onStartCalledTimes += 1
     onStartCalledSpan = span
   }
-  
+
   func onEnd(span: ReadableSpan) {
     onEndCalledTimes += 1
     onEndCalledSpan = span
   }
-  
+
   func shutdown(explicitTimeout: TimeInterval?) {
     shutdownCalledTimes += 1
   }
-  
+
   func forceFlush(timeout: TimeInterval? = nil) {
     forceFlushCalledTimes += 1
   }

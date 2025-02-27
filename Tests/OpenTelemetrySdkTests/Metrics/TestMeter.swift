@@ -7,15 +7,14 @@
 import XCTest
 
 class TestMeter: MeterSdk {
-    let collectAction: () -> Void
+  let collectAction: () -> Void
 
-    init(meterSharedState: MeterSharedState, instrumentationScopeInfo: InstrumentationScopeInfo, collectAction: @escaping () -> Void) {
-        
-        self.collectAction = collectAction
-        super.init(meterSharedState: meterSharedState, instrumentationScopeInfo: instrumentationScopeInfo)
-    }
+  init(meterSharedState: MeterSharedState, instrumentationScopeInfo: InstrumentationScopeInfo, collectAction: @escaping () -> Void) {
+    self.collectAction = collectAction
+    super.init(meterSharedState: meterSharedState, instrumentationScopeInfo: instrumentationScopeInfo)
+  }
 
-    override func collect() {
-        collectAction()
-    }
+  override func collect() {
+    collectAction()
+  }
 }

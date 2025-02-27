@@ -7,9 +7,9 @@ import Foundation
 import OpenTelemetryApi
 
 struct IntObservableGaugeHandle: IntObserverMetricHandle {
-    public private(set) var aggregator = MaxValueAggregator<Int>()
+  public private(set) var aggregator = MaxValueAggregator<Int>()
 
-    func observe(value: Int) {
-        aggregator.update(value: value)
-    }
+  func observe(value: Int) {
+    aggregator.update(value: value)
+  }
 }

@@ -9,7 +9,6 @@ import OpenTelemetrySdk
 // a persistence exporter decorator for `SpanData`.
 // specialization of `PersistenceExporterDecorator` for `SpanExporter`.
 public class PersistenceSpanExporterDecorator: SpanExporter {
-
   struct SpanDecoratedExporter: DecoratedExporter {
     typealias SignalType = SpanData
 

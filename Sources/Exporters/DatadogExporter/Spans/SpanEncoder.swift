@@ -153,7 +153,7 @@ internal struct SpanEncoder {
       String(format: "%016llx", span.traceID.rawLowerLong), forKey: .traceID)
     try container.encode(span.spanID.hexString, forKey: .spanID)
 
-    let parentSpanID = span.parentID ?? SpanId.invalid  // 0 is a reserved ID for a root span (ref: DDTracer.java#L600)
+    let parentSpanID = span.parentID ?? SpanId.invalid // 0 is a reserved ID for a root span (ref: DDTracer.java#L600)
     try container.encode(parentSpanID.hexString, forKey: .parentID)
 
     try container.encode(span.name, forKey: .name)

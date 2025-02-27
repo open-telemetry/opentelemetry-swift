@@ -7,13 +7,13 @@ import Foundation
 import OpenTelemetryApi
 
 struct LoggingBinaryFormat: BinaryFormattable {
-    func fromByteArray(bytes: [UInt8]) -> SpanContext? {
-        Logger.log("LoggingBinaryFormat.FromByteArray(...)")
-        return nil
-    }
+  func fromByteArray(bytes: [UInt8]) -> SpanContext? {
+    Logger.log("LoggingBinaryFormat.FromByteArray(...)")
+    return nil
+  }
 
-    func toByteArray(spanContext: SpanContext) -> [UInt8] {
-        Logger.log("LoggingBinaryFormat.ToByteArray({spanContext})")
-        return [UInt8]()
-    }
+  func toByteArray(spanContext: SpanContext) -> [UInt8] {
+    Logger.log("LoggingBinaryFormat.ToByteArray({spanContext})")
+    return [UInt8]()
+  }
 }

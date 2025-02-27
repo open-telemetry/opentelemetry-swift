@@ -4,9 +4,9 @@
  */
 
 #if os(iOS) && !targetEnvironment(macCatalyst)
-import UIKit
+  import UIKit
 
-class UIDeviceMock: UIDevice {
+  class UIDeviceMock: UIDevice {
     private var _model: String
     private var _systemName: String
     private var _systemVersion: String
@@ -15,19 +15,19 @@ class UIDeviceMock: UIDevice {
     private var _batteryLevel: Float
 
     init(
-        model: String = .mockAny(),
-        systemName: String = .mockAny(),
-        systemVersion: String = .mockAny(),
-        isBatteryMonitoringEnabled: Bool = .mockAny(),
-        batteryState: UIDevice.BatteryState = .unknown,
-        batteryLevel: Float = 0
+      model: String = .mockAny(),
+      systemName: String = .mockAny(),
+      systemVersion: String = .mockAny(),
+      isBatteryMonitoringEnabled: Bool = .mockAny(),
+      batteryState: UIDevice.BatteryState = .unknown,
+      batteryLevel: Float = 0
     ) {
-        self._model = model
-        self._systemName = systemName
-        self._systemVersion = systemVersion
-        self._isBatteryMonitoringEnabled = isBatteryMonitoringEnabled
-        self._batteryState = batteryState
-        self._batteryLevel = batteryLevel
+      self._model = model
+      self._systemName = systemName
+      self._systemVersion = systemVersion
+      self._isBatteryMonitoringEnabled = isBatteryMonitoringEnabled
+      self._batteryState = batteryState
+      self._batteryLevel = batteryLevel
     }
 
     override var model: String { _model }
@@ -37,9 +37,9 @@ class UIDeviceMock: UIDevice {
     override var batteryLevel: Float { _batteryLevel }
 
     override var isBatteryMonitoringEnabled: Bool {
-        get { _isBatteryMonitoringEnabled }
-        set { _isBatteryMonitoringEnabled = newValue }
+      get { _isBatteryMonitoringEnabled }
+      set { _isBatteryMonitoringEnabled = newValue }
     }
-}
+  }
 
 #endif

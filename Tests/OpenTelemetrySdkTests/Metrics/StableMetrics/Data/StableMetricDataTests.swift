@@ -8,168 +8,168 @@ import OpenTelemetryApi
 import XCTest
 
 class StableMetricDataTests: XCTestCase {
-    let resource = Resource(attributes: ["foo": AttributeValue("bar")])
-    let instrumentationScopeInfo = InstrumentationScopeInfo(name: "test")
-    let metricName = "name"
-    let metricDescription = "description"
-    let emptyPointData = [PointData]()
-    let unit = "unit"
+  let resource = Resource(attributes: ["foo": AttributeValue("bar")])
+  let instrumentationScopeInfo = InstrumentationScopeInfo(name: "test")
+  let metricName = "name"
+  let metricDescription = "description"
+  let emptyPointData = [PointData]()
+  let unit = "unit"
 
-    func testStableMetricDataCreation() {
-        let type = MetricDataType.Summary
-        let data = StableMetricData.Data(aggregationTemporality: .delta, points: emptyPointData)
+  func testStableMetricDataCreation() {
+    let type = MetricDataType.Summary
+    let data = StableMetricData.Data(aggregationTemporality: .delta, points: emptyPointData)
 
-        let metricData = StableMetricData(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, type: type, isMonotonic: false, data: data)
+    let metricData = StableMetricData(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, type: type, isMonotonic: false, data: data)
 
-        assertCommon(metricData)
-        XCTAssertEqual(metricData.type, type)
-        XCTAssertEqual(metricData.data, data)
-        XCTAssertEqual(metricData.data.aggregationTemporality, .delta)
-        XCTAssertEqual(metricData.isMonotonic, false)
-    }
+    assertCommon(metricData)
+    XCTAssertEqual(metricData.type, type)
+    XCTAssertEqual(metricData.data, data)
+    XCTAssertEqual(metricData.data.aggregationTemporality, .delta)
+    XCTAssertEqual(metricData.isMonotonic, false)
+  }
 
-    func testEmptyStableMetricData() {
-        XCTAssertEqual(StableMetricData.empty, StableMetricData(resource: Resource.empty, instrumentationScopeInfo: InstrumentationScopeInfo(), name: "", description: "", unit: "", type: .Summary, isMonotonic: false, data: StableMetricData.Data(aggregationTemporality: .cumulative, points: [PointData]())))
-    }
+  func testEmptyStableMetricData() {
+    XCTAssertEqual(StableMetricData.empty, StableMetricData(resource: Resource.empty, instrumentationScopeInfo: InstrumentationScopeInfo(), name: "", description: "", unit: "", type: .Summary, isMonotonic: false, data: StableMetricData.Data(aggregationTemporality: .cumulative, points: [PointData]())))
+  }
 
-    func testCreateExponentialHistogram() {
-        let type = MetricDataType.ExponentialHistogram
-        let histogramData = StableExponentialHistogramData(aggregationTemporality: .delta, points: emptyPointData)
+  func testCreateExponentialHistogram() {
+    let type = MetricDataType.ExponentialHistogram
+    let histogramData = StableExponentialHistogramData(aggregationTemporality: .delta, points: emptyPointData)
 
-        let metricData = StableMetricData.createExponentialHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, data: histogramData)
+    let metricData = StableMetricData.createExponentialHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, data: histogramData)
 
-        assertCommon(metricData)
-        XCTAssertEqual(metricData.type, type)
-        XCTAssertEqual(metricData.data, histogramData)
-        XCTAssertEqual(metricData.data.aggregationTemporality, .delta)
-        XCTAssertEqual(metricData.isMonotonic, false)
-    }
+    assertCommon(metricData)
+    XCTAssertEqual(metricData.type, type)
+    XCTAssertEqual(metricData.data, histogramData)
+    XCTAssertEqual(metricData.data.aggregationTemporality, .delta)
+    XCTAssertEqual(metricData.isMonotonic, false)
+  }
 
-    func testCreateHistogram() {
-        let type = MetricDataType.Histogram
+  func testCreateHistogram() {
+    let type = MetricDataType.Histogram
 
-        let boundaries = [Double]()
-        let sum:Double = 0
-        let min = Double.greatestFiniteMagnitude
-        let max:Double = -1
-        let count = 0
-        let counts = Array(repeating: 0, count: boundaries.count + 1)
+    let boundaries = [Double]()
+    let sum: Double = 0
+    let min = Double.greatestFiniteMagnitude
+    let max: Double = -1
+    let count = 0
+    let counts = Array(repeating: 0, count: boundaries.count + 1)
 
-        let histogramPointData = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [ExemplarData](), sum: sum, count: UInt64(count), min: min, max: max, boundaries: boundaries, counts: counts, hasMin: count > 0, hasMax: count > 0)
+    let histogramPointData = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [ExemplarData](), sum: sum, count: UInt64(count), min: min, max: max, boundaries: boundaries, counts: counts, hasMin: count > 0, hasMax: count > 0)
 
-        let points = [histogramPointData]
-        let histogramData = StableHistogramData(aggregationTemporality: .cumulative, points: points)
-        let metricData = StableMetricData.createHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, data: histogramData)
+    let points = [histogramPointData]
+    let histogramData = StableHistogramData(aggregationTemporality: .cumulative, points: points)
+    let metricData = StableMetricData.createHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, data: histogramData)
 
-        assertCommon(metricData)
-        XCTAssertEqual(metricData.type, type)
-        XCTAssertEqual(metricData.data, histogramData)
-        XCTAssertEqual(metricData.data.aggregationTemporality, .cumulative)
-        XCTAssertEqual(metricData.isMonotonic, false)
+    assertCommon(metricData)
+    XCTAssertEqual(metricData.type, type)
+    XCTAssertEqual(metricData.data, histogramData)
+    XCTAssertEqual(metricData.data.aggregationTemporality, .cumulative)
+    XCTAssertEqual(metricData.isMonotonic, false)
 
-        XCTAssertFalse(metricData.isEmpty())
+    XCTAssertFalse(metricData.isEmpty())
 
-        let hpd = metricData.getHistogramData()
-        XCTAssertNotNil(hpd)
-        XCTAssertEqual(1, hpd.count)
-    }
-    
-    func testCreateExponentialHistogramData() {
-        let type = MetricDataType.ExponentialHistogram
-        let positivieBuckets = DoubleBase2ExponentialHistogramBuckets(scale: 20, maxBuckets: 160)
-        positivieBuckets.downscale(by: 20)
-        positivieBuckets.record(value: 10.0)
-        positivieBuckets.record(value: 40.0)
-        positivieBuckets.record(value: 90.0)
-        positivieBuckets.record(value: 100.0)
-        
-        let negativeBuckets = DoubleBase2ExponentialHistogramBuckets(scale: 20, maxBuckets: 160)
-        
-        let expHistogramPointData = ExponentialHistogramPointData(scale: 20, sum: 240.0, zeroCount: 0, hasMin: true, hasMax: true, min: 10.0, max: 100.0, positiveBuckets: positivieBuckets, negativeBuckets: negativeBuckets, startEpochNanos: 0, epochNanos: 1, attributes: [:], exemplars: [])
-        
-        let points = [expHistogramPointData]
-        let histogramData = StableExponentialHistogramData(aggregationTemporality: .delta, points: points)
-        let metricData = StableMetricData.createExponentialHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, data: histogramData)
-        
-        assertCommon(metricData)
-        XCTAssertEqual(metricData.type, type)
-        XCTAssertEqual(metricData.data, histogramData)
-        XCTAssertEqual(metricData.data.aggregationTemporality, .delta)
-        XCTAssertEqual(metricData.isMonotonic, false)
-        
-        XCTAssertFalse(metricData.isEmpty())
-        let histogramMetricData = metricData.data.points.first as! ExponentialHistogramPointData
-        XCTAssertEqual(histogramMetricData.scale, 20)
-        XCTAssertEqual(histogramMetricData.sum, 240)
-        XCTAssertEqual(histogramMetricData.count, 4)
-        XCTAssertEqual(histogramMetricData.min, 10)
-        XCTAssertEqual(histogramMetricData.max, 100)
-        XCTAssertEqual(histogramMetricData.zeroCount, 0)
-    }
+    let hpd = metricData.getHistogramData()
+    XCTAssertNotNil(hpd)
+    XCTAssertEqual(1, hpd.count)
+  }
 
-    func testCreateDoubleGuage() {
-        let type = MetricDataType.DoubleGauge
-        let d: Double = 22.22222
+  func testCreateExponentialHistogramData() {
+    let type = MetricDataType.ExponentialHistogram
+    let positivieBuckets = DoubleBase2ExponentialHistogramBuckets(scale: 20, maxBuckets: 160)
+    positivieBuckets.downscale(by: 20)
+    positivieBuckets.record(value: 10.0)
+    positivieBuckets.record(value: 40.0)
+    positivieBuckets.record(value: 90.0)
+    positivieBuckets.record(value: 100.0)
 
-        let point:PointData = DoublePointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: d)
-        let guageData = StableGaugeData(aggregationTemporality: .cumulative, points: [point])
-        let metricData = StableMetricData.createDoubleGauge(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, data: guageData)
+    let negativeBuckets = DoubleBase2ExponentialHistogramBuckets(scale: 20, maxBuckets: 160)
 
-        assertCommon(metricData)
-        XCTAssertEqual(metricData.type, type)
-        XCTAssertEqual(metricData.data.points.first, point)
-        XCTAssertEqual(metricData.data.aggregationTemporality, .cumulative)
-        XCTAssertEqual(metricData.isMonotonic, false)
-    }
+    let expHistogramPointData = ExponentialHistogramPointData(scale: 20, sum: 240.0, zeroCount: 0, hasMin: true, hasMax: true, min: 10.0, max: 100.0, positiveBuckets: positivieBuckets, negativeBuckets: negativeBuckets, startEpochNanos: 0, epochNanos: 1, attributes: [:], exemplars: [])
 
-    func testCreateDoubleSum() {
-        let type = MetricDataType.DoubleSum
-        let d: Double = 44.4444
+    let points = [expHistogramPointData]
+    let histogramData = StableExponentialHistogramData(aggregationTemporality: .delta, points: points)
+    let metricData = StableMetricData.createExponentialHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, data: histogramData)
 
-        let point:PointData = DoublePointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: d)
-        let sumData = StableSumData(aggregationTemporality: .cumulative, points: [point])
-        let metricData = StableMetricData.createDoubleSum(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, isMonotonic: true, data: sumData)
+    assertCommon(metricData)
+    XCTAssertEqual(metricData.type, type)
+    XCTAssertEqual(metricData.data, histogramData)
+    XCTAssertEqual(metricData.data.aggregationTemporality, .delta)
+    XCTAssertEqual(metricData.isMonotonic, false)
 
-        assertCommon(metricData)
-        XCTAssertEqual(metricData.type, type)
-        XCTAssertEqual(metricData.data.points.first, point)
-        XCTAssertEqual(metricData.data.aggregationTemporality, .cumulative)
-        XCTAssertEqual(metricData.isMonotonic, true)
-    }
+    XCTAssertFalse(metricData.isEmpty())
+    let histogramMetricData = metricData.data.points.first as! ExponentialHistogramPointData
+    XCTAssertEqual(histogramMetricData.scale, 20)
+    XCTAssertEqual(histogramMetricData.sum, 240)
+    XCTAssertEqual(histogramMetricData.count, 4)
+    XCTAssertEqual(histogramMetricData.min, 10)
+    XCTAssertEqual(histogramMetricData.max, 100)
+    XCTAssertEqual(histogramMetricData.zeroCount, 0)
+  }
 
-    func testCreateLongGuage() {
-        let type = MetricDataType.LongGauge
-        let point:PointData = LongPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: 33)
-        let guageData = StableGaugeData(aggregationTemporality: .cumulative, points: [point])
+  func testCreateDoubleGuage() {
+    let type = MetricDataType.DoubleGauge
+    let d: Double = 22.22222
 
-        let metricData = StableMetricData.createLongGauge(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, data: guageData)
+    let point: PointData = DoublePointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: d)
+    let guageData = StableGaugeData(aggregationTemporality: .cumulative, points: [point])
+    let metricData = StableMetricData.createDoubleGauge(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, data: guageData)
 
-        assertCommon(metricData)
-        XCTAssertEqual(metricData.type, type)
-        XCTAssertEqual(metricData.data.points.first, point)
-        XCTAssertEqual(metricData.data.aggregationTemporality, .cumulative)
-        XCTAssertEqual(metricData.isMonotonic, false)
-    }
+    assertCommon(metricData)
+    XCTAssertEqual(metricData.type, type)
+    XCTAssertEqual(metricData.data.points.first, point)
+    XCTAssertEqual(metricData.data.aggregationTemporality, .cumulative)
+    XCTAssertEqual(metricData.isMonotonic, false)
+  }
 
-    func testCreateLongSum() {
-        let type = MetricDataType.LongSum
-        let point:PointData = LongPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: 55)
-        let sumData = StableSumData(aggregationTemporality: .cumulative, points: [point])
+  func testCreateDoubleSum() {
+    let type = MetricDataType.DoubleSum
+    let d: Double = 44.4444
 
-        let metricData = StableMetricData.createLongSum(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, isMonotonic: true, data: sumData)
+    let point: PointData = DoublePointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: d)
+    let sumData = StableSumData(aggregationTemporality: .cumulative, points: [point])
+    let metricData = StableMetricData.createDoubleSum(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, isMonotonic: true, data: sumData)
 
-        assertCommon(metricData)
-        XCTAssertEqual(metricData.type, type)
-        XCTAssertEqual(metricData.data.points.first, point)
-        XCTAssertEqual(metricData.data.aggregationTemporality, .cumulative)
-        XCTAssertEqual(metricData.isMonotonic, true)
-    }
+    assertCommon(metricData)
+    XCTAssertEqual(metricData.type, type)
+    XCTAssertEqual(metricData.data.points.first, point)
+    XCTAssertEqual(metricData.data.aggregationTemporality, .cumulative)
+    XCTAssertEqual(metricData.isMonotonic, true)
+  }
 
-    func assertCommon(_ metricData: StableMetricData) {
-        XCTAssertEqual(metricData.resource, resource)
-        XCTAssertEqual(metricData.instrumentationScopeInfo, instrumentationScopeInfo)
-        XCTAssertEqual(metricData.name, metricName)
-        XCTAssertEqual(metricData.description, metricDescription)
-        XCTAssertEqual(metricData.unit, unit)
-    }
+  func testCreateLongGuage() {
+    let type = MetricDataType.LongGauge
+    let point: PointData = LongPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: 33)
+    let guageData = StableGaugeData(aggregationTemporality: .cumulative, points: [point])
+
+    let metricData = StableMetricData.createLongGauge(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, data: guageData)
+
+    assertCommon(metricData)
+    XCTAssertEqual(metricData.type, type)
+    XCTAssertEqual(metricData.data.points.first, point)
+    XCTAssertEqual(metricData.data.aggregationTemporality, .cumulative)
+    XCTAssertEqual(metricData.isMonotonic, false)
+  }
+
+  func testCreateLongSum() {
+    let type = MetricDataType.LongSum
+    let point: PointData = LongPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: 55)
+    let sumData = StableSumData(aggregationTemporality: .cumulative, points: [point])
+
+    let metricData = StableMetricData.createLongSum(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: metricName, description: metricDescription, unit: unit, isMonotonic: true, data: sumData)
+
+    assertCommon(metricData)
+    XCTAssertEqual(metricData.type, type)
+    XCTAssertEqual(metricData.data.points.first, point)
+    XCTAssertEqual(metricData.data.aggregationTemporality, .cumulative)
+    XCTAssertEqual(metricData.isMonotonic, true)
+  }
+
+  func assertCommon(_ metricData: StableMetricData) {
+    XCTAssertEqual(metricData.resource, resource)
+    XCTAssertEqual(metricData.instrumentationScopeInfo, instrumentationScopeInfo)
+    XCTAssertEqual(metricData.name, metricName)
+    XCTAssertEqual(metricData.description, metricDescription)
+    XCTAssertEqual(metricData.unit, unit)
+  }
 }

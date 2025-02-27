@@ -6,5 +6,5 @@
 import Foundation
 
 public protocol ObservableLongGauge {
-    func close()
+  func close()
 }

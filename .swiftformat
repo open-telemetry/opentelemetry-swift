@@ -1,0 +1,8 @@
+--exclude Sources/Exporters/OpenTelemetryProtocolCommon/proto,.build,Build
+--indent 2
+--allman false
+--disable wrapMultilineStatementBraces
+--commas inline
+--disable redundantReturn
+--disable preferForLoop
+--stripunusedargs closure-only

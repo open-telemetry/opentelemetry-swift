@@ -14,12 +14,11 @@
   public func == (lhs: Tag, rhs: Tag) -> Bool {
     return
       (lhs.key == rhs.key) && (lhs.vType == rhs.vType) && (lhs.vStr == rhs.vStr)
-      && (lhs.vDouble == rhs.vDouble) && (lhs.vBool == rhs.vBool)
-      && (lhs.vLong == rhs.vLong) && (lhs.vBinary == rhs.vBinary)
+        && (lhs.vDouble == rhs.vDouble) && (lhs.vBool == rhs.vBool)
+        && (lhs.vLong == rhs.vLong) && (lhs.vBinary == rhs.vBinary)
   }
 
   extension Tag: CustomStringConvertible {
-
     public var description: String {
       var desc = "Tag("
       desc += "key=\(String(describing: self.key)), "
@@ -31,7 +30,6 @@
       desc += "vBinary=\(String(describing: self.vBinary))"
       return desc
     }
-
   }
 
   extension Tag: Hashable {
@@ -47,7 +45,6 @@
   }
 
   extension Tag: TStruct {
-
     public static var fieldIds: [String: Int32] {
       return [
         "key": 1, "vType": 2, "vStr": 3, "vDouble": 4, "vBool": 5, "vLong": 6,
@@ -68,7 +65,6 @@
       var vBinary: Data?
 
       fields: while true {
-
         let (_, fieldType, fieldID) = try proto.readFieldBegin()
 
         switch (fieldID, fieldType) {
@@ -95,7 +91,6 @@
         key: key, vType: vType, vStr: vStr, vDouble: vDouble, vBool: vBool,
         vLong: vLong, vBinary: vBinary)
     }
-
   }
 
   public func == (lhs: Log, rhs: Log) -> Bool {
@@ -104,14 +99,12 @@
   }
 
   extension Log: CustomStringConvertible {
-
     public var description: String {
       var desc = "Log("
       desc += "timestamp=\(String(describing: self.timestamp)), "
       desc += "fields=\(String(describing: self.fields))"
       return desc
     }
-
   }
 
   extension Log: Hashable {
@@ -122,7 +115,6 @@
   }
 
   extension Log: TStruct {
-
     public static var fieldIds: [String: Int32] {
       return ["timestamp": 1, "fields": 2]
     }
@@ -135,7 +127,6 @@
       var fields: TList<Tag>!
 
       fields: while true {
-
         let (_, fieldType, fieldID) = try proto.readFieldBegin()
 
         switch (fieldID, fieldType) {
@@ -155,17 +146,15 @@
 
       return Log(timestamp: timestamp, fields: fields)
     }
-
   }
 
   public func == (lhs: SpanRef, rhs: SpanRef) -> Bool {
     return
       (lhs.refType == rhs.refType) && (lhs.traceIdLow == rhs.traceIdLow)
-      && (lhs.traceIdHigh == rhs.traceIdHigh) && (lhs.spanId == rhs.spanId)
+        && (lhs.traceIdHigh == rhs.traceIdHigh) && (lhs.spanId == rhs.spanId)
   }
 
   extension SpanRef: CustomStringConvertible {
-
     public var description: String {
       var desc = "SpanRef("
       desc += "refType=\(String(describing: self.refType)), "
@@ -174,7 +163,6 @@
       desc += "spanId=\(String(describing: self.spanId))"
       return desc
     }
-
   }
 
   extension SpanRef: Hashable {
@@ -187,7 +175,6 @@
   }
 
   extension SpanRef: TStruct {
-
     public static var fieldIds: [String: Int32] {
       return ["refType": 1, "traceIdLow": 2, "traceIdHigh": 3, "spanId": 4]
     }
@@ -202,7 +189,6 @@
       var spanId: Int64!
 
       fields: while true {
-
         let (_, fieldType, fieldID) = try proto.readFieldBegin()
 
         switch (fieldID, fieldType) {
@@ -228,21 +214,19 @@
         refType: refType, traceIdLow: traceIdLow, traceIdHigh: traceIdHigh,
         spanId: spanId)
     }
-
   }
 
   public func == (lhs: Span, rhs: Span) -> Bool {
     return
       (lhs.traceIdLow == rhs.traceIdLow) && (lhs.traceIdHigh == rhs.traceIdHigh)
-      && (lhs.spanId == rhs.spanId) && (lhs.parentSpanId == rhs.parentSpanId)
-      && (lhs.operationName == rhs.operationName)
-      && (lhs.references == rhs.references) && (lhs.flags == rhs.flags)
-      && (lhs.startTime == rhs.startTime) && (lhs.duration == rhs.duration)
-      && (lhs.tags == rhs.tags) && (lhs.logs == rhs.logs)
+        && (lhs.spanId == rhs.spanId) && (lhs.parentSpanId == rhs.parentSpanId)
+        && (lhs.operationName == rhs.operationName)
+        && (lhs.references == rhs.references) && (lhs.flags == rhs.flags)
+        && (lhs.startTime == rhs.startTime) && (lhs.duration == rhs.duration)
+        && (lhs.tags == rhs.tags) && (lhs.logs == rhs.logs)
   }
 
   extension Span: CustomStringConvertible {
-
     public var description: String {
       var desc = "Span("
       desc += "traceIdLow=\(String(describing: self.traceIdLow)), "
@@ -258,7 +242,6 @@
       desc += "logs=\(String(describing: self.logs))"
       return desc
     }
-
   }
 
   extension Span: Hashable {
@@ -278,7 +261,6 @@
   }
 
   extension Span: TStruct {
-
     public static var fieldIds: [String: Int32] {
       return [
         "traceIdLow": 1, "traceIdHigh": 2, "spanId": 3, "parentSpanId": 4,
@@ -303,7 +285,6 @@
       var logs: TList<Log>?
 
       fields: while true {
-
         let (_, fieldType, fieldID) = try proto.readFieldBegin()
 
         switch (fieldID, fieldType) {
@@ -342,7 +323,6 @@
         references: references, flags: flags, startTime: startTime,
         duration: duration, tags: tags, logs: logs)
     }
-
   }
 
   public func == (lhs: Process, rhs: Process) -> Bool {
@@ -351,14 +331,12 @@
   }
 
   extension Process: CustomStringConvertible {
-
     public var description: String {
       var desc = "Process("
       desc += "serviceName=\(String(describing: self.serviceName)), "
       desc += "tags=\(String(describing: self.tags))"
       return desc
     }
-
   }
 
   extension Process: Hashable {
@@ -369,7 +347,6 @@
   }
 
   extension Process: TStruct {
-
     public static var fieldIds: [String: Int32] {
       return ["serviceName": 1, "tags": 2]
     }
@@ -382,7 +359,6 @@
       var tags: TList<Tag>?
 
       fields: while true {
-
         let (_, fieldType, fieldID) = try proto.readFieldBegin()
 
         switch (fieldID, fieldType) {
@@ -401,7 +377,6 @@
 
       return Process(serviceName: serviceName, tags: tags)
     }
-
   }
 
   public func == (lhs: Batch, rhs: Batch) -> Bool {
@@ -410,14 +385,12 @@
   }
 
   extension Batch: CustomStringConvertible {
-
     public var description: String {
       var desc = "Batch("
       desc += "process=\(String(describing: self.process)), "
       desc += "spans=\(String(describing: self.spans))"
       return desc
     }
-
   }
 
   extension Batch: Hashable {
@@ -428,7 +401,6 @@
   }
 
   extension Batch: TStruct {
-
     public static var fieldIds: [String: Int32] {
       return ["process": 1, "spans": 2]
     }
@@ -441,7 +413,6 @@
       var spans: TList<Span>!
 
       fields: while true {
-
         let (_, fieldType, fieldID) = try proto.readFieldBegin()
 
         switch (fieldID, fieldType) {
@@ -461,7 +432,6 @@
 
       return Batch(process: process, spans: spans)
     }
-
   }
 
   public func == (lhs: BatchSubmitResponse, rhs: BatchSubmitResponse) -> Bool {
@@ -470,13 +440,11 @@
   }
 
   extension BatchSubmitResponse: CustomStringConvertible {
-
     public var description: String {
       var desc = "BatchSubmitResponse("
       desc += "ok=\(String(describing: self.ok))"
       return desc
     }
-
   }
 
   extension BatchSubmitResponse: Hashable {
@@ -486,7 +454,6 @@
   }
 
   extension BatchSubmitResponse: TStruct {
-
     public static var fieldIds: [String: Int32] {
       return ["ok": 1]
     }
@@ -498,7 +465,6 @@
       var ok: Bool!
 
       fields: while true {
-
         let (_, fieldType, fieldID) = try proto.readFieldBegin()
 
         switch (fieldID, fieldType) {
@@ -516,17 +482,14 @@
 
       return BatchSubmitResponse(ok: ok)
     }
-
   }
 
   private final class Collector_submitBatches_args {
-
     fileprivate var batches: TList<Batch>
 
     fileprivate init(batches: TList<Batch>) {
       self.batches = batches
     }
-
   }
 
   private func == (
@@ -543,7 +506,6 @@
   }
 
   extension Collector_submitBatches_args: TStruct {
-
     fileprivate static var fieldIds: [String: Int32] {
       return ["batches": 1]
     }
@@ -558,7 +520,6 @@
       var batches: TList<Batch>!
 
       fields: while true {
-
         let (_, fieldType, fieldID) = try proto.readFieldBegin()
 
         switch (fieldID, fieldType) {
@@ -576,18 +537,15 @@
 
       return Collector_submitBatches_args(batches: batches)
     }
-
   }
 
   private final class Collector_submitBatches_result {
-
     fileprivate var success: TList<BatchSubmitResponse>?
 
     fileprivate init() {}
     fileprivate init(success: TList<BatchSubmitResponse>?) {
       self.success = success
     }
-
   }
 
   private func == (
@@ -604,7 +562,6 @@
   }
 
   extension Collector_submitBatches_result: TStruct {
-
     fileprivate static var fieldIds: [String: Int32] {
       return ["success": 0]
     }
@@ -619,7 +576,6 @@
       var success: TList<BatchSubmitResponse>?
 
       fields: while true {
-
         let (_, fieldType, fieldID) = try proto.readFieldBegin()
 
         switch (fieldID, fieldType) {
@@ -636,11 +592,9 @@
 
       return Collector_submitBatches_result(success: success)
     }
-
   }
 
   extension CollectorClient: Collector {
-
     private func send_submitBatches(batches: TList<Batch>) throws {
       try outProtocol.writeMessageBegin(
         name: "submitBatches", type: .call, sequenceID: 0)
@@ -668,11 +622,9 @@
       try outProtocol.transport.flush()
       return try recv_submitBatches()
     }
-
   }
 
   extension CollectorAsyncClient: CollectorAsync {
-
     private func send_submitBatches(
       on outProtocol: TProtocol, batches: TList<Batch>
     ) throws {
@@ -701,7 +653,6 @@
       batches: TList<Batch>,
       completion: @escaping (TAsyncResult<TList<BatchSubmitResponse>>) -> Void
     ) {
-
       let transport = factory.newTransport()
       let proto = Protocol(on: transport)
 
@@ -726,9 +677,7 @@
   }
 
   extension CollectorProcessor: TProcessor {
-
     static let processorHandlers: ProcessorHandlerDictionary = {
-
       var processorHandlers = ProcessorHandlerDictionary()
 
       processorHandlers["submitBatches"] = { sequenceID, inProtocol, outProtocol, handler in

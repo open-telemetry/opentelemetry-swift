@@ -7,7 +7,6 @@ import Foundation
 import OpenTelemetryApi
 
 public class LogRecordBuilderSdk: EventBuilder {
-
   private var sharedState: LoggerSharedState
   private var limits: LogLimits
   private var instrumentationScope: InstrumentationScopeInfo
@@ -69,7 +68,6 @@ public class LogRecordBuilderSdk: EventBuilder {
   }
 
   public func emit() {
-
     if spanContext == nil && includeSpanContext {
       spanContext = OpenTelemetry.instance.contextProvider.activeSpan?.context
     }

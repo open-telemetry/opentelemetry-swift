@@ -7,15 +7,15 @@ import Foundation
 @testable import OpenTelemetryApi
 
 class BaggageMock: Baggage {
-    static func baggageBuilder() -> BaggageBuilder {
-        return EmptyBaggageBuilder()
-    }
+  static func baggageBuilder() -> BaggageBuilder {
+    return EmptyBaggageBuilder()
+  }
 
-    func getEntries() -> [Entry] {
-        return [Entry]()
-    }
+  func getEntries() -> [Entry] {
+    return [Entry]()
+  }
 
-    func getEntryValue(key: EntryKey) -> EntryValue? {
-        return nil
-    }
+  func getEntryValue(key: EntryKey) -> EntryValue? {
+    return nil
+  }
 }

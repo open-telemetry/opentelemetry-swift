@@ -6,8 +6,8 @@
 import Foundation
 
 enum StorageError: Error {
-    case createFileError(path: URL)
-    case createDirectoryError(path: URL, error: Error)
-    case obtainCacheLibraryError
-    case dataExceedsMaxSizeError(dataSize: UInt64, maxSize: UInt64)
+  case createFileError(path: URL)
+  case createDirectoryError(path: URL, error: Error)
+  case obtainCacheLibraryError
+  case dataExceedsMaxSizeError(dataSize: UInt64, maxSize: UInt64)
 }

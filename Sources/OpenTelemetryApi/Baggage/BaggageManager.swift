@@ -13,6 +13,6 @@ import Foundation
 /// own subtypes. This means callers cannot assume the getCurrentContext()
 /// is the same instance as the one withContext() placed into scope.
 public protocol BaggageManager: AnyObject {
-    /// Returns a new ContextBuilder.
-    func baggageBuilder() -> BaggageBuilder
+  /// Returns a new ContextBuilder.
+  func baggageBuilder() -> BaggageBuilder
 }

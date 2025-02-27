@@ -1,7 +1,7 @@
 //
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 
 import Foundation
 import OpenTelemetryApi
@@ -9,33 +9,34 @@ import OpenTelemetryApi
 public typealias AggregationResolver = (InstrumentType) -> Aggregation
 
 public protocol DefaultAggregationSelector {
-    func getDefaultAggregation(for instrument: InstrumentType) -> Aggregation
+  func getDefaultAggregation(for instrument: InstrumentType) -> Aggregation
 }
+
 public class AggregationSelector: DefaultAggregationSelector {
+  public static let instance = AggregationSelector()
 
-    public static let instance = AggregationSelector()
+  public let selector: AggregationResolver
 
-    public let selector: AggregationResolver
+  init(selector: @escaping AggregationResolver = AggregationSelector.defaultSelector()) {
+    self.selector = selector
+  }
 
-    init(selector: @escaping AggregationResolver = AggregationSelector.defaultSelector()) {
-        self.selector = selector
+  public func getDefaultAggregation(for instrument: InstrumentType) -> Aggregation {
+    return selector(instrument)
+  }
+
+  static public func defaultSelector() -> AggregationResolver {
+    return { _ in
+      return Aggregations.defaultAggregation()
     }
+  }
 
-    public func getDefaultAggregation(for instrument: InstrumentType) -> Aggregation {
-        return selector(instrument)
+  public func with(instrumentType: InstrumentType, aggregation: Aggregation) -> AggregationResolver {
+    return { instrumentType1 in
+      if instrumentType == instrumentType1 {
+        return aggregation
+      }
+      return self.selector(instrumentType1)
     }
-
-    static public func defaultSelector() -> AggregationResolver {
-        return { _ in
-            return Aggregations.defaultAggregation()
-        }
-    }
-    public func with(instrumentType: InstrumentType, aggregation: Aggregation) -> AggregationResolver {
-        return { instrumentType1 in
-            if instrumentType == instrumentType1 {
-                return aggregation
-            }
-            return self.selector(instrumentType1)
-        }
-    }
+  }
 }

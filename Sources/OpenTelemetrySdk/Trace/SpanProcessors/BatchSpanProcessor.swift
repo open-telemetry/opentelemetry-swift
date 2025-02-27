@@ -110,7 +110,6 @@ private class BatchWorker: WorkerThread {
     queue.maxConcurrentOperationCount = 1
 
     if let meter = meterProvider?.meterBuilder(name: "io.opentelemetry.sdk.trace").build() {
-
       var longGaugeSdk = meter.gaugeBuilder(name: "queueSize").ofLongs() as? LongGaugeBuilderSdk
       longGaugeSdk = longGaugeSdk?.setDescription("The number of items queued")
       longGaugeSdk = longGaugeSdk?.setUnit("1")
@@ -129,7 +128,7 @@ private class BatchWorker: WorkerThread {
       processedSpansCounter = longCounterSdk?.build()
 
       // Subscribe to new gauge observer
-      self.spanGaugeObserver =  meter.gaugeBuilder(name: "spanSize")
+      self.spanGaugeObserver = meter.gaugeBuilder(name: "spanSize")
         .ofLongs()
         .buildWithCallback { [count = spanList.count] result in
           result.record(

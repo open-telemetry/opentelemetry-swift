@@ -26,9 +26,11 @@ public extension SpanExporter {
   func export(spans: [SpanData]) -> SpanExporterResultCode {
     return export(spans: spans, explicitTimeout: nil)
   }
+
   func flush() -> SpanExporterResultCode {
     return flush(explicitTimeout: nil)
   }
+
   func shutdown() {
     shutdown(explicitTimeout: nil)
   }

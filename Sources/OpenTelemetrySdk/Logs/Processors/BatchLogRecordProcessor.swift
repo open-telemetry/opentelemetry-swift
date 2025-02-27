@@ -7,7 +7,6 @@ import Foundation
 import OpenTelemetryApi
 
 public class BatchLogRecordProcessor: LogRecordProcessor {
-
   fileprivate var worker: BatchWorker
 
   public init(logRecordExporter: LogRecordExporter, scheduleDelay: TimeInterval = 5, exportTimeout: TimeInterval = 30, maxQueueSize: Int = 2048, maxExportBatchSize: Int = 512, willExportCallback: ((inout [ReadableLogRecord]) -> Void)? = nil) {
@@ -54,7 +53,6 @@ private class BatchWorker: WorkerThread {
        maxQueueSize: Int,
        maxExportBatchSize: Int,
        willExportCallback: ((inout [ReadableLogRecord]) -> Void)?) {
-
     self.logRecordExporter = logRecordExporter
     self.scheduleDelay = scheduleDelay
     self.exportTimeout = exportTimeout
@@ -132,7 +130,7 @@ private class BatchWorker: WorkerThread {
 
   private func exportAction(logRecordList: [ReadableLogRecord], explicitTimeout: TimeInterval? = nil) {
     stride(from: 0, to: logRecordList.endIndex, by: maxExportBatchSize).forEach {
-      var logRecordToExport = logRecordList[$0 ..< min($0 + maxExportBatchSize, logRecordList.count)].map {$0}
+      var logRecordToExport = logRecordList[$0 ..< min($0 + maxExportBatchSize, logRecordList.count)].map { $0 }
       willExportCallback?(&logRecordToExport)
       _ = logRecordExporter.export(logRecords: logRecordToExport, explicitTimeout: explicitTimeout)
     }

@@ -7,10 +7,10 @@ import Foundation
 import OpenTelemetryApi
 
 public class MillisClock: Clock {
-    ///  Returns a MillisClock
-    public init() {}
+  ///  Returns a MillisClock
+  public init() {}
 
-    public var now: Date {
-        return Date()
-    }
+  public var now: Date {
+    return Date()
+  }
 }
