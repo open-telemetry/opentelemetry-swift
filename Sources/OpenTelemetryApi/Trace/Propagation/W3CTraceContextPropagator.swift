@@ -29,7 +29,7 @@ public struct W3CTraceContextPropagator: TextMapPropagator {
 
   public let fields: Set<String> = [traceState, traceparent]
 
-  public func inject<S>(spanContext: SpanContext, carrier: inout [String: String], setter: S) where S: Setter {
+  public func inject(spanContext: SpanContext, carrier: inout [String: String], setter: some Setter) {
     guard spanContext.isValid else { return }
     var traceparent = W3CTraceContextPropagator.version +
       String(W3CTraceContextPropagator.delimiter) +
@@ -48,7 +48,7 @@ public struct W3CTraceContextPropagator: TextMapPropagator {
     }
   }
 
-  public func extract<G>(carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
+  public func extract(carrier: [String: String], getter: some Getter) -> SpanContext? {
     guard let traceparentCollection = getter.get(carrier: carrier,
                                                  key: W3CTraceContextPropagator.traceparent),
       traceparentCollection.count <= 1 else {

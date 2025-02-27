@@ -1,4 +1,4 @@
---exclude Sources/Exporters/OpenTelemetryProtocolCommon/proto,.build,Build
+--exclude Sources/Exporters/OpenTelemetryProtocolCommon/proto,.build,Build,Sources/Exporters/OpenTelemetryProtocolGrpc/proto/
 --indent 2
 --allman false
 --disable wrapMultilineStatementBraces

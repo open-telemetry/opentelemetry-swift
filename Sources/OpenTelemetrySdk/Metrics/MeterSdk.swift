@@ -6,8 +6,8 @@
 import Foundation
 import OpenTelemetryApi
 
-extension Meter {
-  public func addMetric(name _: String, type _: AggregationType, data _: [MetricData]) {
+public extension Meter {
+  func addMetric(name _: String, type _: AggregationType, data _: [MetricData]) {
     // noop
   }
 }

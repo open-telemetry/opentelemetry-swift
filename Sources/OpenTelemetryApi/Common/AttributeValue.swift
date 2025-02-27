@@ -75,52 +75,52 @@ public enum AttributeValue: Equatable, CustomStringConvertible, Hashable {
   // swiftlint:enable cyclomatic_complexity
 }
 
-extension AttributeValue {
-  public init(_ value: String) {
+public extension AttributeValue {
+  init(_ value: String) {
     self = .string(value)
   }
 
-  public init(_ value: Bool) {
+  init(_ value: Bool) {
     self = .bool(value)
   }
 
-  public init(_ value: Int) {
+  init(_ value: Int) {
     self = .int(value)
   }
 
-  public init(_ value: Double) {
+  init(_ value: Double) {
     self = .double(value)
   }
 
-  public init(_ value: [String]) {
+  init(_ value: [String]) {
     self = .array(AttributeArray(values: value.map { element in
       return AttributeValue.string(element)
     }))
   }
 
-  public init(_ value: [Int]) {
+  init(_ value: [Int]) {
     self = .array(AttributeArray(values: value.map { element in
       return AttributeValue.int(element)
     }))
   }
 
-  public init(_ value: [Double]) {
+  init(_ value: [Double]) {
     self = .array(AttributeArray(values: value.map { element in
       return AttributeValue.double(element)
     }))
   }
 
-  public init(_ value: [Bool]) {
+  init(_ value: [Bool]) {
     self = .array(AttributeArray(values: value.map { element in
       return AttributeValue.bool(element)
     }))
   }
 
-  public init (_ value: AttributeArray) {
+  init (_ value: AttributeArray) {
     self = .array(value)
   }
 
-  public init(_ value: AttributeSet) {
+  init(_ value: AttributeSet) {
     self = .set(value)
   }
 }

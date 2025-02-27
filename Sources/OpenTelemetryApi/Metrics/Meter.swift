@@ -130,40 +130,40 @@ public protocol Meter {
   func getLabelSet(labels: [String: String]) -> LabelSet
 }
 
-extension Meter {
+public extension Meter {
   // Phase 2
   // @available(*,deprecated)
-  public func createIntCounter(name: String) -> AnyCounterMetric<Int> {
+  func createIntCounter(name: String) -> AnyCounterMetric<Int> {
     return createIntCounter(name: name, monotonic: true)
   }
 
   // Phase 2
   // @available(*,deprecated)
-  public func createDoubleCounter(name: String) -> AnyCounterMetric<Double> {
+  func createDoubleCounter(name: String) -> AnyCounterMetric<Double> {
     return createDoubleCounter(name: name, monotonic: true)
   }
 
   // Phase 2
   // @available(*,deprecated)
-  public func createIntMeasure(name: String) -> AnyMeasureMetric<Int> {
+  func createIntMeasure(name: String) -> AnyMeasureMetric<Int> {
     return createIntMeasure(name: name, absolute: true)
   }
 
   // Phase 2
   // @available(*,deprecated)
-  public func createDoubleMeasure(name: String) -> AnyMeasureMetric<Double> {
+  func createDoubleMeasure(name: String) -> AnyMeasureMetric<Double> {
     return createDoubleMeasure(name: name, absolute: true)
   }
 
   // Phase 2
   // @available(*,deprecated)
-  public func createIntObserver(name: String, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric {
+  func createIntObserver(name: String, callback: @escaping (IntObserverMetric) -> Void) -> IntObserverMetric {
     return createIntObserver(name: name, absolute: true, callback: callback)
   }
 
   // Phase 2
   // @available(*,deprecated)
-  public func createDoubleObserver(name: String, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric {
+  func createDoubleObserver(name: String, callback: @escaping (DoubleObserverMetric) -> Void) -> DoubleObserverMetric {
     return createDoubleObserver(name: name, absolute: true, callback: callback)
   }
 }

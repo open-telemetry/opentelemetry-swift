@@ -17,13 +17,13 @@ public class ZipkinBaggagePropagator: TextMapBaggagePropagator {
 
   public init() {}
 
-  public func inject<S>(baggage: Baggage, carrier: inout [String: String], setter: S) where S: Setter {
+  public func inject(baggage: Baggage, carrier: inout [String: String], setter: some Setter) {
     baggage.getEntries().forEach {
       setter.set(carrier: &carrier, key: ZipkinBaggagePropagator.baggagePrefix + $0.key.name, value: $0.value.string)
     }
   }
 
-  public func extract<G>(carrier: [String: String], getter: G) -> Baggage? where G: Getter {
+  public func extract(carrier: [String: String], getter: some Getter) -> Baggage? {
     let builder = OpenTelemetry.instance.baggageManager.baggageBuilder()
 
     carrier.forEach {

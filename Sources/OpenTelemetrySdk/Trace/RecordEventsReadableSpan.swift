@@ -357,8 +357,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
   }
 }
 
-extension SpanException {
-  fileprivate var eventAttributes: [String: AttributeValue] {
+fileprivate extension SpanException {
+  var eventAttributes: [String: AttributeValue] {
     [
       SemanticAttributes.exceptionType.rawValue: type,
       SemanticAttributes.exceptionMessage.rawValue: message,

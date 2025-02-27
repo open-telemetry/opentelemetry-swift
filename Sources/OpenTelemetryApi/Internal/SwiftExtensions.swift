@@ -37,7 +37,7 @@ public extension TimeInterval {
 }
 
 private extension FixedWidthInteger {
-  init?<T: BinaryFloatingPoint>(withReportingOverflow floatingPoint: T) {
+  init?(withReportingOverflow floatingPoint: some BinaryFloatingPoint) {
     guard let converted = Self(exactly: floatingPoint.rounded()) else {
       return nil
     }

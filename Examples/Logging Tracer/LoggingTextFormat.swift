@@ -9,11 +9,11 @@ import OpenTelemetryApi
 class LoggingTextFormat: TextMapPropagator {
   var fields = Set<String>()
 
-  func inject<S>(spanContext: SpanContext, carrier: inout [String: String], setter: S) where S: Setter {
+  func inject(spanContext: SpanContext, carrier: inout [String: String], setter: some Setter) {
     Logger.log("LoggingTextFormat.Inject(\(spanContext), ...)")
   }
 
-  func extract<G>(carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
+  func extract(carrier: [String: String], getter: some Getter) -> SpanContext? {
     Logger.log("LoggingTextFormat.Extract(...)")
     return nil
   }
