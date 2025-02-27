@@ -269,9 +269,9 @@ import Foundation
     /// - parameter chunk: data to advance the checksum
     public mutating func advance(withChunk chunk: Data) {
       if let fastCrc32 = Crc32.zLibCrc32 {
-        checksum = chunk.withUnsafeBytes({ (ptr: UnsafePointer<UInt8>) -> UInt32 in
+        checksum = chunk.withUnsafeBytes { (ptr: UnsafePointer<UInt8>) -> UInt32 in
           return fastCrc32(checksum, ptr, UInt32(chunk.count))
-        })
+        }
       } else {
         checksum = slowCrc32(start: checksum, data: chunk)
       }
@@ -356,9 +356,9 @@ import Foundation
     /// - parameter chunk: data to advance the checksum
     public mutating func advance(withChunk chunk: Data) {
       if let fastAdler32 = Adler32.zLibAdler32 {
-        checksum = chunk.withUnsafeBytes({ (ptr: UnsafePointer<UInt8>) -> UInt32 in
+        checksum = chunk.withUnsafeBytes { (ptr: UnsafePointer<UInt8>) -> UInt32 in
           return fastAdler32(checksum, ptr, UInt32(chunk.count))
-        })
+        }
       } else {
         checksum = slowAdler32(start: checksum, data: chunk)
       }
@@ -397,9 +397,9 @@ import Foundation
 
   fileprivate extension Data {
     func withUnsafeBytes<ResultType, ContentType>(_ body: (UnsafePointer<ContentType>) throws -> ResultType) rethrows -> ResultType {
-      return try withUnsafeBytes({ (rawBufferPointer: UnsafeRawBufferPointer) -> ResultType in
+      return try withUnsafeBytes { (rawBufferPointer: UnsafeRawBufferPointer) -> ResultType in
         return try body(rawBufferPointer.bindMemory(to: ContentType.self).baseAddress!)
-      })
+      }
     }
   }
 
