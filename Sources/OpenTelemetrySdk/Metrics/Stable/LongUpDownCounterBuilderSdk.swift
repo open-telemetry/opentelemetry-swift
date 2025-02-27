@@ -7,38 +7,38 @@ import Foundation
 import OpenTelemetryApi
 
 public class LongUpDownCounterBuilderSdk: LongUpDownCounterBuilder, InstrumentBuilder {
-    var meterSharedState: StableMeterSharedState
+  var meterSharedState: StableMeterSharedState
 
-    var meterProviderSharedState: MeterProviderSharedState
+  var meterProviderSharedState: MeterProviderSharedState
 
-    let type: InstrumentType = .upDownCounter
+  let type: InstrumentType = .upDownCounter
 
-    let valueType: InstrumentValueType = .long
+  let valueType: InstrumentValueType = .long
 
-    var instrumentName: String
+  var instrumentName: String
 
-    var description: String = ""
+  var description: String = ""
 
-    var unit: String = ""
+  var unit: String = ""
 
-    init(meterProviderSharedState: inout MeterProviderSharedState,
-         meterSharedState: inout StableMeterSharedState,
-         name: String) {
-        self.meterSharedState = meterSharedState
-        self.meterProviderSharedState = meterProviderSharedState
-        self.instrumentName = name
-    }
+  init(meterProviderSharedState: inout MeterProviderSharedState,
+       meterSharedState: inout StableMeterSharedState,
+       name: String) {
+    self.meterSharedState = meterSharedState
+    self.meterProviderSharedState = meterProviderSharedState
+    self.instrumentName = name
+  }
 
-    public func ofDoubles() -> OpenTelemetryApi.DoubleUpDownCounterBuilder {
-        swapBuilder(DoubleUpDownCounterBuilderSdk.init)
-    }
+  public func ofDoubles() -> OpenTelemetryApi.DoubleUpDownCounterBuilder {
+    swapBuilder(DoubleUpDownCounterBuilderSdk.init)
+  }
 
-    public func build() -> OpenTelemetryApi.LongUpDownCounter {
-        buildSynchronousInstrument(LongUpDownCounterSdk.init)
-    }
+  public func build() -> OpenTelemetryApi.LongUpDownCounter {
+    buildSynchronousInstrument(LongUpDownCounterSdk.init)
+  }
 
-    public func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableLongMeasurement) -> Void)
-        -> OpenTelemetryApi.ObservableLongUpDownCounter {
-        registerLongAsynchronousInstrument(type: .observableUpDownCounter, updater: callback)
-    }
+  public func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableLongMeasurement) -> Void)
+    -> OpenTelemetryApi.ObservableLongUpDownCounter {
+    registerLongAsynchronousInstrument(type: .observableUpDownCounter, updater: callback)
+  }
 }

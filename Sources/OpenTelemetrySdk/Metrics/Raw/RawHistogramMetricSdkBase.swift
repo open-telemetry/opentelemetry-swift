@@ -7,7 +7,6 @@ import Foundation
 import OpenTelemetryApi
 
 class RawHistogramMetricSdkBase<T>: RawHistogramMetric {
-
   func record(
     explicitBoundaries: [T], counts: [Int], startDate: Date, endDate: Date,
     count: Int, sum: T, labelset: LabelSet
@@ -38,7 +37,6 @@ class RawHistogramMetricSdkBase<T>: RawHistogramMetric {
 
   func bind(labels: [String: String]) -> BoundRawHistogramMetric<T> {
     bind(labelset: LabelSet(labels: labels), isShortLived: false)
-
   }
 
   internal func bind(labelset: LabelSet, isShortLived: Bool)
@@ -90,5 +88,4 @@ class RawHistogramMetricSdkBase<T>: RawHistogramMetric {
     // noop
     fatalError()
   }
-
 }

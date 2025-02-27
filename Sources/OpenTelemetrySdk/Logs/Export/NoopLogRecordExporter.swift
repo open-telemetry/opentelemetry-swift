@@ -12,9 +12,7 @@ public class NoopLogRecordExporter: LogRecordExporter {
     .success
   }
 
-  public func shutdown(explicitTimeout: TimeInterval? = nil) {
-
-  }
+  public func shutdown(explicitTimeout: TimeInterval? = nil) {}
 
   public func forceFlush(explicitTimeout: TimeInterval? = nil) -> ExportResult {
     .success

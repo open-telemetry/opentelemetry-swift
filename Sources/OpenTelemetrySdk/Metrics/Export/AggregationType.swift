@@ -6,12 +6,12 @@
 import Foundation
 
 public enum AggregationType: String, Codable {
-    case intGauge
-    case doubleGauge
-    case doubleSum
-    case intSum
-    case doubleSummary
-    case intSummary
-    case doubleHistogram
-    case intHistogram
+  case intGauge
+  case doubleGauge
+  case doubleSum
+  case intSum
+  case doubleSummary
+  case intSummary
+  case doubleHistogram
+  case intHistogram
 }

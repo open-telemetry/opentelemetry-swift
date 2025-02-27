@@ -91,7 +91,7 @@ import Foundation
       rlock.lock()
 
       for (activityKey, activity) in contextMap
-      where value === activity[key.rawValue] {
+        where value === activity[key.rawValue] {
         contextMap[activityKey]?[key.rawValue] = nil
         if contextMap[activityKey]?.isEmpty ?? false {
           contextMap[activityKey] = nil

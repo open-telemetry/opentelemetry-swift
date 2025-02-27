@@ -7,37 +7,37 @@ import Foundation
 import OpenTelemetryApi
 
 public class DoubleHistogramMeterBuilderSdk: DoubleHistogramBuilder, InstrumentBuilder {
-    var meterProviderSharedState: MeterProviderSharedState
+  var meterProviderSharedState: MeterProviderSharedState
 
-    var meterSharedState: StableMeterSharedState
+  var meterSharedState: StableMeterSharedState
 
-    let type: InstrumentType = .histogram
+  let type: InstrumentType = .histogram
 
-    let valueType: InstrumentValueType = .double
+  let valueType: InstrumentValueType = .double
 
-    let instrumentName: String
+  let instrumentName: String
 
-    var description: String
+  var description: String
 
-    var unit: String
+  var unit: String
 
-    init(meterProviderSharedState: inout MeterProviderSharedState,
-         meterSharedState: inout StableMeterSharedState,
-         name: String,
-         description: String = "",
-         unit: String = "") {
-        self.meterProviderSharedState = meterProviderSharedState
-        self.meterSharedState = meterSharedState
-        self.instrumentName = name
-        self.description = description
-        self.unit = unit
-    }
+  init(meterProviderSharedState: inout MeterProviderSharedState,
+       meterSharedState: inout StableMeterSharedState,
+       name: String,
+       description: String = "",
+       unit: String = "") {
+    self.meterProviderSharedState = meterProviderSharedState
+    self.meterSharedState = meterSharedState
+    self.instrumentName = name
+    self.description = description
+    self.unit = unit
+  }
 
-    public func ofLongs() -> OpenTelemetryApi.LongHistogramBuilder {
-        swapBuilder(LongHistogramMeterBuilderSdk.init)
-    }
+  public func ofLongs() -> OpenTelemetryApi.LongHistogramBuilder {
+    swapBuilder(LongHistogramMeterBuilderSdk.init)
+  }
 
-    public func build() -> OpenTelemetryApi.DoubleHistogram {
-        buildSynchronousInstrument(DoubleHistogramMeterSdk.init)
-    }
+  public func build() -> OpenTelemetryApi.DoubleHistogram {
+    buildSynchronousInstrument(DoubleHistogramMeterSdk.init)
+  }
 }

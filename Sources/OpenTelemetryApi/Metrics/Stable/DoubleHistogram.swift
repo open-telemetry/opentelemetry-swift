@@ -6,7 +6,6 @@
 import Foundation
 
 public protocol DoubleHistogram {
-    mutating func record(value: Double)
-    mutating func record(value: Double, attributes: [String: AttributeValue])
-
+  mutating func record(value: Double)
+  mutating func record(value: Double, attributes: [String: AttributeValue])
 }

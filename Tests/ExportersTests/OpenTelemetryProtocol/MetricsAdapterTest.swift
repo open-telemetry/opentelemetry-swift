@@ -10,136 +10,136 @@ import OpenTelemetryApi
 @testable import OpenTelemetrySdk
 
 final class MetricsAdapterTest: XCTestCase {
-    let resource = Resource(attributes: ["foo": AttributeValue("bar")])
-    let instrumentationScopeInfo = InstrumentationScopeInfo(name: "test")
-    let unit = "unit"
+  let resource = Resource(attributes: ["foo": AttributeValue("bar")])
+  let instrumentationScopeInfo = InstrumentationScopeInfo(name: "test")
+  let unit = "unit"
 
-     var testCaseDescription: String {
-        String(describing: self)
+  var testCaseDescription: String {
+    String(describing: self)
+  }
+
+  func testToProtoResourceMetricsWithLongGuage() throws {
+    let pointValue = Int.random(in: 1 ... 999)
+    let point: PointData = LongPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: pointValue)
+    let guageData = StableGaugeData(aggregationTemporality: .cumulative, points: [point])
+    let metricData = StableMetricData.createLongGauge(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: guageData)
+
+    let result = MetricsAdapter.toProtoMetric(stableMetric: metricData)
+    guard let value = result?.gauge.dataPoints as? [Opentelemetry_Proto_Metrics_V1_NumberDataPoint] else {
+      let actualType = type(of: result?.gauge.dataPoints)
+      let errorMessage = "Got wrong type: \(actualType)"
+      XCTFail(errorMessage)
+      throw errorMessage
     }
 
-    func testToProtoResourceMetricsWithLongGuage() throws {
-        let pointValue = Int.random(in: 1...999)
-        let point:PointData = LongPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: pointValue)
-        let guageData = StableGaugeData(aggregationTemporality: .cumulative, points: [point])
-        let metricData = StableMetricData.createLongGauge(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: guageData)
+    XCTAssertEqual(value.first?.asInt, Int64(pointValue))
+  }
 
-        let result = MetricsAdapter.toProtoMetric(stableMetric: metricData)
-        guard let value = result?.gauge.dataPoints as? [Opentelemetry_Proto_Metrics_V1_NumberDataPoint] else {
-            let actualType = type(of: result?.gauge.dataPoints)
-            let errorMessage = "Got wrong type: \(actualType)"
-            XCTFail(errorMessage)
-            throw errorMessage
-        }
+  func testToProtoResourceMetricsWithLongSum() throws {
+    let pointValue = Int.random(in: 1 ... 999)
+    let point: PointData = LongPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: pointValue)
+    let sumData = StableSumData(aggregationTemporality: .cumulative, points: [point])
+    let metricData = StableMetricData.createLongSum(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, isMonotonic: true, data: sumData)
 
-        XCTAssertEqual(value.first?.asInt, Int64(pointValue))
+    let result = MetricsAdapter.toProtoMetric(stableMetric: metricData)
+    guard let value = result?.sum.dataPoints as? [Opentelemetry_Proto_Metrics_V1_NumberDataPoint] else {
+      let actualType = type(of: result?.gauge.dataPoints)
+      let errorMessage = "Got wrong type: \(actualType)"
+      XCTFail(errorMessage)
+      throw errorMessage
     }
 
-    func testToProtoResourceMetricsWithLongSum() throws {
-        let pointValue = Int.random(in: 1...999)
-        let point:PointData = LongPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: pointValue)
-        let sumData = StableSumData(aggregationTemporality: .cumulative, points: [point])
-        let metricData = StableMetricData.createLongSum(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, isMonotonic: true, data: sumData)
+    XCTAssertEqual(value.first?.asInt, Int64(pointValue))
+    XCTAssertEqual(result?.sum.isMonotonic, true)
+  }
 
-        let result = MetricsAdapter.toProtoMetric(stableMetric: metricData)
-        guard let value = result?.sum.dataPoints as? [Opentelemetry_Proto_Metrics_V1_NumberDataPoint] else {
-            let actualType = type(of: result?.gauge.dataPoints)
-            let errorMessage = "Got wrong type: \(actualType)"
-            XCTFail(errorMessage)
-            throw errorMessage
-        }
+  func testToProtoResourceMetricsWithDoubleGuage() throws {
+    let pointValue: Double = Double.random(in: 1 ... 999)
+    let point: PointData = DoublePointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: pointValue)
+    let guageData = StableGaugeData(aggregationTemporality: .cumulative, points: [point])
+    let metricData = StableMetricData.createDoubleGauge(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: guageData)
 
-        XCTAssertEqual(value.first?.asInt, Int64(pointValue))
-        XCTAssertEqual(result?.sum.isMonotonic, true)
+    let result = MetricsAdapter.toProtoMetric(stableMetric: metricData)
+    guard let value = result?.gauge.dataPoints as? [Opentelemetry_Proto_Metrics_V1_NumberDataPoint] else {
+      let actualType = type(of: result?.gauge.dataPoints)
+      let errorMessage = "Got wrong type: \(actualType)"
+      XCTFail(errorMessage)
+      throw errorMessage
     }
 
-    func testToProtoResourceMetricsWithDoubleGuage() throws {
-        let pointValue: Double = Double.random(in: 1...999)
-        let point:PointData = DoublePointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: pointValue)
-        let guageData = StableGaugeData(aggregationTemporality: .cumulative, points: [point])
-        let metricData = StableMetricData.createDoubleGauge(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: guageData)
+    XCTAssertEqual(value.first?.asDouble, pointValue)
+  }
 
-        let result = MetricsAdapter.toProtoMetric(stableMetric: metricData)
-        guard let value = result?.gauge.dataPoints as? [Opentelemetry_Proto_Metrics_V1_NumberDataPoint] else {
-            let actualType = type(of: result?.gauge.dataPoints)
-            let errorMessage = "Got wrong type: \(actualType)"
-            XCTFail(errorMessage)
-            throw errorMessage
-        }
+  func testToProtoResourceMetricsWithDoubleSum() throws {
+    let pointValue: Double = Double.random(in: 1 ... 999)
+    let point: PointData = DoublePointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: pointValue)
+    let sumData = StableSumData(aggregationTemporality: .cumulative, points: [point])
+    let metricData = StableMetricData.createDoubleSum(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, isMonotonic: false, data: sumData)
 
-        XCTAssertEqual(value.first?.asDouble, pointValue)
+    let result = MetricsAdapter.toProtoMetric(stableMetric: metricData)
+    guard let value = result?.sum.dataPoints as? [Opentelemetry_Proto_Metrics_V1_NumberDataPoint] else {
+      let actualType = type(of: result?.gauge.dataPoints)
+      let errorMessage = "Got wrong type: \(actualType)"
+      XCTFail(errorMessage)
+      throw errorMessage
     }
 
-    func testToProtoResourceMetricsWithDoubleSum() throws {
-        let pointValue: Double = Double.random(in: 1...999)
-        let point:PointData = DoublePointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: pointValue)
-        let sumData = StableSumData(aggregationTemporality: .cumulative, points: [point])
-        let metricData = StableMetricData.createDoubleSum(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, isMonotonic: false, data: sumData)
+    XCTAssertEqual(value.first?.asDouble, pointValue)
+    XCTAssertEqual(result?.sum.isMonotonic, false)
+  }
 
-        let result = MetricsAdapter.toProtoMetric(stableMetric: metricData)
-        guard let value = result?.sum.dataPoints as? [Opentelemetry_Proto_Metrics_V1_NumberDataPoint] else {
-            let actualType = type(of: result?.gauge.dataPoints)
-            let errorMessage = "Got wrong type: \(actualType)"
-            XCTFail(errorMessage)
-            throw errorMessage
-        }
+  func testToProtoResourceMetricsWithHistogram() throws {
+    let boundaries = [Double]()
+    let sum: Double = Double.random(in: 1 ... 999)
+    let min = Double.greatestFiniteMagnitude
+    let max: Double = -1
+    let count = Int.random(in: 1 ... 100)
+    let counts = Array(repeating: 0, count: boundaries.count + 1)
+    let histogramPointData = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [ExemplarData](), sum: sum, count: UInt64(count), min: min, max: max, boundaries: boundaries, counts: counts, hasMin: count > 0, hasMax: count > 0)
+    let points = [histogramPointData]
+    let histogramData = StableHistogramData(aggregationTemporality: .cumulative, points: points)
+    let metricData = StableMetricData.createHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: histogramData)
 
-        XCTAssertEqual(value.first?.asDouble, pointValue)
-        XCTAssertEqual(result?.sum.isMonotonic, false)
+    let result = MetricsAdapter.toProtoMetric(stableMetric: metricData)
+    guard let value = result?.histogram.dataPoints as? [Opentelemetry_Proto_Metrics_V1_HistogramDataPoint]? else {
+      let actualType = type(of: result?.gauge.dataPoints)
+      let errorMessage = "Got wrong type: \(actualType)"
+      XCTFail(errorMessage)
+      throw errorMessage
     }
 
-    func testToProtoResourceMetricsWithHistogram() throws {
-        let boundaries = [Double]()
-        let sum:Double = Double.random(in: 1...999)
-        let min = Double.greatestFiniteMagnitude
-        let max:Double = -1
-        let count = Int.random(in: 1...100)
-        let counts = Array(repeating: 0, count: boundaries.count + 1)
-        let histogramPointData = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [ExemplarData](), sum: sum, count: UInt64(count), min: min, max: max, boundaries: boundaries, counts: counts, hasMin: count > 0, hasMax: count > 0)
-        let points = [histogramPointData]
-        let histogramData = StableHistogramData(aggregationTemporality: .cumulative, points: points)
-        let metricData = StableMetricData.createHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: histogramData)
+    XCTAssertEqual(value?.first?.sum, sum)
+    XCTAssertEqual(value?.first?.count, UInt64(count))
+  }
 
-        let result = MetricsAdapter.toProtoMetric(stableMetric: metricData)
-        guard let value = result?.histogram.dataPoints as? [Opentelemetry_Proto_Metrics_V1_HistogramDataPoint]? else {
-            let actualType = type(of: result?.gauge.dataPoints)
-            let errorMessage = "Got wrong type: \(actualType)"
-            XCTFail(errorMessage)
-            throw errorMessage
-        }
+  func testToProtoResourceMetricsWithExponentialHistogram() throws {
+    let positivieBuckets = DoubleBase2ExponentialHistogramBuckets(scale: 20, maxBuckets: 160)
+    positivieBuckets.downscale(by: 20)
+    positivieBuckets.record(value: 10.0)
+    positivieBuckets.record(value: 40.0)
+    positivieBuckets.record(value: 90.0)
+    positivieBuckets.record(value: 100.0)
+    let negativeBuckets = DoubleBase2ExponentialHistogramBuckets(scale: 20, maxBuckets: 160)
 
-        XCTAssertEqual(value?.first?.sum, sum)
-        XCTAssertEqual(value?.first?.count, UInt64(count))
+    let expHistogramPointData = ExponentialHistogramPointData(scale: 20, sum: 240.0, zeroCount: 0, hasMin: true, hasMax: true, min: 10.0, max: 100.0, positiveBuckets: positivieBuckets, negativeBuckets: negativeBuckets, startEpochNanos: 0, epochNanos: 1, attributes: [:], exemplars: [])
+
+    let points = [expHistogramPointData]
+    let histogramData = StableExponentialHistogramData(aggregationTemporality: .delta, points: points)
+    let metricData = StableMetricData.createExponentialHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: histogramData)
+
+    let result = MetricsAdapter.toProtoMetric(stableMetric: metricData)
+    guard let value = result?.exponentialHistogram.dataPoints as? [Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint]? else {
+      let actualType = type(of: result?.gauge.dataPoints)
+      let errorMessage = "Got wrong type: \(actualType)"
+      XCTFail(errorMessage)
+      throw errorMessage
     }
-    
-    func testToProtoResourceMetricsWithExponentialHistogram() throws {
-        let positivieBuckets = DoubleBase2ExponentialHistogramBuckets(scale: 20, maxBuckets: 160)
-        positivieBuckets.downscale(by: 20)
-        positivieBuckets.record(value: 10.0)
-        positivieBuckets.record(value: 40.0)
-        positivieBuckets.record(value: 90.0)
-        positivieBuckets.record(value: 100.0)
-        let negativeBuckets = DoubleBase2ExponentialHistogramBuckets(scale: 20, maxBuckets: 160)
-        
-        let expHistogramPointData = ExponentialHistogramPointData(scale: 20, sum: 240.0, zeroCount: 0, hasMin: true, hasMax: true, min: 10.0, max: 100.0, positiveBuckets: positivieBuckets, negativeBuckets: negativeBuckets, startEpochNanos: 0, epochNanos: 1, attributes: [:], exemplars: [])
-        
-        let points = [expHistogramPointData]
-        let histogramData = StableExponentialHistogramData(aggregationTemporality: .delta, points: points)
-        let metricData = StableMetricData.createExponentialHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: histogramData)
-        
-        let result = MetricsAdapter.toProtoMetric(stableMetric: metricData)
-        guard let value = result?.exponentialHistogram.dataPoints as? [Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint]? else {
-            let actualType = type(of: result?.gauge.dataPoints)
-            let errorMessage = "Got wrong type: \(actualType)"
-            XCTFail(errorMessage)
-            throw errorMessage
-        }
-        
-        XCTAssertEqual(value?.first?.scale, 20)
-        XCTAssertEqual(value?.first?.sum, 240)
-        XCTAssertEqual(value?.first?.count, 4)
-        XCTAssertEqual(value?.first?.min, 10)
-        XCTAssertEqual(value?.first?.max, 100)
-        XCTAssertEqual(value?.first?.zeroCount, 0)
-    }
+
+    XCTAssertEqual(value?.first?.scale, 20)
+    XCTAssertEqual(value?.first?.sum, 240)
+    XCTAssertEqual(value?.first?.count, 4)
+    XCTAssertEqual(value?.first?.min, 10)
+    XCTAssertEqual(value?.first?.max, 100)
+    XCTAssertEqual(value?.first?.zeroCount, 0)
+  }
 }

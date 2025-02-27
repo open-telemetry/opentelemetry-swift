@@ -17,47 +17,47 @@ import XCTest
 class StableOtlpHttpMetricsExporterTest: XCTestCase {
   var testServer: NIOHTTP1TestServer!
   var group: MultiThreadedEventLoopGroup!
-  
+
   override func setUp() {
     group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
     testServer = NIOHTTP1TestServer(group: group)
   }
-  
+
   override func tearDown() {
     XCTAssertNoThrow(try testServer.stop())
     XCTAssertNoThrow(try group.syncShutdownGracefully())
   }
-  
+
   // The shutdown() function is a no-op, This test is just here to make codecov happy
   func testShutdown() {
     let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
     let exporter = StableOtlpHTTPMetricExporter(endpoint: endpoint)
     XCTAssertEqual(exporter.shutdown(), .success)
   }
-  
+
   func testExportHeader() {
     let metric = generateSumStableMetricData()
-    
+
     let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
     let exporter = StableOtlpHTTPMetricExporter(endpoint: endpoint, config: OtlpConfiguration(headers: [("headerName", "headerValue")]))
     let result = exporter.export(metrics: [metric])
     XCTAssertEqual(result, ExportResult.success)
-    
+
     XCTAssertNoThrow(try testServer.receiveHeadAndVerify { head in
       XCTAssertTrue(head.headers.contains(name: "headerName"))
       XCTAssertEqual("headerValue", head.headers.first(name: "headerName"))
     })
-    
+
     XCTAssertNotNil(try testServer.receiveBodyAndVerify())
     XCTAssertNoThrow(try testServer.receiveEnd())
   }
-  
+
   func testExport() {
     let words = ["foo", "bar", "fizz", "buzz"]
     var metrics: [StableMetricData] = []
     var metricDescriptions: [String] = []
     for word in words {
-    let metricDescription = word + String(Int.random(in: 1...100))
+      let metricDescription = word + String(Int.random(in: 1 ... 100))
       metricDescriptions.append(metricDescription)
       metrics.append(generateSumStableMetricData(description: metricDescription))
     }
@@ -66,13 +66,13 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
     let exporter = StableOtlpHTTPMetricExporter(endpoint: endpoint, config: .init(compression: .none))
     let result = exporter.export(metrics: metrics)
     XCTAssertEqual(result, ExportResult.success)
-    
+
     XCTAssertNoThrow(try testServer.receiveHeadAndVerify { head in
       let otelVersion = Headers.getUserAgentHeader()
       XCTAssertTrue(head.headers.contains(name: Constants.HTTP.userAgent))
       XCTAssertEqual(otelVersion, head.headers.first(name: Constants.HTTP.userAgent))
     })
-    
+
     XCTAssertNoThrow(try testServer.receiveBodyAndVerify { body in
       var contentsBuffer = ByteBuffer(buffer: body)
       let contents = contentsBuffer.readString(length: contentsBuffer.readableBytes)!
@@ -80,16 +80,16 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
         XCTAssertTrue(contents.contains(metricDescription))
       }
     })
-    
+
     XCTAssertNoThrow(try testServer.receiveEnd())
   }
-  
+
   func testGaugeExport() {
     let words = ["foo", "bar", "fizz", "buzz"]
     var metrics: [StableMetricData] = []
     var metricDescriptions: [String] = []
     for word in words {
-    let metricDescription = word + String(Int.random(in: 1...100))
+      let metricDescription = word + String(Int.random(in: 1 ... 100))
       metricDescriptions.append(metricDescription)
       metrics.append(generateGaugeStableMetricData(description: metricDescription))
     }
@@ -98,13 +98,13 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
     let exporter = StableOtlpHTTPMetricExporter(endpoint: endpoint, config: .init(compression: .none))
     let result = exporter.export(metrics: metrics)
     XCTAssertEqual(result, ExportResult.success)
-    
+
     XCTAssertNoThrow(try testServer.receiveHeadAndVerify { head in
       let otelVersion = Headers.getUserAgentHeader()
       XCTAssertTrue(head.headers.contains(name: Constants.HTTP.userAgent))
       XCTAssertEqual(otelVersion, head.headers.first(name: Constants.HTTP.userAgent))
     })
-    
+
     XCTAssertNoThrow(try testServer.receiveBodyAndVerify { body in
       var contentsBuffer = ByteBuffer(buffer: body)
       let contents = contentsBuffer.readString(length: contentsBuffer.readableBytes)!
@@ -112,18 +112,18 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
         XCTAssertTrue(contents.contains(metricDescription))
       }
     })
-    
+
     XCTAssertNoThrow(try testServer.receiveEnd())
   }
-  
+
   func testFlushWithoutPendingMetrics() {
     let metric = generateSumStableMetricData()
-    
+
     let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
     let exporter = StableOtlpHTTPMetricExporter(endpoint: endpoint, config: OtlpConfiguration(headers: [("headerName", "headerValue")]))
     XCTAssertEqual(exporter.flush(), .success)
   }
-  
+
   func testCustomAggregationTemporalitySelector() {
     let aggregationTemporalitySelector = AggregationTemporalitySelector() { (type) in
       switch type {
@@ -141,7 +141,7 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
         return .delta
       }
     }
-    
+
     let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
     let exporter = StableOtlpHTTPMetricExporter(endpoint: endpoint, aggregationTemporalitySelector: aggregationTemporalitySelector)
     XCTAssertTrue(exporter.getAggregationTemporality(for: .counter) == .cumulative)
@@ -151,10 +151,10 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
     XCTAssertTrue(exporter.getAggregationTemporality(for: .observableUpDownCounter) == .cumulative)
     XCTAssertTrue(exporter.getAggregationTemporality(for: .upDownCounter) == .delta)
   }
-  
+
   func testCustomAggregation() {
     let aggregationSelector = CustomDefaultAggregationSelector()
-    
+
     let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
     let exporter = StableOtlpHTTPMetricExporter(endpoint: endpoint, defaultAggregationSelector: aggregationSelector)
     XCTAssertTrue(exporter.getDefaultAggregation(for: .counter) is SumAggregation)
@@ -162,8 +162,7 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
     XCTAssertTrue(exporter.getDefaultAggregation(for: .observableCounter) is DropAggregation)
     XCTAssertTrue(exporter.getDefaultAggregation(for: .upDownCounter) is DropAggregation)
   }
-  
-  
+
   func generateSumStableMetricData(description: String = "description") -> StableMetricData {
     let scope = InstrumentationScopeInfo(name: "lib", version: "semver:0.0.0")
     let sumPointData = DoublePointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: 1)

@@ -15,15 +15,15 @@ class BatchSpansProcessorTests: XCTestCase {
   var tracer: Tracer!
   let blockingSpanExporter = BlockingSpanExporter()
   var mockServiceHandler = SpanExporterMock()
-  
+
   override func setUp() {
     tracer = tracerSdkFactory.get(instrumentationName: "BatchSpansProcessorTest")
   }
-  
+
   override func tearDown() {
     tracerSdkFactory.shutdown()
   }
-  
+
   @discardableResult private func createSampledEndedSpan(spanName: String) -> ReadableSpan {
     let span = TestUtils.createSpanWithSampler(tracerSdkFactory: tracerSdkFactory,
                                                tracer: tracer,
@@ -33,50 +33,50 @@ class BatchSpansProcessorTests: XCTestCase {
     span.end()
     return span
   }
-  
+
   private func createNotSampledEndedSpan(spanName: String) {
     TestUtils.createSpanWithSampler(tracerSdkFactory: tracerSdkFactory,
                                     tracer: tracer,
                                     spanName: spanName,
                                     sampler: Samplers.alwaysOff)
-    .startSpan()
-    .end()
+      .startSpan()
+      .end()
   }
-  
+
   func testStartEndRequirements() {
-      let spansProcessor = BatchSpanProcessor(
-        spanExporter: WaitingSpanExporter(numberToWaitFor: 0),
-        meterProvider: DefaultStableMeterProvider.instance
-      )
+    let spansProcessor = BatchSpanProcessor(
+      spanExporter: WaitingSpanExporter(numberToWaitFor: 0),
+      meterProvider: DefaultStableMeterProvider.instance
+    )
     XCTAssertFalse(spansProcessor.isStartRequired)
     XCTAssertTrue(spansProcessor.isEndRequired)
   }
-  
+
   func testExportDifferentSampledSpans() {
     let waitingSpanExporter = WaitingSpanExporter(numberToWaitFor: 2)
-    
+
     tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(
-        spanExporter: waitingSpanExporter,
-        meterProvider: DefaultStableMeterProvider.instance,
-        scheduleDelay: maxScheduleDelay)
+      spanExporter: waitingSpanExporter,
+      meterProvider: DefaultStableMeterProvider.instance,
+      scheduleDelay: maxScheduleDelay)
     )
     let span1 = createSampledEndedSpan(spanName: spanName1)
     let span2 = createSampledEndedSpan(spanName: spanName2)
     let exported = waitingSpanExporter.waitForExport()
-    
+
     XCTAssertEqual(exported, [span1.toSpanData(), span2.toSpanData()])
   }
-  
+
   func testExportMoreSpansThanTheBufferSize() {
     let waitingSpanExporter = WaitingSpanExporter(numberToWaitFor: 6)
-    
+
     tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(
-        spanExporter: waitingSpanExporter,
-        meterProvider: DefaultStableMeterProvider.instance,
-        scheduleDelay: maxScheduleDelay,
-        maxQueueSize: 6, maxExportBatchSize: 2)
+      spanExporter: waitingSpanExporter,
+      meterProvider: DefaultStableMeterProvider.instance,
+      scheduleDelay: maxScheduleDelay,
+      maxQueueSize: 6, maxExportBatchSize: 2)
     )
-    
+
     let span1 = createSampledEndedSpan(spanName: spanName1)
     let span2 = createSampledEndedSpan(spanName: spanName1)
     let span3 = createSampledEndedSpan(spanName: spanName1)
@@ -91,18 +91,18 @@ class BatchSpansProcessorTests: XCTestCase {
                               span5.toSpanData(),
                               span6.toSpanData()])
   }
-  
+
   func testForceExport() {
     let waitingSpanExporter = WaitingSpanExporter(numberToWaitFor: 1)
     let batchSpansProcessor = BatchSpanProcessor(
-        spanExporter: waitingSpanExporter,
-        meterProvider: DefaultStableMeterProvider.instance,
-        scheduleDelay: 10,
-        maxQueueSize: 10000,
-        maxExportBatchSize: 2000
+      spanExporter: waitingSpanExporter,
+      meterProvider: DefaultStableMeterProvider.instance,
+      scheduleDelay: 10,
+      maxQueueSize: 10000,
+      maxExportBatchSize: 2000
     )
     tracerSdkFactory.addSpanProcessor(batchSpansProcessor)
-    
+
     for _ in 0 ..< 100 {
       createSampledEndedSpan(spanName: "notExported")
     }
@@ -110,15 +110,15 @@ class BatchSpansProcessorTests: XCTestCase {
     let exported = waitingSpanExporter.waitForExport()
     XCTAssertEqual(exported?.count, 100)
   }
-  
+
   func testExportSpansToMultipleServices() {
     let waitingSpanExporter = WaitingSpanExporter(numberToWaitFor: 2)
     let waitingSpanExporter2 = WaitingSpanExporter(numberToWaitFor: 2)
     tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(
-        spanExporter: MultiSpanExporter(spanExporters: [waitingSpanExporter, waitingSpanExporter2]),
-        meterProvider: DefaultStableMeterProvider.instance,
-        scheduleDelay: maxScheduleDelay))
-    
+      spanExporter: MultiSpanExporter(spanExporters: [waitingSpanExporter, waitingSpanExporter2]),
+      meterProvider: DefaultStableMeterProvider.instance,
+      scheduleDelay: maxScheduleDelay))
+
     let span1 = createSampledEndedSpan(spanName: spanName1)
     let span2 = createSampledEndedSpan(spanName: spanName2)
     let exported1 = waitingSpanExporter.waitForExport()
@@ -126,75 +126,75 @@ class BatchSpansProcessorTests: XCTestCase {
     XCTAssertEqual(exported1, [span1.toSpanData(), span2.toSpanData()])
     XCTAssertEqual(exported2, [span1.toSpanData(), span2.toSpanData()])
   }
-  
+
   func testExportMoreSpansThanTheMaximumLimit() {
     let maxQueuedSpans = 8
     let waitingSpanExporter = WaitingSpanExporter(numberToWaitFor: maxQueuedSpans)
-    
+
     tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(
-        spanExporter: MultiSpanExporter(spanExporters: [waitingSpanExporter, blockingSpanExporter]),
-        meterProvider: DefaultStableMeterProvider.instance,
-        scheduleDelay:    maxScheduleDelay,
-        maxQueueSize: maxQueuedSpans,
-        maxExportBatchSize: maxQueuedSpans / 2)
+      spanExporter: MultiSpanExporter(spanExporters: [waitingSpanExporter, blockingSpanExporter]),
+      meterProvider: DefaultStableMeterProvider.instance,
+      scheduleDelay: maxScheduleDelay,
+      maxQueueSize: maxQueuedSpans,
+      maxExportBatchSize: maxQueuedSpans / 2)
     )
-    
+
     var spansToExport = [SpanData]()
     // Wait to block the worker thread in the BatchSampledSpansProcessor. This ensures that no items
     // can be removed from the queue. Need to add a span to trigger the export otherwise the
     // pipeline is never called.
     spansToExport.append(createSampledEndedSpan(spanName: "blocking_span").toSpanData())
     blockingSpanExporter.waitUntilIsBlocked()
-    
+
     for i in 0 ..< maxQueuedSpans {
       // First export maxQueuedSpans, the worker thread is blocked so all items should be queued.
       spansToExport.append(createSampledEndedSpan(spanName: "span_1_\(i)").toSpanData())
     }
-    
+
     // TODO: assertThat(spanExporter.getReferencedSpans()).isEqualTo(maxQueuedSpans);
-    
+
     // Now we should start dropping.
     for i in 0 ..< 7 {
       createSampledEndedSpan(spanName: "span_2_\(i)")
       // TODO: assertThat(getDroppedSpans()).isEqualTo(i + 1);
     }
-    
+
     // TODO: assertThat(getReferencedSpans()).isEqualTo(maxQueuedSpans);
-    
+
     // Release the blocking exporter
     blockingSpanExporter.unblock()
-    
+
     // While we wait for maxQueuedSpans we ensure that the queue is also empty after this.
     var exported = waitingSpanExporter.waitForExport()
     XCTAssertEqual(exported, spansToExport)
-    
+
     exported?.removeAll()
     spansToExport.removeAll()
-    
+
     // We cannot compare with maxReferencedSpans here because the worker thread may get
     // unscheduled immediately after exporting, but before updating the pushed spans, if that is
     // the case at most bufferSize spans will miss.
     // TODO: assertThat(getPushedSpans()).isAtLeast((long) maxQueuedSpans - maxBatchSize);
-    
+
     for i in 0 ..< maxQueuedSpans {
       spansToExport.append(createSampledEndedSpan(spanName: "span_3_\(i)").toSpanData())
       // No more dropped spans.
       // TODO: assertThat(getDroppedSpans()).isEqualTo(7);
     }
-    
+
     exported = waitingSpanExporter.waitForExport()
     XCTAssertEqual(exported, spansToExport)
   }
-  
+
   func testExportNotSampledSpans() {
     let waitingSpanExporter = WaitingSpanExporter(numberToWaitFor: 1)
-    
+
     tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(
-        spanExporter: waitingSpanExporter,
-        meterProvider: DefaultStableMeterProvider.instance,
-        scheduleDelay: maxScheduleDelay)
+      spanExporter: waitingSpanExporter,
+      meterProvider: DefaultStableMeterProvider.instance,
+      scheduleDelay: maxScheduleDelay)
     )
-    
+
     createNotSampledEndedSpan(spanName: spanName1)
     createNotSampledEndedSpan(spanName: spanName2)
     let span2 = createSampledEndedSpan(spanName: spanName2)
@@ -207,22 +207,22 @@ class BatchSpansProcessorTests: XCTestCase {
     // have a span1 variable.
     XCTAssertEqual(exported, [span2.toSpanData()])
   }
-  
+
   func testShutdownFlushes() {
     let waitingSpanExporter = WaitingSpanExporter(numberToWaitFor: 1)
-    
+
     // Set the export delay to zero, for no timeout, in order to confirm the #flush() below works
-      tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(
-        spanExporter: waitingSpanExporter,
-        meterProvider: DefaultStableMeterProvider.instance,
-        scheduleDelay: 0.1)
-      )
-    
+    tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(
+      spanExporter: waitingSpanExporter,
+      meterProvider: DefaultStableMeterProvider.instance,
+      scheduleDelay: 0.1)
+    )
+
     let span2 = createSampledEndedSpan(spanName: spanName2)
-    
+
     // Force a shutdown, without this, the waitForExport() call below would block indefinitely.
     tracerSdkFactory.shutdown()
-    
+
     let exported = waitingSpanExporter.waitForExport()
     XCTAssertEqual(exported, [span2.toSpanData()])
     XCTAssertTrue(waitingSpanExporter.shutdownCalled)
@@ -263,15 +263,15 @@ class BatchSpansProcessorTests: XCTestCase {
 
 class BlockingSpanExporter: SpanExporter {
   let cond = NSCondition()
-  
+
   enum State {
     case waitToBlock
     case blocked
     case unblocked
   }
-  
+
   var state: State = .waitToBlock
-  
+
   func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
     cond.lock()
     while state != .unblocked {
@@ -283,7 +283,7 @@ class BlockingSpanExporter: SpanExporter {
     cond.unlock()
     return .success
   }
-  
+
   func waitUntilIsBlocked() {
     cond.lock()
     while state != .blocked {
@@ -291,13 +291,13 @@ class BlockingSpanExporter: SpanExporter {
     }
     cond.unlock()
   }
-  
-  func flush(explicitTimeout:TimeInterval?) -> SpanExporterResultCode {
+
+  func flush(explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
     return .success
   }
-  
+
   func shutdown(explicitTimeout: TimeInterval?) {}
-  
+
   fileprivate func unblock() {
     cond.lock()
     state = .unblocked
@@ -311,25 +311,25 @@ class WaitingSpanExporter: SpanExporter {
   let cond = NSCondition()
   let numberToWaitFor: Int
   var shutdownCalled = false
-  
+
   init(numberToWaitFor: Int) {
     self.numberToWaitFor = numberToWaitFor
   }
-  
+
   func waitForExport() -> [SpanData]? {
     var ret: [SpanData]
     cond.lock()
     defer { cond.unlock() }
-    
+
     while spanDataList.count < numberToWaitFor {
       cond.wait()
     }
     ret = spanDataList
     spanDataList.removeAll()
-    
+
     return ret
   }
-  
+
   func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
     cond.lock()
     spanDataList.append(contentsOf: spans)
@@ -337,11 +337,11 @@ class WaitingSpanExporter: SpanExporter {
     cond.broadcast()
     return .success
   }
-  
+
   func flush(explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
     return .success
   }
-  
+
   func shutdown(explicitTimeout: TimeInterval?) {
     shutdownCalled = true
   }

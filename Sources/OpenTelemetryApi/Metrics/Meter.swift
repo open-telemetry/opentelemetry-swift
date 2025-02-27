@@ -4,13 +4,13 @@
  */
 
 import Foundation
+
 // Phase 2
 // @available(*,deprecated, message: "counter instruments are now monotonic only. Use UpDownCounter for non-monotonic.")
 /// Main interface to obtain metric instruments.
 ///
 ///
 public protocol Meter {
-
   // Phase 2
   // @available(*,deprecated, message: "counter instruments are now monotonic only. Use UpDownCounter for non-monotonic.")
   /// Creates Int counter with given name.

@@ -6,6 +6,6 @@
 import Foundation
 
 public protocol LongHistogram {
-    mutating func record(value: Int)
-    mutating func record(value: Int, attributes: [String: AttributeValue])
+  mutating func record(value: Int)
+  mutating func record(value: Int, attributes: [String: AttributeValue])
 }

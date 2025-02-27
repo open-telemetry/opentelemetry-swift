@@ -6,27 +6,26 @@
 import Foundation
 
 class BoundRawHistogramMetricSdk<T>: BoundRawHistogramMetricSdkBase<T> {
-    var metricData = [MetricData]()
-    var metricDataCheckpoint = [MetricData]()
-    var lock = Lock()
+  var metricData = [MetricData]()
+  var metricDataCheckpoint = [MetricData]()
+  var lock = Lock()
 
-    override init(recordStatus: RecordStatus) {
-        super.init(recordStatus: recordStatus)
+  override init(recordStatus: RecordStatus) {
+    super.init(recordStatus: recordStatus)
+  }
+
+  override func record(explicitBoundaries: [T], counts: [Int], startDate: Date, endDate: Date, count: Int, sum: T) {
+    metricData.append(HistogramData<T>(startTimestamp: startDate, timestamp: endDate, buckets: (boundaries: explicitBoundaries, counts: counts), count: count, sum: sum))
+  }
+
+  override func checkpoint() {
+    lock.withLockVoid {
+      metricDataCheckpoint = metricData
+      metricData = [MetricData]()
     }
+  }
 
-    override func record(explicitBoundaries: [T], counts: [Int], startDate: Date, endDate: Date, count: Int, sum: T) {
-        metricData.append(HistogramData<T>(startTimestamp: startDate, timestamp: endDate, buckets: (boundaries: explicitBoundaries, counts: counts), count: count, sum: sum))
-
-    }
-
-    override func checkpoint() {
-        lock.withLockVoid {
-            metricDataCheckpoint = metricData
-            metricData = [MetricData]()
-        }
-    }
-
-    override func getMetrics() -> [MetricData] {
-        return metricDataCheckpoint
-    }
+  override func getMetrics() -> [MetricData] {
+    return metricDataCheckpoint
+  }
 }

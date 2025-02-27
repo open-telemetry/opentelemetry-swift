@@ -16,7 +16,7 @@ struct StoragePerformanceMock: StoragePerformancePreset {
   let maxFileAgeForRead: TimeInterval
   let maxObjectsInFile: Int
   let maxObjectSize: UInt64
-  
+
   static let readAllFiles = StoragePerformanceMock(
     maxFileSize: .max,
     maxDirectorySize: .max,
@@ -26,7 +26,7 @@ struct StoragePerformanceMock: StoragePerformancePreset {
     maxObjectsInFile: .max,
     maxObjectSize: .max
   )
-  
+
   static let writeEachObjectToNewFileAndReadAllFiles = StoragePerformanceMock(
     maxFileSize: .max,
     maxDirectorySize: .max,
@@ -36,7 +36,7 @@ struct StoragePerformanceMock: StoragePerformancePreset {
     maxObjectsInFile: 1, // write each data to new file
     maxObjectSize: .max
   )
-  
+
   static let writeAllObjectsToTheSameFile = StoragePerformanceMock(
     maxFileSize: .max,
     maxDirectorySize: .max,
@@ -54,7 +54,7 @@ struct ExportPerformanceMock: ExportPerformancePreset {
   let minExportDelay: TimeInterval
   let maxExportDelay: TimeInterval
   let exportDelayChangeRate: Double
-  
+
   static let veryQuick = ExportPerformanceMock(
     initialExportDelay: 0.05,
     defaultExportDelay: 0.05,
@@ -65,7 +65,6 @@ struct ExportPerformanceMock: ExportPerformancePreset {
 }
 
 extension PersistencePerformancePreset {
-  
   static func mockWith(storagePerformance: StoragePerformancePreset,
                        synchronousWrite: Bool,
                        exportPerformance: ExportPerformancePreset) -> PersistencePerformancePreset {
@@ -90,20 +89,20 @@ class RelativeDateProvider: DateProvider {
   private(set) var date: Date
   internal let timeInterval: TimeInterval
   private let queue = DispatchQueue(label: "queue-RelativeDateProvider-\(UUID().uuidString)")
-  
+
   private init(date: Date, timeInterval: TimeInterval) {
     self.date = date
     self.timeInterval = timeInterval
   }
-  
+
   convenience init(using date: Date = Date()) {
     self.init(date: date, timeInterval: 0)
   }
-  
+
   convenience init(startingFrom referenceDate: Date = Date(), advancingBySeconds timeInterval: TimeInterval = 0) {
     self.init(date: referenceDate, timeInterval: timeInterval)
   }
-  
+
   /// Returns current date and advances next date by `timeInterval`.
   func currentDate() -> Date {
     defer {
@@ -115,7 +114,7 @@ class RelativeDateProvider: DateProvider {
       return date
     }
   }
-  
+
   /// Pushes time forward by given number of seconds.
   func advance(bySeconds seconds: TimeInterval) {
     queue.async {
@@ -125,11 +124,10 @@ class RelativeDateProvider: DateProvider {
 }
 
 struct DataExporterMock: DataExporter {
-  
   let exportStatus: DataExportStatus
-  
+
   var onExport: ((Data) -> Void)? = nil
-  
+
   func export(data: Data) -> DataExportStatus {
     onExport?(data)
     return exportStatus
@@ -144,75 +142,74 @@ extension DataExportStatus {
 
 class FileWriterMock: FileWriter {
   var onWrite: ((Bool, Data) -> Void)? = nil
-  
+
   func write(data: Data) {
     onWrite?(false, data)
   }
-  
+
   func writeSync(data: Data) {
     onWrite?(true, data)
   }
-  
+
   var onFlush: (() -> Void)? = nil
-  
+
   func flush() {
     onFlush?()
   }
 }
 
 class FileReaderMock: FileReader {
-  
   private class ReadableFileMock: ReadableFile {
     private var deleted = false
     private let data: Data
-    
+
     private(set) var name: String
-    
+
     init(name: String, data: Data) {
       self.name = name
       self.data = data
     }
-    
+
     func read() throws -> Data {
       guard deleted == false else {
         throw ErrorMock("read failed because delete was called")
       }
       return data
     }
-    
+
     func delete() throws {
       deleted = true
     }
   }
-  
+
   var files: [ReadableFile] = []
-  
+
   func addFile(name: String, data: Data) {
     files.append(ReadableFileMock(name: name, data: data))
   }
-  
+
   func readNextBatch() -> Batch? {
     if let file = files.first,
        let fileData = try? file.read() {
       return Batch(data: fileData, file: file)
     }
-    
+
     return nil
   }
-  
+
   func onRemainingBatches(process: (Batch) -> ()) -> Bool {
     do {
       try files.forEach {
         let fileData = try $0.read()
         process(Batch(data: fileData, file: $0))
       }
-      
+
       return true
     } catch {
       return false
     }
   }
-  
+
   func markBatchAsRead(_ batch: Batch) {
     try? batch.file.delete()
     files.removeAll { file -> Bool in

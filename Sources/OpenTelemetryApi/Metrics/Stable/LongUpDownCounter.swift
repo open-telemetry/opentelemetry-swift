@@ -6,6 +6,6 @@
 import Foundation
 
 public protocol LongUpDownCounter {
-    mutating func add(value: Int)
-    mutating func add(value: Int, attributes: [String: AttributeValue])
+  mutating func add(value: Int)
+  mutating func add(value: Int, attributes: [String: AttributeValue])
 }

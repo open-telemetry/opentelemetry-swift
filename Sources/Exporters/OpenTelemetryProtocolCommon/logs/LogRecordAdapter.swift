@@ -6,6 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
+
 public class LogRecordAdapter {
   public static func toProtoResourceRecordLog(logRecordList: [ReadableLogRecord]) -> [Opentelemetry_Proto_Logs_V1_ResourceLogs] {
     let resourceAndScopeMap = groupByResourceAndScope(logRecordList: logRecordList)

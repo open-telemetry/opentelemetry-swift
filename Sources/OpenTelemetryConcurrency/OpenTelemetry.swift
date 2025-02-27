@@ -10,22 +10,22 @@ typealias _OpenTelemetry = OpenTelemetryApi.OpenTelemetry
 
 /// A wrapper type which provides a span builder just like `Tracer`, returns a type of `SpanBuilderBase` to hide APIs on `SpanBuilder` that aren't correctly usable when using a structured concurrency based context manager.
 public struct TracerWrapper {
-    /// The inner `Tracer` used to construct a span builder. Be careful when accessing this property, as it may make it easier to use API's that don't function properly with your configuration.
-    public let inner: Tracer
+  /// The inner `Tracer` used to construct a span builder. Be careful when accessing this property, as it may make it easier to use API's that don't function properly with your configuration.
+  public let inner: Tracer
 
-    public func spanBuilder(spanName: String) -> SpanBuilderBase {
-        self.inner.spanBuilder(spanName: spanName)
-    }
+  public func spanBuilder(spanName: String) -> SpanBuilderBase {
+    self.inner.spanBuilder(spanName: spanName)
+  }
 }
 
 /// A wrapper type which provides a `Tracer` just like `TracerProvider`, but wraps it in a `TracerWrapper` to hide APIs on `SpanBuilder` that aren't correctly usable when using a structured concurrency based context manager.
 public struct TracerProviderWrapper {
-    /// The inner `TracerProvider` used to construct a `Tracer`. Be careful when accessing this property, as it may make it easier to use API's that don't function properly with your configuration.
-    public let inner: TracerProvider
+  /// The inner `TracerProvider` used to construct a `Tracer`. Be careful when accessing this property, as it may make it easier to use API's that don't function properly with your configuration.
+  public let inner: TracerProvider
 
-    public func get(instrumentationName: String, instrumentationVersion: String?) -> TracerWrapper {
-        TracerWrapper(inner: self.inner.get(instrumentationName: instrumentationName, instrumentationVersion: instrumentationVersion))
-    }
+  public func get(instrumentationName: String, instrumentationVersion: String?) -> TracerWrapper {
+    TracerWrapper(inner: self.inner.get(instrumentationName: instrumentationName, instrumentationVersion: instrumentationVersion))
+  }
 }
 
 /// The main interface for interacting with OpenTelemetry types.
@@ -42,104 +42,104 @@ public struct TracerProviderWrapper {
 /// typealias OpenTelemetry = OpenTelemetryConcurrency.OpenTelemetry
 /// ```
 public struct OpenTelemetry {
-    public static var version: String { _OpenTelemetry.version }
+  public static var version: String { _OpenTelemetry.version }
 
-    public static var instance = OpenTelemetry()
+  public static var instance = OpenTelemetry()
 
-    /// Registered tracerProvider or default via DefaultTracerProvider.instance.
-    public var tracerProvider: TracerProviderWrapper {
-        TracerProviderWrapper(inner: _OpenTelemetry.instance.tracerProvider)
-    }
+  /// Registered tracerProvider or default via DefaultTracerProvider.instance.
+  public var tracerProvider: TracerProviderWrapper {
+    TracerProviderWrapper(inner: _OpenTelemetry.instance.tracerProvider)
+  }
 
-    /// Registered MeterProvider or default via DefaultMeterProvider.instance.
-    public var meterProvider: MeterProvider {
-        _OpenTelemetry.instance.meterProvider
-    }
+  /// Registered MeterProvider or default via DefaultMeterProvider.instance.
+  public var meterProvider: MeterProvider {
+    _OpenTelemetry.instance.meterProvider
+  }
 
-    public var stableMeterProvider: StableMeterProvider? {
-        _OpenTelemetry.instance.stableMeterProvider
-    }
+  public var stableMeterProvider: StableMeterProvider? {
+    _OpenTelemetry.instance.stableMeterProvider
+  }
 
-    /// Registered LoggerProvider or default via DefaultLoggerProvider.instance.
-    public var loggerProvider: LoggerProvider {
-        _OpenTelemetry.instance.loggerProvider
-    }
+  /// Registered LoggerProvider or default via DefaultLoggerProvider.instance.
+  public var loggerProvider: LoggerProvider {
+    _OpenTelemetry.instance.loggerProvider
+  }
 
-    /// registered manager or default via  DefaultBaggageManager.instance.
-    public var baggageManager: BaggageManager {
-        _OpenTelemetry.instance.baggageManager
-    }
+  /// registered manager or default via  DefaultBaggageManager.instance.
+  public var baggageManager: BaggageManager {
+    _OpenTelemetry.instance.baggageManager
+  }
 
-    /// registered manager or default via  DefaultBaggageManager.instance.
-    public var propagators: ContextPropagators = DefaultContextPropagators(textPropagators: [W3CTraceContextPropagator()], baggagePropagator: W3CBaggagePropagator())
+  /// registered manager or default via  DefaultBaggageManager.instance.
+  public var propagators: ContextPropagators = DefaultContextPropagators(textPropagators: [W3CTraceContextPropagator()], baggagePropagator: W3CBaggagePropagator())
 
-    /// registered manager or default via  DefaultBaggageManager.instance.
-    public var contextProvider: OpenTelemetryContextProvider {
-        OpenTelemetryContextProvider(contextManager: _OpenTelemetry.instance.contextProvider.contextManager)
-    }
+  /// registered manager or default via  DefaultBaggageManager.instance.
+  public var contextProvider: OpenTelemetryContextProvider {
+    OpenTelemetryContextProvider(contextManager: _OpenTelemetry.instance.contextProvider.contextManager)
+  }
 
-    /// On platforms that support the original default context manager, it is prefered over the structured concurrency context manager when initializing OpenTelemetry. Call this method to register the default structured concurrency context manager instead.
-    public static func registerDefaultConcurrencyContextManager() {
-        _OpenTelemetry.registerContextManager(contextManager: TaskLocalContextManager.instance)
-    }
+  /// On platforms that support the original default context manager, it is prefered over the structured concurrency context manager when initializing OpenTelemetry. Call this method to register the default structured concurrency context manager instead.
+  public static func registerDefaultConcurrencyContextManager() {
+    _OpenTelemetry.registerContextManager(contextManager: TaskLocalContextManager.instance)
+  }
 
-    public static func registerStableMeterProvider(meterProvider: StableMeterProvider) {
-        _OpenTelemetry.registerStableMeterProvider(meterProvider: meterProvider)
-    }
+  public static func registerStableMeterProvider(meterProvider: StableMeterProvider) {
+    _OpenTelemetry.registerStableMeterProvider(meterProvider: meterProvider)
+  }
 
-    public static func registerTracerProvider(tracerProvider: TracerProvider) {
-        _OpenTelemetry.registerTracerProvider(tracerProvider: tracerProvider)
-    }
+  public static func registerTracerProvider(tracerProvider: TracerProvider) {
+    _OpenTelemetry.registerTracerProvider(tracerProvider: tracerProvider)
+  }
 
-    public static func registerMeterProvider(meterProvider: MeterProvider) {
-        _OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
-    }
+  public static func registerMeterProvider(meterProvider: MeterProvider) {
+    _OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
+  }
 
-    public static func registerLoggerProvider(loggerProvider: LoggerProvider) {
-        _OpenTelemetry.registerLoggerProvider(loggerProvider: loggerProvider)
-    }
+  public static func registerLoggerProvider(loggerProvider: LoggerProvider) {
+    _OpenTelemetry.registerLoggerProvider(loggerProvider: loggerProvider)
+  }
 
-    public static func registerBaggageManager(baggageManager: BaggageManager) {
-        _OpenTelemetry.registerBaggageManager(baggageManager: baggageManager)
-    }
+  public static func registerBaggageManager(baggageManager: BaggageManager) {
+    _OpenTelemetry.registerBaggageManager(baggageManager: baggageManager)
+  }
 
-    public static func registerPropagators(textPropagators: [TextMapPropagator], baggagePropagator: TextMapBaggagePropagator) {
-        _OpenTelemetry.registerPropagators(textPropagators: textPropagators, baggagePropagator: baggagePropagator)
-    }
+  public static func registerPropagators(textPropagators: [TextMapPropagator], baggagePropagator: TextMapBaggagePropagator) {
+    _OpenTelemetry.registerPropagators(textPropagators: textPropagators, baggagePropagator: baggagePropagator)
+  }
 
-    public static func registerContextManager(contextManager: ContextManager) {
-        _OpenTelemetry.registerContextManager(contextManager: contextManager)
-    }
+  public static func registerContextManager(contextManager: ContextManager) {
+    _OpenTelemetry.registerContextManager(contextManager: contextManager)
+  }
 }
 
 public struct OpenTelemetryContextProvider {
-    var contextManager: ContextManager
+  var contextManager: ContextManager
 
-    /// Returns the Span from the current context
-    public var activeSpan: Span? {
-        return contextManager.getCurrentContextValue(forKey: .span) as? Span
-    }
+  /// Returns the Span from the current context
+  public var activeSpan: Span? {
+    return contextManager.getCurrentContextValue(forKey: .span) as? Span
+  }
 
-    /// Returns the Baggage from the current context
-    public var activeBaggage: Baggage? {
-        return contextManager.getCurrentContextValue(forKey: OpenTelemetryContextKeys.baggage) as? Baggage
-    }
+  /// Returns the Baggage from the current context
+  public var activeBaggage: Baggage? {
+    return contextManager.getCurrentContextValue(forKey: OpenTelemetryContextKeys.baggage) as? Baggage
+  }
 
-    /// Sets `span` as the active span for the duration of the given closure. While the span will no longer be active after the closure exits, this method does **not** end the span. Prefer `SpanBuilderBase.withActiveSpan` which handles starting, activating, and ending the span.
-    public func withActiveSpan<T>(_ span: SpanBase, _ operation: () throws -> T) rethrows -> T {
-        try self.contextManager.withCurrentContextValue(forKey: .span, value: span, operation)
-    }
+  /// Sets `span` as the active span for the duration of the given closure. While the span will no longer be active after the closure exits, this method does **not** end the span. Prefer `SpanBuilderBase.withActiveSpan` which handles starting, activating, and ending the span.
+  public func withActiveSpan<T>(_ span: SpanBase, _ operation: () throws -> T) rethrows -> T {
+    try self.contextManager.withCurrentContextValue(forKey: .span, value: span, operation)
+  }
 
-    public func withActiveBaggage<T>(_ baggage: Baggage, _ operation: () throws -> T) rethrows -> T {
-        try self.contextManager.withCurrentContextValue(forKey: .baggage, value: baggage, operation)
-    }
+  public func withActiveBaggage<T>(_ baggage: Baggage, _ operation: () throws -> T) rethrows -> T {
+    try self.contextManager.withCurrentContextValue(forKey: .baggage, value: baggage, operation)
+  }
 
-    /// Sets `span` as the active span for the duration of the given closure. While the span will no longer be active after the closure exits, this method does **not** end the span. Prefer `SpanBuilderBase.withActiveSpan` which handles starting, activating, and ending the span.
-    public func withActiveSpan<T>(_ span: SpanBase, _ operation: () async throws -> T) async rethrows -> T {
-        try await self.contextManager.withCurrentContextValue(forKey: .span, value: span, operation)
-    }
+  /// Sets `span` as the active span for the duration of the given closure. While the span will no longer be active after the closure exits, this method does **not** end the span. Prefer `SpanBuilderBase.withActiveSpan` which handles starting, activating, and ending the span.
+  public func withActiveSpan<T>(_ span: SpanBase, _ operation: () async throws -> T) async rethrows -> T {
+    try await self.contextManager.withCurrentContextValue(forKey: .span, value: span, operation)
+  }
 
-    public func withActiveBaggage<T>(_ baggage: Baggage, _ operation: () async throws -> T) async rethrows -> T {
-        try await self.contextManager.withCurrentContextValue(forKey: .baggage, value: baggage, operation)
-    }
+  public func withActiveBaggage<T>(_ baggage: Baggage, _ operation: () async throws -> T) async rethrows -> T {
+    try await self.contextManager.withCurrentContextValue(forKey: .baggage, value: baggage, operation)
+  }
 }

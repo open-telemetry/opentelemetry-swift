@@ -6,5 +6,5 @@
 import Foundation
 
 public protocol LongHistogramBuilder: AnyObject {
-    func build() -> LongHistogram
+  func build() -> LongHistogram
 }

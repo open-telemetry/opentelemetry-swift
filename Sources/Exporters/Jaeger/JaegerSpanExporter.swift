@@ -5,34 +5,33 @@
 
 #if !os(watchOS)
 
-import Foundation
-import OpenTelemetrySdk
-import Thrift
+  import Foundation
+  import OpenTelemetrySdk
+  import Thrift
 
-public class JaegerSpanExporter: SpanExporter {
-  let collectorAddress: String
-  let process: Process
+  public class JaegerSpanExporter: SpanExporter {
+    let collectorAddress: String
+    let process: Process
 
-  public init(serviceName: String, collectorAddress: String) {
-    process = Process(serviceName: serviceName, tags: TList<Tag>())
-    self.collectorAddress = collectorAddress
+    public init(serviceName: String, collectorAddress: String) {
+      process = Process(serviceName: serviceName, tags: TList<Tag>())
+      self.collectorAddress = collectorAddress
+    }
+
+    public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
+      var spanList = TList<Span>()
+      spanList.append(contentsOf: Adapter.toJaeger(spans: spans))
+      let batch = Batch(process: process, spans: spanList)
+      let sender = Sender(host: collectorAddress)
+      let success = sender.sendBatch(batch: batch)
+      return success ? SpanExporterResultCode.success : SpanExporterResultCode.failure
+    }
+
+    public func flush(explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
+      return .success
+    }
+
+    public func shutdown(explicitTimeout: TimeInterval? = nil) {}
   }
-
-  public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
-    var spanList = TList<Span>()
-    spanList.append(contentsOf: Adapter.toJaeger(spans: spans))
-    let batch = Batch(process: process, spans: spanList)
-    let sender = Sender(host: collectorAddress)
-    let success = sender.sendBatch(batch: batch)
-    return success ? SpanExporterResultCode.success : SpanExporterResultCode.failure
-  }
-
-  public func flush(explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
-    return .success
-  }
-
-  public func shutdown(explicitTimeout: TimeInterval? = nil) {
-  }
-}
 
 #endif

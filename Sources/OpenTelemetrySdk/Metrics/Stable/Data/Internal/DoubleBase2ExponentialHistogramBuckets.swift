@@ -36,7 +36,7 @@ public class DoubleBase2ExponentialHistogramBuckets:
     let length = self.counts.endIndex - self.counts.startIndex + 1
     var countsArr: [Int64] = Array(repeating: Int64(0), count: length)
 
-    for i in 0..<length {
+    for i in 0 ..< length {
       countsArr[i] = self.counts.get(index: (i + self.counts.startIndex))
     }
 
@@ -84,7 +84,7 @@ public class DoubleBase2ExponentialHistogramBuckets:
       let newCounts = self.counts.copy() as! AdaptingCircularBufferCounter
       newCounts.clear()
 
-      for i in self.counts.startIndex...self.counts.endIndex {
+      for i in self.counts.startIndex ... self.counts.endIndex {
         let count = self.counts.get(index: i)
         if count > 0 {
           if !newCounts.increment(index: i >> by, delta: count) {

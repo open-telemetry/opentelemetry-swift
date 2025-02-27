@@ -33,71 +33,71 @@ import Foundation
 // MARK: - Basic types
 
 protocol AnyMockable {
-    static func mockAny() -> Self
+  static func mockAny() -> Self
 }
 
 extension Data: AnyMockable {
-    static func mockAny() -> Data {
-        return Data()
-    }
+  static func mockAny() -> Data {
+    return Data()
+  }
 
-    static func mockRepeating(byte: UInt8, times count: Int) -> Data {
-        return Data(repeating: byte, count: count)
-    }
+  static func mockRepeating(byte: UInt8, times count: Int) -> Data {
+    return Data(repeating: byte, count: count)
+  }
 
-    static func mock(ofSize size: UInt64) -> Data {
-        return mockRepeating(byte: 0x41, times: Int(size))
-    }
+  static func mock(ofSize size: UInt64) -> Data {
+    return mockRepeating(byte: 0x41, times: Int(size))
+  }
 }
 
 extension Array where Element == Data {
-    /// Returns chunks of mocked data. Accumulative size of all chunks equals `totalSize`.
-    static func mockChunksOf(totalSize: UInt64, maxChunkSize: UInt64) -> [Data] {
-        var chunks: [Data] = []
-        var bytesWritten: UInt64 = 0
+  /// Returns chunks of mocked data. Accumulative size of all chunks equals `totalSize`.
+  static func mockChunksOf(totalSize: UInt64, maxChunkSize: UInt64) -> [Data] {
+    var chunks: [Data] = []
+    var bytesWritten: UInt64 = 0
 
-        while bytesWritten < totalSize {
-            let bytesLeft = totalSize - bytesWritten
-            var nextChunkSize: UInt64 = bytesLeft > Int.max ? UInt64(Int.max) : bytesLeft // prevents `Int` overflow
-            nextChunkSize = nextChunkSize > maxChunkSize ? maxChunkSize : nextChunkSize // caps the next chunk to its max size
-            chunks.append(.mockRepeating(byte: 0x1, times: Int(nextChunkSize)))
-            bytesWritten += UInt64(nextChunkSize)
-        }
-
-        return chunks
+    while bytesWritten < totalSize {
+      let bytesLeft = totalSize - bytesWritten
+      var nextChunkSize: UInt64 = bytesLeft > Int.max ? UInt64(Int.max) : bytesLeft // prevents `Int` overflow
+      nextChunkSize = nextChunkSize > maxChunkSize ? maxChunkSize : nextChunkSize // caps the next chunk to its max size
+      chunks.append(.mockRepeating(byte: 0x1, times: Int(nextChunkSize)))
+      bytesWritten += UInt64(nextChunkSize)
     }
+
+    return chunks
+  }
 }
 
 extension Date: AnyMockable {
-    static func mockAny() -> Date {
-        return Date(timeIntervalSinceReferenceDate: 1)
-    }
+  static func mockAny() -> Date {
+    return Date(timeIntervalSinceReferenceDate: 1)
+  }
 }
 
 extension TimeInterval: AnyMockable {
-    static func mockAny() -> TimeInterval {
-        return 0
-    }
+  static func mockAny() -> TimeInterval {
+    return 0
+  }
 
-    static let distantFuture = TimeInterval(integerLiteral: .max)
+  static let distantFuture = TimeInterval(integerLiteral: .max)
 }
 
 struct ErrorMock: Error, CustomStringConvertible {
-    let description: String
+  let description: String
 
-    init(_ description: String = "") {
-        self.description = description
-    }
+  init(_ description: String = "") {
+    self.description = description
+  }
 }
 
 struct FailingCodableMock: Codable {
-    init() {}
-    
-    init(from decoder: Decoder) throws {
-        throw ErrorMock("Failing codable failed to decode")
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        throw ErrorMock("Failing codable failed to encode")
-    }
+  init() {}
+
+  init(from decoder: Decoder) throws {
+    throw ErrorMock("Failing codable failed to decode")
+  }
+
+  func encode(to encoder: Encoder) throws {
+    throw ErrorMock("Failing codable failed to encode")
+  }
 }

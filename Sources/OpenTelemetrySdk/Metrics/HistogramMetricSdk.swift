@@ -7,33 +7,33 @@ import Foundation
 import OpenTelemetryApi
 
 internal class HistogramMetricSdk<T: SignedNumeric & Comparable>: HistogramMetric {
-    public private(set) var boundInstruments = [LabelSet: BoundHistogramMetricSdkBase<T>]()
-    let metricName: String
-    let explicitBoundaries: [T]?
-    let bindUnbindLock = Lock()
+  public private(set) var boundInstruments = [LabelSet: BoundHistogramMetricSdkBase<T>]()
+  let metricName: String
+  let explicitBoundaries: [T]?
+  let bindUnbindLock = Lock()
 
-    init(name: String, explicitBoundaries: [T]? = nil) {
-        metricName = name
-        self.explicitBoundaries = explicitBoundaries
+  init(name: String, explicitBoundaries: [T]? = nil) {
+    metricName = name
+    self.explicitBoundaries = explicitBoundaries
+  }
+
+  func bind(labelset: LabelSet) -> BoundHistogramMetric<T> {
+    bindUnbindLock.withLock {
+      var boundInstrument = boundInstruments[labelset]
+      if boundInstrument == nil {
+        boundInstrument = createMetric()
+        boundInstruments[labelset] = boundInstrument!
+      }
+
+      return boundInstrument!
     }
+  }
 
-    func bind(labelset: LabelSet) -> BoundHistogramMetric<T> {
-        bindUnbindLock.withLock {
-            var boundInstrument = boundInstruments[labelset]
-            if boundInstrument == nil {
-                boundInstrument = createMetric()
-                boundInstruments[labelset] = boundInstrument!
-            }
+  func bind(labels: [String: String]) -> BoundHistogramMetric<T> {
+    return bind(labelset: LabelSet(labels: labels))
+  }
 
-            return boundInstrument!
-        }
-    }
-
-    func bind(labels: [String: String]) -> BoundHistogramMetric<T> {
-        return bind(labelset: LabelSet(labels: labels))
-    }
-
-    func createMetric() -> BoundHistogramMetricSdkBase<T> {
-        return BoundHistogramMetricSdk<T>(explicitBoundaries: explicitBoundaries)
-    }
+  func createMetric() -> BoundHistogramMetricSdkBase<T> {
+    return BoundHistogramMetricSdk<T>(explicitBoundaries: explicitBoundaries)
+  }
 }

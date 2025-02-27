@@ -10,31 +10,30 @@ import OpenTelemetrySdk
 import XCTest
 
 class TelemetryResourceProviderTests: XCTestCase {
-    
-    func testAll() {
-        let resources =  DefaultResources().get()
-        print("\(resources)")
-    }
-    
-    func testContents() {
-        let mock = MockTelemetryDataSource(name: "testAgent", language: "swift", version: "1.2.3")
-        let provider = TelemetryResourceProvider(source: mock)
+  func testAll() {
+    let resources = DefaultResources().get()
+    print("\(resources)")
+  }
 
-        let resource = provider.create()
+  func testContents() {
+    let mock = MockTelemetryDataSource(name: "testAgent", language: "swift", version: "1.2.3")
+    let provider = TelemetryResourceProvider(source: mock)
 
-        XCTAssertEqual(mock.name, resource.attributes["telemetry.sdk.name"]?.description)
-        XCTAssertEqual(mock.language, resource.attributes["telemetry.sdk.language"]?.description)
-        XCTAssertEqual(mock.version, resource.attributes["telemetry.sdk.version"]?.description)
-    }
+    let resource = provider.create()
 
-    func testNils() {
-        let mock = MockTelemetryDataSource(name: "testAgent", language: "swift", version: nil)
-        let provider = TelemetryResourceProvider(source: mock)
+    XCTAssertEqual(mock.name, resource.attributes["telemetry.sdk.name"]?.description)
+    XCTAssertEqual(mock.language, resource.attributes["telemetry.sdk.language"]?.description)
+    XCTAssertEqual(mock.version, resource.attributes["telemetry.sdk.version"]?.description)
+  }
 
-        let resource = provider.create()
+  func testNils() {
+    let mock = MockTelemetryDataSource(name: "testAgent", language: "swift", version: nil)
+    let provider = TelemetryResourceProvider(source: mock)
 
-        XCTAssertEqual(mock.name, resource.attributes["telemetry.sdk.name"]?.description)
-        XCTAssertEqual(mock.language, resource.attributes["telemetry.sdk.language"]?.description)
-        XCTAssertNil(resource.attributes["telemetry.sdk.version"])
-    }
+    let resource = provider.create()
+
+    XCTAssertEqual(mock.name, resource.attributes["telemetry.sdk.name"]?.description)
+    XCTAssertEqual(mock.language, resource.attributes["telemetry.sdk.language"]?.description)
+    XCTAssertNil(resource.attributes["telemetry.sdk.version"])
+  }
 }

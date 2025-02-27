@@ -102,7 +102,6 @@ internal struct DDLog: Encodable {
         return value
       case let .set(value):
         return value
-
       }
     }
     self.attributes = LogAttributes(userAttributes: userAttributes, internalAttributes: internalAttributes)

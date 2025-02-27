@@ -80,6 +80,7 @@ public final class Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClient: Open
     get { self.lock.withLock { return self._defaultCallOptions } }
     set { self.lock.withLockVoid { self._defaultCallOptions = newValue } }
   }
+
   public var interceptors: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientInterceptorFactoryProtocol? {
     get { self.lock.withLock { return self._interceptors } }
     set { self.lock.withLockVoid { self._interceptors = newValue } }
@@ -194,7 +195,6 @@ public struct Opentelemetry_Proto_Collector_Logs_V1_LogsServiceAsyncClient: Open
 }
 
 public protocol Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientInterceptorFactoryProtocol: Sendable {
-
   /// - Returns: Interceptors to use when invoking 'export'.
   func makeExportInterceptors() -> [ClientInterceptor<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse>]
 }
@@ -310,7 +310,6 @@ extension Opentelemetry_Proto_Collector_Logs_V1_LogsServiceAsyncProvider {
 }
 
 public protocol Opentelemetry_Proto_Collector_Logs_V1_LogsServiceServerInterceptorFactoryProtocol: Sendable {
-
   /// - Returns: Interceptors to use when handling 'export'.
   ///   Defaults to calling `self.makeInterceptors()`.
   func makeExportInterceptors() -> [ServerInterceptor<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse>]

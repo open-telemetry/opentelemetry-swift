@@ -8,11 +8,11 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 
 public class ResourceProvider {
-    public var attributes: [String: AttributeValue] {
-        [String: AttributeValue]()
-    }
+  public var attributes: [String: AttributeValue] {
+    [String: AttributeValue]()
+  }
 
-    public func create() -> Resource {
-        Resource(attributes: attributes)
-    }
+  public func create() -> Resource {
+    Resource(attributes: attributes)
+  }
 }

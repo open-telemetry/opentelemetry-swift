@@ -70,9 +70,7 @@ internal struct StatusExplicitCodable: Codable {
     case error
   }
 
-  enum EmptyCodingKeys: CodingKey {
-
-  }
+  enum EmptyCodingKeys: CodingKey {}
 
   enum ErrorCodingKeys: String, CodingKey {
     case description
@@ -111,7 +109,6 @@ internal struct StatusExplicitCodable: Codable {
   }
 
   public func encode(to encoder: Encoder) throws {
-
     var container = encoder.container(keyedBy: CodingKeys.self)
 
     switch self.status {
