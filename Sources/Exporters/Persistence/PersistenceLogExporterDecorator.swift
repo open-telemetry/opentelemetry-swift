@@ -34,10 +34,10 @@ public class PersistenceLogExporterDecorator: LogRecordExporter {
               performancePreset: PersistencePerformancePreset = .default) throws {
     persistenceExporter =
       PersistenceExporterDecorator<LogRecordDecoratedExporter>(decoratedExporter: LogRecordDecoratedExporter(
-          logRecordExporter: logRecordExporter),
-                                                               storageURL: storageURL,
-                                                               exportCondition: exportCondition,
-                                                               performancePreset: performancePreset)
+        logRecordExporter: logRecordExporter),
+      storageURL: storageURL,
+      exportCondition: exportCondition,
+      performancePreset: performancePreset)
     self.logRecordExporter = logRecordExporter
   }
 

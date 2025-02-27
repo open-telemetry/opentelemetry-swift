@@ -28,7 +28,7 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
 
   public init(endpoint: URL, config: OtlpConfiguration = OtlpConfiguration(),
               aggregationTemporalitySelector: AggregationTemporalitySelector =
-      AggregationTemporality.alwaysCumulative(),
+                AggregationTemporality.alwaysCumulative(),
               defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector.instance,
               useSession: URLSession? = nil,
               envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
@@ -52,9 +52,9 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
                           config: OtlpConfiguration = OtlpConfiguration(),
                           meterProvider: StableMeterProvider,
                           aggregationTemporalitySelector: AggregationTemporalitySelector =
-      AggregationTemporality.alwaysCumulative(),
+                            AggregationTemporality.alwaysCumulative(),
                           defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector
-      .instance,
+                            .instance,
                           useSession: URLSession? = nil,
                           envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
     self.init(endpoint: endpoint,
@@ -67,8 +67,8 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
                                       meterProvider: meterProvider,
                                       exporterName: "otlp",
                                       transportName: config.exportAsJson
-        ? ExporterMetrics.TransporterType.httpJson
-        : ExporterMetrics.TransporterType.grpc)
+                                        ? ExporterMetrics.TransporterType.httpJson
+                                        : ExporterMetrics.TransporterType.grpc)
   }
 
   // MARK: - StableMetricsExporter

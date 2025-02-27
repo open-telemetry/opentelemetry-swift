@@ -125,7 +125,7 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
   }
 
   func testCustomAggregationTemporalitySelector() {
-    let aggregationTemporalitySelector = AggregationTemporalitySelector() { (type) in
+    let aggregationTemporalitySelector = AggregationTemporalitySelector { type in
       switch type {
       case .counter:
         return .cumulative

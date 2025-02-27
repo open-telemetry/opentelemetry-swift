@@ -33,17 +33,17 @@ class PersistenceExporterDecoratorTests: XCTestCase {
   private func createPersistenceExporter<T: Codable>(fileWriter: FileWriterMock = FileWriterMock(),
                                                      worker: inout DataExportWorkerMock,
                                                      decoratedExporter: DecoratedExporterMock<T> = DecoratedExporterMock(exporter: { _ in
-      return DataExportStatus(needsRetry: false)
-    }),
+                                                       return DataExportStatus(needsRetry: false)
+                                                     }),
                                                      storagePerformance: StoragePerformancePreset = StoragePerformanceMock.writeEachObjectToNewFileAndReadAllFiles,
                                                      synchronousWrite: Bool = true,
                                                      exportPerformance: ExportPerformancePreset = ExportPerformanceMock.veryQuick) -> PersistenceExporter<T> {
     return PersistenceExporterDecorator<DecoratedExporterMock<T>>(decoratedExporter: decoratedExporter,
                                                                   fileWriter: fileWriter,
                                                                   workerFactory: {
-        worker.dataExporter = $0
-        return worker
-      },
+                                                                    worker.dataExporter = $0
+                                                                    return worker
+                                                                  },
                                                                   performancePreset: PersistencePerformancePreset.mockWith(storagePerformance: storagePerformance,
                                                                                                                            synchronousWrite: synchronousWrite,
                                                                                                                            exportPerformance: exportPerformance))

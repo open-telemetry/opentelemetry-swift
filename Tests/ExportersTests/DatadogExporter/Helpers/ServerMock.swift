@@ -49,10 +49,10 @@ private class ServerMockProtocol: URLProtocol {
     // Assert that the request will be intercepted by the right instance of `ServerMock`.
     precondition(server?.urlSessionUUID == urlSessionUUID,
                  """
-      ⚠️ Request to \(request.url?.absoluteString ?? "null") was sent to `ServerMock` with `urlSessionUUID`: \(urlSessionUUID.uuidString),
-      but it was received by the `ServerMock` with `urlSessionUUID`: \(server?.urlSessionUUID.uuidString ?? "<deallocated>")).
-      This indicates lack of test synchronization or cleanup and must be fixed, otherwise the test will become flaky.
-      """)
+                 ⚠️ Request to \(request.url?.absoluteString ?? "null") was sent to `ServerMock` with `urlSessionUUID`: \(urlSessionUUID.uuidString),
+                 but it was received by the `ServerMock` with `urlSessionUUID`: \(server?.urlSessionUUID.uuidString ?? "<deallocated>")).
+                 This indicates lack of test synchronization or cleanup and must be fixed, otherwise the test will become flaky.
+                 """)
   }
 
   override func startLoading() {

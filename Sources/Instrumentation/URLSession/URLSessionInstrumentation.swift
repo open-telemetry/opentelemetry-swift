@@ -171,7 +171,7 @@ public class URLSessionInstrumentation {
 
         let castedIMP = unsafeBitCast(originalIMP,
                                       to: (@convention(c) (URLSession, Selector, Any) ->
-            URLSessionDataTask).self)
+                                        URLSessionDataTask).self)
         var task: URLSessionTask
         let sessionTaskId = UUID().uuidString
 
@@ -220,7 +220,7 @@ public class URLSessionInstrumentation {
           let sessionTaskId = UUID().uuidString
           let castedIMP = unsafeBitCast(originalIMP,
                                         to: (@convention(c) (URLSession, Selector, URLRequest, AnyObject)
-              -> URLSessionDataTask).self)
+                                          -> URLSessionDataTask).self)
           let instrumentedRequest = URLSessionLogger.processAndLogRequest(request, sessionTaskId: sessionTaskId, instrumentation: self,
                                                                           shouldInjectHeaders: true)
           let task = castedIMP(session, selector, instrumentedRequest ?? request, argument)

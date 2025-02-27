@@ -60,7 +60,7 @@ class OrchestratedFileWriterTests: XCTestCase {
                                                                           maxFileAgeForRead: .mockAny(),
                                                                           maxObjectsInFile: .max,
                                                                           maxObjectSize: 17 // 17 bytes is enough to write {"key1":"value1"} JSON
-        ),
+                                      ),
                                       dateProvider: SystemDateProvider())
     )
 

@@ -51,8 +51,8 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
                                       meterProvider: meterProvider,
                                       exporterName: "otlp",
                                       transportName: config.exportAsJson
-        ? ExporterMetrics.TransporterType.httpJson
-        : ExporterMetrics.TransporterType.grpc)
+                                        ? ExporterMetrics.TransporterType.httpJson
+                                        : ExporterMetrics.TransporterType.grpc)
   }
 
   public func export(metrics: [Metric], shouldCancel: (() -> Bool)?)

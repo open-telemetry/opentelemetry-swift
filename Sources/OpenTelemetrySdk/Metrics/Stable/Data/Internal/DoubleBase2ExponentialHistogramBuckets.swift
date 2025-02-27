@@ -36,7 +36,7 @@ public class DoubleBase2ExponentialHistogramBuckets:
     var countsArr: [Int64] = Array(repeating: Int64(0), count: length)
 
     for i in 0 ..< length {
-      countsArr[i] = counts.get(index: (i + counts.startIndex))
+      countsArr[i] = counts.get(index: i + counts.startIndex)
     }
 
     return countsArr

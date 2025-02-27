@@ -33,10 +33,10 @@ public class PersistenceMetricExporterDecorator: MetricExporter {
               performancePreset: PersistencePerformancePreset = .default) throws {
     persistenceExporter =
       PersistenceExporterDecorator<MetricDecoratedExporter>(decoratedExporter: MetricDecoratedExporter(
-          metricExporter: metricExporter),
-                                                            storageURL: storageURL,
-                                                            exportCondition: exportCondition,
-                                                            performancePreset: performancePreset)
+        metricExporter: metricExporter),
+      storageURL: storageURL,
+      exportCondition: exportCondition,
+      performancePreset: performancePreset)
   }
 
   public func export(metrics: [Metric], shouldCancel: (() -> Bool)?)

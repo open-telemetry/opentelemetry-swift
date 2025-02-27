@@ -49,7 +49,7 @@
       }
 
       let sendResult = transport.writeBuffer.withUnsafeBytes { (rawBufferPointer: UnsafeRawBufferPointer) -> Int in
-        address.withSockAddr { (sa, saLen) -> Int in
+        address.withSockAddr { sa, saLen -> Int in
           sendto(fd, rawBufferPointer.baseAddress, transport.writeBuffer.count, 0, sa, saLen)
         }
       }

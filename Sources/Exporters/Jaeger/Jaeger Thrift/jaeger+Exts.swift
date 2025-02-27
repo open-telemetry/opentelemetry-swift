@@ -434,7 +434,7 @@
 
   public func == (lhs: BatchSubmitResponse, rhs: BatchSubmitResponse) -> Bool {
     return
-      (lhs.ok == rhs.ok)
+      lhs.ok == rhs.ok
   }
 
   extension BatchSubmitResponse: CustomStringConvertible {
@@ -492,7 +492,7 @@
 
   private func == (lhs: Collector_submitBatches_args, rhs: Collector_submitBatches_args) -> Bool {
     return
-      (lhs.batches == rhs.batches)
+      lhs.batches == rhs.batches
   }
 
   extension Collector_submitBatches_args: Hashable {
@@ -546,7 +546,7 @@
 
   private func == (lhs: Collector_submitBatches_result, rhs: Collector_submitBatches_result) -> Bool {
     return
-      (lhs.success == rhs.success)
+      lhs.success == rhs.success
   }
 
   extension Collector_submitBatches_result: Hashable {
@@ -646,7 +646,7 @@
         completion(.error(error))
       }
 
-      transport.flush { (_, error) in
+      transport.flush { _, error in
         if let error = error {
           completion(.error(error))
         }

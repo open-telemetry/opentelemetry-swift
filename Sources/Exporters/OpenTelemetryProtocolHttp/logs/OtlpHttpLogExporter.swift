@@ -49,8 +49,8 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter {
                                       meterProvider: meterProvider,
                                       exporterName: "otlp",
                                       transportName: config.exportAsJson
-        ? ExporterMetrics.TransporterType.httpJson
-        : ExporterMetrics.TransporterType.grpc)
+                                        ? ExporterMetrics.TransporterType.httpJson
+                                        : ExporterMetrics.TransporterType.grpc)
   }
 
   public func export(logRecords: [OpenTelemetrySdk.ReadableLogRecord],

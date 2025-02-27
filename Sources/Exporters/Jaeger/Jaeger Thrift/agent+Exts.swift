@@ -21,7 +21,7 @@
 
   private func == (lhs: Agent_emitZipkinBatch_args, rhs: Agent_emitZipkinBatch_args) -> Bool {
     return
-      (lhs.spans == rhs.spans)
+      lhs.spans == rhs.spans
   }
 
   extension Agent_emitZipkinBatch_args: Hashable {
@@ -73,7 +73,7 @@
   }
 
   private func == (lhs: Agent_emitBatch_args, rhs: Agent_emitBatch_args) -> Bool {
-    return (lhs.batch == rhs.batch)
+    return lhs.batch == rhs.batch
   }
 
   extension Agent_emitBatch_args: Hashable {
@@ -158,7 +158,7 @@
         completion(.error(error))
       }
 
-      transport.flush { (_, error) in
+      transport.flush { _, error in
         if let error = error {
           completion(.error(error))
         }
@@ -183,7 +183,7 @@
         completion(.error(error))
       }
 
-      transport.flush { (_, error) in
+      transport.flush { _, error in
 
         if let error = error {
           completion(.error(error))

@@ -73,11 +73,11 @@ class PersistenceExporterDecorator<T>
     self.init(decoratedExporter: decoratedExporter,
               fileWriter: fileWriter,
               workerFactory: {
-        DataExportWorker(fileReader: fileReader,
-                         dataExporter: $0,
-                         exportCondition: exportCondition,
-                         delay: DataExportDelay(performance: performancePreset))
-      },
+                DataExportWorker(fileReader: fileReader,
+                                 dataExporter: $0,
+                                 exportCondition: exportCondition,
+                                 delay: DataExportDelay(performance: performancePreset))
+              },
               performancePreset: performancePreset)
   }
 

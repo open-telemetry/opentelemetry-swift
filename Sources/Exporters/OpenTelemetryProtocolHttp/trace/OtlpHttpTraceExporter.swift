@@ -51,8 +51,8 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
                                       meterProvider: meterProvider,
                                       exporterName: "otlp",
                                       transportName: config.exportAsJson
-        ? ExporterMetrics.TransporterType.httpJson
-        : ExporterMetrics.TransporterType.grpc)
+                                        ? ExporterMetrics.TransporterType.httpJson
+                                        : ExporterMetrics.TransporterType.grpc)
   }
 
   public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil)

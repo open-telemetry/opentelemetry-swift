@@ -132,7 +132,7 @@ import Foundation
 
       let cksum: UInt32 = withUnsafeBytes { (bytePtr: UnsafePointer<UInt8>) -> UInt32 in
         let last = bytePtr.advanced(by: count - 4)
-        return last.withMemoryRebound(to: UInt32.self, capacity: 1) { (intPtr) -> UInt32 in
+        return last.withMemoryRebound(to: UInt32.self, capacity: 1) { intPtr -> UInt32 in
           return intPtr.pointee.bigEndian
         }
       }
