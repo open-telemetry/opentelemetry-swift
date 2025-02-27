@@ -151,9 +151,7 @@ class OtlpTraceExporterTests: XCTestCase {
       .withServiceProviders([fakeCollector])
       .bind(host: "localhost", port: 4317)
 
-    server.map {
-      $0.channel.localAddress
-    }.whenSuccess { address in
+    server.map(\.channel.localAddress).whenSuccess { address in
       print("server started on port \(address!.port!)")
     }
     return server

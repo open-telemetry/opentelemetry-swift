@@ -128,7 +128,7 @@ class FilesOrchestrator {
     var filesWithSizeSortedByCreationDate = try filesSortedByCreationDate
       .map { try (file: $0.file, size: $0.file.size()) }
 
-    let accumulatedFilesSize = filesWithSizeSortedByCreationDate.map { $0.size }.reduce(0, +)
+    let accumulatedFilesSize = filesWithSizeSortedByCreationDate.map(\.size).reduce(0, +)
 
     if accumulatedFilesSize > performance.maxDirectorySize {
       let sizeToFree = accumulatedFilesSize - performance.maxDirectorySize

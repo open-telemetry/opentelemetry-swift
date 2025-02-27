@@ -108,7 +108,7 @@ struct RequestBuilder {
     var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
 
     if !queryItems.isEmpty {
-      urlComponents?.queryItems = queryItems.map { $0.urlQueryItem }
+      urlComponents?.queryItems = queryItems.map(\.urlQueryItem)
     }
 
     var precomputedHeaders: [String: String] = [:]

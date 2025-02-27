@@ -34,7 +34,7 @@ final class OrchestratedFileReader: FileReader {
   // MARK: - Reading batches
 
   func readNextBatch() -> Batch? {
-    if let file = orchestrator.getReadableFile(excludingFilesNamed: Set(filesRead.map { $0.name })) {
+    if let file = orchestrator.getReadableFile(excludingFilesNamed: Set(filesRead.map(\.name))) {
       do {
         let fileData = try file.read()
         return Batch(data: fileData, file: file)
@@ -50,7 +50,7 @@ final class OrchestratedFileReader: FileReader {
   /// Currently called from flush method
   func onRemainingBatches(process: (Batch) -> Void) -> Bool {
     do {
-      try orchestrator.getAllFiles(excludingFilesNamed: Set(filesRead.map { $0.name }))?.forEach {
+      try orchestrator.getAllFiles(excludingFilesNamed: Set(filesRead.map(\.name)))?.forEach {
         let fileData = try $0.read()
         process(Batch(data: fileData, file: $0))
       }
