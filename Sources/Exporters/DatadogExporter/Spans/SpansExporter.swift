@@ -15,7 +15,7 @@ class SpansExporter {
   init(config: ExporterConfiguration) throws {
     configuration = config
 
-    let filesOrchestrator = FilesOrchestrator(directory: try Directory(withSubdirectoryPath: tracesDirectory),
+    let filesOrchestrator = try FilesOrchestrator(directory: Directory(withSubdirectoryPath: tracesDirectory),
                                               performance: configuration.performancePreset,
                                               dateProvider: SystemDateProvider())
 

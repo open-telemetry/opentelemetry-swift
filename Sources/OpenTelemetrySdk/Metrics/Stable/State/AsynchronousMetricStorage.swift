@@ -73,7 +73,7 @@ public class AsynchronousMetricStorage: MetricStorage {
       result = Dictionary(uniqueKeysWithValues: points.map { k, v in
         do {
           if let lastValue = lastPoints[k] {
-            return (k, try aggregator.diff(previousCumulative: lastValue, currentCumulative: v))
+            return try (k, aggregator.diff(previousCumulative: lastValue, currentCumulative: v))
           }
         } catch {
           // todo log error

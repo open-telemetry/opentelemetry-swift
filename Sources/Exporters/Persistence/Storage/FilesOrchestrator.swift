@@ -63,7 +63,7 @@ class FilesOrchestrator {
         let lastFileAge = dateProvider.currentDate().timeIntervalSince(lastFileCreationDate)
 
         let fileIsRecentEnough = lastFileAge <= performance.maxFileAgeForWrite
-        let fileHasRoomForMore = (try lastFile.size() + writeSize) <= performance.maxFileSize
+        let fileHasRoomForMore = try (lastFile.size() + writeSize) <= performance.maxFileSize
         let fileCanBeUsedMoreTimes = (lastWritableFileUsesCount + 1) <= performance.maxObjectsInFile
 
         if fileIsRecentEnough, fileHasRoomForMore, fileCanBeUsedMoreTimes {
@@ -126,7 +126,7 @@ class FilesOrchestrator {
       .sorted { $0.creationDate < $1.creationDate }
 
     var filesWithSizeSortedByCreationDate = try filesSortedByCreationDate
-      .map { (file: $0.file, size: try $0.file.size()) }
+      .map { try (file: $0.file, size: $0.file.size()) }
 
     let accumulatedFilesSize = filesWithSizeSortedByCreationDate.map { $0.size }.reduce(0, +)
 

@@ -15,7 +15,7 @@ class MetricsExporter {
   init(config: ExporterConfiguration) throws {
     configuration = config
 
-    let filesOrchestrator = FilesOrchestrator(directory: try Directory(withSubdirectoryPath: metricsDirectory),
+    let filesOrchestrator = try FilesOrchestrator(directory: Directory(withSubdirectoryPath: metricsDirectory),
                                               performance: configuration.performancePreset,
                                               dateProvider: SystemDateProvider())
 

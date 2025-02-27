@@ -24,7 +24,7 @@ class LogsExporter {
   init(config: ExporterConfiguration) throws {
     configuration = config
 
-    let filesOrchestrator = FilesOrchestrator(directory: try Directory(withSubdirectoryPath: logsDirectory),
+    let filesOrchestrator = try FilesOrchestrator(directory: Directory(withSubdirectoryPath: logsDirectory),
                                               performance: configuration.performancePreset,
                                               dateProvider: SystemDateProvider())
 

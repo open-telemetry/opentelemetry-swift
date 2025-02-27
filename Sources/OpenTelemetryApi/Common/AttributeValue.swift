@@ -157,25 +157,25 @@ struct AttributeValueExplicitCodable: Codable {
     switch container.allKeys.first.unsafelyUnwrapped {
     case .string:
       let nestedContainer = try container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .string)
-      attributeValue = .string(
-        try nestedContainer.decode(String.self, forKey: .associatedValue))
+      attributeValue = try .string(
+        nestedContainer.decode(String.self, forKey: .associatedValue))
     case .bool:
       let nestedContainer = try container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .bool)
-      attributeValue = .bool(try nestedContainer.decode(Bool.self, forKey: .associatedValue))
+      attributeValue = try .bool(nestedContainer.decode(Bool.self, forKey: .associatedValue))
     case .int:
       let nestedContainer = try container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .int)
-      attributeValue = .int(try nestedContainer.decode(Int.self, forKey: .associatedValue))
+      attributeValue = try .int(nestedContainer.decode(Int.self, forKey: .associatedValue))
     case .double:
       let nestedContainer = try container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .double)
-      attributeValue = .double(
-        try nestedContainer.decode(Double.self, forKey: .associatedValue))
+      attributeValue = try .double(
+        nestedContainer.decode(Double.self, forKey: .associatedValue))
     case .array:
       let nestedContainer = try container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .array)
-      attributeValue = .array(try nestedContainer.decode(AttributeArray.self, forKey: .associatedValue))
+      attributeValue = try .array(nestedContainer.decode(AttributeArray.self, forKey: .associatedValue))
     case .set:
       let nestedContainer = try container.nestedContainer(keyedBy: AssociatedValueCodingKeys.self, forKey: .set)
-      attributeValue = .set(
-        try nestedContainer.decode(AttributeSet.self, forKey: .associatedValue))
+      attributeValue = try .set(
+        nestedContainer.decode(AttributeSet.self, forKey: .associatedValue))
     }
   }
 

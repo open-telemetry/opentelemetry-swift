@@ -98,8 +98,8 @@ struct StatusExplicitCodable: Codable {
       status = .unset
     case .error:
       let nestedContainer = try container.nestedContainer(keyedBy: ErrorCodingKeys.self, forKey: .error)
-      status = .error(
-        description: try nestedContainer.decode(String.self, forKey: .description))
+      status = try .error(
+        description: nestedContainer.decode(String.self, forKey: .description))
     }
   }
 
