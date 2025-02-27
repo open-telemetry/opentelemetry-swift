@@ -157,50 +157,50 @@ public class URLSessionInstrumentation {
       var originalIMP: IMP?
 
       let block: @convention(block) (URLSession, AnyObject) -> URLSessionTask = { session, argument in
-          if let url = argument as? URL {
-            let request = URLRequest(url: url)
-            if self.configuration.shouldInjectTracingHeaders?(request) ?? true {
-              if selector == #selector(
-                URLSession.dataTask(with:)
-                  as (URLSession) -> (URL) -> URLSessionDataTask) {
-                return session.dataTask(with: request)
-              } else {
-                return session.downloadTask(with: request)
-              }
+        if let url = argument as? URL {
+          let request = URLRequest(url: url)
+          if self.configuration.shouldInjectTracingHeaders?(request) ?? true {
+            if selector == #selector(
+              URLSession.dataTask(with:)
+                as (URLSession) -> (URL) -> URLSessionDataTask) {
+              return session.dataTask(with: request)
+            } else {
+              return session.downloadTask(with: request)
             }
           }
-
-          let castedIMP = unsafeBitCast(
-            originalIMP,
-            to: (@convention(c) (URLSession, Selector, Any) ->
-              URLSessionDataTask).self)
-          var task: URLSessionTask
-          let sessionTaskId = UUID().uuidString
-
-          if let request = argument as? URLRequest,
-             objc_getAssociatedObject(argument, &idKey) == nil {
-            let instrumentedRequest = URLSessionLogger.processAndLogRequest(
-              request, sessionTaskId: sessionTaskId, instrumentation: self,
-              shouldInjectHeaders: true)
-            task = castedIMP(session, selector, instrumentedRequest ?? request)
-          } else {
-            task = castedIMP(session, selector, argument)
-            if objc_getAssociatedObject(argument, &idKey) == nil,
-               let currentRequest = task.currentRequest {
-              URLSessionLogger.processAndLogRequest(
-                currentRequest, sessionTaskId: sessionTaskId,
-                instrumentation: self, shouldInjectHeaders: false)
-            }
-          }
-          self.setIdKey(value: sessionTaskId, for: task)
-
-          // We want to identify background tasks
-          if session.configuration.identifier == nil {
-            objc_setAssociatedObject(
-              task, "IsBackground", true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-          }
-          return task
         }
+
+        let castedIMP = unsafeBitCast(
+          originalIMP,
+          to: (@convention(c) (URLSession, Selector, Any) ->
+            URLSessionDataTask).self)
+        var task: URLSessionTask
+        let sessionTaskId = UUID().uuidString
+
+        if let request = argument as? URLRequest,
+           objc_getAssociatedObject(argument, &idKey) == nil {
+          let instrumentedRequest = URLSessionLogger.processAndLogRequest(
+            request, sessionTaskId: sessionTaskId, instrumentation: self,
+            shouldInjectHeaders: true)
+          task = castedIMP(session, selector, instrumentedRequest ?? request)
+        } else {
+          task = castedIMP(session, selector, argument)
+          if objc_getAssociatedObject(argument, &idKey) == nil,
+             let currentRequest = task.currentRequest {
+            URLSessionLogger.processAndLogRequest(
+              currentRequest, sessionTaskId: sessionTaskId,
+              instrumentation: self, shouldInjectHeaders: false)
+          }
+        }
+        self.setIdKey(value: sessionTaskId, for: task)
+
+        // We want to identify background tasks
+        if session.configuration.identifier == nil {
+          objc_setAssociatedObject(
+            task, "IsBackground", true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+        return task
+      }
       let swizzledIMP = imp_implementationWithBlock(
         unsafeBitCast(block, to: AnyObject.self))
       originalIMP = method_setImplementation(original, swizzledIMP)
