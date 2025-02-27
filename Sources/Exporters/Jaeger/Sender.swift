@@ -36,7 +36,7 @@
         return false
       }
 
-      guard let address = address else {
+      guard let address else {
         return false
       }
 

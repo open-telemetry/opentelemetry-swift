@@ -79,7 +79,7 @@ class DefaultBaggageManagerTests: DefaultBaggageManagerTestsInfo {
 
       XCTAssertNil(defaultBaggageManager.getCurrentBaggage())
       waitForExpectations(timeout: 30) { error in
-        if let error = error {
+        if let error {
           print("Error: \(error.localizedDescription)")
         }
       }
@@ -118,7 +118,7 @@ class DefaultBaggageManagerTestsImperative: DefaultBaggageManagerTestsInfo {
     XCTAssertNil(defaultBaggageManager.getCurrentBaggage())
     semaphore.signal()
     waitForExpectations(timeout: 30) { error in
-      if let error = error {
+      if let error {
         print("Error: \(error.localizedDescription)")
       }
     }

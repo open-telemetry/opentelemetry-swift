@@ -42,7 +42,7 @@ class DataUploadWorker: DataUploadWorkerType {
     self.featureName = featureName
 
     let uploadWork = DispatchWorkItem { [weak self] in
-      guard let self = self else {
+      guard let self else {
         return
       }
 

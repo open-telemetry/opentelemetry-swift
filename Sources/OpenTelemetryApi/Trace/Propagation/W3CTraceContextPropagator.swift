@@ -79,7 +79,7 @@ public struct W3CTraceContextPropagator: TextMapPropagator {
     var traceOptions = TraceFlags()
     var bestAttempt = false
 
-    guard let traceparent = traceparent,
+    guard let traceparent,
           !traceparent.isEmpty,
           traceparent.count >= W3CTraceContextPropagator.traceparentLengthV0 else {
       return nil
@@ -148,7 +148,7 @@ public struct W3CTraceContextPropagator: TextMapPropagator {
   }
 
   private func extractTraceState(traceStatecollection: [String]?) -> TraceState? {
-    guard let traceStatecollection = traceStatecollection,
+    guard let traceStatecollection,
           !traceStatecollection.isEmpty else { return nil }
 
     var entries = [TraceState.Entry]()

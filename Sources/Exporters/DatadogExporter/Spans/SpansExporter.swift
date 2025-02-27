@@ -16,8 +16,8 @@ class SpansExporter {
     configuration = config
 
     let filesOrchestrator = try FilesOrchestrator(directory: Directory(withSubdirectoryPath: tracesDirectory),
-                                              performance: configuration.performancePreset,
-                                              dateProvider: SystemDateProvider())
+                                                  performance: configuration.performancePreset,
+                                                  dateProvider: SystemDateProvider())
 
     let dataFormat = DataFormat(prefix: "", suffix: "", separator: "\n")
 

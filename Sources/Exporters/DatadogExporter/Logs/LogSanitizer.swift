@@ -128,7 +128,7 @@ struct LogSanitizer {
   // MARK: - Tags sanitization
 
   private func sanitize(tags rawTags: [String]?) -> [String]? {
-    if let rawTags = rawTags {
+    if let rawTags {
       let tags = rawTags
         .map { $0.lowercased() }
         .filter { startsWithAllowedCharacter(tag: $0) }

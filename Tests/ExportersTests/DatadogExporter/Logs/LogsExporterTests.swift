@@ -59,7 +59,7 @@ class LogsExporterTests: XCTestCase {
     logsExporter.logsStorage.writer.queue.sync {}
 
     waitForExpectations(timeout: 30) { error in
-      if let error = error {
+      if let error {
         print("Error: \(error.localizedDescription)")
         XCTFail()
       }

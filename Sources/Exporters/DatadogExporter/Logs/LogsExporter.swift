@@ -25,8 +25,8 @@ class LogsExporter {
     configuration = config
 
     let filesOrchestrator = try FilesOrchestrator(directory: Directory(withSubdirectoryPath: logsDirectory),
-                                              performance: configuration.performancePreset,
-                                              dateProvider: SystemDateProvider())
+                                                  performance: configuration.performancePreset,
+                                                  dateProvider: SystemDateProvider())
 
     let dataFormat = DataFormat(prefix: "[", suffix: "]", separator: ",")
 

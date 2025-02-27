@@ -119,14 +119,14 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
         zeroCount += 1
         return
       } else if value > 0.0 {
-        if let positiveBuckets = positiveBuckets {
+        if let positiveBuckets {
           buckets = positiveBuckets
         } else {
           buckets = DoubleBase2ExponentialHistogramBuckets(scale: scale, maxBuckets: maxBuckets)
           positiveBuckets = buckets
         }
       } else {
-        if let negativeBuckets = negativeBuckets {
+        if let negativeBuckets {
           buckets = negativeBuckets
         } else {
           buckets = DoubleBase2ExponentialHistogramBuckets(scale: scale, maxBuckets: maxBuckets)
@@ -141,7 +141,7 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
     }
 
     private func resolveBuckets(buckets: DoubleBase2ExponentialHistogramBuckets?, scale: Int, reset: Bool) -> ExponentialHistogramBuckets {
-      guard let buckets = buckets else {
+      guard let buckets else {
         return EmptyExponentialHistogramBuckets(scale: scale)
       }
 
@@ -155,12 +155,12 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
     }
 
     func downScale(by: Int) {
-      if let positiveBuckets = positiveBuckets {
+      if let positiveBuckets {
         positiveBuckets.downscale(by: by)
         scale = positiveBuckets.scale
       }
 
-      if let negativeBuckets = negativeBuckets {
+      if let negativeBuckets {
         negativeBuckets.downscale(by: by)
         scale = negativeBuckets.scale
       }

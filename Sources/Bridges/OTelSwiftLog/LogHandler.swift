@@ -64,7 +64,7 @@ public struct OTelLogHandler: LogHandler {
     ]
 
     // Convert metadata from the method parameter to AttributeValue and assign it to otelattributes
-    if let metadata = metadata {
+    if let metadata {
       let methodMetadata = convertMetadata(metadata)
       otelattributes.merge(methodMetadata) { _, new in new }
     }

@@ -115,7 +115,7 @@ public class B3Propagator: TextMapPropagator {
   }
 
   private func buildSpanContext(traceId: String, spanId: String, sampled: String?) -> SpanContext? {
-    if let sampled = sampled {
+    if let sampled {
       let traceFlags = (sampled == B3Propagator.trueInt || sampled == "true") ? B3Propagator.sampledFlags : B3Propagator.notSampledFlags
       let returnContext = SpanContext.createFromRemoteParent(traceId: TraceId(fromHexString: traceId), spanId: SpanId(fromHexString: spanId), traceFlags: traceFlags, traceState: TraceState())
       return returnContext.isValid ? returnContext : nil

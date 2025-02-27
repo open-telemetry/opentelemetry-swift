@@ -647,7 +647,7 @@
       }
 
       transport.flush { _, error in
-        if let error = error {
+        if let error {
           completion(.error(error))
         }
         do {

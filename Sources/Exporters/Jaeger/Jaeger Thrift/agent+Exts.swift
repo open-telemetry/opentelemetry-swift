@@ -159,7 +159,7 @@
       }
 
       transport.flush { _, error in
-        if let error = error {
+        if let error {
           completion(.error(error))
         }
         completion(.success(Void()))
@@ -185,7 +185,7 @@
 
       transport.flush { _, error in
 
-        if let error = error {
+        if let error {
           completion(.error(error))
         }
         completion(.success(Void()))

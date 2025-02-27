@@ -16,8 +16,8 @@ class MetricsExporter {
     configuration = config
 
     let filesOrchestrator = try FilesOrchestrator(directory: Directory(withSubdirectoryPath: metricsDirectory),
-                                              performance: configuration.performancePreset,
-                                              dateProvider: SystemDateProvider())
+                                                  performance: configuration.performancePreset,
+                                                  dateProvider: SystemDateProvider())
 
     let dataFormat = DataFormat(prefix: "{ \"series\": [", suffix: "]}", separator: ",\n")
 

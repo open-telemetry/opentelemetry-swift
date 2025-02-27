@@ -20,7 +20,7 @@ public class StablePeriodicMetricReaderSdk: StableMetricReader {
 
     scheduleTimer.setEventHandler { [weak self] in
       autoreleasepool {
-        guard let self = self else {
+        guard let self else {
           return
         }
         _ = self.doRun()

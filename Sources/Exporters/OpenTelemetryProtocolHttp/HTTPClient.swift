@@ -48,7 +48,7 @@ private func httpClientResult(
 ) -> Result<HTTPURLResponse, Error> {
   let (_, response, error) = urlSessionTaskCompletion
 
-  if let error = error {
+  if let error {
     return .failure(error)
   }
 

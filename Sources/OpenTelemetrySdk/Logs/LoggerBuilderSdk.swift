@@ -45,7 +45,7 @@ public class LoggerBuilderSdk: LoggerBuilder {
 
   public func build() -> OpenTelemetryApi.Logger {
     var logger = registry.get(name: instrumentationScopeName, version: instrumentationScopeVersion, schemaUrl: schemaUrl)
-    if let eventDomain = eventDomain {
+    if let eventDomain {
       logger = logger.withEventDomain(domain: eventDomain)
     }
 

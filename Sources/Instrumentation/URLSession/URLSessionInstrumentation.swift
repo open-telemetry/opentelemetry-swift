@@ -267,13 +267,13 @@ public class URLSessionInstrumentation {
               if selector == #selector(
                 URLSession.dataTask(with:completionHandler:)
                   as (URLSession) -> (URL, @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask) {
-                if let completion = completion {
+                if let completion {
                   return session.dataTask(with: request, completionHandler: completion)
                 } else {
                   return session.dataTask(with: request)
                 }
               } else {
-                if let completion = completion {
+                if let completion {
                   return session.downloadTask(with: request, completionHandler: completion)
                 } else {
                   return session.downloadTask(with: request)
@@ -297,12 +297,12 @@ public class URLSessionInstrumentation {
                   URLSessionLogger.logError(error!, dataOrFile: object, statusCode: status,
                                             instrumentation: self, sessionTaskId: sessionTaskId)
                 } else {
-                  if let response = response {
+                  if let response {
                     URLSessionLogger.logResponse(response, dataOrFile: object, instrumentation: self,
                                                  sessionTaskId: sessionTaskId)
                   }
                 }
-                if let completion = completion {
+                if let completion {
                   completion(object, response, error)
                 } else {
                   (session.delegate as? URLSessionTaskDelegate)?.urlSession?(session, task: task, didCompleteWithError: error)
@@ -366,12 +366,12 @@ public class URLSessionInstrumentation {
                 URLSessionLogger.logError(error!, dataOrFile: object, statusCode: status,
                                           instrumentation: self, sessionTaskId: sessionTaskId)
               } else {
-                if let response = response {
+                if let response {
                   URLSessionLogger.logResponse(response, dataOrFile: object, instrumentation: self,
                                                sessionTaskId: sessionTaskId)
                 }
               }
-              if let completion = completion {
+              if let completion {
                 completion(object, response, error)
               } else {
                 (session.delegate as? URLSessionTaskDelegate)?.urlSession?(session, task: task, didCompleteWithError: error)
@@ -649,7 +649,7 @@ public class URLSessionInstrumentation {
         requestMap[taskId] = nil
       }
     }
-    if let error = error {
+    if let error {
       let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
       URLSessionLogger.logError(error, dataOrFile: requestState?.dataProcessed, statusCode: status,
                                 instrumentation: self, sessionTaskId: taskId)

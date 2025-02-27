@@ -18,7 +18,7 @@ public class HistogramAggregator<T: SignedNumeric & Comparable>: Aggregator<T> {
   ]
 
   public init(explicitBoundaries: [T]? = nil) throws {
-    if let explicitBoundaries = explicitBoundaries, explicitBoundaries.count > 0 {
+    if let explicitBoundaries, explicitBoundaries.count > 0 {
       // we need to an ordered set to be able to correctly compute count for each
       // boundary since we'll iterate on each in order.
       boundaries = explicitBoundaries.sorted { $0 < $1 }

@@ -44,7 +44,7 @@ struct URLSessionTransportInconsistencyException: Error {}
 private func httpClientResult(for urlSessionTaskCompletion: (Data?, URLResponse?, Error?)) -> Result<HTTPURLResponse, Error> {
   let (_, response, error) = urlSessionTaskCompletion
 
-  if let error = error {
+  if let error {
     return .failure(error)
   }
 

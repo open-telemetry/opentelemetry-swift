@@ -44,7 +44,7 @@ class AdaptingIntegerArray: NSCopying {
   }
 
   func increment(index: Int, count: Int64) {
-    if cellSize == .byte, var byteBacking = byteBacking {
+    if cellSize == .byte, var byteBacking {
       let result = Int64(byteBacking[index]) + count
       if result > Int8.max {
         resizeToShort()
@@ -53,7 +53,7 @@ class AdaptingIntegerArray: NSCopying {
         byteBacking[index] = Int8(result)
         self.byteBacking = byteBacking
       }
-    } else if cellSize == .short, var shortBacking = shortBacking {
+    } else if cellSize == .short, var shortBacking {
       let result = Int64(shortBacking[index]) + count
       if result > Int16.max {
         resizeToInt()
@@ -62,7 +62,7 @@ class AdaptingIntegerArray: NSCopying {
         shortBacking[index] = Int16(result)
         self.shortBacking = shortBacking
       }
-    } else if cellSize == .int, var intBacking = intBacking {
+    } else if cellSize == .int, var intBacking {
       let result = Int64(intBacking[index]) + count
       if result > Int32.max {
         resizeToLong()
@@ -71,7 +71,7 @@ class AdaptingIntegerArray: NSCopying {
         intBacking[index] = Int32(result)
         self.intBacking = intBacking
       }
-    } else if cellSize == .long, var longBacking = longBacking {
+    } else if cellSize == .long, var longBacking {
       let result = longBacking[index] + count
       longBacking[index] = result
       self.longBacking = longBacking
@@ -79,13 +79,13 @@ class AdaptingIntegerArray: NSCopying {
   }
 
   func get(index: Int) -> Int64 {
-    if cellSize == .byte, let byteBacking = byteBacking, index < byteBacking.count {
+    if cellSize == .byte, let byteBacking, index < byteBacking.count {
       return Int64(byteBacking[index])
-    } else if cellSize == .short, let shortBacking = shortBacking, index < shortBacking.count {
+    } else if cellSize == .short, let shortBacking, index < shortBacking.count {
       return Int64(shortBacking[index])
-    } else if cellSize == .int, let intBacking = intBacking, index < intBacking.count {
+    } else if cellSize == .int, let intBacking, index < intBacking.count {
       return Int64(intBacking[index])
-    } else if cellSize == .long, let longBacking = longBacking, index < longBacking.count {
+    } else if cellSize == .long, let longBacking, index < longBacking.count {
       return longBacking[index]
     }
 
@@ -95,13 +95,13 @@ class AdaptingIntegerArray: NSCopying {
   func length() -> Int {
     var length = 0
 
-    if cellSize == .byte, let byteBacking = byteBacking {
+    if cellSize == .byte, let byteBacking {
       length = byteBacking.count
-    } else if cellSize == .short, let shortBacking = shortBacking {
+    } else if cellSize == .short, let shortBacking {
       length = shortBacking.count
-    } else if cellSize == .int, let intBacking = intBacking {
+    } else if cellSize == .int, let intBacking {
       length = intBacking.count
-    } else if cellSize == .long, let longBacking = longBacking {
+    } else if cellSize == .long, let longBacking {
       length = longBacking.count
     }
 
@@ -122,7 +122,7 @@ class AdaptingIntegerArray: NSCopying {
   }
 
   private func resizeToShort() {
-    guard let byteBacking = byteBacking else { return }
+    guard let byteBacking else { return }
     var tmpShortBacking: [Int16] = [Int16](repeating: Int16(0), count: byteBacking.count)
 
     for (index, value) in byteBacking.enumerated() {
@@ -134,7 +134,7 @@ class AdaptingIntegerArray: NSCopying {
   }
 
   private func resizeToInt() {
-    guard let shortBacking = shortBacking else { return }
+    guard let shortBacking else { return }
     var tmpIntBacking: [Int32] = [Int32](repeating: Int32(0), count: shortBacking.count)
 
     for (index, value) in shortBacking.enumerated() {
@@ -146,7 +146,7 @@ class AdaptingIntegerArray: NSCopying {
   }
 
   private func resizeToLong() {
-    guard let intBacking = intBacking else { return }
+    guard let intBacking else { return }
     var tmpLongBacking: [Int64] = [Int64](repeating: Int64(0), count: intBacking.count)
 
     for (index, value) in intBacking.enumerated() {

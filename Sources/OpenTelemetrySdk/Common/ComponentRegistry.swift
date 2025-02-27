@@ -25,7 +25,7 @@ class ComponentRegistry<T> {
     defer {
       lock.unlock()
     }
-    if let version = version, let schemaUrl = schemaUrl {
+    if let version, let schemaUrl {
       if componentByNameVersionSchema[name] == nil {
         componentByNameVersionSchema[name] = [String: [String: T]]()
       }
@@ -38,7 +38,7 @@ class ComponentRegistry<T> {
         componentByNameVersionSchema[name]![version]![schemaUrl] = buildComponent(InstrumentationScopeInfo(name: name, version: version, schemaUrl: schemaUrl))
       }
       return componentByNameVersionSchema[name]![version]![schemaUrl]!
-    } else if let version = version {
+    } else if let version {
       if componentByNameVersion[name] == nil {
         componentByNameVersion[name] = [String: T]()
       }
@@ -49,7 +49,7 @@ class ComponentRegistry<T> {
 
       return componentByNameVersion[name]![version]!
 
-    } else if let schemaUrl = schemaUrl {
+    } else if let schemaUrl {
       if componentByNameSchema[name] == nil {
         componentByNameSchema[name] = [String: T]()
       }

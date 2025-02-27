@@ -37,7 +37,7 @@ class PrometheusExporterTests: XCTestCase {
     usleep(useconds_t(waitDuration * 1000000))
     let url = URL(string: "http://localhost:9184/metrics/")!
     let task = URLSession.shared.dataTask(with: url) { data, response, error in
-      if error == nil, let data = data, let response = response as? HTTPURLResponse {
+      if error == nil, let data, let response = response as? HTTPURLResponse {
         XCTAssert(response.statusCode == 200)
         let responseText = String(decoding: data, as: UTF8.self)
         print("Response from metric API is: \n\(responseText)")
@@ -54,7 +54,7 @@ class PrometheusExporterTests: XCTestCase {
     task.resume()
 
     waitForExpectations(timeout: 30) { error in
-      if let error = error {
+      if let error {
         print("Error: \(error.localizedDescription)")
         XCTFail()
       }
