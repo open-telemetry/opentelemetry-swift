@@ -3,8 +3,17 @@ name: Build and Test
 on: [push, pull_request, workflow_dispatch]
 
 jobs:
+  FormattingLint: 
+    if: github.event_name == 'pull_request'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: SwiftFormat
+        run: echo swiftformat --lint `git diff --name-only HEAD^1 HEAD` --reporter github-actions-log
+
   SwiftLint:
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v1
       - name: GitHub Action for SwiftLint (Only files changed in the PR)
