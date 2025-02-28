@@ -4,7 +4,6 @@ on: [push, pull_request, workflow_dispatch]
 
 jobs:
   FormattingLint: 
-    if: github.event_name == 'pull_request'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v1
@@ -13,7 +12,6 @@ jobs:
 
   SwiftLint:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v1
       - name: GitHub Action for SwiftLint (Only files changed in the PR)
