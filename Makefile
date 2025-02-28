@@ -2,7 +2,7 @@ PROJECT_NAME="opentelemetry-swift-Package"
 
 XCODEBUILD_OPTIONS_IOS=\
 	-configuration Debug \
-	-destination platform='iOS Simulator,name=iPhone 15,OS=17.5' \
+	-destination platform='iOS Simulator,name=iPhone 16,OS=18.0' \
 	-scheme $(PROJECT_NAME) \
 	-test-iterations 5 \
     -retry-tests-on-failure \
@@ -10,7 +10,7 @@ XCODEBUILD_OPTIONS_IOS=\
 
 XCODEBUILD_OPTIONS_TVOS=\
 	-configuration Debug \
-	-destination platform='tvOS Simulator,name=Apple TV 4K (3rd generation),OS=18.2' \
+	-destination platform='tvOS Simulator,name=Apple TV 4K (3rd generation),OS=18.0' \
 	-scheme $(PROJECT_NAME) \
 	-test-iterations 5 \
     -retry-tests-on-failure \
@@ -18,7 +18,7 @@ XCODEBUILD_OPTIONS_TVOS=\
 
 XCODEBUILD_OPTIONS_WATCHOS=\
 	-configuration Debug \
-	-destination platform='watchOS Simulator,name=Apple Watch Series 10 (46mm),OS=17.5' \
+	-destination platform='watchOS Simulator,name=Apple Watch Series 10 (46mm),OS=11.0' \
 	-scheme $(PROJECT_NAME) \
 	-test-iterations 5 \
     -retry-tests-on-failure \
