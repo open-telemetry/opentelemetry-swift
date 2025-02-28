@@ -1,8 +1,18 @@
 name: Build and Test
 
-on: [push, pull_request, workflow_dispatch]
+on: 
+  pull_request:
+    types: [opened, synchronize]
+  workflow_dispatch:
 
 jobs:
+  FormattingLint: 
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v1
+      - name: SwiftFormat
+        run: echo swiftformat --lint `git diff --name-only HEAD^1 HEAD` --reporter github-actions-log
+
   SwiftLint:
     runs-on: ubuntu-latest
     steps:
