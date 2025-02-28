@@ -23,7 +23,7 @@ jobs:
           args: --strict
           DIFF_BASE: ${{ github.base_ref }}
   macOS:
-    runs-on: macos-15
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
     - name: Build and Test for macOS
@@ -35,7 +35,7 @@ jobs:
         xcrun llvm-cov export -ignore-filename-regex="pb\.swift|grpc\.swift" -format="lcov" .build/debug/opentelemetry-swiftPackageTests.xctest/Contents/MacOS/opentelemetry-swiftPackageTests -instr-profile .build/debug/codecov/default.profdata > .build/debug/codecov/coverage_report.lcov
         ./codecov -f .build/debug/codecov/coverage_report.lcov
   iOS:
-    runs-on: macos-15
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
     - name: Install Homebrew kegs
@@ -45,7 +45,7 @@ jobs:
     - name: Test for iOS
       run: make test-without-building-ios
   tvOS:
-    runs-on: macos-15
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
     - name: Install Homebrew kegs
@@ -55,7 +55,7 @@ jobs:
     - name: Test for tvOS
       run: make test-without-building-tvos
   watchOS:
-    runs-on: macos-15
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
     - name: Install Homebrew kegs
