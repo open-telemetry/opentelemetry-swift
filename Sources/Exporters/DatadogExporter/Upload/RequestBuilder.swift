@@ -9,7 +9,7 @@
 import Foundation
 
 /// Builds `URLRequest` for sending data to Datadog.
-internal struct RequestBuilder {
+struct RequestBuilder {
   enum QueryItem {
     /// `ddsource={source}` query item
     case ddsource(source: String)
@@ -18,9 +18,9 @@ internal struct RequestBuilder {
 
     var urlQueryItem: URLQueryItem {
       switch self {
-      case .ddsource(let source):
+      case let .ddsource(source):
         return URLQueryItem(name: "ddsource", value: source)
-      case .ddtags(let tags):
+      case let .ddtags(tags):
         return URLQueryItem(name: "ddtags", value: tags.joined(separator: ","))
       }
     }
@@ -63,10 +63,8 @@ internal struct RequestBuilder {
 
     /// Standard "User-Agent" header.
     static func userAgentHeader(appName: String, appVersion: String, device: Device) -> HTTPHeader {
-      return HTTPHeader(
-        field: userAgentHeaderField,
-        value: .constant("\(appName)/\(appVersion) CFNetwork (\(device.model); \(device.osName)/\(device.osVersion))")
-      )
+      return HTTPHeader(field: userAgentHeaderField,
+                        value: .constant("\(appName)/\(appVersion) CFNetwork (\(device.model); \(device.osName)/\(device.osVersion))"))
     }
 
     /// Standard "Content-Encoding" header.
@@ -110,16 +108,16 @@ internal struct RequestBuilder {
     var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
 
     if !queryItems.isEmpty {
-      urlComponents?.queryItems = queryItems.map { $0.urlQueryItem }
+      urlComponents?.queryItems = queryItems.map(\.urlQueryItem)
     }
 
     var precomputedHeaders: [String: String] = [:]
     var computedHeaders: [String: () -> String] = [:]
     headers.forEach { header in
       switch header.value {
-      case .constant(let value):
+      case let .constant(value):
         precomputedHeaders[header.field] = value
-      case .dynamic(let value):
+      case let .dynamic(value):
         computedHeaders[header.field] = value
       }
     }

@@ -20,9 +20,9 @@ class DataExportWorkerTests: XCTestCase {
   // MARK: - Data Exports
 
   func testItExportsAllData() {
-    let v1ExportExpectation = self.expectation(description: "V1 exported")
-    let v2ExportExpectation = self.expectation(description: "V2 exported")
-    let v3ExportExpectation = self.expectation(description: "V3 exported")
+    let v1ExportExpectation = expectation(description: "V1 exported")
+    let v2ExportExpectation = expectation(description: "V2 exported")
+    let v3ExportExpectation = expectation(description: "V3 exported")
 
     var mockDataExporter = DataExporterMock(exportStatus: .mockWith(needsRetry: false))
 
@@ -42,12 +42,10 @@ class DataExportWorkerTests: XCTestCase {
     fileReader.addFile(name: "3", data: "v3".utf8Data)
 
     // When
-    let worker = DataExportWorker(
-      fileReader: fileReader,
-      dataExporter: mockDataExporter,
-      exportCondition: { true },
-      delay: DataExportDelay(performance: ExportPerformanceMock.veryQuick)
-    )
+    let worker = DataExportWorker(fileReader: fileReader,
+                                  dataExporter: mockDataExporter,
+                                  exportCondition: { true },
+                                  delay: DataExportDelay(performance: ExportPerformanceMock.veryQuick))
 
     // Then
     waitForExpectations(timeout: 1, handler: nil)
@@ -58,7 +56,7 @@ class DataExportWorkerTests: XCTestCase {
   }
 
   func testGivenDataToExport_whenExportFinishesAndDoesNotNeedToBeRetried_thenDataIsDeleted() {
-    let startExportExpectation = self.expectation(description: "Export has started")
+    let startExportExpectation = expectation(description: "Export has started")
 
     var mockDataExporter = DataExporterMock(exportStatus: .mockWith(needsRetry: false))
     mockDataExporter.onExport = { _ in startExportExpectation.fulfill() }
@@ -68,12 +66,10 @@ class DataExportWorkerTests: XCTestCase {
     fileReader.addFile(name: "file", data: "value".utf8Data)
 
     // When
-    let worker = DataExportWorker(
-      fileReader: fileReader,
-      dataExporter: mockDataExporter,
-      exportCondition: { true },
-      delay: DataExportDelay(performance: ExportPerformanceMock.veryQuick)
-    )
+    let worker = DataExportWorker(fileReader: fileReader,
+                                  dataExporter: mockDataExporter,
+                                  exportCondition: { true },
+                                  delay: DataExportDelay(performance: ExportPerformanceMock.veryQuick))
 
     wait(for: [startExportExpectation], timeout: 0.5)
 
@@ -84,7 +80,7 @@ class DataExportWorkerTests: XCTestCase {
   }
 
   func testGivenDataToExport_whenExportFinishesAndNeedsToBeRetried_thenDataIsPreserved() {
-    let startExportExpectation = self.expectation(description: "Export has started")
+    let startExportExpectation = expectation(description: "Export has started")
 
     var mockDataExporter = DataExporterMock(exportStatus: .mockWith(needsRetry: true))
     mockDataExporter.onExport = { _ in startExportExpectation.fulfill() }
@@ -94,12 +90,10 @@ class DataExportWorkerTests: XCTestCase {
     fileReader.addFile(name: "file", data: "value".utf8Data)
 
     // When
-    let worker = DataExportWorker(
-      fileReader: fileReader,
-      dataExporter: mockDataExporter,
-      exportCondition: { true },
-      delay: DataExportDelay(performance: ExportPerformanceMock.veryQuick)
-    )
+    let worker = DataExportWorker(fileReader: fileReader,
+                                  dataExporter: mockDataExporter,
+                                  exportCondition: { true },
+                                  delay: DataExportDelay(performance: ExportPerformanceMock.veryQuick))
 
     wait(for: [startExportExpectation], timeout: 0.5)
     worker.cancelSynchronously()
@@ -124,12 +118,10 @@ class DataExportWorkerTests: XCTestCase {
     let fileReader = FileReaderMock()
     let mockDataExporter = DataExporterMock(exportStatus: .mockWith(needsRetry: false))
 
-    let worker = DataExportWorker(
-      fileReader: fileReader,
-      dataExporter: mockDataExporter,
-      exportCondition: { false },
-      delay: mockDelay
-    )
+    let worker = DataExportWorker(fileReader: fileReader,
+                                  dataExporter: mockDataExporter,
+                                  exportCondition: { false },
+                                  delay: mockDelay)
 
     // Then
     waitForExpectations(timeout: 1, handler: nil)
@@ -156,18 +148,16 @@ class DataExportWorkerTests: XCTestCase {
     exportExpectation.assertForOverFulfill = false
 
     var mockDataExporter = DataExporterMock(exportStatus: .mockWith(needsRetry: true))
-    mockDataExporter.onExport = { data in exportExpectation.fulfill() }
+    mockDataExporter.onExport = { _ in exportExpectation.fulfill() }
 
     // When
     let fileReader = FileReaderMock()
     fileReader.addFile(name: "file", data: "value".utf8Data)
 
-    let worker = DataExportWorker(
-      fileReader: fileReader,
-      dataExporter: mockDataExporter,
-      exportCondition: { true },
-      delay: mockDelay
-    )
+    let worker = DataExportWorker(fileReader: fileReader,
+                                  dataExporter: mockDataExporter,
+                                  exportCondition: { true },
+                                  delay: mockDelay)
 
     // Then
     waitForExpectations(timeout: 1, handler: nil)
@@ -184,22 +174,20 @@ class DataExportWorkerTests: XCTestCase {
       }
     }
 
-    let exportExpectation = self.expectation(description: "value exported")
+    let exportExpectation = expectation(description: "value exported")
 
     var mockDataExporter = DataExporterMock(exportStatus: .mockWith(needsRetry: false))
 
-    mockDataExporter.onExport = { data in exportExpectation.fulfill() }
+    mockDataExporter.onExport = { _ in exportExpectation.fulfill() }
 
     // When
     let fileReader = FileReaderMock()
     fileReader.addFile(name: "file", data: "value".utf8Data)
 
-    let worker = DataExportWorker(
-      fileReader: fileReader,
-      dataExporter: mockDataExporter,
-      exportCondition: { true },
-      delay: mockDelay
-    )
+    let worker = DataExportWorker(fileReader: fileReader,
+                                  dataExporter: mockDataExporter,
+                                  exportCondition: { true },
+                                  delay: mockDelay)
 
     // Then
     waitForExpectations(timeout: 1, handler: nil)
@@ -217,12 +205,10 @@ class DataExportWorkerTests: XCTestCase {
     let fileReader = FileReaderMock()
 
     // Given
-    let worker = DataExportWorker(
-      fileReader: fileReader,
-      dataExporter: mockDataExporter,
-      exportCondition: { false },
-      delay: MockDelay()
-    )
+    let worker = DataExportWorker(fileReader: fileReader,
+                                  dataExporter: mockDataExporter,
+                                  exportCondition: { false },
+                                  delay: MockDelay())
 
     worker.cancelSynchronously()
     fileReader.addFile(name: "file", data: "value".utf8Data)
@@ -232,9 +218,9 @@ class DataExportWorkerTests: XCTestCase {
   }
 
   func testItFlushesAllData() {
-    let v1ExportExpectation = self.expectation(description: "V1 exported")
-    let v2ExportExpectation = self.expectation(description: "V2 exported")
-    let v3ExportExpectation = self.expectation(description: "V3 exported")
+    let v1ExportExpectation = expectation(description: "V1 exported")
+    let v2ExportExpectation = expectation(description: "V2 exported")
+    let v3ExportExpectation = expectation(description: "V3 exported")
 
     var mockDataExporter = DataExporterMock(exportStatus: .mockWith(needsRetry: false))
 
@@ -254,12 +240,10 @@ class DataExportWorkerTests: XCTestCase {
     fileReader.addFile(name: "3", data: "v3".utf8Data)
 
     // When
-    let worker = DataExportWorker(
-      fileReader: fileReader,
-      dataExporter: mockDataExporter,
-      exportCondition: { true },
-      delay: DataExportDelay(performance: ExportPerformanceMock.veryQuick)
-    )
+    let worker = DataExportWorker(fileReader: fileReader,
+                                  dataExporter: mockDataExporter,
+                                  exportCondition: { true },
+                                  delay: DataExportDelay(performance: ExportPerformanceMock.veryQuick))
 
     // When
     XCTAssertTrue(worker.flush())

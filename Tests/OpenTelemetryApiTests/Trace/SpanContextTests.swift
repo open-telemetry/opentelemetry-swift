@@ -100,8 +100,8 @@ final class SpanContextTests: XCTestCase {
     let encoder = JSONEncoder()
     let decoder = JSONDecoder()
 
-    XCTAssertEqual(first, try decoder.decode(SpanContext.self, from: try encoder.encode(first)))
-    XCTAssertEqual(second, try decoder.decode(SpanContext.self, from: try encoder.encode(second)))
-    XCTAssertEqual(remote, try decoder.decode(SpanContext.self, from: try encoder.encode(remote)))
+    XCTAssertEqual(first, try decoder.decode(SpanContext.self, from: encoder.encode(first)))
+    XCTAssertEqual(second, try decoder.decode(SpanContext.self, from: encoder.encode(second)))
+    XCTAssertEqual(remote, try decoder.decode(SpanContext.self, from: encoder.encode(remote)))
   }
 }

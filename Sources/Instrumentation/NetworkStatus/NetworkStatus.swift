@@ -12,7 +12,7 @@
     public private(set) var networkInfo: CTTelephonyNetworkInfo
     public private(set) var networkMonitor: NetworkMonitorProtocol
     public convenience init() throws {
-      self.init(with: try NetworkMonitor())
+      try self.init(with: NetworkMonitor())
     }
 
     public init(with monitor: NetworkMonitorProtocol, info: CTTelephonyNetworkInfo = CTTelephonyNetworkInfo()) {

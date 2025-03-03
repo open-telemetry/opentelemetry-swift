@@ -10,19 +10,13 @@ class DataUploadWorkerTests: XCTestCase {
   @UniqueTemporaryDirectory private var temporaryDirectory: Directory
 
   lazy var dateProvider = RelativeDateProvider(advancingBySeconds: 1)
-  lazy var orchestrator = FilesOrchestrator(
-    directory: temporaryDirectory,
-    performance: StoragePerformanceMock.writeEachObjectToNewFileAndReadAllFiles,
-    dateProvider: dateProvider
-  )
-  lazy var writer = FileWriter(
-    dataFormat: .mockWith(prefix: "[", suffix: "]"),
-    orchestrator: orchestrator
-  )
-  lazy var reader = FileReader(
-    dataFormat: .mockWith(prefix: "[", suffix: "]"),
-    orchestrator: orchestrator
-  )
+  lazy var orchestrator = FilesOrchestrator(directory: temporaryDirectory,
+                                            performance: StoragePerformanceMock.writeEachObjectToNewFileAndReadAllFiles,
+                                            dateProvider: dateProvider)
+  lazy var writer = FileWriter(dataFormat: .mockWith(prefix: "[", suffix: "]"),
+                               orchestrator: orchestrator)
+  lazy var reader = FileReader(dataFormat: .mockWith(prefix: "[", suffix: "]"),
+                               orchestrator: orchestrator)
 
   override func setUp() {
     super.setUp()
@@ -42,10 +36,8 @@ class DataUploadWorkerTests: XCTestCase {
     #endif
 
     let server = ServerMock(delivery: .success(response: .mockResponseWith(statusCode: 200)))
-    let dataUploader = DataUploader(
-      httpClient: HTTPClient(session: server.getInterceptedURLSession()),
-      requestBuilder: .mockAny()
-    )
+    let dataUploader = DataUploader(httpClient: HTTPClient(session: server.getInterceptedURLSession()),
+                                    requestBuilder: .mockAny())
 
     // Given
     writer.write(value: ["k1": "v1"])
@@ -53,13 +45,11 @@ class DataUploadWorkerTests: XCTestCase {
     writer.write(value: ["k3": "v3"])
 
     // When
-    let worker = DataUploadWorker(
-      fileReader: reader,
-      dataUploader: dataUploader,
-      uploadCondition: { true },
-      delay: DataUploadDelay(performance: UploadPerformanceMock.veryQuick),
-      featureName: .mockAny()
-    )
+    let worker = DataUploadWorker(fileReader: reader,
+                                  dataUploader: dataUploader,
+                                  uploadCondition: { true },
+                                  delay: DataUploadDelay(performance: UploadPerformanceMock.veryQuick),
+                                  featureName: .mockAny())
 
     // Then
     let recordedRequests = server.waitAndReturnRequests(count: 3)
@@ -74,7 +64,7 @@ class DataUploadWorkerTests: XCTestCase {
 
   func testGivenDataToUpload_whenUploadFinishesAndDoesNotNeedToBeRetried_thenDataIsDeleted() throws {
     throw XCTSkip("unstable test skipped.")
-    let startUploadExpectation = self.expectation(description: "Upload has started")
+    let startUploadExpectation = expectation(description: "Upload has started")
 
     var mockDataUploader = DataUploaderMock(uploadStatus: .mockWith(needsRetry: false))
     mockDataUploader.onUpload = { startUploadExpectation.fulfill() }
@@ -84,13 +74,11 @@ class DataUploadWorkerTests: XCTestCase {
     XCTAssertEqual(try temporaryDirectory.files().count, 1)
 
     // When
-    let worker = DataUploadWorker(
-      fileReader: reader,
-      dataUploader: mockDataUploader,
-      uploadCondition: { true },
-      delay: DataUploadDelay(performance: UploadPerformanceMock.veryQuick),
-      featureName: .mockAny()
-    )
+    let worker = DataUploadWorker(fileReader: reader,
+                                  dataUploader: mockDataUploader,
+                                  uploadCondition: { true },
+                                  delay: DataUploadDelay(performance: UploadPerformanceMock.veryQuick),
+                                  featureName: .mockAny())
 
     wait(for: [startUploadExpectation], timeout: 10)
     worker.cancelSynchronously()
@@ -102,7 +90,7 @@ class DataUploadWorkerTests: XCTestCase {
   func testGivenDataToUpload_whenUploadFinishesAndNeedsToBeRetried_thenDataIsPreserved() throws {
     throw XCTSkip("unstable test skipped.")
 
-    let startUploadExpectation = self.expectation(description: "Upload has started")
+    let startUploadExpectation = expectation(description: "Upload has started")
 
     var mockDataUploader = DataUploaderMock(uploadStatus: .mockWith(needsRetry: true))
     mockDataUploader.onUpload = { startUploadExpectation.fulfill() }
@@ -112,13 +100,11 @@ class DataUploadWorkerTests: XCTestCase {
     XCTAssertEqual(try temporaryDirectory.files().count, 1)
 
     // When
-    let worker = DataUploadWorker(
-      fileReader: reader,
-      dataUploader: mockDataUploader,
-      uploadCondition: { true },
-      delay: DataUploadDelay(performance: UploadPerformanceMock.veryQuick),
-      featureName: .mockAny()
-    )
+    let worker = DataUploadWorker(fileReader: reader,
+                                  dataUploader: mockDataUploader,
+                                  uploadCondition: { true },
+                                  delay: DataUploadDelay(performance: UploadPerformanceMock.veryQuick),
+                                  featureName: .mockAny())
 
     wait(for: [startUploadExpectation], timeout: 10)
     worker.cancelSynchronously()
@@ -145,17 +131,13 @@ class DataUploadWorkerTests: XCTestCase {
     XCTAssertEqual(try temporaryDirectory.files().count, 0)
 
     let server = ServerMock(delivery: .success(response: .mockResponseWith(statusCode: 200)))
-    let dataUploader = DataUploader(
-      httpClient: HTTPClient(session: server.getInterceptedURLSession()),
-      requestBuilder: .mockAny()
-    )
-    let worker = DataUploadWorker(
-      fileReader: reader,
-      dataUploader: dataUploader,
-      uploadCondition: { false },
-      delay: mockDelay,
-      featureName: .mockAny()
-    )
+    let dataUploader = DataUploader(httpClient: HTTPClient(session: server.getInterceptedURLSession()),
+                                    requestBuilder: .mockAny())
+    let worker = DataUploadWorker(fileReader: reader,
+                                  dataUploader: dataUploader,
+                                  uploadCondition: { false },
+                                  delay: mockDelay,
+                                  featureName: .mockAny())
 
     // Then
     server.waitFor(requestsCompletion: 0)
@@ -183,17 +165,13 @@ class DataUploadWorkerTests: XCTestCase {
     writer.write(value: ["k1": "v1"])
 
     let server = ServerMock(delivery: .success(response: .mockResponseWith(statusCode: 500)))
-    let dataUploader = DataUploader(
-      httpClient: HTTPClient(session: server.getInterceptedURLSession()),
-      requestBuilder: .mockAny()
-    )
-    let worker = DataUploadWorker(
-      fileReader: reader,
-      dataUploader: dataUploader,
-      uploadCondition: { true },
-      delay: mockDelay,
-      featureName: .mockAny()
-    )
+    let dataUploader = DataUploader(httpClient: HTTPClient(session: server.getInterceptedURLSession()),
+                                    requestBuilder: .mockAny())
+    let worker = DataUploadWorker(fileReader: reader,
+                                  dataUploader: dataUploader,
+                                  uploadCondition: { true },
+                                  delay: mockDelay,
+                                  featureName: .mockAny())
 
     // Then
     server.waitFor(requestsCompletion: 1)
@@ -220,17 +198,13 @@ class DataUploadWorkerTests: XCTestCase {
     writer.write(value: ["k1": "v1"])
 
     let server = ServerMock(delivery: .success(response: .mockResponseWith(statusCode: 200)))
-    let dataUploader = DataUploader(
-      httpClient: HTTPClient(session: server.getInterceptedURLSession()),
-      requestBuilder: .mockAny()
-    )
-    let worker = DataUploadWorker(
-      fileReader: reader,
-      dataUploader: dataUploader,
-      uploadCondition: { true },
-      delay: mockDelay,
-      featureName: .mockAny()
-    )
+    let dataUploader = DataUploader(httpClient: HTTPClient(session: server.getInterceptedURLSession()),
+                                    requestBuilder: .mockAny())
+    let worker = DataUploadWorker(fileReader: reader,
+                                  dataUploader: dataUploader,
+                                  uploadCondition: { true },
+                                  delay: mockDelay,
+                                  featureName: .mockAny())
 
     // Then
     server.waitFor(requestsCompletion: 1)
@@ -245,17 +219,13 @@ class DataUploadWorkerTests: XCTestCase {
 
     // Given
     let server = ServerMock(delivery: .success(response: .mockResponseWith(statusCode: 200)))
-    let dataUploader = DataUploader(
-      httpClient: HTTPClient(session: server.getInterceptedURLSession()),
-      requestBuilder: .mockAny()
-    )
-    let worker = DataUploadWorker(
-      fileReader: reader,
-      dataUploader: dataUploader,
-      uploadCondition: { false },
-      delay: MockDelay(),
-      featureName: .mockAny()
-    )
+    let dataUploader = DataUploader(httpClient: HTTPClient(session: server.getInterceptedURLSession()),
+                                    requestBuilder: .mockAny())
+    let worker = DataUploadWorker(fileReader: reader,
+                                  dataUploader: dataUploader,
+                                  uploadCondition: { false },
+                                  delay: MockDelay(),
+                                  featureName: .mockAny())
 
     // When
     worker.cancelSynchronously()
@@ -274,17 +244,13 @@ class DataUploadWorkerTests: XCTestCase {
     throw XCTSkip("unstable test skipped.")
 
     let server = ServerMock(delivery: .success(response: .mockResponseWith(statusCode: 200)))
-    let dataUploader = DataUploader(
-      httpClient: HTTPClient(session: server.getInterceptedURLSession()),
-      requestBuilder: .mockAny()
-    )
-    let worker = DataUploadWorker(
-      fileReader: reader,
-      dataUploader: dataUploader,
-      uploadCondition: { true },
-      delay: DataUploadDelay(performance: UploadPerformanceMock.veryQuick),
-      featureName: .mockAny()
-    )
+    let dataUploader = DataUploader(httpClient: HTTPClient(session: server.getInterceptedURLSession()),
+                                    requestBuilder: .mockAny())
+    let worker = DataUploadWorker(fileReader: reader,
+                                  dataUploader: dataUploader,
+                                  uploadCondition: { true },
+                                  delay: DataUploadDelay(performance: UploadPerformanceMock.veryQuick),
+                                  featureName: .mockAny())
 
     // Given
     writer.write(value: ["k1": "v1"])

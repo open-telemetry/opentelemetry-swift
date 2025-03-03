@@ -25,10 +25,8 @@
   let instrumentationScopeName = "OTLPExporter"
   let instrumentationScopeVersion = "semver:0.1.0"
 
-  let configuration = ClientConnection.Configuration.default(
-    target: .hostAndPort("localhost", 4317),
-    eventLoopGroup: MultiThreadedEventLoopGroup(numberOfThreads: 1)
-  )
+  let configuration = ClientConnection.Configuration.default(target: .hostAndPort("localhost", 4317),
+                                                             eventLoopGroup: MultiThreadedEventLoopGroup(numberOfThreads: 1))
   let client = ClientConnection(configuration: configuration)
 
   let otlpTraceExporter = OtlpTraceExporter(channel: client)

@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
-struct ZipkinConversionExtension {
+enum ZipkinConversionExtension {
   static let statusCode = "otel.status_code"
   static let statusErrorDescription = "error"
 

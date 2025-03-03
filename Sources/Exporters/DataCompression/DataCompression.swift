@@ -35,7 +35,7 @@ import Foundation
     /// - parameter withAlgorithm: Compression algorithm to use. See the `CompressionAlgorithm` type
     /// - returns: compressed data
     func compress(withAlgorithm algo: CompressionAlgorithm) -> Data? {
-      return self.withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
+      return withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
         let config = (operation: COMPRESSION_STREAM_ENCODE, algorithm: algo.lowLevelType)
         return perform(config, source: sourcePtr, sourceSize: count)
       }
@@ -45,7 +45,7 @@ import Foundation
     /// - parameter withAlgorithm: Compression algorithm to use. See the `CompressionAlgorithm` type
     /// - returns: decompressed data
     func decompress(withAlgorithm algo: CompressionAlgorithm) -> Data? {
-      return self.withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
+      return withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
         let config = (operation: COMPRESSION_STREAM_DECODE, algorithm: algo.lowLevelType)
         return perform(config, source: sourcePtr, sourceSize: count)
       }
@@ -68,7 +68,7 @@ import Foundation
     /// - returns: raw deflated data according to [RFC-1951](https://tools.ietf.org/html/rfc1951).
     /// - note: Fixed at compression level 5 (best trade off between speed and time)
     func deflate() -> Data? {
-      return self.withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
+      return withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
         let config = (operation: COMPRESSION_STREAM_ENCODE, algorithm: COMPRESSION_ZLIB)
         return perform(config, source: sourcePtr, sourceSize: count)
       }
@@ -78,7 +78,7 @@ import Foundation
     /// stream according to [RFC-1951](https://tools.ietf.org/html/rfc1951).
     /// - returns: uncompressed data
     func inflate() -> Data? {
-      return self.withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
+      return withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
         let config = (operation: COMPRESSION_STREAM_DECODE, algorithm: COMPRESSION_ZLIB)
         return perform(config, source: sourcePtr, sourceSize: count)
       }
@@ -90,14 +90,14 @@ import Foundation
     func zip() -> Data? {
       let header = Data([0x78, 0x5e])
 
-      let deflated = self.withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
+      let deflated = withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
         let config = (operation: COMPRESSION_STREAM_ENCODE, algorithm: COMPRESSION_ZLIB)
         return perform(config, source: sourcePtr, sourceSize: count, preload: header)
       }
 
       guard var result = deflated else { return nil }
 
-      var adler = self.adler32().checksum.bigEndian
+      var adler = adler32().checksum.bigEndian
       result.append(Data(bytes: &adler, count: MemoryLayout<UInt32>.size))
 
       return result
@@ -132,7 +132,7 @@ import Foundation
 
       let cksum: UInt32 = withUnsafeBytes { (bytePtr: UnsafePointer<UInt8>) -> UInt32 in
         let last = bytePtr.advanced(by: count - 4)
-        return last.withMemoryRebound(to: UInt32.self, capacity: 1) { (intPtr) -> UInt32 in
+        return last.withMemoryRebound(to: UInt32.self, capacity: 1) { intPtr -> UInt32 in
           return intPtr.pointee.bigEndian
         }
       }
@@ -151,7 +151,7 @@ import Foundation
 
       header.append(contentsOf: [0x00, 0x03]) // normal compression level, unix file type
 
-      let deflated = self.withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
+      let deflated = withUnsafeBytes { (sourcePtr: UnsafePointer<UInt8>) -> Data? in
         let config = (operation: COMPRESSION_STREAM_ENCODE, algorithm: COMPRESSION_ZLIB)
         return perform(config, source: sourcePtr, sourceSize: count, preload: header)
       }
@@ -159,11 +159,11 @@ import Foundation
       guard var result = deflated else { return nil }
 
       // append checksum
-      var crc32: UInt32 = self.crc32().checksum.littleEndian
+      var crc32: UInt32 = crc32().checksum.littleEndian
       result.append(Data(bytes: &crc32, count: MemoryLayout<UInt32>.size))
 
       // append size of original data
-      var isize: UInt32 = UInt32(truncatingIfNeeded: count).littleEndian
+      var isize = UInt32(truncatingIfNeeded: count).littleEndian
       result.append(Data(bytes: &isize, count: MemoryLayout<UInt32>.size))
 
       return result
@@ -196,7 +196,7 @@ import Foundation
       }
 
       // Wrong gzip magic or unsupported compression method
-      guard hdr.id1 == 0x1f && hdr.id2 == 0x8b && hdr.cm == 0x08 else { return nil }
+      guard hdr.id1 == 0x1f, hdr.id2 == 0x8b, hdr.cm == 0x08 else { return nil }
 
       let has_crc16: Bool = hdr.flg & 0b00010 != 0
       let has_extra: Bool = hdr.flg & 0b00100 != 0
@@ -212,11 +212,11 @@ import Foundation
           }
         }
         if has_fname {
-          while pos < limit && ptr[pos] != 0x0 { pos += 1 }
+          while pos < limit, ptr[pos] != 0x0 { pos += 1 }
           pos += 1 // skip null byte as well
         }
         if has_cmmnt {
-          while pos < limit && ptr[pos] != 0x0 { pos += 1 }
+          while pos < limit, ptr[pos] != 0x0 { pos += 1 }
           pos += 1 // skip null byte as well
         }
         if has_crc16 {
@@ -258,11 +258,9 @@ import Foundation
     public init() {}
 
     // C convention function pointer type matching the signature of `libz::crc32`
-    private typealias ZLibCrc32FuncPtr = @convention(c) (
-      _ cks: UInt32,
-      _ buf: UnsafePointer<UInt8>,
-      _ len: UInt32
-    ) -> UInt32
+    private typealias ZLibCrc32FuncPtr = @convention(c) (_ cks: UInt32,
+                                                         _ buf: UnsafePointer<UInt8>,
+                                                         _ len: UInt32) -> UInt32
 
     /// Raw checksum. Updated after a every call to `advance(withChunk:)`
     public var checksum: UInt32 = 0
@@ -271,9 +269,9 @@ import Foundation
     /// - parameter chunk: data to advance the checksum
     public mutating func advance(withChunk chunk: Data) {
       if let fastCrc32 = Crc32.zLibCrc32 {
-        checksum = chunk.withUnsafeBytes({ (ptr: UnsafePointer<UInt8>) -> UInt32 in
+        checksum = chunk.withUnsafeBytes { (ptr: UnsafePointer<UInt8>) -> UInt32 in
           return fastCrc32(checksum, ptr, UInt32(chunk.count))
-        })
+        }
       } else {
         checksum = slowCrc32(start: checksum, data: chunk)
       }
@@ -347,11 +345,9 @@ import Foundation
     public init() {}
 
     // C convention function pointer type matching the signature of `libz::adler32`
-    private typealias ZLibAdler32FuncPtr = @convention(c) (
-      _ cks: UInt32,
-      _ buf: UnsafePointer<UInt8>,
-      _ len: UInt32
-    ) -> UInt32
+    private typealias ZLibAdler32FuncPtr = @convention(c) (_ cks: UInt32,
+                                                           _ buf: UnsafePointer<UInt8>,
+                                                           _ len: UInt32) -> UInt32
 
     /// Raw checksum. Updated after a every call to `advance(withChunk:)`
     public var checksum: UInt32 = 1
@@ -360,9 +356,9 @@ import Foundation
     /// - parameter chunk: data to advance the checksum
     public mutating func advance(withChunk chunk: Data) {
       if let fastAdler32 = Adler32.zLibAdler32 {
-        checksum = chunk.withUnsafeBytes({ (ptr: UnsafePointer<UInt8>) -> UInt32 in
+        checksum = chunk.withUnsafeBytes { (ptr: UnsafePointer<UInt8>) -> UInt32 in
           return fastAdler32(checksum, ptr, UInt32(chunk.count))
-        })
+        }
       } else {
         checksum = slowAdler32(start: checksum, data: chunk)
       }
@@ -401,9 +397,9 @@ import Foundation
 
   fileprivate extension Data {
     func withUnsafeBytes<ResultType, ContentType>(_ body: (UnsafePointer<ContentType>) throws -> ResultType) rethrows -> ResultType {
-      return try self.withUnsafeBytes({ (rawBufferPointer: UnsafeRawBufferPointer) -> ResultType in
+      return try withUnsafeBytes { (rawBufferPointer: UnsafeRawBufferPointer) -> ResultType in
         return try body(rawBufferPointer.bindMemory(to: ContentType.self).baseAddress!)
-      })
+      }
     }
   }
 
@@ -436,13 +432,13 @@ import Foundation
     defer { compression_stream_destroy(&stream) }
 
     var result = preload
-    var flags: Int32 = Int32(COMPRESSION_STREAM_FINALIZE.rawValue)
+    var flags = Int32(COMPRESSION_STREAM_FINALIZE.rawValue)
     let blockLimit = 64 * 1024
     var bufferSize = Swift.max(sourceSize, 64)
 
     if sourceSize > blockLimit {
       bufferSize = blockLimit
-      if config.algorithm == COMPRESSION_LZFSE && config.operation != COMPRESSION_STREAM_ENCODE {
+      if config.algorithm == COMPRESSION_LZFSE, config.operation != COMPRESSION_STREAM_ENCODE {
         // This fixes a bug in Apples lzfse decompressor. it will sometimes fail randomly when the input gets
         // splitted into multiple chunks and the flag is not 0. Even though it should always work with FINALIZE...
         flags = 0
@@ -465,7 +461,7 @@ import Foundation
         stream.dst_ptr = buffer
         stream.dst_size = bufferSize
 
-        if flags == 0 && stream.src_size == 0 { // part of the lzfse bugfix above
+        if flags == 0, stream.src_size == 0 { // part of the lzfse bugfix above
           flags = Int32(COMPRESSION_STREAM_FINALIZE.rawValue)
         }
 

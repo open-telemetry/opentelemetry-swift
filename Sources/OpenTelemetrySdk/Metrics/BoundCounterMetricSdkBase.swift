@@ -7,8 +7,8 @@ import Foundation
 import OpenTelemetryApi
 
 class BoundCounterMetricSdkBase<T>: BoundCounterMetric<T> {
-  internal var status: RecordStatus
-  internal let statusLock = Lock()
+  var status: RecordStatus
+  let statusLock = Lock()
 
   init(recordStatus: RecordStatus) {
     status = recordStatus

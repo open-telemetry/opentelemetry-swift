@@ -60,21 +60,21 @@ final class TraceFlagsTests: XCTestCase {
     let decoder = JSONDecoder()
 
     var traceFlags = TraceFlags()
-    XCTAssertEqual(traceFlags, try decoder.decode(TraceFlags.self, from: try encoder.encode(traceFlags)))
+    XCTAssertEqual(traceFlags, try decoder.decode(TraceFlags.self, from: encoder.encode(traceFlags)))
 
     traceFlags = TraceFlags().settingIsSampled(true)
-    XCTAssertEqual(traceFlags, try decoder.decode(TraceFlags.self, from: try encoder.encode(traceFlags)))
+    XCTAssertEqual(traceFlags, try decoder.decode(TraceFlags.self, from: encoder.encode(traceFlags)))
 
     traceFlags = TraceFlags().settingIsSampled(false)
-    XCTAssertEqual(traceFlags, try decoder.decode(TraceFlags.self, from: try encoder.encode(traceFlags)))
+    XCTAssertEqual(traceFlags, try decoder.decode(TraceFlags.self, from: encoder.encode(traceFlags)))
 
     traceFlags = TraceFlags(fromByte: firstByte)
-    XCTAssertEqual(traceFlags, try decoder.decode(TraceFlags.self, from: try encoder.encode(traceFlags)))
+    XCTAssertEqual(traceFlags, try decoder.decode(TraceFlags.self, from: encoder.encode(traceFlags)))
 
     traceFlags = TraceFlags(fromByte: secondByte)
-    XCTAssertEqual(traceFlags, try decoder.decode(TraceFlags.self, from: try encoder.encode(traceFlags)))
+    XCTAssertEqual(traceFlags, try decoder.decode(TraceFlags.self, from: encoder.encode(traceFlags)))
 
     traceFlags = TraceFlags(fromByte: thirdByte)
-    XCTAssertEqual(traceFlags, try decoder.decode(TraceFlags.self, from: try encoder.encode(traceFlags)))
+    XCTAssertEqual(traceFlags, try decoder.decode(TraceFlags.self, from: encoder.encode(traceFlags)))
   }
 }

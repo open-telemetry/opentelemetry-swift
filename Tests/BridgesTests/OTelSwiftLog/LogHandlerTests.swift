@@ -47,8 +47,7 @@ final class OTelLogHandlerTests: XCTestCase {
     let attributeValueStringArray = convertToAttributeValue(Logger.Metadata.Value.array(
       [Logger.Metadata.Value.stringConvertible(100),
        Logger.Metadata.Value.string("string"),
-       Logger.Metadata.Value.stringConvertible(true)
-      ]))
+       Logger.Metadata.Value.stringConvertible(true)]))
 
     XCTAssertEqual(attributeValueStringArray, AttributeValue.array(AttributeArray(values: [AttributeValue.string("100"), AttributeValue.string("string"), AttributeValue.string("true")])))
   }

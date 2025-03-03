@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetrySdk
 
-internal enum LogLevel: Int, Codable {
+enum LogLevel: Int, Codable {
   case debug
   case info
   case notice
@@ -15,53 +15,43 @@ internal enum LogLevel: Int, Codable {
   case critical
 }
 
-internal class LogsExporter {
+class LogsExporter {
   let logsDirectory = "com.otel.datadog.logs/v1"
   let configuration: ExporterConfiguration
   let logsStorage: FeatureStorage
   let logsUpload: FeatureUpload
 
   init(config: ExporterConfiguration) throws {
-    self.configuration = config
+    configuration = config
 
-    let filesOrchestrator = FilesOrchestrator(
-      directory: try Directory(withSubdirectoryPath: logsDirectory),
-      performance: configuration.performancePreset,
-      dateProvider: SystemDateProvider()
-    )
+    let filesOrchestrator = try FilesOrchestrator(directory: Directory(withSubdirectoryPath: logsDirectory),
+                                                  performance: configuration.performancePreset,
+                                                  dateProvider: SystemDateProvider())
 
     let dataFormat = DataFormat(prefix: "[", suffix: "]", separator: ",")
 
-    let logsFileWriter = FileWriter(
-      dataFormat: dataFormat,
-      orchestrator: filesOrchestrator
-    )
+    let logsFileWriter = FileWriter(dataFormat: dataFormat,
+                                    orchestrator: filesOrchestrator)
 
-    let logsFileReader = FileReader(
-      dataFormat: dataFormat,
-      orchestrator: filesOrchestrator
-    )
+    let logsFileReader = FileReader(dataFormat: dataFormat,
+                                    orchestrator: filesOrchestrator)
 
     logsStorage = FeatureStorage(writer: logsFileWriter, reader: logsFileReader)
 
-    let requestBuilder = RequestBuilder(
-      url: configuration.endpoint.logsURL,
-      queryItems: [
-        .ddsource(source: configuration.source)
-      ],
-      headers: [
-        .contentTypeHeader(contentType: .applicationJSON),
-        .userAgentHeader(
-          appName: configuration.applicationName,
-          appVersion: configuration.version,
-          device: Device.current
-        ),
-        .ddAPIKeyHeader(apiKey: configuration.apiKey),
-        .ddEVPOriginHeader(source: configuration.source),
-        .ddEVPOriginVersionHeader(version: configuration.version),
-        .ddRequestIDHeader()
-      ] + (configuration.payloadCompression ? [RequestBuilder.HTTPHeader.contentEncodingHeader(contentEncoding: .deflate)] : [])
-    )
+    let requestBuilder = RequestBuilder(url: configuration.endpoint.logsURL,
+                                        queryItems: [
+                                          .ddsource(source: configuration.source)
+                                        ],
+                                        headers: [
+                                          .contentTypeHeader(contentType: .applicationJSON),
+                                          .userAgentHeader(appName: configuration.applicationName,
+                                                           appVersion: configuration.version,
+                                                           device: Device.current),
+                                          .ddAPIKeyHeader(apiKey: configuration.apiKey),
+                                          .ddEVPOriginHeader(source: configuration.source),
+                                          .ddEVPOriginVersionHeader(version: configuration.version),
+                                          .ddRequestIDHeader()
+                                        ] + (configuration.payloadCompression ? [RequestBuilder.HTTPHeader.contentEncodingHeader(contentEncoding: .deflate)] : []))
 
     logsUpload = FeatureUpload(featureName: "logsUpload",
                                storage: logsStorage,

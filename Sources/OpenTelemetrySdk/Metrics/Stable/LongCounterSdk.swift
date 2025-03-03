@@ -12,7 +12,7 @@ public class LongCounterSdk: LongCounter, Instrument {
 
   init(descriptor: InstrumentDescriptor, storage: WritableMetricStorage) {
     self.storage = storage
-    self.instrumentDescriptor = descriptor
+    instrumentDescriptor = descriptor
   }
 
   public func add(value: Int) {
@@ -34,7 +34,7 @@ public struct DoubleCounterSdk: DoubleCounter, Instrument {
 
   init(descriptor: InstrumentDescriptor, storage: WritableMetricStorage) {
     self.storage = storage
-    self.instrumentDescriptor = descriptor
+    instrumentDescriptor = descriptor
   }
 
   public mutating func add(value: Double) {

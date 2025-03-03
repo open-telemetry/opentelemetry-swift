@@ -29,13 +29,13 @@ class TracerSharedState {
     self.clock = clock
     self.idGenerator = idGenerator
     self.resource = resource
-    self.activeSpanLimits = spanLimits
+    activeSpanLimits = spanLimits
     self.sampler = sampler
     if spanProcessors.count > 1 {
-      self.activeSpanProcessor = MultiSpanProcessor(spanProcessors: spanProcessors)
+      activeSpanProcessor = MultiSpanProcessor(spanProcessors: spanProcessors)
       registeredSpanProcessors = spanProcessors
     } else if spanProcessors.count == 1 {
-      self.activeSpanProcessor = spanProcessors[0]
+      activeSpanProcessor = spanProcessors[0]
       registeredSpanProcessors = spanProcessors
     } else {
       activeSpanProcessor = NoopSpanProcessor()
@@ -44,7 +44,7 @@ class TracerSharedState {
     /// Recovers explicit parent context from process environment variables, it allows to automatic
     /// trace context propagation to child processes
     let environmentPropagator = EnvironmentContextPropagator()
-    self.launchEnvironmentContext = environmentPropagator.extract(carrier: ProcessInfo.processInfo.environment, getter: EnvironmentGetter())
+    launchEnvironmentContext = environmentPropagator.extract(carrier: ProcessInfo.processInfo.environment, getter: EnvironmentGetter())
   }
 
   /// Adds a new SpanProcessor

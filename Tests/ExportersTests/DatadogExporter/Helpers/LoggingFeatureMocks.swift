@@ -9,32 +9,28 @@ import Foundation
 // MARK: - Log Mocks
 
 extension DDLog {
-  static func mockWith(
-    date: Date = .mockAny(),
-    status: DDLog.Status = .mockAny(),
-    message: String = .mockAny(),
-    serviceName: String = .mockAny(),
-    environment: String = .mockAny(),
-    loggerName: String = .mockAny(),
-    loggerVersion: String = .mockAny(),
-    threadName: String = .mockAny(),
-    applicationVersion: String = .mockAny(),
-    attributes: LogAttributes = .mockAny(),
-    tags: [String]? = nil
-  ) -> DDLog {
-    return DDLog(
-      date: date,
-      status: status,
-      message: message,
-      serviceName: serviceName,
-      environment: environment,
-      loggerName: loggerName,
-      loggerVersion: loggerVersion,
-      threadName: threadName,
-      applicationVersion: applicationVersion,
-      attributes: attributes,
-      tags: tags
-    )
+  static func mockWith(date: Date = .mockAny(),
+                       status: DDLog.Status = .mockAny(),
+                       message: String = .mockAny(),
+                       serviceName: String = .mockAny(),
+                       environment: String = .mockAny(),
+                       loggerName: String = .mockAny(),
+                       loggerVersion: String = .mockAny(),
+                       threadName: String = .mockAny(),
+                       applicationVersion: String = .mockAny(),
+                       attributes: LogAttributes = .mockAny(),
+                       tags: [String]? = nil) -> DDLog {
+    return DDLog(date: date,
+                 status: status,
+                 message: message,
+                 serviceName: serviceName,
+                 environment: environment,
+                 loggerName: loggerName,
+                 loggerVersion: loggerVersion,
+                 threadName: threadName,
+                 applicationVersion: applicationVersion,
+                 attributes: attributes,
+                 tags: tags)
   }
 }
 
@@ -49,14 +45,10 @@ extension LogAttributes: Equatable {
     return mockWith()
   }
 
-  static func mockWith(
-    userAttributes: [String: Encodable] = [:],
-    internalAttributes: [String: Encodable]? = [:]
-  ) -> LogAttributes {
-    return LogAttributes(
-      userAttributes: userAttributes,
-      internalAttributes: internalAttributes
-    )
+  static func mockWith(userAttributes: [String: Encodable] = [:],
+                       internalAttributes: [String: Encodable]? = [:]) -> LogAttributes {
+    return LogAttributes(userAttributes: userAttributes,
+                         internalAttributes: internalAttributes)
   }
 
   public static func == (lhs: LogAttributes, rhs: LogAttributes) -> Bool {

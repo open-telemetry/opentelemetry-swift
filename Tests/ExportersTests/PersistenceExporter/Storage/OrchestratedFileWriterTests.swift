@@ -20,13 +20,11 @@ class OrchestratedFileWriterTests: XCTestCase {
   }
 
   func testItWritesDataToSingleFile() throws {
-    let expectation = self.expectation(description: "write completed")
+    let expectation = expectation(description: "write completed")
     let writer = OrchestratedFileWriter(
-      orchestrator: FilesOrchestrator(
-        directory: temporaryDirectory,
-        performance: PersistencePerformancePreset.default,
-        dateProvider: SystemDateProvider()
-      )
+      orchestrator: FilesOrchestrator(directory: temporaryDirectory,
+                                      performance: PersistencePerformancePreset.default,
+                                      dateProvider: SystemDateProvider())
     )
 
     var data = Data()
@@ -50,23 +48,20 @@ class OrchestratedFileWriterTests: XCTestCase {
   }
 
   func testGivenErrorVerbosity_whenIndividualDataExceedsMaxWriteSize_itDropsDataAndPrintsError() throws {
-    let expectation1 = self.expectation(description: "write completed")
-    let expectation2 = self.expectation(description: "second write completed")
+    let expectation1 = expectation(description: "write completed")
+    let expectation2 = expectation(description: "second write completed")
 
     let writer = OrchestratedFileWriter(
-      orchestrator: FilesOrchestrator(
-        directory: temporaryDirectory,
-        performance: StoragePerformanceMock(
-          maxFileSize: .max,
-          maxDirectorySize: .max,
-          maxFileAgeForWrite: .distantFuture,
-          minFileAgeForRead: .mockAny(),
-          maxFileAgeForRead: .mockAny(),
-          maxObjectsInFile: .max,
-          maxObjectSize: 17 // 17 bytes is enough to write {"key1":"value1"} JSON
-        ),
-        dateProvider: SystemDateProvider()
-      )
+      orchestrator: FilesOrchestrator(directory: temporaryDirectory,
+                                      performance: StoragePerformanceMock(maxFileSize: .max,
+                                                                          maxDirectorySize: .max,
+                                                                          maxFileAgeForWrite: .distantFuture,
+                                                                          minFileAgeForRead: .mockAny(),
+                                                                          maxFileAgeForRead: .mockAny(),
+                                                                          maxObjectsInFile: .max,
+                                                                          maxObjectSize: 17 // 17 bytes is enough to write {"key1":"value1"} JSON
+                                      ),
+                                      dateProvider: SystemDateProvider())
     )
 
     writer.write(data: "value1".utf8Data) // will be written

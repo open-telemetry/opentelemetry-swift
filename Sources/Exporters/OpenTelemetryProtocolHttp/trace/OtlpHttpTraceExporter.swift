@@ -23,17 +23,14 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
   private var exporterMetrics: ExporterMetrics?
 
   override
-  public init(
-    endpoint: URL = defaultOltpHttpTracesEndpoint(),
-    config: OtlpConfiguration = OtlpConfiguration(),
-    useSession: URLSession? = nil,
-    envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
-    super.init(
-      endpoint: endpoint,
-      config: config,
-      useSession: useSession,
-      envVarHeaders: envVarHeaders
-    )
+  public init(endpoint: URL = defaultOltpHttpTracesEndpoint(),
+              config: OtlpConfiguration = OtlpConfiguration(),
+              useSession: URLSession? = nil,
+              envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+    super.init(endpoint: endpoint,
+               config: config,
+               useSession: useSession,
+               envVarHeaders: envVarHeaders)
   }
 
   /// A `convenience` constructor to provide support for exporter metric using`StableMeterProvider` type
@@ -43,24 +40,19 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
   ///    - meterProvider: Injected `StableMeterProvider` for metric
   ///    - useSession: Overridden `URLSession` if any
   ///    - envVarHeaders: Extra header key-values
-  convenience public init(
-    endpoint: URL,
-    config: OtlpConfiguration,
-    meterProvider: StableMeterProvider,
-    useSession: URLSession? = nil,
-    envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes
-  ) {
-    self.init(
-      endpoint: endpoint, config: config, useSession: useSession,
-      envVarHeaders: envVarHeaders)
-    exporterMetrics = ExporterMetrics(
-      type: "span",
-      meterProvider: meterProvider,
-      exporterName: "otlp",
-      transportName: config.exportAsJson
-        ? ExporterMetrics.TransporterType.httpJson
-        : ExporterMetrics.TransporterType.grpc
-    )
+  public convenience init(endpoint: URL,
+                          config: OtlpConfiguration,
+                          meterProvider: StableMeterProvider,
+                          useSession: URLSession? = nil,
+                          envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+    self.init(endpoint: endpoint, config: config, useSession: useSession,
+              envVarHeaders: envVarHeaders)
+    exporterMetrics = ExporterMetrics(type: "span",
+                                      meterProvider: meterProvider,
+                                      exporterName: "otlp",
+                                      transportName: config.exportAsJson
+                                        ? ExporterMetrics.TransporterType.httpJson
+                                        : ExporterMetrics.TransporterType.grpc)
   }
 
   public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil)

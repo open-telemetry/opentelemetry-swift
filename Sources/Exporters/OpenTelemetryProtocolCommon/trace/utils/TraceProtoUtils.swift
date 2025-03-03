@@ -8,7 +8,7 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 import SwiftProtobuf
 
-struct TraceProtoUtils {
+enum TraceProtoUtils {
   static func toProtoSpanId(spanId: SpanId) -> Data {
     var spanIdData = Data(count: SpanId.size)
     spanId.copyBytesTo(dest: &spanIdData, destOffset: 0)

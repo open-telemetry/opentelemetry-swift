@@ -9,7 +9,7 @@ import OpenTelemetryApi
 public class LongPointData: PointData {
   public var value: Int
 
-  internal init(startEpochNanos: UInt64, endEpochNanos: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], value: Int) {
+  init(startEpochNanos: UInt64, endEpochNanos: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], value: Int) {
     self.value = value
     super.init(startEpochNanos: startEpochNanos, endEpochNanos: endEpochNanos, attributes: attributes, exemplars: exemplars)
   }

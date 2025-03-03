@@ -12,10 +12,8 @@ import XCTest
 
   class OSResourceProviderTests: XCTestCase {
     func testContents() {
-      let mock = MockOperatingSystemDataSource(
-        type: "darwin", description: "iOS Version 15.0 (Build 19A339)",
-        name: "iOS", version: "15.0.2"
-      )
+      let mock = MockOperatingSystemDataSource(type: "darwin", description: "iOS Version 15.0 (Build 19A339)",
+                                               name: "iOS", version: "15.0.2")
       let provider = OSResourceProvider(source: mock)
 
       let resource = provider.create()

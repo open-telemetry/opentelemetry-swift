@@ -6,8 +6,8 @@
 import Foundation
 
 public class Aggregator<T> {
-  var lastStart: Date = Date.distantFuture
-  var lastEnd: Date = Date()
+  var lastStart: Date = .distantFuture
+  var lastEnd: Date = .init()
 
   public func update(value: T) {}
   public func checkpoint() {

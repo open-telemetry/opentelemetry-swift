@@ -29,7 +29,7 @@ public struct W3CTraceContextPropagator: TextMapPropagator {
 
   public let fields: Set<String> = [traceState, traceparent]
 
-  public func inject<S>(spanContext: SpanContext, carrier: inout [String: String], setter: S) where S: Setter {
+  public func inject(spanContext: SpanContext, carrier: inout [String: String], setter: some Setter) {
     guard spanContext.isValid else { return }
     var traceparent = W3CTraceContextPropagator.version +
       String(W3CTraceContextPropagator.delimiter) +
@@ -48,7 +48,7 @@ public struct W3CTraceContextPropagator: TextMapPropagator {
     }
   }
 
-  public func extract<G>(carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
+  public func extract(carrier: [String: String], getter: some Getter) -> SpanContext? {
     guard let traceparentCollection = getter.get(carrier: carrier,
                                                  key: W3CTraceContextPropagator.traceparent),
       traceparentCollection.count <= 1 else {
@@ -79,7 +79,7 @@ public struct W3CTraceContextPropagator: TextMapPropagator {
     var traceOptions = TraceFlags()
     var bestAttempt = false
 
-    guard let traceparent = traceparent,
+    guard let traceparent,
           !traceparent.isEmpty,
           traceparent.count >= W3CTraceContextPropagator.traceparentLengthV0 else {
       return nil
@@ -133,13 +133,13 @@ public struct W3CTraceContextPropagator: TextMapPropagator {
       traceOptions.setIsSampled(true)
     }
 
-    if !bestAttempt && (traceparent.count != (W3CTraceContextPropagator.versionAndTraceIdAndSpanIdLength + W3CTraceContextPropagator.optionsLength)) {
+    if !bestAttempt, traceparent.count != W3CTraceContextPropagator.versionAndTraceIdAndSpanIdLength + W3CTraceContextPropagator.optionsLength {
       return nil
     }
 
     if bestAttempt {
-      if traceparent.count > W3CTraceContextPropagator.traceparentLengthV0 &&
-        traceparentArray[W3CTraceContextPropagator.traceparentLengthV0] != W3CTraceContextPropagator.delimiter {
+      if traceparent.count > W3CTraceContextPropagator.traceparentLengthV0,
+         traceparentArray[W3CTraceContextPropagator.traceparentLengthV0] != W3CTraceContextPropagator.delimiter {
         return nil
       }
     }
@@ -148,7 +148,7 @@ public struct W3CTraceContextPropagator: TextMapPropagator {
   }
 
   private func extractTraceState(traceStatecollection: [String]?) -> TraceState? {
-    guard let traceStatecollection = traceStatecollection,
+    guard let traceStatecollection,
           !traceStatecollection.isEmpty else { return nil }
 
     var entries = [TraceState.Entry]()

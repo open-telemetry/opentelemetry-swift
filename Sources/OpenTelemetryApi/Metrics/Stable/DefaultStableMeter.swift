@@ -6,7 +6,7 @@
 import Foundation
 
 public class DefaultStableMeter: StableMeter {
-  internal init() {}
+  init() {}
 
   public func counterBuilder(name: String) -> LongCounterBuilder {
     NoopLongCounterBuilder()

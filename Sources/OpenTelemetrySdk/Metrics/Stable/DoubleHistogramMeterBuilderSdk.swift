@@ -28,7 +28,7 @@ public class DoubleHistogramMeterBuilderSdk: DoubleHistogramBuilder, InstrumentB
        unit: String = "") {
     self.meterProviderSharedState = meterProviderSharedState
     self.meterSharedState = meterSharedState
-    self.instrumentName = name
+    instrumentName = name
     self.description = description
     self.unit = unit
   }

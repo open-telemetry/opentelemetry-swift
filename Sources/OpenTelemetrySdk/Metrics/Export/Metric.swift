@@ -32,12 +32,12 @@ extension Metric: Equatable {
   }
 
   public static func == (lhs: Metric, rhs: Metric) -> Bool {
-    if lhs.namespace == rhs.namespace &&
-      lhs.resource == rhs.resource &&
-      lhs.instrumentationScopeInfo == rhs.instrumentationScopeInfo &&
-      lhs.name == rhs.name &&
-      lhs.description == rhs.description &&
-      lhs.aggregationType == rhs.aggregationType {
+    if lhs.namespace == rhs.namespace,
+       lhs.resource == rhs.resource,
+       lhs.instrumentationScopeInfo == rhs.instrumentationScopeInfo,
+       lhs.name == rhs.name,
+       lhs.description == rhs.description,
+       lhs.aggregationType == rhs.aggregationType {
       switch lhs.aggregationType {
       case .doubleGauge:
         return isEqual(type: [SumData<Double>].self, lhs: lhs.data, rhs: rhs.data)
@@ -120,10 +120,8 @@ extension Metric: Codable {
     switch aggregationType {
     case .doubleGauge:
       guard let gaugeData = data as? [SumData<Double>] else {
-        let encodingContext = EncodingError.Context(
-          codingPath: encoder.codingPath,
-          debugDescription: "Expected [SumData<Double>] type for doubleGauge aggregationType, but instead found \(type(of: data))"
-        )
+        let encodingContext = EncodingError.Context(codingPath: encoder.codingPath,
+                                                    debugDescription: "Expected [SumData<Double>] type for doubleGauge aggregationType, but instead found \(type(of: data))")
 
         throw EncodingError.invalidValue(data, encodingContext)
       }
@@ -131,10 +129,8 @@ extension Metric: Codable {
       try container.encode(gaugeData, forKey: .data)
     case .intGauge:
       guard let gaugeData = data as? [SumData<Int>] else {
-        let encodingContext = EncodingError.Context(
-          codingPath: encoder.codingPath,
-          debugDescription: "Expected [SumData<Int>] type for intGauge aggregationType, but instead found \(type(of: data))"
-        )
+        let encodingContext = EncodingError.Context(codingPath: encoder.codingPath,
+                                                    debugDescription: "Expected [SumData<Int>] type for intGauge aggregationType, but instead found \(type(of: data))")
 
         throw EncodingError.invalidValue(data, encodingContext)
       }
@@ -142,10 +138,8 @@ extension Metric: Codable {
       try container.encode(gaugeData, forKey: .data)
     case .doubleSum:
       guard let sumData = data as? [SumData<Double>] else {
-        let encodingContext = EncodingError.Context(
-          codingPath: encoder.codingPath,
-          debugDescription: "Expected [SumData<Double>] type for doubleSum aggregationType, but instead found \(type(of: data))"
-        )
+        let encodingContext = EncodingError.Context(codingPath: encoder.codingPath,
+                                                    debugDescription: "Expected [SumData<Double>] type for doubleSum aggregationType, but instead found \(type(of: data))")
 
         throw EncodingError.invalidValue(data, encodingContext)
       }
@@ -153,10 +147,8 @@ extension Metric: Codable {
       try container.encode(sumData, forKey: .data)
     case .doubleSummary:
       guard let summaryData = data as? [SummaryData<Double>] else {
-        let encodingContext = EncodingError.Context(
-          codingPath: encoder.codingPath,
-          debugDescription: "Expected [SummaryData<Double>] type for doubleSummary aggregationType, but instead found \(type(of: data))"
-        )
+        let encodingContext = EncodingError.Context(codingPath: encoder.codingPath,
+                                                    debugDescription: "Expected [SummaryData<Double>] type for doubleSummary aggregationType, but instead found \(type(of: data))")
 
         throw EncodingError.invalidValue(data, encodingContext)
       }
@@ -164,10 +156,8 @@ extension Metric: Codable {
       try container.encode(summaryData, forKey: .data)
     case .intSum:
       guard let sumData = data as? [SumData<Int>] else {
-        let encodingContext = EncodingError.Context(
-          codingPath: encoder.codingPath,
-          debugDescription: "Expected [SumData<Int>] type for intSum aggregationType, but instead found \(type(of: data))"
-        )
+        let encodingContext = EncodingError.Context(codingPath: encoder.codingPath,
+                                                    debugDescription: "Expected [SumData<Int>] type for intSum aggregationType, but instead found \(type(of: data))")
 
         throw EncodingError.invalidValue(data, encodingContext)
       }
@@ -175,10 +165,8 @@ extension Metric: Codable {
       try container.encode(sumData, forKey: .data)
     case .intSummary:
       guard let summaryData = data as? [SummaryData<Int>] else {
-        let encodingContext = EncodingError.Context(
-          codingPath: encoder.codingPath,
-          debugDescription: "Expected [SummaryData<Int>] type for intSummary aggregationType, but instead found \(type(of: data))"
-        )
+        let encodingContext = EncodingError.Context(codingPath: encoder.codingPath,
+                                                    debugDescription: "Expected [SummaryData<Int>] type for intSummary aggregationType, but instead found \(type(of: data))")
 
         throw EncodingError.invalidValue(data, encodingContext)
       }
@@ -186,10 +174,8 @@ extension Metric: Codable {
       try container.encode(summaryData, forKey: .data)
     case .doubleHistogram:
       guard let summaryData = data as? [HistogramData<Double>] else {
-        let encodingContext = EncodingError.Context(
-          codingPath: encoder.codingPath,
-          debugDescription: "Expected [HistogramData<Double>] type for doubleHistogram aggregationType, but instead found \(type(of: data))"
-        )
+        let encodingContext = EncodingError.Context(codingPath: encoder.codingPath,
+                                                    debugDescription: "Expected [HistogramData<Double>] type for doubleHistogram aggregationType, but instead found \(type(of: data))")
 
         throw EncodingError.invalidValue(data, encodingContext)
       }
@@ -197,10 +183,8 @@ extension Metric: Codable {
       try container.encode(summaryData, forKey: .data)
     case .intHistogram:
       guard let summaryData = data as? [HistogramData<Int>] else {
-        let encodingContext = EncodingError.Context(
-          codingPath: encoder.codingPath,
-          debugDescription: "Expected [HistogramData<Int>] type for intHistogram aggregationType, but instead found \(type(of: data))"
-        )
+        let encodingContext = EncodingError.Context(codingPath: encoder.codingPath,
+                                                    debugDescription: "Expected [HistogramData<Int>] type for intHistogram aggregationType, but instead found \(type(of: data))")
 
         throw EncodingError.invalidValue(data, encodingContext)
       }

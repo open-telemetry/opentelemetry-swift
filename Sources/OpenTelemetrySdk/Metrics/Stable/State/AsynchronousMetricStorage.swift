@@ -30,7 +30,7 @@ public class AsynchronousMetricStorage: MetricStorage {
        attributeProcessor: AttributeProcessor) {
     self.registeredReader = registeredReader
     self.metricDescriptor = metricDescriptor
-    self.aggregationTemporality = registeredReader.reader.getAggregationTemporality(for: metricDescriptor.instrument.type)
+    aggregationTemporality = registeredReader.reader.getAggregationTemporality(for: metricDescriptor.instrument.type)
     self.aggregator = aggregator
     self.attributeProcessor = attributeProcessor
   }
@@ -64,8 +64,8 @@ public class AsynchronousMetricStorage: MetricStorage {
   public func collect(resource: Resource, scope: InstrumentationScopeInfo, startEpochNanos: UInt64, epochNanos: UInt64) -> StableMetricData {
     var result: [[String: AttributeValue]: PointData]
     if aggregationTemporality == .delta {
-      let points = self.points
-      var lastPoints = self.lastPoints
+      let points = points
+      var lastPoints = lastPoints
       lastPoints = lastPoints.filter { element in
         points[element.key] == nil // remove if points does not contain key
       }
@@ -73,7 +73,7 @@ public class AsynchronousMetricStorage: MetricStorage {
       result = Dictionary(uniqueKeysWithValues: points.map { k, v in
         do {
           if let lastValue = lastPoints[k] {
-            return (k, try aggregator.diff(previousCumulative: lastValue, currentCumulative: v))
+            return try (k, aggregator.diff(previousCumulative: lastValue, currentCumulative: v))
           }
         } catch {
           // todo log error

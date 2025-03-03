@@ -14,7 +14,7 @@ public struct TracerWrapper {
   public let inner: Tracer
 
   public func spanBuilder(spanName: String) -> SpanBuilderBase {
-    self.inner.spanBuilder(spanName: spanName)
+    inner.spanBuilder(spanName: spanName)
   }
 }
 
@@ -24,7 +24,7 @@ public struct TracerProviderWrapper {
   public let inner: TracerProvider
 
   public func get(instrumentationName: String, instrumentationVersion: String?) -> TracerWrapper {
-    TracerWrapper(inner: self.inner.get(instrumentationName: instrumentationName, instrumentationVersion: instrumentationVersion))
+    TracerWrapper(inner: inner.get(instrumentationName: instrumentationName, instrumentationVersion: instrumentationVersion))
   }
 }
 
@@ -127,19 +127,19 @@ public struct OpenTelemetryContextProvider {
 
   /// Sets `span` as the active span for the duration of the given closure. While the span will no longer be active after the closure exits, this method does **not** end the span. Prefer `SpanBuilderBase.withActiveSpan` which handles starting, activating, and ending the span.
   public func withActiveSpan<T>(_ span: SpanBase, _ operation: () throws -> T) rethrows -> T {
-    try self.contextManager.withCurrentContextValue(forKey: .span, value: span, operation)
+    try contextManager.withCurrentContextValue(forKey: .span, value: span, operation)
   }
 
   public func withActiveBaggage<T>(_ baggage: Baggage, _ operation: () throws -> T) rethrows -> T {
-    try self.contextManager.withCurrentContextValue(forKey: .baggage, value: baggage, operation)
+    try contextManager.withCurrentContextValue(forKey: .baggage, value: baggage, operation)
   }
 
   /// Sets `span` as the active span for the duration of the given closure. While the span will no longer be active after the closure exits, this method does **not** end the span. Prefer `SpanBuilderBase.withActiveSpan` which handles starting, activating, and ending the span.
   public func withActiveSpan<T>(_ span: SpanBase, _ operation: () async throws -> T) async rethrows -> T {
-    try await self.contextManager.withCurrentContextValue(forKey: .span, value: span, operation)
+    try await contextManager.withCurrentContextValue(forKey: .span, value: span, operation)
   }
 
   public func withActiveBaggage<T>(_ baggage: Baggage, _ operation: () async throws -> T) async rethrows -> T {
-    try await self.contextManager.withCurrentContextValue(forKey: .baggage, value: baggage, operation)
+    try await contextManager.withCurrentContextValue(forKey: .baggage, value: baggage, operation)
   }
 }

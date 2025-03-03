@@ -9,7 +9,7 @@ class TestMetricProcessor: MetricProcessor {
   var metrics = [Metric]()
 
   func finishCollectionCycle() -> [Metric] {
-    let metrics = self.metrics
+    let metrics = metrics
     self.metrics = [Metric]()
     return metrics
   }

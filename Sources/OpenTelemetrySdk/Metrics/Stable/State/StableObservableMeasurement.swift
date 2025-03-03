@@ -16,7 +16,7 @@ public class StableObservableMeasurementSdk: ObservableLongMeasurement, Observab
   var epochNanos: UInt64 = 0
 
   init(insturmentScope: InstrumentationScopeInfo, descriptor: InstrumentDescriptor, storages: [AsynchronousMetricStorage]) {
-    self.instrumentScope = insturmentScope
+    instrumentScope = insturmentScope
     self.descriptor = descriptor
     self.storages = storages
   }

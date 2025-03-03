@@ -6,10 +6,10 @@
 import Foundation
 import Opentracing
 
-struct TestUtils {
+enum TestUtils {
   static func contextBaggageToDictionary(context: OTSpanContext) -> [String: String] {
     var dictionary = [String: String]()
-    context.forEachBaggageItem { (key, value) -> Bool in
+    context.forEachBaggageItem { key, value -> Bool in
       dictionary[key] = value
       return true
     }

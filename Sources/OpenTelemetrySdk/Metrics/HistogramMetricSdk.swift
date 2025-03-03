@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-internal class HistogramMetricSdk<T: SignedNumeric & Comparable>: HistogramMetric {
+class HistogramMetricSdk<T: SignedNumeric & Comparable>: HistogramMetric {
   public private(set) var boundInstruments = [LabelSet: BoundHistogramMetricSdkBase<T>]()
   let metricName: String
   let explicitBoundaries: [T]?
