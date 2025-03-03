@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 
 public class ExemplarData: Equatable, Encodable {
-  internal init(epochNanos: UInt64, filteredAttributes: [String: AttributeValue], spanContext: SpanContext? = nil) {
+  init(epochNanos: UInt64, filteredAttributes: [String: AttributeValue], spanContext: SpanContext? = nil) {
     self.filteredAttributes = filteredAttributes
     self.epochNanos = epochNanos
     self.spanContext = spanContext
@@ -22,35 +22,35 @@ public class ExemplarData: Equatable, Encodable {
   }
 
   func isEqual(to other: ExemplarData) -> Bool {
-    return self.epochNanos == other.epochNanos &&
-      self.spanContext == other.spanContext &&
-      self.filteredAttributes == other.filteredAttributes
+    return epochNanos == other.epochNanos &&
+      spanContext == other.spanContext &&
+      filteredAttributes == other.filteredAttributes
   }
 }
 
 public final class DoubleExemplarData: ExemplarData {
   public var value: Double
 
-  internal init(value: Double, epochNanos: UInt64, filteredAttributes: [String: AttributeValue], spanContext: SpanContext? = nil) {
+  init(value: Double, epochNanos: UInt64, filteredAttributes: [String: AttributeValue], spanContext: SpanContext? = nil) {
     self.value = value
     super.init(epochNanos: epochNanos, filteredAttributes: filteredAttributes, spanContext: spanContext)
   }
 
   override func isEqual(to other: ExemplarData) -> Bool {
-    return self.value == (other as! DoubleExemplarData).value &&
+    return value == (other as! DoubleExemplarData).value &&
       super.isEqual(to: other)
   }
 }
 
 public final class LongExemplarData: ExemplarData {
   public var value: Int
-  internal init(value: Int, epochNanos: UInt64, filteredAttributes: [String: AttributeValue], spanContext: SpanContext? = nil) {
+  init(value: Int, epochNanos: UInt64, filteredAttributes: [String: AttributeValue], spanContext: SpanContext? = nil) {
     self.value = value
     super.init(epochNanos: epochNanos, filteredAttributes: filteredAttributes, spanContext: spanContext)
   }
 
   override func isEqual(to other: ExemplarData) -> Bool {
-    return self.value == (other as! LongExemplarData).value &&
+    return value == (other as! LongExemplarData).value &&
       super.isEqual(to: other)
   }
 }

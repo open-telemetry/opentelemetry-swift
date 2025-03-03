@@ -55,16 +55,16 @@ class DoubleBase2ExponentialHistogramAggregatorTests: XCTestCase {
 
     let positiveOffset = pointData.positiveBuckets.offset
     XCTAssertEqual(pointData.positiveBuckets.totalCount, 5)
-    XCTAssertEqual(positiveCounts[(valueToIndex(scale: expectedScale, value: 0.5) - positiveOffset)], 1)
-    XCTAssertEqual(positiveCounts[(valueToIndex(scale: expectedScale, value: 1.0) - positiveOffset)], 1)
-    XCTAssertEqual(positiveCounts[(valueToIndex(scale: expectedScale, value: 12.0) - positiveOffset)], 2)
-    XCTAssertEqual(positiveCounts[(valueToIndex(scale: expectedScale, value: 15.213) - positiveOffset)], 1)
+    XCTAssertEqual(positiveCounts[valueToIndex(scale: expectedScale, value: 0.5) - positiveOffset], 1)
+    XCTAssertEqual(positiveCounts[valueToIndex(scale: expectedScale, value: 1.0) - positiveOffset], 1)
+    XCTAssertEqual(positiveCounts[valueToIndex(scale: expectedScale, value: 12.0) - positiveOffset], 2)
+    XCTAssertEqual(positiveCounts[valueToIndex(scale: expectedScale, value: 15.213) - positiveOffset], 1)
 
     let negativeOffset = pointData.negativeBuckets.offset
     XCTAssertEqual(pointData.negativeBuckets.totalCount, 3)
-    XCTAssertEqual(negativeCounts[(valueToIndex(scale: expectedScale, value: 13.2) - negativeOffset)], 1)
-    XCTAssertEqual(negativeCounts[(valueToIndex(scale: expectedScale, value: 2.01) - negativeOffset)], 1)
-    XCTAssertEqual(negativeCounts[(valueToIndex(scale: expectedScale, value: 1.0) - negativeOffset)], 1)
+    XCTAssertEqual(negativeCounts[valueToIndex(scale: expectedScale, value: 13.2) - negativeOffset], 1)
+    XCTAssertEqual(negativeCounts[valueToIndex(scale: expectedScale, value: 2.01) - negativeOffset], 1)
+    XCTAssertEqual(negativeCounts[valueToIndex(scale: expectedScale, value: 1.0) - negativeOffset], 1)
   }
 
   func testInvalidRecording() {

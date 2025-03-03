@@ -40,33 +40,33 @@ class SpanDataTests: XCTestCase {
     let decoder = JSONDecoder()
 
     var testData = createBasicSpan()
-    XCTAssertEqual(testData, try decoder.decode(SpanData.self, from: try encoder.encode(testData)))
+    XCTAssertEqual(testData, try decoder.decode(SpanData.self, from: encoder.encode(testData)))
 
     testData.settingHasEnded(false)
-    XCTAssertEqual(testData, try decoder.decode(SpanData.self, from: try encoder.encode(testData)))
+    XCTAssertEqual(testData, try decoder.decode(SpanData.self, from: encoder.encode(testData)))
 
     testData.settingAttributes(["key": AttributeValue.bool(true)])
-    XCTAssertEqual(testData, try decoder.decode(SpanData.self, from: try encoder.encode(testData)))
+    XCTAssertEqual(testData, try decoder.decode(SpanData.self, from: encoder.encode(testData)))
 
     testData.settingTotalAttributeCount(2)
-    XCTAssertEqual(testData, try decoder.decode(SpanData.self, from: try encoder.encode(testData)))
+    XCTAssertEqual(testData, try decoder.decode(SpanData.self, from: encoder.encode(testData)))
 
     testData.settingEvents([SpanData.Event(name: "my_event", timestamp: Date(timeIntervalSince1970: 12347))])
-    XCTAssertEqual(testData, try decoder.decode(SpanData.self, from: try encoder.encode(testData)))
+    XCTAssertEqual(testData, try decoder.decode(SpanData.self, from: encoder.encode(testData)))
 
     testData.settingTotalRecordedEvents(3)
-    XCTAssertEqual(testData, try decoder.decode(SpanData.self, from: try encoder.encode(testData)))
+    XCTAssertEqual(testData, try decoder.decode(SpanData.self, from: encoder.encode(testData)))
 
     let traceId = TraceId(fromBytes: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4])
     let spanId = SpanId(fromBytes: [0, 0, 0, 0, 4, 3, 2, 1])
     let spanContext = SpanContext.create(traceId: traceId, spanId: spanId, traceFlags: TraceFlags(), traceState: TraceState())
     testData.settingLinks([SpanData.Link(context: spanContext)])
-    XCTAssertEqual(testData, try decoder.decode(SpanData.self, from: try encoder.encode(testData)))
+    XCTAssertEqual(testData, try decoder.decode(SpanData.self, from: encoder.encode(testData)))
 
     testData.settingTotalRecordedLinks(2)
-    XCTAssertEqual(testData, try decoder.decode(SpanData.self, from: try encoder.encode(testData)))
+    XCTAssertEqual(testData, try decoder.decode(SpanData.self, from: encoder.encode(testData)))
 
     testData.settingStatus(.ok)
-    XCTAssertEqual(testData, try decoder.decode(SpanData.self, from: try encoder.encode(testData)))
+    XCTAssertEqual(testData, try decoder.decode(SpanData.self, from: encoder.encode(testData)))
   }
 }

@@ -21,10 +21,8 @@ class DataUploaderTests: XCTestCase {
     }
 
     let server = ServerMock(delivery: .success(response: randomResponse))
-    let uploader = DataUploader(
-      httpClient: HTTPClient(session: server.getInterceptedURLSession()),
-      requestBuilder: .mockWith(headers: requestIDHeaderOrNil.map { [$0] } ?? [])
-    )
+    let uploader = DataUploader(httpClient: HTTPClient(session: server.getInterceptedURLSession()),
+                                requestBuilder: .mockWith(headers: requestIDHeaderOrNil.map { [$0] } ?? []))
 
     // When
     let uploadStatus = uploader.upload(data: .mockAny())
@@ -46,10 +44,8 @@ class DataUploaderTests: XCTestCase {
     let randomError = NSError(domain: .mockRandom(), code: .mockRandom(), userInfo: [NSLocalizedDescriptionKey: randomErrorDescription])
 
     let server = ServerMock(delivery: .failure(error: randomError))
-    let uploader = DataUploader(
-      httpClient: HTTPClient(session: server.getInterceptedURLSession()),
-      requestBuilder: .mockAny()
-    )
+    let uploader = DataUploader(httpClient: HTTPClient(session: server.getInterceptedURLSession()),
+                                requestBuilder: .mockAny())
 
     // When
     let uploadStatus = uploader.upload(data: .mockAny())

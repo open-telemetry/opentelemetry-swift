@@ -5,7 +5,7 @@
 
 import Foundation
 
-internal class FilesOrchestrator {
+class FilesOrchestrator {
   /// Directory where files are stored.
   private let directory: Directory
   /// Date provider.
@@ -18,11 +18,9 @@ internal class FilesOrchestrator {
   /// This should correspond with number of objects stored in file, assuming that majority of writes succeed (the difference is negligible).
   private var lastWritableFileUsesCount: Int = 0
 
-  init(
-    directory: Directory,
-    performance: StoragePerformancePreset,
-    dateProvider: DateProvider
-  ) {
+  init(directory: Directory,
+       performance: StoragePerformancePreset,
+       dateProvider: DateProvider) {
     self.directory = directory
     self.performance = performance
     self.dateProvider = dateProvider
@@ -65,7 +63,7 @@ internal class FilesOrchestrator {
         let lastFileAge = dateProvider.currentDate().timeIntervalSince(lastFileCreationDate)
 
         let fileIsRecentEnough = lastFileAge <= performance.maxFileAgeForWrite
-        let fileHasRoomForMore = (try lastFile.size() + writeSize) <= performance.maxFileSize
+        let fileHasRoomForMore = try (lastFile.size() + writeSize) <= performance.maxFileSize
         let fileCanBeUsedMoreTimes = (lastWritableFileUsesCount + 1) <= performance.maxObjectsInFile
 
         if fileIsRecentEnough, fileHasRoomForMore, fileCanBeUsedMoreTimes {
@@ -131,9 +129,9 @@ internal class FilesOrchestrator {
       .sorted { $0.creationDate < $1.creationDate }
 
     var filesWithSizeSortedByCreationDate = try filesSortedByCreationDate
-      .map { (file: $0.file, size: try $0.file.size()) }
+      .map { try (file: $0.file, size: $0.file.size()) }
 
-    let accumulatedFilesSize = filesWithSizeSortedByCreationDate.map { $0.size }.reduce(0, +)
+    let accumulatedFilesSize = filesWithSizeSortedByCreationDate.map(\.size).reduce(0, +)
 
     if accumulatedFilesSize > performance.maxDirectorySize {
       let sizeToFree = accumulatedFilesSize - performance.maxDirectorySize
@@ -161,7 +159,7 @@ internal class FilesOrchestrator {
 
 /// File creation date is used as file name - timestamp in milliseconds is used for date representation.
 /// This function converts file creation date into file name.
-internal func fileNameFrom(fileCreationDate: Date) -> String {
+func fileNameFrom(fileCreationDate: Date) -> String {
   let milliseconds = fileCreationDate.timeIntervalSinceReferenceDate * 1_000
   let converted = (try? UInt64(withReportingOverflow: milliseconds)) ?? 0
   return String(converted)
@@ -169,7 +167,7 @@ internal func fileNameFrom(fileCreationDate: Date) -> String {
 
 /// File creation date is used as file name - timestamp in milliseconds is used for date representation.
 /// This function converts file name into file creation date.
-internal func fileCreationDateFrom(fileName: String) -> Date {
+func fileCreationDateFrom(fileName: String) -> Date {
   let millisecondsSinceReferenceDate = TimeInterval(UInt64(fileName) ?? 0) / 1_000
   return Date(timeIntervalSinceReferenceDate: TimeInterval(millisecondsSinceReferenceDate))
 }

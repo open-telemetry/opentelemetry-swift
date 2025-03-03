@@ -18,16 +18,16 @@ public class HistogramAggregator<T: SignedNumeric & Comparable>: Aggregator<T> {
   ]
 
   public init(explicitBoundaries: [T]? = nil) throws {
-    if let explicitBoundaries = explicitBoundaries, explicitBoundaries.count > 0 {
+    if let explicitBoundaries, explicitBoundaries.count > 0 {
       // we need to an ordered set to be able to correctly compute count for each
       // boundary since we'll iterate on each in order.
-      self.boundaries = explicitBoundaries.sorted { $0 < $1 }
+      boundaries = explicitBoundaries.sorted { $0 < $1 }
     } else {
-      self.boundaries = defaultBoundaries
+      boundaries = defaultBoundaries
     }
 
-    self.histogram = Histogram<T>(boundaries: self.boundaries)
-    self.pointCheck = Histogram<T>(boundaries: self.boundaries)
+    histogram = Histogram<T>(boundaries: boundaries)
+    pointCheck = Histogram<T>(boundaries: boundaries)
   }
 
   override public func update(value: T) {
@@ -52,16 +52,15 @@ public class HistogramAggregator<T: SignedNumeric & Comparable>: Aggregator<T> {
     }
   }
 
-  public override func toMetricData() -> MetricData {
-    return HistogramData<T>(
-      startTimestamp: lastStart,
-      timestamp: lastEnd,
-      buckets: pointCheck.buckets,
-      count: pointCheck.count,
-      sum: pointCheck.sum)
+  override public func toMetricData() -> MetricData {
+    return HistogramData<T>(startTimestamp: lastStart,
+                            timestamp: lastEnd,
+                            buckets: pointCheck.buckets,
+                            count: pointCheck.count,
+                            sum: pointCheck.sum)
   }
 
-  public override func getAggregationType() -> AggregationType {
+  override public func getAggregationType() -> AggregationType {
     if T.self == Double.Type.self {
       return .doubleHistogram
     } else {
@@ -88,19 +87,15 @@ private struct Histogram<T> where T: SignedNumeric {
    * }
    */
   var buckets:
-    (
-      boundaries: [T],
-      counts: [Int]
-    )
+    (boundaries: [T],
+     counts: [Int])
   var sum: T
   var count: Int
 
   init(boundaries: [T]) {
     sum = 0
     count = 0
-    buckets = (
-      boundaries: boundaries,
-      counts: Array(repeating: 0, count: boundaries.count + 1)
-    )
+    buckets = (boundaries: boundaries,
+               counts: Array(repeating: 0, count: boundaries.count + 1))
   }
 }

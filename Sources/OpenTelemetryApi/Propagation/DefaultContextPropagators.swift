@@ -52,13 +52,13 @@ public struct DefaultContextPropagators: ContextPropagators {
       return fields
     }
 
-    public func inject<S>(spanContext: SpanContext, carrier: inout [String: String], setter: S) where S: Setter {
+    public func inject(spanContext: SpanContext, carrier: inout [String: String], setter: some Setter) {
       textPropagators.forEach {
         $0.inject(spanContext: spanContext, carrier: &carrier, setter: setter)
       }
     }
 
-    public func extract<G>(carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
+    public func extract(carrier: [String: String], getter: some Getter) -> SpanContext? {
       var spanContext: SpanContext?
       textPropagators.forEach {
         spanContext = $0.extract(carrier: carrier, getter: getter)
@@ -70,9 +70,9 @@ public struct DefaultContextPropagators: ContextPropagators {
   struct NoopTextMapPropagator: TextMapPropagator {
     public var fields = Set<String>()
 
-    public func inject<S>(spanContext: SpanContext, carrier: inout [String: String], setter: S) where S: Setter {}
+    public func inject(spanContext: SpanContext, carrier: inout [String: String], setter: some Setter) {}
 
-    public func extract<G>(carrier: [String: String], getter: G) -> SpanContext? where G: Getter {
+    public func extract(carrier: [String: String], getter: some Getter) -> SpanContext? {
       return nil
     }
   }
@@ -80,9 +80,9 @@ public struct DefaultContextPropagators: ContextPropagators {
   struct NoopBaggagePropagator: TextMapBaggagePropagator {
     public var fields = Set<String>()
 
-    public func inject<S>(baggage: Baggage, carrier: inout [String: String], setter: S) where S: Setter {}
+    public func inject(baggage: Baggage, carrier: inout [String: String], setter: some Setter) {}
 
-    public func extract<G>(carrier: [String: String], getter: G) -> Baggage? where G: Getter {
+    public func extract(carrier: [String: String], getter: some Getter) -> Baggage? {
       return nil
     }
   }

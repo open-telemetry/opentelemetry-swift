@@ -7,13 +7,11 @@
 import XCTest
 
 class DataUploadDelayTests: XCTestCase {
-  private let mockPerformance = UploadPerformanceMock(
-    initialUploadDelay: 3,
-    defaultUploadDelay: 5,
-    minUploadDelay: 1,
-    maxUploadDelay: 20,
-    uploadDelayChangeRate: 0.1
-  )
+  private let mockPerformance = UploadPerformanceMock(initialUploadDelay: 3,
+                                                      defaultUploadDelay: 5,
+                                                      minUploadDelay: 1,
+                                                      maxUploadDelay: 20,
+                                                      uploadDelayChangeRate: 0.1)
 
   func testWhenNotModified_itReturnsInitialDelay() {
     let delay = DataUploadDelay(performance: mockPerformance)
@@ -29,11 +27,9 @@ class DataUploadDelayTests: XCTestCase {
       delay.decrease()
 
       let nextValue = delay.current
-      XCTAssertEqual(
-        nextValue / previousValue,
-        1.0 - mockPerformance.uploadDelayChangeRate,
-        accuracy: 0.1
-      )
+      XCTAssertEqual(nextValue / previousValue,
+                     1.0 - mockPerformance.uploadDelayChangeRate,
+                     accuracy: 0.1)
       XCTAssertLessThanOrEqual(nextValue, max(previousValue, mockPerformance.minUploadDelay))
 
       previousValue = nextValue
@@ -48,11 +44,9 @@ class DataUploadDelayTests: XCTestCase {
       delay.increase()
 
       let nextValue = delay.current
-      XCTAssertEqual(
-        nextValue / previousValue,
-        1.0 + mockPerformance.uploadDelayChangeRate,
-        accuracy: 0.1
-      )
+      XCTAssertEqual(nextValue / previousValue,
+                     1.0 + mockPerformance.uploadDelayChangeRate,
+                     accuracy: 0.1)
       XCTAssertGreaterThanOrEqual(nextValue, min(previousValue, mockPerformance.maxUploadDelay))
       previousValue = nextValue
     }

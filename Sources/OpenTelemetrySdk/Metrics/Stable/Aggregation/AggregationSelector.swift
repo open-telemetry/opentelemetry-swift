@@ -25,7 +25,7 @@ public class AggregationSelector: DefaultAggregationSelector {
     return selector(instrument)
   }
 
-  static public func defaultSelector() -> AggregationResolver {
+  public static func defaultSelector() -> AggregationResolver {
     return { _ in
       return Aggregations.defaultAggregation()
     }

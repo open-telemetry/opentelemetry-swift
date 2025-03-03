@@ -10,7 +10,7 @@ import OpenTelemetryApi
 /// The host application can then track different types of exporters, such as `http, grpc, and log`
 public class ExporterMetrics {
   public enum TransporterType: String {
-    case grpc = "grpc"
+    case grpc
     case protoBuf = "http"
     case httpJson = "http-json"
   }
@@ -33,27 +33,25 @@ public class ExporterMetrics {
   ///    - meterProvider: Injected `StableMeterProvider` for metric
   ///    - exporterName: Could be `span`, `log` etc
   ///    - transportName: Kind of exporter defined by type `TransporterType`
-  public init(
-    type: String,
-    meterProvider: StableMeterProvider,
-    exporterName: String,
-    transportName: TransporterType
-  ) {
+  public init(type: String,
+              meterProvider: StableMeterProvider,
+              exporterName: String,
+              transportName: TransporterType) {
     self.meterProvider = meterProvider
     self.exporterName = exporterName
     self.transportName = transportName.rawValue
-    self.seenAttrs = [
+    seenAttrs = [
       ExporterMetrics.ATTRIBUTE_KEY_TYPE: .string(type)
     ]
-    self.successAttrs = [
+    successAttrs = [
       ExporterMetrics.ATTRIBUTE_KEY_SUCCESS: .bool(true)
     ]
-    self.failedAttrs = [
+    failedAttrs = [
       ExporterMetrics.ATTRIBUTE_KEY_SUCCESS: .bool(false)
     ]
 
-    self.seen = meter.counterBuilder(name: "\(exporterName).exporter.seen").build()
-    self.exported = meter.counterBuilder(name: "\(exporterName).exporter.exported").build()
+    seen = meter.counterBuilder(name: "\(exporterName).exporter.seen").build()
+    exported = meter.counterBuilder(name: "\(exporterName).exporter.exported").build()
   }
 
   public func addSeen(value: Int) {
@@ -80,17 +78,13 @@ public class ExporterMetrics {
 
   // MARK: - Static function
 
-  public static func makeExporterMetric(
-    type: String,
-    meterProvider: StableMeterProvider,
-    exporterName: String,
-    transportName: TransporterType
-  ) -> ExporterMetrics {
-    ExporterMetrics(
-      type: type,
-      meterProvider: meterProvider,
-      exporterName: exporterName,
-      transportName: transportName
-    )
+  public static func makeExporterMetric(type: String,
+                                        meterProvider: StableMeterProvider,
+                                        exporterName: String,
+                                        transportName: TransporterType) -> ExporterMetrics {
+    ExporterMetrics(type: type,
+                    meterProvider: meterProvider,
+                    exporterName: exporterName,
+                    transportName: transportName)
   }
 }

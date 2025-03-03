@@ -20,15 +20,11 @@ class FileWriterTests: XCTestCase {
   }
 
   func testItWritesDataToSingleFile() throws {
-    let expectation = self.expectation(description: "write completed")
-    let writer = FileWriter(
-      dataFormat: DataFormat(prefix: "[", suffix: "]", separator: ","),
-      orchestrator: FilesOrchestrator(
-        directory: temporaryDirectory,
-        performance: PerformancePreset.default,
-        dateProvider: SystemDateProvider()
-      )
-    )
+    let expectation = expectation(description: "write completed")
+    let writer = FileWriter(dataFormat: DataFormat(prefix: "[", suffix: "]", separator: ","),
+                            orchestrator: FilesOrchestrator(directory: temporaryDirectory,
+                                                            performance: PerformancePreset.default,
+                                                            dateProvider: SystemDateProvider()))
 
     writer.write(value: ["key1": "value1"])
     writer.write(value: ["key2": "value3"])
@@ -37,32 +33,25 @@ class FileWriterTests: XCTestCase {
     waitForWritesCompletion(on: writer.queue, thenFulfill: expectation)
     waitForExpectations(timeout: 1, handler: nil)
     XCTAssertEqual(try temporaryDirectory.files().count, 1)
-    XCTAssertEqual(
-      try temporaryDirectory.files()[0].read(),
-      #"{"key1":"value1"},{"key2":"value3"},{"key3":"value3"}"#.utf8Data
-    )
+    XCTAssertEqual(try temporaryDirectory.files()[0].read(),
+                   #"{"key1":"value1"},{"key2":"value3"},{"key3":"value3"}"#.utf8Data)
   }
 
   func testGivenErrorVerbosity_whenIndividualDataExceedsMaxWriteSize_itDropsDataAndPrintsError() throws {
-    let expectation1 = self.expectation(description: "write completed")
-    let expectation2 = self.expectation(description: "second write completed")
+    let expectation1 = expectation(description: "write completed")
+    let expectation2 = expectation(description: "second write completed")
 
-    let writer = FileWriter(
-      dataFormat: .mockWith(prefix: "[", suffix: "]"),
-      orchestrator: FilesOrchestrator(
-        directory: temporaryDirectory,
-        performance: StoragePerformanceMock(
-          maxFileSize: .max,
-          maxDirectorySize: .max,
-          maxFileAgeForWrite: .distantFuture,
-          minFileAgeForRead: .mockAny(),
-          maxFileAgeForRead: .mockAny(),
-          maxObjectsInFile: .max,
-          maxObjectSize: 17 // 17 bytes is enough to write {"key1":"value1"} JSON
-        ),
-        dateProvider: SystemDateProvider()
-      )
-    )
+    let writer = FileWriter(dataFormat: .mockWith(prefix: "[", suffix: "]"),
+                            orchestrator: FilesOrchestrator(directory: temporaryDirectory,
+                                                            performance: StoragePerformanceMock(maxFileSize: .max,
+                                                                                                maxDirectorySize: .max,
+                                                                                                maxFileAgeForWrite: .distantFuture,
+                                                                                                minFileAgeForRead: .mockAny(),
+                                                                                                maxFileAgeForRead: .mockAny(),
+                                                                                                maxObjectsInFile: .max,
+                                                                                                maxObjectSize: 17 // 17 bytes is enough to write {"key1":"value1"} JSON
+                                                            ),
+                                                            dateProvider: SystemDateProvider()))
 
     writer.write(value: ["key1": "value1"]) // will be written
 

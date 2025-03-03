@@ -12,7 +12,7 @@ public class LongGaugeSdk: LongGauge, Instrument {
 
   init(descriptor: InstrumentDescriptor, storage: WritableMetricStorage) {
     self.storage = storage
-    self.instrumentDescriptor = descriptor
+    instrumentDescriptor = descriptor
   }
 
   public func record(value: Int) {

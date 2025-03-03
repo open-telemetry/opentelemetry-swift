@@ -21,11 +21,11 @@ public class LongHistogramMeterBuilderSdk: LongHistogramBuilder, InstrumentBuild
 
   var instrumentName: String
 
-  internal init(meterProviderSharedState: MeterProviderSharedState,
-                meterSharedState: StableMeterSharedState,
-                instrumentName: String,
-                description: String,
-                unit: String) {
+  init(meterProviderSharedState: MeterProviderSharedState,
+       meterSharedState: StableMeterSharedState,
+       instrumentName: String,
+       description: String,
+       unit: String) {
     self.meterProviderSharedState = meterProviderSharedState
     self.meterSharedState = meterSharedState
     self.instrumentName = instrumentName

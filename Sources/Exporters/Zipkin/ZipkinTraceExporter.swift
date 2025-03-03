@@ -19,7 +19,7 @@ public class ZipkinTraceExporter: SpanExporter {
   }
 
   public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
-    guard let url = URL(string: self.options.endpoint) else { return .failure }
+    guard let url = URL(string: options.endpoint) else { return .failure }
 
     var request = URLRequest(url: url)
     request.timeoutInterval = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, options.timeoutSeconds)

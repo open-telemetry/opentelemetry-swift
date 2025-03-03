@@ -21,7 +21,7 @@ public class LongGaugeBuilderSdk: LongGaugeBuilder, InstrumentBuilder {
 
   var instrumentName: String
 
-  internal init(meterProviderSharedState: MeterProviderSharedState, meterSharedState: StableMeterSharedState, name: String, description: String, unit: String) {
+  init(meterProviderSharedState: MeterProviderSharedState, meterSharedState: StableMeterSharedState, name: String, description: String, unit: String) {
     instrumentName = name
     self.unit = unit
     self.description = description

@@ -67,7 +67,7 @@ class OtlpMetricExproterTests: XCTestCase {
   }
 
   func testConfigHeadersAreSet_whenInitCalledWithCustomConfig() throws {
-    let config: OtlpConfiguration = OtlpConfiguration(timeout: TimeInterval(10), headers: [("FOO", "BAR")])
+    let config = OtlpConfiguration(timeout: TimeInterval(10), headers: [("FOO", "BAR")])
     let exporter = OtlpMetricExporter(channel: channel, config: config)
     XCTAssertNotNil(exporter.config.headers)
     XCTAssertEqual(exporter.config.headers?[0].0, "FOO")
@@ -145,9 +145,7 @@ class OtlpMetricExproterTests: XCTestCase {
       .withServiceProviders([fakeCollector])
       .bind(host: "localhost", port: 4317)
 
-    server.map {
-      $0.channel.localAddress
-    }.whenSuccess { address in
+    server.map(\.channel.localAddress).whenSuccess { address in
       print("server started on port \(address!.port!)")
     }
     return server
@@ -179,7 +177,7 @@ class OtlpMetricExproterTests: XCTestCase {
     if let callOptions = exporter.callOptions {
       let customMetadata = callOptions.customMetadata
       let userAgent = Headers.getUserAgentHeader()
-      if customMetadata.contains(name: Constants.HTTP.userAgent) && customMetadata.first(name: Constants.HTTP.userAgent) == userAgent {
+      if customMetadata.contains(name: Constants.HTTP.userAgent), customMetadata.first(name: Constants.HTTP.userAgent) == userAgent {
         return
       }
     }

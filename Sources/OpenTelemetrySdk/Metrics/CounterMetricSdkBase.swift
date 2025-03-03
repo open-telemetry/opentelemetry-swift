@@ -31,7 +31,7 @@ class CounterMetricSdkBase<T>: CounterMetric {
     return bind(labelset: LabelSet(labels: labels), isShortLived: false)
   }
 
-  internal func bind(labelset: LabelSet, isShortLived: Bool) -> BoundCounterMetric<T> {
+  func bind(labelset: LabelSet, isShortLived: Bool) -> BoundCounterMetric<T> {
     var boundInstrument: BoundCounterMetricSdkBase<T>?
     bindUnbindLock.withLockVoid {
       boundInstrument = boundInstruments[labelset]
@@ -63,7 +63,7 @@ class CounterMetricSdkBase<T>: CounterMetric {
     return boundInstrument!
   }
 
-  internal func unBind(labelSet: LabelSet) {
+  func unBind(labelSet: LabelSet) {
     bindUnbindLock.withLockVoid {
       if let boundInstrument = boundInstruments[labelSet] {
         boundInstrument.statusLock.withLockVoid {

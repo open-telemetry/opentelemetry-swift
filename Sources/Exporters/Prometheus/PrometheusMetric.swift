@@ -21,7 +21,7 @@ struct PrometheusMetric {
   func write(timeStamp: String) -> String {
     var output = ""
 
-    let name = PrometheusMetric.getSafeMetricName(name: self.name)
+    let name = PrometheusMetric.getSafeMetricName(name: name)
 
     if !description.isEmpty {
       output += "# HELP "

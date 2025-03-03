@@ -14,23 +14,23 @@ public class DoubleExplicitBucketHistogramAggregator: StableAggregator {
   class Handle: AggregatorHandle {
     let lock = Lock()
 
-    internal init(boundaries: [Double], exemplarReservoir: ExemplarReservoir) {
+    init(boundaries: [Double], exemplarReservoir: ExemplarReservoir) {
       self.boundaries = boundaries
 
-      self.sum = 0
+      sum = 0
       self.min = Double.greatestFiniteMagnitude
       self.max = -1
-      self.count = 0
-      self.counts = Array(repeating: 0, count: boundaries.count + 1)
+      count = 0
+      counts = Array(repeating: 0, count: boundaries.count + 1)
       super.init(exemplarReservoir: exemplarReservoir)
     }
 
-    internal var boundaries: [Double]
-    internal var sum: Double
-    internal var min: Double
-    internal var max: Double
-    internal var count: UInt64
-    internal var counts: [Int]
+    var boundaries: [Double]
+    var sum: Double
+    var min: Double
+    var max: Double
+    var count: UInt64
+    var counts: [Int]
 
     override func doAggregateThenMaybeReset(startEpochNano: UInt64, endEpochNano: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], reset: Bool) -> PointData {
       lock.lock()
@@ -76,7 +76,7 @@ public class DoubleExplicitBucketHistogramAggregator: StableAggregator {
     }
   }
 
-  internal let boundaries: [Double]
+  let boundaries: [Double]
   private let reservoirSupplier: () -> ExemplarReservoir
 
   public init(boundaries: [Double], reservoirSupplier: @escaping () -> ExemplarReservoir) {
@@ -93,7 +93,7 @@ public class DoubleExplicitBucketHistogramAggregator: StableAggregator {
   }
 
   public func createHandle() -> AggregatorHandle {
-    return Handle(boundaries: self.boundaries, exemplarReservoir: self.reservoirSupplier())
+    return Handle(boundaries: boundaries, exemplarReservoir: reservoirSupplier())
   }
 
   public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [PointData], temporality: AggregationTemporality) -> StableMetricData {

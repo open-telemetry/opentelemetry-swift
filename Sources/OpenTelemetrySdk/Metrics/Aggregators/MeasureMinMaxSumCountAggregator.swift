@@ -29,7 +29,7 @@ public class MeasureMinMaxSumCountAggregator<T: SignedNumeric & Comparable>: Agg
     }
   }
 
-  public override func toMetricData() -> MetricData {
+  override public func toMetricData() -> MetricData {
     return SummaryData<T>(startTimestamp: lastStart,
                           timestamp: lastEnd,
                           count: pointCheck.count,
@@ -38,7 +38,7 @@ public class MeasureMinMaxSumCountAggregator<T: SignedNumeric & Comparable>: Agg
                           max: pointCheck.max ?? 0)
   }
 
-  public override func getAggregationType() -> AggregationType {
+  override public func getAggregationType() -> AggregationType {
     if T.self == Double.Type.self {
       return .doubleSummary
     } else {

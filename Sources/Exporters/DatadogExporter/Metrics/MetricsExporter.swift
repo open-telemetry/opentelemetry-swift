@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetrySdk
 
-internal class MetricsExporter {
+class MetricsExporter {
   let metricsDirectory = "com.otel.datadog.metrics/v1"
   let configuration: ExporterConfiguration
   let metricsStorage: FeatureStorage
@@ -15,42 +15,32 @@ internal class MetricsExporter {
   init(config: ExporterConfiguration) throws {
     configuration = config
 
-    let filesOrchestrator = FilesOrchestrator(
-      directory: try Directory(withSubdirectoryPath: metricsDirectory),
-      performance: configuration.performancePreset,
-      dateProvider: SystemDateProvider()
-    )
+    let filesOrchestrator = try FilesOrchestrator(directory: Directory(withSubdirectoryPath: metricsDirectory),
+                                                  performance: configuration.performancePreset,
+                                                  dateProvider: SystemDateProvider())
 
     let dataFormat = DataFormat(prefix: "{ \"series\": [", suffix: "]}", separator: ",\n")
 
-    let spanFileWriter = FileWriter(
-      dataFormat: dataFormat,
-      orchestrator: filesOrchestrator
-    )
+    let spanFileWriter = FileWriter(dataFormat: dataFormat,
+                                    orchestrator: filesOrchestrator)
 
-    let spanFileReader = FileReader(
-      dataFormat: dataFormat,
-      orchestrator: filesOrchestrator
-    )
+    let spanFileReader = FileReader(dataFormat: dataFormat,
+                                    orchestrator: filesOrchestrator)
 
     metricsStorage = FeatureStorage(writer: spanFileWriter, reader: spanFileReader)
 
-    let requestBuilder = RequestBuilder(
-      url: configuration.endpoint.metricsURL,
-      queryItems: [],
-      headers: [
-        .contentTypeHeader(contentType: .textPlainUTF8),
-        .userAgentHeader(
-          appName: configuration.applicationName,
-          appVersion: configuration.version,
-          device: Device.current
-        ),
-        .ddAPIKeyHeader(apiKey: configuration.apiKey),
-        .ddEVPOriginHeader(source: configuration.source),
-        .ddEVPOriginVersionHeader(version: configuration.version),
-        .ddRequestIDHeader()
-      ]
-    )
+    let requestBuilder = RequestBuilder(url: configuration.endpoint.metricsURL,
+                                        queryItems: [],
+                                        headers: [
+                                          .contentTypeHeader(contentType: .textPlainUTF8),
+                                          .userAgentHeader(appName: configuration.applicationName,
+                                                           appVersion: configuration.version,
+                                                           device: Device.current),
+                                          .ddAPIKeyHeader(apiKey: configuration.apiKey),
+                                          .ddEVPOriginHeader(source: configuration.source),
+                                          .ddEVPOriginVersionHeader(version: configuration.version),
+                                          .ddRequestIDHeader()
+                                        ])
 
     metricsUpload = FeatureUpload(featureName: "metricsUpload",
                                   storage: metricsStorage,

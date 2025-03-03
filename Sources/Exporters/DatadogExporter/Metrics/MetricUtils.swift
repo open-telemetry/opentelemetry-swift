@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetrySdk
 
-internal struct MetricUtils: Encodable {
+struct MetricUtils: Encodable {
   private static let gaugeType = "gauge"
   private static let countType = "count"
 

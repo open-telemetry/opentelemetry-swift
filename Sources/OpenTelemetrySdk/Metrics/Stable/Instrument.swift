@@ -9,8 +9,8 @@ public protocol Instrument: Equatable {
   var instrumentDescriptor: InstrumentDescriptor { get }
 }
 
-extension Instrument {
-  public static func == (lhs: Self, rhs: Self) -> Bool {
+public extension Instrument {
+  static func == (lhs: Self, rhs: Self) -> Bool {
     return lhs.instrumentDescriptor == rhs.instrumentDescriptor
   }
 }

@@ -27,7 +27,7 @@ class EnvVarResourceTest: XCTestCase {
   }
 
   func testGetUniqueInstanceConsideringEnvironment() {
-    let environment = [ "OTEL_RESOURCE_ATTRIBUTES": "unique.key=some.value,another.key=another.value"]
+    let environment = ["OTEL_RESOURCE_ATTRIBUTES": "unique.key=some.value,another.key=another.value"]
     let resource = EnvVarResource.get(environment: environment)
     XCTAssertEqual(resource.attributes.count, 6)
     XCTAssertTrue(resource.attributes.keys.contains(ResourceAttributes.serviceName.rawValue))
@@ -43,7 +43,7 @@ class EnvVarResourceTest: XCTestCase {
   }
 
   func testSpecifyingServiceNameViaEnvironment_changesResourceAttributeValue() {
-    let environment = [ "OTEL_RESOURCE_ATTRIBUTES": "service.name=CustomServiceName"]
+    let environment = ["OTEL_RESOURCE_ATTRIBUTES": "service.name=CustomServiceName"]
     let resource = EnvVarResource.get(environment: environment)
     XCTAssertTrue(resource.attributes.keys.contains(ResourceAttributes.serviceName.rawValue))
     XCTAssertEqual(resource.attributes[ResourceAttributes.serviceName.rawValue], AttributeValue("CustomServiceName"))

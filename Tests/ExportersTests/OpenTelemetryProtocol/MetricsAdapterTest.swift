@@ -54,7 +54,7 @@ final class MetricsAdapterTest: XCTestCase {
   }
 
   func testToProtoResourceMetricsWithDoubleGuage() throws {
-    let pointValue: Double = Double.random(in: 1 ... 999)
+    let pointValue = Double.random(in: 1 ... 999)
     let point: PointData = DoublePointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: pointValue)
     let guageData = StableGaugeData(aggregationTemporality: .cumulative, points: [point])
     let metricData = StableMetricData.createDoubleGauge(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: guageData)
@@ -71,7 +71,7 @@ final class MetricsAdapterTest: XCTestCase {
   }
 
   func testToProtoResourceMetricsWithDoubleSum() throws {
-    let pointValue: Double = Double.random(in: 1 ... 999)
+    let pointValue = Double.random(in: 1 ... 999)
     let point: PointData = DoublePointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: pointValue)
     let sumData = StableSumData(aggregationTemporality: .cumulative, points: [point])
     let metricData = StableMetricData.createDoubleSum(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, isMonotonic: false, data: sumData)
@@ -90,7 +90,7 @@ final class MetricsAdapterTest: XCTestCase {
 
   func testToProtoResourceMetricsWithHistogram() throws {
     let boundaries = [Double]()
-    let sum: Double = Double.random(in: 1 ... 999)
+    let sum = Double.random(in: 1 ... 999)
     let min = Double.greatestFiniteMagnitude
     let max: Double = -1
     let count = Int.random(in: 1 ... 100)

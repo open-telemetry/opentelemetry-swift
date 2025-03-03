@@ -23,11 +23,9 @@
 
     #if os(iOS) && !targetEnvironment(macCatalyst)
       func testWhenRunningOnMobile_itUsesUIDeviceInfo() {
-        let uiDevice = UIDeviceMock(
-          model: "model mock",
-          systemName: "system name mock",
-          systemVersion: "system version mock"
-        )
+        let uiDevice = UIDeviceMock(model: "model mock",
+                                    systemName: "system name mock",
+                                    systemVersion: "system version mock")
         let device = Device(uiDevice: uiDevice, processInfo: ProcessInfoMock())
 
         XCTAssertEqual(device.model, uiDevice.model)

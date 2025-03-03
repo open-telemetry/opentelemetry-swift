@@ -24,7 +24,7 @@ public struct W3CBaggagePropagator: TextMapBaggagePropagator {
 
   public let fields: Set<String> = [headerBaggage]
 
-  public func inject<S>(baggage: Baggage, carrier: inout [String: String], setter: S) where S: Setter {
+  public func inject(baggage: Baggage, carrier: inout [String: String], setter: some Setter) {
     var headerContent = ""
     baggage.getEntries().forEach {
       headerContent += $0.key.name + "=" + $0.value.string
@@ -42,7 +42,7 @@ public struct W3CBaggagePropagator: TextMapBaggagePropagator {
     }
   }
 
-  public func extract<G>(carrier: [String: String], getter: G) -> Baggage? where G: Getter {
+  public func extract(carrier: [String: String], getter: some Getter) -> Baggage? {
     guard let baggageHeaderCollection = getter.get(carrier: carrier,
                                                    key: W3CBaggagePropagator.headerBaggage),
       let baggageHeader = baggageHeaderCollection.first else {

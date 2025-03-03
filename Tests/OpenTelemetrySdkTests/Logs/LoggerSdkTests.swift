@@ -12,29 +12,23 @@ import OpenTelemetryTestUtils
 public class LoggerSdkTests: OpenTelemetryContextTestCase {
   func testEventBuilder() {
     let processor = LogRecordProcessorMock()
-    let sharedState = LoggerSharedState(
-      resource: Resource(), logLimits: LogLimits(), processors: [processor], clock: MillisClock())
-    let logger = LoggerSdk(
-      sharedState: sharedState, instrumentationScope: InstrumentationScopeInfo(name: "test"),
-      eventDomain: "Test")
+    let sharedState = LoggerSharedState(resource: Resource(), logLimits: LogLimits(), processors: [processor], clock: MillisClock())
+    let logger = LoggerSdk(sharedState: sharedState, instrumentationScope: InstrumentationScopeInfo(name: "test"),
+                           eventDomain: "Test")
 
     logger.eventBuilder(name: "myEvent").setData(["test": AttributeValue("data")]).emit()
 
     XCTAssertTrue(processor.onEmitCalled)
-    XCTAssertEqual(
-      processor.onEmitCalledLogRecord?.attributes["event.name"]?.description, "myEvent")
+    XCTAssertEqual(processor.onEmitCalledLogRecord?.attributes["event.name"]?.description, "myEvent")
     XCTAssertEqual(processor.onEmitCalledLogRecord?.attributes["event.domain"]?.description, "Test")
-    XCTAssertEqual(
-      processor.onEmitCalledLogRecord?.attributes["event.data"]?.description, "[\"test\": data]")
+    XCTAssertEqual(processor.onEmitCalledLogRecord?.attributes["event.data"]?.description, "[\"test\": data]")
   }
 
   func testEventBuilderNoDomain() {
     let processor = LogRecordProcessorMock()
-    let sharedState = LoggerSharedState(
-      resource: Resource(), logLimits: LogLimits(), processors: [processor], clock: MillisClock())
-    let logger = LoggerSdk(
-      sharedState: sharedState, instrumentationScope: InstrumentationScopeInfo(name: "test"),
-      eventDomain: nil)
+    let sharedState = LoggerSharedState(resource: Resource(), logLimits: LogLimits(), processors: [processor], clock: MillisClock())
+    let logger = LoggerSdk(sharedState: sharedState, instrumentationScope: InstrumentationScopeInfo(name: "test"),
+                           eventDomain: nil)
 
     logger.eventBuilder(name: "myEvent").emit()
 
@@ -44,63 +38,52 @@ public class LoggerSdkTests: OpenTelemetryContextTestCase {
 
   func testNewEventDomain() {
     let processor = LogRecordProcessorMock()
-    let sharedState = LoggerSharedState(
-      resource: Resource(), logLimits: LogLimits(), processors: [processor], clock: MillisClock())
-    let logger = LoggerSdk(
-      sharedState: sharedState, instrumentationScope: InstrumentationScopeInfo(name: "test"),
-      eventDomain: "OldDomain")
+    let sharedState = LoggerSharedState(resource: Resource(), logLimits: LogLimits(), processors: [processor], clock: MillisClock())
+    let logger = LoggerSdk(sharedState: sharedState, instrumentationScope: InstrumentationScopeInfo(name: "test"),
+                           eventDomain: "OldDomain")
 
     logger.eventBuilder(name: "myEvent").emit()
 
     XCTAssertTrue(processor.onEmitCalled)
-    XCTAssertEqual(
-      processor.onEmitCalledLogRecord?.attributes["event.name"]?.description, "myEvent")
-    XCTAssertEqual(
-      processor.onEmitCalledLogRecord?.attributes["event.domain"]?.description, "OldDomain")
+    XCTAssertEqual(processor.onEmitCalledLogRecord?.attributes["event.name"]?.description, "myEvent")
+    XCTAssertEqual(processor.onEmitCalledLogRecord?.attributes["event.domain"]?.description, "OldDomain")
 
     let newLogger = logger.withEventDomain(domain: "MyDomain")
 
     newLogger.eventBuilder(name: "MyEvent").emit()
     XCTAssertTrue(processor.onEmitCalled)
     XCTAssertNotNil(processor.onEmitCalledLogRecord)
-    XCTAssertEqual(
-      processor.onEmitCalledLogRecord?.attributes["event.name"]?.description, "MyEvent")
-    XCTAssertEqual(
-      processor.onEmitCalledLogRecord?.attributes["event.domain"]?.description, "MyDomain")
+    XCTAssertEqual(processor.onEmitCalledLogRecord?.attributes["event.name"]?.description, "MyEvent")
+    XCTAssertEqual(processor.onEmitCalledLogRecord?.attributes["event.domain"]?.description, "MyDomain")
   }
 
   func testContextPropogation() {
     let processor = LogRecordProcessorMock()
-    let sharedState = LoggerSharedState(
-      resource: Resource(), logLimits: LogLimits(), processors: [processor], clock: MillisClock())
+    let sharedState = LoggerSharedState(resource: Resource(), logLimits: LogLimits(), processors: [processor], clock: MillisClock())
 
-    let context = SpanContext.create(
-      traceId: TraceId(idHi: 0, idLo: 16), spanId: SpanId(id: 8), traceFlags: TraceFlags(),
-      traceState: TraceState())
-    let span = RecordEventsReadableSpan.startSpan(
-      context: context,
-      name: "Test",
-      instrumentationScopeInfo: InstrumentationScopeInfo(name: "test"),
-      kind: .client,
-      parentContext: nil,
-      hasRemoteParent: false,
-      spanLimits: SpanLimits(),
-      spanProcessor: NoopSpanProcessor(),
-      clock: MillisClock(),
-      resource: Resource(),
-      attributes: AttributesDictionary(capacity: 1),
-      links: [SpanData.Link](),
-      totalRecordedLinks: 1,
-      startTime: Date())
+    let context = SpanContext.create(traceId: TraceId(idHi: 0, idLo: 16), spanId: SpanId(id: 8), traceFlags: TraceFlags(),
+                                     traceState: TraceState())
+    let span = RecordEventsReadableSpan.startSpan(context: context,
+                                                  name: "Test",
+                                                  instrumentationScopeInfo: InstrumentationScopeInfo(name: "test"),
+                                                  kind: .client,
+                                                  parentContext: nil,
+                                                  hasRemoteParent: false,
+                                                  spanLimits: SpanLimits(),
+                                                  spanProcessor: NoopSpanProcessor(),
+                                                  clock: MillisClock(),
+                                                  resource: Resource(),
+                                                  attributes: AttributesDictionary(capacity: 1),
+                                                  links: [SpanData.Link](),
+                                                  totalRecordedLinks: 1,
+                                                  startTime: Date())
 
-    let logger = LoggerSdk(
-      sharedState: sharedState, instrumentationScope: InstrumentationScopeInfo(name: "TestName"),
-      eventDomain: "TestDomain")
+    let logger = LoggerSdk(sharedState: sharedState, instrumentationScope: InstrumentationScopeInfo(name: "TestName"),
+                           eventDomain: "TestDomain")
 
     OpenTelemetry.instance.contextProvider.withActiveSpan(span) {
-      let specialContext = SpanContext.create(
-        traceId: TraceId(idHi: 0, idLo: 0), spanId: SpanId(id: 0), traceFlags: TraceFlags(),
-        traceState: TraceState())
+      let specialContext = SpanContext.create(traceId: TraceId(idHi: 0, idLo: 0), spanId: SpanId(id: 0), traceFlags: TraceFlags(),
+                                              traceState: TraceState())
 
       logger.eventBuilder(name: "MyEvent").setSpanContext(specialContext).emit()
 
@@ -124,36 +107,31 @@ final class LoggerSdkTestsImperative: OpenTelemetryContextTestCase {
 
   func testContextPropogation() {
     let processor = LogRecordProcessorMock()
-    let sharedState = LoggerSharedState(
-      resource: Resource(), logLimits: LogLimits(), processors: [processor], clock: MillisClock())
+    let sharedState = LoggerSharedState(resource: Resource(), logLimits: LogLimits(), processors: [processor], clock: MillisClock())
 
-    let context = SpanContext.create(
-      traceId: TraceId(idHi: 0, idLo: 16), spanId: SpanId(id: 8), traceFlags: TraceFlags(),
-      traceState: TraceState())
-    let span = RecordEventsReadableSpan.startSpan(
-      context: context,
-      name: "Test",
-      instrumentationScopeInfo: InstrumentationScopeInfo(name: "test"),
-      kind: .client,
-      parentContext: nil,
-      hasRemoteParent: false,
-      spanLimits: SpanLimits(),
-      spanProcessor: NoopSpanProcessor(),
-      clock: MillisClock(),
-      resource: Resource(),
-      attributes: AttributesDictionary(capacity: 1),
-      links: [SpanData.Link](),
-      totalRecordedLinks: 1,
-      startTime: Date())
+    let context = SpanContext.create(traceId: TraceId(idHi: 0, idLo: 16), spanId: SpanId(id: 8), traceFlags: TraceFlags(),
+                                     traceState: TraceState())
+    let span = RecordEventsReadableSpan.startSpan(context: context,
+                                                  name: "Test",
+                                                  instrumentationScopeInfo: InstrumentationScopeInfo(name: "test"),
+                                                  kind: .client,
+                                                  parentContext: nil,
+                                                  hasRemoteParent: false,
+                                                  spanLimits: SpanLimits(),
+                                                  spanProcessor: NoopSpanProcessor(),
+                                                  clock: MillisClock(),
+                                                  resource: Resource(),
+                                                  attributes: AttributesDictionary(capacity: 1),
+                                                  links: [SpanData.Link](),
+                                                  totalRecordedLinks: 1,
+                                                  startTime: Date())
 
-    let logger = LoggerSdk(
-      sharedState: sharedState, instrumentationScope: InstrumentationScopeInfo(name: "TestName"),
-      eventDomain: "TestDomain")
+    let logger = LoggerSdk(sharedState: sharedState, instrumentationScope: InstrumentationScopeInfo(name: "TestName"),
+                           eventDomain: "TestDomain")
     OpenTelemetry.instance.contextProvider.setActiveSpan(span)
 
-    let specialContext = SpanContext.create(
-      traceId: TraceId(idHi: 0, idLo: 0), spanId: SpanId(id: 0), traceFlags: TraceFlags(),
-      traceState: TraceState())
+    let specialContext = SpanContext.create(traceId: TraceId(idHi: 0, idLo: 0), spanId: SpanId(id: 0), traceFlags: TraceFlags(),
+                                            traceState: TraceState())
 
     logger.eventBuilder(name: "MyEvent").setSpanContext(specialContext).emit()
 

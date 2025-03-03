@@ -64,7 +64,7 @@ extension Optional: AnyMockable where Wrapped: AnyMockable {
   }
 }
 
-extension Array where Element == Data {
+extension [Data] {
   /// Returns chunks of mocked data. Accumulative size of all chunks equals `totalSize`.
   static func mockChunksOf(totalSize: UInt64, maxChunkSize: UInt64) -> [Data] {
     var chunks: [Data] = []
@@ -142,20 +142,16 @@ extension URL: AnyMockable, RandomMockable {
   static func mockRandom() -> URL {
     return URL(string: "https://www.foo.com/")!
       .appendingPathComponent(
-        .mockRandom(
-          among: .alphanumerics,
-          length: 32
-        )
+        .mockRandom(among: .alphanumerics,
+                    length: 32)
       )
   }
 
   static func mockRandomPath(containing subpathComponents: [String] = []) -> URL {
     let count: Int = .mockRandom(min: 2, max: 10)
     var components: [String] = (0 ..< count).map { _ in
-      .mockRandom(
-        among: .alphanumerics,
-        length: .mockRandom(min: 3, max: 10)
-      )
+      .mockRandom(among: .alphanumerics,
+                  length: .mockRandom(min: 3, max: 10))
     }
     components.insert(contentsOf: subpathComponents, at: .random(in: 0 ..< count))
     return URL(fileURLWithPath: "/\(components.joined(separator: "/"))")
@@ -172,10 +168,8 @@ extension String: AnyMockable, RandomMockable {
   }
 
   static func mockRandom(length: Int) -> String {
-    return mockRandom(
-      among: .alphanumerics + " ",
-      length: length
-    )
+    return mockRandom(among: .alphanumerics + " ",
+                      length: length)
   }
 
   static func mockRandom(among characters: String, length: Int = 10) -> String {

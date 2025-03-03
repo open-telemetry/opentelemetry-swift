@@ -41,7 +41,7 @@ public class SimpleAttributeProcessor: AttributeProcessor {
     return attributeProcessor(incoming)
   }
 
-  static func filterByKeyName( nameFilter: @escaping (String) -> Bool) -> AttributeProcessor {
+  static func filterByKeyName(nameFilter: @escaping (String) -> Bool) -> AttributeProcessor {
     return SimpleAttributeProcessor { attributes in
       attributes.filter { key, _ in
         nameFilter(key)

@@ -6,12 +6,12 @@
 import Foundation
 
 /// A type that performs data uploads.
-internal protocol DataUploaderType {
+protocol DataUploaderType {
   func upload(data: Data) -> DataUploadStatus
 }
 
 /// Synchronously uploads data to server using `HTTPClient`.
-internal final class DataUploader: DataUploaderType {
+final class DataUploader: DataUploaderType {
   /// An unreachable upload status - only meant to satisfy the compiler.
   private static let unreachableUploadStatus = DataUploadStatus(needsRetry: false)
 
@@ -33,9 +33,9 @@ internal final class DataUploader: DataUploaderType {
 
     httpClient.send(request: request) { result in
       switch result {
-      case .success(let httpResponse):
+      case let .success(httpResponse):
         uploadStatus = DataUploadStatus(httpResponse: httpResponse, ddRequestID: ddRequestID)
-      case .failure(let error):
+      case let .failure(error):
         uploadStatus = DataUploadStatus(networkError: error)
       }
 

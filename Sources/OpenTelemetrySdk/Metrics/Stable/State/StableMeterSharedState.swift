@@ -75,11 +75,11 @@ class StableMeterSharedState {
   }
 
   func collectAll(registeredReader: RegisteredReader, meterProviderSharedState: MeterProviderSharedState, epochNanos: UInt64) -> [StableMetricData] {
-    self.callbackLock.lock()
+    callbackLock.lock()
     let currentRegisteredCallbacks = callbackRegistration // todo verify this copies list not references (for concurrency safety)
-    self.callbackLock.unlock()
+    callbackLock.unlock()
 
-    self.collectionLock.lock()
+    collectionLock.lock()
     defer {
       self.collectionLock.unlock()
     }

@@ -9,8 +9,8 @@ import OpenTelemetryApi
 public class TracerProviderSdk: TracerProvider {
   private var tracerLock = pthread_rwlock_t()
   private var tracerProvider = [InstrumentationScopeInfo: TracerSdk]()
-  internal var sharedState: TracerSharedState
-  internal static let emptyName = "unknown"
+  var sharedState: TracerSharedState
+  static let emptyName = "unknown"
 
   /// Returns a new TracerProviderSdk with default Clock, IdGenerator and Resource.
   public init(clock: Clock = MillisClock(),

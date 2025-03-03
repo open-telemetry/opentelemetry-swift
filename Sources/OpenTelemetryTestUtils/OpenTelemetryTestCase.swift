@@ -20,19 +20,19 @@ open class OpenTelemetryContextTestCase: XCTestCase {
 
   private var cachedManagers: [any ContextManager]?
 
-  open override func perform(_ run: XCTestRun) {
-    self.cachedManagers = self.contextManagers
-    if self.cachedManagers!.isEmpty {
+  override open func perform(_ run: XCTestRun) {
+    cachedManagers = contextManagers
+    if cachedManagers!.isEmpty {
       // Bail out before any other output is printed by the testing system to avoid confusion.
-      print("Skipping Test Case '\(self.name)' due to no applicable context managers")
+      print("Skipping Test Case '\(name)' due to no applicable context managers")
       return
     }
 
     super.perform(run)
   }
 
-  open override func invokeTest() {
-    for manager in self.cachedManagers! {
+  override open func invokeTest() {
+    for manager in cachedManagers! {
       // Install the desired context manager temporarily and re-run the test method.
       OpenTelemetry.withContextManager(manager) {
         super.invokeTest()
@@ -43,24 +43,20 @@ open class OpenTelemetryContextTestCase: XCTestCase {
   // Ensure we print out which context manager was in use when a failure is encountered.
   // Non-Apple platforms don't have access to `record(XCTIssue)` so we need to support both the new and old style method to avoid a deprecation warning on Apple platforms.
   #if canImport(ObjectiveC)
-    open override func record(_ issue: XCTIssue) {
-      super.record(XCTIssue(
-        type: issue.type,
-        compactDescription: "\(issue.compactDescription) - with context manager \(OpenTelemetry.instance.contextProvider.contextManager)",
-        detailedDescription: issue.detailedDescription,
-        sourceCodeContext: issue.sourceCodeContext,
-        associatedError: issue.associatedError,
-        attachments: issue.attachments
-      ))
+    override open func record(_ issue: XCTIssue) {
+      super.record(XCTIssue(type: issue.type,
+                            compactDescription: "\(issue.compactDescription) - with context manager \(OpenTelemetry.instance.contextProvider.contextManager)",
+                            detailedDescription: issue.detailedDescription,
+                            sourceCodeContext: issue.sourceCodeContext,
+                            associatedError: issue.associatedError,
+                            attachments: issue.attachments))
     }
   #else
-    open override func recordFailure(withDescription description: String, inFile filePath: String, atLine lineNumber: Int, expected: Bool) {
-      super.recordFailure(
-        withDescription: "\(description) - with context manager \(OpenTelemetry.instance.contextProvider.contextManager)",
-        inFile: filePath,
-        atLine: lineNumber,
-        expected: expected
-      )
+    override open func recordFailure(withDescription description: String, inFile filePath: String, atLine lineNumber: Int, expected: Bool) {
+      super.recordFailure(withDescription: "\(description) - with context manager \(OpenTelemetry.instance.contextProvider.contextManager)",
+                          inFile: filePath,
+                          atLine: lineNumber,
+                          expected: expected)
     }
   #endif
 

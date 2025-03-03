@@ -7,12 +7,12 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
-internal enum Constants {
+enum Constants {
   static let ddsource = "ios"
 }
 
 /// `SpanEnvelope` allows encoding multiple spans sharing the same `traceID` to a single payload.
-internal struct SpanEnvelope: Encodable {
+struct SpanEnvelope: Encodable {
   enum CodingKeys: String, CodingKey {
     case spans
     case environment = "env"
@@ -35,7 +35,7 @@ internal struct SpanEnvelope: Encodable {
 }
 
 /// `Encodable` representation of span.
-internal struct DDSpan: Encodable {
+struct DDSpan: Encodable {
   let traceID: TraceId
   let spanID: SpanId
   let parentID: SpanId?
@@ -65,50 +65,50 @@ internal struct DDSpan: Encodable {
     try SpanEncoder().encode(self, to: encoder)
   }
 
-  internal init(spanData: SpanData, configuration: ExporterConfiguration) {
-    self.traceID = spanData.traceId
-    self.spanID = spanData.spanId
-    self.parentID = spanData.parentSpanId
+  init(spanData: SpanData, configuration: ExporterConfiguration) {
+    traceID = spanData.traceId
+    spanID = spanData.spanId
+    parentID = spanData.parentSpanId
 
     if spanData.attributes["type"] != nil {
-      self.name = spanData.name
+      name = spanData.name
     } else {
-      self.name = spanData.name + "." + spanData.kind.rawValue
+      name = spanData.name + "." + spanData.kind.rawValue
     }
 
-    self.serviceName = configuration.serviceName
-    self.resource =
+    serviceName = configuration.serviceName
+    resource =
       spanData.attributes["resource.name"]?.description ?? spanData.name
-    self.startTime = spanData.startTime.timeIntervalSince1970.toNanoseconds
-    self.duration =
+    startTime = spanData.startTime.timeIntervalSince1970.toNanoseconds
+    duration =
       spanData.endTime.timeIntervalSince(spanData.startTime).toNanoseconds
 
     switch spanData.status {
-    case .error(let errorDescription):
-      self.error = true
-      self.errorType =
+    case let .error(errorDescription):
+      error = true
+      errorType =
         spanData.attributes["error.type"]?.description ?? errorDescription
-      self.errorMessage = spanData.attributes["error.message"]?.description
-      self.errorStack = spanData.attributes["error.stack"]?.description
+      errorMessage = spanData.attributes["error.message"]?.description
+      errorStack = spanData.attributes["error.stack"]?.description
     default:
-      self.error = false
-      self.errorMessage = nil
-      self.errorType = nil
-      self.errorStack = nil
+      error = false
+      errorMessage = nil
+      errorType = nil
+      errorStack = nil
     }
 
     let spanType = spanData.attributes["type"] ?? spanData.attributes["db.type"]
-    self.type = spanType?.description ?? spanData.kind.rawValue
+    type = spanType?.description ?? spanData.kind.rawValue
 
-    self.applicationVersion = configuration.version
-    self.tags = spanData.attributes.filter {
+    applicationVersion = configuration.version
+    tags = spanData.attributes.filter {
       !DDSpan.filteredTagKeys.contains($0.key)
     }.mapValues { $0 }
   }
 }
 
 /// Encodes `SpanData` to given encoder.
-internal struct SpanEncoder {
+struct SpanEncoder {
   /// Coding keys for permanent `Span` attributes.
   enum StaticCodingKeys: String, CodingKey {
     // MARK: - Attributes
@@ -144,13 +144,12 @@ internal struct SpanEncoder {
     var intValue: Int?
     init?(stringValue: String) { self.stringValue = stringValue }
     init?(intValue: Int) { return nil }
-    init(_ string: String) { self.stringValue = string }
+    init(_ string: String) { stringValue = string }
   }
 
   func encode(_ span: DDSpan, to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: StaticCodingKeys.self)
-    try container.encode(
-      String(format: "%016llx", span.traceID.rawLowerLong), forKey: .traceID)
+    try container.encode(String(format: "%016llx", span.traceID.rawLowerLong), forKey: .traceID)
     try container.encode(span.spanID.hexString, forKey: .spanID)
 
     let parentSpanID = span.parentID ?? SpanId.invalid // 0 is a reserved ID for a root span (ref: DDTracer.java#L600)
@@ -182,9 +181,7 @@ internal struct SpanEncoder {
   }
 
   /// Encodes default `metrics.*` attributes
-  private func encodeDefaultMetrics(
-    _ span: DDSpan, to container: inout KeyedEncodingContainer<StaticCodingKeys>
-  ) throws {
+  private func encodeDefaultMetrics(_ span: DDSpan, to container: inout KeyedEncodingContainer<StaticCodingKeys>) throws {
     // NOTE: RUMM-299 only numeric values are supported for `metrics.*` attributes
     if span.parentID == nil {
       try container.encode(1, forKey: .isRootSpan)
@@ -193,31 +190,27 @@ internal struct SpanEncoder {
   }
 
   /// Encodes default `meta.*` attributes
-  private func encodeDefaultMeta(
-    _ span: DDSpan, to container: inout KeyedEncodingContainer<StaticCodingKeys>
-  ) throws {
+  private func encodeDefaultMeta(_ span: DDSpan, to container: inout KeyedEncodingContainer<StaticCodingKeys>) throws {
     // NOTE: RUMM-299 only string values are supported for `meta.*` attributes
     try container.encode(Constants.ddsource, forKey: .source)
     try container.encode(span.applicationVersion, forKey: .applicationVersion)
   }
 
   /// Encodes `meta.*` attributes coming from user
-  private func encodeCustomAttributes(
-    _ span: DDSpan, to container: inout KeyedEncodingContainer<DynamicCodingKey>
-  ) throws {
+  private func encodeCustomAttributes(_ span: DDSpan, to container: inout KeyedEncodingContainer<DynamicCodingKey>) throws {
     // NOTE: RUMM-299 only string values are supported for `meta.*` attributes
     try span.tags.forEach {
       switch $0.value {
-      case .int(let intValue):
+      case let .int(intValue):
         let metricsKey = "metrics.\($0.key)"
         try container.encode(intValue, forKey: DynamicCodingKey(metricsKey))
-      case .double(let doubleValue):
+      case let .double(doubleValue):
         let metricsKey = "metrics.\($0.key)"
         try container.encode(doubleValue, forKey: DynamicCodingKey(metricsKey))
-      case .string(let stringValue):
+      case let .string(stringValue):
         let metaKey = "meta.\($0.key)"
         try container.encode(stringValue, forKey: DynamicCodingKey(metaKey))
-      case .bool(let boolValue):
+      case let .bool(boolValue):
         let metaKey = "meta.\($0.key)"
         try container.encode(boolValue, forKey: DynamicCodingKey(metaKey))
       default:

@@ -19,13 +19,13 @@ class LoggerSharedState {
     self.logLimits = logLimits
     self.clock = clock
     if processors.count > 1 {
-      self.activeLogRecordProcessor = MultiLogRecordProcessor(logRecordProcessors: processors)
-      self.registeredLogRecordProcessors = processors
+      activeLogRecordProcessor = MultiLogRecordProcessor(logRecordProcessors: processors)
+      registeredLogRecordProcessors = processors
     } else if processors.count == 1 {
-      self.activeLogRecordProcessor = processors[0]
-      self.registeredLogRecordProcessors = processors
+      activeLogRecordProcessor = processors[0]
+      registeredLogRecordProcessors = processors
     } else {
-      self.activeLogRecordProcessor = NoopLogRecordProcessor()
+      activeLogRecordProcessor = NoopLogRecordProcessor()
     }
   }
 
@@ -47,6 +47,6 @@ class LoggerSharedState {
   }
 
   func setLogLimits(limits: LogLimits) {
-    self.logLimits = limits
+    logLimits = limits
   }
 }

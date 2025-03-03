@@ -15,7 +15,7 @@ public enum ExportResult {
   /// - Parameter newResultCode: the result code to merge with
   mutating func mergeResultCode(newResultCode: ExportResult) {
     // If both results are success then return success.
-    if self == .success && newResultCode == .success {
+    if self == .success, newResultCode == .success {
       self = .success
       return
     }

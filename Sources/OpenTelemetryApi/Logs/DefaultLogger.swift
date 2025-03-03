@@ -18,9 +18,9 @@ public class DefaultLogger: Logger {
 
   static func getInstance(_ hasDomain: Bool) -> Logger {
     if hasDomain {
-      return Self.instanceWithDomain
+      return instanceWithDomain
     } else {
-      return Self.instanceNoDomain
+      return instanceNoDomain
     }
   }
 

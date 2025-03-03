@@ -111,7 +111,7 @@ public class SpanShim: OTSpan, BaseShimProtocol {
   }
 
   public func finish(withTime finishTime: Date?) {
-    if let finishTime = finishTime {
+    if let finishTime {
       span.end(time: finishTime)
     } else {
       span.end()

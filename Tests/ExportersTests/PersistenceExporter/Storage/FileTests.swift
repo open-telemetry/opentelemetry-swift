@@ -25,24 +25,20 @@ class FileTests: XCTestCase {
 
     try file.append(data: Data([0x41, 0x41, 0x41, 0x41, 0x41])) // 5 bytes
 
-    XCTAssertEqual(
-      try Data(contentsOf: file.url),
-      Data([0x41, 0x41, 0x41, 0x41, 0x41])
-    )
+    XCTAssertEqual(try Data(contentsOf: file.url),
+                   Data([0x41, 0x41, 0x41, 0x41, 0x41]))
 
     try file.append(data: Data([0x42, 0x42, 0x42, 0x42, 0x42])) // 5 bytes
     try file.append(data: Data([0x41, 0x41, 0x41, 0x41, 0x41])) // 5 bytes
 
-    XCTAssertEqual(
-      try Data(contentsOf: file.url),
-      Data(
-        [
-          0x41, 0x41, 0x41, 0x41, 0x41,
-          0x42, 0x42, 0x42, 0x42, 0x42,
-          0x41, 0x41, 0x41, 0x41, 0x41
-        ]
-      )
-    )
+    XCTAssertEqual(try Data(contentsOf: file.url),
+                   Data(
+                     [
+                       0x41, 0x41, 0x41, 0x41, 0x41,
+                       0x42, 0x42, 0x42, 0x42, 0x42,
+                       0x41, 0x41, 0x41, 0x41, 0x41
+                     ]
+                   ))
   }
 
   func testItReadsDataFromFile() throws {

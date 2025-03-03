@@ -77,27 +77,27 @@ class MetricCodableTests: XCTestCase {
     let decoder = JSONDecoder()
 
     var testData = generateIntSumMetric()
-    XCTAssertEqual(testData, try decoder.decode(Metric.self, from: try encoder.encode(testData)))
+    XCTAssertEqual(testData, try decoder.decode(Metric.self, from: encoder.encode(testData)))
 
     testData = generateDoubleSumMetric()
-    XCTAssertEqual(testData, try decoder.decode(Metric.self, from: try encoder.encode(testData)))
+    XCTAssertEqual(testData, try decoder.decode(Metric.self, from: encoder.encode(testData)))
 
     testData = generateIntSummaryMetric()
-    XCTAssertEqual(testData, try decoder.decode(Metric.self, from: try encoder.encode(testData)))
+    XCTAssertEqual(testData, try decoder.decode(Metric.self, from: encoder.encode(testData)))
 
     testData = generateDoubleSummaryMetric()
-    XCTAssertEqual(testData, try decoder.decode(Metric.self, from: try encoder.encode(testData)))
+    XCTAssertEqual(testData, try decoder.decode(Metric.self, from: encoder.encode(testData)))
 
     testData = generateIntGaugeMetric()
-    XCTAssertEqual(testData, try decoder.decode(Metric.self, from: try encoder.encode(testData)))
+    XCTAssertEqual(testData, try decoder.decode(Metric.self, from: encoder.encode(testData)))
 
     testData = generateDoubleGaugeMetric()
-    XCTAssertEqual(testData, try decoder.decode(Metric.self, from: try encoder.encode(testData)))
+    XCTAssertEqual(testData, try decoder.decode(Metric.self, from: encoder.encode(testData)))
 
     testData = generateDoubleHistogramMetric()
-    XCTAssertEqual(testData, try decoder.decode(Metric.self, from: try encoder.encode(testData)))
+    XCTAssertEqual(testData, try decoder.decode(Metric.self, from: encoder.encode(testData)))
 
     testData = generateIntHistogramMetric()
-    XCTAssertEqual(testData, try decoder.decode(Metric.self, from: try encoder.encode(testData)))
+    XCTAssertEqual(testData, try decoder.decode(Metric.self, from: encoder.encode(testData)))
   }
 }

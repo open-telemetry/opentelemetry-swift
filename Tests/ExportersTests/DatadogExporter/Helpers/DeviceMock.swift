@@ -14,20 +14,18 @@
     private var _batteryState: UIDevice.BatteryState
     private var _batteryLevel: Float
 
-    init(
-      model: String = .mockAny(),
-      systemName: String = .mockAny(),
-      systemVersion: String = .mockAny(),
-      isBatteryMonitoringEnabled: Bool = .mockAny(),
-      batteryState: UIDevice.BatteryState = .unknown,
-      batteryLevel: Float = 0
-    ) {
-      self._model = model
-      self._systemName = systemName
-      self._systemVersion = systemVersion
-      self._isBatteryMonitoringEnabled = isBatteryMonitoringEnabled
-      self._batteryState = batteryState
-      self._batteryLevel = batteryLevel
+    init(model: String = .mockAny(),
+         systemName: String = .mockAny(),
+         systemVersion: String = .mockAny(),
+         isBatteryMonitoringEnabled: Bool = .mockAny(),
+         batteryState: UIDevice.BatteryState = .unknown,
+         batteryLevel: Float = 0) {
+      _model = model
+      _systemName = systemName
+      _systemVersion = systemVersion
+      _isBatteryMonitoringEnabled = isBatteryMonitoringEnabled
+      _batteryState = batteryState
+      _batteryLevel = batteryLevel
     }
 
     override var model: String { _model }

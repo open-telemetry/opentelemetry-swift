@@ -38,10 +38,8 @@
     func testCreateRequestWithGzipCompression() {
       let config = OtlpConfiguration(compression: .gzip)
 
-      exporter = StableOtlpHTTPExporterBase(
-        endpoint: URL(string: "http://example.com")!,
-        config: config
-      )
+      exporter = StableOtlpHTTPExporterBase(endpoint: URL(string: "http://example.com")!,
+                                            config: config)
 
       let body = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
         $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
@@ -62,10 +60,8 @@
     func testCreateRequestWithDeflateCompression() {
       let config = OtlpConfiguration(compression: .deflate)
 
-      exporter = StableOtlpHTTPExporterBase(
-        endpoint: URL(string: "http://example.com")!,
-        config: config
-      )
+      exporter = StableOtlpHTTPExporterBase(endpoint: URL(string: "http://example.com")!,
+                                            config: config)
 
       let body = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
         $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
@@ -86,10 +82,8 @@
     func testCreateRequestWithNoCompression() {
       let config = OtlpConfiguration(compression: .none)
 
-      exporter = StableOtlpHTTPExporterBase(
-        endpoint: URL(string: "http://example.com")!,
-        config: config
-      )
+      exporter = StableOtlpHTTPExporterBase(endpoint: URL(string: "http://example.com")!,
+                                            config: config)
 
       let body = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
         $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)

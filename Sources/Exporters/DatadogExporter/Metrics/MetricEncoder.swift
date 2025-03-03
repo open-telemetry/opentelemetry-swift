@@ -5,14 +5,14 @@
 
 import Foundation
 
-internal struct DDMetricPoint {
+struct DDMetricPoint {
   /// Log attributes received from the user. They are subject for sanitization.
   let timestamp: Date
   /// Log attributes added internally by the SDK. They are not a subject for sanitization.
   let value: Double
 }
 
-internal struct DDMetric: Encodable {
+struct DDMetric: Encodable {
   var name: String
   var points: [DDMetricPoint]
   var type: String?
@@ -26,7 +26,7 @@ internal struct DDMetric: Encodable {
 }
 
 /// Encodes `DDMetric` to given encoder.
-internal struct MetricEncoder {
+struct MetricEncoder {
   /// Coding keys for permanent `Metric` attributes.
   enum StaticCodingKeys: String, CodingKey {
     // MARK: - Attributes
@@ -45,7 +45,7 @@ internal struct MetricEncoder {
     var intValue: Int?
     init?(stringValue: String) { self.stringValue = stringValue }
     init?(intValue: Int) { return nil }
-    init(_ string: String) { self.stringValue = string }
+    init(_ string: String) { stringValue = string }
   }
 
   func encode(_ metric: DDMetric, to encoder: Encoder) throws {

@@ -7,13 +7,13 @@ import Foundation
 import OpenTelemetrySdk
 
 /// Abstracts the `DataUploadWorker`, so we can have no-op uploader in tests.
-internal protocol DataUploadWorkerType {
+protocol DataUploadWorkerType {
   func flush() -> SpanExporterResultCode
 }
 
-internal class DataUploadWorker: DataUploadWorkerType {
+class DataUploadWorker: DataUploadWorkerType {
   /// Queue to execute uploads.
-  internal let queue = DispatchQueue(label: "com.otel.datadog.datauploadworker", target: .global(qos: .utility))
+  let queue = DispatchQueue(label: "com.otel.datadog.datauploadworker", target: .global(qos: .utility))
   /// File reader providing data to upload.
   private let fileReader: FileReader
   /// Data uploader sending data to server.
@@ -30,13 +30,11 @@ internal class DataUploadWorker: DataUploadWorkerType {
   /// Upload work scheduled by this worker.
   private var uploadWork: DispatchWorkItem?
 
-  init(
-    fileReader: FileReader,
-    dataUploader: DataUploaderType,
-    uploadCondition: @escaping () -> Bool,
-    delay: Delay,
-    featureName: String
-  ) {
+  init(fileReader: FileReader,
+       dataUploader: DataUploaderType,
+       uploadCondition: @escaping () -> Bool,
+       delay: Delay,
+       featureName: String) {
     self.fileReader = fileReader
     self.uploadCondition = uploadCondition
     self.dataUploader = dataUploader
@@ -44,7 +42,7 @@ internal class DataUploadWorker: DataUploadWorkerType {
     self.featureName = featureName
 
     let uploadWork = DispatchWorkItem { [weak self] in
-      guard let self = self else {
+      guard let self else {
         return
       }
 
@@ -66,7 +64,7 @@ internal class DataUploadWorker: DataUploadWorkerType {
         self.delay.increase()
       }
 
-      self.scheduleNextUpload(after: self.delay.current)
+      scheduleNextUpload(after: self.delay.current)
     }
 
     self.uploadWork = uploadWork
@@ -84,7 +82,7 @@ internal class DataUploadWorker: DataUploadWorkerType {
 
   /// This method  gets remaining files at once, and uploads them
   /// It assures that periodic uploader cannot read or upload the files while the flush is being processed
-  internal func flush() -> SpanExporterResultCode {
+  func flush() -> SpanExporterResultCode {
     let success = queue.sync {
       self.fileReader.onRemainingBatches {
         let uploadStatus = self.dataUploader.upload(data: $0.data)
@@ -99,7 +97,7 @@ internal class DataUploadWorker: DataUploadWorkerType {
   /// Cancels scheduled uploads and stops scheduling next ones.
   /// - It does not affect the upload that has already begun.
   /// - It blocks the caller thread if called in the middle of upload execution.
-  internal func cancelSynchronously() {
+  func cancelSynchronously() {
     queue.sync {
       // This cancellation must be performed on the `queue` to ensure that it is not called
       // in the middle of a `DispatchWorkItem` execution - otherwise, as the pending block would be

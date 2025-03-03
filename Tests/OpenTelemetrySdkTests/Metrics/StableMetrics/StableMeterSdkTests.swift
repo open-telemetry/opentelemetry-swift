@@ -9,7 +9,7 @@ import XCTest
 import OpenTelemetryApi
 
 class MockStableMetricExporter: StableMetricExporter {
-  public var exportData: [StableMetricData] = [StableMetricData]()
+  public var exportData: [StableMetricData] = .init()
 
   func export(metrics: [OpenTelemetrySdk.StableMetricData]) -> OpenTelemetrySdk.ExportResult {
     exportData = metrics

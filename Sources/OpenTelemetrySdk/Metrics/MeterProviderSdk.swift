@@ -31,10 +31,8 @@ public class MeterProviderSdk: MeterProvider {
 
     defaultMeter = MeterSdk(meterSharedState: meterSharedState, instrumentationScopeInfo: InstrumentationScopeInfo())
 
-    pushMetricController = PushMetricController(
-      meterProvider: self,
-      meterSharedState: meterSharedState
-    ) {
+    pushMetricController = PushMetricController(meterProvider: self,
+                                                meterSharedState: meterSharedState) {
       false
     }
   }

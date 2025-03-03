@@ -14,7 +14,7 @@ public class StablePeriodicMetricReaderBuilder {
   }
 
   public func setInterval(timeInterval: TimeInterval) -> Self {
-    self.exporterInterval = timeInterval
+    exporterInterval = timeInterval
     return self
   }
 

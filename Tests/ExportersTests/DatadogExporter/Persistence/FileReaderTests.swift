@@ -20,14 +20,10 @@ class FileReaderTests: XCTestCase {
   }
 
   func testItReadsSingleBatch() throws {
-    let reader = FileReader(
-      dataFormat: .mockWith(prefix: "[", suffix: "]"),
-      orchestrator: FilesOrchestrator(
-        directory: temporaryDirectory,
-        performance: StoragePerformanceMock.readAllFiles,
-        dateProvider: SystemDateProvider()
-      )
-    )
+    let reader = FileReader(dataFormat: .mockWith(prefix: "[", suffix: "]"),
+                            orchestrator: FilesOrchestrator(directory: temporaryDirectory,
+                                                            performance: StoragePerformanceMock.readAllFiles,
+                                                            dateProvider: SystemDateProvider()))
     _ = try temporaryDirectory
       .createFile(named: Date.mockAny().toFileName)
       .append(data: "ABCD".utf8Data)
@@ -40,14 +36,10 @@ class FileReaderTests: XCTestCase {
 
   func testItMarksBatchesAsRead() throws {
     let dateProvider = RelativeDateProvider(advancingBySeconds: 60)
-    let reader = FileReader(
-      dataFormat: .mockWith(prefix: "[", suffix: "]"),
-      orchestrator: FilesOrchestrator(
-        directory: temporaryDirectory,
-        performance: StoragePerformanceMock.readAllFiles,
-        dateProvider: dateProvider
-      )
-    )
+    let reader = FileReader(dataFormat: .mockWith(prefix: "[", suffix: "]"),
+                            orchestrator: FilesOrchestrator(directory: temporaryDirectory,
+                                                            performance: StoragePerformanceMock.readAllFiles,
+                                                            dateProvider: dateProvider))
     let file1 = try temporaryDirectory.createFile(named: dateProvider.currentDate().toFileName)
     try file1.append(data: "1".utf8Data)
 

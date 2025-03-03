@@ -13,17 +13,16 @@
 #endif
 
 /// Describes current mobile device.
-internal class Device {
+class Device {
   // MARK: - Info
 
   var model: String
   var osName: String
   var osVersion: String
 
-  init(
-    model: String,
-    osName: String,
-    osVersion: String) {
+  init(model: String,
+       osName: String,
+       osVersion: String) {
     self.model = model
     self.osName = osName
     self.osVersion = osVersion
@@ -31,18 +30,16 @@ internal class Device {
 
   #if os(iOS) || targetEnvironment(macCatalyst)
     convenience init(uiDevice: UIDevice, processInfo: ProcessInfo) {
-      self.init(
-        model: uiDevice.model,
-        osName: uiDevice.systemName,
-        osVersion: uiDevice.systemVersion)
+      self.init(model: uiDevice.model,
+                osName: uiDevice.systemName,
+                osVersion: uiDevice.systemVersion)
     }
 
   #elseif os(macOS)
     convenience init(processInfo: ProcessInfo) {
-      self.init(
-        model: "Mac",
-        osName: processInfo.hostName,
-        osVersion: processInfo.operatingSystemVersionString)
+      self.init(model: "Mac",
+                osName: processInfo.hostName,
+                osVersion: processInfo.operatingSystemVersionString)
     }
   #endif
 
@@ -56,16 +53,14 @@ internal class Device {
       return Device(uiDevice: UIDevice.current, processInfo: ProcessInfo.processInfo)
     #elseif os(iOS) || os(tvOS)
       // iOS Simulator or tvOS - battery monitoring doesn't work on Simulator, so return "always OK" value
-      return Device(
-        model: UIDevice.current.model,
-        osName: UIDevice.current.systemName,
-        osVersion: UIDevice.current.systemVersion)
+      return Device(model: UIDevice.current.model,
+                    osName: UIDevice.current.systemName,
+                    osVersion: UIDevice.current.systemVersion)
     #elseif os(watchOS)
       let device = WKInterfaceDevice.current()
-      return Device(
-        model: device.model,
-        osName: device.systemName,
-        osVersion: device.systemVersion)
+      return Device(model: device.model,
+                    osName: device.systemName,
+                    osVersion: device.systemVersion)
     #endif
   }
 }

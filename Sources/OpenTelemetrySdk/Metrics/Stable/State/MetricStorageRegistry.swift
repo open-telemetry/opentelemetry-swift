@@ -25,7 +25,8 @@ public class MetricStorageRegistry {
       lock.unlock()
     }
     guard let storage = registry[descriptor] else {
-      registry[descriptor] = newStorage
+      registry[descriptor] = newStorage
+
       return newStorage
     }
 
@@ -36,7 +37,7 @@ public class MetricStorageRegistry {
 
       let existing = storage.metricDescriptor
 
-      if existing.name.lowercased() == descriptor.name.lowercased() && existing != descriptor {
+      if existing.name.lowercased() == descriptor.name.lowercased(), existing != descriptor {
         // todo: log warning
         break
       }

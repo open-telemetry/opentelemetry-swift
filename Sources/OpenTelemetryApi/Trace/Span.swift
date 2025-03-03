@@ -168,9 +168,9 @@ public extension SpanExceptionRecorder {
 
     switch (attributes, timestamp) {
     case (.none, .none): recordException(exception)
-    case (.some(let attributes), .none): recordException(exception, attributes: attributes)
-    case (.none, .some(let timestamp)): recordException(exception, timestamp: timestamp)
-    case (.some(let attributes), .some(let timestamp)): recordException(exception, attributes: attributes, timestamp: timestamp)
+    case let (.some(attributes), .none): recordException(exception, attributes: attributes)
+    case let (.none, .some(timestamp)): recordException(exception, timestamp: timestamp)
+    case let (.some(attributes), .some(timestamp)): recordException(exception, attributes: attributes, timestamp: timestamp)
     }
   }
 }
@@ -191,14 +191,13 @@ public extension Span {
   ///   - reasonPhrase: Http reason phrase.
   func putHttpStatusCode(statusCode: Int, reasonPhrase: String) {
     setAttribute(key: .httpStatusCode, value: statusCode)
-    var newStatus: Status
-    switch statusCode {
+    var newStatus: Status = switch statusCode {
     case 200 ..< 400:
-      newStatus = .ok
+      .ok
     case 400 ..< 600:
-      newStatus = .error(description: reasonPhrase)
+      .error(description: reasonPhrase)
     default:
-      newStatus = .unset
+      .unset
     }
     status = newStatus
   }

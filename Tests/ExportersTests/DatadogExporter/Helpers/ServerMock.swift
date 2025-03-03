@@ -42,21 +42,17 @@ private class ServerMockProtocol: URLProtocol {
     // Get utility header value to match it with an active instance of `ServerMock`
     let urlSessionUUID = UUID(uuidString: request.allHTTPHeaderFields![ddURLSessionUUIDHeaderField]!)!
 
-    super.init(
-      request: request.removing(httpHeaderField: ddURLSessionUUIDHeaderField), // remove utility header
-      cachedResponse: cachedResponse,
-      client: client
-    )
+    super.init(request: request.removing(httpHeaderField: ddURLSessionUUIDHeaderField), // remove utility header
+               cachedResponse: cachedResponse,
+               client: client)
 
     // Assert that the request will be intercepted by the right instance of `ServerMock`.
-    precondition(
-      server?.urlSessionUUID == urlSessionUUID,
-      """
-      ⚠️ Request to \(request.url?.absoluteString ?? "null") was sent to `ServerMock` with `urlSessionUUID`: \(urlSessionUUID.uuidString),
-      but it was received by the `ServerMock` with `urlSessionUUID`: \(server?.urlSessionUUID.uuidString ?? "<deallocated>")).
-      This indicates lack of test synchronization or cleanup and must be fixed, otherwise the test will become flaky.
-      """
-    )
+    precondition(server?.urlSessionUUID == urlSessionUUID,
+                 """
+                 ⚠️ Request to \(request.url?.absoluteString ?? "null") was sent to `ServerMock` with `urlSessionUUID`: \(urlSessionUUID.uuidString),
+                 but it was received by the `ServerMock` with `urlSessionUUID`: \(server?.urlSessionUUID.uuidString ?? "<deallocated>")).
+                 This indicates lack of test synchronization or cleanup and must be fixed, otherwise the test will become flaky.
+                 """)
   }
 
   override func startLoading() {
@@ -84,7 +80,7 @@ class ServerMock {
   weak static var activeInstance: ServerMock?
 
   /// An unique identifier of the `URLSession` produced by this instance of `ServerMock`.
-  internal let urlSessionUUID = UUID()
+  let urlSessionUUID = UUID()
   private let queue: DispatchQueue
 
   fileprivate let mockedResponse: HTTPURLResponse?
@@ -99,17 +95,17 @@ class ServerMock {
   init(delivery: Delivery) {
     switch delivery {
     case let .success(response: response, data: data):
-      self.mockedResponse = response
-      self.mockedData = data
-      self.mockedError = nil
+      mockedResponse = response
+      mockedData = data
+      mockedError = nil
     case let .failure(error):
-      self.mockedResponse = nil
-      self.mockedData = nil
-      self.mockedError = error
+      mockedResponse = nil
+      mockedData = nil
+      mockedError = error
     }
     precondition(Thread.isMainThread, "`ServerMock` should be initialized on the main thread.")
     precondition(ServerMock.activeInstance == nil, "Only one active instance of `ServerMock` is allowed at a time.")
-    self.queue = DispatchQueue(label: "com.datadoghq.ServerMock-\(urlSessionUUID.uuidString)")
+    queue = DispatchQueue(label: "com.datadoghq.ServerMock-\(urlSessionUUID.uuidString)")
 
     ServerMock.activeInstance = self
   }
