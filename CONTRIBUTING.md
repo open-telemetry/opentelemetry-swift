@@ -79,13 +79,17 @@ To test from the command line you need `swift` version `5.0+`.
 ```sh
 swift test
 ```
-
-### SwiftLint
-the SwiftLint Xcode plugin can be optionally enabled during development by using an environmental variable when opening the project from the commandline. 
+### Linting
+#### SwiftLint
+The SwiftLint Xcode plugin can be optionally enabled during development by using an environmental variable when opening the project from the commandline. 
 ```
 OTEL_ENABLE_SWIFTLINT=1 open Package.swift
 ```
 Note: Xcode must be completely closed before running the above command, close Xcode using `⌘Q` or running `killall xcode` in the commandline.  
+
+#### SwiftFormat
+SwiftFormat is also used to enforce formatting rules where Swiftlint isn't able.
+It will also run in the optionally enabled pre-commit hook if installed via `brew install swiftformat`. 
 
 ### Make your modifications
 
