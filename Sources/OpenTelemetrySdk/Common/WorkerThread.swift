@@ -1,6 +1,6 @@
 import Foundation
 
-#if (swift(>=6) && os(Linux)) || OPENTELEMETRY_SWIFT_LINUX_COMPAT
+#if (compiler(>=6) && os(Linux)) || OPENTELEMETRY_SWIFT_LINUX_COMPAT
   // https://github.com/open-telemetry/opentelemetry-swift/issues/615 prevents Linux builds from succeeding due to a regression in Swift 6 when subclassing Thread. We can work around this by using a block based Thread.
   class WorkerThread {
     var thread: Thread!
