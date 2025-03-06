@@ -43,6 +43,10 @@ public class DefaultStableMeter: StableMeter {
       NoopLongHistogramBuilder()
     }
 
+    func setUnit(_ unit: String) -> Self {
+      self
+    }
+
     func build() -> DoubleHistogram {
       NoopDoubleHistogram()
     }
@@ -160,6 +164,10 @@ public class DefaultStableMeter: StableMeter {
       StableNoopDoubleCounter()
     }
 
+    func setUnit(_ unit: String) -> Self {
+      self
+    }
+
     func buildWithCallback(_ callback: @escaping (ObservableDoubleMeasurement) -> Void) -> ObservableDoubleCounter {
       NoopObservableDoubleCounter()
     }
@@ -176,6 +184,10 @@ public class DefaultStableMeter: StableMeter {
   private class StableNoopDoubleCounterBuilder: DoubleCounterBuilder {
     func build() -> DoubleCounter {
       StableNoopDoubleCounter()
+    }
+
+    func setUnit(_ unit: String) -> Self {
+      self
     }
 
     func buildWithCallback(_ callback: @escaping (ObservableDoubleMeasurement) -> Void) -> ObservableDoubleCounter {

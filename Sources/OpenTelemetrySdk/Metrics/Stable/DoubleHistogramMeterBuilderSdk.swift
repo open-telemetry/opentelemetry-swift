@@ -37,6 +37,11 @@ public class DoubleHistogramMeterBuilderSdk: DoubleHistogramBuilder, InstrumentB
     swapBuilder(LongHistogramMeterBuilderSdk.init)
   }
 
+  public func setUnit(_ unit: String) -> Self {
+    self.unit = unit
+    return self
+  }
+
   public func build() -> OpenTelemetryApi.DoubleHistogram {
     buildSynchronousInstrument(DoubleHistogramMeterSdk.init)
   }
