@@ -6,25 +6,17 @@
 import Foundation
 import OpenTelemetryApi
 
-public class DoubleGaugeBuilderSdk: DoubleGaugeBuilder, InstrumentBuilder {
-  var meterProviderSharedState: MeterProviderSharedState
-
-  var meterSharedState: StableMeterSharedState
-
-  var type: InstrumentType = .observableGauge
-
-  var valueType: InstrumentValueType = .double
-
-  var description: String = ""
-
-  var unit: String = ""
-
-  var instrumentName: String
-
+public class DoubleGaugeBuilderSdk: InstrumentBuilder, DoubleGaugeBuilder {
   init(meterProviderSharedState: inout MeterProviderSharedState, meterSharedState: inout StableMeterSharedState, name: String) {
-    self.meterProviderSharedState = meterProviderSharedState
-    self.meterSharedState = meterSharedState
-    instrumentName = name
+    super.init(
+      meterProviderSharedState: &meterProviderSharedState,
+      meterSharedState: &meterSharedState,
+      type: .observableGauge,
+      valueType: .double,
+      description: "",
+      unit: "",
+      instrumentName: name
+    )
   }
 
   public func ofLongs() -> OpenTelemetryApi.LongGaugeBuilder {

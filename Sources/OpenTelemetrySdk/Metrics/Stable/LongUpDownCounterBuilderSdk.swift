@@ -6,27 +6,19 @@
 import Foundation
 import OpenTelemetryApi
 
-public class LongUpDownCounterBuilderSdk: LongUpDownCounterBuilder, InstrumentBuilder {
-  var meterSharedState: StableMeterSharedState
-
-  var meterProviderSharedState: MeterProviderSharedState
-
-  let type: InstrumentType = .upDownCounter
-
-  let valueType: InstrumentValueType = .long
-
-  var instrumentName: String
-
-  var description: String = ""
-
-  var unit: String = ""
-
+public class LongUpDownCounterBuilderSdk: InstrumentBuilder, LongUpDownCounterBuilder {
   init(meterProviderSharedState: inout MeterProviderSharedState,
        meterSharedState: inout StableMeterSharedState,
        name: String) {
-    self.meterSharedState = meterSharedState
-    self.meterProviderSharedState = meterProviderSharedState
-    instrumentName = name
+    super.init(
+      meterProviderSharedState: &meterProviderSharedState,
+      meterSharedState: &meterSharedState,
+      type: .upDownCounter,
+      valueType: .long,
+      description: "",
+      unit: "",
+      instrumentName: name
+    )
   }
 
   public func ofDoubles() -> OpenTelemetryApi.DoubleUpDownCounterBuilder {
