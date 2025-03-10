@@ -6,31 +6,21 @@
 import Foundation
 import OpenTelemetryApi
 
-public class DoubleCounterMeterBuilderSdk: DoubleCounterBuilder, InstrumentBuilder {
-  var meterSharedState: StableMeterSharedState
-
-  var meterProviderSharedState: MeterProviderSharedState
-
-  let type: InstrumentType = .counter
-
-  let valueType: InstrumentValueType = .double
-
-  var instrumentName: String
-
-  var description: String
-
-  var unit: String
-
-  init(meterProviderSharedState: MeterProviderSharedState,
-       meterSharedState: StableMeterSharedState,
+public class DoubleCounterMeterBuilderSdk: InstrumentBuilder, DoubleCounterBuilder {
+  init(meterProviderSharedState: inout MeterProviderSharedState,
+       meterSharedState: inout StableMeterSharedState,
        name: String,
        description: String,
        unit: String) {
-    self.meterProviderSharedState = meterProviderSharedState
-    self.meterSharedState = meterSharedState
-    self.unit = unit
-    self.description = description
-    instrumentName = name
+    super.init(
+      meterProviderSharedState: &meterProviderSharedState,
+      meterSharedState: &meterSharedState,
+      type: .counter,
+      valueType: .double,
+      description: description,
+      unit: unit,
+      instrumentName: name
+    )
   }
 
   public func build() -> OpenTelemetryApi.DoubleCounter {
