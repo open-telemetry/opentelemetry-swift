@@ -9,12 +9,12 @@ import OpenTelemetryApi
 public class InstrumentBuilder {
   private var meterProviderSharedState: MeterProviderSharedState
   private var meterSharedState: StableMeterSharedState
-  var type: InstrumentType
-  var valueType: InstrumentValueType
-  var description: String
-  var unit: String
-  var instrumentName: String
-  init(meterProviderSharedState: inout MeterProviderSharedState, meterSharedState: inout StableMeterSharedState, type: InstrumentType, valueType: InstrumentValueType, description: String, unit: String, instrumentName: String) {
+  internal var type: InstrumentType
+  internal var valueType: InstrumentValueType
+  internal var description: String
+  internal var unit: String
+  internal var instrumentName: String
+  internal init(meterProviderSharedState: inout MeterProviderSharedState, meterSharedState: inout StableMeterSharedState, type: InstrumentType, valueType: InstrumentValueType, description: String, unit: String, instrumentName: String) {
     self.meterProviderSharedState = meterProviderSharedState
     self.meterSharedState = meterSharedState
     self.type = type
@@ -28,7 +28,7 @@ public class InstrumentBuilder {
 public extension InstrumentBuilder {
   func setUnit(_ units: String) -> Self {
     // todo : validate unit
-    unit = unit
+    unit = units
     return self
   }
 
