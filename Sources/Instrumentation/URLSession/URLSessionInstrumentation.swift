@@ -724,16 +724,16 @@ public class URLSessionInstrumentation {
           // If not inside a Task basePriority is nil
           return
         }
-        
+
         let instrumentedRequest = URLSessionLogger.processAndLogRequest(request,
-                                                                                     sessionTaskId: taskId,
-                                                                                     instrumentation: self,
-                                                                                     shouldInjectHeaders: true)
+                                                                        sessionTaskId: taskId,
+                                                                        instrumentation: self,
+                                                                        shouldInjectHeaders: true)
         if let instrumentedRequest {
           task.setValue(instrumentedRequest, forKey: "currentRequest")
         }
         self.setIdKey(value: taskId, for: task)
-
+        
         if task.delegate == nil, task.state != .running {
           task.delegate = FakeDelegate()
         }
