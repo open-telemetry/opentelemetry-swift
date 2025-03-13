@@ -81,12 +81,13 @@ class HttpTestServer {
 
       switch reqPart {
       case let .head(request):
-
-        if request.uri.unicodeScalars.starts(with: "/success".unicodeScalars) {
+        if request.uri.unicodeScalars.starts(with: "/success".unicodeScalars) ||
+           request.uri.unicodeScalars.starts(with: "/dontinstrument".unicodeScalars) {
           let channel = context.channel
 
           let head = HTTPResponseHead(version: request.version,
-                                      status: .ok)
+                                      status: .ok,
+                                      headers: HTTPHeaders([("Content-Length", "0")]))
           let part = HTTPServerResponsePart.head(head)
           _ = channel.write(part)
 
