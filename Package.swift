@@ -175,7 +175,6 @@ extension Package {
         .executable(name: "OTLPHTTPExporter", targets: ["OTLPHTTPExporter"]),
         .library(name: "SignPostIntegration", targets: ["SignPostIntegration"]),
         .library(name: "ResourceExtension", targets: ["ResourceExtension"]),
-        .library(name: "DatadogExporter", targets: ["DatadogExporter"])
       ])
       targets.append(contentsOf: [
         .target(name: "JaegerExporter",
@@ -240,20 +239,6 @@ extension Package {
         .testTarget(name: "ResourceExtensionTests",
                     dependencies: ["ResourceExtension", "OpenTelemetrySdk"],
                     path: "Tests/InstrumentationTests/SDKResourceExtensionTests"),
-        .target(name: "DatadogExporter",
-                dependencies: ["OpenTelemetrySdk",
-                               "DataCompression"],
-                path: "Sources/Exporters/DatadogExporter",
-                exclude: ["NOTICE", "README.md"]),
-        .testTarget(name: "DatadogExporterTests",
-                    dependencies: ["DatadogExporter",
-                                   .product(name: "NIO", package: "swift-nio"),
-                                   .product(name: "NIOHTTP1", package: "swift-nio")],
-                    path: "Tests/ExportersTests/DatadogExporter"),
-        .executableTarget(name: "DatadogSample",
-                          dependencies: ["DatadogExporter"],
-                          path: "Examples/Datadog Sample",
-                          exclude: ["README.md"]),
         .executableTarget(name: "PrometheusSample",
                           dependencies: ["OpenTelemetrySdk", "PrometheusExporter"],
                           path: "Examples/Prometheus Sample",
