@@ -35,6 +35,11 @@ public class StableMeterProviderBuilder {
     return self
   }
 
+  public func setExemplarFilter(exemplarFilter: ExemplarFilter) -> Self {
+    self.exemplarFilter = exemplarFilter
+    return self
+  }
+
   public func build() -> StableMeterProviderSdk {
     StableMeterProviderSdk(registeredViews: registeredViews, metricReaders: metricReaders, clock: clock, resource: resource, exemplarFilter: exemplarFilter)
   }
