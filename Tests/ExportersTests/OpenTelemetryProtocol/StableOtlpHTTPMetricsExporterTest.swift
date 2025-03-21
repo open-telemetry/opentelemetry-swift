@@ -133,7 +133,7 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
         return .delta
       case .observableCounter:
         return .delta
-      case .observableGauge:
+      case .observableGauge, .gauge:
         return .delta
       case .observableUpDownCounter:
         return .cumulative
