@@ -12,6 +12,8 @@ public protocol ExemplarFilter {
 }
 
 public struct AlwaysOnFilter: ExemplarFilter {
+  public init() {}
+
   public func shouldSampleMeasurement(value: Double, attributes: [String: OpenTelemetryApi.AttributeValue]) -> Bool {
     return true
   }

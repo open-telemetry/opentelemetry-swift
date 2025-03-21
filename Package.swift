@@ -26,7 +26,8 @@ let package = Package(name: "opentelemetry-swift",
                         .library(name: "DataCompression", type: .static, targets: ["DataCompression"]),
                         .library(name: "BaggagePropagationProcessor", targets: ["BaggagePropagationProcessor"]),
                         .executable(name: "ConcurrencyContext", targets: ["ConcurrencyContext"]),
-                        .executable(name: "loggingTracer", targets: ["LoggingTracer"])
+                        .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
+                        .executable(name: "StableMetricSample", targets: ["StableMetricSample"])
                       ],
                       dependencies: [
                         .package(url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
@@ -134,7 +135,8 @@ let package = Package(name: "opentelemetry-swift",
                                           path: "Examples/Logs Sample"),
                         .executableTarget(name: "ConcurrencyContext",
                                           dependencies: ["OpenTelemetrySdk", "OpenTelemetryConcurrency", "StdoutExporter"],
-                                          path: "Examples/ConcurrencyContext")
+                                          path: "Examples/ConcurrencyContext"),
+                        .executableTarget(name: "StableMetricSample", dependencies: ["OpenTelemetrySdk", "OpenTelemetryProtocolExporterGrpc", "StdoutExporter"], path: "Examples/Stable Metric Sample")
                       ]).addPlatformSpecific()
 
 extension Package {
@@ -174,7 +176,7 @@ extension Package {
         .executable(name: "OTLPExporter", targets: ["OTLPExporter"]),
         .executable(name: "OTLPHTTPExporter", targets: ["OTLPHTTPExporter"]),
         .library(name: "SignPostIntegration", targets: ["SignPostIntegration"]),
-        .library(name: "ResourceExtension", targets: ["ResourceExtension"]),
+        .library(name: "ResourceExtension", targets: ["ResourceExtension"])
       ])
       targets.append(contentsOf: [
         .target(name: "JaegerExporter",

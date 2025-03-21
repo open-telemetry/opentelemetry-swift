@@ -45,13 +45,16 @@ class StableMeterSharedState {
   }
 
   func registerSynchronousMetricStorage(instrument: InstrumentDescriptor, meterProviderSharedState: MeterProviderSharedState) -> WritableMetricStorage {
-    var registeredStorages = [SynchronousMetricStorage]()
+    var registeredStorages = [SynchronousMetricStorageProtocol]()
     for (reader, registry) in readerStorageRegisteries {
       for registeredView in reader.registry.findViews(descriptor: instrument, meterScope: instrumentationScope) {
         if type(of: registeredView.view.aggregation) == DropAggregation.self {
           continue
         }
-        registeredStorages.append(registry.register(newStorage: SynchronousMetricStorage.create(registeredReader: reader, registeredView: registeredView, descriptor: instrument, exemplarFilter: meterProviderSharedState.exemplarFilter)) as! SynchronousMetricStorage)
+        registeredStorages.append(registry.register(newStorage: SynchronousMetricStorage.create(registeredReader: reader,
+                                                                                                registeredView: registeredView,
+                                                                                                descriptor: instrument,
+                                                                                                exemplarFilter: meterProviderSharedState.exemplarFilter)) as! SynchronousMetricStorageProtocol)
       }
     }
     if registeredStorages.count == 1 {

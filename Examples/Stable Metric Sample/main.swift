@@ -6,7 +6,9 @@
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
-import OpenTelemetryProtocolExporter
+import OpenTelemetryProtocolExporterCommon
+import OpenTelemetryProtocolExporterGrpc
+import StdoutExporter
 import GRPC
 import NIO
 import NIOHPACK
@@ -51,10 +53,28 @@ func complexViewConfiguration() {
 
   // The example registers a View that re-configures the Gauge instrument into a sum instrument named "GaugeSum"
 
-  OpenTelemetry.registerStableMeterProvider(meterProvider: StableMeterProviderBuilder()
-    .registerView(selector: InstrumentSelector.builder().setInstrument(name: "Gauge").build(), view: StableView.builder().withName(name: "GaugeSum").withAggregation(aggregation: Aggregations.sum()).build())
-    .registerMetricReader(reader: StablePeriodicMetricReaderBuilder(exporter: StableOtlpMetricExporter(channel: exporterChannel)).build())
-    .build()
+  OpenTelemetry.registerStableMeterProvider(
+    meterProvider: StableMeterProviderBuilder()
+      .registerView(
+        selector: InstrumentSelector.builder()
+          .setInstrument(name: "Gauge")
+          .build(),
+        view: StableView.builder()
+          .withName(name: "GaugeSum")
+          .withAggregation(
+            aggregation: Aggregations
+              .sum()
+          )
+          .build()
+      )
+      .setExemplarFilter(exemplarFilter: AlwaysOnFilter())
+      .registerMetricReader(
+        reader: StablePeriodicMetricReaderBuilder(
+          exporter: StdoutMetricExporter(isDebug: true)
+        )
+        .build()
+      )
+      .build()
   )
 }
 
@@ -69,6 +89,9 @@ var observableGauge = gaugeBuilder.buildWithCallback { ObservableDoubleMeasureme
   ObservableDoubleMeasurement.record(value: 1.0, attributes: ["test": AttributeValue.bool(true)])
 }
 
+var gauge = (meter?.gaugeBuilder(name: "Gauge") as! DoubleGaugeBuilderSdk).buildWithCallback { _ in
+  // noop
+}
+
 // gauge
-var gauge = gaugeBuilder.build()
-gauge.record(value: 1.0, attributes: ["test": AttributeValue.bool(true)])
+// gauge.record(value: 1.0, attributes: ["test": AttributeValue.bool(true)])
