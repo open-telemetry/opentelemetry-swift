@@ -22,7 +22,7 @@ public class DefaultAggregation: Aggregation {
       return SumAggregation.instance
     case .histogram:
       return ExplicitBucketHistogramAggregation.instance
-    case .observableGauge:
+    case .observableGauge, .gauge:
       return LastValueAggregation.instance
     }
   }

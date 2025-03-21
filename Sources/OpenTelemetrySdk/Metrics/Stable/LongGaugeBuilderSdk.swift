@@ -20,10 +20,12 @@ public class LongGaugeBuilderSdk: InstrumentBuilder, LongGaugeBuilder {
   }
 
   public func build() -> OpenTelemetryApi.LongGauge {
+    type = .gauge
     return buildSynchronousInstrument(LongGaugeSdk.init)
   }
 
   public func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableLongMeasurement) -> Void) -> OpenTelemetryApi.ObservableLongGauge {
-    registerLongAsynchronousInstrument(type: type, updater: callback)
+    type = .observableGauge
+    return registerLongAsynchronousInstrument(type: type, updater: callback)
   }
 }

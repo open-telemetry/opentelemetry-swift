@@ -18,7 +18,7 @@ public class MetricStorageRegistry {
     return Array(registry.values)
   }
 
-  func register(newStorage: MetricStorage) -> MetricStorage {
+  func register(newStorage: any MetricStorage) -> MetricStorage {
     let descriptor = newStorage.metricDescriptor
     lock.lock()
     defer {
