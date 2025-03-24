@@ -42,7 +42,7 @@ public enum AggregationTemporality: Codable {
       switch type {
       case .upDownCounter, .observableUpDownCounter:
         return .cumulative
-      case .counter, .observableCounter, .histogram, .observableGauge:
+      case .counter, .observableCounter, .histogram, .observableGauge, .gauge:
         return .delta
       }
     }

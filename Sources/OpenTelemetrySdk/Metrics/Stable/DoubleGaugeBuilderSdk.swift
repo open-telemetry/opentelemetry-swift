@@ -24,10 +24,12 @@ public class DoubleGaugeBuilderSdk: InstrumentBuilder, DoubleGaugeBuilder {
   }
 
   public func build() -> DoubleGauge {
+    type = .gauge
     return buildSynchronousInstrument(DoubleGaugeSdk.init)
   }
 
   public func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableDoubleMeasurement) -> Void) -> OpenTelemetryApi.ObservableDoubleGauge {
-    registerDoubleAsynchronousInstrument(type: type, updater: callback)
+    type = .observableGauge
+    return registerDoubleAsynchronousInstrument(type: type, updater: callback)
   }
 }

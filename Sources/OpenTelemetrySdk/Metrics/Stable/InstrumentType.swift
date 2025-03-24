@@ -12,4 +12,5 @@ public enum InstrumentType: CaseIterable {
   case observableCounter
   case observableUpDownCounter
   case observableGauge
+  case gauge
 }
