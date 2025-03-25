@@ -4,7 +4,7 @@
 //
 
 #if canImport(Compression)
-  import DataCompression
+  import OTelDataCompression
   import Foundation
   #if canImport(FoundationNetworking)
     import FoundationNetworking

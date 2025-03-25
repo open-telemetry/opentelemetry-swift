@@ -4,7 +4,7 @@
 //
 
 #if canImport(Compression)
-  import DataCompression
+  import OTelDataCompression
 #endif
 import Foundation
 import SwiftProtobuf
