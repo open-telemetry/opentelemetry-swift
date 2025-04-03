@@ -15,10 +15,10 @@ Pod::Spec.new do |spec|
   spec.ios.deployment_target = "13.0"
   spec.tvos.deployment_target = "13.0"
   spec.watchos.deployment_target = "6.0"
-  spec.module_name = "DataCompression"
+  spec.module_name = "OTelDataCompression"
 
   spec.dependency 'OpenTelemetry-Swift-Api', spec.version.to_s
   spec.dependency 'OpenTelemetry-Swift-Sdk', spec.version.to_s
-  spec.pod_target_xcconfig = { "OTHER_SWIFT_FLAGS" => "-module-name DataCompression -package-name opentelemetry_swift_data_compression" }
+  spec.pod_target_xcconfig = { "OTHER_SWIFT_FLAGS" => "-module-name OTelDataCompression -package-name opentelemetry_swift_data_compression" }
 
 end
