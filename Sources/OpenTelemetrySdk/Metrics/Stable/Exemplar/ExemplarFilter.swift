@@ -34,3 +34,19 @@ public struct AlwaysOffFilter: ExemplarFilter {
     false
   }
 }
+
+public struct TraceBasedFilter: ExemplarFilter {
+  public init() {}
+
+  public func shouldSampleMeasurement(value: Int, attributes: [String: OpenTelemetryApi.AttributeValue]) -> Bool {
+    hasSampledTrace()
+  }
+
+  public func shouldSampleMeasurement(value: Double, attributes: [String: OpenTelemetryApi.AttributeValue]) -> Bool {
+    hasSampledTrace()
+  }
+
+  private func hasSampledTrace() -> Bool {
+    OpenTelemetry.instance.contextProvider.activeSpan?.context.isSampled ?? false
+  }
+}
