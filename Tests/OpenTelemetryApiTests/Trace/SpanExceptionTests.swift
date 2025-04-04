@@ -19,11 +19,30 @@ final class SpanExceptionTests: XCTestCase {
     // `SpanException` possible since `NSError` conforms to `SpanException`.
     let exception = error as SpanException
 
-    #if !os(Linux)
-      XCTAssertEqual(exception.type, String(reflecting: error))
-    #else
-      XCTAssertEqual(exception.type, String(reflecting: error as NSError))
-    #endif
+    // Even though the enum carries an associated "code", when transforming an `Error` to `NSError`,
+    // `code` defaults to 0 if `CustomNSError` is not implemented.
+    XCTAssertEqual(exception.type, "0")
+    XCTAssertEqual(exception.message, error.localizedDescription)
+    XCTAssertNil(exception.stackTrace)
+  }
+
+  func testErrorAsSpanExceptionWithProperBridgeToCustomNSError() {
+    enum TestError: Error, CustomNSError {
+      case test(code: Int)
+
+      var errorCode: Int {
+        switch self {
+        case .test(let code):
+          return code
+        }
+      }
+    }
+
+    let error = TestError.test(code: 5)
+
+    let exception = error as SpanException
+
+    XCTAssertEqual(exception.type, "5")
     XCTAssertEqual(exception.message, error.localizedDescription)
     XCTAssertNil(exception.stackTrace)
   }
@@ -35,6 +54,10 @@ final class SpanExceptionTests: XCTestCase {
       var errorUserInfo: [String: Any] {
         [NSLocalizedDescriptionKey: "This is a custom NSError: \(additionalComments)"]
       }
+
+      var errorCode: Int {
+        -123
+      }
     }
 
     let error = TestCustomNSError(additionalComments: "SpanExceptionTests")
@@ -43,11 +66,7 @@ final class SpanExceptionTests: XCTestCase {
     // `SpanException` possible since `NSError` conforms to `SpanException`.
     let exception = error as SpanException
 
-    #if !os(Linux)
-      XCTAssertEqual(exception.type, String(reflecting: error))
-    #else
-      XCTAssertEqual(exception.type, String(reflecting: error as NSError))
-    #endif
+    XCTAssertEqual(exception.type, "-123")
     XCTAssertEqual(exception.message, error.localizedDescription)
     XCTAssertNil(exception.stackTrace)
 
@@ -61,7 +80,7 @@ final class SpanExceptionTests: XCTestCase {
     let nsError = NSError(domain: "Test Domain", code: 1)
     let exception = nsError as SpanException
 
-    XCTAssertEqual(exception.type, String(reflecting: nsError))
+    XCTAssertEqual(exception.type, "1")
     XCTAssertEqual(exception.message, nsError.localizedDescription)
     XCTAssertNil(exception.stackTrace)
   }

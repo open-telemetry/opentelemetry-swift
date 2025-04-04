@@ -14,7 +14,7 @@ public protocol SpanException {
 
 extension NSError: SpanException {
   public var type: String {
-    String(reflecting: self)
+    String(code)
   }
 
   public var message: String? {
