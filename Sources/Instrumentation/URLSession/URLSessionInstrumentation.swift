@@ -733,9 +733,10 @@ public class URLSessionInstrumentation {
           task.setValue(instrumentedRequest, forKey: "currentRequest")
         }
         self.setIdKey(value: taskId, for: task)
-        
+
         if task.delegate == nil, task.state != .running {
-          task.delegate = FakeDelegate()
+          let session = task.value(forKey: "session") as? URLSession
+          task.delegate = DelegateProxy(delegate: session?.delegate)
         }
       }
     }
@@ -764,7 +765,71 @@ public class URLSessionInstrumentation {
   }
 }
 
-class FakeDelegate: NSObject, URLSessionTaskDelegate {
-  func urlSession(_ session: URLSession, task: URLSessionTask,
-                  didCompleteWithError error: Error?) {}
+class DelegateProxy: NSObject, URLSessionTaskDelegate, URLSessionDataDelegate, URLSessionDownloadDelegate {
+  private let wrappedDelegate: URLSessionDelegate?
+
+  init(delegate: URLSessionDelegate?) {
+    self.wrappedDelegate = delegate
+  }
+
+  func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+    if let sessionDelegate = wrappedDelegate as? URLSessionDownloadDelegate {
+      sessionDelegate.urlSession(session, downloadTask: downloadTask, didFinishDownloadingTo: location)
+    }
+  }
+
+  func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
+    if let sessionDelegate = wrappedDelegate as? URLSessionTaskDelegate {
+      sessionDelegate.urlSession?(session, task: task, didFinishCollecting: metrics)
+    }
+  }
+
+  func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+    if let sessionDelegate = wrappedDelegate as? URLSessionTaskDelegate {
+      sessionDelegate.urlSession?(session, task: task, didCompleteWithError: error)
+    }
+  }
+
+  func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping @Sendable (URLSession.ResponseDisposition) -> Void) {
+    if let sessionDelegate = wrappedDelegate as? URLSessionDataDelegate {
+      sessionDelegate.urlSession?(session, dataTask: dataTask, didReceive: response, completionHandler: completionHandler)
+    }
+  }
+
+  func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didBecome downloadTask: URLSessionDownloadTask) {
+    if let sessionDelegate = wrappedDelegate as? URLSessionDataDelegate {
+      sessionDelegate.urlSession?(session, dataTask: dataTask, didBecome: downloadTask)
+    }
+  }
+
+  // Because the protocol is full of optional methods, we have to forward requests about which
+  // methods are actually implemented.
+  override func responds(to aSelector: Selector!) -> Bool {
+    // these are the methods we've defined above, and swizzle elsewhere in this file
+    if aSelector == #selector(URLSessionDownloadDelegate.urlSession(_:downloadTask:didFinishDownloadingTo:)) {
+      return true
+    }
+    if aSelector == #selector(URLSessionTaskDelegate.urlSession(_:task:didFinishCollecting:)) {
+      return true
+    }
+    if aSelector == #selector(URLSessionTaskDelegate.urlSession(_:task:didCompleteWithError:)) {
+      return true
+    }
+    if aSelector == #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:completionHandler:)) {
+      return true
+    }
+    if aSelector == #selector(URLSessionDataDelegate.urlSession(_:dataTask:didBecome:)
+                              as (URLSessionDataDelegate) -> ((URLSession, URLSessionDataTask, URLSessionDownloadTask) -> Void)?) {
+      return true
+    }
+
+    // we also respond to anything else that our wrapped delegate responds to
+    let answer = wrappedDelegate?.responds(to: aSelector) ?? false
+    return answer
+  }
+
+  // Forward any unhandled methods to the underlying delegate.
+  override func forwardingTarget(for aSelector: Selector!) -> Any? {
+    return wrappedDelegate
+  }
 }
