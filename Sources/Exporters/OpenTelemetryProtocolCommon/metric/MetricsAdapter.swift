@@ -203,6 +203,7 @@ public enum MetricsAdapter {
         protoExemplar.spanID = TraceProtoUtils.toProtoSpanId(spanId: spanContext.spanId)
         protoExemplar.traceID = TraceProtoUtils.toProtoTraceId(traceId: spanContext.traceId)
       }
+      protoPoint.exemplars.append(protoExemplar)
     }
   }
 
@@ -225,6 +226,7 @@ public enum MetricsAdapter {
         protoExemplar.spanID = TraceProtoUtils.toProtoSpanId(spanId: spanContext.spanId)
         protoExemplar.traceID = TraceProtoUtils.toProtoTraceId(traceId: spanContext.traceId)
       }
+      protoPoint.exemplars.append(protoExemplar)
     }
   }
 
@@ -234,19 +236,6 @@ public enum MetricsAdapter {
 
     pointData.attributes.forEach {
       protoPoint.attributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
-    }
-
-    pointData.exemplars.forEach {
-      var protoExemplar = Opentelemetry_Proto_Metrics_V1_Exemplar()
-      protoExemplar.timeUnixNano = $0.epochNanos
-
-      $0.filteredAttributes.forEach {
-        protoExemplar.filteredAttributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
-      }
-      if let spanContext = $0.spanContext {
-        protoExemplar.spanID = TraceProtoUtils.toProtoSpanId(spanId: spanContext.spanId)
-        protoExemplar.traceID = TraceProtoUtils.toProtoTraceId(traceId: spanContext.traceId)
-      }
     }
   }
 
