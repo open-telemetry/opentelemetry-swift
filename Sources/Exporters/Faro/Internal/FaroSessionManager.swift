@@ -10,6 +10,12 @@ public protocol FaroSessionManaging {
     /// Returns the current session identifier
     /// - Returns: A string representing the current session ID
     func getSessionId() -> String
+    
+    /// Callback that will be called when the session ID changes
+    /// - Parameters:
+    ///   - previousId: The previous session ID
+    ///   - newId: The new session ID
+    var onSessionIdChanged: ((String, String) -> Void)? { get set }
 }
 
 /// Factory for creating and managing the singleton instance of FaroSessionManager
@@ -39,6 +45,9 @@ public class FaroSessionManager: FaroSessionManaging {
     private var sessionStartDate: Date
     private let dateProvider: DateProviding
     
+    /// Callback that will be called when the session ID changes
+    public var onSessionIdChanged: ((String, String) -> Void)?
+    
     init(dateProvider: DateProviding) {
         self.dateProvider = dateProvider
         self.sessionStartDate = dateProvider.currentDate()
@@ -58,7 +67,9 @@ public class FaroSessionManager: FaroSessionManaging {
     }
 
     private func refreshSession() {
+        let previousId = sessionId
         sessionStartDate = dateProvider.currentDate()
         sessionId = UUID().uuidString
+        onSessionIdChanged?(previousId, sessionId)
     }
 } 
