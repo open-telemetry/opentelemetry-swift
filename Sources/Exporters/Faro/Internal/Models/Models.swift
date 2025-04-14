@@ -4,15 +4,15 @@ import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterCommon
 
 /// Represents the complete payload sent to Faro collector
-public struct FaroPayload: Encodable {
-    public let meta: FaroMeta
-    public let traces: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest?
-    public let logs: [FaroLog]?
-    public let events: [FaroEvent]?
-    public let measurements: [FaroMeasurement]?
-    public let exceptions: [FaroException]?
+struct FaroPayload: Encodable {
+    let meta: FaroMeta
+    let traces: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest?
+    let logs: [FaroLog]?
+    let events: [FaroEvent]?
+    let measurements: [FaroMeasurement]?
+    let exceptions: [FaroException]?
 
-    public init(
+    init(
         meta: FaroMeta,
         traces: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest? = nil,
         logs: [FaroLog]? = nil,
@@ -28,7 +28,7 @@ public struct FaroPayload: Encodable {
         self.exceptions = exceptions
     }
     
-    public func encode(to encoder: Encoder) throws {
+    func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         
         try container.encode(meta, forKey: .meta)
@@ -67,14 +67,14 @@ public struct FaroPayload: Encodable {
 }
 
 /// Holds metadata about an app event
-public struct FaroMeta: Encodable {
-    public let sdk: FaroSdkInfo
-    public let app: FaroAppInfo
-    public let session: FaroSession
-    public let user: FaroUser?
-    public let view: FaroView
+struct FaroMeta: Encodable {
+    let sdk: FaroSdkInfo
+    let app: FaroAppInfo
+    let session: FaroSession
+    let user: FaroUser?
+    let view: FaroView
 
-    public init(sdk: FaroSdkInfo, app: FaroAppInfo, session: FaroSession, user: FaroUser, view: FaroView) {
+    init(sdk: FaroSdkInfo, app: FaroAppInfo, session: FaroSession, user: FaroUser, view: FaroView) {
         self.sdk = sdk
         self.app = app
         self.session = session
@@ -84,22 +84,22 @@ public struct FaroMeta: Encodable {
 }
 
 /// Holds metadata about a view
-public struct FaroView: Encodable {
-    public let name: String
+struct FaroView: Encodable {
+    let name: String
     
-    public init(name: String) {
+    init(name: String) {
         self.name = name
     }
 }
 
 /// Holds metadata about the user related to an app event
-public struct FaroUser: Encodable {
-    public let id: String?
-    public let username: String?
-    public let email: String?
-    public let attributes: [String: String]
+struct FaroUser: Encodable {
+    let id: String?
+    let username: String?
+    let email: String?
+    let attributes: [String: String]
     
-    public init(id: String, username: String, email: String, attributes: [String : String]) {
+    init(id: String, username: String, email: String, attributes: [String : String]) {
         self.id = id
         self.username = username
         self.email = email
@@ -108,23 +108,23 @@ public struct FaroUser: Encodable {
 }
 
 /// Holds metadata about the browser session the event originates from
-public struct FaroSession: Encodable {
-    public let id: String
-    public let attributes: [String: String]
+struct FaroSession: Encodable {
+    let id: String
+    let attributes: [String: String]
     
-    public init(id: String, attributes: [String: String]) {
+    init(id: String, attributes: [String: String]) {
         self.id = id
         self.attributes = attributes
     }
 }
 
 /// Holds metadata about the app agent that produced the event
-public struct FaroSdkInfo: Encodable {
-    public let name: String
-    public let version: String
-    public let integrations: [FaroIntegration]
+struct FaroSdkInfo: Encodable {
+    let name: String
+    let version: String
+    let integrations: [FaroIntegration]
     
-    public init(name: String, version: String, integrations: [FaroIntegration]) {
+    init(name: String, version: String, integrations: [FaroIntegration]) {
         self.name = name
         self.version = version
         self.integrations = integrations
@@ -132,26 +132,26 @@ public struct FaroSdkInfo: Encodable {
 }
 
 /// Holds metadata about a plugin/integration on the app agent that collected and sent the event
-public struct FaroIntegration: Encodable {
-    public let name: String
-    public let version: String
+struct FaroIntegration: Encodable {
+    let name: String
+    let version: String
     
-    public init(name: String, version: String) {
+    init(name: String, version: String) {
         self.name = name
         self.version = version
     }
 }
 
 /// Holds metadata about the application event originates from
-public struct FaroAppInfo: Encodable {
-    public let name: String?
-    public let namespace: String?
-    public let version: String?
-    public let environment: String?
-    public let bundleId: String?
-    public let release: String?
+struct FaroAppInfo: Encodable {
+    let name: String?
+    let namespace: String?
+    let version: String?
+    let environment: String?
+    let bundleId: String?
+    let release: String?
     
-    public init(name: String?, namespace: String?, version: String?, environment: String?, bundleId: String?, release: String?) {
+    init(name: String?, namespace: String?, version: String?, environment: String?, bundleId: String?, release: String?) {
         self.name = name
         self.namespace = namespace
         self.version = version
@@ -162,9 +162,9 @@ public struct FaroAppInfo: Encodable {
 }
 
 /// Holds trace id and span id associated to an entity (log, exception, measurement...)
-public struct FaroTraceContext: Encodable {
-    public let traceId: String?
-    public let spanId: String?
+struct FaroTraceContext: Encodable {
+    let traceId: String?
+    let spanId: String?
 
     enum CodingKeys: String, CodingKey {
         case traceId = "trace_id"
@@ -176,7 +176,7 @@ public struct FaroTraceContext: Encodable {
         self.spanId = spanId
     }
     
-    public static func create(traceId: String?, spanId: String?) -> FaroTraceContext? {
+    static func create(traceId: String?, spanId: String?) -> FaroTraceContext? {
         guard traceId?.isEmpty == false || spanId?.isEmpty == false else {
             return nil
         }
@@ -185,14 +185,14 @@ public struct FaroTraceContext: Encodable {
 }
 
 /// Holds RUM event data
-public struct FaroEvent: Encodable {
-    public let name: String
-    public let domain: String
-    public let attributes: [String: String]
-    public let timestamp: String
-    public let trace: FaroTraceContext?
+struct FaroEvent: Encodable {
+    let name: String
+    let domain: String
+    let attributes: [String: String]
+    let timestamp: String
+    let trace: FaroTraceContext?
     
-    public init(
+    init(
         name: String,
         attributes: [String: String],
         timestamp: String,
@@ -207,11 +207,11 @@ public struct FaroEvent: Encodable {
 }
 
 /// Holds the data for user provided measurements
-public struct FaroMeasurement: Encodable {
-    public let type: String
-    public let values: [String: Double]
-    public let timestamp: String
-    public let trace: FaroTraceContext?
+struct FaroMeasurement: Encodable {
+    let type: String
+    let values: [String: Double]
+    let timestamp: String
+    let trace: FaroTraceContext?
     
     init(type: String, values: [String : Double], timestamp: String, trace: FaroTraceContext?) {
         self.type = type
@@ -222,12 +222,12 @@ public struct FaroMeasurement: Encodable {
 }
 
 /// Represents a single stacktrace frame
-public struct FaroStacktraceFrame: Encodable {
-    public let colno: Int
-    public let lineno: Int
-    public let filename: String
-    public let function: String
-    public let module: String
+struct FaroStacktraceFrame: Encodable {
+    let colno: Int
+    let lineno: Int
+    let filename: String
+    let function: String
+    let module: String
     
     init(colno: Int, lineno: Int, filename: String, function: String, module: String) {
         self.colno = colno
@@ -239,8 +239,8 @@ public struct FaroStacktraceFrame: Encodable {
 }
 
 /// Is a collection of Frames
-public struct FaroStacktrace: Encodable {
-    public let frames: [FaroStacktraceFrame]
+struct FaroStacktrace: Encodable {
+    let frames: [FaroStacktraceFrame]
 
     init(frames: [FaroStacktraceFrame]) {
         self.frames = frames
@@ -248,13 +248,13 @@ public struct FaroStacktrace: Encodable {
 }
 
 /// Holds all the data regarding an exception
-public struct FaroException: Encodable {
-    public let type: String
-    public let value: String
-    public let timestamp: String
-    public let stacktrace: FaroStacktrace?
-    public let context: [String: String]?
-    public let trace: FaroTraceContext?
+struct FaroException: Encodable {
+    let type: String
+    let value: String
+    let timestamp: String
+    let stacktrace: FaroStacktrace?
+    let context: [String: String]?
+    let trace: FaroTraceContext?
  
     init(type: String, value: String, timestamp: String, stacktrace: FaroStacktrace?, context: [String : String]?, trace: FaroTraceContext?) {
         self.type = type
@@ -267,7 +267,7 @@ public struct FaroException: Encodable {
 }
 
 /// Log level enum for incoming app logs
-public enum FaroLogLevel: String, Encodable {
+enum FaroLogLevel: String, Encodable {
     case trace
     case debug
     case info
@@ -276,12 +276,12 @@ public enum FaroLogLevel: String, Encodable {
 }
 
 /// Controls the data that come into a Log message
-public struct FaroLog: Encodable {
-    public let timestamp: String
-    public let level: FaroLogLevel
-    public let message: String
-    public let context: [String: String]?
-    public let trace: FaroTraceContext?
+struct FaroLog: Encodable {
+    let timestamp: String
+    let level: FaroLogLevel
+    let message: String
+    let context: [String: String]?
+    let trace: FaroTraceContext?
         
     init(timestamp: String, level: FaroLogLevel, message: String, context: [String : String]?, trace: FaroTraceContext?) {
         self.timestamp = timestamp
@@ -293,14 +293,14 @@ public struct FaroLog: Encodable {
 }
 
 /// Error types used throughout the exporter
-public enum FaroExporterError: Error, Equatable {
+enum FaroExporterError: Error, Equatable {
     case invalidCollectorUrl
     case missingApiKey
     case payloadTooLarge
     case networkError(Error)
     case serializationError(Error)
     
-    public static func == (lhs: FaroExporterError, rhs: FaroExporterError) -> Bool {
+    static func == (lhs: FaroExporterError, rhs: FaroExporterError) -> Bool {
         switch (lhs, rhs) {
         case (.invalidCollectorUrl, .invalidCollectorUrl),
              (.missingApiKey, .missingApiKey),
@@ -317,14 +317,14 @@ public enum FaroExporterError: Error, Equatable {
 }
 
 /// Transport-specific errors
-public enum TransportError: Error {
+enum TransportError: Error {
     case invalidResponse
     case httpError(statusCode: Int, message: String?)
     case encodingError(Error)
 }
 
 /// Retry-specific errors
-public enum RetryError: Error {
+enum RetryError: Error {
     case maxRetriesExceeded
     case circuitBreakerOpen
 }

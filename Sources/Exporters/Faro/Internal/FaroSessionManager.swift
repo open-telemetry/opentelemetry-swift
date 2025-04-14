@@ -6,7 +6,7 @@
 import Foundation
 
 /// Protocol defining the contract for Faro session management
-public protocol FaroSessionManaging {
+protocol FaroSessionManaging {
     /// Returns the current session identifier
     /// - Returns: A string representing the current session ID
     func getSessionId() -> String
@@ -19,7 +19,7 @@ public protocol FaroSessionManaging {
 }
 
 /// Factory for creating and managing the singleton instance of FaroSessionManager
-public final class FaroSessionManagerFactory {
+final class FaroSessionManagerFactory {
     private static var shared: FaroSessionManager?
     
     private init() {}
@@ -27,7 +27,7 @@ public final class FaroSessionManagerFactory {
     /// Creates or returns the shared instance of FaroSessionManager
     /// - Parameter dateProvider: Provider for current date, defaults to DateProvider
     /// - Returns: The shared FaroSessionManager instance
-    public static func shared(dateProvider: DateProviding = DateProvider()) -> FaroSessionManager {
+    static func shared(dateProvider: DateProviding = DateProvider()) -> FaroSessionManager {
         if let existingManager = shared {
             return existingManager
         }
@@ -38,7 +38,7 @@ public final class FaroSessionManagerFactory {
 }
 
 /// Default implementation of the FaroSessionManaging protocol
-public class FaroSessionManager: FaroSessionManaging {
+class FaroSessionManager: FaroSessionManaging {
     private static let sessionExpirationInterval: TimeInterval = 4 * 60 * 60  // 4 hours in seconds
     
     private var sessionId: String
@@ -46,7 +46,7 @@ public class FaroSessionManager: FaroSessionManaging {
     private let dateProvider: DateProviding
     
     /// Callback that will be called when the session ID changes
-    public var onSessionIdChanged: ((String, String) -> Void)?
+    var onSessionIdChanged: ((String, String) -> Void)?
     
     init(dateProvider: DateProviding) {
         self.dateProvider = dateProvider
@@ -54,7 +54,7 @@ public class FaroSessionManager: FaroSessionManaging {
         self.sessionId = UUID().uuidString
     }
     
-    public func getSessionId() -> String {
+    func getSessionId() -> String {
         if !isSessionValid() {
             refreshSession()
         }

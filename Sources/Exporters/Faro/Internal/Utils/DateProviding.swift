@@ -6,16 +6,16 @@
 import Foundation
 
 /// Protocol for providing current date, making it easier to test time-dependent logic
-public protocol DateProviding {
+protocol DateProviding {
     /// Returns the current date
     func currentDate() -> Date
 }
 
 /// Default implementation of DateProviding that returns the actual current date
-public class DateProvider: DateProviding {
-    public init() {}
+class DateProvider: DateProviding {
+    init() {}
     
-    public func currentDate() -> Date {
+    func currentDate() -> Date {
         return Date()
     }
 } 
