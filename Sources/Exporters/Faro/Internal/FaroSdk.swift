@@ -10,11 +10,13 @@ final class FaroSdk {
   private var pendingLogs: [FaroLog] = []
   private let appInfo: FaroAppInfo
   private let transport: FaroTransport
+  private let sessionManager: FaroSessionManaging
   private let exporterLogsQueue = DispatchQueue(label: "com.opentelemetry.faro.logs")
 
-  init(appInfo: FaroAppInfo, transport: FaroTransport) {
+  init(appInfo: FaroAppInfo, transport: FaroTransport, sessionManager: FaroSessionManaging) {
     self.appInfo = appInfo
     self.transport = transport
+    self.sessionManager = sessionManager
   }
 
   func addLogs(_ logs: [FaroLog]) {
@@ -48,7 +50,7 @@ final class FaroSdk {
       meta: FaroMeta(
         sdk: FaroSdkInfo(name: "opentelemetry-swift", version: "1.0.0", integrations: []),
         app: appInfo,
-        session: FaroSession(id: UUID().uuidString, attributes: [:]),
+        session: FaroSession(id: sessionManager.getSessionId(), attributes: [:]),
         user: FaroUser(id: "", username: "", email: "", attributes: [:]),
         view: FaroView(name: "")
       ),

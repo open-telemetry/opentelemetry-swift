@@ -77,7 +77,7 @@ struct FaroMeta: Encodable {
   let user: FaroUser?
   let view: FaroView
 
-  init(sdk: FaroSdkInfo, app: FaroAppInfo, session: FaroSession, user: FaroUser, view: FaroView) {
+  init(sdk: FaroSdkInfo, app: FaroAppInfo, session: FaroSession, user: FaroUser?, view: FaroView) {
     self.sdk = sdk
     self.app = app
     self.session = session

@@ -10,6 +10,7 @@ final class FaroSdkTests: XCTestCase {
     var sut: FaroSdk!
     var mockAppInfo: FaroAppInfo!
     var mockTransport: MockTransport!
+    var mockSessionManager: MockFaroSessionManager!
     
     override func setUp() {
         super.setUp()
@@ -25,11 +26,12 @@ final class FaroSdkTests: XCTestCase {
         
         // Use a mock transport instead of trying to create a real one
         mockTransport = MockTransport()
+        mockSessionManager = MockFaroSessionManager()
         
         // For now, we'll test a simplified version that accepts our mock
         // In a complete solution, we'd refactor FaroSdk to use the protocol
         let realTransport = createRealTransport()
-        sut = FaroSdk(appInfo: mockAppInfo, transport: realTransport)
+        sut = FaroSdk(appInfo: mockAppInfo, transport: realTransport, sessionManager: mockSessionManager)
     }
     
     private func createRealTransport() -> FaroTransport {
@@ -56,6 +58,7 @@ final class FaroSdkTests: XCTestCase {
         sut = nil
         mockAppInfo = nil
         mockTransport = nil
+        mockSessionManager = nil
         super.tearDown()
     }
 

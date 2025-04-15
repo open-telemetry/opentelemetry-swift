@@ -27,7 +27,7 @@ final class FaroSdkFactory {
     let sessionManager = FaroSessionManager(dateProvider: DateProvider())
     let transport = FaroTransport(endpointConfiguration: endpointConfiguration, sessionManager: sessionManager)
 
-    let sdk = FaroSdk(appInfo: appInfo, transport: transport)
+    let sdk = FaroSdk(appInfo: appInfo, transport: transport, sessionManager: sessionManager)
     shared = sdk
     return sdk
   }

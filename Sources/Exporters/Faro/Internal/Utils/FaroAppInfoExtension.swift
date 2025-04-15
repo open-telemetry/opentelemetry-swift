@@ -12,7 +12,7 @@ extension FaroAppInfo {
   static func create(from options: FaroExporterOptions) -> FaroAppInfo {
     return FaroAppInfo(
       name: options.appName,
-      namespace: nil,
+      namespace: options.namespace,
       version: options.appVersion,
       environment: options.appEnvironment,
       bundleId: nil,

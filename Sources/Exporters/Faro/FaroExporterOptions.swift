@@ -11,23 +11,17 @@ public struct FaroExporterOptions {
   public let appName: String?
   public let appVersion: String?
   public let appEnvironment: String?
-  public let maxBatchSize: Int
-  public let maxQueueSize: Int
-  public let batchTimeout: TimeInterval
+  public let namespace: String?
 
   public init(collectorUrl: String,
               appName: String? = nil,
               appVersion: String? = nil,
               appEnvironment: String? = nil,
-              maxBatchSize: Int = 100,
-              maxQueueSize: Int = 1000,
-              batchTimeout: TimeInterval = 30.0) {
+              namespace: String? = nil) {
     self.collectorUrl = collectorUrl
     self.appName = appName
     self.appVersion = appVersion
     self.appEnvironment = appEnvironment
-    self.maxBatchSize = maxBatchSize
-    self.maxQueueSize = maxQueueSize
-    self.batchTimeout = batchTimeout
+    self.namespace = namespace
   }
 }
