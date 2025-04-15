@@ -25,7 +25,7 @@ final class FaroSessionManagerTests: XCTestCase {
     
     // MARK: - Session Management Tests
     
-    func test_getSessionId_returnsNonEmptyString() {
+    func testGetSessionIdReturnsNonEmptyString() {
         // When
         let sessionId = sut.getSessionId()
         
@@ -33,7 +33,7 @@ final class FaroSessionManagerTests: XCTestCase {
         XCTAssertFalse(sessionId.isEmpty, "Session ID should not be empty")
     }
     
-    func test_getSessionId_returnsSameIdWithinFourHours() {
+    func testGetSessionIdReturnsSameIdWithinFourHours() {
         // Given
         let initialSessionId = sut.getSessionId()
         
@@ -46,7 +46,7 @@ final class FaroSessionManagerTests: XCTestCase {
         XCTAssertEqual(initialSessionId, laterSessionId, "Session ID should remain the same within 4 hours")
     }
     
-    func test_getSessionId_returnsNewIdAfterFourHours() {
+    func testGetSessionIdReturnsNewIdAfterFourHours() {
         // Given
         let initialSessionId = sut.getSessionId()
         
@@ -59,7 +59,7 @@ final class FaroSessionManagerTests: XCTestCase {
         XCTAssertNotEqual(initialSessionId, newSessionId, "Session ID should change after 4 hours")
     }
     
-    func test_onSessionIdChanged_notCalledOnInitialization() {
+    func testOnSessionIdChangedNotCalledOnInitialization() {
         // Given
         var callCount = 0
         sut.onSessionIdChanged = { (_, _) in
@@ -73,7 +73,7 @@ final class FaroSessionManagerTests: XCTestCase {
         XCTAssertEqual(callCount, 0, "Callback should not be called on initialization")
     }
     
-    func test_onSessionIdChanged_calledWhenSessionRefreshed() {
+    func testOnSessionIdChangedCalledWhenSessionRefreshed() {
         // Given
         var capturedPreviousId: String?
         var capturedNewId: String?
@@ -94,7 +94,7 @@ final class FaroSessionManagerTests: XCTestCase {
         XCTAssertNotEqual(capturedPreviousId, capturedNewId, "Session IDs should be different")
     }
     
-    func test_onSessionIdChanged_notCalledWhenSessionStillValid() {
+    func testOnSessionIdChangedNotCalledWhenSessionStillValid() {
         // Given
         var callCount = 0
         sut.onSessionIdChanged = { (previousId: String, newId: String) in

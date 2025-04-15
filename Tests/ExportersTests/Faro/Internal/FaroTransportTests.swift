@@ -37,7 +37,7 @@ final class FaroTransportTests: XCTestCase {
     
     // MARK: - Tests
     
-    func test_send_addsCorrectHeaders() {
+    func testSendAddsCorrectHeaders() {
         // Given
         let payload = createTestPayload()
         
@@ -57,7 +57,7 @@ final class FaroTransportTests: XCTestCase {
         XCTAssertEqual(httpClient.lastRequest?.value(forHTTPHeaderField: "x-faro-session-id"), sessionManager.sessionId)
     }
     
-    func test_send_encodesPayload() {
+    func testSendEncodesPayload() {
         // Given
         let payload = createTestPayload()
         
@@ -85,7 +85,7 @@ final class FaroTransportTests: XCTestCase {
         }
     }
     
-    func test_send_completesSuccessfully() {
+    func testSendCompletesSuccessfully() {
         // Given
         let payload = createTestPayload()
         httpClient.mockResponse = (data: nil as Data?, response: HTTPURLResponse(url: endpointConfiguration.collectorUrl, statusCode: 200, httpVersion: nil, headerFields: nil), error: nil as Error?)
@@ -112,7 +112,7 @@ final class FaroTransportTests: XCTestCase {
         }
     }
     
-    func test_send_failsWithNetworkError() {
+    func testSendFailsWithNetworkError() {
         // Given
         let payload = createTestPayload()
         let expectedError = NSError(domain: "test", code: 42, userInfo: [NSLocalizedDescriptionKey: "Network error"])
@@ -143,7 +143,7 @@ final class FaroTransportTests: XCTestCase {
         }
     }
     
-    func test_send_failsWithHttpError() {
+    func testSendFailsWithHttpError() {
         // Given
         let payload = createTestPayload()
         let responseData = "Error message".data(using: .utf8)

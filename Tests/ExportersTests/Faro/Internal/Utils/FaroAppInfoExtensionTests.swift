@@ -7,7 +7,7 @@ import XCTest
 @testable import FaroExporter
 
 final class FaroAppInfoExtensionTests: XCTestCase {
-    func testCreate_FromOptions_CreatesCorrectAppInfo() {
+    func testCreateFromOptionsCreatesCorrectAppInfo() {
         // Given
         let options = FaroExporterOptions(
             collectorUrl: "https://example.com",
@@ -28,7 +28,7 @@ final class FaroAppInfoExtensionTests: XCTestCase {
         XCTAssertNil(appInfo.release)
     }
     
-    func testCreate_FromOptionsWithNilValues_CreatesAppInfoWithNilValues() {
+    func testCreateFromOptionsWithNilValuesCreatesAppInfoWithNilValues() {
         // Given
         let options = FaroExporterOptions(
             collectorUrl: "https://example.com"

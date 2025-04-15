@@ -8,7 +8,7 @@ import XCTest
 
 final class FaroTraceContextTests: XCTestCase {
     
-    func testEquatable_Equal() {
+    func testEquatableEqual() {
         // Given
         let context1 = FaroTraceContext.create(traceId: "trace123", spanId: "span456")
         let context2 = FaroTraceContext.create(traceId: "trace123", spanId: "span456")
@@ -17,7 +17,7 @@ final class FaroTraceContextTests: XCTestCase {
         XCTAssertEqual(context1, context2)
     }
     
-    func testEquatable_NotEqual() {
+    func testEquatableNotEqual() {
         // Given
         let context1 = FaroTraceContext.create(traceId: "trace123", spanId: "span456")
         let context2 = FaroTraceContext.create(traceId: "trace789", spanId: "span456")
@@ -28,7 +28,7 @@ final class FaroTraceContextTests: XCTestCase {
         XCTAssertNotEqual(context1, context3, "Should not be equal with different spanId")
     }
     
-    func testEquatable_WithNil() {
+    func testEquatableWithNil() {
         // Given
         let context1 = FaroTraceContext.create(traceId: nil, spanId: nil)
         let context2 = FaroTraceContext.create(traceId: nil, spanId: nil)
@@ -38,7 +38,7 @@ final class FaroTraceContextTests: XCTestCase {
         XCTAssertNil(context2)
     }
     
-    func testCreate_WithValidValues_ReturnsContext() {
+    func testCreateWithValidValuesReturnsContext() {
         // Given
         let traceId = "trace123"
         let spanId = "span456"
@@ -52,7 +52,7 @@ final class FaroTraceContextTests: XCTestCase {
         XCTAssertEqual(context?.spanId, spanId)
     }
     
-    func testCreate_WithNilValues_ReturnsNil() {
+    func testCreateWithNilValuesReturnsNil() {
         // Given/When
         let context1 = FaroTraceContext.create(traceId: nil, spanId: "span456")
         let context2 = FaroTraceContext.create(traceId: "trace123", spanId: nil)
@@ -66,7 +66,7 @@ final class FaroTraceContextTests: XCTestCase {
         XCTAssertNil(context4, "Should be nil when both values are empty strings")
     }
     
-    func testCreate_WithEmptyStrings() {
+    func testCreateWithEmptyStrings() {
         // Given/When
         let context1 = FaroTraceContext.create(traceId: "", spanId: "span456")
         let context2 = FaroTraceContext.create(traceId: "trace123", spanId: "")

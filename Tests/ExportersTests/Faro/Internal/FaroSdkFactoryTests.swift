@@ -7,7 +7,7 @@ import XCTest
 @testable import FaroExporter
 
 final class FaroSdkFactoryTests: XCTestCase {
-    func testGetInstance_ReturnsSameInstance() throws {
+    func testGetInstanceReturnsSameInstance() throws {
         // Given
         let options = FaroExporterOptions(
             collectorUrl: "https://example.com/collect/test-api-key",

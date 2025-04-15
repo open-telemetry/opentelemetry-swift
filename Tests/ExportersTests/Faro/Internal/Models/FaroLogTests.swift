@@ -17,7 +17,7 @@ final class FaroLogTests: XCTestCase {
     
     // MARK: - Equatable Tests
     
-    func testEquatable_Equal() {
+    func testEquatableEqual() {
         // Given
         let log1 = FaroLog(
             timestamp: timestamp,
@@ -39,7 +39,7 @@ final class FaroLogTests: XCTestCase {
         XCTAssertEqual(log1, log2)
     }
     
-    func testEquatable_NotEqual_DifferentTimestamp() {
+    func testEquatableNotEqualDifferentTimestamp() {
         // Given
         let log1 = FaroLog(timestamp: "2024-03-20T10:00:00Z", level: .info, message: message, context: context, trace: trace)
         let log2 = FaroLog(timestamp: "2024-03-20T10:00:01Z", level: .info, message: message, context: context, trace: trace)
@@ -48,7 +48,7 @@ final class FaroLogTests: XCTestCase {
         XCTAssertNotEqual(log1, log2, "Should not be equal with different timestamp")
     }
     
-    func testEquatable_NotEqual_DifferentLevel() {
+    func testEquatableNotEqualDifferentLevel() {
         // Given
         let log1 = FaroLog(timestamp: timestamp, level: .info, message: message, context: context, trace: trace)
         let log2 = FaroLog(timestamp: timestamp, level: .error, message: message, context: context, trace: trace)
@@ -57,7 +57,7 @@ final class FaroLogTests: XCTestCase {
         XCTAssertNotEqual(log1, log2, "Should not be equal with different level")
     }
     
-    func testEquatable_NotEqual_DifferentMessage() {
+    func testEquatableNotEqualDifferentMessage() {
         // Given
         let log1 = FaroLog(timestamp: timestamp, level: .info, message: "Message 1", context: context, trace: trace)
         let log2 = FaroLog(timestamp: timestamp, level: .info, message: "Message 2", context: context, trace: trace)
@@ -66,7 +66,7 @@ final class FaroLogTests: XCTestCase {
         XCTAssertNotEqual(log1, log2, "Should not be equal with different message")
     }
     
-    func testEquatable_NotEqual_DifferentContext() {
+    func testEquatableNotEqualDifferentContext() {
         // Given
         let log1 = FaroLog(timestamp: timestamp, level: .info, message: message, context: ["key1": "value1"], trace: trace)
         let log2 = FaroLog(timestamp: timestamp, level: .info, message: message, context: ["key2": "value2"], trace: trace)
@@ -75,7 +75,7 @@ final class FaroLogTests: XCTestCase {
         XCTAssertNotEqual(log1, log2, "Should not be equal with different context")
     }
     
-    func testEquatable_NotEqual_DifferentTrace() {
+    func testEquatableNotEqualDifferentTrace() {
         // Given
         let trace1 = FaroTraceContext.create(traceId: "trace1", spanId: "span1")
         let trace2 = FaroTraceContext.create(traceId: "trace2", spanId: "span2")
@@ -87,7 +87,7 @@ final class FaroLogTests: XCTestCase {
         XCTAssertNotEqual(log1, log2, "Should not be equal with different trace")
     }
     
-    func testEquatable_WithNilValues() {
+    func testEquatableWithNilValues() {
         // Given
         let log1 = FaroLog(
             timestamp: timestamp,
@@ -109,7 +109,7 @@ final class FaroLogTests: XCTestCase {
         XCTAssertEqual(log1, log2, "Should be equal with nil optional values")
     }
     
-    func testEquatable_WithMixedNilValues() {
+    func testEquatableWithMixedNilValues() {
         // Given
         let log1 = FaroLog(timestamp: timestamp, level: .info, message: message, context: context, trace: nil)
         let log2 = FaroLog(timestamp: timestamp, level: .info, message: message, context: nil, trace: trace)

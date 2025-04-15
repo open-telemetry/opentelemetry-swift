@@ -64,7 +64,7 @@ final class FaroSdkTests: XCTestCase {
         XCTAssertNotNil(sut, "SDK should be initialized")
     }
     
-    func testAddLogs_BasicFunctionality() {
+    func testAddLogsBasicFunctionality() {
         // Empty test for now - will implement proper testing later
         let testLog = FaroLog(
             timestamp: ISO8601DateFormatter().string(from: Date()),
