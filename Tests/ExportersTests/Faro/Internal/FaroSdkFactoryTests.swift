@@ -7,20 +7,20 @@ import XCTest
 @testable import FaroExporter
 
 final class FaroSdkFactoryTests: XCTestCase {
-    func testGetInstanceReturnsSameInstance() throws {
-        // Given
-        let options = FaroExporterOptions(
-            collectorUrl: "https://example.com/collect/test-api-key",
-            appName: "TestApp",
-            appVersion: "1.0.0",
-            appEnvironment: "test"
-        )
-        
-        // When
-        let firstInstance = try FaroSdkFactory.getInstance(options: options)
-        let secondInstance = try FaroSdkFactory.getInstance(options: options)
-        
-        // Then
-        XCTAssertTrue(firstInstance === secondInstance, "Factory should return the same instance")
-    }
-} 
+  func testGetInstanceReturnsSameInstance() throws {
+    // Given
+    let options = FaroExporterOptions(
+      collectorUrl: "https://example.com/collect/test-api-key",
+      appName: "TestApp",
+      appVersion: "1.0.0",
+      appEnvironment: "test"
+    )
+
+    // When
+    let firstInstance = try FaroSdkFactory.getInstance(options: options)
+    let secondInstance = try FaroSdkFactory.getInstance(options: options)
+
+    // Then
+    XCTAssertTrue(firstInstance === secondInstance, "Factory should return the same instance")
+  }
+}

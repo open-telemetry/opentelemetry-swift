@@ -196,7 +196,7 @@ struct FaroEvent: Encodable {
   let trace: FaroTraceContext?
 
   init(name: String,
-       attributes: [String: String],
+       attributes: [String: String] = [:],
        timestamp: String,
        trace: FaroTraceContext?) {
     self.name = name

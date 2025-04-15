@@ -11,7 +11,7 @@ final class FaroSdk {
   private let transport: FaroTransport
   private let sessionManager: FaroSessionManaging
   private let exporterQueue = DispatchQueue(label: "com.opentelemetry.faro.exporter")
-  
+
   private let flushInterval: TimeInterval = 2.0 // seconds
   private var flushTimer: Timer?
 
@@ -22,6 +22,8 @@ final class FaroSdk {
     self.appInfo = appInfo
     self.transport = transport
     self.sessionManager = sessionManager
+
+    sendSessionStartEvent()
   }
 
   func pushEvents(events: [FaroEvent]) {
@@ -38,6 +40,12 @@ final class FaroSdk {
     }
   }
 
+  private func sendSessionStartEvent() {
+    let sessionStartEvent = FaroEvent.create(name: "session_start")
+    pushEvents(events: [sessionStartEvent])
+    scheduleFlush()
+  }
+
   private func scheduleFlush() {
     if flushTimer == nil {
       flushTimer = Timer.scheduledTimer(withTimeInterval: flushInterval, repeats: false) { [weak self] _ in
@@ -49,17 +57,17 @@ final class FaroSdk {
   private func flushPendingData() {
     var sendingLogs: [FaroLog] = []
     var sendingEvents: [FaroEvent] = []
-    
+
     exporterQueue.sync {
       sendingLogs = pendingLogs
       sendingEvents = pendingEvents
       pendingLogs = []
       pendingEvents = []
-      
+
       flushTimer?.invalidate()
       flushTimer = nil
     }
-    
+
     if !sendingLogs.isEmpty || !sendingEvents.isEmpty {
       let payload = getPayload(logs: sendingLogs, events: sendingEvents)
       transport.send(payload) { [weak self] result in

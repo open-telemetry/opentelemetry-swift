@@ -1,0 +1,30 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import Foundation
+
+// MARK: - FaroEvent Factory Methods
+
+extension FaroEvent {
+  /// Shared date provider instance
+  private static let sharedDateProvider = DateProvider()
+
+  /// Factory method to create a FaroEvent with current timestamp
+  /// - Parameters:
+  ///   - name: The name of the event
+  ///   - attributes: Optional event attributes
+  ///   - trace: Optional trace context
+  /// - Returns: A new FaroEvent instance
+  static func create(name: String,
+                     attributes: [String: String] = [:],
+                     trace: FaroTraceContext? = nil) -> FaroEvent {
+    return FaroEvent(
+      name: name,
+      attributes: attributes,
+      timestamp: sharedDateProvider.currentDateISO8601String(),
+      trace: trace
+    )
+  }
+}
