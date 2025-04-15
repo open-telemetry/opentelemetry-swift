@@ -67,7 +67,7 @@ final class FaroSdkTests: XCTestCase {
         XCTAssertNotNil(sut, "SDK should be initialized")
     }
     
-    func testAddLogsBasicFunctionality() {
+    func testPushLogsBasicFunctionality() {
         // Empty test for now - will implement proper testing later
         let testLog = FaroLog(
             timestamp: ISO8601DateFormatter().string(from: Date()),
@@ -77,9 +77,9 @@ final class FaroSdkTests: XCTestCase {
             trace: nil
         )
         
-        // Just verify we can call addLogs without crashing
-        sut.addLogs([testLog])
-        XCTAssertTrue(true, "Should be able to add logs without crashing")
+        // Just verify we can call pushLogs without crashing
+        sut.pushLogs([testLog])
+        XCTAssertTrue(true, "Should be able to push logs without crashing")
     }
 }
 
