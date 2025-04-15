@@ -1,3 +1,8 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+ 
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
@@ -162,7 +167,7 @@ struct FaroAppInfo: Encodable {
 }
 
 /// Holds trace id and span id associated to an entity (log, exception, measurement...)
-struct FaroTraceContext: Encodable {
+struct FaroTraceContext: Encodable, Equatable {
     let traceId: String?
     let spanId: String?
 
@@ -276,13 +281,13 @@ enum FaroLogLevel: String, Encodable {
 }
 
 /// Controls the data that come into a Log message
-struct FaroLog: Encodable {
+struct FaroLog: Encodable, Equatable {
     let timestamp: String
     let level: FaroLogLevel
     let message: String
     let context: [String: String]?
     let trace: FaroTraceContext?
-        
+    
     init(timestamp: String, level: FaroLogLevel, message: String, context: [String : String]?, trace: FaroTraceContext?) {
         self.timestamp = timestamp
         self.level = level
@@ -315,17 +320,3 @@ enum FaroExporterError: Error, Equatable {
         }
     }
 }
-
-/// Transport-specific errors
-enum TransportError: Error {
-    case invalidResponse
-    case httpError(statusCode: Int, message: String?)
-    case encodingError(Error)
-}
-
-/// Retry-specific errors
-enum RetryError: Error {
-    case maxRetriesExceeded
-    case circuitBreakerOpen
-}
-

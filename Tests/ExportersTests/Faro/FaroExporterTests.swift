@@ -25,7 +25,7 @@ final class FaroExporterTests: XCTestCase {
     func testInvalidCollectorUrl() {
         // Given
         let options = FaroExporterOptions(
-            collectorUrl: "invalid-url",
+            collectorUrl: "",
             appName: "TestApp"
         )
         

@@ -11,6 +11,7 @@ import OpenTelemetryProtocolExporterCommon
 public final class FaroExporter: SpanExporter, LogRecordExporter {
 
     private let options: FaroExporterOptions
+    private let faroSdk: FaroSdk
     
     static let version = "1.0.0"
 
@@ -18,28 +19,9 @@ public final class FaroExporter: SpanExporter, LogRecordExporter {
     /// - Parameter options: Configuration options
     /// - Throws: FaroExporterError if configuration is invalid
     public init(options: FaroExporterOptions) throws {
-        try Self.validateOptions(options)
         self.options = options
-    }
-
-    private static func validateOptions(_ options: FaroExporterOptions) throws {
-        guard let url = URL(string: options.collectorUrl),
-              url.scheme?.lowercased() == "https",
-              let host = url.host,
-              !host.isEmpty else {
-            throw FaroExporterError.invalidCollectorUrl
-        }
-
-        // The API key should be the last non-empty path component
-        let pathComponents = url.pathComponents
-            .filter { !$0.isEmpty && $0 != "/" }
-        
-        // Ensure we have at least one path component and it's not just "collect"
-        guard !pathComponents.isEmpty,
-              let lastComponent = pathComponents.last,
-              lastComponent != "collect" else {
-            throw FaroExporterError.missingApiKey
-        }
+        // Create FaroSdk using factory - this will validate the endpoint configuration
+        self.faroSdk = try FaroSdkFactory.getInstance(options: options)
     }
 
     // MARK: - SpanExporter Implementation
