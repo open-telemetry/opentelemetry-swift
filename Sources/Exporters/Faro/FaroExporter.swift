@@ -25,7 +25,25 @@ public final class FaroExporter: SpanExporter, LogRecordExporter {
   // MARK: - SpanExporter Implementation
 
   public func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
+    // Push spans as normal
     faroSdk.pushSpans(spans)
+    
+    // Additionally create and push an event for each span
+    let events = spans.compactMap { span -> FaroEvent? in
+      // Create a Faro event from each span
+      guard let traceContext = span.getFaroTraceContext() else { return nil }
+      
+      return FaroEvent.create(
+        name: span.getFaroEventName(),
+        attributes: span.getFaroEventAttributes(),
+        trace: traceContext
+      )
+    }
+    
+    if !events.isEmpty {
+      faroSdk.pushEvents(events: events)
+    }
+    
     return .success
   }
 
