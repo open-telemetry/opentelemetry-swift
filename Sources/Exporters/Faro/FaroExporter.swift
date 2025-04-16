@@ -24,12 +24,12 @@ public final class FaroExporter: SpanExporter, LogRecordExporter {
   // MARK: - SpanExporter Implementation
 
   public func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
-    let _ =
+    let body =
       Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
         $0.resourceSpans = SpanAdapter.toProtoResourceSpans(
           spanDataList: spans)
       }
-    // print("### bodyJson: \(try? body.jsonString() ?? "nil") ###")
+    print("### bodyJson: \(try? body.jsonString() ?? "nil") ###")
     return .success
   }
 
