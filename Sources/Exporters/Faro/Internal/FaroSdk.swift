@@ -13,7 +13,7 @@ final class FaroSdk {
   private let exporterQueue = DispatchQueue(label: "com.opentelemetry.faro.exporter")
 
   private let flushInterval: TimeInterval = 2.0 // seconds
-  private var flushTimer: Timer?
+  private var flushWorkItem: DispatchWorkItem?
 
   private var pendingLogs: [FaroLog] = []
   private var pendingEvents: [FaroEvent] = []
@@ -48,12 +48,14 @@ final class FaroSdk {
 
   private func scheduleFlush() {
     print("### FaroSdk: want to scheduleFlush")
-    if flushTimer == nil {
+    if flushWorkItem == nil {
       print("### FaroSdk: did scheduleFlush with new times")
-      flushTimer = Timer.scheduledTimer(withTimeInterval: flushInterval, repeats: false) { [weak self] _ in
+      let workItem = DispatchWorkItem { [weak self] in
         print("### FaroSdk: scheduleFlush timer fired")
         self?.flushPendingData()
       }
+      flushWorkItem = workItem
+      exporterQueue.asyncAfter(deadline: .now() + flushInterval, execute: workItem)
     }
   }
 
@@ -68,9 +70,9 @@ final class FaroSdk {
       pendingLogs = []
       pendingEvents = []
 
-      print("### FaroSdk: flushPendingData: invalidate timer")
-      flushTimer?.invalidate()
-      flushTimer = nil
+      print("### FaroSdk: flushPendingData: cancel work item")
+      flushWorkItem?.cancel()
+      flushWorkItem = nil
     }
 
     if !sendingLogs.isEmpty || !sendingEvents.isEmpty {
