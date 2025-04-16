@@ -6,6 +6,7 @@
 import Foundation
 import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterCommon
+import OpenTelemetryApi
 
 /// Main exporter class implementing OTel protocols for Grafana Faro
 public final class FaroExporter: SpanExporter, LogRecordExporter {

@@ -60,17 +60,6 @@ final class FaroTransport: FaroTransportable {
 
     // Set the payload
     do {
-      // Debug: Print the payload
-      let jsonEncoder = JSONEncoder()
-      jsonEncoder.outputFormatting = [.prettyPrinted]
-      let jsonData = try jsonEncoder.encode(payload)
-      if let jsonString = String(data: jsonData, encoding: .utf8) {
-        print("### === FaroPayload JSON ===")
-        print(jsonString)
-        print("### ========================")
-      }
-      // Debug: END
-
       request.httpBody = try JSONEncoder().encode(payload)
     } catch {
       print("FaroTransport: Failed to encode payload: \(error)")

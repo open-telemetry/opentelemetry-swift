@@ -42,7 +42,7 @@ final class FaroSdk {
     }
     scheduleFlush()
   }
-  
+
   func pushSpans(_ spans: [SpanData]) {
     telemetryDataQueue.sync {
       pendingSpans.append(contentsOf: spans)
@@ -104,15 +104,17 @@ final class FaroSdk {
   }
 
   private func getPayload(logs: [FaroLog], events: [FaroEvent], spans: [SpanData] = []) -> FaroPayload {
-    let traces = spans.isEmpty ? nil : Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
-      $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
-    }
+    let sessionId = sessionManager.getSessionId()
     
+    let traces = spans.isEmpty ? nil : Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
+      $0.resourceSpans = FaroSpanAdapter.toProtoResourceSpans(spanDataList: spans, sessionId: sessionId)
+    }
+
     return FaroPayload(
       meta: FaroMeta(
         sdk: FaroSdkInfo(name: "opentelemetry-swift-faro-exporter", version: "1.3.5", integrations: []), // TODO: check if we can get this from Otel
         app: appInfo,
-        session: FaroSession(id: sessionManager.getSessionId(), attributes: [:]), // TODO: check if we can get the device attributes, or map them
+        session: FaroSession(id: sessionId, attributes: [:]), // TODO: check if we can get the device attributes, or map them
         user: nil,
         view: FaroView(name: "default")
       ),

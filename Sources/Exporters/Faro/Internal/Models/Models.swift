@@ -37,9 +37,13 @@ struct FaroPayload: Encodable {
     try container.encode(meta, forKey: .meta)
 
     if let traces {
+      // Convert protobuf to JSON object and inject it directly
       let jsonData = try traces.jsonUTF8Data()
-      let jsonString = String(data: jsonData, encoding: .utf8)
-      try container.encode(jsonString, forKey: .traces)
+      if let jsonObject = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] {
+        // Create a nested container for traces and encode each key-value pair
+        var tracesContainer = container.nestedContainer(keyedBy: DynamicCodingKey.self, forKey: .traces)
+        try encodeJSONObject(jsonObject, into: &tracesContainer)
+      }
     }
 
     if let logs {
@@ -56,6 +60,107 @@ struct FaroPayload: Encodable {
 
     if let exceptions {
       try container.encode(exceptions, forKey: .exceptions)
+    }
+  }
+
+  // Helper method to encode JSON objects with proper nesting
+  private func encodeJSONObject(_ jsonObject: [String: Any], into container: inout KeyedEncodingContainer<DynamicCodingKey>) throws {
+    for (key, value) in jsonObject {
+      let codingKey = DynamicCodingKey(key: key)
+      
+      // Special handling for trace and span IDs - check various capitalization and formats
+      if key == "traceId" || key == "spanId" || key == "parentSpanId" || 
+         key == "traceID" || key == "spanID" || key == "parentSpanID" {
+        // Handle different possible value types
+        if let data = value as? Data {
+          // Convert binary data to hex string
+          let hexString = data.map { String(format: "%02hhx", $0) }.joined()
+          try container.encode(hexString, forKey: codingKey)
+          continue
+        } else if let base64String = value as? String {
+          // Try to decode base64 string to Data then to hex
+          if let data = Data(base64Encoded: base64String) {
+            let hexString = data.map { String(format: "%02hhx", $0) }.joined()
+            try container.encode(hexString, forKey: codingKey)
+            continue
+          }
+        } else if let valueDict = value as? [String: Any], 
+                  let stringValue = valueDict["stringValue"] as? String {
+          // For Faro format where values might be in {stringValue: "..."} format
+          try container.encode(stringValue, forKey: codingKey)
+          continue
+        }
+      }
+      
+      // Special handling for span kind
+      if key == "kind" {
+        if let kindString = value as? String {
+          let kindValue: Int
+          switch kindString {
+          case "SPAN_KIND_INTERNAL":
+            kindValue = 1
+          case "SPAN_KIND_SERVER":
+            kindValue = 2
+          case "SPAN_KIND_CLIENT":
+            kindValue = 3
+          case "SPAN_KIND_PRODUCER":
+            kindValue = 4
+          case "SPAN_KIND_CONSUMER":
+            kindValue = 5
+          default:
+            kindValue = 0
+          }
+          try container.encode(kindValue, forKey: codingKey)
+          continue
+        } else if let kindInt = value as? Int {
+          try container.encode(kindInt, forKey: codingKey)
+          continue
+        }
+      }
+      
+      if let stringValue = value as? String {
+        try container.encode(stringValue, forKey: codingKey)
+      } else if let intValue = value as? Int {
+        try container.encode(intValue, forKey: codingKey)
+      } else if let doubleValue = value as? Double {
+        try container.encode(doubleValue, forKey: codingKey)
+      } else if let boolValue = value as? Bool {
+        try container.encode(boolValue, forKey: codingKey)
+      } else if let arrayValue = value as? [Any] {
+        // Create a nested array container
+        var arrayContainer = container.nestedUnkeyedContainer(forKey: codingKey)
+        try encodeJSONArray(arrayValue, into: &arrayContainer)
+      } else if let dictValue = value as? [String: Any] {
+        // Create a nested keyed container
+        var nestedDictContainer = container.nestedContainer(keyedBy: DynamicCodingKey.self, forKey: codingKey)
+        try encodeJSONObject(dictValue, into: &nestedDictContainer)
+      } else if value is NSNull {
+        try container.encodeNil(forKey: codingKey)
+      }
+    }
+  }
+  
+  // Helper method to encode JSON arrays with proper nesting
+  private func encodeJSONArray(_ array: [Any], into container: inout UnkeyedEncodingContainer) throws {
+    for value in array {
+      if let stringValue = value as? String {
+        try container.encode(stringValue)
+      } else if let intValue = value as? Int {
+        try container.encode(intValue)
+      } else if let doubleValue = value as? Double {
+        try container.encode(doubleValue)
+      } else if let boolValue = value as? Bool {
+        try container.encode(boolValue)
+      } else if let arrayValue = value as? [Any] {
+        // Create a nested array container
+        var nestedArrayContainer = container.nestedUnkeyedContainer()
+        try encodeJSONArray(arrayValue, into: &nestedArrayContainer)
+      } else if let dictValue = value as? [String: Any] {
+        var dictContainer = container.nestedContainer(keyedBy: DynamicCodingKey.self)
+        try encodeJSONObject(dictValue, into: &dictContainer)
+      } else if value is NSNull {
+        try container.encodeNil()
+      }
     }
   }
 
@@ -314,5 +419,25 @@ enum FaroExporterError: Error, Equatable {
     default:
       return false
     }
+  }
+}
+
+private struct DynamicCodingKey: CodingKey {
+  var stringValue: String
+  var intValue: Int?
+
+  init(key: String) {
+    stringValue = key
+    intValue = nil
+  }
+
+  init?(stringValue: String) {
+    self.stringValue = stringValue
+    intValue = nil
+  }
+
+  init?(intValue: Int) {
+    stringValue = "\(intValue)"
+    self.intValue = intValue
   }
 }
