@@ -44,12 +44,15 @@ public final class FaroExporter: SpanExporter, LogRecordExporter {
   // MARK: - LogRecordExporter Implementation
 
   public func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval?) -> ExportResult {
+    print("### FaroExporter: export logs")
     let faroLogs = FaroLogAdapter.toFaroLogs(logRecords: logRecords)
+    print("### FaroExporter: parsed faroLogs: \(faroLogs)")
     faroSdk.pushLogs(faroLogs)
     return .success
   }
 
   public func forceFlush(explicitTimeout: TimeInterval?) -> OpenTelemetrySdk.ExportResult {
+    print("### FaroExporter: forceFlush logs")
     return .success // TODO: fix real code
   }
 

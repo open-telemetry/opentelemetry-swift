@@ -47,14 +47,18 @@ final class FaroSdk {
   }
 
   private func scheduleFlush() {
+    print("### FaroSdk: want to scheduleFlush")
     if flushTimer == nil {
+      print("### FaroSdk: did scheduleFlush with new times")
       flushTimer = Timer.scheduledTimer(withTimeInterval: flushInterval, repeats: false) { [weak self] _ in
+        print("### FaroSdk: scheduleFlush timer fired")
         self?.flushPendingData()
       }
     }
   }
 
   private func flushPendingData() {
+    print("### FaroSdk: flushPendingData")
     var sendingLogs: [FaroLog] = []
     var sendingEvents: [FaroEvent] = []
 
@@ -64,12 +68,15 @@ final class FaroSdk {
       pendingLogs = []
       pendingEvents = []
 
+      print("### FaroSdk: flushPendingData: invalidate timer")
       flushTimer?.invalidate()
       flushTimer = nil
     }
 
     if !sendingLogs.isEmpty || !sendingEvents.isEmpty {
+      print("### FaroSdk: flushPendingData: getPayload")
       let payload = getPayload(logs: sendingLogs, events: sendingEvents)
+      print("### FaroSdk: flushPendingData: send payload")
       transport.send(payload) { [weak self] result in
         switch result {
         case .success:
@@ -85,6 +92,8 @@ final class FaroSdk {
           }
         }
       }
+    } else {
+      print("### FaroSdk: flushPendingData: no data to send")
     }
   }
 
