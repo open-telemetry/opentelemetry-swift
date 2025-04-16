@@ -64,6 +64,10 @@ final class MockDateProvider: DateProviding {
     return iso8601Formatter.string(from: currentDate())
   }
 
+  func iso8601String(from date: Date) -> String {
+    return iso8601Formatter.string(from: date)
+  }
+
   /// Advances the mock's current date by the specified time interval
   /// - Parameter timeInterval: The amount of time to advance by
   func advance(by timeInterval: TimeInterval) {

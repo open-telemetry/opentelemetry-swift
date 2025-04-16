@@ -73,3 +73,5 @@ class FaroSessionManager: FaroSessionManaging {
     onSessionIdChanged?(previousId, sessionId)
   }
 }
+
+// TODO: Add logic to refresh session on inactivity also.

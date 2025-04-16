@@ -76,7 +76,7 @@ final class FaroSdk {
           // Data sent successfully
           break
         case let .failure(error):
-          print("Failed to send telemetry: \(error)")
+          print("FaroSdk: Failed to send telemetry: \(error)")
           self?.exporterQueue.sync {
             // Simply add failed items back to pending queues
             self?.pendingLogs.append(contentsOf: sendingLogs)
@@ -93,7 +93,7 @@ final class FaroSdk {
       meta: FaroMeta(
         sdk: FaroSdkInfo(name: "opentelemetry-swift", version: "1.0.0", integrations: []), // TODO: check if we can get this from Otel
         app: appInfo,
-        session: FaroSession(id: sessionManager.getSessionId(), attributes: [:]),
+        session: FaroSession(id: sessionManager.getSessionId(), attributes: [:]), // TODO: check if we can get the device attributes, or map them
         user: nil,
         view: FaroView(name: "default")
       ),

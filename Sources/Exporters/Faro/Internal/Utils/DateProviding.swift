@@ -12,6 +12,9 @@ protocol DateProviding {
 
   /// Returns the current date as a string in ISO 8601 format with milliseconds precision (YYYY-MM-DDTHH:mm:ss.sssZ)
   func currentDateISO8601String() -> String
+  
+  /// Converts a specific date to ISO 8601 format with milliseconds precision
+  func iso8601String(from date: Date) -> String
 }
 
 /// Default implementation of DateProviding that returns the actual current date
@@ -30,5 +33,9 @@ class DateProvider: DateProviding {
 
   func currentDateISO8601String() -> String {
     return iso8601Formatter.string(from: currentDate())
+  }
+  
+  func iso8601String(from date: Date) -> String {
+    return iso8601Formatter.string(from: date)
   }
 }

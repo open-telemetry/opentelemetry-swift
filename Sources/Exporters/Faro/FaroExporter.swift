@@ -9,7 +9,6 @@ import OpenTelemetryProtocolExporterCommon
 
 /// Main exporter class implementing OTel protocols for Grafana Faro
 public final class FaroExporter: SpanExporter, LogRecordExporter {
-  private let options: FaroExporterOptions
   private let faroSdk: FaroSdk
 
   static let version = "1.0.0"
@@ -18,7 +17,6 @@ public final class FaroExporter: SpanExporter, LogRecordExporter {
   /// - Parameter options: Configuration options
   /// - Throws: FaroExporterError if configuration is invalid
   public init(options: FaroExporterOptions) throws {
-    self.options = options
     // Create FaroSdk using factory - this will validate the endpoint configuration
     faroSdk = try FaroSdkFactory.getInstance(options: options)
   }
@@ -26,12 +24,12 @@ public final class FaroExporter: SpanExporter, LogRecordExporter {
   // MARK: - SpanExporter Implementation
 
   public func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
-    let body =
+    let _ =
       Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
         $0.resourceSpans = SpanAdapter.toProtoResourceSpans(
           spanDataList: spans)
       }
-    print("### bodyJson: \(try? body.jsonString() ?? "nil") ###")
+    // print("### bodyJson: \(try? body.jsonString() ?? "nil") ###")
     return .success
   }
 
@@ -46,6 +44,8 @@ public final class FaroExporter: SpanExporter, LogRecordExporter {
   // MARK: - LogRecordExporter Implementation
 
   public func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval?) -> ExportResult {
+    let faroLogs = FaroLogAdapter.toFaroLogs(logRecords: logRecords)
+    faroSdk.pushLogs(faroLogs)
     return .success
   }
 
