@@ -5,6 +5,7 @@
 
 import Foundation
 import OpenTelemetrySdk
+import OpenTelemetryProtocolExporterCommon
 
 final class FaroSdk {
   private let appInfo: FaroAppInfo
@@ -18,6 +19,7 @@ final class FaroSdk {
 
   private var pendingLogs: [FaroLog] = []
   private var pendingEvents: [FaroEvent] = []
+  private var pendingSpans: [SpanData] = []
 
   init(appInfo: FaroAppInfo, transport: FaroTransport, sessionManager: FaroSessionManaging) {
     self.appInfo = appInfo
@@ -40,6 +42,13 @@ final class FaroSdk {
     }
     scheduleFlush()
   }
+  
+  func pushSpans(_ spans: [SpanData]) {
+    telemetryDataQueue.sync {
+      pendingSpans.append(contentsOf: spans)
+    }
+    scheduleFlush()
+  }
 
   private func sendSessionStartEvent() {
     let sessionStartEvent = FaroEvent.create(name: "session_start")
@@ -59,19 +68,22 @@ final class FaroSdk {
   private func flushPendingData() {
     var sendingLogs: [FaroLog] = []
     var sendingEvents: [FaroEvent] = []
+    var sendingSpans: [SpanData] = []
 
     telemetryDataQueue.sync {
       sendingLogs = pendingLogs
       sendingEvents = pendingEvents
+      sendingSpans = pendingSpans
       pendingLogs = []
       pendingEvents = []
+      pendingSpans = []
 
       flushWorkItem?.cancel()
       flushWorkItem = nil
     }
 
-    if !sendingLogs.isEmpty || !sendingEvents.isEmpty {
-      let payload = getPayload(logs: sendingLogs, events: sendingEvents)
+    if !sendingLogs.isEmpty || !sendingEvents.isEmpty || !sendingSpans.isEmpty {
+      let payload = getPayload(logs: sendingLogs, events: sendingEvents, spans: sendingSpans)
       transport.send(payload) { [weak self] result in
         switch result {
         case .success:
@@ -83,6 +95,7 @@ final class FaroSdk {
             // Simply add failed items back to pending queues
             self?.pendingLogs.append(contentsOf: sendingLogs)
             self?.pendingEvents.append(contentsOf: sendingEvents)
+            self?.pendingSpans.append(contentsOf: sendingSpans)
             // No explicit retry scheduling - next natural data addition will trigger it
           }
         }
@@ -90,7 +103,11 @@ final class FaroSdk {
     }
   }
 
-  private func getPayload(logs: [FaroLog], events: [FaroEvent]) -> FaroPayload {
+  private func getPayload(logs: [FaroLog], events: [FaroEvent], spans: [SpanData] = []) -> FaroPayload {
+    let traces = spans.isEmpty ? nil : Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
+      $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
+    }
+    
     return FaroPayload(
       meta: FaroMeta(
         sdk: FaroSdkInfo(name: "opentelemetry-swift-faro-exporter", version: "1.3.5", integrations: []), // TODO: check if we can get this from Otel
@@ -99,6 +116,7 @@ final class FaroSdk {
         user: nil,
         view: FaroView(name: "default")
       ),
+      traces: traces,
       logs: logs,
       events: events
     )
