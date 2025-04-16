@@ -10,7 +10,8 @@ final class FaroSdk {
   private let appInfo: FaroAppInfo
   private let transport: FaroTransport
   private let sessionManager: FaroSessionManaging
-  private let exporterQueue = DispatchQueue(label: "com.opentelemetry.faro.exporter")
+  private let telemetryDataQueue = DispatchQueue(label: "com.opentelemetry.faro.telemetryDataQueue")
+  private let flushQueue = DispatchQueue(label: "com.opentelemetry.faro.flush")
 
   private let flushInterval: TimeInterval = 2.0 // seconds
   private var flushWorkItem: DispatchWorkItem?
@@ -27,23 +28,22 @@ final class FaroSdk {
   }
 
   func pushEvents(events: [FaroEvent]) {
-    exporterQueue.sync {
+    telemetryDataQueue.sync {
       pendingEvents.append(contentsOf: events)
-      scheduleFlush()
     }
+    scheduleFlush()
   }
 
   func pushLogs(_ logs: [FaroLog]) {
-    exporterQueue.sync {
+    telemetryDataQueue.sync {
       pendingLogs.append(contentsOf: logs)
-      scheduleFlush()
     }
+    scheduleFlush()
   }
 
   private func sendSessionStartEvent() {
     let sessionStartEvent = FaroEvent.create(name: "session_start")
     pushEvents(events: [sessionStartEvent])
-    scheduleFlush()
   }
 
   private func scheduleFlush() {
@@ -55,7 +55,7 @@ final class FaroSdk {
         self?.flushPendingData()
       }
       flushWorkItem = workItem
-      exporterQueue.asyncAfter(deadline: .now() + flushInterval, execute: workItem)
+      flushQueue.asyncAfter(deadline: .now() + flushInterval, execute: workItem)
     }
   }
 
@@ -64,7 +64,7 @@ final class FaroSdk {
     var sendingLogs: [FaroLog] = []
     var sendingEvents: [FaroEvent] = []
 
-    exporterQueue.sync {
+    telemetryDataQueue.sync {
       sendingLogs = pendingLogs
       sendingEvents = pendingEvents
       pendingLogs = []
@@ -86,7 +86,7 @@ final class FaroSdk {
           break
         case let .failure(error):
           print("FaroSdk: Failed to send telemetry: \(error)")
-          self?.exporterQueue.sync {
+          self?.telemetryDataQueue.sync {
             // Simply add failed items back to pending queues
             self?.pendingLogs.append(contentsOf: sendingLogs)
             self?.pendingEvents.append(contentsOf: sendingEvents)
