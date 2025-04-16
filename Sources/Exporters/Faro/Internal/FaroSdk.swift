@@ -91,7 +91,7 @@ final class FaroSdk {
   private func getPayload(logs: [FaroLog], events: [FaroEvent]) -> FaroPayload {
     return FaroPayload(
       meta: FaroMeta(
-        sdk: FaroSdkInfo(name: "opentelemetry-swift", version: "1.0.0", integrations: []), // TODO: check if we can get this from Otel
+        sdk: FaroSdkInfo(name: "opentelemetry-swift-faro-exporter", version: "1.3.5", integrations: []), // TODO: check if we can get this from Otel
         app: appInfo,
         session: FaroSession(id: sessionManager.getSessionId(), attributes: [:]), // TODO: check if we can get the device attributes, or map them
         user: nil,
