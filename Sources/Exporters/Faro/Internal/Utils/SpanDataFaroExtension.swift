@@ -12,13 +12,21 @@ extension SpanData {
     /// Creates a Faro event name from the span name
     /// - Returns: A string formatted as 'faro.tracing.{spanName}'
     func getFaroEventName() -> String {
-        return "faro.tracing.\(name)"
+        return "span"
     }
     
     /// Extracts relevant attributes from the span for a Faro event
     /// - Returns: A dictionary of string attributes for the Faro event
     func getFaroEventAttributes() -> [String: String] {
         var faroEventAttributes: [String: String] = [:]
+
+        // Calculate duration in milliseconds from startTime and endTime
+        let durationMs = endTime.timeIntervalSince(startTime) * 1000
+        
+        faroEventAttributes["name"] = name
+        faroEventAttributes["status"] = status.description
+        faroEventAttributes["duration_ms"] = String(format: "%.3f", durationMs)
+        faroEventAttributes["has_parent"] = parentSpanId != nil ? "true" : "false"
         
         // Convert all span attributes to strings, similar to Flutter implementation
         for (key, value) in self.attributes {
