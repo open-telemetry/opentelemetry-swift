@@ -87,7 +87,7 @@ func simpleNetworkCallWithDelegate() {
   delegate.semaphore.wait()
 }
 
-@available(macOS 10.15, iOS 15.0, tvOS 15.0, *)
+@available(macOS 10.15, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 func asyncNetworkCallWithTaskDelegate() async {
     let session = URLSession(configuration: .default)
 
@@ -133,7 +133,7 @@ var callCount = delegate.callCount
 simpleNetworkCallWithDelegate()
 assert(delegate.callCount == callCount + 1)
 
-if #available(macOS 10.15, iOS 15.0, tvOS 15.0, *) {
+if #available(macOS 10.15, iOS 15.0, watchOS 8.0, tvOS 15.0, *) {
     print("making simple call with task delegate")
     callCount = delegate.callCount
     await asyncNetworkCallWithTaskDelegate()
