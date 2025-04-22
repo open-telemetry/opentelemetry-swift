@@ -24,6 +24,7 @@ final class FaroTransport: FaroTransportable {
   private let endpointConfiguration: FaroEndpointConfiguration
   private let sessionManager: FaroSessionManaging
   private let httpClient: FaroHttpClient
+  private let logger: FaroLogging
   private let timeout: TimeInterval = 30.0
 
   // MARK: - Initialization
@@ -33,12 +34,15 @@ final class FaroTransport: FaroTransportable {
   ///   - endpointConfiguration: Configuration for connecting to the Faro backend
   ///   - sessionManager: Manager for Faro sessions
   ///   - httpClient: Client for making HTTP requests, defaults to URLSessionFaroHttpClient
+  ///   - logger: Logger for transport operations, defaults to FaroLogger
   init(endpointConfiguration: FaroEndpointConfiguration,
        sessionManager: FaroSessionManaging,
-       httpClient: FaroHttpClient = URLSessionFaroHttpClient()) {
+       httpClient: FaroHttpClient = URLSessionFaroHttpClient(),
+       logger: FaroLogging = FaroLoggingFactory.getInstance()) {
     self.endpointConfiguration = endpointConfiguration
     self.sessionManager = sessionManager
     self.httpClient = httpClient
+    self.logger = logger
   }
 
   // MARK: - Public Methods
@@ -62,7 +66,7 @@ final class FaroTransport: FaroTransportable {
     do {
       request.httpBody = try JSONEncoder().encode(payload)
     } catch {
-      print("FaroTransport: Failed to encode payload: \(error)")
+      logger.logError("FaroTransport: Failed to encode payload", error: error)
       completion(.failure(FaroTransportError.encodingError(error)))
       return
     }
@@ -71,7 +75,7 @@ final class FaroTransport: FaroTransportable {
     let task = httpClient.dataTask(with: request) { data, response, error in
       // Handle network error
       if let error {
-        print("FaroTransport: Network error: \(error)")
+        self.logger.logError("FaroTransport:Network error", error: error)
         completion(.failure(FaroTransportError.networkError(error)))
         return
       }
@@ -81,7 +85,7 @@ final class FaroTransport: FaroTransportable {
         let statusCode = httpResponse.statusCode
         if statusCode < 200 || statusCode >= 300 {
           let responseData = data != nil ? String(data: data!, encoding: .utf8) : nil
-          print("FaroTransport: HTTP error: status=\(statusCode), response=\(responseData ?? "nil")")
+          self.logger.logError("FaroTransport: HTTP error: status=\(statusCode), response=\(responseData ?? "nil")", error: nil)
           completion(.failure(FaroTransportError.httpError(statusCode, responseData)))
           return
         }

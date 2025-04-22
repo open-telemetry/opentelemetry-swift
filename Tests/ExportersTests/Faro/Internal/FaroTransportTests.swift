@@ -20,10 +20,12 @@ final class FaroTransportTests: XCTestCase {
       collectorUrl: URL(string: "https://faro-collector.example.com/api/collect")!,
       apiKey: "test-api-key"
     )
+
     sut = FaroTransport(
       endpointConfiguration: endpointConfiguration,
       sessionManager: sessionManager,
-      httpClient: httpClient
+      httpClient: httpClient,
+      logger: MockFaroLogger(),
     )
   }
 
@@ -198,6 +200,7 @@ final class FaroTransportTests: XCTestCase {
       logs: [
         FaroLog(
           timestamp: "2023-01-01T00:00:00Z",
+          dateTimestamp: Date(),
           level: .info,
           message: "Test log",
           context: nil,

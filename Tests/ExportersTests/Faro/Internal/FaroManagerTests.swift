@@ -29,7 +29,8 @@ final class FaroManagerTests: XCTestCase {
     sut = FaroManager(appInfo: appInfo,
                       transport: mockTransport,
                       sessionManager: mockSessionManager,
-                      dateProvider: mockDateProvider)
+                      dateProvider: mockDateProvider,
+                      config: FaroManagerConfig(flushInterval: 0.01))
   }
 
   override func tearDown() {
@@ -327,13 +328,14 @@ final class FaroManagerTests: XCTestCase {
   // MARK: - Test Helpers
 
   private func createTestEvent(name: String) -> FaroEvent {
-    let timestamp = mockDateProvider.currentDateISO8601String()
-    return FaroEvent(name: name, attributes: ["test": "value"], timestamp: timestamp, trace: nil)
+    let currentDate = mockDateProvider.currentDate()
+    return FaroEvent(name: name, attributes: ["test": "value"], timestamp: mockDateProvider.iso8601String(from: currentDate), dateTimestamp: currentDate, trace: nil)
   }
 
   private func createTestLog(message: String) -> FaroLog {
-    let timestamp = mockDateProvider.currentDateISO8601String()
-    return FaroLog(timestamp: timestamp, level: .info, message: message, context: ["test": "value"], trace: nil)
+    let currentDate = mockDateProvider.currentDate()
+    let timestamp = mockDateProvider.iso8601String(from: currentDate)
+    return FaroLog(timestamp: timestamp, dateTimestamp: currentDate, level: .info, message: message, context: ["test": "value"], trace: nil)
   }
 
   private func createTestSpan(name: String,

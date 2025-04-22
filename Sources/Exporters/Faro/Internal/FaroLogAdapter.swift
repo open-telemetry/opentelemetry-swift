@@ -24,6 +24,7 @@ class FaroLogAdapter {
   /// - Returns: A FaroLog object
   private static func toFaroLog(logRecord: ReadableLogRecord) -> FaroLog {
     // Convert timestamp to ISO8601 string (required by Faro)
+    let dateTimestamp = logRecord.timestamp
     let timestamp = dateProvider.iso8601String(from: logRecord.timestamp)
 
     // Convert severity to Faro log level
@@ -54,6 +55,7 @@ class FaroLogAdapter {
 
     return FaroLog(
       timestamp: timestamp,
+      dateTimestamp: dateTimestamp,
       level: level,
       message: message,
       context: context.isEmpty ? nil : context,

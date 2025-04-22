@@ -18,10 +18,12 @@ extension FaroEvent {
   static func create(name: String,
                      attributes: [String: String] = [:],
                      trace: FaroTraceContext? = nil) -> FaroEvent {
+    let currentDate = sharedDateProvider.currentDate()
     return FaroEvent(
       name: name,
       attributes: attributes,
-      timestamp: sharedDateProvider.currentDateISO8601String(),
+      timestamp: sharedDateProvider.iso8601String(from: currentDate),
+      dateTimestamp: currentDate,
       trace: trace
     )
   }

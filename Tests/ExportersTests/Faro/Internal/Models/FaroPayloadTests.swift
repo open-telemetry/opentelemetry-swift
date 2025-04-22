@@ -48,6 +48,7 @@ final class FaroPayloadTests: XCTestCase {
 
     let log = FaroLog(
       timestamp: "2024-03-20T10:00:00Z",
+      dateTimestamp: Date(),
       level: .info,
       message: "Test log message",
       context: ["context": "test"],

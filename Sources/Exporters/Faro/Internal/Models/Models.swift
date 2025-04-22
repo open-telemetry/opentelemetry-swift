@@ -296,16 +296,28 @@ struct FaroEvent: Encodable {
   let attributes: [String: String]
   let timestamp: String
   let trace: FaroTraceContext?
+  let dateTimestamp: Date
 
   init(name: String,
        attributes: [String: String] = [:],
        timestamp: String,
+       dateTimestamp: Date,
        trace: FaroTraceContext?) {
     self.name = name
     domain = "swift"
     self.attributes = attributes
     self.timestamp = timestamp
+    self.dateTimestamp = dateTimestamp
     self.trace = trace
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case name
+    case domain
+    case attributes
+    case timestamp
+    case trace
+    // dateTimestamp is intentionally omitted from CodingKeys to exclude it from encoding
   }
 }
 
@@ -385,13 +397,24 @@ struct FaroLog: Encodable, Equatable {
   let message: String
   let context: [String: String]?
   let trace: FaroTraceContext?
+  let dateTimestamp: Date
 
-  init(timestamp: String, level: FaroLogLevel, message: String, context: [String: String]?, trace: FaroTraceContext?) {
+  init(timestamp: String, dateTimestamp: Date, level: FaroLogLevel, message: String, context: [String: String]?, trace: FaroTraceContext?) {
     self.timestamp = timestamp
+    self.dateTimestamp = dateTimestamp
     self.level = level
     self.message = message
     self.context = context
     self.trace = trace
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case timestamp
+    case level
+    case message
+    case context
+    case trace
+    // dateTimestamp is intentionally omitted from CodingKeys to exclude it from encoding
   }
 }
 

@@ -15,18 +15,23 @@ final class FaroManager {
   private let telemetryDataQueue = DispatchQueue(label: "com.opentelemetry.exporter.faro.telemetryDataQueue")
   private let flushQueue = DispatchQueue(label: "com.opentelemetry.exporter.faro.flushQueue")
 
-  private let flushInterval: TimeInterval = 2.0 // seconds
+  private let config: FaroManagerConfig
   private var flushWorkItem: DispatchWorkItem?
 
   private var pendingLogs: [FaroLog] = []
   private var pendingEvents: [FaroEvent] = []
   private var pendingSpans: [SpanData] = []
 
-  init(appInfo: FaroAppInfo, transport: FaroTransportable, sessionManager: FaroSessionManaging, dateProvider: DateProviding = DateProvider()) {
+  init(appInfo: FaroAppInfo,
+       transport: FaroTransportable,
+       sessionManager: FaroSessionManaging,
+       dateProvider: DateProviding = DateProvider(),
+       config: FaroManagerConfig = FaroManagerConfig(flushInterval: 2.0)) {
     self.appInfo = appInfo
     self.transport = transport
     self.sessionManager = sessionManager
     self.dateProvider = dateProvider
+    self.config = config
 
     sendSessionStartEvent()
     listenForSessionChanges()
@@ -64,7 +69,7 @@ final class FaroManager {
         self?.flushPendingData()
       }
       flushWorkItem = workItem
-      flushQueue.asyncAfter(deadline: .now() + flushInterval, execute: workItem)
+      flushQueue.asyncAfter(deadline: .now() + config.flushInterval, execute: workItem)
     }
   }
 
@@ -92,8 +97,7 @@ final class FaroManager {
         case .success:
           // Data sent successfully
           break
-        case let .failure(error):
-          print("FaroManager: Failed to send telemetry: \(error)")
+        case .failure:
           self?.telemetryDataQueue.sync {
             // Simply add failed items back to pending queues
             self?.pendingLogs.append(contentsOf: sendingLogs)
@@ -107,8 +111,8 @@ final class FaroManager {
   }
 
   private func findLatestTimestamp(logs: [FaroLog], events: [FaroEvent], spans: [SpanData]) -> Date? {
-    let logDates = logs.compactMap { self.dateProvider.date(fromISO8601String: $0.timestamp) }
-    let eventDates = events.compactMap { self.dateProvider.date(fromISO8601String: $0.timestamp) }
+    let logDates = logs.compactMap(\.dateTimestamp)
+    let eventDates = events.compactMap(\.dateTimestamp)
     let spanEndTimes = spans.map(\.endTime)
     let allTimestamps = logDates + eventDates + spanEndTimes
     return allTimestamps.max()
@@ -144,4 +148,8 @@ final class FaroManager {
       self?.sendSessionStartEvent()
     }
   }
+}
+
+struct FaroManagerConfig {
+  let flushInterval: TimeInterval
 }

@@ -7,6 +7,11 @@ import XCTest
 @testable import FaroExporter
 
 final class FaroExporterTests: XCTestCase {
+  override func setUp() {
+    super.setUp()
+    FaroLoggingFactory.setLogger(logger: MockFaroLogger())
+  }
+
   func testValidInitialization() throws {
     // Given
     let options = FaroExporterOptions(

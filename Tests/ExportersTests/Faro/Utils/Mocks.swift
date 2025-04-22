@@ -63,10 +63,6 @@ final class MockDateProvider: DateProviding {
     return internalCurrentDate
   }
 
-  func currentDateISO8601String() -> String {
-    return iso8601Formatter.string(from: currentDate())
-  }
-
   func iso8601String(from date: Date) -> String {
     return iso8601Formatter.string(from: date)
   }
@@ -109,5 +105,24 @@ class MockFaroTransport: FaroTransportable {
 
   func failNextSend(with error: Error = NSError(domain: "MockError", code: 1, userInfo: nil)) {
     sendResult = .failure(error)
+  }
+}
+
+/// Silent implementation of FaroLogging for tests
+class MockFaroLogger: FaroLogging {
+  var loggedMessages: [String] = []
+  var loggedErrors: [(message: String, error: Error?)] = []
+
+  func log(_ message: String) {
+    loggedMessages.append(message)
+  }
+
+  func logError(_ message: String, error: Error?) {
+    loggedErrors.append((message: message, error: error))
+  }
+
+  func reset() {
+    loggedMessages = []
+    loggedErrors = []
   }
 }
