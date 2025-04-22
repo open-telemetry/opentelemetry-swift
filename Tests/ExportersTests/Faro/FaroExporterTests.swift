@@ -7,8 +7,6 @@ import XCTest
 @testable import FaroExporter
 
 final class FaroExporterTests: XCTestCase {
-  // MARK: - Initialization Tests
-
   func testValidInitialization() throws {
     // Given
     let options = FaroExporterOptions(

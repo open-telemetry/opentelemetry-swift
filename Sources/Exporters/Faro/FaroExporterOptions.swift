@@ -6,7 +6,7 @@
 import Foundation
 
 /// Configuration options for the Faro exporter
-public struct FaroExporterOptions {
+public struct FaroExporterOptions: Hashable {
   public let collectorUrl: String
   public let appName: String?
   public let appVersion: String?

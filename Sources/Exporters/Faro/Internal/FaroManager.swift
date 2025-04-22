@@ -9,7 +9,7 @@ import OpenTelemetryProtocolExporterCommon
 
 final class FaroManager {
   private let appInfo: FaroAppInfo
-  private let transport: FaroTransport
+  private let transport: FaroTransportable
   private var sessionManager: FaroSessionManaging
   private let dateProvider: DateProviding
   private let telemetryDataQueue = DispatchQueue(label: "com.opentelemetry.exporter.faro.telemetryDataQueue")
@@ -22,7 +22,7 @@ final class FaroManager {
   private var pendingEvents: [FaroEvent] = []
   private var pendingSpans: [SpanData] = []
 
-  init(appInfo: FaroAppInfo, transport: FaroTransport, sessionManager: FaroSessionManaging, dateProvider: DateProviding = DateProvider()) {
+  init(appInfo: FaroAppInfo, transport: FaroTransportable, sessionManager: FaroSessionManaging, dateProvider: DateProviding = DateProvider()) {
     self.appInfo = appInfo
     self.transport = transport
     self.sessionManager = sessionManager

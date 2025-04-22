@@ -35,8 +35,6 @@ final class FaroTransportTests: XCTestCase {
     super.tearDown()
   }
 
-  // MARK: - Tests
-
   func testSendAddsCorrectHeaders() {
     // Given
     let payload = createTestPayload()

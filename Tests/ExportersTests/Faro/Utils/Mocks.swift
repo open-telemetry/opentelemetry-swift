@@ -81,3 +81,33 @@ final class MockDateProvider: DateProviding {
     iso8601Formatter.date(from: string)
   }
 }
+
+final class MockDeviceAttributesProvider: FaroDeviceAttributesProviding {
+  let mockAttributes = [
+    "device_manufacturer": "apple",
+    "device_os": "iOS",
+    "device_os_version": "16.0",
+    "device_model": "iPhone14,3",
+    "device_id": "mock-device-id"
+  ]
+
+  func getDeviceAttributes() -> [String: String] {
+    return mockAttributes
+  }
+}
+
+class MockFaroTransport: FaroTransportable {
+  var sentPayloads: [FaroPayload] = []
+  var sendResult: Result<Void, Error> = .success(())
+  var sendExpectation: XCTestExpectation?
+
+  func send(_ payload: FaroPayload, completion: @escaping (Result<Void, Error>) -> Void) {
+    sentPayloads.append(payload)
+    sendExpectation?.fulfill()
+    completion(sendResult)
+  }
+
+  func failNextSend(with error: Error = NSError(domain: "MockError", code: 1, userInfo: nil)) {
+    sendResult = .failure(error)
+  }
+}
