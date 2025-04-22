@@ -5,12 +5,10 @@
 
 import Foundation
 import OpenTelemetrySdk
-import OpenTelemetryProtocolExporterCommon
-import OpenTelemetryApi
 
 /// Main exporter class implementing OTel protocols for Grafana Faro
 public final class FaroExporter: SpanExporter, LogRecordExporter {
-  private let faroSdk: FaroSdk
+  private let faroManager: FaroManager
 
   static let version = "1.0.0"
 
@@ -18,32 +16,31 @@ public final class FaroExporter: SpanExporter, LogRecordExporter {
   /// - Parameter options: Configuration options
   /// - Throws: FaroExporterError if configuration is invalid
   public init(options: FaroExporterOptions) throws {
-    // Create FaroSdk using factory - this will validate the endpoint configuration
-    faroSdk = try FaroSdkFactory.getInstance(options: options)
+    faroManager = try FaroManagerFactory.getInstance(options: options)
   }
 
   // MARK: - SpanExporter Implementation
 
   public func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
     // Push spans as normal
-    faroSdk.pushSpans(spans)
-    
+    faroManager.pushSpans(spans)
+
     // Additionally create and push an event for each span
     let events = spans.compactMap { span -> FaroEvent? in
       // Create a Faro event from each span
       guard let traceContext = span.getFaroTraceContext() else { return nil }
-      
+
       return FaroEvent.create(
         name: span.getFaroEventName(),
         attributes: span.getFaroEventAttributes(),
         trace: traceContext
       )
     }
-    
+
     if !events.isEmpty {
-      faroSdk.pushEvents(events: events)
+      faroManager.pushEvents(events: events)
     }
-    
+
     return .success
   }
 
@@ -59,7 +56,7 @@ public final class FaroExporter: SpanExporter, LogRecordExporter {
 
   public func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval?) -> ExportResult {
     let faroLogs = FaroLogAdapter.toFaroLogs(logRecords: logRecords)
-    faroSdk.pushLogs(faroLogs)
+    faroManager.pushLogs(faroLogs)
     return .success
   }
 

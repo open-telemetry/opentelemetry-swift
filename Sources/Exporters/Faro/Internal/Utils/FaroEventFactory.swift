@@ -5,8 +5,6 @@
 
 import Foundation
 
-// MARK: - FaroEvent Factory Methods
-
 extension FaroEvent {
   /// Shared date provider instance
   private static let sharedDateProvider = DateProvider()

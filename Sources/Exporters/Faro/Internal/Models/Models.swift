@@ -4,8 +4,6 @@
  */
 
 import Foundation
-import OpenTelemetryApi
-import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterCommon
 
 /// Represents the complete payload sent to Faro collector
@@ -67,10 +65,10 @@ struct FaroPayload: Encodable {
   private func encodeJSONObject(_ jsonObject: [String: Any], into container: inout KeyedEncodingContainer<DynamicCodingKey>) throws {
     for (key, value) in jsonObject {
       let codingKey = DynamicCodingKey(key: key)
-      
+
       // Special handling for trace and span IDs - check various capitalization and formats
-      if key == "traceId" || key == "spanId" || key == "parentSpanId" || 
-         key == "traceID" || key == "spanID" || key == "parentSpanID" {
+      if key == "traceId" || key == "spanId" || key == "parentSpanId" ||
+        key == "traceID" || key == "spanID" || key == "parentSpanID" {
         // Handle different possible value types
         if let data = value as? Data {
           // Convert binary data to hex string
@@ -84,31 +82,30 @@ struct FaroPayload: Encodable {
             try container.encode(hexString, forKey: codingKey)
             continue
           }
-        } else if let valueDict = value as? [String: Any], 
+        } else if let valueDict = value as? [String: Any],
                   let stringValue = valueDict["stringValue"] as? String {
           // For Faro format where values might be in {stringValue: "..."} format
           try container.encode(stringValue, forKey: codingKey)
           continue
         }
       }
-      
+
       // Special handling for span kind
       if key == "kind" {
         if let kindString = value as? String {
-          let kindValue: Int
-          switch kindString {
+          let kindValue = switch kindString {
           case "SPAN_KIND_INTERNAL":
-            kindValue = 1
+            1
           case "SPAN_KIND_SERVER":
-            kindValue = 2
+            2
           case "SPAN_KIND_CLIENT":
-            kindValue = 3
+            3
           case "SPAN_KIND_PRODUCER":
-            kindValue = 4
+            4
           case "SPAN_KIND_CONSUMER":
-            kindValue = 5
+            5
           default:
-            kindValue = 0
+            0
           }
           try container.encode(kindValue, forKey: codingKey)
           continue
@@ -117,7 +114,7 @@ struct FaroPayload: Encodable {
           continue
         }
       }
-      
+
       if let stringValue = value as? String {
         try container.encode(stringValue, forKey: codingKey)
       } else if let intValue = value as? Int {
@@ -139,7 +136,7 @@ struct FaroPayload: Encodable {
       }
     }
   }
-  
+
   // Helper method to encode JSON arrays with proper nesting
   private func encodeJSONArray(_ array: [Any], into container: inout UnkeyedEncodingContainer) throws {
     for value in array {

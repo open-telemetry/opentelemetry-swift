@@ -34,10 +34,13 @@ class MockURLSessionDataTask: FaroHttpClientTask {
 /// Mock session manager for testing session handling
 class MockFaroSessionManager: FaroSessionManaging {
   let sessionId = "mock-session-id"
+  let attributes: [String: String] = [:]
 
-  func getSessionId() -> String {
-    return sessionId
+  func getSession() -> FaroSession {
+    return FaroSession(id: sessionId, attributes: attributes)
   }
+
+  func updateLastActivity(date: Date) {}
 
   /// Callback that will be called when the session ID changes
   var onSessionIdChanged: ((String, String) -> Void)?
@@ -72,5 +75,9 @@ final class MockDateProvider: DateProviding {
   /// - Parameter timeInterval: The amount of time to advance by
   func advance(by timeInterval: TimeInterval) {
     internalCurrentDate = internalCurrentDate.addingTimeInterval(timeInterval)
+  }
+
+  func date(fromISO8601String string: String) -> Date? {
+    iso8601Formatter.date(from: string)
   }
 }

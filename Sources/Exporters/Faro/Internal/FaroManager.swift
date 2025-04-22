@@ -7,12 +7,13 @@ import Foundation
 import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterCommon
 
-final class FaroSdk {
+final class FaroManager {
   private let appInfo: FaroAppInfo
   private let transport: FaroTransport
-  private let sessionManager: FaroSessionManaging
-  private let telemetryDataQueue = DispatchQueue(label: "com.opentelemetry.faro.telemetryDataQueue")
-  private let flushQueue = DispatchQueue(label: "com.opentelemetry.faro.flush")
+  private var sessionManager: FaroSessionManaging
+  private let dateProvider: DateProviding
+  private let telemetryDataQueue = DispatchQueue(label: "com.opentelemetry.exporter.faro.telemetryDataQueue")
+  private let flushQueue = DispatchQueue(label: "com.opentelemetry.exporter.faro.flushQueue")
 
   private let flushInterval: TimeInterval = 2.0 // seconds
   private var flushWorkItem: DispatchWorkItem?
@@ -21,12 +22,14 @@ final class FaroSdk {
   private var pendingEvents: [FaroEvent] = []
   private var pendingSpans: [SpanData] = []
 
-  init(appInfo: FaroAppInfo, transport: FaroTransport, sessionManager: FaroSessionManaging) {
+  init(appInfo: FaroAppInfo, transport: FaroTransport, sessionManager: FaroSessionManaging, dateProvider: DateProviding = DateProvider()) {
     self.appInfo = appInfo
     self.transport = transport
     self.sessionManager = sessionManager
+    self.dateProvider = dateProvider
 
     sendSessionStartEvent()
+    listenForSessionChanges()
   }
 
   func pushEvents(events: [FaroEvent]) {
@@ -90,7 +93,7 @@ final class FaroSdk {
           // Data sent successfully
           break
         case let .failure(error):
-          print("FaroSdk: Failed to send telemetry: \(error)")
+          print("FaroManager: Failed to send telemetry: \(error)")
           self?.telemetryDataQueue.sync {
             // Simply add failed items back to pending queues
             self?.pendingLogs.append(contentsOf: sendingLogs)
@@ -103,18 +106,30 @@ final class FaroSdk {
     }
   }
 
+  private func findLatestTimestamp(logs: [FaroLog], events: [FaroEvent], spans: [SpanData]) -> Date? {
+    let logDates = logs.compactMap { self.dateProvider.date(fromISO8601String: $0.timestamp) }
+    let eventDates = events.compactMap { self.dateProvider.date(fromISO8601String: $0.timestamp) }
+    let spanEndTimes = spans.map(\.endTime)
+    let allTimestamps = logDates + eventDates + spanEndTimes
+    return allTimestamps.max()
+  }
+
   private func getPayload(logs: [FaroLog], events: [FaroEvent], spans: [SpanData] = []) -> FaroPayload {
-    let sessionId = sessionManager.getSessionId()
-    
+    if let latestTimestamp = findLatestTimestamp(logs: logs, events: events, spans: spans) {
+      sessionManager.updateLastActivity(date: latestTimestamp)
+    }
+
+    let session = sessionManager.getSession()
+
     let traces = spans.isEmpty ? nil : Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
-      $0.resourceSpans = FaroSpanAdapter.toProtoResourceSpans(spanDataList: spans, sessionId: sessionId)
+      $0.resourceSpans = FaroSpanAdapter.toProtoResourceSpans(spanDataList: spans, sessionId: session.id)
     }
 
     return FaroPayload(
       meta: FaroMeta(
-        sdk: FaroSdkInfo(name: "opentelemetry-swift-faro-exporter", version: "1.3.5", integrations: []), // TODO: check if we can get this from Otel
+        sdk: FaroSdkInfo(name: "opentelemetry-swift-faro-exporter", version: "1.3.5", integrations: []), // TODO: Get version dynamically?
         app: appInfo,
-        session: FaroSession(id: sessionId, attributes: [:]), // TODO: check if we can get the device attributes, or map them
+        session: session,
         user: nil,
         view: FaroView(name: "default")
       ),
@@ -122,5 +137,11 @@ final class FaroSdk {
       logs: logs,
       events: events
     )
+  }
+
+  private func listenForSessionChanges() {
+    sessionManager.onSessionIdChanged = { [weak self] _, _ in
+      self?.sendSessionStartEvent()
+    }
   }
 }

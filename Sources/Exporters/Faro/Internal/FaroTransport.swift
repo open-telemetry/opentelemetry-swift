@@ -52,7 +52,7 @@ final class FaroTransport: FaroTransportable {
     request.addValue(endpointConfiguration.apiKey, forHTTPHeaderField: "x-api-key")
 
     // Add session ID
-    let sessionId = sessionManager.getSessionId()
+    let sessionId = sessionManager.getSession().id
     request.addValue(sessionId, forHTTPHeaderField: "x-faro-session-id")
 
     // Set timeout

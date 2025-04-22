@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import Foundation
-
 extension FaroAppInfo {
   /// Creates a FaroAppInfo instance from FaroExporterOptions
   /// - Parameter options: The exporter options containing app information
