@@ -30,7 +30,7 @@ protocol DeviceInformationSource {
     var osName: String { device.systemName }
     var osVersion: String { device.systemVersion }
     var deviceBrand: String { device.model } // e.g., "Apple Watch"
-    var deviceModel: String { getMachineIdentifier() } // Use uname for model ID like "Watch6,1"
+    var deviceModel: String { getDeviceIdentifier() }
     #if targetEnvironment(simulator)
       var isPhysical: Bool { false }
     #else
@@ -46,7 +46,7 @@ protocol DeviceInformationSource {
     var osName: String { device.systemName }
     var osVersion: String { device.systemVersion }
     var deviceBrand: String { device.model } // e.g., "iPhone"
-    var deviceModel: String { getMachineIdentifier() } // Use uname for model ID like "iPhone14,3"
+    var deviceModel: String { getDeviceIdentifier() }
     #if targetEnvironment(simulator)
       var isPhysical: Bool { false }
     #else
@@ -87,11 +87,20 @@ struct FallbackDeviceSource: DeviceInformationSource {
   var isPhysical: Bool { true }
 }
 
-#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-  // Internal helper function accessible by sources within this file
-  private func getMachineIdentifier() -> String {
+// --- Shared Helper Function for Device Model Detection ---
+#if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
+  private func getDeviceIdentifier() -> String {
+    #if targetEnvironment(simulator)
+      // For simulators, use the environment variable which has the correct model ID
+      if let simulatorModelId = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] {
+        return simulatorModelId
+      }
+    #endif
+
+    // For physical devices, get it from uname
     var systemInfo = utsname()
     uname(&systemInfo)
+
     let machineMirror = Mirror(reflecting: systemInfo.machine)
     return machineMirror.children.reduce("") { identifier, element in
       guard let value = element.value as? Int8, value != 0 else { return identifier }
