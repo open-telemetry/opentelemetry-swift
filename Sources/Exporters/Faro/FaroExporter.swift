@@ -3,6 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+// TODO:
+// - Clean up code documentation
+// - Add readme with examples
+
 import Foundation
 import OpenTelemetrySdk
 
@@ -25,9 +29,8 @@ public final class FaroExporter: SpanExporter, LogRecordExporter {
     // Push spans as normal
     faroManager.pushSpans(spans)
 
-    // Additionally create and push an event for each span
+    // Additionally create and push a Faro event for each span
     let events = spans.compactMap { span -> FaroEvent? in
-      // Create a Faro event from each span
       guard let traceContext = span.getFaroTraceContext() else { return nil }
 
       return FaroEvent.create(
@@ -44,13 +47,11 @@ public final class FaroExporter: SpanExporter, LogRecordExporter {
     return .success
   }
 
-  public func flush(explicitTimeout: TimeInterval?) -> OpenTelemetrySdk.SpanExporterResultCode {
-    return .success // TODO: fix real code
+  public func flush(explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
+    return .success
   }
 
-  public func shutdown(explicitTimeout: TimeInterval?) {
-    // TODO: fix real code
-  }
+  public func shutdown(explicitTimeout: TimeInterval?) {}
 
   // MARK: - LogRecordExporter Implementation
 
@@ -60,11 +61,9 @@ public final class FaroExporter: SpanExporter, LogRecordExporter {
     return .success
   }
 
-  public func forceFlush(explicitTimeout: TimeInterval?) -> OpenTelemetrySdk.ExportResult {
-    return .success // TODO: fix real code
+  public func forceFlush(explicitTimeout: TimeInterval?) -> ExportResult {
+    return .success
   }
-
-  // MARK: - Shutdown
 
   public func shutdown() async {}
 }
