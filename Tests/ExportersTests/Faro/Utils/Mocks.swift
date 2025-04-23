@@ -126,3 +126,49 @@ class MockFaroLogger: FaroLogging {
     loggedErrors = []
   }
 }
+
+final class MockDeviceInformationSource: DeviceInformationSource {
+    var osName: String
+    var osVersion: String
+    var deviceBrand: String
+    var deviceModel: String
+    var isPhysical: Bool
+    
+    init(
+        osName: String,
+        osVersion: String,
+        deviceBrand: String,
+        deviceModel: String,
+        isPhysical: Bool
+    ) {
+        self.osName = osName
+        self.osVersion = osVersion
+        self.deviceBrand = deviceBrand
+        self.deviceModel = deviceModel
+        self.isPhysical = isPhysical
+    }
+}
+
+final class MockPersistentDeviceIdentifierProvider: PersistentDeviceIdentifierProviding {
+    var mockIdentifier: String
+    
+    init(mockIdentifier: String) {
+        self.mockIdentifier = mockIdentifier
+    }
+    
+    func getIdentifier() -> String {
+        return mockIdentifier
+    }
+}
+
+class MockUserDefaults: UserDefaultsProviding {
+    private var storage: [String: Any] = [:]
+    
+    func string(forKey defaultName: String) -> String? {
+        return storage[defaultName] as? String
+    }
+    
+    func set(_ value: Any?, forKey defaultName: String) {
+        storage[defaultName] = value
+    }
+}

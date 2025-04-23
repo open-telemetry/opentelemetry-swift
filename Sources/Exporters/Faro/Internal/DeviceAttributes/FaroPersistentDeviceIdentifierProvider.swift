@@ -9,20 +9,27 @@ protocol PersistentDeviceIdentifierProviding {
   func getIdentifier() -> String
 }
 
+protocol UserDefaultsProviding {
+  func string(forKey defaultName: String) -> String?
+  func set(_ value: Any?, forKey defaultName: String)
+}
+
+extension UserDefaults: UserDefaultsProviding {}
+
 class FaroPersistentDeviceIdentifierProvider: PersistentDeviceIdentifierProviding {
   private static let faroDeviceIdUserDefaultsKey = "faro.device_id"
-  private let userDefaults: UserDefaults
+  private let storage: UserDefaultsProviding
 
-  init(userDefaults: UserDefaults = .standard) {
-    self.userDefaults = userDefaults
+  init(storage: UserDefaultsProviding = UserDefaults.standard) {
+    self.storage = storage
   }
 
   func getIdentifier() -> String {
-    if let existingId = userDefaults.string(forKey: Self.faroDeviceIdUserDefaultsKey) {
+    if let existingId = storage.string(forKey: Self.faroDeviceIdUserDefaultsKey) {
       return existingId
     } else {
       let newId = UUID().uuidString
-      userDefaults.set(newId, forKey: Self.faroDeviceIdUserDefaultsKey)
+      storage.set(newId, forKey: Self.faroDeviceIdUserDefaultsKey)
       return newId
     }
   }
