@@ -224,7 +224,7 @@ extension Package {
                     dependencies: ["ZipkinExporter"],
                     path: "Tests/ExportersTests/Zipkin"),
         .target(name: "FaroExporter",
-                dependencies: ["OpenTelemetrySdk", "OpenTelemetryProtocolExporterCommon"],
+                dependencies: ["OpenTelemetrySdk", "OpenTelemetryApi", "OpenTelemetryProtocolExporterCommon"],
                 path: "Sources/Exporters/Faro"),
         .testTarget(name: "FaroExporterTests",
                     dependencies: ["FaroExporter"],
