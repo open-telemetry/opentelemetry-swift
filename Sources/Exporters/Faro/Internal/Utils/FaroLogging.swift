@@ -1,3 +1,8 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /// Protocol for logging Faro transport operations
 protocol FaroLogging {
   func log(_ message: String)

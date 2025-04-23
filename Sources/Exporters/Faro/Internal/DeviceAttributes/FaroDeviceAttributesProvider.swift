@@ -20,8 +20,9 @@ class FaroDeviceAttributesProvider: FaroDeviceAttributesProviding {
   func getDeviceAttributes() -> [String: String] {
     var faroAttributes: [String: String] = [:]
 
-    // Set base attributes
+    // Set base/shared attributes
     faroAttributes["device_manufacturer"] = "apple"
+    faroAttributes["device_id"] = identifierProvider.getIdentifier()
 
     // Use the injected source for platform details
     faroAttributes["device_os"] = source.osName
@@ -29,7 +30,6 @@ class FaroDeviceAttributesProvider: FaroDeviceAttributesProviding {
     faroAttributes["device_os_detail"] = "\(source.osName) \(source.osVersion)"
     faroAttributes["device_brand"] = source.deviceBrand
     faroAttributes["device_model"] = source.deviceModel
-    faroAttributes["device_id"] = identifierProvider.getIdentifier()
     faroAttributes["device_is_physical"] = source.isPhysical ? "true" : "false"
 
     return faroAttributes
