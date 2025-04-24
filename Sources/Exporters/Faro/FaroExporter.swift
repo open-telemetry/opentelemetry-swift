@@ -3,18 +3,59 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// TODO:
-// - Clean up code documentation
-// - Add readme with examples
-
 import Foundation
 import OpenTelemetrySdk
 
-/// Main exporter class implementing OTel protocols for Grafana Faro
+/// A Grafana Faro exporter that supports both traces and logs in a single instance.
+///
+/// The FaroExporter sends telemetry data to Grafana Faro, which can be either cloud-hosted (Grafana Cloud)
+/// or self-hosted using Grafana Alloy. It supports both traces and logs through the same exporter instance,
+/// allowing for efficient telemetry collection.
+///
+/// For Grafana Cloud users, you can find your collector URL in the Frontend Observability configuration section.
+/// For self-hosted setups using Grafana Alloy, refer to the [Quick Start Guide](https://github.com/grafana/faro-web-sdk/blob/main/docs/sources/tutorials/quick-start-browser.md).
+///
+/// Example configuration:
+/// ```swift
+/// let faroOptions = FaroExporterOptions(
+///     collectorUrl: "http://your-faro-collector.net/collect/YOUR_API_KEY",
+///     appName: "your-app-name",
+///     appVersion: "1.0.0",
+///     appEnvironment: "production"
+/// )
+/// ```
+///
+/// Example setup for traces:
+/// ```swift
+/// // Create the Faro exporter
+/// let faroExporter = try! FaroExporter(options: faroOptions)
+///
+/// // Create a span processor with the Faro exporter
+/// let faroProcessor = BatchSpanProcessor(spanExporter: faroExporter)
+///
+/// // Configure the tracer provider
+/// let tracerProvider = TracerProviderBuilder()
+///     .add(spanProcessor: faroProcessor)
+///     ...
+///     .build()
+/// ```
+///
+/// Example setup for logs:
+/// ```swift
+/// // Create the Faro exporter (or reuse the one from traces)
+/// let faroExporter = try! FaroExporter(options: faroOptions)
+///
+/// // Create a log processor with the Faro exporter
+/// let faroProcessor = BatchLogRecordProcessor(logRecordExporter: faroExporter)
+///
+/// // Configure the logger provider
+/// let loggerProvider = LoggerProviderBuilder()
+///     .with(processors: [faroProcessor])
+///     ...
+///     .build()
+/// ```
 public final class FaroExporter: SpanExporter, LogRecordExporter {
   private let faroManager: FaroManager
-
-  static let version = "1.0.0"
 
   /// Initialize a new Faro exporter instance
   /// - Parameter options: Configuration options
