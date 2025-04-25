@@ -32,7 +32,8 @@ class FixedSizedExemplarReservoirTests: XCTestCase {
 
   override func setUp() {
     super.setUp()
-    reservoir = FixedSizedExemplarReservoir(clock: clock, size: 3, reservoirCellSelector: selector, mapAndResetCell: { _, _ in nil })
+    reservoir = FixedSizedExemplarReservoir(clock: clock, size: 4, reservoirCellSelector: selector, mapAndResetCell: { cell,attributes in cell.getAndResetDouble(pointAttributes: attributes)
+ })
   }
 
   func testOfferLongMeasurement() {
@@ -59,15 +60,26 @@ class FixedSizedExemplarReservoirTests: XCTestCase {
     XCTAssertTrue(reservoir.storage.contains { $0.doubleValue == 4.4 })
   }
 
+
+  func testPartiallyFullReservoir(){
+    reservoir.offerDoubleMeasurement(value: 1.1, attributes: attributes)
+    let result = reservoir.collectAndReset(attribute: attributes)
+    XCTAssertEqual(result.count, 1)
+    XCTAssertTrue(result.contains(where: { exemplarData in
+      (exemplarData as! DoubleExemplarData).value == 1.1
+    }))
+    XCTAssertFalse(reservoir.storage.contains { $0.doubleValue == 1.1 })
+  }
+
   func testCollectAndReset() {
     let clock = TestClock()
-    let reservoirSize = 5
+    let reservoirSize = 6
     let reservoirCellSelector = ReservoirCellSelectorMock()
 
     // Create the reservoir
     let reservoir = FixedSizedExemplarReservoir(clock: clock, size: reservoirSize, reservoirCellSelector: reservoirCellSelector, mapAndResetCell: { cell, attributes in
       let exemplar = cell.getAndResetLong(pointAttributes: attributes)
-      return exemplar.value > 0 ? exemplar : nil
+      return exemplar?.value ?? 0 > 0 ? exemplar : nil
     })
 
     // Offer measurements
