@@ -41,10 +41,10 @@ class ReservoirCellTests: XCTestCase {
     reservoirCell.recordLongValue(value: 10, attributes: attributes)
 
     let result = reservoirCell.getAndResetLong(pointAttributes: pointAttributes)
-    XCTAssertEqual(result.value, 10)
-    XCTAssertEqual(result.epochNanos, mockClock.nanoTime)
-    XCTAssertEqual(result.filteredAttributes, attributes)
-    XCTAssertEqual(result.spanContext, nil)
+    XCTAssertEqual(result?.value, 10)
+    XCTAssertEqual(result?.epochNanos, mockClock.nanoTime)
+    XCTAssertEqual(result?.filteredAttributes, attributes)
+    XCTAssertEqual(result?.spanContext, nil)
 
     XCTAssertEqual(reservoirCell.attributes, [:])
     XCTAssertEqual(reservoirCell.longValue, 0)
@@ -58,10 +58,10 @@ class ReservoirCellTests: XCTestCase {
     reservoirCell.recordDoubleValue(value: 3.14, attributes: attributes)
 
     let result = reservoirCell.getAndResetDouble(pointAttributes: pointAttributes)
-    XCTAssertEqual(result.value, 3.14)
-    XCTAssertEqual(result.epochNanos, mockClock.nanoTime)
-    XCTAssertEqual(result.filteredAttributes, attributes)
-    XCTAssertEqual(result.spanContext, nil)
+    XCTAssertEqual(result?.value, 3.14)
+    XCTAssertEqual(result?.epochNanos, mockClock.nanoTime)
+    XCTAssertEqual(result?.filteredAttributes, attributes)
+    XCTAssertEqual(result?.spanContext, nil)
 
     XCTAssertEqual(reservoirCell.attributes, [:])
     XCTAssertEqual(reservoirCell.doubleValue, 0)

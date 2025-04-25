@@ -37,13 +37,19 @@ public class ReservoirCell {
     }
   }
 
-  func getAndResetLong(pointAttributes: [String: AttributeValue]) -> LongExemplarData {
+  func getAndResetLong(pointAttributes: [String: AttributeValue]) -> LongExemplarData? {
+    if attributes.isEmpty {
+      return nil
+    }
     let result = LongExemplarData(value: longValue, epochNanos: recordTime, filteredAttributes: filtered(attributes, pointAttributes), spanContext: spanContext)
     reset()
     return result
   }
 
-  func getAndResetDouble(pointAttributes: [String: AttributeValue]) -> DoubleExemplarData {
+  func getAndResetDouble(pointAttributes: [String: AttributeValue]) -> DoubleExemplarData? {
+    if attributes.isEmpty {
+      return nil
+    }
     let result = DoubleExemplarData(value: doubleValue, epochNanos: recordTime, filteredAttributes: filtered(attributes, pointAttributes), spanContext: spanContext)
     reset()
     return result
