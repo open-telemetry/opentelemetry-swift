@@ -95,6 +95,12 @@ public enum CommonAdapter {
     if let version = instrumentationScopeInfo.version {
       instrumentationScope.version = version
     }
-    return instrumentationScope
+
+    if let attributes = instrumentationScopeInfo.attributes {
+      attributes.forEach {
+        instrumentationScope.attributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
+      }
+    }
+  return instrumentationScope
   }
 }

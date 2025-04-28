@@ -30,6 +30,6 @@ public class TraceShim {
   }
 
   private static func getTracer(tracerProvider: TracerProvider) -> Tracer {
-    tracerProvider.get(instrumentationName: "opentracingshim", instrumentationVersion: nil)
+    tracerProvider.get(instrumentationName: "opentracingshim")
   }
 }
