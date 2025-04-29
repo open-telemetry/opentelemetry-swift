@@ -47,32 +47,33 @@ class SessionDelegate: NSObject, URLSessionDataDelegate, URLSessionTaskDelegate 
 
 let delegate = SessionDelegate()
 
+enum TimeoutError: Error {
+  case timeout
+}
+
 func waitForSemaphore(withTimeoutSecs: Int) async {
-    var continuation: CheckedContinuation<Bool, Never>?
-    let waitTask = Task {
-        let res = await withCheckedContinuation { c in
-            continuation = c
-            DispatchQueue.global().async {
-                delegate.semaphore.wait()
-                c.resume(returning: true)
-            }
-        }
-        try Task.checkCancellation()
-        return res
-    }
-
-    let timeoutTask = Task {
+  do {
+    let _ = try await withThrowingTaskGroup(of: Bool.self) { group in
+      group.addTask {
         try await Task.sleep(nanoseconds: UInt64(withTimeoutSecs) * NSEC_PER_SEC)
-        waitTask.cancel()
-        continuation?.resume(returning: false)
+        throw TimeoutError.timeout
+      }
+      group.addTask {
+        let semaphoreTask = Task {
+          DispatchQueue.global().async {
+            delegate.semaphore.wait()
+          }
+        }
+        await semaphoreTask.value
+        try Task.checkCancellation()
+        return true
+      }
+      
+      return try await group.next()!
     }
-
-    do {
-        _ = try await waitTask.value
-        timeoutTask.cancel()
-    } catch {
-        print("timed out waiting for semaphore")
-    }
+  } catch {
+    print("timed out waiting for semaphore")
+  }
 }
 
 func simpleNetworkCallWithDelegate() {
