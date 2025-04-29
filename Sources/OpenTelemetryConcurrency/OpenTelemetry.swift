@@ -33,7 +33,7 @@ public struct TracerProviderWrapper {
           instrumentationName: instrumentationName,
           instrumentationVersion: instrumentationVersion,
           schemaUrl: schemaUrl,
-          attributes: attributes,
+          attributes: attributes
         )
     )
   }
