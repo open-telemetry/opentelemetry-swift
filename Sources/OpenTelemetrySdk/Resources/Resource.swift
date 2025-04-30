@@ -14,6 +14,8 @@ public struct Resource: Equatable, Hashable, Codable {
   /// A dictionary of labels that describe the resource.
   public var attributes: [String: AttributeValue]
 
+  public private(set) var entities : [Entity] = []
+
   ///  Returns a default Resource.
   public init() {
     let executableName = ProcessInfo.processInfo.processName
@@ -30,6 +32,35 @@ public struct Resource: Equatable, Hashable, Codable {
     )
   }
 
+  private static func mergeEntities(_ lhs: [Entity], _ rhs: [Entity]) -> [Entity] {
+    if lhs.isEmpty {
+      return rhs
+    }
+
+    if rhs.isEmpty {
+      return lhs
+    }
+    var entityMap = [String: Entity]()
+    lhs.forEach { entityMap[$0.type] = $0 }
+    rhs.forEach { entity in
+      if !entityMap.contains(where: { key, _ in
+        entity.type == key
+      }) {
+        entityMap[entity.type] = entity
+      } else {
+        if let old = entityMap[entity.type] {
+          let new = Entity.builder(type: old.type)
+            .with(identifiers: old.identifiers)
+            .with(attributes: entity.attributes
+              .merging(old.attributes) { _, old in old })
+            .build()
+          entityMap[entity.type] = new
+        }
+      }
+    }
+    return Array(entityMap.values)
+  }
+
   ///  Returns an empty Resource.
   static var empty: Resource {
     return self.init(attributes: [String: AttributeValue]())
@@ -37,12 +68,24 @@ public struct Resource: Equatable, Hashable, Codable {
 
   /// Returns a Resource.
   /// - Parameter labels: a dictionary of labels that describe the resource.
-  public init(attributes: [String: AttributeValue]) {
+  public init(attributes: [String: AttributeValue], entities: [Entity] = []) {
+    self.entities = entities
     if Resource.checkAttributes(attributes: attributes) {
-      self.attributes = attributes
+      self.attributes = attributes.filter { key, _ in
+        for entity in entities {
+          if entity.attributes.contains(where: { attribute in attribute.key == key }) {
+            return true
+          }
+          if entity.identifiers.contains(where: { attribute in attribute.key == key }) {
+            return true
+          }
+        }
+        return false
+      }
     } else {
       self.attributes = [String: AttributeValue]()
     }
+
   }
 
   /// Modifies the current Resource by merging with the other Resource.
@@ -50,6 +93,7 @@ public struct Resource: Equatable, Hashable, Codable {
   /// - Parameter other: the Resource that will be merged with this
   public mutating func merge(other: Resource) {
     attributes.merge(other.attributes) { _, other in other }
+    entities = Resource.mergeEntities(entities, other.entities)
   }
 
   /// Returns a new, merged Resource by merging the current Resource with the other Resource.
@@ -57,10 +101,11 @@ public struct Resource: Equatable, Hashable, Codable {
   /// - Parameter other: the Resource that will be merged with this
   public func merging(other: Resource) -> Resource {
     let labelsCopy = attributes.merging(other.attributes) { _, other in other }
-    return Resource(attributes: labelsCopy)
+    let entities = Resource.mergeEntities(self.entities, other.entities)
+    return Resource(attributes: labelsCopy, entities: entities)
   }
 
-  private static func checkAttributes(attributes: [String: AttributeValue]) -> Bool {
+  internal static func checkAttributes(attributes: [String: AttributeValue]) -> Bool {
     for entry in attributes where !isValidAndNotEmpty(name: entry.key) {
       return false
     }
