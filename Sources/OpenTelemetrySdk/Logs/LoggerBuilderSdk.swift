@@ -11,6 +11,7 @@ public class LoggerBuilderSdk: LoggerBuilder {
   private var instrumentationScopeName: String
   private var eventDomain: String?
   private var schemaUrl: String?
+  private var attributes: [String: AttributeValue]?
   private var instrumentationScopeVersion: String?
   private var includeTraceContext = true
 
@@ -40,11 +41,17 @@ public class LoggerBuilderSdk: LoggerBuilder {
   }
 
   public func setAttributes(_ attributes: [String: OpenTelemetryApi.AttributeValue]) -> Self {
+    self.attributes = attributes
     return self
   }
 
   public func build() -> OpenTelemetryApi.Logger {
-    var logger = registry.get(name: instrumentationScopeName, version: instrumentationScopeVersion, schemaUrl: schemaUrl)
+    var logger = registry.get(
+      name: instrumentationScopeName,
+      version: instrumentationScopeVersion,
+      schemaUrl: schemaUrl,
+      attributes: attributes
+    )
     if let eventDomain {
       logger = logger.withEventDomain(domain: eventDomain)
     }
