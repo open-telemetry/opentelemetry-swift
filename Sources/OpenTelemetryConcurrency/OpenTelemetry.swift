@@ -23,8 +23,19 @@ public struct TracerProviderWrapper {
   /// The inner `TracerProvider` used to construct a `Tracer`. Be careful when accessing this property, as it may make it easier to use API's that don't function properly with your configuration.
   public let inner: TracerProvider
 
-  public func get(instrumentationName: String, instrumentationVersion: String?) -> TracerWrapper {
-    TracerWrapper(inner: inner.get(instrumentationName: instrumentationName, instrumentationVersion: instrumentationVersion))
+  public func get(instrumentationName: String,
+                  instrumentationVersion: String? = nil,
+                  schemaUrl: String? = nil,
+                  attributes: [String: AttributeValue]? = nil) -> TracerWrapper {
+    TracerWrapper(
+      inner: inner
+        .get(
+          instrumentationName: instrumentationName,
+          instrumentationVersion: instrumentationVersion,
+          schemaUrl: schemaUrl,
+          attributes: attributes
+        )
+    )
   }
 }
 
