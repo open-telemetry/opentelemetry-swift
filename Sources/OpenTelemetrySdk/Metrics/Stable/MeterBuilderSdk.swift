@@ -10,6 +10,7 @@ public class MeterBuilderSdk: MeterBuilder {
   private let registry: ComponentRegistry<StableMeterSdk>
   private let instrumentationScopeName: String
   private var instrumentationVersion: String?
+  private var attributes: [String: AttributeValue]?
   private var schemaUrl: String?
 
   init(registry: ComponentRegistry<StableMeterSdk>, instrumentationScopeName: String) {
@@ -24,6 +25,11 @@ public class MeterBuilderSdk: MeterBuilder {
 
   public func setInstrumentationVersion(instrumentationVersion: String) -> Self {
     self.instrumentationVersion = instrumentationVersion
+    return self
+  }
+
+  public func setAttributes(attributes: [String: OpenTelemetryApi.AttributeValue]) -> Self {
+    self.attributes = attributes
     return self
   }
 

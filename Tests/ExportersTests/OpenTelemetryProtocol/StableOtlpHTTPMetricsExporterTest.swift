@@ -164,7 +164,11 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
   }
 
   func generateSumStableMetricData(description: String = "description") -> StableMetricData {
-    let scope = InstrumentationScopeInfo(name: "lib", version: "semver:0.0.0")
+    let scope = InstrumentationScopeInfo(
+      name: "lib",
+      version: "semver:0.0.0",
+      attributes: ["instrumentationScope": AttributeValue.string("attributes")]
+    )
     let sumPointData = DoublePointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: 1)
     let metric = StableMetricData(resource: Resource(), instrumentationScopeInfo: scope, name: "metric", description: description, unit: "", type: .DoubleSum, isMonotonic: true, data: StableMetricData.Data(aggregationTemporality: .cumulative, points: [sumPointData]))
     return metric

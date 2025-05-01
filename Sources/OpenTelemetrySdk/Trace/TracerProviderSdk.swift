@@ -32,7 +32,7 @@ public class TracerProviderSdk: TracerProvider {
     pthread_rwlock_destroy(&tracerLock)
   }
 
-  public func get(instrumentationName: String, instrumentationVersion: String? = nil) -> Tracer {
+  public func get(instrumentationName: String, instrumentationVersion: String? = nil, schemaUrl: String? = nil, attributes: [String: AttributeValue]? = nil) -> Tracer {
     if sharedState.hasBeenShutdown {
       return DefaultTracer.instance
     }
@@ -43,7 +43,11 @@ public class TracerProviderSdk: TracerProvider {
       print("Tracer requested without instrumentation name.")
       instrumentationName = TracerProviderSdk.emptyName
     }
-    let instrumentationScopeInfo = InstrumentationScopeInfo(name: instrumentationName, version: instrumentationVersion ?? "")
+    let instrumentationScopeInfo = InstrumentationScopeInfo(
+      name: instrumentationName,
+      version: instrumentationVersion,
+      schemaUrl: schemaUrl,
+      attributes: attributes)
 
     if pthread_rwlock_rdlock(&tracerLock) == 0 {
       let existingTracer = tracerProvider[instrumentationScopeInfo]

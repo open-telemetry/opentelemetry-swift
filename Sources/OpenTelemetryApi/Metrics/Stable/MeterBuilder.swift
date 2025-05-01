@@ -18,6 +18,12 @@ public protocol MeterBuilder: AnyObject {
   /// - Returns: self
   func setInstrumentationVersion(instrumentationVersion: String) -> Self
 
+  /// Assign a set of attributes that will be applied to the Meter.
+  ///
+  /// - Parameter attributes: key/value-pair of attributes
+  /// - Returns: self
+  func setAttributes(attributes: [String: AttributeValue]) -> Self
+
   /// gets or creates a Meter
   ///
   /// - Returns: a Meter configured with the provided options.

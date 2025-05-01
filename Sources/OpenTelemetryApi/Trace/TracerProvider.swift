@@ -11,11 +11,26 @@ public protocol TracerProvider {
   /// - Parameters:
   ///   - instrumentationName: the name of the instrumentation library, not the name of the instrumented library
   ///   - instrumentationVersion:  The version of the instrumentation library (e.g., "semver:1.0.0"). Optional
-  func get(instrumentationName: String, instrumentationVersion: String?) -> Tracer
+  ///   - schemaUrl: The schema url. Optional
+  ///   - attributes: attributes to be associated with span created by this tracer. Optional
+  func get(
+    instrumentationName: String,
+    instrumentationVersion: String?,
+    schemaUrl: String?,
+    attributes: [String: AttributeValue]?
+  ) -> any Tracer
 }
 
-extension TracerProvider {
-  func get(instrumentationName: String) -> Tracer {
-    return get(instrumentationName: instrumentationName, instrumentationVersion: nil)
+public extension TracerProvider {
+  func get(instrumentationName: String,
+           instrumentationVersion: String? = nil,
+           schemaUrl: String? = nil,
+           attributes: [String: AttributeValue]? = nil) -> any Tracer {
+    return get(
+      instrumentationName: instrumentationName,
+      instrumentationVersion: instrumentationVersion,
+      schemaUrl: schemaUrl,
+      attributes: attributes
+    )
   }
 }

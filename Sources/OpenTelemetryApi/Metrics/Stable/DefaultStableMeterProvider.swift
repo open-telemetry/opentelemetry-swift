@@ -31,6 +31,10 @@ public class DefaultStableMeterProvider: StableMeterProvider {
       self
     }
 
+    func setAttributes(attributes: [String: AttributeValue]) -> Self {
+      self
+    }
+
     func build() -> StableMeter {
       Self.noopMeter
     }
