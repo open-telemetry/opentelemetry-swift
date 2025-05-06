@@ -118,13 +118,6 @@ class W3BaggagePropagatorTest: XCTestCase {
     }
   }
 
-  func testW3CListMemberLimit() {
-    // Create a baggage string with 180 list-members (should fail as per spec limit)
-    let listMembers = (1...180).map { "k\($0)=v" }.joined(separator: ",")
-    let result = propagator.extract(carrier: ["baggage": listMembers], getter: getter)
-    XCTAssertNotNil(result) // Should still parse but might truncate
-  }
-
   func testW3CPropertyValues() {
     // Test case with properties as defined in W3C spec
     let result = propagator.extract(carrier: ["baggage": "key1=value1;property1;property2=value"], getter: getter)!

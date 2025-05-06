@@ -17,7 +17,6 @@ public struct W3CBaggagePropagator: TextMapBaggagePropagator {
   private static let versionAndTraceIdAndSpanIdLength = versionAndTraceIdLength + spanIdLength + delimiterLength
   private static let optionsLength = 2
   private static let traceparentLengthV0 = versionAndTraceIdAndSpanIdLength + optionsLength
-  private static let maxBaggageStringLength = 180
 
   static let headerBaggage = "baggage"
 
@@ -63,7 +62,7 @@ public struct W3CBaggagePropagator: TextMapBaggagePropagator {
     }
 
     let headerContent = headerParts.joined(separator: ",")
-    if !headerContent.isEmpty && headerContent.count <= W3CBaggagePropagator.maxBaggageStringLength {
+    if !headerContent.isEmpty {
       setter.set(carrier: &carrier, key: W3CBaggagePropagator.headerBaggage, value: headerContent)
     }
   }
