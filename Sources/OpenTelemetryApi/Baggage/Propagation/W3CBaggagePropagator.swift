@@ -27,16 +27,6 @@ public struct W3CBaggagePropagator: TextMapBaggagePropagator {
     return (String(parts[0]), String(parts[1]))
   }
 
-  private func percentEncode(_ value: String) -> String {
-    // Use .urlQueryAllowed as base and then percent-encode % signs
-    var encoded = value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? value
-
-    // Additionally encode any remaining % signs
-    encoded = encoded.replacingOccurrences(of: "%", with: "%25")
-
-    return encoded
-  }
-
   public init() {}
 
   public let fields: Set<String> = [headerBaggage]
