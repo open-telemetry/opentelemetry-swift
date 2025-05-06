@@ -25,9 +25,15 @@ class EntryValueTests: XCTestCase {
     XCTAssertNil(EntryValue(string: value)?.string)
   }
 
-  func testDisallowEntryValueWithUnprintableChars() {
-    let value = String("\0")
-    XCTAssertNil(EntryValue(string: value)?.string)
+  func testAllowAnyCharactersInValue() {
+    let value = String("\0")  // null character
+    XCTAssertNotNil(EntryValue(string: value))
+
+    let unicodeValue = "Amélie"  // unicode character
+    XCTAssertNotNil(EntryValue(string: unicodeValue))
+
+    let specialChars = "!@#$%^&*()"  // special characters
+    XCTAssertNotNil(EntryValue(string: specialChars))
   }
 
   func testEntryValueEquals() {

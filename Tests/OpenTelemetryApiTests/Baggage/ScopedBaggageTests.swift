@@ -8,9 +8,9 @@ import XCTest
 import OpenTelemetryTestUtils
 
 class ScopedBaggageTestsInfo: OpenTelemetryContextTestCase {
-  let key1 = EntryKey(name: "key 1")!
-  let key2 = EntryKey(name: "key 2")!
-  let key3 = EntryKey(name: "key 3")!
+  let key1 = EntryKey(name: "key-1")!
+  let key2 = EntryKey(name: "key-2")!
+  let key3 = EntryKey(name: "key-3")!
 
   let value1 = EntryValue(string: "value 1")!
   let value2 = EntryValue(string: "value 2")!

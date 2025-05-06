@@ -69,6 +69,10 @@ public struct Resource: Equatable, Hashable, Codable {
 
   /// Determines whether the given String is a valid printable ASCII string with a length not
   /// exceed 255 characters.
+  /// According to OpenTelemetry specification, resource attribute keys:
+  /// - Must be non-null and non-empty string
+  /// - Must be printable ASCII characters (32-126)
+  /// - Maximum length 255 characters
   /// - Parameter name: the name to be validated.
   private static func isValid(name: String) -> Bool {
     return name.count <= maxLength && StringUtils.isPrintableString(name)

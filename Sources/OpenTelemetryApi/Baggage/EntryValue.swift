@@ -30,6 +30,6 @@ public struct EntryValue: Equatable {
   /// Determines whether the given String is a valid entry value.
   /// - Parameter value: value the entry value to be validated.
   private static func isValid(value: String) -> Bool {
-    return value.count <= maxLength && StringUtils.isPrintableString(value)
+    return value.count <= maxLength
   }
 }
