@@ -7,26 +7,26 @@ import OpenTelemetryApi
 
 public class EntityBuilder {
   private var type: String
-  private var identifiers: [String: AttributeValue] = [:]
-  private var attributes: [String: AttributeValue] = [:]
+  private var identifierKeys: Set<String> = []
+  private var attributeKeys: Set<String> = []
 
   internal init(type: String) {
     self.type = type
   }
 
-  public func with(identifiers: [String: AttributeValue]) -> Self {
-    self.identifiers = identifiers
+  public func with(identifiersKeys: [String]) -> Self {
+    self.identifierKeys = Set(identifiersKeys)
     return self
   }
 
-  public func with(attributes: [String: AttributeValue]) -> Self {
-    self.attributes = attributes
+  public func with(attributeKeys: [String]) -> Self {
+    self.attributeKeys = Set(attributeKeys)
     return self
   }
 
   public func build() -> Entity {
     return Entity(type: type,
-                  identifiers: identifiers,
-                  attributes: attributes)
+                  identifierKeys: identifierKeys,
+                  attributeKeys: attributeKeys)
   }
 }

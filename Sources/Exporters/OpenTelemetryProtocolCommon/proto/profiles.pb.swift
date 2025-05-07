@@ -168,11 +168,36 @@ public struct Opentelemetry_Proto_Profiles_V1development_ProfilesData: Sendable 
   // methods supported on all messages.
 
   /// An array of ResourceProfiles.
-  /// For data coming from a single resource this array will typically contain
-  /// one element. Intermediary nodes that receive data from multiple origins
-  /// typically batch the data before forwarding further and in that case this
-  /// array will contain multiple elements.
+  /// For data coming from an SDK profiler, this array will typically contain one
+  /// element. Host-level profilers will usually create one ResourceProfile per
+  /// container, as well as one additional ResourceProfile grouping all samples
+  /// from non-containerized processes.
+  /// Other resource groupings are possible as well and clarified via
+  /// Resource.attributes and semantic conventions.
   public var resourceProfiles: [Opentelemetry_Proto_Profiles_V1development_ResourceProfiles] = []
+
+  /// Mappings from address ranges to the image/binary/library mapped
+  /// into that address range referenced by locations via Location.mapping_index.
+  public var mappingTable: [Opentelemetry_Proto_Profiles_V1development_Mapping] = []
+
+  /// Locations referenced by samples via Profile.location_indices.
+  public var locationTable: [Opentelemetry_Proto_Profiles_V1development_Location] = []
+
+  /// Functions referenced by locations via Line.function_index.
+  public var functionTable: [Opentelemetry_Proto_Profiles_V1development_Function] = []
+
+  /// Links referenced by samples via Sample.link_index.
+  public var linkTable: [Opentelemetry_Proto_Profiles_V1development_Link] = []
+
+  /// A common table for strings referenced by various messages.
+  /// string_table[0] must always be "".
+  public var stringTable: [String] = []
+
+  /// A common table for attributes referenced by various messages.
+  public var attributeTable: [Opentelemetry_Proto_Common_V1_KeyValue] = []
+
+  /// Represents a mapping between Attribute Keys and Units.
+  public var attributeUnits: [Opentelemetry_Proto_Profiles_V1development_AttributeUnit] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -269,137 +294,57 @@ public struct Opentelemetry_Proto_Profiles_V1development_Profile: @unchecked Sen
   /// If one of the values represents the number of events represented
   /// by the sample, by convention it should be at index 0 and use
   /// sample_type.unit == "count".
-  public var sampleType: [Opentelemetry_Proto_Profiles_V1development_ValueType] {
-    get {return _storage._sampleType}
-    set {_uniqueStorage()._sampleType = newValue}
-  }
+  public var sampleType: [Opentelemetry_Proto_Profiles_V1development_ValueType] = []
 
   /// The set of samples recorded in this profile.
-  public var sample: [Opentelemetry_Proto_Profiles_V1development_Sample] {
-    get {return _storage._sample}
-    set {_uniqueStorage()._sample = newValue}
-  }
+  public var sample: [Opentelemetry_Proto_Profiles_V1development_Sample] = []
 
-  /// Mapping from address ranges to the image/binary/library mapped
-  /// into that address range.  mapping[0] will be the main binary.
-  /// If multiple binaries contribute to the Profile and no main
-  /// binary can be identified, mapping[0] has no special meaning.
-  public var mappingTable: [Opentelemetry_Proto_Profiles_V1development_Mapping] {
-    get {return _storage._mappingTable}
-    set {_uniqueStorage()._mappingTable = newValue}
-  }
-
-  /// Locations referenced by samples via location_indices.
-  public var locationTable: [Opentelemetry_Proto_Profiles_V1development_Location] {
-    get {return _storage._locationTable}
-    set {_uniqueStorage()._locationTable = newValue}
-  }
-
-  /// Array of locations referenced by samples.
-  public var locationIndices: [Int32] {
-    get {return _storage._locationIndices}
-    set {_uniqueStorage()._locationIndices = newValue}
-  }
-
-  /// Functions referenced by locations.
-  public var functionTable: [Opentelemetry_Proto_Profiles_V1development_Function] {
-    get {return _storage._functionTable}
-    set {_uniqueStorage()._functionTable = newValue}
-  }
-
-  /// Lookup table for attributes.
-  public var attributeTable: [Opentelemetry_Proto_Common_V1_KeyValue] {
-    get {return _storage._attributeTable}
-    set {_uniqueStorage()._attributeTable = newValue}
-  }
-
-  /// Represents a mapping between Attribute Keys and Units.
-  public var attributeUnits: [Opentelemetry_Proto_Profiles_V1development_AttributeUnit] {
-    get {return _storage._attributeUnits}
-    set {_uniqueStorage()._attributeUnits = newValue}
-  }
-
-  /// Lookup table for links.
-  public var linkTable: [Opentelemetry_Proto_Profiles_V1development_Link] {
-    get {return _storage._linkTable}
-    set {_uniqueStorage()._linkTable = newValue}
-  }
-
-  /// A common table for strings referenced by various messages.
-  /// string_table[0] must always be "".
-  public var stringTable: [String] {
-    get {return _storage._stringTable}
-    set {_uniqueStorage()._stringTable = newValue}
-  }
+  /// References to locations in ProfilesData.location_table.
+  public var locationIndices: [Int32] = []
 
   /// Time of collection (UTC) represented as nanoseconds past the epoch.
-  public var timeNanos: Int64 {
-    get {return _storage._timeNanos}
-    set {_uniqueStorage()._timeNanos = newValue}
-  }
+  public var timeNanos: Int64 = 0
 
   /// Duration of the profile, if a duration makes sense.
-  public var durationNanos: Int64 {
-    get {return _storage._durationNanos}
-    set {_uniqueStorage()._durationNanos = newValue}
-  }
+  public var durationNanos: Int64 = 0
 
   /// The kind of events between sampled occurrences.
   /// e.g [ "cpu","cycles" ] or [ "heap","bytes" ]
   public var periodType: Opentelemetry_Proto_Profiles_V1development_ValueType {
-    get {return _storage._periodType ?? Opentelemetry_Proto_Profiles_V1development_ValueType()}
-    set {_uniqueStorage()._periodType = newValue}
+    get {return _periodType ?? Opentelemetry_Proto_Profiles_V1development_ValueType()}
+    set {_periodType = newValue}
   }
   /// Returns true if `periodType` has been explicitly set.
-  public var hasPeriodType: Bool {return _storage._periodType != nil}
+  public var hasPeriodType: Bool {return self._periodType != nil}
   /// Clears the value of `periodType`. Subsequent reads from it will return its default value.
-  public mutating func clearPeriodType() {_uniqueStorage()._periodType = nil}
+  public mutating func clearPeriodType() {self._periodType = nil}
 
   /// The number of events between sampled occurrences.
-  public var period: Int64 {
-    get {return _storage._period}
-    set {_uniqueStorage()._period = newValue}
-  }
+  public var period: Int64 = 0
 
   /// Free-form text associated with the profile. The text is displayed as is
   /// to the user by the tools that read profiles (e.g. by pprof). This field
   /// should not be used to store any machine-readable information, it is only
   /// for human-friendly content. The profile must stay functional if this field
   /// is cleaned.
-  public var commentStrindices: [Int32] {
-    get {return _storage._commentStrindices}
-    set {_uniqueStorage()._commentStrindices = newValue}
-  }
+  public var commentStrindices: [Int32] = []
 
-  /// Index into the string table of the type of the preferred sample
-  /// value. If unset, clients should default to the last sample value.
-  public var defaultSampleTypeStrindex: Int32 {
-    get {return _storage._defaultSampleTypeStrindex}
-    set {_uniqueStorage()._defaultSampleTypeStrindex = newValue}
-  }
+  /// Index into the sample_type array to the default sample type.
+  public var defaultSampleTypeIndex: Int32 = 0
 
   /// A globally unique identifier for a profile. The ID is a 16-byte array. An ID with
   /// all zeroes is considered invalid.
   ///
   /// This field is required.
-  public var profileID: Data {
-    get {return _storage._profileID}
-    set {_uniqueStorage()._profileID = newValue}
-  }
+  public var profileID: Data = Data()
 
   /// dropped_attributes_count is the number of attributes that were discarded. Attributes
   /// can be discarded because their keys are too long or because there are too many
   /// attributes. If this value is 0, then no attributes were dropped.
-  public var droppedAttributesCount: UInt32 {
-    get {return _storage._droppedAttributesCount}
-    set {_uniqueStorage()._droppedAttributesCount = newValue}
-  }
+  public var droppedAttributesCount: UInt32 = 0
 
   /// Specifies format of the original payload. Common values are defined in semantic conventions. [required if original_payload is present]
-  public var originalPayloadFormat: String {
-    get {return _storage._originalPayloadFormat}
-    set {_uniqueStorage()._originalPayloadFormat = newValue}
-  }
+  public var originalPayloadFormat: String = String()
 
   /// Original payload can be stored in this field. This can be useful for users who want to get the original payload.
   /// Formats such as JFR are highly extensible and can contain more information than what is defined in this spec.
@@ -407,10 +352,7 @@ public struct Opentelemetry_Proto_Profiles_V1development_Profile: @unchecked Sen
   /// If the original payload is in pprof format, it SHOULD not be included in this field.
   /// The field is optional, however if it is present then equivalent converted data should be populated in other fields
   /// of this message as far as is practicable.
-  public var originalPayload: Data {
-    get {return _storage._originalPayload}
-    set {_uniqueStorage()._originalPayload = newValue}
-  }
+  public var originalPayload: Data = Data()
 
   /// References to attributes in attribute_table. [optional]
   /// It is a collection of key/value pairs. Note, global attributes
@@ -425,16 +367,13 @@ public struct Opentelemetry_Proto_Profiles_V1development_Profile: @unchecked Sen
   /// https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/common/README.md#attribute
   /// Attribute keys MUST be unique (it is not allowed to have more than one
   /// attribute with the same key).
-  public var attributeIndices: [Int32] {
-    get {return _storage._attributeIndices}
-    set {_uniqueStorage()._attributeIndices = newValue}
-  }
+  public var attributeIndices: [Int32] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
-  fileprivate var _storage = _StorageClass.defaultInstance
+  fileprivate var _periodType: Opentelemetry_Proto_Profiles_V1development_ValueType? = nil
 }
 
 /// Represents a mapping between Attribute Keys and Units.
@@ -479,10 +418,10 @@ public struct Opentelemetry_Proto_Profiles_V1development_ValueType: Sendable {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  /// Index into string table.
+  /// Index into ProfilesData.string_table.
   public var typeStrindex: Int32 = 0
 
-  /// Index into string table.
+  /// Index into ProfilesData.string_table.
   public var unitStrindex: Int32 = 0
 
   public var aggregationTemporality: Opentelemetry_Proto_Profiles_V1development_AggregationTemporality = .unspecified
@@ -516,10 +455,10 @@ public struct Opentelemetry_Proto_Profiles_V1development_Sample: Sendable {
   /// lists of the originals.
   public var value: [Int64] = []
 
-  /// References to attributes in Profile.attribute_table. [optional]
+  /// References to attributes in ProfilesData.attribute_table. [optional]
   public var attributeIndices: [Int32] = []
 
-  /// Reference to link in Profile.link_table. [optional]
+  /// Reference to link in ProfilesData.link_table. [optional]
   public var linkIndex: Int32 {
     get {return _linkIndex ?? 0}
     set {_linkIndex = newValue}
@@ -561,7 +500,7 @@ public struct Opentelemetry_Proto_Profiles_V1development_Mapping: Sendable {
   /// abstractions like "[vdso]".
   public var filenameStrindex: Int32 = 0
 
-  /// References to attributes in Profile.attribute_table. [optional]
+  /// References to attributes in ProfilesData.attribute_table. [optional]
   public var attributeIndices: [Int32] = []
 
   /// The following fields indicate the resolution of symbolic info.
@@ -584,7 +523,7 @@ public struct Opentelemetry_Proto_Profiles_V1development_Location: Sendable {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  /// Reference to mapping in Profile.mapping_table.
+  /// Reference to mapping in ProfilesData.mapping_table.
   /// It can be unset if the mapping is unknown or not applicable for
   /// this profile type.
   public var mappingIndex: Int32 {
@@ -619,7 +558,7 @@ public struct Opentelemetry_Proto_Profiles_V1development_Location: Sendable {
   /// profile changes.
   public var isFolded: Bool = false
 
-  /// References to attributes in Profile.attribute_table. [optional]
+  /// References to attributes in ProfilesData.attribute_table. [optional]
   public var attributeIndices: [Int32] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -635,13 +574,13 @@ public struct Opentelemetry_Proto_Profiles_V1development_Line: Sendable {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  /// Reference to function in Profile.function_table.
+  /// Reference to function in ProfilesData.function_table.
   public var functionIndex: Int32 = 0
 
-  /// Line number in source code.
+  /// Line number in source code. 0 means unset.
   public var line: Int64 = 0
 
-  /// Column number in source code.
+  /// Column number in source code. 0 means unset.
   public var column: Int64 = 0
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -656,17 +595,17 @@ public struct Opentelemetry_Proto_Profiles_V1development_Function: Sendable {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  /// Name of the function, in human-readable form if available.
+  /// Function name. Empty string if not available.
   public var nameStrindex: Int32 = 0
 
-  /// Name of the function, as identified by the system.
-  /// For instance, it can be a C++ mangled name.
+  /// Function name, as identified by the system. For instance,
+  /// it can be a C++ mangled name. Empty string if not available.
   public var systemNameStrindex: Int32 = 0
 
-  /// Source file containing the function.
+  /// Source file containing the function. Empty string if not available.
   public var filenameStrindex: Int32 = 0
 
-  /// Line number in source file.
+  /// Line number in source file. 0 means unset.
   public var startLine: Int64 = 0
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -690,6 +629,13 @@ extension Opentelemetry_Proto_Profiles_V1development_ProfilesData: SwiftProtobuf
   public static let protoMessageName: String = _protobuf_package + ".ProfilesData"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "resource_profiles"),
+    2: .standard(proto: "mapping_table"),
+    3: .standard(proto: "location_table"),
+    4: .standard(proto: "function_table"),
+    5: .standard(proto: "link_table"),
+    6: .standard(proto: "string_table"),
+    7: .standard(proto: "attribute_table"),
+    8: .standard(proto: "attribute_units"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -699,6 +645,13 @@ extension Opentelemetry_Proto_Profiles_V1development_ProfilesData: SwiftProtobuf
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeRepeatedMessageField(value: &self.resourceProfiles) }()
+      case 2: try { try decoder.decodeRepeatedMessageField(value: &self.mappingTable) }()
+      case 3: try { try decoder.decodeRepeatedMessageField(value: &self.locationTable) }()
+      case 4: try { try decoder.decodeRepeatedMessageField(value: &self.functionTable) }()
+      case 5: try { try decoder.decodeRepeatedMessageField(value: &self.linkTable) }()
+      case 6: try { try decoder.decodeRepeatedStringField(value: &self.stringTable) }()
+      case 7: try { try decoder.decodeRepeatedMessageField(value: &self.attributeTable) }()
+      case 8: try { try decoder.decodeRepeatedMessageField(value: &self.attributeUnits) }()
       default: break
       }
     }
@@ -708,11 +661,39 @@ extension Opentelemetry_Proto_Profiles_V1development_ProfilesData: SwiftProtobuf
     if !self.resourceProfiles.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.resourceProfiles, fieldNumber: 1)
     }
+    if !self.mappingTable.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.mappingTable, fieldNumber: 2)
+    }
+    if !self.locationTable.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.locationTable, fieldNumber: 3)
+    }
+    if !self.functionTable.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.functionTable, fieldNumber: 4)
+    }
+    if !self.linkTable.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.linkTable, fieldNumber: 5)
+    }
+    if !self.stringTable.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.stringTable, fieldNumber: 6)
+    }
+    if !self.attributeTable.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.attributeTable, fieldNumber: 7)
+    }
+    if !self.attributeUnits.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.attributeUnits, fieldNumber: 8)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Opentelemetry_Proto_Profiles_V1development_ProfilesData, rhs: Opentelemetry_Proto_Profiles_V1development_ProfilesData) -> Bool {
     if lhs.resourceProfiles != rhs.resourceProfiles {return false}
+    if lhs.mappingTable != rhs.mappingTable {return false}
+    if lhs.locationTable != rhs.locationTable {return false}
+    if lhs.functionTable != rhs.functionTable {return false}
+    if lhs.linkTable != rhs.linkTable {return false}
+    if lhs.stringTable != rhs.stringTable {return false}
+    if lhs.attributeTable != rhs.attributeTable {return false}
+    if lhs.attributeUnits != rhs.attributeUnits {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -819,232 +800,110 @@ extension Opentelemetry_Proto_Profiles_V1development_Profile: SwiftProtobuf.Mess
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "sample_type"),
     2: .same(proto: "sample"),
-    3: .standard(proto: "mapping_table"),
-    4: .standard(proto: "location_table"),
-    5: .standard(proto: "location_indices"),
-    6: .standard(proto: "function_table"),
-    7: .standard(proto: "attribute_table"),
-    8: .standard(proto: "attribute_units"),
-    9: .standard(proto: "link_table"),
-    10: .standard(proto: "string_table"),
-    11: .standard(proto: "time_nanos"),
-    12: .standard(proto: "duration_nanos"),
-    13: .standard(proto: "period_type"),
-    14: .same(proto: "period"),
-    15: .standard(proto: "comment_strindices"),
-    16: .standard(proto: "default_sample_type_strindex"),
-    17: .standard(proto: "profile_id"),
-    19: .standard(proto: "dropped_attributes_count"),
-    20: .standard(proto: "original_payload_format"),
-    21: .standard(proto: "original_payload"),
-    22: .standard(proto: "attribute_indices"),
+    3: .standard(proto: "location_indices"),
+    4: .standard(proto: "time_nanos"),
+    5: .standard(proto: "duration_nanos"),
+    6: .standard(proto: "period_type"),
+    7: .same(proto: "period"),
+    8: .standard(proto: "comment_strindices"),
+    9: .standard(proto: "default_sample_type_index"),
+    10: .standard(proto: "profile_id"),
+    11: .standard(proto: "dropped_attributes_count"),
+    12: .standard(proto: "original_payload_format"),
+    13: .standard(proto: "original_payload"),
+    14: .standard(proto: "attribute_indices"),
   ]
 
-  fileprivate class _StorageClass {
-    var _sampleType: [Opentelemetry_Proto_Profiles_V1development_ValueType] = []
-    var _sample: [Opentelemetry_Proto_Profiles_V1development_Sample] = []
-    var _mappingTable: [Opentelemetry_Proto_Profiles_V1development_Mapping] = []
-    var _locationTable: [Opentelemetry_Proto_Profiles_V1development_Location] = []
-    var _locationIndices: [Int32] = []
-    var _functionTable: [Opentelemetry_Proto_Profiles_V1development_Function] = []
-    var _attributeTable: [Opentelemetry_Proto_Common_V1_KeyValue] = []
-    var _attributeUnits: [Opentelemetry_Proto_Profiles_V1development_AttributeUnit] = []
-    var _linkTable: [Opentelemetry_Proto_Profiles_V1development_Link] = []
-    var _stringTable: [String] = []
-    var _timeNanos: Int64 = 0
-    var _durationNanos: Int64 = 0
-    var _periodType: Opentelemetry_Proto_Profiles_V1development_ValueType? = nil
-    var _period: Int64 = 0
-    var _commentStrindices: [Int32] = []
-    var _defaultSampleTypeStrindex: Int32 = 0
-    var _profileID: Data = Data()
-    var _droppedAttributesCount: UInt32 = 0
-    var _originalPayloadFormat: String = String()
-    var _originalPayload: Data = Data()
-    var _attributeIndices: [Int32] = []
-
-    #if swift(>=5.10)
-      // This property is used as the initial default value for new instances of the type.
-      // The type itself is protecting the reference to its storage via CoW semantics.
-      // This will force a copy to be made of this reference when the first mutation occurs;
-      // hence, it is safe to mark this as `nonisolated(unsafe)`.
-      static nonisolated(unsafe) let defaultInstance = _StorageClass()
-    #else
-      static let defaultInstance = _StorageClass()
-    #endif
-
-    private init() {}
-
-    init(copying source: _StorageClass) {
-      _sampleType = source._sampleType
-      _sample = source._sample
-      _mappingTable = source._mappingTable
-      _locationTable = source._locationTable
-      _locationIndices = source._locationIndices
-      _functionTable = source._functionTable
-      _attributeTable = source._attributeTable
-      _attributeUnits = source._attributeUnits
-      _linkTable = source._linkTable
-      _stringTable = source._stringTable
-      _timeNanos = source._timeNanos
-      _durationNanos = source._durationNanos
-      _periodType = source._periodType
-      _period = source._period
-      _commentStrindices = source._commentStrindices
-      _defaultSampleTypeStrindex = source._defaultSampleTypeStrindex
-      _profileID = source._profileID
-      _droppedAttributesCount = source._droppedAttributesCount
-      _originalPayloadFormat = source._originalPayloadFormat
-      _originalPayload = source._originalPayload
-      _attributeIndices = source._attributeIndices
-    }
-  }
-
-  fileprivate mutating func _uniqueStorage() -> _StorageClass {
-    if !isKnownUniquelyReferenced(&_storage) {
-      _storage = _StorageClass(copying: _storage)
-    }
-    return _storage
-  }
-
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    _ = _uniqueStorage()
-    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
-      while let fieldNumber = try decoder.nextFieldNumber() {
-        // The use of inline closures is to circumvent an issue where the compiler
-        // allocates stack space for every case branch when no optimizations are
-        // enabled. https://github.com/apple/swift-protobuf/issues/1034
-        switch fieldNumber {
-        case 1: try { try decoder.decodeRepeatedMessageField(value: &_storage._sampleType) }()
-        case 2: try { try decoder.decodeRepeatedMessageField(value: &_storage._sample) }()
-        case 3: try { try decoder.decodeRepeatedMessageField(value: &_storage._mappingTable) }()
-        case 4: try { try decoder.decodeRepeatedMessageField(value: &_storage._locationTable) }()
-        case 5: try { try decoder.decodeRepeatedInt32Field(value: &_storage._locationIndices) }()
-        case 6: try { try decoder.decodeRepeatedMessageField(value: &_storage._functionTable) }()
-        case 7: try { try decoder.decodeRepeatedMessageField(value: &_storage._attributeTable) }()
-        case 8: try { try decoder.decodeRepeatedMessageField(value: &_storage._attributeUnits) }()
-        case 9: try { try decoder.decodeRepeatedMessageField(value: &_storage._linkTable) }()
-        case 10: try { try decoder.decodeRepeatedStringField(value: &_storage._stringTable) }()
-        case 11: try { try decoder.decodeSingularInt64Field(value: &_storage._timeNanos) }()
-        case 12: try { try decoder.decodeSingularInt64Field(value: &_storage._durationNanos) }()
-        case 13: try { try decoder.decodeSingularMessageField(value: &_storage._periodType) }()
-        case 14: try { try decoder.decodeSingularInt64Field(value: &_storage._period) }()
-        case 15: try { try decoder.decodeRepeatedInt32Field(value: &_storage._commentStrindices) }()
-        case 16: try { try decoder.decodeSingularInt32Field(value: &_storage._defaultSampleTypeStrindex) }()
-        case 17: try { try decoder.decodeSingularBytesField(value: &_storage._profileID) }()
-        case 19: try { try decoder.decodeSingularUInt32Field(value: &_storage._droppedAttributesCount) }()
-        case 20: try { try decoder.decodeSingularStringField(value: &_storage._originalPayloadFormat) }()
-        case 21: try { try decoder.decodeSingularBytesField(value: &_storage._originalPayload) }()
-        case 22: try { try decoder.decodeRepeatedInt32Field(value: &_storage._attributeIndices) }()
-        default: break
-        }
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.sampleType) }()
+      case 2: try { try decoder.decodeRepeatedMessageField(value: &self.sample) }()
+      case 3: try { try decoder.decodeRepeatedInt32Field(value: &self.locationIndices) }()
+      case 4: try { try decoder.decodeSingularInt64Field(value: &self.timeNanos) }()
+      case 5: try { try decoder.decodeSingularInt64Field(value: &self.durationNanos) }()
+      case 6: try { try decoder.decodeSingularMessageField(value: &self._periodType) }()
+      case 7: try { try decoder.decodeSingularInt64Field(value: &self.period) }()
+      case 8: try { try decoder.decodeRepeatedInt32Field(value: &self.commentStrindices) }()
+      case 9: try { try decoder.decodeSingularInt32Field(value: &self.defaultSampleTypeIndex) }()
+      case 10: try { try decoder.decodeSingularBytesField(value: &self.profileID) }()
+      case 11: try { try decoder.decodeSingularUInt32Field(value: &self.droppedAttributesCount) }()
+      case 12: try { try decoder.decodeSingularStringField(value: &self.originalPayloadFormat) }()
+      case 13: try { try decoder.decodeSingularBytesField(value: &self.originalPayload) }()
+      case 14: try { try decoder.decodeRepeatedInt32Field(value: &self.attributeIndices) }()
+      default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every if/case branch local when no optimizations
-      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-      // https://github.com/apple/swift-protobuf/issues/1182
-      if !_storage._sampleType.isEmpty {
-        try visitor.visitRepeatedMessageField(value: _storage._sampleType, fieldNumber: 1)
-      }
-      if !_storage._sample.isEmpty {
-        try visitor.visitRepeatedMessageField(value: _storage._sample, fieldNumber: 2)
-      }
-      if !_storage._mappingTable.isEmpty {
-        try visitor.visitRepeatedMessageField(value: _storage._mappingTable, fieldNumber: 3)
-      }
-      if !_storage._locationTable.isEmpty {
-        try visitor.visitRepeatedMessageField(value: _storage._locationTable, fieldNumber: 4)
-      }
-      if !_storage._locationIndices.isEmpty {
-        try visitor.visitPackedInt32Field(value: _storage._locationIndices, fieldNumber: 5)
-      }
-      if !_storage._functionTable.isEmpty {
-        try visitor.visitRepeatedMessageField(value: _storage._functionTable, fieldNumber: 6)
-      }
-      if !_storage._attributeTable.isEmpty {
-        try visitor.visitRepeatedMessageField(value: _storage._attributeTable, fieldNumber: 7)
-      }
-      if !_storage._attributeUnits.isEmpty {
-        try visitor.visitRepeatedMessageField(value: _storage._attributeUnits, fieldNumber: 8)
-      }
-      if !_storage._linkTable.isEmpty {
-        try visitor.visitRepeatedMessageField(value: _storage._linkTable, fieldNumber: 9)
-      }
-      if !_storage._stringTable.isEmpty {
-        try visitor.visitRepeatedStringField(value: _storage._stringTable, fieldNumber: 10)
-      }
-      if _storage._timeNanos != 0 {
-        try visitor.visitSingularInt64Field(value: _storage._timeNanos, fieldNumber: 11)
-      }
-      if _storage._durationNanos != 0 {
-        try visitor.visitSingularInt64Field(value: _storage._durationNanos, fieldNumber: 12)
-      }
-      try { if let v = _storage._periodType {
-        try visitor.visitSingularMessageField(value: v, fieldNumber: 13)
-      } }()
-      if _storage._period != 0 {
-        try visitor.visitSingularInt64Field(value: _storage._period, fieldNumber: 14)
-      }
-      if !_storage._commentStrindices.isEmpty {
-        try visitor.visitPackedInt32Field(value: _storage._commentStrindices, fieldNumber: 15)
-      }
-      if _storage._defaultSampleTypeStrindex != 0 {
-        try visitor.visitSingularInt32Field(value: _storage._defaultSampleTypeStrindex, fieldNumber: 16)
-      }
-      if !_storage._profileID.isEmpty {
-        try visitor.visitSingularBytesField(value: _storage._profileID, fieldNumber: 17)
-      }
-      if _storage._droppedAttributesCount != 0 {
-        try visitor.visitSingularUInt32Field(value: _storage._droppedAttributesCount, fieldNumber: 19)
-      }
-      if !_storage._originalPayloadFormat.isEmpty {
-        try visitor.visitSingularStringField(value: _storage._originalPayloadFormat, fieldNumber: 20)
-      }
-      if !_storage._originalPayload.isEmpty {
-        try visitor.visitSingularBytesField(value: _storage._originalPayload, fieldNumber: 21)
-      }
-      if !_storage._attributeIndices.isEmpty {
-        try visitor.visitPackedInt32Field(value: _storage._attributeIndices, fieldNumber: 22)
-      }
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if !self.sampleType.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.sampleType, fieldNumber: 1)
+    }
+    if !self.sample.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.sample, fieldNumber: 2)
+    }
+    if !self.locationIndices.isEmpty {
+      try visitor.visitPackedInt32Field(value: self.locationIndices, fieldNumber: 3)
+    }
+    if self.timeNanos != 0 {
+      try visitor.visitSingularInt64Field(value: self.timeNanos, fieldNumber: 4)
+    }
+    if self.durationNanos != 0 {
+      try visitor.visitSingularInt64Field(value: self.durationNanos, fieldNumber: 5)
+    }
+    try { if let v = self._periodType {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
+    } }()
+    if self.period != 0 {
+      try visitor.visitSingularInt64Field(value: self.period, fieldNumber: 7)
+    }
+    if !self.commentStrindices.isEmpty {
+      try visitor.visitPackedInt32Field(value: self.commentStrindices, fieldNumber: 8)
+    }
+    if self.defaultSampleTypeIndex != 0 {
+      try visitor.visitSingularInt32Field(value: self.defaultSampleTypeIndex, fieldNumber: 9)
+    }
+    if !self.profileID.isEmpty {
+      try visitor.visitSingularBytesField(value: self.profileID, fieldNumber: 10)
+    }
+    if self.droppedAttributesCount != 0 {
+      try visitor.visitSingularUInt32Field(value: self.droppedAttributesCount, fieldNumber: 11)
+    }
+    if !self.originalPayloadFormat.isEmpty {
+      try visitor.visitSingularStringField(value: self.originalPayloadFormat, fieldNumber: 12)
+    }
+    if !self.originalPayload.isEmpty {
+      try visitor.visitSingularBytesField(value: self.originalPayload, fieldNumber: 13)
+    }
+    if !self.attributeIndices.isEmpty {
+      try visitor.visitPackedInt32Field(value: self.attributeIndices, fieldNumber: 14)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Opentelemetry_Proto_Profiles_V1development_Profile, rhs: Opentelemetry_Proto_Profiles_V1development_Profile) -> Bool {
-    if lhs._storage !== rhs._storage {
-      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
-        let _storage = _args.0
-        let rhs_storage = _args.1
-        if _storage._sampleType != rhs_storage._sampleType {return false}
-        if _storage._sample != rhs_storage._sample {return false}
-        if _storage._mappingTable != rhs_storage._mappingTable {return false}
-        if _storage._locationTable != rhs_storage._locationTable {return false}
-        if _storage._locationIndices != rhs_storage._locationIndices {return false}
-        if _storage._functionTable != rhs_storage._functionTable {return false}
-        if _storage._attributeTable != rhs_storage._attributeTable {return false}
-        if _storage._attributeUnits != rhs_storage._attributeUnits {return false}
-        if _storage._linkTable != rhs_storage._linkTable {return false}
-        if _storage._stringTable != rhs_storage._stringTable {return false}
-        if _storage._timeNanos != rhs_storage._timeNanos {return false}
-        if _storage._durationNanos != rhs_storage._durationNanos {return false}
-        if _storage._periodType != rhs_storage._periodType {return false}
-        if _storage._period != rhs_storage._period {return false}
-        if _storage._commentStrindices != rhs_storage._commentStrindices {return false}
-        if _storage._defaultSampleTypeStrindex != rhs_storage._defaultSampleTypeStrindex {return false}
-        if _storage._profileID != rhs_storage._profileID {return false}
-        if _storage._droppedAttributesCount != rhs_storage._droppedAttributesCount {return false}
-        if _storage._originalPayloadFormat != rhs_storage._originalPayloadFormat {return false}
-        if _storage._originalPayload != rhs_storage._originalPayload {return false}
-        if _storage._attributeIndices != rhs_storage._attributeIndices {return false}
-        return true
-      }
-      if !storagesAreEqual {return false}
-    }
+    if lhs.sampleType != rhs.sampleType {return false}
+    if lhs.sample != rhs.sample {return false}
+    if lhs.locationIndices != rhs.locationIndices {return false}
+    if lhs.timeNanos != rhs.timeNanos {return false}
+    if lhs.durationNanos != rhs.durationNanos {return false}
+    if lhs._periodType != rhs._periodType {return false}
+    if lhs.period != rhs.period {return false}
+    if lhs.commentStrindices != rhs.commentStrindices {return false}
+    if lhs.defaultSampleTypeIndex != rhs.defaultSampleTypeIndex {return false}
+    if lhs.profileID != rhs.profileID {return false}
+    if lhs.droppedAttributesCount != rhs.droppedAttributesCount {return false}
+    if lhs.originalPayloadFormat != rhs.originalPayloadFormat {return false}
+    if lhs.originalPayload != rhs.originalPayload {return false}
+    if lhs.attributeIndices != rhs.attributeIndices {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

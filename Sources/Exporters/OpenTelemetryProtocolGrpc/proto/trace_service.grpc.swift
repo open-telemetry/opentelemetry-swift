@@ -11,6 +11,7 @@ import NIOConcurrencyHelpers
 import SwiftProtobuf
 import OpenTelemetryProtocolExporterCommon
 
+
 /// Service that can be used to push spans between one Application instrumented with
 /// OpenTelemetry and a collector, or between a collector and a central collector (in this
 /// case spans are sent/received to/from multiple Applications).
@@ -31,8 +32,7 @@ extension Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientProtocol {
     return "opentelemetry.proto.collector.trace.v1.TraceService"
   }
 
-  /// For performance reasons, it is recommended to keep this RPC
-  /// alive for the entire life of the application.
+  /// Unary call to Export
   ///
   /// - Parameters:
   ///   - request: Request to send to Export.
@@ -209,8 +209,6 @@ public enum Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientMetadata {
 public protocol Opentelemetry_Proto_Collector_Trace_V1_TraceServiceProvider: CallHandlerProvider {
   var interceptors: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceServerInterceptorFactoryProtocol? { get }
 
-  /// For performance reasons, it is recommended to keep this RPC
-  /// alive for the entire life of the application.
   func export(request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse>
 }
 
@@ -251,8 +249,6 @@ public protocol Opentelemetry_Proto_Collector_Trace_V1_TraceServiceAsyncProvider
   static var serviceDescriptor: GRPCServiceDescriptor { get }
   var interceptors: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceServerInterceptorFactoryProtocol? { get }
 
-  /// For performance reasons, it is recommended to keep this RPC
-  /// alive for the entire life of the application.
   func export(
     request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest,
     context: GRPCAsyncServerCallContext

@@ -49,6 +49,13 @@ public struct Opentelemetry_Proto_Resource_V1_Resource: Sendable {
   /// no attributes were dropped.
   public var droppedAttributesCount: UInt32 = 0
 
+  /// Set of entities that participate in this Resource.
+  ///
+  /// Note: keys in the references MUST exist in attributes of this message.
+  ///
+  /// Status: [Development]
+  public var entityRefs: [Opentelemetry_Proto_Common_V1_EntityRef] = []
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -63,6 +70,7 @@ extension Opentelemetry_Proto_Resource_V1_Resource: SwiftProtobuf.Message, Swift
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "attributes"),
     2: .standard(proto: "dropped_attributes_count"),
+    3: .standard(proto: "entity_refs"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -73,6 +81,7 @@ extension Opentelemetry_Proto_Resource_V1_Resource: SwiftProtobuf.Message, Swift
       switch fieldNumber {
       case 1: try { try decoder.decodeRepeatedMessageField(value: &self.attributes) }()
       case 2: try { try decoder.decodeSingularUInt32Field(value: &self.droppedAttributesCount) }()
+      case 3: try { try decoder.decodeRepeatedMessageField(value: &self.entityRefs) }()
       default: break
       }
     }
@@ -85,12 +94,16 @@ extension Opentelemetry_Proto_Resource_V1_Resource: SwiftProtobuf.Message, Swift
     if self.droppedAttributesCount != 0 {
       try visitor.visitSingularUInt32Field(value: self.droppedAttributesCount, fieldNumber: 2)
     }
+    if !self.entityRefs.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.entityRefs, fieldNumber: 3)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Opentelemetry_Proto_Resource_V1_Resource, rhs: Opentelemetry_Proto_Resource_V1_Resource) -> Bool {
     if lhs.attributes != rhs.attributes {return false}
     if lhs.droppedAttributesCount != rhs.droppedAttributesCount {return false}
+    if lhs.entityRefs != rhs.entityRefs {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

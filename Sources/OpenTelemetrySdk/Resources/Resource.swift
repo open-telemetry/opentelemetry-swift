@@ -32,6 +32,15 @@ public struct Resource: Equatable, Hashable, Codable {
     )
   }
 
+  public func builder() -> ResourceBuilder {
+    return ResourceBuilder()
+      .add(attributes: self.attributes)
+  }
+
+  public static func builder() -> ResourceBuilder {
+    return ResourceBuilder()
+  }
+
   private static func mergeEntities(_ lhs: [Entity], _ rhs: [Entity]) -> [Entity] {
     if lhs.isEmpty {
       return rhs
@@ -50,9 +59,8 @@ public struct Resource: Equatable, Hashable, Codable {
       } else {
         if let old = entityMap[entity.type] {
           let new = Entity.builder(type: old.type)
-            .with(identifiers: old.identifiers)
-            .with(attributes: entity.attributes
-              .merging(old.attributes) { _, old in old })
+            .with(identifiersKeys: Array(entity.identifierKeys.union(old.identifierKeys)))
+            .with(attributeKeys: Array(entity.attributeKeys.union(old.attributeKeys)))
             .build()
           entityMap[entity.type] = new
         }
@@ -71,17 +79,7 @@ public struct Resource: Equatable, Hashable, Codable {
   public init(attributes: [String: AttributeValue], entities: [Entity] = []) {
     self.entities = entities
     if Resource.checkAttributes(attributes: attributes) {
-      self.attributes = attributes.filter { key, _ in
-        for entity in entities {
-          if entity.attributes.contains(where: { attribute in attribute.key == key }) {
-            return true
-          }
-          if entity.identifiers.contains(where: { attribute in attribute.key == key }) {
-            return true
-          }
-        }
-        return false
-      }
+      self.attributes = attributes
     } else {
       self.attributes = [String: AttributeValue]()
     }

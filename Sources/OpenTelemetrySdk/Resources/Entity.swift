@@ -12,11 +12,11 @@ public struct Entity : Codable, Hashable, Equatable {
 
   /// id: A set of attributes that identifies the Entity.
   /// MUST not change during the lifetime of the Entity. The Id must contain at least one attribute.
-  public let identifiers: [String: AttributeValue]
+  public let identifierKeys: Set<String>
 
   /// A set of descriptive (non-identifying) attributes of the Entity.
   /// MAY change over the lifetime of the entity. MAY be empty. These attributes are not part of Entity's identity.
-  public var attributes: [String: AttributeValue]
+  public var attributeKeys: Set<String>
 
 
   public static func builder(type: String) -> EntityBuilder {

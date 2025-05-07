@@ -11,6 +11,7 @@ import NIOConcurrencyHelpers
 import SwiftProtobuf
 import OpenTelemetryProtocolExporterCommon
 
+
 /// Service that can be used to push metrics between one Application
 /// instrumented with OpenTelemetry and a collector, or between a collector and a
 /// central collector.
@@ -31,8 +32,7 @@ extension Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientProtocol 
     return "opentelemetry.proto.collector.metrics.v1.MetricsService"
   }
 
-  /// For performance reasons, it is recommended to keep this RPC
-  /// alive for the entire life of the application.
+  /// Unary call to Export
   ///
   /// - Parameters:
   ///   - request: Request to send to Export.
@@ -209,8 +209,6 @@ public enum Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientMetadat
 public protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceProvider: CallHandlerProvider {
   var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerInterceptorFactoryProtocol? { get }
 
-  /// For performance reasons, it is recommended to keep this RPC
-  /// alive for the entire life of the application.
   func export(request: Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse>
 }
 
@@ -251,8 +249,6 @@ public protocol Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceAsyncProv
   static var serviceDescriptor: GRPCServiceDescriptor { get }
   var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerInterceptorFactoryProtocol? { get }
 
-  /// For performance reasons, it is recommended to keep this RPC
-  /// alive for the entire life of the application.
   func export(
     request: Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest,
     context: GRPCAsyncServerCallContext
