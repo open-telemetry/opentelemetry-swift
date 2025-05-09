@@ -23,12 +23,12 @@ public class DoubleCounterMeterBuilderSdk: InstrumentBuilder, DoubleCounterBuild
     )
   }
 
-  public func build() -> OpenTelemetryApi.DoubleCounter {
+  public func build() -> DoubleCounterSdk {
     buildSynchronousInstrument(DoubleCounterSdk.init)
   }
 
-  public func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableDoubleMeasurement) -> Void)
-    -> OpenTelemetryApi.ObservableDoubleCounter {
+  public func buildWithCallback(_ callback: @escaping (StableObservableMeasurementSdk) -> Void)
+    -> ObservableInstrumentSdk {
     registerDoubleAsynchronousInstrument(type: .observableCounter, updater: callback)
   }
 }
