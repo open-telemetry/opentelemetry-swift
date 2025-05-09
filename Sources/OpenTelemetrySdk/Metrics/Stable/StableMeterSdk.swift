@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-class StableMeterSdk: StableMeter {
+public class StableMeterSdk: StableMeter {
   var meterProviderSharedState: MeterProviderSharedState
   var meterSharedState: StableMeterSharedState
   public private(set) var instrumentationScopeInfo: InstrumentationScopeInfo
@@ -20,25 +20,25 @@ class StableMeterSdk: StableMeter {
                                               registeredReaders: registeredReaders)
   }
 
-  func counterBuilder(name: String) -> OpenTelemetryApi.LongCounterBuilder {
+  public func counterBuilder(name: String) -> LongCounterMeterBuilderSdk {
     return LongCounterMeterBuilderSdk(meterProviderSharedState: &meterProviderSharedState,
                                       meterSharedState: &meterSharedState,
                                       name: name)
   }
 
-  func upDownCounterBuilder(name: String) -> OpenTelemetryApi.LongUpDownCounterBuilder {
+  public func upDownCounterBuilder(name: String) -> LongUpDownCounterBuilderSdk {
     return LongUpDownCounterBuilderSdk(meterProviderSharedState: &meterProviderSharedState,
                                        meterSharedState: &meterSharedState,
                                        name: name)
   }
 
-  func histogramBuilder(name: String) -> OpenTelemetryApi.DoubleHistogramBuilder {
+  public func histogramBuilder(name: String) -> DoubleHistogramMeterBuilderSdk {
     return DoubleHistogramMeterBuilderSdk(meterProviderSharedState: &meterProviderSharedState,
                                           meterSharedState: &meterSharedState,
                                           name: name)
   }
 
-  func gaugeBuilder(name: String) -> OpenTelemetryApi.DoubleGaugeBuilder {
+  public func gaugeBuilder(name: String) -> DoubleGaugeBuilderSdk {
     DoubleGaugeBuilderSdk(meterProviderSharedState: &meterProviderSharedState,
                           meterSharedState: &meterSharedState,
                           name: name)
