@@ -16,9 +16,8 @@ public struct ArrayWithCapacity<T> {
   }
 
   public mutating func append(_ item: T) {
-    array.append(item)
-    if array.count > capacity {
-      _ = array.removeFirst()
+    if array.count != capacity {
+      array.append(item)
     }
   }
 }
