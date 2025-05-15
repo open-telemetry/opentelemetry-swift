@@ -18,14 +18,14 @@ public class StableMeterProviderSdk: StableMeterProvider {
 
   var componentRegistry: ComponentRegistry<StableMeterSdk>!
 
-  public func get(name: String) -> StableMeter {
+  public func get(name: String) -> StableMeterSdk {
     meterBuilder(name: name).build()
   }
 
-  public func meterBuilder(name: String) -> MeterBuilder {
-    if registeredReaders.isEmpty {
-      return DefaultStableMeterProvider.noop()
-    }
+  public func meterBuilder(name: String) -> MeterBuilderSdk {
+//    if registeredReaders.isEmpty {
+//      return DefaultStableMeterProvider.noop()
+//    }
     var name = name
     if name.isEmpty {
       name = Self.defaultMeterName

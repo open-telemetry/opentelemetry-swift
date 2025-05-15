@@ -23,11 +23,11 @@ public class DoubleHistogramMeterBuilderSdk: InstrumentBuilder, DoubleHistogramB
     )
   }
 
-  public func ofLongs() -> OpenTelemetryApi.LongHistogramBuilder {
+  public func ofLongs() -> LongHistogramMeterBuilderSdk {
     swapBuilder(LongHistogramMeterBuilderSdk.init)
   }
 
-  public func build() -> OpenTelemetryApi.DoubleHistogram {
+  public func build() -> DoubleHistogramMeterSdk {
     buildSynchronousInstrument(DoubleHistogramMeterSdk.init)
   }
 }
