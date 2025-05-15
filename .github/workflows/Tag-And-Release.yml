@@ -7,7 +7,7 @@ on :
       - closed
 jobs:
   CheckRelease:
-    runs-on: ubuntu-latest
+    runs-on: macos-15
     steps:
       - name: Check if merge is release branch
         id: check-release
