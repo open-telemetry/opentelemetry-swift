@@ -12,7 +12,7 @@ jobs:
         contents: write
         pull-requests: write
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       with: 
         ref: ${{ github.head_ref }}
     - name: update version file
@@ -39,7 +39,7 @@ jobs:
         sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-StdoutExporter.podspec    
 
     - name: Create Pull Request
-      uses: peter-evans/create-pull-request@v7
+      uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7
       with:
         token: ${{ secrets.RELEASE_TOKEN }}
         branch: release/${{inputs.new_version}}
