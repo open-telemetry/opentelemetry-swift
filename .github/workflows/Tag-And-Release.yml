@@ -7,7 +7,7 @@ on :
       - closed
 jobs:
   CheckRelease:
-    runs-on: ubuntu-latest
+    runs-on: macos-15
     steps:
       - name: Check if merge is release branch
         id: check-release
@@ -19,15 +19,15 @@ jobs:
       - name: Tag if release branch
         if: github.event.pull_request.merged != true || steps.check-release.outputs.match != 'true'
         run: exit 1
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
           fetch-depth: '0'      
-      - uses: stefanzweifel/git-auto-commit-action@v5
+      - uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403 # v5
         with:
           commit_message: version bump to ${{ steps.check-release.outputs.version }}
           tagging_message: '${{ steps.check-release.outputs.version }}'
-      - uses: ncipollo/release-action@v1
+      - uses: ncipollo/release-action@440c8c1cb0ed28b9f43e4d1d670870f059653174 # v1
         with: 
           tag: ${{ steps.check-release.outputs.version }}
           prerelease: true
@@ -39,9 +39,13 @@ jobs:
         run: |
           pod trunk push OpenTelemetry-Swift-Api.podspec --allow-warnings 
           pod trunk push OpenTelemetry-Swift-Sdk.podspec --allow-warnings --synchronous
+          pod trunk push OpenTelemetry-Swift-BaggagePropagationProcessor.podspec --allow-warnings --synchronous
           pod trunk push OpenTelemetry-Swift-DataCompression.podspec --allow-warnings --synchronous
+          pod trunk push OpenTelemetry-Swift-Instrumentation-NetworkStatus.podspec --allow-warnings --synchronous
+          pod trunk push OpenTelemetry-Swift-Instrumentation-URLSession.podspec --allow-warnings --synchronous
           pod trunk push OpenTelemetry-Swift-Protocol-Exporter-Common.podspec --allow-warnings --synchronous
           pod trunk push OpenTelemetry-Swift-SdkResourceExtension.podspec --allow-warnings --synchronous
           pod trunk push OpenTelemetry-Swift-Protocol-Exporter-Http.podspec --allow-warnings --synchronous
+          pod trunk push OpenTelemetry-Swift-PersistenceExporter.podspec --allow-warnings --synchronous
           pod trunk push OpenTelemetry-Swift-StdoutExporter.podspec --allow-warnings --synchronous
         

@@ -196,6 +196,14 @@ public enum MetricsAdapter {
       var protoExemplar = Opentelemetry_Proto_Metrics_V1_Exemplar()
       protoExemplar.timeUnixNano = $0.epochNanos
 
+      if let doubleExemplar = $0 as? DoubleExemplarData {
+        protoExemplar.value = .asDouble(doubleExemplar.value)
+      }
+
+      if let longExemplar = $0 as? LongExemplarData {
+        protoExemplar.value = .asInt(Int64(longExemplar.value))
+      }
+
       $0.filteredAttributes.forEach {
         protoExemplar.filteredAttributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
       }
@@ -218,6 +226,14 @@ public enum MetricsAdapter {
     pointData.exemplars.forEach {
       var protoExemplar = Opentelemetry_Proto_Metrics_V1_Exemplar()
       protoExemplar.timeUnixNano = $0.epochNanos
+
+      if let doubleExemplar = $0 as? DoubleExemplarData {
+        protoExemplar.value = .asDouble(doubleExemplar.value)
+      }
+
+      if let longExemplar = $0 as? LongExemplarData {
+        protoExemplar.value = .asInt(Int64(longExemplar.value))
+      }
 
       $0.filteredAttributes.forEach {
         protoExemplar.filteredAttributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))

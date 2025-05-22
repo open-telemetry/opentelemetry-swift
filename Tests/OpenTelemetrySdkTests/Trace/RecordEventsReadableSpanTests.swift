@@ -459,26 +459,39 @@ class RecordEventsReadableSpanTest: XCTestCase {
     span.end()
   }
 
-  func testDroppingEvents() {
+  func testAddingEventsAboveLimitShouldntBeAllowed() {
     let maxNumberOfEvents = 8
     let spanLimits = SpanLimits().settingEventCountLimit(UInt(maxNumberOfEvents))
     let span = createTestSpan(config: spanLimits)
+
     for _ in 0 ..< 2 * maxNumberOfEvents {
       span.addEvent(name: "event2", attributes: [String: AttributeValue]())
       testClock.advanceMillis(millisPerSecond)
     }
+
     var spanData = span.toSpanData()
-    XCTAssertEqual(spanData.events.count, maxNumberOfEvents) //
+
+    XCTAssertEqual(spanData.events.count, maxNumberOfEvents)
     for i in 0 ..< maxNumberOfEvents {
-      let expectedEvent = SpanData.Event(name: "event2", timestamp: startTime.addingTimeInterval(TimeInterval(maxNumberOfEvents + i)), attributes: [String: AttributeValue]())
+      let expectedEvent = SpanData.Event(
+        name: "event2",
+        timestamp: startTime.addingTimeInterval(TimeInterval(i)),
+        attributes: [String: AttributeValue]()
+      )
       XCTAssertEqual(spanData.events[i], expectedEvent)
       XCTAssertEqual(spanData.totalRecordedEvents, 2 * maxNumberOfEvents)
     }
+
     span.end()
     spanData = span.toSpanData()
+
     XCTAssertEqual(spanData.events.count, maxNumberOfEvents)
     for i in 0 ..< maxNumberOfEvents {
-      let expectedEvent = SpanData.Event(name: "event2", timestamp: startTime.addingTimeInterval(TimeInterval(maxNumberOfEvents + i)), attributes: [String: AttributeValue]())
+      let expectedEvent = SpanData.Event(
+        name: "event2",
+        timestamp: startTime.addingTimeInterval(TimeInterval(i)),
+        attributes: [String: AttributeValue]()
+      )
       XCTAssertEqual(spanData.events[i], expectedEvent)
     }
   }
