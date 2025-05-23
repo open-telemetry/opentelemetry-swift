@@ -11,7 +11,7 @@ class BuilderTests: XCTestCase {
   func testBuilders() {
     let meterProvider = StableMeterProviderSdk.builder().build()
     let meter = meterProvider.meterBuilder(name: "meter").build()
-    XCTAssertTrue(type(of: meter) == Meter.self)
+    XCTAssertTrue(type(of: meter) == DefaultStableMeter.self)
     XCTAssertNotNil(meter.counterBuilder(name: "counter").ofDoubles().build())
     XCTAssertNotNil(meter.counterBuilder(name: "counter").build())
     XCTAssertNotNil(meter.gaugeBuilder(name: "gauge").build())
