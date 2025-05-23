@@ -11,6 +11,7 @@ import NIOConcurrencyHelpers
 import SwiftProtobuf
 import OpenTelemetryProtocolExporterCommon
 
+
 /// Service that can be used to push profiles between one Application instrumented with
 /// OpenTelemetry and a collector, or between a collector and a central collector.
 ///
@@ -30,8 +31,7 @@ extension Opentelemetry_Proto_Collector_Profiles_V1development_ProfilesServiceCl
     return "opentelemetry.proto.collector.profiles.v1development.ProfilesService"
   }
 
-  /// For performance reasons, it is recommended to keep this RPC
-  /// alive for the entire life of the application.
+  /// Unary call to Export
   ///
   /// - Parameters:
   ///   - request: Request to send to Export.
@@ -206,8 +206,6 @@ public enum Opentelemetry_Proto_Collector_Profiles_V1development_ProfilesService
 public protocol Opentelemetry_Proto_Collector_Profiles_V1development_ProfilesServiceProvider: CallHandlerProvider {
   var interceptors: Opentelemetry_Proto_Collector_Profiles_V1development_ProfilesServiceServerInterceptorFactoryProtocol? { get }
 
-  /// For performance reasons, it is recommended to keep this RPC
-  /// alive for the entire life of the application.
   func export(request: Opentelemetry_Proto_Collector_Profiles_V1development_ExportProfilesServiceRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Opentelemetry_Proto_Collector_Profiles_V1development_ExportProfilesServiceResponse>
 }
 
@@ -247,8 +245,6 @@ public protocol Opentelemetry_Proto_Collector_Profiles_V1development_ProfilesSer
   static var serviceDescriptor: GRPCServiceDescriptor { get }
   var interceptors: Opentelemetry_Proto_Collector_Profiles_V1development_ProfilesServiceServerInterceptorFactoryProtocol? { get }
 
-  /// For performance reasons, it is recommended to keep this RPC
-  /// alive for the entire life of the application.
   func export(
     request: Opentelemetry_Proto_Collector_Profiles_V1development_ExportProfilesServiceRequest,
     context: GRPCAsyncServerCallContext
