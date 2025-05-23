@@ -6,7 +6,11 @@
 import Foundation
 
 public protocol LongUpDownCounterBuilder: AnyObject {
-  func ofDoubles() -> DoubleUpDownCounterBuilder
-  func build() -> LongUpDownCounter
-  func buildWithCallback(_ callback: @escaping (ObservableLongMeasurement) -> Void) -> ObservableLongUpDownCounter
+  associatedtype AssociatedDoubleUpDownCounterBuilder : DoubleUpDownCounterBuilder
+  associatedtype AssociatedLongUpDownCounter: LongUpDownCounter
+  associatedtype AssociatedObservableLongMeasurement: ObservableLongMeasurement
+  associatedtype AssociatedObservableLongUpDownCounter: ObservableLongUpDownCounter
+  func ofDoubles() -> AssociatedDoubleUpDownCounterBuilder
+  func build() -> AssociatedLongUpDownCounter
+  func buildWithCallback(_ callback: @escaping (AssociatedObservableLongMeasurement) -> Void) -> AssociatedObservableLongUpDownCounter
 }

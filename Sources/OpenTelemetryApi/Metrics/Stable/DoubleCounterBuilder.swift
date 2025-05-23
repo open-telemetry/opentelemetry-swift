@@ -6,7 +6,10 @@
 import Foundation
 
 public protocol DoubleCounterBuilder: AnyObject {
-  func build() -> DoubleCounter
+  associatedtype AnyDoubleCounter: DoubleCounter
+  associatedtype AnyObservableDoubleCounter: ObservableDoubleCounter
+  associatedtype AnyObservableDoubleMeasurement: ObservableDoubleMeasurement
 
-  func buildWithCallback(_ callback: @escaping (ObservableDoubleMeasurement) -> Void) -> ObservableDoubleCounter
+  func build() -> AnyDoubleCounter
+  func buildWithCallback(_ callback: @escaping (AnyObservableDoubleMeasurement) -> Void) -> AnyObservableDoubleCounter
 }
