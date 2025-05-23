@@ -1,15 +1,14 @@
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
+//
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
+// 
 
 import Foundation
 import OpenTelemetryApi
 
-public class StableMeterProviderBuilder {
+public class NoopStableMeterProviderBuilder {
   public private(set) var clock: Clock = MillisClock()
   public private(set) var resource: Resource = .init()
-  public private(set) var metricReaders = [StableMetricReader]()
   public private(set) var registeredViews = [RegisteredView]()
   public private(set) var exemplarFilter: ExemplarFilter = AlwaysOnFilter()
 
@@ -30,9 +29,16 @@ public class StableMeterProviderBuilder {
     return self
   }
 
-  public func registerMetricReader(reader: StableMetricReader) -> Self {
-    metricReaders.append(reader)
-    return self
+  public func registerMetricReader(reader: StableMetricReader) -> StableMeterProviderBuilder {
+    let newBuilder = StableMeterProviderBuilder()
+      .setClock(clock: self.clock)
+      .setResource(resource: self.resource)
+      .registerMetricReader(reader: reader)
+      .setExemplarFilter(exemplarFilter: self.exemplarFilter)
+    for view in self.registeredViews {
+      _ = newBuilder.registerView(selector: view.selector, view: view.view)
+    }
+    return newBuilder
   }
 
   public func setExemplarFilter(exemplarFilter: ExemplarFilter) -> Self {
@@ -40,7 +46,7 @@ public class StableMeterProviderBuilder {
     return self
   }
 
-  public func build() -> StableMeterProviderSdk {
-    StableMeterProviderSdk(registeredViews: registeredViews, metricReaders: metricReaders, clock: clock, resource: resource, exemplarFilter: exemplarFilter)
+  public func build() -> DefaultStableMeterProvider  {
+    DefaultStableMeterProvider.instance
   }
 }

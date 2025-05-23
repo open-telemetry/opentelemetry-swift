@@ -14,7 +14,7 @@ public class DefaultStableMeterProvider: StableMeterProvider {
   }
 
   public func get(name: String) -> DefaultStableMeter {
-    DefaultStableMeter()
+    NoopMeterBuilder.noopMeter
   }
 
   public func meterBuilder(name: String) ->  NoopMeterBuilder {
@@ -41,5 +41,5 @@ public class DefaultStableMeterProvider: StableMeterProvider {
     }
   }
 
-  public static var instance: any StableMeterProvider = DefaultStableMeterProvider()
+  public static var instance = DefaultStableMeterProvider()
 }

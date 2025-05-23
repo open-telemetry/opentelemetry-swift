@@ -9,9 +9,9 @@ import XCTest
 
 class BuilderTests: XCTestCase {
   func testBuilders() {
-    let meterProvider = StableMeterProviderBuilder().build()
+    let meterProvider = StableMeterProviderSdk.builder().build()
     let meter = meterProvider.meterBuilder(name: "meter").build()
-    XCTAssertTrue(type(of: meter) == Meter.self)
+    XCTAssertTrue(type(of: meter) == DefaultStableMeter.self)
     XCTAssertNotNil(meter.counterBuilder(name: "counter").ofDoubles().build())
     XCTAssertNotNil(meter.counterBuilder(name: "counter").build())
     XCTAssertNotNil(meter.gaugeBuilder(name: "gauge").build())
@@ -30,7 +30,7 @@ class BuilderTests: XCTestCase {
       exporter: MockStableMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderBuilder()
+    let meterProvider = StableMeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .registerView(
         selector: InstrumentSelector.builder().setMeter(name: "*").build(),
@@ -64,7 +64,7 @@ class BuilderTests: XCTestCase {
       exporter: MockStableMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderBuilder()
+    let meterProvider = StableMeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .registerView(
         selector: InstrumentSelector.builder().setMeter(name: "*").build(),
@@ -98,7 +98,7 @@ class BuilderTests: XCTestCase {
       exporter: MockStableMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderBuilder()
+    let meterProvider = StableMeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .registerView(
         selector: InstrumentSelector.builder().setMeter(name: "*").build(),
@@ -129,7 +129,7 @@ class BuilderTests: XCTestCase {
       exporter: MockStableMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderBuilder()
+    let meterProvider = StableMeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .registerView(
         selector: InstrumentSelector.builder().setMeter(name: "*").build(),
@@ -163,7 +163,7 @@ class BuilderTests: XCTestCase {
       exporter: MockStableMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderBuilder()
+    let meterProvider = StableMeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .registerView(
         selector: InstrumentSelector.builder().setMeter(name: "*").build(),
@@ -193,7 +193,7 @@ class BuilderTests: XCTestCase {
       exporter: MockStableMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderBuilder()
+    let meterProvider = StableMeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .build()
 
@@ -219,7 +219,7 @@ class BuilderTests: XCTestCase {
       exporter: MockStableMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderBuilder()
+    let meterProvider = StableMeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .build()
     let meter = meterProvider.meterBuilder(name: "meter").build()
@@ -240,7 +240,7 @@ class BuilderTests: XCTestCase {
       exporter: MockStableMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderBuilder()
+    let meterProvider = StableMeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .build()
 

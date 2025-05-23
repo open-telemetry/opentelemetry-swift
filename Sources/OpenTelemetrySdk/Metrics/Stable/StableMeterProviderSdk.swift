@@ -8,6 +8,7 @@ import OpenTelemetryApi
 
 public class MeterProviderError: Error {}
 
+
 public class StableMeterProviderSdk: StableMeterProvider {
   private static let defaultMeterName = "unknown"
   private let readerLock = Lock()
@@ -23,9 +24,6 @@ public class StableMeterProviderSdk: StableMeterProvider {
   }
 
   public func meterBuilder(name: String) -> MeterBuilderSdk {
-//    if registeredReaders.isEmpty {
-//      return DefaultStableMeterProvider.noop()
-//    }
     var name = name
     if name.isEmpty {
       name = Self.defaultMeterName
@@ -34,8 +32,8 @@ public class StableMeterProviderSdk: StableMeterProvider {
     return MeterBuilderSdk(registry: componentRegistry, instrumentationScopeName: name)
   }
 
-  public static func builder() -> StableMeterProviderBuilder {
-    return StableMeterProviderBuilder()
+  public static func builder() -> NoopStableMeterProviderBuilder {
+    return NoopStableMeterProviderBuilder()
   }
 
   init(registeredViews: [RegisteredView],
