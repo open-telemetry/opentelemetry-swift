@@ -70,7 +70,8 @@ class URLSessionLogger {
     if let customSpanName = instrumentation.configuration.nameSpan?(request) {
       spanName = customSpanName
     }
-    let spanBuilder = instrumentation.tracer.spanBuilder(spanName: spanName)
+    let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "NSURLSession", instrumentationVersion: "0.0.1")
+    let spanBuilder = tracer.spanBuilder(spanName: spanName)
     spanBuilder.setSpanKind(spanKind: .client)
     attributes.forEach {
       spanBuilder.setAttribute(key: $0.key, value: $0.value)
