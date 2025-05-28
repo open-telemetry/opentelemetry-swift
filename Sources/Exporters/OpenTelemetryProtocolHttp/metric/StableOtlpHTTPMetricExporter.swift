@@ -50,7 +50,7 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
   ///    - envVarHeaders: Extra header key-values
   public convenience init(endpoint: URL,
                           config: OtlpConfiguration = OtlpConfiguration(),
-                          meterProvider: StableMeterProvider,
+                          meterProvider: any StableMeterProvider,
                           aggregationTemporalitySelector: AggregationTemporalitySelector =
                             AggregationTemporality.alwaysCumulative(),
                           defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector

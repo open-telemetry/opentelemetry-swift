@@ -65,7 +65,7 @@ public struct OpenTelemetry {
   }
 
   public static func registerStableMeterProvider(
-    meterProvider: StableMeterProvider
+    meterProvider: any StableMeterProvider
   ) {
     instance.stableMeterProvider = meterProvider
   }
