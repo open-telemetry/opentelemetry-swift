@@ -9,7 +9,7 @@ import XCTest
 
 class BuilderTests: XCTestCase {
   func testBuilders() {
-    let meterProvider = StableMeterProviderBuilder().build()
+    let meterProvider = StableMeterProviderSdk.builder().build()
     let meter = meterProvider.meterBuilder(name: "meter").build()
     XCTAssertTrue(type(of: meter) == DefaultStableMeter.self)
     XCTAssertNotNil(meter.counterBuilder(name: "counter").ofDoubles().build())
@@ -30,7 +30,7 @@ class BuilderTests: XCTestCase {
       exporter: MockStableMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderBuilder()
+    let meterProvider = StableMeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .registerView(
         selector: InstrumentSelector.builder().setMeter(name: "*").build(),
@@ -39,15 +39,15 @@ class BuilderTests: XCTestCase {
       )
       .build()
 
-    let meter = meterProvider.meterBuilder(name: "meter").build() as! StableMeterSdk
-    let instrument = (
+    let meter = meterProvider.meterBuilder(name: "meter").build()
+    let instrument =
       meter
         .counterBuilder(
           name: "longCounter"
-        ) as! LongCounterMeterBuilderSdk)
+        )
       .setUnit("unit")
       .setDescription("description")
-      .build() as! LongCounterSdk
+      .build()
 
     XCTAssertEqual(instrument.instrumentDescriptor.name, "longCounter")
     XCTAssertEqual(instrument.instrumentDescriptor.unit, "unit")
@@ -64,7 +64,7 @@ class BuilderTests: XCTestCase {
       exporter: MockStableMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderBuilder()
+    let meterProvider = StableMeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .registerView(
         selector: InstrumentSelector.builder().setMeter(name: "*").build(),
@@ -73,15 +73,15 @@ class BuilderTests: XCTestCase {
       )
       .build()
 
-    let meter = meterProvider.meterBuilder(name: "meter").build() as! StableMeterSdk
-    let instrument = (
+    let meter = meterProvider.meterBuilder(name: "meter").build()
+    let instrument =
       meter
         .counterBuilder(
           name: "doubleCounter"
-        ).ofDoubles() as! DoubleCounterMeterBuilderSdk)
+        ).ofDoubles()
       .setUnit("unit")
       .setDescription("description")
-      .build() as! DoubleCounterSdk
+      .build()
 
     XCTAssertEqual(instrument.instrumentDescriptor.name, "doubleCounter")
     XCTAssertEqual(instrument.instrumentDescriptor.unit, "unit")
@@ -98,7 +98,7 @@ class BuilderTests: XCTestCase {
       exporter: MockStableMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderBuilder()
+    let meterProvider = StableMeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .registerView(
         selector: InstrumentSelector.builder().setMeter(name: "*").build(),
@@ -107,15 +107,12 @@ class BuilderTests: XCTestCase {
       )
       .build()
 
-    let meter = meterProvider.meterBuilder(name: "meter").build() as! StableMeterSdk
-    let instrument = (
-      meter
-        .gaugeBuilder(
-          name: "doubleGauge"
-        ) as! DoubleGaugeBuilderSdk)
-      .setUnit("unit")
-      .setDescription("description")
-      .build() as! DoubleGaugeSdk
+    let meter = meterProvider.meterBuilder(name: "meter").build()
+    let instrument =
+      meter.gaugeBuilder(name: "doubleGauge")
+       .setUnit("unit")
+       .setDescription("description")
+       .build()
 
     XCTAssertEqual(instrument.instrumentDescriptor.name, "doubleGauge")
     XCTAssertEqual(instrument.instrumentDescriptor.unit, "unit")
@@ -132,7 +129,7 @@ class BuilderTests: XCTestCase {
       exporter: MockStableMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderBuilder()
+    let meterProvider = StableMeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .registerView(
         selector: InstrumentSelector.builder().setMeter(name: "*").build(),
@@ -141,15 +138,15 @@ class BuilderTests: XCTestCase {
       )
       .build()
 
-    let meter = meterProvider.meterBuilder(name: "meter").build() as! StableMeterSdk
+    let meter = meterProvider.meterBuilder(name: "meter").build()
     let instrument = (
       meter
         .gaugeBuilder(
           name: "longGauge"
-        ).ofLongs() as! LongGaugeBuilderSdk)
+        ).ofLongs())
       .setUnit("unit")
       .setDescription("description")
-      .build() as! LongGaugeSdk
+      .build()
 
     XCTAssertEqual(instrument.instrumentDescriptor.name, "longGauge")
     XCTAssertEqual(instrument.instrumentDescriptor.unit, "unit")
@@ -166,7 +163,7 @@ class BuilderTests: XCTestCase {
       exporter: MockStableMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderBuilder()
+    let meterProvider = StableMeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .registerView(
         selector: InstrumentSelector.builder().setMeter(name: "*").build(),
@@ -175,16 +172,15 @@ class BuilderTests: XCTestCase {
       )
       .build()
 
-    let meter = meterProvider.meterBuilder(name: "meter").build() as! StableMeterSdk
-    let instrument = (
+    let meter = meterProvider.meterBuilder(name: "meter").build()
+    let instrument =
       meter
         .histogramBuilder(
           name: "longHistogram"
-        ).ofLongs() as! LongHistogramMeterBuilderSdk)
+        ).ofLongs()
       .setUnit("unit")
       .setDescription("description")
-      .build() as! LongHistogramMeterSdk
-
+      .build()
     XCTAssertEqual(instrument.instrumentDescriptor.name, "longHistogram")
     XCTAssertEqual(instrument.instrumentDescriptor.unit, "unit")
     XCTAssertEqual(instrument.instrumentDescriptor.description, "description")
@@ -197,19 +193,19 @@ class BuilderTests: XCTestCase {
       exporter: MockStableMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderBuilder()
+    let meterProvider = StableMeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .build()
 
-    let meter = meterProvider.meterBuilder(name: "meter").build() as! StableMeterSdk
-    let instrument = (
+    let meter = meterProvider.meterBuilder(name: "meter").build()
+    let instrument =
       meter
         .histogramBuilder(
           name: "doubleHistogram"
-        ) as! DoubleHistogramMeterBuilderSdk)
+        )
       .setUnit("unit")
       .setDescription("description")
-      .build() as! DoubleHistogramMeterSdk
+      .build()
 
     XCTAssertEqual(instrument.instrumentDescriptor.name, "doubleHistogram")
     XCTAssertEqual(instrument.instrumentDescriptor.unit, "unit")
@@ -223,14 +219,14 @@ class BuilderTests: XCTestCase {
       exporter: MockStableMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderBuilder()
+    let meterProvider = StableMeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .build()
-    let meter = meterProvider.meterBuilder(name: "meter").build() as! StableMeterSdk
-    let instrument = (meter.upDownCounterBuilder(name: "updown") as! LongUpDownCounterBuilderSdk)
+    let meter = meterProvider.meterBuilder(name: "meter").build()
+    let instrument = meter.upDownCounterBuilder(name: "updown")
       .setUnit("unit")
       .setDescription("description")
-      .build() as! LongUpDownCounterSdk
+      .build()
 
     XCTAssertEqual(instrument.instrumentDescriptor.type, InstrumentType.upDownCounter)
     XCTAssertEqual(instrument.instrumentDescriptor.name, "updown")
@@ -244,15 +240,15 @@ class BuilderTests: XCTestCase {
       exporter: MockStableMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderBuilder()
+    let meterProvider = StableMeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .build()
 
-    let meter = meterProvider.meterBuilder(name: "meter").build() as! StableMeterSdk
-    let instrument = (meter.upDownCounterBuilder(name: "doubleUpdown").ofDoubles() as! DoubleUpDownCounterBuilderSdk)
+    let meter = meterProvider.meterBuilder(name: "meter").build()
+    let instrument = meter.upDownCounterBuilder(name: "doubleUpdown").ofDoubles()
       .setUnit("unit")
       .setDescription("description")
-      .build() as! DoubleUpDownCounterSdk
+      .build()
 
     XCTAssertEqual(instrument.instrumentDescriptor.name, "doubleUpdown")
     XCTAssertEqual(instrument.instrumentDescriptor.unit, "unit")

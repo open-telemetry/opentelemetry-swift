@@ -23,7 +23,7 @@ public struct OpenTelemetry {
   /// Registered MeterProvider or default via DefaultMeterProvider.instance.
   public private(set) var meterProvider: MeterProvider
 
-  public private(set) var stableMeterProvider: StableMeterProvider?
+  public private(set) var stableMeterProvider: (any StableMeterProvider)?
 
   /// Registered LoggerProvider or default via DefaultLoggerProvider.instance.
   public private(set) var loggerProvider: LoggerProvider
@@ -65,7 +65,7 @@ public struct OpenTelemetry {
   }
 
   public static func registerStableMeterProvider(
-    meterProvider: StableMeterProvider
+    meterProvider: any StableMeterProvider
   ) {
     instance.stableMeterProvider = meterProvider
   }

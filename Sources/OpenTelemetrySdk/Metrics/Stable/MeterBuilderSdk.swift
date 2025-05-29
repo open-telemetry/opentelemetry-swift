@@ -33,7 +33,7 @@ public class MeterBuilderSdk: MeterBuilder {
     return self
   }
 
-  public func build() -> StableMeter {
+  public func build() -> StableMeterSdk {
     return registry.get(name: instrumentationScopeName, version: instrumentationVersion, schemaUrl: schemaUrl)
   }
 }

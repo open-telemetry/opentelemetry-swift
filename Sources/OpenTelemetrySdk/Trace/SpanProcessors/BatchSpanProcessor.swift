@@ -26,7 +26,7 @@ public struct BatchSpanProcessor: SpanProcessor {
   }
 
   public init(spanExporter: SpanExporter,
-              meterProvider: StableMeterProvider? = nil,
+              meterProvider: (any StableMeterProvider)? = nil,
               scheduleDelay: TimeInterval = 5,
               exportTimeout: TimeInterval = 30,
               maxQueueSize: Int = 2048,
@@ -69,7 +69,7 @@ public struct BatchSpanProcessor: SpanProcessor {
 /// The list of batched data is protected by a NSCondition which ensures full concurrency.
 private class BatchWorker: WorkerThread {
   let spanExporter: SpanExporter
-  let meterProvider: StableMeterProvider?
+  let meterProvider: (any StableMeterProvider)?
   let scheduleDelay: TimeInterval
   let maxQueueSize: Int
   let exportTimeout: TimeInterval
@@ -85,7 +85,7 @@ private class BatchWorker: WorkerThread {
   private var processedSpansCounter: LongCounter?
 
   init(spanExporter: SpanExporter,
-       meterProvider: StableMeterProvider? = nil,
+       meterProvider: (any StableMeterProvider)? = nil,
        scheduleDelay: TimeInterval,
        exportTimeout: TimeInterval,
        maxQueueSize: Int,

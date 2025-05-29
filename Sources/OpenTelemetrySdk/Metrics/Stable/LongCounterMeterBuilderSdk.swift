@@ -21,16 +21,16 @@ public class LongCounterMeterBuilderSdk: InstrumentBuilder, LongCounterBuilder {
     )
   }
 
-  public func ofDoubles() -> OpenTelemetryApi.DoubleCounterBuilder {
+  public func ofDoubles() -> DoubleCounterMeterBuilderSdk {
     swapBuilder(DoubleCounterMeterBuilderSdk.init)
   }
 
-  public func build() -> OpenTelemetryApi.LongCounter {
+  public func build() -> LongCounterSdk {
     return buildSynchronousInstrument(LongCounterSdk.init)
   }
 
-  public func buildWithCallback(_ callback: @escaping (OpenTelemetryApi.ObservableLongMeasurement) -> Void)
-    -> OpenTelemetryApi.ObservableLongCounter {
+  public func buildWithCallback(_ callback: @escaping (StableObservableMeasurementSdk) -> Void)
+    -> ObservableInstrumentSdk {
     registerLongAsynchronousInstrument(type: .observableCounter, updater: callback)
   }
 }
