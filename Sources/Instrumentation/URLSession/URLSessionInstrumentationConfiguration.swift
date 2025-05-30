@@ -25,7 +25,8 @@ public struct URLSessionInstrumentationConfiguration {
               receivedResponse: ((URLResponse, DataOrFile?, Span) -> Void)? = nil,
               receivedError: ((Error, DataOrFile?, HTTPStatus, Span) -> Void)? = nil,
               delegateClassesToInstrument: [AnyClass]? = nil,
-              baggageProvider: ((inout URLRequest, Span?) -> (Baggage)?)? = nil) {
+              baggageProvider: ((inout URLRequest, Span?) -> (Baggage)?)? = nil,
+              tracer: Tracer? = nil) {
     self.shouldRecordPayload = shouldRecordPayload
     self.shouldInstrument = shouldInstrument
     self.shouldInjectTracingHeaders = shouldInjectTracingHeaders
@@ -37,8 +38,12 @@ public struct URLSessionInstrumentationConfiguration {
     self.receivedError = receivedError
     self.delegateClassesToInstrument = delegateClassesToInstrument
     self.baggageProvider = baggageProvider
+    self.tracer = tracer ??
+      OpenTelemetry.instance.tracerProvider.get(instrumentationName: "NSURLSession", instrumentationVersion: "0.0.1")
   }
 
+  public var tracer: Tracer
+ 
   // Instrumentation Callbacks
 
   /// Implement this callback to filter which requests you want to instrument, all by default

@@ -70,7 +70,7 @@ class URLSessionLogger {
     if let customSpanName = instrumentation.configuration.nameSpan?(request) {
       spanName = customSpanName
     }
-    let spanBuilder = instrumentation.tracer.spanBuilder(spanName: spanName)
+    let spanBuilder = instrumentation.configuration.tracer.spanBuilder(spanName: spanName)
     spanBuilder.setSpanKind(spanKind: .client)
     attributes.forEach {
       spanBuilder.setAttribute(key: $0.key, value: $0.value)
