@@ -25,7 +25,7 @@ jobs:
   macOS:
     runs-on: macos-15
     steps:
-    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
     - name: Build and Test for macOS
       run: swift test --enable-code-coverage
     - name: Upload Code coverage
@@ -37,7 +37,7 @@ jobs:
   iOS:
     runs-on: macos-15
     steps:
-    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
     - name: Install Homebrew kegs
       run: make setup-brew
     - name: Build for iOS
@@ -47,7 +47,7 @@ jobs:
   tvOS:
     runs-on: macos-15
     steps:
-    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
     - name: Install Homebrew kegs
       run: make setup-brew
     - name: Build for tvOS
@@ -57,7 +57,7 @@ jobs:
   watchOS:
     runs-on: macos-15
     steps:
-    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
     - name: Install Homebrew kegs
       run: make setup-brew
     - name: Build for watchOS
@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     container: swift:5.10@sha256:6f788584d9b1ed6a4dc83ca224e3caf58c23530fa08dcf12a4a0e25893b20538
     steps:
-      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
       - name: Build tests for Linux
         run: swift build --build-tests
       - name: Run tests for Linux
