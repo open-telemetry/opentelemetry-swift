@@ -23,7 +23,7 @@ public class LongHistogramMeterBuilderSdk: InstrumentBuilder, LongHistogramBuild
     )
   }
 
-  public func build() -> OpenTelemetryApi.LongHistogram {
+  public func build() -> LongHistogramMeterSdk {
     buildSynchronousInstrument(LongHistogramMeterSdk.init)
   }
 }
