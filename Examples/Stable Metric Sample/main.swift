@@ -39,7 +39,7 @@ func basicConfiguration() {
 
   // register view will process all instruments using `.*` regex
 
-  OpenTelemetry.registerStableMeterProvider(meterProvider: StableMeterProviderBuilder()
+  OpenTelemetry.registerStableMeterProvider(meterProvider: StableMeterProviderSdk.builder()
     .registerView(selector: InstrumentSelector.builder().setInstrument(name: ".*").build(), view: StableView.builder().build())
     .registerMetricReader(reader: StablePeriodicMetricReaderBuilder(exporter: StableOtlpMetricExporter(channel: exporterChannel)).build())
     .build()
@@ -54,7 +54,7 @@ func complexViewConfiguration() {
   // The example registers a View that re-configures the Gauge instrument into a sum instrument named "GaugeSum"
 
   OpenTelemetry.registerStableMeterProvider(
-    meterProvider: StableMeterProviderBuilder()
+    meterProvider: StableMeterProviderSdk.builder()
       .registerView(
         selector: InstrumentSelector.builder()
           .setInstrument(name: "Gauge")

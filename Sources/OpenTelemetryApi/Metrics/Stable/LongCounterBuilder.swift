@@ -6,7 +6,12 @@
 import Foundation
 
 public protocol LongCounterBuilder: AnyObject {
-  func ofDoubles() -> DoubleCounterBuilder
-  func build() -> LongCounter
-  func buildWithCallback(_ callback: @escaping (ObservableLongMeasurement) -> Void) -> ObservableLongCounter
+  associatedtype AnyDoubleCounterBuilder: DoubleCounterBuilder
+  associatedtype AnyLongCounter: LongCounter
+  associatedtype AnyObservableLongMeasurement: ObservableLongMeasurement
+  associatedtype AnyObservableLongCounter: ObservableLongCounter
+  
+  func ofDoubles() -> AnyDoubleCounterBuilder
+  func build() -> AnyLongCounter
+  func buildWithCallback(_ callback: @escaping (AnyObservableLongMeasurement) -> Void) -> AnyObservableLongCounter
 }

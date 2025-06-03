@@ -42,7 +42,7 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
   ///    - envVarHeaders: Extra header key-values
   public convenience init(endpoint: URL,
                           config: OtlpConfiguration,
-                          meterProvider: StableMeterProvider,
+                          meterProvider: any StableMeterProvider,
                           useSession: URLSession? = nil,
                           envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
     self.init(endpoint: endpoint, config: config, useSession: useSession,
