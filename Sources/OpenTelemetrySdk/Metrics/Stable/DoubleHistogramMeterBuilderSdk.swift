@@ -23,6 +23,11 @@ public class DoubleHistogramMeterBuilderSdk: InstrumentBuilder, DoubleHistogramB
     )
   }
 
+  public func setExplicitBucketBoundariesAdvice(_ boundaries: [Double]) -> Self {
+    self.explicitBucketBoundariesAdvice = boundaries
+    return self
+  }
+
   public func ofLongs() -> LongHistogramMeterBuilderSdk {
     swapBuilder(LongHistogramMeterBuilderSdk.init)
   }

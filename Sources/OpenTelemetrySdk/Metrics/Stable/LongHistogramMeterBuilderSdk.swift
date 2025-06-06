@@ -9,9 +9,9 @@ import OpenTelemetryApi
 public class LongHistogramMeterBuilderSdk: InstrumentBuilder, LongHistogramBuilder {
   init(meterProviderSharedState: inout MeterProviderSharedState,
        meterSharedState: inout StableMeterSharedState,
-       instrumentName: String,
-       description: String,
-       unit: String) {
+       name: String,
+       description: String = "",
+       unit: String = "") {
     super.init(
       meterProviderSharedState: &meterProviderSharedState,
       meterSharedState: &meterSharedState,
@@ -19,8 +19,13 @@ public class LongHistogramMeterBuilderSdk: InstrumentBuilder, LongHistogramBuild
       valueType: .long,
       description: description,
       unit: unit,
-      instrumentName: instrumentName
+      instrumentName: name
     )
+  }
+
+  public func setExplicitBucketBoundariesAdvice(_ boundaries: [Double]) -> Self {
+    self.explicitBucketBoundariesAdvice = boundaries
+    return self
   }
 
   public func build() -> LongHistogramMeterSdk {
