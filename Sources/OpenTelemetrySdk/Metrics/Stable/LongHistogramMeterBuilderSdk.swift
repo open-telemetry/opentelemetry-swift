@@ -9,9 +9,9 @@ import OpenTelemetryApi
 public class LongHistogramMeterBuilderSdk: InstrumentBuilder, LongHistogramBuilder {
   init(meterProviderSharedState: inout MeterProviderSharedState,
        meterSharedState: inout StableMeterSharedState,
-       name: String,
-       description: String = "",
-       unit: String = "") {
+       instrumentName: String,
+       description: String,
+       unit: String) {
     super.init(
       meterProviderSharedState: &meterProviderSharedState,
       meterSharedState: &meterSharedState,
@@ -19,7 +19,7 @@ public class LongHistogramMeterBuilderSdk: InstrumentBuilder, LongHistogramBuild
       valueType: .long,
       description: description,
       unit: unit,
-      instrumentName: name
+      instrumentName: instrumentName
     )
   }
 
