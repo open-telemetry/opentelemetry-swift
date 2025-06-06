@@ -49,6 +49,10 @@ public class DefaultStableMeter: StableMeter {
   }
 
   public class NoopDoubleHistogramBuilder: DoubleHistogramBuilder {
+    public func setExplicitBucketBoundariesAdvice(_ boundaries: [Double]) -> Self {
+      return self
+    }
+    
     public func ofLongs() -> NoopLongHistogramBuilder {
       NoopLongHistogramBuilder()
     }
@@ -127,6 +131,10 @@ public class DefaultStableMeter: StableMeter {
   }
 
   public class NoopLongHistogramBuilder: LongHistogramBuilder {
+    public func setExplicitBucketBoundariesAdvice(_ boundaries: [Double]) -> Self {
+      return self
+    }
+    
     public func build() -> NoopLongHistogram {
       NoopLongHistogram()
     }
