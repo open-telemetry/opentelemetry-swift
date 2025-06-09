@@ -10,7 +10,7 @@ import OpenTelemetryApi
 public class RecordEventsReadableSpan: ReadableSpan {
   public var isRecording = true
 
-  let lock: ReadWriteLock = .init()
+  private let lock: ReadWriteLock = .init()
 
   fileprivate var internalName: String
   public var name: String {
