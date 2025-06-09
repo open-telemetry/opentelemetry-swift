@@ -9,40 +9,38 @@ import OpenTelemetryApi
 /// Implementation for the Span class that records trace events.
 public class RecordEventsReadableSpan: ReadableSpan {
   public var isRecording = true
-    
-  let lock: ReadWriteLock = ReadWriteLock()
+
+  let lock: ReadWriteLock = .init()
 
   fileprivate var internalName: String
   public var name: String {
     get { lock.withReaderLock { internalName } }
     set {
-        lock.withWriterLock {
-            if !internalEnd {
-                internalName = newValue
-            }
+      lock.withWriterLock {
+        if !internalEnd {
+          internalName = newValue
         }
+      }
     }
   }
-    
-    /// The status of the span.
-    fileprivate var internalStatus: Status = .unset
-    public var status: Status {
-        get { lock.withReaderLock { internalStatus } }
-        set {
-            lock.withWriterLock {
-                if !internalEnd {
-                    internalStatus = newValue
-                }
-            }
+
+  /// The status of the span.
+  fileprivate var internalStatus: Status = .unset
+  public var status: Status {
+    get { lock.withReaderLock { internalStatus } }
+    set {
+      lock.withWriterLock {
+        if !internalEnd {
+          internalStatus = newValue
         }
+      }
     }
-    
-    /// True if the span is ended.
-    fileprivate var internalEnd = false
-    public var hasEnded: Bool {
-        get { lock.withReaderLock { internalEnd } }
-    }
-    
+  }
+
+  /// True if the span is ended.
+  fileprivate var internalEnd = false
+  public var hasEnded: Bool { lock.withReaderLock { internalEnd } }
+
   // The config used when constructing this Span.
   public private(set) var spanLimits: SpanLimits
   /// Contains the identifiers associated with this Span.
@@ -82,8 +80,6 @@ public class RecordEventsReadableSpan: ReadableSpan {
   public private(set) var totalAttributeCount: Int = 0
   /// Number of events recorded.
   public private(set) var totalRecordedEvents = 0
-
-  
 
   /// Returns the latency of the Span in seconds. If still active then returns now() - start time.
   public var latency: TimeInterval {
@@ -177,27 +173,27 @@ public class RecordEventsReadableSpan: ReadableSpan {
   }
 
   public func toSpanData() -> SpanData {
-      lock.withReaderLock {
-          SpanData(traceId: context.traceId,
-                      spanId: context.spanId,
-                      traceFlags: context.traceFlags,
-                      traceState: context.traceState,
-                      parentSpanId: parentContext?.spanId,
-                      resource: resource,
-                      instrumentationScope: instrumentationScopeInfo,
-                      name: name,
-                      kind: kind,
-                      startTime: startTime,
-                      attributes: attributes.attributes,
-                      events: adaptEvents(),
-                      links: adaptLinks(),
-                      status: status,
-                      endTime: endTime ?? clock.now,
-                      hasRemoteParent: hasRemoteParent,
-                      hasEnded: hasEnded,
-                      totalRecordedEvents: getTotalRecordedEvents(),
-                      totalRecordedLinks: totalRecordedLinks,
-                      totalAttributeCount: totalAttributeCount)
+    lock.withReaderLock {
+      SpanData(traceId: context.traceId,
+               spanId: context.spanId,
+               traceFlags: context.traceFlags,
+               traceState: context.traceState,
+               parentSpanId: parentContext?.spanId,
+               resource: resource,
+               instrumentationScope: instrumentationScopeInfo,
+               name: name,
+               kind: kind,
+               startTime: startTime,
+               attributes: attributes.attributes,
+               events: adaptEvents(),
+               links: adaptLinks(),
+               status: status,
+               endTime: endTime ?? clock.now,
+               hasRemoteParent: hasRemoteParent,
+               hasEnded: hasEnded,
+               totalRecordedEvents: getTotalRecordedEvents(),
+               totalRecordedLinks: totalRecordedLinks,
+               totalAttributeCount: totalAttributeCount)
     }
   }
 
@@ -223,7 +219,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
   }
 
   public func setAttribute(key: String, value: AttributeValue?) {
-      lock.withWriterLock {
+    lock.withWriterLock {
       if !isRecording {
         return
       }
@@ -269,7 +265,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
   }
 
   private func addEvent(event: SpanData.Event) {
-      lock.withWriterLock {
+    lock.withWriterLock {
       if !isRecording {
         return
       }
@@ -283,18 +279,15 @@ public class RecordEventsReadableSpan: ReadableSpan {
   }
 
   public func end(time: Date) {
-      
-      let alreadyEnded = lock.withWriterLock {
-          if internalEnd {
-              return true
-          }
-          
-          internalEnd = true
-          isRecording = false
-          return false
-          
-          
+    let alreadyEnded = lock.withWriterLock {
+      if internalEnd {
+        return true
       }
+
+      internalEnd = true
+      isRecording = false
+      return false
+    }
     if alreadyEnded {
       return
     }
@@ -309,7 +302,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
   }
 
   func getTotalRecordedEvents() -> Int {
-      lock.withReaderLock { totalRecordedEvents }
+    lock.withReaderLock { totalRecordedEvents }
   }
 
   /// For testing purposes
