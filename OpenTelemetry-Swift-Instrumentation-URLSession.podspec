@@ -17,7 +17,7 @@ Pod::Spec.new do |spec|
   spec.watchos.deployment_target = "6.0"
   spec.module_name = "URLSession"
 
-  spec.dependency 'OpenTelemetry-Swift-Instrumentation-URLSession', spec.version.to_s
+  spec.dependency 'OpenTelemetry-Swift-Instrumentation-NetworkStatus', spec.version.to_s
   spec.dependency 'OpenTelemetry-Swift-Sdk', spec.version.to_s
   spec.pod_target_xcconfig = { "OTHER_SWIFT_FLAGS" => "-module-name URLSession -package-name opentelemetry_swift_urlsession" }
 
