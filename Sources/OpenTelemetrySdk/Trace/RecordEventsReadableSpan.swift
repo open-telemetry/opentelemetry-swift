@@ -8,9 +8,19 @@ import OpenTelemetryApi
 
 /// Implementation for the Span class that records trace events.
 public class RecordEventsReadableSpan: ReadableSpan {
-  public var isRecording = true
-
   private let lock: ReadWriteLock = .init()
+
+  fileprivate var internalIsRecording = true
+  public var isRecording: Bool {
+    get { lock.withReaderLock { internalIsRecording } }
+    set {
+      lock.withWriterLock {
+        if !internalEnd {
+          internalIsRecording = newValue
+        }
+      }
+    }
+  }
 
   fileprivate var internalName: String
   public var name: String {
@@ -181,20 +191,28 @@ public class RecordEventsReadableSpan: ReadableSpan {
                parentSpanId: parentContext?.spanId,
                resource: resource,
                instrumentationScope: instrumentationScopeInfo,
-               name: name,
+               name: internalName,
                kind: kind,
                startTime: startTime,
                attributes: attributes.attributes,
-               events: adaptEvents(),
-               links: adaptLinks(),
-               status: status,
+               events: lockedAdaptEvents(),
+               links: lockedAdaptLinks(),
+               status: internalStatus,
                endTime: endTime ?? clock.now,
                hasRemoteParent: hasRemoteParent,
-               hasEnded: hasEnded,
-               totalRecordedEvents: getTotalRecordedEvents(),
+               hasEnded: internalEnd,
+               totalRecordedEvents: totalRecordedEvents,
                totalRecordedLinks: totalRecordedLinks,
                totalAttributeCount: totalAttributeCount)
     }
+  }
+
+  private func lockedAdaptEvents() -> [SpanData.Event] {
+    var result = [SpanData.Event]()
+    events.array.forEach {
+      result.append(SpanData.Event(name: $0.name, timestamp: $0.timestamp, attributes: $0.attributes))
+    }
+    return result
   }
 
   private func adaptEvents() -> [SpanData.Event] {
@@ -209,7 +227,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
     return result
   }
 
-  private func adaptLinks() -> [SpanData.Link] {
+  private func lockedAdaptLinks() -> [SpanData.Link] {
     var result = [SpanData.Link]()
     let linksRef = links
     linksRef.forEach {
@@ -220,7 +238,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
 
   public func setAttribute(key: String, value: AttributeValue?) {
     lock.withWriterLock {
-      if !isRecording {
+      if !internalIsRecording {
         return
       }
 
@@ -266,7 +284,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
 
   private func addEvent(event: SpanData.Event) {
     lock.withWriterLock {
-      if !isRecording {
+      if !internalIsRecording {
         return
       }
       events.append(event)
@@ -285,7 +303,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
       }
 
       internalEnd = true
-      isRecording = false
+      internalIsRecording = false
       return false
     }
     if alreadyEnded {
