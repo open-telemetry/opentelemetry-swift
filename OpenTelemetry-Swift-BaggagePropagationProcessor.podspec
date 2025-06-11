@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name = "OpenTelemetry-Swift-BaggagePropagationProcessor"
-  spec.version = "1.15.0"
+  spec.version = "1.16.0"
   spec.summary = "Swift OpenTelemetry Baggage Propagation Processor"
 
   spec.homepage = "https://github.com/open-telemetry/opentelemetry-swift"
