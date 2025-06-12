@@ -21,7 +21,12 @@ public class DefaultAggregation: Aggregation {
     case .counter, .upDownCounter, .observableCounter, .observableUpDownCounter:
       return SumAggregation.instance
     case .histogram:
-      return ExplicitBucketHistogramAggregation.instance
+      // Use advisory bucket boundaries if available, otherwise use default
+      if let advisoryBoundaries = instrument.explicitBucketBoundariesAdvice {
+        return ExplicitBucketHistogramAggregation(bucketBoundaries: advisoryBoundaries)
+      } else {
+        return ExplicitBucketHistogramAggregation.instance
+      }
     case .observableGauge, .gauge:
       return LastValueAggregation.instance
     }
