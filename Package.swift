@@ -35,7 +35,7 @@ let package = Package(name: "opentelemetry-swift",
                         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.30.0"),
                         .package(url: "https://github.com/apple/swift-log.git", from: "1.6.3"),
                         .package(url: "https://github.com/apple/swift-metrics.git", from: "2.7.0"),
-                        .package(url: "https://github.com/apple/swift-atomics.git", from: "1.2.0")
+                        .package(url: "https://github.com/apple/swift-atomics.git", from: "1.3.0")
                       ],
                       targets: [
                         .target(name: "OpenTelemetryApi",
