@@ -6,7 +6,7 @@
 import Foundation
 
 public protocol LongUpDownCounterBuilder: AnyObject {
-  associatedtype AssociatedDoubleUpDownCounterBuilder : DoubleUpDownCounterBuilder
+  associatedtype AssociatedDoubleUpDownCounterBuilder: DoubleUpDownCounterBuilder
   associatedtype AssociatedLongUpDownCounter: LongUpDownCounter
   associatedtype AssociatedObservableLongMeasurement: ObservableLongMeasurement
   associatedtype AssociatedObservableLongUpDownCounter: ObservableLongUpDownCounter

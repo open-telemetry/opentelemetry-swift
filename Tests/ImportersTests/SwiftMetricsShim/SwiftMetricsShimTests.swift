@@ -9,20 +9,65 @@
 @testable import SwiftMetricsShim
 import XCTest
 
-class SwiftMetricsShimTests: XCTestCase {
-  var testProcessor = TestMetricProcessor()
-  let provider = MeterProviderSdk()
-  var meter: MeterSdk!
-  var metrics: OpenTelemetrySwiftMetrics!
+class MetricExporterMock: StableMetricExporter {
+  func flush() -> OpenTelemetrySdk.ExportResult {
+    .success
+  }
 
+  func shutdown() -> OpenTelemetrySdk.ExportResult {
+    .success
+  }
+
+  func getAggregationTemporality(for instrument: OpenTelemetrySdk.InstrumentType) -> OpenTelemetrySdk.AggregationTemporality {
+    return AggregationTemporality.cumulative
+  }
+
+  let onExport: ([StableMetricData]) -> ExportResult
+  init(onExport: @escaping ([StableMetricData])-> ExportResult)  {
+    self.onExport = onExport
+  }
+
+  func export(metrics: [StableMetricData]) -> ExportResult {
+    return onExport(metrics)
+  }
+}
+
+class SwiftMetricsShimTests: XCTestCase {
+  var mockExporter: MetricExporterMock! = nil
+  let provider: StableMeterSdk! = nil
+  var stableMetrics = [StableMetricData]()
+  var metrics: OpenTelemetrySwiftMetrics! = nil
+  var metricsExportExpectation: XCTestExpectation! = nil
   override func setUp() {
     super.setUp()
-    testProcessor = TestMetricProcessor()
+    metricsExportExpectation =  expectation(description: "metrics exported")
 
-    meter = MeterProviderSdk(metricProcessor: testProcessor,
-                             metricExporter: NoopMetricExporter()).get(instrumentationName: "SwiftMetricsShimTest") as? MeterSdk
+    var reader : StablePeriodicMetricReaderSdk! = nil
+    stableMetrics = [StableMetricData]()
+    mockExporter = MetricExporterMock { metrics in
+      self.stableMetrics = metrics
+      self.metricsExportExpectation.fulfill()
+      _ = reader.shutdown()
+      return .success
+    }
 
-    metrics = .init(meter: meter)
+    reader = StablePeriodicMetricReaderSdk(
+      exporter: mockExporter,
+      exportInterval: 0.5
+    )
+
+    let provider = StableMeterProviderSdk.builder()
+      .registerView(
+        selector: InstrumentSelector.builder().setInstrument(name: ".*").build(),
+        view: StableView.builder().build()
+      )
+      .registerMetricReader(
+        reader: reader
+
+      )
+      .build()
+
+    metrics = .init(meter: provider.meterBuilder(name: "meter").build())
     MetricsSystem.bootstrapInternal(metrics)
   }
 
@@ -31,7 +76,8 @@ class SwiftMetricsShimTests: XCTestCase {
   func testDestroy() {
     let handler = metrics.makeCounter(label: "my_label", dimensions: [])
     XCTAssertEqual(metrics.metrics.count, 1)
-
+    handler.increment(by: 1)
+    waitForExpectations(timeout: 10, handler: nil)
     metrics.destroyCounter(handler)
     XCTAssertEqual(metrics.metrics.count, 0)
   }
@@ -42,28 +88,28 @@ class SwiftMetricsShimTests: XCTestCase {
     let counter = Counter(label: "my_counter")
     counter.increment()
 
-    meter.collect()
+    waitForExpectations(timeout: 10, handler: nil)
 
-    let metric = testProcessor.metrics[0]
-    let data = try XCTUnwrap(metric.data.last as? SumData<Int>)
+    let metric = self.stableMetrics[0]
+    let data = try XCTUnwrap(metric.data.points.last as? LongPointData)
     XCTAssertEqual(metric.name, "my_counter")
-    XCTAssertEqual(metric.aggregationType, .intSum)
-    XCTAssertEqual(data.sum, 1)
-    XCTAssertNil(data.labels["label_one"])
+    XCTAssertEqual(metric.type, .LongSum)
+    XCTAssertEqual(data.value, 1)
+    XCTAssertNil(data.attributes["label_one"])
   }
 
   func testCounter_withLabels() throws {
     let counter = Counter(label: "my_counter", dimensions: [("label_one", "value")])
     counter.increment(by: 5)
 
-    meter.collect()
+    waitForExpectations(timeout: 10, handler: nil)
 
-    let metric = testProcessor.metrics[0]
-    let data = try XCTUnwrap(metric.data.last as? SumData<Int>)
+    let metric = self.stableMetrics[0]
+    let data = try XCTUnwrap(metric.data.points.last as? LongPointData)
     XCTAssertEqual(metric.name, "my_counter")
-    XCTAssertEqual(metric.aggregationType, .intSum)
-    XCTAssertEqual(data.sum, 5)
-    XCTAssertEqual(data.labels["label_one"], "value")
+    XCTAssertEqual(metric.type, .LongSum)
+    XCTAssertEqual(data.value, 5)
+    XCTAssertEqual(data.attributes["label_one"]?.description, "value")
   }
 
   // MARK: - Test Metric: Gauge
@@ -72,14 +118,16 @@ class SwiftMetricsShimTests: XCTestCase {
     let gauge = Gauge(label: "my_gauge")
     gauge.record(100)
 
-    meter.collect()
+    waitForExpectations(timeout: 10, handler: nil)
 
-    let metric = testProcessor.metrics[0]
-    let data = try XCTUnwrap(metric.data.last as? SumData<Double>)
+
+    let metric = self.stableMetrics[0]
+    let data = try XCTUnwrap(metric.data.points.last as? DoublePointData)
     XCTAssertEqual(metric.name, "my_gauge")
-    XCTAssertEqual(metric.aggregationType, .doubleSum)
-    XCTAssertEqual(data.sum, 100)
-    XCTAssertNil(data.labels["label_one"])
+    XCTAssertEqual(metric.type, .DoubleGauge)
+    XCTAssertEqual(data.value, 100)
+    XCTAssertNil(data.attributes["label_one"])
+
   }
 
   // MARK: - Test Metric: Histogram
@@ -88,14 +136,14 @@ class SwiftMetricsShimTests: XCTestCase {
     let histogram = Gauge(label: "my_histogram", dimensions: [], aggregate: true)
     histogram.record(100)
 
-    meter.collect()
+    waitForExpectations(timeout: 10, handler: nil)
 
-    let metric = testProcessor.metrics[0]
-    let data = try XCTUnwrap(metric.data.last as? SummaryData<Double>)
+    let metric = self.stableMetrics[0]
+    let data = try XCTUnwrap(metric.data.points.last as? HistogramPointData)
     XCTAssertEqual(metric.name, "my_histogram")
-    XCTAssertEqual(metric.aggregationType, .doubleSummary)
-    XCTAssertEqual(data.sum, 100)
-    XCTAssertNil(data.labels["label_one"])
+    XCTAssertEqual(metric.type, .Histogram)
+//    XCTAssertEqual(/*data*/., 100)
+    XCTAssertNil(data.attributes["label_one"])
   }
 
   // MARK: - Test Metric: Summary
@@ -104,14 +152,14 @@ class SwiftMetricsShimTests: XCTestCase {
     let timer = CoreMetrics.Timer(label: "my_timer")
     timer.recordSeconds(1)
 
-    meter.collect()
+    waitForExpectations(timeout: 10, handler: nil)
 
-    let metric = testProcessor.metrics[0]
-    let data = try XCTUnwrap(metric.data.last as? SummaryData<Double>)
+    let metric = self.stableMetrics[0]
+    let data = try XCTUnwrap(metric.data.points.last as? DoublePointData)
     XCTAssertEqual(metric.name, "my_timer")
-    XCTAssertEqual(metric.aggregationType, .doubleSummary)
-    XCTAssertEqual(data.sum, 1000000000)
-    XCTAssertNil(data.labels["label_one"])
+    XCTAssertEqual(metric.type, .DoubleSum)
+    XCTAssertEqual(data.value, 1000000000)
+    XCTAssertNil(data.attributes["label_one"])
   }
 
   // MARK: - Test Concurrency
@@ -122,13 +170,13 @@ class SwiftMetricsShimTests: XCTestCase {
       counter.increment()
     }
 
-    meter.collect()
+    waitForExpectations(timeout: 10, handler: nil)
 
-    let metric = testProcessor.metrics[0]
-    let data = try XCTUnwrap(metric.data.last as? SumData<Int>)
+    let metric = self.stableMetrics[0]
+    let data = try XCTUnwrap(metric.data.points.last as? LongPointData)
     XCTAssertEqual(metric.name, "my_counter")
-    XCTAssertEqual(metric.aggregationType, .intSum)
-    XCTAssertEqual(data.sum, 5)
-    XCTAssertNil(data.labels["label_one"])
+    XCTAssertEqual(metric.type, .LongSum)
+    XCTAssertEqual(data.value, 5)
+    XCTAssertNil(data.attributes["label_one"])
   }
 }

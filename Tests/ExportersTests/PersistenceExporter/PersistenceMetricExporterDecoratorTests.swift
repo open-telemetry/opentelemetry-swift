@@ -11,13 +11,25 @@ import XCTest
 class PersistenceMetricExporterDecoratorTests: XCTestCase {
   @UniqueTemporaryDirectory private var temporaryDirectory: Directory
 
-  class MetricExporterMock: MetricExporter {
-    let onExport: ([Metric]) -> MetricExporterResultCode
-    init(onExport: @escaping ([Metric]) -> MetricExporterResultCode) {
+  class MetricExporterMock: StableMetricExporter {
+    func flush() -> OpenTelemetrySdk.ExportResult {
+      .success
+    }
+
+    func shutdown() -> OpenTelemetrySdk.ExportResult {
+      .success
+    }
+
+    func getAggregationTemporality(for instrument: OpenTelemetrySdk.InstrumentType) -> OpenTelemetrySdk.AggregationTemporality {
+      .cumulative
+    }
+
+    let onExport: ([StableMetricData]) -> ExportResult
+    init(onExport: @escaping ([StableMetricData]) -> ExportResult) {
       self.onExport = onExport
     }
 
-    func export(metrics: [Metric], shouldCancel: (() -> Bool)?) -> MetricExporterResultCode {
+    func export(metrics: [StableMetricData]) -> ExportResult {
       return onExport(metrics)
     }
   }
@@ -37,12 +49,10 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
 
     let mockMetricExporter = MetricExporterMock(onExport: { metrics in
       metrics.forEach { metric in
-        if metric.name == "MyCounter",
-           metric.namespace == "MyMeter",
-           metric.data.count == 1 {
-          if let metricData = metric.data[0] as? SumData<Int>,
-             metricData.sum == 100,
-             metricData.labels == ["labelKey": "labelValue"] {
+        if metric.name == "MyCounter", metric.data.points.count == 1 {
+          let pointData: LongPointData = metric.data.points[0] as! LongPointData
+           if pointData.value == 100,
+              pointData.attributes == ["labelKey": AttributeValue.string("labelValue")] {
             metricsExportExpectation.fulfill()
           }
         }
@@ -58,14 +68,25 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
                                                                                                       synchronousWrite: true,
                                                                                                       exportPerformance: ExportPerformanceMock.veryQuick))
 
-    let provider = MeterProviderSdk(metricProcessor: MetricProcessorSdk(),
-                                    metricExporter: persistenceMetricExporter,
-                                    metricPushInterval: 0.1)
 
-    let meter = provider.get(instrumentationName: "MyMeter")
 
-    let myCounter = meter.createIntCounter(name: "MyCounter")
-    myCounter.add(value: 100, labels: ["labelKey": "labelValue"])
+    let provider = StableMeterProviderSdk.builder().registerMetricReader(
+      reader: StablePeriodicMetricReaderBuilder(
+        exporter: persistenceMetricExporter
+      )
+      .build()
+    ).registerView(
+      selector: InstrumentSelector.builder().setInstrument(
+        name: ".*"
+      ).build(),
+      view: StableView.builder().build()).build()
+
+
+    let meter = provider.get(name: "MyMeter")
+
+    let myCounter = meter.counterBuilder(name: "MyCounter").build()
+    myCounter
+      .add(value: 100, attributes: ["labelKey": AttributeValue.string("labelValue")])
 
     waitForExpectations(timeout: 10, handler: nil)
   }

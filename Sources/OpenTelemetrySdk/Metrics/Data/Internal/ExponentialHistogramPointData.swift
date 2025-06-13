@@ -29,6 +29,10 @@ public class ExponentialHistogramPointData: PointData {
     case max
     case positiveBuckets
     case negativeBuckets
+    case startEpochNanos
+    case endEpochNanos
+    case attributes
+    case exemplars
   }
 
   public init(scale: Int,
@@ -70,7 +74,6 @@ public class ExponentialHistogramPointData: PointData {
     min = try values.decode(Double.self, forKey: .min)
     max = try values.decode(Double.self, forKey: .max)
 
-
     do {
       positiveBuckets = try values.decode(DoubleBase2ExponentialHistogramBuckets.self, forKey: .positiveBuckets)
     } catch {
@@ -87,6 +90,15 @@ public class ExponentialHistogramPointData: PointData {
       negativeBuckets = try values
         .decode(EmptyExponentialHistogramBuckets.self, forKey: .negativeBuckets)
     }
-    try super.init(from: decoder)
-  }
+    let attributes = try values.decode(Dictionary<String, AttributeValue>.self, forKey: .attributes)
+    let endEpochNanos = try values.decode(UInt64.self, forKey: .endEpochNanos)
+    let exemplars = try values.decode(Array<DoubleExemplarData>.self, forKey: .exemplars)
+    let startEpochNanos = try values
+      .decode(UInt64.self, forKey: .startEpochNanos)
+    super.init(
+      startEpochNanos: startEpochNanos,
+      endEpochNanos: endEpochNanos,
+      attributes: attributes,
+      exemplars: exemplars
+    )  }
 }

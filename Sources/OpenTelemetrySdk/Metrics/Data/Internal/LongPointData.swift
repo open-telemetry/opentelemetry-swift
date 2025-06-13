@@ -6,11 +6,15 @@
 import Foundation
 import OpenTelemetryApi
 
-public class LongPointData: PointData {
+public class LongPointData: PointData, Codable {
   public var value: Int
 
   enum CodingKeys: String, CodingKey {
     case value
+    case startEpochNanos
+    case endEpochNanos
+    case attributes
+    case exemplars
   }
 
   init(startEpochNanos: UInt64, endEpochNanos: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], value: Int) {
@@ -18,11 +22,30 @@ public class LongPointData: PointData {
     super.init(startEpochNanos: startEpochNanos, endEpochNanos: endEpochNanos, attributes: attributes, exemplars: exemplars)
   }
 
+  public func encode(to encoder: any Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(value, forKey: .value)
+    try container.encode(attributes, forKey: .attributes)
+    try container.encode(endEpochNanos, forKey: .endEpochNanos)
+    try container.encode(exemplars as! [LongExemplarData], forKey: .exemplars)
+  }
 
-  required init(from decoder: any Decoder) throws {
+  required public init(from decoder: any Decoder) throws {
     let values = try decoder.container(keyedBy: CodingKeys.self)
     value = try values.decode(Int.self, forKey: .value)
-    try super.init(from: decoder)
+    let attributes = try values.decode([String: AttributeValue].self, forKey: .attributes)
+    let endEpochNanos = try values.decode(UInt64.self, forKey: .endEpochNanos)
+    let exemplars = try values.decode([LongExemplarData].self, forKey: .exemplars)
+    let startEpochNanos = try values.decode(
+      UInt64.self,
+      forKey: .startEpochNanos
+    )
+    super.init(
+      startEpochNanos: startEpochNanos,
+      endEpochNanos: endEpochNanos,
+      attributes: attributes,
+      exemplars: exemplars
+    )
   }
 
   static func - (left: LongPointData, right: LongPointData) -> Self {

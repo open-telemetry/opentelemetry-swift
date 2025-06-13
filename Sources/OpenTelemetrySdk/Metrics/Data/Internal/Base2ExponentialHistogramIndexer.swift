@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public class Base2ExponentialHistogramIndexer : Codable {
+public class Base2ExponentialHistogramIndexer: Codable {
   private static var cache = [Int: Base2ExponentialHistogramIndexer]()
   private static var cacheLock = Lock()
 

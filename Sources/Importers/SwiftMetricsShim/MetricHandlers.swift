@@ -95,7 +95,6 @@ class SwiftSummaryMetric: TimerHandler, SwiftMetric {
     })
   }
 
-
   func recordNanoseconds(_ duration: Int64) {
     measure.add(value: Double(duration), attributes: labels)
   }

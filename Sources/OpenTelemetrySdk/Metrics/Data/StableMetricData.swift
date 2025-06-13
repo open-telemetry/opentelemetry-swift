@@ -28,7 +28,7 @@ public struct StableMetricData: Equatable, Codable {
 
   public static let empty = StableMetricData(resource: Resource.empty, instrumentationScopeInfo: InstrumentationScopeInfo(), name: "", description: "", unit: "", type: .Summary, isMonotonic: false, data: StableMetricData.Data(aggregationTemporality: .cumulative, points: [PointData]()))
 
-  public class Data: Equatable, Codable {
+  public class Data: Equatable {
     public private(set) var points: [PointData]
     public private(set) var aggregationTemporality: AggregationTemporality
 
@@ -39,6 +39,95 @@ public struct StableMetricData: Equatable, Codable {
 
     public static func == (lhs: StableMetricData.Data, rhs: StableMetricData.Data) -> Bool {
       return lhs.points == rhs.points && lhs.aggregationTemporality == rhs.aggregationTemporality
+    }
+  }
+
+  enum CodingKeys: String, CodingKey {
+    case resource
+    case instrumentationScopeInfo
+    case name
+    case description
+    case unit
+    case type
+    case isMonotonic
+    case dataPoints
+    case aggregationTemporality
+  }
+
+  public func encode(to encoder: any Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(self.resource, forKey: .resource)
+    try container
+      .encode(self.instrumentationScopeInfo, forKey: .instrumentationScopeInfo)
+    try container.encode(self.name, forKey: .name)
+    try container.encode(self.description, forKey: .description)
+    try container.encode(self.unit, forKey: .unit)
+    try container.encode(self.type, forKey: .type)
+    try container.encode(self.isMonotonic, forKey: .isMonotonic)
+
+    switch self.type {
+      case .Summary:
+      try container.encode(self.data.points as! [SummaryPointData], forKey: .dataPoints)
+    case .LongGauge, .LongSum:
+      try container
+        .encode(self.data.points as! [LongPointData], forKey: .dataPoints)
+    case .DoubleGauge, .DoubleSum:
+      try container.encode(self.data.points as! [DoublePointData], forKey: .dataPoints)
+    case .Histogram, .ExponentialHistogram:
+      try container
+        .encode(self.data.points as! [HistogramPointData], forKey: .dataPoints)
+    }
+
+    try container.encode(self.data.aggregationTemporality, forKey: .aggregationTemporality)
+  }
+
+  public init(from decoder: any Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    resource = try container.decode(Resource.self, forKey: .resource)
+    instrumentationScopeInfo = try container
+      .decode(InstrumentationScopeInfo.self, forKey: .instrumentationScopeInfo)
+    name = try container.decode(String.self, forKey: .name)
+    description = try container.decode(String.self, forKey: .description)
+    unit = try container.decode(String.self, forKey: .unit)
+    type = try container.decode(MetricDataType.self, forKey: .type)
+    isMonotonic = try container.decode(Bool.self, forKey: .isMonotonic)
+
+    let aggregationTemporality = try container.decode(
+      AggregationTemporality.self,
+      forKey: .aggregationTemporality
+    )
+    switch type {
+    case .Summary:
+      let points = try container.decode([SummaryPointData].self, forKey: .dataPoints)
+      data = Data(aggregationTemporality: aggregationTemporality, points: points)
+    case .LongGauge, .LongSum:
+     let points = try container.decode(
+        [LongPointData].self,
+        forKey: .dataPoints
+      )
+      data = Data(
+          aggregationTemporality: aggregationTemporality,
+          points: points
+        )
+    case .DoubleGauge, .DoubleSum:
+       let points = try container.decode(
+        [DoublePointData].self,
+        forKey: .dataPoints
+      )
+      data = Data(
+        aggregationTemporality: aggregationTemporality,
+        points: points
+      )
+
+    case .Histogram, .ExponentialHistogram:
+       let points = try container.decode(
+        [HistogramPointData].self,
+        forKey: .dataPoints
+      )
+      data = Data(
+        aggregationTemporality: aggregationTemporality,
+        points: points
+      )
     }
   }
 
@@ -107,17 +196,11 @@ public class StableHistogramData: StableMetricData.Data {
   init(aggregationTemporality: AggregationTemporality, points: [HistogramPointData]) {
     super.init(aggregationTemporality: aggregationTemporality, points: points)
   }
-  required init(from decoder: any Decoder) throws {
-    try super.init(from: decoder)
-  }
 }
 
 public class StableExponentialHistogramData: StableMetricData.Data {
   override init(aggregationTemporality: AggregationTemporality, points: [PointData]) {
     super.init(aggregationTemporality: aggregationTemporality, points: points)
-  }
-  required init(from decoder: any Decoder) throws {
-    try super.init(from: decoder)
   }
 }
 
@@ -125,19 +208,11 @@ public class StableGaugeData: StableMetricData.Data {
   override init(aggregationTemporality: AggregationTemporality, points: [PointData]) {
     super.init(aggregationTemporality: aggregationTemporality, points: points)
   }
-
-  required init(from decoder: any Decoder) throws {
-    try super.init(from: decoder)
-  }
 }
 
 public class StableSumData: StableMetricData.Data {
   override init(aggregationTemporality: AggregationTemporality, points: [PointData]) {
     super.init(aggregationTemporality: aggregationTemporality, points: points)
-  }
-
-  required init(from decoder: any Decoder) throws {
-    try super.init(from: decoder)
   }
 }
 
@@ -146,7 +221,4 @@ public class StableSummaryData: StableMetricData.Data {
     super.init(aggregationTemporality: aggregationTemporality, points: points)
   }
 
-  required init(from decoder: any Decoder) throws {
-    try super.init(from: decoder)
-  }
 }
