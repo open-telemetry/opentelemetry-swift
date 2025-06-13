@@ -6,8 +6,8 @@
 import Foundation
 
 public protocol DoubleHistogramBuilder: AnyObject {
-  associatedtype AnyLongHistogramBuilder : LongHistogramBuilder
-  associatedtype AnyDoubleHistogram : DoubleHistogram
+  associatedtype AnyLongHistogramBuilder: LongHistogramBuilder
+  associatedtype AnyDoubleHistogram: DoubleHistogram
   func ofLongs() -> AnyLongHistogramBuilder
   
   /// Sets explicit bucket boundaries advice for the histogram.

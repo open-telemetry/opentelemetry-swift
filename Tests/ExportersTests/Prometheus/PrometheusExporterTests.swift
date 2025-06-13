@@ -7,6 +7,7 @@ import Foundation
 #if canImport(FoundationNetworking)
   import FoundationNetworking
 #endif
+import OpenTelemetryApi
 import OpenTelemetrySdk
 @testable import PrometheusExporter
 import XCTest
@@ -18,7 +19,6 @@ class PrometheusExporterTests: XCTestCase {
   func testMetricsHttpServerAsync() {
     let promOptions = PrometheusExporterOptions(url: "http://localhost:9184/metrics/")
     let promExporter = PrometheusExporter(options: promOptions)
-    let simpleProcessor = MetricProcessorSdk()
     let metricsHttpServer = PrometheusExporterHttpServer(exporter: promExporter)
 
     let expec = expectation(description: "Get metrics from server")
@@ -32,7 +32,7 @@ class PrometheusExporterTests: XCTestCase {
       }
     }
 
-    let retain_me = collectMetrics(simpleProcessor: simpleProcessor, exporter: promExporter)
+    let retain_me = collectMetrics(exporter: promExporter)
     _ = retain_me // silence warning
     usleep(useconds_t(waitDuration * 1000000))
     let url = URL(string: "http://localhost:9184/metrics/")!
@@ -63,33 +63,54 @@ class PrometheusExporterTests: XCTestCase {
     metricsHttpServer.stop()
   }
 
-  private func collectMetrics(simpleProcessor: MetricProcessorSdk, exporter: MetricExporter) -> MeterProviderSdk {
-    let meterProvider = MeterProviderSdk(metricProcessor: simpleProcessor, metricExporter: exporter, metricPushInterval: metricPushIntervalSec)
+  private func collectMetrics(exporter: StableMetricExporter) -> StableMeterProviderSdk {
+    let meterProvider = StableMeterProviderSdk.builder()
+      .registerMetricReader(
+        reader: StablePeriodicMetricReaderBuilder(
+          exporter: exporter
+        ).build()
+    )
+      .registerView(
+        selector: InstrumentSelector
+          .builder()
+          .setInstrument(type: .histogram).build(),
+        view: StableView.builder()
+          .withAggregation(
+            aggregation: ExplicitBucketHistogramAggregation(bucketBoundaries:  [5, 10, 25])
+          ).build()
+      )
+      .registerView(
+        selector: InstrumentSelector
+          .builder()
+          .setInstrument(name: ".*")
+          .build(),
+        view: StableView.builder().build()
+      )
+      .build()
 
-    let meter = meterProvider.get(instrumentationName: "scope1")
+    let meter = meterProvider.get(name: "scope1")
 
-    let testCounter = meter.createIntCounter(name: "testCounter")
-    let testMeasure = meter.createIntMeasure(name: "testMeasure")
-    let boundaries: [Int] = [5, 10, 25]
-    let testHistogram = meter.createIntHistogram(name: "testHistogram", explicitBoundaries: boundaries, absolute: true)
-    let labels1 = ["dim1": "value1", "dim2": "value1"]
-    let labels2 = ["dim1": "value2", "dim2": "value2"]
-    let labels3 = ["dim1": "value1"]
+    let testCounter = meter.counterBuilder(name: "testCounter").build()
+    let testMeasure = meter.gaugeBuilder(name: "testMeasure").build()
+    let testHistogram = meter.histogramBuilder(name: "testHistogram").build()
+    let labels1 = ["dim1": AttributeValue.string("value1"), "dim2": AttributeValue.string("value1")]
+    let labels2 = ["dim1": AttributeValue.string("value2"), "dim2": AttributeValue.string("value2")]
+    let labels3 = ["dim1": AttributeValue.string("value1")]
 
     for _ in 0 ..< 10 {
-      testCounter.add(value: 100, labelset: meter.getLabelSet(labels: labels1))
-      testCounter.add(value: 10, labelset: meter.getLabelSet(labels: labels1))
-      testCounter.add(value: 200, labelset: meter.getLabelSet(labels: labels2))
-      testCounter.add(value: 10, labelset: meter.getLabelSet(labels: labels2))
+      testCounter.add(value: 100, attributes: labels1)
+      testCounter.add(value: 10, attributes: labels1)
+      testCounter.add(value: 200, attributes: labels2)
+      testCounter.add(value: 10, attributes: labels2)
 
-      testMeasure.record(value: 10, labelset: meter.getLabelSet(labels: labels1))
-      testMeasure.record(value: 100, labelset: meter.getLabelSet(labels: labels1))
-      testMeasure.record(value: 5, labelset: meter.getLabelSet(labels: labels1))
-      testMeasure.record(value: 500, labelset: meter.getLabelSet(labels: labels1))
+      testMeasure.record(value: 10, attributes: labels1)
+      testMeasure.record(value: 100, attributes: labels1)
+      testMeasure.record(value: 5, attributes: labels1)
+      testMeasure.record(value: 500, attributes: labels1)
 
-      testHistogram.record(value: 8, labelset: meter.getLabelSet(labels: labels3))
-      testHistogram.record(value: 20, labelset: meter.getLabelSet(labels: labels3))
-      testHistogram.record(value: 30, labelset: meter.getLabelSet(labels: labels3))
+      testHistogram.record(value: 8, attributes: labels3)
+      testHistogram.record(value: 20, attributes: labels3)
+      testHistogram.record(value: 30, attributes: labels3)
     }
     return meterProvider
   }

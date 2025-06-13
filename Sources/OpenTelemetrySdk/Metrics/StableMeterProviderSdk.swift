@@ -8,7 +8,6 @@ import OpenTelemetryApi
 
 public class MeterProviderError: Error {}
 
-
 public class StableMeterProviderSdk: StableMeterProvider {
   private static let defaultMeterName = "unknown"
   private let readerLock = Lock()

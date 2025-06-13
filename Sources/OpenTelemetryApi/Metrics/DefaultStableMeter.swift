@@ -7,12 +7,12 @@ import Foundation
 
 public class NoopObservableLongMeasurement: ObservableLongMeasurement {
   public func record(value: Int) {}
-  public func record(value: Int, attributes: [String : AttributeValue]) {}
+  public func record(value: Int, attributes: [String: AttributeValue]) {}
 }
 
 public class NoopObservableDoubleMeasurement: ObservableDoubleMeasurement {
   public func record(value: Double) {}
-  public func record(value: Double, attributes: [String : AttributeValue]) {}
+  public func record(value: Double, attributes: [String: AttributeValue]) {}
 }
 
 public class DefaultStableMeter: StableMeter {

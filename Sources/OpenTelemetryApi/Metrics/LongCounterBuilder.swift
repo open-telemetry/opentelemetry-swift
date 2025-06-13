@@ -10,7 +10,7 @@ public protocol LongCounterBuilder: AnyObject {
   associatedtype AnyLongCounter: LongCounter
   associatedtype AnyObservableLongMeasurement: ObservableLongMeasurement
   associatedtype AnyObservableLongCounter: ObservableLongCounter
-  
+
   func ofDoubles() -> AnyDoubleCounterBuilder
   func build() -> AnyLongCounter
   func buildWithCallback(_ callback: @escaping (AnyObservableLongMeasurement) -> Void) -> AnyObservableLongCounter

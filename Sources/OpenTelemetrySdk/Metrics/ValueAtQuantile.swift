@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public struct ValueAtQuantile : Codable {
+public struct ValueAtQuantile: Codable {
   public let quantile: Double
   public let value: Double
 }

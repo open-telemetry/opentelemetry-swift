@@ -11,7 +11,6 @@ public class EmptyExponentialHistogramBuckets: ExponentialHistogramBuckets {
   public var bucketCounts: [Int64] = []
   public var totalCount: Int = 0
 
-
   init(scale: Int) {
     self.scale = scale
   }

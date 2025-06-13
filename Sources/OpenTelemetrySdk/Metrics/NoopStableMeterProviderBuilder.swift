@@ -46,7 +46,7 @@ public class NoopStableMeterProviderBuilder {
     return self
   }
 
-  public func build() -> DefaultStableMeterProvider  {
+  public func build() -> DefaultStableMeterProvider {
     DefaultStableMeterProvider.instance
   }
 }
