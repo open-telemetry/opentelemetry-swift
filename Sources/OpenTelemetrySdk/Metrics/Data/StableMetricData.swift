@@ -56,29 +56,29 @@ public struct StableMetricData: Equatable, Codable {
 
   public func encode(to encoder: any Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
-    try container.encode(self.resource, forKey: .resource)
+    try container.encode(resource, forKey: .resource)
     try container
-      .encode(self.instrumentationScopeInfo, forKey: .instrumentationScopeInfo)
-    try container.encode(self.name, forKey: .name)
-    try container.encode(self.description, forKey: .description)
-    try container.encode(self.unit, forKey: .unit)
-    try container.encode(self.type, forKey: .type)
-    try container.encode(self.isMonotonic, forKey: .isMonotonic)
+      .encode(instrumentationScopeInfo, forKey: .instrumentationScopeInfo)
+    try container.encode(name, forKey: .name)
+    try container.encode(description, forKey: .description)
+    try container.encode(unit, forKey: .unit)
+    try container.encode(type, forKey: .type)
+    try container.encode(isMonotonic, forKey: .isMonotonic)
 
-    switch self.type {
-      case .Summary:
-      try container.encode(self.data.points as! [SummaryPointData], forKey: .dataPoints)
+    switch type {
+    case .Summary:
+      try container.encode(data.points as! [SummaryPointData], forKey: .dataPoints)
     case .LongGauge, .LongSum:
       try container
-        .encode(self.data.points as! [LongPointData], forKey: .dataPoints)
+        .encode(data.points as! [LongPointData], forKey: .dataPoints)
     case .DoubleGauge, .DoubleSum:
-      try container.encode(self.data.points as! [DoublePointData], forKey: .dataPoints)
+      try container.encode(data.points as! [DoublePointData], forKey: .dataPoints)
     case .Histogram, .ExponentialHistogram:
       try container
-        .encode(self.data.points as! [HistogramPointData], forKey: .dataPoints)
+        .encode(data.points as! [HistogramPointData], forKey: .dataPoints)
     }
 
-    try container.encode(self.data.aggregationTemporality, forKey: .aggregationTemporality)
+    try container.encode(data.aggregationTemporality, forKey: .aggregationTemporality)
   }
 
   public init(from decoder: any Decoder) throws {
@@ -101,16 +101,16 @@ public struct StableMetricData: Equatable, Codable {
       let points = try container.decode([SummaryPointData].self, forKey: .dataPoints)
       data = Data(aggregationTemporality: aggregationTemporality, points: points)
     case .LongGauge, .LongSum:
-     let points = try container.decode(
+      let points = try container.decode(
         [LongPointData].self,
         forKey: .dataPoints
       )
       data = Data(
-          aggregationTemporality: aggregationTemporality,
-          points: points
-        )
+        aggregationTemporality: aggregationTemporality,
+        points: points
+      )
     case .DoubleGauge, .DoubleSum:
-       let points = try container.decode(
+      let points = try container.decode(
         [DoublePointData].self,
         forKey: .dataPoints
       )
@@ -118,9 +118,8 @@ public struct StableMetricData: Equatable, Codable {
         aggregationTemporality: aggregationTemporality,
         points: points
       )
-
     case .Histogram, .ExponentialHistogram:
-       let points = try container.decode(
+      let points = try container.decode(
         [HistogramPointData].self,
         forKey: .dataPoints
       )
@@ -220,5 +219,4 @@ public class StableSummaryData: StableMetricData.Data {
   override init(aggregationTemporality: AggregationTemporality, points: [PointData]) {
     super.init(aggregationTemporality: aggregationTemporality, points: points)
   }
-
 }

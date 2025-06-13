@@ -1,7 +1,7 @@
 //
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 
 import Foundation
 import OpenTelemetryApi
@@ -12,7 +12,7 @@ public class NoopStableMeterProviderBuilder {
   public private(set) var registeredViews = [RegisteredView]()
   public private(set) var exemplarFilter: ExemplarFilter = AlwaysOnFilter()
 
-  internal init() {}
+  init() {}
 
   public func setClock(clock: Clock) -> Self {
     self.clock = clock
@@ -31,11 +31,11 @@ public class NoopStableMeterProviderBuilder {
 
   public func registerMetricReader(reader: StableMetricReader) -> StableMeterProviderBuilder {
     let newBuilder = StableMeterProviderBuilder()
-      .setClock(clock: self.clock)
-      .setResource(resource: self.resource)
+      .setClock(clock: clock)
+      .setResource(resource: resource)
       .registerMetricReader(reader: reader)
-      .setExemplarFilter(exemplarFilter: self.exemplarFilter)
-    for view in self.registeredViews {
+      .setExemplarFilter(exemplarFilter: exemplarFilter)
+    for view in registeredViews {
       _ = newBuilder.registerView(selector: view.selector, view: view.view)
     }
     return newBuilder

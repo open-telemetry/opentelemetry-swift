@@ -32,8 +32,8 @@ class FixedSizedExemplarReservoirTests: XCTestCase {
 
   override func setUp() {
     super.setUp()
-    reservoir = FixedSizedExemplarReservoir(clock: clock, size: 4, reservoirCellSelector: selector, mapAndResetCell: { cell,attributes in cell.getAndResetDouble(pointAttributes: attributes)
- })
+    reservoir = FixedSizedExemplarReservoir(clock: clock, size: 4, reservoirCellSelector: selector, mapAndResetCell: { cell, attributes in cell.getAndResetDouble(pointAttributes: attributes)
+    })
   }
 
   func testOfferLongMeasurement() {
@@ -60,8 +60,7 @@ class FixedSizedExemplarReservoirTests: XCTestCase {
     XCTAssertTrue(reservoir.storage.contains { $0.doubleValue == 4.4 })
   }
 
-
-  func testPartiallyFullReservoir(){
+  func testPartiallyFullReservoir() {
     reservoir.offerDoubleMeasurement(value: 1.1, attributes: attributes)
     let result = reservoir.collectAndReset(attribute: attributes)
     XCTAssertEqual(result.count, 1)

@@ -42,7 +42,7 @@ public class PersistenceMetricExporterDecorator: StableMetricExporter {
   }
 
   public func export(metrics: [StableMetricData])
-  -> ExportResult {
+    -> ExportResult {
     do {
       try persistenceExporter.export(values: metrics)
 
@@ -51,6 +51,7 @@ public class PersistenceMetricExporterDecorator: StableMetricExporter {
       return .failure
     }
   }
+
   public func flush() -> OpenTelemetrySdk.ExportResult {
     persistenceExporter.flush()
     return metricExporter.flush()
@@ -62,6 +63,6 @@ public class PersistenceMetricExporterDecorator: StableMetricExporter {
   }
 
   public func getAggregationTemporality(for instrument: OpenTelemetrySdk.InstrumentType) -> OpenTelemetrySdk.AggregationTemporality {
-   return metricExporter.getAggregationTemporality(for: instrument)
+    return metricExporter.getAggregationTemporality(for: instrument)
   }
 }

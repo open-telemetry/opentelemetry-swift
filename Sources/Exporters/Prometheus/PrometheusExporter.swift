@@ -30,7 +30,7 @@ public class PrometheusExporter: StableMetricExporter {
 
   public init(options: PrometheusExporterOptions, aggregationTemoralitySelector: AggregationTemporalitySelector = AggregationTemporality.alwaysCumulative()) {
     self.options = options
-    self.aggregationTemporalitySelector = aggregationTemoralitySelector
+    aggregationTemporalitySelector = aggregationTemoralitySelector
   }
 
   public func export(metrics: [StableMetricData]) -> ExportResult {

@@ -69,14 +69,14 @@ class PrometheusExporterTests: XCTestCase {
         reader: StablePeriodicMetricReaderBuilder(
           exporter: exporter
         ).build()
-    )
+      )
       .registerView(
         selector: InstrumentSelector
           .builder()
           .setInstrument(type: .histogram).build(),
         view: StableView.builder()
           .withAggregation(
-            aggregation: ExplicitBucketHistogramAggregation(bucketBoundaries:  [5, 10, 25])
+            aggregation: ExplicitBucketHistogramAggregation(bucketBoundaries: [5, 10, 25])
           ).build()
       )
       .registerView(

@@ -7,7 +7,6 @@ import Foundation
 import OpenTelemetryApi
 
 public class HistogramPointData: PointData, Codable {
-
   public var sum: Double
   public var count: UInt64
   public var min: Double
@@ -59,7 +58,7 @@ public class HistogramPointData: PointData, Codable {
     try container.encode(exemplars as! [DoubleExemplarData], forKey: .exemplars)
   }
 
-  required public init(from decoder: any Decoder) throws {
+  public required init(from decoder: any Decoder) throws {
     let values = try decoder.container(keyedBy: CodingKeys.self)
     sum = try values.decode(Double.self, forKey: .sum)
     counts = try values.decode([Int].self, forKey: .counts)
@@ -69,7 +68,7 @@ public class HistogramPointData: PointData, Codable {
     min = try values.decode(Double.self, forKey: .min)
     max = try values.decode(Double.self, forKey: .max)
     boundaries = try values.decode([Double].self, forKey: .boundaries)
-    let attributes = try values.decode(Dictionary<String, AttributeValue>.self, forKey: .attributes)
+    let attributes = try values.decode([String: AttributeValue].self, forKey: .attributes)
     let endEpochNanos = try values.decode(UInt64.self, forKey: .endEpochNanos)
     let exemplars = try values.decode([DoubleExemplarData].self, forKey: .exemplars)
     let startEpochNanos = try values

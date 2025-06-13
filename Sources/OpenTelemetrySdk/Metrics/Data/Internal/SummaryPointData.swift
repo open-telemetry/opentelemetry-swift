@@ -38,10 +38,10 @@ public class SummaryPointData: PointData, Codable {
     try container.encode(exemplars as! [DoubleExemplarData], forKey: .exemplars)
   }
 
-  required public init(from decoder: any Decoder) throws {
+  public required init(from decoder: any Decoder) throws {
     let values = try decoder.container(keyedBy: CodingKeys.self)
-    self.count = try values.decode(UInt64.self, forKey: .count)
-    self.sum = try values.decode(Double.self, forKey: .sum)
+    count = try values.decode(UInt64.self, forKey: .count)
+    sum = try values.decode(Double.self, forKey: .sum)
     self.values = try values.decode([ValueAtQuantile].self, forKey: .values)
     let startEpochNanos = try values.decode(UInt64.self, forKey: .startEpochNanos)
     let endEpochNanos = try values.decode(UInt64.self, forKey: .endEpochNanos)

@@ -18,15 +18,14 @@ public class ExemplarData: Equatable {
   public var spanContext: OpenTelemetryApi.SpanContext?
 
   public func isEqual(to other: ExemplarData) -> Bool {
-    return self.epochNanos == other.epochNanos
-    && self.filteredAttributes == other.filteredAttributes
-    && self.spanContext == other.spanContext
+    return epochNanos == other.epochNanos
+      && filteredAttributes == other.filteredAttributes
+      && spanContext == other.spanContext
   }
 
   public static func == (lhs: ExemplarData, rhs: ExemplarData) -> Bool {
     return type(of: lhs) == type(of: rhs) && lhs.isEqual(to: rhs)
   }
-
 }
 
 public final class DoubleExemplarData: ExemplarData, Codable {
@@ -65,7 +64,7 @@ public final class DoubleExemplarData: ExemplarData, Codable {
     super.init(epochNanos: epochNanos, filteredAttributes: filteredAttributes, spanContext: spanContext)
   }
 
-  public override func isEqual(to other: ExemplarData) -> Bool {
+  override public func isEqual(to other: ExemplarData) -> Bool {
     return value == (other as! DoubleExemplarData).value &&
       super.isEqual(to: other)
   }
@@ -107,7 +106,7 @@ public final class LongExemplarData: ExemplarData, Codable {
     super.init(epochNanos: epochNanos, filteredAttributes: filteredAttributes, spanContext: spanContext)
   }
 
-  public override func isEqual(to other: ExemplarData) -> Bool {
+  override public func isEqual(to other: ExemplarData) -> Bool {
     return value == (other as! LongExemplarData).value &&
       super.isEqual(to: other)
   }

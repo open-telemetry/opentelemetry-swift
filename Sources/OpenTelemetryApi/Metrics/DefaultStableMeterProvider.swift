@@ -6,7 +6,6 @@
 import Foundation
 
 public class DefaultStableMeterProvider: StableMeterProvider {
-
   static let noopMeterBuilder = NoopMeterBuilder()
 
   public static func noop() -> NoopMeterBuilder {
