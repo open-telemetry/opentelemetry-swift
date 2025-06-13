@@ -30,10 +30,10 @@ public class DoublePointData: PointData, Codable {
     try container.encode(exemplars as! [DoubleExemplarData], forKey: .exemplars)
   }
 
-  required public init(from decoder: any Decoder) throws {
+  public required init(from decoder: any Decoder) throws {
     let values = try decoder.container(keyedBy: CodingKeys.self)
     value = try values.decode(Double.self, forKey: .value)
-    let attributes = try values.decode(Dictionary<String, AttributeValue>.self, forKey: .attributes)
+    let attributes = try values.decode([String: AttributeValue].self, forKey: .attributes)
     let endEpochNanos = try values.decode(UInt64.self, forKey: .endEpochNanos)
     let exemplars = try values.decode([DoubleExemplarData].self, forKey: .exemplars)
     let startEpochNanos = try values

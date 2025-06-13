@@ -90,9 +90,9 @@ public class ExponentialHistogramPointData: PointData {
       negativeBuckets = try values
         .decode(EmptyExponentialHistogramBuckets.self, forKey: .negativeBuckets)
     }
-    let attributes = try values.decode(Dictionary<String, AttributeValue>.self, forKey: .attributes)
+    let attributes = try values.decode([String: AttributeValue].self, forKey: .attributes)
     let endEpochNanos = try values.decode(UInt64.self, forKey: .endEpochNanos)
-    let exemplars = try values.decode(Array<DoubleExemplarData>.self, forKey: .exemplars)
+    let exemplars = try values.decode([DoubleExemplarData].self, forKey: .exemplars)
     let startEpochNanos = try values
       .decode(UInt64.self, forKey: .startEpochNanos)
     super.init(
@@ -100,5 +100,6 @@ public class ExponentialHistogramPointData: PointData {
       endEpochNanos: endEpochNanos,
       attributes: attributes,
       exemplars: exemplars
-    )  }
+    )
+  }
 }

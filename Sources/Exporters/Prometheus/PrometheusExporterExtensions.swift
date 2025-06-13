@@ -38,9 +38,9 @@ public enum PrometheusExporterExtensions {
             .writeSum(
               prometheusMetric: prometheusMetric,
               timeStamp: now,
-              labels: labels.mapValues({ value in
+              labels: labels.mapValues { value in
                 value.description
-              }),
+              },
               doubleValue: sum.value
             )
         case .LongSum:
@@ -51,9 +51,9 @@ public enum PrometheusExporterExtensions {
             .writeSum(
               prometheusMetric: prometheusMetric,
               timeStamp: now,
-              labels: labels.mapValues({ value in
+              labels: labels.mapValues { value in
                 value.description
-              }),
+              },
               doubleValue: Double(sum.value)
             )
         case .DoubleGauge:
@@ -66,9 +66,9 @@ public enum PrometheusExporterExtensions {
             .writeSummary(
               prometheusMetric: prometheusMetric,
               timeStamp: now,
-              labels: labels.mapValues({ value in
+              labels: labels.mapValues { value in
                 value.description
-              }),
+              },
               metricName: metric.name,
               sum: sum,
               count: count,
@@ -85,9 +85,9 @@ public enum PrometheusExporterExtensions {
             .writeSummary(
               prometheusMetric: prometheusMetric,
               timeStamp: now,
-              labels: labels.mapValues({ value in
+              labels: labels.mapValues { value in
                 value.description
-              }),
+              },
               metricName: metric.name,
               sum: Double(sum),
               count: count,
@@ -104,9 +104,9 @@ public enum PrometheusExporterExtensions {
             .writeHistogram(
               prometheusMetric: prometheusMetric,
               timeStamp: now,
-              labels: labels.mapValues({ value in
+              labels: labels.mapValues { value in
                 value.description
-              }),
+              },
               metricName: metric.name,
               sum: Double(sum),
               count: Int(count),
@@ -123,9 +123,9 @@ public enum PrometheusExporterExtensions {
             .writeHistogram(
               prometheusMetric: prometheusMetric,
               timeStamp: now,
-              labels: labels.mapValues({ value in
+              labels: labels.mapValues { value in
                 value.description
-              }),
+              },
               metricName: metric.name,
               sum: Double(sum),
               count: Int(count),
@@ -146,9 +146,9 @@ public enum PrometheusExporterExtensions {
             .writeSummary(
               prometheusMetric: prometheusMetric,
               timeStamp: now,
-              labels: labels.mapValues({ value in
+              labels: labels.mapValues { value in
                 value.description
-              }),
+              },
               metricName: metric.name,
               sum: Double(sum),
               count: Int(count),

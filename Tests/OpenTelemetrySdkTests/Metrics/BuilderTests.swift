@@ -45,9 +45,9 @@ class BuilderTests: XCTestCase {
         .counterBuilder(
           name: "longCounter"
         )
-      .setUnit("unit")
-      .setDescription("description")
-      .build()
+        .setUnit("unit")
+        .setDescription("description")
+        .build()
 
     XCTAssertEqual(instrument.instrumentDescriptor.name, "longCounter")
     XCTAssertEqual(instrument.instrumentDescriptor.unit, "unit")
@@ -79,9 +79,9 @@ class BuilderTests: XCTestCase {
         .counterBuilder(
           name: "doubleCounter"
         ).ofDoubles()
-      .setUnit("unit")
-      .setDescription("description")
-      .build()
+        .setUnit("unit")
+        .setDescription("description")
+        .build()
 
     XCTAssertEqual(instrument.instrumentDescriptor.name, "doubleCounter")
     XCTAssertEqual(instrument.instrumentDescriptor.unit, "unit")
@@ -110,9 +110,9 @@ class BuilderTests: XCTestCase {
     let meter = meterProvider.meterBuilder(name: "meter").build()
     let instrument =
       meter.gaugeBuilder(name: "doubleGauge")
-       .setUnit("unit")
-       .setDescription("description")
-       .build()
+        .setUnit("unit")
+        .setDescription("description")
+        .build()
 
     XCTAssertEqual(instrument.instrumentDescriptor.name, "doubleGauge")
     XCTAssertEqual(instrument.instrumentDescriptor.unit, "unit")
@@ -178,9 +178,9 @@ class BuilderTests: XCTestCase {
         .histogramBuilder(
           name: "longHistogram"
         ).ofLongs()
-      .setUnit("unit")
-      .setDescription("description")
-      .build()
+        .setUnit("unit")
+        .setDescription("description")
+        .build()
     XCTAssertEqual(instrument.instrumentDescriptor.name, "longHistogram")
     XCTAssertEqual(instrument.instrumentDescriptor.unit, "unit")
     XCTAssertEqual(instrument.instrumentDescriptor.description, "description")
@@ -203,9 +203,9 @@ class BuilderTests: XCTestCase {
         .histogramBuilder(
           name: "doubleHistogram"
         )
-      .setUnit("unit")
-      .setDescription("description")
-      .build()
+        .setUnit("unit")
+        .setDescription("description")
+        .build()
 
     XCTAssertEqual(instrument.instrumentDescriptor.name, "doubleHistogram")
     XCTAssertEqual(instrument.instrumentDescriptor.unit, "unit")

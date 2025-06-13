@@ -12,16 +12,14 @@ class SwiftCounterMetric: CounterHandler, SwiftMetric {
   var counter: LongCounter
   let labels: [String: AttributeValue]
 
-  required init(
-    name: String,
-    labels: [String: String],
-    meter: any StableMeter
-  ) {
+  required init(name: String,
+                labels: [String: String],
+                meter: any StableMeter) {
     metricName = name
     counter = meter.counterBuilder(name: name).build()
-    self.labels = labels.mapValues({ value in
+    self.labels = labels.mapValues { value in
       return AttributeValue.string(value)
-    })
+    }
   }
 
   func increment(by: Int64) {
@@ -37,16 +35,14 @@ class SwiftGaugeMetric: RecorderHandler, SwiftMetric {
   var counter: DoubleGauge
   let labels: [String: AttributeValue]
 
-  required init(
-    name: String,
-    labels: [String: String],
-    meter: any StableMeter
-  ) {
+  required init(name: String,
+                labels: [String: String],
+                meter: any StableMeter) {
     metricName = name
     counter = meter.gaugeBuilder(name: name).build()
-    self.labels = labels.mapValues({ value in
+    self.labels = labels.mapValues { value in
       return AttributeValue.string(value)
-    })
+    }
   }
 
   func record(_ value: Int64) {
@@ -67,9 +63,9 @@ class SwiftHistogramMetric: RecorderHandler, SwiftMetric {
   required init(name: String, labels: [String: String], meter: any StableMeter) {
     metricName = name
     measure = meter.histogramBuilder(name: name).build()
-    self.labels = labels.mapValues({ value in
+    self.labels = labels.mapValues { value in
       return AttributeValue.string(value)
-    })
+    }
   }
 
   func record(_ value: Int64) {
@@ -90,9 +86,9 @@ class SwiftSummaryMetric: TimerHandler, SwiftMetric {
   required init(name: String, labels: [String: String], meter: any StableMeter) {
     metricName = name
     measure = meter.counterBuilder(name: name).ofDoubles().build()
-    self.labels = labels.mapValues({ value in
+    self.labels = labels.mapValues { value in
       return AttributeValue.string(value)
-    })
+    }
   }
 
   func recordNanoseconds(_ duration: Int64) {

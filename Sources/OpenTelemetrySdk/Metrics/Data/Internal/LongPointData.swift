@@ -30,7 +30,7 @@ public class LongPointData: PointData, Codable {
     try container.encode(exemplars as! [LongExemplarData], forKey: .exemplars)
   }
 
-  required public init(from decoder: any Decoder) throws {
+  public required init(from decoder: any Decoder) throws {
     let values = try decoder.container(keyedBy: CodingKeys.self)
     value = try values.decode(Int.self, forKey: .value)
     let attributes = try values.decode([String: AttributeValue].self, forKey: .attributes)

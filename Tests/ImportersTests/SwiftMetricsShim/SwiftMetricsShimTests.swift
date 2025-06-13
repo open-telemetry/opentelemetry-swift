@@ -23,7 +23,7 @@ class MetricExporterMock: StableMetricExporter {
   }
 
   let onExport: ([StableMetricData]) -> ExportResult
-  init(onExport: @escaping ([StableMetricData])-> ExportResult)  {
+  init(onExport: @escaping ([StableMetricData]) -> ExportResult) {
     self.onExport = onExport
   }
 
@@ -40,9 +40,9 @@ class SwiftMetricsShimTests: XCTestCase {
   var metricsExportExpectation: XCTestExpectation! = nil
   override func setUp() {
     super.setUp()
-    metricsExportExpectation =  expectation(description: "metrics exported")
+    metricsExportExpectation = expectation(description: "metrics exported")
 
-    var reader : StablePeriodicMetricReaderSdk! = nil
+    var reader: StablePeriodicMetricReaderSdk! = nil
     stableMetrics = [StableMetricData]()
     mockExporter = MetricExporterMock { metrics in
       self.stableMetrics = metrics
@@ -63,7 +63,6 @@ class SwiftMetricsShimTests: XCTestCase {
       )
       .registerMetricReader(
         reader: reader
-
       )
       .build()
 
@@ -90,7 +89,7 @@ class SwiftMetricsShimTests: XCTestCase {
 
     waitForExpectations(timeout: 10, handler: nil)
 
-    let metric = self.stableMetrics[0]
+    let metric = stableMetrics[0]
     let data = try XCTUnwrap(metric.data.points.last as? LongPointData)
     XCTAssertEqual(metric.name, "my_counter")
     XCTAssertEqual(metric.type, .LongSum)
@@ -104,7 +103,7 @@ class SwiftMetricsShimTests: XCTestCase {
 
     waitForExpectations(timeout: 10, handler: nil)
 
-    let metric = self.stableMetrics[0]
+    let metric = stableMetrics[0]
     let data = try XCTUnwrap(metric.data.points.last as? LongPointData)
     XCTAssertEqual(metric.name, "my_counter")
     XCTAssertEqual(metric.type, .LongSum)
@@ -120,14 +119,12 @@ class SwiftMetricsShimTests: XCTestCase {
 
     waitForExpectations(timeout: 10, handler: nil)
 
-
-    let metric = self.stableMetrics[0]
+    let metric = stableMetrics[0]
     let data = try XCTUnwrap(metric.data.points.last as? DoublePointData)
     XCTAssertEqual(metric.name, "my_gauge")
     XCTAssertEqual(metric.type, .DoubleGauge)
     XCTAssertEqual(data.value, 100)
     XCTAssertNil(data.attributes["label_one"])
-
   }
 
   // MARK: - Test Metric: Histogram
@@ -138,7 +135,7 @@ class SwiftMetricsShimTests: XCTestCase {
 
     waitForExpectations(timeout: 10, handler: nil)
 
-    let metric = self.stableMetrics[0]
+    let metric = stableMetrics[0]
     let data = try XCTUnwrap(metric.data.points.last as? HistogramPointData)
     XCTAssertEqual(metric.name, "my_histogram")
     XCTAssertEqual(metric.type, .Histogram)
@@ -154,7 +151,7 @@ class SwiftMetricsShimTests: XCTestCase {
 
     waitForExpectations(timeout: 10, handler: nil)
 
-    let metric = self.stableMetrics[0]
+    let metric = stableMetrics[0]
     let data = try XCTUnwrap(metric.data.points.last as? DoublePointData)
     XCTAssertEqual(metric.name, "my_timer")
     XCTAssertEqual(metric.type, .DoubleSum)
@@ -172,7 +169,7 @@ class SwiftMetricsShimTests: XCTestCase {
 
     waitForExpectations(timeout: 10, handler: nil)
 
-    let metric = self.stableMetrics[0]
+    let metric = stableMetrics[0]
     let data = try XCTUnwrap(metric.data.points.last as? LongPointData)
     XCTAssertEqual(metric.name, "my_counter")
     XCTAssertEqual(metric.type, .LongSum)

@@ -51,8 +51,8 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
       metrics.forEach { metric in
         if metric.name == "MyCounter", metric.data.points.count == 1 {
           let pointData: LongPointData = metric.data.points[0] as! LongPointData
-           if pointData.value == 100,
-              pointData.attributes == ["labelKey": AttributeValue.string("labelValue")] {
+          if pointData.value == 100,
+             pointData.attributes == ["labelKey": AttributeValue.string("labelValue")] {
             metricsExportExpectation.fulfill()
           }
         }
@@ -68,8 +68,6 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
                                                                                                       synchronousWrite: true,
                                                                                                       exportPerformance: ExportPerformanceMock.veryQuick))
 
-
-
     let provider = StableMeterProviderSdk.builder().registerMetricReader(
       reader: StablePeriodicMetricReaderBuilder(
         exporter: persistenceMetricExporter
@@ -79,8 +77,8 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
       selector: InstrumentSelector.builder().setInstrument(
         name: ".*"
       ).build(),
-      view: StableView.builder().build()).build()
-
+      view: StableView.builder().build()
+    ).build()
 
     let meter = provider.get(name: "MyMeter")
 
