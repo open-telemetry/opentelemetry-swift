@@ -101,6 +101,6 @@ public enum CommonAdapter {
         instrumentationScope.attributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
       }
     }
-  return instrumentationScope
+    return instrumentationScope
   }
 }

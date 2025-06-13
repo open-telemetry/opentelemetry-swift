@@ -9,17 +9,21 @@ import OpenTelemetryApi
 class SwiftCounterMetric: CounterHandler, SwiftMetric {
   let metricName: String
   let metricType: MetricType = .counter
-  let counter: AnyCounterMetric<Int>
-  let labels: [String: String]
+  var counter: LongCounter
+  let labels: [String: AttributeValue]
 
-  required init(name: String, labels: [String: String], meter: OpenTelemetryApi.Meter) {
+  required init(name: String,
+                labels: [String: String],
+                meter: any StableMeter) {
     metricName = name
-    counter = meter.createIntCounter(name: name, monotonic: true)
-    self.labels = labels
+    counter = meter.counterBuilder(name: name).build()
+    self.labels = labels.mapValues { value in
+      return AttributeValue.string(value)
+    }
   }
 
   func increment(by: Int64) {
-    counter.add(value: Int(by), labels: labels)
+    counter.add(value: Int(by), attributes: labels)
   }
 
   func reset() {}
@@ -28,66 +32,74 @@ class SwiftCounterMetric: CounterHandler, SwiftMetric {
 class SwiftGaugeMetric: RecorderHandler, SwiftMetric {
   let metricName: String
   let metricType: MetricType = .gauge
-  let counter: AnyCounterMetric<Double>
-  let labels: [String: String]
+  var counter: DoubleGauge
+  let labels: [String: AttributeValue]
 
-  required init(name: String, labels: [String: String], meter: OpenTelemetryApi.Meter) {
+  required init(name: String,
+                labels: [String: String],
+                meter: any StableMeter) {
     metricName = name
-    counter = meter.createDoubleCounter(name: name, monotonic: false)
-    self.labels = labels
+    counter = meter.gaugeBuilder(name: name).build()
+    self.labels = labels.mapValues { value in
+      return AttributeValue.string(value)
+    }
   }
 
   func record(_ value: Int64) {
-    counter.add(value: Double(value), labels: labels)
+    counter.record(value: Double(value), attributes: labels)
   }
 
   func record(_ value: Double) {
-    counter.add(value: value, labels: labels)
+    counter.record(value: value, attributes: labels)
   }
 }
 
 class SwiftHistogramMetric: RecorderHandler, SwiftMetric {
   let metricName: String
   let metricType: MetricType = .histogram
-  let measure: AnyMeasureMetric<Double>
-  let labels: [String: String]
+  var measure: DoubleHistogram
+  let labels: [String: AttributeValue]
 
-  required init(name: String, labels: [String: String], meter: OpenTelemetryApi.Meter) {
+  required init(name: String, labels: [String: String], meter: any StableMeter) {
     metricName = name
-    measure = meter.createDoubleMeasure(name: name)
-    self.labels = labels
+    measure = meter.histogramBuilder(name: name).build()
+    self.labels = labels.mapValues { value in
+      return AttributeValue.string(value)
+    }
   }
 
   func record(_ value: Int64) {
-    measure.record(value: Double(value), labels: labels)
+    measure.record(value: Double(value), attributes: labels)
   }
 
   func record(_ value: Double) {
-    measure.record(value: value, labels: labels)
+    measure.record(value: value, attributes: labels)
   }
 }
 
 class SwiftSummaryMetric: TimerHandler, SwiftMetric {
   let metricName: String
   let metricType: MetricType = .summary
-  let measure: AnyMeasureMetric<Double>
-  let labels: [String: String]
+  var measure: DoubleCounter
+  let labels: [String: AttributeValue]
 
-  required init(name: String, labels: [String: String], meter: OpenTelemetryApi.Meter) {
+  required init(name: String, labels: [String: String], meter: any StableMeter) {
     metricName = name
-    measure = meter.createDoubleMeasure(name: name)
-    self.labels = labels
+    measure = meter.counterBuilder(name: name).ofDoubles().build()
+    self.labels = labels.mapValues { value in
+      return AttributeValue.string(value)
+    }
   }
 
   func recordNanoseconds(_ duration: Int64) {
-    measure.record(value: Double(duration), labels: labels)
+    measure.add(value: Double(duration), attributes: labels)
   }
 }
 
 protocol SwiftMetric {
   var metricName: String { get }
   var metricType: MetricType { get }
-  init(name: String, labels: [String: String], meter: OpenTelemetryApi.Meter)
+  init(name: String, labels: [String: String], meter: any StableMeter)
 }
 
 enum MetricType: String {
