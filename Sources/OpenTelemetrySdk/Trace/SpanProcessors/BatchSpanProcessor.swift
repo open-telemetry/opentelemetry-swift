@@ -32,12 +32,22 @@ public struct BatchSpanProcessor: SpanProcessor {
               maxQueueSize: Int = 2048,
               maxExportBatchSize: Int = 512,
               willExportCallback: ((inout [SpanData]) -> Void)? = nil) {
+    assert(scheduleDelay >= 0, "scheduleDelay (\(scheduleDelay)) < 0, fallback to default 5.")
+    assert(exportTimeout >= 0, "exportTimeout (\(exportTimeout)) < 0, fallback to default 30.")
+    assert(maxQueueSize > 0, "maxQueueSize (\(maxQueueSize)) <= 0, fallback to default 2048.")
+    assert(maxExportBatchSize > 0, "maxExportBatchSize (\(maxExportBatchSize)) <= 0, fallback to default 512.")
+
+    let safeScheduleDelay: TimeInterval = scheduleDelay >= 0 ? scheduleDelay : 5
+    let safeExportTimeout: TimeInterval = exportTimeout >= 0 ? exportTimeout : 30
+    let safeMaxQueueSize: Int = maxQueueSize > 0 ? maxQueueSize : 2048
+    let safeMaxExportBatchSize: Int = maxExportBatchSize > 0 ? maxExportBatchSize : 512
+
     worker = BatchWorker(spanExporter: spanExporter,
                          meterProvider: meterProvider,
-                         scheduleDelay: scheduleDelay,
-                         exportTimeout: exportTimeout,
-                         maxQueueSize: maxQueueSize,
-                         maxExportBatchSize: maxExportBatchSize,
+                         scheduleDelay: safeScheduleDelay,
+                         exportTimeout: safeExportTimeout,
+                         maxQueueSize: safeMaxQueueSize,
+                         maxExportBatchSize: safeMaxExportBatchSize,
                          willExportCallback: willExportCallback)
     worker.start()
   }
