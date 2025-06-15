@@ -215,18 +215,6 @@ public class RecordEventsReadableSpan: ReadableSpan {
     return result
   }
 
-  private func adaptEvents() -> [SpanData.Event] {
-    var sourceEvents = [SpanData.Event]()
-    lock.withReaderLock {
-      sourceEvents = events.array
-    }
-    var result = [SpanData.Event]()
-    sourceEvents.forEach {
-      result.append(SpanData.Event(name: $0.name, timestamp: $0.timestamp, attributes: $0.attributes))
-    }
-    return result
-  }
-
   private func lockedAdaptLinks() -> [SpanData.Link] {
     var result = [SpanData.Link]()
     let linksRef = links
