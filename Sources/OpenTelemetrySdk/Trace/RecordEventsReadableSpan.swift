@@ -8,27 +8,48 @@ import OpenTelemetryApi
 
 /// Implementation for the Span class that records trace events.
 public class RecordEventsReadableSpan: ReadableSpan {
-  public var isRecording = true
+  private let lock: ReadWriteLock = .init()
 
-  fileprivate let internalStatusQueue = DispatchQueue(label: "org.opentelemetry.RecordEventsReadableSpan.internalStatusQueue", attributes: .concurrent)
-  /// The displayed name of the span.
+  fileprivate var internalIsRecording = true
+  public var isRecording: Bool {
+    get { lock.withReaderLock { internalIsRecording } }
+    set {
+      lock.withWriterLock {
+        if !internalEnd {
+          internalIsRecording = newValue
+        }
+      }
+    }
+  }
+
   fileprivate var internalName: String
   public var name: String {
-    get {
-      var value = ""
-      internalStatusQueue.sync {
-        value = internalName
-      }
-      return value
-    }
+    get { lock.withReaderLock { internalName } }
     set {
-      internalStatusQueue.sync(flags: .barrier) {
+      lock.withWriterLock {
         if !internalEnd {
           internalName = newValue
         }
       }
     }
   }
+
+  /// The status of the span.
+  fileprivate var internalStatus: Status = .unset
+  public var status: Status {
+    get { lock.withReaderLock { internalStatus } }
+    set {
+      lock.withWriterLock {
+        if !internalEnd {
+          internalStatus = newValue
+        }
+      }
+    }
+  }
+
+  /// True if the span is ended.
+  fileprivate var internalEnd = false
+  public var hasEnded: Bool { lock.withReaderLock { internalEnd } }
 
   // The config used when constructing this Span.
   public private(set) var spanLimits: SpanLimits
@@ -70,25 +91,6 @@ public class RecordEventsReadableSpan: ReadableSpan {
   /// Number of events recorded.
   public private(set) var totalRecordedEvents = 0
 
-  /// The status of the span.
-  fileprivate var internalStatus: Status = .unset
-  public var status: Status {
-    get {
-      var value: Status = .unset
-      internalStatusQueue.sync {
-        value = internalStatus
-      }
-      return value
-    }
-    set {
-      internalStatusQueue.sync(flags: .barrier) {
-        if !internalEnd {
-          internalStatus = newValue
-        }
-      }
-    }
-  }
-
   /// Returns the latency of the Span in seconds. If still active then returns now() - start time.
   public var latency: TimeInterval {
     return endTime?.timeIntervalSince(startTime) ?? clock.now.timeIntervalSince(startTime)
@@ -96,18 +98,6 @@ public class RecordEventsReadableSpan: ReadableSpan {
 
   /// The end time of the span.
   public private(set) var endTime: Date?
-  /// True if the span is ended.
-  fileprivate var internalEnd = false
-  public var hasEnded: Bool {
-    var value = false
-    internalStatusQueue.sync {
-      value = internalEnd
-    }
-    return value
-  }
-
-  private let eventsSyncLock = Lock()
-  private let attributesSyncLock = Lock()
 
   private init(context: SpanContext,
                name: String,
@@ -193,43 +183,39 @@ public class RecordEventsReadableSpan: ReadableSpan {
   }
 
   public func toSpanData() -> SpanData {
-    attributesSyncLock.withLock {
-      return SpanData(traceId: context.traceId,
-                      spanId: context.spanId,
-                      traceFlags: context.traceFlags,
-                      traceState: context.traceState,
-                      parentSpanId: parentContext?.spanId,
-                      resource: resource,
-                      instrumentationScope: instrumentationScopeInfo,
-                      name: name,
-                      kind: kind,
-                      startTime: startTime,
-                      attributes: attributes.attributes,
-                      events: adaptEvents(),
-                      links: adaptLinks(),
-                      status: status,
-                      endTime: endTime ?? clock.now,
-                      hasRemoteParent: hasRemoteParent,
-                      hasEnded: hasEnded,
-                      totalRecordedEvents: getTotalRecordedEvents(),
-                      totalRecordedLinks: totalRecordedLinks,
-                      totalAttributeCount: totalAttributeCount)
+    lock.withReaderLock {
+      SpanData(traceId: context.traceId,
+               spanId: context.spanId,
+               traceFlags: context.traceFlags,
+               traceState: context.traceState,
+               parentSpanId: parentContext?.spanId,
+               resource: resource,
+               instrumentationScope: instrumentationScopeInfo,
+               name: internalName,
+               kind: kind,
+               startTime: startTime,
+               attributes: attributes.attributes,
+               events: lockedAdaptEvents(),
+               links: lockedAdaptLinks(),
+               status: internalStatus,
+               endTime: endTime ?? clock.now,
+               hasRemoteParent: hasRemoteParent,
+               hasEnded: internalEnd,
+               totalRecordedEvents: totalRecordedEvents,
+               totalRecordedLinks: totalRecordedLinks,
+               totalAttributeCount: totalAttributeCount)
     }
   }
 
-  private func adaptEvents() -> [SpanData.Event] {
-    var sourceEvents = [SpanData.Event]()
-    eventsSyncLock.withLockVoid {
-      sourceEvents = events.array
-    }
+  private func lockedAdaptEvents() -> [SpanData.Event] {
     var result = [SpanData.Event]()
-    sourceEvents.forEach {
+    events.array.forEach {
       result.append(SpanData.Event(name: $0.name, timestamp: $0.timestamp, attributes: $0.attributes))
     }
     return result
   }
 
-  private func adaptLinks() -> [SpanData.Link] {
+  private func lockedAdaptLinks() -> [SpanData.Link] {
     var result = [SpanData.Link]()
     let linksRef = links
     linksRef.forEach {
@@ -239,8 +225,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
   }
 
   public func setAttribute(key: String, value: AttributeValue?) {
-    attributesSyncLock.withLockVoid {
-      if !isRecording {
+    lock.withWriterLock {
+      if !internalIsRecording {
         return
       }
 
@@ -285,8 +271,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
   }
 
   private func addEvent(event: SpanData.Event) {
-    eventsSyncLock.withLockVoid {
-      if !isRecording {
+    lock.withWriterLock {
+      if !internalIsRecording {
         return
       }
       events.append(event)
@@ -299,24 +285,19 @@ public class RecordEventsReadableSpan: ReadableSpan {
   }
 
   public func end(time: Date) {
-    let alreadyEnded = internalStatusQueue.sync(flags: .barrier) { () -> Bool in
+    let alreadyEnded = lock.withWriterLock {
       if internalEnd {
         return true
       }
 
       internalEnd = true
+      internalIsRecording = false
       return false
     }
-
     if alreadyEnded {
       return
     }
 
-    eventsSyncLock.withLockVoid {
-      attributesSyncLock.withLockVoid {
-        isRecording = false
-      }
-    }
     endTime = time
     OpenTelemetry.instance.contextProvider.removeContextForSpan(self)
     spanProcessor.onEnd(span: self)
@@ -327,9 +308,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
   }
 
   func getTotalRecordedEvents() -> Int {
-    eventsSyncLock.withLock {
-      totalRecordedEvents
-    }
+    lock.withReaderLock { totalRecordedEvents }
   }
 
   /// For testing purposes
