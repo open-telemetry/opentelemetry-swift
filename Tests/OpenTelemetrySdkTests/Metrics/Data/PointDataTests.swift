@@ -46,13 +46,13 @@ class PointDataTests: XCTestCase {
       startEpochNanos: 1,
       endEpochNanos: 2,
       attributes: ["hello": AttributeValue.string("world")],
-      exemplars: [DoubleExemplarData(value: 1.2, epochNanos: 1, filteredAttributes:["hello": AttributeValue.string("world")] )] ,
+      exemplars: [DoubleExemplarData(value: 1.2, epochNanos: 1, filteredAttributes: ["hello": AttributeValue.string("world")])],
       sum: 22.22,
       count: 15,
       min: 1,
       max: 100,
-      boundaries: [1,3,5,8],
-      counts: [1,1,1,1],
+      boundaries: [1, 3, 5, 8],
+      counts: [1, 1, 1, 1],
       hasMin: true,
       hasMax: true,
     )
@@ -83,8 +83,8 @@ class PointDataTests: XCTestCase {
       ),
       startEpochNanos: 1111,
       epochNanos: 123123123,
-      attributes:  ["hello": AttributeValue.string("world")],
-      exemplars: [DoubleExemplarData(value: 1.2, epochNanos: 1, filteredAttributes:["hello": AttributeValue.string("world")] )]
+      attributes: ["hello": AttributeValue.string("world")],
+      exemplars: [DoubleExemplarData(value: 1.2, epochNanos: 1, filteredAttributes: ["hello": AttributeValue.string("world")])]
     )
 
     let encoder = JSONEncoder()
@@ -101,11 +101,12 @@ class PointDataTests: XCTestCase {
     let origin = LongPointData(
       startEpochNanos: 2,
       endEpochNanos: 1,
-      attributes:["hello": AttributeValue.string("world")] ,
+      attributes: ["hello": AttributeValue.string("world")],
       exemplars: [LongExemplarData(
         value: 1,
         epochNanos: 1,
-        filteredAttributes:["hello": AttributeValue.string("world")])],
+        filteredAttributes: ["hello": AttributeValue.string("world")]
+      )],
       value: 100,
     )
 
@@ -118,15 +119,17 @@ class PointDataTests: XCTestCase {
       XCTFail(error.localizedDescription)
     }
   }
+
   func testDoublePointDataCodable() {
     let origin = DoublePointData(
       startEpochNanos: 2,
       endEpochNanos: 1,
-      attributes:["hello": AttributeValue.string("world")] ,
+      attributes: ["hello": AttributeValue.string("world")],
       exemplars: [DoubleExemplarData(
         value: 1.0,
         epochNanos: 1,
-        filteredAttributes:["hello": AttributeValue.string("world")])],
+        filteredAttributes: ["hello": AttributeValue.string("world")]
+      )],
       value: 100.1,
     )
     let encoder = JSONEncoder()

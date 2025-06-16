@@ -71,7 +71,7 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
       reader: StablePeriodicMetricReaderBuilder(
         exporter: persistenceMetricExporter
       ).setInterval(timeInterval: 1)
-      .build()
+        .build()
     ).registerView(
       selector: InstrumentSelector.builder().setInstrument(
         name: ".*"
@@ -83,7 +83,7 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
 
     let myCounter = meter.counterBuilder(name: "MyCounter").build()
 
-    myCounter .add(value: 100, attributes: ["labelKey": AttributeValue.string("labelValue")])
+    myCounter.add(value: 100, attributes: ["labelKey": AttributeValue.string("labelValue")])
 
     waitForExpectations(timeout: 10, handler: nil)
   }

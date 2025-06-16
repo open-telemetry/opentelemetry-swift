@@ -88,10 +88,9 @@ public class ExponentialHistogramPointData: PointData, Codable {
     } else {
       try container.encode(negativeBuckets, forKey: .negativeBuckets)
     }
-
   }
 
-  required public init(from decoder: any Decoder) throws {
+  public required init(from decoder: any Decoder) throws {
     let values = try decoder.container(keyedBy: CodingKeys.self)
     count = try values.decode(Int.self, forKey: .count)
     scale = try values.decode(Int.self, forKey: .scale)
@@ -116,7 +115,6 @@ public class ExponentialHistogramPointData: PointData, Codable {
         )
     } catch {
       negativeBuckets = EmptyExponentialHistogramBuckets(scale: scale)
-
     }
     let attributes = try values.decode([String: AttributeValue].self, forKey: .attributes)
     let endEpochNanos = try values.decode(UInt64.self, forKey: .endEpochNanos)

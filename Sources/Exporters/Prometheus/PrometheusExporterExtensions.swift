@@ -171,11 +171,11 @@ public enum PrometheusExporterExtensions {
       prometheusMetric.values.append(PrometheusValue(name: metricName + prometheusSummaryCountPostFix, labels: [$0.key: $0.value], value: Double(count)))
       prometheusMetric.values.append(PrometheusValue(name: metricName,
                                                      labels: [$0.key: $0.value,
-                                  prometheusSummaryQuantileLabelName: prometheusSummaryQuantileLabelValueForMin],
+                                                              prometheusSummaryQuantileLabelName: prometheusSummaryQuantileLabelValueForMin],
                                                      value: min))
       prometheusMetric.values.append(PrometheusValue(name: metricName,
                                                      labels: [$0.key: $0.value,
-                                  prometheusSummaryQuantileLabelName: prometheusSummaryQuantileLabelValueForMax],
+                                                              prometheusSummaryQuantileLabelName: prometheusSummaryQuantileLabelValueForMax],
                                                      value: max))
     }
     return prometheusMetric.write(timeStamp: timeStamp)

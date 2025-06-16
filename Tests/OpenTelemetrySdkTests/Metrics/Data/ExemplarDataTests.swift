@@ -18,11 +18,10 @@ class ExemplarDataTests: XCTestCase {
     XCTAssertEqual(exemplarData.filteredAttributes, filteredAttributes)
   }
 
-
   func testDoubleCodable() {
-    let origin: DoubleExemplarData = DoubleExemplarData(value: 12.0,
-      epochNanos: 1,
-      filteredAttributes: ["hello": AttributeValue.string("world")])
+    let origin = DoubleExemplarData(value: 12.0,
+                                    epochNanos: 1,
+                                    filteredAttributes: ["hello": AttributeValue.string("world")])
 
     let encoder = JSONEncoder()
     do {
@@ -36,8 +35,8 @@ class ExemplarDataTests: XCTestCase {
 
   func testLongCodable() {
     let origin = LongExemplarData(value: 12,
-                                                        epochNanos: 1,
-                                                        filteredAttributes: ["hello": AttributeValue.string("world")])
+                                  epochNanos: 1,
+                                  filteredAttributes: ["hello": AttributeValue.string("world")])
 
     let encoder = JSONEncoder()
     do {
@@ -48,7 +47,6 @@ class ExemplarDataTests: XCTestCase {
       XCTFail(error.localizedDescription)
     }
   }
-
 
   func testExemplarDataCreationContext() {
     let epochNanos: UInt64 = 3
