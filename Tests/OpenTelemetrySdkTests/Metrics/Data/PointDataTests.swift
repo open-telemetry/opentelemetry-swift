@@ -54,7 +54,7 @@ class PointDataTests: XCTestCase {
       boundaries: [1, 3, 5, 8],
       counts: [1, 1, 1, 1],
       hasMin: true,
-      hasMax: true,
+      hasMax: true
     )
 
     let encoder = JSONEncoder()
