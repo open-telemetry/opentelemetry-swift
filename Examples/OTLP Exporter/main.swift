@@ -114,7 +114,6 @@ var exampleObserver = meter.gaugeBuilder(
 
   for _ in 1 ... 3000 {
     exampleCounter.add(value: 1, attributes: labels1)
-
     sleep(1)
   }
 
