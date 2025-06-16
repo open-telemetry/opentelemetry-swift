@@ -72,7 +72,7 @@
   createSpans()
 
 // Metrics
-let otlpMetricExporter = StableOtlpHTTPMetricExporter(endpoint: StableOtlpHTTPMetricExporter.defaultStableOtlpHTTPMetricsEndpoint())
+let otlpMetricExporter = StableOtlpHTTPMetricExporter(endpoint: defaultStableOtlpHTTPMetricsEndpoint())
 let meterProvider = StableMeterProviderSdk.builder()
   .registerMetricReader(
     reader: StablePeriodicMetricReaderBuilder(
