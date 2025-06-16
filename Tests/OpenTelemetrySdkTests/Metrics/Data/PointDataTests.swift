@@ -107,7 +107,7 @@ class PointDataTests: XCTestCase {
         epochNanos: 1,
         filteredAttributes: ["hello": AttributeValue.string("world")]
       )],
-      value: 100,
+      value: 100
     )
 
     let encoder = JSONEncoder()
@@ -130,7 +130,7 @@ class PointDataTests: XCTestCase {
         epochNanos: 1,
         filteredAttributes: ["hello": AttributeValue.string("world")]
       )],
-      value: 100.1,
+      value: 100.1
     )
     let encoder = JSONEncoder()
     do {
