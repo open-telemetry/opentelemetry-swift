@@ -47,14 +47,15 @@ public class HistogramPointData: PointData, Codable {
     var container = encoder.container(keyedBy: CodingKeys.self)
     try container.encode(sum, forKey: .sum)
     try container.encode(count, forKey: .count)
+    try container.encode(counts, forKey: .counts)
     try container.encode(min, forKey: .min)
     try container.encode(max, forKey: .max)
     try container.encode(boundaries, forKey: .boundaries)
-    try container.encode(counts, forKey: .counts)
     try container.encode(hasMin, forKey: .hasMin)
     try container.encode(hasMax, forKey: .hasMax)
     try container.encode(attributes, forKey: .attributes)
     try container.encode(endEpochNanos, forKey: .endEpochNanos)
+    try container.encode(startEpochNanos, forKey: .startEpochNanos)
     try container.encode(exemplars as! [DoubleExemplarData], forKey: .exemplars)
   }
 
@@ -71,8 +72,7 @@ public class HistogramPointData: PointData, Codable {
     let attributes = try values.decode([String: AttributeValue].self, forKey: .attributes)
     let endEpochNanos = try values.decode(UInt64.self, forKey: .endEpochNanos)
     let exemplars = try values.decode([DoubleExemplarData].self, forKey: .exemplars)
-    let startEpochNanos = try values
-      .decode(UInt64.self, forKey: .startEpochNanos)
+    let startEpochNanos = try values.decode(UInt64.self, forKey: .startEpochNanos)
     super.init(
       startEpochNanos: startEpochNanos,
       endEpochNanos: endEpochNanos,

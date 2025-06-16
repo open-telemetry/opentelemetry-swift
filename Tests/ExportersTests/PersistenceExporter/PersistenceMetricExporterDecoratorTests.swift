@@ -46,7 +46,6 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
 
   func testWhenExportMetricIsCalled_thenMetricsAreExported() throws {
     let metricsExportExpectation = expectation(description: "metrics exported")
-
     let mockMetricExporter = MetricExporterMock(onExport: { metrics in
       metrics.forEach { metric in
         if metric.name == "MyCounter", metric.data.points.count == 1 {
@@ -71,7 +70,7 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
     let provider = StableMeterProviderSdk.builder().registerMetricReader(
       reader: StablePeriodicMetricReaderBuilder(
         exporter: persistenceMetricExporter
-      )
+      ).setInterval(timeInterval: 1)
       .build()
     ).registerView(
       selector: InstrumentSelector.builder().setInstrument(
@@ -83,8 +82,8 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
     let meter = provider.get(name: "MyMeter")
 
     let myCounter = meter.counterBuilder(name: "MyCounter").build()
-    myCounter
-      .add(value: 100, attributes: ["labelKey": AttributeValue.string("labelValue")])
+
+    myCounter .add(value: 100, attributes: ["labelKey": AttributeValue.string("labelValue")])
 
     waitForExpectations(timeout: 10, handler: nil)
   }

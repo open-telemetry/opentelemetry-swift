@@ -35,6 +35,7 @@ public class SummaryPointData: PointData, Codable {
     try container.encodeIfPresent(values, forKey: .values)
     try container.encode(attributes, forKey: .attributes)
     try container.encode(endEpochNanos, forKey: .endEpochNanos)
+    try container.encode(startEpochNanos, forKey: .startEpochNanos)
     try container.encode(exemplars as! [DoubleExemplarData], forKey: .exemplars)
   }
 

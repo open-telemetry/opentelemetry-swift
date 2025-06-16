@@ -27,6 +27,7 @@ public class DoublePointData: PointData, Codable {
     try container.encode(value, forKey: .value)
     try container.encode(attributes, forKey: .attributes)
     try container.encode(endEpochNanos, forKey: .endEpochNanos)
+    try container.encode(startEpochNanos, forKey: .startEpochNanos)
     try container.encode(exemplars as! [DoubleExemplarData], forKey: .exemplars)
   }
 

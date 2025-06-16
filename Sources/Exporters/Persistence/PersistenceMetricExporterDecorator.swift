@@ -12,9 +12,9 @@ public class PersistenceMetricExporterDecorator: StableMetricExporter {
   struct MetricDecoratedExporter: DecoratedExporter {
     typealias SignalType = StableMetricData
 
-    private let metricExporter: StableMetricExporter
+    private let metricExporter: any StableMetricExporter
 
-    init(metricExporter: StableMetricExporter) {
+    init(metricExporter: any StableMetricExporter) {
       self.metricExporter = metricExporter
     }
 
