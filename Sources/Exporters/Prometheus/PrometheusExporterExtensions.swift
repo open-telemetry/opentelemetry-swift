@@ -8,6 +8,7 @@ import OpenTelemetrySdk
 
 public enum PrometheusExporterExtensions {
   static let prometheusCounterType = "counter"
+  static let prometheusGaugeType = "gauge"
   static let prometheusSummaryType = "summary"
   static let prometheusSummarySumPostFix = "_sum"
   static let prometheusSummaryCountPostFix = "_count"
@@ -58,41 +59,25 @@ public enum PrometheusExporterExtensions {
             )
         case .DoubleGauge:
           guard let gauge = metricData as? DoublePointData else { break }
-          let count = 1
-          let sum = gauge.value
-          let min = gauge.value
-          let max = gauge.value
           output += PrometheusExporterExtensions
-            .writeSummary(
+            .writeGauge(
               prometheusMetric: prometheusMetric,
               timeStamp: now,
               labels: labels.mapValues { value in
                 value.description
               },
-              metricName: metric.name,
-              sum: sum,
-              count: count,
-              min: min,
-              max: max
+              doubleValue: gauge.value
             )
         case .LongGauge:
           guard let gauge = metricData as? LongPointData else { break }
-          let count = 1
-          let sum = gauge.value
-          let min = gauge.value
-          let max = gauge.value
           output += PrometheusExporterExtensions
-            .writeSummary(
+            .writeGauge(
               prometheusMetric: prometheusMetric,
               timeStamp: now,
               labels: labels.mapValues { value in
                 value.description
               },
-              metricName: metric.name,
-              sum: Double(sum),
-              count: count,
-              min: Double(min),
-              max: Double(max)
+              doubleValue: Double(gauge.value)
             )
         case .Histogram:
           guard let histogram = metricData as? HistogramPointData else { break }
@@ -170,6 +155,14 @@ public enum PrometheusExporterExtensions {
     return prometheusMetric.write(timeStamp: timeStamp)
   }
 
+  private static func writeGauge(prometheusMetric: PrometheusMetric, timeStamp: String, labels: [String: String], doubleValue: Double) -> String {
+    var prometheusMetric = prometheusMetric
+    prometheusMetric.type = prometheusGaugeType
+    let metricValue = PrometheusValue(labels: labels, value: doubleValue)
+    prometheusMetric.values.append(metricValue)
+    return prometheusMetric.write(timeStamp: timeStamp)
+  }
+
   private static func writeSummary(prometheusMetric: PrometheusMetric, timeStamp: String, labels: [String: String], metricName: String, sum: Double, count: Int, min: Double, max: Double) -> String {
     var prometheusMetric = prometheusMetric
     prometheusMetric.type = prometheusSummaryType
@@ -178,11 +171,11 @@ public enum PrometheusExporterExtensions {
       prometheusMetric.values.append(PrometheusValue(name: metricName + prometheusSummaryCountPostFix, labels: [$0.key: $0.value], value: Double(count)))
       prometheusMetric.values.append(PrometheusValue(name: metricName,
                                                      labels: [$0.key: $0.value,
-                                                              prometheusSummaryQuantileLabelName: prometheusSummaryQuantileLabelValueForMin],
+                                  prometheusSummaryQuantileLabelName: prometheusSummaryQuantileLabelValueForMin],
                                                      value: min))
       prometheusMetric.values.append(PrometheusValue(name: metricName,
                                                      labels: [$0.key: $0.value,
-                                                              prometheusSummaryQuantileLabelName: prometheusSummaryQuantileLabelValueForMax],
+                                  prometheusSummaryQuantileLabelName: prometheusSummaryQuantileLabelValueForMax],
                                                      value: max))
     }
     return prometheusMetric.write(timeStamp: timeStamp)

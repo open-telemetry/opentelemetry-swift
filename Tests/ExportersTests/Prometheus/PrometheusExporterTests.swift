@@ -63,35 +63,34 @@ class PrometheusExporterTests: XCTestCase {
     metricsHttpServer.stop()
   }
 
-  private func collectMetrics(exporter: StableMetricExporter) -> StableMeterProviderSdk {
+  private func collectMetrics(exporter: any StableMetricExporter) -> StableMeterProviderSdk {
     let meterProvider = StableMeterProviderSdk.builder()
       .registerMetricReader(
         reader: StablePeriodicMetricReaderBuilder(
           exporter: exporter
-        ).build()
+        )
+        .setInterval(timeInterval: 0.01)
+        .build()
       )
       .registerView(
         selector: InstrumentSelector
           .builder()
-          .setInstrument(type: .histogram).build(),
+          .setInstrument(name: "testHistogram")
+          .build(),
         view: StableView.builder()
           .withAggregation(
             aggregation: ExplicitBucketHistogramAggregation(bucketBoundaries: [5, 10, 25])
           ).build()
       )
       .registerView(
-        selector: InstrumentSelector
-          .builder()
-          .setInstrument(name: ".*")
-          .build(),
+        selector: InstrumentSelector.builder().setInstrument(name: "testCounter|testGauge").build(),
         view: StableView.builder().build()
       )
       .build()
-
     let meter = meterProvider.get(name: "scope1")
 
     let testCounter = meter.counterBuilder(name: "testCounter").build()
-    let testMeasure = meter.gaugeBuilder(name: "testMeasure").build()
+    let testGauge = meter.gaugeBuilder(name: "testGauge").build()
     let testHistogram = meter.histogramBuilder(name: "testHistogram").build()
     let labels1 = ["dim1": AttributeValue.string("value1"), "dim2": AttributeValue.string("value1")]
     let labels2 = ["dim1": AttributeValue.string("value2"), "dim2": AttributeValue.string("value2")]
@@ -103,10 +102,7 @@ class PrometheusExporterTests: XCTestCase {
       testCounter.add(value: 200, attributes: labels2)
       testCounter.add(value: 10, attributes: labels2)
 
-      testMeasure.record(value: 10, attributes: labels1)
-      testMeasure.record(value: 100, attributes: labels1)
-      testMeasure.record(value: 5, attributes: labels1)
-      testMeasure.record(value: 500, attributes: labels1)
+      testGauge.record(value: 500, attributes: labels1)
 
       testHistogram.record(value: 8, attributes: labels3)
       testHistogram.record(value: 20, attributes: labels3)
@@ -122,15 +118,8 @@ class PrometheusExporterTests: XCTestCase {
     XCTAssert(responseText.contains("testCounter{dim1=\"value2\",dim2=\"value2\"}") || responseText.contains("testCounter{dim2=\"value2\",dim1=\"value2\"}"))
 
     // Validate measure.
-    XCTAssert(responseText.contains("# TYPE testMeasure summary"))
-    // sum is 6150 = 10 * (10+100+5+500)
-    XCTAssert(responseText.contains("testMeasure_sum{dim1=\"value1\"} 6150"))
-    // count is 10 * 4
-    XCTAssert(responseText.contains("testMeasure_count{dim1=\"value1\"} 40"))
-    // Min is 5
-    XCTAssert(responseText.contains("testMeasure{dim1=\"value1\",quantile=\"0\"} 5") || responseText.contains("testMeasure{quantile=\"0\",dim1=\"value1\"} 5"))
-    // Max is 500
-    XCTAssert(responseText.contains("testMeasure{dim1=\"value1\",quantile=\"1\"} 500") || responseText.contains("testMeasure{quantile=\"1\",dim1=\"value1\"} 500"))
+    XCTAssert(responseText.contains("# TYPE testGauge gauge"))
+    XCTAssert(responseText.contains("testGauge{dim1=\"value1\",dim2=\"value1\"} 500"))
 
     // Validate histogram.
     XCTAssert(responseText.contains("# TYPE testHistogram histogram"))
