@@ -12,7 +12,7 @@ import OpenTelemetrySdk
 @testable import PrometheusExporter
 import XCTest
 
-class PrometheusExporterTests: XCTestCase {
+git aclass PrometheusExporterTests: XCTestCase {
   let metricPushIntervalSec = 0.05
   let waitDuration = 0.1 + 0.1
 
@@ -119,7 +119,7 @@ class PrometheusExporterTests: XCTestCase {
 
     // Validate measure.
     XCTAssert(responseText.contains("# TYPE testGauge gauge"))
-    XCTAssert(responseText.contains("testGauge{dim1=\"value1\",dim2=\"value1\"} 500"))
+    XCTAssert(responseText.contains("testGauge{dim2=\"value1\",dim1=\"value1\"} 500"))
 
     // Validate histogram.
     XCTAssert(responseText.contains("# TYPE testHistogram histogram"))
