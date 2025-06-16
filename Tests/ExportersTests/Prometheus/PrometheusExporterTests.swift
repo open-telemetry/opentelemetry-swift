@@ -12,7 +12,7 @@ import OpenTelemetrySdk
 @testable import PrometheusExporter
 import XCTest
 
-git aclass PrometheusExporterTests: XCTestCase {
+class PrometheusExporterTests: XCTestCase {
   let metricPushIntervalSec = 0.05
   let waitDuration = 0.1 + 0.1
 
