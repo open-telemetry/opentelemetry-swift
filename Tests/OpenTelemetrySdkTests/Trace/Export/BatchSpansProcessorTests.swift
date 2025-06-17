@@ -70,7 +70,8 @@ class BatchSpansProcessorTests: XCTestCase {
     tracerSdkFactory.addSpanProcessor(BatchSpanProcessor(spanExporter: waitingSpanExporter,
                                                          meterProvider: DefaultStableMeterProvider.instance,
                                                          scheduleDelay: maxScheduleDelay,
-                                                         maxQueueSize: 6, maxExportBatchSize: 2)
+                                                         maxQueueSize: 6,
+                                                         maxExportBatchSize: 2)
     )
 
     let span1 = createSampledEndedSpan(spanName: spanName1)
@@ -246,6 +247,48 @@ class BatchSpansProcessorTests: XCTestCase {
     sleep(UInt32(ceil(maxScheduleDelay + 1)))
     // Interestingly, this will always succeed on macOS even if you intentionally create a strong reference cycle between the BatchWorker and the Thread's closure. I assume either calling cancel or the thread exiting releases the closure which breaks the cycle. This is not the case on Linux where the test will fail as expected.
     XCTAssertNil(exporter)
+  }
+
+  func testInitializeWithDefaultParameters() {
+    let processor = BatchSpanProcessor(
+      spanExporter: WaitingSpanExporter(numberToWaitFor: 0),
+      meterProvider: DefaultStableMeterProvider.instance
+    )
+    XCTAssertEqual(processor.safeScheduleDelay, 5)
+    XCTAssertEqual(processor.safeExportTimeout, 30)
+    XCTAssertEqual(processor.safeMaxQueueSize, 2048)
+    XCTAssertEqual(processor.safeMaxExportBatchSize, 512)
+  }
+
+  func testInitializeWithValidParameters() {
+    let processor = BatchSpanProcessor(
+      spanExporter: WaitingSpanExporter(numberToWaitFor: 0),
+      meterProvider: DefaultStableMeterProvider.instance,
+      scheduleDelay: 99,
+      exportTimeout: 99,
+      maxQueueSize: 99,
+      maxExportBatchSize: 99
+    )
+    XCTAssertEqual(processor.safeScheduleDelay, 99)
+    XCTAssertEqual(processor.safeExportTimeout, 99)
+    XCTAssertEqual(processor.safeMaxQueueSize, 99)
+    XCTAssertEqual(processor.safeMaxExportBatchSize, 99)
+  }
+
+  func testInitializeWithInvalidParameters() {
+    let processor = BatchSpanProcessor(
+      spanExporter: WaitingSpanExporter(numberToWaitFor: 0),
+      meterProvider: DefaultStableMeterProvider.instance,
+      scheduleDelay: -99,
+      exportTimeout: -99,
+      maxQueueSize: 0,
+      maxExportBatchSize: 0
+    )
+    // Fallback to default parameters
+    XCTAssertEqual(processor.safeScheduleDelay, 5)
+    XCTAssertEqual(processor.safeExportTimeout, 30)
+    XCTAssertEqual(processor.safeMaxQueueSize, 2048)
+    XCTAssertEqual(processor.safeMaxExportBatchSize, 512)
   }
 }
 
