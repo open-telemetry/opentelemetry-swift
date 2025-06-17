@@ -25,6 +25,11 @@ public struct BatchSpanProcessor: SpanProcessor {
     String(describing: Self.self)
   }
 
+  let safeScheduleDelay: TimeInterval
+  let safeExportTimeout: TimeInterval
+  let safeMaxQueueSize: Int
+  let safeMaxExportBatchSize: Int
+
   public init(spanExporter: SpanExporter,
               meterProvider: (any StableMeterProvider)? = nil,
               scheduleDelay: TimeInterval = 5,
@@ -32,15 +37,30 @@ public struct BatchSpanProcessor: SpanProcessor {
               maxQueueSize: Int = 2048,
               maxExportBatchSize: Int = 512,
               willExportCallback: ((inout [SpanData]) -> Void)? = nil) {
-    assert(scheduleDelay >= 0, "scheduleDelay (\(scheduleDelay)) < 0, fallback to default 5.")
-    assert(exportTimeout >= 0, "exportTimeout (\(exportTimeout)) < 0, fallback to default 30.")
-    assert(maxQueueSize > 0, "maxQueueSize (\(maxQueueSize)) <= 0, fallback to default 2048.")
-    assert(maxExportBatchSize > 0, "maxExportBatchSize (\(maxExportBatchSize)) <= 0, fallback to default 512.")
-
-    let safeScheduleDelay: TimeInterval = scheduleDelay >= 0 ? scheduleDelay : 5
-    let safeExportTimeout: TimeInterval = exportTimeout >= 0 ? exportTimeout : 30
-    let safeMaxQueueSize: Int = maxQueueSize > 0 ? maxQueueSize : 2048
-    let safeMaxExportBatchSize: Int = maxExportBatchSize > 0 ? maxExportBatchSize : 512
+    if scheduleDelay >= 0 {
+      safeScheduleDelay = scheduleDelay
+    } else {
+      print("scheduleDelay (\(scheduleDelay)) < 0, fallback to default 5.")
+      safeScheduleDelay = 5
+    }
+    if exportTimeout >= 0 {
+      safeExportTimeout = exportTimeout
+    } else {
+      print("exportTimeout (\(exportTimeout)) < 0, fallback to default 30.")
+      safeExportTimeout = 30
+    }
+    if maxQueueSize > 0 {
+      safeMaxQueueSize = maxQueueSize
+    } else {
+      print("maxQueueSize (\(maxQueueSize)) <= 0, fallback to default 2048.")
+      safeMaxQueueSize = 2048
+    }
+    if maxExportBatchSize > 0 {
+      safeMaxExportBatchSize = maxExportBatchSize
+    } else {
+      print("maxExportBatchSize (\(maxExportBatchSize)) <= 0, fallback to default 512.")
+      safeMaxExportBatchSize = 512
+    }
 
     worker = BatchWorker(spanExporter: spanExporter,
                          meterProvider: meterProvider,
