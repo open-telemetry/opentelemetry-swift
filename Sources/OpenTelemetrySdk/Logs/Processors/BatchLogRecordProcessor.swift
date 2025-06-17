@@ -9,8 +9,48 @@ import OpenTelemetryApi
 public class BatchLogRecordProcessor: LogRecordProcessor {
   fileprivate var worker: BatchWorker
 
-  public init(logRecordExporter: LogRecordExporter, scheduleDelay: TimeInterval = 5, exportTimeout: TimeInterval = 30, maxQueueSize: Int = 2048, maxExportBatchSize: Int = 512, willExportCallback: ((inout [ReadableLogRecord]) -> Void)? = nil) {
-    worker = BatchWorker(logRecordExporter: logRecordExporter, scheduleDelay: scheduleDelay, exportTimeout: exportTimeout, maxQueueSize: maxQueueSize, maxExportBatchSize: maxExportBatchSize, willExportCallback: willExportCallback)
+  let safeScheduleDelay: TimeInterval
+  let safeExportTimeout: TimeInterval
+  let safeMaxQueueSize: Int
+  let safeMaxExportBatchSize: Int
+
+  public init(logRecordExporter: LogRecordExporter,
+              scheduleDelay: TimeInterval = 5,
+              exportTimeout: TimeInterval = 30,
+              maxQueueSize: Int = 2048,
+              maxExportBatchSize: Int = 512,
+              willExportCallback: ((inout [ReadableLogRecord]) -> Void)? = nil) {
+    if scheduleDelay >= 0 {
+      safeScheduleDelay = scheduleDelay
+    } else {
+      print("scheduleDelay (\(scheduleDelay)) < 0, fallback to default 5.")
+      safeScheduleDelay = 5
+    }
+    if exportTimeout >= 0 {
+      safeExportTimeout = exportTimeout
+    } else {
+      print("exportTimeout (\(exportTimeout)) < 0, fallback to default 30.")
+      safeExportTimeout = 30
+    }
+    if maxQueueSize > 0 {
+      safeMaxQueueSize = maxQueueSize
+    } else {
+      print("maxQueueSize (\(maxQueueSize)) <= 0, fallback to default 2048.")
+      safeMaxQueueSize = 2048
+    }
+    if maxExportBatchSize > 0 {
+      safeMaxExportBatchSize = maxExportBatchSize
+    } else {
+      print("maxExportBatchSize (\(maxExportBatchSize)) <= 0, fallback to default 512.")
+      safeMaxExportBatchSize = 512
+    }
+
+    worker = BatchWorker(logRecordExporter: logRecordExporter,
+                         scheduleDelay: safeScheduleDelay,
+                         exportTimeout: safeExportTimeout,
+                         maxQueueSize: safeMaxQueueSize,
+                         maxExportBatchSize: safeMaxExportBatchSize,
+                         willExportCallback: willExportCallback)
 
     worker.start()
   }
