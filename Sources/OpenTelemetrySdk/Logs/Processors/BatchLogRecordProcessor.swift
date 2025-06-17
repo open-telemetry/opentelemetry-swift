@@ -45,7 +45,12 @@ public class BatchLogRecordProcessor: LogRecordProcessor {
       safeMaxExportBatchSize = 512
     }
 
-    worker = BatchWorker(logRecordExporter: logRecordExporter, scheduleDelay: scheduleDelay, exportTimeout: exportTimeout, maxQueueSize: maxQueueSize, maxExportBatchSize: maxExportBatchSize, willExportCallback: willExportCallback)
+    worker = BatchWorker(logRecordExporter: logRecordExporter,
+                         scheduleDelay: safeScheduleDelay,
+                         exportTimeout: safeExportTimeout,
+                         maxQueueSize: safeMaxQueueSize,
+                         maxExportBatchSize: safeMaxExportBatchSize,
+                         willExportCallback: willExportCallback)
 
     worker.start()
   }
