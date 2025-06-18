@@ -55,15 +55,15 @@ public class ExporterMetrics {
   }
 
   public func addSeen(value: Int) {
-    seen?.add(value: value, attribute: seenAttrs)
+    seen?.add(value: value, attributes: seenAttrs)
   }
 
   public func addSuccess(value: Int) {
-    exported?.add(value: value, attribute: successAttrs)
+    exported?.add(value: value, attributes: successAttrs)
   }
 
   public func addFailed(value: Int) {
-    exported?.add(value: value, attribute: failedAttrs)
+    exported?.add(value: value, attributes: failedAttrs)
   }
 
   // MARK: - Private functions

@@ -18,7 +18,6 @@ class ComponentRegistryTests: XCTestCase {
     }
   }
 
-
   func testComponentRegistryWithAttributes() {
     let registry = ComponentRegistry<StringBox> { instrumentationScope in
       return StringBox(instrumentationScope.name + (instrumentationScope.version ?? "") + (instrumentationScope.schemaUrl ?? ""))
@@ -29,10 +28,10 @@ class ComponentRegistryTests: XCTestCase {
     let item3 = registry.get(name: "one", version: "1", schemaUrl: "https://opentelemetry.io/schemas/1.15.0")
     let item4 = registry.get(name: "one", schemaUrl: "https://opentelemetry.io/schemas/1.15.0")
 
-    XCTAssertIdentical(item1, registry.get(name: "one", attributes:["a" : AttributeValue.string("b")]))
+    XCTAssertIdentical(item1, registry.get(name: "one", attributes: ["a": AttributeValue.string("b")]))
     XCTAssertIdentical(item2,
                        registry
-      .get(name: "one", version: "1", attributes:["a" : AttributeValue.string("b")]))
+                         .get(name: "one", version: "1", attributes: ["a": AttributeValue.string("b")]))
     XCTAssertIdentical(
       item3,
       registry
@@ -40,13 +39,12 @@ class ComponentRegistryTests: XCTestCase {
           name: "one",
           version: "1",
           schemaUrl: "https://opentelemetry.io/schemas/1.15.0",
-          attributes:["a" : AttributeValue.string("b")]
+          attributes: ["a": AttributeValue.string("b")]
         )
     )
     XCTAssertIdentical(item4, registry.get(name: "one",
                                            schemaUrl: "https://opentelemetry.io/schemas/1.15.0",
-                                           attributes:["a" : AttributeValue.string("b")]))
-
+                                           attributes: ["a": AttributeValue.string("b")]))
   }
 
   func testComponentRegistry() {

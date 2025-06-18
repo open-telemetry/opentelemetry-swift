@@ -8,26 +8,27 @@ import OpenTelemetrySdk
 
 // a persistence exporter decorator for `Metric`.
 // specialization of `PersistenceExporterDecorator` for `MetricExporter`.
-public class PersistenceMetricExporterDecorator: MetricExporter {
+public class PersistenceMetricExporterDecorator: StableMetricExporter {
   struct MetricDecoratedExporter: DecoratedExporter {
-    typealias SignalType = Metric
+    typealias SignalType = StableMetricData
 
-    private let metricExporter: MetricExporter
+    private let metricExporter: any StableMetricExporter
 
-    init(metricExporter: MetricExporter) {
+    init(metricExporter: any StableMetricExporter) {
       self.metricExporter = metricExporter
     }
 
-    func export(values: [Metric]) -> DataExportStatus {
-      let result = metricExporter.export(metrics: values, shouldCancel: nil)
-      return DataExportStatus(needsRetry: result == .failureRetryable)
+    func export(values: [StableMetricData]) -> DataExportStatus {
+      let result = metricExporter.export(metrics: values)
+      return DataExportStatus(needsRetry: result == .failure)
     }
   }
 
+  private let metricExporter: StableMetricExporter
   private let persistenceExporter:
     PersistenceExporterDecorator<MetricDecoratedExporter>
 
-  public init(metricExporter: MetricExporter,
+  public init(metricExporter: StableMetricExporter,
               storageURL: URL,
               exportCondition: @escaping () -> Bool = { true },
               performancePreset: PersistencePerformancePreset = .default) throws {
@@ -37,16 +38,31 @@ public class PersistenceMetricExporterDecorator: MetricExporter {
       storageURL: storageURL,
       exportCondition: exportCondition,
       performancePreset: performancePreset)
+    self.metricExporter = metricExporter
   }
 
-  public func export(metrics: [Metric], shouldCancel: (() -> Bool)?)
-    -> MetricExporterResultCode {
+  public func export(metrics: [StableMetricData])
+    -> ExportResult {
     do {
       try persistenceExporter.export(values: metrics)
 
       return .success
     } catch {
-      return .failureNotRetryable
+      return .failure
     }
+  }
+
+  public func flush() -> OpenTelemetrySdk.ExportResult {
+    persistenceExporter.flush()
+    return metricExporter.flush()
+  }
+
+  public func shutdown() -> OpenTelemetrySdk.ExportResult {
+    persistenceExporter.flush()
+    return metricExporter.shutdown()
+  }
+
+  public func getAggregationTemporality(for instrument: OpenTelemetrySdk.InstrumentType) -> OpenTelemetrySdk.AggregationTemporality {
+    return metricExporter.getAggregationTemporality(for: instrument)
   }
 }
