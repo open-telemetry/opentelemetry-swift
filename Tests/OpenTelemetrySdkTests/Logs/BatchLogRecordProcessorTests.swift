@@ -121,6 +121,43 @@ class BatchLogRecordProcessorTests: XCTestCase {
     // Interestingly, this will always succeed on macOS even if you intentionally create a strong reference cycle between the BatchWorker and the Thread's closure. I assume either calling cancel or the thread exiting releases the closure which breaks the cycle. This is not the case on Linux where the test will fail as expected.
     XCTAssertNil(exporter)
   }
+
+  func testInitializeWithDefaultParameters() {
+    let processor = BatchLogRecordProcessor(logRecordExporter: WaitingLogRecordExporter(numberToWaitFor: 0))
+    XCTAssertEqual(processor.safeScheduleDelay, 5)
+    XCTAssertEqual(processor.safeExportTimeout, 30)
+    XCTAssertEqual(processor.safeMaxQueueSize, 2048)
+    XCTAssertEqual(processor.safeMaxExportBatchSize, 512)
+  }
+
+  func testInitializeWithValidParameters() {
+    let processor = BatchLogRecordProcessor(
+      logRecordExporter: WaitingLogRecordExporter(numberToWaitFor: 0),
+      scheduleDelay: 99,
+      exportTimeout: 99,
+      maxQueueSize: 99,
+      maxExportBatchSize: 99
+    )
+    XCTAssertEqual(processor.safeScheduleDelay, 99)
+    XCTAssertEqual(processor.safeExportTimeout, 99)
+    XCTAssertEqual(processor.safeMaxQueueSize, 99)
+    XCTAssertEqual(processor.safeMaxExportBatchSize, 99)
+  }
+
+  func testInitializeWithInvalidParameters() {
+    let processor = BatchLogRecordProcessor(
+      logRecordExporter: WaitingLogRecordExporter(numberToWaitFor: 0),
+      scheduleDelay: -99,
+      exportTimeout: -99,
+      maxQueueSize: 0,
+      maxExportBatchSize: 0
+    )
+    // Fallback to default parameters
+    XCTAssertEqual(processor.safeScheduleDelay, 5)
+    XCTAssertEqual(processor.safeExportTimeout, 30)
+    XCTAssertEqual(processor.safeMaxQueueSize, 2048)
+    XCTAssertEqual(processor.safeMaxExportBatchSize, 512)
+  }
 }
 
 class BlockingLogRecordExporter: LogRecordExporter {

@@ -23,7 +23,7 @@ class SpanAdapterTests: XCTestCase {
     spanContext = SpanContext.create(traceId: traceId, spanId: spanId, traceFlags: TraceFlags(), traceState: tracestate)
   }
 
-  func testToPRotoResourceSpans() {
+  func testToProtoResourceSpans() {
     let libInfo = InstrumentationScopeInfo(name: "testScope", version: "semver:0.0.1")
 
     let event = RecordEventsReadableSpan.startSpan(context: spanContext, name: "GET /api/endpoint", instrumentationScopeInfo: libInfo, kind: SpanKind.server, parentContext: nil, hasRemoteParent: false, spanLimits: SpanLimits(), spanProcessor: NoopSpanProcessor(), clock: MillisClock(), resource: Resource(), attributes: AttributesDictionary(capacity: 0), links: [], totalRecordedLinks: 0, startTime: Date())
