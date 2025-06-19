@@ -43,8 +43,6 @@ public class URLSessionInstrumentation {
   ]
   .compactMap { NSClassFromString($0) }
 
-  public private(set) var tracer: Tracer
-
   public var startedRequestSpans: [Span] {
     var spans = [Span]()
     URLSessionLogger.runningSpansQueue.sync {
@@ -55,7 +53,6 @@ public class URLSessionInstrumentation {
 
   public init(configuration: URLSessionInstrumentationConfiguration) {
     self.configuration = configuration
-    tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "NSURLSession", instrumentationVersion: "0.0.1")
     injectInNSURLClasses()
   }
 
@@ -733,8 +730,8 @@ public class URLSessionInstrumentation {
           task.setValue(instrumentedRequest, forKey: "currentRequest")
         }
         self.setIdKey(value: taskId, for: task)
-        
-        if task.delegate == nil, task.state != .running {
+
+        if task.delegate == nil, task.state != .running, (task.value(forKey: "session") as? URLSession)?.delegate == nil {
           task.delegate = FakeDelegate()
         }
       }

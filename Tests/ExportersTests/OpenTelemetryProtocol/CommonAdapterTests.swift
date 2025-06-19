@@ -49,9 +49,18 @@ class CommonAdapterTests: XCTestCase {
   }
 
   func testToProtoInstrumentationScopeNoVersion() {
-    let instrumentationScope = CommonAdapter.toProtoInstrumentationScope(instrumentationScopeInfo: InstrumentationScopeInfo(name: "name"))
+    let instrumentationScope = CommonAdapter.toProtoInstrumentationScope(
+      instrumentationScopeInfo: InstrumentationScopeInfo(
+        name: "name",
+        version: "1.2.0",
+        attributes: ["myAttribute": AttributeValue.string("myValue")]
+      )
+    )
     XCTAssertEqual(instrumentationScope.name, "name")
-    XCTAssertEqual(instrumentationScope.version, "")
+    XCTAssertEqual(instrumentationScope.version, "1.2.0")
+    XCTAssertEqual(instrumentationScope.attributes.count, 1)
+    XCTAssertEqual(instrumentationScope.attributes.first?.value.stringValue, "myValue")
+    XCTAssertEqual(instrumentationScope.attributes.first?.key, "myAttribute")
   }
 
   func testToProtoAnyValue() {

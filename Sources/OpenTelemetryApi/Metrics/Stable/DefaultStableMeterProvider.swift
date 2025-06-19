@@ -6,35 +6,40 @@
 import Foundation
 
 public class DefaultStableMeterProvider: StableMeterProvider {
+  
   static let noopMeterBuilder = NoopMeterBuilder()
 
-  public static func noop() -> MeterBuilder {
+  public static func noop() -> NoopMeterBuilder {
     noopMeterBuilder
   }
 
-  public func get(name: String) -> StableMeter {
-    DefaultStableMeter()
+  public func get(name: String) -> DefaultStableMeter {
+    NoopMeterBuilder.noopMeter
   }
 
-  public func meterBuilder(name: String) -> MeterBuilder {
+  public func meterBuilder(name: String) ->  NoopMeterBuilder {
     Self.noop()
   }
 
-  class NoopMeterBuilder: MeterBuilder {
+  public class NoopMeterBuilder: MeterBuilder {
     static let noopMeter = DefaultStableMeter()
 
-    func setSchemaUrl(schemaUrl: String) -> Self {
+    public func setSchemaUrl(schemaUrl: String) -> Self {
       self
     }
 
-    func setInstrumentationVersion(instrumentationVersion: String) -> Self {
+    public func setInstrumentationVersion(instrumentationVersion: String) -> Self {
       self
     }
 
-    func build() -> StableMeter {
+    public func setAttributes(attributes: [String: AttributeValue]) -> Self {
+      self
+    }
+
+    public func build() -> DefaultStableMeter {
       Self.noopMeter
     }
   }
 
-  public static var instance: StableMeterProvider = DefaultStableMeterProvider()
+  public static var instance = DefaultStableMeterProvider()
 }

@@ -5,6 +5,7 @@
 
 import Foundation
 @testable import OpenTelemetrySdk
+import OpenTelemetryApi
 import XCTest
 
 class ComponentRegistryTests: XCTestCase {
@@ -15,6 +16,37 @@ class ComponentRegistryTests: XCTestCase {
     init(_ value: String) {
       self.value = value
     }
+  }
+
+
+  func testComponentRegistryWithAttributes() {
+    let registry = ComponentRegistry<StringBox> { instrumentationScope in
+      return StringBox(instrumentationScope.name + (instrumentationScope.version ?? "") + (instrumentationScope.schemaUrl ?? ""))
+    }
+
+    let item1 = registry.get(name: "one")
+    let item2 = registry.get(name: "one", version: "1")
+    let item3 = registry.get(name: "one", version: "1", schemaUrl: "https://opentelemetry.io/schemas/1.15.0")
+    let item4 = registry.get(name: "one", schemaUrl: "https://opentelemetry.io/schemas/1.15.0")
+
+    XCTAssertIdentical(item1, registry.get(name: "one", attributes:["a" : AttributeValue.string("b")]))
+    XCTAssertIdentical(item2,
+                       registry
+      .get(name: "one", version: "1", attributes:["a" : AttributeValue.string("b")]))
+    XCTAssertIdentical(
+      item3,
+      registry
+        .get(
+          name: "one",
+          version: "1",
+          schemaUrl: "https://opentelemetry.io/schemas/1.15.0",
+          attributes:["a" : AttributeValue.string("b")]
+        )
+    )
+    XCTAssertIdentical(item4, registry.get(name: "one",
+                                           schemaUrl: "https://opentelemetry.io/schemas/1.15.0",
+                                           attributes:["a" : AttributeValue.string("b")]))
+
   }
 
   func testComponentRegistry() {

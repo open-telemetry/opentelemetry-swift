@@ -18,7 +18,7 @@ public class ExporterMetrics {
   public static let ATTRIBUTE_KEY_TYPE: String = "type"
   public static let ATTRIBUTE_KEY_SUCCESS: String = "success"
 
-  private let meterProvider: StableMeterProvider
+  private let meterProvider: any StableMeterProvider
   private let exporterName: String
   private let transportName: String
   private var seenAttrs: [String: AttributeValue] = [:]
@@ -34,7 +34,7 @@ public class ExporterMetrics {
   ///    - exporterName: Could be `span`, `log` etc
   ///    - transportName: Kind of exporter defined by type `TransporterType`
   public init(type: String,
-              meterProvider: StableMeterProvider,
+              meterProvider: any StableMeterProvider,
               exporterName: String,
               transportName: TransporterType) {
     self.meterProvider = meterProvider
@@ -72,14 +72,14 @@ public class ExporterMetrics {
    * Create an instance for recording exporter metrics under the meter
    * "io.opentelemetry.exporters." + exporterName + "-transporterType".
    **/
-  private var meter: StableMeter {
+  private var meter: any StableMeter {
     meterProvider.get(name: "io.opentelemetry.exporters.\(exporterName)-\(transportName)")
   }
 
   // MARK: - Static function
 
   public static func makeExporterMetric(type: String,
-                                        meterProvider: StableMeterProvider,
+                                        meterProvider: any StableMeterProvider,
                                         exporterName: String,
                                         transportName: TransporterType) -> ExporterMetrics {
     ExporterMetrics(type: type,

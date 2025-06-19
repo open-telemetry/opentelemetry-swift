@@ -23,7 +23,12 @@ public class LongHistogramMeterBuilderSdk: InstrumentBuilder, LongHistogramBuild
     )
   }
 
-  public func build() -> OpenTelemetryApi.LongHistogram {
+  public func setExplicitBucketBoundariesAdvice(_ boundaries: [Double]) -> Self {
+    self.explicitBucketBoundariesAdvice = boundaries
+    return self
+  }
+
+  public func build() -> LongHistogramMeterSdk {
     buildSynchronousInstrument(LongHistogramMeterSdk.init)
   }
 }

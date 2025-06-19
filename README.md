@@ -95,6 +95,10 @@ Metrics is implemented using an outdated spec, is fully functional but will chan
 * `SDKResourceExtension`
 * `SignPostIntegration`
 
+### Third-party exporters
+In addition to the specified OpenTelemetry exporters, some third-party exporters have been contributed and can be found in the following repos: 
+* [Grafana/faro](https://github.com/grafana/faro-otel-swift-exporter)
+
 ## Examples
 
 The package includes some example projects with basic functionality:

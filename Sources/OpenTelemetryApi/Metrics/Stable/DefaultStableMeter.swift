@@ -5,186 +5,204 @@
 
 import Foundation
 
+public class NoopObservableLongMeasurement: ObservableLongMeasurement {
+  public func record(value: Int) {}
+  public func record(value: Int, attributes: [String : AttributeValue]) {}
+}
+
+public class NoopObservableDoubleMeasurement: ObservableDoubleMeasurement {
+  public func record(value: Double) {}
+  public func record(value: Double, attributes: [String : AttributeValue]) {}
+}
+
 public class DefaultStableMeter: StableMeter {
   init() {}
 
-  public func counterBuilder(name: String) -> LongCounterBuilder {
+  public func counterBuilder(name: String) -> NoopLongCounterBuilder {
     NoopLongCounterBuilder()
   }
 
-  public func upDownCounterBuilder(name: String) -> LongUpDownCounterBuilder {
+  public func upDownCounterBuilder(name: String) -> NoopLongUpDownCounterBuilder {
     NoopLongUpDownCounterBuilder()
   }
 
-  public func histogramBuilder(name: String) -> DoubleHistogramBuilder {
+  public func histogramBuilder(name: String) -> NoopDoubleHistogramBuilder {
     NoopDoubleHistogramBuilder()
   }
 
-  public func gaugeBuilder(name: String) -> DoubleGaugeBuilder {
+  public func gaugeBuilder(name: String) -> NoopDoubleGaugeBuilder {
     NoopDoubleGaugeBuilder()
   }
 
-  private class NoopLongUpDownCounterBuilder: LongUpDownCounterBuilder {
-    func ofDoubles() -> DoubleUpDownCounterBuilder {
+  public class NoopLongUpDownCounterBuilder: LongUpDownCounterBuilder {
+    public func ofDoubles() -> NoopDoubleUpDownCounterBuilder {
       NoopDoubleUpDownCounterBuilder()
     }
 
-    func build() -> LongUpDownCounter {
+    public func build() -> NoopLongUpDownCounter {
       NoopLongUpDownCounter()
     }
 
-    func buildWithCallback(_ callback: @escaping (ObservableLongMeasurement) -> Void) -> ObservableLongUpDownCounter {
+    public func buildWithCallback(_ callback: @escaping (NoopObservableLongMeasurement) -> Void) -> NoopObservableLongUpDownCounter {
       NoopObservableLongUpDownCounter()
     }
   }
 
-  private class NoopDoubleHistogramBuilder: DoubleHistogramBuilder {
-    func ofLongs() -> LongHistogramBuilder {
+  public class NoopDoubleHistogramBuilder: DoubleHistogramBuilder {
+    public func setExplicitBucketBoundariesAdvice(_ boundaries: [Double]) -> Self {
+      return self
+    }
+    
+    public func ofLongs() -> NoopLongHistogramBuilder {
       NoopLongHistogramBuilder()
     }
 
-    func build() -> DoubleHistogram {
+    public func build() -> NoopDoubleHistogram {
       NoopDoubleHistogram()
     }
   }
 
-  private class NoopDoubleGaugeBuilder: DoubleGaugeBuilder {
-    func ofLongs() -> LongGaugeBuilder {
+  public class NoopDoubleGaugeBuilder: DoubleGaugeBuilder {
+    public func ofLongs() -> NoopLongGaugeBuilder {
       NoopLongGaugeBuilder()
     }
 
-    func build() -> DoubleGauge {
+    public func build() -> NoopDoubleGauge {
       NoopDoubleGauge()
     }
 
-    func buildWithCallback(_ callback: @escaping (ObservableDoubleMeasurement) -> Void) -> ObservableDoubleGauge {
+    public func buildWithCallback(_ callback: @escaping (NoopObservableDoubleMeasurement) -> Void) -> NoopObservableDoubleGauge {
       NoopObservableDoubleGauge()
     }
   }
 
-  private class NoopLongGaugeBuilder: LongGaugeBuilder {
-    func build() -> LongGauge {
+  public class NoopLongGaugeBuilder: LongGaugeBuilder {
+    public func build() -> NoopLongGauge {
       NoopLongGauge()
     }
 
-    func buildWithCallback(_ callback: @escaping (ObservableLongMeasurement) -> Void) -> ObservableLongGauge {
+    public func buildWithCallback(_ callback: @escaping (NoopObservableLongMeasurement) -> Void) -> NoopObservableLongGauge {
       NoopObservableLongGauge()
     }
   }
 
-  private struct NoopDoubleGauge: DoubleGauge {
-    func record(value: Double) {}
+  public struct NoopDoubleGauge: DoubleGauge {
+    public func record(value: Double) {}
 
-    func record(value: Double, attributes: [String: AttributeValue]) {}
+    public func record(value: Double, attributes: [String: AttributeValue]) {}
   }
 
-  private struct NoopLongGauge: LongGauge {
-    func record(value: Int) {}
+  public struct NoopLongGauge: LongGauge {
+    public func record(value: Int) {}
 
-    func record(value: Int, attributes: [String: AttributeValue]) {}
+    public func record(value: Int, attributes: [String: AttributeValue]) {}
   }
 
-  private struct NoopObservableLongGauge: ObservableLongGauge {
-    func close() {}
+  public struct NoopObservableLongGauge: ObservableLongGauge {
+    public func close() {}
   }
 
-  private struct NoopObservableDoubleGauge: ObservableDoubleGauge {
-    func close() {}
+  public struct NoopObservableDoubleGauge: ObservableDoubleGauge {
+    public func close() {}
   }
 
-  private class NoopDoubleUpDownCounterBuilder: DoubleUpDownCounterBuilder {
-    func build() -> DoubleUpDownCounter {
+  public class NoopDoubleUpDownCounterBuilder: DoubleUpDownCounterBuilder {
+    public func build() -> NoopDoubleUpDownCounter {
       NoopDoubleUpDownCounter()
     }
 
-    func buildWithCallback(_ callback: @escaping (ObservableDoubleMeasurement) -> Void) -> ObservableDoubleUpDownCounter {
+    public func buildWithCallback(_ callback: @escaping (NoopObservableDoubleMeasurement) -> Void) -> NoopObservableDoubleUpDownCounter {
       NoopObservableDoubleUpDownCounter()
     }
   }
 
-  private struct NoopObservableDoubleUpDownCounter: ObservableDoubleUpDownCounter {
-    func close() {}
+  public struct NoopObservableDoubleUpDownCounter: ObservableDoubleUpDownCounter {
+    public func close() {}
   }
 
-  private struct NoopDoubleUpDownCounter: DoubleUpDownCounter {
-    mutating func add(value: Double) {}
-    mutating func add(value: Double, attributes: [String: AttributeValue]) {}
+  public struct NoopDoubleUpDownCounter: DoubleUpDownCounter {
+    public mutating func add(value: Double) {}
+    public mutating func add(value: Double, attributes: [String: AttributeValue]) {}
   }
 
-  private class NoopLongUpDownCounter: LongUpDownCounter {
-    func add(value: Int) {}
-    func add(value: Int, attributes: [String: AttributeValue]) {}
+  public class NoopLongUpDownCounter: LongUpDownCounter {
+    public func add(value: Int) {}
+    public func add(value: Int, attributes: [String: AttributeValue]) {}
   }
 
-  private class NoopLongHistogramBuilder: LongHistogramBuilder {
-    func build() -> LongHistogram {
+  public class NoopLongHistogramBuilder: LongHistogramBuilder {
+    public func setExplicitBucketBoundariesAdvice(_ boundaries: [Double]) -> Self {
+      return self
+    }
+    
+    public func build() -> NoopLongHistogram {
       NoopLongHistogram()
     }
   }
 
-  private struct NoopLongHistogram: LongHistogram {
-    mutating func record(value: Int) {}
-    mutating func record(value: Int, attributes: [String: AttributeValue]) {}
+  public struct NoopLongHistogram: LongHistogram {
+    public mutating func record(value: Int) {}
+    public mutating func record(value: Int, attributes: [String: AttributeValue]) {}
   }
 
-  private class NoopObservableLongUpDownCounter: ObservableLongUpDownCounter {
-    func close() {}
+  public class NoopObservableLongUpDownCounter: ObservableLongUpDownCounter {
+    public func close() {}
   }
 
-  private class NoopDoubleHistogram: DoubleHistogram {
-    func record(value: Double) {}
-    func record(value: Double, attributes: [String: AttributeValue]) {}
+  public class NoopDoubleHistogram: DoubleHistogram {
+    public func record(value: Double) {}
+    public func record(value: Double, attributes: [String: AttributeValue]) {}
   }
 
-  private class NoopLongCounter: LongCounter {
-    func add(value: Int) {}
-    func add(value: Int, attribute: [String: AttributeValue]) {}
+  public class NoopLongCounter: LongCounter {
+    public func add(value: Int) {}
+    public func add(value: Int, attribute: [String: AttributeValue]) {}
   }
 
-  private class NoopLongCounterBuilder: LongCounterBuilder {
-    func ofDoubles() -> DoubleCounterBuilder {
+  public class NoopLongCounterBuilder: LongCounterBuilder {
+    public func ofDoubles() -> NoopDoubleCounterBuilder {
       NoopDoubleCounterBuilder()
     }
 
-    func build() -> LongCounter {
+    public func build() -> NoopLongCounter {
       NoopLongCounter()
     }
 
-    func buildWithCallback(_ callback: @escaping (ObservableLongMeasurement) -> Void) -> ObservableLongCounter {
+    public func buildWithCallback(_ callback: @escaping (NoopObservableLongMeasurement) -> Void) -> NoopObservableLongCounter {
       NoopObservableLongCounter()
     }
   }
 
-  private class NoopDoubleCounterBuilder: DoubleCounterBuilder {
-    func build() -> DoubleCounter {
+  public class NoopDoubleCounterBuilder: DoubleCounterBuilder {
+    public func build() -> StableNoopDoubleCounter {
       StableNoopDoubleCounter()
     }
 
-    func buildWithCallback(_ callback: @escaping (ObservableDoubleMeasurement) -> Void) -> ObservableDoubleCounter {
+    public func buildWithCallback(_ callback: @escaping (NoopObservableDoubleMeasurement) -> Void) -> NoopObservableDoubleCounter {
       NoopObservableDoubleCounter()
     }
   }
 
-  private class NoopObservableLongCounter: ObservableLongCounter {
-    func close() {}
+  public class NoopObservableLongCounter: ObservableLongCounter {
+    public func close() {}
   }
 
-  private class NoopObservableDoubleCounter: ObservableDoubleCounter {
-    func close() {}
+  public class NoopObservableDoubleCounter: ObservableDoubleCounter {
+    public func close() {}
   }
 
-  private class StableNoopDoubleCounterBuilder: DoubleCounterBuilder {
-    func build() -> DoubleCounter {
+  public class StableNoopDoubleCounterBuilder: DoubleCounterBuilder {
+    public func build() -> StableNoopDoubleCounter {
       StableNoopDoubleCounter()
     }
 
-    func buildWithCallback(_ callback: @escaping (ObservableDoubleMeasurement) -> Void) -> ObservableDoubleCounter {
+    public func buildWithCallback(_ callback: @escaping (NoopObservableDoubleMeasurement) -> Void) -> NoopObservableDoubleCounter {
       NoopObservableDoubleCounter()
     }
   }
 
-  private class StableNoopDoubleCounter: DoubleCounter {
-    func add(value: Double) {}
-    func add(value: Double, attributes: [String: AttributeValue]) {}
+  public class StableNoopDoubleCounter: DoubleCounter {
+    public func add(value: Double) {}
+    public func add(value: Double, attributes: [String: AttributeValue]) {}
   }
 }

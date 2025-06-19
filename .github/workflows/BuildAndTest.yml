@@ -9,23 +9,23 @@ jobs:
   FormattingLint: 
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: SwiftFormat
         run: echo swiftformat --lint `git diff --name-only HEAD^1 HEAD` --reporter github-actions-log
 
   SwiftLint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: GitHub Action for SwiftLint (Only files changed in the PR)
-        uses: norio-nomura/action-swiftlint@3.2.1
+        uses: norio-nomura/action-swiftlint@9f4dcd7fd46b4e75d7935cf2f4df406d5cae3684 # 3.2.1
         env:
           args: --strict
           DIFF_BASE: ${{ github.base_ref }}
   macOS:
     runs-on: macos-15
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     - name: Build and Test for macOS
       run: swift test --enable-code-coverage
     - name: Upload Code coverage
@@ -37,7 +37,7 @@ jobs:
   iOS:
     runs-on: macos-15
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     - name: Install Homebrew kegs
       run: make setup-brew
     - name: Build for iOS
@@ -47,7 +47,7 @@ jobs:
   tvOS:
     runs-on: macos-15
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     - name: Install Homebrew kegs
       run: make setup-brew
     - name: Build for tvOS
@@ -57,7 +57,7 @@ jobs:
   watchOS:
     runs-on: macos-15
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     - name: Install Homebrew kegs
       run: make setup-brew
     - name: Build for watchOS
@@ -66,9 +66,9 @@ jobs:
       run: make test-without-building-watchos
   linux:
     runs-on: ubuntu-latest
-    container: swift:5.10
+    container: swift:5.10@sha256:8d7965d8b1757b46fee0ce603505b71e424a443e2002d502dfebd288a7f9a109
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Build tests for Linux
         run: swift build --build-tests
       - name: Run tests for Linux

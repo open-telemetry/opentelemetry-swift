@@ -13,7 +13,7 @@ public class StableMeterProviderBuilder {
   public private(set) var registeredViews = [RegisteredView]()
   public private(set) var exemplarFilter: ExemplarFilter = AlwaysOnFilter()
 
-  public init() {}
+  internal init() {}
 
   public func setClock(clock: Clock) -> Self {
     self.clock = clock

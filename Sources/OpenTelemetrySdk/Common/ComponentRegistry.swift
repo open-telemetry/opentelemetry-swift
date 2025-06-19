@@ -20,7 +20,7 @@ class ComponentRegistry<T> {
     self.builder = builder
   }
 
-  public func get(name: String, version: String? = nil, schemaUrl: String? = nil) -> T {
+  public func get(name: String, version: String? = nil, schemaUrl: String? = nil, attributes: [String: AttributeValue]? = nil) -> T {
     lock.lock()
     defer {
       lock.unlock()
@@ -35,7 +35,7 @@ class ComponentRegistry<T> {
       }
 
       if componentByNameVersionSchema[name]![version]![schemaUrl] == nil {
-        componentByNameVersionSchema[name]![version]![schemaUrl] = buildComponent(InstrumentationScopeInfo(name: name, version: version, schemaUrl: schemaUrl))
+        componentByNameVersionSchema[name]![version]![schemaUrl] = buildComponent(InstrumentationScopeInfo(name: name, version: version, schemaUrl: schemaUrl, attributes: attributes))
       }
       return componentByNameVersionSchema[name]![version]![schemaUrl]!
     } else if let version {
@@ -44,7 +44,13 @@ class ComponentRegistry<T> {
       }
 
       if componentByNameVersion[name]![version] == nil {
-        componentByNameVersion[name]![version] = buildComponent(InstrumentationScopeInfo(name: name, version: version))
+        componentByNameVersion[name]![version] = buildComponent(
+          InstrumentationScopeInfo(
+            name: name,
+            version: version,
+            attributes: attributes
+          )
+        )
       }
 
       return componentByNameVersion[name]![version]!
@@ -55,14 +61,22 @@ class ComponentRegistry<T> {
       }
 
       if componentByNameSchema[name]![schemaUrl] == nil {
-        componentByNameSchema[name]![schemaUrl] = buildComponent(InstrumentationScopeInfo(name: name, schemaUrl: schemaUrl))
+        componentByNameSchema[name]![schemaUrl] = buildComponent(
+          InstrumentationScopeInfo(
+            name: name,
+            schemaUrl: schemaUrl,
+            attributes: attributes
+          )
+        )
       }
 
       return componentByNameSchema[name]![schemaUrl]!
 
     } else {
       if componentByName[name] == nil {
-        componentByName[name] = buildComponent(InstrumentationScopeInfo(name: name))
+        componentByName[name] = buildComponent(
+          InstrumentationScopeInfo(name: name, attributes: attributes)
+        )
       }
       return componentByName[name]!
     }

@@ -51,7 +51,7 @@ public class FixedSizedExemplarReservoir: ExemplarReservoir {
     self.reservoirCellSelector = reservoirCellSelector
     self.mapAndResetCell = mapAndResetCell
 
-    for _ in 0 ... size {
+    for _ in 0 ..< size {
       storage.append(ReservoirCell(clock: clock))
     }
   }

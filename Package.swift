@@ -30,12 +30,12 @@ let package = Package(name: "opentelemetry-swift",
                         .executable(name: "StableMetricSample", targets: ["StableMetricSample"])
                       ],
                       dependencies: [
-                        .package(url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
-                        .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.24.2"),
-                        .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.20.2"),
-                        .package(url: "https://github.com/apple/swift-log.git", from: "1.4.4"),
-                        .package(url: "https://github.com/apple/swift-metrics.git", from: "2.1.1"),
-                        .package(url: "https://github.com/apple/swift-atomics.git", from: "1.2.0")
+                        .package(url: "https://github.com/apple/swift-nio.git", from: "2.83.0"),
+                        .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.26.1"),
+                        .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.30.0"),
+                        .package(url: "https://github.com/apple/swift-log.git", from: "1.6.3"),
+                        .package(url: "https://github.com/apple/swift-metrics.git", from: "2.7.0"),
+                        .package(url: "https://github.com/apple/swift-atomics.git", from: "1.3.0")
                       ],
                       targets: [
                         .target(name: "OpenTelemetryApi",
