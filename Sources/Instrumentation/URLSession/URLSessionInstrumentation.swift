@@ -29,7 +29,7 @@ private var idKey: Void?
 public class URLSessionInstrumentation {
   private var requestMap = [String: NetworkRequestState]()
 
-  var configuration: URLSessionInstrumentationConfiguration
+  public var configuration: URLSessionInstrumentationConfiguration
 
   private let queue = DispatchQueue(
     label: "io.opentelemetry.ddnetworkinstrumentation")
