@@ -93,9 +93,9 @@ public struct SpanData: Equatable, Codable {
     endTime: Date,
     hasRemoteParent: Bool,
     hasEnded: Bool,
-    totalRecordedEvents: Int,
-    totalRecordedLinks: Int,
-    totalAttributeCount: Int
+    totalRecordedEvents: Int = 0,
+    totalRecordedLinks: Int = 0,
+    totalAttributeCount: Int = 0
   ) {
     self.traceId = traceId
     self.spanId = spanId
