@@ -89,10 +89,10 @@ public struct SpanData: Equatable, Codable {
     attributes: [String: AttributeValue] = [String: AttributeValue](),
     events: [Event] = [Event](),
     links: [Link] = [Link](),
-    status: Status,
+    status: Status = .unset,
     endTime: Date,
-    hasRemoteParent: Bool,
-    hasEnded: Bool,
+    hasRemoteParent: Bool = false,
+    hasEnded: Bool = false,
     totalRecordedEvents: Int = 0,
     totalRecordedLinks: Int = 0,
     totalAttributeCount: Int = 0
