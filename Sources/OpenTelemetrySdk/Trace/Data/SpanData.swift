@@ -75,6 +75,50 @@ public struct SpanData: Equatable, Codable {
   /// greater than the configured maximum value. See SpanLimits.maxNumberOfAttributes
   public private(set) var totalAttributeCount: Int = 0
 
+  public init(
+    traceId: TraceId,
+    spanId: SpanId,
+    traceFlags: TraceFlags = TraceFlags(),
+    traceState: TraceState = TraceState(),
+    parentSpanId: SpanId? = nil,
+    resource: Resource = Resource(),
+    instrumentationScope: InstrumentationScopeInfo = InstrumentationScopeInfo(),
+    name: String,
+    kind: SpanKind,
+    startTime: Date,
+    attributes: [String: AttributeValue] = [String: AttributeValue](),
+    events: [Event] = [Event](),
+    links: [Link] = [Link](),
+    status: Status = .unset,
+    endTime: Date,
+    hasRemoteParent: Bool = false,
+    hasEnded: Bool = false,
+    totalRecordedEvents: Int = 0,
+    totalRecordedLinks: Int = 0,
+    totalAttributeCount: Int = 0
+  ) {
+    self.traceId = traceId
+    self.spanId = spanId
+    self.traceFlags = traceFlags
+    self.traceState = traceState
+    self.parentSpanId = parentSpanId
+    self.resource = resource
+    self.instrumentationScope = instrumentationScope
+    self.name = name
+    self.kind = kind
+    self.startTime = startTime
+    self.attributes = attributes
+    self.events = events
+    self.links = links
+    self.status = status
+    self.endTime = endTime
+    self.hasRemoteParent = hasRemoteParent
+    self.hasEnded = hasEnded
+    self.totalRecordedEvents = totalRecordedEvents
+    self.totalRecordedLinks = totalRecordedLinks
+    self.totalAttributeCount = totalAttributeCount
+  }
+
   public static func == (lhs: SpanData, rhs: SpanData) -> Bool {
     return lhs.traceId == rhs.traceId &&
       lhs.spanId == rhs.spanId &&
