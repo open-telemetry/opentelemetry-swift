@@ -86,7 +86,7 @@ public struct SpanData: Equatable, Codable {
     name: String,
     kind: SpanKind,
     startTime: Date,
-    attributes: [String : AttributeValue] = [String: AttributeValue](),
+    attributes: [String: AttributeValue] = [String: AttributeValue](),
     events: [Event] = [Event](),
     links: [Link] = [Link](),
     status: Status,
