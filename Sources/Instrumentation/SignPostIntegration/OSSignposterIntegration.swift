@@ -11,7 +11,7 @@
   import OpenTelemetrySdk
 
   /// A span processor that decorates spans with the origin attribute
-  @available(macOS 12, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  @available(iOS 15.0, macOS 12, tvOS 15.0, watchOS 8.0, *)
   public class OSSignposterIntegration: SpanProcessor {
 
     public let isStartRequired = true
