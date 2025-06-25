@@ -130,7 +130,7 @@ For more information about the maintainer role, see the [community repository](h
 
 #### Approvers
 
-- [Vinod Vydier](https://github.com/vvydier)), Independent
+- [Vinod Vydier](https://github.com/vvydier), Independent
 - [Austin Emmons](https://github.com/atreat), Embrace
 
 For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#approver).
