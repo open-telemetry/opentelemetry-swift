@@ -130,8 +130,9 @@ For more information about the maintainer role, see the [community repository](h
 
 #### Approvers
 
-- [Vinod Vydier](https://github.com/vvydier)), Independent
+- [Ariel Demarco](https://github.com/arieldemarco), Embrace
 - [Austin Emmons](https://github.com/atreat), Embrace
+- [Vinod Vydier](https://github.com/vvydier), Independent
 
 For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#approver).
 
@@ -139,6 +140,4 @@ For more information about the approver role, see the [community repository](htt
 
 - [Alolita Sharma](https://github.com/alolita), Apple
 
-*Find more about the triager role in the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#triager).*
-
-
+For more information about the triager role, see the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#triager).
