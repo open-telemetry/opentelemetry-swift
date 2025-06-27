@@ -250,6 +250,12 @@ public class RecordEventsReadableSpan: ReadableSpan {
     }
   }
 
+  public func setAttributes(_ attributes: [String: AttributeValue]) {
+    attributes.forEach { (key: String, value: AttributeValue) in
+      setAttribute(key: key, value: value)
+    }
+  }
+
   public func addEvent(name: String) {
     addEvent(event: SpanData.Event(name: name, timestamp: clock.now))
   }
@@ -305,6 +311,12 @@ public class RecordEventsReadableSpan: ReadableSpan {
 
   public var description: String {
     return "RecordEventsReadableSpan{}"
+  }
+
+  public func getAttributes() -> [String: AttributeValue] {
+    lock.withReaderLock {
+      return attributes.attributes
+    }
   }
 
   func getTotalRecordedEvents() -> Int {

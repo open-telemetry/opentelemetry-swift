@@ -36,6 +36,11 @@ public protocol SpanBase: AnyObject, CustomStringConvertible {
   ///   - value: Attribute value.
   func setAttribute(key: String, value: AttributeValue?)
 
+  /// inserts attributes dictionary into the span.
+  /// - Parameters:
+  ///   - attributes: dictionary of attributes
+  func setAttributes(_ attributes: [String: AttributeValue])
+
   /// Adds an event to the Span
   /// - Parameter name: the name of the event.
   func addEvent(name: String)

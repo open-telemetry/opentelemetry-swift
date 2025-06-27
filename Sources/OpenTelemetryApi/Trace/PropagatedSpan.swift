@@ -85,6 +85,8 @@ class PropagatedSpan: Span {
 
   func setAttribute(key: String, value: AttributeValue?) {}
 
+  func setAttributes(_ attributes: [String: AttributeValue]) {}
+
   func addEvent(name: String) {}
 
   func addEvent(name: String, timestamp: Date) {}

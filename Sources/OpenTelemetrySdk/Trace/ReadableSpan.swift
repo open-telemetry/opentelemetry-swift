@@ -23,4 +23,7 @@ public protocol ReadableSpan: Span {
 
   /// Returns the latecy of the  Span. If still active then returns now() - start time.
   var latency: TimeInterval { get }
+
+  /// get attributes
+  func getAttributes() -> [String: AttributeValue]
 }

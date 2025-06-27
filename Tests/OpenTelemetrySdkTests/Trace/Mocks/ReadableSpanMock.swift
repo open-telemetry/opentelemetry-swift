@@ -54,6 +54,12 @@ class ReadableSpanMock: ReadableSpan {
 
   func setAttribute(key: String, value: AttributeValue?) {}
 
+  func getAttributes() -> [String : OpenTelemetryApi.AttributeValue] {
+    return [:]
+  }
+
+  func setAttributes(_ attributes: [String : OpenTelemetryApi.AttributeValue]) {}
+
   func addEvent(name: String) {}
 
   func addEvent(name: String, attributes: [String: AttributeValue]) {}

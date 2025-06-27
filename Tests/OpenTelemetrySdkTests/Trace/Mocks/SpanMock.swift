@@ -8,6 +8,7 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 
 class SpanMock: Span {
+
   var name: String = ""
 
   var kind: SpanKind {
@@ -29,6 +30,8 @@ class SpanMock: Span {
   func updateName(name: String) {}
 
   func setAttribute(key: String, value: AttributeValue?) {}
+
+  func setAttributes(_ attributes: [String : OpenTelemetryApi.AttributeValue]) {}
 
   func addEvent(name: String) {}
 
