@@ -123,7 +123,7 @@ We are also available in the [#otel-swift](https://cloud-native.slack.com/archiv
 
 #### Maintainers
 
-- [Ignacio Bonaforte](https://github.com/nachob), Independent
+- [Ignacio Bonafonte](https://github.com/nachobonafonte), Independent
 - [Bryce Buchanan](https://github.com/bryce-b), Elastic
 
 For more information about the maintainer role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#maintainer).
