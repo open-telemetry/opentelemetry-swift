@@ -126,14 +126,14 @@ We are also available in the [#otel-swift](https://cloud-native.slack.com/archiv
 - [Ignacio Bonaforte](https://github.com/nachob), Independent
 - [Bryce Buchanan](https://github.com/bryce-b), Elastic
 
-For more information about the maintainer role, see the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#maintainer).
+For more information about the maintainer role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#maintainer).
 
 #### Approvers
 
 - [Vinod Vydier](https://github.com/vvydier)), Independent
 - [Austin Emmons](https://github.com/atreat), Embrace
 
-For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#approver).
+For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).
 
 #### Triager ([@open-telemetry/swift-triagers](https://github.com/orgs/open-telemetry/teams/swift-triagers))
 
