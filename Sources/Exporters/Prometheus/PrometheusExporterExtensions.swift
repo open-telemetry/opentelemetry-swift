@@ -8,6 +8,7 @@ import OpenTelemetrySdk
 
 public enum PrometheusExporterExtensions {
   static let prometheusCounterType = "counter"
+  static let prometheusGaugeType = "gauge"
   static let prometheusSummaryType = "summary"
   static let prometheusSummarySumPostFix = "_sum"
   static let prometheusSummaryCountPostFix = "_count"
@@ -27,43 +28,118 @@ public enum PrometheusExporterExtensions {
 
     metrics.forEach { metric in
       let prometheusMetric = PrometheusMetric(name: metric.name, description: metric.description)
-      metric.data.forEach { metricData in
-        let labels = metricData.labels
-        switch metric.aggregationType {
-        case .doubleSum:
-          let sum = metricData as! SumData<Double>
-          output += PrometheusExporterExtensions.writeSum(prometheusMetric: prometheusMetric, timeStamp: now, labels: labels, doubleValue: sum.sum)
-        case .intSum:
-          let sum = metricData as! SumData<Int>
-          output += PrometheusExporterExtensions.writeSum(prometheusMetric: prometheusMetric, timeStamp: now, labels: labels, doubleValue: Double(sum.sum))
-        case .doubleSummary, .doubleGauge:
-          let summary = metricData as! SummaryData<Double>
-          let count = summary.count
-          let sum = summary.sum
-          let min = summary.min
-          let max = summary.max
-          output += PrometheusExporterExtensions.writeSummary(prometheusMetric: prometheusMetric, timeStamp: now, labels: labels, metricName: metric.name, sum: sum, count: count, min: min, max: max)
-        case .intSummary, .intGauge:
-          let summary = metricData as! SummaryData<Int>
-          let count = summary.count
-          let sum = summary.sum
-          let min = summary.min
-          let max = summary.max
-          output += PrometheusExporterExtensions.writeSummary(prometheusMetric: prometheusMetric, timeStamp: now, labels: labels, metricName: metric.name, sum: Double(sum), count: count, min: Double(min), max: Double(max))
-        case .intHistogram:
-          let histogram = metricData as! HistogramData<Int>
+      metric.data.points.forEach { metricData in
+        let labels = metricData.attributes
+        switch metric.type {
+        case .DoubleSum:
+          guard let sum = metricData as? DoublePointData else {
+            break
+          }
+          output += PrometheusExporterExtensions
+            .writeSum(
+              prometheusMetric: prometheusMetric,
+              timeStamp: now,
+              labels: labels.mapValues { value in
+                value.description
+              },
+              doubleValue: sum.value
+            )
+        case .LongSum:
+          guard let sum = metricData as? LongPointData else {
+            break
+          }
+          output += PrometheusExporterExtensions
+            .writeSum(
+              prometheusMetric: prometheusMetric,
+              timeStamp: now,
+              labels: labels.mapValues { value in
+                value.description
+              },
+              doubleValue: Double(sum.value)
+            )
+        case .DoubleGauge:
+          guard let gauge = metricData as? DoublePointData else { break }
+          output += PrometheusExporterExtensions
+            .writeGauge(
+              prometheusMetric: prometheusMetric,
+              timeStamp: now,
+              labels: labels.mapValues { value in
+                value.description
+              },
+              doubleValue: gauge.value
+            )
+        case .LongGauge:
+          guard let gauge = metricData as? LongPointData else { break }
+          output += PrometheusExporterExtensions
+            .writeGauge(
+              prometheusMetric: prometheusMetric,
+              timeStamp: now,
+              labels: labels.mapValues { value in
+                value.description
+              },
+              doubleValue: Double(gauge.value)
+            )
+        case .Histogram:
+          guard let histogram = metricData as? HistogramPointData else { break }
           let count = histogram.count
           let sum = histogram.sum
-          let bucketsBoundaries = histogram.buckets.boundaries.map { Double($0) }
-          let bucketsCounts = histogram.buckets.counts
-          output += PrometheusExporterExtensions.writeHistogram(prometheusMetric: prometheusMetric, timeStamp: now, labels: labels, metricName: metric.name, sum: Double(sum), count: count, bucketsBoundaries: bucketsBoundaries, bucketsCounts: bucketsCounts)
-        case .doubleHistogram:
-          let histogram = metricData as! HistogramData<Double>
+          let bucketsBoundaries = histogram.boundaries
+          let bucketsCounts = histogram.counts
+          output += PrometheusExporterExtensions
+            .writeHistogram(
+              prometheusMetric: prometheusMetric,
+              timeStamp: now,
+              labels: labels.mapValues { value in
+                value.description
+              },
+              metricName: metric.name,
+              sum: Double(sum),
+              count: Int(count),
+              bucketsBoundaries: bucketsBoundaries,
+              bucketsCounts: bucketsCounts
+            )
+        case .ExponentialHistogram:
+          guard let histogram = metricData as? HistogramPointData else { break }
           let count = histogram.count
           let sum = histogram.sum
-          let bucketsBoundaries = histogram.buckets.boundaries
-          let bucketsCounts = histogram.buckets.counts
-          output += PrometheusExporterExtensions.writeHistogram(prometheusMetric: prometheusMetric, timeStamp: now, labels: labels, metricName: metric.name, sum: Double(sum), count: count, bucketsBoundaries: bucketsBoundaries, bucketsCounts: bucketsCounts)
+          let bucketsBoundaries = histogram.boundaries
+          let bucketsCounts = histogram.counts
+          output += PrometheusExporterExtensions
+            .writeHistogram(
+              prometheusMetric: prometheusMetric,
+              timeStamp: now,
+              labels: labels.mapValues { value in
+                value.description
+              },
+              metricName: metric.name,
+              sum: Double(sum),
+              count: Int(count),
+              bucketsBoundaries: bucketsBoundaries,
+              bucketsCounts: bucketsCounts
+            )
+        case .Summary:
+          guard let summary = metricData as? SummaryPointData else { break }
+          let count = summary.count
+          let sum = summary.sum
+          let min = summary.values.max(by: { a, b in
+            a.value < b.value
+          })?.value ?? 0.0
+          let max = summary.values.max { a, b in
+            a.value > b.value
+          }?.value ?? 0.0
+          output += PrometheusExporterExtensions
+            .writeSummary(
+              prometheusMetric: prometheusMetric,
+              timeStamp: now,
+              labels: labels.mapValues { value in
+                value.description
+              },
+              metricName: metric.name,
+              sum: Double(sum),
+              count: Int(count),
+              min: Double(min),
+              max: Double(max)
+            )
         }
       }
     }
@@ -74,6 +150,14 @@ public enum PrometheusExporterExtensions {
   private static func writeSum(prometheusMetric: PrometheusMetric, timeStamp: String, labels: [String: String], doubleValue: Double) -> String {
     var prometheusMetric = prometheusMetric
     prometheusMetric.type = prometheusCounterType
+    let metricValue = PrometheusValue(labels: labels, value: doubleValue)
+    prometheusMetric.values.append(metricValue)
+    return prometheusMetric.write(timeStamp: timeStamp)
+  }
+
+  private static func writeGauge(prometheusMetric: PrometheusMetric, timeStamp: String, labels: [String: String], doubleValue: Double) -> String {
+    var prometheusMetric = prometheusMetric
+    prometheusMetric.type = prometheusGaugeType
     let metricValue = PrometheusValue(labels: labels, value: doubleValue)
     prometheusMetric.values.append(metricValue)
     return prometheusMetric.write(timeStamp: timeStamp)

@@ -62,11 +62,6 @@ public struct OpenTelemetry {
     TracerProviderWrapper(inner: _OpenTelemetry.instance.tracerProvider)
   }
 
-  /// Registered MeterProvider or default via DefaultMeterProvider.instance.
-  public var meterProvider: MeterProvider {
-    _OpenTelemetry.instance.meterProvider
-  }
-
   public var stableMeterProvider: (any StableMeterProvider)? {
     _OpenTelemetry.instance.stableMeterProvider
   }
@@ -100,10 +95,6 @@ public struct OpenTelemetry {
 
   public static func registerTracerProvider(tracerProvider: TracerProvider) {
     _OpenTelemetry.registerTracerProvider(tracerProvider: tracerProvider)
-  }
-
-  public static func registerMeterProvider(meterProvider: MeterProvider) {
-    _OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
   }
 
   public static func registerLoggerProvider(loggerProvider: LoggerProvider) {

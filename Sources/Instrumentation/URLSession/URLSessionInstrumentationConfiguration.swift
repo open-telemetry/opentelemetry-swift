@@ -43,7 +43,7 @@ public struct URLSessionInstrumentationConfiguration {
   }
 
   public var tracer: Tracer
- 
+
   // Instrumentation Callbacks
 
   /// Implement this callback to filter which requests you want to instrument, all by default

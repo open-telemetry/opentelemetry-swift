@@ -188,7 +188,7 @@ public enum Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientMetadat
     name: "MetricsService",
     fullName: "opentelemetry.proto.collector.metrics.v1.MetricsService",
     methods: [
-      Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientMetadata.Methods.export,
+      Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceClientMetadata.Methods.export
     ]
   )
 
@@ -305,7 +305,7 @@ public enum Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerMetadat
     name: "MetricsService",
     fullName: "opentelemetry.proto.collector.metrics.v1.MetricsService",
     methods: [
-      Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerMetadata.Methods.export,
+      Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerMetadata.Methods.export
     ]
   )
 

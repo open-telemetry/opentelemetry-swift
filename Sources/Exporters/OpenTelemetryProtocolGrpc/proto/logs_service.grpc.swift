@@ -188,7 +188,7 @@ public enum Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientMetadata {
     name: "LogsService",
     fullName: "opentelemetry.proto.collector.logs.v1.LogsService",
     methods: [
-      Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientMetadata.Methods.export,
+      Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientMetadata.Methods.export
     ]
   )
 
@@ -305,7 +305,7 @@ public enum Opentelemetry_Proto_Collector_Logs_V1_LogsServiceServerMetadata {
     name: "LogsService",
     fullName: "opentelemetry.proto.collector.logs.v1.LogsService",
     methods: [
-      Opentelemetry_Proto_Collector_Logs_V1_LogsServiceServerMetadata.Methods.export,
+      Opentelemetry_Proto_Collector_Logs_V1_LogsServiceServerMetadata.Methods.export
     ]
   )
 

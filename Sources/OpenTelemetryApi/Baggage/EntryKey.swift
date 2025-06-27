@@ -43,7 +43,7 @@ public struct EntryKey: Equatable, Comparable, Hashable {
   }
 
   private static func isValid(name: String) -> Bool {
-    guard name.count > 0 && name.count <= maxLength else {
+    guard name.count > 0, name.count <= maxLength else {
       return false
     }
 
