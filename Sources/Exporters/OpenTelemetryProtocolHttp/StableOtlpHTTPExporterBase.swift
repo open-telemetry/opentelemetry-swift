@@ -4,7 +4,7 @@
 //
 
 #if canImport(Compression)
-  import DataCompression
+  import OpenTelemetryDataCompression
 #endif
 import Foundation
 import OpenTelemetryProtocolExporterCommon
