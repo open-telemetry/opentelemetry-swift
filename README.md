@@ -123,22 +123,21 @@ We are also available in the [#otel-swift](https://cloud-native.slack.com/archiv
 
 #### Maintainers
 
-- [Ignacio Bonaforte](https://github.com/nachob), Independent
+- [Ignacio Bonafonte](https://github.com/nachobonafonte), Independent
 - [Bryce Buchanan](https://github.com/bryce-b), Elastic
 
-For more information about the maintainer role, see the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#maintainer).
+For more information about the maintainer role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#maintainer).
 
 #### Approvers
 
-- [Vinod Vydier](https://github.com/vvydier)), Independent
+- [Ariel Demarco](https://github.com/arieldemarco), Embrace
 - [Austin Emmons](https://github.com/atreat), Embrace
+- [Vinod Vydier](https://github.com/vvydier), Independent
 
-For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#approver).
+For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).
 
 #### Triager ([@open-telemetry/swift-triagers](https://github.com/orgs/open-telemetry/teams/swift-triagers))
 
 - [Alolita Sharma](https://github.com/alolita), Apple
 
-*Find more about the triager role in the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#triager).*
-
-
+For more information about the triager role, see the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#triager).
