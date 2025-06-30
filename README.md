@@ -119,16 +119,14 @@ We have a weekly SIG meeting! See the [community page](https://github.com/open-t
 
 We are also available in the [#otel-swift](https://cloud-native.slack.com/archives/C01NCHR19SB) channel in the [CNCF slack](https://slack.cncf.io/). Please join us there for OTel Swift discussions.
 
-### Community members
-
-#### Maintainers
+### Maintainers
 
 - [Ignacio Bonafonte](https://github.com/nachobonafonte), Independent
 - [Bryce Buchanan](https://github.com/bryce-b), Elastic
 
 For more information about the maintainer role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#maintainer).
 
-#### Approvers
+### Approvers
 
 - [Ariel Demarco](https://github.com/arieldemarco), Embrace
 - [Austin Emmons](https://github.com/atreat), Embrace
@@ -136,7 +134,7 @@ For more information about the maintainer role, see the [community repository](h
 
 For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).
 
-#### Triager ([@open-telemetry/swift-triagers](https://github.com/orgs/open-telemetry/teams/swift-triagers))
+### Triager ([@open-telemetry/swift-triagers](https://github.com/orgs/open-telemetry/teams/swift-triagers))
 
 - [Alolita Sharma](https://github.com/alolita), Apple
 
