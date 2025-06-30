@@ -56,6 +56,14 @@ class LoggingSpan: Span {
     setAttribute(key: keyValuePair.0, value: keyValuePair.1)
   }
 
+  public func setAttributes(
+    _ attributes: [String: OpenTelemetryApi.AttributeValue]
+  ) {
+    attributes.forEach { key, value in
+      setAttribute(key: key, value: value)
+    }
+  }
+
   public func addEvent(name: String) {
     Logger.log("Span.addEvent(\(name))")
   }
