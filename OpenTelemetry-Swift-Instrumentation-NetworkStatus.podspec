@@ -13,8 +13,6 @@ Pod::Spec.new do |spec|
 
   spec.swift_version = "5.10"
   spec.ios.deployment_target = "13.0"
-  spec.tvos.deployment_target = "13.0"
-  spec.watchos.deployment_target = "6.0"
   spec.module_name = "NetworkStatus"
 
   spec.frameworks = 'CoreTelephony'
