@@ -38,4 +38,5 @@ public class OSSignposterIntegration: SpanProcessor {
 
   public func forceFlush(timeout: TimeInterval? = nil) {}
   public func shutdown(explicitTimeout: TimeInterval?) {}
+
 }
