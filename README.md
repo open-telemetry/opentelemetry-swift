@@ -119,26 +119,23 @@ We have a weekly SIG meeting! See the [community page](https://github.com/open-t
 
 We are also available in the [#otel-swift](https://cloud-native.slack.com/archives/C01NCHR19SB) channel in the [CNCF slack](https://slack.cncf.io/). Please join us there for OTel Swift discussions.
 
-### Community members
+### Maintainers
 
-#### Maintainers ([@open-telemetry/swift-maintainers](https://github.com/orgs/open-telemetry/teams/swift-maintainers))
-
-- [Ignacio Bonaforte](https://github.com/nachob), Independent
+- [Ignacio Bonafonte](https://github.com/nachobonafonte), Independent
 - [Bryce Buchanan](https://github.com/bryce-b), Elastic
 
-*Find more about the maintainer role in the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#maintainer).*
+For more information about the maintainer role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#maintainer).
 
-#### Approvers ([@open-telemetry/swift-approvers](https://github.com/orgs/open-telemetry/teams/swift-approvers))
+### Approvers
 
-- [Vinod Vydier](https://github.com/vvydier)), Independent
+- [Ariel Demarco](https://github.com/arieldemarco), Embrace
 - [Austin Emmons](https://github.com/atreat), Embrace
+- [Vinod Vydier](https://github.com/vvydier), Independent
 
-*Find more about the approver role in the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).*
+For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).
 
-#### Triager ([@open-telemetry/swift-triagers](https://github.com/orgs/open-telemetry/teams/swift-triagers))
+### Triager ([@open-telemetry/swift-triagers](https://github.com/orgs/open-telemetry/teams/swift-triagers))
 
 - [Alolita Sharma](https://github.com/alolita), Apple
 
-*Find more about the triager role in the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#triager).*
-
-
+For more information about the triager role, see the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#triager).
