@@ -29,10 +29,15 @@ private var idKey: Void?
 public class URLSessionInstrumentation {
   private var requestMap = [String: NetworkRequestState]()
 
-  var configuration: URLSessionInstrumentationConfiguration
+  private var _configuration: URLSessionInstrumentationConfiguration
+  public var configuration: URLSessionInstrumentationConfiguration {
+      get { configurationQueue.sync { _configuration } }
+  }
 
   private let queue = DispatchQueue(
     label: "io.opentelemetry.ddnetworkinstrumentation")
+  private let configurationQueue = DispatchQueue(
+      label: "io.opentelemetry.configuration")
 
   static var instrumentedKey = "io.opentelemetry.instrumentedCall"
 
@@ -52,7 +57,7 @@ public class URLSessionInstrumentation {
   }
 
   public init(configuration: URLSessionInstrumentationConfiguration) {
-    self.configuration = configuration
+    self._configuration = configuration
     injectInNSURLClasses()
   }
 
