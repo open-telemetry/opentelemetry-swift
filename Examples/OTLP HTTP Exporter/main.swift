@@ -35,7 +35,10 @@
 
   let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion)
 
-  if #available(macOS 10.14, *), #available(iOS 12.0, *) {
+  if #available(iOS 15.0, macOS 12, tvOS 15.0, watchOS 8.0, *) {
+    let tracerProviderSDK = OpenTelemetry.instance.tracerProvider as? TracerProviderSdk
+    tracerProviderSDK?.addSpanProcessor(OSSignposterIntegration())
+  } else {
     let tracerProviderSDK = OpenTelemetry.instance.tracerProvider as? TracerProviderSdk
     tracerProviderSDK?.addSpanProcessor(SignPostIntegration())
   }
