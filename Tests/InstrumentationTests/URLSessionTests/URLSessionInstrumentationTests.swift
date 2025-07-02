@@ -814,13 +814,9 @@ class URLSessionInstrumentationTests: XCTestCase {
 
     try await task.value
   }
-
-  // MARK: - Test case to reproduce async/await instrumentation issue
   
   @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
   public func testAsyncAwaitMethodsDoNotCompleteSpans() async throws {
-    // This test demonstrates that async/await methods introduced in iOS 15/macOS 12
-    // create spans but never complete them, leaving them orphaned.
     let request = URLRequest(url: URL(string: "http://localhost:33333/success")!)
     
     // Test data(for:) method - the new async/await API introduced in iOS 15
@@ -833,24 +829,11 @@ class URLSessionInstrumentationTests: XCTestCase {
     
     XCTAssertEqual(httpResponse.statusCode, 200, "Request should succeed")
     XCTAssertNotNil(data, "Should receive data")
-    
-    // THE BUG: receivedResponse callback is NOT called for async/await methods
-    XCTAssertFalse(URLSessionInstrumentationTests.checker.receivedResponseCalled,
-                   "BUG: receivedResponse is NOT called for async/await methods introduced in iOS 15")
-    
-    // This means spans are created but never ended, causing a memory leak
-    // The spans remain in URLSessionLogger.runningSpans indefinitely
-    
-    // Headers ARE injected, showing partial instrumentation works
-    XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent],
-                    "Headers are injected")
-    
-    // The other callbacks are called, showing the request is instrumented
-    XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInstrumentCalled)
-    XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
-    
-    // Summary: The async/await methods bypass the response handling,
-    // leaving spans uncompleted and causing telemetry data loss.
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled, "receivedResponse should be called")
+    XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent], "Headers are injected")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInstrumentCalled, "shouldInstrument should be called")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled, "createdRequest should be called")
   }
   
   @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
@@ -868,13 +851,9 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertEqual(httpResponse.statusCode, 200, "Request should succeed")
     XCTAssertNotNil(fileURL, "Should receive file URL")
     
-    // IMPORTANT: These assertions show the bug - instrumentation callbacks are NOT called
-    XCTAssertFalse(URLSessionInstrumentationTests.checker.shouldInstrumentCalled,
-                   "BUG: shouldInstrument is not called for async/await download methods")
-    XCTAssertFalse(URLSessionInstrumentationTests.checker.createdRequestCalled,
-                   "BUG: createdRequest is not called for async/await download methods")
-    XCTAssertFalse(URLSessionInstrumentationTests.checker.receivedResponseCalled,
-                   "BUG: receivedResponse is not called for async/await download methods")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInstrumentCalled, "shouldInstrument should be called")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled, "createdRequest should be called")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled, "receivedResponse should be called")
     
     // Clean up downloaded file
     try? FileManager.default.removeItem(at: fileURL)
@@ -895,13 +874,9 @@ class URLSessionInstrumentationTests: XCTestCase {
     
     XCTAssertEqual(httpResponse.statusCode, 200, "Request should succeed")
     XCTAssertNotNil(data, "Should receive response data")
-    
-    // IMPORTANT: These assertions show the bug - instrumentation callbacks are NOT called
-    XCTAssertFalse(URLSessionInstrumentationTests.checker.shouldInstrumentCalled,
-                   "BUG: shouldInstrument is not called for async/await upload methods")
-    XCTAssertFalse(URLSessionInstrumentationTests.checker.createdRequestCalled,
-                   "BUG: createdRequest is not called for async/await upload methods")
-    XCTAssertFalse(URLSessionInstrumentationTests.checker.receivedResponseCalled,
-                   "BUG: receivedResponse is not called for async/await upload methods")
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInstrumentCalled, "shouldInstrument should be called")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled, "createdRequest should be called")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled, "receivedResponse should be called")
   }
 }
