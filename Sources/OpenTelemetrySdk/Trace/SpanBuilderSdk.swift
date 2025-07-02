@@ -197,7 +197,7 @@ class SpanBuilderSdk: SpanBuilder {
   private func getParentContext(parentType: ParentType, explicitParent: Span?, remoteParent: SpanContext?) -> SpanContext? {
     let currentSpan = OpenTelemetry.instance.contextProvider.activeSpan
 
-    var parentContext: SpanContext? = switch parentType {
+    let parentContext: SpanContext? = switch parentType {
     case .noParent:
       nil
     case .currentSpan:
