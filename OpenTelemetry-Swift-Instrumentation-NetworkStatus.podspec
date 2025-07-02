@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name = "OpenTelemetry-Swift-Instrumentation-NetworkStatus"
-  spec.version = "1.16.1"
+  spec.version = "1.17.1"
   spec.summary = "Swift OpenTelemetry Network Status Instrumentation"
 
   spec.homepage = "https://github.com/open-telemetry/opentelemetry-swift"
@@ -17,7 +17,8 @@ Pod::Spec.new do |spec|
   spec.watchos.deployment_target = "6.0"
   spec.module_name = "NetworkStatus"
 
-  spec.frameworks = 'CoreTelephony'
+  spec.ios.frameworks = 'CoreTelephony'
+
   spec.dependency 'OpenTelemetry-Swift-Api', spec.version.to_s
   spec.pod_target_xcconfig = { "OTHER_SWIFT_FLAGS" => "-module-name NetworkStatus -package-name opentelemetry_swift_network_status" }
 
