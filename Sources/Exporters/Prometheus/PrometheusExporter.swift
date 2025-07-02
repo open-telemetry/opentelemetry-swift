@@ -7,25 +7,42 @@ import Foundation
 import NIOConcurrencyHelpers
 import OpenTelemetrySdk
 
-public class PrometheusExporter: MetricExporter {
-  fileprivate let metricsLock = NIOLock()
-  let options: PrometheusExporterOptions
-  private var metrics = [Metric]()
+public class PrometheusExporter: StableMetricExporter {
+  var aggregationTemporalitySelector: AggregationTemporalitySelector
 
-  public init(options: PrometheusExporterOptions) {
-    self.options = options
+  public func getAggregationTemporality(for instrument: OpenTelemetrySdk.InstrumentType) -> OpenTelemetrySdk.AggregationTemporality {
+    return aggregationTemporalitySelector.getAggregationTemporality(for: instrument)
   }
 
-  public func export(metrics: [Metric], shouldCancel: (() -> Bool)?) -> MetricExporterResultCode {
+  public func flush() -> OpenTelemetrySdk.ExportResult {
+    // noop
+    return .success
+  }
+
+  public func shutdown() -> OpenTelemetrySdk.ExportResult {
+    // noop
+    return .success
+  }
+
+  fileprivate let metricsLock = NIOLock()
+  let options: PrometheusExporterOptions
+  private var metrics = [StableMetricData]()
+
+  public init(options: PrometheusExporterOptions, aggregationTemoralitySelector: AggregationTemporalitySelector = AggregationTemporality.alwaysCumulative()) {
+    self.options = options
+    aggregationTemporalitySelector = aggregationTemoralitySelector
+  }
+
+  public func export(metrics: [StableMetricData]) -> ExportResult {
     metricsLock.withLockVoid {
       self.metrics.append(contentsOf: metrics)
     }
     return .success
   }
 
-  public func getAndClearMetrics() -> [Metric] {
+  public func getAndClearMetrics() -> [StableMetricData] {
     defer {
-      metrics = [Metric]()
+      metrics = [StableMetricData]()
       metricsLock.unlock()
     }
     metricsLock.lock()

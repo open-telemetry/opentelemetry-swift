@@ -188,7 +188,7 @@ public enum Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientMetadata {
     name: "TraceService",
     fullName: "opentelemetry.proto.collector.trace.v1.TraceService",
     methods: [
-      Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientMetadata.Methods.export,
+      Opentelemetry_Proto_Collector_Trace_V1_TraceServiceClientMetadata.Methods.export
     ]
   )
 
@@ -305,7 +305,7 @@ public enum Opentelemetry_Proto_Collector_Trace_V1_TraceServiceServerMetadata {
     name: "TraceService",
     fullName: "opentelemetry.proto.collector.trace.v1.TraceService",
     methods: [
-      Opentelemetry_Proto_Collector_Trace_V1_TraceServiceServerMetadata.Methods.export,
+      Opentelemetry_Proto_Collector_Trace_V1_TraceServiceServerMetadata.Methods.export
     ]
   )
 

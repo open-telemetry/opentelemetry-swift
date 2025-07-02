@@ -32,7 +32,7 @@ final class SpanExceptionTests: XCTestCase {
 
       var errorCode: Int {
         switch self {
-        case .test(let code):
+        case let .test(code):
           return code
         }
       }
