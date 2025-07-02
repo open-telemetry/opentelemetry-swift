@@ -6,14 +6,14 @@
 import Foundation
 import OpenTelemetrySdk
 
-class StdoutLogExporter: LogRecordExporter {
+public class StdoutLogExporter: LogRecordExporter {
   let isDebug: Bool
 
-  init(isDebug: Bool) {
+  public init(isDebug: Bool = false) {
     self.isDebug = isDebug
   }
 
-  func export(logRecords: [OpenTelemetrySdk.ReadableLogRecord], explicitTimeout: TimeInterval?) -> OpenTelemetrySdk.ExportResult {
+  public func export(logRecords: [OpenTelemetrySdk.ReadableLogRecord], explicitTimeout: TimeInterval?) -> OpenTelemetrySdk.ExportResult {
     if isDebug {
       for logRecord in logRecords {
         print(String(repeating: "-", count: 40))
@@ -41,9 +41,9 @@ class StdoutLogExporter: LogRecordExporter {
     return .success
   }
 
-  func forceFlush(explicitTimeout: TimeInterval?) -> OpenTelemetrySdk.ExportResult {
+  public func forceFlush(explicitTimeout: TimeInterval?) -> OpenTelemetrySdk.ExportResult {
     return .success
   }
 
-  func shutdown(explicitTimeout: TimeInterval?) {}
+  public func shutdown(explicitTimeout: TimeInterval?) {}
 }

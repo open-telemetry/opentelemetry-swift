@@ -224,6 +224,45 @@ class RecordEventsReadableSpanTest: XCTestCase {
     }())
   }
 
+  func testSetAttributes() {
+    let span = createTestRootSpan()
+
+    let attributes: [String: AttributeValue] = ["hello": .string("world"),
+                                                "count": .int(2)]
+
+    let attributes2: [String: AttributeValue] = ["fiz": .string("buzz"),
+                                                 "pi": .double(3.14)]
+    span.setAttributes(attributes)
+
+    XCTAssertEqual(attributes, span.getAttributes())
+
+    span.setAttributes(attributes2)
+
+    var attributes3 : [String: AttributeValue] = [:]
+
+    attributes3.merge(attributes) { (_, new) in new }
+    attributes3.merge(attributes2) { (_, new) in new }
+
+    XCTAssertEqual(attributes3, span.getAttributes())
+  }
+
+
+  func testGetAttributes() {
+    let span = createTestRootSpan()
+    
+    let attributes: [String: AttributeValue] = ["hello": .string("world"),
+                                                "count": .int(2)]
+    
+    span.setAttributes(attributes)
+    
+    var spanAttributes = span.getAttributes()
+
+    spanAttributes["newAttribute"] = .string("oops!")
+
+    XCTAssertNotEqual(spanAttributes, span.getAttributes())
+
+  }
+
   func testAddEvent() {
     let span = createTestRootSpan()
     span.addEvent(name: "event1")
