@@ -14,7 +14,7 @@ class SwiftCounterMetric: CounterHandler, SwiftMetric {
 
   required init(name: String,
                 labels: [String: String],
-                meter: any StableMeter) {
+                meter: any OpenTelemetryApi.Meter) {
     metricName = name
     counter = meter.counterBuilder(name: name).build()
     self.labels = labels.mapValues { value in
@@ -37,7 +37,7 @@ class SwiftGaugeMetric: RecorderHandler, SwiftMetric {
 
   required init(name: String,
                 labels: [String: String],
-                meter: any StableMeter) {
+                meter: any OpenTelemetryApi.Meter) {
     metricName = name
     counter = meter.gaugeBuilder(name: name).build()
     self.labels = labels.mapValues { value in
@@ -60,7 +60,7 @@ class SwiftHistogramMetric: RecorderHandler, SwiftMetric {
   var measure: DoubleHistogram
   let labels: [String: AttributeValue]
 
-  required init(name: String, labels: [String: String], meter: any StableMeter) {
+  required init(name: String, labels: [String: String], meter: any OpenTelemetryApi.Meter) {
     metricName = name
     measure = meter.histogramBuilder(name: name).build()
     self.labels = labels.mapValues { value in
@@ -83,7 +83,7 @@ class SwiftSummaryMetric: TimerHandler, SwiftMetric {
   var measure: DoubleCounter
   let labels: [String: AttributeValue]
 
-  required init(name: String, labels: [String: String], meter: any StableMeter) {
+  required init(name: String, labels: [String: String], meter: any OpenTelemetryApi.Meter) {
     metricName = name
     measure = meter.counterBuilder(name: name).ofDoubles().build()
     self.labels = labels.mapValues { value in
@@ -99,7 +99,7 @@ class SwiftSummaryMetric: TimerHandler, SwiftMetric {
 protocol SwiftMetric {
   var metricName: String { get }
   var metricType: MetricType { get }
-  init(name: String, labels: [String: String], meter: any StableMeter)
+  init(name: String, labels: [String: String], meter: any OpenTelemetryApi.Meter)
 }
 
 enum MetricType: String {

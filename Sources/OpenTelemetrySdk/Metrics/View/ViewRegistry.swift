@@ -5,13 +5,28 @@
 
 import Foundation
 
-public class StableViewRegistry {
+@available(*, deprecated, renamed: "ViewRegistry")
+public typealias StableViewRegistry = ViewRegistry
+
+public class ViewRegistry {
   private var instrumentDefaultRegisteredView = [InstrumentType: RegisteredView]()
   private var registeredViews = [RegisteredView]()
 
   init(aggregationSelector: DefaultAggregationSelector, registeredViews: [RegisteredView]) {
     for type in InstrumentType.allCases {
-      instrumentDefaultRegisteredView[type] = RegisteredView(selector: InstrumentSelector.builder().setInstrument(name: ".*").build(), view: StableView.builder().withAggregation(aggregation: aggregationSelector.getDefaultAggregation(for: type)).build(), attributeProcessor: NoopAttributeProcessor.noop)
+      instrumentDefaultRegisteredView[type] = RegisteredView(
+        selector: InstrumentSelector
+          .builder()
+          .setInstrument(name: ".*")
+          .build(),
+        view: View
+          .builder()
+          .withAggregation(
+            aggregation: aggregationSelector.getDefaultAggregation(for: type)
+          )
+          .build(),
+        attributeProcessor: NoopAttributeProcessor.noop
+      )
     }
     self.registeredViews = registeredViews
   }

@@ -8,7 +8,7 @@ import OpenTelemetryApi
 
 public class DoubleHistogramMeterBuilderSdk: InstrumentBuilder, DoubleHistogramBuilder {
   init(meterProviderSharedState: inout MeterProviderSharedState,
-       meterSharedState: inout StableMeterSharedState,
+       meterSharedState: inout MeterSharedState,
        name: String,
        description: String = "",
        unit: String = "") {

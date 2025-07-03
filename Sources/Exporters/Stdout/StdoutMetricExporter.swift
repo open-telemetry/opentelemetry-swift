@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetrySdk
 
-public class StdoutMetricExporter: StableMetricExporter {
+public class StdoutMetricExporter: MetricExporter {
   let isDebug: Bool
   var aggregationTemporalitySelector: AggregationTemporalitySelector
 
@@ -15,7 +15,7 @@ public class StdoutMetricExporter: StableMetricExporter {
     self.aggregationTemporalitySelector = aggregationTemporalitySelector
   }
 
-  public func export(metrics: [OpenTelemetrySdk.StableMetricData]) -> OpenTelemetrySdk.ExportResult {
+  public func export(metrics: [OpenTelemetrySdk.MetricData]) -> OpenTelemetrySdk.ExportResult {
     if isDebug {
       for metric in metrics {
         print(String(repeating: "-", count: 40))

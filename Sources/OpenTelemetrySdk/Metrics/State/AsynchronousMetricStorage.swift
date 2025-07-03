@@ -10,7 +10,7 @@ public class AsynchronousMetricStorage: MetricStorage {
   public private(set) var registeredReader: RegisteredReader
   public private(set) var metricDescriptor: MetricDescriptor
   private var aggregationTemporality: AggregationTemporality
-  private var aggregator: StableAggregator
+  private var aggregator: Aggregator
   private var attributeProcessor: AttributeProcessor
   private var points = [[String: AttributeValue]: PointData]()
   private var lastPoints = [[String: AttributeValue]: PointData]()
@@ -26,7 +26,7 @@ public class AsynchronousMetricStorage: MetricStorage {
 
   init(registeredReader: RegisteredReader,
        metricDescriptor: MetricDescriptor,
-       aggregator: StableAggregator,
+       aggregator: Aggregator,
        attributeProcessor: AttributeProcessor) {
     self.registeredReader = registeredReader
     self.metricDescriptor = metricDescriptor
@@ -61,7 +61,7 @@ public class AsynchronousMetricStorage: MetricStorage {
     points[attributes] = point
   }
 
-  public func collect(resource: Resource, scope: InstrumentationScopeInfo, startEpochNanos: UInt64, epochNanos: UInt64) -> StableMetricData {
+  public func collect(resource: Resource, scope: InstrumentationScopeInfo, startEpochNanos: UInt64, epochNanos: UInt64) -> MetricData {
     var result: [[String: AttributeValue]: PointData]
     if aggregationTemporality == .delta {
       let points = points
