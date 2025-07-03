@@ -4,7 +4,7 @@
 //
 
 #if canImport(Compression)
-  import OpenTelemetryDataCompression
+  import DataCompression
 
   import Foundation
   #if canImport(FoundationNetworking)
