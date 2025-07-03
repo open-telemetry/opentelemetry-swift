@@ -397,7 +397,7 @@ public struct Opentelemetry_Proto_Metrics_V1_Metric: Sendable {
   public var description_p: String = String()
 
   /// unit in which the metric value is reported. Follows the format
-  /// described by http://unitsofmeasure.org/ucum.html.
+  /// described by https://unitsofmeasure.org/ucum.html.
   public var unit: String = String()
 
   /// Data determines the aggregation type (if any) of the metric, what is the
@@ -551,7 +551,7 @@ public struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogram: Sendable {
 
 /// Summary metric data are used to convey quantile summaries,
 /// a Prometheus (see: https://prometheus.io/docs/concepts/metric_types/#summary)
-/// and OpenMetrics (see: https://github.com/OpenObservability/OpenMetrics/blob/4dbf6075567ab43296eed941037c12951faafb92/protos/prometheus.proto#L45)
+/// and OpenMetrics (see: https://github.com/prometheus/OpenMetrics/blob/4dbf6075567ab43296eed941037c12951faafb92/protos/prometheus.proto#L45)
 /// data type. These data points cannot always be merged in a meaningful way.
 /// While they can be useful in some applications, histogram data points are
 /// recommended for new applications.
@@ -699,7 +699,9 @@ public struct Opentelemetry_Proto_Metrics_V1_HistogramDataPoint: Sendable {
   /// The sum of the bucket_counts must equal the value in the count field.
   ///
   /// The number of elements in bucket_counts array must be by one greater than
-  /// the number of elements in explicit_bounds array.
+  /// the number of elements in explicit_bounds array. The exception to this rule
+  /// is when the length of bucket_counts is 0, then the length of explicit_bounds
+  /// must also be 0.
   public var bucketCounts: [UInt64] = []
 
   /// explicit_bounds specifies buckets with explicitly defined bounds for values.
@@ -715,6 +717,9 @@ public struct Opentelemetry_Proto_Metrics_V1_HistogramDataPoint: Sendable {
   /// Histogram buckets are inclusive of their upper boundary, except the last
   /// bucket where the boundary is at infinity. This format is intentionally
   /// compatible with the OpenMetrics histogram definition.
+  ///
+  /// If bucket_counts length is 0 then explicit_bounds length must also be 0,
+  /// otherwise the data point is invalid.
   public var explicitBounds: [Double] = []
 
   /// (Optional) List of exemplars collected from
@@ -897,7 +902,7 @@ public struct Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint: Send
     // methods supported on all messages.
 
     /// Offset is the bucket index of the first entry in the bucket_counts array.
-    /// 
+    ///
     /// Note: This uses a varint encoding as a simple form of compression.
     public var offset: Int32 = 0
 

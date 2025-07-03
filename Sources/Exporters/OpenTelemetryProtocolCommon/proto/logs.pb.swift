@@ -407,8 +407,6 @@ public struct Opentelemetry_Proto_Logs_V1_LogRecord: @unchecked Sendable {
   /// as an event.
   ///
   /// [Optional].
-  ///
-  /// Status: [Development]
   public var eventName: String = String()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
