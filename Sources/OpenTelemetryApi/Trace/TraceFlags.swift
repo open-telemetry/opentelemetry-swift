@@ -75,7 +75,7 @@ public struct TraceFlags: Equatable, CustomStringConvertible, Codable {
   /// Sets the sampling bit in the options.
   /// - Parameter isSampled: the sampling bit
   public func settingIsSampled(_ isSampled: Bool) -> TraceFlags {
-    var optionsCopy: UInt8 = if isSampled {
+    let optionsCopy: UInt8 = if isSampled {
       options | TraceFlags.isSampled
     } else {
       options & ~TraceFlags.isSampled

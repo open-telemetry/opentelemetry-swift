@@ -47,7 +47,8 @@ public class TracerProviderSdk: TracerProvider {
       name: instrumentationName,
       version: instrumentationVersion,
       schemaUrl: schemaUrl,
-      attributes: attributes)
+      attributes: attributes
+    )
 
     if pthread_rwlock_rdlock(&tracerLock) == 0 {
       let existingTracer = tracerProvider[instrumentationScopeInfo]

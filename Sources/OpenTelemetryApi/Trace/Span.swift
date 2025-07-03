@@ -196,7 +196,7 @@ public extension Span {
   ///   - reasonPhrase: Http reason phrase.
   func putHttpStatusCode(statusCode: Int, reasonPhrase: String) {
     setAttribute(key: .httpStatusCode, value: statusCode)
-    var newStatus: Status = switch statusCode {
+    let newStatus: Status = switch statusCode {
     case 200 ..< 400:
       .ok
     case 400 ..< 600:
