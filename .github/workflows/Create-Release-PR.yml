@@ -33,7 +33,6 @@ jobs:
         sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-Api.podspec
         sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-Sdk.podspec
         sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-BaggagePropagationProcessor.podspec
-        sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-DataCompression.podspec
         sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-Instrumentation-NetworkStatus.podspec
         sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-Instrumentation-URLSession.podspec
         sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-Protocol-Exporter-Common.podspec
