@@ -9,7 +9,7 @@
   @testable import OpenTelemetryApi
   @testable import OpenTelemetrySdk
 
-  final class RecordEventsReadableSpanPerformanceTests: XCTestCase {
+  final class SpanSdkPerformanceTests: XCTestCase {
     var tracerSdkFactory = TracerProviderSdk()
     var tracerSdk: Tracer!
 
@@ -20,8 +20,8 @@
       tracerSdk = tracerSdkFactory.get(instrumentationName: "SpanBuilderSdkTest")
     }
 
-    private func createTestSpan() -> RecordEventsReadableSpan {
-      tracerSdk.spanBuilder(spanName: name).startSpan() as! RecordEventsReadableSpan
+    private func createTestSpan() -> SpanSdk {
+      tracerSdk.spanBuilder(spanName: name).startSpan() as! SpanSdk
     }
 
     func testAddEventPerformance() {

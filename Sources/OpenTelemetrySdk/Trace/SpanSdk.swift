@@ -6,8 +6,10 @@
 import Foundation
 import OpenTelemetryApi
 
+@available(*, deprecated, renamed: "SpanSdk")
+public typealias RecordEventsReadableSpan = SpanSdk
 /// Implementation for the Span class that records trace events.
-public class RecordEventsReadableSpan: ReadableSpan {
+public class SpanSdk: ReadableSpan {
   private let lock: ReadWriteLock = .init()
 
   fileprivate var internalIsRecording = true
@@ -163,8 +165,8 @@ public class RecordEventsReadableSpan: ReadableSpan {
                                attributes: AttributesDictionary,
                                links: [SpanData.Link],
                                totalRecordedLinks: Int,
-                               startTime: Date?) -> RecordEventsReadableSpan {
-    let span = RecordEventsReadableSpan(context: context,
+                               startTime: Date?) -> SpanSdk {
+    let span = SpanSdk(context: context,
                                         name: name,
                                         instrumentationScopeInfo: instrumentationScopeInfo,
                                         kind: kind,
@@ -310,7 +312,7 @@ public class RecordEventsReadableSpan: ReadableSpan {
   }
 
   public var description: String {
-    return "RecordEventsReadableSpan{}"
+    return "SpanSdk{}"
   }
 
   public func getAttributes() -> [String: AttributeValue] {
