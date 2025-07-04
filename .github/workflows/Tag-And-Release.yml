@@ -40,7 +40,6 @@ jobs:
           pod trunk push OpenTelemetry-Swift-Api.podspec --allow-warnings 
           pod trunk push OpenTelemetry-Swift-Sdk.podspec --allow-warnings --synchronous
           pod trunk push OpenTelemetry-Swift-BaggagePropagationProcessor.podspec --allow-warnings --synchronous
-          pod trunk push OpenTelemetry-Swift-DataCompression.podspec --allow-warnings --synchronous
           pod trunk push OpenTelemetry-Swift-Instrumentation-NetworkStatus.podspec --allow-warnings --synchronous
           pod trunk push OpenTelemetry-Swift-Instrumentation-URLSession.podspec --allow-warnings --synchronous
           pod trunk push OpenTelemetry-Swift-Protocol-Exporter-Common.podspec --allow-warnings --synchronous
