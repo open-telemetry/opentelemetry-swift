@@ -49,7 +49,7 @@
             // Detached task doesn't inherit context
             XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
             let detached = self.tracer.spanBuilder(spanName: "detached").startSpan()
-            XCTAssertNil((detached as! RecordEventsReadableSpan).parentContext)
+            XCTAssertNil((detached as! SpanSdk).parentContext)
           }.value
         }
     }
@@ -61,7 +61,7 @@
           await Task {
             XCTAssertIdentical(OpenTelemetry.instance.contextProvider.activeSpan, span)
             let attached = self.tracer.spanBuilder(spanName: "attached").startSpan()
-            XCTAssertEqual((attached as! RecordEventsReadableSpan).parentContext, (span as! RecordEventsReadableSpan).context)
+            XCTAssertEqual((attached as! SpanSdk).parentContext, (span as! SpanSdk).context)
           }.value
         }
     }

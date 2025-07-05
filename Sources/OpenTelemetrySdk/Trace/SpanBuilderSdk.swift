@@ -136,7 +136,7 @@ class SpanBuilderSdk: SpanBuilder {
 
     attributes.updateValues(attributes: samplingDecision.attributes)
 
-    return RecordEventsReadableSpan.startSpan(context: spanContext,
+    return SpanSdk.startSpan(context: spanContext,
                                               name: spanName,
                                               instrumentationScopeInfo: instrumentationScopeInfo,
                                               kind: spanKind,
@@ -187,8 +187,8 @@ class SpanBuilderSdk: SpanBuilder {
   #endif
 
   private static func getClock(parent: Span?, clock: Clock) -> Clock {
-    if let parentRecordEventSpan = parent as? RecordEventsReadableSpan {
-      return parentRecordEventSpan.clock
+    if let parentSpanSdk = parent as? SpanSdk {
+      return parentSpanSdk.clock
     } else {
       return MonotonicClock(clock: clock)
     }
@@ -197,7 +197,7 @@ class SpanBuilderSdk: SpanBuilder {
   private func getParentContext(parentType: ParentType, explicitParent: Span?, remoteParent: SpanContext?) -> SpanContext? {
     let currentSpan = OpenTelemetry.instance.contextProvider.activeSpan
 
-    var parentContext: SpanContext? = switch parentType {
+    let parentContext: SpanContext? = switch parentType {
     case .noParent:
       nil
     case .currentSpan:

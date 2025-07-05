@@ -186,7 +186,7 @@ public enum Opentelemetry_Proto_Collector_Profiles_V1development_ProfilesService
     name: "ProfilesService",
     fullName: "opentelemetry.proto.collector.profiles.v1development.ProfilesService",
     methods: [
-      Opentelemetry_Proto_Collector_Profiles_V1development_ProfilesServiceClientMetadata.Methods.export,
+      Opentelemetry_Proto_Collector_Profiles_V1development_ProfilesServiceClientMetadata.Methods.export
     ]
   )
 
@@ -301,7 +301,7 @@ public enum Opentelemetry_Proto_Collector_Profiles_V1development_ProfilesService
     name: "ProfilesService",
     fullName: "opentelemetry.proto.collector.profiles.v1development.ProfilesService",
     methods: [
-      Opentelemetry_Proto_Collector_Profiles_V1development_ProfilesServiceServerMetadata.Methods.export,
+      Opentelemetry_Proto_Collector_Profiles_V1development_ProfilesServiceServerMetadata.Methods.export
     ]
   )
 

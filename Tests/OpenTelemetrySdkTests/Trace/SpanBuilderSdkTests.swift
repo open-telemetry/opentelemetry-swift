@@ -30,7 +30,7 @@ class SpanBuilderSdkTest: SpanBuilderSdkTestInfo {
     spanBuilder.addLink(SpanData.Link(context: PropagatedSpan().context))
     spanBuilder.addLink(spanContext: PropagatedSpan().context)
     spanBuilder.addLink(spanContext: PropagatedSpan().context, attributes: [String: AttributeValue]())
-    let span = spanBuilder.startSpan() as! RecordEventsReadableSpan
+    let span = spanBuilder.startSpan() as! SpanSdk
     XCTAssertEqual(span.toSpanData().links.count, 3)
     span.end()
   }
@@ -44,7 +44,7 @@ class SpanBuilderSdkTest: SpanBuilderSdkTestInfo {
     for _ in 0 ..< 2 * maxNumberOfLinks {
       spanBuilder.addLink(spanContext: sampledSpanContext)
     }
-    let span = spanBuilder.startSpan() as! RecordEventsReadableSpan
+    let span = spanBuilder.startSpan() as! SpanSdk
     let spanData = span.toSpanData()
     let links = spanData.links
     XCTAssertEqual(links.count, maxNumberOfLinks)
@@ -64,7 +64,7 @@ class SpanBuilderSdkTest: SpanBuilderSdkTestInfo {
     spanBuilder.setAttribute(key: "boolean", value: true)
     spanBuilder.setAttribute(key: "stringAttribute", value: AttributeValue.string("attrvalue"))
 
-    let span = spanBuilder.startSpan() as! RecordEventsReadableSpan
+    let span = spanBuilder.startSpan() as! SpanSdk
     let attrs = span.toSpanData().attributes
     XCTAssertEqual(attrs.count, 5)
     XCTAssertEqual(attrs["string"], AttributeValue.string("value"))
@@ -81,7 +81,7 @@ class SpanBuilderSdkTest: SpanBuilderSdkTestInfo {
     spanBuilder.setAttribute(key: "boolArrayAttribute", value: AttributeValue.array(AttributeArray.empty))
     spanBuilder.setAttribute(key: "longArrayAttribute", value: AttributeValue.array(AttributeArray.empty))
     spanBuilder.setAttribute(key: "doubleArrayAttribute", value: AttributeValue.array(AttributeArray.empty))
-    let span = spanBuilder.startSpan() as! RecordEventsReadableSpan
+    let span = spanBuilder.startSpan() as! SpanSdk
     XCTAssertEqual(span.toSpanData().attributes.count, 4)
   }
 
@@ -93,7 +93,7 @@ class SpanBuilderSdkTest: SpanBuilderSdkTestInfo {
     for i in 0 ..< 2 * maxNumberOfAttrs {
       spanBuilder.setAttribute(key: "key\(i)", value: i)
     }
-    let span = spanBuilder.startSpan() as! RecordEventsReadableSpan
+    let span = spanBuilder.startSpan() as! SpanSdk
     let attrs = span.toSpanData().attributes
     XCTAssertEqual(attrs.count, maxNumberOfAttrs)
     for i in 0 ..< maxNumberOfAttrs {
@@ -104,19 +104,19 @@ class SpanBuilderSdkTest: SpanBuilderSdkTestInfo {
   }
 
   func testRecordEvents_default() {
-    let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
+    let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! SpanSdk
     XCTAssertTrue(span.isRecording)
     span.end()
   }
 
   func testKind_default() {
-    let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
+    let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! SpanSdk
     XCTAssertEqual(span.kind, SpanKind.internal)
     span.end()
   }
 
   func testKind() {
-    let span = tracerSdk.spanBuilder(spanName: spanName).setSpanKind(spanKind: .consumer).startSpan() as! RecordEventsReadableSpan
+    let span = tracerSdk.spanBuilder(spanName: spanName).setSpanKind(spanKind: .consumer).startSpan() as! SpanSdk
     XCTAssertEqual(span.kind, SpanKind.consumer)
   }
 
@@ -165,7 +165,7 @@ class SpanBuilderSdkTest: SpanBuilderSdkTestInfo {
                                                spanName: spanName,
                                                sampler: sampler,
                                                attributes: [SpanBuilderSdkTest.samplerAttributeName: AttributeValue.string("none")])
-      .startSpan() as! RecordEventsReadableSpan
+      .startSpan() as! SpanSdk
     XCTAssertTrue(span.context.traceFlags.sampled)
     XCTAssertTrue(span.toSpanData().attributes.keys.contains(SpanBuilderSdkTest.samplerAttributeName))
     span.end()
@@ -194,7 +194,7 @@ class SpanBuilderSdkTest: SpanBuilderSdkTestInfo {
 
   func testNoParent_override() {
     let parent = tracerSdk.spanBuilder(spanName: spanName).startSpan()
-    let span = tracerSdk.spanBuilder(spanName: spanName).setNoParent().setParent(parent).startSpan() as! RecordEventsReadableSpan
+    let span = tracerSdk.spanBuilder(spanName: spanName).setNoParent().setParent(parent).startSpan() as! SpanSdk
     XCTAssertEqual(span.context.traceId, parent.context.traceId)
     XCTAssertEqual(span.parentContext?.spanId, parent.context.spanId)
     let span2 = tracerSdk.spanBuilder(spanName: spanName).setNoParent().setParent(parent.context).startSpan()
@@ -206,7 +206,7 @@ class SpanBuilderSdkTest: SpanBuilderSdkTestInfo {
 
   func testOverrideNoParent_remoteParent() {
     let parent = tracerSdk.spanBuilder(spanName: spanName).startSpan()
-    let span = tracerSdk.spanBuilder(spanName: spanName).setNoParent().setParent(parent.context).startSpan() as! RecordEventsReadableSpan
+    let span = tracerSdk.spanBuilder(spanName: spanName).setNoParent().setParent(parent.context).startSpan() as! SpanSdk
     XCTAssertEqual(span.context.traceId, parent.context.traceId)
     XCTAssertEqual(span.parentContext?.spanId, parent.context.spanId)
     span.end()
@@ -215,7 +215,7 @@ class SpanBuilderSdkTest: SpanBuilderSdkTestInfo {
 
   func testParentCurrentSpan() {
     tracerSdk.spanBuilder(spanName: spanName).setActive(true).withActiveSpan { parent in
-      let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
+      let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! SpanSdk
       XCTAssertEqual(span.context.traceId, parent.context.traceId)
       XCTAssertEqual(span.parentContext?.spanId, parent.context.spanId)
       span.end()
@@ -224,7 +224,7 @@ class SpanBuilderSdkTest: SpanBuilderSdkTestInfo {
 
   func testParent_invalidContext() {
     let parent = PropagatedSpan()
-    let span = tracerSdk.spanBuilder(spanName: spanName).setParent(parent.context).startSpan() as! RecordEventsReadableSpan
+    let span = tracerSdk.spanBuilder(spanName: spanName).setParent(parent.context).startSpan() as! SpanSdk
     XCTAssertNotEqual(span.context.traceId, parent.context.traceId)
     XCTAssertNil(span.parentContext?.spanId)
     span.end()
@@ -245,15 +245,15 @@ class SpanBuilderSdkTest: SpanBuilderSdkTestInfo {
 
   func testParent_timestampConverter() {
     let parent = tracerSdk.spanBuilder(spanName: spanName).startSpan()
-    let span = tracerSdk.spanBuilder(spanName: spanName).setParent(parent).startSpan() as! RecordEventsReadableSpan
-    XCTAssert(span.clock === (parent as! RecordEventsReadableSpan).clock)
+    let span = tracerSdk.spanBuilder(spanName: spanName).setParent(parent).startSpan() as! SpanSdk
+    XCTAssert(span.clock === (parent as! SpanSdk).clock)
     parent.end()
   }
 
   func testParentCurrentSpan_timestampConverter() {
     tracerSdk.spanBuilder(spanName: spanName).withActiveSpan { parent in
-      let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
-      XCTAssert(span.clock === (parent as! RecordEventsReadableSpan).clock)
+      let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! SpanSdk
+      XCTAssert(span.clock === (parent as! SpanSdk).clock)
     }
   }
 
@@ -262,7 +262,7 @@ class SpanBuilderSdkTest: SpanBuilderSdkTestInfo {
     let parent = tracerSdk.spanBuilder(spanName: spanName).startSpan()
     OpenTelemetry.instance.contextProvider.withActiveSpan(parent) {
       XCTAssertEqual(parent.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
-      let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
+      let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! SpanSdk
       OpenTelemetry.instance.contextProvider.withActiveSpan(span) {
         XCTAssertEqual(span.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
       }
@@ -281,7 +281,7 @@ final class SpanBuilderSdkTestImperative: SpanBuilderSdkTestInfo {
 
   func testParentCurrentSpan() {
     let parent = tracerSdk.spanBuilder(spanName: spanName).setActive(true).startSpan()
-    let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
+    let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! SpanSdk
     XCTAssertEqual(span.context.traceId, parent.context.traceId)
     XCTAssertEqual(span.parentContext?.spanId, parent.context.spanId)
     span.end()
@@ -290,8 +290,8 @@ final class SpanBuilderSdkTestImperative: SpanBuilderSdkTestInfo {
 
   func testParentCurrentSpan_timestampConverter() {
     let parent = tracerSdk.spanBuilder(spanName: spanName).setActive(true).startSpan()
-    let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
-    XCTAssert(span.clock === (parent as! RecordEventsReadableSpan).clock)
+    let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! SpanSdk
+    XCTAssert(span.clock === (parent as! SpanSdk).clock)
     parent.end()
   }
 
@@ -300,7 +300,7 @@ final class SpanBuilderSdkTestImperative: SpanBuilderSdkTestInfo {
     let parent = tracerSdk.spanBuilder(spanName: spanName).startSpan()
     OpenTelemetry.instance.contextProvider.setActiveSpan(parent)
     XCTAssertEqual(parent.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
-    let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
+    let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! SpanSdk
     OpenTelemetry.instance.contextProvider.setActiveSpan(span)
     XCTAssertEqual(span.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
     span.end()
@@ -341,7 +341,7 @@ final class SpanBuilderSdkTestImperative: SpanBuilderSdkTestInfo {
       os_activity_scope_enter(activity2, &activity2State)
 
       XCTAssertEqual(parent.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
-      let span = tracerSdk.spanBuilder(spanName: spanName).setActive(true).startSpan() as! RecordEventsReadableSpan
+      let span = tracerSdk.spanBuilder(spanName: spanName).setActive(true).startSpan() as! SpanSdk
 
       var activity3State = os_activity_scope_state_s()
       let activity3 = _os_activity_create(dso, "Activity-3", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
@@ -367,7 +367,7 @@ final class SpanBuilderSdkTestImperative: SpanBuilderSdkTestInfo {
         let activity2 = _os_activity_create(dso, "Activity-2", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
         os_activity_apply(activity2) {
           XCTAssertEqual(parent.context, OpenTelemetry.instance.contextProvider.activeSpan?.context)
-          let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! RecordEventsReadableSpan
+          let span = tracerSdk.spanBuilder(spanName: spanName).startSpan() as! SpanSdk
           OpenTelemetry.instance.contextProvider.setActiveSpan(span)
 
           let activity3 = _os_activity_create(dso, "Activity-3", OS_ACTIVITY_CURRENT, OS_ACTIVITY_FLAG_DEFAULT)
