@@ -25,19 +25,49 @@ public struct BatchSpanProcessor: SpanProcessor {
     String(describing: Self.self)
   }
 
+  let safeScheduleDelay: TimeInterval
+  let safeExportTimeout: TimeInterval
+  let safeMaxQueueSize: Int
+  let safeMaxExportBatchSize: Int
+
   public init(spanExporter: SpanExporter,
-              meterProvider: StableMeterProvider? = nil,
+              meterProvider: (any StableMeterProvider)? = nil,
               scheduleDelay: TimeInterval = 5,
               exportTimeout: TimeInterval = 30,
               maxQueueSize: Int = 2048,
               maxExportBatchSize: Int = 512,
               willExportCallback: ((inout [SpanData]) -> Void)? = nil) {
+    if scheduleDelay >= 0 {
+      safeScheduleDelay = scheduleDelay
+    } else {
+      print("scheduleDelay (\(scheduleDelay)) < 0, fallback to default 5.")
+      safeScheduleDelay = 5
+    }
+    if exportTimeout >= 0 {
+      safeExportTimeout = exportTimeout
+    } else {
+      print("exportTimeout (\(exportTimeout)) < 0, fallback to default 30.")
+      safeExportTimeout = 30
+    }
+    if maxQueueSize > 0 {
+      safeMaxQueueSize = maxQueueSize
+    } else {
+      print("maxQueueSize (\(maxQueueSize)) <= 0, fallback to default 2048.")
+      safeMaxQueueSize = 2048
+    }
+    if maxExportBatchSize > 0 {
+      safeMaxExportBatchSize = maxExportBatchSize
+    } else {
+      print("maxExportBatchSize (\(maxExportBatchSize)) <= 0, fallback to default 512.")
+      safeMaxExportBatchSize = 512
+    }
+
     worker = BatchWorker(spanExporter: spanExporter,
                          meterProvider: meterProvider,
-                         scheduleDelay: scheduleDelay,
-                         exportTimeout: exportTimeout,
-                         maxQueueSize: maxQueueSize,
-                         maxExportBatchSize: maxExportBatchSize,
+                         scheduleDelay: safeScheduleDelay,
+                         exportTimeout: safeExportTimeout,
+                         maxQueueSize: safeMaxQueueSize,
+                         maxExportBatchSize: safeMaxExportBatchSize,
                          willExportCallback: willExportCallback)
     worker.start()
   }
@@ -69,7 +99,7 @@ public struct BatchSpanProcessor: SpanProcessor {
 /// The list of batched data is protected by a NSCondition which ensures full concurrency.
 private class BatchWorker: WorkerThread {
   let spanExporter: SpanExporter
-  let meterProvider: StableMeterProvider?
+  let meterProvider: (any StableMeterProvider)?
   let scheduleDelay: TimeInterval
   let maxQueueSize: Int
   let exportTimeout: TimeInterval
@@ -85,7 +115,7 @@ private class BatchWorker: WorkerThread {
   private var processedSpansCounter: LongCounter?
 
   init(spanExporter: SpanExporter,
-       meterProvider: StableMeterProvider? = nil,
+       meterProvider: (any StableMeterProvider)? = nil,
        scheduleDelay: TimeInterval,
        exportTimeout: TimeInterval,
        maxQueueSize: Int,
@@ -142,7 +172,7 @@ private class BatchWorker: WorkerThread {
     defer { cond.unlock() }
 
     if spanList.count == maxQueueSize {
-      processedSpansCounter?.add(value: 1, attribute: [
+      processedSpansCounter?.add(value: 1, attributes: [
         BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE),
         BatchSpanProcessor.SPAN_PROCESSOR_DROPPED_LABEL: .bool(true)
       ])
@@ -214,7 +244,7 @@ private class BatchWorker: WorkerThread {
       let result = spanExporter.export(spans: spansToExport, explicitTimeout: explicitTimeout)
       if result == .success {
         cond.lock()
-        processedSpansCounter?.add(value: spanList.count, attribute: [
+        processedSpansCounter?.add(value: spanList.count, attributes: [
           BatchSpanProcessor.SPAN_PROCESSOR_TYPE_LABEL: .string(BatchSpanProcessor.SPAN_PROCESSOR_TYPE_VALUE),
           BatchSpanProcessor.SPAN_PROCESSOR_DROPPED_LABEL: .bool(false)
         ])

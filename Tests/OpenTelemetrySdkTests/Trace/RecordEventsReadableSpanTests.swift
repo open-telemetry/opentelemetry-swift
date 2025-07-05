@@ -7,7 +7,7 @@ import OpenTelemetryApi
 @testable import OpenTelemetrySdk
 import XCTest
 
-class RecordEventsReadableSpanTest: XCTestCase {
+class SpanSdkTest: XCTestCase {
   let spanName = "MySpanName"
   let spanNewName = "NewName"
   let nanosPerSecond: Int64 = 1000000000
@@ -222,6 +222,45 @@ class RecordEventsReadableSpanTest: XCTestCase {
       }
       return false
     }())
+  }
+
+  func testSetAttributes() {
+    let span = createTestRootSpan()
+
+    let attributes: [String: AttributeValue] = ["hello": .string("world"),
+                                                "count": .int(2)]
+
+    let attributes2: [String: AttributeValue] = ["fiz": .string("buzz"),
+                                                 "pi": .double(3.14)]
+    span.setAttributes(attributes)
+
+    XCTAssertEqual(attributes, span.getAttributes())
+
+    span.setAttributes(attributes2)
+
+    var attributes3 : [String: AttributeValue] = [:]
+
+    attributes3.merge(attributes) { (_, new) in new }
+    attributes3.merge(attributes2) { (_, new) in new }
+
+    XCTAssertEqual(attributes3, span.getAttributes())
+  }
+
+
+  func testGetAttributes() {
+    let span = createTestRootSpan()
+    
+    let attributes: [String: AttributeValue] = ["hello": .string("world"),
+                                                "count": .int(2)]
+    
+    span.setAttributes(attributes)
+    
+    var spanAttributes = span.getAttributes()
+
+    spanAttributes["newAttribute"] = .string("oops!")
+
+    XCTAssertNotEqual(spanAttributes, span.getAttributes())
+
   }
 
   func testAddEvent() {
@@ -459,26 +498,39 @@ class RecordEventsReadableSpanTest: XCTestCase {
     span.end()
   }
 
-  func testDroppingEvents() {
+  func testAddingEventsAboveLimitShouldntBeAllowed() {
     let maxNumberOfEvents = 8
     let spanLimits = SpanLimits().settingEventCountLimit(UInt(maxNumberOfEvents))
     let span = createTestSpan(config: spanLimits)
+
     for _ in 0 ..< 2 * maxNumberOfEvents {
       span.addEvent(name: "event2", attributes: [String: AttributeValue]())
       testClock.advanceMillis(millisPerSecond)
     }
+
     var spanData = span.toSpanData()
-    XCTAssertEqual(spanData.events.count, maxNumberOfEvents) //
+
+    XCTAssertEqual(spanData.events.count, maxNumberOfEvents)
     for i in 0 ..< maxNumberOfEvents {
-      let expectedEvent = SpanData.Event(name: "event2", timestamp: startTime.addingTimeInterval(TimeInterval(maxNumberOfEvents + i)), attributes: [String: AttributeValue]())
+      let expectedEvent = SpanData.Event(
+        name: "event2",
+        timestamp: startTime.addingTimeInterval(TimeInterval(i)),
+        attributes: [String: AttributeValue]()
+      )
       XCTAssertEqual(spanData.events[i], expectedEvent)
       XCTAssertEqual(spanData.totalRecordedEvents, 2 * maxNumberOfEvents)
     }
+
     span.end()
     spanData = span.toSpanData()
+
     XCTAssertEqual(spanData.events.count, maxNumberOfEvents)
     for i in 0 ..< maxNumberOfEvents {
-      let expectedEvent = SpanData.Event(name: "event2", timestamp: startTime.addingTimeInterval(TimeInterval(maxNumberOfEvents + i)), attributes: [String: AttributeValue]())
+      let expectedEvent = SpanData.Event(
+        name: "event2",
+        timestamp: startTime.addingTimeInterval(TimeInterval(i)),
+        attributes: [String: AttributeValue]()
+      )
       XCTAssertEqual(spanData.events[i], expectedEvent)
     }
   }
@@ -512,7 +564,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
     let link1 = SpanData.Link(context: context, attributes: TestUtils.generateRandomAttributes())
     let links = [link1]
 
-    let readableSpan = RecordEventsReadableSpan.startSpan(context: context,
+    let readableSpan = SpanSdk.startSpan(context: context,
                                                           name: name,
                                                           instrumentationScopeInfo: instrumentationScopeInfo,
                                                           kind: kind,
@@ -576,15 +628,15 @@ class RecordEventsReadableSpanTest: XCTestCase {
     XCTAssertEqual(expected, result)
   }
 
-  private func createTestRootSpan() -> RecordEventsReadableSpan {
+  private func createTestRootSpan() -> SpanSdk {
     return createTestSpan(kind: .internal, config: SpanLimits(), parentContext: nil, attributes: [String: AttributeValue]())
   }
 
-  private func createTestSpan(attributes: [String: AttributeValue]) -> RecordEventsReadableSpan {
+  private func createTestSpan(attributes: [String: AttributeValue]) -> SpanSdk {
     return createTestSpan(kind: .internal, config: SpanLimits(), parentContext: nil, attributes: attributes)
   }
 
-  private func createTestSpan(kind: SpanKind) -> RecordEventsReadableSpan {
+  private func createTestSpan(kind: SpanKind) -> SpanSdk {
     let parentContext = SpanContext.create(traceId: traceId,
                                            spanId: parentSpanId,
                                            traceFlags: TraceFlags(),
@@ -592,15 +644,15 @@ class RecordEventsReadableSpanTest: XCTestCase {
     return createTestSpan(kind: kind, config: SpanLimits(), parentContext: parentContext, attributes: [String: AttributeValue]())
   }
 
-  private func createTestSpan(config: SpanLimits) -> RecordEventsReadableSpan {
+  private func createTestSpan(config: SpanLimits) -> SpanSdk {
     return createTestSpan(kind: .internal, config: config, parentContext: nil, attributes: [String: AttributeValue]())
   }
 
-  private func createTestSpan(kind: SpanKind, config: SpanLimits, parentContext: SpanContext?, attributes: [String: AttributeValue]) -> RecordEventsReadableSpan {
+  private func createTestSpan(kind: SpanKind, config: SpanLimits, parentContext: SpanContext?, attributes: [String: AttributeValue]) -> SpanSdk {
     var attributesWithCapacity = AttributesDictionary(capacity: config.attributeCountLimit)
     attributesWithCapacity.updateValues(attributes: attributes)
 
-    let span = RecordEventsReadableSpan.startSpan(context: spanContext,
+    let span = SpanSdk.startSpan(context: spanContext,
                                                   name: spanName,
                                                   instrumentationScopeInfo: instrumentationScopeInfo,
                                                   kind: kind,
@@ -618,7 +670,7 @@ class RecordEventsReadableSpanTest: XCTestCase {
     return span
   }
 
-  private func spanDoWork(span: RecordEventsReadableSpan, status: Status) {
+  private func spanDoWork(span: SpanSdk, status: Status) {
     span.setAttribute(key: "MySingleStringAttributeKey", value: AttributeValue.string("MySingleStringAttributeValue"))
 
     for attribute in attributes {

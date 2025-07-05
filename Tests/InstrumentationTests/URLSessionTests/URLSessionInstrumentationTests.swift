@@ -35,23 +35,22 @@ class URLSessionInstrumentationTests: XCTestCase {
       semaphore.signal()
     }
   }
-    
+
   class CountingSessionDelegate: NSObject, URLSessionDelegate, URLSessionDataDelegate {
-      var callCount: Int = 0
+    var callCount: Int = 0
 
-      func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {
-        callCount += 1
-          
-      }
-
-      func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        callCount += 1
-      }
-      
-      func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
-        callCount += 1
-      }
+    func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {
+      callCount += 1
     }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+      callCount += 1
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
+      callCount += 1
+    }
+  }
 
   static var requestCopy: URLRequest!
   static var responseCopy: HTTPURLResponse!
@@ -623,10 +622,10 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
     XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
   }
-    
+
   @available(macOS 10.15, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
   public func
-  testDataTaskWithTaskDelegateAsync() async throws {
+    testDataTaskWithTaskDelegateAsync() async throws {
     let request = URLRequest(url: URL(string: "http://localhost:33333/success")!)
 
     let delegate = CountingSessionDelegate()
@@ -672,15 +671,15 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
     XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
   }
-    
+
   @available(macOS 12, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
   public func testDownloadTaskWithRequestDelegateAsync() async throws {
     let url = URL(string: "http://localhost:33333/success")!
     let request = URLRequest(url: url)
-    
+
     let session = URLSession(configuration: URLSessionConfiguration.default)
     _ = try await session.download(for: request, delegate: sessionDelegate)
-        XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
     XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
     XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
   }
@@ -695,14 +694,14 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
     XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
   }
-    
+
   @available(macOS 10.15, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
   public func testUploadTaskWithRequestDelegateAsync() async throws {
     let url = URL(string: "http://localhost:33333/success")!
     let request = URLRequest(url: url)
     let session = URLSession(configuration: URLSessionConfiguration.default)
     _ = try await session.upload(for: request, from: Data(), delegate: sessionDelegate)
-    
+
     XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
     XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
   }
@@ -712,7 +711,7 @@ class URLSessionInstrumentationTests: XCTestCase {
     let expectation = expectation(description: "Non-instrumented request completes")
 
     let session = URLSession(configuration: URLSessionConfiguration.default, delegate: sessionDelegate, delegateQueue: nil)
-    let task = session.dataTask(with: request) { data, response, error in
+    let task = session.dataTask(with: request) { _, response, error in
       XCTAssertNil(error, "Non-instrumented request should not error")
       XCTAssertNotNil(response, "Non-instrumented request should receive response")
       if let httpResponse = response as? HTTPURLResponse {
@@ -720,7 +719,7 @@ class URLSessionInstrumentationTests: XCTestCase {
       } else {
         XCTFail("Response should be HTTPURLResponse")
       }
-      
+
       // Verify that no instrumentation was added
       XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInstrumentCalled, "shouldInstrument should be called")
       XCTAssertFalse(URLSessionInstrumentationTests.checker.nameSpanCalled, "nameSpan should not be called")
@@ -728,11 +727,11 @@ class URLSessionInstrumentationTests: XCTestCase {
       XCTAssertFalse(URLSessionInstrumentationTests.checker.shouldInjectTracingHeadersCalled, "shouldInjectTracingHeaders should not be called")
       XCTAssertFalse(URLSessionInstrumentationTests.checker.createdRequestCalled, "createdRequest should not be called")
       XCTAssertFalse(URLSessionInstrumentationTests.checker.receivedResponseCalled, "receivedResponse should not be called")
-      
+
       // Verify the request wasn't modified
       XCTAssertNil(URLSessionInstrumentationTests.requestCopy, "Request should not have been copied/modified")
       XCTAssertEqual(0, URLSessionLogger.runningSpans.count, "No spans should be created for non-instrumented requests")
-      
+
       expectation.fulfill()
     }
     task.resume()
@@ -748,14 +747,14 @@ class URLSessionInstrumentationTests: XCTestCase {
     let session = URLSession(configuration: configuration, delegate: sessionDelegate, delegateQueue: nil)
 
     let (_, response) = try await session.data(for: request)
-    
+
     guard let httpResponse = response as? HTTPURLResponse else {
       XCTFail("Response should be HTTPURLResponse")
       return
     }
-    
+
     XCTAssertEqual(httpResponse.statusCode, 200, "Non-instrumented request should receive 200 OK")
-    
+
     // Verify that no instrumentation was added
     XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInstrumentCalled, "shouldInstrument should be called")
     XCTAssertFalse(URLSessionInstrumentationTests.checker.nameSpanCalled, "nameSpan should not be called")
@@ -763,7 +762,7 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertFalse(URLSessionInstrumentationTests.checker.shouldInjectTracingHeadersCalled, "shouldInjectTracingHeaders should not be called")
     XCTAssertFalse(URLSessionInstrumentationTests.checker.createdRequestCalled, "createdRequest should not be called")
     XCTAssertFalse(URLSessionInstrumentationTests.checker.receivedResponseCalled, "receivedResponse should not be called")
-    
+
     // Verify the request wasn't modified
     XCTAssertNil(URLSessionInstrumentationTests.requestCopy, "Request should not have been copied/modified")
     XCTAssertEqual(0, URLSessionLogger.runningSpans.count, "No spans should be created for non-instrumented requests")
@@ -772,21 +771,21 @@ class URLSessionInstrumentationTests: XCTestCase {
   @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
   public func testNonInstrumentedRequestCompletesAsync_NonTaskContext() async throws {
     let request = URLRequest(url: URL(string: "http://localhost:33333/dontinstrument")!)
-    
+
     let configuration = URLSessionConfiguration.default
     let session = URLSession(configuration: configuration, delegate: sessionDelegate, delegateQueue: nil)
-    
+
     // Run in a detached task to ensure we're not in the main Task context
     let task = Task.detached {
       // Ensure we're not in a Task context by running on a background thread
       await Task.yield()
       let (_, response) = try await session.data(for: request)
-      
+
       guard let httpResponse = response as? HTTPURLResponse else {
         XCTFail("Response should be HTTPURLResponse")
         return
       }
-      
+
       XCTAssertEqual(httpResponse.statusCode, 200, "Non-instrumented request should receive 200 OK")
     }
 
@@ -796,19 +795,19 @@ class URLSessionInstrumentationTests: XCTestCase {
   @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
   public func testNonInstrumentedRequestCompletesAsync_ExplicitTaskContext() async throws {
     let request = URLRequest(url: URL(string: "http://localhost:33333/dontinstrument")!)
-    
+
     let configuration = URLSessionConfiguration.default
     let session = URLSession(configuration: configuration, delegate: sessionDelegate, delegateQueue: nil)
 
     // Run in an explicit task to ensure we're in a Task context
     let task = Task {
       let (_, response) = try await session.data(for: request)
-      
+
       guard let httpResponse = response as? HTTPURLResponse else {
         XCTFail("Response should be HTTPURLResponse")
         return
       }
-      
+
       XCTAssertEqual(httpResponse.statusCode, 200, "Non-instrumented request should receive 200 OK")
     }
 

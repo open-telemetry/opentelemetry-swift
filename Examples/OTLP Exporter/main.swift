@@ -42,7 +42,10 @@
 
   let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion)
 
-  if #available(macOS 10.14, *), #available(iOS 12.0, *) {
+  if #available(iOS 15.0, macOS 12, tvOS 15.0, watchOS 8.0, *) {
+    let tracerProviderSDK = OpenTelemetry.instance.tracerProvider as? TracerProviderSdk
+    tracerProviderSDK?.addSpanProcessor(OSSignposterIntegration())
+  } else {
     let tracerProviderSDK = OpenTelemetry.instance.tracerProvider as? TracerProviderSdk
     tracerProviderSDK?.addSpanProcessor(SignPostIntegration())
   }
@@ -79,18 +82,29 @@
   createSpans()
 
   // Metrics
-  let otlpMetricExporter = OtlpMetricExporter(channel: client)
-  let processor = MetricProcessorSdk()
-  let meterProvider = MeterProviderSdk(metricProcessor: processor, metricExporter: otlpMetricExporter, metricPushInterval: 0.1)
+let otlpMetricExporter = StableOtlpMetricExporter(channel: client)
+let meterProvider = StableMeterProviderSdk.builder()
+  .registerMetricReader(
+    reader: StablePeriodicMetricReaderBuilder(
+      exporter: otlpMetricExporter).setInterval(timeInterval: 60)
+      .build()
+  )
+  .registerView(
+    selector: InstrumentSelector.builder().setInstrument(name: ".*").build(),
+      view: StableView.builder().build()
+    )
+  .build()
 
-  OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
+OpenTelemetry.registerStableMeterProvider(meterProvider: meterProvider)
 
-  let labels1 = ["dim1": "value1"]
+let labels1 = ["dim1": AttributeValue.string("value1")]
 
-  var meter = meterProvider.get(instrumentationName: "otlp_example_meter'")
-  var exampleCounter = meter.createIntCounter(name: "otlp_example_counter")
-  var exampleMeasure = meter.createIntMeasure(name: "otlp_example_measure")
-  var exampleObserver = meter.createIntObserver(name: "otlp_example_observation") { observer in
+  var meter = meterProvider.get(name: "otlp_example_meter'")
+
+var exampleCounter = meter.counterBuilder(name: "otlp_example_counter").build()
+var exampleObserver = meter.gaugeBuilder(
+  name: "otlp_example_observation"
+).buildWithCallback { observer in
     var taskInfo = mach_task_basic_info()
     var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
     let _: kern_return_t = withUnsafeMutablePointer(to: &taskInfo) {
@@ -98,15 +112,11 @@
         task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
       }
     }
-    observer.observe(value: Int(taskInfo.resident_size), labels: labels1)
+  observer.record(value: Int(taskInfo.resident_size), attributes: labels1)
   }
 
   for _ in 1 ... 3000 {
-    exampleCounter.add(value: 1, labelset: meter.getLabelSet(labels: labels1))
-    exampleMeasure.record(value: 100, labelset: meter.getLabelSet(labels: labels1))
-    exampleMeasure.record(value: 500, labelset: meter.getLabelSet(labels: labels1))
-    exampleMeasure.record(value: 5, labelset: meter.getLabelSet(labels: labels1))
-    exampleMeasure.record(value: 750, labelset: meter.getLabelSet(labels: labels1))
+    exampleCounter.add(value: 1, attributes: labels1)
     sleep(1)
   }
 
