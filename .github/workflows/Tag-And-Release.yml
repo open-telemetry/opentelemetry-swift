@@ -5,8 +5,12 @@ on :
       - main
     types:
       - closed
+permissions:
+  contents: read
 jobs:
   CheckRelease:
+    permissions:
+      contents: write # required for creating tags and releases
     runs-on: macos-15
     steps:
       - name: Check if merge is release branch
