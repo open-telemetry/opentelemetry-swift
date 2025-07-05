@@ -11,6 +11,7 @@ let package = Package(
     .iOS(.v13),
     .tvOS(.v13),
     .watchOS(.v6),
+    .visionOS(.v1),
   ],
   products: [
     .library(name: "OpenTelemetryApi", targets: ["OpenTelemetryApi"]),
@@ -103,7 +104,7 @@ let package = Package(
         .product(
           name: "DataCompression",
           package: "DataCompression",
-          condition: .when(platforms: [.macOS, .iOS, .watchOS, .tvOS])
+          condition: .when(platforms: [.macOS, .iOS, .watchOS, .tvOS, .visionOS])
         ),
       ],
       path: "Sources/Exporters/OpenTelemetryProtocolHttp"
@@ -180,7 +181,7 @@ let package = Package(
         .product(
           name: "DataCompression",
           package: "DataCompression",
-          condition: .when(platforms: [.macOS, .iOS, .watchOS, .tvOS])
+          condition: .when(platforms: [.macOS, .iOS, .watchOS, .tvOS, .visionOS])
         ),
         .product(name: "NIO", package: "swift-nio"),
         .product(name: "NIOHTTP1", package: "swift-nio"),
@@ -365,7 +366,7 @@ extension Package {
             .product(
               name: "DataCompression",
               package: "DataCompression",
-              condition: .when(platforms: [.macOS, .iOS, .watchOS, .tvOS])
+              condition: .when(platforms: [.macOS, .iOS, .watchOS, .tvOS, .visionOS])
             ),
           ],
           path: "Examples/OTLP HTTP Exporter",

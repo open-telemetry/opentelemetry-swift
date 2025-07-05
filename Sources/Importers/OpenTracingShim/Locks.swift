@@ -31,7 +31,7 @@
 //
 // ===----------------------------------------------------------------------===//
 
-#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
   import Darwin
 #elseif canImport(Glibc)
   import Glibc

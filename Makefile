@@ -24,6 +24,14 @@ XCODEBUILD_OPTIONS_WATCHOS=\
     -retry-tests-on-failure \
 	-workspace .
 
+XCODEBUILD_OPTIONS_VISIONOS=\
+	-configuration Debug \
+	-destination platform='visionOS Simulator,name=Apple Vision Pro,OS=2.0' \
+	-scheme $(PROJECT_NAME) \
+	-test-iterations 5 \
+    -retry-tests-on-failure \
+	-workspace .
+
 .PHONY: setup-brew
 setup-brew:
 	brew update && brew install xcbeautify
@@ -40,6 +48,10 @@ build-tvos:
 build-watchos:
 	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_WATCHOS) build | xcbeautify
 
+.PHONY: build-visionOS
+build-visionos:
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) build | xcbeautify
+
 .PHONY: build-for-testing-ios
 build-for-testing-ios:
 	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_IOS) build-for-testing | xcbeautify
@@ -51,6 +63,10 @@ build-for-testing-tvos:
 .PHONY: build-for-testing-watchos
 build-for-testing-watchos:
 	set -o pipefail && xcodebuild OTHER_LDFLAGS="$(OTHER_LDFLAGS) -fprofile-instr-generate" $(XCODEBUILD_OPTIONS_WATCHOS) build-for-testing | xcbeautify
+
+.PHONY: build-for-testing-visionos
+build-for-testing-visionos:
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) build-for-testing | xcbeautify
 
 .PHONY: test-ios
 test-ios:
@@ -64,6 +80,10 @@ test-tvos:
 test-watchos:
 	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_WATCHOS) test | xcbeautify
 
+.PHONY: test-visionos
+test-visionos:
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) test | xcbeautify
+
 .PHONY: test-without-building-ios
 test-without-building-ios:
 	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_IOS) test-without-building | xcbeautify
@@ -75,3 +95,7 @@ test-without-building-tvos:
 .PHONY: test-without-building-watchos
 test-without-building-watchos:
 	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_WATCHOS) test-without-building | xcbeautify
+
+.PHONY: test-without-building-visionos
+test-without-building-visionos:
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) test-without-building | xcbeautify
