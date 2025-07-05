@@ -38,7 +38,7 @@ build-tvos:
 
 .PHONY: build-watchos
 build-watchos:
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_IOS) build | xcbeautify
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_WATCHOS) build | xcbeautify
 
 .PHONY: build-for-testing-ios
 build-for-testing-ios:
