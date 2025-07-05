@@ -721,6 +721,45 @@ public class URLSessionInstrumentation {
         requestMap[taskId]?.setRequest(request)
       }
 
+      // For iOS 15+/macOS 12+, handle async/await methods differently
+      if #available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *) {
+        // Check if we can determine if this is an async/await call
+        // For iOS 15/macOS 12, we can't use Task.basePriority, so we check other indicators
+        var isAsyncContext = false
+        
+        if #available(OSX 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *) {
+          isAsyncContext = Task.basePriority != nil
+        } else {
+          // For iOS 15/macOS 12, check if the task has no delegate and no session delegate
+          // This is a heuristic that works for async/await methods
+          isAsyncContext = task.delegate == nil && 
+                          (task.value(forKey: "session") as? URLSession)?.delegate == nil &&
+                          task.state != .running
+        }
+        
+        if isAsyncContext {
+          // This is likely an async/await call
+          let instrumentedRequest = URLSessionLogger.processAndLogRequest(request,
+                                                                        sessionTaskId: taskId,
+                                                                        instrumentation: self,
+                                                                        shouldInjectHeaders: true)
+          if let instrumentedRequest {
+            task.setValue(instrumentedRequest, forKey: "currentRequest")
+          }
+          self.setIdKey(value: taskId, for: task)
+          
+          // For async/await methods, we need to ensure the delegate is set
+          // to capture the completion, but only if there's no existing delegate
+          // AND no session delegate (session delegates are called for async/await too)
+          if task.delegate == nil, 
+             task.state != .running,
+             (task.value(forKey: "session") as? URLSession)?.delegate == nil {
+            task.delegate = AsyncTaskDelegate(instrumentation: self, sessionTaskId: taskId)
+          }
+          return
+        }
+      }
+
       if #available(OSX 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *) {
         guard Task.basePriority != nil else {
           // If not inside a Task basePriority is nil
@@ -769,4 +808,33 @@ public class URLSessionInstrumentation {
 class FakeDelegate: NSObject, URLSessionTaskDelegate {
   func urlSession(_ session: URLSession, task: URLSessionTask,
                   didCompleteWithError error: Error?) {}
+}
+
+@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+class AsyncTaskDelegate: NSObject, URLSessionTaskDelegate {
+  private weak var instrumentation: URLSessionInstrumentation?
+  private let sessionTaskId: String
+  
+  init(instrumentation: URLSessionInstrumentation, sessionTaskId: String) {
+    self.instrumentation = instrumentation
+    self.sessionTaskId = sessionTaskId
+    super.init()
+  }
+  
+  func urlSession(_ session: URLSession, task: URLSessionTask,
+                  didCompleteWithError error: Error?) {
+    guard let instrumentation = instrumentation else { return }
+    
+    // Get the task ID that was set when the task was created
+    let taskId = sessionTaskId
+    
+    if let error = error {
+      let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
+      URLSessionLogger.logError(error, dataOrFile: nil, statusCode: status,
+                                instrumentation: instrumentation, sessionTaskId: taskId)
+    } else if let response = task.response {
+      URLSessionLogger.logResponse(response, dataOrFile: nil,
+                                   instrumentation: instrumentation, sessionTaskId: taskId)
+    }
+  }
 }
