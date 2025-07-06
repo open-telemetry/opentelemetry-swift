@@ -5,11 +5,14 @@
 
 import Foundation
 
-public class StablePeriodicMetricReaderBuilder {
-  public private(set) var exporter: StableMetricExporter
+@available(*, deprecated, renamed: "PeriodicMetricReaderBuilder")
+public typealias StablePeriodicMetricReaderBuilder = PeriodicMetricReaderBuilder
+
+public class PeriodicMetricReaderBuilder {
+  public private(set) var exporter: MetricExporter
   public private(set) var exporterInterval: TimeInterval = 1.0
 
-  public init(exporter: StableMetricExporter) {
+  public init(exporter: MetricExporter) {
     self.exporter = exporter
   }
 
@@ -18,8 +21,8 @@ public class StablePeriodicMetricReaderBuilder {
     return self
   }
 
-  public func build() -> StablePeriodicMetricReaderSdk {
-    return StablePeriodicMetricReaderSdk(exporter: exporter,
+  public func build() -> PeriodicMetricReaderSdk {
+    return PeriodicMetricReaderSdk(exporter: exporter,
                                          exportInterval: exporterInterval)
   }
 }

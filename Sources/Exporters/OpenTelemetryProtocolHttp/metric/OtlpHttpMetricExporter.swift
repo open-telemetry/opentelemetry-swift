@@ -12,15 +12,26 @@ import OpenTelemetrySdk
   import FoundationNetworking
 #endif
 
+public func defaultOtlpHttpMetricsEndpoint() -> URL {
+  URL(string: "http://localhost:4318/v1/metrics")!
+}
+
+@available(*, deprecated, renamed: "defaultOtlpHttpMetricsEndpoint")
 public func defaultStableOtlpHTTPMetricsEndpoint() -> URL {
   URL(string: "http://localhost:4318/v1/metrics")!
 }
 
-public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMetricExporter {
+@available(*, deprecated, renamed: "OtlpHttpMetricExporter")
+public typealias StableOtlpHTTPMetricExporter = OtlpHttpMetricExporter
+
+@available(*, deprecated, renamed: "OtlpHttpMetricExporter")
+public typealias OtlpHTTPMetricExporter = OtlpHttpMetricExporter
+
+public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
   var aggregationTemporalitySelector: AggregationTemporalitySelector
   var defaultAggregationSelector: DefaultAggregationSelector
 
-  var pendingMetrics: [StableMetricData] = []
+  var pendingMetrics: [MetricData] = []
   private let exporterLock = Lock()
   private var exporterMetrics: ExporterMetrics?
 
@@ -50,7 +61,7 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
   ///    - envVarHeaders: Extra header key-values
   public convenience init(endpoint: URL,
                           config: OtlpConfiguration = OtlpConfiguration(),
-                          meterProvider: any StableMeterProvider,
+                          meterProvider: any MeterProvider,
                           aggregationTemporalitySelector: AggregationTemporalitySelector =
                             AggregationTemporality.alwaysCumulative(),
                           defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector
@@ -73,8 +84,8 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
 
   // MARK: - StableMetricsExporter
 
-  public func export(metrics: [StableMetricData]) -> ExportResult {
-    var sendingMetrics: [StableMetricData] = []
+  public func export(metrics: [MetricData]) -> ExportResult {
+    var sendingMetrics: [MetricData] = []
     exporterLock.withLockVoid {
       pendingMetrics.append(contentsOf: metrics)
       sendingMetrics = pendingMetrics
@@ -83,7 +94,7 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
     let body =
       Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
         $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(
-          stableMetricData: sendingMetrics)
+          metricData: sendingMetrics)
       }
     exporterMetrics?.addSeen(value: sendingMetrics.count)
     var request = createRequest(body: body, endpoint: endpoint)
@@ -106,7 +117,7 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
 
   public func flush() -> ExportResult {
     var exporterResult: ExportResult = .success
-    var pendingMetrics: [StableMetricData] = []
+    var pendingMetrics: [MetricData] = []
     exporterLock.withLockVoid {
       pendingMetrics = self.pendingMetrics
     }
@@ -115,7 +126,7 @@ public class StableOtlpHTTPMetricExporter: StableOtlpHTTPExporterBase, StableMet
         Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest
           .with {
             $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(
-              stableMetricData: pendingMetrics)
+              metricData: pendingMetrics)
           }
       let semaphore = DispatchSemaphore(value: 0)
       var request = createRequest(body: body, endpoint: endpoint)

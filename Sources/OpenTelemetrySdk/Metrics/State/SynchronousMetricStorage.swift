@@ -16,7 +16,7 @@ public class SynchronousMetricStorage: SynchronousMetricStorageProtocol {
   let registeredReader: RegisteredReader
   public private(set) var metricDescriptor: MetricDescriptor
   let aggregatorTemporality: AggregationTemporality
-  let aggregator: StableAggregator
+  let aggregator: Aggregator
   var aggregatorHandles = [[String: AttributeValue]: AggregatorHandle]()
   let attributeProcessor: AttributeProcessor
   var aggregatorHandlePool = [AggregatorHandle]()
@@ -39,7 +39,12 @@ public class SynchronousMetricStorage: SynchronousMetricStorageProtocol {
     return SynchronousMetricStorage(registeredReader: registeredReader, metricDescriptor: metricDescriptor, aggregator: aggregator, attributeProcessor: registeredView.attributeProcessor)
   }
 
-  init(registeredReader: RegisteredReader, metricDescriptor: MetricDescriptor, aggregator: StableAggregator, attributeProcessor: AttributeProcessor) {
+  init(
+    registeredReader: RegisteredReader,
+    metricDescriptor: MetricDescriptor,
+    aggregator: Aggregator,
+    attributeProcessor: AttributeProcessor
+  ) {
     self.registeredReader = registeredReader
     self.metricDescriptor = metricDescriptor
     aggregatorTemporality = registeredReader.reader.getAggregationTemporality(for: metricDescriptor.instrument.type)
@@ -67,7 +72,7 @@ public class SynchronousMetricStorage: SynchronousMetricStorageProtocol {
     return aggregatorHandle
   }
 
-  public func collect(resource: Resource, scope: InstrumentationScopeInfo, startEpochNanos: UInt64, epochNanos: UInt64) -> StableMetricData {
+  public func collect(resource: Resource, scope: InstrumentationScopeInfo, startEpochNanos: UInt64, epochNanos: UInt64) -> MetricData {
     let reset = aggregatorTemporality == .delta
     let start = reset ? registeredReader.lastCollectedEpochNanos : startEpochNanos
 
@@ -85,7 +90,7 @@ public class SynchronousMetricStorage: SynchronousMetricStorageProtocol {
     }
 
     if points.isEmpty {
-      return StableMetricData.empty
+      return MetricData.empty
     }
     return aggregator.toMetricData(resource: resource, scope: scope, descriptor: metricDescriptor, points: points, temporality: aggregatorTemporality)
   }

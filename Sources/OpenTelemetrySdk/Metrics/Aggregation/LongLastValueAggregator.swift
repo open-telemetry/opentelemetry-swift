@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public class LongLastValueAggregator: StableAggregator {
+public class LongLastValueAggregator: Aggregator {
   private var reservoirSupplier: () -> ExemplarReservoir
 
   init(reservoirSupplier: @escaping () -> ExemplarReservoir) {
@@ -25,8 +25,19 @@ public class LongLastValueAggregator: StableAggregator {
     Handle(exemplarReservoir: reservoirSupplier())
   }
 
-  public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [PointData], temporality: AggregationTemporality) -> StableMetricData {
-    StableMetricData.createLongGauge(resource: resource, instrumentationScopeInfo: scope, name: descriptor.name, description: descriptor.description, unit: descriptor.instrument.unit, data: StableGaugeData(aggregationTemporality: temporality, points: points))
+  public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [PointData], temporality: AggregationTemporality) -> MetricData {
+    MetricData
+      .createLongGauge(
+        resource: resource,
+        instrumentationScopeInfo: scope,
+        name: descriptor.name,
+        description: descriptor.description,
+        unit: descriptor.instrument.unit,
+        data: GaugeData(
+          aggregationTemporality: temporality,
+          points: points
+        )
+      )
   }
 
   private class Handle: AggregatorHandle {

@@ -9,7 +9,7 @@
 @testable import SwiftMetricsShim
 import XCTest
 
-class MetricExporterMock: StableMetricExporter {
+class MetricExporterMock: MetricExporter {
   func flush() -> OpenTelemetrySdk.ExportResult {
     .success
   }
@@ -22,28 +22,28 @@ class MetricExporterMock: StableMetricExporter {
     return AggregationTemporality.cumulative
   }
 
-  let onExport: ([StableMetricData]) -> ExportResult
-  init(onExport: @escaping ([StableMetricData]) -> ExportResult) {
+  let onExport: ([MetricData]) -> ExportResult
+  init(onExport: @escaping ([MetricData]) -> ExportResult) {
     self.onExport = onExport
   }
 
-  func export(metrics: [StableMetricData]) -> ExportResult {
+  func export(metrics: [MetricData]) -> ExportResult {
     return onExport(metrics)
   }
 }
 
 class SwiftMetricsShimTests: XCTestCase {
   var mockExporter: MetricExporterMock! = nil
-  let provider: StableMeterSdk! = nil
-  var stableMetrics = [StableMetricData]()
+  let provider: MeterSdk! = nil
+  var stableMetrics = [MetricData]()
   var metrics: OpenTelemetrySwiftMetrics! = nil
   var metricsExportExpectation: XCTestExpectation! = nil
   override func setUp() {
     super.setUp()
     metricsExportExpectation = expectation(description: "metrics exported")
 
-    var reader: StablePeriodicMetricReaderSdk! = nil
-    stableMetrics = [StableMetricData]()
+    var reader: PeriodicMetricReaderSdk! = nil
+    stableMetrics = [MetricData]()
     mockExporter = MetricExporterMock { metrics in
       self.stableMetrics = metrics
       self.metricsExportExpectation.fulfill()
@@ -51,15 +51,15 @@ class SwiftMetricsShimTests: XCTestCase {
       return .success
     }
 
-    reader = StablePeriodicMetricReaderSdk(
+    reader = PeriodicMetricReaderSdk(
       exporter: mockExporter,
       exportInterval: 0.5
     )
 
-    let provider = StableMeterProviderSdk.builder()
+    let provider = MeterProviderSdk.builder()
       .registerView(
         selector: InstrumentSelector.builder().setInstrument(name: ".*").build(),
-        view: StableView.builder().build()
+        view: View.builder().build()
       )
       .registerMetricReader(
         reader: reader

@@ -11,7 +11,7 @@ import NIOHPACK
 import OpenTelemetryProtocolExporterCommon
 import OpenTelemetrySdk
 
-public class StableOtlpMetricExporter: StableMetricExporter {
+public class OtlpMetricExporter: MetricExporter {
   public func getAggregationTemporality(for instrument: OpenTelemetrySdk.InstrumentType) -> OpenTelemetrySdk.AggregationTemporality {
     return aggregationTemporalitySelector.getAggregationTemporality(for: instrument)
   }
@@ -40,9 +40,9 @@ public class StableOtlpMetricExporter: StableMetricExporter {
     }
   }
 
-  public func export(metrics: [OpenTelemetrySdk.StableMetricData]) -> OpenTelemetrySdk.ExportResult {
+  public func export(metrics: [OpenTelemetrySdk.MetricData]) -> OpenTelemetrySdk.ExportResult {
     let exportRequest = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
-      $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(stableMetricData: metrics)
+      $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(metricData: metrics)
     }
     if config.timeout > 0 {
       metricClient.defaultCallOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(config.timeout.toNanoseconds)))

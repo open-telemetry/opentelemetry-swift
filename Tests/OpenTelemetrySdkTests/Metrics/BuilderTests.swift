@@ -9,9 +9,9 @@ import XCTest
 
 class BuilderTests: XCTestCase {
   func testBuilders() {
-    let meterProvider = StableMeterProviderSdk.builder().build()
+    let meterProvider = MeterProviderSdk.builder().build()
     let meter = meterProvider.meterBuilder(name: "meter").build()
-    XCTAssertTrue(type(of: meter) == DefaultStableMeter.self)
+    XCTAssertTrue(type(of: meter) == DefaultMeter.self)
     XCTAssertNotNil(meter.counterBuilder(name: "counter").ofDoubles().build())
     XCTAssertNotNil(meter.counterBuilder(name: "counter").build())
     XCTAssertNotNil(meter.gaugeBuilder(name: "gauge").build())
@@ -26,15 +26,15 @@ class BuilderTests: XCTestCase {
   }
 
   func testCounterofLongs() {
-    let myReader = StablePeriodicMetricReaderBuilder(
-      exporter: MockStableMetricExporter()
+    let myReader = PeriodicMetricReaderBuilder(
+      exporter: MockMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderSdk.builder()
+    let meterProvider = MeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .registerView(
         selector: InstrumentSelector.builder().setMeter(name: "*").build(),
-        view: StableView
+        view: View
           .builder().build()
       )
       .build()
@@ -60,15 +60,15 @@ class BuilderTests: XCTestCase {
   }
 
   func testCounterOfDoubles() {
-    let myReader = StablePeriodicMetricReaderBuilder(
-      exporter: MockStableMetricExporter()
+    let myReader = PeriodicMetricReaderBuilder(
+      exporter: MockMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderSdk.builder()
+    let meterProvider = MeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .registerView(
         selector: InstrumentSelector.builder().setMeter(name: "*").build(),
-        view: StableView
+        view: View
           .builder().build()
       )
       .build()
@@ -94,15 +94,15 @@ class BuilderTests: XCTestCase {
   }
 
   func testGuageOfDoubles() {
-    let myReader = StablePeriodicMetricReaderBuilder(
-      exporter: MockStableMetricExporter()
+    let myReader = PeriodicMetricReaderBuilder(
+      exporter: MockMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderSdk.builder()
+    let meterProvider = MeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .registerView(
         selector: InstrumentSelector.builder().setMeter(name: "*").build(),
-        view: StableView
+        view: View
           .builder().build()
       )
       .build()
@@ -125,15 +125,15 @@ class BuilderTests: XCTestCase {
   }
 
   func testGaugeOfLongs() {
-    let myReader = StablePeriodicMetricReaderBuilder(
-      exporter: MockStableMetricExporter()
+    let myReader = PeriodicMetricReaderBuilder(
+      exporter: MockMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderSdk.builder()
+    let meterProvider = MeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .registerView(
         selector: InstrumentSelector.builder().setMeter(name: "*").build(),
-        view: StableView
+        view: View
           .builder().build()
       )
       .build()
@@ -159,15 +159,15 @@ class BuilderTests: XCTestCase {
   }
 
   func testHistogramOfLongs() {
-    let myReader = StablePeriodicMetricReaderBuilder(
-      exporter: MockStableMetricExporter()
+    let myReader = PeriodicMetricReaderBuilder(
+      exporter: MockMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderSdk.builder()
+    let meterProvider = MeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .registerView(
         selector: InstrumentSelector.builder().setMeter(name: "*").build(),
-        view: StableView
+        view: View
           .builder().build()
       )
       .build()
@@ -189,11 +189,11 @@ class BuilderTests: XCTestCase {
   }
 
   func testHistogramOfDoubles() {
-    let myReader = StablePeriodicMetricReaderBuilder(
-      exporter: MockStableMetricExporter()
+    let myReader = PeriodicMetricReaderBuilder(
+      exporter: MockMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderSdk.builder()
+    let meterProvider = MeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .build()
 
@@ -215,11 +215,11 @@ class BuilderTests: XCTestCase {
   }
 
   func testLongUpDownInstrument() {
-    let myReader = StablePeriodicMetricReaderBuilder(
-      exporter: MockStableMetricExporter()
+    let myReader = PeriodicMetricReaderBuilder(
+      exporter: MockMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderSdk.builder()
+    let meterProvider = MeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .build()
     let meter = meterProvider.meterBuilder(name: "meter").build()
@@ -236,11 +236,11 @@ class BuilderTests: XCTestCase {
   }
 
   func testDoubleUpDownInstrument() {
-    let myReader = StablePeriodicMetricReaderBuilder(
-      exporter: MockStableMetricExporter()
+    let myReader = PeriodicMetricReaderBuilder(
+      exporter: MockMetricExporter()
     ).build()
 
-    let meterProvider = StableMeterProviderSdk.builder()
+    let meterProvider = MeterProviderSdk.builder()
       .registerMetricReader(reader: myReader)
       .build()
 

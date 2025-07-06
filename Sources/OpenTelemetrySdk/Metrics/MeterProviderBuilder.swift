@@ -1,14 +1,18 @@
-//
-// Copyright The OpenTelemetry Authors
-// SPDX-License-Identifier: Apache-2.0
-//
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import Foundation
 import OpenTelemetryApi
 
-public class NoopStableMeterProviderBuilder {
+@available(*, deprecated, renamed: "MeterProviderBuilder")
+public typealias StableMeterProviderBuilder = MeterProviderBuilder
+
+public class MeterProviderBuilder {
   public private(set) var clock: Clock = MillisClock()
   public private(set) var resource: Resource = .init()
+  public private(set) var metricReaders = [MetricReader]()
   public private(set) var registeredViews = [RegisteredView]()
   public private(set) var exemplarFilter: ExemplarFilter = AlwaysOnFilter()
 
@@ -24,21 +28,14 @@ public class NoopStableMeterProviderBuilder {
     return self
   }
 
-  public func registerView(selector: InstrumentSelector, view: StableView) -> Self {
+  public func registerView(selector: InstrumentSelector, view: View) -> Self {
     registeredViews.append(RegisteredView(selector: selector, view: view, attributeProcessor: view.attributeProcessor))
     return self
   }
 
-  public func registerMetricReader(reader: StableMetricReader) -> StableMeterProviderBuilder {
-    let newBuilder = StableMeterProviderBuilder()
-      .setClock(clock: clock)
-      .setResource(resource: resource)
-      .registerMetricReader(reader: reader)
-      .setExemplarFilter(exemplarFilter: exemplarFilter)
-    for view in registeredViews {
-      _ = newBuilder.registerView(selector: view.selector, view: view.view)
-    }
-    return newBuilder
+  public func registerMetricReader(reader: MetricReader) -> Self {
+    metricReaders.append(reader)
+    return self
   }
 
   public func setExemplarFilter(exemplarFilter: ExemplarFilter) -> Self {
@@ -46,7 +43,7 @@ public class NoopStableMeterProviderBuilder {
     return self
   }
 
-  public func build() -> DefaultStableMeterProvider {
-    DefaultStableMeterProvider.instance
+  public func build() -> MeterProviderSdk {
+    MeterProviderSdk(registeredViews: registeredViews, metricReaders: metricReaders, clock: clock, resource: resource, exemplarFilter: exemplarFilter)
   }
 }

@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public class DropAggregator: StableAggregator {
+public class DropAggregator: Aggregator {
   public private(set) static var POINT_DATA = PointData(startEpochNanos: 0, endEpochNanos: 0, attributes: [String: AttributeValue](), exemplars: [ExemplarData]())
 
   public func createHandle() -> AggregatorHandle {
@@ -21,7 +21,7 @@ public class DropAggregator: StableAggregator {
     Self.POINT_DATA
   }
 
-  public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [PointData], temporality: AggregationTemporality) -> StableMetricData {
-    StableMetricData.empty
+  public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [PointData], temporality: AggregationTemporality) -> MetricData {
+    MetricData.empty
   }
 }

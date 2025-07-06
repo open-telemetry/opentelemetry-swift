@@ -6,7 +6,7 @@
 import Foundation
 
 public protocol MeterBuilder: AnyObject {
-  associatedtype AnyStableMeter: StableMeter
+  associatedtype AnyMeter: Meter
   /// Assign an OpenTelemetry schema URL to the resulting Meter
   ///
   /// - Parameter schemaUrl: the URL of the OpenTelemetry schema being used by this instrumentation scope
@@ -28,5 +28,5 @@ public protocol MeterBuilder: AnyObject {
   /// gets or creates a Meter
   ///
   /// - Returns: a Meter configured with the provided options.
-  func build() -> AnyStableMeter
+  func build() -> AnyMeter
 }

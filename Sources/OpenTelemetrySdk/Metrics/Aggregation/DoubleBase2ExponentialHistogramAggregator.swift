@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
+public class DoubleBase2ExponentialHistogramAggregator: Aggregator {
   private var reservoirSupplier: () -> ExemplarReservoir
   private var maxBuckets: Int
   private var maxScale: Int
@@ -29,8 +29,19 @@ public class DoubleBase2ExponentialHistogramAggregator: StableAggregator {
     return Handle(maxBuckets: maxBuckets, maxScale: maxScale, exemplarReservoir: reservoirSupplier())
   }
 
-  public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [PointData], temporality: AggregationTemporality) -> StableMetricData {
-    StableMetricData.createExponentialHistogram(resource: resource, instrumentationScopeInfo: scope, name: descriptor.name, description: descriptor.description, unit: descriptor.instrument.unit, data: StableExponentialHistogramData(aggregationTemporality: temporality, points: points))
+  public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [PointData], temporality: AggregationTemporality) -> MetricData {
+    MetricData
+      .createExponentialHistogram(
+        resource: resource,
+        instrumentationScopeInfo: scope,
+        name: descriptor.name,
+        description: descriptor.description,
+        unit: descriptor.instrument.unit,
+        data: ExponentialHistogramData(
+          aggregationTemporality: temporality,
+          points: points
+        )
+      )
   }
 
   class Handle: AggregatorHandle {

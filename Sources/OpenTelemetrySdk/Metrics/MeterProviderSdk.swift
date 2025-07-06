@@ -8,7 +8,10 @@ import OpenTelemetryApi
 
 public class MeterProviderError: Error {}
 
-public class StableMeterProviderSdk: StableMeterProvider {
+@available(*, deprecated, renamed: "MeterProviderSdk")
+public typealias StableMeterProviderSdk = MeterProviderSdk
+
+public class MeterProviderSdk: MeterProvider {
   private static let defaultMeterName = "unknown"
   private let readerLock = Lock()
   var meterProviderSharedState: MeterProviderSharedState
@@ -16,9 +19,9 @@ public class StableMeterProviderSdk: StableMeterProvider {
   var registeredReaders = [RegisteredReader]()
   var registeredViews = [RegisteredView]()
 
-  var componentRegistry: ComponentRegistry<StableMeterSdk>!
+  var componentRegistry: ComponentRegistry<MeterSdk>!
 
-  public func get(name: String) -> StableMeterSdk {
+  public func get(name: String) -> MeterSdk {
     meterBuilder(name: name).build()
   }
 
@@ -31,25 +34,35 @@ public class StableMeterProviderSdk: StableMeterProvider {
     return MeterBuilderSdk(registry: componentRegistry, instrumentationScopeName: name)
   }
 
-  public static func builder() -> NoopStableMeterProviderBuilder {
-    return NoopStableMeterProviderBuilder()
+  public static func builder() -> NoopMeterProviderBuilder {
+    return NoopMeterProviderBuilder()
   }
 
   init(registeredViews: [RegisteredView],
-       metricReaders: [StableMetricReader],
+       metricReaders: [MetricReader],
        clock: Clock,
        resource: Resource,
        exemplarFilter: ExemplarFilter) {
     let startEpochNano = Date().timeIntervalSince1970.toNanoseconds
     self.registeredViews = registeredViews
     registeredReaders = metricReaders.map { reader in
-      RegisteredReader(reader: reader, registry: StableViewRegistry(aggregationSelector: reader, registeredViews: registeredViews))
+      RegisteredReader(
+        reader: reader,
+        registry: ViewRegistry(
+          aggregationSelector: reader,
+          registeredViews: registeredViews
+        )
+      )
     }
 
     meterProviderSharedState = MeterProviderSharedState(clock: clock, resource: resource, startEpochNanos: startEpochNano, exemplarFilter: exemplarFilter)
 
     componentRegistry = ComponentRegistry { scope in
-      StableMeterSdk(meterProviderSharedState: &self.meterProviderSharedState, instrumentScope: scope, registeredReaders: &self.registeredReaders)
+      MeterSdk(
+        meterProviderSharedState: &self.meterProviderSharedState,
+        instrumentScope: scope,
+        registeredReaders: &self.registeredReaders
+      )
     }
 
     for registeredReader in registeredReaders {
@@ -96,19 +109,23 @@ public class StableMeterProviderSdk: StableMeterProvider {
   }
 
   private class LeasedMetricProducer: MetricProducer {
-    private let registry: ComponentRegistry<StableMeterSdk>
+    private let registry: ComponentRegistry<MeterSdk>
     private var sharedState: MeterProviderSharedState
     private var registeredReader: RegisteredReader
 
-    init(registry: ComponentRegistry<StableMeterSdk>, sharedState: MeterProviderSharedState, registeredReader: RegisteredReader) {
+    init(
+      registry: ComponentRegistry<MeterSdk>,
+      sharedState: MeterProviderSharedState,
+      registeredReader: RegisteredReader
+    ) {
       self.registry = registry
       self.sharedState = sharedState
       self.registeredReader = registeredReader
     }
 
-    func collectAllMetrics() -> [StableMetricData] {
+    func collectAllMetrics() -> [MetricData] {
       let meters = registry.getComponents()
-      var result = [StableMetricData]()
+      var result = [MetricData]()
       let collectTime = sharedState.clock.nanoTime
       for meter in meters {
         result.append(contentsOf: meter.collectAll(registerReader: registeredReader, epochNanos: collectTime))

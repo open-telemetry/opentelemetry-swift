@@ -39,27 +39,36 @@ func basicConfiguration() {
 
   // register view will process all instruments using `.*` regex
 
-  OpenTelemetry.registerStableMeterProvider(meterProvider: StableMeterProviderSdk.builder()
-    .registerView(selector: InstrumentSelector.builder().setInstrument(name: ".*").build(), view: StableView.builder().build())
-    .registerMetricReader(reader: StablePeriodicMetricReaderBuilder(exporter: StableOtlpMetricExporter(channel: exporterChannel)).build())
+  OpenTelemetry.registerMeterProvider(
+meterProvider: MeterProviderSdk.builder()
+  .registerView(
+    selector: InstrumentSelector.builder().setInstrument(name: ".*").build(),
+    view: View.builder().build()
+  )
+  .registerMetricReader(
+    reader: PeriodicMetricReaderBuilder(
+      exporter: OtlpMetricExporter(channel: exporterChannel)
+    )
+    .build()
+  )
     .build()
   )
 }
 
 func complexViewConfiguration() {
   let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-  let exporterChannel = ClientConnection.insecure(group: group)
+  _ = ClientConnection.insecure(group: group)
     .connect(host: "localhost", port: 8200)
 
   // The example registers a View that re-configures the Gauge instrument into a sum instrument named "GaugeSum"
 
-  OpenTelemetry.registerStableMeterProvider(
-    meterProvider: StableMeterProviderSdk.builder()
+  OpenTelemetry.registerMeterProvider(
+    meterProvider: MeterProviderSdk.builder()
       .registerView(
         selector: InstrumentSelector.builder()
           .setInstrument(name: "Gauge")
           .build(),
-        view: StableView.builder()
+        view: View.builder()
           .withName(name: "GaugeSum")
           .withAggregation(
             aggregation: Aggregations
@@ -69,7 +78,7 @@ func complexViewConfiguration() {
       )
       .setExemplarFilter(exemplarFilter: AlwaysOnFilter())
       .registerMetricReader(
-        reader: StablePeriodicMetricReaderBuilder(
+        reader: PeriodicMetricReaderBuilder(
           exporter: StdoutMetricExporter(isDebug: true)
         )
         .build()
@@ -81,15 +90,15 @@ func complexViewConfiguration() {
 basicConfiguration()
 
 // creating a new meter & instrument
-let meter = OpenTelemetry.instance.stableMeterProvider?.meterBuilder(name: "MyMeter").build()
-var gaugeBuilder = meter!.gaugeBuilder(name: "Gauge")
+let meter = OpenTelemetry.instance.meterProvider.meterBuilder(name: "MyMeter").build()
+var gaugeBuilder = meter.gaugeBuilder(name: "Gauge")
 
 // observable gauge
 var observableGauge = gaugeBuilder.buildWithCallback { ObservableDoubleMeasurement in
   ObservableDoubleMeasurement.record(value: 1.0, attributes: ["test": AttributeValue.bool(true)])
 }
 
-var gauge = (meter?.gaugeBuilder(name: "Gauge") as! DoubleGaugeBuilderSdk).buildWithCallback { _ in
+var gauge = meter.gaugeBuilder(name: "Gauge").buildWithCallback { _ in
   // noop
 }
 

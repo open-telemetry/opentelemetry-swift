@@ -6,11 +6,11 @@ import OpenTelemetryApi
 @testable import OpenTelemetrySdk
 import XCTest
 
-class StableMeterProviderSdkTests: XCTestCase {
-  var meterProvider = StableMeterProviderSdk.builder().build()
+class MeterProviderSdkTests: XCTestCase {
+  var meterProvider = MeterProviderSdk.builder().build()
 
   func testDefaultGet() {
-    XCTAssert(meterProvider.get(name: "test") is DefaultStableMeter)
+    XCTAssertTrue(meterProvider.get(name: "test") is DefaultMeter)
   }
 
   func testGetSameInstanceForName_WithoutVersion() {

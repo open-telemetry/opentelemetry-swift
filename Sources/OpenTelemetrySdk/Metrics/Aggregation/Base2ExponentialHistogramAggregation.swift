@@ -20,7 +20,7 @@ public class Base2ExponentialHistogramAggregation: Aggregation {
     self.maxBuckets = maxBuckets >= 2 ? maxBuckets : Self.defaultMaxBuckets
   }
 
-  public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> StableAggregator {
+  public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> Aggregator {
     DoubleBase2ExponentialHistogramAggregator(maxBuckets: maxBuckets, maxScale: maxScale) {
       FilteredExemplarReservoir(filter: exemplarFilter, reservoir: LongToDoubleExemplarReservoir(reservoir: RandomFixedSizedExemplarReservoir.createDouble(clock: MillisClock(), size: 2)))
     }

@@ -63,10 +63,10 @@ class PrometheusExporterTests: XCTestCase {
     metricsHttpServer.stop()
   }
 
-  private func collectMetrics(exporter: any StableMetricExporter) -> StableMeterProviderSdk {
-    let meterProvider = StableMeterProviderSdk.builder()
+  private func collectMetrics(exporter: any MetricExporter) -> MeterProviderSdk {
+    let meterProvider = MeterProviderSdk.builder()
       .registerMetricReader(
-        reader: StablePeriodicMetricReaderBuilder(
+        reader: PeriodicMetricReaderBuilder(
           exporter: exporter
         )
         .setInterval(timeInterval: 0.01)
@@ -77,14 +77,14 @@ class PrometheusExporterTests: XCTestCase {
           .builder()
           .setInstrument(name: "testHistogram")
           .build(),
-        view: StableView.builder()
+        view: View.builder()
           .withAggregation(
             aggregation: ExplicitBucketHistogramAggregation(bucketBoundaries: [5, 10, 25])
           ).build()
       )
       .registerView(
         selector: InstrumentSelector.builder().setInstrument(name: "testCounter|testGauge").build(),
-        view: StableView.builder().build()
+        view: View.builder().build()
       )
       .build()
     let meter = meterProvider.get(name: "scope1")
