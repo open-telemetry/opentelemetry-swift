@@ -9,10 +9,6 @@ The Persistence Exporter provides decorators for MetricExporter and SpanExporter
 - Asynchronously serializing and writing the exported data to the disk to a specified path.
 - Asynchronously picking up persisted data, deserializing it, and forwarding it to the decorated exporter.
 
-## Getting Started
-
-*This is a work in progress, and currently in an alpha stage, should not be used in production.*
-
 ### Usage
 
 An example of decorating a `MetricExporter`:
