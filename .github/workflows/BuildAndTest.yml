@@ -5,6 +5,9 @@ on:
     types: [opened, synchronize]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   FormattingLint: 
     runs-on: macos-15
