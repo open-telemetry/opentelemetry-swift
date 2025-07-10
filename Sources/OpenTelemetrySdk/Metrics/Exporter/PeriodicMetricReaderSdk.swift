@@ -6,14 +6,17 @@
 import Foundation
 import OpenTelemetryApi
 
-public class StablePeriodicMetricReaderSdk: StableMetricReader {
-  let exporter: StableMetricExporter
+@available(*, deprecated, renamed: "PeriodicMetricReaderSdk")
+public typealias StablePeriodicMetricReaderSdk = PeriodicMetricReaderSdk
+
+public class PeriodicMetricReaderSdk: MetricReader {
+  let exporter: MetricExporter
   let exportInterval: TimeInterval
   let scheduleQueue = DispatchQueue(label: "org.opentelemetry.StablePeriodicMetricReaderSdk.scheduleQueue")
   let scheduleTimer: DispatchSourceTimer
   var metricProduce: MetricProducer = NoopMetricProducer()
 
-  init(exporter: StableMetricExporter, exportInterval: TimeInterval = 60.0) {
+  init(exporter: MetricExporter, exportInterval: TimeInterval = 60.0) {
     self.exporter = exporter
     self.exportInterval = exportInterval
     scheduleTimer = DispatchSource.makeTimerSource(flags: DispatchSource.TimerFlags(), queue: scheduleQueue)

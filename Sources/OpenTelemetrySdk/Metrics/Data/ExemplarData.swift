@@ -94,7 +94,7 @@ public final class LongExemplarData: ExemplarData, Codable {
   }
 
   public func encode(to encoder: any Encoder) throws {
-    var container = try encoder.container(keyedBy: CodingKeys.self)
+    var container = encoder.container(keyedBy: CodingKeys.self)
     try container.encode(value, forKey: .value)
     try container.encode(filteredAttributes, forKey: .filteredAttributes)
     try container.encode(epochNanos, forKey: .epochNanos)

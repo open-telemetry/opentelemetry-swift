@@ -6,11 +6,11 @@
 import Foundation
 
 public protocol MetricProducer: CollectionRegistration {
-  func collectAllMetrics() -> [StableMetricData]
+  func collectAllMetrics() -> [MetricData]
 }
 
 public struct NoopMetricProducer: MetricProducer {
-  public func collectAllMetrics() -> [StableMetricData] {
-    return [StableMetricData]()
+  public func collectAllMetrics() -> [MetricData] {
+    return [MetricData]()
   }
 }

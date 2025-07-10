@@ -12,7 +12,7 @@ public enum MetricStorageConstants {
 
 public protocol MetricStorage {
   var metricDescriptor: MetricDescriptor { get }
-  mutating func collect(resource: Resource, scope: InstrumentationScopeInfo, startEpochNanos: UInt64, epochNanos: UInt64) -> StableMetricData
+  mutating func collect(resource: Resource, scope: InstrumentationScopeInfo, startEpochNanos: UInt64, epochNanos: UInt64) -> MetricData
   func isEmpty() -> Bool
 }
 

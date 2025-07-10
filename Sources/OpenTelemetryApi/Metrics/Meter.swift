@@ -8,7 +8,11 @@ import Foundation
 /// Main interface to obtain metric instruments.
 /// Replaces Meter class. After a deprecation period StableMeter will be renamed to Meter
 ///
-public protocol StableMeter {
+
+@available(*, deprecated, renamed: "Meter")
+public typealias StableMeter = Meter
+
+public protocol Meter {
   associatedtype AssociatedCounterBuilder: LongCounterBuilder
   associatedtype AssociatedLongUpDownCounterBuilder: LongUpDownCounterBuilder
   associatedtype AssociatedDoubleHistogramBuilder: DoubleHistogramBuilder

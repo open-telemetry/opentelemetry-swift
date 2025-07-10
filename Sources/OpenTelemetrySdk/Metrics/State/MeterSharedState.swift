@@ -5,9 +5,9 @@
 
 import Foundation
 
-class StableMeterSharedState {
+class MeterSharedState {
   let meterLock = Lock()
-  public private(set) var meterRegistry = [StableMeterSdk]()
+  public private(set) var meterRegistry = [MeterSdk]()
   public private(set) var readerStorageRegisteries = [RegisteredReader: MetricStorageRegistry]()
   let callbackLock = Lock()
   public private(set) var callbackRegistration = [CallbackRegistration]()
@@ -22,7 +22,7 @@ class StableMeterSharedState {
     })
   }
 
-  func add(meter: StableMeterSdk) {
+  func add(meter: MeterSdk) {
     meterLock.lock()
     defer {
       meterLock.unlock()
@@ -63,7 +63,7 @@ class StableMeterSharedState {
     return MultiWritableMetricStorage(storages: registeredStorages)
   }
 
-  func registerObservableMeasurement(instrumentDescriptor: InstrumentDescriptor) -> StableObservableMeasurementSdk {
+  func registerObservableMeasurement(instrumentDescriptor: InstrumentDescriptor) -> ObservableMeasurementSdk {
     var registeredStorages = [AsynchronousMetricStorage]()
     for (reader, registry) in readerStorageRegisteries {
       for registeredView in reader.registry.findViews(descriptor: instrumentDescriptor, meterScope: instrumentationScope) {
@@ -74,10 +74,10 @@ class StableMeterSharedState {
       }
     }
 
-    return StableObservableMeasurementSdk(insturmentScope: instrumentationScope, descriptor: instrumentDescriptor, storages: registeredStorages)
+    return ObservableMeasurementSdk(insturmentScope: instrumentationScope, descriptor: instrumentDescriptor, storages: registeredStorages)
   }
 
-  func collectAll(registeredReader: RegisteredReader, meterProviderSharedState: MeterProviderSharedState, epochNanos: UInt64) -> [StableMetricData] {
+  func collectAll(registeredReader: RegisteredReader, meterProviderSharedState: MeterProviderSharedState, epochNanos: UInt64) -> [MetricData] {
     callbackLock.lock()
     let currentRegisteredCallbacks = callbackRegistration // todo verify this copies list not references (for concurrency safety)
     callbackLock.unlock()
@@ -89,7 +89,7 @@ class StableMeterSharedState {
     for callbackRegistration in currentRegisteredCallbacks {
       callbackRegistration.execute(reader: registeredReader, startEpochNanos: meterProviderSharedState.startEpochNanos, epochNanos: epochNanos)
     }
-    var result = [StableMetricData]()
+    var result = [MetricData]()
 
     if let storages = readerStorageRegisteries[registeredReader]?.getStorages() {
       for var storage in storages {

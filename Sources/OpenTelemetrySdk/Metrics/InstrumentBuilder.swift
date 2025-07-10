@@ -8,15 +8,15 @@ import OpenTelemetryApi
 
 public class InstrumentBuilder {
   private var meterProviderSharedState: MeterProviderSharedState
-  private var meterSharedState: StableMeterSharedState
+  private var meterSharedState: MeterSharedState
   var type: InstrumentType
   var valueType: InstrumentValueType
   var description: String
   var unit: String
   var instrumentName: String
   var explicitBucketBoundariesAdvice: [Double]?
-  
-  init(meterProviderSharedState: inout MeterProviderSharedState, meterSharedState: inout StableMeterSharedState, type: InstrumentType, valueType: InstrumentValueType, description: String, unit: String, instrumentName: String) {
+
+  init(meterProviderSharedState: inout MeterProviderSharedState, meterSharedState: inout MeterSharedState, type: InstrumentType, valueType: InstrumentValueType, description: String, unit: String, instrumentName: String) {
     self.meterProviderSharedState = meterProviderSharedState
     self.meterSharedState = meterSharedState
     self.type = type
@@ -40,7 +40,7 @@ public extension InstrumentBuilder {
     return self
   }
 
-  internal func swapBuilder<T: InstrumentBuilder>(_ builder: (inout MeterProviderSharedState, inout StableMeterSharedState, String, String, String) -> T) -> T {
+  internal func swapBuilder<T: InstrumentBuilder>(_ builder: (inout MeterProviderSharedState, inout MeterSharedState, String, String, String) -> T) -> T {
     let newBuilder = builder(&meterProviderSharedState, &meterSharedState, instrumentName, description, unit)
     newBuilder.explicitBucketBoundariesAdvice = self.explicitBucketBoundariesAdvice
     return newBuilder
@@ -53,7 +53,7 @@ public extension InstrumentBuilder {
     return instrumentFactory(descriptor, storage)
   }
 
-  func registerDoubleAsynchronousInstrument(type: InstrumentType, updater: @escaping (StableObservableMeasurementSdk) -> Void) -> ObservableInstrumentSdk {
+  func registerDoubleAsynchronousInstrument(type: InstrumentType, updater: @escaping (ObservableMeasurementSdk) -> Void) -> ObservableInstrumentSdk {
     let sdkObservableMeasurement = buildObservableMeasurement(type: type)
     let callbackRegistration = CallbackRegistration(observableMeasurements: [sdkObservableMeasurement]) {
       updater(sdkObservableMeasurement)
@@ -62,7 +62,7 @@ public extension InstrumentBuilder {
     return ObservableInstrumentSdk(meterSharedState: meterSharedState, callbackRegistration: callbackRegistration)
   }
 
-  func registerLongAsynchronousInstrument(type: InstrumentType, updater: @escaping (StableObservableMeasurementSdk) -> Void) -> ObservableInstrumentSdk {
+  func registerLongAsynchronousInstrument(type: InstrumentType, updater: @escaping (ObservableMeasurementSdk) -> Void) -> ObservableInstrumentSdk {
     let sdkObservableMeasurement = buildObservableMeasurement(type: type)
     let callbackRegistration = CallbackRegistration(observableMeasurements: [sdkObservableMeasurement], callback: {
       updater(sdkObservableMeasurement)
@@ -71,7 +71,7 @@ public extension InstrumentBuilder {
     return ObservableInstrumentSdk(meterSharedState: meterSharedState, callbackRegistration: callbackRegistration)
   }
 
-  func buildObservableMeasurement(type: InstrumentType) -> StableObservableMeasurementSdk {
+  func buildObservableMeasurement(type: InstrumentType) -> ObservableMeasurementSdk {
     let descriptor = InstrumentDescriptor(name: instrumentName, description: description, unit: unit, type: type, valueType: valueType, explicitBucketBoundariesAdvice: explicitBucketBoundariesAdvice)
     return meterSharedState.registerObservableMeasurement(instrumentDescriptor: descriptor)
   }

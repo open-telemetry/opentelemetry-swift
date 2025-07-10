@@ -5,14 +5,17 @@
 
 import Foundation
 
-public class DefaultStableMeterProvider: StableMeterProvider {
+@available(*, deprecated, renamed: "DefaultMeterProvider")
+public typealias DefaultStableMeterProvider = DefaultMeterProvider
+
+public class DefaultMeterProvider: MeterProvider {
   static let noopMeterBuilder = NoopMeterBuilder()
 
   public static func noop() -> NoopMeterBuilder {
     noopMeterBuilder
   }
 
-  public func get(name: String) -> DefaultStableMeter {
+  public func get(name: String) -> DefaultMeter {
     NoopMeterBuilder.noopMeter
   }
 
@@ -21,7 +24,7 @@ public class DefaultStableMeterProvider: StableMeterProvider {
   }
 
   public class NoopMeterBuilder: MeterBuilder {
-    static let noopMeter = DefaultStableMeter()
+    static let noopMeter = DefaultMeter()
 
     public func setSchemaUrl(schemaUrl: String) -> Self {
       self
@@ -35,10 +38,10 @@ public class DefaultStableMeterProvider: StableMeterProvider {
       self
     }
 
-    public func build() -> DefaultStableMeter {
+    public func build() -> DefaultMeter {
       Self.noopMeter
     }
   }
 
-  public static var instance = DefaultStableMeterProvider()
+  public static var instance = DefaultMeterProvider()
 }

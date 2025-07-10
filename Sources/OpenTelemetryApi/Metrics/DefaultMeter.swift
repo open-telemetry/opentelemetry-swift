@@ -15,7 +15,7 @@ public class NoopObservableDoubleMeasurement: ObservableDoubleMeasurement {
   public func record(value: Double, attributes: [String: AttributeValue]) {}
 }
 
-public class DefaultStableMeter: StableMeter {
+public class DefaultMeter: Meter {
   init() {}
 
   public func counterBuilder(name: String) -> NoopLongCounterBuilder {
@@ -52,7 +52,7 @@ public class DefaultStableMeter: StableMeter {
     public func setExplicitBucketBoundariesAdvice(_ boundaries: [Double]) -> Self {
       return self
     }
-    
+
     public func ofLongs() -> NoopLongHistogramBuilder {
       NoopLongHistogramBuilder()
     }
@@ -134,7 +134,7 @@ public class DefaultStableMeter: StableMeter {
     public func setExplicitBucketBoundariesAdvice(_ boundaries: [Double]) -> Self {
       return self
     }
-    
+
     public func build() -> NoopLongHistogram {
       NoopLongHistogram()
     }
@@ -174,8 +174,8 @@ public class DefaultStableMeter: StableMeter {
   }
 
   public class NoopDoubleCounterBuilder: DoubleCounterBuilder {
-    public func build() -> StableNoopDoubleCounter {
-      StableNoopDoubleCounter()
+    public func build() -> NoopDoubleCounter {
+      NoopDoubleCounter()
     }
 
     public func buildWithCallback(_ callback: @escaping (NoopObservableDoubleMeasurement) -> Void) -> NoopObservableDoubleCounter {
@@ -191,17 +191,13 @@ public class DefaultStableMeter: StableMeter {
     public func close() {}
   }
 
-  public class StableNoopDoubleCounterBuilder: DoubleCounterBuilder {
-    public func build() -> StableNoopDoubleCounter {
-      StableNoopDoubleCounter()
-    }
+  @available(*, deprecated, renamed: "NoopDoubleCounterBuilder")
+  public typealias StableNoopDoubleCounterBuilder = NoopDoubleCounterBuilder
 
-    public func buildWithCallback(_ callback: @escaping (NoopObservableDoubleMeasurement) -> Void) -> NoopObservableDoubleCounter {
-      NoopObservableDoubleCounter()
-    }
-  }
+  @available(*, deprecated, renamed: "NoopDoubleCounter")
+  public typealias StableNoopDoubleCounter = NoopDoubleCounter
 
-  public class StableNoopDoubleCounter: DoubleCounter {
+  public class NoopDoubleCounter: DoubleCounter {
     public func add(value: Double) {}
     public func add(value: Double, attributes: [String: AttributeValue]) {}
   }
