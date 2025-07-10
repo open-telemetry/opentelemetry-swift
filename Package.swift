@@ -67,7 +67,8 @@ let package = Package(
         "OpenTelemetryApi",
         .product(name: "Logging", package: "swift-log"),
       ],
-      path: "Sources/Bridges/OTelSwiftLog"
+      path: "Sources/Bridges/OTelSwiftLog",
+      exclude: ["README.md"]
     ),
     .target(
       name: "SwiftMetricsShim",
@@ -131,7 +132,8 @@ let package = Package(
     .target(
       name: "PersistenceExporter",
       dependencies: ["OpenTelemetrySdk"],
-      path: "Sources/Exporters/Persistence"
+      path: "Sources/Exporters/Persistence",
+      exclude: ["README.md"]
     ),
     .target(
       name: "BaggagePropagationProcessor",
@@ -227,7 +229,8 @@ let package = Package(
     .executableTarget(
       name: "StableMetricSample",
       dependencies: ["OpenTelemetrySdk", "OpenTelemetryProtocolExporterGrpc", "StdoutExporter"],
-      path: "Examples/Stable Metric Sample"
+      path: "Examples/Stable Metric Sample",
+      exclude: ["README.md"]
     ),
   ]
 ).addPlatformSpecific()
@@ -356,7 +359,7 @@ extension Package {
             "ZipkinExporter", "ResourceExtension", "SignPostIntegration",
           ],
           path: "Examples/OTLP Exporter",
-          exclude: ["README.md"]
+          exclude: ["README.md", "prometheus.yaml", "collector-config.yaml", "docker-compose.yaml", "images"]
         ),
         .executableTarget(
           name: "OTLPHTTPExporter",
@@ -370,7 +373,7 @@ extension Package {
             ),
           ],
           path: "Examples/OTLP HTTP Exporter",
-          exclude: ["README.md"]
+          exclude: ["README.md", "collector-config.yaml", "docker-compose.yaml", "prometheus.yaml", "images"]
         ),
         .target(
           name: "SignPostIntegration",
