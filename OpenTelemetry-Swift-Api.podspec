@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name = "OpenTelemetry-Swift-Api"
-  spec.version = "1.16.1"
+  spec.version = "1.17.1"
   spec.summary = "Swift OpenTelemetryApi"
 
   spec.homepage = "https://github.com/open-telemetry/opentelemetry-swift"
@@ -15,6 +15,7 @@ Pod::Spec.new do |spec|
   spec.ios.deployment_target = "13.0"
   spec.tvos.deployment_target = "13.0"
   spec.watchos.deployment_target = "6.0"
+  spec.visionos.deployment_target = "1.0"
   spec.module_name = "OpenTelemetryApi"
   # This is necessary because we use the `package` keyword to access some properties in `OpenTelemetryApi`
   # This keyword was introduced in Swift 5.9 and it's tightly bound to SPM.

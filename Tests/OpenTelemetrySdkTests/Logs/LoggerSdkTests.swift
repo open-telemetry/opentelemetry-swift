@@ -63,7 +63,7 @@ public class LoggerSdkTests: OpenTelemetryContextTestCase {
 
     let context = SpanContext.create(traceId: TraceId(idHi: 0, idLo: 16), spanId: SpanId(id: 8), traceFlags: TraceFlags(),
                                      traceState: TraceState())
-    let span = RecordEventsReadableSpan.startSpan(context: context,
+    let span = SpanSdk.startSpan(context: context,
                                                   name: "Test",
                                                   instrumentationScopeInfo: InstrumentationScopeInfo(name: "test"),
                                                   kind: .client,
@@ -111,7 +111,7 @@ final class LoggerSdkTestsImperative: OpenTelemetryContextTestCase {
 
     let context = SpanContext.create(traceId: TraceId(idHi: 0, idLo: 16), spanId: SpanId(id: 8), traceFlags: TraceFlags(),
                                      traceState: TraceState())
-    let span = RecordEventsReadableSpan.startSpan(context: context,
+    let span = SpanSdk.startSpan(context: context,
                                                   name: "Test",
                                                   instrumentationScopeInfo: InstrumentationScopeInfo(name: "test"),
                                                   kind: .client,

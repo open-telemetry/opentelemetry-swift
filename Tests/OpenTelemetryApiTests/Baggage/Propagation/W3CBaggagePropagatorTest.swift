@@ -158,20 +158,20 @@ class W3BaggagePropagatorTest: XCTestCase {
   func testW3CInvalidCharacters() {
     let invalidInputs = [
       // Invalid characters in key
-      "key@=value",      // @ not allowed in token
-      "key,=value",      // comma not allowed in token
-      "key;=value",      // semicolon not allowed in token
-      "key\"=value",     // quote not allowed in token
+      "key@=value", // @ not allowed in token
+      "key,=value", // comma not allowed in token
+      "key;=value", // semicolon not allowed in token
+      "key\"=value", // quote not allowed in token
 
       // Empty parts
-      "=value",          // empty key
-      "key=",            // empty value
-      "=",              // both empty
-      "",               // completely empty
+      "=value", // empty key
+      "key=", // empty value
+      "=", // both empty
+      "", // completely empty
 
       // Invalid percent-encoding
-      "key=%",          // incomplete percent-encoding
-      "key=%XY",        // invalid hex digits
+      "key=%", // incomplete percent-encoding
+      "key=%XY" // invalid hex digits
     ]
 
     for invalidInput in invalidInputs {
@@ -204,7 +204,7 @@ class W3BaggagePropagatorTest: XCTestCase {
       // Percent-encoded values
       "key=value%20with%20spaces",
       "key=special%3Dequals",
-      "key=unicode%C3%A9",  // é
+      "key=unicode%C3%A9", // é
 
       // Valid baggage-octets without encoding
       "key=value-123",
