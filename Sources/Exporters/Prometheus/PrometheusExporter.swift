@@ -35,14 +35,13 @@ public class PrometheusExporter: StableMetricExporter {
 
   public func export(metrics: [StableMetricData]) -> ExportResult {
     metricsLock.withLockVoid {
-      self.metrics.append(contentsOf: metrics)
+      self.metrics = metrics
     }
     return .success
   }
-
-  public func getAndClearMetrics() -> [StableMetricData] {
+    
+  public func getMetrics() -> [StableMetricData] {
     defer {
-      metrics = [StableMetricData]()
       metricsLock.unlock()
     }
     metricsLock.lock()
