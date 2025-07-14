@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 
 public class TracerProviderSdk: TracerProvider {
-  private var tracerLock = pthread_rwlock_t()
+  private let tracerLock: TraceProviderLock = TraceProviderLock()
   private var tracerProvider = [InstrumentationScopeInfo: TracerSdk]()
   var sharedState: TracerSharedState
   static let emptyName = "unknown"
@@ -19,17 +19,12 @@ public class TracerProviderSdk: TracerProvider {
               spanLimits: SpanLimits = SpanLimits(),
               sampler: Sampler = Samplers.parentBased(root: Samplers.alwaysOn),
               spanProcessors: [SpanProcessor] = []) {
-    pthread_rwlock_init(&tracerLock, nil)
     sharedState = TracerSharedState(clock: clock,
                                     idGenerator: idGenerator,
                                     resource: resource,
                                     spanLimits: spanLimits,
                                     sampler: sampler,
                                     spanProcessors: spanProcessors)
-  }
-
-  deinit {
-    pthread_rwlock_destroy(&tracerLock)
   }
 
   public func get(instrumentationName: String, instrumentationVersion: String? = nil, schemaUrl: String? = nil, attributes: [String: AttributeValue]? = nil) -> Tracer {
@@ -49,24 +44,15 @@ public class TracerProviderSdk: TracerProvider {
       schemaUrl: schemaUrl,
       attributes: attributes
     )
-
-    if pthread_rwlock_rdlock(&tracerLock) == 0 {
-      let existingTracer = tracerProvider[instrumentationScopeInfo]
-      pthread_rwlock_unlock(&tracerLock)
-
-      if existingTracer != nil {
-        return existingTracer!
+      
+      return tracerLock.withLock {
+          if let existingTracer = tracerProvider[instrumentationScopeInfo] {
+              return existingTracer
+          }
+          let tracer = TracerSdk(sharedState: sharedState, instrumentationScopeInfo: instrumentationScopeInfo)
+          tracerProvider[instrumentationScopeInfo] = tracer
+          return tracer
       }
-    }
-
-    let tracer = TracerSdk(sharedState: sharedState, instrumentationScopeInfo: instrumentationScopeInfo)
-
-    if pthread_rwlock_wrlock(&tracerLock) == 0 {
-      tracerProvider[instrumentationScopeInfo] = tracer
-      pthread_rwlock_unlock(&tracerLock)
-    }
-
-    return tracer
   }
 
   /// Returns the active Clock.
@@ -157,4 +143,64 @@ public class TracerProviderSdk: TracerProvider {
   public func forceFlush(timeout: TimeInterval? = nil) {
     sharedState.activeSpanProcessor.forceFlush(timeout: timeout)
   }
+}
+
+// Stolen from openTelemtryApi.
+private final class TraceProviderLock {
+    private let mutex: UnsafeMutablePointer<pthread_mutex_t> = UnsafeMutablePointer.allocate(capacity: 1)
+    
+    /// Create a new lock.
+    init() {
+        let err = pthread_mutex_init(mutex, nil)
+        precondition(err == 0, "pthread_mutex_init failed with error \(err)")
+    }
+    
+    deinit {
+        let err = pthread_mutex_destroy(self.mutex)
+        precondition(err == 0, "pthread_mutex_destroy failed with error \(err)")
+        self.mutex.deallocate()
+    }
+    
+    /// Acquire the lock.
+    ///
+    /// Whenever possible, consider using `withLock` instead of this method and
+    /// `unlock`, to simplify lock handling.
+    func lock() {
+        let err = pthread_mutex_lock(mutex)
+        precondition(err == 0, "pthread_mutex_lock failed with error \(err)")
+    }
+    
+    /// Release the lock.
+    ///
+    /// Whenever possible, consider using `withLock` instead of this method and
+    /// `lock`, to simplify lock handling.
+    func unlock() {
+        let err = pthread_mutex_unlock(mutex)
+        precondition(err == 0, "pthread_mutex_unlock failed with error \(err)")
+    }
+}
+
+extension TraceProviderLock {
+    /// Acquire the lock for the duration of the given block.
+    ///
+    /// This convenience method should be preferred to `lock` and `unlock` in
+    /// most situations, as it ensures that the lock will be released regardless
+    /// of how `body` exits.
+    ///
+    /// - Parameter body: The block to execute while holding the lock.
+    /// - Returns: The value returned by the block.
+    @inlinable
+    func withLock<T>(_ body: () throws -> T) rethrows -> T {
+        lock()
+        defer {
+            self.unlock()
+        }
+        return try body()
+    }
+    
+    // specialise Void return (for performance)
+    @inlinable
+    func withLockVoid(_ body: () throws -> Void) rethrows {
+        try withLock(body)
+    }
 }
