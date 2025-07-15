@@ -517,6 +517,9 @@ class URLSessionInstrumentationTests: XCTestCase {
     let string = String(decoding: data, as: UTF8.self)
     print(string)
 
+    // Note: These tests were passing incorrectly. The async/await methods
+    // introduced in iOS 15/macOS 12 are NOT instrumented at all, which is what
+    // testAsyncAwaitMethodsAreNotInstrumented demonstrates.
     XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInstrumentCalled)
     XCTAssertTrue(URLSessionInstrumentationTests.checker.nameSpanCalled)
     XCTAssertTrue(URLSessionInstrumentationTests.checker.spanCustomizationCalled)
@@ -817,5 +820,70 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
 
     try await task.value
+  }
+  
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testAsyncAwaitMethodsDoNotCompleteSpans() async throws {
+    let request = URLRequest(url: URL(string: "http://localhost:33333/success")!)
+    
+    // Test data(for:) method - the new async/await API introduced in iOS 15
+    let (data, response) = try await URLSession.shared.data(for: request)
+    
+    guard let httpResponse = response as? HTTPURLResponse else {
+      XCTFail("Response should be HTTPURLResponse")
+      return
+    }
+    
+    XCTAssertEqual(httpResponse.statusCode, 200, "Request should succeed")
+    XCTAssertNotNil(data, "Should receive data")
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled, "receivedResponse should be called")
+    XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent], "Headers are injected")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInstrumentCalled, "shouldInstrument should be called")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled, "createdRequest should be called")
+  }
+  
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testAsyncAwaitDownloadMethodsAreNotInstrumented() async throws {
+    let url = URL(string: "http://localhost:33333/success")!
+    
+    // Test download(from:) method
+    let (fileURL, response) = try await URLSession.shared.download(from: url)
+    
+    guard let httpResponse = response as? HTTPURLResponse else {
+      XCTFail("Response should be HTTPURLResponse")
+      return
+    }
+    
+    XCTAssertEqual(httpResponse.statusCode, 200, "Request should succeed")
+    XCTAssertNotNil(fileURL, "Should receive file URL")
+    
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInstrumentCalled, "shouldInstrument should be called")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled, "createdRequest should be called")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled, "receivedResponse should be called")
+    
+    // Clean up downloaded file
+    try? FileManager.default.removeItem(at: fileURL)
+  }
+  
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testAsyncAwaitUploadMethodsAreNotInstrumented() async throws {
+    let url = URL(string: "http://localhost:33333/success")!
+    let request = URLRequest(url: url)
+    
+    // Test upload(for:from:) method
+    let (data, response) = try await URLSession.shared.upload(for: request, from: Data())
+    
+    guard let httpResponse = response as? HTTPURLResponse else {
+      XCTFail("Response should be HTTPURLResponse")
+      return
+    }
+    
+    XCTAssertEqual(httpResponse.statusCode, 200, "Request should succeed")
+    XCTAssertNotNil(data, "Should receive response data")
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInstrumentCalled, "shouldInstrument should be called")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled, "createdRequest should be called")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled, "receivedResponse should be called")
   }
 }

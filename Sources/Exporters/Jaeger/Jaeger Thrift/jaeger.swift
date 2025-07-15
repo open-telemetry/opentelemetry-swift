@@ -5,7 +5,7 @@
  *  @generated
  */
 
-#if !os(watchOS)
+#if !os(watchOS) && !os(visionOS)
 
   import Foundation
 
