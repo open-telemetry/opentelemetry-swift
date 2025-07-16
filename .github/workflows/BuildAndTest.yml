@@ -76,7 +76,7 @@ jobs:
       run: make test-without-building-visionos
   linux:
     runs-on: ubuntu-latest
-    container: swift:6.1@sha256:5fce423d9125680f7f5fe809f3b3c733ea9497d41d4f407c9e5e3d27218b710a
+    container: swift:6.1@sha256:1ee6dc0c17f48aa016af86adcb5faabe2e38a35844538c5abb34e916ec0a5324
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Build tests for Linux
