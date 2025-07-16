@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 
 public class TracerProviderSdk: TracerProvider {
-  private let tracerLock: TraceProviderLock = .init()
+  private let tracerLock: ReadWriteLock = .init()
   private var tracerProvider = [InstrumentationScopeInfo: TracerSdk]()
   var sharedState: TracerSharedState
   static let emptyName = "unknown"
@@ -45,14 +45,18 @@ public class TracerProviderSdk: TracerProvider {
       attributes: attributes
     )
 
-    return tracerLock.withLock {
-      if let existingTracer = tracerProvider[instrumentationScopeInfo] {
-        return existingTracer
-      }
-      let tracer = TracerSdk(sharedState: sharedState, instrumentationScopeInfo: instrumentationScopeInfo)
-      tracerProvider[instrumentationScopeInfo] = tracer
-      return tracer
+    let existingTracer = tracerLock.withReaderLock {
+      tracerProvider[instrumentationScopeInfo]
     }
+    if let existingTracer {
+      return existingTracer
+    }
+
+    let tracer = TracerSdk(sharedState: sharedState, instrumentationScopeInfo: instrumentationScopeInfo)
+    tracerLock.withWriterLock {
+      tracerProvider[instrumentationScopeInfo] = tracer
+    }
+    return tracer
   }
 
   /// Returns the active Clock.
@@ -142,65 +146,5 @@ public class TracerProviderSdk: TracerProvider {
   /// Requests the active span processor to process all span events that have not yet been processed.
   public func forceFlush(timeout: TimeInterval? = nil) {
     sharedState.activeSpanProcessor.forceFlush(timeout: timeout)
-  }
-}
-
-// Stolen from openTelemtryApi.
-private final class TraceProviderLock {
-  private let mutex: UnsafeMutablePointer<pthread_mutex_t> = UnsafeMutablePointer.allocate(capacity: 1)
-
-  /// Create a new lock.
-  init() {
-    let err = pthread_mutex_init(mutex, nil)
-    precondition(err == 0, "pthread_mutex_init failed with error \(err)")
-  }
-
-  deinit {
-    let err = pthread_mutex_destroy(self.mutex)
-    precondition(err == 0, "pthread_mutex_destroy failed with error \(err)")
-    self.mutex.deallocate()
-  }
-
-  /// Acquire the lock.
-  ///
-  /// Whenever possible, consider using `withLock` instead of this method and
-  /// `unlock`, to simplify lock handling.
-  func lock() {
-    let err = pthread_mutex_lock(mutex)
-    precondition(err == 0, "pthread_mutex_lock failed with error \(err)")
-  }
-
-  /// Release the lock.
-  ///
-  /// Whenever possible, consider using `withLock` instead of this method and
-  /// `lock`, to simplify lock handling.
-  func unlock() {
-    let err = pthread_mutex_unlock(mutex)
-    precondition(err == 0, "pthread_mutex_unlock failed with error \(err)")
-  }
-}
-
-extension TraceProviderLock {
-  /// Acquire the lock for the duration of the given block.
-  ///
-  /// This convenience method should be preferred to `lock` and `unlock` in
-  /// most situations, as it ensures that the lock will be released regardless
-  /// of how `body` exits.
-  ///
-  /// - Parameter body: The block to execute while holding the lock.
-  /// - Returns: The value returned by the block.
-  @inlinable
-  func withLock<T>(_ body: () throws -> T) rethrows -> T {
-    lock()
-    defer {
-      self.unlock()
-    }
-    return try body()
-  }
-
-  // specialise Void return (for performance)
-  @inlinable
-  func withLockVoid(_ body: () throws -> Void) rethrows {
-    try withLock(body)
   }
 }
