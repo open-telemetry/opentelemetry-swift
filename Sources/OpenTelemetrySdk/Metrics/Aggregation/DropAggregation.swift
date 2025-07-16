@@ -9,7 +9,7 @@ import OpenTelemetryApi
 public class DropAggregation: Aggregation {
   public private(set) static var instance = DropAggregation()
 
-  public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> any StableAggregator {
+  public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> any Aggregator {
     return DropAggregator()
   }
 
