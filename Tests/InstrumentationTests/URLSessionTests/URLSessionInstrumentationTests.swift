@@ -280,7 +280,15 @@ class URLSessionInstrumentationTests: XCTestCase {
     let request1 = URLRequest(url: URL(string: "http://defaultName.com")!)
     let request2 = URLRequest(url: URL(string: "http://dontinstrument.com")!)
 
-    let processedRequest1 = try XCTUnwrap(URLSessionLogger.processAndLogRequest(request1, sessionTaskId: "111", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true))
+    _ = try XCTUnwrap(
+      URLSessionLogger
+        .processAndLogRequest(
+          request1,
+          sessionTaskId: "111",
+          instrumentation: URLSessionInstrumentationTests.instrumentation,
+          shouldInjectHeaders: true
+        )
+    )
     let processedRequest2 = URLSessionLogger.processAndLogRequest(request2, sessionTaskId: "222", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
 
     // `processedRequest2` is expected to be nil, because its URL was marked as not to be instrumented.

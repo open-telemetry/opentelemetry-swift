@@ -7,11 +7,14 @@
   import DataCompression
 #endif
 import Foundation
-import SwiftProtobuf
 import OpenTelemetryProtocolExporterCommon
+import SwiftProtobuf
 #if canImport(FoundationNetworking)
   import FoundationNetworking
 #endif
+
+@available(*, deprecated, renamed: "OtlpHttpExporterBase")
+public typealias StableOtlpHTTPExporterBase = OtlpHttpExporterBase
 
 public class OtlpHttpExporterBase {
   let endpoint: URL
@@ -19,10 +22,9 @@ public class OtlpHttpExporterBase {
   let envVarHeaders: [(String, String)]?
   let config: OtlpConfiguration
 
-  public init(endpoint: URL,
-              config: OtlpConfiguration = OtlpConfiguration(),
-              useSession: URLSession? = nil,
-              envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+  // MARK: - Init
+
+  public init(endpoint: URL, config: OtlpConfiguration = OtlpConfiguration(), useSession: URLSession? = nil, envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
     self.envVarHeaders = envVarHeaders
     self.endpoint = endpoint
     self.config = config
@@ -35,6 +37,17 @@ public class OtlpHttpExporterBase {
 
   public func createRequest(body: Message, endpoint: URL) -> URLRequest {
     var request = URLRequest(url: endpoint)
+
+    if let headers = envVarHeaders {
+      headers.forEach { key, value in
+        request.addValue(value, forHTTPHeaderField: key)
+      }
+
+    } else if let headers = config.headers {
+      headers.forEach { key, value in
+        request.addValue(value, forHTTPHeaderField: key)
+      }
+    }
 
     do {
       let rawData = try body.serializedData()
@@ -62,13 +75,13 @@ public class OtlpHttpExporterBase {
           break
         }
       #endif
+
       // Apply final data. Could be compressed or raw
       // but it doesn't matter here
       request.httpBody = compressedData
     } catch {
       print("Error serializing body: \(error)")
     }
-
     return request
   }
 

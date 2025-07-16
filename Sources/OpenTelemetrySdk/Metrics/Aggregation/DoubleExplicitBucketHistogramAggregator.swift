@@ -10,7 +10,7 @@ public enum HistogramAggregatorError: Error {
   case unsupportedOperation(String)
 }
 
-public class DoubleExplicitBucketHistogramAggregator: StableAggregator {
+public class DoubleExplicitBucketHistogramAggregator: Aggregator {
   class Handle: AggregatorHandle {
     let lock = Lock()
 
@@ -96,7 +96,18 @@ public class DoubleExplicitBucketHistogramAggregator: StableAggregator {
     return Handle(boundaries: boundaries, exemplarReservoir: reservoirSupplier())
   }
 
-  public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [PointData], temporality: AggregationTemporality) -> StableMetricData {
-    StableMetricData.createHistogram(resource: resource, instrumentationScopeInfo: scope, name: descriptor.name, description: descriptor.description, unit: descriptor.instrument.unit, data: StableHistogramData(aggregationTemporality: temporality, points: points as! [HistogramPointData]))
+  public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [PointData], temporality: AggregationTemporality) -> MetricData {
+    MetricData
+      .createHistogram(
+        resource: resource,
+        instrumentationScopeInfo: scope,
+        name: descriptor.name,
+        description: descriptor.description,
+        unit: descriptor.instrument.unit,
+        data: HistogramData(
+          aggregationTemporality: temporality,
+          points: points as! [HistogramPointData]
+        )
+      )
   }
 }

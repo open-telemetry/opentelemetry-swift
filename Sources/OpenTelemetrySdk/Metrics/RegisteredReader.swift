@@ -17,11 +17,11 @@ public class RegisteredReader: Equatable, Hashable {
   #endif
 
   public let id: Int32
-  public let reader: StableMetricReader
-  public let registry: StableViewRegistry
+  public let reader: MetricReader
+  public let registry: ViewRegistry
   public var lastCollectedEpochNanos: UInt64 = 0
 
-  init(reader: StableMetricReader, registry: StableViewRegistry) {
+  init(reader: MetricReader, registry: ViewRegistry) {
     #if canImport(Darwin)
       id = OSAtomicIncrement32(&Self.id_counter)
     #else

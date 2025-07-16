@@ -28,21 +28,21 @@ DispatchQueue.global(qos: .default).async {
   }
 }
 
-let meterProvider = StableMeterProviderSdk.builder()
+let meterProvider = MeterProviderSdk.builder()
   .registerView(
     selector: InstrumentSelector
       .builder()
       .setInstrument(type: .histogram).build(),
-    view: StableView.builder()
+    view: View.builder()
       .withAggregation(
         aggregation: ExplicitBucketHistogramAggregation(bucketBoundaries: [5, 10, 25])
       ).build()
   )
   .registerMetricReader(
-    reader: StablePeriodicMetricReaderBuilder(exporter: promExporter).build(
+    reader: PeriodicMetricReaderBuilder(exporter: promExporter).build(
     )).build()
 
-OpenTelemetry.registerStableMeterProvider(meterProvider: meterProvider)
+OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
 
 var meter = meterProvider.get(name: "MyMeter")
 

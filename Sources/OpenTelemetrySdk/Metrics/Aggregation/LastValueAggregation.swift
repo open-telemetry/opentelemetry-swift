@@ -9,7 +9,7 @@ import OpenTelemetryApi
 public class LastValueAggregation: Aggregation {
   public private(set) static var instance = LastValueAggregation()
 
-  public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> StableAggregator {
+  public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> Aggregator {
     switch descriptor.valueType {
     case .double:
       return DoubleLastValueAggregator(reservoirSupplier: {
