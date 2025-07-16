@@ -11,9 +11,17 @@ class AdvisoryParameterTests: XCTestCase {
     
   func testHistogramExportedDataUsesCustomBucketsWithWaitingExporter() {
     let waitingExporter = WaitingMetricExporter(numberToWaitFor: 1, aggregationTemporality: .delta)
-    let stableMeterProvider = StableMeterProviderSdk.builder()
-      .registerMetricReader(reader: StablePeriodicMetricReaderSdk(exporter: waitingExporter, exportInterval: 5.0))
-      .registerView(selector: InstrumentSelectorBuilder().build(), view: StableView.builder().build())
+    let stableMeterProvider = MeterProviderSdk.builder()
+      .registerMetricReader(
+        reader: PeriodicMetricReaderSdk(
+          exporter: waitingExporter,
+          exportInterval: 5.0
+        )
+      )
+      .registerView(
+        selector: InstrumentSelectorBuilder().build(),
+        view: View.builder().build()
+      )
       .build()
     
     let meter = stableMeterProvider.meterBuilder(name: "testMeter").build()

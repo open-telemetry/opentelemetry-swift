@@ -7,11 +7,11 @@ import CoreMetrics
 import OpenTelemetryApi
 
 public class OpenTelemetrySwiftMetrics: MetricsFactory {
-  let meter: any OpenTelemetryApi.StableMeter
+  let meter: any OpenTelemetryApi.Meter
   var metrics = [MetricKey: SwiftMetric]()
   let lock = Lock()
 
-  public init(meter: any OpenTelemetryApi.StableMeter) {
+  public init(meter: any OpenTelemetryApi.Meter) {
     self.meter = meter
   }
 

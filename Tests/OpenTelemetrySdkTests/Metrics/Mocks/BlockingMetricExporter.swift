@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetrySdk
 
-class BlockingMetricExporter: StableMetricExporter {
+class BlockingMetricExporter: MetricExporter {
   let cond = NSCondition()
 
   enum State {
@@ -23,7 +23,7 @@ class BlockingMetricExporter: StableMetricExporter {
     aggregrationTemporality = aggregationTemporality
   }
 
-  func export(metrics: [OpenTelemetrySdk.StableMetricData]) -> OpenTelemetrySdk.ExportResult {
+  func export(metrics: [OpenTelemetrySdk.MetricData]) -> OpenTelemetrySdk.ExportResult {
     cond.lock()
     while state != .unblocked {
       state = .blocked
@@ -56,8 +56,8 @@ class BlockingMetricExporter: StableMetricExporter {
   }
 }
 
-class WaitingMetricExporter: StableMetricExporter {
-  var metricDataList = [StableMetricData]()
+class WaitingMetricExporter: MetricExporter {
+  var metricDataList = [MetricData]()
   let cond = NSCondition()
   let numberToWaitFor: Int
   var shutdownCalled = false
@@ -67,7 +67,7 @@ class WaitingMetricExporter: StableMetricExporter {
     self.aggregationTemporality = aggregationTemporality
   }
 
-  func export(metrics: [OpenTelemetrySdk.StableMetricData]) -> OpenTelemetrySdk.ExportResult {
+  func export(metrics: [OpenTelemetrySdk.MetricData]) -> OpenTelemetrySdk.ExportResult {
     cond.lock()
     metricDataList.append(contentsOf: metrics)
     cond.unlock()
@@ -75,8 +75,8 @@ class WaitingMetricExporter: StableMetricExporter {
     return .success
   }
 
-  func waitForExport() -> [StableMetricData] {
-    var ret: [StableMetricData]
+  func waitForExport() -> [MetricData] {
+    var ret: [MetricData]
     cond.lock()
     defer { cond.unlock() }
     while metricDataList.count < numberToWaitFor {

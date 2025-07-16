@@ -6,7 +6,10 @@
 import Foundation
 import OpenTelemetryApi
 
-public class StableObservableMeasurementSdk: ObservableLongMeasurement, ObservableDoubleMeasurement {
+@available(*, deprecated, renamed: "ObservableMeasurementSdk")
+public typealias StableObservableMeasurementSdk = ObservableMeasurementSdk
+
+public class ObservableMeasurementSdk: ObservableLongMeasurement, ObservableDoubleMeasurement {
   private var instrumentScope: InstrumentationScopeInfo
   public private(set) var descriptor: InstrumentDescriptor
   public private(set) var storages: [AsynchronousMetricStorage]

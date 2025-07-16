@@ -7,8 +7,8 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 
 public enum MetricsAdapter {
-  public static func toProtoResourceMetrics(stableMetricData: [StableMetricData]) -> [Opentelemetry_Proto_Metrics_V1_ResourceMetrics] {
-    let resourceAndScopeMap = groupByResourceAndScope(stableMetricData: stableMetricData)
+  public static func toProtoResourceMetrics(metricData: [MetricData]) -> [Opentelemetry_Proto_Metrics_V1_ResourceMetrics] {
+    let resourceAndScopeMap = groupByResourceAndScope(metricData: metricData)
 
     var resourceMetrics = [Opentelemetry_Proto_Metrics_V1_ResourceMetrics]()
     resourceAndScopeMap.forEach { resMap in
@@ -30,26 +30,26 @@ public enum MetricsAdapter {
     return resourceMetrics
   }
 
-  private static func groupByResourceAndScope(stableMetricData: [StableMetricData]) -> [Resource: [InstrumentationScopeInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]] {
+  private static func groupByResourceAndScope(metricData: [MetricData]) -> [Resource: [InstrumentationScopeInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]] {
     var results = [Resource: [InstrumentationScopeInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]]()
 
-    stableMetricData.forEach {
-      if let metric = toProtoMetric(stableMetric: $0) {
+    metricData.forEach {
+      if let metric = toProtoMetric(metricData: $0) {
         results[$0.resource, default: [InstrumentationScopeInfo: [Opentelemetry_Proto_Metrics_V1_Metric]]()][$0.instrumentationScopeInfo, default: [Opentelemetry_Proto_Metrics_V1_Metric]()].append(metric)
       }
     }
     return results
   }
 
-  public static func toProtoMetric(stableMetric: StableMetricData) -> Opentelemetry_Proto_Metrics_V1_Metric? {
+  public static func toProtoMetric(metricData: MetricData) -> Opentelemetry_Proto_Metrics_V1_Metric? {
     var protoMetric = Opentelemetry_Proto_Metrics_V1_Metric()
-    protoMetric.name = stableMetric.name
-    protoMetric.unit = stableMetric.unit
-    protoMetric.description_p = stableMetric.description
-    if stableMetric.data.points.isEmpty { return nil }
+    protoMetric.name = metricData.name
+    protoMetric.unit = metricData.unit
+    protoMetric.description_p = metricData.description
+    if metricData.data.points.isEmpty { return nil }
 
-    stableMetric.data.points.forEach {
-      switch stableMetric.type {
+    metricData.data.points.forEach {
+      switch metricData.type {
       case .LongGauge:
         guard let gaugeData = $0 as? LongPointData else {
           break
@@ -65,9 +65,9 @@ public enum MetricsAdapter {
         var protoDataPoint = Opentelemetry_Proto_Metrics_V1_NumberDataPoint()
         injectPointData(protoNumberPoint: &protoDataPoint, pointData: gaugeData)
         protoDataPoint.value = .asInt(Int64(gaugeData.value))
-        protoMetric.sum.aggregationTemporality = stableMetric.data.aggregationTemporality.convertToProtoEnum()
+        protoMetric.sum.aggregationTemporality = metricData.data.aggregationTemporality.convertToProtoEnum()
         protoMetric.sum.dataPoints.append(protoDataPoint)
-        protoMetric.sum.isMonotonic = stableMetric.isMonotonic
+        protoMetric.sum.isMonotonic = metricData.isMonotonic
       case .DoubleGauge:
         guard let gaugeData = $0 as? DoublePointData else {
           break
@@ -83,9 +83,9 @@ public enum MetricsAdapter {
         var protoDataPoint = Opentelemetry_Proto_Metrics_V1_NumberDataPoint()
         injectPointData(protoNumberPoint: &protoDataPoint, pointData: gaugeData)
         protoDataPoint.value = .asDouble(gaugeData.value)
-        protoMetric.sum.aggregationTemporality = stableMetric.data.aggregationTemporality.convertToProtoEnum()
+        protoMetric.sum.aggregationTemporality = metricData.data.aggregationTemporality.convertToProtoEnum()
         protoMetric.sum.dataPoints.append(protoDataPoint)
-        protoMetric.sum.isMonotonic = stableMetric.isMonotonic
+        protoMetric.sum.isMonotonic = metricData.isMonotonic
       case .Summary:
         guard let summaryData = $0 as? SummaryPointData else {
           break
@@ -113,7 +113,7 @@ public enum MetricsAdapter {
         protoDataPoint.min = Double(histogramData.min)
         protoDataPoint.explicitBounds = histogramData.boundaries.map { Double($0) }
         protoDataPoint.bucketCounts = histogramData.counts.map { UInt64($0) }
-        protoMetric.histogram.aggregationTemporality = stableMetric.data.aggregationTemporality.convertToProtoEnum()
+        protoMetric.histogram.aggregationTemporality = metricData.data.aggregationTemporality.convertToProtoEnum()
         protoMetric.histogram.dataPoints.append(protoDataPoint)
       case .ExponentialHistogram:
         guard let exponentialHistogramData = $0 as? ExponentialHistogramPointData else {
@@ -139,7 +139,7 @@ public enum MetricsAdapter {
         protoDataPoint.positive = positiveBuckets
         protoDataPoint.negative = negativeBuckets
 
-        protoMetric.exponentialHistogram.aggregationTemporality = stableMetric.data.aggregationTemporality.convertToProtoEnum()
+        protoMetric.exponentialHistogram.aggregationTemporality = metricData.data.aggregationTemporality.convertToProtoEnum()
         protoMetric.exponentialHistogram.dataPoints.append(protoDataPoint)
       }
     }

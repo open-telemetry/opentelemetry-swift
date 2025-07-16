@@ -11,7 +11,7 @@ import XCTest
 class PersistenceMetricExporterDecoratorTests: XCTestCase {
   @UniqueTemporaryDirectory private var temporaryDirectory: Directory
 
-  class MetricExporterMock: StableMetricExporter {
+  class MetricExporterMock: MetricExporter {
     func flush() -> OpenTelemetrySdk.ExportResult {
       .success
     }
@@ -24,12 +24,12 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
       .cumulative
     }
 
-    let onExport: ([StableMetricData]) -> ExportResult
-    init(onExport: @escaping ([StableMetricData]) -> ExportResult) {
+    let onExport: ([MetricData]) -> ExportResult
+    init(onExport: @escaping ([MetricData]) -> ExportResult) {
       self.onExport = onExport
     }
 
-    func export(metrics: [StableMetricData]) -> ExportResult {
+    func export(metrics: [MetricData]) -> ExportResult {
       return onExport(metrics)
     }
   }
@@ -67,8 +67,8 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
                                                                                                       synchronousWrite: true,
                                                                                                       exportPerformance: ExportPerformanceMock.veryQuick))
 
-    let provider = StableMeterProviderSdk.builder().registerMetricReader(
-      reader: StablePeriodicMetricReaderBuilder(
+    let provider = MeterProviderSdk.builder().registerMetricReader(
+      reader: PeriodicMetricReaderBuilder(
         exporter: persistenceMetricExporter
       ).setInterval(timeInterval: 1)
         .build()
@@ -76,7 +76,7 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
       selector: InstrumentSelector.builder().setInstrument(
         name: ".*"
       ).build(),
-      view: StableView.builder().build()
+      view: View.builder().build()
     ).build()
 
     let meter = provider.get(name: "MyMeter")

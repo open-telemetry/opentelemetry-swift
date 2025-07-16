@@ -7,13 +7,13 @@ import Foundation
 import OpenTelemetryApi
 
 public class MeterBuilderSdk: MeterBuilder {
-  private let registry: ComponentRegistry<StableMeterSdk>
+  private let registry: ComponentRegistry<MeterSdk>
   private let instrumentationScopeName: String
   private var instrumentationVersion: String?
   private var attributes: [String: AttributeValue]?
   private var schemaUrl: String?
 
-  init(registry: ComponentRegistry<StableMeterSdk>, instrumentationScopeName: String) {
+  init(registry: ComponentRegistry<MeterSdk>, instrumentationScopeName: String) {
     self.registry = registry
     self.instrumentationScopeName = instrumentationScopeName
   }
@@ -33,7 +33,7 @@ public class MeterBuilderSdk: MeterBuilder {
     return self
   }
 
-  public func build() -> StableMeterSdk {
+  public func build() -> MeterSdk {
     return registry.get(name: instrumentationScopeName, version: instrumentationVersion, schemaUrl: schemaUrl)
   }
 }
