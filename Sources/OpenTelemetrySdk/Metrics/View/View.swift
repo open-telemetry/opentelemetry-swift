@@ -6,7 +6,10 @@
 import Foundation
 import OpenTelemetryApi
 
-public class StableView {
+@available(*, deprecated, renamed: "View")
+public typealias StableView = View
+
+public class View {
   public private(set) var name: String?
   public private(set) var description: String?
   public private(set) var aggregation: Aggregation

@@ -8,27 +8,27 @@ import OpenTelemetrySdk
 
 // a persistence exporter decorator for `Metric`.
 // specialization of `PersistenceExporterDecorator` for `MetricExporter`.
-public class PersistenceMetricExporterDecorator: StableMetricExporter {
+public class PersistenceMetricExporterDecorator: MetricExporter {
   struct MetricDecoratedExporter: DecoratedExporter {
-    typealias SignalType = StableMetricData
+    typealias SignalType = MetricData
 
-    private let metricExporter: any StableMetricExporter
+    private let metricExporter: any MetricExporter
 
-    init(metricExporter: any StableMetricExporter) {
+    init(metricExporter: any MetricExporter) {
       self.metricExporter = metricExporter
     }
 
-    func export(values: [StableMetricData]) -> DataExportStatus {
+    func export(values: [MetricData]) -> DataExportStatus {
       let result = metricExporter.export(metrics: values)
       return DataExportStatus(needsRetry: result == .failure)
     }
   }
 
-  private let metricExporter: StableMetricExporter
+  private let metricExporter: MetricExporter
   private let persistenceExporter:
     PersistenceExporterDecorator<MetricDecoratedExporter>
 
-  public init(metricExporter: StableMetricExporter,
+  public init(metricExporter: MetricExporter,
               storageURL: URL,
               exportCondition: @escaping () -> Bool = { true },
               performancePreset: PersistencePerformancePreset = .default) throws {
@@ -41,7 +41,7 @@ public class PersistenceMetricExporterDecorator: StableMetricExporter {
     self.metricExporter = metricExporter
   }
 
-  public func export(metrics: [StableMetricData])
+  public func export(metrics: [MetricData])
     -> ExportResult {
     do {
       try persistenceExporter.export(values: metrics)

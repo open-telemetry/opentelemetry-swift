@@ -5,10 +5,13 @@
 
 import Foundation
 
+@available(*, deprecated, renamed: "MetricReader")
+public typealias StableMetricReader = MetricReader
+
 /// The duties of the MetricReader include:
 /// - Collecting metrics from the SDK
 /// - Handling the ForceFlush and Shutdown signals from the SDK
-public protocol StableMetricReader: AggregationTemporalitySelectorProtocol, DefaultAggregationSelector {
+public protocol MetricReader: AggregationTemporalitySelectorProtocol, DefaultAggregationSelector {
   /// force flush handler from meter provider
   ///
   /// - Returns: success
