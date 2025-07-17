@@ -5,13 +5,16 @@
 
 import Foundation
 
-public protocol StableMetricExporter: AggregationTemporalitySelectorProtocol, DefaultAggregationSelector {
-  func export(metrics: [StableMetricData]) -> ExportResult
+@available(*, deprecated, renamed: "MetricExporter")
+public typealias StableMetricExporter = MetricExporter
+
+public protocol MetricExporter: AggregationTemporalitySelectorProtocol, DefaultAggregationSelector {
+  func export(metrics: [MetricData]) -> ExportResult
   func flush() -> ExportResult
   func shutdown() -> ExportResult
 }
 
-public extension StableMetricExporter {
+public extension MetricExporter {
   func getDefaultAggregation(for instrument: InstrumentType) -> Aggregation {
     return Aggregations.defaultAggregation()
   }

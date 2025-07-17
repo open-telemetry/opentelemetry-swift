@@ -14,7 +14,7 @@ import OpenTelemetryProtocolExporterCommon
 @testable import OpenTelemetrySdk
 import XCTest
 
-class StableOtlpHttpMetricsExporterTest: XCTestCase {
+class OtlpHttpMetricsExporterTest: XCTestCase {
   var testServer: NIOHTTP1TestServer!
   var group: MultiThreadedEventLoopGroup!
 
@@ -31,7 +31,7 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
   // The shutdown() function is a no-op, This test is just here to make codecov happy
   func testShutdown() {
     let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
-    let exporter = StableOtlpHTTPMetricExporter(endpoint: endpoint)
+    let exporter = OtlpHttpMetricExporter(endpoint: endpoint)
     XCTAssertEqual(exporter.shutdown(), .success)
   }
 
@@ -39,7 +39,10 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
     let metric = generateSumStableMetricData()
 
     let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
-    let exporter = StableOtlpHTTPMetricExporter(endpoint: endpoint, config: OtlpConfiguration(headers: [("headerName", "headerValue")]))
+    let exporter = OtlpHttpMetricExporter(
+      endpoint: endpoint,
+      config: OtlpConfiguration(headers: [("headerName", "headerValue")])
+    )
     let result = exporter.export(metrics: [metric])
     XCTAssertEqual(result, ExportResult.success)
 
@@ -54,7 +57,7 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
 
   func testExport() {
     let words = ["foo", "bar", "fizz", "buzz"]
-    var metrics: [StableMetricData] = []
+    var metrics: [MetricData] = []
     var metricDescriptions: [String] = []
     for word in words {
       let metricDescription = word + String(Int.random(in: 1 ... 100))
@@ -63,7 +66,10 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
     }
 
     let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
-    let exporter = StableOtlpHTTPMetricExporter(endpoint: endpoint, config: .init(compression: .none))
+    let exporter = OtlpHttpMetricExporter(
+      endpoint: endpoint,
+      config: .init(compression: .none)
+    )
     let result = exporter.export(metrics: metrics)
     XCTAssertEqual(result, ExportResult.success)
 
@@ -86,7 +92,7 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
 
   func testGaugeExport() {
     let words = ["foo", "bar", "fizz", "buzz"]
-    var metrics: [StableMetricData] = []
+    var metrics: [MetricData] = []
     var metricDescriptions: [String] = []
     for word in words {
       let metricDescription = word + String(Int.random(in: 1 ... 100))
@@ -95,7 +101,10 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
     }
 
     let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
-    let exporter = StableOtlpHTTPMetricExporter(endpoint: endpoint, config: .init(compression: .none))
+    let exporter = OtlpHttpMetricExporter(
+      endpoint: endpoint,
+      config: .init(compression: .none)
+    )
     let result = exporter.export(metrics: metrics)
     XCTAssertEqual(result, ExportResult.success)
 
@@ -117,10 +126,13 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
   }
 
   func testFlushWithoutPendingMetrics() {
-    let metric = generateSumStableMetricData()
+    _ = generateSumStableMetricData()
 
     let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
-    let exporter = StableOtlpHTTPMetricExporter(endpoint: endpoint, config: OtlpConfiguration(headers: [("headerName", "headerValue")]))
+    let exporter = OtlpHttpMetricExporter(
+      endpoint: endpoint,
+      config: OtlpConfiguration(headers: [("headerName", "headerValue")])
+    )
     XCTAssertEqual(exporter.flush(), .success)
   }
 
@@ -143,7 +155,10 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
     }
 
     let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
-    let exporter = StableOtlpHTTPMetricExporter(endpoint: endpoint, aggregationTemporalitySelector: aggregationTemporalitySelector)
+    let exporter = OtlpHttpMetricExporter(
+      endpoint: endpoint,
+      aggregationTemporalitySelector: aggregationTemporalitySelector
+    )
     XCTAssertTrue(exporter.getAggregationTemporality(for: .counter) == .cumulative)
     XCTAssertTrue(exporter.getAggregationTemporality(for: .histogram) == .delta)
     XCTAssertTrue(exporter.getAggregationTemporality(for: .observableCounter) == .delta)
@@ -156,28 +171,51 @@ class StableOtlpHttpMetricsExporterTest: XCTestCase {
     let aggregationSelector = CustomDefaultAggregationSelector()
 
     let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
-    let exporter = StableOtlpHTTPMetricExporter(endpoint: endpoint, defaultAggregationSelector: aggregationSelector)
+    let exporter = OtlpHttpMetricExporter(
+      endpoint: endpoint,
+      defaultAggregationSelector: aggregationSelector
+    )
     XCTAssertTrue(exporter.getDefaultAggregation(for: .counter) is SumAggregation)
     XCTAssertTrue(exporter.getDefaultAggregation(for: .histogram) is SumAggregation)
     XCTAssertTrue(exporter.getDefaultAggregation(for: .observableCounter) is DropAggregation)
     XCTAssertTrue(exporter.getDefaultAggregation(for: .upDownCounter) is DropAggregation)
   }
 
-  func generateSumStableMetricData(description: String = "description") -> StableMetricData {
+  func generateSumStableMetricData(description: String = "description") -> MetricData {
     let scope = InstrumentationScopeInfo(
       name: "lib",
       version: "semver:0.0.0",
       attributes: ["instrumentationScope": AttributeValue.string("attributes")]
     )
     let sumPointData = DoublePointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: 1)
-    let metric = StableMetricData(resource: Resource(), instrumentationScopeInfo: scope, name: "metric", description: description, unit: "", type: .DoubleSum, isMonotonic: true, data: StableMetricData.Data(aggregationTemporality: .cumulative, points: [sumPointData]))
+    let metric = MetricData(
+      resource: Resource(),
+      instrumentationScopeInfo: scope,
+      name: "metric",
+      description: description,
+      unit: "",
+      type: .DoubleSum,
+      isMonotonic: true,
+      data: MetricData
+        .Data(aggregationTemporality: .cumulative, points: [sumPointData])
+    )
     return metric
   }
 
-  func generateGaugeStableMetricData(description: String = "description") -> StableMetricData {
+  func generateGaugeStableMetricData(description: String = "description") -> MetricData {
     let scope = InstrumentationScopeInfo(name: "lib", version: "semver:0.0.0")
     let sumPointData = DoublePointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], value: 100)
-    let metric = StableMetricData(resource: Resource(), instrumentationScopeInfo: scope, name: "MyGauge", description: description, unit: "", type: .LongGauge, isMonotonic: true, data: StableMetricData.Data(aggregationTemporality: .cumulative, points: [sumPointData]))
+    let metric = MetricData(
+      resource: Resource(),
+      instrumentationScopeInfo: scope,
+      name: "MyGauge",
+      description: description,
+      unit: "",
+      type: .LongGauge,
+      isMonotonic: true,
+      data: MetricData
+        .Data(aggregationTemporality: .cumulative, points: [sumPointData])
+    )
     return metric
   }
 }

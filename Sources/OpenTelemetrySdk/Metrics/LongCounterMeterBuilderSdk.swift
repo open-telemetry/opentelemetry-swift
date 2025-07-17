@@ -8,7 +8,7 @@ import OpenTelemetryApi
 
 public class LongCounterMeterBuilderSdk: InstrumentBuilder, LongCounterBuilder {
   init(meterProviderSharedState: inout MeterProviderSharedState,
-       meterSharedState: inout StableMeterSharedState,
+       meterSharedState: inout MeterSharedState,
        name: String) {
     super.init(
       meterProviderSharedState: &meterProviderSharedState,
@@ -29,7 +29,7 @@ public class LongCounterMeterBuilderSdk: InstrumentBuilder, LongCounterBuilder {
     return buildSynchronousInstrument(LongCounterSdk.init)
   }
 
-  public func buildWithCallback(_ callback: @escaping (StableObservableMeasurementSdk) -> Void)
+  public func buildWithCallback(_ callback: @escaping (ObservableMeasurementSdk) -> Void)
     -> ObservableInstrumentSdk {
     registerLongAsynchronousInstrument(type: .observableCounter, updater: callback)
   }
