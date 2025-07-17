@@ -8,7 +8,7 @@ import OpenTelemetryApi
 
 public class ReservoirCell {
   let clock: Clock
-  let attributes = ReadWriteLocked< [String: AttributeValue]>(initialValue: [:])
+  let attributes = ReadWriteLocked<[String: AttributeValue]>(initialValue: [:])
   var spanContext: SpanContext?
   var recordTime: UInt64 = 0
 
