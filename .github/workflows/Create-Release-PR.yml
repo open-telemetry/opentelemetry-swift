@@ -5,6 +5,8 @@ on:
       new_version:
         description: "New sdk version"
         required: true
+permissions:
+  contents: read
 jobs:
   Release:
     runs-on: ubuntu-latest
