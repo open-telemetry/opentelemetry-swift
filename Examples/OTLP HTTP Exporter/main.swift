@@ -75,20 +75,20 @@
   createSpans()
 
 // Metrics
-let otlpMetricExporter = StableOtlpHTTPMetricExporter(endpoint: defaultStableOtlpHTTPMetricsEndpoint())
-let meterProvider = StableMeterProviderSdk.builder()
+let otlpMetricExporter = OtlpHttpMetricExporter(endpoint: defaultOtlpHttpMetricsEndpoint())
+let meterProvider = MeterProviderSdk.builder()
   .registerMetricReader(
-    reader: StablePeriodicMetricReaderBuilder(
+    reader: PeriodicMetricReaderBuilder(
       exporter: otlpMetricExporter).setInterval(timeInterval: 60)
       .build()
   )
   .registerView(
     selector: InstrumentSelector.builder().setInstrument(name: ".*").build(),
-    view: StableView.builder().build()
+    view: View.builder().build()
   )
   .build()
 
-OpenTelemetry.registerStableMeterProvider(meterProvider: meterProvider)
+OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
 
 let labels1 = ["dim1": AttributeValue.string("value1")]
 

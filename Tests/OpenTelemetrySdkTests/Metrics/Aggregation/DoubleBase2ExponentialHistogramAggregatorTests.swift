@@ -87,8 +87,6 @@ class DoubleBase2ExponentialHistogramAggregatorTests: XCTestCase {
     let aggregator = DoubleBase2ExponentialHistogramAggregator(maxBuckets: 160, maxScale: 20, reservoirSupplier: { self.reservoir })
     let attr: [String: AttributeValue] = ["test": .string("value")]
 
-    _ = DoubleExemplarData(value: 1.0, epochNanos: 2, filteredAttributes: attr)
-
     let handle = aggregator.createHandle() as! DoubleBase2ExponentialHistogramAggregator.Handle
     handle.recordDouble(value: 0, attributes: attr)
 

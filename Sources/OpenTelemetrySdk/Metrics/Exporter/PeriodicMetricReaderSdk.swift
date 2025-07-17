@@ -14,7 +14,7 @@ public class PeriodicMetricReaderSdk: MetricReader {
   let exportInterval: TimeInterval
   let scheduleQueue = DispatchQueue(label: "org.opentelemetry.StablePeriodicMetricReaderSdk.scheduleQueue")
   let scheduleTimer: DispatchSourceTimer
-  var metricProduce: MetricProducer = NoopMetricProducer()
+  let metricProduce: ReadWriteLocked<MetricProducer> = .init(initialValue: NoopMetricProducer())
 
   init(exporter: MetricExporter, exportInterval: TimeInterval = 60.0) {
     self.exporter = exporter
@@ -38,7 +38,7 @@ public class PeriodicMetricReaderSdk: MetricReader {
 
   public func register(registration: CollectionRegistration) {
     if let newProducer = registration as? MetricProducer {
-      metricProduce = newProducer
+      metricProduce.protectedValue = newProducer
       start()
     } else {
       // todo: error : unrecognized CollectionRegistration
@@ -55,7 +55,7 @@ public class PeriodicMetricReaderSdk: MetricReader {
   }
 
   private func doRun() -> ExportResult {
-    let metricData = metricProduce.collectAllMetrics()
+    let metricData = metricProduce.protectedValue.collectAllMetrics()
     if metricData.isEmpty {
       return .success
     }

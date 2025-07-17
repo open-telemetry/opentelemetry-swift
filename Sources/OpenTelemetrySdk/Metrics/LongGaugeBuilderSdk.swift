@@ -7,10 +7,10 @@ import Foundation
 import OpenTelemetryApi
 
 public class LongGaugeBuilderSdk: InstrumentBuilder, LongGaugeBuilder {
-  init(meterProviderSharedState: inout MeterProviderSharedState, meterSharedState: inout MeterSharedState, name: String, description: String, unit: String) {
+  init(meterProviderSharedState: MeterProviderSharedState, meterSharedState: MeterSharedState, name: String, description: String, unit: String) {
     super.init(
-      meterProviderSharedState: &meterProviderSharedState,
-      meterSharedState: &meterSharedState,
+      meterProviderSharedState: meterProviderSharedState,
+      meterSharedState: meterSharedState,
       type: .observableGauge,
       valueType: .long,
       description: description,

@@ -7,14 +7,14 @@ import Foundation
 import OpenTelemetryApi
 
 public class DoubleUpDownCounterBuilderSdk: InstrumentBuilder, DoubleUpDownCounterBuilder {
-  init(meterProviderSharedState: inout MeterProviderSharedState,
-       meterSharedState: inout MeterSharedState,
+  init(meterProviderSharedState: MeterProviderSharedState,
+       meterSharedState: MeterSharedState,
        name: String,
        description: String,
        unit: String) {
     super.init(
-      meterProviderSharedState: &meterProviderSharedState,
-      meterSharedState: &meterSharedState,
+      meterProviderSharedState: meterProviderSharedState,
+      meterSharedState: meterSharedState,
       type: .upDownCounter,
       valueType: .double,
       description: description,

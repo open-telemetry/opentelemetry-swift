@@ -68,7 +68,6 @@ class DefaultBaggageManagerTests: DefaultBaggageManagerTestsInfo {
 
     func testWithContextUsingWrap() {
       let expec = expectation(description: "testWithContextUsingWrap")
-      _ = DispatchSemaphore(value: 0)
       OpenTelemetry.instance.contextProvider.withActiveBaggage(baggage) {
         XCTAssertTrue(defaultBaggageManager.getCurrentBaggage() === baggage)
         Task {

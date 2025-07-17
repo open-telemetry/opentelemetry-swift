@@ -7,10 +7,10 @@ import Foundation
 import OpenTelemetryApi
 
 public class DoubleGaugeBuilderSdk: InstrumentBuilder, DoubleGaugeBuilder {
-  init(meterProviderSharedState: inout MeterProviderSharedState, meterSharedState: inout MeterSharedState, name: String) {
+  init(meterProviderSharedState: MeterProviderSharedState, meterSharedState: MeterSharedState, name: String) {
     super.init(
-      meterProviderSharedState: &meterProviderSharedState,
-      meterSharedState: &meterSharedState,
+      meterProviderSharedState: meterProviderSharedState,
+      meterSharedState: meterSharedState,
       type: .observableGauge,
       valueType: .double,
       description: "",
