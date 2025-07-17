@@ -41,38 +41,42 @@
   #error("Unsupported platform")
 #endif
 
-/// A threading lock based on `os_unfair_lock`
+/// A threading lock based on `libpthread` instead of `libdispatch`.
+///
+/// This object provides a lock on top of a single `pthread_mutex_t`. This kind
+/// of lock is safe to use with `libpthread`-based threading models, such as the
+/// one used by NIO.
 final class Lock {
-  private let unfairLock: os_unfair_lock_t
+  private let mutex: UnsafeMutablePointer<pthread_mutex_t> = UnsafeMutablePointer.allocate(capacity: 1)
 
   /// Create a new lock.
-  init() {
-    unfairLock = .allocate(capacity: 1)
-    unfairLock.initialize(to: os_unfair_lock_s())
+  public init() {
+    let err = pthread_mutex_init(mutex, nil)
+    precondition(err == 0, "pthread_mutex_init failed with error \(err)")
   }
 
   deinit {
-    os_unfair_lock_assert_not_owner(unfairLock)
-    self.unfairLock.deinitialize(count: 1)
-    self.unfairLock.deallocate()
+    let err = pthread_mutex_destroy(self.mutex)
+    precondition(err == 0, "pthread_mutex_destroy failed with error \(err)")
+    self.mutex.deallocate()
   }
 
   /// Acquire the lock.
   ///
   /// Whenever possible, consider using `withLock` instead of this method and
   /// `unlock`, to simplify lock handling.
-  func lock() {
-    os_unfair_lock_assert_not_owner(unfairLock)
-    os_unfair_lock_lock(unfairLock)
+  public func lock() {
+    let err = pthread_mutex_lock(mutex)
+    precondition(err == 0, "pthread_mutex_lock failed with error \(err)")
   }
 
   /// Release the lock.
   ///
   /// Whenever possible, consider using `withLock` instead of this method and
   /// `lock`, to simplify lock handling.
-  func unlock() {
-    os_unfair_lock_assert_owner(unfairLock)
-    os_unfair_lock_unlock(unfairLock)
+  public func unlock() {
+    let err = pthread_mutex_unlock(mutex)
+    precondition(err == 0, "pthread_mutex_unlock failed with error \(err)")
   }
 }
 
