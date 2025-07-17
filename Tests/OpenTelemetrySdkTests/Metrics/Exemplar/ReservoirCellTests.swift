@@ -22,7 +22,7 @@ class ReservoirCellTests: XCTestCase {
     reservoirCell.recordLongValue(value: 10, attributes: attributes)
 
     XCTAssertEqual(reservoirCell.longValue, 10)
-    XCTAssertEqual(reservoirCell.attributes, attributes)
+    XCTAssertEqual(reservoirCell.attributes.protectedValue, attributes)
     XCTAssertEqual(reservoirCell.spanContext, nil)
   }
 
@@ -31,7 +31,7 @@ class ReservoirCellTests: XCTestCase {
     reservoirCell.recordDoubleValue(value: 3.14, attributes: attributes)
 
     XCTAssertEqual(reservoirCell.doubleValue, 3.14)
-    XCTAssertEqual(reservoirCell.attributes, attributes)
+    XCTAssertEqual(reservoirCell.attributes.protectedValue, attributes)
     XCTAssertEqual(reservoirCell.spanContext, nil)
   }
 
@@ -46,7 +46,7 @@ class ReservoirCellTests: XCTestCase {
     XCTAssertEqual(result?.filteredAttributes, attributes)
     XCTAssertEqual(result?.spanContext, nil)
 
-    XCTAssertEqual(reservoirCell.attributes, [:])
+    XCTAssertEqual(reservoirCell.attributes.protectedValue, [:])
     XCTAssertEqual(reservoirCell.longValue, 0)
     XCTAssertEqual(reservoirCell.spanContext, nil)
     XCTAssertEqual(reservoirCell.recordTime, 0)
@@ -63,7 +63,7 @@ class ReservoirCellTests: XCTestCase {
     XCTAssertEqual(result?.filteredAttributes, attributes)
     XCTAssertEqual(result?.spanContext, nil)
 
-    XCTAssertEqual(reservoirCell.attributes, [:])
+    XCTAssertEqual(reservoirCell.attributes.protectedValue, [:])
     XCTAssertEqual(reservoirCell.doubleValue, 0)
     XCTAssertEqual(reservoirCell.spanContext, nil)
     XCTAssertEqual(reservoirCell.recordTime, 0)
@@ -75,7 +75,7 @@ class ReservoirCellTests: XCTestCase {
 
     reservoirCell.reset()
 
-    XCTAssertEqual(reservoirCell.attributes, [:])
+    XCTAssertEqual(reservoirCell.attributes.protectedValue, [:])
     XCTAssertEqual(reservoirCell.longValue, 0)
     XCTAssertEqual(reservoirCell.doubleValue, 0)
     XCTAssertEqual(reservoirCell.spanContext, nil)

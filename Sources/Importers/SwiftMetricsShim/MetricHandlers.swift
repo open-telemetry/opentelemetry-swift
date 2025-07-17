@@ -9,21 +9,21 @@ import OpenTelemetryApi
 class SwiftCounterMetric: CounterHandler, SwiftMetric {
   let metricName: String
   let metricType: MetricType = .counter
-  var counter: LongCounter
+  let counter: Locked<LongCounter>
   let labels: [String: AttributeValue]
 
   required init(name: String,
                 labels: [String: String],
                 meter: any OpenTelemetryApi.Meter) {
     metricName = name
-    counter = meter.counterBuilder(name: name).build()
+    counter = .init(initialValue: meter.counterBuilder(name: name).build())
     self.labels = labels.mapValues { value in
       return AttributeValue.string(value)
     }
   }
 
   func increment(by: Int64) {
-    counter.add(value: Int(by), attributes: labels)
+    counter.protectedValue.add(value: Int(by), attributes: labels)
   }
 
   func reset() {}

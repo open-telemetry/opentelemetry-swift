@@ -16,7 +16,7 @@ public class InstrumentBuilder {
   var instrumentName: String
   var explicitBucketBoundariesAdvice: [Double]?
 
-  init(meterProviderSharedState: inout MeterProviderSharedState, meterSharedState: inout MeterSharedState, type: InstrumentType, valueType: InstrumentValueType, description: String, unit: String, instrumentName: String) {
+  init(meterProviderSharedState: MeterProviderSharedState, meterSharedState: MeterSharedState, type: InstrumentType, valueType: InstrumentValueType, description: String, unit: String, instrumentName: String) {
     self.meterProviderSharedState = meterProviderSharedState
     self.meterSharedState = meterSharedState
     self.type = type
@@ -40,8 +40,8 @@ public extension InstrumentBuilder {
     return self
   }
 
-  internal func swapBuilder<T: InstrumentBuilder>(_ builder: (inout MeterProviderSharedState, inout MeterSharedState, String, String, String) -> T) -> T {
-    let newBuilder = builder(&meterProviderSharedState, &meterSharedState, instrumentName, description, unit)
+  internal func swapBuilder<T: InstrumentBuilder>(_ builder: (MeterProviderSharedState, MeterSharedState, String, String, String) -> T) -> T {
+    let newBuilder = builder(meterProviderSharedState, meterSharedState, instrumentName, description, unit)
     newBuilder.explicitBucketBoundariesAdvice = self.explicitBucketBoundariesAdvice
     return newBuilder
   }

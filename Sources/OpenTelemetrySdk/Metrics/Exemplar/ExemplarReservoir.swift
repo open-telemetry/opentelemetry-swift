@@ -44,7 +44,7 @@ public class FixedSizedExemplarReservoir: ExemplarReservoir {
   var storage: [ReservoirCell]
   let reservoirCellSelector: ReservoirCellSelector
   let mapAndResetCell: (ReservoirCell, [String: AttributeValue]) -> ExemplarData?
-  var hasMeasurements = false
+  let hasMeasurements = Locked<Bool>(initialValue: false)
 
   init(clock: Clock, size: Int, reservoirCellSelector: ReservoirCellSelector, mapAndResetCell: @escaping (ReservoirCell, [String: AttributeValue]) -> ExemplarData?) {
     storage = [ReservoirCell]()
@@ -61,7 +61,7 @@ public class FixedSizedExemplarReservoir: ExemplarReservoir {
 
     if bucketIndex != -1 {
       storage[bucketIndex].recordLongValue(value: value, attributes: attributes)
-      hasMeasurements = true
+      hasMeasurements.protectedValue = true
     }
   }
 
@@ -70,13 +70,14 @@ public class FixedSizedExemplarReservoir: ExemplarReservoir {
 
     if bucketIndex != -1 {
       storage[bucketIndex].recordDoubleValue(value: value, attributes: attributes)
-      hasMeasurements = true
+      hasMeasurements.protectedValue = true
     }
   }
 
   override public func collectAndReset(attribute: [String: AttributeValue]) -> [ExemplarData] {
     var results = [ExemplarData]()
-    if !hasMeasurements {
+
+    if !hasMeasurements.protectedValue {
       return results
     }
     for cell in storage {
@@ -85,7 +86,7 @@ public class FixedSizedExemplarReservoir: ExemplarReservoir {
       }
     }
     reservoirCellSelector.reset()
-    hasMeasurements = false
+    hasMeasurements.protectedValue = false
     return results
   }
 }
@@ -108,7 +109,7 @@ public class RandomFixedSizedExemplarReservoir: FixedSizedExemplarReservoir {
   }
 
   class RandomCellSelector: ReservoirCellSelector {
-    var numMeasurements: Int = 0
+    var numMeasurements: Locked<Int> = .init(initialValue: 0)
 
     func reservoirCellIndex(for cells: [ReservoirCell], value: Int, attributes: [String: OpenTelemetryApi.AttributeValue]) -> Int {
       return getIndex(cells: cells)
@@ -119,13 +120,15 @@ public class RandomFixedSizedExemplarReservoir: FixedSizedExemplarReservoir {
     }
 
     func reset() {
-      numMeasurements = 0
+      numMeasurements.protectedValue = 0
     }
 
     private func getIndex(cells: [ReservoirCell]) -> Int {
-      let count = numMeasurements + 1
+      let count = numMeasurements.locking {
+        $0 += 1
+        return $0
+      }
       let index = Int.random(in: Int.min ... Int.max) > 0 ? count : 1
-      numMeasurements += 1
       if index < cells.count {
         return index
       }

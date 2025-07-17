@@ -8,7 +8,7 @@ import OpenTelemetryApi
 
 public class ReservoirCell {
   let clock: Clock
-  var attributes = [String: AttributeValue]()
+  let attributes = ReadWriteLocked< [String: AttributeValue]>(initialValue: [:])
   var spanContext: SpanContext?
   var recordTime: UInt64 = 0
 
@@ -30,7 +30,7 @@ public class ReservoirCell {
   }
 
   private func offerMeasurement(attributes: [String: AttributeValue]) {
-    self.attributes = attributes
+    self.attributes.protectedValue = attributes
     recordTime = clock.nanoTime
     if let context = OpenTelemetry.instance.contextProvider.activeSpan?.context, context.isValid {
       spanContext = context
@@ -38,25 +38,29 @@ public class ReservoirCell {
   }
 
   func getAndResetLong(pointAttributes: [String: AttributeValue]) -> LongExemplarData? {
-    if attributes.isEmpty {
-      return nil
+      let result: LongExemplarData? = attributes.readLocking {
+      if $0.isEmpty {
+        return nil
+      }
+      return LongExemplarData(value: longValue, epochNanos: recordTime, filteredAttributes: filtered($0, pointAttributes), spanContext: spanContext)
     }
-    let result = LongExemplarData(value: longValue, epochNanos: recordTime, filteredAttributes: filtered(attributes, pointAttributes), spanContext: spanContext)
     reset()
     return result
   }
 
   func getAndResetDouble(pointAttributes: [String: AttributeValue]) -> DoubleExemplarData? {
-    if attributes.isEmpty {
-      return nil
+    let result: DoubleExemplarData? = attributes.readLocking {
+      if $0.isEmpty {
+        return nil
+      }
+      return DoubleExemplarData(value: doubleValue, epochNanos: recordTime, filteredAttributes: filtered($0, pointAttributes), spanContext: spanContext)
     }
-    let result = DoubleExemplarData(value: doubleValue, epochNanos: recordTime, filteredAttributes: filtered(attributes, pointAttributes), spanContext: spanContext)
     reset()
     return result
   }
 
   func reset() {
-    attributes = [String: AttributeValue]()
+    attributes.protectedValue = [String: AttributeValue]()
     longValue = 0
     doubleValue = 0
     spanContext = nil

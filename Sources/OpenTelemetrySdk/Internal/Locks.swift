@@ -41,42 +41,38 @@
   #error("Unsupported platform")
 #endif
 
-/// A threading lock based on `libpthread` instead of `libdispatch`.
-///
-/// This object provides a lock on top of a single `pthread_mutex_t`. This kind
-/// of lock is safe to use with `libpthread`-based threading models, such as the
-/// one used by NIO.
+/// A threading lock based on `os_unfair_lock`
 final class Lock {
-  private let mutex: UnsafeMutablePointer<pthread_mutex_t> = UnsafeMutablePointer.allocate(capacity: 1)
+  private let unfairLock: os_unfair_lock_t
 
   /// Create a new lock.
-  public init() {
-    let err = pthread_mutex_init(mutex, nil)
-    precondition(err == 0, "pthread_mutex_init failed with error \(err)")
+  init() {
+    unfairLock = .allocate(capacity: 1)
+    unfairLock.initialize(to: os_unfair_lock_s())
   }
 
   deinit {
-    let err = pthread_mutex_destroy(self.mutex)
-    precondition(err == 0, "pthread_mutex_destroy failed with error \(err)")
-    self.mutex.deallocate()
+    os_unfair_lock_assert_not_owner(unfairLock)
+    self.unfairLock.deinitialize(count: 1)
+    self.unfairLock.deallocate()
   }
 
   /// Acquire the lock.
   ///
   /// Whenever possible, consider using `withLock` instead of this method and
   /// `unlock`, to simplify lock handling.
-  public func lock() {
-    let err = pthread_mutex_lock(mutex)
-    precondition(err == 0, "pthread_mutex_lock failed with error \(err)")
+  func lock() {
+    os_unfair_lock_assert_not_owner(unfairLock)
+    os_unfair_lock_lock(unfairLock)
   }
 
   /// Release the lock.
   ///
   /// Whenever possible, consider using `withLock` instead of this method and
   /// `lock`, to simplify lock handling.
-  public func unlock() {
-    let err = pthread_mutex_unlock(mutex)
-    precondition(err == 0, "pthread_mutex_unlock failed with error \(err)")
+  func unlock() {
+    os_unfair_lock_assert_owner(unfairLock)
+    os_unfair_lock_unlock(unfairLock)
   }
 }
 
@@ -163,7 +159,7 @@ extension ReadWriteLock {
   /// - Parameter body: The block to execute while holding the lock.
   /// - Returns: The value returned by the block.
   @inlinable
-  func withReaderLock<T>(_ body: () throws -> T) rethrows -> T {
+  public func withReaderLock<T>(_ body: () throws -> T) rethrows -> T {
     lockRead()
     defer {
       self.unlock()
@@ -180,7 +176,7 @@ extension ReadWriteLock {
   /// - Parameter body: The block to execute while holding the lock.
   /// - Returns: The value returned by the block.
   @inlinable
-  func withWriterLock<T>(_ body: () throws -> T) rethrows -> T {
+  public func withWriterLock<T>(_ body: () throws -> T) rethrows -> T {
     lockWrite()
     defer {
       self.unlock()
@@ -199,4 +195,62 @@ extension ReadWriteLock {
   func withWriterLockVoid(_ body: () throws -> Void) rethrows {
     try withWriterLock(body)
   }
+}
+
+public final class Locked<Value> : @unchecked Sendable {
+    
+    private var internalValue: Value
+    
+    private let lock = Lock()
+    
+    public var protectedValue: Value {
+        get {
+            lock.withLock { internalValue }
+        }
+        _modify {
+            lock.lock()
+            defer { lock.unlock() }
+            yield &internalValue
+        }
+    }
+    
+    public init(initialValue: Value) {
+        self.internalValue = initialValue
+    }
+    
+    public func locking<T>(_ block: (inout Value) throws -> T) rethrows -> T {
+        try lock.withLock { try block(&internalValue) }
+    }
+}
+
+public final class ReadWriteLocked<Value> : @unchecked Sendable {
+    
+    private var internalValue: Value
+    
+    private let rwlock = ReadWriteLock()
+    
+    public var protectedValue: Value {
+        get {
+            rwlock.withReaderLock { internalValue }
+        }
+        _modify {
+            rwlock.lockWrite()
+            defer { rwlock.unlock() }
+            yield &internalValue
+        }
+    }
+    
+    public init(initialValue: Value) {
+        self.internalValue = initialValue
+    }
+    
+    public func readLocking<T>(_ block: (Value) throws -> T) rethrows -> T {
+        try rwlock.withReaderLock{ try block(internalValue) }
+    }
+    
+    public func writeLocking<T>(_ block: (inout Value) throws -> T) rethrows -> T {
+        try rwlock.withWriterLock{ try block(&internalValue) }
+    }
+    
+    
 }
