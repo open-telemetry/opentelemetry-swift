@@ -27,7 +27,7 @@ jobs:
        import Foundation
        
        extension Resource {
-         public static let OTEL_SWIFT_SDK_VERSION : String = "${{ inputs.new_version }}"
+         public static let OTEL_SWIFT_SDK_VERSION: String = "${{ inputs.new_version }}"
        }
        ' > Sources/OpenTelemetrySdk/Version.swift
     - name: update Podspec

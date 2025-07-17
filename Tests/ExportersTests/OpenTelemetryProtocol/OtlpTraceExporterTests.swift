@@ -13,7 +13,8 @@ import OpenTelemetryProtocolExporterCommon
 @testable import OpenTelemetrySdk
 import XCTest
 
-extension Swift.String: LocalizedError {
+extension String: @retroactive Error {}
+extension Swift.String: @retroactive LocalizedError {
   public var errorDescription: String? { return self }
 }
 
@@ -51,6 +52,7 @@ class OtlpTraceExporterTests: XCTestCase {
   func testImplicitGrpcLoggingConfig() throws {
     let exporter = OtlpTraceExporter(channel: channel)
     let logger = exporter.callOptions.logger
+    XCTAssertEqual(logger.label, "io.grpc")
   }
 
   func testExplicitGrpcLoggingConfig() throws {

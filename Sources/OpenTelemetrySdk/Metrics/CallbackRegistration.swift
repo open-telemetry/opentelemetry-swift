@@ -7,11 +7,14 @@ import Foundation
 import OpenTelemetryApi
 
 public class CallbackRegistration {
-  var observableMeasurements = [StableObservableMeasurementSdk]()
+  var observableMeasurements = [ObservableMeasurementSdk]()
   var callback: () -> Void
   var instrumentDescriptors: [InstrumentDescriptor]
   var hasStorages: Bool
-  init(observableMeasurements: [StableObservableMeasurementSdk], callback: @escaping () -> Void) {
+  init(
+    observableMeasurements: [ObservableMeasurementSdk],
+    callback: @escaping () -> Void
+  ) {
     self.observableMeasurements = observableMeasurements
     self.callback = callback
     instrumentDescriptors = observableMeasurements.map { measurement in

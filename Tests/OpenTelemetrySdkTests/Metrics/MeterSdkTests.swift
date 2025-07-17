@@ -8,10 +8,10 @@ import XCTest
 @testable import OpenTelemetrySdk
 import OpenTelemetryApi
 
-class MockStableMetricExporter: StableMetricExporter {
-  public var exportData: [StableMetricData] = .init()
+class MockMetricExporter: MetricExporter {
+  public var exportData: [MetricData] = .init()
 
-  func export(metrics: [OpenTelemetrySdk.StableMetricData]) -> OpenTelemetrySdk.ExportResult {
+  func export(metrics: [OpenTelemetrySdk.MetricData]) -> OpenTelemetrySdk.ExportResult {
     exportData = metrics
     return .success
   }
@@ -29,24 +29,24 @@ class MockStableMetricExporter: StableMetricExporter {
   }
 }
 
-class StableMeterProviderTests: XCTestCase {
+class MeterProviderTests: XCTestCase {
   func testStableMeterSdk() {
     let mockExporter = WaitingMetricExporter(numberToWaitFor: 3, aggregationTemporality: .delta)
-    let stableMeterProvider = StableMeterProviderSdk.builder().registerMetricReader(reader: StablePeriodicMetricReaderSdk(exporter: mockExporter, exportInterval: 5.0)).registerView(selector: InstrumentSelectorBuilder().build(), view: StableView.builder().build()).build()
+    let stableMeterProvider = MeterProviderSdk.builder().registerMetricReader(reader: PeriodicMetricReaderSdk(exporter: mockExporter, exportInterval: 5.0)).registerView(selector: InstrumentSelectorBuilder().build(), view: View.builder().build()).build()
     let meterSdk = stableMeterProvider.meterBuilder(name: "myMeter").build()
 
-    var counter = meterSdk.counterBuilder(name: "counter").build()
+    let counter = meterSdk.counterBuilder(name: "counter").build()
 
     var _ = meterSdk.gaugeBuilder(name: "observable_gauge").buildWithCallback { measurement in
       measurement.record(value: 1.0)
     }
-    var histogram = meterSdk.histogramBuilder(name: "histogram").build()
-    var upDown = meterSdk.upDownCounterBuilder(name: "upDown").build()
+    let histogram = meterSdk.histogramBuilder(name: "histogram").build()
+    let upDown = meterSdk.upDownCounterBuilder(name: "upDown").build()
 
-    var doubleGauge = meterSdk.gaugeBuilder(name: "double_gauge").build()
+    let doubleGauge = meterSdk.gaugeBuilder(name: "double_gauge").build()
     doubleGauge.record(value: 5.0)
 
-    var longGauge = meterSdk.gaugeBuilder(name: "long_gauge").ofLongs().build()
+    let longGauge = meterSdk.gaugeBuilder(name: "long_gauge").ofLongs().build()
     longGauge.record(value: 10)
 
     counter.add(value: 1)

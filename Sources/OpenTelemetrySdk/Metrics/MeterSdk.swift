@@ -6,9 +6,12 @@
 import Foundation
 import OpenTelemetryApi
 
-public class StableMeterSdk: StableMeter {
+@available(*, deprecated, renamed: "MeterSdk")
+public typealias StableMeterSdk = MeterSdk
+
+public class MeterSdk: Meter {
   var meterProviderSharedState: MeterProviderSharedState
-  var meterSharedState: StableMeterSharedState
+  var meterSharedState: MeterSharedState
   public private(set) var instrumentationScopeInfo: InstrumentationScopeInfo
 
   init(meterProviderSharedState: inout MeterProviderSharedState,
@@ -16,8 +19,8 @@ public class StableMeterSdk: StableMeter {
        registeredReaders: inout [RegisteredReader]) {
     instrumentationScopeInfo = instrumentScope
     self.meterProviderSharedState = meterProviderSharedState
-    meterSharedState = StableMeterSharedState(instrumentationScope: instrumentScope,
-                                              registeredReaders: registeredReaders)
+    meterSharedState = MeterSharedState(instrumentationScope: instrumentScope,
+                                           registeredReaders: registeredReaders)
   }
 
   public func counterBuilder(name: String) -> LongCounterMeterBuilderSdk {
@@ -46,7 +49,7 @@ public class StableMeterSdk: StableMeter {
 
   fileprivate let collectLock = Lock()
 
-  func collectAll(registerReader: RegisteredReader, epochNanos: UInt64) -> [StableMetricData] {
+  func collectAll(registerReader: RegisteredReader, epochNanos: UInt64) -> [MetricData] {
     meterSharedState.collectAll(registeredReader: registerReader, meterProviderSharedState: meterProviderSharedState, epochNanos: epochNanos)
   }
 }

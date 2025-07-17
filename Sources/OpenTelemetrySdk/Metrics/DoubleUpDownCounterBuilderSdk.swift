@@ -8,7 +8,7 @@ import OpenTelemetryApi
 
 public class DoubleUpDownCounterBuilderSdk: InstrumentBuilder, DoubleUpDownCounterBuilder {
   init(meterProviderSharedState: inout MeterProviderSharedState,
-       meterSharedState: inout StableMeterSharedState,
+       meterSharedState: inout MeterSharedState,
        name: String,
        description: String,
        unit: String) {
@@ -27,7 +27,11 @@ public class DoubleUpDownCounterBuilderSdk: InstrumentBuilder, DoubleUpDownCount
     buildSynchronousInstrument(DoubleUpDownCounterSdk.init)
   }
 
-  public func buildWithCallback(_ callback: @escaping (StableObservableMeasurementSdk) -> Void)
+  public func buildWithCallback(
+    _ callback: @escaping (
+      ObservableMeasurementSdk
+    ) -> Void
+  )
     -> ObservableInstrumentSdk {
     registerDoubleAsynchronousInstrument(type: .observableUpDownCounter, updater: callback)
   }

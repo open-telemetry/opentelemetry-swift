@@ -22,7 +22,7 @@ public struct OpenTelemetry {
 
   /// Registered MeterProvider or default via DefaultMeterProvider.instance.
 
-  public private(set) var stableMeterProvider: (any StableMeterProvider)?
+  public private(set) var meterProvider: any MeterProvider
 
   /// Registered LoggerProvider or default via DefaultLoggerProvider.instance.
   public private(set) var loggerProvider: LoggerProvider
@@ -42,7 +42,7 @@ public struct OpenTelemetry {
   public private(set) var feedbackHandler: ((String) -> Void)?
 
   private init() {
-    stableMeterProvider = nil
+    meterProvider = DefaultMeterProvider.instance
     tracerProvider = DefaultTracerProvider.instance
     loggerProvider = DefaultLoggerProvider.instance
     baggageManager = DefaultBaggageManager.instance
@@ -62,10 +62,15 @@ public struct OpenTelemetry {
     #endif
   }
 
-  public static func registerStableMeterProvider(
-    meterProvider: any StableMeterProvider
+  @available(*, deprecated, renamed: "registerMeterProvider")
+  public static func registerStableMeterProvider(meterProvider: any MeterProvider) {
+    Self.registerMeterProvider(meterProvider: meterProvider)
+  }
+
+  public static func registerMeterProvider(
+    meterProvider: any MeterProvider
   ) {
-    instance.stableMeterProvider = meterProvider
+    instance.meterProvider = meterProvider
   }
 
   public static func registerTracerProvider(tracerProvider: TracerProvider) {

@@ -18,7 +18,7 @@ public class SumAggregation: Aggregation {
     }
   }
 
-  public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> any StableAggregator {
+  public func createAggregator(descriptor: InstrumentDescriptor, exemplarFilter: ExemplarFilter) -> any Aggregator {
     switch descriptor.valueType {
     case .long:
       return LongSumAggregator(descriptor: descriptor, reservoirSupplier: {

@@ -8,14 +8,23 @@ import Foundation
 public struct MetricDescriptor: Hashable {
   public private(set) var name: String
   public private(set) var description: String
-  public private(set) var view: StableView
+  public private(set) var view: View
   public private(set) var instrument: InstrumentDescriptor
 
   init(name: String, description: String, unit: String) {
-    self.init(view: StableView.builder().build(), instrument: InstrumentDescriptor(name: name, description: description, unit: unit, type: .observableGauge, valueType: .double))
+    self.init(
+      view: View.builder().build(),
+      instrument: InstrumentDescriptor(
+        name: name,
+        description: description,
+        unit: unit,
+        type: .observableGauge,
+        valueType: .double
+      )
+    )
   }
 
-  init(view: StableView, instrument: InstrumentDescriptor) {
+  init(view: View, instrument: InstrumentDescriptor) {
     if let name = view.name {
       self.name = name
     } else {
