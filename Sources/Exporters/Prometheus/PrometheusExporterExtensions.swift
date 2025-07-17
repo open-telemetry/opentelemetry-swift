@@ -23,7 +23,7 @@ public enum PrometheusExporterExtensions {
 
   public static func writeMetricsCollection(exporter: PrometheusExporter) -> String {
     var output = ""
-    let metrics = exporter.getAndClearMetrics()
+    let metrics = exporter.getMetrics()
     let now = String(Int64((Date().timeIntervalSince1970 * 1000.0).rounded()))
 
     metrics.forEach { metric in
