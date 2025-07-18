@@ -26,7 +26,8 @@ public struct URLSessionInstrumentationConfiguration {
               receivedError: ((Error, DataOrFile?, HTTPStatus, Span) -> Void)? = nil,
               delegateClassesToInstrument: [AnyClass]? = nil,
               baggageProvider: ((inout URLRequest, Span?) -> (Baggage)?)? = nil,
-              tracer: Tracer? = nil) {
+              tracer: Tracer? = nil,
+              ignoredClassPrefixes: [String]? = nil) {
     self.shouldRecordPayload = shouldRecordPayload
     self.shouldInstrument = shouldInstrument
     self.shouldInjectTracingHeaders = shouldInjectTracingHeaders
@@ -40,6 +41,7 @@ public struct URLSessionInstrumentationConfiguration {
     self.baggageProvider = baggageProvider
     self.tracer = tracer ??
       OpenTelemetry.instance.tracerProvider.get(instrumentationName: "NSURLSession", instrumentationVersion: "0.0.1")
+    self.ignoredClassPrefixes = ignoredClassPrefixes
   }
 
   public var tracer: Tracer
@@ -90,4 +92,7 @@ public struct URLSessionInstrumentationConfiguration {
   /// Note: The injected baggage depends on the propagator in use (e.g., W3C or custom).
   /// Returns: A `Baggage` instance or `nil` if no baggage is needed.
   public let baggageProvider: ((inout URLRequest, Span?) -> (Baggage)?)?
+    
+  /// The Array of Prefixes you can avoid in swizzle process
+  public let ignoredClassPrefixes: [String]?
 }
