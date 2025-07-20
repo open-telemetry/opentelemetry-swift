@@ -7,14 +7,14 @@ import Foundation
 import OpenTelemetryApi
 
 public class MeterBuilderSdk: MeterBuilder {
-  private let registry: ComponentRegistry<MeterSdk>
+  private let registry: ReadWriteLocked<ComponentRegistry<MeterSdk>>
   private let instrumentationScopeName: String
   private var instrumentationVersion: String?
   private var attributes: [String: AttributeValue]?
   private var schemaUrl: String?
 
   init(registry: ComponentRegistry<MeterSdk>, instrumentationScopeName: String) {
-    self.registry = registry
+    self.registry = .init(initialValue:registry)
     self.instrumentationScopeName = instrumentationScopeName
   }
 
@@ -34,6 +34,6 @@ public class MeterBuilderSdk: MeterBuilder {
   }
 
   public func build() -> MeterSdk {
-    return registry.get(name: instrumentationScopeName, version: instrumentationVersion, schemaUrl: schemaUrl)
+    return registry.protectedValue.get(name: instrumentationScopeName, version: instrumentationVersion, schemaUrl: schemaUrl)
   }
 }

@@ -7,14 +7,14 @@ import Foundation
 import OpenTelemetryApi
 
 public class LongHistogramMeterBuilderSdk: InstrumentBuilder, LongHistogramBuilder {
-  init(meterProviderSharedState: inout MeterProviderSharedState,
-       meterSharedState: inout MeterSharedState,
+  init(meterProviderSharedState: MeterProviderSharedState,
+       meterSharedState: MeterSharedState,
        instrumentName: String,
        description: String,
        unit: String) {
     super.init(
-      meterProviderSharedState: &meterProviderSharedState,
-      meterSharedState: &meterSharedState,
+      meterProviderSharedState: meterProviderSharedState,
+      meterSharedState: meterSharedState,
       type: .histogram,
       valueType: .long,
       description: description,

@@ -5,6 +5,9 @@ on:
     types: [opened, synchronize]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   FormattingLint: 
     runs-on: macos-15
@@ -76,7 +79,7 @@ jobs:
       run: make test-without-building-visionos
   linux:
     runs-on: ubuntu-latest
-    container: swift:6.1@sha256:5fce423d9125680f7f5fe809f3b3c733ea9497d41d4f407c9e5e3d27218b710a
+    container: swift:6.1@sha256:0afbf4e0d1358b6b59a41b9313c2447d25196c8e25ba51a4d6673e2609a15083
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Build tests for Linux

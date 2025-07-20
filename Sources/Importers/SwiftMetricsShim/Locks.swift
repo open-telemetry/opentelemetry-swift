@@ -200,3 +200,29 @@ extension ReadWriteLock {
     try withWriterLock(body)
   }
 }
+
+public final class Locked<Value> : @unchecked Sendable {
+    
+    private var internalValue: Value
+    
+    private let lock = Lock()
+    
+    public var protectedValue: Value {
+        get {
+            lock.withLock { internalValue }
+        }
+        _modify {
+            lock.lock()
+            defer { lock.unlock() }
+            yield &internalValue
+        }
+    }
+    
+    public init(initialValue: Value) {
+        self.internalValue = initialValue
+    }
+    
+    public func locking<T>(_ block: (inout Value) throws -> T) rethrows -> T {
+        try lock.withLock { try block(&internalValue) }
+    }
+}

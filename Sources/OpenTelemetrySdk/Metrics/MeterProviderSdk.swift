@@ -19,7 +19,7 @@ public class MeterProviderSdk: MeterProvider {
   var registeredReaders = [RegisteredReader]()
   var registeredViews = [RegisteredView]()
 
-  var componentRegistry: ComponentRegistry<MeterSdk>!
+  let componentRegistry: ComponentRegistry<MeterSdk>!
 
   public func get(name: String) -> MeterSdk {
     meterBuilder(name: name).build()
@@ -57,11 +57,11 @@ public class MeterProviderSdk: MeterProvider {
 
     meterProviderSharedState = MeterProviderSharedState(clock: clock, resource: resource, startEpochNanos: startEpochNano, exemplarFilter: exemplarFilter)
 
-    componentRegistry = ComponentRegistry { scope in
+    componentRegistry = ComponentRegistry { [meterProviderSharedState, registeredReaders] scope in
       MeterSdk(
-        meterProviderSharedState: &self.meterProviderSharedState,
+        meterProviderSharedState: meterProviderSharedState,
         instrumentScope: scope,
-        registeredReaders: &self.registeredReaders
+        registeredReaders: registeredReaders
       )
     }
 

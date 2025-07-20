@@ -8,7 +8,7 @@ import OpenTelemetryApi
 
 public class LoggerProviderSdk: LoggerProvider {
   private var sharedState: LoggerSharedState
-  private var loggerRegistry: ComponentRegistry<LoggerSdk>
+  private let loggerRegistry: ComponentRegistry<LoggerSdk>
   public init(clock: Clock = MillisClock(),
               resource: Resource = EnvVarResource.get(),
               logLimits: LogLimits = LogLimits(),

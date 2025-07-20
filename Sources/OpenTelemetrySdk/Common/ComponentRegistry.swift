@@ -12,7 +12,7 @@ class ComponentRegistry<T> {
   private var componentByNameVersion = [String: [String: T]]()
   private var componentByNameSchema = [String: [String: T]]()
   private var componentByNameVersionSchema = [String: [String: [String: T]]]()
-  private var allComponents = [T]()
+  private let allComponents = ReadWriteLocked<[T]>(initialValue: [])
 
   private let builder: (InstrumentationScopeInfo) -> T
 
@@ -84,11 +84,13 @@ class ComponentRegistry<T> {
 
   private func buildComponent(_ scope: InstrumentationScopeInfo) -> T {
     let component = builder(scope)
-    allComponents.append(component)
+    allComponents.writeLocking {
+      $0.append(component)
+    }
     return component
   }
 
   public func getComponents() -> [T] {
-    return [T](allComponents)
+    return [T](allComponents.protectedValue)
   }
 }

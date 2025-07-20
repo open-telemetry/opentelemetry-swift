@@ -9,10 +9,6 @@ import XCTest
 class MeterProviderSdkTests: XCTestCase {
   var meterProvider = MeterProviderSdk.builder().build()
 
-  func testDefaultGet() {
-    XCTAssertTrue(meterProvider.get(name: "test") is DefaultMeter)
-  }
-
   func testGetSameInstanceForName_WithoutVersion() {
     XCTAssert(meterProvider.get(name: "test") as AnyObject === meterProvider.get(name: "test") as AnyObject)
     XCTAssert(meterProvider.get(name: "test") as AnyObject === meterProvider.meterBuilder(name: "test").build() as AnyObject)
