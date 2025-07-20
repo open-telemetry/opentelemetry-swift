@@ -7,8 +7,8 @@ import Foundation
 import OpenTelemetryApi
 
 public class LoggerBuilderSdk: LoggerBuilder {
-  private var registry: ComponentRegistry<LoggerSdk>
-  private var instrumentationScopeName: String
+  private let registry: ComponentRegistry<LoggerSdk>
+  private let instrumentationScopeName: String
   private var eventDomain: String?
   private var schemaUrl: String?
   private var attributes: [String: AttributeValue]?

@@ -6,14 +6,17 @@
 import Foundation
 import OpenTelemetryApi
 
-public class StablePeriodicMetricReaderSdk: StableMetricReader {
-  let exporter: StableMetricExporter
+@available(*, deprecated, renamed: "PeriodicMetricReaderSdk")
+public typealias StablePeriodicMetricReaderSdk = PeriodicMetricReaderSdk
+
+public class PeriodicMetricReaderSdk: MetricReader {
+  let exporter: MetricExporter
   let exportInterval: TimeInterval
   let scheduleQueue = DispatchQueue(label: "org.opentelemetry.StablePeriodicMetricReaderSdk.scheduleQueue")
   let scheduleTimer: DispatchSourceTimer
-  var metricProduce: MetricProducer = NoopMetricProducer()
+  let metricProduce: ReadWriteLocked<MetricProducer> = .init(initialValue: NoopMetricProducer())
 
-  init(exporter: StableMetricExporter, exportInterval: TimeInterval = 60.0) {
+  init(exporter: MetricExporter, exportInterval: TimeInterval = 60.0) {
     self.exporter = exporter
     self.exportInterval = exportInterval
     scheduleTimer = DispatchSource.makeTimerSource(flags: DispatchSource.TimerFlags(), queue: scheduleQueue)
@@ -35,7 +38,7 @@ public class StablePeriodicMetricReaderSdk: StableMetricReader {
 
   public func register(registration: CollectionRegistration) {
     if let newProducer = registration as? MetricProducer {
-      metricProduce = newProducer
+      metricProduce.protectedValue = newProducer
       start()
     } else {
       // todo: error : unrecognized CollectionRegistration
@@ -52,7 +55,7 @@ public class StablePeriodicMetricReaderSdk: StableMetricReader {
   }
 
   private func doRun() -> ExportResult {
-    let metricData = metricProduce.collectAllMetrics()
+    let metricData = metricProduce.protectedValue.collectAllMetrics()
     if metricData.isEmpty {
       return .success
     }

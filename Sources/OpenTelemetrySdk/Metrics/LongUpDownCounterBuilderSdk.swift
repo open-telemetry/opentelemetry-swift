@@ -7,12 +7,12 @@ import Foundation
 import OpenTelemetryApi
 
 public class LongUpDownCounterBuilderSdk: InstrumentBuilder, LongUpDownCounterBuilder {
-  init(meterProviderSharedState: inout MeterProviderSharedState,
-       meterSharedState: inout StableMeterSharedState,
+  init(meterProviderSharedState: MeterProviderSharedState,
+       meterSharedState: MeterSharedState,
        name: String) {
     super.init(
-      meterProviderSharedState: &meterProviderSharedState,
-      meterSharedState: &meterSharedState,
+      meterProviderSharedState: meterProviderSharedState,
+      meterSharedState: meterSharedState,
       type: .upDownCounter,
       valueType: .long,
       description: "",
@@ -29,7 +29,11 @@ public class LongUpDownCounterBuilderSdk: InstrumentBuilder, LongUpDownCounterBu
     buildSynchronousInstrument(LongUpDownCounterSdk.init)
   }
 
-  public func buildWithCallback(_ callback: @escaping (StableObservableMeasurementSdk) -> Void)
+  public func buildWithCallback(
+    _ callback: @escaping (
+      ObservableMeasurementSdk
+    ) -> Void
+  )
     -> ObservableInstrumentSdk {
     registerLongAsynchronousInstrument(type: .observableUpDownCounter, updater: callback)
   }

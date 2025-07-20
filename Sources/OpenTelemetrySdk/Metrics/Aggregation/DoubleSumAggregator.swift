@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public class DoubleSumAggregator: SumAggregator, StableAggregator {
+public class DoubleSumAggregator: SumAggregator, Aggregator {
   private let reservoirSupplier: () -> ExemplarReservoir
 
   public func diff(previousCumulative: PointData, currentCumulative: PointData) throws -> PointData {
@@ -21,8 +21,20 @@ public class DoubleSumAggregator: SumAggregator, StableAggregator {
     Handle(exemplarReservoir: reservoirSupplier())
   }
 
-  public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [PointData], temporality: AggregationTemporality) -> StableMetricData {
-    StableMetricData.createDoubleSum(resource: resource, instrumentationScopeInfo: scope, name: descriptor.instrument.name, description: descriptor.instrument.description, unit: descriptor.instrument.unit, isMonotonic: isMonotonic, data: StableSumData(aggregationTemporality: temporality, points: points as! [DoublePointData]))
+  public func toMetricData(resource: Resource, scope: InstrumentationScopeInfo, descriptor: MetricDescriptor, points: [PointData], temporality: AggregationTemporality) -> MetricData {
+    MetricData
+      .createDoubleSum(
+        resource: resource,
+        instrumentationScopeInfo: scope,
+        name: descriptor.instrument.name,
+        description: descriptor.instrument.description,
+        unit: descriptor.instrument.unit,
+        isMonotonic: isMonotonic,
+        data: SumData(
+          aggregationTemporality: temporality,
+          points: points as! [DoublePointData]
+        )
+      )
   }
 
   init(instrumentDescriptor: InstrumentDescriptor, reservoirSupplier: @escaping () -> ExemplarReservoir) {

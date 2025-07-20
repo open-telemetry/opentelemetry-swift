@@ -7,14 +7,14 @@ import Foundation
 import OpenTelemetryApi
 
 public class DoubleHistogramMeterBuilderSdk: InstrumentBuilder, DoubleHistogramBuilder {
-  init(meterProviderSharedState: inout MeterProviderSharedState,
-       meterSharedState: inout StableMeterSharedState,
+  init(meterProviderSharedState: MeterProviderSharedState,
+       meterSharedState: MeterSharedState,
        name: String,
        description: String = "",
        unit: String = "") {
     super.init(
-      meterProviderSharedState: &meterProviderSharedState,
-      meterSharedState: &meterSharedState,
+      meterProviderSharedState: meterProviderSharedState,
+      meterSharedState: meterSharedState,
       type: .histogram,
       valueType: .double,
       description: description,

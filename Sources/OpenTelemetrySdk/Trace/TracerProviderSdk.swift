@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetryApi
 
 public class TracerProviderSdk: TracerProvider {
-  private var tracerLock = pthread_rwlock_t()
+  private let tracerLock: ReadWriteLock = .init()
   private var tracerProvider = [InstrumentationScopeInfo: TracerSdk]()
   var sharedState: TracerSharedState
   static let emptyName = "unknown"
@@ -19,17 +19,12 @@ public class TracerProviderSdk: TracerProvider {
               spanLimits: SpanLimits = SpanLimits(),
               sampler: Sampler = Samplers.parentBased(root: Samplers.alwaysOn),
               spanProcessors: [SpanProcessor] = []) {
-    pthread_rwlock_init(&tracerLock, nil)
     sharedState = TracerSharedState(clock: clock,
                                     idGenerator: idGenerator,
                                     resource: resource,
                                     spanLimits: spanLimits,
                                     sampler: sampler,
                                     spanProcessors: spanProcessors)
-  }
-
-  deinit {
-    pthread_rwlock_destroy(&tracerLock)
   }
 
   public func get(instrumentationName: String, instrumentationVersion: String? = nil, schemaUrl: String? = nil, attributes: [String: AttributeValue]? = nil) -> Tracer {
@@ -50,22 +45,17 @@ public class TracerProviderSdk: TracerProvider {
       attributes: attributes
     )
 
-    if pthread_rwlock_rdlock(&tracerLock) == 0 {
-      let existingTracer = tracerProvider[instrumentationScopeInfo]
-      pthread_rwlock_unlock(&tracerLock)
-
-      if existingTracer != nil {
-        return existingTracer!
-      }
+    let existingTracer = tracerLock.withReaderLock {
+      tracerProvider[instrumentationScopeInfo]
+    }
+    if let existingTracer {
+      return existingTracer
     }
 
     let tracer = TracerSdk(sharedState: sharedState, instrumentationScopeInfo: instrumentationScopeInfo)
-
-    if pthread_rwlock_wrlock(&tracerLock) == 0 {
+    tracerLock.withWriterLock {
       tracerProvider[instrumentationScopeInfo] = tracer
-      pthread_rwlock_unlock(&tracerLock)
     }
-
     return tracer
   }
 

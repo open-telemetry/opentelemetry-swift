@@ -44,7 +44,12 @@ public class ViewBuilder {
     return self
   }
 
-  public func build() -> StableView {
-    return StableView(name: name, description: description, aggregation: aggregation, attributeProcessor: processor)
+  public func build() -> View {
+    return View(
+      name: name,
+      description: description,
+      aggregation: aggregation,
+      attributeProcessor: processor
+    )
   }
 }
