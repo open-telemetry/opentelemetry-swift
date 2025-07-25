@@ -202,36 +202,64 @@ public class URLSessionInstrumentation {
     }
   }
 
-  private func injectIntoNSURLSessionCreateTaskWithParameterMethods() {
-    let cls = URLSession.self
-    [
-      #selector(URLSession.uploadTask(with:from:)),
-      #selector(URLSession.uploadTask(with:fromFile:))
-    ].forEach {
-      let selector = $0
-      guard let original = class_getInstanceMethod(cls, selector) else {
-        print("injectInto \(selector.description) failed")
-        return
-      }
-      var originalIMP: IMP?
-
-      let block:
-        @convention(block) (URLSession, URLRequest, AnyObject) -> URLSessionTask = { session, request, argument in
-          let sessionTaskId = UUID().uuidString
-          let castedIMP = unsafeBitCast(originalIMP,
-                                        to: (@convention(c) (URLSession, Selector, URLRequest, AnyObject)
-                                          -> URLSessionDataTask).self)
-          let instrumentedRequest = URLSessionLogger.processAndLogRequest(request, sessionTaskId: sessionTaskId, instrumentation: self,
-                                                                          shouldInjectHeaders: true)
-          let task = castedIMP(session, selector, instrumentedRequest ?? request, argument)
-          self.setIdKey(value: sessionTaskId, for: task)
-          return task
+    private func injectIntoNSURLSessionCreateTaskWithParameterMethods() {
+        typealias UploadWithDataIMP = @convention(c) (URLSession, Selector, URLRequest, Data?) -> URLSessionTask
+        typealias UploadWithFileIMP = @convention(c) (URLSession, Selector, URLRequest, URL) -> URLSessionTask
+        
+        let cls = URLSession.self
+        
+        // MARK: Swizzle `uploadTask(with:from:)`
+        if let method = class_getInstanceMethod(cls, #selector(URLSession.uploadTask(with:from:))) {
+            let originalIMP = method_getImplementation(method)
+            let imp = unsafeBitCast(originalIMP, to: UploadWithDataIMP.self)
+            
+            let block: @convention(block) (URLSession, URLRequest, Data?) -> URLSessionTask = { [weak self] session, request, data in
+                guard let instrumentation = self else {
+                    return imp(session, #selector(URLSession.uploadTask(with:from:)), request, data)
+                }
+                
+                let sessionTaskId = UUID().uuidString
+                let instrumentedRequest = URLSessionLogger.processAndLogRequest(
+                    request,
+                    sessionTaskId: sessionTaskId,
+                    instrumentation: instrumentation,
+                    shouldInjectHeaders: true
+                )
+                
+                let task = imp(session, #selector(URLSession.uploadTask(with:from:)), instrumentedRequest ?? request, data)
+                instrumentation.setIdKey(value: sessionTaskId, for: task)
+                return task
+            }
+            let swizzledIMP = imp_implementationWithBlock(block)
+            method_setImplementation(method, swizzledIMP)
         }
-      let swizzledIMP = imp_implementationWithBlock(
-        unsafeBitCast(block, to: AnyObject.self))
-      originalIMP = method_setImplementation(original, swizzledIMP)
+        
+        // MARK: Swizzle `uploadTask(with:fromFile:)`
+        if let method = class_getInstanceMethod(cls, #selector(URLSession.uploadTask(with:fromFile:))) {
+            let originalIMP = method_getImplementation(method)
+            let imp = unsafeBitCast(originalIMP, to: UploadWithFileIMP.self)
+            
+            let block: @convention(block) (URLSession, URLRequest, URL) -> URLSessionTask = { [weak self] session, request, fileURL in
+                guard let instrumentation = self else {
+                    return imp(session, #selector(URLSession.uploadTask(with:fromFile:)), request, fileURL)
+                }
+                
+                let sessionTaskId = UUID().uuidString
+                let instrumentedRequest = URLSessionLogger.processAndLogRequest(
+                    request,
+                    sessionTaskId: sessionTaskId,
+                    instrumentation: instrumentation,
+                    shouldInjectHeaders: true
+                )
+                
+                let task = imp(session, #selector(URLSession.uploadTask(with:fromFile:)), instrumentedRequest ?? request, fileURL)
+                instrumentation.setIdKey(value: sessionTaskId, for: task)
+                return task
+            }
+            let swizzledIMP = imp_implementationWithBlock(block)
+            method_setImplementation(method, swizzledIMP)
+        }
     }
-  }
 
   private func injectIntoNSURLSessionAsyncDataAndDownloadTaskMethods() {
     let cls = URLSession.self
