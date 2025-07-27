@@ -69,17 +69,7 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
         $0.resourceSpans = SpanAdapter.toProtoResourceSpans(
           spanDataList: sendingSpans)
       }
-    var request = createRequest(body: body, endpoint: endpoint)
-    if let headers = envVarHeaders {
-      headers.forEach { key, value in
-        request.addValue(value, forHTTPHeaderField: key)
-      }
-
-    } else if let headers = config.headers {
-      headers.forEach { key, value in
-        request.addValue(value, forHTTPHeaderField: key)
-      }
-    }
+    let request = createRequest(body: body, endpoint: endpoint)
     exporterMetrics?.addSeen(value: sendingSpans.count)
     httpClient.send(request: request) { [weak self] result in
       switch result {
