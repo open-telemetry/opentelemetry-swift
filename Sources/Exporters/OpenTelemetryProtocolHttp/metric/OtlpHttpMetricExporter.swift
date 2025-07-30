@@ -41,12 +41,12 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
               aggregationTemporalitySelector: AggregationTemporalitySelector =
                 AggregationTemporality.alwaysCumulative(),
               defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector.instance,
-              useSession: URLSession? = nil,
+              httpClient: HTTPClient = BaseHTTPClient(),
               envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
     self.aggregationTemporalitySelector = aggregationTemporalitySelector
     self.defaultAggregationSelector = defaultAggregationSelector
 
-    super.init(endpoint: endpoint, config: config, useSession: useSession,
+    super.init(endpoint: endpoint, config: config, httpClient: httpClient,
                envVarHeaders: envVarHeaders)
   }
 
@@ -57,7 +57,7 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
   ///    - meterProvider: Injected `StableMeterProvider` for metric
   ///    - aggregationTemporalitySelector: aggregator
   ///    - defaultAggregationSelector: default aggregator
-  ///    - useSession: Overridden `URLSession` if any
+  ///    - httpClient: Custom HTTPClient implementation
   ///    - envVarHeaders: Extra header key-values
   public convenience init(endpoint: URL,
                           config: OtlpConfiguration = OtlpConfiguration(),
@@ -66,13 +66,13 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
                             AggregationTemporality.alwaysCumulative(),
                           defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector
                             .instance,
-                          useSession: URLSession? = nil,
+                          httpClient: HTTPClient = BaseHTTPClient(),
                           envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
     self.init(endpoint: endpoint,
               config: config,
               aggregationTemporalitySelector: aggregationTemporalitySelector,
               defaultAggregationSelector: defaultAggregationSelector,
-              useSession: useSession,
+              httpClient: httpClient,
               envVarHeaders: envVarHeaders)
     exporterMetrics = ExporterMetrics(type: "metric",
                                       meterProvider: meterProvider,

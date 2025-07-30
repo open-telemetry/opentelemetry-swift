@@ -24,14 +24,30 @@ public class OtlpHttpExporterBase {
 
   // MARK: - Init
 
-  public init(endpoint: URL, config: OtlpConfiguration = OtlpConfiguration(), useSession: URLSession? = nil, envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+  // New initializer with HTTPClient support
+  public init(endpoint: URL,
+              config: OtlpConfiguration = OtlpConfiguration(),
+              httpClient: HTTPClient = BaseHTTPClient(),
+              envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+    self.envVarHeaders = envVarHeaders
+    self.endpoint = endpoint
+    self.config = config
+    self.httpClient = httpClient
+  }
+
+  // Deprecated initializer for backward compatibility
+  @available(*, deprecated, message: "Use init(endpoint:config:httpClient:envVarHeaders:) instead")
+  public init(endpoint: URL,
+              config: OtlpConfiguration = OtlpConfiguration(),
+              useSession: URLSession? = nil,
+              envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
     self.envVarHeaders = envVarHeaders
     self.endpoint = endpoint
     self.config = config
     if let providedSession = useSession {
-      httpClient = HTTPClient(session: providedSession)
+      self.httpClient = BaseHTTPClient(session: providedSession)
     } else {
-      httpClient = HTTPClient()
+      self.httpClient = BaseHTTPClient()
     }
   }
 

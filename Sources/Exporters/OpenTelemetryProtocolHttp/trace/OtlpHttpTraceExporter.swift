@@ -22,14 +22,13 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
   private let exporterLock = Lock()
   private var exporterMetrics: ExporterMetrics?
 
-  override
-  public init(endpoint: URL = defaultOltpHttpTracesEndpoint(),
-              config: OtlpConfiguration = OtlpConfiguration(),
-              useSession: URLSession? = nil,
-              envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+  override public init(endpoint: URL = defaultOltpHttpTracesEndpoint(),
+                       config: OtlpConfiguration = OtlpConfiguration(),
+                       httpClient: HTTPClient = BaseHTTPClient(),
+                       envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
     super.init(endpoint: endpoint,
                config: config,
-               useSession: useSession,
+               httpClient: httpClient,
                envVarHeaders: envVarHeaders)
   }
 
@@ -38,14 +37,14 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
   ///    - endpoint: Exporter endpoint injected as dependency
   ///    - config: Exporter configuration including type of exporter
   ///    - meterProvider: Injected `StableMeterProvider` for metric
-  ///    - useSession: Overridden `URLSession` if any
+  ///    - httpClient: Custom HTTPClient implementation
   ///    - envVarHeaders: Extra header key-values
   public convenience init(endpoint: URL,
                           config: OtlpConfiguration,
                           meterProvider: any MeterProvider,
-                          useSession: URLSession? = nil,
+                          httpClient: HTTPClient = BaseHTTPClient(),
                           envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
-    self.init(endpoint: endpoint, config: config, useSession: useSession,
+    self.init(endpoint: endpoint, config: config, httpClient: httpClient,
               envVarHeaders: envVarHeaders)
     exporterMetrics = ExporterMetrics(type: "span",
                                       meterProvider: meterProvider,
