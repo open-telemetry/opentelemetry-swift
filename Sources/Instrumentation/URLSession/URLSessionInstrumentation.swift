@@ -435,7 +435,9 @@ public class URLSessionInstrumentation {
     }
 
     if NSClassFromString("AFURLSessionManager") != nil {
-      let classes = InstrumentationUtils.objc_getClassList()
+      let classes = InstrumentationUtils.objc_getSafeClassList(
+        ignoredPrefixes: configuration.ignoredClassPrefixes
+      )
       classes.forEach {
         if let method = class_getInstanceMethod($0, NSSelectorFromString("af_resume")) {
           methodsToSwizzle.append(method)
