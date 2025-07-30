@@ -42,8 +42,9 @@
         endpoint: URL(
           string: "http://example.com"
         )!,
-                                            config: config
-)
+        config: config,
+        httpClient: BaseHTTPClient()
+      )
 
       let body = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
         $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
@@ -68,8 +69,9 @@
         endpoint: URL(
           string: "http://example.com"
         )!,
-                                            config: config
-)
+        config: config,
+        httpClient: BaseHTTPClient()
+      )
 
       let body = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
         $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
@@ -94,8 +96,9 @@
         endpoint: URL(
           string: "http://example.com"
         )!,
-                                            config: config
-)
+        config: config,
+        httpClient: BaseHTTPClient()
+      )
 
       let body = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
         $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
