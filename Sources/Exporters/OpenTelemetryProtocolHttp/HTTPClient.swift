@@ -1,7 +1,7 @@
-/*
- * Copyright The OpenTelemetry Authors
- * SPDX-License-Identifier: Apache-2.0
- */
+//
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
+//
 
 import Foundation
 
@@ -9,11 +9,22 @@ import Foundation
   import FoundationNetworking
 #endif
 
-/// Client for sending requests over HTTP.
-final class HTTPClient {
+/// Protocol for sending HTTP requests, allowing custom implementations for authentication and other behaviors.
+public protocol HTTPClient {
+  /// Sends an HTTP request and calls the completion handler with the result.
+  /// - Parameters:
+  ///   - request: The URLRequest to send
+  ///   - completion: Completion handler called with Result<HTTPURLResponse, Error>
+  func send(request: URLRequest,
+            completion: @escaping (Result<HTTPURLResponse, Error>) -> Void)
+}
+
+/// Default implementation of HTTPClient using URLSession.
+public final class BaseHTTPClient: HTTPClient {
   private let session: URLSession
 
-  convenience init() {
+  /// Creates a BaseHTTPClient with default ephemeral session configuration.
+  public convenience init() {
     let configuration: URLSessionConfiguration = .ephemeral
     // NOTE: RUMM-610 Default behaviour of `.ephemeral` session is to cache requests.
     // To not leak requests memory (including their `.httpBody` which may be significant)
@@ -24,12 +35,14 @@ final class HTTPClient {
     self.init(session: URLSession(configuration: configuration))
   }
 
-  init(session: URLSession) {
+  /// Creates a BaseHTTPClient with a custom URLSession.
+  /// - Parameter session: The URLSession to use for HTTP requests
+  public init(session: URLSession) {
     self.session = session
   }
 
-  func send(request: URLRequest,
-            completion: @escaping (Result<HTTPURLResponse, Error>) -> Void) {
+  public func send(request: URLRequest,
+                   completion: @escaping (Result<HTTPURLResponse, Error>) -> Void) {
     let task = session.dataTask(with: request) { data, response, error in
       completion(httpClientResult(for: (data, response, error)))
     }
@@ -38,23 +51,25 @@ final class HTTPClient {
 }
 
 /// An error returned if `URLSession` response state is inconsistent (like no data, no response and no error).
-/// The code execution in `URLSessionTransport` should never reach its initialization.
-struct URLSessionTransportInconsistencyException: Error {}
+struct HTTPClientError: Error, CustomStringConvertible {
+  let description: String
+}
 
-/// As `URLSession` returns 3-values-tuple for request execution, this function applies consistency constraints and turns
-/// it into only two possible states of `HTTPTransportResult`.
-private func httpClientResult(
-  for urlSessionTaskCompletion: (Data?, URLResponse?, Error?)
-) -> Result<HTTPURLResponse, Error> {
-  let (_, response, error) = urlSessionTaskCompletion
+/// Maps `URLSessionDataTask` response to `HTTPClient` response.
+func httpClientResult(for taskResult: (Data?, URLResponse?, Error?)) -> Result<HTTPURLResponse, Error> {
+  let (_, response, error) = taskResult
 
-  if let error {
+  if let error = error {
     return .failure(error)
   }
 
-  if let httpResponse = response as? HTTPURLResponse {
-    return .success(httpResponse)
+  guard let httpResponse = response as? HTTPURLResponse else {
+    return .failure(
+      HTTPClientError(
+        description: "Failed to receive HTTPURLResponse: \(String(describing: response))"
+      )
+    )
   }
 
-  return .failure(URLSessionTransportInconsistencyException())
+  return .success(httpResponse)
 }

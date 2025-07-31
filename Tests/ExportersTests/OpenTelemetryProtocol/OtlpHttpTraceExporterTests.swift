@@ -69,7 +69,7 @@ class OtlpHttpTraceExporterTests: XCTestCase {
   // There is a more complete test as part of the DataDog exporter test
   func testHttpClient() {
     let endpoint = URL(string: "http://localhost:\(testServer.serverPort)/some-route")!
-    let httpClient = HTTPClient()
+    let httpClient = BaseHTTPClient()
     var request = URLRequest(url: endpoint)
     request.httpMethod = HTTPMethod.GET.rawValue
 
