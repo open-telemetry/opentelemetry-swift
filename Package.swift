@@ -33,7 +33,7 @@ let package = Package(
     .executable(name: "StableMetricSample", targets: ["StableMetricSample"]),
   ],
   dependencies: [
-    .package(url: "https://github.com/apple/swift-nio.git", from: "2.83.0"),
+    .package(url: "https://github.com/apple/swift-nio.git", from: "2.85.0"),
     .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.26.1"),
     .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.30.0"),
     .package(url: "https://github.com/apple/swift-log.git", from: "1.6.3"),
