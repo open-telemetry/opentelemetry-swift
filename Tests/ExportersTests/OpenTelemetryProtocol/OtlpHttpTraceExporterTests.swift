@@ -35,8 +35,10 @@ class OtlpHttpTraceExporterTests: XCTestCase {
   // description strings (which is why I made them unique) in the body returned by testServer.receiveBodyAndVerify().
   // It should ideally turn that body into [SpanData] using protobuf and then confirm content
   func testExport() {
+    let testHeader = ("testHeader", "testValue")
     let endpoint = URL(string: "http://localhost:\(testServer.serverPort)/v1/traces")!
-    let exporter = OtlpHttpTraceExporter(endpoint: endpoint, config: .init(compression: .none))
+    let config = OtlpConfiguration(compression: .none, headers: [testHeader])
+    let exporter = OtlpHttpTraceExporter(endpoint: endpoint, config: config)
 
     var spans: [SpanData] = []
     let endpointName1 = "/api/foo" + String(Int.random(in: 1 ... 100))
@@ -48,6 +50,9 @@ class OtlpHttpTraceExporterTests: XCTestCase {
     XCTAssertNoThrow(try testServer.receiveHeadAndVerify { head in
       let otelVersion = Headers.getUserAgentHeader()
       XCTAssertTrue(head.headers.contains(name: Constants.HTTP.userAgent))
+      XCTAssertTrue(head.headers.contains { header in
+          header.name.lowercased() == testHeader.0.lowercased() && header.value == testHeader.1
+      })
       XCTAssertEqual(otelVersion, head.headers.first(name: Constants.HTTP.userAgent))
     })
     XCTAssertNoThrow(try testServer.receiveBodyAndVerify { body in
