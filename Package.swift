@@ -39,7 +39,7 @@ let package = Package(
     .package(url: "https://github.com/apple/swift-log.git", from: "1.6.3"),
     .package(url: "https://github.com/apple/swift-metrics.git", from: "2.7.0"),
     .package(url: "https://github.com/apple/swift-atomics.git", from: "1.3.0"),
-    .package(url: "https://github.com/mw99/DataCompression", from: "3.8.0"),
+    .package(url: "https://github.com/mw99/DataCompression", from: "3.9.0"),
   ],
   targets: [
     .target(
