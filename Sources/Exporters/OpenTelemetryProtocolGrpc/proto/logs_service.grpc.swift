@@ -31,8 +31,7 @@ extension Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientProtocol {
     return "opentelemetry.proto.collector.logs.v1.LogsService"
   }
 
-  /// For performance reasons, it is recommended to keep this RPC
-  /// alive for the entire life of the application.
+  /// Unary call to Export
   ///
   /// - Parameters:
   ///   - request: Request to send to Export.
@@ -209,8 +208,6 @@ public enum Opentelemetry_Proto_Collector_Logs_V1_LogsServiceClientMetadata {
 public protocol Opentelemetry_Proto_Collector_Logs_V1_LogsServiceProvider: CallHandlerProvider {
   var interceptors: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceServerInterceptorFactoryProtocol? { get }
 
-  /// For performance reasons, it is recommended to keep this RPC
-  /// alive for the entire life of the application.
   func export(request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse>
 }
 
@@ -251,8 +248,6 @@ public protocol Opentelemetry_Proto_Collector_Logs_V1_LogsServiceAsyncProvider: 
   static var serviceDescriptor: GRPCServiceDescriptor { get }
   var interceptors: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceServerInterceptorFactoryProtocol? { get }
 
-  /// For performance reasons, it is recommended to keep this RPC
-  /// alive for the entire life of the application.
   func export(
     request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest,
     context: GRPCAsyncServerCallContext
