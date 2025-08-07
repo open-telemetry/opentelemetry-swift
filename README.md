@@ -121,6 +121,7 @@ We are also available in the [#otel-swift](https://cloud-native.slack.com/archiv
 
 ### Maintainers
 
+- [Ariel Demarco](https://github.com/arieldemarco), Embrace
 - [Bryce Buchanan](https://github.com/bryce-b), Elastic
 - [Ignacio Bonafonte](https://github.com/nachobonafonte), Independent
 
@@ -128,7 +129,6 @@ For more information about the maintainer role, see the [community repository](h
 
 ### Approvers
 
-- [Ariel Demarco](https://github.com/arieldemarco), Embrace
 - [Austin Emmons](https://github.com/atreat), Embrace
 - [Vinod Vydier](https://github.com/vvydier), Independent
 
