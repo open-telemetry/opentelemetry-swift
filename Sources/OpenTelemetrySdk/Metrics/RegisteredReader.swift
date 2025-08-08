@@ -5,29 +5,17 @@
 
 import Foundation
 import OpenTelemetryApi
-#if !canImport(Darwin)
-  import Atomics
-#endif
 
 public class RegisteredReader: Equatable, Hashable {
-  #if canImport(Darwin)
-    private(set) static var id_counter: Int32 = 0
-  #else
-    private(set) static var id_counter = ManagedAtomic<Int32>(0)
-  #endif
-
+  private(set) static var id_counter = OtelAtomicInt32(0)
+    
   public let id: Int32
   public let reader: MetricReader
   public let registry: ViewRegistry
   public var lastCollectedEpochNanos: UInt64 = 0
 
   init(reader: MetricReader, registry: ViewRegistry) {
-    #if canImport(Darwin)
-      id = OSAtomicIncrement32(&Self.id_counter)
-    #else
-      id = Self.id_counter.wrappingIncrementThenLoad(ordering: .relaxed)
-    #endif
-
+    self.id = Self.id_counter.increment()
     self.reader = reader
     self.registry = registry
   }
