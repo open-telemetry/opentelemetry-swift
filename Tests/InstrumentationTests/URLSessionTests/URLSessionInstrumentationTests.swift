@@ -417,6 +417,41 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
   }
 
+  public func testUploadTaskWithUrlBlock() {
+    let url = URL(string: "http://localhost:33333/success")!
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+
+    let session = URLSession(configuration: URLSessionConfiguration.default, delegate: sessionDelegate, delegateQueue: nil)
+    let task = session.uploadTask(
+        with: request,
+        from: "UploadData".data(using: .utf8)!
+    )
+    task.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+
+    XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
+  }
+
+  public func testUploadFileTaskWithUrlBlock() {
+    let url = URL(string: "http://localhost:33333/success")!
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+    let session = URLSession(configuration: URLSessionConfiguration.default, delegate: sessionDelegate, delegateQueue: nil)
+
+    let task = session.uploadTask(with: URLRequest(url: url), fromFile: url)
+    task.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+
+    XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
+  }
+
   public func testDownloadTaskWithRequestBlock() {
     let url = URL(string: "http://localhost:33333/success")!
     let request = URLRequest(url: url)
