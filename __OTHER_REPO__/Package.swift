@@ -4,6 +4,9 @@
 import Foundation
 import PackageDescription
 
+let openTelemetrySdkProduct = Target.Dependency.product(name: "OpenTelemetrySdk", package: "opentelemetry-swift")
+let openTelemetryApiProduct = Target.Dependency.product(name: "OpenTelemetryApi", package: "opentelemetry-swift")
+
 let package = Package(
   name: "opentelemetry-swift-contrib",
   platforms: [
@@ -24,7 +27,6 @@ let package = Package(
     ),
     .library(name: "OTelSwiftLog", targets: ["OTelSwiftLog"]),
     .library(name: "BaggagePropagationProcessor", targets: ["BaggagePropagationProcessor"]),
-    .library(name: "StdoutExporter", targets: ["StdoutExporter"]),
     .library(name: "PersistenceExporter", targets: ["PersistenceExporter"]),
     .library(name: "InMemoryExporter", targets: ["InMemoryExporter"]),
     .executable(name: "StableMetricSample", targets: ["StableMetricSample"]),
@@ -38,33 +40,35 @@ let package = Package(
     .package(url: "https://github.com/apple/swift-log.git", from: "1.6.3"),
     .package(url: "https://github.com/apple/swift-metrics.git", from: "2.7.0"),
     .package(url: "https://github.com/mw99/DataCompression", from: "3.9.0"),
+    // TODO: Change this to the proper repository once we land.  
+    .package(name: "opentelemetry-swift", path: "..")
   ],
   targets: [
     .target(
       name: "OpenTelemetryConcurrency",
-      dependencies: ["OpenTelemetryApi"]
+      dependencies: [openTelemetryApiProduct]
     ),
 
     .target(
       name: "StdoutExporter",
-      dependencies: ["OpenTelemetrySdk"],
+      dependencies: [openTelemetrySdkProduct],
       path: "Sources/Exporters/Stdout"
     ),
     .target(
       name: "InMemoryExporter",
-      dependencies: ["OpenTelemetrySdk"],
+      dependencies: [openTelemetrySdkProduct],
       path: "Sources/Exporters/InMemory"
     ),
     .target(
       name: "PersistenceExporter",
-      dependencies: ["OpenTelemetrySdk"],
+      dependencies: [openTelemetrySdkProduct],
       path: "Sources/Exporters/Persistence",
       exclude: ["README.md"]
     ),
     .target(
       name: "OTelSwiftLog",
       dependencies: [
-        "OpenTelemetryApi",
+        openTelemetryApiProduct,
         .product(name: "Logging", package: "swift-log"),
       ],
       path: "Sources/Bridges/OTelSwiftLog",
@@ -73,7 +77,7 @@ let package = Package(
     .target(
       name: "SwiftMetricsShim",
       dependencies: [
-        "OpenTelemetrySdk",
+        openTelemetrySdkProduct,
         .product(name: "CoreMetrics", package: "swift-metrics"),
       ],
       path: "Sources/Importers/SwiftMetricsShim",
@@ -82,7 +86,7 @@ let package = Package(
     .target(
       name: "PrometheusExporter",
       dependencies: [
-        "OpenTelemetrySdk",
+        openTelemetrySdkProduct,
         .product(name: "NIO", package: "swift-nio"),
         .product(name: "NIOHTTP1", package: "swift-nio"),
       ],
@@ -91,7 +95,7 @@ let package = Package(
     .target(
       name: "OpenTelemetryProtocolExporterCommon",
       dependencies: [
-        "OpenTelemetrySdk",
+        openTelemetrySdkProduct,
         .product(name: "Logging", package: "swift-log"),
         .product(name: "SwiftProtobuf", package: "swift-protobuf"),
       ],
@@ -100,7 +104,7 @@ let package = Package(
     .target(
       name: "OpenTelemetryProtocolExporterHttp",
       dependencies: [
-        "OpenTelemetrySdk",
+        openTelemetrySdkProduct,
         "OpenTelemetryProtocolExporterCommon",
         .product(
           name: "DataCompression",
@@ -113,7 +117,7 @@ let package = Package(
     .target(
       name: "OpenTelemetryProtocolExporterGrpc",
       dependencies: [
-        "OpenTelemetrySdk",
+        openTelemetrySdkProduct,
         "OpenTelemetryProtocolExporterCommon",
         .product(name: "GRPC", package: "grpc-swift"),
       ],
@@ -122,8 +126,8 @@ let package = Package(
     .target(
       name: "BaggagePropagationProcessor",
       dependencies: [
-        "OpenTelemetryApi",
-        "OpenTelemetrySdk",
+        openTelemetryApiProduct,
+        openTelemetrySdkProduct,
       ],
       path: "Sources/Contrib/Processors/BaggagePropagationProcessor"
     ),
@@ -136,7 +140,7 @@ let package = Package(
       name: "SwiftMetricsShimTests",
       dependencies: [
         "SwiftMetricsShim",
-        "OpenTelemetrySdk",
+        openTelemetrySdkProduct,
       ],
       path: "Tests/ImportersTests/SwiftMetricsShim"
     ),
@@ -171,14 +175,14 @@ let package = Package(
     .executableTarget(
       name: "LogsSample",
       dependencies: [
-        "OpenTelemetrySdk", "OpenTelemetryProtocolExporterGrpc",
+        openTelemetrySdkProduct, "OpenTelemetryProtocolExporterGrpc",
         .product(name: "GRPC", package: "grpc-swift"),
       ],
       path: "Examples/Logs Sample"
     ),
     .executableTarget(
       name: "StableMetricSample",
-      dependencies: ["OpenTelemetrySdk", "OpenTelemetryProtocolExporterGrpc", "StdoutExporter"],
+      dependencies: [openTelemetrySdkProduct, "OpenTelemetryProtocolExporterGrpc", "StdoutExporter"],
       path: "Examples/Stable Metric Sample",
       exclude: ["README.md"]
     ),
@@ -195,13 +199,13 @@ let package = Package(
     
     .executableTarget(
       name: "LoggingTracer",
-      dependencies: ["OpenTelemetryApi"],
+      dependencies: [openTelemetryApiProduct],
       path: "Examples/Logging Tracer"
     ),
     
     .executableTarget(
       name: "ConcurrencyContext",
-      dependencies: ["OpenTelemetrySdk", "OpenTelemetryConcurrency", "StdoutExporter"],
+      dependencies: [openTelemetrySdkProduct, "OpenTelemetryConcurrency", "StdoutExporter"],
       path: "Examples/ConcurrencyContext"
     )
   ]
@@ -220,7 +224,7 @@ extension Package {
         .target(
           name: "OpenTracingShim",
           dependencies: [
-            "OpenTelemetrySdk",
+            openTelemetrySdkProduct,
             .product(name: "Opentracing", package: "opentracing-objc"),
           ],
           path: "Sources/Importers/OpenTracingShim",
@@ -230,7 +234,7 @@ extension Package {
           name: "OpenTracingShimTests",
           dependencies: [
             "OpenTracingShim",
-            "OpenTelemetrySdk",
+            openTelemetrySdkProduct,
           ],
           path: "Tests/ImportersTests/OpenTracingShim"
         ),
@@ -256,7 +260,7 @@ extension Package {
         .target(
           name: "JaegerExporter",
           dependencies: [
-            "OpenTelemetrySdk",
+            openTelemetrySdkProduct,
             .product(
               name: "Thrift", package: "Thrift-Swift",
               condition: .when(platforms: [.iOS, .macOS, .tvOS, .macCatalyst, .linux])
@@ -272,7 +276,7 @@ extension Package {
         .executableTarget(
           name: "SimpleExporter",
           dependencies: [
-            "OpenTelemetrySdk", "JaegerExporter", "StdoutExporter", "ZipkinExporter",
+            openTelemetrySdkProduct, "JaegerExporter", "StdoutExporter", "ZipkinExporter",
             "ResourceExtension", "SignPostIntegration",
           ],
           path: "Examples/Simple Exporter",
@@ -281,7 +285,7 @@ extension Package {
         .target(
           name: "NetworkStatus",
           dependencies: [
-            "OpenTelemetryApi"
+            openTelemetryApiProduct
           ],
           path: "Sources/Instrumentation/NetworkStatus",
           linkerSettings: [.linkedFramework("CoreTelephony", .when(platforms: [.iOS]))]
@@ -295,7 +299,7 @@ extension Package {
         ),
         .target(
           name: "URLSessionInstrumentation",
-          dependencies: ["OpenTelemetrySdk", "NetworkStatus"],
+          dependencies: [openTelemetrySdkProduct, "NetworkStatus"],
           path: "Sources/Instrumentation/URLSession",
           exclude: ["README.md"]
         ),
@@ -316,7 +320,7 @@ extension Package {
         ),
         .target(
           name: "ZipkinExporter",
-          dependencies: ["OpenTelemetrySdk"],
+          dependencies: [openTelemetrySdkProduct],
           path: "Sources/Exporters/Zipkin"
         ),
         .testTarget(
@@ -327,7 +331,7 @@ extension Package {
         .executableTarget(
           name: "OTLPExporter",
           dependencies: [
-            "OpenTelemetrySdk", "OpenTelemetryProtocolExporterGrpc", "StdoutExporter",
+            openTelemetrySdkProduct, "OpenTelemetryProtocolExporterGrpc", "StdoutExporter",
             "ZipkinExporter", "ResourceExtension", "SignPostIntegration",
           ],
           path: "Examples/OTLP Exporter",
@@ -336,7 +340,7 @@ extension Package {
         .executableTarget(
           name: "OTLPHTTPExporter",
           dependencies: [
-            "OpenTelemetrySdk", "OpenTelemetryProtocolExporterHttp", "StdoutExporter",
+            openTelemetrySdkProduct, "OpenTelemetryProtocolExporterHttp", "StdoutExporter",
             "ZipkinExporter", "ResourceExtension", "SignPostIntegration",
             .product(
               name: "DataCompression",
@@ -349,24 +353,24 @@ extension Package {
         ),
         .target(
           name: "SignPostIntegration",
-          dependencies: ["OpenTelemetrySdk"],
+          dependencies: [openTelemetrySdkProduct],
           path: "Sources/Instrumentation/SignPostIntegration",
           exclude: ["README.md"]
         ),
         .target(
           name: "ResourceExtension",
-          dependencies: ["OpenTelemetrySdk"],
+          dependencies: [openTelemetrySdkProduct],
           path: "Sources/Instrumentation/SDKResourceExtension",
           exclude: ["README.md"]
         ),
         .testTarget(
           name: "ResourceExtensionTests",
-          dependencies: ["ResourceExtension", "OpenTelemetrySdk"],
+          dependencies: ["ResourceExtension", openTelemetrySdkProduct],
           path: "Tests/InstrumentationTests/SDKResourceExtensionTests"
         ),
         .executableTarget(
           name: "PrometheusSample",
-          dependencies: ["OpenTelemetrySdk", "PrometheusExporter"],
+          dependencies: [openTelemetrySdkProduct, "PrometheusExporter"],
           path: "Examples/Prometheus Sample",
           exclude: ["README.md"]
         ),

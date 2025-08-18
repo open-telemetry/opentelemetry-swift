@@ -16,7 +16,7 @@ import Foundation
   /// If you require dynamic context injection, you will need a custom context manager.
   @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
   public class TaskLocalContextManager: ContextManager {
-    package static let instance = TaskLocalContextManager()
+    public static let instance = TaskLocalContextManager()
 
     @TaskLocal static var context = [String: AnyObject]()
 
