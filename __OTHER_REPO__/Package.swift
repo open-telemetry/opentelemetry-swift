@@ -14,6 +14,7 @@ let package = Package(
     .visionOS(.v1),
   ],
   products: [
+    .library(name: "OpenTelemetryConcurrency", targets: ["OpenTelemetryConcurrency"]),
     .library(name: "SwiftMetricsShim", targets: ["SwiftMetricsShim"]),
     .library(name: "StdoutExporter", targets: ["StdoutExporter"]),
     .library(name: "PrometheusExporter", targets: ["PrometheusExporter"]),
@@ -23,7 +24,12 @@ let package = Package(
     ),
     .library(name: "OTelSwiftLog", targets: ["OTelSwiftLog"]),
     .library(name: "BaggagePropagationProcessor", targets: ["BaggagePropagationProcessor"]),
+    .library(name: "StdoutExporter", targets: ["StdoutExporter"]),
+    .library(name: "PersistenceExporter", targets: ["PersistenceExporter"]),
+    .library(name: "InMemoryExporter", targets: ["InMemoryExporter"]),
     .executable(name: "StableMetricSample", targets: ["StableMetricSample"]),
+    .executable(name: "LoggingTracer", targets: ["LoggingTracer"]),
+    .executable(name: "ConcurrencyContext", targets: ["ConcurrencyContext"])
   ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-nio.git", from: "2.83.0"),
@@ -34,6 +40,27 @@ let package = Package(
     .package(url: "https://github.com/mw99/DataCompression", from: "3.9.0"),
   ],
   targets: [
+    .target(
+      name: "OpenTelemetryConcurrency",
+      dependencies: ["OpenTelemetryApi"]
+    ),
+
+    .target(
+      name: "StdoutExporter",
+      dependencies: ["OpenTelemetrySdk"],
+      path: "Sources/Exporters/Stdout"
+    ),
+    .target(
+      name: "InMemoryExporter",
+      dependencies: ["OpenTelemetrySdk"],
+      path: "Sources/Exporters/InMemory"
+    ),
+    .target(
+      name: "PersistenceExporter",
+      dependencies: ["OpenTelemetrySdk"],
+      path: "Sources/Exporters/Persistence",
+      exclude: ["README.md"]
+    ),
     .target(
       name: "OTelSwiftLog",
       dependencies: [
@@ -155,6 +182,28 @@ let package = Package(
       path: "Examples/Stable Metric Sample",
       exclude: ["README.md"]
     ),
+    .testTarget(
+      name: "InMemoryExporterTests",
+      dependencies: ["InMemoryExporter"],
+      path: "Tests/ExportersTests/InMemory"
+    ),
+    .testTarget(
+      name: "PersistenceExporterTests",
+      dependencies: ["PersistenceExporter"],
+      path: "Tests/ExportersTests/PersistenceExporter"
+    ),
+    
+    .executableTarget(
+      name: "LoggingTracer",
+      dependencies: ["OpenTelemetryApi"],
+      path: "Examples/Logging Tracer"
+    ),
+    
+    .executableTarget(
+      name: "ConcurrencyContext",
+      dependencies: ["OpenTelemetrySdk", "OpenTelemetryConcurrency", "StdoutExporter"],
+      path: "Examples/ConcurrencyContext"
+    )
   ]
 ).addPlatformSpecific()
 
