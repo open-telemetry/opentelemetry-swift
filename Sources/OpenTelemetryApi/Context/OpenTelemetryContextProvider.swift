@@ -12,7 +12,7 @@ public enum OpenTelemetryContextKeys: String {
 }
 
 public struct OpenTelemetryContextProvider {
-  package var contextManager: ContextManager
+  public var contextManager: ContextManager
 
   /// Returns the Span from the current context
   public var activeSpan: Span? {
