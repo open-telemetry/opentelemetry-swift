@@ -26,7 +26,7 @@ XCODEBUILD_OPTIONS_WATCHOS=\
 
 XCODEBUILD_OPTIONS_VISIONOS=\
 	-configuration Debug \
-	-destination 'platform=visionOS Simulator,name=Apple Vision Pro,OS=2.0' \
+	-destination 'platform=visionOS Simulator,name=Apple Vision Pro,OS=2.5' \
 	-scheme $(PROJECT_NAME) \
 	-test-iterations 5 \
     -retry-tests-on-failure \
