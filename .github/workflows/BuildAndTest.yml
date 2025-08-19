@@ -31,7 +31,7 @@ jobs:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
       with:
-        xcode-version: '16.0'
+        xcode-version: '16.4'
     - name: Build and Test for macOS
       run: swift test --enable-code-coverage
     - name: Upload Code coverage
@@ -46,7 +46,7 @@ jobs:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
       with:
-        xcode-version: '16.0'
+        xcode-version: '16.4'
     - name: Install Homebrew kegs
       run: make setup-brew
     - name: Build for iOS
@@ -59,7 +59,7 @@ jobs:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
       with:
-        xcode-version: '16.0'
+        xcode-version: '16.4'
     - name: Install Homebrew kegs
       run: make setup-brew
     - name: Build for tvOS
@@ -72,7 +72,7 @@ jobs:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
       with:
-        xcode-version: '16.0'
+        xcode-version: '16.4'
     - name: Install Homebrew kegs
       run: make setup-brew
     - name: Build for watchOS
@@ -85,7 +85,7 @@ jobs:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
       with:
-        xcode-version: '16.0'
+        xcode-version: '16.4'
     - name: Install Homebrew kegs
       run: make setup-brew
     - name: Build for visionOS
