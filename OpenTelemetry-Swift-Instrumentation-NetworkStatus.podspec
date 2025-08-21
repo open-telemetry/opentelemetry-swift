@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name = "OpenTelemetry-Swift-Instrumentation-NetworkStatus"
-  spec.version = "2.0.0"
+  spec.version = "2.0.1"
   spec.summary = "Swift OpenTelemetry Network Status Instrumentation"
 
   spec.homepage = "https://github.com/open-telemetry/opentelemetry-swift"
