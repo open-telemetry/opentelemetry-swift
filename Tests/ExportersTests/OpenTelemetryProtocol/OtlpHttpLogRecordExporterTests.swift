@@ -34,6 +34,7 @@ class OtlpHttpLogRecordExporterTests: XCTestCase {
   }
 
   func testExport() {
+    let testHeader = ("testHeader", "testValue")
     let testBody = AttributeValue.string("Helloworld" + String(Int.random(in: 1 ... 100)))
     let logRecord = ReadableLogRecord(resource: Resource(),
                                       instrumentationScopeInfo: InstrumentationScopeInfo(name: "scope"),
@@ -45,13 +46,17 @@ class OtlpHttpLogRecordExporterTests: XCTestCase {
                                       attributes: ["event.name": AttributeValue.string("name"), "event.domain": AttributeValue.string("domain")])
 
     let endpoint = URL(string: "http://localhost:\(testServer.serverPort)")!
-    let exporter = OtlpHttpLogExporter(endpoint: endpoint, config: .init(compression: .none))
+    let config = OtlpConfiguration(compression: .none, headers: [testHeader])
+    let exporter = OtlpHttpLogExporter(endpoint: endpoint, config: config)
     let _ = exporter.export(logRecords: [logRecord])
 
     // TODO: Use protobuf to verify that we have received the correct Log records
     XCTAssertNoThrow(try testServer.receiveHeadAndVerify { head in
       let otelVersion = Headers.getUserAgentHeader()
       XCTAssertTrue(head.headers.contains(name: Constants.HTTP.userAgent))
+      XCTAssertTrue(head.headers.contains { header in
+          header.name.lowercased() == testHeader.0.lowercased() && header.value == testHeader.1
+      })
       XCTAssertEqual(otelVersion, head.headers.first(name: Constants.HTTP.userAgent))
     })
     XCTAssertNoThrow(try testServer.receiveBodyAndVerify { body in
