@@ -370,7 +370,12 @@ class URLSessionInstrumentationTests: XCTestCase {
     task.resume()
     URLSessionInstrumentationTests.semaphore.wait()
 
+
+#if os(watchOS)
+    XCTAssertEqual(1, URLSessionInstrumentationTests.instrumentation.startedRequestSpans.count)
+#else
     XCTAssertEqual(0, URLSessionInstrumentationTests.instrumentation.startedRequestSpans.count)
+#endif
     XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
     XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
   }
@@ -605,7 +610,11 @@ class URLSessionInstrumentationTests: XCTestCase {
 
     _ = try await URLSession.shared.data(for: request)
 
+#if os(watchOS)
+    XCTAssertEqual(1, URLSessionInstrumentationTests.instrumentation.startedRequestSpans.count)
+#else
     XCTAssertEqual(0, URLSessionInstrumentationTests.instrumentation.startedRequestSpans.count)
+#endif
     XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
     XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
   }

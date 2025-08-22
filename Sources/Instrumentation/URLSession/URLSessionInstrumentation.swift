@@ -31,7 +31,7 @@ public class URLSessionInstrumentation {
 
   private var _configuration: URLSessionInstrumentationConfiguration
   public var configuration: URLSessionInstrumentationConfiguration {
-      get { configurationQueue.sync { _configuration } }
+    configurationQueue.sync { _configuration }
   }
 
   private let queue = DispatchQueue(
@@ -40,6 +40,10 @@ public class URLSessionInstrumentation {
       label: "io.opentelemetry.configuration")
 
   static var instrumentedKey = "io.opentelemetry.instrumentedCall"
+
+  static let excludeList: [String] = [
+    "__NSCFURLProxySessionConnection"
+  ]
 
   static let AVTaskClassList: [AnyClass] = [
     "__NSCFBackgroundAVAggregateAssetDownloadTask",
@@ -94,15 +98,24 @@ public class URLSessionInstrumentation {
       }
       defer { free(methodList) }
 
+      var foundClasses: [AnyClass] = []
       for j in 0 ..< selectorsCount {
         for i in 0 ..< Int(methodCount)
           where method_getName(methodList[i]) == selectors[j] {
           selectorFound = true
-          injectIntoDelegateClass(cls: theClass)
+          foundClasses.append(theClass)
         }
         if selectorFound {
           break
         }
+      }
+
+      foundClasses.removeAll { cls in
+        Self.excludeList.contains(NSStringFromClass(cls))
+      }
+
+      foundClasses.forEach { cls in
+        injectIntoDelegateClass(cls: cls)
       }
     }
 
@@ -205,19 +218,19 @@ public class URLSessionInstrumentation {
     private func injectIntoNSURLSessionCreateTaskWithParameterMethods() {
         typealias UploadWithDataIMP = @convention(c) (URLSession, Selector, URLRequest, Data?) -> URLSessionTask
         typealias UploadWithFileIMP = @convention(c) (URLSession, Selector, URLRequest, URL) -> URLSessionTask
-        
+
         let cls = URLSession.self
-        
+
         // MARK: Swizzle `uploadTask(with:from:)`
         if let method = class_getInstanceMethod(cls, #selector(URLSession.uploadTask(with:from:))) {
             let originalIMP = method_getImplementation(method)
             let imp = unsafeBitCast(originalIMP, to: UploadWithDataIMP.self)
-            
+
             let block: @convention(block) (URLSession, URLRequest, Data?) -> URLSessionTask = { [weak self] session, request, data in
                 guard let instrumentation = self else {
                     return imp(session, #selector(URLSession.uploadTask(with:from:)), request, data)
                 }
-                
+
                 let sessionTaskId = UUID().uuidString
                 let instrumentedRequest = URLSessionLogger.processAndLogRequest(
                     request,
@@ -225,7 +238,7 @@ public class URLSessionInstrumentation {
                     instrumentation: instrumentation,
                     shouldInjectHeaders: true
                 )
-                
+
                 let task = imp(session, #selector(URLSession.uploadTask(with:from:)), instrumentedRequest ?? request, data)
                 instrumentation.setIdKey(value: sessionTaskId, for: task)
                 return task
@@ -233,17 +246,17 @@ public class URLSessionInstrumentation {
             let swizzledIMP = imp_implementationWithBlock(block)
             method_setImplementation(method, swizzledIMP)
         }
-        
+
         // MARK: Swizzle `uploadTask(with:fromFile:)`
         if let method = class_getInstanceMethod(cls, #selector(URLSession.uploadTask(with:fromFile:))) {
             let originalIMP = method_getImplementation(method)
             let imp = unsafeBitCast(originalIMP, to: UploadWithFileIMP.self)
-            
+
             let block: @convention(block) (URLSession, URLRequest, URL) -> URLSessionTask = { [weak self] session, request, fileURL in
                 guard let instrumentation = self else {
                     return imp(session, #selector(URLSession.uploadTask(with:fromFile:)), request, fileURL)
                 }
-                
+
                 let sessionTaskId = UUID().uuidString
                 let instrumentedRequest = URLSessionLogger.processAndLogRequest(
                     request,
@@ -251,7 +264,7 @@ public class URLSessionInstrumentation {
                     instrumentation: instrumentation,
                     shouldInjectHeaders: true
                 )
-                
+
                 let task = imp(session, #selector(URLSession.uploadTask(with:fromFile:)), instrumentedRequest ?? request, fileURL)
                 instrumentation.setIdKey(value: sessionTaskId, for: task)
                 return task
@@ -756,17 +769,17 @@ public class URLSessionInstrumentation {
         // Check if we can determine if this is an async/await call
         // For iOS 15/macOS 12, we can't use Task.basePriority, so we check other indicators
         var isAsyncContext = false
-        
+
         if #available(OSX 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *) {
           isAsyncContext = Task.basePriority != nil
         } else {
           // For iOS 15/macOS 12, check if the task has no delegate and no session delegate
           // This is a heuristic that works for async/await methods
-          isAsyncContext = task.delegate == nil && 
+          isAsyncContext = task.delegate == nil &&
                           (task.value(forKey: "session") as? URLSession)?.delegate == nil &&
                           task.state != .running
         }
-        
+
         if isAsyncContext {
           // This is likely an async/await call
           let instrumentedRequest = URLSessionLogger.processAndLogRequest(request,
@@ -777,11 +790,11 @@ public class URLSessionInstrumentation {
             task.setValue(instrumentedRequest, forKey: "currentRequest")
           }
           self.setIdKey(value: taskId, for: task)
-          
+
           // For async/await methods, we need to ensure the delegate is set
           // to capture the completion, but only if there's no existing delegate
           // AND no session delegate (session delegates are called for async/await too)
-          if task.delegate == nil, 
+          if task.delegate == nil,
              task.state != .running,
              (task.value(forKey: "session") as? URLSession)?.delegate == nil {
             task.delegate = AsyncTaskDelegate(instrumentation: self, sessionTaskId: taskId)
@@ -844,20 +857,20 @@ class FakeDelegate: NSObject, URLSessionTaskDelegate {
 class AsyncTaskDelegate: NSObject, URLSessionTaskDelegate {
   private weak var instrumentation: URLSessionInstrumentation?
   private let sessionTaskId: String
-  
+
   init(instrumentation: URLSessionInstrumentation, sessionTaskId: String) {
     self.instrumentation = instrumentation
     self.sessionTaskId = sessionTaskId
     super.init()
   }
-  
+
   func urlSession(_ session: URLSession, task: URLSessionTask,
                   didCompleteWithError error: Error?) {
     guard let instrumentation = instrumentation else { return }
-    
+
     // Get the task ID that was set when the task was created
     let taskId = sessionTaskId
-    
+
     if let error = error {
       let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
       URLSessionLogger.logError(error, dataOrFile: nil, statusCode: status,
