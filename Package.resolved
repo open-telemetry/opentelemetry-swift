@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mw99/DataCompression",
       "state" : {
-        "revision" : "5ab15951321b08b74511601cbd0497667649d70b",
-        "version" : "3.8.0"
+        "revision" : "16f858982a077451ce3bdbd9144d3073ec85b6e4",
+        "version" : "3.9.0"
       }
     },
     {

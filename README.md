@@ -94,6 +94,7 @@ Metrics is implemented using an outdated spec, is fully functional but will chan
 * `NetworkStatus`
 * `SDKResourceExtension`
 * `SignPostIntegration`
+* `SessionsEventInstrumentation`
 
 ### Third-party exporters
 In addition to the specified OpenTelemetry exporters, some third-party exporters have been contributed and can be found in the following repos: 
