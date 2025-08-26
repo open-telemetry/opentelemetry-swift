@@ -2,7 +2,7 @@ version: "3"
 services:
   # Collector
   collector:
-    image: otel/opentelemetry-collector:0.131.1@sha256:e601f0d6d77e6d61491db0d79d45534ac7d9c8c655a8d69085a0000257895059
+    image: otel/opentelemetry-collector:0.133.0@sha256:01268c1bf7f561f1df20a0ea2875db8cb388508f1845a96c8e9ff83efe970a80
 #    The latest image of the otel-collector may not work, so specifying the version that works with this release
 #    image: otel/opentelemetry-collector:latest
     command: ["--config=/conf/collector-config.yaml"]
