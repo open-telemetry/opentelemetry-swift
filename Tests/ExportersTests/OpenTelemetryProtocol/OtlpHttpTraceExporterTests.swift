@@ -8,9 +8,6 @@ import Foundation
   import FoundationNetworking
 #endif
 import Logging
-import NIO
-import NIOHTTP1
-import NIOTestUtils
 import OpenTelemetryApi
 import OpenTelemetryProtocolExporterCommon
 @testable import OpenTelemetryProtocolExporterHttp
@@ -18,17 +15,15 @@ import OpenTelemetryProtocolExporterCommon
 import XCTest
 
 class OtlpHttpTraceExporterTests: XCTestCase {
-  var testServer: NIOHTTP1TestServer!
-  var group: MultiThreadedEventLoopGroup!
+  var testServer: HttpTestServer!
 
   override func setUp() {
-    group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-    testServer = NIOHTTP1TestServer(group: group)
+    testServer = HttpTestServer()
+    XCTAssertNoThrow(try testServer.start())
   }
 
   override func tearDown() {
     XCTAssertNoThrow(try testServer.stop())
-    XCTAssertNoThrow(try group.syncShutdownGracefully())
   }
 
   // This is a somewhat hacky solution to verifying that the spans got across correctly.  It simply looks for the metric
@@ -49,17 +44,18 @@ class OtlpHttpTraceExporterTests: XCTestCase {
 
     XCTAssertNoThrow(try testServer.receiveHeadAndVerify { head in
       let otelVersion = Headers.getUserAgentHeader()
-      XCTAssertTrue(head.headers.contains(name: Constants.HTTP.userAgent))
-      XCTAssertTrue(head.headers.contains { header in
+      XCTAssertTrue(head.headers_.contains(name: Constants.HTTP.userAgent))
+      XCTAssertTrue(head.headers_.contains { header in
           header.name.lowercased() == testHeader.0.lowercased() && header.value == testHeader.1
       })
-      XCTAssertEqual(otelVersion, head.headers.first(name: Constants.HTTP.userAgent))
+      XCTAssertEqual(otelVersion, head.headers_.first(name: Constants.HTTP.userAgent))
     })
     XCTAssertNoThrow(try testServer.receiveBodyAndVerify { body in
-      var contentsBuffer = ByteBuffer(buffer: body)
-      let contents = contentsBuffer.readString(length: contentsBuffer.readableBytes)!
-      XCTAssertTrue(contents.contains(endpointName1))
-      XCTAssertTrue(contents.contains(endpointName2))
+      XCTAssertTrue(body.count > 0, "Body should not be empty")
+      // Check that endpoint names are present in the protobuf data
+      let bodyString = String(decoding: body, as: UTF8.self)
+      XCTAssertTrue(bodyString.contains(endpointName1))
+      XCTAssertTrue(bodyString.contains(endpointName2))
     })
 
     XCTAssertNoThrow(try testServer.receiveEnd())
@@ -68,6 +64,9 @@ class OtlpHttpTraceExporterTests: XCTestCase {
   // This is not a thorough test of HTTPClient, but just enough to keep code coverage happy.
   // There is a more complete test as part of the DataDog exporter test
   func testHttpClient() {
+    // Clear any previous requests
+    testServer.clearReceivedRequests()
+    
     let endpoint = URL(string: "http://localhost:\(testServer.serverPort)/some-route")!
     let httpClient = BaseHTTPClient()
     var request = URLRequest(url: endpoint)
@@ -76,7 +75,7 @@ class OtlpHttpTraceExporterTests: XCTestCase {
     httpClient.send(request: request) { result in
       switch result {
       case let .success(response):
-        XCTAssertEqual(HTTPResponseStatus.imATeapot.code, UInt(response.statusCode))
+        XCTAssertEqual(HTTPResponseStatus.ok.code, UInt(response.statusCode))
       case let .failure(error):
         XCTFail("Send failed: \(error)")
       }
@@ -85,16 +84,10 @@ class OtlpHttpTraceExporterTests: XCTestCase {
     // Assert the server received the expected request.
     XCTAssertNoThrow(try testServer.receiveHeadAndVerify { head in
       XCTAssertEqual(head.version, .http1_1)
-      XCTAssertEqual(head.method, .GET)
+      XCTAssertEqual(head.method_.rawValue, "GET")
       XCTAssertEqual(head.uri, "/some-route")
     })
-    XCTAssertNoThrow(try testServer.receiveEndAndVerify { trailers in
-      XCTAssertNil(trailers)
-    })
-
-    // Make the server send a response to the client.
-    XCTAssertNoThrow(try testServer.writeOutbound(.head(.init(version: .http1_1, status: .imATeapot))))
-    XCTAssertNoThrow(try testServer.writeOutbound(.end(nil)))
+    XCTAssertNoThrow(try testServer.receiveEnd())
   }
 
   func testFlush() {

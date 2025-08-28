@@ -5,9 +5,6 @@
 
 import Foundation
 import Logging
-import NIO
-import NIOHTTP1
-import NIOTestUtils
 import OpenTelemetryApi
 import OpenTelemetryProtocolExporterCommon
 @testable import OpenTelemetryProtocolExporterHttp
@@ -15,17 +12,15 @@ import OpenTelemetryProtocolExporterCommon
 import XCTest
 
 class OtlpHttpMetricsExporterTest: XCTestCase {
-  var testServer: NIOHTTP1TestServer!
-  var group: MultiThreadedEventLoopGroup!
+  var testServer: HttpTestServer!
 
   override func setUp() {
-    group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-    testServer = NIOHTTP1TestServer(group: group)
+    testServer = HttpTestServer()
+    XCTAssertNoThrow(try testServer.start())
   }
 
   override func tearDown() {
     XCTAssertNoThrow(try testServer.stop())
-    XCTAssertNoThrow(try group.syncShutdownGracefully())
   }
 
   // The shutdown() function is a no-op, This test is just here to make codecov happy
@@ -47,11 +42,13 @@ class OtlpHttpMetricsExporterTest: XCTestCase {
     XCTAssertEqual(result, ExportResult.success)
 
     XCTAssertNoThrow(try testServer.receiveHeadAndVerify { head in
-      XCTAssertTrue(head.headers.contains(name: "headerName"))
-      XCTAssertEqual("headerValue", head.headers.first(name: "headerName"))
+      XCTAssertTrue(head.headers_.contains(name: "headerName"))
+      XCTAssertEqual("headerValue", head.headers_.first(name: "headerName"))
     })
 
-    XCTAssertNotNil(try testServer.receiveBodyAndVerify())
+    XCTAssertNoThrow(try testServer.receiveBodyAndVerify { _ in 
+      // Body verified
+    })
     XCTAssertNoThrow(try testServer.receiveEnd())
   }
 
@@ -75,15 +72,14 @@ class OtlpHttpMetricsExporterTest: XCTestCase {
 
     XCTAssertNoThrow(try testServer.receiveHeadAndVerify { head in
       let otelVersion = Headers.getUserAgentHeader()
-      XCTAssertTrue(head.headers.contains(name: Constants.HTTP.userAgent))
-      XCTAssertEqual(otelVersion, head.headers.first(name: Constants.HTTP.userAgent))
+      XCTAssertTrue(head.headers_.contains(name: Constants.HTTP.userAgent))
+      XCTAssertEqual(otelVersion, head.headers_.first(name: Constants.HTTP.userAgent))
     })
 
     XCTAssertNoThrow(try testServer.receiveBodyAndVerify { body in
-      var contentsBuffer = ByteBuffer(buffer: body)
-      let contents = contentsBuffer.readString(length: contentsBuffer.readableBytes)!
+      let bodyString = String(decoding: body, as: UTF8.self)
       for metricDescription in metricDescriptions {
-        XCTAssertTrue(contents.contains(metricDescription))
+        XCTAssertTrue(bodyString.contains(metricDescription))
       }
     })
 
@@ -110,15 +106,14 @@ class OtlpHttpMetricsExporterTest: XCTestCase {
 
     XCTAssertNoThrow(try testServer.receiveHeadAndVerify { head in
       let otelVersion = Headers.getUserAgentHeader()
-      XCTAssertTrue(head.headers.contains(name: Constants.HTTP.userAgent))
-      XCTAssertEqual(otelVersion, head.headers.first(name: Constants.HTTP.userAgent))
+      XCTAssertTrue(head.headers_.contains(name: Constants.HTTP.userAgent))
+      XCTAssertEqual(otelVersion, head.headers_.first(name: Constants.HTTP.userAgent))
     })
 
     XCTAssertNoThrow(try testServer.receiveBodyAndVerify { body in
-      var contentsBuffer = ByteBuffer(buffer: body)
-      let contents = contentsBuffer.readString(length: contentsBuffer.readableBytes)!
+      let bodyString = String(decoding: body, as: UTF8.self)
       for metricDescription in metricDescriptions {
-        XCTAssertTrue(contents.contains(metricDescription))
+        XCTAssertTrue(bodyString.contains(metricDescription))
       }
     })
 

@@ -9,9 +9,6 @@
     import FoundationNetworking
   #endif
   import Logging
-  import NIO
-  import NIOHTTP1
-  import NIOTestUtils
   import OpenTelemetryApi
   import OpenTelemetryProtocolExporterCommon
   @testable import OpenTelemetryProtocolExporterHttp
