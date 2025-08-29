@@ -13,6 +13,7 @@ import OpenTelemetryProtocolExporterCommon
 @testable import OpenTelemetryProtocolExporterHttp
 @testable import OpenTelemetrySdk
 import XCTest
+import SharedTestUtils
 
 class OtlpHttpTraceExporterTests: XCTestCase {
   var testServer: HttpTestServer!
@@ -44,11 +45,11 @@ class OtlpHttpTraceExporterTests: XCTestCase {
 
     XCTAssertNoThrow(try testServer.receiveHeadAndVerify { head in
       let otelVersion = Headers.getUserAgentHeader()
-      XCTAssertTrue(head.headers_.contains(name: Constants.HTTP.userAgent))
-      XCTAssertTrue(head.headers_.contains { header in
+      XCTAssertTrue(head.headers.contains(name: Constants.HTTP.userAgent))
+      XCTAssertTrue(head.headers.contains { header in
           header.name.lowercased() == testHeader.0.lowercased() && header.value == testHeader.1
       })
-      XCTAssertEqual(otelVersion, head.headers_.first(name: Constants.HTTP.userAgent))
+      XCTAssertEqual(otelVersion, head.headers.first(name: Constants.HTTP.userAgent))
     })
     XCTAssertNoThrow(try testServer.receiveBodyAndVerify { body in
       XCTAssertTrue(body.count > 0, "Body should not be empty")
@@ -84,7 +85,7 @@ class OtlpHttpTraceExporterTests: XCTestCase {
     // Assert the server received the expected request.
     XCTAssertNoThrow(try testServer.receiveHeadAndVerify { head in
       XCTAssertEqual(head.version, .http1_1)
-      XCTAssertEqual(head.method_.rawValue, "GET")
+      XCTAssertEqual(head.method.rawValue, "GET")
       XCTAssertEqual(head.uri, "/some-route")
     })
     XCTAssertNoThrow(try testServer.receiveEnd())

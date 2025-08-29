@@ -10,6 +10,7 @@ import OpenTelemetryProtocolExporterCommon
 @testable import OpenTelemetryProtocolExporterHttp
 @testable import OpenTelemetrySdk
 import XCTest
+import SharedTestUtils
 
 class OtlpHttpLogRecordExporterTests: XCTestCase {
   var testServer: HttpTestServer!
@@ -48,11 +49,11 @@ class OtlpHttpLogRecordExporterTests: XCTestCase {
     // TODO: Use protobuf to verify that we have received the correct Log records
     XCTAssertNoThrow(try testServer.receiveHeadAndVerify { head in
       let otelVersion = Headers.getUserAgentHeader()
-      XCTAssertTrue(head.headers_.contains(name: Constants.HTTP.userAgent))
-      XCTAssertTrue(head.headers_.contains { header in
+      XCTAssertTrue(head.headers.contains(name: Constants.HTTP.userAgent))
+      XCTAssertTrue(head.headers.contains { header in
           header.name.lowercased() == testHeader.0.lowercased() && header.value == testHeader.1
       })
-      XCTAssertEqual(otelVersion, head.headers_.first(name: Constants.HTTP.userAgent))
+      XCTAssertEqual(otelVersion, head.headers.first(name: Constants.HTTP.userAgent))
     })
     XCTAssertNoThrow(try testServer.receiveBodyAndVerify { body in
       let bodyString = String(decoding: body, as: UTF8.self)

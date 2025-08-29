@@ -10,6 +10,7 @@ import OpenTelemetryProtocolExporterCommon
 @testable import OpenTelemetryProtocolExporterHttp
 @testable import OpenTelemetrySdk
 import XCTest
+import SharedTestUtils
 
 class OtlpHttpMetricsExporterTest: XCTestCase {
   var testServer: HttpTestServer!
@@ -42,8 +43,8 @@ class OtlpHttpMetricsExporterTest: XCTestCase {
     XCTAssertEqual(result, ExportResult.success)
 
     XCTAssertNoThrow(try testServer.receiveHeadAndVerify { head in
-      XCTAssertTrue(head.headers_.contains(name: "headerName"))
-      XCTAssertEqual("headerValue", head.headers_.first(name: "headerName"))
+      XCTAssertTrue(head.headers.contains(name: "headerName"))
+      XCTAssertEqual("headerValue", head.headers.first(name: "headerName"))
     })
 
     XCTAssertNoThrow(try testServer.receiveBodyAndVerify { _ in 
@@ -72,8 +73,8 @@ class OtlpHttpMetricsExporterTest: XCTestCase {
 
     XCTAssertNoThrow(try testServer.receiveHeadAndVerify { head in
       let otelVersion = Headers.getUserAgentHeader()
-      XCTAssertTrue(head.headers_.contains(name: Constants.HTTP.userAgent))
-      XCTAssertEqual(otelVersion, head.headers_.first(name: Constants.HTTP.userAgent))
+      XCTAssertTrue(head.headers.contains(name: Constants.HTTP.userAgent))
+      XCTAssertEqual(otelVersion, head.headers.first(name: Constants.HTTP.userAgent))
     })
 
     XCTAssertNoThrow(try testServer.receiveBodyAndVerify { body in
@@ -106,8 +107,8 @@ class OtlpHttpMetricsExporterTest: XCTestCase {
 
     XCTAssertNoThrow(try testServer.receiveHeadAndVerify { head in
       let otelVersion = Headers.getUserAgentHeader()
-      XCTAssertTrue(head.headers_.contains(name: Constants.HTTP.userAgent))
-      XCTAssertEqual(otelVersion, head.headers_.first(name: Constants.HTTP.userAgent))
+      XCTAssertTrue(head.headers.contains(name: Constants.HTTP.userAgent))
+      XCTAssertEqual(otelVersion, head.headers.first(name: Constants.HTTP.userAgent))
     })
 
     XCTAssertNoThrow(try testServer.receiveBodyAndVerify { body in
