@@ -308,8 +308,14 @@ public class HttpTestServer {
             handleURLSessionRequest(socket: clientSocket, path: path)
             return
         }
-        
-        // Handle OTLP test requests
+
+        // Handle OTLP test requests (or when no config is provided)
+        // For paths like /error without config, still handle them appropriately
+        if path.hasPrefix("/error") {
+            // Close without response - this simulates a network error
+            return
+        }
+
         guard let request = parseHttpRequest(rawData: totalData) else {
             sendErrorResponse(socket: clientSocket)
             return
