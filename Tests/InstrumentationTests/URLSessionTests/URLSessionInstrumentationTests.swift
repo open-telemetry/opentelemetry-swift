@@ -7,6 +7,7 @@
 @testable import OpenTelemetrySdk
 @testable import URLSessionInstrumentation
 import XCTest
+import SharedTestUtils
 
 class URLSessionInstrumentationTests: XCTestCase {
   class Check {
