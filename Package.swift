@@ -38,13 +38,6 @@ let package = Package(
   ],
   targets: [
     .target(
-      name: "OpenTelemetryTestUtils",
-      dependencies: [
-        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
-      ]
-    ),
-    .target(
       name: "OTelSwiftLog",
       dependencies: [
         .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
