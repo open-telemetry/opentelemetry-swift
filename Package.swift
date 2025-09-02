@@ -39,7 +39,6 @@ let package = Package(
     .package(url: "https://github.com/apple/swift-log.git", from: "1.6.3"),
     .package(url: "https://github.com/apple/swift-metrics.git", from: "2.7.0"),
     .package(url: "https://github.com/apple/swift-atomics.git", from: "1.3.0"),
-    .package(url: "https://github.com/mw99/DataCompression", from: "3.9.0"),
   ],
   targets: [
     .target(
@@ -102,11 +101,6 @@ let package = Package(
       dependencies: [
         "OpenTelemetrySdk",
         "OpenTelemetryProtocolExporterCommon",
-        .product(
-          name: "DataCompression",
-          package: "DataCompression",
-          condition: .when(platforms: [.macOS, .iOS, .watchOS, .tvOS, .visionOS])
-        ),
       ],
       path: "Sources/Exporters/OpenTelemetryProtocolHttp"
     ),
@@ -180,11 +174,6 @@ let package = Package(
       dependencies: [
         "OpenTelemetryProtocolExporterGrpc",
         "OpenTelemetryProtocolExporterHttp",
-        .product(
-          name: "DataCompression",
-          package: "DataCompression",
-          condition: .when(platforms: [.macOS, .iOS, .watchOS, .tvOS, .visionOS])
-        ),
         .product(name: "NIO", package: "swift-nio"),
         .product(name: "NIOHTTP1", package: "swift-nio"),
         .product(name: "NIOTestUtils", package: "swift-nio"),
@@ -366,11 +355,6 @@ extension Package {
           dependencies: [
             "OpenTelemetrySdk", "OpenTelemetryProtocolExporterHttp", "StdoutExporter",
             "ZipkinExporter", "ResourceExtension", "SignPostIntegration",
-            .product(
-              name: "DataCompression",
-              package: "DataCompression",
-              condition: .when(platforms: [.macOS, .iOS, .watchOS, .tvOS, .visionOS])
-            ),
           ],
           path: "Examples/OTLP HTTP Exporter",
           exclude: ["README.md", "collector-config.yaml", "docker-compose.yaml", "prometheus.yaml", "images"]

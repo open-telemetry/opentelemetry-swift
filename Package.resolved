@@ -1,15 +1,6 @@
 {
   "pins" : [
     {
-      "identity" : "datacompression",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mw99/DataCompression",
-      "state" : {
-        "revision" : "5ab15951321b08b74511601cbd0497667649d70b",
-        "version" : "3.8.0"
-      }
-    },
-    {
       "identity" : "grpc-swift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/grpc/grpc-swift.git",
