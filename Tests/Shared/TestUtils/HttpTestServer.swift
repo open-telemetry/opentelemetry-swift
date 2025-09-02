@@ -4,7 +4,6 @@
 //
 
 import Foundation
-import Darwin
 import XCTest
 #if canImport(FoundationNetworking)
   import FoundationNetworking
