@@ -10,6 +10,15 @@
       }
     },
     {
+      "identity" : "opentelemetry-swift-core",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/open-telemetry/opentelemetry-swift-core.git",
+      "state" : {
+        "revision" : "7daba72cf5e6c1a2047b835066a404d7507ef2b3",
+        "version" : "1.0.0"
+      }
+    },
+    {
       "identity" : "opentracing-objc",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/undefinedlabs/opentracing-objc",
