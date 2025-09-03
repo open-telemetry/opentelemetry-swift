@@ -4,8 +4,6 @@
 //
 
 #if canImport(Compression)
-  import DataCompression
-
   import Foundation
   #if canImport(FoundationNetworking)
     import FoundationNetworking

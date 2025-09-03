@@ -3,9 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#if canImport(Compression)
-  import DataCompression
-#endif
 import Foundation
 import OpenTelemetryProtocolExporterCommon
 import SwiftProtobuf
