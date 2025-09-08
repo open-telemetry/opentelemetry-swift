@@ -29,7 +29,7 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "1.0.0"),
-    .package(url: "https://github.com/apple/swift-nio.git", from: "2.83.0"),
+    .package(url: "https://github.com/apple/swift-nio.git", from: "2.86.0"),
     .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.26.1"),
     .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.30.0"),
     .package(url: "https://github.com/apple/swift-log.git", from: "1.6.3"),
