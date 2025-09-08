@@ -463,6 +463,7 @@ public class URLSessionInstrumentation {
 
       var originalIMP: IMP?
       let block: @convention(block) (URLSessionTask) -> Void = { anyTask in
+        guard anyTask.responds(to: #selector(getter: URLSessionTask.currentRequest)) else { return }
         self.urlSessionTaskWillResume(anyTask)
         guard anyTask.currentRequest != nil else { return }
         let key = String(theMethod.hashValue)
