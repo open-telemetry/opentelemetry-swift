@@ -136,7 +136,7 @@ final class SessionManagerTests: XCTestCase {
     let session = sessionManager.getSession()
 
     XCTAssertEqual(SessionEventInstrumentation.queue.count, 1)
-    XCTAssertEqual(SessionEventInstrumentation.queue[0].id, session.id)
+    XCTAssertEqual(SessionEventInstrumentation.queue[0].session.id, session.id)
   }
 
   func testStartSessionTriggersNotificationWhenInstrumentationApplied() {
@@ -144,14 +144,14 @@ final class SessionManagerTests: XCTestCase {
     SessionEventInstrumentation.isApplied = true
 
     let expectation = XCTestExpectation(description: "Session notification posted")
-    var receivedSession: Session?
+    var receivedSessionEvent: SessionEvent?
 
     let observer = NotificationCenter.default.addObserver(
       forName: SessionEventInstrumentation.sessionEventNotification,
       object: nil,
       queue: nil
     ) { notification in
-      receivedSession = notification.object as? Session
+      receivedSessionEvent = notification.object as? SessionEvent
       expectation.fulfill()
     }
 
@@ -159,8 +159,8 @@ final class SessionManagerTests: XCTestCase {
 
     wait(for: [expectation], timeout: 0.1)
 
-    XCTAssertNotNil(receivedSession)
-    XCTAssertEqual(receivedSession?.id, session.id)
+    XCTAssertNotNil(receivedSessionEvent)
+    XCTAssertEqual(receivedSessionEvent?.session.id, session.id)
     XCTAssertEqual(SessionEventInstrumentation.queue.count, 0)
 
     NotificationCenter.default.removeObserver(observer)

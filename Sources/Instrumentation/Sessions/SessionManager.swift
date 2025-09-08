@@ -46,7 +46,7 @@ public class SessionManager {
 
     /// Queue the previous session for a `session.end` event
     if session != nil {
-      SessionEventInstrumentation.addSession(session: session!)
+      SessionEventInstrumentation.addSession(session: session!, eventType: .end)
     }
 
     session = Session(
@@ -58,7 +58,7 @@ public class SessionManager {
     )
 
     // Queue the new session for a `session.start`` event
-    SessionEventInstrumentation.addSession(session: session!)
+    SessionEventInstrumentation.addSession(session: session!, eventType: .start)
   }
 
   /// Refreshes the current session, creating new one if expired or extending existing one

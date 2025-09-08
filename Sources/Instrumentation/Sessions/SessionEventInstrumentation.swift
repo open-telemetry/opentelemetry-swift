@@ -6,6 +6,18 @@
 import Foundation
 import OpenTelemetryApi
 
+/// Enum to specify the type of session event
+public enum SessionEventType {
+  case start
+  case end
+}
+
+/// Represents a session event with its associated session and event type
+public struct SessionEvent {
+  let session: Session
+  let eventType: SessionEventType
+}
+
 /// Instrumentation for tracking and logging session lifecycle events.
 ///
 /// This class is responsible for creating OpenTelemetry log records for session start and end events.
@@ -20,10 +32,14 @@ import OpenTelemetryApi
 public class SessionEventInstrumentation {
   private let logger: Logger
 
-  /// Queue for storing sessions that were created before instrumentation was initialized.
+  /// Queue for storing session events that were created before instrumentation was initialized.
   /// This allows capturing session events that occur during application startup before
   /// the OpenTelemetry SDK is fully initialized.
-  internal static var queue: [Session] = []
+  /// Limited to 20 items to prevent memory issues.
+  static var queue: [SessionEvent] = []
+
+  /// Maximum number of sessions that can be queued before instrumentation is applied
+  static let maxQueueSize: UInt8 = 32
 
   /// Notification name for new session events.
   /// Used to broadcast session creation and expiration events after instrumentation is applied.
@@ -33,11 +49,10 @@ public class SessionEventInstrumentation {
 
   /// Flag to track if the instrumentation has been applied.
   /// Controls whether new sessions are queued or immediately processed via notifications.
-  public internal(set) static var isApplied = false
+  static var isApplied = false
 
   public init() {
-    self.logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: SessionEventInstrumentation.instrumentationKey)
-    
+    logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: SessionEventInstrumentation.instrumentationKey)
     guard !SessionEventInstrumentation.isApplied else {
       return
     }
@@ -52,8 +67,8 @@ public class SessionEventInstrumentation {
       object: nil,
       queue: nil
     ) { notification in
-      if let session = notification.object as? Session {
-        self.createSessionEvent(session: session)
+      if let sessionEvent = notification.object as? SessionEvent {
+        self.createSessionEvent(session: sessionEvent.session, eventType: sessionEvent.eventType)
       }
     }
   }
@@ -64,28 +79,30 @@ public class SessionEventInstrumentation {
   /// were created before the instrumentation was initialized. It creates log records
   /// for all queued sessions and then clears the queue.
   private func processQueuedSessions() {
-    let sessions = SessionEventInstrumentation.queue
+    let sessionEvents = SessionEventInstrumentation.queue
 
-    if sessions.isEmpty {
+    if sessionEvents.isEmpty {
       return
     }
 
-    for session in sessions {
-      createSessionEvent(session: session)
+    for sessionEvent in sessionEvents {
+      createSessionEvent(session: sessionEvent.session, eventType: sessionEvent.eventType)
     }
 
     SessionEventInstrumentation.queue.removeAll()
   }
 
-  /// Create session start or end log record, depending on if the session is expired.
+  /// Create session start or end log record based on the specified event type.
   ///
-  /// This method routes the session to the appropriate handler based on its expiration status.
-  /// - Parameter session: The session to create an event for
-  private func createSessionEvent(session: Session) {
-    if session.isExpired() {
-      createSessionEndEvent(session: session)
-    } else {
+  /// - Parameters:
+  ///   - session: The session to create an event for
+  ///   - eventType: The type of event to create (start or end)
+  private func createSessionEvent(session: Session, eventType: SessionEventType) {
+    switch eventType {
+    case .start:
       createSessionStartEvent(session: session)
+    case .end:
+      createSessionEndEvent(session: session)
     }
   }
 
@@ -97,7 +114,7 @@ public class SessionEventInstrumentation {
   private func createSessionStartEvent(session: Session) {
     var attributes: [String: AttributeValue] = [
       SessionConstants.id: AttributeValue.string(session.id),
-      SessionConstants.startTime: AttributeValue.double(session.startTime.timeIntervalSince1970)
+      SessionConstants.startTime: AttributeValue.double(Double(session.startTime.timeIntervalSince1970.toNanoseconds))
     ]
 
     if let previousId = session.previousId {
@@ -118,17 +135,16 @@ public class SessionEventInstrumentation {
   /// end time, duration, and previous session ID (if available).
   /// - Parameter session: The expired session
   private func createSessionEndEvent(session: Session) {
-    guard session.isExpired(),
-          let endTime = session.endTime,
+    guard let endTime = session.endTime,
           let duration = session.duration else {
       return
     }
 
     var attributes: [String: AttributeValue] = [
       SessionConstants.id: AttributeValue.string(session.id),
-      SessionConstants.startTime: AttributeValue.double(session.startTime.timeIntervalSince1970),
-      SessionConstants.endTime: AttributeValue.double(endTime.timeIntervalSince1970),
-      SessionConstants.duration: AttributeValue.double(duration)
+      SessionConstants.startTime: AttributeValue.double(Double(session.startTime.timeIntervalSince1970.toNanoseconds)),
+      SessionConstants.endTime: AttributeValue.double(Double(endTime.timeIntervalSince1970.toNanoseconds)),
+      SessionConstants.duration: AttributeValue.double(Double(duration.toNanoseconds))
     ]
 
     if let previousId = session.previousId {
@@ -146,20 +162,23 @@ public class SessionEventInstrumentation {
   /// Add a session to the queue or send notification if instrumentation is already applied.
   ///
   /// This static method is the main entry point for handling new sessions. It either:
-  /// - Adds the session to the static queue if instrumentation hasn't been applied yet
+  /// - Adds the session to the static queue if instrumentation hasn't been applied yet (max 32 items)
   /// - Posts a notification with the session if instrumentation has been applied
   ///
   /// - Parameter session: The session to process
-  static func addSession(session: Session) {
+  static func addSession(session: Session, eventType: SessionEventType) {
     if isApplied {
       NotificationCenter.default.post(
         name: sessionEventNotification,
-        object: session
+        object: SessionEvent(session: session, eventType: eventType)
       )
     } else {
       /// SessionManager creates sessions before SessionEventInstrumentation is applied,
       /// which the notification observer cannot see. So we need to keep the sessions in a queue.
-      queue.append(session)
+      if queue.count >= maxQueueSize {
+        return
+      }
+      queue.append(SessionEvent(session: session, eventType: eventType))
     }
   }
 }
