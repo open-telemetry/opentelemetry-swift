@@ -9,6 +9,14 @@ import XCTest
   import FoundationNetworking
 #endif
 
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#elseif canImport(Musl)
+import Musl
+#endif
+
 /// A unified HTTP test server using POSIX sockets
 /// Combines functionality from both OTLP exporter tests and URLSession instrumentation tests
 public class HttpTestServer {
@@ -91,7 +99,12 @@ public class HttpTestServer {
             throw TestServerError.portRetrievalFailed
         }
         
+        // Convert from network byte order (big endian) to host byte order
+        #if canImport(Darwin)
         serverPort = Int(CFSwapInt16BigToHost(actualAddr.sin_port))
+        #else
+        serverPort = Int(ntohs(actualAddr.sin_port))
+        #endif
         
         // Listen
         guard listen(serverSocket, 10) >= 0 else {
@@ -117,7 +130,14 @@ public class HttpTestServer {
         
         // Close server socket
         if serverSocket >= 0 {
+            // Use platform-specific shutdown
+            #if canImport(Darwin)
             Darwin.shutdown(serverSocket, SHUT_RDWR)
+            #elseif canImport(Glibc)
+            Glibc.shutdown(serverSocket, SHUT_RDWR)
+            #elseif canImport(Musl)
+            Musl.shutdown(serverSocket, SHUT_RDWR)
+            #endif
             close(serverSocket)
             serverSocket = -1
         }
@@ -262,7 +282,7 @@ public class HttpTestServer {
             return
         }
         
-        let method = parts[0]
+        let _ = parts[0]  // method - unused but needed for parsing
         let path = parts[1]
         
         // Parse headers
@@ -303,7 +323,7 @@ public class HttpTestServer {
         }
         
         // Handle URLSession test paths
-        if let config = config {
+        if config != nil {
             handleURLSessionRequest(socket: clientSocket, path: path)
             return
         }
