@@ -55,7 +55,7 @@ public class HttpTestServer {
     
     public func start(semaphore: DispatchSemaphore?) throws {
         // Create socket
-        serverSocket = socket(AF_INET, SOCK_STREAM, 0)
+        serverSocket = socket(AF_INET, Int32(SOCK_STREAM.rawValue), 0)
         guard serverSocket >= 0 else {
             throw TestServerError.socketCreationFailed
         }
@@ -134,9 +134,9 @@ public class HttpTestServer {
             #if canImport(Darwin)
             Darwin.shutdown(serverSocket, SHUT_RDWR)
             #elseif canImport(Glibc)
-            Glibc.shutdown(serverSocket, SHUT_RDWR)
+            Glibc.shutdown(serverSocket, Int32(SHUT_RDWR))
             #elseif canImport(Musl)
-            Musl.shutdown(serverSocket, SHUT_RDWR)
+            Musl.shutdown(serverSocket, Int32(SHUT_RDWR))
             #endif
             close(serverSocket)
             serverSocket = -1
