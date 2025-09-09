@@ -55,7 +55,11 @@ public class HttpTestServer {
     
     public func start(semaphore: DispatchSemaphore?) throws {
         // Create socket
+        #if canImport(Darwin)
+        serverSocket = socket(AF_INET, SOCK_STREAM, 0)
+        #else
         serverSocket = socket(AF_INET, Int32(SOCK_STREAM.rawValue), 0)
+        #endif
         guard serverSocket >= 0 else {
             throw TestServerError.socketCreationFailed
         }
@@ -68,7 +72,7 @@ public class HttpTestServer {
         if config == nil {
             let flags = fcntl(serverSocket, F_GETFL, 0)
             if flags >= 0 {
-                fcntl(serverSocket, F_SETFL, flags | O_NONBLOCK)
+                _ = fcntl(serverSocket, F_SETFL, flags | O_NONBLOCK)
             }
         }
         
@@ -366,28 +370,28 @@ public class HttpTestServer {
     
     private func sendSuccessResponse(socket: Int32) {
         let response = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
-        response.withCString { ptr in
+        _ = response.withCString { ptr in
             send(socket, ptr, strlen(ptr), 0)
         }
     }
     
     private func sendErrorResponse(socket: Int32) {
         let response = "HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
-        response.withCString { ptr in
+        _ = response.withCString { ptr in
             send(socket, ptr, strlen(ptr), 0)
         }
     }
     
     private func sendForbiddenResponse(socket: Int32) {
         let response = "HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
-        response.withCString { ptr in
+        _ = response.withCString { ptr in
             send(socket, ptr, strlen(ptr), 0)
         }
     }
     
     private func sendNotFoundResponse(socket: Int32) {
         let response = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
-        response.withCString { ptr in
+        _ = response.withCString { ptr in
             send(socket, ptr, strlen(ptr), 0)
         }
     }
