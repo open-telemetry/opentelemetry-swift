@@ -205,6 +205,7 @@ final class SessionLogRecordProcessorTests: XCTestCase {
   }
 
   func testConcurrentOnEmitThreadSafety() {
+    let mockNextProcessor = MockLogRecordProcessor()
     let expectation = XCTestExpectation(description: "Concurrent processing")
     let queue = DispatchQueue(label: "test.concurrent", attributes: .concurrent)
     let group = DispatchGroup()
@@ -214,7 +215,7 @@ final class SessionLogRecordProcessorTests: XCTestCase {
       queue.async {
         let sessionManager = MockSessionManager()
         sessionManager.sessionId = "session-\(i)"
-        let processor = SessionLogRecordProcessor(nextProcessor: self.mockNextProcessor, sessionManager: sessionManager)
+        let processor = SessionLogRecordProcessor(nextProcessor: mockNextProcessor, sessionManager: sessionManager)
         processor.onEmit(logRecord: self.testLogRecord)
         group.leave()
       }
@@ -236,10 +237,17 @@ final class SessionLogRecordProcessorTests: XCTestCase {
 // MARK: - Mock Classes
 
 class MockLogRecordProcessor: LogRecordProcessor {
-  var receivedLogRecords: [ReadableLogRecord] = []
+  private let queue = DispatchQueue(label: "MockLogRecordProcessor")
+  private var _receivedLogRecords: [ReadableLogRecord] = []
+  
+  var receivedLogRecords: [ReadableLogRecord] {
+    return queue.sync { _receivedLogRecords }
+  }
 
   func onEmit(logRecord: ReadableLogRecord) {
-    receivedLogRecords.append(logRecord)
+    queue.sync {
+      _receivedLogRecords.append(logRecord)
+    }
   }
 
   func shutdown(explicitTimeout: TimeInterval?) -> ExportResult {
