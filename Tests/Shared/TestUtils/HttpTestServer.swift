@@ -146,6 +146,11 @@ public class HttpTestServer {
             serverSocket = -1
         }
         
+        // Clear received requests
+        receivedRequestsQueue.sync {
+            receivedRequests.removeAll()
+        }
+        
         // Wait for queue to finish
         serverQueue?.sync(flags: .barrier) {}
         serverQueue = nil
