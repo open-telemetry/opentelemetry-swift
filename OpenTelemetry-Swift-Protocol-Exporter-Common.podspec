@@ -18,8 +18,8 @@ Pod::Spec.new do |spec|
   spec.visionos.deployment_target = "1.0"
   spec.module_name = "OpenTelemetryProtocolExporterCommon"
 
-  spec.dependency 'OpenTelemetry-Swift-Api', spec.version.to_s
-  spec.dependency 'OpenTelemetry-Swift-Sdk', spec.version.to_s
+  spec.dependency 'OpenTelemetry-Swift-Api', '~> 2.1.1'
+  spec.dependency 'OpenTelemetry-Swift-Sdk', '~> 2.1.1'
   spec.dependency 'SwiftProtobuf', '~> 1.28'
   spec.pod_target_xcconfig = { "OTHER_SWIFT_FLAGS" => "-module-name OpenTelemetryProtocolExporterCommon -package-name opentelemetry_swift_exporter_common" }
 
