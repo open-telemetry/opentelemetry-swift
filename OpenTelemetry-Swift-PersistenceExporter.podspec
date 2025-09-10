@@ -18,7 +18,7 @@ Pod::Spec.new do |spec|
   spec.visionos.deployment_target = "1.0"
   spec.module_name = "PersistenceExporter"
 
-  spec.dependency 'OpenTelemetry-Swift-Sdk', spec.version.to_s
+  spec.dependency 'OpenTelemetry-Swift-Sdk', '~> 2.1.1'
   spec.pod_target_xcconfig = { "OTHER_SWIFT_FLAGS" => "-module-name PersistenceExporter -package-name opentelemetry_swift_persistence_exporter" }
 
 end
