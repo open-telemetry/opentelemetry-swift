@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       core_version:
-        description: 'OpenTelemetry Swift Core version to update to'
+        description: 'OpenTelemetry-swift-core version to update to'
         required: true
         type: string
       create_pr:
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Validate version format
         run: |
@@ -42,9 +42,9 @@ jobs:
 
       - name: Create Pull Request
         if: steps.changes.outputs.has_changes == 'true' && github.event.inputs.create_pr == 'true'
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_TOKEN }}
           commit-message: |
             Update opentelemetry-swift-core dependencies to ${{ github.event.inputs.core_version }}
             
@@ -52,7 +52,7 @@ jobs:
             - Updated all .podspec files with new core dependency versions
           title: "Update core dependencies to ${{ github.event.inputs.core_version }}"
           body: |
-            This PR updates the OpenTelemetry Swift Core dependencies to version `${{ github.event.inputs.core_version }}`.
+            This PR updates the openTelemetry-swift-core dependencies to version `${{ github.event.inputs.core_version }}`.
 
             ## Changes
             - Updated `Package.swift` to use core version `${{ github.event.inputs.core_version }}`
