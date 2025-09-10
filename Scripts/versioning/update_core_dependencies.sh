@@ -34,8 +34,8 @@ PODSPEC_COUNT=$(echo "$PODSPEC_FILES" | wc -l | tr -d ' ')
 echo "Updating $PODSPEC_COUNT .podspec files..."
 
 for podspec in $PODSPEC_FILES; do
-    sed -i '' "s|spec.dependency 'OpenTelemetry-Swift-Api', '[^']*'|spec.dependency 'OpenTelemetry-Swift-Api', '$NEW_VERSION'|g" "$podspec"
-    sed -i '' "s|spec.dependency 'OpenTelemetry-Swift-Sdk', '[^']*'|spec.dependency 'OpenTelemetry-Swift-Sdk', '$NEW_VERSION'|g" "$podspec"
+    sed -i '' "s|spec.dependency 'OpenTelemetry-Swift-Api', '[^']*'|spec.dependency 'OpenTelemetry-Swift-Api', '~> $NEW_VERSION'|g" "$podspec"
+    sed -i '' "s|spec.dependency 'OpenTelemetry-Swift-Sdk', '[^']*'|spec.dependency 'OpenTelemetry-Swift-Sdk', '~> $NEW_VERSION'|g" "$podspec"
 done
 
 echo "Update completed successfully"
