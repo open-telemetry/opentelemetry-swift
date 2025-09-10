@@ -5,50 +5,102 @@ on :
       - main
     types:
       - closed
+      
+concurrency:
+  group: tag-note-release-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 jobs:
-  CheckRelease:
+  tag:
+    name: Create Tag & Release
+    if: >
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'release/')
+    runs-on: macos-15
     permissions:
       contents: write # required for creating tags and releases
-    runs-on: macos-15
+    outputs:
+      version: ${{ steps.parse.outputs.version }}
     steps:
-      - name: Check if merge is release branch
-        id: check-release
+      - name: Parse version from branch name
+        id: parse
         run: |
-          if [[ ${{ github.head_ref }} =~ ^release/([0-9]+\.[0-9]+\.[0-9]+$) ]]; then
-            echo "match=true" >> $GITHUB_OUTPUT
-            echo "version=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
-          fi
-      - name: Tag if release branch
-        if: github.event.pull_request.merged != true || steps.check-release.outputs.match != 'true'
-        run: exit 1
+          version=$(echo "${{ github.event.pull_request.head.ref }}" | sed 's/^release\///')
+          echo "version=$version" >> $GITHUB_OUTPUT
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
-          fetch-depth: '0'      
-      - uses: stefanzweifel/git-auto-commit-action@778341af668090896ca464160c2def5d1d1a3eb0 # v6.0.1
+          fetch-depth: '0'
+      - name: Check if tag already exists
+        id: tag_check
+        run: |
+          if git rev-parse "refs/tags/${{ steps.parse.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Create tag
+        if: steps.tag_check.outputs.exists == 'false'
+        uses: stefanzweifel/git-auto-commit-action@778341af668090896ca464160c2def5d1d1a3eb0 # v6.0.1
         with:
-          commit_message: version bump to ${{ steps.check-release.outputs.version }}
-          tagging_message: '${{ steps.check-release.outputs.version }}'
-      - uses: ncipollo/release-action@bcfe5470707e8832e12347755757cec0eb3c22af # v1.18.0
+          commit_message: version bump to ${{ steps.parse.outputs.version }}
+          tagging_message: '${{ steps.parse.outputs.version }}'
+      - name: Create release
+        if: steps.tag_check.outputs.exists == 'false'
+        uses: ncipollo/release-action@bcfe5470707e8832e12347755757cec0eb3c22af # v1.18.0
         with: 
-          tag: ${{ steps.check-release.outputs.version }}
+          tag: ${{ steps.parse.outputs.version }}
           prerelease: true
           generateReleaseNotes: true
-      - name: push cocoapods
+  
+  cocoapods:
+    name: Publish to CocoaPods
+    needs: tag
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Publish to CocoaPods trunk
         env: 
           COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
-        id: cocoapod_trunk_push
         run: |
-          pod trunk push OpenTelemetry-Swift-Api.podspec --allow-warnings 
-          pod trunk push OpenTelemetry-Swift-Sdk.podspec --allow-warnings --synchronous
-          pod trunk push OpenTelemetry-Swift-BaggagePropagationProcessor.podspec --allow-warnings --synchronous
-          pod trunk push OpenTelemetry-Swift-Instrumentation-NetworkStatus.podspec --allow-warnings --synchronous
-          pod trunk push OpenTelemetry-Swift-Instrumentation-URLSession.podspec --allow-warnings --synchronous
-          pod trunk push OpenTelemetry-Swift-Protocol-Exporter-Common.podspec --allow-warnings --synchronous
-          pod trunk push OpenTelemetry-Swift-SdkResourceExtension.podspec --allow-warnings --synchronous
-          pod trunk push OpenTelemetry-Swift-Protocol-Exporter-Http.podspec --allow-warnings --synchronous
-          pod trunk push OpenTelemetry-Swift-PersistenceExporter.podspec --allow-warnings --synchronous
-          pod trunk push OpenTelemetry-Swift-StdoutExporter.podspec --allow-warnings --synchronous
+          VERSION="${{ needs.tag.outputs.version }}"
+          failed_pods=()
+          
+          # Define all pods to publish
+          pods=(
+            "OpenTelemetry-Swift-BaggagePropagationProcessor"
+            "OpenTelemetry-Swift-Instrumentation-NetworkStatus"
+            "OpenTelemetry-Swift-Instrumentation-URLSession"
+            "OpenTelemetry-Swift-SdkResourceExtension"
+            "OpenTelemetry-Swift-Protocol-Exporter-Common"
+            "OpenTelemetry-Swift-Protocol-Exporter-Http"
+            "OpenTelemetry-Swift-PersistenceExporter"
+            "OpenTelemetry-Swift-StdoutExporter"
+          )
+          
+          # Process each pod
+          for pod_name in "${pods[@]}"; do
+            echo "Processing $pod_name..."
+            
+            if pod trunk info "$pod_name" 2>&1 | grep -F " - ${VERSION} (" >/dev/null; then
+              echo "::warning::$pod_name '${VERSION}' already exists on CocoaPods. Skipping."
+            else
+              if ! pod trunk push "${pod_name}.podspec" --allow-warnings --synchronous; then
+                echo "::error::Failed to push $pod_name"
+                failed_pods+=("$pod_name")
+              else
+                echo "Successfully pushed $pod_name"
+              fi
+            fi
+          done
+          
+          # Report results
+          if [ ${#failed_pods[@]} -gt 0 ]; then
+            echo "::error::The following pods failed to publish: ${failed_pods[*]}"
+            exit 1
+          else
+            echo "All pods published successfully!"
+          fi
         
