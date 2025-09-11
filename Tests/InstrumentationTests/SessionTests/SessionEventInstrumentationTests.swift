@@ -352,4 +352,16 @@ final class SessionEventInstrumentationTests: XCTestCase {
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, Int(max))
   }
+  
+  func testSessionEndEventWithActiveSession() {
+    // Test session end event with active session (no endTime/duration)
+    let activeSession = Session(id: "active-session", expireTime: Date().addingTimeInterval(3600))
+    
+    _ = SessionEventInstrumentation()
+    SessionEventInstrumentation.addSession(session: activeSession, eventType: .end)
+    
+    // Should not create log record for active session end event
+    let logRecords = logExporter.getFinishedLogRecords()
+    XCTAssertEqual(logRecords.count, 0)
+  }
 }

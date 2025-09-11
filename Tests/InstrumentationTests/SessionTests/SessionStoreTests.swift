@@ -168,4 +168,43 @@ final class SessionStoreTests: XCTestCase {
     let loadedSession = SessionStore.load()
     XCTAssertNil(loadedSession)
   }
+  
+  func testLoadSessionMissingTimeout() {
+    UserDefaults.standard.set("test-id", forKey: SessionStore.idKey)
+    UserDefaults.standard.set(Date(), forKey: SessionStore.expireTimeKey)
+    UserDefaults.standard.set(Date(), forKey: SessionStore.startTimeKey)
+    
+    let loadedSession = SessionStore.load()
+    XCTAssertNil(loadedSession)
+  }
+  
+  func testScheduleSaveWithSameSession() {
+    let session1 = Session(id: "session-1", expireTime: Date(), startTime: Date())
+    
+    SessionStore.scheduleSave(session: session1)
+    let savedId1 = UserDefaults.standard.string(forKey: SessionStore.idKey)
+    XCTAssertEqual(savedId1, session1.id)
+    
+    // Schedule the same session again - should not trigger another save
+    SessionStore.scheduleSave(session: session1)
+    let savedId2 = UserDefaults.standard.string(forKey: SessionStore.idKey)
+    XCTAssertEqual(savedId2, session1.id)
+  }
+  
+  func testScheduleSaveWithExistingTimer() {
+    let session1 = Session(id: "session-1", expireTime: Date(), startTime: Date())
+    let session2 = Session(id: "session-2", expireTime: Date(), startTime: Date())
+    
+    // First call creates timer and saves session1
+    SessionStore.scheduleSave(session: session1)
+    let savedId1 = UserDefaults.standard.string(forKey: SessionStore.idKey)
+    XCTAssertEqual(savedId1, session1.id)
+    
+    // Second call should use existing timer and update pending session
+    SessionStore.scheduleSave(session: session2)
+    
+    // The first session is still saved until timer fires
+    let savedId2 = UserDefaults.standard.string(forKey: SessionStore.idKey)
+    XCTAssertEqual(savedId2, session1.id)
+  }
 }
