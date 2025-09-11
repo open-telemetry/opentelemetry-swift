@@ -17,23 +17,8 @@ jobs:
     - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with: 
         ref: ${{ github.head_ref }}
-    - name: update version file
-      run: |
-       echo '//
-       // Copyright The OpenTelemetry Authors
-       // SPDX-License-Identifier: Apache-2.0
-       //
-       
-       import Foundation
-       
-       extension Resource {
-         public static let OTEL_SWIFT_SDK_VERSION: String = "${{ inputs.new_version }}"
-       }
-       ' > Sources/OpenTelemetrySdk/Version.swift
     - name: update Podspec
       run: | 
-        sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-Api.podspec
-        sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-Sdk.podspec
         sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-BaggagePropagationProcessor.podspec
         sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-Instrumentation-NetworkStatus.podspec
         sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-Instrumentation-URLSession.podspec
@@ -42,7 +27,6 @@ jobs:
         sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-SdkResourceExtension.podspec
         sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-StdoutExporter.podspec
         sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-PersistenceExporter.podspec
-
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
       with:
