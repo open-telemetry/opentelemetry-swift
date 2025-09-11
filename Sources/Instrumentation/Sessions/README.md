@@ -162,7 +162,7 @@ A `session.start` log record is created when a new session begins.
   "attributes": {
     "session.id": "550e8400-e29b-41d4-a716-446655440000",
     "session.start_time": 1692123456789000000,
-    "session.previous_id": "previous-session-id"
+    "session.previous_id": "71260ACC-5286-455F-9955-5DA8C5109A07"
   }
 }
 ```
@@ -173,7 +173,7 @@ A `session.start` log record is created when a new session begins.
 | --------------------- | ------ | --------------------------------------------- | ---------------------------------------- |
 | `session.id`          | string | Unique identifier for the current session     | `"550e8400-e29b-41d4-a716-446655440000"` |
 | `session.start_time`  | double | Session start time in nanoseconds since epoch | `1692123456789000000`                    |
-| `session.previous_id` | string | Identifier of the previous session (if any)   | `"previous-session-id"`                  |
+| `session.previous_id` | string | Identifier of the previous session (if any)   | `"71260ACC-5286-455F-9955-5DA8C5109A07"`                  |
 
 ### Session End
 
@@ -189,7 +189,7 @@ A `session.end` log record is created when a session expires.
     "session.start_time": 1692123456789000000,
     "session.end_time": 1692125256789000000,
     "session.duration": 1800000000000,
-    "session.previous_id": "previous-session-id"
+    "session.previous_id": "71260ACC-5286-455F-9955-5DA8C5109A07"
   }
 }
 ```
@@ -202,7 +202,7 @@ A `session.end` log record is created when a session expires.
 | `session.start_time`  | double | Session start time in nanoseconds since epoch | `1692123456789000000`                    |
 | `session.end_time`    | double | Session end time in nanoseconds since epoch   | `1692125256789000000`                    |
 | `session.duration`    | double | Session duration in nanoseconds               | `1800000000000` (30 minutes)             |
-| `session.previous_id` | string | Identifier of the previous session (if any)   | `"previous-session-id"`                  |
+| `session.previous_id` | string | Identifier of the previous session (if any)   | `"71260ACC-5286-455F-9955-5DA8C5109A07"`                  |
 
 ## Span and Log Attribution
 
@@ -211,7 +211,7 @@ A `session.end` log record is created when a session expires.
 | Attribute             | Type   | Description                                  | Example                                  |
 | --------------------- | ------ | -------------------------------------------- | ---------------------------------------- |
 | `session.id`          | string | Current active session identifier            | `"550e8400-e29b-41d4-a716-446655440000"` |
-| `session.previous_id` | string | Previous session identifier (when available) | `"previous-session-id"`                  |
+| `session.previous_id` | string | Previous session identifier (when available) | `"71260ACC-5286-455F-9955-5DA8C5109A07"`                  |
 
 **Special Handling**: For `session.start` and `session.end` log records, the processors preserve the existing session attributes rather than overriding them with current session data, ensuring historical accuracy of session events.
 
