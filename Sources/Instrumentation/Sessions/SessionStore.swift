@@ -72,7 +72,7 @@ internal class SessionStore {
     guard let startTime = UserDefaults.standard.object(forKey: startTimeKey) as? Date,
           let id = UserDefaults.standard.string(forKey: idKey),
           let expireTime = UserDefaults.standard.object(forKey: expireTimeKey) as? Date,
-          let sessionTimeout = UserDefaults.standard.object(forKey: sessionTimeoutKey) as? Int
+          let sessionTimeout = UserDefaults.standard.object(forKey: sessionTimeoutKey) as? TimeInterval
     else {
       return nil
     }

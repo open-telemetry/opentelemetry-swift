@@ -73,7 +73,7 @@ public class SessionManager {
         expireTime: Date(timeIntervalSinceNow: Double(configuration.sessionTimeout)),
         previousId: session!.previousId,
         startTime: session!.startTime,
-        sessionTimeout: configuration.sessionTimeout
+        sessionTimeout: TimeInterval(configuration.sessionTimeout)
       )
     }
     saveSessionToDisk()

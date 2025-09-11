@@ -33,7 +33,7 @@ public struct Session: Equatable {
   /// Start time of the session
   public let startTime: Date
   /// The duration in seconds after which this session expires if inactive
-  public let sessionTimeout: Int
+  public let sessionTimeout: TimeInterval
 
   /// Creates a new session
   /// - Parameters:
@@ -46,7 +46,7 @@ public struct Session: Equatable {
               expireTime: Date,
               previousId: String? = nil,
               startTime: Date = Date(),
-              sessionTimeout: Int = SessionConfig.default.sessionTimeout) {
+              sessionTimeout: TimeInterval = SessionConfig.default.sessionTimeout) {
     self.id = id
     self.expireTime = expireTime
     self.previousId = previousId

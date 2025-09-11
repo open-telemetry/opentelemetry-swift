@@ -132,7 +132,7 @@ print("Duration: \(session.duration ?? 0)")
 
 | Field            | Type  | Description                                                        | Default         | Required |
 | ---------------- | ----- | ------------------------------------------------------------------ | --------------- | -------- |
-| `sessionTimeout` | `Int` | Duration in seconds after which a session expires if left inactive | `1800` (30 min) | No       |
+| `sessionTimeout` | `TimeInterval` | Duration in seconds after which a session expires if left inactive | `1800` (30 min) | No       |
 
 ```swift
 let config = SessionConfigBuilder()

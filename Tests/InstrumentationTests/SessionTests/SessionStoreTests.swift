@@ -76,13 +76,7 @@ final class SessionStoreTests: XCTestCase {
     XCTAssertEqual(SessionStore.sessionTimeoutKey, "otel-session-timeout")
   }
 
-  func testLoadWithCorruptedData() {
-    UserDefaults.standard.set(123, forKey: SessionStore.idKey)
-    UserDefaults.standard.set("invalid-date", forKey: SessionStore.expireTimeKey)
 
-    let loadedSession = SessionStore.load()
-    XCTAssertNil(loadedSession)
-  }
 
   func testSaveAndLoadSessionWithPreviousId() {
     let sessionId = "current-session-123"
@@ -135,12 +129,43 @@ final class SessionStoreTests: XCTestCase {
     XCTAssertEqual(savedId, session2.id)
   }
   
-  func testLoadSessionMissingTimeout() {
+  func testLoadSessionWithCorruptedId() {
+    UserDefaults.standard.set(["invalid": "id"], forKey: SessionStore.idKey)
+    UserDefaults.standard.set(Date(), forKey: SessionStore.expireTimeKey)
+    UserDefaults.standard.set(Date(), forKey: SessionStore.startTimeKey)
+    UserDefaults.standard.set(1800.0, forKey: SessionStore.sessionTimeoutKey)
+    
+    let loadedSession = SessionStore.load()
+    XCTAssertNil(loadedSession)
+  }
+  
+  func testLoadSessionWithCorruptedExpireTime() {
+    UserDefaults.standard.set("test-id", forKey: SessionStore.idKey)
+    UserDefaults.standard.set("invalid-date", forKey: SessionStore.expireTimeKey)
+    UserDefaults.standard.set(Date(), forKey: SessionStore.startTimeKey)
+    UserDefaults.standard.set(1800.0, forKey: SessionStore.sessionTimeoutKey)
+    
+    let loadedSession = SessionStore.load()
+    XCTAssertNil(loadedSession)
+  }
+  
+  func testLoadSessionWithCorruptedStartTime() {
+    UserDefaults.standard.set("test-id", forKey: SessionStore.idKey)
+    UserDefaults.standard.set(Date(), forKey: SessionStore.expireTimeKey)
+    UserDefaults.standard.set("invalid-date", forKey: SessionStore.startTimeKey)
+    UserDefaults.standard.set(1800.0, forKey: SessionStore.sessionTimeoutKey)
+    
+    let loadedSession = SessionStore.load()
+    XCTAssertNil(loadedSession)
+  }
+  
+  func testLoadSessionWithCorruptedTimeout() {
     UserDefaults.standard.set("test-id", forKey: SessionStore.idKey)
     UserDefaults.standard.set(Date(), forKey: SessionStore.expireTimeKey)
     UserDefaults.standard.set(Date(), forKey: SessionStore.startTimeKey)
+    UserDefaults.standard.set("invalid-timeout", forKey: SessionStore.sessionTimeoutKey)
     
     let loadedSession = SessionStore.load()
-    XCTAssertNil(loadedSession, "Session should be nil when timeout is missing")
+    XCTAssertNil(loadedSession)
   }
 }

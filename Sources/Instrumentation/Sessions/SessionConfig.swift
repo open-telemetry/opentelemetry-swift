@@ -24,11 +24,11 @@ import Foundation
 /// ```
 public struct SessionConfig {
   /// Duration in seconds after which a session expires if left inactive
-  public let sessionTimeout: Int
+  public let sessionTimeout: TimeInterval
   
   /// Creates a new session configuration
   /// - Parameter sessionTimeout: Duration in seconds after which a session expires if left inactive (default 30 minutes)
-  public init(sessionTimeout: Int = 30 * 60) {
+  public init(sessionTimeout: TimeInterval = 30 * 60) {
     self.sessionTimeout = sessionTimeout
   }
   
@@ -47,14 +47,14 @@ public struct SessionConfig {
 ///   .build()
 /// ```
 public class SessionConfigBuilder {
-  public private(set) var sessionTimeout: Int = 30 * 60
+  public private(set) var sessionTimeout: TimeInterval = 30 * 60
   
   public init() {}
   
   /// Sets the session timeout duration
   /// - Parameter sessionTimeout: Duration in seconds after which a session expires if left inactive
   /// - Returns: The builder instance for method chaining
-  public func with(sessionTimeout: Int) -> Self {
+  public func with(sessionTimeout: TimeInterval) -> Self {
     self.sessionTimeout = sessionTimeout
     return self
   }

@@ -59,7 +59,7 @@ final class SessionManagerTests: XCTestCase {
   func testGetSessionSavedToDisk() {
     let session = sessionManager.getSession()
     let savedId = UserDefaults.standard.object(forKey: SessionStore.idKey) as? String
-    let savedTimeout = UserDefaults.standard.object(forKey: SessionStore.sessionTimeoutKey) as? Int
+    let savedTimeout = UserDefaults.standard.object(forKey: SessionStore.sessionTimeoutKey) as? TimeInterval
 
     XCTAssertEqual(session.id, savedId)
     XCTAssertEqual(session.sessionTimeout, savedTimeout)
@@ -103,11 +103,11 @@ final class SessionManagerTests: XCTestCase {
   }
 
   func testCustomSessionLength() {
-    let customLength = 60
+    let customLength: TimeInterval = 60
     sessionManager = SessionManager(configuration: SessionConfig(sessionTimeout: customLength))
 
     let session1 = sessionManager.getSession()
-    let expectedExpiry = Date(timeIntervalSinceNow: Double(customLength))
+    let expectedExpiry = Date(timeIntervalSinceNow: customLength)
 
     XCTAssertEqual(session1.expireTime.timeIntervalSince1970, expectedExpiry.timeIntervalSince1970, accuracy: 1.0)
     XCTAssertEqual(session1.sessionTimeout, customLength)
