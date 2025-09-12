@@ -52,22 +52,53 @@ protocol ExportPerformancePreset {
 public struct PersistencePerformancePreset: Equatable, StoragePerformancePreset, ExportPerformancePreset {
   // MARK: - StoragePerformancePreset
 
-  let maxFileSize: UInt64
-  let maxDirectorySize: UInt64
-  let maxFileAgeForWrite: TimeInterval
-  let minFileAgeForRead: TimeInterval
-  let maxFileAgeForRead: TimeInterval
-  let maxObjectsInFile: Int
-  let maxObjectSize: UInt64
-  let synchronousWrite: Bool
+  public let maxFileSize: UInt64
+  public let maxDirectorySize: UInt64
+  public let maxFileAgeForWrite: TimeInterval
+  public let minFileAgeForRead: TimeInterval
+  public let maxFileAgeForRead: TimeInterval
+  public let maxObjectsInFile: Int
+  public let maxObjectSize: UInt64
+  public let synchronousWrite: Bool
 
   // MARK: - ExportPerformancePreset
 
-  let initialExportDelay: TimeInterval
-  let defaultExportDelay: TimeInterval
-  let minExportDelay: TimeInterval
-  let maxExportDelay: TimeInterval
-  let exportDelayChangeRate: Double
+  public let initialExportDelay: TimeInterval
+  public let defaultExportDelay: TimeInterval
+  public let minExportDelay: TimeInterval
+  public let maxExportDelay: TimeInterval
+  public let exportDelayChangeRate: Double
+
+  /// Public initializer to allow custom presets
+  public init(
+    maxFileSize: UInt64,
+    maxDirectorySize: UInt64,
+    maxFileAgeForWrite: TimeInterval,
+    minFileAgeForRead: TimeInterval,
+    maxFileAgeForRead: TimeInterval,
+    maxObjectsInFile: Int,
+    maxObjectSize: UInt64,
+    synchronousWrite: Bool,
+    initialExportDelay: TimeInterval,
+    defaultExportDelay: TimeInterval,
+    minExportDelay: TimeInterval,
+    maxExportDelay: TimeInterval,
+    exportDelayChangeRate: Double
+  ) {
+    self.maxFileSize = maxFileSize
+    self.maxDirectorySize = maxDirectorySize
+    self.maxFileAgeForWrite = maxFileAgeForWrite
+    self.minFileAgeForRead = minFileAgeForRead
+    self.maxFileAgeForRead = maxFileAgeForRead
+    self.maxObjectsInFile = maxObjectsInFile
+    self.maxObjectSize = maxObjectSize
+    self.synchronousWrite = synchronousWrite
+    self.initialExportDelay = initialExportDelay
+    self.defaultExportDelay = defaultExportDelay
+    self.minExportDelay = minExportDelay
+    self.maxExportDelay = maxExportDelay
+    self.exportDelayChangeRate = exportDelayChangeRate
+  }
 
   // MARK: - Predefined presets
 
