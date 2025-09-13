@@ -49,7 +49,7 @@ jobs:
           tagging_message: '${{ steps.parse.outputs.version }}'
       - name: Create release
         if: steps.tag_check.outputs.exists == 'false'
-        uses: ncipollo/release-action@bcfe5470707e8832e12347755757cec0eb3c22af # v1.18.0
+        uses: ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b # v1.20.0
         with: 
           tag: ${{ steps.parse.outputs.version }}
           prerelease: true
