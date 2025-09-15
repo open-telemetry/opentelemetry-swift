@@ -20,7 +20,6 @@ processors:
       - key: service.name
         value: OTLP Exporter
         action: insert
-  batch:
 
 service:
   telemetry:
