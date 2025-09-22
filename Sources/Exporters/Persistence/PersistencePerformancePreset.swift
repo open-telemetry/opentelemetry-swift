@@ -52,22 +52,22 @@ protocol ExportPerformancePreset {
 public struct PersistencePerformancePreset: Equatable, StoragePerformancePreset, ExportPerformancePreset {
   // MARK: - StoragePerformancePreset
 
-  public let maxFileSize: UInt64
-  public let maxDirectorySize: UInt64
-  public let maxFileAgeForWrite: TimeInterval
-  public let minFileAgeForRead: TimeInterval
-  public let maxFileAgeForRead: TimeInterval
-  public let maxObjectsInFile: Int
-  public let maxObjectSize: UInt64
-  public let synchronousWrite: Bool
+  let maxFileSize: UInt64
+  let maxDirectorySize: UInt64
+  let maxFileAgeForWrite: TimeInterval
+  let minFileAgeForRead: TimeInterval
+  let maxFileAgeForRead: TimeInterval
+  let maxObjectsInFile: Int
+  let maxObjectSize: UInt64
+  let synchronousWrite: Bool
 
   // MARK: - ExportPerformancePreset
 
-  public let initialExportDelay: TimeInterval
-  public let defaultExportDelay: TimeInterval
-  public let minExportDelay: TimeInterval
-  public let maxExportDelay: TimeInterval
-  public let exportDelayChangeRate: Double
+  let initialExportDelay: TimeInterval
+  let defaultExportDelay: TimeInterval
+  let minExportDelay: TimeInterval
+  let maxExportDelay: TimeInterval
+  let exportDelayChangeRate: Double
 
   /// Public initializer to allow custom presets
   public init(
