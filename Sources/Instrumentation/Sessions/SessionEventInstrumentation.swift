@@ -125,7 +125,6 @@ public class SessionEventInstrumentation {
     /// https://opentelemetry.io/docs/specs/semconv/general/session/
     logger.logRecordBuilder()
       .setBody(AttributeValue.string(SessionConstants.sessionStartEvent))
-      .setEventName(SessionConstants.sessionStartEvent)
       .setAttributes(attributes)
       .emit()
   }
@@ -156,7 +155,6 @@ public class SessionEventInstrumentation {
     /// https://opentelemetry.io/docs/specs/semconv/general/session/
     logger.logRecordBuilder()
       .setBody(AttributeValue.string(SessionConstants.sessionEndEvent))
-      .setEventName(SessionConstants.sessionEndEvent)
       .setAttributes(attributes)
       .emit()
   }
