@@ -52,7 +52,7 @@ public class SessionEventInstrumentation {
   static var isApplied = false
 
   public init() {
-    logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: SessionEventInstrumentation.instrumentationKey)
+    logger = OpenTelemetry.instance.loggerProvider.loggerBuilder(instrumentationScopeName: SessionEventInstrumentation.instrumentationKey).build()
     guard !SessionEventInstrumentation.isApplied else {
       return
     }
@@ -125,6 +125,7 @@ public class SessionEventInstrumentation {
     /// https://opentelemetry.io/docs/specs/semconv/general/session/
     logger.logRecordBuilder()
       .setBody(AttributeValue.string(SessionConstants.sessionStartEvent))
+      .setEventName(SessionConstants.sessionStartEvent)
       .setAttributes(attributes)
       .emit()
   }
@@ -155,6 +156,7 @@ public class SessionEventInstrumentation {
     /// https://opentelemetry.io/docs/specs/semconv/general/session/
     logger.logRecordBuilder()
       .setBody(AttributeValue.string(SessionConstants.sessionEndEvent))
+      .setEventName(SessionConstants.sessionEndEvent)
       .setAttributes(attributes)
       .emit()
   }

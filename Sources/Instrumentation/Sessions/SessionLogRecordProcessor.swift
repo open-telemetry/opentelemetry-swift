@@ -22,7 +22,7 @@ public class SessionLogRecordProcessor: LogRecordProcessor {
 
   /// Called when a log record is emitted - adds session attributes and forwards to next processor
   public func onEmit(logRecord: ReadableLogRecord) {
-    var newAttributes = logRecord.attributes
+    var enhancedRecord = logRecord
 
     // For session.start and session.end events, preserve existing session attributes
     if let body = logRecord.body,
@@ -33,22 +33,11 @@ public class SessionLogRecordProcessor: LogRecordProcessor {
     } else {
       // For other log records, add current session attributes
       let session = sessionManager.getSession()
-      newAttributes[SessionConstants.id] = AttributeValue.string(session.id)
+      enhancedRecord.setAttribute(key: SessionConstants.id, value: AttributeValue.string(session.id))
       if let previousId = session.previousId {
-        newAttributes[SessionConstants.previousId] = AttributeValue.string(previousId)
+        enhancedRecord.setAttribute(key: SessionConstants.previousId, value: AttributeValue.string(previousId))
       }
     }
-
-    let enhancedRecord = ReadableLogRecord(
-      resource: logRecord.resource,
-      instrumentationScopeInfo: logRecord.instrumentationScopeInfo,
-      timestamp: logRecord.timestamp,
-      observedTimestamp: logRecord.observedTimestamp,
-      spanContext: logRecord.spanContext,
-      severity: logRecord.severity,
-      body: logRecord.body,
-      attributes: newAttributes
-    )
 
     nextProcessor.onEmit(logRecord: enhancedRecord)
   }
