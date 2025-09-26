@@ -52,7 +52,7 @@ public class SessionEventInstrumentation {
   static var isApplied = false
 
   public init() {
-    logger = OpenTelemetry.instance.loggerProvider.loggerBuilder(instrumentationScopeName: SessionEventInstrumentation.instrumentationKey).build()
+    logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: SessionEventInstrumentation.instrumentationKey)
     guard !SessionEventInstrumentation.isApplied else {
       return
     }
