@@ -24,6 +24,7 @@ let package = Package(
     .library(name: "InMemoryExporter", targets: ["InMemoryExporter"]),
     .library(name: "OTelSwiftLog", targets: ["OTelSwiftLog"]),
     .library(name: "BaggagePropagationProcessor", targets: ["BaggagePropagationProcessor"]),
+    .library(name: "Sessions", targets: ["Sessions"]),
     .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
     .executable(name: "StableMetricSample", targets: ["StableMetricSample"])
   ],
@@ -113,6 +114,16 @@ let package = Package(
       ],
       path: "Sources/Contrib/Processors/BaggagePropagationProcessor"
     ),
+    .target(
+      name: "Sessions",
+      dependencies: [
+        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
+        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+
+      ],
+      path: "Sources/Instrumentation/Sessions",
+      exclude: ["README.md"]
+    ),
     .testTarget(
       name: "OTelSwiftLogTests",
       dependencies: ["OTelSwiftLog"],
@@ -158,6 +169,14 @@ let package = Package(
         "BaggagePropagationProcessor",
         "InMemoryExporter"
       ]
+    ),
+    .testTarget(
+      name: "SessionTests",
+      dependencies: [
+        "Sessions",
+        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+      ],
+      path: "Tests/InstrumentationTests/SessionTests"
     ),
     .executableTarget(
       name: "LoggingTracer",
