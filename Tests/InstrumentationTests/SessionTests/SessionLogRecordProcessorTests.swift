@@ -204,6 +204,53 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     }
   }
 
+  func testDataIsPreserved() {
+    let logRecordWithEventName = ReadableLogRecord(
+      resource: Resource(attributes: [:]),
+      instrumentationScopeInfo: InstrumentationScopeInfo(),
+      timestamp: Date(),
+      observedTimestamp: Date(),
+      spanContext: nil,
+      severity: .info,
+      body: AttributeValue.string("Test log message"),
+      attributes: ["test.key": AttributeValue.string("test.value")],
+      eventName: "user.login"
+    )
+
+    mockSessionManager.sessionId = "test-session-123"
+    logRecordProcessor.onEmit(logRecord: logRecordWithEventName)
+
+    XCTAssertEqual(mockNextProcessor.receivedLogRecords.count, 1)
+    let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
+
+    // Verify all fields are preserved
+    XCTAssertEqual(enhancedRecord.eventName, "user.login", "EventName should be preserved")
+    XCTAssertEqual(enhancedRecord.resource.attributes, logRecordWithEventName.resource.attributes)
+    XCTAssertEqual(enhancedRecord.instrumentationScopeInfo.name, logRecordWithEventName.instrumentationScopeInfo.name)
+    XCTAssertEqual(enhancedRecord.timestamp, logRecordWithEventName.timestamp)
+    XCTAssertEqual(enhancedRecord.observedTimestamp, logRecordWithEventName.observedTimestamp)
+    XCTAssertEqual(enhancedRecord.severity, logRecordWithEventName.severity)
+    XCTAssertEqual(enhancedRecord.body?.description, logRecordWithEventName.body?.description)
+    XCTAssertEqual(enhancedRecord.spanContext, logRecordWithEventName.spanContext)
+    
+    // Verify session attributes were added
+    if case let .string(sessionId) = enhancedRecord.attributes[SessionConstants.id] {
+      XCTAssertEqual(sessionId, "test-session-123")
+    } else {
+      XCTFail("Expected session.id attribute to be added")
+    }
+    
+    // Verify original attributes preserved
+    if case let .string(testValue) = enhancedRecord.attributes["test.key"] {
+      XCTAssertEqual(testValue, "test.value")
+    } else {
+      XCTFail("Expected original attributes to be preserved")
+    }
+    
+    // Verify total attribute count (original + session attributes)
+    XCTAssertEqual(enhancedRecord.attributes.count, 2, "Should have original attribute + session.id")
+  }
+
   func testConcurrentOnEmitThreadSafety() {
     let mockNextProcessor = MockLogRecordProcessor()
     let expectation = XCTestExpectation(description: "Concurrent processing")
