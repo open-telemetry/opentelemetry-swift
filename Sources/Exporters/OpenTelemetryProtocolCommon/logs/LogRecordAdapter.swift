@@ -46,6 +46,10 @@ public class LogRecordAdapter {
 
     protoLogRecord.timeUnixNano = logRecord.timestamp.timeIntervalSince1970.toNanoseconds
 
+    if let eventName = logRecord.eventName {
+      protoLogRecord.eventName = eventName
+    }
+
     if let body = logRecord.body {
       protoLogRecord.body = CommonAdapter.toProtoAnyValue(attributeValue: body)
     }

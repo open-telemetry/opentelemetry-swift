@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name = "OpenTelemetry-Swift-Instrumentation-NetworkStatus"
-  spec.version = "2.0.2"
+  spec.version = "2.1.0"
   spec.summary = "Swift OpenTelemetry Network Status Instrumentation"
 
   spec.homepage = "https://github.com/open-telemetry/opentelemetry-swift"
@@ -20,7 +20,7 @@ Pod::Spec.new do |spec|
 
   spec.ios.frameworks = 'CoreTelephony'
 
-  spec.dependency 'OpenTelemetry-Swift-Api', spec.version.to_s
+  spec.dependency 'OpenTelemetry-Swift-Api', '~> 2.1.1'
   spec.pod_target_xcconfig = { "OTHER_SWIFT_FLAGS" => "-module-name NetworkStatus -package-name opentelemetry_swift_network_status" }
 
 end

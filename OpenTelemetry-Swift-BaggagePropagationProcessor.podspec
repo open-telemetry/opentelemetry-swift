@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name = "OpenTelemetry-Swift-BaggagePropagationProcessor"
-  spec.version = "2.0.2"
+  spec.version = "2.1.0"
   spec.summary = "Swift OpenTelemetry Baggage Propagation Processor"
 
   spec.homepage = "https://github.com/open-telemetry/opentelemetry-swift"
@@ -18,8 +18,8 @@ Pod::Spec.new do |spec|
   spec.visionos.deployment_target = "1.0"
   spec.module_name = "BaggagePropagationProcessor"
 
-  spec.dependency 'OpenTelemetry-Swift-Api', spec.version.to_s
-  spec.dependency 'OpenTelemetry-Swift-Sdk', spec.version.to_s
+  spec.dependency 'OpenTelemetry-Swift-Api', '~> 2.1.1'
+  spec.dependency 'OpenTelemetry-Swift-Sdk', '~> 2.1.1'
   spec.pod_target_xcconfig = { "OTHER_SWIFT_FLAGS" => "-module-name BaggagePropagationProcessor -package-name opentelemetry_swift_baggage_propagation_processor" }
 
 end
