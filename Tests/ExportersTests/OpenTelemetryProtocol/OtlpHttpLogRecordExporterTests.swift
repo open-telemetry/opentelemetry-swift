@@ -5,23 +5,20 @@
 
 import Foundation
 import Logging
-import NIO
-import NIOHTTP1
-import NIOTestUtils
 import OpenTelemetryApi
 import OpenTelemetryProtocolExporterCommon
 @testable import OpenTelemetryProtocolExporterHttp
 @testable import OpenTelemetrySdk
 import XCTest
+import SharedTestUtils
 
 class OtlpHttpLogRecordExporterTests: XCTestCase {
-  var testServer: NIOHTTP1TestServer!
-  var group: MultiThreadedEventLoopGroup!
+  var testServer: HttpTestServer!
   var spanContext: SpanContext!
 
   override func setUp() {
-    group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-    testServer = NIOHTTP1TestServer(group: group)
+    testServer = HttpTestServer()
+    XCTAssertNoThrow(try testServer.start())
 
     let spanId = SpanId.random()
     let traceId = TraceId.random()
@@ -30,7 +27,6 @@ class OtlpHttpLogRecordExporterTests: XCTestCase {
 
   override func tearDown() {
     XCTAssertNoThrow(try testServer.stop())
-    XCTAssertNoThrow(try group.syncShutdownGracefully())
   }
 
   func testExport() {
@@ -60,9 +56,8 @@ class OtlpHttpLogRecordExporterTests: XCTestCase {
       XCTAssertEqual(otelVersion, head.headers.first(name: Constants.HTTP.userAgent))
     })
     XCTAssertNoThrow(try testServer.receiveBodyAndVerify { body in
-      var contentsBuffer = ByteBuffer(buffer: body)
-      let contents = contentsBuffer.readString(length: contentsBuffer.readableBytes)!
-      XCTAssertTrue(contents.description.contains(testBody.description))
+      let bodyString = String(decoding: body, as: UTF8.self)
+      XCTAssertTrue(bodyString.contains(testBody.description))
     })
 
     XCTAssertNoThrow(try testServer.receiveEnd())

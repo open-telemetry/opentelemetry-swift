@@ -5,27 +5,23 @@
 
 import Foundation
 import Logging
-import NIO
-import NIOHTTP1
-import NIOTestUtils
 import OpenTelemetryApi
 import OpenTelemetryProtocolExporterCommon
 @testable import OpenTelemetryProtocolExporterHttp
 @testable import OpenTelemetrySdk
 import XCTest
+import SharedTestUtils
 
 class OtlpHttpMetricsExporterTest: XCTestCase {
-  var testServer: NIOHTTP1TestServer!
-  var group: MultiThreadedEventLoopGroup!
+  var testServer: HttpTestServer!
 
   override func setUp() {
-    group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-    testServer = NIOHTTP1TestServer(group: group)
+    testServer = HttpTestServer()
+    XCTAssertNoThrow(try testServer.start())
   }
 
   override func tearDown() {
     XCTAssertNoThrow(try testServer.stop())
-    XCTAssertNoThrow(try group.syncShutdownGracefully())
   }
 
   // The shutdown() function is a no-op, This test is just here to make codecov happy
@@ -51,7 +47,9 @@ class OtlpHttpMetricsExporterTest: XCTestCase {
       XCTAssertEqual("headerValue", head.headers.first(name: "headerName"))
     })
 
-    XCTAssertNotNil(try testServer.receiveBodyAndVerify())
+    XCTAssertNoThrow(try testServer.receiveBodyAndVerify { _ in 
+      // Body verified
+    })
     XCTAssertNoThrow(try testServer.receiveEnd())
   }
 
@@ -80,10 +78,9 @@ class OtlpHttpMetricsExporterTest: XCTestCase {
     })
 
     XCTAssertNoThrow(try testServer.receiveBodyAndVerify { body in
-      var contentsBuffer = ByteBuffer(buffer: body)
-      let contents = contentsBuffer.readString(length: contentsBuffer.readableBytes)!
+      let bodyString = String(decoding: body, as: UTF8.self)
       for metricDescription in metricDescriptions {
-        XCTAssertTrue(contents.contains(metricDescription))
+        XCTAssertTrue(bodyString.contains(metricDescription))
       }
     })
 
@@ -115,10 +112,9 @@ class OtlpHttpMetricsExporterTest: XCTestCase {
     })
 
     XCTAssertNoThrow(try testServer.receiveBodyAndVerify { body in
-      var contentsBuffer = ByteBuffer(buffer: body)
-      let contents = contentsBuffer.readString(length: contentsBuffer.readableBytes)!
+      let bodyString = String(decoding: body, as: UTF8.self)
       for metricDescription in metricDescriptions {
-        XCTAssertTrue(contents.contains(metricDescription))
+        XCTAssertTrue(bodyString.contains(metricDescription))
       }
     })
 
