@@ -24,11 +24,12 @@ let package = Package(
     .library(name: "InMemoryExporter", targets: ["InMemoryExporter"]),
     .library(name: "OTelSwiftLog", targets: ["OTelSwiftLog"]),
     .library(name: "BaggagePropagationProcessor", targets: ["BaggagePropagationProcessor"]),
+    .library(name: "Sessions", targets: ["Sessions"]),
     .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
     .executable(name: "StableMetricSample", targets: ["StableMetricSample"])
   ],
   dependencies: [
-    .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.1.1"),
+    .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.2.0"),
     .package(url: "https://github.com/apple/swift-nio.git", from: "2.86.0"),
     .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.26.1"),
     .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.30.0"),
@@ -36,6 +37,11 @@ let package = Package(
     .package(url: "https://github.com/apple/swift-metrics.git", from: "2.7.0")
   ],
   targets: [
+    .target(
+      name: "SharedTestUtils",
+      dependencies: [],
+      path: "Tests/Shared/TestUtils"
+    ),
     .target(
       name: "OTelSwiftLog",
       dependencies: [
@@ -113,6 +119,16 @@ let package = Package(
       ],
       path: "Sources/Contrib/Processors/BaggagePropagationProcessor"
     ),
+    .target(
+      name: "Sessions",
+      dependencies: [
+        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
+        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+
+      ],
+      path: "Sources/Instrumentation/Sessions",
+      exclude: ["README.md"]
+    ),
     .testTarget(
       name: "OTelSwiftLogTests",
       dependencies: ["OTelSwiftLog"],
@@ -136,9 +152,7 @@ let package = Package(
       dependencies: [
         "OpenTelemetryProtocolExporterGrpc",
         "OpenTelemetryProtocolExporterHttp",
-        .product(name: "NIO", package: "swift-nio"),
-        .product(name: "NIOHTTP1", package: "swift-nio"),
-        .product(name: "NIOTestUtils", package: "swift-nio")
+        "SharedTestUtils",
       ],
       path: "Tests/ExportersTests/OpenTelemetryProtocol"
     ),
@@ -158,6 +172,14 @@ let package = Package(
         "BaggagePropagationProcessor",
         "InMemoryExporter"
       ]
+    ),
+    .testTarget(
+      name: "SessionTests",
+      dependencies: [
+        "Sessions",
+        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+      ],
+      path: "Tests/InstrumentationTests/SessionTests"
     ),
     .executableTarget(
       name: "LoggingTracer",
@@ -289,8 +311,7 @@ extension Package {
           name: "URLSessionInstrumentationTests",
           dependencies: [
             "URLSessionInstrumentation",
-            .product(name: "NIO", package: "swift-nio"),
-            .product(name: "NIOHTTP1", package: "swift-nio")
+            "SharedTestUtils",
           ],
           path: "Tests/InstrumentationTests/URLSessionTests"
         ),
