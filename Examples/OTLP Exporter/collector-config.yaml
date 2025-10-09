@@ -11,6 +11,8 @@ receivers:
 exporters:
   zipkin:
     endpoint: "http://zipkin-all-in-one:9411/api/v2/spans"
+    sending_queue:
+      batch:
   prometheus:
     endpoint: "0.0.0.0:9464"
 
@@ -20,7 +22,6 @@ processors:
       - key: service.name
         value: OTLP Exporter
         action: insert
-  batch:
 
 service:
   telemetry:
@@ -30,8 +31,8 @@ service:
     traces:
       receivers: [otlp]
       exporters: [zipkin]
-      processors: [resource, batch]
+      processors: [resource]
     metrics:
       receivers: [otlp]
       exporters: [prometheus]
-      processors: [resource, batch]
+      processors: [resource]
