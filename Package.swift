@@ -32,7 +32,8 @@ let package = Package(
     .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.2.0"),
     .package(url: "https://github.com/apple/swift-nio.git", from: "2.86.0"),
     .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.26.1"),
-    .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.31.0"),    .package(url: "https://github.com/apple/swift-log.git", from: "1.6.4"),
+    .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.31.0"),    
+    .package(url: "https://github.com/apple/swift-log.git", from: "1.6.4"),
     .package(url: "https://github.com/apple/swift-metrics.git", from: "2.7.0")
   ],
   targets: [
