@@ -94,6 +94,7 @@ Metrics is implemented using an outdated spec, is fully functional but will chan
 * `NetworkStatus`
 * `SDKResourceExtension`
 * `SignPostIntegration`
+* `SessionsEventInstrumentation`
 
 ### Third-party exporters
 In addition to the specified OpenTelemetry exporters, some third-party exporters have been contributed and can be found in the following repos: 
@@ -137,5 +138,6 @@ For more information about the approver role, see the [community repository](htt
 ### Triager ([@open-telemetry/swift-triagers](https://github.com/orgs/open-telemetry/teams/swift-triagers))
 
 - [Alolita Sharma](https://github.com/alolita), Apple
+- [Billy Zhou](https://github.com/williazz), AWS
 
 For more information about the triager role, see the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#triager).

@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name = "OpenTelemetry-Swift-SdkResourceExtension"
-  spec.version = "2.0.2"
+  spec.version = "2.2.0"
   spec.summary = "Swift OpenTelemetry Resource Extension"
 
   spec.homepage = "https://github.com/open-telemetry/opentelemetry-swift"

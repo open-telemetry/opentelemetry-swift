@@ -42,7 +42,8 @@ class LogRecordAdapterTests: XCTestCase {
                                       spanContext: spanContext,
                                       severity: .fatal,
                                       body: AttributeValue.string("Hello, world"),
-                                      attributes: ["event.name": AttributeValue.string("name"), "event.domain": AttributeValue.string("domain")])
+                                      attributes: ["event.name": AttributeValue.string("name"), "event.domain": AttributeValue.string("domain")],
+                                      eventName: "session.start")
 
     let protoLog = LogRecordAdapter.toProtoLogRecord(logRecord: logRecord)
 
@@ -55,5 +56,6 @@ class LogRecordAdapterTests: XCTestCase {
     XCTAssertEqual(protoLog.traceID, Data(bytes: traceIdBytes, count: 16))
     XCTAssertEqual(protoLog.timeUnixNano, timestamp.timeIntervalSince1970.toNanoseconds)
     XCTAssertEqual(protoLog.attributes.count, 2)
+    XCTAssertEqual(protoLog.eventName, "session.start")
   }
 }
