@@ -15,22 +15,31 @@ Libraries that produce telemetry data should only depend on `OpenTelemetryApi`, 
 
 ### Adding the dependency
 
-opentelemetry-swift is designed for Swift 5. To depend on the  opentelemetry-swift package, you need to declare your dependency in your `Package.swift`:
+opentelemetry-swift is designed for Swift 5. To depend on the opentelemetry-swift package, you need to declare your dependencies in your `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/open-telemetry/opentelemetry-swift", from: "1.0.0"),
+.package(url: "https://github.com/open-telemetry/opentelemetry-swift", from: "2.2.0"),
+.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.2.0")
 ```
 
-and to your application/library target, add `OpenTelemetryApi` or  `OpenTelemetrySdk`to your `dependencies`, e.g. like this:
+and to your application/library target, add `OpenTelemetryApi` or `OpenTelemetrySdk`to your `dependencies`, e.g. like this:
 
 ```swift
-.target(name: "ExampleTelemetryProducerApp", dependencies: ["OpenTelemetryApi"]),
+.target(
+    name: "ExampleTelemetryProducerApp",
+    dependencies: [
+        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core")
+    ])
 ```
 
 or
 
 ```swift
-.target(name: "ExampleApp", dependencies: ["OpenTelemetrySdk"]),
+.target(
+    name: "ExampleApp",
+    dependencies: [
+        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+    ])
 ```
 
 ### Cocoapods
@@ -138,5 +147,6 @@ For more information about the approver role, see the [community repository](htt
 ### Triager ([@open-telemetry/swift-triagers](https://github.com/orgs/open-telemetry/teams/swift-triagers))
 
 - [Alolita Sharma](https://github.com/alolita), Apple
+- [Billy Zhou](https://github.com/williazz), AWS
 
 For more information about the triager role, see the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#triager).
