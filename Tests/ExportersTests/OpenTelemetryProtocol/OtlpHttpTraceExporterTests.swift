@@ -63,7 +63,6 @@ class OtlpHttpTraceExporterTests: XCTestCase {
   }
 
   // This is not a thorough test of HTTPClient, but just enough to keep code coverage happy.
-  // There is a more complete test as part of the DataDog exporter test
   func testHttpClient() {
     // Clear any previous requests
     testServer.clearReceivedRequests()
