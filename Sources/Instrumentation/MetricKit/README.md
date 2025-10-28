@@ -232,4 +232,4 @@ For MetricKit crash diagnostics, we add additional attributes in the `exception.
 
 ### Stacktrace Format
 
-Diagnostics that include stack traces (hangs and crashes) provide them as JSON via the `callStackTree` property. The JSON structure represents the call stack tree with frame information. This is stored in attributes ending with `stacktrace_json`.
+Diagnostics that include stack traces (hangs and crashes) provide them as JSON via the [`callStackTree`](https://developer.apple.com/documentation/metrickit/mxdiagnostic/callstacktree) property, using Apple's proprietary format. The JSON structure represents the call stack tree with frame information.
