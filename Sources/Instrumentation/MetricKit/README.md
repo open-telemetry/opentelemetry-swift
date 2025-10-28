@@ -55,7 +55,7 @@ All data in MetricKit payloads includes two timestamps:
 
 For metrics spans, `timeStampBegin` is used as the span start time and `timeStampEnd` as the span end time, so spans are typically 24 hours long.
 
-For diagnostics, both `timestamp` (set to `timeStampEnd`) and `observedTimestamp` (set to the current time when the log is emitted) are included. We use `timeStampEnd` so that diagnostic events appear as "new" data in observability systems when they arrive, even though the actual event occurred sometime during the 24-hour period.
+For diagnostics, both `timestamp` (set to `timeStampEnd`) and `observedTimestamp` (set to the current time when the log is emitted) are included. `timeStampEnd` is used so that diagnostic events appear as "new" data in observability systems when they arrive, even though the actual event occurred sometime during the 24-hour period.
 
 ## MXMetricPayload
 
@@ -63,9 +63,9 @@ Metrics are pre-aggregated measurements over the reporting period, such as "tota
 
 ### Data Representation
 
-For metrics, we report a single span named `"MXMetricPayload"`. The span's start time is the beginning of the reporting period and the end time is the end of the period (typically 24 hours). Each metric is included as an attribute on this span, with attributes namespaced by their category in MXMetricPayload (e.g., `metrickit.app_exit.foreground.abnormal_exit_count`, `metrickit.cpu.cpu_time`).
+For metrics, a single span named `"MXMetricPayload"` is reported. The span's start time is the beginning of the reporting period and the end time is the end of the period (typically 24 hours). Each metric is included as an attribute on this span, with attributes namespaced by their category in MXMetricPayload (e.g., `metrickit.app_exit.foreground.abnormal_exit_count`, `metrickit.cpu.cpu_time`).
 
-For histogram data, we estimate and report only the average value.
+For histogram data, only the average value is estimated and reported.
 
 ### Attribute Reference
 
@@ -165,11 +165,11 @@ Each signpost metric creates a separate span named `"MXSignpostMetric"` with att
 
 ## MXDiagnosticPayload
 
-Diagnostics are individual events that occurred during the reporting period, such as crashes, hangs, and exceptions. Unlike metrics which are aggregated, each diagnostic represents a discrete event, though we don't know the exact time it occurred within the 24-hour window.
+Diagnostics are individual events that occurred during the reporting period, such as crashes, hangs, and exceptions. Unlike metrics which are aggregated, each diagnostic represents a discrete event, though the exact time it occurred within the 24-hour window is not known.
 
 ### Data Representation
 
-For diagnostics, we create a parent span named `"MXDiagnosticPayload"` spanning the reporting period (start time = `timeStampBegin`, end time = `timeStampEnd`). For each diagnostic event, we emit an OpenTelemetry log record (not a span, since each event is instantaneous). Each log has:
+For diagnostics, a parent span named `"MXDiagnosticPayload"` is created spanning the reporting period (start time = `timeStampBegin`, end time = `timeStampEnd`). For each diagnostic event, an OpenTelemetry log record is emitted (not a span, since each event is instantaneous). Each log has:
 
 - A `name` attribute identifying the diagnostic type (e.g., `"metrickit.diagnostic.crash"`)
 - Additional attributes with diagnostic details, all namespaced by type (e.g., `metrickit.diagnostic.crash.exception.code`)
@@ -196,7 +196,7 @@ This instrumentation extends the standard OpenTelemetry [exception semantic conv
 - `exception.message` - The exception message
 - `exception.stacktrace` - The stacktrace as a string
 
-For MetricKit crash diagnostics, we add additional attributes in the `metrickit.diagnostic.crash.*` namespace to capture MetricKit's rich exception data (Mach exception types, signal numbers, Objective-C exception details).
+For MetricKit crash diagnostics, additional attributes are added in the `metrickit.diagnostic.crash.*` namespace to capture MetricKit's rich exception data (Mach exception types, signal numbers, Objective-C exception details).
 
 #### How Standard Exception Attributes Are Derived
 
