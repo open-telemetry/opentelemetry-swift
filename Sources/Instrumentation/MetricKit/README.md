@@ -1,8 +1,5 @@
 # MetricKit Instrumentation
 
-TODO: Make Cocoapods work.
-TODO: Write a PR description.
-
 This instrumentation adds MetricKit signals to OpenTelemetry, capturing performance metrics and diagnostic data from Apple's MetricKit framework. MetricKit provides aggregated data about your app's performance and diagnostics, reported approximately once per day with cumulative data from the previous 24-hour period.
 
 All data is captured using the instrumentation scope `"MetricKit"` with version `"0.0.1"`.
