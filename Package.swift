@@ -394,6 +394,7 @@ extension Package {
           name: "MetricKitInstrumentationTests",
           dependencies: [
             "MetricKitInstrumentation",
+            "InMemoryExporter",
             .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
           ],
           path: "Tests/InstrumentationTests/MetricKitTests"

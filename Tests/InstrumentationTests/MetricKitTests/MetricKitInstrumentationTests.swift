@@ -393,4 +393,188 @@ class MetricKitInstrumentationTests: XCTestCase {
         XCTAssertEqual(attributes?["metrickit.cellular_condition.cellular_condition_time_average"]?.description, "4.0")
     }
 }
+
+// MARK: - Diagnostic Tests
+
+@available(iOS 14.0, *)
+class MetricKitDiagnosticTests: XCTestCase {
+    var logExporter: InMemoryLogRecordExporter!
+    var loggerProvider: LoggerProviderSdk!
+    var spanExporter: InMemoryExporter!
+    var tracerProvider: TracerProviderSdk!
+
+    override func setUp() {
+        super.setUp()
+
+        // Set up logger provider with in-memory exporter
+        logExporter = InMemoryLogRecordExporter()
+        loggerProvider = LoggerProviderBuilder()
+            .with(processors: [SimpleLogRecordProcessor(logRecordExporter: logExporter)])
+            .build()
+
+        // Set up tracer provider with in-memory exporter
+        spanExporter = InMemoryExporter()
+        tracerProvider = TracerProviderSdk()
+        tracerProvider.addSpanProcessor(SimpleSpanProcessor(spanExporter: spanExporter))
+
+        // Register providers
+        OpenTelemetry.registerLoggerProvider(loggerProvider: loggerProvider)
+        OpenTelemetry.registerTracerProvider(tracerProvider: tracerProvider)
+    }
+
+    override func tearDown() {
+        logExporter.shutdown()
+        spanExporter.reset()
+        super.tearDown()
+    }
+
+    func testReportDiagnostics_CreatesMainSpan() {
+        let payload = FakeDiagnosticPayload()
+
+        reportDiagnostics(payload: payload)
+
+        // Force flush to ensure spans are exported
+        tracerProvider.forceFlush()
+
+        let spans = spanExporter.getFinishedSpanItems()
+        let mainSpan = spans.first { $0.name == "MXDiagnosticPayload" }
+
+        XCTAssertNotNil(mainSpan, "Should have a MXDiagnosticPayload span")
+        XCTAssertEqual(mainSpan?.startTime, payload.timeStampBegin)
+    }
+
+    func testReportDiagnostics_CreatesCPUExceptionLogs() {
+        let payload = FakeDiagnosticPayload()
+
+        reportDiagnostics(payload: payload)
+
+        let logs = logExporter.getFinishedLogRecords()
+
+        // Find CPU exception log
+        let cpuLog = logs.first {
+            $0.attributes["name"]?.description == "metrickit.diagnostic.cpu_exception"
+        }
+
+        XCTAssertNotNil(cpuLog, "Should have a CPU exception log")
+        XCTAssertEqual(cpuLog?.attributes["metrickit.diagnostic.cpu_exception.total_cpu_time"]?.description, "3180.0") // 53 minutes
+        XCTAssertEqual(cpuLog?.attributes["metrickit.diagnostic.cpu_exception.total_sampled_time"]?.description, "194400.0") // 54 hours
+    }
+
+    func testReportDiagnostics_CreatesDiskWriteExceptionLogs() {
+        let payload = FakeDiagnosticPayload()
+
+        reportDiagnostics(payload: payload)
+
+        let logs = logExporter.getFinishedLogRecords()
+
+        // Find disk write exception log
+        let diskLog = logs.first {
+            $0.attributes["name"]?.description == "metrickit.diagnostic.disk_write_exception"
+        }
+
+        XCTAssertNotNil(diskLog, "Should have a disk write exception log")
+        XCTAssertEqual(diskLog?.attributes["metrickit.diagnostic.disk_write_exception.total_writes_caused"]?.description, "55000000.0") // 55 megabytes
+    }
+
+    func testReportDiagnostics_CreatesHangDiagnosticLogs() {
+        let payload = FakeDiagnosticPayload()
+
+        reportDiagnostics(payload: payload)
+
+        let logs = logExporter.getFinishedLogRecords()
+
+        // Find hang diagnostic log
+        let hangLog = logs.first {
+            $0.attributes["name"]?.description == "metrickit.diagnostic.hang"
+        }
+
+        XCTAssertNotNil(hangLog, "Should have a hang diagnostic log")
+        XCTAssertEqual(hangLog?.attributes["metrickit.diagnostic.hang.hang_duration"]?.description, "56.0") // 56 seconds
+        XCTAssertNotNil(hangLog?.attributes["metrickit.diagnostic.hang.exception.stacktrace_json"])
+    }
+
+    func testReportDiagnostics_CreatesCrashDiagnosticLogs() {
+        let payload = FakeDiagnosticPayload()
+
+        reportDiagnostics(payload: payload)
+
+        let logs = logExporter.getFinishedLogRecords()
+
+        // Find crash diagnostic log
+        let crashLog = logs.first {
+            $0.attributes["name"]?.description == "metrickit.diagnostic.crash"
+        }
+
+        XCTAssertNotNil(crashLog, "Should have a crash diagnostic log")
+
+        // Verify exception attributes
+        XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.code"]?.description, "58")
+        XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.mach_exception.type"]?.description, "57")
+        XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.mach_exception.name"]?.description, "Unknown exception type: 57")
+        XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.signal"]?.description, "59")
+        XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.signal.name"]?.description, "Unknown signal: 59")
+        XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.termination_reason"]?.description, "reason")
+        XCTAssertNotNil(crashLog?.attributes["metrickit.diagnostic.crash.exception.stacktrace_json"])
+
+        // Verify Objective-C exception attributes (iOS 17+)
+        if #available(iOS 17.0, *) {
+            XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.objc.type"]?.description, "ExceptionType")
+            XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.objc.message"]?.description, "message: 1 2")
+            XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.objc.classname"]?.description, "MyClass")
+            XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.objc.name"]?.description, "MyCrash")
+        }
+    }
+
+    #if !os(macOS)
+    @available(iOS 16.0, *)
+    func testReportDiagnostics_CreatesAppLaunchDiagnosticLogs() {
+        let payload = FakeDiagnosticPayload()
+
+        reportDiagnostics(payload: payload)
+
+        let logs = logExporter.getFinishedLogRecords()
+
+        // Find app launch diagnostic log
+        let launchLog = logs.first {
+            $0.attributes["name"]?.description == "metrickit.diagnostic.app_launch"
+        }
+
+        XCTAssertNotNil(launchLog, "Should have an app launch diagnostic log")
+        XCTAssertEqual(launchLog?.attributes["metrickit.diagnostic.app_launch.launch_duration"]?.description, "60.0")
+    }
+    #endif
+
+    func testReportDiagnostics_VerifyLogTimestamps() {
+        let payload = FakeDiagnosticPayload()
+
+        reportDiagnostics(payload: payload)
+
+        let logs = logExporter.getFinishedLogRecords()
+
+        // All logs should have the payload's end timestamp
+        for log in logs {
+            XCTAssertEqual(log.timestamp, payload.timeStampEnd)
+        }
+    }
+
+    func testReportDiagnostics_VerifyLogCount() {
+        let payload = FakeDiagnosticPayload()
+
+        reportDiagnostics(payload: payload)
+
+        let logs = logExporter.getFinishedLogRecords()
+
+        // Should have 4 logs on macOS (cpu_exception, disk_write_exception, hang, crash)
+        // Should have 5 logs on iOS 16+ (!macOS) (cpu_exception, disk_write_exception, hang, crash, app_launch)
+        #if !os(macOS)
+        if #available(iOS 16.0, *) {
+            XCTAssertEqual(logs.count, 5, "Should have 5 diagnostic logs on iOS 16+")
+        } else {
+            XCTAssertEqual(logs.count, 4, "Should have 4 diagnostic logs on iOS 14-15")
+        }
+        #else
+        XCTAssertEqual(logs.count, 4, "Should have 4 diagnostic logs on macOS")
+        #endif
+    }
+}
 #endif
