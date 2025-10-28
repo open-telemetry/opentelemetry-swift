@@ -31,7 +31,12 @@ public class URLSessionInstrumentation {
 
   private var _configuration: URLSessionInstrumentationConfiguration
   public var configuration: URLSessionInstrumentationConfiguration {
-    configurationQueue.sync { _configuration }
+      get{
+          configurationQueue.sync { _configuration }
+      }
+      set {
+          configurationQueue.sync { _configuration = newValue }
+      }
   }
 
   private let queue = DispatchQueue(
