@@ -201,6 +201,18 @@ This instrumentation extends the standard OpenTelemetry [exception semantic conv
 
 For MetricKit crash diagnostics, we add additional attributes in the `metrickit.diagnostic.crash.*` namespace to capture MetricKit's rich exception data (Mach exception types, signal numbers, Objective-C exception details).
 
+#### How Standard Exception Attributes Are Derived
+
+For **crash diagnostics**, `exception.type` and `exception.message` are derived from the most specific available information using the following priority order (highest to lowest):
+
+1. **Objective-C exception info** (iOS 17+, highest priority) - Uses `objc.name` for type and `objc.message` for message
+2. **Mach exception info** - Uses `mach_exception.name` for type and `mach_exception.description` for message
+3. **POSIX signal info** (lowest priority) - Uses `signal.name` for type and `signal.description` for message
+
+For **hang diagnostics**, only `exception.stacktrace` is set (from `callStackTree`). No `exception.type` or `exception.message` is provided since hangs don't have exception objects.
+
+The `exception.stacktrace` attribute is always set to the JSON representation of the `callStackTree` for both crashes and hangs.
+
 ### Attribute Reference
 
 | Attribute Name | Type | Units | Apple Documentation |
