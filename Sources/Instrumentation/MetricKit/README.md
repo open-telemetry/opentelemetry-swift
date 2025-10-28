@@ -1,165 +1,235 @@
 # MetricKit Instrumentation
 
-TOOD: Make sure the trace names, log names, and attribute key names are correct.
-TODO: Document what the timestamps on all of the fields mean.
-TODO: Double-check whether it's consistent with OpenTelemetry semantic conventions the way we're adding to the `exception` namespace.
-TOOD: Make Cocoapods work.
-TODO: Document why we're using traces instead of metrics.
+TODO: Make Cocoapods work.
 TODO: Write a PR description.
 
-This adds MetricKit signals to the Honeycomb Swift SDK.
+This instrumentation adds MetricKit signals to OpenTelemetry, capturing performance metrics and diagnostic data from Apple's MetricKit framework. MetricKit provides aggregated data about your app's performance and diagnostics, reported approximately once per day with cumulative data from the previous 24-hour period.
 
-This adds all of the data from Apple's MetricKit into Honeycomb. It's not obvious how to structure this data in order to best fit OTel semantics conventions while also being most usable in Honeycomb. I made my best guess how to do it, but would appreciate feedback on it. I am really not sure if this is the best way to represent this data. Here is how I'm structuring the data:
-
-MetricKit reports a batch of data approximately once a day, with cumulative data from the previous day. There are two big categories of data: _Metrics_ and _Diagnostics_. These are covered below.
-
-All of this data is captured using the scope `"@honeycombio/instrumentation-metric-kit"`
+All data is captured using the instrumentation scope `"MetricKit"` with version `"0.0.1"`.
 
 ## Usage
 
-TODO: Write instructions for how to use this instrumentation.
+To use the MetricKit instrumentation, register the subscriber with MetricKit's metric manager:
+
+```swift
+import MetricKit
+import OpenTelemetryApi
+
+// Initialize OpenTelemetry providers (tracer and logger)
+// ... your OpenTelemetry setup code ...
+
+// Register the MetricKit subscriber
+// IMPORTANT: Store the subscriber in a static or app-level variable.
+// MXMetricManager.shared holds only a weak reference, so if the subscriber
+// is released, it won't receive MetricKit callbacks.
+if #available(iOS 13.0, *) {
+    let subscriber = MetricKitSubscriber()
+    MXMetricManager.shared.add(subscriber)
+
+    // Store subscriber somewhere to keep it alive, e.g.:
+    // AppDelegate.metricKitSubscriber = subscriber
+}
+```
+
+The subscriber will automatically receive MetricKit payloads and convert them to OpenTelemetry spans and logs.
+
+## Data Structure Overview
+
+MetricKit reports data in two categories: **Metrics** and **Diagnostics**.
+
+### Why Traces Instead of OTel Metrics?
+
+This instrumentation represents MetricKit data as OpenTelemetry traces (spans) rather than OTel metrics for several reasons:
+
+1. **Pre-aggregated data**: MetricKit data is already aggregated over 24 hours, not individual measurements, so OTel metric semantics (counters, gauges, histograms with live aggregation) don't map naturally
+2. **Timing semantics**: The data represents activity over a 24-hour period, not point-in-time measurements. Using spans with start/end times better represents this temporal nature
+3. **API simplicity**: The OpenTelemetry metrics API is complex, and spans provide a simpler way to represent this pre-aggregated, time-windowed data
 
 ## Units
 
-MetricKit measurements have units, so that a metric might report "1 kb" or "3 hours". To represent this data in attributes, they are all converted to the standard unit for their type (such as bytes or seconds) and represented as doubles.
+All MetricKit measurements have units (e.g., "1 kb" or "3 hours"). When converted to attributes, they are normalized to base units (bytes, seconds, etc.) and represented as doubles.
+
+## Timestamps
+
+All data in MetricKit payloads includes two timestamps:
+
+- **`timeStampBegin`**: The start of the 24-hour reporting period
+- **`timeStampEnd`**: The end of the reporting period
+
+For metrics spans, `timeStampBegin` is used as the span start time and `timeStampEnd` as the span end time, so spans are typically 24 hours long.
+
+For diagnostics, both `timestamp` (set to `timeStampEnd`) and `observedTimestamp` (set to the current time when the log is emitted) are included. We use `timeStampEnd` so that diagnostic events appear as "new" data in observability systems when they arrive, even though the actual event occurred sometime during the 24-hour period.
 
 ## MXMetricPayload
 
-Metrics are things like "total cpu time" and "number of abnormal exists". They are pre-aggregated over the reported period. For metrics, we report a single `Span` named `"MXMetricPayload"`. The start time of the span is the start of the reporting period, and the end of the span is the end time of the reporting period. So these spans are generally 24 hours long. Each metric is included as an attribute on that span. The attributes are namespaced corresponding to their category in `MXMetricPayload`. For example, the metrics mentioned above are named `metrickit.app_exit.foreground.abnormal_exit_count` and `metrickit.cpu.cpu_time`. For histogram data, we include only the estimated average value for now.
+Metrics are pre-aggregated measurements over the reporting period, such as "total CPU time" and "number of abnormal exits".
 
-I used an OTel span instead of OTel metrics for a few reasons:
-* Metrics usually go into a different dataset, and we want all the data in one place for a launchpad.
-* The data is pre-aggregated, not individual values, so some of the OTel metric semantics don't make sense.
-* The time the data is reported doesn't accurately reflect when the events occur. For example, we don't want to interpret 1000 cpu instructions over 24 hours as sitting idle for 23.999 hours and then suddenly bursting 1000 instructions.
-* The Swift metrics APIs are confusing, and it's not clear how to represent some of the data.
+### Data Representation
 
-TODO: Describe the fields in MXMetricPayload.
+For metrics, we report a single span named `"MXMetricPayload"`. The span's start time is the beginning of the reporting period and the end time is the end of the period (typically 24 hours). Each metric is included as an attribute on this span, with attributes namespaced by their category in MXMetricPayload (e.g., `metrickit.app_exit.foreground.abnormal_exit_count`, `metrickit.cpu.cpu_time`).
 
-TODO: Rewrite this in english:
-  scope="MetricKit"
-  span="MXMetricPayload"
+For histogram data, we estimate and report only the average value.
 
-TODO: Turn this list into a markdown table with columns for (1) attribute name, with a link to the relevant Apple documentation for the equivalent MetricKit field, (2) the data type, and (3) the units of the attribute (not the comment).
-  metrickit.includes_multiple_application_versions" bool)" false
-  metrickit.latest_application_version" string)" '"3.14.159"'
-  metrickit.cpu.cpu_time" double)" 1
-  metrickit.cpu.instruction_count" double)" 2
-  metrickit.gpu.time" double)" 10800  # 3 hours
-  metrickit.cellular_condition.bars_average" double)" 4
-  metrickit.app_time.foreground_time" double)" 300          # 5 minutes
-  metrickit.app_time.background_time" double)" 0.000006     # 6 microseconds
-  metrickit.app_time.background_audio_time" double)" 0.007  # 7 milliseconds
-  metrickit.app_time.background_location_time" double)" 480 # 8 minutes
-  metrickit.location_activity.best_accuracy_time" double)" 9
-  metrickit.location_activity.best_accuracy_for_nav_time" double)" 10
-  metrickit.location_activity.accuracy_10m_time" double)"  11
-  metrickit.location_activity.accuracy_100m_time" double)" 12
-  metrickit.location_activity.accuracy_1km_time" double)" 13
-  metrickit.location_activity.accuracy_3km_time" double)" 14
-  metrickit.network_transfer.wifi_upload" double)" 15                 # 15 B
-  metrickit.network_transfer.wifi_download" double)" 16000            # 16 KB
-  metrickit.network_transfer.cellular_upload" double)" 17000000       # 17 MB
-  metrickit.network_transfer.cellular_download" double)" 18000000000  # 18 GB
-  metrickit.app_launch.time_to_first_draw_average" double)" 1140            # 19 minutes
-  metrickit.app_launch.app_resume_time_average" double)" 1200               # 20 minutes
-  metrickit.app_launch.optimized_time_to_first_draw_average" double)" 1260  # 21 minutes
-  metrickit.app_launch.extended_launch_average" double)" 1320               # 22 minutes
-  metrickit.app_responsiveness.hang_time_average" double)" 82800  # 23 hours
-  metrickit.diskio.logical_write_count" double)" 24000000000000  # 24 TB
-  metrickit.memory.peak_memory_usage" double)" 25
-  metrickit.memory.suspended_memory_average" double)" 26
-  metrickit.display.pixel_luminance_average" double)" 27
-  metrickit.animation.scroll_hitch_time_ratio" double)" 28
-  metrickit.metadata.pid" int)" '"29"'
-  metrickit.metadata.app_build_version" string)" '"build"'
-  metrickit.metadata.device_type" string)" '"device"'
-  metrickit.metadata.is_test_flight_app" bool)" true
-  metrickit.metadata.low_power_mode_enabled" bool)" true
-  metrickit.metadata.os_version" string)" '"os"'
-  metrickit.metadata.platform_arch" string)" '"arch"'
-  metrickit.metadata.region_format" string)" '"format"'
-  metrickit.app_exit.foreground.normal_app_exit_count" int)" '"30"'
-  metrickit.app_exit.foreground.memory_resource_limit_exit-count" int)" '"31"'
-  metrickit.app_exit.foreground.bad_access_exit_count" int)" '"32"'
-  metrickit.app_exit.foreground.abnormal_exit_count" int)" '"33"'
-  metrickit.app_exit.foreground.illegal_instruction_exit_count" int)" '"34"'
-  metrickit.app_exit.foreground.app_watchdog_exit_count" int)" '"35"'
-  metrickit.app_exit.background.normal_app_exit_count" int)" '"36"'
-  metrickit.app_exit.background.memory_resource_limit_exit_count" int)" '"37"'
-  metrickit.app_exit.background.cpu_resource_limit_exit_count" int)" '"38"'
-  metrickit.app_exit.background.memory_pressure_exit_count" int)" '"39"'
-  metrickit.app_exit.background.bad_access-exit_count" int)" '"40"'
-  metrickit.app_exit.background.abnormal_exit_count" int)" '"41"'
-  metrickit.app_exit.background.illegal_instruction_exit_count" int)" '"42"'
-  metrickit.app_exit.background.app_watchdog_exit_count" int)" '"43"'
-  metrickit.app_exit.background.suspended_with_locked_file_exit_count" int)" '"44"'
-  metrickit.app_exit.background.background_task_assertion_timeout_exit_count" int)" '"45"'
-}
+### Attribute Reference
 
-## MXSignpost
+| Attribute Name | Type | Units | Apple Documentation |
+|----------------|------|-------|---------------------|
+| `metrickit.includes_multiple_application_versions` | bool | - | [includesMultipleApplicationVersions](https://developer.apple.com/documentation/metrickit/mxmetricpayload/includesmultipleapplicationversions) |
+| `metrickit.latest_application_version` | string | - | [latestApplicationVersion](https://developer.apple.com/documentation/metrickit/mxmetricpayload/latestapplicationversion) |
+| `metrickit.timestamp_begin` | double | seconds (Unix epoch) | [timeStampBegin](https://developer.apple.com/documentation/metrickit/mxmetricpayload/timestampbegin) |
+| `metrickit.timestamp_end` | double | seconds (Unix epoch) | [timeStampEnd](https://developer.apple.com/documentation/metrickit/mxmetricpayload/timestampend) |
+| **CPU Metrics** | | | [MXCPUMetric](https://developer.apple.com/documentation/metrickit/mxcpumetric) |
+| `metrickit.cpu.cpu_time` | double | seconds | [cumulativeCPUTime](https://developer.apple.com/documentation/metrickit/mxcpumetric/cumulativecputime) |
+| `metrickit.cpu.instruction_count` | double | instructions | [cumulativeCPUInstructions](https://developer.apple.com/documentation/metrickit/mxcpumetric/cumulativecpuinstructions) (iOS 14+) |
+| **GPU Metrics** | | | [MXGPUMetric](https://developer.apple.com/documentation/metrickit/mxgpumetric) |
+| `metrickit.gpu.time` | double | seconds | [cumulativeGPUTime](https://developer.apple.com/documentation/metrickit/mxgpumetric/cumulativegputime) |
+| **Cellular Metrics** | | | [MXCellularConditionMetric](https://developer.apple.com/documentation/metrickit/mxcellularconditionmetric) |
+| `metrickit.cellular_condition.bars_average` | double | bars | [histogrammedCellularConditionTime](https://developer.apple.com/documentation/metrickit/mxcellularconditionmetric/histogrammedcellularconditiontime) |
+| **App Time Metrics** | | | [MXAppRunTimeMetric](https://developer.apple.com/documentation/metrickit/mxappruntimemetric) |
+| `metrickit.app_time.foreground_time` | double | seconds | [cumulativeForegroundTime](https://developer.apple.com/documentation/metrickit/mxappruntimemetric/cumulativeforegroundtime) |
+| `metrickit.app_time.background_time` | double | seconds | [cumulativeBackgroundTime](https://developer.apple.com/documentation/metrickit/mxappruntimemetric/cumulativebackgroundtime) |
+| `metrickit.app_time.background_audio_time` | double | seconds | [cumulativeBackgroundAudioTime](https://developer.apple.com/documentation/metrickit/mxappruntimemetric/cumulativebackgroundaudiotime) |
+| `metrickit.app_time.background_location_time` | double | seconds | [cumulativeBackgroundLocationTime](https://developer.apple.com/documentation/metrickit/mxappruntimemetric/cumulativebackgroundlocationtime) |
+| **Location Activity Metrics** | | | [MXLocationActivityMetric](https://developer.apple.com/documentation/metrickit/mxlocationactivitymetric) |
+| `metrickit.location_activity.best_accuracy_time` | double | seconds | [cumulativeBestAccuracyTime](https://developer.apple.com/documentation/metrickit/mxlocationactivitymetric/cumulativebestaccuracytime) |
+| `metrickit.location_activity.best_accuracy_for_nav_time` | double | seconds | [cumulativeBestAccuracyForNavigationTime](https://developer.apple.com/documentation/metrickit/mxlocationactivitymetric/cumulativebestaccuracyfornavigationtime) |
+| `metrickit.location_activity.accuracy_10m_time` | double | seconds | [cumulativeNearestTenMetersAccuracyTime](https://developer.apple.com/documentation/metrickit/mxlocationactivitymetric/cumulativenearesttenmetersaccuracytime) |
+| `metrickit.location_activity.accuracy_100m_time` | double | seconds | [cumulativeHundredMetersAccuracyTime](https://developer.apple.com/documentation/metrickit/mxlocationactivitymetric/cumulativehundredmetersaccuracytime) |
+| `metrickit.location_activity.accuracy_1km_time` | double | seconds | [cumulativeKilometerAccuracyTime](https://developer.apple.com/documentation/metrickit/mxlocationactivitymetric/cumulativekilometeraccuracytime) |
+| `metrickit.location_activity.accuracy_3km_time` | double | seconds | [cumulativeThreeKilometersAccuracyTime](https://developer.apple.com/documentation/metrickit/mxlocationactivitymetric/cumulativethreekilometersaccuracytime) |
+| **Network Transfer Metrics** | | | [MXNetworkTransferMetric](https://developer.apple.com/documentation/metrickit/mxnetworktransfermetric) |
+| `metrickit.network_transfer.wifi_upload` | double | bytes | [cumulativeWifiUpload](https://developer.apple.com/documentation/metrickit/mxnetworktransfermetric/cumulativewifiupload) |
+| `metrickit.network_transfer.wifi_download` | double | bytes | [cumulativeWifiDownload](https://developer.apple.com/documentation/metrickit/mxnetworktransfermetric/cumulativewifidownload) |
+| `metrickit.network_transfer.cellular_upload` | double | bytes | [cumulativeCellularUpload](https://developer.apple.com/documentation/metrickit/mxnetworktransfermetric/cumulativecellularupload) |
+| `metrickit.network_transfer.cellular_download` | double | bytes | [cumulativeCellularDownload](https://developer.apple.com/documentation/metrickit/mxnetworktransfermetric/cumulativecellulardownload) |
+| **App Launch Metrics** | | | [MXAppLaunchMetric](https://developer.apple.com/documentation/metrickit/mxapplaunchmetric) |
+| `metrickit.app_launch.time_to_first_draw_average` | double | seconds | [histogrammedTimeToFirstDraw](https://developer.apple.com/documentation/metrickit/mxapplaunchmetric/histogrammedtimetofirstdraw) (average) |
+| `metrickit.app_launch.app_resume_time_average` | double | seconds | [histogrammedApplicationResumeTime](https://developer.apple.com/documentation/metrickit/mxapplaunchmetric/histogrammedapplicationresumetime) (average) |
+| `metrickit.app_launch.optimized_time_to_first_draw_average` | double | seconds | [histogrammedOptimizedTimeToFirstDraw](https://developer.apple.com/documentation/metrickit/mxapplaunchmetric/histogrammedoptimizedtimetofirstdraw) (average, iOS 15.2+) |
+| `metrickit.app_launch.extended_launch_average` | double | seconds | [histogrammedExtendedLaunch](https://developer.apple.com/documentation/metrickit/mxapplaunchmetric/histogrammedextendedlaunch) (average, iOS 16+) |
+| **App Responsiveness Metrics** | | | [MXAppResponsivenessMetric](https://developer.apple.com/documentation/metrickit/mxappresponsivenessmetric) |
+| `metrickit.app_responsiveness.hang_time_average` | double | seconds | [histogrammedApplicationHangTime](https://developer.apple.com/documentation/metrickit/mxappresponsivenessmetric/histogrammedapplicationhangtime) (average) |
+| **Disk I/O Metrics** | | | [MXDiskIOMetric](https://developer.apple.com/documentation/metrickit/mxdiskiometric) |
+| `metrickit.diskio.logical_write_count` | double | bytes | [cumulativeLogicalWrites](https://developer.apple.com/documentation/metrickit/mxdiskiometric/cumulativelogicalwrites) |
+| **Memory Metrics** | | | [MXMemoryMetric](https://developer.apple.com/documentation/metrickit/mxmemorymetric) |
+| `metrickit.memory.peak_memory_usage` | double | bytes | [peakMemoryUsage](https://developer.apple.com/documentation/metrickit/mxmemorymetric/peakmemoryusage) |
+| `metrickit.memory.suspended_memory_average` | double | bytes | [averageSuspendedMemory](https://developer.apple.com/documentation/metrickit/mxmemorymetric/averagesuspendedmemory) (average) |
+| **Display Metrics** | | | [MXDisplayMetric](https://developer.apple.com/documentation/metrickit/mxdisplaymetric) |
+| `metrickit.display.pixel_luminance_average` | double | APL (average pixel luminance) | [averagePixelLuminance](https://developer.apple.com/documentation/metrickit/mxdisplaymetric/averagepixelluminance) (average) |
+| **Animation Metrics** | | | [MXAnimationMetric](https://developer.apple.com/documentation/metrickit/mxanimationmetric) |
+| `metrickit.animation.scroll_hitch_time_ratio` | double | ratio (dimensionless) | [scrollHitchTimeRatio](https://developer.apple.com/documentation/metrickit/mxanimationmetric/scrollhitchtimeratio) (iOS 14+) |
+| **Metadata** | | | [MXMetaData](https://developer.apple.com/documentation/metrickit/mxmetadata) |
+| `metrickit.metadata.pid` | int | - | [pid](https://developer.apple.com/documentation/metrickit/mxmetadata/pid) (iOS 17+) |
+| `metrickit.metadata.app_build_version` | string | - | [applicationBuildVersion](https://developer.apple.com/documentation/metrickit/mxmetadata/applicationbuildversion) |
+| `metrickit.metadata.device_type` | string | - | [deviceType](https://developer.apple.com/documentation/metrickit/mxmetadata/devicetype) |
+| `metrickit.metadata.is_test_flight_app` | bool | - | [isTestFlightApp](https://developer.apple.com/documentation/metrickit/mxmetadata/istestflightapp) (iOS 17+) |
+| `metrickit.metadata.low_power_mode_enabled` | bool | - | [lowPowerModeEnabled](https://developer.apple.com/documentation/metrickit/mxmetadata/lowpowermodeenabled) (iOS 17+) |
+| `metrickit.metadata.os_version` | string | - | [osVersion](https://developer.apple.com/documentation/metrickit/mxmetadata/osversion) |
+| `metrickit.metadata.platform_arch` | string | - | [platformArchitecture](https://developer.apple.com/documentation/metrickit/mxmetadata/platformarchitecture) (iOS 14+) |
+| `metrickit.metadata.region_format` | string | - | [regionFormat](https://developer.apple.com/documentation/metrickit/mxmetadata/regionformat) |
+| **App Exit Metrics - Foreground** | | | [MXForegroundExitData](https://developer.apple.com/documentation/metrickit/mxforegroundexitdata) |
+| `metrickit.app_exit.foreground.normal_app_exit_count` | int | count | [cumulativeNormalAppExitCount](https://developer.apple.com/documentation/metrickit/mxforegroundexitdata/cumulativenormalappexitcount) |
+| `metrickit.app_exit.foreground.memory_resource_limit_exit-count` | int | count | [cumulativeMemoryResourceLimitExitCount](https://developer.apple.com/documentation/metrickit/mxforegroundexitdata/cumulativememoryresourcelimitexitcount) |
+| `metrickit.app_exit.foreground.bad_access_exit_count` | int | count | [cumulativeBadAccessExitCount](https://developer.apple.com/documentation/metrickit/mxforegroundexitdata/cumulativebadaccessexitcount) |
+| `metrickit.app_exit.foreground.abnormal_exit_count` | int | count | [cumulativeAbnormalExitCount](https://developer.apple.com/documentation/metrickit/mxforegroundexitdata/cumulativeabnormalexitcount) |
+| `metrickit.app_exit.foreground.illegal_instruction_exit_count` | int | count | [cumulativeIllegalInstructionExitCount](https://developer.apple.com/documentation/metrickit/mxforegroundexitdata/cumulativeillegalinstructionexitcount) |
+| `metrickit.app_exit.foreground.app_watchdog_exit_count` | int | count | [cumulativeAppWatchdogExitCount](https://developer.apple.com/documentation/metrickit/mxforegroundexitdata/cumulativeappwatchdogexitcount) |
+| **App Exit Metrics - Background** | | | [MXBackgroundExitData](https://developer.apple.com/documentation/metrickit/mxbackgroundexitdata) |
+| `metrickit.app_exit.background.normal_app_exit_count` | int | count | [cumulativeNormalAppExitCount](https://developer.apple.com/documentation/metrickit/mxbackgroundexitdata/cumulativenormalappexitcount) |
+| `metrickit.app_exit.background.memory_resource_limit_exit_count` | int | count | [cumulativeMemoryResourceLimitExitCount](https://developer.apple.com/documentation/metrickit/mxbackgroundexitdata/cumulativememoryresourcelimitexitcount) |
+| `metrickit.app_exit.background.cpu_resource_limit_exit_count` | int | count | [cumulativeCPUResourceLimitExitCount](https://developer.apple.com/documentation/metrickit/mxbackgroundexitdata/cumulativecpuresourcelimitexitcount) |
+| `metrickit.app_exit.background.memory_pressure_exit_count` | int | count | [cumulativeMemoryPressureExitCount](https://developer.apple.com/documentation/metrickit/mxbackgroundexitdata/cumulativememorypressureexitcount) |
+| `metrickit.app_exit.background.bad_access-exit_count` | int | count | [cumulativeBadAccessExitCount](https://developer.apple.com/documentation/metrickit/mxbackgroundexitdata/cumulativebadaccessexitcount) |
+| `metrickit.app_exit.background.abnormal_exit_count` | int | count | [cumulativeAbnormalExitCount](https://developer.apple.com/documentation/metrickit/mxbackgroundexitdata/cumulativeabnormalexitcount) |
+| `metrickit.app_exit.background.illegal_instruction_exit_count` | int | count | [cumulativeIllegalInstructionExitCount](https://developer.apple.com/documentation/metrickit/mxbackgroundexitdata/cumulativeillegalinstructionexitcount) |
+| `metrickit.app_exit.background.app_watchdog_exit_count` | int | count | [cumulativeAppWatchdogExitCount](https://developer.apple.com/documentation/metrickit/mxbackgroundexitdata/cumulativeappwatchdogexitcount) |
+| `metrickit.app_exit.background.suspended_with_locked_file_exit_count` | int | count | [cumulativeSuspendedWithLockedFileExitCount](https://developer.apple.com/documentation/metrickit/mxbackgroundexitdata/cumulativesuspendedwithlockedfileexitcount) |
+| `metrickit.app_exit.background.background_task_assertion_timeout_exit_count` | int | count | [cumulativeBackgroundTaskAssertionTimeoutExitCount](https://developer.apple.com/documentation/metrickit/mxbackgroundexitdata/cumulativebackgroundtaskassertiontimeoutexitcount) |
 
-TODO: Rewrite this in english:
-  scope="MetricKit"
-  span="MXSignpostMetric"
+## MXSignpostMetric
 
-TODO: Rewrite this list of attributes as a markdown table with (1) attribute name, linked to apple documentation, (2) the datatype, and (3) units.
-"SampleRate"
-"app.metadata"
-"device.isBatteryMonitoringEnabled"
-"device.isLowPowerModeEnabled"
-"device.isMultitaskingSupported"
-"device.localizedModel"
-"device.manufacturer"
-"device.model"
-"device.model.name"
-"device.name"
-"device.orientation"
-"device.systemName"
-"device.systemVersion"
-"device.userInterfaceIdiom"
-"network.connection.type"
-"screen.name"
-"screen.path"
-"session.id"
-"signpost.category"
-"signpost.count"
-"signpost.cpu_time"
-"signpost.hitch_time_ratio"
-"signpost.logical_write_count"
-"signpost.memory_average"
-"signpost.name"'
+Signpost metrics are custom performance measurements you define in your app using [os_signpost](https://developer.apple.com/documentation/os/logging/recording_performance_data). Unlike the other MetricKit metrics which are aggregated into a single span, each signpost metric generates its own individual span.
 
-## MXDiagnostics
+### Data Representation
 
-Diagnostics are events that occur once. However, we don't know exactly when. We only know they occurred during the reporting period. These include things like crashes and hangs. To represent diagnostics, we emit a top-level `Span` called `"MXDiagnosticPayload"` with the start and end corresponding to the reporting period. Then, for each event, we emit an OTel "log" for the event. I used logs instead of traces, because each event is instantaneous as far as we know. Also, I wanted to be consistent with the way the Android OTel auto-instrumentation represents uncaught exceptions. Each log has a name attribute for its type, with the key `"metrickit.diagnostic.name"`. The logs have metadata attached with namespaced keys, similar to metrics. For example, crash exception codes have the key `"metrickit.diagnostic.crash.exception.code"`. Since we don't know the exact times of the events, all logs use the end time of the reporting period. This helps so that data shows up as new data in Honeycomb when it arrives.
+Each signpost metric creates a separate span named `"MXSignpostMetric"` with attributes describing the signpost's category, name, count, and performance measurements. The instrumentation scope is `"MetricKit"`.
 
-TODO: Fix the start time vs the end time. There's some kind of bug in the code I think?
+### Attribute Reference
 
-TODO: Figure out whether there's a `MXDiagnosticPayload` trace and document it.
+| Attribute Name | Type | Units | Apple Documentation |
+|----------------|------|-------|---------------------|
+| `signpost.name` | string | - | [signpostName](https://developer.apple.com/documentation/metrickit/mxsignpostmetric/signpostname) |
+| `signpost.category` | string | - | [signpostCategory](https://developer.apple.com/documentation/metrickit/mxsignpostmetric/signpostcategory) |
+| `signpost.count` | int | count | [totalCount](https://developer.apple.com/documentation/metrickit/mxsignpostmetric/totalcount) |
+| `signpost.cpu_time` | double | seconds | [cumulativeCPUTime](https://developer.apple.com/documentation/metrickit/mxsignpostintervaldata/cumulativecputime) |
+| `signpost.memory_average` | double | bytes | [averageMemory](https://developer.apple.com/documentation/metrickit/mxsignpostintervaldata/averagememory) (average) |
+| `signpost.logical_write_count` | double | bytes | [cumulativeLogicalWrites](https://developer.apple.com/documentation/metrickit/mxsignpostintervaldata/cumulativelogicalwrites) |
+| `signpost.hitch_time_ratio` | double | ratio (dimensionless) | [cumulativeHitchTimeRatio](https://developer.apple.com/documentation/metrickit/mxsignpostintervaldata/cumulativehitchtimeratio) (iOS 15+) |
 
-TODO: Write this in English:
-  scope="MetricKit"
+## MXDiagnosticPayload
 
-TODO: Turn this list into a markdown table with columns for (1) attribute name, with a link to the relevant Apple documentation for the equivalent MetricKit field, (2) the data type, and (3) the units of the attribute (not the comment).
-  metrickit.diagnostic.cpu_exception.total_cpu_time" double)" 3180        # 53 minutes
-  metrickit.diagnostic.cpu_exception.total_sampled_time" double)" 194400  # 54 hours
-  metrickit.diagnostic.disk_write_exception.total_writes_caused" double)" 55000000  # 55 MB
-  metrickit.diagnostic.hang.hang_duration" double)" 56
-  metrickit.diagnostic.hang.exception.stacktrace_json" string)" '"fake json stacktrace"'
-  metrickit.diagnostic.crash.exception.mach_exception.type" int)" '"57"'
-  metrickit.diagnostic.crash.exception.mach_exception.name" string)" '"Unknown exception type: 57"'
-  metrickit.diagnostic.crash.exception.mach_exception.description" string)" '"Unknown exception type: 57"'
-  metrickit.diagnostic.crash.exception.code" int)" '"58"'
-  metrickit.diagnostic.crash.exception.signal" int)" '"59"'
-  metrickit.diagnostic.crash.exception.signal.name" string)" '"Unknown signal: 59"'
-  metrickit.diagnostic.crash.exception.signal.description" string)" '"Unknown signal: 59"'
-  metrickit.diagnostic.crash.exception.objc.message" string)" '"message: 1 2"'
-  metrickit.diagnostic.crash.exception.objc.type" string)" '"ExceptionType"'
-  metrickit.diagnostic.crash.exception.termination_reason" string)" '"reason"'
-  metrickit.diagnostic.crash.exception.objc.name" string)" '"MyCrash"'
-  metrickit.diagnostic.crash.exception.objc.classname" string)" '"MyClass"'
-  metrickit.diagnostic.crash.exception.stacktrace_json" string)" '"fake json stacktrace"'
-  metrickit.diagnostic.app_launch.launch_duration" double)" 60
+Diagnostics are individual events that occurred during the reporting period, such as crashes, hangs, and exceptions. Unlike metrics which are aggregated, each diagnostic represents a discrete event, though we don't know the exact time it occurred within the 24-hour window.
 
-TODO: Do the logs produced by the metrickit instrumentation have names or something to document?
+### Data Representation
 
+For diagnostics, we create a parent span named `"MXDiagnosticPayload"` spanning the reporting period (start time = `timeStampBegin`, end time = `timeStampEnd`). For each diagnostic event, we emit an OpenTelemetry log record (not a span, since each event is instantaneous). Each log has:
+
+- A `name` attribute identifying the diagnostic type (e.g., `"metrickit.diagnostic.crash"`)
+- Additional attributes with diagnostic details, all namespaced by type (e.g., `metrickit.diagnostic.crash.exception.code`)
+- A `timestamp` set to `timeStampEnd` (so the event appears as "new" when it arrives)
+- An `observedTimestamp` set to the current time when the log is emitted
+
+The instrumentation scope is `"MetricKit"`.
+
+### Log Names
+
+Each diagnostic log includes a `name` attribute that identifies its type:
+
+- `metrickit.diagnostic.cpu_exception`
+- `metrickit.diagnostic.disk_write_exception`
+- `metrickit.diagnostic.hang`
+- `metrickit.diagnostic.crash`
+- `metrickit.diagnostic.app_launch` (iOS 16+, not available on macOS)
+
+### OpenTelemetry Semantic Conventions
+
+This instrumentation extends the standard OpenTelemetry [exception semantic conventions](https://opentelemetry.io/docs/specs/semconv/exceptions/exceptions-logs/) with additional MetricKit-specific attributes. The standard OTel attributes for exceptions are:
+
+- `exception.type` - The exception type/class name
+- `exception.message` - The exception message
+- `exception.stacktrace` - The stacktrace as a string
+
+For MetricKit crash diagnostics, we add additional attributes in the `exception.*` namespace to capture MetricKit's rich exception data (Mach exception types, signal numbers, Objective-C exception details).
+
+### Attribute Reference
+
+| Attribute Name | Type | Units | Apple Documentation |
+|----------------|------|-------|---------------------|
+| **CPU Exception Diagnostics** | | | [MXCPUExceptionDiagnostic](https://developer.apple.com/documentation/metrickit/mxcpuexceptiondiagnostic) |
+| `metrickit.diagnostic.cpu_exception.total_cpu_time` | double | seconds | [totalCPUTime](https://developer.apple.com/documentation/metrickit/mxcpuexceptiondiagnostic/totalcputime) |
+| `metrickit.diagnostic.cpu_exception.total_sampled_time` | double | seconds | [totalSampledTime](https://developer.apple.com/documentation/metrickit/mxcpuexceptiondiagnostic/totalsampledtime) |
+| **Disk Write Exception Diagnostics** | | | [MXDiskWriteExceptionDiagnostic](https://developer.apple.com/documentation/metrickit/mxdiskwriteexceptiondiagnostic) |
+| `metrickit.diagnostic.disk_write_exception.total_writes_caused` | double | bytes | [totalWritesCaused](https://developer.apple.com/documentation/metrickit/mxdiskwriteexceptiondiagnostic/totalwritescaused) |
+| **Hang Diagnostics** | | | [MXHangDiagnostic](https://developer.apple.com/documentation/metrickit/mxhangdiagnostic) |
+| `metrickit.diagnostic.hang.hang_duration` | double | seconds | [hangDuration](https://developer.apple.com/documentation/metrickit/mxhangdiagnostic/hangduration) |
+| `metrickit.diagnostic.hang.exception.stacktrace_json` | string | - | [callStackTree](https://developer.apple.com/documentation/metrickit/mxdiagnostic/callstacktree) (as JSON) |
+| **Crash Diagnostics** | | | [MXCrashDiagnostic](https://developer.apple.com/documentation/metrickit/mxcrashdiagnostic) |
+| `metrickit.diagnostic.crash.exception.code` | int | - | [exceptionCode](https://developer.apple.com/documentation/metrickit/mxcrashdiagnostic/exceptioncode) |
+| `metrickit.diagnostic.crash.exception.mach_exception.type` | int | - | [exceptionType](https://developer.apple.com/documentation/metrickit/mxcrashdiagnostic/exceptiontype) |
+| `metrickit.diagnostic.crash.exception.mach_exception.name` | string | - | Human-readable name for the Mach exception type (e.g., "EXC_BAD_ACCESS") |
+| `metrickit.diagnostic.crash.exception.mach_exception.description` | string | - | Description of the Mach exception type |
+| `metrickit.diagnostic.crash.exception.signal` | int | - | [signal](https://developer.apple.com/documentation/metrickit/mxcrashdiagnostic/signal) |
+| `metrickit.diagnostic.crash.exception.signal.name` | string | - | POSIX signal name (e.g., "SIGSEGV") |
+| `metrickit.diagnostic.crash.exception.signal.description` | string | - | Description of the POSIX signal |
+| `metrickit.diagnostic.crash.exception.termination_reason` | string | - | [terminationReason](https://developer.apple.com/documentation/metrickit/mxcrashdiagnostic/terminationreason) |
+| `metrickit.diagnostic.crash.exception.stacktrace_json` | string | - | [callStackTree](https://developer.apple.com/documentation/metrickit/mxdiagnostic/callstacktree) (as JSON) |
+| `metrickit.diagnostic.crash.exception.objc.type` | string | - | [exceptionType](https://developer.apple.com/documentation/metrickit/mxcrashdiagnosticobjectivecexceptionreason/exceptiontype) (iOS 17+) |
+| `metrickit.diagnostic.crash.exception.objc.message` | string | - | [composedMessage](https://developer.apple.com/documentation/metrickit/mxcrashdiagnosticobjectivecexceptionreason/composedmessage) (iOS 17+) |
+| `metrickit.diagnostic.crash.exception.objc.name` | string | - | [exceptionName](https://developer.apple.com/documentation/metrickit/mxcrashdiagnosticobjectivecexceptionreason/exceptionname) (iOS 17+) |
+| `metrickit.diagnostic.crash.exception.objc.classname` | string | - | [className](https://developer.apple.com/documentation/metrickit/mxcrashdiagnosticobjectivecexceptionreason/classname) (iOS 17+) |
+| **App Launch Diagnostics** | | | [MXAppLaunchDiagnostic](https://developer.apple.com/documentation/metrickit/mxapplaunchdiagnostic) |
+| `metrickit.diagnostic.app_launch.launch_duration` | double | seconds | [launchDuration](https://developer.apple.com/documentation/metrickit/mxapplaunchdiagnostic/launchduration) (iOS 16+, not on macOS) |
+
+### Stacktrace Format
+
+Diagnostics that include stack traces (hangs and crashes) provide them as JSON via the `callStackTree` property. The JSON structure represents the call stack tree with frame information. This is stored in attributes ending with `stacktrace_json`.
