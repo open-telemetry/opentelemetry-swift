@@ -7,15 +7,15 @@
     private let metricKitInstrumentationVersion = "0.0.1"
 
     @available(iOS 13.0, *)
-    class MetricKitSubscriber: NSObject, MXMetricManagerSubscriber {
-        func didReceive(_ payloads: [MXMetricPayload]) {
+    public class MetricKitInstrumentation: NSObject, MXMetricManagerSubscriber {
+        public func didReceive(_ payloads: [MXMetricPayload]) {
             for payload in payloads {
                 reportMetrics(payload: payload)
             }
         }
 
         @available(iOS 14.0, *)
-        func didReceive(_ payloads: [MXDiagnosticPayload]) {
+        public func didReceive(_ payloads: [MXDiagnosticPayload]) {
             for payload in payloads {
                 reportDiagnostics(payload: payload)
             }

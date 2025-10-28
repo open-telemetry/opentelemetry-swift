@@ -6,7 +6,7 @@ All data is captured using the instrumentation scope `"MetricKit"` with version 
 
 ## Usage
 
-To use the MetricKit instrumentation, register the subscriber with MetricKit's metric manager:
+To use the MetricKit instrumentation, register it with MetricKit's metric manager:
 
 ```swift
 import MetricKit
@@ -15,20 +15,20 @@ import OpenTelemetryApi
 // Initialize OpenTelemetry providers (tracer and logger)
 // ... your OpenTelemetry setup code ...
 
-// Register the MetricKit subscriber
-// IMPORTANT: Store the subscriber in a static or app-level variable.
-// MXMetricManager.shared holds only a weak reference, so if the subscriber
+// Register the MetricKit instrumentation
+// IMPORTANT: Store the instrumentation instance in a static or app-level variable.
+// MXMetricManager.shared holds only a weak reference, so if the instance
 // is released, it won't receive MetricKit callbacks.
 if #available(iOS 13.0, *) {
-    let subscriber = MetricKitSubscriber()
-    MXMetricManager.shared.add(subscriber)
+    let metricKit = MetricKitInstrumentation()
+    MXMetricManager.shared.add(metricKit)
 
-    // Store subscriber somewhere to keep it alive, e.g.:
-    // AppDelegate.metricKitSubscriber = subscriber
+    // Store instrumentation somewhere to keep it alive, e.g.:
+    // AppDelegate.metricKitInstrumentation = metricKit
 }
 ```
 
-The subscriber will automatically receive MetricKit payloads and convert them to OpenTelemetry spans and logs.
+The instrumentation will automatically receive MetricKit payloads and convert them to OpenTelemetry spans and logs.
 
 ## Data Structure Overview
 
