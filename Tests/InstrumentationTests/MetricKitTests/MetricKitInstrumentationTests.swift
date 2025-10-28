@@ -491,6 +491,13 @@ class MetricKitDiagnosticTests: XCTestCase {
         XCTAssertNotNil(hangLog, "Should have a hang diagnostic log")
         XCTAssertEqual(hangLog?.attributes["metrickit.diagnostic.hang.hang_duration"]?.description, "56.0") // 56 seconds
         XCTAssertNotNil(hangLog?.attributes["metrickit.diagnostic.hang.exception.stacktrace_json"])
+
+        // Verify standard OTel exception attribute
+        XCTAssertNotNil(hangLog?.attributes["metrickit.diagnostic.hang.exception.stacktrace"])
+        XCTAssertEqual(
+            hangLog?.attributes["metrickit.diagnostic.hang.exception.stacktrace"]?.description,
+            hangLog?.attributes["metrickit.diagnostic.hang.exception.stacktrace_json"]?.description
+        )
     }
 
     func testReportDiagnostics_CreatesCrashDiagnosticLogs() {
@@ -516,12 +523,27 @@ class MetricKitDiagnosticTests: XCTestCase {
         XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.termination_reason"]?.description, "reason")
         XCTAssertNotNil(crashLog?.attributes["metrickit.diagnostic.crash.exception.stacktrace_json"])
 
+        // Verify standard OTel exception attributes
+        XCTAssertNotNil(crashLog?.attributes["metrickit.diagnostic.crash.exception.stacktrace"])
+        XCTAssertEqual(
+            crashLog?.attributes["metrickit.diagnostic.crash.exception.stacktrace"]?.description,
+            crashLog?.attributes["metrickit.diagnostic.crash.exception.stacktrace_json"]?.description
+        )
+
         // Verify Objective-C exception attributes (iOS 17+)
         if #available(iOS 17.0, *) {
             XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.objc.type"]?.description, "ExceptionType")
             XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.objc.message"]?.description, "message: 1 2")
             XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.objc.classname"]?.description, "MyClass")
             XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.objc.name"]?.description, "MyCrash")
+
+            // On iOS 17+, OTel attributes should use Objective-C exception info (highest priority)
+            XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.type"]?.description, "MyCrash")
+            XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.message"]?.description, "message: 1 2")
+        } else {
+            // On iOS 14-16, OTel attributes should use signal info (preferred over Mach exception)
+            XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.type"]?.description, "Unknown signal: 59")
+            XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.message"]?.description, "Unknown signal: 59")
         }
     }
 

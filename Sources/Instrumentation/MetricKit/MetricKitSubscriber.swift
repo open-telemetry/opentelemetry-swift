@@ -404,10 +404,13 @@
             attrs["hang_duration"] = $0.hangDuration
 
             let callStackTree = $0.callStackTree
-            attrs["exception.stacktrace_json"] = String(
+            let stacktraceJson = String(
                 decoding: callStackTree.jsonRepresentation(),
                 as: UTF8.self
             )
+            attrs["exception.stacktrace_json"] = stacktraceJson
+            // Standard OTel exception attribute
+            attrs["exception.stacktrace"] = stacktraceJson
 
             return attrs
         }
@@ -419,44 +422,77 @@
         }
         logForEach(payload.crashDiagnostics, "crash") {
             var attrs: [String: AttributeValueConvertable] = [:]
+
+            // Standard OTel exception attributes - will be populated below
+            var otelType: String?
+            var otelMessage: String?
+
             if let exceptionCode = $0.exceptionCode {
                 attrs["exception.code"] = exceptionCode.intValue
             }
             if let exceptionType = $0.exceptionType {
                 attrs["exception.mach_exception.type"] = exceptionType.intValue
-                attrs["exception.mach_exception.name"] =
-                    exceptionNameMap[exceptionType.int32Value]
+                let machExceptionName = exceptionNameMap[exceptionType.int32Value]
                     ?? "Unknown exception type: \(String(describing: exceptionType))"
-                attrs["exception.mach_exception.description"] =
-                    exceptionDescriptionMap[exceptionType.int32Value]
+                attrs["exception.mach_exception.name"] = machExceptionName
+                let machExceptionDescription = exceptionDescriptionMap[exceptionType.int32Value]
                     ?? "Unknown exception type: \(String(describing: exceptionType))"
+                attrs["exception.mach_exception.description"] = machExceptionDescription
+
+                // Use Mach exception for OTel attributes if we don't have anything better
+                if otelType == nil {
+                    otelType = machExceptionName
+                    otelMessage = machExceptionDescription
+                }
             }
             if let signal = $0.signal {
                 attrs["exception.signal"] = signal.intValue
-                attrs["exception.signal.name"] =
-                    signalNameMap[signal.int32Value]
+                let signalName = signalNameMap[signal.int32Value]
                     ?? "Unknown signal: \(String(describing: signal))"
-                attrs["exception.signal.description"] =
-                    signalDescriptionMap[signal.int32Value]
+                attrs["exception.signal.name"] = signalName
+                let signalDescription = signalDescriptionMap[signal.int32Value]
                     ?? "Unknown signal: \(String(describing: signal))"
+                attrs["exception.signal.description"] = signalDescription
+
+                // Prefer signal over Mach exception for OTel attributes
+                otelType = signalName
+                otelMessage = signalDescription
             }
             if let terminationReason = $0.terminationReason {
                 attrs["exception.termination_reason"] = terminationReason
             }
             let callStackTree = $0.callStackTree
-            attrs["exception.stacktrace_json"] = String(
+            let stacktraceJson = String(
                 decoding: callStackTree.jsonRepresentation(),
                 as: UTF8.self
             )
+            attrs["exception.stacktrace_json"] = stacktraceJson
+            // Standard OTel exception attribute
+            attrs["exception.stacktrace"] = stacktraceJson
 
             if #available(iOS 17.0, macOS 14.0, *) {
                 if let exceptionReason = $0.exceptionReason {
                     attrs["exception.objc.type"] = exceptionReason.exceptionType
-                    attrs["exception.objc.message"] = exceptionReason.composedMessage
+                    let objcMessage = exceptionReason.composedMessage
+                    attrs["exception.objc.message"] = objcMessage
                     attrs["exception.objc.classname"] = exceptionReason.className
-                    attrs["exception.objc.name"] = exceptionReason.exceptionName
+                    let objcName = exceptionReason.exceptionName
+                    attrs["exception.objc.name"] = objcName
+
+                    // Prefer Objective-C exception info for OTel attributes (most specific)
+                    otelType = objcName
+                    otelMessage = objcMessage
                 }
             }
+
+            // Set standard OTel exception attributes
+            if let type = otelType {
+                attrs["exception.type"] = type
+            }
+            if let message = otelMessage {
+                attrs["exception.message"] = message
+            }
+
             return attrs
         }
     }

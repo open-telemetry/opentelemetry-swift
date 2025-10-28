@@ -199,7 +199,7 @@ This instrumentation extends the standard OpenTelemetry [exception semantic conv
 - `exception.message` - The exception message
 - `exception.stacktrace` - The stacktrace as a string
 
-For MetricKit crash diagnostics, we add additional attributes in the `exception.*` namespace to capture MetricKit's rich exception data (Mach exception types, signal numbers, Objective-C exception details).
+For MetricKit crash diagnostics, we add additional attributes in the `metrickit.diagnostic.crash.*` namespace to capture MetricKit's rich exception data (Mach exception types, signal numbers, Objective-C exception details).
 
 ### Attribute Reference
 
