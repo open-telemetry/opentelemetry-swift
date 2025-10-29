@@ -6,7 +6,7 @@
     private let metricKitInstrumentationName = "MetricKit"
     private let metricKitInstrumentationVersion = "0.0.1"
 
-    @available(iOS 13.0, *)
+    @available(iOS 13.0, macOS 12.0, macCatalyst 13.0, watchOS 7.0, *)
     public class MetricKitInstrumentation: NSObject, MXMetricManagerSubscriber {
         public func didReceive(_ payloads: [MXMetricPayload]) {
             for payload in payloads {
@@ -14,7 +14,7 @@
             }
         }
 
-        @available(iOS 14.0, *)
+        @available(iOS 14.0, macOS 12.0, macCatalyst 14.0, watchOS 7.0, *)
         public func didReceive(_ payloads: [MXDiagnosticPayload]) {
             for payload in payloads {
                 reportDiagnostics(payload: payload)
@@ -32,7 +32,7 @@
     }
 
     /// Estimates the average value of the whole histogram.
-    @available(iOS 13.0, *)
+    @available(iOS 13.0, macOS 12.0, macCatalyst 13.0, watchOS 7.0, *)
     func estimateHistogramAverage<UnitType>(_ histogram: MXHistogram<UnitType>) -> Measurement<
         UnitType
     >? {
@@ -53,6 +53,7 @@
         return estimatedSum.map { $0 / sampleCount }
     }
 
+    @available(iOS 13.0, macOS 12.0, macCatalyst 13.0, watchOS 7.0, *)
     public func reportMetrics(payload: MXMetricPayload) {
         let span = getMetricKitTracer().spanBuilder(spanName: "MXMetricPayload")
             .setStartTime(time: payload.timeStampBegin)
@@ -345,7 +346,7 @@
         }
     }
 
-    @available(iOS 14.0, *)
+    @available(iOS 14.0, macOS 12.0, macCatalyst 14.0, watchOS 7.0, *)
     public func reportDiagnostics(payload: MXDiagnosticPayload) {
         let span = getMetricKitTracer().spanBuilder(spanName: "MXDiagnosticPayload")
             .setStartTime(time: payload.timeStampBegin)
