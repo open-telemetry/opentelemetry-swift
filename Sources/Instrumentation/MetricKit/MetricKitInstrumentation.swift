@@ -6,7 +6,7 @@
     private let metricKitInstrumentationName = "MetricKit"
     private let metricKitInstrumentationVersion = "0.0.1"
 
-    @available(iOS 13.0, macOS 10.15, macCatalyst 13.1, visionOS 1.0, *)
+    @available(iOS 13.0, macOS 12.0, macCatalyst 13.1, visionOS 1.0, *)
     public class MetricKitInstrumentation: NSObject, MXMetricManagerSubscriber {
         public func didReceive(_ payloads: [MXMetricPayload]) {
             for payload in payloads {
@@ -53,7 +53,7 @@
         return estimatedSum.map { $0 / sampleCount }
     }
 
-    @available(iOS 13.0, macOS 10.15, macCatalyst 13.1, visionOS 1.0, *)
+    @available(iOS 13.0, macOS 12.0, macCatalyst 13.1, visionOS 1.0, *)
     public func reportMetrics(payload: MXMetricPayload) {
         let span = getMetricKitTracer().spanBuilder(spanName: "MXMetricPayload")
             .setStartTime(time: payload.timeStampBegin)
@@ -71,8 +71,6 @@
         }
 
         // Helper functions for sending histograms, specifically.
-        // Note: MXHistogram requires macOS 12.0+
-        @available(iOS 13.0, macOS 12.0, macCatalyst 13.1, visionOS 1.0, *)
         func captureMetric<UnitType>(key: String, value histogram: MXHistogram<UnitType>) {
             if let average = estimateHistogramAverage(histogram) {
                 captureMetric(key: key, value: average)
@@ -120,16 +118,14 @@
             }
         }
         withCategory(payload.applicationLaunchMetrics, "app_launch") {
-            if #available(iOS 13.0, macOS 12.0, macCatalyst 13.1, visionOS 1.0, *) {
-                captureMetric(
-                    key: "time_to_first_draw_average",
-                    value: $0.histogrammedTimeToFirstDraw
-                )
-                captureMetric(
-                    key: "app_resume_time_average",
-                    value: $0.histogrammedApplicationResumeTime
-                )
-            }
+            captureMetric(
+                key: "time_to_first_draw_average",
+                value: $0.histogrammedTimeToFirstDraw
+            )
+            captureMetric(
+                key: "app_resume_time_average",
+                value: $0.histogrammedApplicationResumeTime
+            )
             if #available(iOS 15.2, macOS 12.2, *) {
                 captureMetric(
                     key: "optimized_time_to_first_draw_average",
@@ -144,14 +140,10 @@
             }
         }
         withCategory(payload.applicationResponsivenessMetrics, "app_responsiveness") {
-            if #available(iOS 13.0, macOS 12.0, macCatalyst 13.1, visionOS 1.0, *) {
-                captureMetric(key: "hang_time_average", value: $0.histogrammedApplicationHangTime)
-            }
+            captureMetric(key: "hang_time_average", value: $0.histogrammedApplicationHangTime)
         }
         withCategory(payload.cellularConditionMetrics, "cellular_condition") {
-            if #available(iOS 13.0, macOS 12.0, macCatalyst 13.1, visionOS 1.0, *) {
-                captureMetric(key: "bars_average", value: $0.histogrammedCellularConditionTime)
-            }
+            captureMetric(key: "bars_average", value: $0.histogrammedCellularConditionTime)
         }
         withCategory(payload.locationActivityMetrics, "location_activity") {
             captureMetric(key: "best_accuracy_time", value: $0.cumulativeBestAccuracyTime)
@@ -276,12 +268,10 @@
             )
         }
         withCategory(payload.cellularConditionMetrics, "cellular_condition") {
-            if #available(iOS 13.0, macOS 12.0, macCatalyst 13.1, visionOS 1.0, *) {
-                captureMetric(
-                    key: "cellular_condition_time_average",
-                    value: $0.histogrammedCellularConditionTime
-                )
-            }
+            captureMetric(
+                key: "cellular_condition_time_average",
+                value: $0.histogrammedCellularConditionTime
+            )
         }
         withCategory(payload.cpuMetrics, "cpu") {
             if #available(iOS 14.0, *) {
