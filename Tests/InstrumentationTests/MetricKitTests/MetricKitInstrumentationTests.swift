@@ -12,7 +12,7 @@ import MetricKit
 import InMemoryExporter
 import XCTest
 
-@available(iOS 13.0, *)
+@available(iOS 13.0, macOS 10.15, macCatalyst 13.1, visionOS 1.0, *)
 class MetricKitInstrumentationTests: XCTestCase {
     var spanExporter: InMemoryExporter!
     var tracerProvider: TracerProviderSdk!
@@ -155,6 +155,7 @@ class MetricKitInstrumentationTests: XCTestCase {
         XCTAssertEqual(attributes?["metrickit.network_transfer.cellular_download"]?.description, "18000000000.0")
     }
 
+    @available(iOS 13.0, macOS 12.0, macCatalyst 13.1, visionOS 1.0, *)
     func testReportMetrics_SetsAppLaunchAttributes() {
         let payload = FakeMetricPayload()
 
@@ -226,6 +227,7 @@ class MetricKitInstrumentationTests: XCTestCase {
         XCTAssertEqual(attributes?["metrickit.location_activity.accuracy_3km_time"]?.description, "14.0")
     }
 
+    @available(iOS 13.0, macOS 12.0, macCatalyst 13.1, visionOS 1.0, *)
     func testReportMetrics_SetsResponsivenessAttributes() {
         let payload = FakeMetricPayload()
 
@@ -373,6 +375,7 @@ class MetricKitInstrumentationTests: XCTestCase {
         XCTAssertEqual(signpost2?.attributes["signpost.count"]?.description, "52")
     }
 
+    @available(iOS 13.0, macOS 12.0, macCatalyst 13.1, visionOS 1.0, *)
     func testReportMetrics_SetsCellularConditionAttributes() {
         let payload = FakeMetricPayload()
 
@@ -396,7 +399,7 @@ class MetricKitInstrumentationTests: XCTestCase {
 
 // MARK: - Diagnostic Tests
 
-@available(iOS 14.0, *)
+@available(iOS 14.0, macOS 12.0, macCatalyst 14.0, visionOS 1.0, *)
 class MetricKitDiagnosticTests: XCTestCase {
     var logExporter: InMemoryLogRecordExporter!
     var loggerProvider: LoggerProviderSdk!
