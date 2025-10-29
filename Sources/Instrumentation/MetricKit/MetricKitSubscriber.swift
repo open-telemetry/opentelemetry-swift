@@ -24,8 +24,6 @@
 
     // MARK: - MetricKit helpers
 
-    // TODO: Figure out how to set OTel Metrics as well.
-
     func getMetricKitTracer() -> Tracer {
         return OpenTelemetry.instance.tracerProvider.get(
             instrumentationName: metricKitInstrumentationName,

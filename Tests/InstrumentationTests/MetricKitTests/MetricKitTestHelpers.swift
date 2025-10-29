@@ -527,8 +527,4 @@ class FakeDiagnosticPayload: MXDiagnosticPayload {
     }
     #endif
 }
-
-public func testMetricKit() {
-    // TODO: How do we mock the tracer and/or logger?
-}
 #endif
