@@ -1,3 +1,4 @@
+#if canImport(MetricKit) && !os(tvOS) && !os(macOS)
 import Foundation
 import OpenTelemetryApi
 
@@ -48,3 +49,4 @@ extension Measurement: AttributeValueConvertable {
         return AttributeValue.double(value)
     }
 }
+#endif

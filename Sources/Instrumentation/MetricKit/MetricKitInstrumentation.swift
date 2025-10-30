@@ -1,4 +1,4 @@
-#if canImport(MetricKit) && !os(tvOS)
+#if canImport(MetricKit) && !os(tvOS) && !os(macOS)
     import Foundation
     import MetricKit
     import OpenTelemetryApi
