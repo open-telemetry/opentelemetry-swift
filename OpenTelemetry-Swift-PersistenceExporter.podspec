@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name = "OpenTelemetry-Swift-PersistenceExporter"
-  spec.version = "2.2.0"
+  spec.version = "2.2.1"
   spec.summary = "Swift OpenTelemetry Persistence Exporter"
 
   spec.homepage = "https://github.com/open-telemetry/opentelemetry-swift"
