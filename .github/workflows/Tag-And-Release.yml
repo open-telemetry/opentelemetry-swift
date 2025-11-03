@@ -77,7 +77,6 @@ jobs:
             "OpenTelemetry-Swift-Protocol-Exporter-Common"
             "OpenTelemetry-Swift-Protocol-Exporter-Http"
             "OpenTelemetry-Swift-PersistenceExporter"
-            "OpenTelemetry-Swift-StdoutExporter"
           )
           
           # Process each pod
