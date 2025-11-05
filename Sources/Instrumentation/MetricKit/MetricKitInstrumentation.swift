@@ -405,10 +405,11 @@
         }
         logForEach(payload.hangDiagnostics, "hang") {
             let callStackTree = $0.callStackTree
-            let stacktraceJson = String(
-                decoding: callStackTree.jsonRepresentation(),
-                as: UTF8.self
-            )
+            let appleJson = callStackTree.jsonRepresentation()
+
+            // Transform to simplified format, fall back to original if transformation fails
+            let stacktraceData = transformStackTrace(appleJson) ?? appleJson
+            let stacktraceJson = String(decoding: stacktraceData, as: UTF8.self)
 
             let namespacedAttrs: [String: AttributeValueConvertable] = [
                 "hang_duration": $0.hangDuration,
@@ -470,10 +471,12 @@
                 namespacedAttrs["exception.termination_reason"] = terminationReason
             }
             let callStackTree = $0.callStackTree
-            let stacktraceJson = String(
-                decoding: callStackTree.jsonRepresentation(),
-                as: UTF8.self
-            )
+            let appleJson = callStackTree.jsonRepresentation()
+
+            // Transform to simplified format, fall back to original if transformation fails
+            let stacktraceData = transformStackTrace(appleJson) ?? appleJson
+            let stacktraceJson = String(decoding: stacktraceData, as: UTF8.self)
+
             namespacedAttrs["exception.stacktrace_json"] = stacktraceJson
             // Standard OTel exception attribute (without namespace prefix)
             globalAttrs["exception.stacktrace"] = stacktraceJson

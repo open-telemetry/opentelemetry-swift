@@ -241,4 +241,6 @@ The `exception.stacktrace` attribute is always set to the JSON representation of
 
 ### Stacktrace Format
 
-Diagnostics that include stack traces (hangs and crashes) provide them as JSON via the [`callStackTree`](https://developer.apple.com/documentation/metrickit/mxdiagnostic/callstacktree) property, using Apple's proprietary format. The JSON structure represents the call stack tree with frame information.
+For details on the stack trace format used in crash and hang diagnostics, see [StackTraceFormat.md](StackTraceFormat.md).
+
+**Note:** The instrumentation attempts to transform Apple's native MetricKit format into the simplified OpenTelemetry format described in StackTraceFormat.md. If the transformation fails for any reason (e.g., if the OS returns a stacktrace in a different format than documented), the stacktrace will be included as-is in its original format to ensure diagnostic data is never lost.
