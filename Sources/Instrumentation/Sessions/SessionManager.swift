@@ -15,7 +15,7 @@ public class SessionManager {
 
   /// Initializes the session manager and restores any previous session from disk
   /// - Parameter configuration: Session configuration settings
-  init(configuration: SessionConfig = .default) {
+  public init(configuration: SessionConfig = .default) {
     self.configuration = configuration
     restoreSessionFromDisk()
   }

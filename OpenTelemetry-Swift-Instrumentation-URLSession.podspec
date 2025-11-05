@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name = "OpenTelemetry-Swift-Instrumentation-URLSession"
-  spec.version = "2.2.0"
+  spec.version = "2.2.1"
   spec.summary = "Swift OpenTelemetry URLSession Instrumentation"
 
   spec.homepage = "https://github.com/open-telemetry/opentelemetry-swift"
@@ -19,7 +19,7 @@ Pod::Spec.new do |spec|
   spec.module_name = "URLSession"
 
   spec.dependency 'OpenTelemetry-Swift-Instrumentation-NetworkStatus', spec.version.to_s
-  spec.dependency 'OpenTelemetry-Swift-Sdk', '~> 2.1.1'
+  spec.dependency 'OpenTelemetry-Swift-Sdk', '~> 2.2'
   spec.pod_target_xcconfig = { "OTHER_SWIFT_FLAGS" => "-module-name URLSession -package-name opentelemetry_swift_urlsession" }
 
 end
