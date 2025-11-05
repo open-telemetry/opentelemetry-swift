@@ -493,14 +493,9 @@ class MetricKitDiagnosticTests: XCTestCase {
 
         XCTAssertNotNil(hangLog, "Should have a hang diagnostic log")
         XCTAssertEqual(hangLog?.attributes["metrickit.diagnostic.hang.hang_duration"]?.description, "56.0") // 56 seconds
-        XCTAssertNotNil(hangLog?.attributes["metrickit.diagnostic.hang.exception.stacktrace_json"])
 
         // Verify standard OTel exception attribute (without namespace prefix)
         XCTAssertNotNil(hangLog?.attributes["exception.stacktrace"])
-        XCTAssertEqual(
-            hangLog?.attributes["exception.stacktrace"]?.description,
-            hangLog?.attributes["metrickit.diagnostic.hang.exception.stacktrace_json"]?.description
-        )
     }
 
     func testReportDiagnostics_CreatesCrashDiagnosticLogs() {
@@ -524,14 +519,9 @@ class MetricKitDiagnosticTests: XCTestCase {
         XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.signal"]?.description, "59")
         XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.signal.name"]?.description, "Unknown signal: 59")
         XCTAssertEqual(crashLog?.attributes["metrickit.diagnostic.crash.exception.termination_reason"]?.description, "reason")
-        XCTAssertNotNil(crashLog?.attributes["metrickit.diagnostic.crash.exception.stacktrace_json"])
 
         // Verify standard OTel exception attributes (without namespace prefix)
         XCTAssertNotNil(crashLog?.attributes["exception.stacktrace"])
-        XCTAssertEqual(
-            crashLog?.attributes["exception.stacktrace"]?.description,
-            crashLog?.attributes["metrickit.diagnostic.crash.exception.stacktrace_json"]?.description
-        )
 
         // Verify Objective-C exception attributes (iOS 17+)
         if #available(iOS 17.0, *) {

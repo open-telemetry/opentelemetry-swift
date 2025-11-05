@@ -221,7 +221,6 @@ The `exception.stacktrace` attribute is always set to the JSON representation of
 | `metrickit.diagnostic.disk_write_exception.total_writes_caused` | double | bytes | [totalWritesCaused](https://developer.apple.com/documentation/metrickit/mxdiskwriteexceptiondiagnostic/totalwritescaused) |
 | **Hang Diagnostics** | | | [MXHangDiagnostic](https://developer.apple.com/documentation/metrickit/mxhangdiagnostic) |
 | `metrickit.diagnostic.hang.hang_duration` | double | seconds | [hangDuration](https://developer.apple.com/documentation/metrickit/mxhangdiagnostic/hangduration) |
-| `metrickit.diagnostic.hang.exception.stacktrace_json` | string | - | [callStackTree](https://developer.apple.com/documentation/metrickit/mxdiagnostic/callstacktree) (as JSON) |
 | **Crash Diagnostics** | | | [MXCrashDiagnostic](https://developer.apple.com/documentation/metrickit/mxcrashdiagnostic) |
 | `metrickit.diagnostic.crash.exception.code` | int | - | [exceptionCode](https://developer.apple.com/documentation/metrickit/mxcrashdiagnostic/exceptioncode) |
 | `metrickit.diagnostic.crash.exception.mach_exception.type` | int | - | [exceptionType](https://developer.apple.com/documentation/metrickit/mxcrashdiagnostic/exceptiontype) |
@@ -231,7 +230,6 @@ The `exception.stacktrace` attribute is always set to the JSON representation of
 | `metrickit.diagnostic.crash.exception.signal.name` | string | - | POSIX signal name (e.g., "SIGSEGV") |
 | `metrickit.diagnostic.crash.exception.signal.description` | string | - | Description of the POSIX signal |
 | `metrickit.diagnostic.crash.exception.termination_reason` | string | - | [terminationReason](https://developer.apple.com/documentation/metrickit/mxcrashdiagnostic/terminationreason) |
-| `metrickit.diagnostic.crash.exception.stacktrace_json` | string | - | [callStackTree](https://developer.apple.com/documentation/metrickit/mxdiagnostic/callstacktree) (as JSON) |
 | `metrickit.diagnostic.crash.exception.objc.type` | string | - | [exceptionType](https://developer.apple.com/documentation/metrickit/mxcrashdiagnosticobjectivecexceptionreason/exceptiontype) (iOS 17+) |
 | `metrickit.diagnostic.crash.exception.objc.message` | string | - | [composedMessage](https://developer.apple.com/documentation/metrickit/mxcrashdiagnosticobjectivecexceptionreason/composedmessage) (iOS 17+) |
 | `metrickit.diagnostic.crash.exception.objc.name` | string | - | [exceptionName](https://developer.apple.com/documentation/metrickit/mxcrashdiagnosticobjectivecexceptionreason/exceptionname) (iOS 17+) |

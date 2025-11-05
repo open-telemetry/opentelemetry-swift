@@ -412,8 +412,7 @@
             let stacktraceJson = String(decoding: stacktraceData, as: UTF8.self)
 
             let namespacedAttrs: [String: AttributeValueConvertable] = [
-                "hang_duration": $0.hangDuration,
-                "exception.stacktrace_json": stacktraceJson
+                "hang_duration": $0.hangDuration
             ]
 
             let globalAttrs: [String: AttributeValueConvertable] = [
@@ -477,7 +476,6 @@
             let stacktraceData = transformStackTrace(appleJson) ?? appleJson
             let stacktraceJson = String(decoding: stacktraceData, as: UTF8.self)
 
-            namespacedAttrs["exception.stacktrace_json"] = stacktraceJson
             // Standard OTel exception attribute (without namespace prefix)
             globalAttrs["exception.stacktrace"] = stacktraceJson
 
