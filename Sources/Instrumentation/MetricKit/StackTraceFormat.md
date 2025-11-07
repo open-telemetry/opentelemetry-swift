@@ -37,10 +37,10 @@ A stack frame is a dictionary containing three keys:
 **`binaryName`** (string, required)  
 The name of the binary associated with the stack frame.
 
-**`binaryUUID`** (string, required)  
+**`binaryUUID`** (string, required)
 A unique ID used to symbolicate a stack frame (format: 8-4-4-4-12 hex digits).
 
-**`offsetIntoBinaryTextSegment`** (integer, required)  
+**`offsetAddress`** (integer, required)
 The offset of the stack frame into the text segment of the binary. This is used for symbolication.
 
 ---
@@ -55,12 +55,12 @@ The offset of the stack frame into the text segment of the binary. This is used 
       "callStackFrames": [
         {
           "binaryUUID": "70B89F27-1634-3580-A695-57CDB41D7743",
-          "offsetIntoBinaryTextSegment": 165304,
+          "offsetAddress": 165304,
           "binaryName": "MetricKitTestApp"
         },
         {
           "binaryUUID": "77A62F2E-8212-30F3-84C1-E8497440ACF8",
-          "offsetIntoBinaryTextSegment": 6948,
+          "offsetAddress": 6948,
           "binaryName": "libdyld.dylib"
         }
       ]
@@ -70,7 +70,7 @@ The offset of the stack frame into the text segment of the binary. This is used 
       "callStackFrames": [
         {
           "binaryUUID": "A1B2C3D4-5678-90AB-CDEF-1234567890AB",
-          "offsetIntoBinaryTextSegment": 42000,
+          "offsetAddress": 42000,
           "binaryName": "Foundation"
         }
       ]
@@ -95,7 +95,11 @@ Renamed `callStackRootFrames` to `callStackFrames` and removed the nested `subFr
 
 The `sampleCount` field is specific to CPU profiling scenarios and is not relevant for general crash analysis. Since this format is designed primarily for post-mortem crash analysis, removing this field simplifies the format without losing essential information.
 
-### 4. Removed `address` Field
+### 4. Renamed `offsetIntoBinaryTextSegment` to `offsetAddress`
 
-The runtime memory `address` changes with each execution due to Address Space Layout Randomization (ASLR) and cannot be used for symbolication. The `offsetIntoBinaryTextSegment` contains all the information needed to symbolicate crashes post-mortem. Including `address` adds redundant data that serves no purpose for the primary use case.
+Renamed for brevity while preserving the same semantic meaning - this field contains the offset into the binary's text segment used for symbolication.
+
+### 5. Removed `address` Field
+
+The runtime memory `address` changes with each execution due to Address Space Layout Randomization (ASLR) and cannot be used for symbolication. The `offsetAddress` (formerly `offsetIntoBinaryTextSegment`) contains all the information needed to symbolicate crashes post-mortem. Including `address` adds redundant data that serves no purpose for the primary use case.
 

@@ -78,7 +78,7 @@ class StackTraceTransformTests: XCTestCase {
         // First frame (innermost)
         XCTAssertEqual(frames[0]["binaryName"] as? String, "MyApp")
         XCTAssertEqual(frames[0]["binaryUUID"] as? String, "A1B2C3D4-5678-90AB-CDEF-1234567890AB")
-        XCTAssertEqual(frames[0]["offsetIntoBinaryTextSegment"] as? Int, 1000)
+        XCTAssertEqual(frames[0]["offsetAddress"] as? Int, 1000)
         XCTAssertNil(frames[0]["address"], "address should be removed")
         XCTAssertNil(frames[0]["sampleCount"], "sampleCount should be removed")
         XCTAssertNil(frames[0]["subFrames"], "subFrames should be removed")
@@ -86,12 +86,12 @@ class StackTraceTransformTests: XCTestCase {
         // Second frame
         XCTAssertEqual(frames[1]["binaryName"] as? String, "Foundation")
         XCTAssertEqual(frames[1]["binaryUUID"] as? String, "B2C3D4E5-6789-01BC-DEF0-234567890ABC")
-        XCTAssertEqual(frames[1]["offsetIntoBinaryTextSegment"] as? Int, 2000)
+        XCTAssertEqual(frames[1]["offsetAddress"] as? Int, 2000)
 
         // Third frame (outermost)
         XCTAssertEqual(frames[2]["binaryName"] as? String, "libdyld.dylib")
         XCTAssertEqual(frames[2]["binaryUUID"] as? String, "C3D4E5F6-7890-12CD-EF01-34567890ABCD")
-        XCTAssertEqual(frames[2]["offsetIntoBinaryTextSegment"] as? Int, 3000)
+        XCTAssertEqual(frames[2]["offsetAddress"] as? Int, 3000)
     }
 
     func testTransformStackTrace_HandlesMultipleThreads() throws {

@@ -43,7 +43,7 @@
         struct SimplifiedStackFrame: Codable {
             let binaryName: String
             let binaryUUID: String
-            let offsetIntoBinaryTextSegment: Int
+            let offsetAddress: Int
         }
 
         // Helper to recursively flatten a frame and its subframes
@@ -54,7 +54,7 @@
             result.append(SimplifiedStackFrame(
                 binaryName: frame.binaryName,
                 binaryUUID: frame.binaryUUID,
-                offsetIntoBinaryTextSegment: frame.offsetIntoBinaryTextSegment
+                offsetAddress: frame.offsetIntoBinaryTextSegment
             ))
 
             // Recursively add subframes
