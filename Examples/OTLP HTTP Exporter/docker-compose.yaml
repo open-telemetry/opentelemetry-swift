@@ -2,7 +2,7 @@ version: "3"
 services:
   # Collector
   collector:
-    image: otel/opentelemetry-collector:latest@sha256:56951db9579bf00d3f32a4e934e19548183a86c14640798502bcd4c225976ea6
+    image: otel/opentelemetry-collector:latest@sha256:8ac5df2a931e9264667b236d65bf7591fa4ba633a7a634e6caa2f0a4fc549c07
 #    The latest image of the otel-collector may not work, so specifying the version that works with this release
 #    image: otel/opentelemetry-collector:latest
     command: ["--config=/conf/collector-config.yaml"]
@@ -25,7 +25,7 @@ services:
   # Prometheus
   prometheus:
     container_name: prometheus
-    image: prom/prometheus:latest@sha256:23031bfe0e74a13004252caaa74eccd0d62b6c6e7a04711d5b8bf5b7e113adc7
+    image: prom/prometheus:latest@sha256:49214755b6153f90a597adcbff0252cc61069f8ab69ce8411285cd4a560e8038
     volumes:
       - ./prometheus.yaml:/etc/prometheus/prometheus.yml
     ports:
