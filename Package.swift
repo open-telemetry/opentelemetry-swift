@@ -253,7 +253,8 @@ extension Package {
         .executable(name: "OTLPExporter", targets: ["OTLPExporter"]),
         .executable(name: "OTLPHTTPExporter", targets: ["OTLPHTTPExporter"]),
         .library(name: "SignPostIntegration", targets: ["SignPostIntegration"]),
-        .library(name: "ResourceExtension", targets: ["ResourceExtension"])
+        .library(name: "ResourceExtension", targets: ["ResourceExtension"]),
+        .library(name: "MetricKitInstrumentation", targets: ["MetricKitInstrumentation"])
       ])
       targets.append(contentsOf: [
         .target(
@@ -380,6 +381,23 @@ extension Package {
             .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
           ],
           path: "Tests/InstrumentationTests/SDKResourceExtensionTests"
+        ),
+        .target(
+          name: "MetricKitInstrumentation",
+          dependencies: [
+            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+          ],
+          path: "Sources/Instrumentation/MetricKit",
+          exclude: ["README.md"]
+        ),
+        .testTarget(
+          name: "MetricKitInstrumentationTests",
+          dependencies: [
+            "MetricKitInstrumentation",
+            "InMemoryExporter",
+            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+          ],
+          path: "Tests/InstrumentationTests/MetricKitTests"
         ),
         .executableTarget(
           name: "PrometheusSample",
