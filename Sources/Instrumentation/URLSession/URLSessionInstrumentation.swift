@@ -31,7 +31,7 @@ public class URLSessionInstrumentation {
 
   private var _configuration: URLSessionInstrumentationConfiguration
   public var configuration: URLSessionInstrumentationConfiguration {
-      get{
+      get {
           configurationQueue.sync { _configuration }
       }
       set {
@@ -452,17 +452,6 @@ public class URLSessionInstrumentation {
     if let cfURLSession = NSClassFromString("__NSCFURLSessionTask"),
        let method = class_getInstanceMethod(cfURLSession, NSSelectorFromString("resume")) {
       methodsToSwizzle.append(method)
-    }
-
-    if NSClassFromString("AFURLSessionManager") != nil {
-      let classes = InstrumentationUtils.objc_getSafeClassList(
-        ignoredPrefixes: configuration.ignoredClassPrefixes
-      )
-      classes.forEach {
-        if let method = class_getInstanceMethod($0, NSSelectorFromString("af_resume")) {
-          methodsToSwizzle.append(method)
-        }
-      }
     }
 
     methodsToSwizzle.forEach {
