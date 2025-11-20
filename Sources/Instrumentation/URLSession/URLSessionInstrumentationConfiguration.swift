@@ -50,7 +50,7 @@ public struct URLSessionInstrumentationConfiguration {
     self.delegateClassesToInstrument = delegateClassesToInstrument
     self.baggageProvider = baggageProvider
     self.tracer = tracer ??
-      OpenTelemetry.instance.tracerProvider.get(instrumentationName: "NSURLSession", instrumentationVersion: "0.0.1")
+      OpenTelemetry.instance.tracerProvider.get(instrumentationName: "NSURLSession", instrumentationVersion: "1.0.0")
     self.ignoredClassPrefixes = ignoredClassPrefixes
     self.semanticConvention = semanticConvention
   }
@@ -103,7 +103,7 @@ public struct URLSessionInstrumentationConfiguration {
   /// Note: The injected baggage depends on the propagator in use (e.g., W3C or custom).
   /// Returns: A `Baggage` instance or `nil` if no baggage is needed.
   public let baggageProvider: ((inout URLRequest, Span?) -> (Baggage)?)?
-    
+
   /// The Array of Prefixes you can avoid in swizzle process
   public let ignoredClassPrefixes: [String]?
 
