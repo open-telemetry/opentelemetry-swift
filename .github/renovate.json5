@@ -4,6 +4,9 @@
     "config:best-practices",
     "helpers:pinGitHubActionDigestsToSemver"
   ],
+  "ignoreDeps": [
+     "open-telemetry/opentelemetry-swift-core"
+  ],
   "packageRules": [
     {
       "groupName": "all patch versions",
