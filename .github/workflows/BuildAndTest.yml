@@ -9,7 +9,21 @@ permissions:
   contents: read
 
 jobs:
+  should-run:
+    runs-on: ubuntu-latest
+    outputs:
+      should-run: ${{ steps.check.outputs.should-run }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - name: Check if the workflow should run
+        id: check
+        run: |
+          git diff --name-only origin/${{ github.base_ref }} HEAD | grep -q "Sources/" && echo "should-run=true" || echo "should-run=false"
   FormattingLint: 
+    needs: should-run
+    if: ${{ needs.should-run.outputs.should-run }}
     runs-on: macos-15
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -17,6 +31,8 @@ jobs:
         run: echo swiftformat --lint `git diff --name-only HEAD^1 HEAD` --reporter github-actions-log
 
   SwiftLint:
+    needs: should-run
+    if: ${{ needs.should-run.outputs.should-run }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -26,6 +42,8 @@ jobs:
           args: --strict
           DIFF_BASE: ${{ github.base_ref }}
   macOS:
+    needs: should-run
+    if: ${{ needs.should-run.outputs.should-run }}
     runs-on: macos-15
     steps:
     - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -41,6 +59,8 @@ jobs:
         xcrun llvm-cov export -ignore-filename-regex="pb\.swift|grpc\.swift" -format="lcov" .build/debug/opentelemetry-swiftPackageTests.xctest/Contents/MacOS/opentelemetry-swiftPackageTests -instr-profile .build/debug/codecov/default.profdata > .build/debug/codecov/coverage_report.lcov
         ./codecov -f .build/debug/codecov/coverage_report.lcov
   iOS:
+    needs: should-run
+    if: ${{ needs.should-run.outputs.should-run }}
     runs-on: macos-15
     steps:
     - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -54,6 +74,8 @@ jobs:
     - name: Test for iOS
       run: make test-without-building-ios
   tvOS:
+    needs: should-run
+    if: ${{ needs.should-run.outputs.should-run }}
     runs-on: macos-15
     steps:
     - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -67,6 +89,8 @@ jobs:
     - name: Test for tvOS
       run: make test-without-building-tvos
   watchOS:
+    needs: should-run
+    if: ${{ needs.should-run.outputs.should-run }}
     runs-on: macos-15
     steps:
     - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -80,6 +104,8 @@ jobs:
     - name: Test for watchOS
       run: make test-without-building-watchos
   visionOS:
+    needs: should-run
+    if: ${{ needs.should-run.outputs.should-run }}
     runs-on: macos-15
     steps:
     - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -93,6 +119,8 @@ jobs:
     - name: Test for visionOS
       run: make test-without-building-visionos
   linux:
+    needs: should-run
+    if: ${{ needs.should-run.outputs.should-run }}
     runs-on: ubuntu-latest
     container: swift:6.2@sha256:0e4716bd34384d22963a63afbdbc93be3129dfd0753185aa1ded27755abdcae8
     steps:
@@ -101,3 +129,31 @@ jobs:
         run: swift build --build-tests
       - name: Run tests for Linux
         run: swift test
+  required-status-checks:
+    needs: 
+      - FormattingLint
+      - SwiftLint
+      - macOS
+      - iOS
+      - tvOS
+      - watchOS
+      - visionOS
+      - linux
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check if all required jobs passed
+        run: |
+          if [[ ${{ needs.SwiftLint.result }} == 'failure' || \
+          ${{ needs.FormattingLint.result }} == 'failure' || \
+          ${{ needs.macOS.result }} == 'failure' || \
+          ${{ needs.iOS.result }} == 'failure' || \
+          ${{ needs.tvOS.result }} == 'failure' || \
+          ${{ needs.watchOS.result }} == 'failure' || \
+          ${{ needs.visionOS.result }} == 'failure' || \
+          ${{ needs.linux.result }} == 'failure' ]]; then
+            echo "One or more required jobs failed. Failing the workflow."
+            exit 1
+          else
+            echo "All required jobs passed/skipped."
+          fi
