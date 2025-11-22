@@ -14,6 +14,15 @@ public typealias DataOrFile = Any
 public typealias SessionTaskId = String
 public typealias HTTPStatus = Int
 
+/// Controls which HTTP semantic conventions to emit.
+///
+/// See migration guide: https://opentelemetry.io/docs/specs/semconv/non-normative/http-migration/
+public enum HTTPSemanticConvention {
+  case old      // Old HTTP and networking conventions
+  case stable   // Stable HTTP and networking conventions (v1.23.1+)
+  case httpDup  // Emit both old and stable (migration period)
+}
+
 public struct URLSessionInstrumentationConfiguration {
   public init(shouldRecordPayload: ((URLSession) -> (Bool)?)? = nil,
               shouldInstrument: ((URLRequest) -> (Bool)?)? = nil,
@@ -27,7 +36,8 @@ public struct URLSessionInstrumentationConfiguration {
               delegateClassesToInstrument: [AnyClass]? = nil,
               baggageProvider: ((inout URLRequest, Span?) -> (Baggage)?)? = nil,
               tracer: Tracer? = nil,
-              ignoredClassPrefixes: [String]? = nil) {
+              ignoredClassPrefixes: [String]? = nil,
+              semanticConvention: HTTPSemanticConvention = .old) {
     self.shouldRecordPayload = shouldRecordPayload
     self.shouldInstrument = shouldInstrument
     self.shouldInjectTracingHeaders = shouldInjectTracingHeaders
@@ -42,6 +52,7 @@ public struct URLSessionInstrumentationConfiguration {
     self.tracer = tracer ??
       OpenTelemetry.instance.tracerProvider.get(instrumentationName: "NSURLSession", instrumentationVersion: "1.0.0")
     self.ignoredClassPrefixes = ignoredClassPrefixes
+    self.semanticConvention = semanticConvention
   }
 
   public var tracer: Tracer
@@ -95,4 +106,7 @@ public struct URLSessionInstrumentationConfiguration {
 
   /// The Array of Prefixes you can avoid in swizzle process
   public let ignoredClassPrefixes: [String]?
+
+  /// Which HTTP semantic conventions to emit
+  public var semanticConvention: HTTPSemanticConvention
 }
