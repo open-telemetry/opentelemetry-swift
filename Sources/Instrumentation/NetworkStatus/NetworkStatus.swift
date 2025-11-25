@@ -27,7 +27,7 @@
       case .cellular:
         if #available(iOS 13.0, *) {
           if let serviceId = networkInfo.dataServiceIdentifier, let value = networkInfo.serviceCurrentRadioAccessTechnology?[serviceId] {
-            return ("cell", simpleConnectionName(connectionType: value), networkInfo.serviceSubscriberCellularProviders?[networkInfo.dataServiceIdentifier!])
+            return ("cell", simpleConnectionName(connectionType: value), networkInfo.serviceSubscriberCellularProviders?[serviceId])
           }
         } else {
           if let radioType = networkInfo.currentRadioAccessTechnology {
