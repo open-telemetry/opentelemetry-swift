@@ -171,9 +171,10 @@ let package = Package(
       dependencies: [
         "BaggagePropagationProcessor",
         "InMemoryExporter"
-      ]
+      ],
+      path: "Tests/ContribTests"
     ),
-    .testTarget(
+    .testTarget( 
       name: "SessionTests",
       dependencies: [
         "Sessions",
@@ -388,7 +389,7 @@ extension Package {
             .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
           ],
           path: "Sources/Instrumentation/MetricKit",
-          exclude: ["README.md"]
+          exclude: ["README.md", "StackTraceFormat.md"]
         ),
         .testTarget(
           name: "MetricKitInstrumentationTests",
