@@ -17,9 +17,9 @@ let localAddress = "192.168.1.28"
 
 let promOptions = PrometheusExporterOptions(url: "http://\(localAddress):9184/metrics")
 let promExporter = PrometheusExporter(options: promOptions)
-let metricsHttpServer = PrometheusExporterHttpServer(exporter: promExporter)
 
-DispatchQueue.global(qos: .default).async {
+Task { @MainActor in
+  let metricsHttpServer = PrometheusExporterHttpServer(exporter: promExporter)
   do {
     try metricsHttpServer.start()
   } catch {
@@ -84,7 +84,7 @@ while counter < 3000 {
   sleep(1)
 }
 
-metricsHttpServer.stop()
+// Server will be stopped when the task completes
 
 print("Metrics server shutdown.")
 print("Press Enter key to exit.")

@@ -169,7 +169,7 @@ func fileCreationDateFrom(fileName: String) -> Date {
   return Date(timeIntervalSinceReferenceDate: TimeInterval(millisecondsSinceReferenceDate))
 }
 
-private enum FixedWidthIntegerError<T: BinaryFloatingPoint>: Error {
+private enum FixedWidthIntegerError<T: BinaryFloatingPoint>: Error, @unchecked Sendable {
   case overflow(overflowingValue: T)
 }
 
