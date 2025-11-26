@@ -97,7 +97,7 @@ class URLSessionLogger {
     }
 
     if let bodySize = request.httpBody?.count {
-      attributes[SemanticAttributes.httpRequestBodySize.rawValue] = AttributeValue.int(bodySize)
+      attributes[SemanticConventions.Http.requestBodySize.rawValue] = AttributeValue.int(bodySize)
     }
 
     var spanName = "HTTP " + (request.httpMethod ?? "")
@@ -160,7 +160,7 @@ class URLSessionLogger {
 
     if let contentLengthHeader = httpResponse.allHeaderFields["Content-Length"] as? String,
        let contentLength = Int(contentLengthHeader) {
-      span.setAttribute(key: SemanticAttributes.httpResponseBodySize.rawValue,
+      span.setAttribute(key: SemanticConventions.Http.responseBodySize.rawValue,
                         value: AttributeValue.int(contentLength))
     }
 
