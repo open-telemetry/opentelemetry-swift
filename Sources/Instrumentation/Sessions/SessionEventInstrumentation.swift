@@ -7,13 +7,13 @@ import Foundation
 import OpenTelemetryApi
 
 /// Enum to specify the type of session event
-public enum SessionEventType {
+public enum SessionEventType: Sendable {
   case start
   case end
 }
 
 /// Represents a session event with its associated session and event type
-public struct SessionEvent {
+public struct SessionEvent: Sendable {
   let session: Session
   let eventType: SessionEventType
 }
@@ -29,7 +29,7 @@ public struct SessionEvent {
 /// - Sessions created after instrumentation is applied trigger notifications
 /// - All session events are converted to OpenTelemetry log records with appropriate attributes
 /// - Session end events include duration and end time attributes
-public class SessionEventInstrumentation {
+public final class SessionEventInstrumentation: @unchecked Sendable {
   private static var logger: Logger {
     return OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: SessionEventInstrumentation.instrumentationKey)
   }
@@ -38,7 +38,7 @@ public class SessionEventInstrumentation {
   /// This allows capturing session events that occur during application startup before
   /// the OpenTelemetry SDK is fully initialized.
   /// Limited to 20 items to prevent memory issues.
-  static var queue: [SessionEvent] = []
+  nonisolated(unsafe) static var queue: [SessionEvent] = []
 
   /// Maximum number of sessions that can be queued before instrumentation is applied
   static let maxQueueSize: UInt8 = 32

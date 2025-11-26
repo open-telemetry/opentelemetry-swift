@@ -21,8 +21,8 @@ class URLSessionInstrumentationTests: XCTestCase {
     public var receivedErrorCalled: Bool = false
   }
 
-  class SessionDelegate: NSObject, URLSessionDelegate, URLSessionDataDelegate {
-    var semaphore: DispatchSemaphore
+  final class SessionDelegate: NSObject, URLSessionDelegate, URLSessionDataDelegate, @unchecked Sendable {
+    let semaphore: DispatchSemaphore
 
     init(semaphore: DispatchSemaphore) {
       self.semaphore = semaphore
@@ -37,15 +37,28 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
-  class CountingSessionDelegate: NSObject, URLSessionDelegate, URLSessionDataDelegate {
-    var callCount: Int = 0
+  final class CountingSessionDelegate: NSObject, URLSessionDelegate, URLSessionDataDelegate, @unchecked Sendable {
+    private let lock = NSLock()
+    private var _callCount: Int = 0
+    
+    var callCount: Int {
+      lock.lock()
+      defer { lock.unlock() }
+      return _callCount
+    }
+    
+    private func incrementCallCount() {
+      lock.lock()
+      defer { lock.unlock() }
+      _callCount += 1
+    }
 
     func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {
-      callCount += 1
+      incrementCallCount()
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-      callCount += 1
+      incrementCallCount()
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
@@ -64,13 +77,13 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
-  static var requestCopy: URLRequest!
-  static var responseCopy: HTTPURLResponse!
+  nonisolated(unsafe) static var requestCopy: URLRequest!
+  nonisolated(unsafe) static var responseCopy: HTTPURLResponse!
 
-  static var activeBaggage: Baggage!
-  static var customBaggage: Baggage!
+  nonisolated(unsafe) static var activeBaggage: Baggage!
+  nonisolated(unsafe) static var customBaggage: Baggage!
 
-  static var config = URLSessionInstrumentationConfiguration(shouldRecordPayload: nil,
+  nonisolated(unsafe) static var config = URLSessionInstrumentationConfiguration(shouldRecordPayload: nil,
                                                              shouldInstrument: { req in
                                                                checker.shouldInstrumentCalled = true
                                                                if req.url?.path == "/dontinstrument" || req.url?.host == "dontinstrument.com" {
@@ -109,13 +122,13 @@ class URLSessionInstrumentationTests: XCTestCase {
                                                                URLSessionInstrumentationTests.checker.receivedErrorCalled = true
                                                              },
                                                              baggageProvider: { _, _ in
-                                                               customBaggage
+                                                               return customBaggage
                                                              })
 
-  static var checker = Check()
-  static var semaphore: DispatchSemaphore!
+  nonisolated(unsafe) static var checker = Check()
+  nonisolated(unsafe) static var semaphore: DispatchSemaphore!
   var sessionDelegate: SessionDelegate!
-  static var instrumentation: URLSessionInstrumentation!
+  nonisolated(unsafe) static var instrumentation: URLSessionInstrumentation!
 
   static let server = HttpTestServer(url: URL(string: "http://localhost:33333"), config: nil)
 
@@ -805,7 +818,7 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
   }
 
-  public func testNonInstrumentedRequestCompletes() {
+  @MainActor public func testNonInstrumentedRequestCompletes() {
     let request = URLRequest(url: URL(string: "http://localhost:33333/dontinstrument")!)
     let expectation = expectation(description: "Non-instrumented request completes")
 

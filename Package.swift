@@ -1,4 +1,4 @@
-// swift-tools-version:5.9
+// swift-tools-version:6.0
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import Foundation
@@ -40,7 +40,8 @@ let package = Package(
     .target(
       name: "SharedTestUtils",
       dependencies: [],
-      path: "Tests/Shared/TestUtils"
+      path: "Tests/Shared/TestUtils",
+      swiftSettings: [.unsafeFlags(["-Xfrontend", "-disable-availability-checking", "-strict-concurrency=minimal"])]
     ),
     .target(
       name: "OTelSwiftLog",
@@ -132,7 +133,8 @@ let package = Package(
     .testTarget(
       name: "OTelSwiftLogTests",
       dependencies: ["OTelSwiftLog"],
-      path: "Tests/BridgesTests/OTelSwiftLog"
+      path: "Tests/BridgesTests/OTelSwiftLog",
+      swiftSettings: [.unsafeFlags(["-Xfrontend", "-disable-availability-checking", "-strict-concurrency=minimal"])]
     ),
     .testTarget(
       name: "SwiftMetricsShimTests",
@@ -140,12 +142,14 @@ let package = Package(
         "SwiftMetricsShim",
         .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
       ],
-      path: "Tests/ImportersTests/SwiftMetricsShim"
+      path: "Tests/ImportersTests/SwiftMetricsShim",
+      swiftSettings: [.unsafeFlags(["-Xfrontend", "-disable-availability-checking", "-strict-concurrency=minimal"])]
     ),
     .testTarget(
       name: "PrometheusExporterTests",
       dependencies: ["PrometheusExporter"],
-      path: "Tests/ExportersTests/Prometheus"
+      path: "Tests/ExportersTests/Prometheus",
+      swiftSettings: [.unsafeFlags(["-Xfrontend", "-disable-availability-checking", "-strict-concurrency=minimal"])]
     ),
     .testTarget(
       name: "OpenTelemetryProtocolExporterTests",
@@ -154,17 +158,20 @@ let package = Package(
         "OpenTelemetryProtocolExporterHttp",
         "SharedTestUtils",
       ],
-      path: "Tests/ExportersTests/OpenTelemetryProtocol"
+      path: "Tests/ExportersTests/OpenTelemetryProtocol",
+      swiftSettings: [.unsafeFlags(["-Xfrontend", "-disable-availability-checking", "-strict-concurrency=minimal"])]
     ),
     .testTarget(
       name: "InMemoryExporterTests",
       dependencies: ["InMemoryExporter"],
-      path: "Tests/ExportersTests/InMemory"
+      path: "Tests/ExportersTests/InMemory",
+      swiftSettings: [.unsafeFlags(["-Xfrontend", "-disable-availability-checking", "-strict-concurrency=minimal"])]
     ),
     .testTarget(
       name: "PersistenceExporterTests",
       dependencies: ["PersistenceExporter"],
-      path: "Tests/ExportersTests/PersistenceExporter"
+      path: "Tests/ExportersTests/PersistenceExporter",
+      swiftSettings: [.unsafeFlags(["-Xfrontend", "-disable-availability-checking", "-strict-concurrency=minimal"])]
     ),
     .testTarget(
       name: "ContribTests",
@@ -172,7 +179,8 @@ let package = Package(
         "BaggagePropagationProcessor",
         "InMemoryExporter"
       ],
-      path: "Tests/ContribTests"
+      path: "Tests/ContribTests",
+      swiftSettings: [.unsafeFlags(["-Xfrontend", "-disable-availability-checking", "-strict-concurrency=minimal"])]
     ),
     .testTarget( 
       name: "SessionTests",
@@ -180,7 +188,8 @@ let package = Package(
         "Sessions",
         .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
       ],
-      path: "Tests/InstrumentationTests/SessionTests"
+      path: "Tests/InstrumentationTests/SessionTests",
+      swiftSettings: [.unsafeFlags(["-Xfrontend", "-disable-availability-checking", "-strict-concurrency=minimal"])]
     ),
     .executableTarget(
       name: "LoggingTracer",
@@ -236,7 +245,8 @@ extension Package {
             "OpenTracingShim",
             .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
           ],
-          path: "Tests/ImportersTests/OpenTracingShim"
+          path: "Tests/ImportersTests/OpenTracingShim",
+          swiftSettings: [.unsafeFlags(["-Xfrontend", "-disable-availability-checking", "-strict-concurrency=minimal"])]
         )
       ])
     #endif
@@ -267,12 +277,14 @@ extension Package {
               condition: .when(platforms: [.iOS, .macOS, .tvOS, .macCatalyst, .linux])
             )
           ],
-          path: "Sources/Exporters/Jaeger"
+          path: "Sources/Exporters/Jaeger",
+          swiftSettings: [.unsafeFlags(["-Xfrontend", "-disable-availability-checking", "-strict-concurrency=minimal"])]
         ),
         .testTarget(
           name: "JaegerExporterTests",
           dependencies: ["JaegerExporter"],
-          path: "Tests/ExportersTests/Jaeger"
+          path: "Tests/ExportersTests/Jaeger",
+          swiftSettings: [.unsafeFlags(["-Xfrontend", "-disable-availability-checking", "-strict-concurrency=minimal"])]
         ),
         .executableTarget(
           name: "SimpleExporter",
@@ -299,7 +311,8 @@ extension Package {
           dependencies: [
             "NetworkStatus"
           ],
-          path: "Tests/InstrumentationTests/NetworkStatusTests"
+          path: "Tests/InstrumentationTests/NetworkStatusTests",
+          swiftSettings: [.unsafeFlags(["-Xfrontend", "-disable-availability-checking", "-strict-concurrency=minimal"])]
         ),
         .target(
           name: "URLSessionInstrumentation",
@@ -315,7 +328,8 @@ extension Package {
             "URLSessionInstrumentation",
             "SharedTestUtils",
           ],
-          path: "Tests/InstrumentationTests/URLSessionTests"
+          path: "Tests/InstrumentationTests/URLSessionTests",
+          swiftSettings: [.unsafeFlags(["-Xfrontend", "-disable-availability-checking", "-strict-concurrency=minimal"])]
         ),
         .executableTarget(
           name: "NetworkSample",
@@ -336,7 +350,8 @@ extension Package {
         .testTarget(
           name: "ZipkinExporterTests",
           dependencies: ["ZipkinExporter"],
-          path: "Tests/ExportersTests/Zipkin"
+          path: "Tests/ExportersTests/Zipkin",
+          swiftSettings: [.unsafeFlags(["-Xfrontend", "-disable-availability-checking", "-strict-concurrency=minimal"])]
         ),
         .executableTarget(
           name: "OTLPExporter",
@@ -381,7 +396,8 @@ extension Package {
             "ResourceExtension",
             .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
           ],
-          path: "Tests/InstrumentationTests/SDKResourceExtensionTests"
+          path: "Tests/InstrumentationTests/SDKResourceExtensionTests",
+          swiftSettings: [.unsafeFlags(["-Xfrontend", "-disable-availability-checking", "-strict-concurrency=minimal"])]
         ),
         .target(
           name: "MetricKitInstrumentation",
@@ -398,7 +414,8 @@ extension Package {
             "InMemoryExporter",
             .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
           ],
-          path: "Tests/InstrumentationTests/MetricKitTests"
+          path: "Tests/InstrumentationTests/MetricKitTests",
+          swiftSettings: [.unsafeFlags(["-Xfrontend", "-disable-availability-checking", "-strict-concurrency=minimal"])]
         ),
         .executableTarget(
           name: "PrometheusSample",
