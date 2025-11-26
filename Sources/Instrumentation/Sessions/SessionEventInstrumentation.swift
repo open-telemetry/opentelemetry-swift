@@ -7,13 +7,13 @@ import Foundation
 import OpenTelemetryApi
 
 /// Enum to specify the type of session event
-public enum SessionEventType {
+public enum SessionEventType: Sendable {
   case start
   case end
 }
 
 /// Represents a session event with its associated session and event type
-public struct SessionEvent {
+public struct SessionEvent: Sendable {
   let session: Session
   let eventType: SessionEventType
 }
@@ -29,14 +29,14 @@ public struct SessionEvent {
 /// - Sessions created after instrumentation is applied trigger notifications
 /// - All session events are converted to OpenTelemetry log records with appropriate attributes
 /// - Session end events include duration and end time attributes
-public class SessionEventInstrumentation {
+public final class SessionEventInstrumentation: @unchecked Sendable {
   private let logger: Logger
 
   /// Queue for storing session events that were created before instrumentation was initialized.
   /// This allows capturing session events that occur during application startup before
   /// the OpenTelemetry SDK is fully initialized.
   /// Limited to 20 items to prevent memory issues.
-  static var queue: [SessionEvent] = []
+  nonisolated(unsafe) static var queue: [SessionEvent] = []
 
   /// Maximum number of sessions that can be queued before instrumentation is applied
   static let maxQueueSize: UInt8 = 32
@@ -49,26 +49,29 @@ public class SessionEventInstrumentation {
 
   /// Flag to track if the instrumentation has been applied.
   /// Controls whether new sessions are queued or immediately processed via notifications.
-  static var isApplied = false
+  nonisolated(unsafe) static var isApplied = false
 
   public init() {
     logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: SessionEventInstrumentation.instrumentationKey)
-    guard !SessionEventInstrumentation.isApplied else {
-      return
-    }
+    
+    Task {
+      guard !SessionEventInstrumentation.isApplied else {
+        return
+      }
 
-    SessionEventInstrumentation.isApplied = true
-    // Process any queued sessions
-    processQueuedSessions()
+      SessionEventInstrumentation.isApplied = true
+      // Process any queued sessions
+      await processQueuedSessions()
+    }
 
     // Start observing for new session notifications
     NotificationCenter.default.addObserver(
       forName: SessionEventInstrumentation.sessionEventNotification,
       object: nil,
       queue: nil
-    ) { notification in
+    ) { [weak self] notification in
       if let sessionEvent = notification.object as? SessionEvent {
-        self.createSessionEvent(session: sessionEvent.session, eventType: sessionEvent.eventType)
+        self?.createSessionEvent(session: sessionEvent.session, eventType: sessionEvent.eventType)
       }
     }
   }
@@ -78,7 +81,7 @@ public class SessionEventInstrumentation {
   /// This method is called during the `apply()` process to handle any sessions that
   /// were created before the instrumentation was initialized. It creates log records
   /// for all queued sessions and then clears the queue.
-  private func processQueuedSessions() {
+  private func processQueuedSessions() async {
     let sessionEvents = SessionEventInstrumentation.queue
 
     if sessionEvents.isEmpty {

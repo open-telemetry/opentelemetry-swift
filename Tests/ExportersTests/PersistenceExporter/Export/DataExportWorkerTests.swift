@@ -19,7 +19,7 @@ class DataExportWorkerTests: XCTestCase {
 
   // MARK: - Data Exports
 
-  func testItExportsAllData() {
+  @MainActor func testItExportsAllData() {
     let v1ExportExpectation = expectation(description: "V1 exported")
     let v2ExportExpectation = expectation(description: "V2 exported")
     let v3ExportExpectation = expectation(description: "V3 exported")
@@ -104,7 +104,7 @@ class DataExportWorkerTests: XCTestCase {
 
   // MARK: - Export Interval Changes
 
-  func testWhenThereIsNoBatch_thenIntervalIncreases() {
+  @MainActor func testWhenThereIsNoBatch_thenIntervalIncreases() {
     let delayChangeExpectation = expectation(description: "Export delay is increased")
     let mockDelay = MockDelay { command in
       if case .increase = command {
@@ -128,7 +128,7 @@ class DataExportWorkerTests: XCTestCase {
     worker.cancelSynchronously()
   }
 
-  func testWhenBatchFails_thenIntervalIncreases() {
+  @MainActor func testWhenBatchFails_thenIntervalIncreases() {
     let delayChangeExpectation = expectation(description: "Export delay is increased")
     let mockDelay = MockDelay { command in
       if case .increase = command {
@@ -164,7 +164,7 @@ class DataExportWorkerTests: XCTestCase {
     worker.cancelSynchronously()
   }
 
-  func testWhenBatchSucceeds_thenIntervalDecreases() {
+  @MainActor func testWhenBatchSucceeds_thenIntervalDecreases() {
     let delayChangeExpectation = expectation(description: "Export delay is decreased")
     let mockDelay = MockDelay { command in
       if case .decrease = command {
@@ -217,7 +217,7 @@ class DataExportWorkerTests: XCTestCase {
     worker.queue.sync(flags: .barrier) {}
   }
 
-  func testItFlushesAllData() {
+  @MainActor func testItFlushesAllData() {
     let v1ExportExpectation = expectation(description: "V1 exported")
     let v2ExportExpectation = expectation(description: "V2 exported")
     let v3ExportExpectation = expectation(description: "V3 exported")
