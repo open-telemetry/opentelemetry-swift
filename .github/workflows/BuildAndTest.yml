@@ -20,7 +20,7 @@ jobs:
       - name: Check if the workflow should run
         id: check
         run: |
-          git diff --name-only origin/${{ github.base_ref }} HEAD | grep -q "Sources/" && echo "should-run=true" || echo "should-run=false"
+          git diff --name-only origin/${{ github.base_ref }} HEAD | grep -q "Sources/" && echo "should-run=true" >> "$GITHUB_OUTPUT" || echo "should-run=false" >> "$GITHUB_OUTPUT"
   FormattingLint: 
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run }}
