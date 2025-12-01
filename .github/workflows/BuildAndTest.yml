@@ -20,10 +20,10 @@ jobs:
       - name: Check if the workflow should run
         id: check
         run: |
-          git diff --name-only origin/${{ github.base_ref }} HEAD | grep -q "Sources/" && echo "should-run=true" || echo "should-run=false"
+          git diff --name-only origin/${{ github.base_ref }} HEAD | grep -q "Sources/" && echo "should-run=true" >> "$GITHUB_OUTPUT" || echo "should-run=false" >> "$GITHUB_OUTPUT"
   FormattingLint: 
     needs: should-run
-    if: ${{ needs.should-run.outputs.should-run }}
+    if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: macos-15
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -32,7 +32,7 @@ jobs:
 
   SwiftLint:
     needs: should-run
-    if: ${{ needs.should-run.outputs.should-run }}
+    if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -43,7 +43,7 @@ jobs:
           DIFF_BASE: ${{ github.base_ref }}
   macOS:
     needs: should-run
-    if: ${{ needs.should-run.outputs.should-run }}
+    if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: macos-15
     steps:
     - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -60,7 +60,7 @@ jobs:
         ./codecov -f .build/debug/codecov/coverage_report.lcov
   iOS:
     needs: should-run
-    if: ${{ needs.should-run.outputs.should-run }}
+    if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: macos-15
     steps:
     - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -75,7 +75,7 @@ jobs:
       run: make test-without-building-ios
   tvOS:
     needs: should-run
-    if: ${{ needs.should-run.outputs.should-run }}
+    if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: macos-15
     steps:
     - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -90,7 +90,7 @@ jobs:
       run: make test-without-building-tvos
   watchOS:
     needs: should-run
-    if: ${{ needs.should-run.outputs.should-run }}
+    if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: macos-15
     steps:
     - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -105,7 +105,7 @@ jobs:
       run: make test-without-building-watchos
   visionOS:
     needs: should-run
-    if: ${{ needs.should-run.outputs.should-run }}
+    if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: macos-15
     steps:
     - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -120,7 +120,7 @@ jobs:
       run: make test-without-building-visionos
   linux:
     needs: should-run
-    if: ${{ needs.should-run.outputs.should-run }}
+    if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: ubuntu-latest
     container: swift:6.2@sha256:0e4716bd34384d22963a63afbdbc93be3129dfd0753185aa1ded27755abdcae8
     steps:
