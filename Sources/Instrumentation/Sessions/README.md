@@ -19,7 +19,7 @@ import Sessions
 import OpenTelemetrySdk
 
 // Record session start and end events
-let sessionInstrumentation = SessionEventInstrumentation()
+SessionEventInstrumentation.install()
 
 // Add session attributes to spans
 let sessionSpanProcessor = SessionSpanProcessor()
@@ -107,7 +107,7 @@ let processor = SessionLogRecordProcessor(nextProcessor: yourProcessor)
 Creates OpenTelemetry log records for session lifecycle events.
 
 ```swift
-let instrumentation = SessionEventInstrumentation()
+SessionEventInstrumentation.install()
 // Emits session.start and session.end log records
 ```
 
