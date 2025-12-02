@@ -6,7 +6,6 @@
 [![FOSSA Status](https://app.fossa.com/api/projects/custom%2B162%2Fgithub.com%2Fopen-telemetry%2Fopentelemetry-swift.svg?type=shield&issueType=security)](https://app.fossa.com/projects/custom%2B162%2Fgithub.com%2Fopen-telemetry%2Fopentelemetry-swift?ref=badge_shield&issueType=security)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/open-telemetry/opentelemetry-swift/badge)](https://scorecard.dev/viewer/?uri=github.com/open-telemetry/opentelemetry-swift)
 
-
 ## About
 
 The repository contains the Swift [OpenTelemetry](https://opentelemetry.io/) client
