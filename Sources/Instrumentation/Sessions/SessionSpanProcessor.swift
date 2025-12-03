@@ -20,7 +20,7 @@ public class SessionSpanProcessor: SpanProcessor {
   /// Initializes the span processor with a session manager
   /// - Parameter sessionManager: The session manager to use for retrieving session IDs (defaults to singleton)
   public init(sessionManager: SessionManager? = nil) {
-    self.sessionManager = sessionManager ?? SessionManagerProvider.getInstance()
+    self.sessionManager = sessionManager ?? SessionManager()
   }
 
   /// Called when a span starts - adds the current session ID as an attribute

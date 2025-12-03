@@ -12,8 +12,8 @@ import os.log
 #endif // os(iOS) && !targetEnvironment(macCatalyst)
 
 class URLSessionLogger {
-  static var runningSpans = [String: Span]()
-  static var runningSpansQueue = DispatchQueue(label: "io.opentelemetry.URLSessionLogger")
+  nonisolated(unsafe) static var runningSpans = [String: Span]()
+  static let runningSpansQueue = DispatchQueue(label: "io.opentelemetry.URLSessionLogger")
   #if os(iOS) && !targetEnvironment(macCatalyst)
 
     static var netstatInjector: NetworkStatusInjector? = { () -> NetworkStatusInjector? in
@@ -40,30 +40,30 @@ class URLSessionLogger {
 
     var attributes = [String: AttributeValue]()
 
-    attributes[SemanticAttributes.httpMethod.rawValue] = AttributeValue.string(request.httpMethod ?? "unknown_method")
+    attributes[SemanticConventions.Http.requestMethod.rawValue] = AttributeValue.string(request.httpMethod ?? "unknown_method")
 
     if let requestURL = request.url {
-      attributes[SemanticAttributes.httpUrl.rawValue] = AttributeValue.string(requestURL.absoluteString)
+      attributes[SemanticConventions.Url.full.rawValue] = AttributeValue.string(requestURL.absoluteString)
     }
 
     if let requestURLPath = request.url?.path {
-      attributes[SemanticAttributes.httpTarget.rawValue] = AttributeValue.string(requestURLPath)
+      attributes[SemanticConventions.Url.path.rawValue] = AttributeValue.string(requestURLPath)
     }
 
     if let host = request.url?.host {
-      attributes[SemanticAttributes.netPeerName.rawValue] = AttributeValue.string(host)
+      attributes[SemanticConventions.Network.peerAddress.rawValue] = AttributeValue.string(host)
     }
 
     if let requestScheme = request.url?.scheme {
-      attributes[SemanticAttributes.httpScheme.rawValue] = AttributeValue.string(requestScheme)
+      attributes[SemanticConventions.Url.scheme.rawValue] = AttributeValue.string(requestScheme)
     }
 
     if let port = request.url?.port {
-      attributes[SemanticAttributes.netPeerPort.rawValue] = AttributeValue.int(port)
+      attributes[SemanticConventions.Network.peerPort.rawValue] = AttributeValue.int(port)
     }
 
     if let bodySize = request.httpBody?.count {
-      attributes[SemanticAttributes.httpRequestBodySize.rawValue] = AttributeValue.int(bodySize)
+      attributes[SemanticConventions.Http.requestBodySize.rawValue] = AttributeValue.int(bodySize)
     }
 
     var spanName = "HTTP " + (request.httpMethod ?? "")
@@ -111,13 +111,13 @@ class URLSessionLogger {
     }
 
     let statusCode = httpResponse.statusCode
-    span.setAttribute(key: SemanticAttributes.httpStatusCode.rawValue,
+    span.setAttribute(key: SemanticConventions.Http.responseStatusCode.rawValue,
                       value: AttributeValue.int(statusCode))
     span.status = statusForStatusCode(code: statusCode)
 
     if let contentLengthHeader = httpResponse.allHeaderFields["Content-Length"] as? String,
        let contentLength = Int(contentLengthHeader) {
-      span.setAttribute(key: SemanticAttributes.httpResponseBodySize.rawValue,
+      span.setAttribute(key: SemanticConventions.Http.responseBodySize.rawValue,
                         value: AttributeValue.int(contentLength))
     }
 
@@ -134,7 +134,7 @@ class URLSessionLogger {
     guard span != nil else {
       return
     }
-    span.setAttribute(key: SemanticAttributes.httpStatusCode.rawValue, value: AttributeValue.int(statusCode))
+    span.setAttribute(key: SemanticConventions.Http.responseStatusCode.rawValue, value: AttributeValue.int(statusCode))
     span.status = URLSessionLogger.statusForStatusCode(code: statusCode)
     instrumentation.configuration.receivedError?(error, dataOrFile, statusCode, span)
 

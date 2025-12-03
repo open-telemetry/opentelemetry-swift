@@ -8,7 +8,7 @@ import Foundation
 /// Manages OpenTelemetry sessions with automatic expiration and persistence.
 /// Provides thread-safe access to session information and handles session lifecycle.
 /// Sessions are automatically extended on access and persisted to UserDefaults.
-public class SessionManager {
+public class SessionManager: @unchecked Sendable {
   private var configuration: SessionConfig
   private var session: Session?
   private var lock = NSLock()
@@ -24,7 +24,7 @@ public class SessionManager {
   /// This method is thread-safe and will extend the session expireTime time
   /// - Returns: The current active session
   @discardableResult
-  public func getSession() -> Session {
+  open func getSession() -> Session {
     // We only lock once when fetching the current session to expire with thread safety
     return lock.withLock {
       refreshSession()

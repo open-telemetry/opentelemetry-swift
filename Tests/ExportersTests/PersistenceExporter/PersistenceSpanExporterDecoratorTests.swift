@@ -47,7 +47,7 @@ class PersistenceSpanExporterDecoratorTests: XCTestCase {
     super.tearDown()
   }
 
-  func testWhenExportMetricIsCalled_thenSpansAreExported() throws {
+  @MainActor func testWhenExportMetricIsCalled_thenSpansAreExported() throws {
     let spansExportExpectation = expectation(description: "spans exported")
     let exporterShutdownExpectation = expectation(description: "exporter shut down")
 

@@ -16,7 +16,7 @@ class PrometheusExporterTests: XCTestCase {
   let metricPushIntervalSec = 0.05
   let waitDuration = 0.1 + 0.1
 
-  func testMetricsHttpServerAsync() {
+  @MainActor func testMetricsHttpServerAsync() {
     let promOptions = PrometheusExporterOptions(url: "http://localhost:9184/metrics/")
     let promExporter = PrometheusExporter(options: promOptions)
     let metricsHttpServer = PrometheusExporterHttpServer(exporter: promExporter)
