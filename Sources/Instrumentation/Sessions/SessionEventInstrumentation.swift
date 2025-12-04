@@ -108,11 +108,11 @@ public class SessionEventInstrumentation {
   /// - Parameter session: The session that has started
   private static func createSessionStartEvent(session: Session) {
     var attributes: [String: AttributeValue] = [
-      SessionConstants.id: AttributeValue.string(session.id)
+      SemanticConventions.Session.id.rawValue: AttributeValue.string(session.id)
     ]
 
     if let previousId = session.previousId {
-      attributes[SessionConstants.previousId] = AttributeValue.string(previousId)
+      attributes[SemanticConventions.Session.previousId.rawValue] = AttributeValue.string(previousId)
     }
 
     /// Create `session.start` log record according to otel semantic convention
@@ -136,12 +136,12 @@ public class SessionEventInstrumentation {
     }
 
     var attributes: [String: AttributeValue] = [
-      SessionConstants.id: AttributeValue.string(session.id),
+      SemanticConventions.Session.id.rawValue: AttributeValue.string(session.id),
       SessionConstants.duration: AttributeValue.double(Double(duration.toNanoseconds))
     ]
 
     if let previousId = session.previousId {
-      attributes[SessionConstants.previousId] = AttributeValue.string(previousId)
+      attributes[SemanticConventions.Session.previousId.rawValue] = AttributeValue.string(previousId)
     }
 
     /// Create `session.end`` log record according to otel semantic convention

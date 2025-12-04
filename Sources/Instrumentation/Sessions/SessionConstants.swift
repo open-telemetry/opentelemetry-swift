@@ -20,8 +20,10 @@ public class SessionConstants {
   /// Event name for session end events
   public static let sessionEndEvent = "session.end"
   /// Attribute name for session identifier
+  @available(*, deprecated, message: "Use SemanticConventions.Session.id instead")
   public static let id = "session.id"
   /// Attribute name for previous session identifier
+  @available(*, deprecated, message: "Use SemanticConventions.Session.previousId instead")
   public static let previousId = "session.previous_id"
 
   // MARK: - Extension Attributes
