@@ -31,13 +31,13 @@ public class SessionManager {
       if let session,
          !session.isExpired() {
         // extend session
-        let extendedSession = refreshSession(session: session)
+        let extendedSession = locked_refreshSession(session: session)
         self.session = extendedSession
         return (extendedSession, nil as Session?, false)
       } else {
         // start new session
         let prev = session
-        let nextSession = startSession()
+        let nextSession = locked_startSession()
         self.session = nextSession
         return (nextSession, prev, true)
       }
@@ -64,7 +64,7 @@ public class SessionManager {
 
   /// Creates a new session with a unique identifier
   /// *Warning* - this must be a pure function since it is used inside a lock
-  private func startSession() -> Session {
+  private func locked_startSession() -> Session {
     let now = Date()
 
     return Session(
@@ -78,7 +78,7 @@ public class SessionManager {
 
   /// Extends the current session expiry time
   /// *Warning* - this must be a pure function since it is used inside a lock
-  private func refreshSession(session: Session) -> Session {
+  private func locked_refreshSession(session: Session) -> Session {
     return Session(
       id: session.id,
       expireTime: Date(timeIntervalSinceNow: Double(configuration.sessionTimeout)),
