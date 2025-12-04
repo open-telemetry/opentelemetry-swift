@@ -181,8 +181,7 @@ final class SessionLogRecordProcessorTests: XCTestCase {
       severity: .info,
       body: AttributeValue.string("session.end"),
       attributes: [
-        SemanticConventions.Session.id.rawValue: AttributeValue.string("ending-session-789"),
-        "session.duration": AttributeValue.double(123.45)
+        SemanticConventions.Session.id.rawValue: AttributeValue.string("ending-session-789")
       ]
     )
 
@@ -195,12 +194,6 @@ final class SessionLogRecordProcessorTests: XCTestCase {
       XCTAssertEqual(sessionId, "ending-session-789", "Should preserve existing session ID for session.end")
     } else {
       XCTFail("Expected existing session.id to be preserved")
-    }
-
-    if case let .double(duration) = enhancedRecord.attributes["session.duration"] {
-      XCTAssertEqual(duration, 123.45, "Should preserve existing session.duration")
-    } else {
-      XCTFail("Expected existing session.duration to be preserved")
     }
   }
 

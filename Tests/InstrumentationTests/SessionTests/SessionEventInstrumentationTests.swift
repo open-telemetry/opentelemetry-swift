@@ -200,7 +200,6 @@ final class SessionEventInstrumentationTests: XCTestCase {
     XCTAssertEqual(record.eventName, "session.end")
     XCTAssertNotNil(record.observedTimestamp, "Observed timestamp should be set")
     XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionIdExpired))
-    XCTAssertEqual(record.attributes["session.duration"], AttributeValue.double(Double(sessionExpired.duration!.toNanoseconds)))
 
     XCTAssertNil(record.attributes["session.previous_id"])
   }

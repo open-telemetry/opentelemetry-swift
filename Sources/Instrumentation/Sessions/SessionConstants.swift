@@ -19,19 +19,6 @@ public class SessionConstants {
   public static let sessionStartEvent = "session.start"
   /// Event name for session end events
   public static let sessionEndEvent = "session.end"
-  /// Attribute name for session identifier
-  @available(*, deprecated, message: "Use SemanticConventions.Session.id instead")
-  public static let id = "session.id"
-  /// Attribute name for previous session identifier
-  @available(*, deprecated, message: "Use SemanticConventions.Session.previousId instead")
-  public static let previousId = "session.previous_id"
-
-  // MARK: - Extension Attributes
-  
-  /// Attribute name for session duration
-  public static let duration = "session.duration"
-
-  // MARK: - Internal Constants
   
   /// Notification name for session events
   public static let sessionEventNotification = "SessionEventInstrumentation.SessionEvent"

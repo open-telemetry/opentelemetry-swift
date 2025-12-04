@@ -130,14 +130,12 @@ public class SessionEventInstrumentation {
   /// end time, duration, and previous session ID (if available).
   /// - Parameter session: The expired session
   private static func createSessionEndEvent(session: Session) {
-    guard let endTime = session.endTime,
-    let duration = session.duration else {
+    guard let endTime = session.endTime else {
       return
     }
 
     var attributes: [String: AttributeValue] = [
-      SemanticConventions.Session.id.rawValue: AttributeValue.string(session.id),
-      SessionConstants.duration: AttributeValue.double(Double(duration.toNanoseconds))
+      SemanticConventions.Session.id.rawValue: AttributeValue.string(session.id)
     ]
 
     if let previousId = session.previousId {
