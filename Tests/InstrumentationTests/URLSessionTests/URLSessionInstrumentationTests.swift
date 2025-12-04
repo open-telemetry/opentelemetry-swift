@@ -159,6 +159,7 @@ class URLSessionInstrumentationTests: XCTestCase {
     URLSessionInstrumentationTests.requestCopy = nil
     URLSessionInstrumentationTests.responseCopy = nil
     XCTAssertEqual(0, URLSessionInstrumentationTests.instrumentation.startedRequestSpans.count)
+    URLSessionInstrumentationTests.instrumentation.configuration.semanticConvention = .old
   }
 
   override func tearDown() {
@@ -962,5 +963,98 @@ class URLSessionInstrumentationTests: XCTestCase {
     // Verify instrumentation worked (span was created and completed)
     XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled, "Instrumentation should capture the request")
     XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled, "Instrumentation should capture the response")
+  }
+
+  public func testOldSemanticConvention() {
+    URLSessionInstrumentationTests.instrumentation.configuration.semanticConvention = .old
+
+    let request = URLRequest(url: URL(string: "http://example.com:8080/path")!)
+
+    URLSessionLogger.processAndLogRequest(request, sessionTaskId: "test-old", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
+
+    XCTAssertEqual(1, URLSessionLogger.runningSpans.count)
+    guard let span = URLSessionLogger.runningSpans["test-old"] as? SpanSdk else {
+      XCTFail("Span should be SpanSdk")
+      return
+    }
+
+    let attributes = span.toSpanData().attributes
+
+    // Verify old semantic convention attributes are present
+    XCTAssertEqual(attributes["http.method"]?.description, "GET")
+    XCTAssertEqual(attributes["http.target"]?.description, "/path")
+    XCTAssertEqual(attributes["net.peer.name"]?.description, "example.com")
+    XCTAssertEqual(attributes["net.peer.port"]?.description, "8080")
+    XCTAssertEqual(attributes["http.scheme"]?.description, "http")
+
+    // Verify stable semantic convention attributes are NOT present
+    XCTAssertNil(attributes["http.request.method"])
+    XCTAssertNil(attributes["url.full"])
+    XCTAssertNil(attributes["url.path"])
+    XCTAssertNil(attributes["server.address"])
+    XCTAssertNil(attributes["server.port"])
+    XCTAssertNil(attributes["url.scheme"])
+  }
+
+  public func testStableSemanticConvention() {
+    URLSessionInstrumentationTests.instrumentation.configuration.semanticConvention = .stable
+
+    let request = URLRequest(url: URL(string: "http://example.com:8080/path")!)
+
+    URLSessionLogger.processAndLogRequest(request, sessionTaskId: "test-stable", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
+
+    XCTAssertEqual(1, URLSessionLogger.runningSpans.count)
+    guard let span = URLSessionLogger.runningSpans["test-stable"] as? SpanSdk else {
+      XCTFail("Span should be SpanSdk")
+      return
+    }
+
+    let attributes = span.toSpanData().attributes
+
+    // Verify stable semantic convention attributes are present
+    XCTAssertEqual(attributes["http.request.method"]?.description, "GET")
+    XCTAssertEqual(attributes["url.path"]?.description, "/path")
+    XCTAssertEqual(attributes["server.address"]?.description, "example.com")
+    XCTAssertEqual(attributes["server.port"]?.description, "8080")
+    XCTAssertEqual(attributes["url.scheme"]?.description, "http")
+
+    // Verify old semantic convention attributes are NOT present
+    XCTAssertNil(attributes["http.method"])
+    XCTAssertNil(attributes["http.url"])
+    XCTAssertNil(attributes["http.target"])
+    XCTAssertNil(attributes["net.peer.name"])
+    XCTAssertNil(attributes["net.peer.port"])
+    XCTAssertNil(attributes["http.scheme"])
+  }
+
+  public func testHttpDupSemanticConvention() {
+    URLSessionInstrumentationTests.instrumentation.configuration.semanticConvention = .httpDup
+
+    let request = URLRequest(url: URL(string: "http://example.com:8080/path")!)
+
+    URLSessionLogger.processAndLogRequest(request, sessionTaskId: "test-dup", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
+
+    XCTAssertEqual(1, URLSessionLogger.runningSpans.count)
+    guard let span = URLSessionLogger.runningSpans["test-dup"] as? SpanSdk else {
+      XCTFail("Span should be SpanSdk")
+      return
+    }
+
+    let attributes = span.toSpanData().attributes
+
+    // Verify BOTH old and stable semantic convention attributes are present
+    // Old attributes
+    XCTAssertEqual(attributes["http.method"]?.description, "GET")
+    XCTAssertEqual(attributes["http.target"]?.description, "/path")
+    XCTAssertEqual(attributes["net.peer.name"]?.description, "example.com")
+    XCTAssertEqual(attributes["net.peer.port"]?.description, "8080")
+    XCTAssertEqual(attributes["http.scheme"]?.description, "http")
+
+    // Stable attributes
+    XCTAssertEqual(attributes["http.request.method"]?.description, "GET")
+    XCTAssertEqual(attributes["url.path"]?.description, "/path")
+    XCTAssertEqual(attributes["server.address"]?.description, "example.com")
+    XCTAssertEqual(attributes["server.port"]?.description, "8080")
+    XCTAssertEqual(attributes["url.scheme"]?.description, "http")
   }
 }

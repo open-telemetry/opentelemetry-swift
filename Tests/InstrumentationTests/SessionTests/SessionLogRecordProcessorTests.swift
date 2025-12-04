@@ -36,7 +36,7 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     XCTAssertEqual(mockNextProcessor.receivedLogRecords.count, 1)
     let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
 
-    if case let .string(sessionId) = enhancedRecord.attributes[SessionConstants.id] {
+    if case let .string(sessionId) = enhancedRecord.attributes[SemanticConventions.Session.id.rawValue] {
       XCTAssertEqual(sessionId, expectedSessionId)
     } else {
       XCTFail("Expected session.id attribute to be a string value")
@@ -75,13 +75,13 @@ final class SessionLogRecordProcessorTests: XCTestCase {
 
     let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
 
-    if case let .string(sessionId) = enhancedRecord.attributes[SessionConstants.id] {
+    if case let .string(sessionId) = enhancedRecord.attributes[SemanticConventions.Session.id.rawValue] {
       XCTAssertEqual(sessionId, expectedSessionId)
     } else {
       XCTFail("Expected session.id attribute to be a string value")
     }
 
-    if case let .string(previousSessionId) = enhancedRecord.attributes[SessionConstants.previousId] {
+    if case let .string(previousSessionId) = enhancedRecord.attributes[SemanticConventions.Session.previousId.rawValue] {
       XCTAssertEqual(previousSessionId, expectedPreviousSessionId)
     } else {
       XCTFail("Expected session.previous_id attribute to be a string value")
@@ -97,13 +97,13 @@ final class SessionLogRecordProcessorTests: XCTestCase {
 
     let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
 
-    if case let .string(sessionId) = enhancedRecord.attributes[SessionConstants.id] {
+    if case let .string(sessionId) = enhancedRecord.attributes[SemanticConventions.Session.id.rawValue] {
       XCTAssertEqual(sessionId, expectedSessionId)
     } else {
       XCTFail("Expected session.id attribute to be a string value")
     }
 
-    XCTAssertNil(enhancedRecord.attributes[SessionConstants.previousId], "Previous session ID should not be set when nil")
+    XCTAssertNil(enhancedRecord.attributes[SemanticConventions.Session.previousId.rawValue], "Previous session ID should not be set when nil")
   }
 
   func testOnEmitWithDifferentSessionIds() {
@@ -115,13 +115,13 @@ final class SessionLogRecordProcessorTests: XCTestCase {
 
     XCTAssertEqual(mockNextProcessor.receivedLogRecords.count, 2)
 
-    if case let .string(sessionId1) = mockNextProcessor.receivedLogRecords[0].attributes[SessionConstants.id] {
+    if case let .string(sessionId1) = mockNextProcessor.receivedLogRecords[0].attributes[SemanticConventions.Session.id.rawValue] {
       XCTAssertEqual(sessionId1, "session-1")
     } else {
       XCTFail("Expected first log record to have session-1")
     }
 
-    if case let .string(sessionId2) = mockNextProcessor.receivedLogRecords[1].attributes[SessionConstants.id] {
+    if case let .string(sessionId2) = mockNextProcessor.receivedLogRecords[1].attributes[SemanticConventions.Session.id.rawValue] {
       XCTAssertEqual(sessionId2, "session-2")
     } else {
       XCTFail("Expected second log record to have session-2")
@@ -148,8 +148,8 @@ final class SessionLogRecordProcessorTests: XCTestCase {
       severity: .info,
       body: AttributeValue.string("session.start"),
       attributes: [
-        SessionConstants.id: AttributeValue.string("existing-session-123"),
-        SessionConstants.previousId: AttributeValue.string("existing-previous-456")
+        SemanticConventions.Session.id.rawValue: AttributeValue.string("existing-session-123"),
+        SemanticConventions.Session.previousId.rawValue: AttributeValue.string("existing-previous-456")
       ]
     )
 
@@ -158,13 +158,13 @@ final class SessionLogRecordProcessorTests: XCTestCase {
 
     let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
 
-    if case let .string(sessionId) = enhancedRecord.attributes[SessionConstants.id] {
+    if case let .string(sessionId) = enhancedRecord.attributes[SemanticConventions.Session.id.rawValue] {
       XCTAssertEqual(sessionId, "existing-session-123", "Should preserve existing session ID for session.start")
     } else {
       XCTFail("Expected existing session.id to be preserved")
     }
 
-    if case let .string(previousId) = enhancedRecord.attributes[SessionConstants.previousId] {
+    if case let .string(previousId) = enhancedRecord.attributes[SemanticConventions.Session.previousId.rawValue] {
       XCTAssertEqual(previousId, "existing-previous-456", "Should preserve existing previous session ID")
     } else {
       XCTFail("Expected existing session.previous_id to be preserved")
@@ -181,8 +181,7 @@ final class SessionLogRecordProcessorTests: XCTestCase {
       severity: .info,
       body: AttributeValue.string("session.end"),
       attributes: [
-        SessionConstants.id: AttributeValue.string("ending-session-789"),
-        "session.duration": AttributeValue.double(123.45)
+        SemanticConventions.Session.id.rawValue: AttributeValue.string("ending-session-789")
       ]
     )
 
@@ -191,16 +190,10 @@ final class SessionLogRecordProcessorTests: XCTestCase {
 
     let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
 
-    if case let .string(sessionId) = enhancedRecord.attributes[SessionConstants.id] {
+    if case let .string(sessionId) = enhancedRecord.attributes[SemanticConventions.Session.id.rawValue] {
       XCTAssertEqual(sessionId, "ending-session-789", "Should preserve existing session ID for session.end")
     } else {
       XCTFail("Expected existing session.id to be preserved")
-    }
-
-    if case let .double(duration) = enhancedRecord.attributes["session.duration"] {
-      XCTAssertEqual(duration, 123.45, "Should preserve existing session.duration")
-    } else {
-      XCTFail("Expected existing session.duration to be preserved")
     }
   }
 
@@ -234,7 +227,7 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     XCTAssertEqual(enhancedRecord.spanContext, logRecordWithEventName.spanContext)
     
     // Verify session attributes were added
-    if case let .string(sessionId) = enhancedRecord.attributes[SessionConstants.id] {
+    if case let .string(sessionId) = enhancedRecord.attributes[SemanticConventions.Session.id.rawValue] {
       XCTAssertEqual(sessionId, "test-session-123")
     } else {
       XCTFail("Expected session.id attribute to be added")
@@ -276,7 +269,7 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     
     XCTAssertEqual(mockNextProcessor.receivedLogRecords.count, 10)
     for record in mockNextProcessor.receivedLogRecords {
-      XCTAssertTrue(record.attributes.keys.contains(SessionConstants.id))
+      XCTAssertTrue(record.attributes.keys.contains(SemanticConventions.Session.id.rawValue))
     }
   }
 }
