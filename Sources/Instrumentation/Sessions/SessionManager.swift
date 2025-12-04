@@ -48,10 +48,8 @@ public class SessionManager {
       if let previousSession {
         SessionEventInstrumentation.addSession(session: previousSession, eventType: .end)
       }
-      if previousSession != nil {
-        SessionEventInstrumentation.addSession(session: currentSession, eventType: .start)
-        NotificationCenter.default.post(name: SessionEventNotification, object: currentSession)
-      }
+      SessionEventInstrumentation.addSession(session: currentSession, eventType: .start)
+      NotificationCenter.default.post(name: SessionEventNotification, object: currentSession)
     }
 
     SessionStore.scheduleSave(session: currentSession)
@@ -65,6 +63,7 @@ public class SessionManager {
   }
 
   /// Creates a new session with a unique identifier
+  /// *Warning* - this must be a pure function since it is used inside a lock
   private func startSession() -> Session {
     let now = Date()
 
@@ -78,6 +77,7 @@ public class SessionManager {
   }
 
   /// Extends the current session expiry time
+  /// *Warning* - this must be a pure function since it is used inside a lock
   private func refreshSession(session: Session) -> Session {
     return Session(
       id: session.id,
