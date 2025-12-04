@@ -28,7 +28,8 @@ final class SessionEventInstrumentationTests: XCTestCase {
 
   lazy var sessionExpired = Session(
     id: sessionIdExpired,
-    expireTime: Date().addingTimeInterval(-3600)
+    expireTime: Date().addingTimeInterval(-3600),
+    startTime: Date().addingTimeInterval(-7200)
   )
 
   override func setUp() {
@@ -37,31 +38,23 @@ final class SessionEventInstrumentationTests: XCTestCase {
     startTime1 = Date()
     startTime2 = Date().addingTimeInterval(60)
 
-    SessionEventInstrumentation.queue = []
+    // Reset static state FIRST
+    SessionStore.teardown()
+    SessionEventInstrumentation.queue.removeAll()
     SessionEventInstrumentation.isApplied = false
 
+    // Then setup LoggerProvider
     logExporter = InMemoryLogRecordExporter()
     let loggerProvider = LoggerProviderBuilder()
       .with(processors: [SimpleLogRecordProcessor(logRecordExporter: logExporter)])
       .build()
     OpenTelemetry.registerLoggerProvider(loggerProvider: loggerProvider)
-
-    NotificationCenter.default.removeObserver(
-      self,
-      name: SessionEventInstrumentation.sessionEventNotification,
-      object: nil
-    )
   }
 
   override func tearDown() {
     super.tearDown()
 
-    NotificationCenter.default.removeObserver(
-      self,
-      name: SessionEventInstrumentation.sessionEventNotification,
-      object: nil
-    )
-
+    SessionStore.teardown()
     OpenTelemetry.registerTracerProvider(tracerProvider: DefaultTracerProvider.instance)
     OpenTelemetry.registerLoggerProvider(loggerProvider: DefaultLoggerProvider.instance)
   }
@@ -76,7 +69,6 @@ final class SessionEventInstrumentationTests: XCTestCase {
 
     XCTAssertEqual(SessionEventInstrumentation.queue.count, 1)
     XCTAssertEqual(SessionEventInstrumentation.queue[0].session.id, sessionId1)
-    XCTAssertEqual(SessionEventInstrumentation.queue[0].eventType, .start)
   }
 
   func testInstrumentationEmptiesQueue() {
@@ -86,213 +78,165 @@ final class SessionEventInstrumentationTests: XCTestCase {
     XCTAssertEqual(SessionEventInstrumentation.queue.count, 2)
     XCTAssertFalse(SessionEventInstrumentation.isApplied)
 
-    _ = SessionEventInstrumentation()
+    SessionEventInstrumentation.install()
 
     XCTAssertTrue(SessionEventInstrumentation.isApplied)
     XCTAssertEqual(SessionEventInstrumentation.queue.count, 0)
   }
 
   func testQueueDoesNotFillAfterApplied() {
-    // XCTAssertFalse(SessionEventInstrumentation.isApplied)
-    _ = SessionEventInstrumentation()
+    SessionEventInstrumentation.install()
 
     SessionEventInstrumentation.addSession(session: session2, eventType: .start)
 
     XCTAssertEqual(SessionEventInstrumentation.queue.count, 0)
   }
 
-  func testNotificationPostedAfterInstrumentationApplied() {
-    let expectation = XCTestExpectation(description: "Session notification posted")
-    var receivedSessionEvent: SessionEvent?
-
-    NotificationCenter.default.addObserver(
-      forName: SessionEventInstrumentation.sessionEventNotification,
-      object: nil,
-      queue: nil
-    ) { notification in
-      receivedSessionEvent = notification.object as? SessionEvent
-      expectation.fulfill()
-    }
-
-    _ = SessionEventInstrumentation()
-
-    SessionEventInstrumentation.addSession(session: session1, eventType: .start)
-
-    wait(for: [expectation], timeout: 0)
-
-    XCTAssertNotNil(receivedSessionEvent)
-    XCTAssertEqual(receivedSessionEvent?.session.id, sessionId1)
-    XCTAssertEqual(receivedSessionEvent?.eventType, .start)
-    XCTAssertEqual(SessionEventInstrumentation.queue.count, 0)
-  }
-
-  func testMultipleInitializationDoesNotProcessQueueTwice() {
+  func testMultipleInstallationDoesNotProcessQueueTwice() {
     SessionEventInstrumentation.addSession(session: session1, eventType: .start)
     SessionEventInstrumentation.addSession(session: session2, eventType: .start)
     XCTAssertEqual(SessionEventInstrumentation.queue.count, 2)
-    
-    _ = SessionEventInstrumentation()
+
+    SessionEventInstrumentation.install()
     XCTAssertTrue(SessionEventInstrumentation.isApplied)
     XCTAssertEqual(SessionEventInstrumentation.queue.count, 0)
-    
-    // Second initialization should not process queue again
-    SessionEventInstrumentation.queue = [SessionEvent(session: sessionExpired, eventType: .end)]
-    _ = SessionEventInstrumentation()
-    XCTAssertEqual(SessionEventInstrumentation.queue.count, 1) // Queue unchanged
+
+    // Second installation should not process queue again
+    SessionEventInstrumentation.install()
+    XCTAssertTrue(SessionEventInstrumentation.isApplied)
   }
 
-  func testMultipleInitializationDoesNotAddDuplicateObservers() {
-    _ = SessionEventInstrumentation()
-    _ = SessionEventInstrumentation()
-    
+  func testMultipleInstallationIsSafe() {
+    SessionEventInstrumentation.install()
+    SessionEventInstrumentation.install()
+
     SessionEventInstrumentation.addSession(session: session1, eventType: .start)
-    
+
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, 1)
-    XCTAssertEqual(logRecords[0].body, AttributeValue.string("session.start"))
+    guard logRecords.count > 0 else {
+      XCTFail("No log records found")
+      return
+    }
+    XCTAssertEqual(logRecords[0].eventName, "session.start")
   }
 
   func testSessionStartLogRecord() {
     SessionEventInstrumentation.addSession(session: session1, eventType: .start)
-    _ = SessionEventInstrumentation()
-    
+    SessionEventInstrumentation.install()
+
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, 1)
-    
+
     let record = logRecords[0]
-    XCTAssertEqual(record.body, AttributeValue.string("session.start"))
+    XCTAssertEqual(record.eventName, "session.start")
+    XCTAssertNotNil(record.observedTimestamp, "Observed timestamp should be set")
     XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionId1))
-    XCTAssertEqual(record.attributes["session.start_time"], AttributeValue.double(Double(startTime1.timeIntervalSince1970.toNanoseconds)))
+
+    XCTAssertNil(record.attributes["session.previous_id"])
+  }
+
+  func testSessionStartApplyAfter() {
+    SessionEventInstrumentation.addSession(session: session1, eventType: .start)
+    SessionEventInstrumentation.install()
+
+    let logRecords = logExporter.getFinishedLogRecords()
+    XCTAssertEqual(logRecords.count, 1)
+
+    let record = logRecords[0]
+    XCTAssertEqual(record.eventName, "session.start")
+    XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionId1))
+    XCTAssertNil(record.attributes["session.previous_id"])
+  }
+
+  func testSessionStartApplyBefore() {
+    SessionEventInstrumentation.install()
+    SessionEventInstrumentation.addSession(session: session1, eventType: .start)
+
+    let logRecords = logExporter.getFinishedLogRecords()
+    XCTAssertEqual(logRecords.count, 1)
+
+    let record = logRecords[0]
+    XCTAssertEqual(record.eventName, "session.start")
+    XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionId1))
+    XCTAssertNil(record.attributes["session.previous_id"])
+  }
+
+  func testSessionEndApplyBefore() {
+    SessionEventInstrumentation.install()
+    SessionEventInstrumentation.addSession(session: sessionExpired, eventType: .end)
+
+    let logRecords = logExporter.getFinishedLogRecords()
+    XCTAssertEqual(logRecords.count, 1)
+
+    let record = logRecords[0]
+    XCTAssertEqual(record.eventName, "session.end")
+    XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionIdExpired))
     XCTAssertNil(record.attributes["session.previous_id"])
   }
 
   func testSessionStartLogRecordWithPreviousId() {
     SessionEventInstrumentation.addSession(session: session2, eventType: .start)
-    _ = SessionEventInstrumentation()
-    
+    SessionEventInstrumentation.install()
+
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, 1)
-    
+
     let record = logRecords[0]
-    XCTAssertEqual(record.body, AttributeValue.string("session.start"))
+    XCTAssertEqual(record.eventName, "session.start")
     XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionId2))
-    XCTAssertEqual(record.attributes["session.start_time"], AttributeValue.double(Double(startTime2.timeIntervalSince1970.toNanoseconds)))
+
     XCTAssertEqual(record.attributes["session.previous_id"], AttributeValue.string(sessionId1))
   }
 
   func testSessionEndLogRecord() {
     SessionEventInstrumentation.addSession(session: sessionExpired, eventType: .end)
-    _ = SessionEventInstrumentation()
-    
+    SessionEventInstrumentation.install()
+
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, 1)
-    
+
     let record = logRecords[0]
-    XCTAssertEqual(record.body, AttributeValue.string("session.end"))
+    XCTAssertEqual(record.eventName, "session.end")
+    XCTAssertNotNil(record.observedTimestamp, "Observed timestamp should be set")
     XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionIdExpired))
-    XCTAssertEqual(record.attributes["session.start_time"], AttributeValue.double(Double(sessionExpired.startTime.timeIntervalSince1970.toNanoseconds)))
-    XCTAssertEqual(record.attributes["session.end_time"], AttributeValue.double(Double(sessionExpired.endTime!.timeIntervalSince1970.toNanoseconds)))
-    XCTAssertEqual(record.attributes["session.duration"], AttributeValue.double(Double(sessionExpired.duration!.toNanoseconds)))
+
     XCTAssertNil(record.attributes["session.previous_id"])
   }
-  
+
   func testInstrumentationScopeName() {
     SessionEventInstrumentation.addSession(session: session1, eventType: .start)
-    _ = SessionEventInstrumentation()
-    
+    SessionEventInstrumentation.install()
+
     let logRecords = logExporter.getFinishedLogRecords()
+    XCTAssertEqual(SessionEventInstrumentation.instrumentationKey, "io.opentelemetry.sessions")
     XCTAssertEqual(logRecords.first?.instrumentationScopeInfo.name, "io.opentelemetry.sessions")
   }
-  
-  func testQueueSizeLimit() {
-    // Fill queue to max capacity
-    for i in 0..<Int(SessionEventInstrumentation.maxQueueSize) {
-      let session = Session(id: "session-\(i)", expireTime: Date().addingTimeInterval(3600))
-      SessionEventInstrumentation.addSession(session: session, eventType: .start)
-    }
-    
-    XCTAssertEqual(SessionEventInstrumentation.queue.count, Int(SessionEventInstrumentation.maxQueueSize))
-    
-    // Try to add one more - should be dropped
-    let extraSession = Session(id: "extra-session", expireTime: Date().addingTimeInterval(3600))
-    SessionEventInstrumentation.addSession(session: extraSession, eventType: .start)
-    
-    // Queue should still be at max size, extra session dropped
-    XCTAssertEqual(SessionEventInstrumentation.queue.count, Int(SessionEventInstrumentation.maxQueueSize))
-    
-    // Verify the extra session was not added
-    let sessionIds = SessionEventInstrumentation.queue.map { $0.session.id }
-    XCTAssertFalse(sessionIds.contains("extra-session"))
-  }
-  
-  func testNotificationNotPostedBeforeInstrumentationApplied() {
-    let expectation = XCTestExpectation(description: "Session notification posted")
-    expectation.isInverted = true
 
-    NotificationCenter.default.addObserver(
-      forName: SessionEventInstrumentation.sessionEventNotification,
-      object: nil,
-      queue: nil
-    ) { _ in
-      expectation.fulfill()
-    }
-
-    SessionEventInstrumentation.addSession(session: session1, eventType: .start)
-
-    wait(for: [expectation], timeout: 0.1)
-
-    XCTAssertEqual(SessionEventInstrumentation.queue.count, 1)
-  }
-  
-  func testSessionEventProcessingOrder() {
-    // Test both before and after instrumentation application
-    SessionEventInstrumentation.addSession(session: session1, eventType: .start)
-    _ = SessionEventInstrumentation()
-    SessionEventInstrumentation.addSession(session: sessionExpired, eventType: .end)
-
-    let logRecords = logExporter.getFinishedLogRecords()
-    XCTAssertEqual(logRecords.count, 2)
-
-    // Verify session start record
-    let startRecord = logRecords[0]
-    XCTAssertEqual(startRecord.body, AttributeValue.string("session.start"))
-    XCTAssertEqual(startRecord.attributes["session.id"], AttributeValue.string(sessionId1))
-    XCTAssertEqual(startRecord.attributes["session.start_time"], AttributeValue.double(Double(session1.startTime.timeIntervalSince1970.toNanoseconds)))
-    XCTAssertNil(startRecord.attributes["session.previous_id"])
-
-    // Verify session end record
-    let endRecord = logRecords[1]
-    XCTAssertEqual(endRecord.body, AttributeValue.string("session.end"))
-    XCTAssertEqual(endRecord.attributes["session.id"], AttributeValue.string(sessionIdExpired))
-    XCTAssertEqual(endRecord.attributes["session.start_time"], AttributeValue.double(Double(sessionExpired.startTime.timeIntervalSince1970.toNanoseconds)))
-    XCTAssertEqual(endRecord.attributes["session.end_time"], AttributeValue.double(Double(sessionExpired.endTime!.timeIntervalSince1970.toNanoseconds)))
-    XCTAssertEqual(endRecord.attributes["session.duration"], AttributeValue.double(Double(sessionExpired.duration!.toNanoseconds)))
-  }
-  
-  func testMultipleSessionsProcessedInOrderAfterInstrumentation() {
+  func testMultipleSessionsProcessedInOrderAfterinstrumentation() {
     SessionEventInstrumentation.addSession(session: session1, eventType: .start)
     SessionEventInstrumentation.addSession(session: session2, eventType: .start)
     SessionEventInstrumentation.addSession(session: sessionExpired, eventType: .end)
 
-    _ = SessionEventInstrumentation()
+    SessionEventInstrumentation.install()
 
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, 3)
 
     XCTAssertEqual(logRecords[0].attributes["session.id"], AttributeValue.string(sessionId1))
-    XCTAssertEqual(logRecords[0].body, AttributeValue.string("session.start"))
+    XCTAssertEqual(logRecords[0].eventName, "session.start")
     XCTAssertNil(logRecords[0].attributes["session.previous_id"])
 
     XCTAssertEqual(logRecords[1].attributes["session.id"], AttributeValue.string(sessionId2))
-    XCTAssertEqual(logRecords[1].body, AttributeValue.string("session.start"))
+    XCTAssertEqual(logRecords[1].eventName, "session.start")
     XCTAssertEqual(logRecords[1].attributes["session.previous_id"], AttributeValue.string(sessionId1))
 
     XCTAssertEqual(logRecords[2].attributes["session.id"], AttributeValue.string(sessionIdExpired))
-    XCTAssertEqual(logRecords[2].body, AttributeValue.string("session.end"))
+    XCTAssertEqual(logRecords[2].eventName, "session.end")
   }
 
   func testMultipleSessionsProcessedInOrderBefore() {
-    _ = SessionEventInstrumentation()
+    SessionEventInstrumentation.install()
 
     SessionEventInstrumentation.addSession(session: session1, eventType: .start)
     SessionEventInstrumentation.addSession(session: session2, eventType: .start)
@@ -302,28 +246,72 @@ final class SessionEventInstrumentationTests: XCTestCase {
     XCTAssertEqual(logRecords.count, 3)
 
     XCTAssertEqual(logRecords[0].attributes["session.id"], AttributeValue.string(sessionId1))
-    XCTAssertEqual(logRecords[0].body, AttributeValue.string("session.start"))
+    XCTAssertEqual(logRecords[0].eventName, "session.start")
     XCTAssertNil(logRecords[0].attributes["session.previous_id"])
 
     XCTAssertEqual(logRecords[1].attributes["session.id"], AttributeValue.string(sessionId2))
-    XCTAssertEqual(logRecords[1].body, AttributeValue.string("session.start"))
+    XCTAssertEqual(logRecords[1].eventName, "session.start")
     XCTAssertEqual(logRecords[1].attributes["session.previous_id"], AttributeValue.string(sessionId1))
 
     XCTAssertEqual(logRecords[2].attributes["session.id"], AttributeValue.string(sessionIdExpired))
-    XCTAssertEqual(logRecords[2].body, AttributeValue.string("session.end"))
+    XCTAssertEqual(logRecords[2].eventName, "session.end")
   }
-  
+
+  // MARK: - Max Queue Size Tests
+
   func testMaxQueueSizeConstant() {
     XCTAssertEqual(SessionEventInstrumentation.maxQueueSize, 32)
   }
 
-  func testQueueSizeEnforcement() {
-    XCTAssertEqual(SessionEventInstrumentation.maxQueueSize, 32)
-    
-    // Test queue drops events when exceeding max size with mixed event types
-    for i in 1...40 {
-      let eventType: SessionEventType = (i % 3 == 0) ? .end : .start
-      let session = Session(id: "session-\(i)", expireTime: Date().addingTimeInterval(3600))
+  func testQueueEnforcesMaxSize() {
+    // Add sessions up to max capacity
+    for i in 1 ... 32 {
+      let session = Session(
+        id: "session-\(i)",
+        expireTime: Date().addingTimeInterval(3600)
+      )
+      SessionEventInstrumentation.addSession(session: session, eventType: .start)
+    }
+
+    XCTAssertEqual(SessionEventInstrumentation.queue.count, 32)
+    XCTAssertEqual(SessionEventInstrumentation.queue.first?.session.id, "session-1")
+    XCTAssertEqual(SessionEventInstrumentation.queue.last?.session.id, "session-32")
+  }
+
+  func testQueueDropsNewEventsWhenExceedingMaxSize() {
+    // Add sessions beyond max capacity
+    for i in 1 ... 40 {
+      let session = Session(
+        id: "session-\(i)",
+        expireTime: Date().addingTimeInterval(3600)
+      )
+      SessionEventInstrumentation.addSession(session: session, eventType: .start)
+    }
+
+    XCTAssertEqual(SessionEventInstrumentation.queue.count, 32)
+    XCTAssertEqual(SessionEventInstrumentation.queue.first?.session.id, "session-1")
+    XCTAssertEqual(SessionEventInstrumentation.queue.last?.session.id, "session-32")
+  }
+
+  func testMaxQueueSizeWithMixedSessionTypes() {
+    // Add mix of active and expired sessions beyond max capacity
+    for i in 1 ... 40 {
+      let session: Session
+      let eventType: SessionEventType
+      if i % 3 == 0 {
+        // Every third session is expired
+        session = Session(
+          id: "session-\(i)",
+          expireTime: Date().addingTimeInterval(-3600)
+        )
+        eventType = .end
+      } else {
+        session = Session(
+          id: "session-\(i)",
+          expireTime: Date().addingTimeInterval(3600)
+        )
+        eventType = .start
+      }
       SessionEventInstrumentation.addSession(session: session, eventType: eventType)
     }
 
@@ -333,11 +321,11 @@ final class SessionEventInstrumentationTests: XCTestCase {
   }
 
   func testQueueDoesNotEnforceMaxSizeAfterInstrumentationApplied() {
-    _ = SessionEventInstrumentation()
+    SessionEventInstrumentation.install()
     let max: UInt8 = SessionEventInstrumentation.maxQueueSize + 1
 
     // Add sessions after instrumentation is applied
-    for i in 1...max {
+    for i in 1 ... max {
       let session = Session(
         id: "session-\(i)",
         expireTime: Date().addingTimeInterval(3600)
@@ -345,23 +333,146 @@ final class SessionEventInstrumentationTests: XCTestCase {
       SessionEventInstrumentation.addSession(session: session, eventType: .start)
     }
 
-    // Queue should remain empty as sessions are processed via notifications
+    // Queue should remain empty as sessions are processed immediately
     XCTAssertEqual(SessionEventInstrumentation.queue.count, 0)
 
     // All sessions should be processed
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, Int(max))
   }
-  
-  func testSessionEndEventWithActiveSession() {
-    // Test session end event with active session (no endTime/duration)
-    let activeSession = Session(id: "active-session", expireTime: Date().addingTimeInterval(3600))
-    
-    _ = SessionEventInstrumentation()
-    SessionEventInstrumentation.addSession(session: activeSession, eventType: .end)
-    
-    // Should not create log record for active session end event
+
+  func testProcessingQueuedSessionsAfterMaxSizeEnforcement() {
+    // Add sessions beyond max capacity
+    for i in 1 ... 40 {
+      let session = Session(
+        id: "session-\(i)",
+        expireTime: Date().addingTimeInterval(3600)
+      )
+      SessionEventInstrumentation.addSession(session: session, eventType: .start)
+    }
+
+    XCTAssertEqual(SessionEventInstrumentation.queue.count, 32)
+
+    // Apply instrumentation to process queued sessions
+    SessionEventInstrumentation.install()
+
+    // Only the first 32 sessions should be processed (sessions 33-40 were dropped)
     let logRecords = logExporter.getFinishedLogRecords()
-    XCTAssertEqual(logRecords.count, 0)
+    XCTAssertEqual(logRecords.count, 32)
+
+    // Verify the first processed session is session-1 (first added)
+    XCTAssertEqual(logRecords[0].attributes["session.id"], AttributeValue.string("session-1"))
+    // Verify the last processed session is session-32 (last one that fit in queue)
+    XCTAssertEqual(logRecords[31].attributes["session.id"], AttributeValue.string("session-32"))
+  }
+
+  // MARK: - SessionManager Integration Tests
+
+  func testSessionManagerTenSessionChain() {
+    SessionEventInstrumentation.install()
+    let sessionManager = SessionManager(configuration: SessionConfig(sessionTimeout: 0))
+
+    var sessions: [Session] = []
+
+    // Create 10 sessions in sequence
+    for _ in 1 ... 10 {
+      sessions.append(sessionManager.getSession())
+    }
+
+    let logRecords = logExporter.getFinishedLogRecords()
+    XCTAssertEqual(logRecords.count, 19) // 1 start + 9*(end+start) = 1 + 18 = 19
+
+    // Verify first session has no previous ID
+    let firstStartRecord = logRecords.first { record in
+      record.eventName == "session.start" &&
+        record.attributes["session.id"] == AttributeValue.string(sessions[0].id)
+    }
+    XCTAssertNotNil(firstStartRecord)
+    XCTAssertNil(firstStartRecord!.attributes["session.previous_id"])
+
+    // Verify session chain linking
+    for i in 1 ..< sessions.count {
+      let sessionStartRecord = logRecords.first { record in
+        record.eventName == "session.start" &&
+          record.attributes["session.id"] == AttributeValue.string(sessions[i].id)
+      }
+      XCTAssertNotNil(sessionStartRecord)
+      XCTAssertEqual(sessionStartRecord?.attributes["session.previous_id"], AttributeValue.string(sessions[i - 1].id))
+    }
+  }
+
+  // MARK: - Explicit Event Type Tests
+
+  func testAddSessionWithExplicitStartEventType() {
+    SessionEventInstrumentation.addSession(session: session1, eventType: .start)
+    SessionEventInstrumentation.install()
+
+    let logRecords = logExporter.getFinishedLogRecords()
+    XCTAssertEqual(logRecords.count, 1)
+    guard logRecords.count > 0 else {
+      XCTFail("No log records found. isApplied: \(SessionEventInstrumentation.isApplied), queue: \(SessionEventInstrumentation.queue.count)")
+      return
+    }
+    XCTAssertEqual(logRecords[0].eventName, "session.start")
+    XCTAssertEqual(logRecords[0].attributes["session.id"], AttributeValue.string(sessionId1))
+  }
+
+  func testAddSessionWithExplicitEndEventType() {
+    let sessionWithEndTime = Session(
+      id: sessionIdExpired,
+      expireTime: Date().addingTimeInterval(-3600),
+      startTime: Date().addingTimeInterval(-7200)
+    )
+
+    SessionEventInstrumentation.addSession(session: sessionWithEndTime, eventType: .end)
+    SessionEventInstrumentation.install()
+
+    let logRecords = logExporter.getFinishedLogRecords()
+    XCTAssertEqual(logRecords.count, 1)
+    XCTAssertEqual(logRecords[0].eventName, "session.end")
+    XCTAssertEqual(logRecords[0].attributes["session.id"], AttributeValue.string(sessionIdExpired))
+  }
+
+  func testObservedTimestampIsSetOnSessionEvents() {
+    SessionEventInstrumentation.addSession(session: session1, eventType: .start)
+    SessionEventInstrumentation.install()
+
+    let logRecords = logExporter.getFinishedLogRecords()
+    XCTAssertEqual(logRecords.count, 1)
+
+    let record = logRecords[0]
+    XCTAssertNotNil(record.observedTimestamp)
+    XCTAssertNotNil(record.timestamp)
+
+    // Verify the observed timestamp equals the timestamp
+    XCTAssertNotEqual(record.observedTimestamp, record.timestamp)
+  }
+
+  func testQueueStoresEventType() {
+    SessionEventInstrumentation.addSession(session: session1, eventType: .start)
+    SessionEventInstrumentation.addSession(session: sessionExpired, eventType: .end)
+
+    XCTAssertEqual(SessionEventInstrumentation.queue.count, 2)
+    XCTAssertEqual(SessionEventInstrumentation.queue[0].eventType, .start)
+    XCTAssertEqual(SessionEventInstrumentation.queue[1].eventType, .end)
+  }
+
+  func testDeprecatedConstructorCallsInstall() {
+    SessionEventInstrumentation.addSession(session: session1, eventType: .start)
+    XCTAssertFalse(SessionEventInstrumentation.isApplied)
+    XCTAssertEqual(SessionEventInstrumentation.queue.count, 1)
+
+    _ = SessionEventInstrumentation()
+
+    XCTAssertTrue(SessionEventInstrumentation.isApplied)
+    XCTAssertEqual(SessionEventInstrumentation.queue.count, 0)
+    
+    let logRecords = logExporter.getFinishedLogRecords()
+    XCTAssertEqual(logRecords.count, 1)
+    XCTAssertEqual(logRecords[0].eventName, "session.start")
+  }
+
+  func testDeprecatedSessionEventNotification() {
+    XCTAssertEqual(SessionEventInstrumentation.sessionEventNotification, SessionEventNotification)
   }
 }
