@@ -25,7 +25,6 @@ let package = Package(
     .library(name: "OTelSwiftLog", targets: ["OTelSwiftLog"]),
     .library(name: "BaggagePropagationProcessor", targets: ["BaggagePropagationProcessor"]),
     .library(name: "Sessions", targets: ["Sessions"]),
-
     .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
     .executable(name: "StableMetricSample", targets: ["StableMetricSample"])
   ],
@@ -35,8 +34,7 @@ let package = Package(
     .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.27.0"),
     .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.33.3"),
     .package(url: "https://github.com/apple/swift-log.git", from: "1.6.4"),
-    .package(url: "https://github.com/apple/swift-metrics.git", from: "2.7.1"),
-
+    .package(url: "https://github.com/apple/swift-metrics.git", from: "2.7.1")
   ],
   targets: [
     .target(
