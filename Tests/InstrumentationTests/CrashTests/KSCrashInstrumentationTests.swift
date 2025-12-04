@@ -165,7 +165,6 @@ final class KSCrashInstrumentationTests: XCTestCase {
     XCTAssertNil(result[SemanticConventions.Session.previousId.rawValue])
   }
 
-
   func testNotificationHandling() {
     KSCrashInstrumentation.setupNotificationObservers()
     defer {

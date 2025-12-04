@@ -129,7 +129,6 @@ let package = Package(
       path: "Sources/Instrumentation/Sessions",
       exclude: ["README.md"]
     ),
-
     .testTarget(
       name: "OTelSwiftLogTests",
       dependencies: ["OTelSwiftLog"],
@@ -153,7 +152,7 @@ let package = Package(
       dependencies: [
         "OpenTelemetryProtocolExporterGrpc",
         "OpenTelemetryProtocolExporterHttp",
-        "SharedTestUtils",
+        "SharedTestUtils"
       ],
       path: "Tests/ExportersTests/OpenTelemetryProtocol"
     ),
@@ -182,7 +181,6 @@ let package = Package(
       ],
       path: "Tests/InstrumentationTests/SessionTests"
     ),
-
     .executableTarget(
       name: "LoggingTracer",
       dependencies: [
@@ -308,7 +306,8 @@ extension Package {
           name: "URLSessionInstrumentation",
           dependencies: [
             .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
-            "NetworkStatus"],
+            "NetworkStatus"
+          ],
           path: "Sources/Instrumentation/URLSession",
           exclude: ["README.md"]
         ),
@@ -316,7 +315,7 @@ extension Package {
           name: "URLSessionInstrumentationTests",
           dependencies: [
             "URLSessionInstrumentation",
-            "SharedTestUtils",
+            "SharedTestUtils"
           ],
           path: "Tests/InstrumentationTests/URLSessionTests"
         ),
@@ -357,7 +356,7 @@ extension Package {
           dependencies: [
             .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
             "OpenTelemetryProtocolExporterHttp", .product(name: "StdoutExporter", package: "opentelemetry-swift-core"),
-            "ZipkinExporter", "ResourceExtension", "SignPostIntegration",
+            "ZipkinExporter", "ResourceExtension", "SignPostIntegration"
           ],
           path: "Examples/OTLP HTTP Exporter",
           exclude: ["README.md", "collector-config.yaml", "docker-compose.yaml", "prometheus.yaml", "images"]
@@ -407,7 +406,8 @@ extension Package {
           name: "PrometheusSample",
           dependencies: [
             .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
-            "PrometheusExporter"],
+            "PrometheusExporter"
+          ],
           path: "Examples/Prometheus Sample",
           exclude: ["README.md"]
         ),

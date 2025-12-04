@@ -130,7 +130,6 @@ public class KSCrashInstrumentation: CrashProtocol {
       // Delete processed report
       reportStore.deleteReport(with: id)
     }
-
   }
 
   // Report a KSCrash report in Apple format
