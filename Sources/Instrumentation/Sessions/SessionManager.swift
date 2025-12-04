@@ -13,11 +13,6 @@ public class SessionManager {
   private var session: Session?
   private let lock = NSLock()
 
-  private struct SessionTransition {
-    let current: Session
-    let previous: Session?
-  }
-
   /// Initializes the session manager and restores any previous session from disk
   /// - Parameter configuration: Session configuration settings
   public init(configuration: SessionConfig = .default) {
@@ -30,25 +25,37 @@ public class SessionManager {
   /// - Returns: The current active session
   @discardableResult
   public func getSession() -> Session {
-    let transition : SessionTransition? = lock.withLock {
-      if session == nil || session!.isExpired() {
-        return startSession()
+    let (currentSession,
+         previousSession,
+         sessionDidExpire) = lock.withLock {
+      if let session,
+         !session.isExpired() {
+        // extend session
+        let extendedSession = refreshSession(session: session)
+        self.session = extendedSession
+        return (extendedSession, nil as Session?, false)
+      } else {
+        // start new session
+        let prev = session
+        let nextSession = startSession()
+        self.session = nextSession
+        return (nextSession, prev, true)
       }
-      refreshSession()
-      return nil
     }
-    
+
     // Call external code outside the lock only if new session was created
-    if let transition {
-      if let previousSession = transition.previous {
+    if sessionDidExpire {
+      if let previousSession {
         SessionEventInstrumentation.addSession(session: previousSession, eventType: .end)
       }
-      SessionEventInstrumentation.addSession(session: transition.current, eventType: .start)
-      NotificationCenter.default.post(name: SessionEventNotification, object: transition.current)
+      if previousSession != nil {
+        SessionEventInstrumentation.addSession(session: currentSession, eventType: .start)
+        NotificationCenter.default.post(name: SessionEventNotification, object: currentSession)
+      }
     }
-    
-    SessionStore.scheduleSave(session: session!)
-    return session!
+
+    SessionStore.scheduleSave(session: currentSession)
+    return currentSession
   }
 
   /// Gets the current session without extending its expireTime time
@@ -57,32 +64,26 @@ public class SessionManager {
     return lock.withLock { session }
   }
 
-  /// Creates a new session with a unique identifier (called within lock)
-  private func startSession() -> SessionTransition {
+  /// Creates a new session with a unique identifier
+  private func startSession() -> Session {
     let now = Date()
-    let previousId = session?.id
-    let newId = UUID().uuidString
-    let previousSession = session
 
-    // Create new session
-    session = Session(
-      id: newId,
+    return Session(
+      id: UUID().uuidString,
       expireTime: now.addingTimeInterval(Double(configuration.sessionTimeout)),
-      previousId: previousId,
+      previousId: session?.id,
       startTime: now,
       sessionTimeout: configuration.sessionTimeout
     )
-
-    return SessionTransition(current: session!, previous: previousSession)
   }
 
-  /// Extends the current session expiry time (called within lock)
-  private func refreshSession() {
-    session = Session(
-      id: session!.id,
+  /// Extends the current session expiry time
+  private func refreshSession(session: Session) -> Session {
+    return Session(
+      id: session.id,
       expireTime: Date(timeIntervalSinceNow: Double(configuration.sessionTimeout)),
-      previousId: session!.previousId,
-      startTime: session!.startTime,
+      previousId: session.previousId,
+      startTime: session.startTime,
       sessionTimeout: configuration.sessionTimeout
     )
   }
