@@ -56,6 +56,7 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
 
   public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil)
     -> SpanExporterResultCode {
+    var resultValue: SpanExporterResultCode = .success
     var sendingSpans: [SpanData] = []
     exporterLock.withLockVoid {
       pendingSpans.append(contentsOf: spans)
@@ -68,7 +69,17 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
         $0.resourceSpans = SpanAdapter.toProtoResourceSpans(
           spanDataList: sendingSpans)
       }
-    let request = createRequest(body: body, endpoint: endpoint)
+    let semaphore = DispatchSemaphore(value: 0)
+    var request = createRequest(body: body, endpoint: endpoint)
+    if let headers = envVarHeaders {
+        headers.forEach { key, value in
+            request.addValue(value, forHTTPHeaderField: key)
+        }
+    } else if let headers = config.headers {
+        headers.forEach { key, value in
+            request.addValue(value, forHTTPHeaderField: key)
+        }
+    }
     exporterMetrics?.addSeen(value: sendingSpans.count)
     httpClient.send(request: request) { [weak self] result in
       switch result {
@@ -80,9 +91,12 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
           self?.pendingSpans.append(contentsOf: sendingSpans)
         }
         print(error)
+        resultValue = .failure
       }
+      semaphore.signal()
     }
-    return .success
+    semaphore.wait()
+    return resultValue
   }
 
   public func flush(explicitTimeout: TimeInterval? = nil)
