@@ -53,6 +53,17 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
+  /// A minimal delegate that only implements didFinishCollecting.
+  /// This tests that delegate classes are discovered even when they only implement
+  /// urlSession(_:task:didFinishCollecting:) and no other delegate methods.
+  class MinimalMetricsDelegate: NSObject, URLSessionTaskDelegate {
+    var didFinishCollectingCalled = false
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
+      didFinishCollectingCalled = true
+    }
+  }
+
   static var requestCopy: URLRequest!
   static var responseCopy: HTTPURLResponse!
 
@@ -931,6 +942,27 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInstrumentCalled, "shouldInstrument should be called")
     XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled, "createdRequest should be called")
     XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled, "receivedResponse should be called")
+  }
+
+  /// Tests that delegate classes are discovered and swizzled even when they only implement
+  /// urlSession(_:task:didFinishCollecting:) and no other delegate methods.
+  /// This is a regression test for a bug where the selector for didFinishCollecting was missing
+  /// from the delegate discovery mechanism.
+  @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
+  public func testDelegateWithOnlyDidFinishCollectingIsDiscovered() async throws {
+    let request = URLRequest(url: URL(string: "http://localhost:33333/success")!)
+
+    let delegate = MinimalMetricsDelegate()
+    let session = URLSession(configuration: URLSessionConfiguration.default, delegate: delegate, delegateQueue: nil)
+
+    _ = try await session.data(for: request)
+
+    // Verify the user's delegate was called (proves swizzling forwarded the call)
+    XCTAssertTrue(delegate.didFinishCollectingCalled, "Delegate should receive metrics callback")
+
+    // Verify instrumentation worked (span was created and completed)
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled, "Instrumentation should capture the request")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled, "Instrumentation should capture the response")
   }
 
   public func testOldSemanticConvention() {
