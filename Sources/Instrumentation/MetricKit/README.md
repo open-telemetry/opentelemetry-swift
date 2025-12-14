@@ -30,6 +30,29 @@ if #available(iOS 13.0, *) {
 
 The instrumentation will automatically receive MetricKit payloads and convert them to OpenTelemetry spans and logs.
 
+### Configuration
+
+You can optionally provide a `MetricKitConfiguration` to customize the instrumentation:
+
+```swift
+if #available(iOS 13.0, *) {
+    let config = MetricKitConfiguration(
+        useAppleStacktraceFormat: false,
+        tracer: customTracer
+    )
+    let metricKit = MetricKitInstrumentation(configuration: config)
+    MXMetricManager.shared.add(metricKit)
+
+    // Store instrumentation somewhere to keep it alive, e.g.:
+    // AppDelegate.metricKitInstrumentation = metricKit
+}
+```
+
+| Option                      | Default             | Description                                                     |
+|-----------------------------|--------------------------------|------------------------------------------------------|
+| `tracer`                    | (a default tracer)  | Custom tracer for creating spans                                |
+| `useAppleStacktraceFormat`  | `false`             | Use Apple's native JSON format for stacktraces instead of OTel  |
+
 ## Data Structure Overview
 
 MetricKit reports data in two categories: **Metrics** and **Diagnostics**.
