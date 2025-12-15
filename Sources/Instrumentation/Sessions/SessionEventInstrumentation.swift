@@ -30,7 +30,9 @@ public struct SessionEvent {
 /// - All session events are converted to OpenTelemetry log records with appropriate attributes
 /// - Session end events include duration and end time attributes
 public class SessionEventInstrumentation {
-  private let logger: Logger
+  private static var logger: Logger {
+    return OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: SessionEventInstrumentation.instrumentationKey)
+  }
 
   /// Queue for storing session events that were created before instrumentation was initialized.
   /// This allows capturing session events that occur during application startup before
@@ -43,34 +45,27 @@ public class SessionEventInstrumentation {
 
   /// Notification name for new session events.
   /// Used to broadcast session creation and expiration events after instrumentation is applied.
-  static let sessionEventNotification = Notification.Name(SessionConstants.sessionEventNotification)
+  @available(*, deprecated, message: "Use SessionEventNotification instead")
+  static let sessionEventNotification = SessionEventNotification
 
   static let instrumentationKey = "io.opentelemetry.sessions"
+
+  @available(*, deprecated, message: "Use SessionEventInstrumentation.install() instead")
+  public init() {
+    SessionEventInstrumentation.install()
+  }
 
   /// Flag to track if the instrumentation has been applied.
   /// Controls whether new sessions are queued or immediately processed via notifications.
   static var isApplied = false
-
-  public init() {
-    logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: SessionEventInstrumentation.instrumentationKey)
-    guard !SessionEventInstrumentation.isApplied else {
+  public static func install() {
+    guard !isApplied else {
       return
     }
 
-    SessionEventInstrumentation.isApplied = true
+    isApplied = true
     // Process any queued sessions
     processQueuedSessions()
-
-    // Start observing for new session notifications
-    NotificationCenter.default.addObserver(
-      forName: SessionEventInstrumentation.sessionEventNotification,
-      object: nil,
-      queue: nil
-    ) { notification in
-      if let sessionEvent = notification.object as? SessionEvent {
-        self.createSessionEvent(session: sessionEvent.session, eventType: sessionEvent.eventType)
-      }
-    }
   }
 
   /// Process any sessions that were queued before instrumentation was applied.
@@ -78,7 +73,7 @@ public class SessionEventInstrumentation {
   /// This method is called during the `apply()` process to handle any sessions that
   /// were created before the instrumentation was initialized. It creates log records
   /// for all queued sessions and then clears the queue.
-  private func processQueuedSessions() {
+  private static func processQueuedSessions() {
     let sessionEvents = SessionEventInstrumentation.queue
 
     if sessionEvents.isEmpty {
@@ -97,7 +92,7 @@ public class SessionEventInstrumentation {
   /// - Parameters:
   ///   - session: The session to create an event for
   ///   - eventType: The type of event to create (start or end)
-  private func createSessionEvent(session: Session, eventType: SessionEventType) {
+  private static func createSessionEvent(session: Session, eventType: SessionEventType) {
     switch eventType {
     case .start:
       createSessionStartEvent(session: session)
@@ -111,21 +106,21 @@ public class SessionEventInstrumentation {
   /// Creates an OpenTelemetry log record with session attributes including ID, start time,
   /// and previous session ID (if available).
   /// - Parameter session: The session that has started
-  private func createSessionStartEvent(session: Session) {
+  private static func createSessionStartEvent(session: Session) {
     var attributes: [String: AttributeValue] = [
-      SessionConstants.id: AttributeValue.string(session.id),
-      SessionConstants.startTime: AttributeValue.double(Double(session.startTime.timeIntervalSince1970.toNanoseconds))
+      SemanticConventions.Session.id.rawValue: AttributeValue.string(session.id)
     ]
 
     if let previousId = session.previousId {
-      attributes[SessionConstants.previousId] = AttributeValue.string(previousId)
+      attributes[SemanticConventions.Session.previousId.rawValue] = AttributeValue.string(previousId)
     }
 
     /// Create `session.start` log record according to otel semantic convention
     /// https://opentelemetry.io/docs/specs/semconv/general/session/
     logger.logRecordBuilder()
-      .setBody(AttributeValue.string(SessionConstants.sessionStartEvent))
+      .setEventName(SessionConstants.sessionStartEvent)
       .setAttributes(attributes)
+      .setTimestamp(session.startTime)
       .emit()
   }
 
@@ -134,44 +129,38 @@ public class SessionEventInstrumentation {
   /// Creates an OpenTelemetry log record with session attributes including ID, start time,
   /// end time, duration, and previous session ID (if available).
   /// - Parameter session: The expired session
-  private func createSessionEndEvent(session: Session) {
-    guard let endTime = session.endTime,
-          let duration = session.duration else {
+  private static func createSessionEndEvent(session: Session) {
+    guard let endTime = session.endTime else {
       return
     }
 
     var attributes: [String: AttributeValue] = [
-      SessionConstants.id: AttributeValue.string(session.id),
-      SessionConstants.startTime: AttributeValue.double(Double(session.startTime.timeIntervalSince1970.toNanoseconds)),
-      SessionConstants.endTime: AttributeValue.double(Double(endTime.timeIntervalSince1970.toNanoseconds)),
-      SessionConstants.duration: AttributeValue.double(Double(duration.toNanoseconds))
+      SemanticConventions.Session.id.rawValue: AttributeValue.string(session.id)
     ]
 
     if let previousId = session.previousId {
-      attributes[SessionConstants.previousId] = AttributeValue.string(previousId)
+      attributes[SemanticConventions.Session.previousId.rawValue] = AttributeValue.string(previousId)
     }
 
     /// Create `session.end`` log record according to otel semantic convention
     /// https://opentelemetry.io/docs/specs/semconv/general/session/
     logger.logRecordBuilder()
-      .setBody(AttributeValue.string(SessionConstants.sessionEndEvent))
+      .setEventName(SessionConstants.sessionEndEvent)
       .setAttributes(attributes)
+      .setTimestamp(endTime)
       .emit()
   }
 
   /// Add a session to the queue or send notification if instrumentation is already applied.
   ///
   /// This static method is the main entry point for handling new sessions. It either:
-  /// - Adds the session to the static queue if instrumentation hasn't been applied yet (max 32 items)
+  /// - Adds the session to the static queue if instrumentation hasn't been applied yet (max 10 items)
   /// - Posts a notification with the session if instrumentation has been applied
   ///
   /// - Parameter session: The session to process
   static func addSession(session: Session, eventType: SessionEventType) {
     if isApplied {
-      NotificationCenter.default.post(
-        name: sessionEventNotification,
-        object: SessionEvent(session: session, eventType: eventType)
-      )
+      createSessionEvent(session: session, eventType: eventType)
     } else {
       /// SessionManager creates sessions before SessionEventInstrumentation is applied,
       /// which the notification observer cannot see. So we need to keep the sessions in a queue.

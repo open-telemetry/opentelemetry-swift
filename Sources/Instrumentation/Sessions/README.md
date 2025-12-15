@@ -19,7 +19,7 @@ import Sessions
 import OpenTelemetrySdk
 
 // Record session start and end events
-let sessionInstrumentation = SessionEventInstrumentation()
+SessionEventInstrumentation.install()
 
 // Add session attributes to spans
 let sessionSpanProcessor = SessionSpanProcessor()
@@ -107,7 +107,7 @@ let processor = SessionLogRecordProcessor(nextProcessor: yourProcessor)
 Creates OpenTelemetry log records for session lifecycle events.
 
 ```swift
-let instrumentation = SessionEventInstrumentation()
+SessionEventInstrumentation.install()
 // Emits session.start and session.end log records
 ```
 
@@ -123,7 +123,6 @@ let session = Session(
 )
 
 print("Expired: \(session.isExpired())")
-print("Duration: \(session.duration ?? 0)")
 ```
 
 ## Configuration
@@ -188,7 +187,6 @@ A `session.end` log record is created when a session expires.
     "session.id": "550e8400-e29b-41d4-a716-446655440000",
     "session.start_time": 1692123456789000000,
     "session.end_time": 1692125256789000000,
-    "session.duration": 1800000000000,
     "session.previous_id": "71260ACC-5286-455F-9955-5DA8C5109A07"
   }
 }
@@ -201,8 +199,7 @@ A `session.end` log record is created when a session expires.
 | `session.id`          | string | Unique identifier for the ended session       | `"550e8400-e29b-41d4-a716-446655440000"` |
 | `session.start_time`  | double | Session start time in nanoseconds since epoch | `1692123456789000000`                    |
 | `session.end_time`    | double | Session end time in nanoseconds since epoch   | `1692125256789000000`                    |
-| `session.duration`    | double | Session duration in nanoseconds               | `1800000000000` (30 minutes)             |
-| `session.previous_id` | string | Identifier of the previous session (if any)   | `"71260ACC-5286-455F-9955-5DA8C5109A07"`                  |
+| `session.previous_id` | string | Identifier of the previous session (if any)   | `"71260ACC-5286-455F-9955-5DA8C5109A07"` |
 
 ## Span and Log Attribution
 

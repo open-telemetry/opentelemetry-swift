@@ -87,7 +87,9 @@ public class URLSessionInstrumentation {
         URLSessionDataDelegate.urlSession(_:dataTask:didBecome:)
           as (URLSessionDataDelegate) -> (
             (URLSession, URLSessionDataTask, URLSessionStreamTask) -> Void
-          )?)
+          )?),
+      #selector(
+        URLSessionTaskDelegate.urlSession(_:task:didFinishCollecting:))
     ]
     let classes =
       configuration.delegateClassesToInstrument
