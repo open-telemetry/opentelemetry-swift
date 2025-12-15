@@ -1078,11 +1078,6 @@ class URLSessionInstrumentationTests: XCTestCase {
     let task = session.dataTask(with: request)
     task.resume()
     
-    // Wait a bit for the task to attempt to complete
-    // The important thing is that it doesn't crash when the instrumentation
-    // checks if it should assign a fake delegate
-    try await Task.sleep(nanoseconds: 100_000_000) // 100ms
-    
     // The test passes if tasks completes without crashing.
     wait { task.state == .completed }
   }
