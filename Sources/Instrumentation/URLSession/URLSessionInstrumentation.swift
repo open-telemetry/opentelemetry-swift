@@ -207,11 +207,6 @@ public class URLSessionInstrumentation {
           }
         }
         self.setIdKey(value: sessionTaskId, for: task)
-
-        // We want to identify background tasks
-        if session.configuration.identifier == nil {
-          objc_setAssociatedObject(task, "IsBackground", true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        }
         return task
       }
       let swizzledIMP = imp_implementationWithBlock(
@@ -741,15 +736,12 @@ public class URLSessionInstrumentation {
       return
     }
 
-    // We cannot instrument async background tasks because they crash if you assign a delegate
-    if #available(OSX 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *) {
-      if objc_getAssociatedObject(task, "IsBackground") is Bool {
-        guard Task.basePriority == nil else {
-          return
-        }
-      }
+    // Background tasks cannot be instrumented because they crash if you assign a delegate
+    // They require the delegate to be set when creating the session
+    guard !task.isBackground else {
+      return
     }
-
+    
     let taskId = idKeyForTask(task)
     if let request = task.currentRequest {
       queue.sync {
@@ -874,5 +866,20 @@ class AsyncTaskDelegate: NSObject, URLSessionTaskDelegate {
       URLSessionLogger.logResponse(response, dataOrFile: nil,
                                    instrumentation: instrumentation, sessionTaskId: taskId)
     }
+  }
+}
+
+extension URLSessionTask {
+  var isBackground: Bool {
+    [
+      "__NSCFBackgroundAVAggregateAssetDownloadTask",
+      "__NSCFBackgroundAVAggregateAssetDownloadTaskNoChildTask",
+      "__NSCFBackgroundAVAssetDownloadTask",
+      "__NSCFBackgroundDataTask",
+      "__NSCFBackgroundDownloadTask",
+      "__NSCFBackgroundSessionTask",
+      "__NSCFBackgroundUploadTask"
+    ]
+    .contains(String(describing: type(of: self)))
   }
 }
