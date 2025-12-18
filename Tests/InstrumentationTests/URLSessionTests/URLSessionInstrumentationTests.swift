@@ -422,6 +422,40 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
   }
 
+  /// Tests that resuming a task after suspend does not crash when using async/await methods.
+  /// More info: https://github.com/open-telemetry/opentelemetry-swift/issues/937
+  ///
+  /// Bug scenario (before fix):
+  /// 1. Create task in async context (state = .suspended, delegate = nil)
+  /// 2. Resume (state => .running, detects async context and sets delegate)
+  /// 3. Suspend (state => .suspended, delegate still set)
+  /// 4. Resume again (state == .suspended, condition `!= .running` is true => tries to set delegate again and crashes)
+  /// Reason => Task 4: "Cannot set task delegate after resumption"
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testDataTaskDoesNotCrashOnResumeAfterSuspend() async throws {
+    let url = URL(string: "http://localhost:33333/success")!
+    let request = URLRequest(url: url)
+    let session = URLSession(configuration: .ephemeral)
+
+    // I found this the easiest way to simulate the scenario
+    await Task {
+      let task = session.dataTask(with: request)
+
+      XCTAssertEqual(task.state, .suspended)
+      task.resume()
+
+      // Give the task a moment to transition to running state
+      try? await Task.sleep(nanoseconds: 50000000) // 0.05 seconds
+      
+      task.suspend()
+      // With the old code (task.state != .running), this would try to set delegate again abd crash
+      task.resume()
+    }.value
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
+    XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
+  }
+
   public func testDownloadTaskWithUrlBlock() {
     let url = URL(string: "http://localhost:33333/success")!
 
