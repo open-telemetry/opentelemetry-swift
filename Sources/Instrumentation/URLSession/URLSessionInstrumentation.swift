@@ -774,7 +774,7 @@ public class URLSessionInstrumentation {
           // This is a heuristic that works for async/await methods
           isAsyncContext = task.delegate == nil &&
                           (task.value(forKey: "session") as? URLSession)?.delegate == nil &&
-                          task.state != .running
+                          task.state == .suspended
         }
 
         if isAsyncContext {
@@ -792,7 +792,7 @@ public class URLSessionInstrumentation {
           // to capture the completion, but only if there's no existing delegate
           // AND no session delegate (session delegates are called for async/await too)
           if task.delegate == nil,
-             task.state != .running,
+             task.state == .suspended,
              (task.value(forKey: "session") as? URLSession)?.delegate == nil {
             task.delegate = AsyncTaskDelegate(instrumentation: self, sessionTaskId: taskId)
           }
@@ -815,7 +815,7 @@ public class URLSessionInstrumentation {
         }
         self.setIdKey(value: taskId, for: task)
 
-        if task.delegate == nil, task.state != .running, (task.value(forKey: "session") as? URLSession)?.delegate == nil {
+        if task.delegate == nil, task.state == .suspended, (task.value(forKey: "session") as? URLSession)?.delegate == nil {
           task.delegate = FakeDelegate()
         }
       }
