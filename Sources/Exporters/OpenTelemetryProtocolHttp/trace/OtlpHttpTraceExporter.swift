@@ -71,15 +71,7 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
       }
     let semaphore = DispatchSemaphore(value: 0)
     var request = createRequest(body: body, endpoint: endpoint)
-    if let headers = envVarHeaders {
-        headers.forEach { key, value in
-            request.addValue(value, forHTTPHeaderField: key)
-        }
-    } else if let headers = config.headers {
-        headers.forEach { key, value in
-            request.addValue(value, forHTTPHeaderField: key)
-        }
-    }
+
     exporterMetrics?.addSeen(value: sendingSpans.count)
     httpClient.send(request: request) { [weak self] result in
       switch result {
