@@ -72,6 +72,9 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
     let semaphore = DispatchSemaphore(value: 0)
     var request = createRequest(body: body, endpoint: endpoint)
 
+    let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+    request.timeoutInterval = timeout
+
     exporterMetrics?.addSeen(value: sendingSpans.count)
     httpClient.send(request: request) { [weak self] result in
       switch result {
@@ -87,7 +90,12 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
       }
       semaphore.signal()
     }
-    semaphore.wait()
+
+    let waitResult = semaphore.wait(timeout: .now() + timeout)
+    if waitResult == .timedOut {
+      exporterMetrics?.addFailed(value: sendingSpans.count)
+      return .failure
+    }
     return resultValue
   }
 
@@ -105,7 +113,9 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
             spanDataList: pendingSpans)
         }
       let semaphore = DispatchSemaphore(value: 0)
-      let request = createRequest(body: body, endpoint: endpoint)
+      var request = createRequest(body: body, endpoint: endpoint)
+      let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+      request.timeoutInterval = timeout
 
       httpClient.send(request: request) { [weak self] result in
         switch result {
@@ -118,7 +128,12 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
         }
         semaphore.signal()
       }
-      semaphore.wait()
+
+      let waitResult = semaphore.wait(timeout: .now() + timeout)
+      if waitResult == .timedOut {
+        exporterMetrics?.addFailed(value: pendingSpans.count)
+        return .failure
+      }
     }
     return resultValue
   }
