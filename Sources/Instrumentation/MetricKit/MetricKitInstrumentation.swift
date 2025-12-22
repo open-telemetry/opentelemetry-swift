@@ -8,28 +8,33 @@
 
     @available(iOS 13.0, macOS 12.0, macCatalyst 13.1, visionOS 1.0, *)
     public class MetricKitInstrumentation: NSObject, MXMetricManagerSubscriber {
+        public let configuration: MetricKitConfiguration
+
+        public override init() {
+            self.configuration = MetricKitConfiguration()
+            super.init()
+        }
+
+        public init(configuration: MetricKitConfiguration) {
+            self.configuration = configuration
+            super.init()
+        }
+
         public func didReceive(_ payloads: [MXMetricPayload]) {
             for payload in payloads {
-                reportMetrics(payload: payload)
+                reportMetrics(payload: payload, configuration: configuration)
             }
         }
 
         @available(iOS 14.0, macOS 12.0, macCatalyst 14.0, watchOS 7.0, *)
         public func didReceive(_ payloads: [MXDiagnosticPayload]) {
             for payload in payloads {
-                reportDiagnostics(payload: payload)
+                reportDiagnostics(payload: payload, configuration: configuration)
             }
         }
     }
 
     // MARK: - MetricKit helpers
-
-    func getMetricKitTracer() -> Tracer {
-        return OpenTelemetry.instance.tracerProvider.get(
-            instrumentationName: metricKitInstrumentationName,
-            instrumentationVersion: metricKitInstrumentationVersion,
-        )
-    }
 
     /// Estimates the average value of the whole histogram.
     @available(iOS 13.0, macOS 12.0, macCatalyst 13.1, visionOS 1.0, *)
@@ -54,8 +59,8 @@
     }
 
     @available(iOS 13.0, macOS 12.0, macCatalyst 13.1, visionOS 1.0, *)
-    public func reportMetrics(payload: MXMetricPayload) {
-        let span = getMetricKitTracer().spanBuilder(spanName: "MXMetricPayload")
+    public func reportMetrics(payload: MXMetricPayload, configuration: MetricKitConfiguration) {
+        let span = configuration.tracer.spanBuilder(spanName: "MXMetricPayload")
             .setStartTime(time: payload.timeStampBegin)
             .startSpan()
         defer { span.end(time: payload.timeStampEnd) }
@@ -305,7 +310,7 @@
         // Signpost metrics are a little different from the other metrics, since they can have arbitrary names.
         if let signpostMetrics = payload.signpostMetrics {
             for signpostMetric in signpostMetrics {
-                let span = getMetricKitTracer().spanBuilder(spanName: "MXSignpostMetric")
+                let span = configuration.tracer.spanBuilder(spanName: "MXSignpostMetric")
                     .startSpan()
                 span.setAttribute(key: "signpost.name", value: signpostMetric.signpostName)
                 span.setAttribute(
@@ -347,8 +352,8 @@
     }
 
     @available(iOS 14.0, macOS 12.0, macCatalyst 14.0, visionOS 1.0, *)
-    public func reportDiagnostics(payload: MXDiagnosticPayload) {
-        let span = getMetricKitTracer().spanBuilder(spanName: "MXDiagnosticPayload")
+    public func reportDiagnostics(payload: MXDiagnosticPayload, configuration: MetricKitConfiguration) {
+        let span = configuration.tracer.spanBuilder(spanName: "MXDiagnosticPayload")
             .setStartTime(time: payload.timeStampBegin)
             .startSpan()
         defer { span.end() }
@@ -407,8 +412,12 @@
             let callStackTree = $0.callStackTree
             let appleJson = callStackTree.jsonRepresentation()
 
-            // Transform to simplified format, fall back to original if transformation fails
-            let stacktraceData = transformStackTrace(appleJson) ?? appleJson
+            let stacktraceData: Data
+            if configuration.useAppleStacktraceFormat {
+                stacktraceData = appleJson
+            } else {
+                stacktraceData = transformStackTrace(appleJson) ?? appleJson
+            }
             let stacktraceJson = String(decoding: stacktraceData, as: UTF8.self)
 
             let namespacedAttrs: [String: AttributeValueConvertable] = [
@@ -472,8 +481,12 @@
             let callStackTree = $0.callStackTree
             let appleJson = callStackTree.jsonRepresentation()
 
-            // Transform to simplified format, fall back to original if transformation fails
-            let stacktraceData = transformStackTrace(appleJson) ?? appleJson
+            let stacktraceData: Data
+            if configuration.useAppleStacktraceFormat {
+                stacktraceData = appleJson
+            } else {
+                stacktraceData = transformStackTrace(appleJson) ?? appleJson
+            }
             let stacktraceJson = String(decoding: stacktraceData, as: UTF8.self)
 
             // Standard OTel exception attribute (without namespace prefix)

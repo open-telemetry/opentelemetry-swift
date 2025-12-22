@@ -439,7 +439,27 @@ class FakeMetricPayload: MXMetricPayload {
 @available(iOS 14.0, *)
 class FakeCallStackTree: MXCallStackTree {
     override func jsonRepresentation() -> Data {
-        return Data("fake json stacktrace".utf8)
+        let appleFormat = """
+        {
+            "callStackTree": {
+                "callStackPerThread": true,
+                "callStacks": [
+                    {
+                        "threadAttributed": true,
+                        "callStackRootFrames": [
+                            {
+                                "binaryName": "TestApp",
+                                "binaryUUID": "12345678-1234-1234-1234-123456789012",
+                                "offsetIntoBinaryTextSegment": 1000,
+                                "subFrames": []
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+        """
+        return Data(appleFormat.utf8)
     }
 }
 
