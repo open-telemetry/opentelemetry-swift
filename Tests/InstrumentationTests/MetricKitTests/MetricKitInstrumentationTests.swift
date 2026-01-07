@@ -687,5 +687,24 @@ class MetricKitDiagnosticTests: XCTestCase {
         let defaultSpans = spanExporter.getFinishedSpanItems()
         XCTAssertEqual(defaultSpans.count, 0, "Default tracer should not have received spans")
     }
+
+    func testConfiguration_UsesCustomLoggerForDiagnostics() {
+        let customLogExporter = InMemoryLogRecordExporter()
+        let customLoggerProvider = LoggerProviderBuilder()
+            .with(processors: [SimpleLogRecordProcessor(logRecordExporter: customLogExporter)])
+            .build()
+        let customLogger = customLoggerProvider.get(instrumentationScopeName: "CustomLogger")
+
+        let config = MetricKitConfiguration(logger: customLogger)
+        let payload = FakeDiagnosticPayload()
+
+        reportDiagnostics(payload: payload, configuration: config)
+
+        let logs = customLogExporter.getFinishedLogRecords()
+        XCTAssertGreaterThanOrEqual(logs.count, 1, "Custom logger should have received diagnostic logs")
+
+        let defaultLogs = logExporter.getFinishedLogRecords()
+        XCTAssertEqual(defaultLogs.count, 0, "Default logger should not have received logs")
+    }
 }
 #endif
