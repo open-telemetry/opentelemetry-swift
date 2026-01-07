@@ -59,7 +59,7 @@
     }
 
     @available(iOS 13.0, macOS 12.0, macCatalyst 13.1, visionOS 1.0, *)
-    public func reportMetrics(payload: MXMetricPayload, configuration: MetricKitConfiguration) {
+    internal func reportMetrics(payload: MXMetricPayload, configuration: MetricKitConfiguration) {
         let span = configuration.tracer.spanBuilder(spanName: "MXMetricPayload")
             .setStartTime(time: payload.timeStampBegin)
             .startSpan()
@@ -352,15 +352,13 @@
     }
 
     @available(iOS 14.0, macOS 12.0, macCatalyst 14.0, visionOS 1.0, *)
-    public func reportDiagnostics(payload: MXDiagnosticPayload, configuration: MetricKitConfiguration) {
+    internal func reportDiagnostics(payload: MXDiagnosticPayload, configuration: MetricKitConfiguration) {
         let span = configuration.tracer.spanBuilder(spanName: "MXDiagnosticPayload")
             .setStartTime(time: payload.timeStampBegin)
             .startSpan()
         defer { span.end() }
 
-        let logger = OpenTelemetry.instance.loggerProvider.get(
-            instrumentationScopeName: metricKitInstrumentationName
-        )
+        let logger = configuration.logger
 
         let now = Date()
 
