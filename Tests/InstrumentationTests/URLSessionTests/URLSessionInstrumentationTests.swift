@@ -1091,4 +1091,28 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertEqual(attributes["server.port"]?.description, "8080")
     XCTAssertEqual(attributes["url.scheme"]?.description, "http")
   }
+
+  // MARK: - Background session tests
+  @available(macOS 10.15, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testBackgroundSession_ShouldNotCrashWhenAssigningDelegate() async throws {
+    let request = URLRequest(url: URL(string: "http://localhost:33333/success")!)
+    
+    // Background sessions require a delegate to be set when creating the session.
+    // However, for this test, we set to nil so it tries to do it on resume (where the crash happens)
+    let session = URLSession(
+      configuration: URLSessionConfiguration.background(
+        withIdentifier: UUID().uuidString
+      ),
+      delegate: nil,
+      delegateQueue: .main
+    )
+    
+    // Background sessions cannot use async/await or completion handlers
+    // Must use dataTask(with:) and call resume()
+    let task = session.dataTask(with: request)
+    task.resume()
+    
+    // The test passes if tasks completes without crashing.
+    wait { task.state == .completed }
+  }
 }
