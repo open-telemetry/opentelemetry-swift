@@ -387,6 +387,7 @@
                     }
 
                     logger.logRecordBuilder()
+                        .setEventName("metrickit.diagnostic.\(namespace)")
                         .setTimestamp(payload.timeStampEnd)
                         .setObservedTimestamp(now)
                         .setAttributes(attributes)
