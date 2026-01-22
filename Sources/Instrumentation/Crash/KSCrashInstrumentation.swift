@@ -142,7 +142,7 @@ public class KSCrashInstrumentation: CrashProtocol {
       SemanticConventions.Exception.type.rawValue: AttributeValue.string("crash")
     ]
 
-    // Attempt to recovert the original crash context
+    // Attempt to recover the original crash context
     attributes = recoverCrashContext(from: rawCrash, log: log, attributes: attributes)
 
     // Get stack trace in Apple format and emit log event in async callback
