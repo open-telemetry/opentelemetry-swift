@@ -71,5 +71,14 @@ func httpClientResult(for taskResult: (Data?, URLResponse?, Error?)) -> Result<H
     )
   }
 
+  let statusCode = httpResponse.statusCode
+  guard (200..<300).contains(statusCode) else {
+    return .failure(
+      HTTPClientError(
+        description: "HTTP request failed with status code: \(statusCode)"
+      )
+    )
+  }
+
   return .success(httpResponse)
 }
