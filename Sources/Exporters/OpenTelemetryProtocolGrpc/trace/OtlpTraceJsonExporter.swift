@@ -7,7 +7,7 @@ import Foundation
 import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterCommon
 
-public class OtlpTraceJsonExporter: SpanExporter {
+public final class OtlpTraceJsonExporter: SpanExporter, @unchecked Sendable {
   // MARK: - Variables declaration
 
   private var exportedSpans = [OtlpSpan]()
