@@ -6,6 +6,7 @@
 import Foundation
 import NIO
 import NIOHTTP1
+import OpenTelemetryApi
 
 public class PrometheusExporterHttpServer {
   private let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
@@ -24,7 +25,7 @@ public class PrometheusExporterHttpServer {
   public func start() throws {
     do {
       let channel = try serverBootstrap.bind(host: host, port: port).wait()
-      print("Listening on \(String(describing: channel.localAddress))...")
+      OpenTelemetry.instance.feedbackHandler?("Listening on \(String(describing: channel.localAddress))...")
       try channel.closeFuture.wait()
     } catch {
       throw error
@@ -35,10 +36,10 @@ public class PrometheusExporterHttpServer {
     do {
       try group.syncShutdownGracefully()
     } catch {
-      print("Error shutting down \(error.localizedDescription)")
+      OpenTelemetry.instance.feedbackHandler?("Error shutting down \(error.localizedDescription)")
       exit(0)
     }
-    print("Client connection closed")
+    OpenTelemetry.instance.feedbackHandler?("Client connection closed")
   }
 
   private var serverBootstrap: ServerBootstrap {
@@ -108,7 +109,7 @@ public class PrometheusExporterHttpServer {
     }
 
     public func errorCaught(context: ChannelHandlerContext, error: Error) {
-      print("error: ", error)
+      OpenTelemetry.instance.feedbackHandler?("error: \(error)")
 
       // As we are not really interested getting notified on success or failure we just pass nil as promise to
       // reduce allocations.
