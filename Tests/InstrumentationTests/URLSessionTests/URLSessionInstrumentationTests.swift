@@ -62,14 +62,14 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
-      callCount += 1
+      incrementCallCount()
     }
   }
 
   /// A minimal delegate that only implements didFinishCollecting.
   /// This tests that delegate classes are discovered even when they only implement
   /// urlSession(_:task:didFinishCollecting:) and no other delegate methods.
-  class MinimalMetricsDelegate: NSObject, URLSessionTaskDelegate {
+  final class MinimalMetricsDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
     var didFinishCollectingCalled = false
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {

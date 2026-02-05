@@ -55,6 +55,7 @@ class DataExportWorkerTests: XCTestCase {
     XCTAssertEqual(fileReader.files.count, 0)
   }
 
+  @MainActor
   func testGivenDataToExport_whenExportFinishesAndDoesNotNeedToBeRetried_thenDataIsDeleted() {
     let startExportExpectation = expectation(description: "Export has started")
 
@@ -79,6 +80,7 @@ class DataExportWorkerTests: XCTestCase {
     XCTAssertEqual(fileReader.files.count, 0, "When export finishes with `needsRetry: false`, data should be deleted")
   }
 
+  @MainActor
   func testGivenDataToExport_whenExportFinishesAndNeedsToBeRetried_thenDataIsPreserved() {
     let startExportExpectation = expectation(description: "Export has started")
 
@@ -196,6 +198,7 @@ class DataExportWorkerTests: XCTestCase {
 
   // MARK: - Tearing Down
 
+  @MainActor
   func testWhenCancelled_itPerformsNoMoreExports() {
     var mockDataExporter = DataExporterMock(exportStatus: .mockWith(needsRetry: false))
 
