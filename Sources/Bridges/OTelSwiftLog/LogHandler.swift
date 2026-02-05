@@ -7,7 +7,7 @@ let bridgeName: String = "OTelSwiftLog"
 let version: String = "1.0.0"
 
 /// A  custom log handler to translate swift logs into otel logs
-public struct OTelLogHandler: LogHandler {
+public struct OTelLogHandler: LogHandler, @unchecked Sendable {
   /// Get or set the configured log level.
   ///
   /// - note: `LogHandler`s must treat the log level as a value type. This means that the change in metadata must
@@ -41,7 +41,6 @@ public struct OTelLogHandler: LogHandler {
     self.loggerProvider = loggerProvider
     logger = self.loggerProvider.loggerBuilder(instrumentationScopeName: bridgeName)
       .setInstrumentationVersion(version)
-      .setEventDomain("device")
       .setIncludeTraceContext(true)
       .setAttributes(attributes)
       .setIncludeTraceContext(includeTraceContext)

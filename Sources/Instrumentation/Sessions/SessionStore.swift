@@ -7,7 +7,7 @@ import Foundation
 
 /// Handles persistence of OpenTelemetry sessions to UserDefaults
 /// Provides static methods for saving and loading session data
-internal class SessionStore {
+internal final class SessionStore: @unchecked Sendable {
   /// UserDefaults key for storing session ID
   static let idKey = "otel-session-id"
   /// UserDefaults key for storing previous session ID
@@ -23,28 +23,35 @@ internal class SessionStore {
   /// in memory and saves to disk on an interval (every 30 seconds).
 
   /// The most recent session to be saved to disk
+  @MainActor
   private static var pendingSession: Session?
   /// The previous session
+  @MainActor
   private static var prevSession: Session?
   /// The interval period after which the current session is saved to disk
   private static let saveInterval: TimeInterval = 30 // in seconds
   /// The timer responsible for saving the current session to disk
+  @MainActor
   private static var saveTimer: Timer?
 
   /// Schedules a session to be saved to UserDefaults on the next timer interval
   /// - Parameter session: The session to save
   static func scheduleSave(session: Session) {
-    pendingSession = session
+    Task { @MainActor in
+      pendingSession = session
 
-    if saveTimer == nil {
-      // save initial session
-      saveImmediately(session: session)
+      if saveTimer == nil {
+        // save initial session
+        saveImmediately(session: session)
 
-      // save future sessions on a interval
-      saveTimer = Timer.scheduledTimer(withTimeInterval: saveInterval, repeats: true) { _ in
-        // only write to disk if it is a new sesssion
-        if let pending = pendingSession, prevSession != pending {
-          saveImmediately(session: pending)
+        // save future sessions on a interval
+        saveTimer = Timer.scheduledTimer(withTimeInterval: saveInterval, repeats: true) { _ in
+          Task { @MainActor in
+            // only write to disk if it is a new sesssion
+            if let pending = pendingSession, prevSession != pending {
+              saveImmediately(session: pending)
+            }
+          }
         }
       }
     }
@@ -60,10 +67,12 @@ internal class SessionStore {
     UserDefaults.standard.set(session.previousId, forKey: previousIdKey)
     UserDefaults.standard.set(session.sessionTimeout, forKey: sessionTimeoutKey)
 
-    // update prev session
-    prevSession = session
-    // clear pending session, since it is now outdated
-    pendingSession = nil
+    Task { @MainActor in
+      // update prev session
+      prevSession = session
+      // clear pending session, since it is now outdated
+      pendingSession = nil
+    }
   }
 
   /// Loads a previously saved session from UserDefaults
@@ -79,24 +88,31 @@ internal class SessionStore {
 
     let previousId = UserDefaults.standard.string(forKey: previousIdKey)
 
-    // reset sessions so it does not get overridden in the next scheduled save
-    pendingSession = nil
-    prevSession = Session(
+    let session = Session(
       id: id,
       expireTime: expireTime,
       previousId: previousId,
       startTime: startTime,
       sessionTimeout: sessionTimeout
     )
-    return prevSession
+    
+    Task { @MainActor in
+      // reset sessions so it does not get overridden in the next scheduled save
+      pendingSession = nil
+      prevSession = session
+    }
+    
+    return session
   }
 
   /// Cleans up timer and UserDefaults
   static func teardown() {
-    saveTimer?.invalidate()
-    saveTimer = nil
-    pendingSession = nil
-    prevSession = nil
+    Task { @MainActor in
+      saveTimer?.invalidate()
+      saveTimer = nil
+      pendingSession = nil
+      prevSession = nil
+    }
     UserDefaults.standard.removeObject(forKey: idKey)
     UserDefaults.standard.removeObject(forKey: startTimeKey)
     UserDefaults.standard.removeObject(forKey: expireTimeKey)

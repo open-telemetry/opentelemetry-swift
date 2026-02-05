@@ -194,7 +194,7 @@
   }
 
   extension AgentProcessor: TProcessor {
-    static let processorHandlers: ProcessorHandlerDictionary = {
+    nonisolated(unsafe) static let processorHandlers: ProcessorHandlerDictionary = {
       var processorHandlers = ProcessorHandlerDictionary()
 
       processorHandlers["emitZipkinBatch"] = { _, inProtocol, _, _ in

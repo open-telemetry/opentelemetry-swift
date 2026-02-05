@@ -49,14 +49,14 @@
     tracerProviderSDK?.addSpanProcessor(SignPostIntegration())
   }
 
-  func simpleSpan() {
+  @MainActor func simpleSpan() {
     let span = tracer.spanBuilder(spanName: "SimpleSpan").setSpanKind(spanKind: .client).startSpan()
     span.setAttribute(key: sampleKey, value: sampleValue)
     Thread.sleep(forTimeInterval: 0.5)
     span.end()
   }
 
-  func childSpan() {
+  @MainActor func childSpan() {
     let span = tracer.spanBuilder(spanName: "parentSpan").setSpanKind(spanKind: .client).setActive(true).startSpan()
     span.setAttribute(key: sampleKey, value: sampleValue)
     Thread.sleep(forTimeInterval: 0.2)
@@ -67,9 +67,11 @@
     span.end()
   }
 
-  simpleSpan()
-  sleep(1)
-  childSpan()
-  sleep(1)
+  Task { @MainActor in
+    simpleSpan()
+    sleep(1)
+    childSpan()
+    sleep(1)
+  }
 
 #endif

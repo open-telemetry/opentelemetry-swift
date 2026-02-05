@@ -8,8 +8,8 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 import Opentracing
 
-public class TraceShim {
-  public static var instance = TraceShim()
+public final class TraceShim: @unchecked Sendable {
+  public static let instance = TraceShim()
 
   public private(set) var otTracer: OTTracer
 

@@ -24,9 +24,9 @@ struct NetworkRequestState {
   }
 }
 
-private var idKey: Void?
+nonisolated(unsafe) private var idKey: Void?
 
-public class URLSessionInstrumentation {
+public final class URLSessionInstrumentation: @unchecked Sendable {
   private var requestMap = [String: NetworkRequestState]()
 
   private var _configuration: URLSessionInstrumentationConfiguration
@@ -44,7 +44,7 @@ public class URLSessionInstrumentation {
   private let configurationQueue = DispatchQueue(
       label: "io.opentelemetry.configuration")
 
-  static var instrumentedKey = "io.opentelemetry.instrumentedCall"
+  static let instrumentedKey = "io.opentelemetry.instrumentedCall"
 
   static let excludeList: [String] = [
     "__NSCFURLProxySessionConnection"
@@ -837,14 +837,14 @@ public class URLSessionInstrumentation {
   }
 }
 
-class FakeDelegate: NSObject, URLSessionTaskDelegate {
+final class FakeDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
   func urlSession(_ session: URLSession, task: URLSessionTask,
                   didCompleteWithError error: Error?) {}
 }
 
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
-class AsyncTaskDelegate: NSObject, URLSessionTaskDelegate {
-  private weak var instrumentation: URLSessionInstrumentation?
+final class AsyncTaskDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+  private let instrumentation: URLSessionInstrumentation?
   private let sessionTaskId: String
 
   init(instrumentation: URLSessionInstrumentation, sessionTaskId: String) {
