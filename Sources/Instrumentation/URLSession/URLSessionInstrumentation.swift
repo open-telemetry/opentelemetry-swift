@@ -87,7 +87,9 @@ public class URLSessionInstrumentation {
         URLSessionDataDelegate.urlSession(_:dataTask:didBecome:)
           as (URLSessionDataDelegate) -> (
             (URLSession, URLSessionDataTask, URLSessionStreamTask) -> Void
-          )?)
+          )?),
+      #selector(
+        URLSessionTaskDelegate.urlSession(_:task:didFinishCollecting:))
     ]
     let classes =
       configuration.delegateClassesToInstrument
@@ -168,7 +170,7 @@ public class URLSessionInstrumentation {
     ].forEach {
       let selector = $0
       guard let original = class_getInstanceMethod(cls, selector) else {
-        print("injectInto \(selector.description) failed")
+        OpenTelemetry.instance.feedbackHandler?("injectInto \(selector.description) failed")
         return
       }
       var originalIMP: IMP?
@@ -207,11 +209,6 @@ public class URLSessionInstrumentation {
           }
         }
         self.setIdKey(value: sessionTaskId, for: task)
-
-        // We want to identify background tasks
-        if session.configuration.identifier == nil {
-          objc_setAssociatedObject(task, "IsBackground", true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        }
         return task
       }
       let swizzledIMP = imp_implementationWithBlock(
@@ -298,7 +295,7 @@ public class URLSessionInstrumentation {
     ].forEach {
       let selector = $0
       guard let original = class_getInstanceMethod(cls, selector) else {
-        print("injectInto \(selector.description) failed")
+        OpenTelemetry.instance.feedbackHandler?("injectInto \(selector.description) failed")
         return
       }
       var originalIMP: IMP?
@@ -388,7 +385,7 @@ public class URLSessionInstrumentation {
     ].forEach {
       let selector = $0
       guard let original = class_getInstanceMethod(cls, selector) else {
-        print("injectInto \(selector.description) failed")
+        OpenTelemetry.instance.feedbackHandler?("injectInto \(selector.description) failed")
         return
       }
       var originalIMP: IMP?
@@ -741,15 +738,12 @@ public class URLSessionInstrumentation {
       return
     }
 
-    // We cannot instrument async background tasks because they crash if you assign a delegate
-    if #available(OSX 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *) {
-      if objc_getAssociatedObject(task, "IsBackground") is Bool {
-        guard Task.basePriority == nil else {
-          return
-        }
-      }
+    // Background tasks cannot be instrumented because they crash if you assign a delegate
+    // They require the delegate to be set when creating the session
+    guard !task.isBackground else {
+      return
     }
-
+    
     let taskId = idKeyForTask(task)
     if let request = task.currentRequest {
       queue.sync {
@@ -772,7 +766,7 @@ public class URLSessionInstrumentation {
           // This is a heuristic that works for async/await methods
           isAsyncContext = task.delegate == nil &&
                           (task.value(forKey: "session") as? URLSession)?.delegate == nil &&
-                          task.state != .running
+                          task.state == .suspended
         }
 
         if isAsyncContext {
@@ -790,7 +784,7 @@ public class URLSessionInstrumentation {
           // to capture the completion, but only if there's no existing delegate
           // AND no session delegate (session delegates are called for async/await too)
           if task.delegate == nil,
-             task.state != .running,
+             task.state == .suspended,
              (task.value(forKey: "session") as? URLSession)?.delegate == nil {
             task.delegate = AsyncTaskDelegate(instrumentation: self, sessionTaskId: taskId)
           }
@@ -813,7 +807,7 @@ public class URLSessionInstrumentation {
         }
         self.setIdKey(value: taskId, for: task)
 
-        if task.delegate == nil, task.state != .running, (task.value(forKey: "session") as? URLSession)?.delegate == nil {
+        if task.delegate == nil, task.state == .suspended, (task.value(forKey: "session") as? URLSession)?.delegate == nil {
           task.delegate = FakeDelegate()
         }
       }
@@ -874,5 +868,20 @@ class AsyncTaskDelegate: NSObject, URLSessionTaskDelegate {
       URLSessionLogger.logResponse(response, dataOrFile: nil,
                                    instrumentation: instrumentation, sessionTaskId: taskId)
     }
+  }
+}
+
+extension URLSessionTask {
+  var isBackground: Bool {
+    [
+      "__NSCFBackgroundAVAggregateAssetDownloadTask",
+      "__NSCFBackgroundAVAggregateAssetDownloadTaskNoChildTask",
+      "__NSCFBackgroundAVAssetDownloadTask",
+      "__NSCFBackgroundDataTask",
+      "__NSCFBackgroundDownloadTask",
+      "__NSCFBackgroundSessionTask",
+      "__NSCFBackgroundUploadTask"
+    ]
+    .contains(String(describing: type(of: self)))
   }
 }

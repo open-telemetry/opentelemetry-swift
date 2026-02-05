@@ -108,7 +108,7 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
         self?.exporterLock.withLockVoid {
           self?.pendingMetrics.append(contentsOf: sendingMetrics)
         }
-        print(error)
+        OpenTelemetry.instance.feedbackHandler?("\(error)")
       }
     }
 
@@ -137,7 +137,7 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
           self?.exporterMetrics?.addSuccess(value: pendingMetrics.count)
         case let .failure(error):
           self?.exporterMetrics?.addFailed(value: pendingMetrics.count)
-          print(error)
+          OpenTelemetry.instance.feedbackHandler?("\(error)")
           exporterResult = .failure
         }
         semaphore.signal()

@@ -47,7 +47,7 @@ class PersistenceSpanExporterDecoratorTests: XCTestCase {
     super.tearDown()
   }
 
-  func testWhenExportMetricIsCalled_thenSpansAreExported() throws {
+  func testWhenExportSpansIsCalled_thenSpansAreExported() throws {
     let spansExportExpectation = expectation(description: "spans exported")
     let exporterShutdownExpectation = expectation(description: "exporter shut down")
 
@@ -86,6 +86,47 @@ class PersistenceSpanExporterDecoratorTests: XCTestCase {
     spanProcessor.shutdown()
 
     waitForExpectations(timeout: 10, handler: nil)
+  }
+
+  func testWhenExportFails_thenSpansAreRetried() throws {
+    var exportAttempts = 0
+    let firstExportExpectation = expectation(description: "first export attempt")
+    let secondExportExpectation = expectation(description: "second export attempt")
+
+    let mockSpanExporter = SpanExporterMock(onExport: { spans, _ in
+      exportAttempts += 1
+      if exportAttempts == 1 {
+        firstExportExpectation.fulfill()
+        return .failure
+      } else if exportAttempts == 2 {
+        secondExportExpectation.fulfill()
+        return .success
+      }
+      return .success
+    })
+
+    let persistenceSpanExporter =
+      try PersistenceSpanExporterDecorator(spanExporter: mockSpanExporter,
+                                           storageURL: temporaryDirectory.url,
+                                           exportCondition: { true },
+                                           performancePreset: PersistencePerformancePreset.mockWith(storagePerformance: StoragePerformanceMock.writeEachObjectToNewFileAndReadAllFiles,
+                                                                                                    synchronousWrite: true,
+                                                                                                    exportPerformance: ExportPerformanceMock.veryQuick))
+
+    let instrumentationScopeName = "RetryExporter"
+    let instrumentationScopeVersion = "semver:0.1.0"
+    let tracerProviderSDK = TracerProviderSdk()
+    OpenTelemetry.registerTracerProvider(tracerProvider: tracerProviderSDK)
+    let tracer = tracerProviderSDK.get(instrumentationName: instrumentationScopeName, instrumentationVersion: instrumentationScopeVersion) as! TracerSdk
+
+    let spanProcessor = SimpleSpanProcessor(spanExporter: persistenceSpanExporter)
+    tracerProviderSDK.addSpanProcessor(spanProcessor)
+
+    simpleSpan(tracer: tracer)
+    spanProcessor.shutdown()
+
+    waitForExpectations(timeout: 10, handler: nil)
+    XCTAssertEqual(exportAttempts, 2, "Expected 2 export attempts (1 failure + 1 retry)")
   }
 
   private func simpleSpan(tracer: TracerSdk) {

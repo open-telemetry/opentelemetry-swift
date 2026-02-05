@@ -84,7 +84,7 @@ public struct Session: Equatable {
   /// Calculates the time between session start and end. Only available for expired sessions.
   /// - Returns: The session duration in seconds, or nil if the session is still active
   public var duration: TimeInterval? {
-    guard let endTime = endTime else { return nil }
+    guard let endTime else { return nil }
     return endTime.timeIntervalSince(startTime)
   }
 }

@@ -24,18 +24,18 @@ public class SessionLogRecordProcessor: LogRecordProcessor {
   public func onEmit(logRecord: ReadableLogRecord) {
     var enhancedRecord = logRecord
 
-    // For session.start and session.end events, preserve existing session attributes
-    if let body = logRecord.body,
-       case let .string(bodyString) = body,
-       bodyString == SessionConstants.sessionStartEvent || bodyString == SessionConstants.sessionEndEvent {
-      // Session start and end events already have their intended session ids
-      // Overwriting them would cause session end to have wrong current and previous session ids
-    } else {
-      // For other log records, add current session attributes
+    // Only add session attributes if they don't already exist
+    if logRecord.attributes[SemanticConventions.Session.id.rawValue] == nil || logRecord.attributes[SemanticConventions.Session.previousId.rawValue] == nil {
       let session = sessionManager.getSession()
-      enhancedRecord.setAttribute(key: SessionConstants.id, value: AttributeValue.string(session.id))
-      if let previousId = session.previousId {
-        enhancedRecord.setAttribute(key: SessionConstants.previousId, value: AttributeValue.string(previousId))
+
+      // Add session.id if not already present
+      if logRecord.attributes[SemanticConventions.Session.id.rawValue] == nil {
+        enhancedRecord.setAttribute(key: SemanticConventions.Session.id.rawValue, value: session.id)
+      }
+
+      // Add session.previous_id if not already present and session has a previous ID
+      if logRecord.attributes[SemanticConventions.Session.previousId.rawValue] == nil, let previousId = session.previousId {
+        enhancedRecord.setAttribute(key: SemanticConventions.Session.previousId.rawValue, value: previousId)
       }
     }
 

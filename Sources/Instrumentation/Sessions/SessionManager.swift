@@ -11,7 +11,7 @@ import Foundation
 public class SessionManager {
   private var configuration: SessionConfig
   private var session: Session?
-  private var lock = NSLock()
+  private let lock = NSLock()
 
   /// Initializes the session manager and restores any previous session from disk
   /// - Parameter configuration: Session configuration settings
@@ -25,69 +25,74 @@ public class SessionManager {
   /// - Returns: The current active session
   @discardableResult
   public func getSession() -> Session {
-    // We only lock once when fetching the current session to expire with thread safety
-    return lock.withLock {
-      refreshSession()
-      return session!
+    let (currentSession,
+         previousSession,
+         sessionDidExpire) = lock.withLock {
+      if let session,
+         !session.isExpired() {
+        // extend session
+        let extendedSession = locked_refreshSession(session: session)
+        self.session = extendedSession
+        return (extendedSession, nil as Session?, false)
+      } else {
+        // start new session
+        let prev = session
+        let nextSession = locked_startSession()
+        self.session = nextSession
+        return (nextSession, prev, true)
+      }
     }
+
+    // Call external code outside the lock only if new session was created
+    if sessionDidExpire {
+      if let previousSession {
+        SessionEventInstrumentation.addSession(session: previousSession, eventType: .end)
+      }
+      SessionEventInstrumentation.addSession(session: currentSession, eventType: .start)
+      NotificationCenter.default.post(name: SessionEventNotification, object: currentSession)
+    }
+
+    SessionStore.scheduleSave(session: currentSession)
+    return currentSession
   }
 
   /// Gets the current session without extending its expireTime time
   /// - Returns: The current session if one exists, nil otherwise
   public func peekSession() -> Session? {
-    return session
+    return lock.withLock { session }
   }
 
   /// Creates a new session with a unique identifier
-  private func startSession() {
+  /// *Warning* - this must be a pure function since it is used inside a lock
+  private func locked_startSession() -> Session {
     let now = Date()
-    let previousId = session?.id
-    let newId = UUID().uuidString
 
-    /// Queue the previous session for a `session.end` event
-    if session != nil {
-      SessionEventInstrumentation.addSession(session: session!, eventType: .end)
-    }
-
-    session = Session(
-      id: newId,
+    return Session(
+      id: UUID().uuidString,
       expireTime: now.addingTimeInterval(Double(configuration.sessionTimeout)),
-      previousId: previousId,
+      previousId: session?.id,
       startTime: now,
       sessionTimeout: configuration.sessionTimeout
     )
-
-    // Queue the new session for a `session.start`` event
-    SessionEventInstrumentation.addSession(session: session!, eventType: .start)
   }
 
-  /// Refreshes the current session, creating new one if expired or extending existing one
-  private func refreshSession() {
-    if session == nil || session!.isExpired() {
-      // Start new session if none exists or expired
-      startSession()
-    } else {
-      // Otherwise, extend the existing session but preserve the startTime
-      session = Session(
-        id: session!.id,
-        expireTime: Date(timeIntervalSinceNow: Double(configuration.sessionTimeout)),
-        previousId: session!.previousId,
-        startTime: session!.startTime,
-        sessionTimeout: TimeInterval(configuration.sessionTimeout)
-      )
-    }
-    saveSessionToDisk()
-  }
-
-  /// Schedules the current session to be persisted to UserDefaults
-  private func saveSessionToDisk() {
-    if session != nil {
-      SessionStore.scheduleSave(session: session!)
-    }
+  /// Extends the current session expiry time
+  /// *Warning* - this must be a pure function since it is used inside a lock
+  private func locked_refreshSession(session: Session) -> Session {
+    return Session(
+      id: session.id,
+      expireTime: Date(timeIntervalSinceNow: Double(configuration.sessionTimeout)),
+      previousId: session.previousId,
+      startTime: session.startTime,
+      sessionTimeout: configuration.sessionTimeout
+    )
   }
 
   /// Restores a previously saved session from UserDefaults
   private func restoreSessionFromDisk() {
-    session = SessionStore.load()
+    let loadedSession = SessionStore.load()
+    lock.withLock {
+      session = loadedSession
+    }
   }
 }

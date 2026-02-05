@@ -37,7 +37,7 @@ class MetricKitInstrumentationTests: XCTestCase {
     func testReportMetrics_CreatesMainSpan() {
         let payload = FakeMetricPayload()
 
-        reportMetrics(payload: payload)
+        reportMetrics(payload: payload, configuration: MetricKitConfiguration())
 
         // Force flush to ensure spans are exported
         tracerProvider.forceFlush()
@@ -58,7 +58,7 @@ class MetricKitInstrumentationTests: XCTestCase {
     func testReportMetrics_SetsMetadataAttributes() {
         let payload = FakeMetricPayload()
 
-        reportMetrics(payload: payload)
+        reportMetrics(payload: payload, configuration: MetricKitConfiguration())
 
         // Force flush to ensure spans are exported
         tracerProvider.forceFlush()
@@ -93,7 +93,7 @@ class MetricKitInstrumentationTests: XCTestCase {
     func testReportMetrics_SetsCPUAttributes() {
         let payload = FakeMetricPayload()
 
-        reportMetrics(payload: payload)
+        reportMetrics(payload: payload, configuration: MetricKitConfiguration())
 
         // Force flush to ensure spans are exported
         tracerProvider.forceFlush()
@@ -115,7 +115,7 @@ class MetricKitInstrumentationTests: XCTestCase {
     func testReportMetrics_SetsMemoryAndGPUAttributes() {
         let payload = FakeMetricPayload()
 
-        reportMetrics(payload: payload)
+        reportMetrics(payload: payload, configuration: MetricKitConfiguration())
 
         // Force flush to ensure spans are exported
         tracerProvider.forceFlush()
@@ -137,7 +137,7 @@ class MetricKitInstrumentationTests: XCTestCase {
     func testReportMetrics_SetsNetworkAttributes() {
         let payload = FakeMetricPayload()
 
-        reportMetrics(payload: payload)
+        reportMetrics(payload: payload, configuration: MetricKitConfiguration())
 
         // Force flush to ensure spans are exported
         tracerProvider.forceFlush()
@@ -159,7 +159,7 @@ class MetricKitInstrumentationTests: XCTestCase {
     func testReportMetrics_SetsAppLaunchAttributes() {
         let payload = FakeMetricPayload()
 
-        reportMetrics(payload: payload)
+        reportMetrics(payload: payload, configuration: MetricKitConfiguration())
 
         // Force flush to ensure spans are exported
         tracerProvider.forceFlush()
@@ -186,7 +186,7 @@ class MetricKitInstrumentationTests: XCTestCase {
     func testReportMetrics_SetsAppTimeAttributes() {
         let payload = FakeMetricPayload()
 
-        reportMetrics(payload: payload)
+        reportMetrics(payload: payload, configuration: MetricKitConfiguration())
 
         // Force flush to ensure spans are exported
         tracerProvider.forceFlush()
@@ -207,7 +207,7 @@ class MetricKitInstrumentationTests: XCTestCase {
     func testReportMetrics_SetsLocationActivityAttributes() {
         let payload = FakeMetricPayload()
 
-        reportMetrics(payload: payload)
+        reportMetrics(payload: payload, configuration: MetricKitConfiguration())
 
         // Force flush to ensure spans are exported
         tracerProvider.forceFlush()
@@ -231,7 +231,7 @@ class MetricKitInstrumentationTests: XCTestCase {
     func testReportMetrics_SetsResponsivenessAttributes() {
         let payload = FakeMetricPayload()
 
-        reportMetrics(payload: payload)
+        reportMetrics(payload: payload, configuration: MetricKitConfiguration())
 
         // Force flush to ensure spans are exported
         tracerProvider.forceFlush()
@@ -249,7 +249,7 @@ class MetricKitInstrumentationTests: XCTestCase {
     func testReportMetrics_SetsDiskIOAttributes() {
         let payload = FakeMetricPayload()
 
-        reportMetrics(payload: payload)
+        reportMetrics(payload: payload, configuration: MetricKitConfiguration())
 
         // Force flush to ensure spans are exported
         tracerProvider.forceFlush()
@@ -267,7 +267,7 @@ class MetricKitInstrumentationTests: XCTestCase {
     func testReportMetrics_SetsDisplayAttributes() {
         let payload = FakeMetricPayload()
 
-        reportMetrics(payload: payload)
+        reportMetrics(payload: payload, configuration: MetricKitConfiguration())
 
         // Force flush to ensure spans are exported
         tracerProvider.forceFlush()
@@ -286,7 +286,7 @@ class MetricKitInstrumentationTests: XCTestCase {
     func testReportMetrics_SetsAnimationAttributes() {
         let payload = FakeMetricPayload()
 
-        reportMetrics(payload: payload)
+        reportMetrics(payload: payload, configuration: MetricKitConfiguration())
 
         // Force flush to ensure spans are exported
         tracerProvider.forceFlush()
@@ -305,7 +305,7 @@ class MetricKitInstrumentationTests: XCTestCase {
     func testReportMetrics_SetsAppExitAttributes() {
         let payload = FakeMetricPayload()
 
-        reportMetrics(payload: payload)
+        reportMetrics(payload: payload, configuration: MetricKitConfiguration())
 
         // Force flush to ensure spans are exported
         tracerProvider.forceFlush()
@@ -340,7 +340,7 @@ class MetricKitInstrumentationTests: XCTestCase {
     func testReportMetrics_CreatesSignpostSpans() {
         let payload = FakeMetricPayload()
 
-        reportMetrics(payload: payload)
+        reportMetrics(payload: payload, configuration: MetricKitConfiguration())
 
         // Force flush to ensure spans are exported
         tracerProvider.forceFlush()
@@ -379,7 +379,7 @@ class MetricKitInstrumentationTests: XCTestCase {
     func testReportMetrics_SetsCellularConditionAttributes() {
         let payload = FakeMetricPayload()
 
-        reportMetrics(payload: payload)
+        reportMetrics(payload: payload, configuration: MetricKitConfiguration())
 
         // Force flush to ensure spans are exported
         tracerProvider.forceFlush()
@@ -394,6 +394,38 @@ class MetricKitInstrumentationTests: XCTestCase {
         XCTAssertEqual(attributes?["metrickit.cellular_condition.bars_average"]?.description, "4.0")
         // Note: The attribute is set twice in the code (lines 146 and 270), the second one wins
         XCTAssertEqual(attributes?["metrickit.cellular_condition.cellular_condition_time_average"]?.description, "4.0")
+    }
+
+    func testConfiguration_UsesCustomTracer() {
+        let customTracerProvider = TracerProviderSdk()
+        let customExporter = InMemoryExporter()
+        customTracerProvider.addSpanProcessor(SimpleSpanProcessor(spanExporter: customExporter))
+        let customTracer = customTracerProvider.get(instrumentationName: "CustomTracer")
+
+        let config = MetricKitConfiguration(tracer: customTracer)
+        let payload = FakeMetricPayload()
+
+        reportMetrics(payload: payload, configuration: config)
+
+        customTracerProvider.forceFlush()
+
+        let spans = customExporter.getFinishedSpanItems()
+        XCTAssertGreaterThanOrEqual(spans.count, 1, "Custom tracer should have received spans")
+
+        let defaultSpans = spanExporter.getFinishedSpanItems()
+        XCTAssertEqual(defaultSpans.count, 0, "Default tracer should not have received spans")
+    }
+
+    func testConfiguration_DefaultTracerWhenNoneProvided() {
+        let config = MetricKitConfiguration()
+        let payload = FakeMetricPayload()
+
+        reportMetrics(payload: payload, configuration: config)
+
+        tracerProvider.forceFlush()
+
+        let spans = spanExporter.getFinishedSpanItems()
+        XCTAssertGreaterThanOrEqual(spans.count, 1, "Default tracer should have received spans")
     }
 }
 
@@ -434,7 +466,7 @@ class MetricKitDiagnosticTests: XCTestCase {
     func testReportDiagnostics_CreatesMainSpan() {
         let payload = FakeDiagnosticPayload()
 
-        reportDiagnostics(payload: payload)
+        reportDiagnostics(payload: payload, configuration: MetricKitConfiguration())
 
         // Force flush to ensure spans are exported
         tracerProvider.forceFlush()
@@ -449,7 +481,7 @@ class MetricKitDiagnosticTests: XCTestCase {
     func testReportDiagnostics_CreatesCPUExceptionLogs() {
         let payload = FakeDiagnosticPayload()
 
-        reportDiagnostics(payload: payload)
+        reportDiagnostics(payload: payload, configuration: MetricKitConfiguration())
 
         let logs = logExporter.getFinishedLogRecords()
 
@@ -466,7 +498,7 @@ class MetricKitDiagnosticTests: XCTestCase {
     func testReportDiagnostics_CreatesDiskWriteExceptionLogs() {
         let payload = FakeDiagnosticPayload()
 
-        reportDiagnostics(payload: payload)
+        reportDiagnostics(payload: payload, configuration: MetricKitConfiguration())
 
         let logs = logExporter.getFinishedLogRecords()
 
@@ -482,7 +514,7 @@ class MetricKitDiagnosticTests: XCTestCase {
     func testReportDiagnostics_CreatesHangDiagnosticLogs() {
         let payload = FakeDiagnosticPayload()
 
-        reportDiagnostics(payload: payload)
+        reportDiagnostics(payload: payload, configuration: MetricKitConfiguration())
 
         let logs = logExporter.getFinishedLogRecords()
 
@@ -501,7 +533,7 @@ class MetricKitDiagnosticTests: XCTestCase {
     func testReportDiagnostics_CreatesCrashDiagnosticLogs() {
         let payload = FakeDiagnosticPayload()
 
-        reportDiagnostics(payload: payload)
+        reportDiagnostics(payload: payload, configuration: MetricKitConfiguration())
 
         let logs = logExporter.getFinishedLogRecords()
 
@@ -545,7 +577,7 @@ class MetricKitDiagnosticTests: XCTestCase {
     func testReportDiagnostics_CreatesAppLaunchDiagnosticLogs() {
         let payload = FakeDiagnosticPayload()
 
-        reportDiagnostics(payload: payload)
+        reportDiagnostics(payload: payload, configuration: MetricKitConfiguration())
 
         let logs = logExporter.getFinishedLogRecords()
 
@@ -562,7 +594,7 @@ class MetricKitDiagnosticTests: XCTestCase {
     func testReportDiagnostics_VerifyLogTimestamps() {
         let payload = FakeDiagnosticPayload()
 
-        reportDiagnostics(payload: payload)
+        reportDiagnostics(payload: payload, configuration: MetricKitConfiguration())
 
         let logs = logExporter.getFinishedLogRecords()
 
@@ -575,7 +607,7 @@ class MetricKitDiagnosticTests: XCTestCase {
     func testReportDiagnostics_VerifyLogCount() {
         let payload = FakeDiagnosticPayload()
 
-        reportDiagnostics(payload: payload)
+        reportDiagnostics(payload: payload, configuration: MetricKitConfiguration())
 
         let logs = logExporter.getFinishedLogRecords()
 
@@ -590,6 +622,89 @@ class MetricKitDiagnosticTests: XCTestCase {
         #else
         XCTAssertEqual(logs.count, 4, "Should have 4 diagnostic logs on macOS")
         #endif
+    }
+
+    func testConfiguration_UseAppleStacktraceFormat() {
+        let config = MetricKitConfiguration(useAppleStacktraceFormat: true)
+        let payload = FakeDiagnosticPayload()
+
+        reportDiagnostics(payload: payload, configuration: config)
+
+        let logs = logExporter.getFinishedLogRecords()
+
+        let hangLog = logs.first {
+            $0.attributes["name"]?.description == "metrickit.diagnostic.hang"
+        }
+
+        XCTAssertNotNil(hangLog)
+        let stacktraceString = hangLog?.attributes["exception.stacktrace"]?.description ?? ""
+        let stacktraceData = stacktraceString.data(using: .utf8)!
+        let json = try? JSONSerialization.jsonObject(with: stacktraceData) as? [String: Any]
+
+        XCTAssertNotNil(json)
+        XCTAssertTrue(json?.keys.contains("callStackTree") ?? false, "Should have Apple's callStackTree wrapper")
+        XCTAssertFalse(json?.keys.contains("callStacks") ?? true, "Should not have OTel's callStacks")
+    }
+
+    func testConfiguration_UseOTelStacktraceFormat() {
+        let config = MetricKitConfiguration(useAppleStacktraceFormat: false)
+        let payload = FakeDiagnosticPayload()
+
+        reportDiagnostics(payload: payload, configuration: config)
+
+        let logs = logExporter.getFinishedLogRecords()
+
+        let hangLog = logs.first {
+            $0.attributes["name"]?.description == "metrickit.diagnostic.hang"
+        }
+
+        XCTAssertNotNil(hangLog)
+        let stacktraceString = hangLog?.attributes["exception.stacktrace"]?.description ?? ""
+        let stacktraceData = stacktraceString.data(using: .utf8)!
+        let json = try? JSONSerialization.jsonObject(with: stacktraceData) as? [String: Any]
+
+        XCTAssertNotNil(json)
+        XCTAssertTrue(json?.keys.contains("callStacks") ?? false, "Should have OTel's callStacks")
+        XCTAssertFalse(json?.keys.contains("callStackTree") ?? true, "Should not have Apple's callStackTree wrapper")
+    }
+
+    func testConfiguration_UsesCustomTracerForDiagnostics() {
+        let customTracerProvider = TracerProviderSdk()
+        let customExporter = InMemoryExporter()
+        customTracerProvider.addSpanProcessor(SimpleSpanProcessor(spanExporter: customExporter))
+        let customTracer = customTracerProvider.get(instrumentationName: "CustomTracer")
+
+        let config = MetricKitConfiguration(tracer: customTracer)
+        let payload = FakeDiagnosticPayload()
+
+        reportDiagnostics(payload: payload, configuration: config)
+
+        customTracerProvider.forceFlush()
+
+        let spans = customExporter.getFinishedSpanItems()
+        XCTAssertGreaterThanOrEqual(spans.count, 1, "Custom tracer should have received diagnostic span")
+
+        let defaultSpans = spanExporter.getFinishedSpanItems()
+        XCTAssertEqual(defaultSpans.count, 0, "Default tracer should not have received spans")
+    }
+
+    func testConfiguration_UsesCustomLoggerForDiagnostics() {
+        let customLogExporter = InMemoryLogRecordExporter()
+        let customLoggerProvider = LoggerProviderBuilder()
+            .with(processors: [SimpleLogRecordProcessor(logRecordExporter: customLogExporter)])
+            .build()
+        let customLogger = customLoggerProvider.get(instrumentationScopeName: "CustomLogger")
+
+        let config = MetricKitConfiguration(logger: customLogger)
+        let payload = FakeDiagnosticPayload()
+
+        reportDiagnostics(payload: payload, configuration: config)
+
+        let logs = customLogExporter.getFinishedLogRecords()
+        XCTAssertGreaterThanOrEqual(logs.count, 1, "Custom logger should have received diagnostic logs")
+
+        let defaultLogs = logExporter.getFinishedLogRecords()
+        XCTAssertEqual(defaultLogs.count, 0, "Default logger should not have received logs")
     }
 }
 #endif

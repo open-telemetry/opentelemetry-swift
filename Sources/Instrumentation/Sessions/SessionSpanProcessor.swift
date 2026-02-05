@@ -29,9 +29,9 @@ public class SessionSpanProcessor: SpanProcessor {
   ///   - span: The span being started
   public func onStart(parentContext: SpanContext?, span: ReadableSpan) {
     let session = sessionManager.getSession()
-    span.setAttribute(key: SessionConstants.id, value: session.id)
+    span.setAttribute(key: SemanticConventions.Session.id.rawValue, value: session.id)
     if session.previousId != nil {
-      span.setAttribute(key: SessionConstants.previousId, value: session.previousId!)
+      span.setAttribute(key: SemanticConventions.Session.previousId.rawValue, value: session.previousId!)
     }
   }
 
