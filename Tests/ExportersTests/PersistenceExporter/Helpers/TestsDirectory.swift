@@ -24,7 +24,7 @@ import XCTest
   }
 
   init() {
-    let subdirectoryName = "com.datadoghq.ios-sdk-tests-\(UUID().uuidString)"
+    let subdirectoryName = "io.opentelemetry.ios-sdk-tests-\(UUID().uuidString)"
     let osTemporaryDirectoryURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent(subdirectoryName, isDirectory: true)
     directory = Directory(url: osTemporaryDirectoryURL)
   }
