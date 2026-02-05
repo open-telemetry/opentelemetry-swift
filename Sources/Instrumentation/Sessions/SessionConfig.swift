@@ -49,8 +49,6 @@ public struct SessionConfig {
 public class SessionConfigBuilder {
   public private(set) var sessionTimeout: TimeInterval = 30 * 60
   
-  public init() {}
-  
   /// Sets the session timeout duration
   /// - Parameter sessionTimeout: Duration in seconds after which a session expires if left inactive
   /// - Returns: The builder instance for method chaining
@@ -67,10 +65,10 @@ public class SessionConfigBuilder {
 }
 
 /// Extension to SessionConfig for builder pattern support
-extension SessionConfig {
+public extension SessionConfig {
   /// Creates a new SessionConfigBuilder instance
   /// - Returns: A new builder for creating SessionConfig
-  public static func builder() -> SessionConfigBuilder {
+  static func builder() -> SessionConfigBuilder {
     return SessionConfigBuilder()
   }
 }

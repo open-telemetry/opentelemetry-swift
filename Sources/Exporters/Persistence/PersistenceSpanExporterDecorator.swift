@@ -19,8 +19,8 @@ public class PersistenceSpanExporterDecorator: SpanExporter {
     }
 
     func export(values: [SpanData]) -> DataExportStatus {
-      _ = spanExporter.export(spans: values)
-      return DataExportStatus(needsRetry: false)
+      let result = spanExporter.export(spans: values)
+      return DataExportStatus(needsRetry: result == .failure)
     }
   }
 

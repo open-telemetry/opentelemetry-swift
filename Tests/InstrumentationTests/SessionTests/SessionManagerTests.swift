@@ -11,6 +11,7 @@ final class SessionManagerTests: XCTestCase {
   }
 
   override func tearDown() {
+    NotificationCenter.default.removeObserver(self)
     SessionStore.teardown()
     super.tearDown()
   }
@@ -59,19 +60,20 @@ final class SessionManagerTests: XCTestCase {
   func testGetSessionSavedToDisk() {
     let session = sessionManager.getSession()
     let savedId = UserDefaults.standard.object(forKey: SessionStore.idKey) as? String
-    let savedTimeout = UserDefaults.standard.object(forKey: SessionStore.sessionTimeoutKey) as? TimeInterval
+    let savedTimeout = UserDefaults.standard.object(forKey: SessionStore.sessionTimeoutKey) as? Double
 
     XCTAssertEqual(session.id, savedId)
-    XCTAssertEqual(session.sessionTimeout, savedTimeout)
+    XCTAssertEqual(session.sessionTimeout, TimeInterval(savedTimeout ?? -1))
   }
 
   func testLoadSessionMissingExpiry() {
-    let id1 = "session-1"
-    UserDefaults.standard.set(id1, forKey: SessionStore.idKey)
-    XCTAssertNil(SessionStore.load())
+    UserDefaults.standard.removeObject(forKey: SessionStore.expireTimeKey)
+    UserDefaults.standard.set("test-id", forKey: SessionStore.idKey)
+    UserDefaults.standard.set(Date(), forKey: SessionStore.startTimeKey)
+    UserDefaults.standard.set(1800, forKey: SessionStore.sessionTimeoutKey)
 
-    let id2 = sessionManager.getSession().id
-    XCTAssertNotEqual(id1, id2)
+    let loadedSession = SessionStore.load()
+    XCTAssertNil(loadedSession)
   }
 
   func testLoadSessionMissingID() {
@@ -107,7 +109,7 @@ final class SessionManagerTests: XCTestCase {
     sessionManager = SessionManager(configuration: SessionConfig(sessionTimeout: customLength))
 
     let session1 = sessionManager.getSession()
-    let expectedExpiry = Date(timeIntervalSinceNow: customLength)
+    let expectedExpiry = Date(timeIntervalSinceNow: Double(customLength))
 
     XCTAssertEqual(session1.expireTime.timeIntervalSince1970, expectedExpiry.timeIntervalSince1970, accuracy: 1.0)
     XCTAssertEqual(session1.sessionTimeout, customLength)
@@ -132,37 +134,84 @@ final class SessionManagerTests: XCTestCase {
   func testStartSessionAddsToQueueWhenInstrumentationNotApplied() {
     SessionEventInstrumentation.queue = []
     SessionEventInstrumentation.isApplied = false
-
+    sessionManager = SessionManager(configuration: SessionConfig(sessionTimeout: 0))
     let session = sessionManager.getSession()
+
+    // Wait for async session event processing
+    let expectation = XCTestExpectation(description: "Session event queued")
+    DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now()) {
+      expectation.fulfill()
+    }
+    wait(for: [expectation], timeout: 2.0)
 
     XCTAssertEqual(SessionEventInstrumentation.queue.count, 1)
     XCTAssertEqual(SessionEventInstrumentation.queue[0].session.id, session.id)
   }
 
-  func testStartSessionTriggersNotificationWhenInstrumentationApplied() {
+  func testStartSessionProcessesDirectlyWhenInstrumentationApplied() {
     SessionEventInstrumentation.queue = []
     SessionEventInstrumentation.isApplied = true
 
-    let expectation = XCTestExpectation(description: "Session notification posted")
-    var receivedSessionEvent: SessionEvent?
+    let session = sessionManager.getSession()
+
+    // When instrumentation is applied, sessions are processed directly, not queued
+    XCTAssertEqual(SessionEventInstrumentation.queue.count, 0)
+    XCTAssertNotNil(session.id)
+  }
+
+  func testSessionStartNotificationPosted() {
+    let expectation = XCTestExpectation(description: "Session start notification")
+    var receivedSession: Session?
 
     let observer = NotificationCenter.default.addObserver(
-      forName: SessionEventInstrumentation.sessionEventNotification,
+      forName: SessionEventNotification,
       object: nil,
       queue: nil
     ) { notification in
-      receivedSessionEvent = notification.object as? SessionEvent
+      receivedSession = notification.object as? Session
       expectation.fulfill()
     }
 
     let session = sessionManager.getSession()
 
-    wait(for: [expectation], timeout: 0.1)
-
-    XCTAssertNotNil(receivedSessionEvent)
-    XCTAssertEqual(receivedSessionEvent?.session.id, session.id)
-    XCTAssertEqual(SessionEventInstrumentation.queue.count, 0)
+    wait(for: [expectation], timeout: 2.0) // Increased timeout for async processing
+    XCTAssertEqual(receivedSession?.id, session.id)
 
     NotificationCenter.default.removeObserver(observer)
+  }
+
+  func testMultipleSessionStartNotifications() {
+    // Clean up any existing state
+    SessionStore.teardown()
+    sessionManager = SessionManager(configuration: SessionConfig(sessionTimeout: 0))
+
+    var receivedSessions: [String] = []
+    let expectation = XCTestExpectation(description: "Multiple session notifications")
+    expectation.expectedFulfillmentCount = 3
+
+    let observer = NotificationCenter.default.addObserver(
+      forName: SessionEventNotification,
+      object: nil,
+      queue: nil
+    ) { notification in
+      if let session = notification.object as? Session {
+        receivedSessions.append(session.id)
+      }
+      expectation.fulfill()
+    }
+
+    let session1 = sessionManager.getSession()
+    let session2 = sessionManager.getSession()
+    let session3 = sessionManager.getSession()
+
+    wait(for: [expectation], timeout: 2.0)
+
+    NotificationCenter.default.removeObserver(observer)
+
+    // Only check the count and that we got the expected sessions
+    XCTAssertEqual(receivedSessions.count, 3)
+    XCTAssertTrue(receivedSessions.contains(session1.id))
+    XCTAssertTrue(receivedSessions.contains(session2.id))
+    XCTAssertTrue(receivedSessions.contains(session3.id))
   }
 }

@@ -4,6 +4,7 @@
  */
 
 import Foundation
+import OpenTelemetryApi
 import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterCommon
 
@@ -32,7 +33,7 @@ public class OtlpTraceJsonExporter: SpanExporter {
         let span = try JSONDecoder().decode(OtlpSpan.self, from: jsonData)
         exportedSpans.append(span)
       } catch {
-        print("Decode Error: \(error)")
+        OpenTelemetry.instance.feedbackHandler?("Decode Error: \(error)")
       }
       return .success
     } catch {

@@ -9,26 +9,44 @@ permissions:
   contents: read
 
 jobs:
+  should-run:
+    runs-on: ubuntu-latest
+    outputs:
+      should-run: ${{ steps.check.outputs.should-run }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - name: Check if the workflow should run
+        id: check
+        run: |
+          git diff --name-only origin/${{ github.base_ref }} HEAD | grep -q "Sources/" && echo "should-run=true" >> "$GITHUB_OUTPUT" || echo "should-run=false" >> "$GITHUB_OUTPUT"
   FormattingLint: 
+    needs: should-run
+    if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: SwiftFormat
         run: echo swiftformat --lint `git diff --name-only HEAD^1 HEAD` --reporter github-actions-log
 
   SwiftLint:
+    needs: should-run
+    if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: GitHub Action for SwiftLint (Only files changed in the PR)
         uses: norio-nomura/action-swiftlint@9f4dcd7fd46b4e75d7935cf2f4df406d5cae3684 # 3.2.1
         env:
           args: --strict
           DIFF_BASE: ${{ github.base_ref }}
   macOS:
+    needs: should-run
+    if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: macos-15
     steps:
-    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
       with:
         xcode-version: 16.4
@@ -41,9 +59,11 @@ jobs:
         xcrun llvm-cov export -ignore-filename-regex="pb\.swift|grpc\.swift" -format="lcov" .build/debug/opentelemetry-swiftPackageTests.xctest/Contents/MacOS/opentelemetry-swiftPackageTests -instr-profile .build/debug/codecov/default.profdata > .build/debug/codecov/coverage_report.lcov
         ./codecov -f .build/debug/codecov/coverage_report.lcov
   iOS:
+    needs: should-run
+    if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: macos-15
     steps:
-    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
       with:
         xcode-version: 16.4
@@ -54,9 +74,11 @@ jobs:
     - name: Test for iOS
       run: make test-without-building-ios
   tvOS:
+    needs: should-run
+    if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: macos-15
     steps:
-    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
       with:
         xcode-version: 16.4
@@ -67,9 +89,11 @@ jobs:
     - name: Test for tvOS
       run: make test-without-building-tvos
   watchOS:
+    needs: should-run
+    if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: macos-15
     steps:
-    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
       with:
         xcode-version: 16.4
@@ -80,9 +104,11 @@ jobs:
     - name: Test for watchOS
       run: make test-without-building-watchos
   visionOS:
+    needs: should-run
+    if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: macos-15
     steps:
-    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
       with:
         xcode-version: 16.4
@@ -93,11 +119,41 @@ jobs:
     - name: Test for visionOS
       run: make test-without-building-visionos
   linux:
+    needs: should-run
+    if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: ubuntu-latest
-    container: swift:6.2@sha256:471acf16d3ce9b270d2f15ea177b0e150bdf1595ae2acfcc4932d1a03f43c3fd
+    container: swift:6.2@sha256:7f7deb9dc8cc0c4e06772eccbac80a63bc3e710d557df49771ef1037eeb068fa
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Build tests for Linux
         run: swift build --build-tests
       - name: Run tests for Linux
         run: swift test
+  required-status-checks:
+    needs: 
+      - FormattingLint
+      - SwiftLint
+      - macOS
+      - iOS
+      - tvOS
+      - watchOS
+      - visionOS
+      - linux
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check if all required jobs passed
+        run: |
+          if [[ ${{ needs.SwiftLint.result }} == 'failure' || \
+          ${{ needs.FormattingLint.result }} == 'failure' || \
+          ${{ needs.macOS.result }} == 'failure' || \
+          ${{ needs.iOS.result }} == 'failure' || \
+          ${{ needs.tvOS.result }} == 'failure' || \
+          ${{ needs.watchOS.result }} == 'failure' || \
+          ${{ needs.visionOS.result }} == 'failure' || \
+          ${{ needs.linux.result }} == 'failure' ]]; then
+            echo "One or more required jobs failed. Failing the workflow."
+            exit 1
+          else
+            echo "All required jobs passed/skipped."
+          fi
