@@ -57,7 +57,21 @@ public final class SessionEventInstrumentation: @unchecked Sendable {
 
   /// Flag to track if the instrumentation has been applied.
   /// Controls whether new sessions are queued or immediately processed via notifications.
-  static var isApplied = false
+  private static let isAppliedLock = NSLock()
+  private nonisolated(unsafe) static var _isApplied = false
+  static var isApplied: Bool {
+    get {
+      isAppliedLock.lock()
+      defer { isAppliedLock.unlock() }
+      return _isApplied
+    }
+    set {
+      isAppliedLock.lock()
+      defer { isAppliedLock.unlock() }
+      _isApplied = newValue
+    }
+  }
+  
   public static func install() {
     guard !isApplied else {
       return

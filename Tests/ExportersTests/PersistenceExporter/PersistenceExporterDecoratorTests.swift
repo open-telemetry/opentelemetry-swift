@@ -49,6 +49,7 @@ class PersistenceExporterDecoratorTests: XCTestCase {
                                                                                                                            exportPerformance: exportPerformance))
   }
 
+  @MainActor
   func testWhenSetupWithSynchronousWrite_thenWritesAreSynchronous() throws {
     var worker = DataExportWorkerMock()
     let fileWriter = FileWriterMock()
@@ -63,6 +64,7 @@ class PersistenceExporterDecoratorTests: XCTestCase {
     try exporter.export(values: ["value"])
   }
 
+  @MainActor
   func testWhenSetupWithAsynchronousWrite_thenWritesAreAsynchronous() throws {
     var worker = DataExportWorkerMock()
     let fileWriter = FileWriterMock()
@@ -78,6 +80,7 @@ class PersistenceExporterDecoratorTests: XCTestCase {
     try exporter.export(values: ["value"])
   }
 
+  @MainActor
   func testWhenValueCannotBeEncoded_itThrowsAnError() {
     // When
     var worker = DataExportWorkerMock()
@@ -88,6 +91,7 @@ class PersistenceExporterDecoratorTests: XCTestCase {
     XCTAssertThrowsError(try exporter.export(values: [FailingCodableMock()]))
   }
 
+  @MainActor
   func testWhenValueCannotBeDecoded_itReportsNoRetryIsNeeded() {
     var worker = DataExportWorkerMock()
 
