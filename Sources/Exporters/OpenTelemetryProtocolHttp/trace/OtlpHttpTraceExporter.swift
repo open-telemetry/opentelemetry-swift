@@ -56,6 +56,7 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
 
   public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil)
     -> SpanExporterResultCode {
+    var resultValue: SpanExporterResultCode = .success
     var sendingSpans: [SpanData] = []
     exporterLock.withLockVoid {
       pendingSpans.append(contentsOf: spans)
@@ -68,7 +69,12 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
         $0.resourceSpans = SpanAdapter.toProtoResourceSpans(
           spanDataList: sendingSpans)
       }
-    let request = createRequest(body: body, endpoint: endpoint)
+    let semaphore = DispatchSemaphore(value: 0)
+    var request = createRequest(body: body, endpoint: endpoint)
+
+    let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+    request.timeoutInterval = timeout
+
     exporterMetrics?.addSeen(value: sendingSpans.count)
     httpClient.send(request: request) { [weak self] result in
       switch result {
@@ -80,9 +86,17 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
           self?.pendingSpans.append(contentsOf: sendingSpans)
         }
         OpenTelemetry.instance.feedbackHandler?("\(error)")
+        resultValue = .failure
       }
+      semaphore.signal()
     }
-    return .success
+
+    let waitResult = semaphore.wait(timeout: .now() + timeout)
+    if waitResult == .timedOut {
+      exporterMetrics?.addFailed(value: sendingSpans.count)
+      return .failure
+    }
+    return resultValue
   }
 
   public func flush(explicitTimeout: TimeInterval? = nil)
@@ -99,7 +113,9 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
             spanDataList: pendingSpans)
         }
       let semaphore = DispatchSemaphore(value: 0)
-      let request = createRequest(body: body, endpoint: endpoint)
+      var request = createRequest(body: body, endpoint: endpoint)
+      let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+      request.timeoutInterval = timeout
 
       httpClient.send(request: request) { [weak self] result in
         switch result {
@@ -112,7 +128,12 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
         }
         semaphore.signal()
       }
-      semaphore.wait()
+
+      let waitResult = semaphore.wait(timeout: .now() + timeout)
+      if waitResult == .timedOut {
+        exporterMetrics?.addFailed(value: pendingSpans.count)
+        return .failure
+      }
     }
     return resultValue
   }
