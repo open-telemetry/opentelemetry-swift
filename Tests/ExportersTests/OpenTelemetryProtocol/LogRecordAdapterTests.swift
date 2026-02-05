@@ -50,11 +50,11 @@ class LogRecordAdapterTests: XCTestCase {
     XCTAssertEqual(protoLog.body.stringValue, "Hello, world")
     XCTAssertEqual(protoLog.hasBody, true)
     XCTAssertEqual(protoLog.severityText, "FATAL")
-    XCTAssertEqual(protoLog.observedTimeUnixNano, Date.distantPast.timeIntervalSince1970.toNanoseconds)
+    XCTAssertEqual(protoLog.observedTimeUnixNano, 0) // Date.distantPast is negative, clamped to 0
     XCTAssertEqual(protoLog.severityNumber.rawValue, Severity.fatal.rawValue)
     XCTAssertEqual(protoLog.spanID, Data(bytes: spanIdBytes, count: 8))
     XCTAssertEqual(protoLog.traceID, Data(bytes: traceIdBytes, count: 16))
-    XCTAssertEqual(protoLog.timeUnixNano, timestamp.timeIntervalSince1970.toNanoseconds)
+    XCTAssertEqual(protoLog.timeUnixNano, UInt64(timestamp.timeIntervalSince1970.toNanoseconds))
     XCTAssertEqual(protoLog.attributes.count, 2)
     XCTAssertEqual(protoLog.eventName, "session.start")
   }

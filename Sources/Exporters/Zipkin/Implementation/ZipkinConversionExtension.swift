@@ -81,8 +81,8 @@ enum ZipkinConversionExtension {
                       id: ZipkinConversionExtension.EncodeSpanId(spanId: otelSpan.spanId),
                       kind: ZipkinConversionExtension.toSpanKind(otelSpan: otelSpan),
                       name: otelSpan.name,
-                      timestamp: otelSpan.startTime.timeIntervalSince1970.toMicroseconds,
-                      duration: otelSpan.endTime.timeIntervalSince(otelSpan.startTime).toMicroseconds,
+                      timestamp: UInt64(otelSpan.startTime.timeIntervalSince1970.toMicroseconds),
+                      duration: UInt64(otelSpan.endTime.timeIntervalSince(otelSpan.startTime).toMicroseconds),
                       localEndpoint: localEndpoint,
                       remoteEndpoint: remoteEndpoint,
                       annotations: annotations,
@@ -119,7 +119,7 @@ enum ZipkinConversionExtension {
   }
 
   private static func processEvents(event: SpanData.Event) -> ZipkinAnnotation {
-    return ZipkinAnnotation(timestamp: event.timestamp.timeIntervalSince1970.toMicroseconds, value: event.name)
+    return ZipkinAnnotation(timestamp: UInt64(event.timestamp.timeIntervalSince1970.toMicroseconds), value: event.name)
   }
 
   private static func processAttributes(state: inout AttributeEnumerationState, key: String, value: AttributeValue) {

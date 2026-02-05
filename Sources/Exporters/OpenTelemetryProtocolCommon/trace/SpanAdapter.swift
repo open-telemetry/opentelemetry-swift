@@ -48,8 +48,8 @@ public enum SpanAdapter {
     }
     protoSpan.name = spanData.name
     protoSpan.kind = toProtoSpanKind(kind: spanData.kind)
-    protoSpan.startTimeUnixNano = spanData.startTime.timeIntervalSince1970.toNanoseconds
-    protoSpan.endTimeUnixNano = spanData.endTime.timeIntervalSince1970.toNanoseconds
+    protoSpan.startTimeUnixNano = UInt64(spanData.startTime.timeIntervalSince1970.toNanoseconds)
+    protoSpan.endTimeUnixNano = UInt64(spanData.endTime.timeIntervalSince1970.toNanoseconds)
     spanData.attributes.forEach {
       protoSpan.attributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
     }
@@ -85,7 +85,7 @@ public enum SpanAdapter {
   public static func toProtoSpanEvent(event: SpanData.Event) -> Opentelemetry_Proto_Trace_V1_Span.Event {
     var protoEvent = Opentelemetry_Proto_Trace_V1_Span.Event()
     protoEvent.name = event.name
-    protoEvent.timeUnixNano = event.timestamp.timeIntervalSince1970.toNanoseconds
+    protoEvent.timeUnixNano = UInt64(event.timestamp.timeIntervalSince1970.toNanoseconds)
     event.attributes.forEach {
       protoEvent.attributes.append(CommonAdapter.toProtoAttribute(key: $0.key, attributeValue: $0.value))
     }

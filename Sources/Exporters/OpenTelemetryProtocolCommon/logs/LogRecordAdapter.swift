@@ -41,10 +41,10 @@ public class LogRecordAdapter {
     var protoLogRecord = Opentelemetry_Proto_Logs_V1_LogRecord()
 
     if let observedTimestamp = logRecord.observedTimestamp {
-      protoLogRecord.observedTimeUnixNano = observedTimestamp.timeIntervalSince1970.toNanoseconds
+      protoLogRecord.observedTimeUnixNano = UInt64(max(0, observedTimestamp.timeIntervalSince1970.toNanoseconds))
     }
 
-    protoLogRecord.timeUnixNano = logRecord.timestamp.timeIntervalSince1970.toNanoseconds
+    protoLogRecord.timeUnixNano = UInt64(max(0, logRecord.timestamp.timeIntervalSince1970.toNanoseconds))
 
     if let eventName = logRecord.eventName {
       protoLogRecord.eventName = eventName
