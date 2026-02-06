@@ -18,50 +18,41 @@ import OpenTelemetryApi
 
 import Sessions
 
-protocol CrashProtocol {
-  static func install()
-  static func cacheCrashContext(session: Session?)
-
-  static func recoverCrashContext(from rawCrash: [String: Any],
-                                  log: LogRecordBuilder,
-                                  attributes: [String: AttributeValue]) -> [String: AttributeValue]
-  static func processStoredCrashes()
+public class KSCrashInstrumentationConfig: KSCrashConfiguration {
+  public var maxStackTraceBytes: Int = 25 * 1024
+  
+  public static let `default` = KSCrashInstrumentationConfig()
 }
 
-public class KSCrashInstrumentation: CrashProtocol {
-  public internal(set) static var maxStackTraceBytes = 25 * 1024 // 25 KB
-  public private(set) static var isInstalled: Bool = false
-  private static let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: "io.opentelemetry.kscrash")
-  static let reporter = KSCrash.shared
-  static var observers: [NSObjectProtocol] = []
-  private static let queue = DispatchQueue(label: "io.opentelemetry.kscrash", qos: .utility)
-  private static let timestampFormatter: ISO8601DateFormatter = {
-    // Example KSCrash timestamp: `2025-10-28T03:30:53.604204Z`
+public class KSCrashInstrumentation: Instrumentation {
+  public private(set) static var shared: KSCrashInstrumentation?
+  
+  private let config: KSCrashInstrumentationConfig
+  private let reporter = KSCrash.shared
+  private var observers: [NSObjectProtocol] = []
+  private let queue = DispatchQueue(label: "io.opentelemetry.kscrash", qos: .utility)
+  private let timestampFormatter: ISO8601DateFormatter = {
     let formatter = ISO8601DateFormatter()
-    formatter.formatOptions = [
-      .withInternetDateTime,
-      .withFractionalSeconds
-    ]
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
     return formatter
   }()
 
-  public init(maxStackTraceBytes: Int = 25 * 1024) {
-    KSCrashInstrumentation.maxStackTraceBytes = maxStackTraceBytes
-    KSCrashInstrumentation.install()
+  public init(config: KSCrashInstrumentationConfig = .default) {
+    self.config = config
+    super.init(scope: "io.opentelemetry.kscrash")
+    queue.sync {
+      install()
+    }
   }
 
-  public static func install() {
-    guard !isInstalled else {
+  private func install() {
+    guard Self.shared == nil else {
       return
     }
 
     do {
-      let config = KSCrashConfiguration()
-      config.enableSigTermMonitoring = false
-      config.enableSwapCxaThrow = false
-
       try reporter.install(with: config)
-      isInstalled = true
+      Self.shared = self
     } catch {
       return
     }
@@ -70,34 +61,32 @@ public class KSCrashInstrumentation: CrashProtocol {
     cacheCrashContext()
 
     // Process any stored crashes asynchronously
-    queue.async {
-      processStoredCrashes()
+    queue.async { [weak self] in
+      self?.processStoredCrashes()
     }
 
     // setup cache context subscribers
     setupNotificationObservers()
   }
 
-  static func setupNotificationObservers() {
-    // Update crash context on session start
+  private func setupNotificationObservers() {
     let sessionObserver = NotificationCenter.default.addObserver(
       forName: Notification.Name(SessionConstants.sessionEventNotification),
       object: nil,
       queue: nil
-    ) { notification in
+    ) { [weak self] notification in
       if let session = notification.object as? Session {
-        queue.async {
-          cacheCrashContext(session: session)
+        self?.queue.async {
+          self?.cacheCrashContext(session: session)
         }
       }
     }
     observers.append(sessionObserver)
   }
 
-  static func cacheCrashContext(session: Session? = nil) {
+  private func cacheCrashContext(session: Session? = nil) {
     var userInfo: [String: Any] = [:]
 
-    // session
     let sessionManager = SessionManagerProvider.getInstance()
     if let session = session ?? sessionManager.peekSession() {
       userInfo[SemanticConventions.Session.id.rawValue] = session.id
@@ -110,8 +99,7 @@ public class KSCrashInstrumentation: CrashProtocol {
   }
 
   /// Report cached crashes from KSCrash store (just a local file)
-  static func processStoredCrashes() {
-    // Init
+  private func processStoredCrashes() {
     guard let reportStore = reporter.reportStore else {
       return
     }
@@ -126,16 +114,15 @@ public class KSCrashInstrumentation: CrashProtocol {
 
       // Report crash as log event
       reportCrash(crashReport: crashReport)
-
       // Delete processed report
       reportStore.deleteReport(with: id)
     }
   }
 
   // Report a KSCrash report in Apple format
-  private static func reportCrash(crashReport: CrashReportDictionary) {
+  private func reportCrash(crashReport: CrashReportDictionary) {
     let rawCrash: [String: Any] = crashReport.value
-    let log: any LogRecordBuilder = logger.logRecordBuilder()
+    let log: any LogRecordBuilder = self.logger.logRecordBuilder()
       .setEventName("device.crash")
 
     var attributes: [String: AttributeValue] = [
@@ -148,15 +135,18 @@ public class KSCrashInstrumentation: CrashProtocol {
     // Get stack trace in Apple format and emit log event in async callback
     // If the iOS application was built with `strip styles` set to `debugging symbols`, then KSCrash will
     // also perform on-device symbolication.
-    CrashReportFilterAppleFmt().filterReports([crashReport]) { reports, _ in
+    let filter = CrashReportFilterAppleFmt(reportStyle: .unsymbolicated)
+    filter.filterReports([crashReport]) { [weak self] reports, _ in
+      guard let self = self else { return }
       var appleFormatReport = (reports?.first as? CrashReportString)?.value ?? "Failed to format crash report"
-      if appleFormatReport.utf8.count > maxStackTraceBytes {
-        appleFormatReport = String(appleFormatReport.utf8.prefix(maxStackTraceBytes)) ?? appleFormatReport
+      let maxBytes = self.config.maxStackTraceBytes
+      if appleFormatReport.utf8.count > maxBytes {
+        appleFormatReport = String(appleFormatReport.utf8.prefix(maxBytes)) ?? appleFormatReport
       }
       attributes[SemanticConventions.Exception.stacktrace.rawValue] = AttributeValue.string(appleFormatReport)
 
       // `Crash detected on thread 0 at libswiftCore.dylib 0x000000019ed5c8c4 $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF + 172`
-      attributes[SemanticConventions.Exception.message.rawValue] = AttributeValue.string(extractCrashMessage(from: appleFormatReport))
+      attributes[SemanticConventions.Exception.message.rawValue] = AttributeValue.string(self.extractCrashMessage(from: appleFormatReport))
 
       _ = log.setAttributes(attributes)
       log.emit()
@@ -164,7 +154,7 @@ public class KSCrashInstrumentation: CrashProtocol {
   }
 
   /// Get exception code information for the crash message. This is useful for grouping
-  static func extractCrashMessage(from stackTrace: String) -> String {
+  private func extractCrashMessage(from stackTrace: String) -> String {
     let lines = stackTrace.components(separatedBy: "\n")
 
     // Get exception type
@@ -199,15 +189,15 @@ public class KSCrashInstrumentation: CrashProtocol {
   /// However, if user session context cannot be recovered, then we use the current timestamp
   /// and let sessions id processors do their work. For this edge case, users can look
   /// at the current `session.previous_id` to see if the previous session had crashed.
-  static func recoverCrashContext(from rawCrash: [String: Any],
-                                  log: LogRecordBuilder,
-                                  attributes: [String: AttributeValue]) -> [String: AttributeValue] {
+  private func recoverCrashContext(from rawCrash: [String: Any],
+                                   log: LogRecordBuilder,
+                                   attributes: [String: AttributeValue]) -> [String: AttributeValue] {
     guard let report = rawCrash["report"] as? [String: Any],
           let timestampString = report["timestamp"] as? String,
           let timestamp = timestampFormatter.date(from: timestampString),
           let userInfo = rawCrash["user"] as? [String: Any],
           let sessionId = userInfo[SemanticConventions.Session.id.rawValue] as? String else {
-      _ = log.setTimestamp(Date()) // just for clarity (upstream already does this)
+      _ = log.setTimestamp(Date())
       return attributes
     }
     var mutatedAttributes = attributes
