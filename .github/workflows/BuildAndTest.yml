@@ -20,7 +20,25 @@ jobs:
       - name: Check if the workflow should run
         id: check
         run: |
-          git diff --name-only origin/${{ github.base_ref }} HEAD | grep -q "Sources/" && echo "should-run=true" >> "$GITHUB_OUTPUT" || echo "should-run=false" >> "$GITHUB_OUTPUT"
+          SHOULD_RUN=false
+
+          # github.base_ref is empty for workflow_dispatch runs; in that case,
+          # skip diff-based checks and run all jobs.
+          if [ -z "${{ github.base_ref }}" ]; then
+            SHOULD_RUN=true
+          else
+            CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }} HEAD)
+
+            # Run jobs if source code changed
+            echo "$CHANGED_FILES" | grep -q "Sources/" && SHOULD_RUN=true
+
+            # Run if SwiftNIO dependency was bumped
+            if echo "$CHANGED_FILES" | grep -q "Package.swift"; then
+              git diff -G "swift-nio" origin/${{ github.base_ref }} HEAD -- Package.swift | grep -q . && SHOULD_RUN=true
+            fi
+          fi
+
+          echo "should-run=$SHOULD_RUN" >> "$GITHUB_OUTPUT"
   FormattingLint: 
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run == 'true' }}
