@@ -5,7 +5,6 @@ on :
       - main
     types:
       - closed
-      
 concurrency:
   group: tag-note-release-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -18,7 +17,7 @@ jobs:
     if: >
       github.event.pull_request.merged == true &&
       startsWith(github.event.pull_request.head.ref, 'release/')
-    runs-on: macos-15
+    runs-on: macos-latest
     permissions:
       contents: write # required for creating tags and releases
     outputs:
@@ -58,7 +57,7 @@ jobs:
   cocoapods:
     name: Publish to CocoaPods
     needs: tag
-    runs-on: macos-15
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Publish to CocoaPods trunk
