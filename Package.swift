@@ -152,7 +152,7 @@ let package = Package(
       dependencies: [
         "OpenTelemetryProtocolExporterGrpc",
         "OpenTelemetryProtocolExporterHttp",
-        "SharedTestUtils",
+        "SharedTestUtils"
       ],
       path: "Tests/ExportersTests/OpenTelemetryProtocol"
     ),
@@ -241,9 +241,10 @@ extension Package {
     #endif
 
     #if canImport(Darwin)
-      dependencies.append(
-        .package(url: "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1")
-      )
+      dependencies.append(contentsOf: [
+        .package(url: "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1"),
+        .package(url: "https://github.com/kstenerud/KSCrash.git", exact: "2.5.0")
+      ])
       products.append(contentsOf: [
         .library(name: "JaegerExporter", targets: ["JaegerExporter"]),
         .executable(name: "simpleExporter", targets: ["SimpleExporter"]),
@@ -254,7 +255,8 @@ extension Package {
         .executable(name: "OTLPHTTPExporter", targets: ["OTLPHTTPExporter"]),
         .library(name: "SignPostIntegration", targets: ["SignPostIntegration"]),
         .library(name: "ResourceExtension", targets: ["ResourceExtension"]),
-        .library(name: "MetricKitInstrumentation", targets: ["MetricKitInstrumentation"])
+        .library(name: "MetricKitInstrumentation", targets: ["MetricKitInstrumentation"]),
+        .library(name: "Crash", targets: ["Crash"])
       ])
       targets.append(contentsOf: [
         .target(
@@ -304,7 +306,8 @@ extension Package {
           name: "URLSessionInstrumentation",
           dependencies: [
             .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
-            "NetworkStatus"],
+            "NetworkStatus"
+          ],
           path: "Sources/Instrumentation/URLSession",
           exclude: ["README.md"]
         ),
@@ -312,7 +315,7 @@ extension Package {
           name: "URLSessionInstrumentationTests",
           dependencies: [
             "URLSessionInstrumentation",
-            "SharedTestUtils",
+            "SharedTestUtils"
           ],
           path: "Tests/InstrumentationTests/URLSessionTests"
         ),
@@ -353,7 +356,7 @@ extension Package {
           dependencies: [
             .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
             "OpenTelemetryProtocolExporterHttp", .product(name: "StdoutExporter", package: "opentelemetry-swift-core"),
-            "ZipkinExporter", "ResourceExtension", "SignPostIntegration",
+            "ZipkinExporter", "ResourceExtension", "SignPostIntegration"
           ],
           path: "Examples/OTLP HTTP Exporter",
           exclude: ["README.md", "collector-config.yaml", "docker-compose.yaml", "prometheus.yaml", "images"]
@@ -403,9 +406,30 @@ extension Package {
           name: "PrometheusSample",
           dependencies: [
             .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
-            "PrometheusExporter"],
+            "PrometheusExporter"
+          ],
           path: "Examples/Prometheus Sample",
           exclude: ["README.md"]
+        ),
+        .target(
+          name: "Crash",
+          dependencies: [
+            .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
+            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
+            "Sessions",
+            .product(name: "Installations", package: "KSCrash")
+          ],
+          path: "Sources/Instrumentation/Crash"
+        ),
+        .testTarget(
+          name: "CrashTests",
+          dependencies: [
+            "Crash",
+            "Sessions",
+            "InMemoryExporter",
+            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+          ],
+          path: "Tests/InstrumentationTests/CrashTests"
         )
       ])
     #endif
