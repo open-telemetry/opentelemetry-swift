@@ -32,9 +32,9 @@ jobs:
             # Run jobs if source code changed
             echo "$CHANGED_FILES" | grep -q "Sources/" && SHOULD_RUN=true
 
-            # Run if SwiftNIO dependency was bumped
+            # Run if any dependency is updated in Package.swift
             if echo "$CHANGED_FILES" | grep -q "Package.swift"; then
-              git diff -G "swift-nio" origin/${{ github.base_ref }} HEAD -- Package.swift | grep -q . && SHOULD_RUN=true
+              git diff origin/${{ github.base_ref }} HEAD -- Package.swift | grep -q . && SHOULD_RUN=true
             fi
           fi
 
