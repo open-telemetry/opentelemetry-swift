@@ -42,7 +42,7 @@ jobs:
   FormattingLint: 
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run == 'true' }}
-    runs-on: macos-15
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: SwiftFormat
@@ -62,12 +62,12 @@ jobs:
   macOS:
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run == 'true' }}
-    runs-on: macos-15
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
       with:
-        xcode-version: 16.4
+        xcode-version: latest-stable
     - name: Build and Test for macOS
       run: swift test --enable-code-coverage
     - name: Upload Code coverage
@@ -79,12 +79,12 @@ jobs:
   iOS:
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run == 'true' }}
-    runs-on: macos-15
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
       with:
-        xcode-version: 16.4
+        xcode-version: latest-stable
     - name: Install Homebrew kegs
       run: make setup-brew
     - name: Build for iOS
@@ -94,12 +94,12 @@ jobs:
   tvOS:
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run == 'true' }}
-    runs-on: macos-15
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
       with:
-        xcode-version: 16.4
+        xcode-version: latest-stable
     - name: Install Homebrew kegs
       run: make setup-brew
     - name: Build for tvOS
@@ -109,12 +109,12 @@ jobs:
   watchOS:
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run == 'true' }}
-    runs-on: macos-15
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
       with:
-        xcode-version: 16.4
+        xcode-version: latest-stable
     - name: Install Homebrew kegs
       run: make setup-brew
     - name: Build for watchOS
@@ -124,12 +124,12 @@ jobs:
   visionOS:
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run == 'true' }}
-    runs-on: macos-15
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
       with:
-        xcode-version: 16.4
+        xcode-version: latest-stable
     - name: Install Homebrew kegs
       run: make setup-brew
     - name: Build for visionOS
