@@ -19,7 +19,7 @@ services:
   # Zipkin
   zipkin-all-in-one:
     platform: linux/amd64
-    image: openzipkin/zipkin:latest
+    image: openzipkin/zipkin:latest@sha256:bb570eb45c2994eaf32da783cc098b3d51d1095b73ec92919863d73d0a9eaafb
     ports:
       - "9411:9411"
 
