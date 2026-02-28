@@ -1,0 +1,105 @@
+name: Nightly Build (Core @ main)
+
+on:
+  schedule:
+    # Run daily at 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  macOS:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Use opentelemetry-swift-core from main
+        run: |
+          sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
+      - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
+        with:
+          xcode-version: 16.4
+      - name: Build and Test for macOS
+        run: swift test
+
+  iOS:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Use opentelemetry-swift-core from main
+        run: |
+          sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
+      - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
+        with:
+          xcode-version: 16.4
+      - name: Install Homebrew kegs
+        run: make setup-brew
+      - name: Build for iOS
+        run: make build-for-testing-ios
+      - name: Test for iOS
+        run: make test-without-building-ios
+
+  tvOS:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Use opentelemetry-swift-core from main
+        run: |
+          sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
+      - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
+        with:
+          xcode-version: 16.4
+      - name: Install Homebrew kegs
+        run: make setup-brew
+      - name: Build for tvOS
+        run: make build-for-testing-tvos
+      - name: Test for tvOS
+        run: make test-without-building-tvos
+
+  watchOS:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Use opentelemetry-swift-core from main
+        run: |
+          sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
+      - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
+        with:
+          xcode-version: 16.4
+      - name: Install Homebrew kegs
+        run: make setup-brew
+      - name: Build for watchOS
+        run: make build-for-testing-watchos
+      - name: Test for watchOS
+        run: make test-without-building-watchos
+
+  visionOS:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Use opentelemetry-swift-core from main
+        run: |
+          sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
+      - uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
+        with:
+          xcode-version: 16.4
+      - name: Install Homebrew kegs
+        run: make setup-brew
+      - name: Build for visionOS
+        run: make build-for-testing-visionos
+      - name: Test for visionOS
+        run: make test-without-building-visionos
+
+  linux:
+    runs-on: ubuntu-latest
+    container: swift:6.2@sha256:7f7deb9dc8cc0c4e06772eccbac80a63bc3e710d557df49771ef1037eeb068fa
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Use opentelemetry-swift-core from main
+        run: |
+          sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
+      - name: Build tests for Linux
+        run: swift build --build-tests
+      - name: Run tests for Linux
+        run: swift test
