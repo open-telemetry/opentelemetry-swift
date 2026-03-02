@@ -9,7 +9,7 @@
   import OpenTelemetrySdk
   import Thrift
 
-  public class JaegerSpanExporter: SpanExporter {
+  public final class JaegerSpanExporter: SpanExporter, @unchecked Sendable {
     let collectorAddress: String
     let process: Process
 

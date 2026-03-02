@@ -18,8 +18,10 @@ enum ZipkinConversionExtension {
                                                        "http.host": 3,
                                                        "db.instance": 4]
 
-  static var localEndpointCache = [String: ZipkinEndpoint]()
-  static var remoteEndpointCache = [String: ZipkinEndpoint]()
+  static let localEndpointCacheLock = NSLock()
+  nonisolated(unsafe) static var localEndpointCache = [String: ZipkinEndpoint]()
+  static let remoteEndpointCacheLock = NSLock()
+  nonisolated(unsafe) static var remoteEndpointCache = [String: ZipkinEndpoint]()
 
   static let defaultServiceName = "unknown_service:" + ProcessInfo.processInfo.processName
 
@@ -47,10 +49,12 @@ enum ZipkinConversionExtension {
     var localEndpoint = defaultLocalEndpoint
 
     if let serviceName = attributeEnumerationState.serviceName, !serviceName.isEmpty, defaultServiceName != serviceName {
-      if localEndpointCache[serviceName] == nil {
-        localEndpointCache[serviceName] = defaultLocalEndpoint.clone(serviceName: serviceName)
+      localEndpointCacheLock.withLock {
+        if localEndpointCache[serviceName] == nil {
+          localEndpointCache[serviceName] = defaultLocalEndpoint.clone(serviceName: serviceName)
+        }
+        localEndpoint = localEndpointCache[serviceName] ?? localEndpoint
       }
-      localEndpoint = localEndpointCache[serviceName] ?? localEndpoint
     }
 
     if let serviceNamespace = attributeEnumerationState.serviceNamespace, !serviceNamespace.isEmpty {
@@ -59,10 +63,12 @@ enum ZipkinConversionExtension {
 
     var remoteEndpoint: ZipkinEndpoint?
     if otelSpan.kind == .client || otelSpan.kind == .producer, attributeEnumerationState.RemoteEndpointServiceName != nil {
-      remoteEndpoint = remoteEndpointCache[attributeEnumerationState.RemoteEndpointServiceName!]
-      if remoteEndpoint == nil {
-        remoteEndpoint = ZipkinEndpoint(serviceName: attributeEnumerationState.RemoteEndpointServiceName!)
-        remoteEndpointCache[attributeEnumerationState.RemoteEndpointServiceName!] = remoteEndpoint!
+      remoteEndpointCacheLock.withLock {
+        remoteEndpoint = remoteEndpointCache[attributeEnumerationState.RemoteEndpointServiceName!]
+        if remoteEndpoint == nil {
+          remoteEndpoint = ZipkinEndpoint(serviceName: attributeEnumerationState.RemoteEndpointServiceName!)
+          remoteEndpointCache[attributeEnumerationState.RemoteEndpointServiceName!] = remoteEndpoint!
+        }
       }
     }
 
@@ -81,8 +87,8 @@ enum ZipkinConversionExtension {
                       id: ZipkinConversionExtension.EncodeSpanId(spanId: otelSpan.spanId),
                       kind: ZipkinConversionExtension.toSpanKind(otelSpan: otelSpan),
                       name: otelSpan.name,
-                      timestamp: otelSpan.startTime.timeIntervalSince1970.toMicroseconds,
-                      duration: otelSpan.endTime.timeIntervalSince(otelSpan.startTime).toMicroseconds,
+                      timestamp: UInt64(otelSpan.startTime.timeIntervalSince1970.toMicroseconds),
+                      duration: UInt64(otelSpan.endTime.timeIntervalSince(otelSpan.startTime).toMicroseconds),
                       localEndpoint: localEndpoint,
                       remoteEndpoint: remoteEndpoint,
                       annotations: annotations,
@@ -119,7 +125,7 @@ enum ZipkinConversionExtension {
   }
 
   private static func processEvents(event: SpanData.Event) -> ZipkinAnnotation {
-    return ZipkinAnnotation(timestamp: event.timestamp.timeIntervalSince1970.toMicroseconds, value: event.name)
+    return ZipkinAnnotation(timestamp: UInt64(event.timestamp.timeIntervalSince1970.toMicroseconds), value: event.name)
   }
 
   private static func processAttributes(state: inout AttributeEnumerationState, key: String, value: AttributeValue) {
