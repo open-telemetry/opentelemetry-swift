@@ -14,10 +14,6 @@ extension ServiceContext {
     }
 }
 
-let tracer = OTelTracer()
-
-let _ = InstrumentationSystem.bootstrap(tracer)
-
 /// A `swift-distributed-tracing` tracer which emits spans using OpenTelemetry Swift.
 public struct OTelTracer: Tracing.Tracer, @unchecked Sendable {
     public typealias Span = OTelSpan
@@ -173,7 +169,6 @@ public final class OTelSpan: Tracing.Span, @unchecked Sendable {
     private let otelSpan: OpenTelemetryApi.Span
     private let lock = NSLock()
     private var storedAttributes: Tracing.SpanAttributes = [:]
-    private var storedLinks: [Tracing.SpanLink] = []
 
     internal init(otelSpan: OpenTelemetryApi.Span, context: ServiceContext) {
         self.otelSpan = otelSpan
