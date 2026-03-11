@@ -1,6 +1,17 @@
 # OTelSwiftTracing
 
-Scaffold target for bridging `swift-distributed-tracing` (`Tracing`) into OpenTelemetry Swift.
+Bridges `swift-distributed-tracing` (`Tracing`) into OpenTelemetry Swift.
 
-Implementation pending.
+## Usage
 
+Bootstrapping the global `InstrumentationSystem`:
+
+```swift
+
+import OTelSwiftTracing
+import Tracing
+
+let tracer = OTelTracer()
+
+OTelSwiftTracing.bootstrap(tracer)
+```
