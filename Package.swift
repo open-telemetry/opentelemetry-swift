@@ -154,7 +154,9 @@ let package = Package(
     ),
     .testTarget(
       name: "OTelSwiftTracingTests",
-      dependencies: ["OTelSwiftTracing"],
+      dependencies: [
+        "OTelSwiftTracing"
+      ],
       path: "Tests/BridgesTests/OTelSwiftTracing"
     ),
     .testTarget(
