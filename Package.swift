@@ -23,6 +23,7 @@ let package = Package(
     .library(name: "PersistenceExporter", targets: ["PersistenceExporter"]),
     .library(name: "InMemoryExporter", targets: ["InMemoryExporter"]),
     .library(name: "OTelSwiftLog", targets: ["OTelSwiftLog"]),
+    .library(name: "OTelSwiftTracing", targets: ["OTelSwiftTracing"]),
     .library(name: "BaggagePropagationProcessor", targets: ["BaggagePropagationProcessor"]),
     .library(name: "Sessions", targets: ["Sessions"]),
     .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
@@ -34,6 +35,7 @@ let package = Package(
     .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.27.1"),
     .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.33.3"),
     .package(url: "https://github.com/apple/swift-log.git", from: "1.9.1"),
+    .package(url: "https://github.com/apple/swift-distributed-tracing.git", from: "1.0.0"),
     .package(url: "https://github.com/apple/swift-metrics.git", from: "2.7.1")
   ],
   targets: [
@@ -49,6 +51,15 @@ let package = Package(
         .product(name: "Logging", package: "swift-log")
       ],
       path: "Sources/Bridges/OTelSwiftLog",
+      exclude: ["README.md"]
+    ),
+    .target(
+      name: "OTelSwiftTracing",
+      dependencies: [
+        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
+        .product(name: "Tracing", package: "swift-distributed-tracing")
+      ],
+      path: "Sources/Bridges/OTelSwiftTracing",
       exclude: ["README.md"]
     ),
     .target(
@@ -133,6 +144,13 @@ let package = Package(
       name: "OTelSwiftLogTests",
       dependencies: ["OTelSwiftLog"],
       path: "Tests/BridgesTests/OTelSwiftLog"
+    ),
+    .testTarget(
+      name: "OTelSwiftTracingTests",
+      dependencies: [
+        "OTelSwiftTracing"
+      ],
+      path: "Tests/BridgesTests/OTelSwiftTracing"
     ),
     .testTarget(
       name: "SwiftMetricsShimTests",
