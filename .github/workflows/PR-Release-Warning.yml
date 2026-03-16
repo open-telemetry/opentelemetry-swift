@@ -21,7 +21,7 @@ jobs:
           fi
       - name: add comment if PR is release 
         if: steps.check-release.outputs.match == 'true'
-        uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # v2.8.2
+        uses: mshick/add-pr-comment@ffd016c7e151d97d69d21a843022fd4cd5b96fe5 # v3.9.0
         with:
           message: |
             **WARNING** : This PR will trigger a release and tag when merged.
