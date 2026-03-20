@@ -1,6 +1,7 @@
 # <img src="https://opentelemetry.io/img/logos/opentelemetry-logo-nav.png" alt="OpenTelemetry Icon" width="45" height=""> opentelemetry-swift
 
 [![CI](https://github.com/open-telemetry/opentelemetry-swift/actions/workflows/BuildAndTest.yml/badge.svg)](https://github.com/open-telemetry/opentelemetry-swift/actions/workflows/BuildAndTest.yml?query=branch%3Amain+)
+[![Nightly Build](https://github.com/open-telemetry/opentelemetry-swift/actions/workflows/Nightly-Build-Core-Main.yml/badge.svg)](https://github.com/open-telemetry/opentelemetry-swift/actions/workflows/Nightly-Build-Core-Main.yml)
 [![codecov](https://codecov.io/gh/open-telemetry/opentelemetry-swift/branch/master/graph/badge.svg)](https://codecov.io/gh/open-telemetry/opentelemetry-swift)
 
 ## About
