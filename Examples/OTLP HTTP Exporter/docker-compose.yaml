@@ -18,7 +18,7 @@ services:
 
   # Zipkin
   zipkin-all-in-one:
-    image: openzipkin/zipkin:latest@sha256:bb570eb45c2994eaf32da783cc098b3d51d1095b73ec92919863d73d0a9eaafb
+    image: openzipkin/zipkin:latest@sha256:ebfd47b93879b4bec4075ea3a4b07744c5476bae8dca3f6f9c2aca798ceaf0cc
     ports:
       - "9411:9411"
 
