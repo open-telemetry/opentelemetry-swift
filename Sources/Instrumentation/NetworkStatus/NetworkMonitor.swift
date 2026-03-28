@@ -9,7 +9,7 @@
 
   import Network
 
-  public class NetworkMonitor: NetworkMonitorProtocol {
+  public final class NetworkMonitor: NetworkMonitorProtocol, @unchecked Sendable {
     let monitor = NWPathMonitor()
     var connection: Connection = .unavailable
     let monitorQueue = DispatchQueue(label: "OTel-Network-Monitor")
@@ -20,7 +20,7 @@
     }
 
     public init() throws {
-      let pathHandler = { (path: NWPath) in
+      let pathHandler: @Sendable (NWPath) -> Void = { (path: NWPath) in
         let availableInterfaces = path.availableInterfaces
         let wifiInterface = self.getWifiInterface(interfaces: availableInterfaces)
         let cellInterface = self.getCellInterface(interfaces: availableInterfaces)
