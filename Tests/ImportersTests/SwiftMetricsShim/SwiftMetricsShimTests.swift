@@ -72,7 +72,7 @@ class SwiftMetricsShimTests: XCTestCase {
 
   // MARK: - Test Lifecycle
 
-  func testDestroy() {
+  @MainActor func testDestroy() {
     let handler = metrics.makeCounter(label: "my_label", dimensions: [])
     XCTAssertEqual(metrics.metrics.count, 1)
     handler.increment(by: 1)
@@ -83,7 +83,7 @@ class SwiftMetricsShimTests: XCTestCase {
 
   // MARK: - Test Metric: Counter
 
-  func testCounter() throws {
+  @MainActor func testCounter() throws {
     let counter = Counter(label: "my_counter")
     counter.increment()
 
@@ -97,7 +97,7 @@ class SwiftMetricsShimTests: XCTestCase {
     XCTAssertNil(data.attributes["label_one"])
   }
 
-  func testCounter_withLabels() throws {
+  @MainActor func testCounter_withLabels() throws {
     let counter = Counter(label: "my_counter", dimensions: [("label_one", "value")])
     counter.increment(by: 5)
 
@@ -113,7 +113,7 @@ class SwiftMetricsShimTests: XCTestCase {
 
   // MARK: - Test Metric: Gauge
 
-  func testGauge() throws {
+  @MainActor func testGauge() throws {
     let gauge = Gauge(label: "my_gauge")
     gauge.record(100)
 
@@ -129,7 +129,7 @@ class SwiftMetricsShimTests: XCTestCase {
 
   // MARK: - Test Metric: Histogram
 
-  func testHistogram() throws {
+  @MainActor func testHistogram() throws {
     let histogram = Gauge(label: "my_histogram", dimensions: [], aggregate: true)
     histogram.record(100)
 
@@ -145,7 +145,7 @@ class SwiftMetricsShimTests: XCTestCase {
 
   // MARK: - Test Metric: Summary
 
-  func testSummary() throws {
+  @MainActor func testSummary() throws {
     let timer = CoreMetrics.Timer(label: "my_timer")
     timer.recordSeconds(1)
 
@@ -161,7 +161,7 @@ class SwiftMetricsShimTests: XCTestCase {
 
   // MARK: - Test Concurrency
 
-  func testConcurrency() throws {
+  @MainActor func testConcurrency() throws {
     DispatchQueue.concurrentPerform(iterations: 5) { _ in
       let counter = Counter(label: "my_counter")
       counter.increment()

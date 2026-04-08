@@ -49,6 +49,7 @@ class PersistenceExporterDecoratorTests: XCTestCase {
                                                                                                                            exportPerformance: exportPerformance))
   }
 
+  @MainActor
   func testWhenSetupWithSynchronousWrite_thenWritesAreSynchronous() throws {
     var worker = DataExportWorkerMock()
     let fileWriter = FileWriterMock()
@@ -63,6 +64,7 @@ class PersistenceExporterDecoratorTests: XCTestCase {
     try exporter.export(values: ["value"])
   }
 
+  @MainActor
   func testWhenSetupWithAsynchronousWrite_thenWritesAreAsynchronous() throws {
     var worker = DataExportWorkerMock()
     let fileWriter = FileWriterMock()
@@ -78,6 +80,7 @@ class PersistenceExporterDecoratorTests: XCTestCase {
     try exporter.export(values: ["value"])
   }
 
+  @MainActor
   func testWhenValueCannotBeEncoded_itThrowsAnError() {
     // When
     var worker = DataExportWorkerMock()
@@ -88,6 +91,7 @@ class PersistenceExporterDecoratorTests: XCTestCase {
     XCTAssertThrowsError(try exporter.export(values: [FailingCodableMock()]))
   }
 
+  @MainActor
   func testWhenValueCannotBeDecoded_itReportsNoRetryIsNeeded() {
     var worker = DataExportWorkerMock()
 
@@ -99,7 +103,7 @@ class PersistenceExporterDecoratorTests: XCTestCase {
     XCTAssertFalse(result!.needsRetry)
   }
 
-  func testWhenItIsFlushed_thenItFlushesTheWriterAndWorker() {
+  @MainActor func testWhenItIsFlushed_thenItFlushesTheWriterAndWorker() {
     let writerIsFlushedExpectation = expectation(description: "FileWriter was flushed")
     let workerIsFlushedExpectation = expectation(description: "DataExportWorker was flushed")
 
@@ -123,7 +127,7 @@ class PersistenceExporterDecoratorTests: XCTestCase {
     waitForExpectations(timeout: 1, handler: nil)
   }
 
-  func testWhenObjectsDataIsExportedSeparately_thenObjectsAreExported() throws {
+  @MainActor func testWhenObjectsDataIsExportedSeparately_thenObjectsAreExported() throws {
     let v1ExportExpectation = expectation(description: "V1 exported")
     let v2ExportExpectation = expectation(description: "V2 exported")
     let v3ExportExpectation = expectation(description: "V3 exported")
@@ -148,9 +152,11 @@ class PersistenceExporterDecoratorTests: XCTestCase {
                                                                           worker: &worker,
                                                                           decoratedExporter: decoratedExporter)
 
-    fileWriter.onWrite = { _, data in
-      if let dataExporter = worker.dataExporter {
-        XCTAssertFalse(dataExporter.export(data: data).needsRetry)
+    fileWriter.onWrite = { [weak worker] _, data in
+      Task { @MainActor in
+        if let dataExporter = worker?.dataExporter {
+          XCTAssertFalse(dataExporter.export(data: data).needsRetry)
+        }
       }
     }
 
@@ -161,7 +167,7 @@ class PersistenceExporterDecoratorTests: XCTestCase {
     waitForExpectations(timeout: 1, handler: nil)
   }
 
-  func testWhenObjectsDataIsExportedConcatenated_thenObjectsAreExported() throws {
+  @MainActor func testWhenObjectsDataIsExportedConcatenated_thenObjectsAreExported() throws {
     let v1ExportExpectation = expectation(description: "V1 exported")
     let v2ExportExpectation = expectation(description: "V2 exported")
     let v3ExportExpectation = expectation(description: "V3 exported")

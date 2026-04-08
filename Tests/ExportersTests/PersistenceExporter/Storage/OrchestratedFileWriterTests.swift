@@ -19,7 +19,7 @@ class OrchestratedFileWriterTests: XCTestCase {
     super.tearDown()
   }
 
-  func testItWritesDataToSingleFile() throws {
+  @MainActor func testItWritesDataToSingleFile() throws {
     let expectation = expectation(description: "write completed")
     let writer = OrchestratedFileWriter(
       orchestrator: FilesOrchestrator(directory: temporaryDirectory,
@@ -47,7 +47,7 @@ class OrchestratedFileWriterTests: XCTestCase {
     XCTAssertEqual(try temporaryDirectory.files()[0].read(), data)
   }
 
-  func testGivenErrorVerbosity_whenIndividualDataExceedsMaxWriteSize_itDropsDataAndPrintsError() throws {
+  @MainActor func testGivenErrorVerbosity_whenIndividualDataExceedsMaxWriteSize_itDropsDataAndPrintsError() throws {
     let expectation1 = expectation(description: "write completed")
     let expectation2 = expectation(description: "second write completed")
 
