@@ -27,7 +27,7 @@ services:
   prometheus:
     platform: linux/amd64
     container_name: prometheus
-    image: prom/prometheus:latest@sha256:759ea6db49103737f2a6f420b0d1632062d8ad99dec086c76db605fd0bf23e15
+    image: prom/prometheus:latest@sha256:97dba1708ab397a77313543a877951e67f0f363221b289e36f29121d50dc0950
     volumes:
       - ./prometheus.yaml:/etc/prometheus/prometheus.yml
     ports:
