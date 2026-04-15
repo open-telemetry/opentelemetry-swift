@@ -276,7 +276,7 @@ final class SessionLogRecordProcessorTests: XCTestCase {
 
 // MARK: - Mock Classes
 
-class MockLogRecordProcessor: LogRecordProcessor {
+class MockLogRecordProcessor: LogRecordProcessor, @unchecked Sendable {
   private let queue = DispatchQueue(label: "MockLogRecordProcessor")
   private var _receivedLogRecords: [ReadableLogRecord] = []
   

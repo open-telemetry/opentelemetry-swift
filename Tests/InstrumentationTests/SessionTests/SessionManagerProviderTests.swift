@@ -32,7 +32,7 @@ final class SessionManagerProviderTests: XCTestCase {
     let expectation = XCTestExpectation(description: "Thread safety test")
     expectation.expectedFulfillmentCount = 10
     
-    var managers: [SessionManager] = []
+    nonisolated(unsafe) var managers: [SessionManager] = []
     let queue = DispatchQueue.global(qos: .default)
     let syncQueue = DispatchQueue(label: "test.sync")
     
@@ -56,7 +56,7 @@ final class SessionManagerProviderTests: XCTestCase {
   
   func testConcurrentGetInstanceCreatesOnlyOneInstance() {
     let group = DispatchGroup()
-    var instances: [SessionManager] = []
+    nonisolated(unsafe) var instances: [SessionManager] = []
     let syncQueue = DispatchQueue(label: "test.instances")
     
     for _ in 0..<100 {
