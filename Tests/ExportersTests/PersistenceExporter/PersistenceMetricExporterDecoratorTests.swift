@@ -24,8 +24,8 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
       .cumulative
     }
 
-    let onExport: ([MetricData]) -> ExportResult
-    init(onExport: @escaping ([MetricData]) -> ExportResult) {
+    nonisolated(unsafe) let onExport: @Sendable ([MetricData]) -> ExportResult
+    init(onExport: @escaping @Sendable ([MetricData]) -> ExportResult) {
       self.onExport = onExport
     }
 
