@@ -37,16 +37,22 @@ internal final class SessionStore: @unchecked Sendable {
   /// Schedules a session to be saved to UserDefaults on the next timer interval
   /// - Parameter session: The session to save
   static func scheduleSave(session: Session) {
-    Task { @MainActor in
+    // Always save to UserDefaults synchronously for the first session
+    // to ensure load() can retrieve it immediately
+    let needsTimer: Bool = MainActor.assumeIsolated {
       pendingSession = session
+      let isFirst = saveTimer == nil
+      return isFirst
+    }
 
-      if saveTimer == nil {
-        // save initial session
-        saveImmediately(session: session)
+    if needsTimer {
+      // save initial session immediately
+      saveImmediately(session: session)
 
-        // save future sessions on a interval
+      // save future sessions on a interval
+      MainActor.assumeIsolated {
         saveTimer = Timer.scheduledTimer(withTimeInterval: saveInterval, repeats: true) { _ in
-          Task { @MainActor in
+          MainActor.assumeIsolated {
             // only write to disk if it is a new sesssion
             if let pending = pendingSession, prevSession != pending {
               saveImmediately(session: pending)
@@ -67,7 +73,7 @@ internal final class SessionStore: @unchecked Sendable {
     UserDefaults.standard.set(session.previousId, forKey: previousIdKey)
     UserDefaults.standard.set(session.sessionTimeout, forKey: sessionTimeoutKey)
 
-    Task { @MainActor in
+    MainActor.assumeIsolated {
       // update prev session
       prevSession = session
       // clear pending session, since it is now outdated
@@ -96,7 +102,7 @@ internal final class SessionStore: @unchecked Sendable {
       sessionTimeout: sessionTimeout
     )
     
-    Task { @MainActor in
+    MainActor.assumeIsolated {
       // reset sessions so it does not get overridden in the next scheduled save
       pendingSession = nil
       prevSession = session
@@ -107,7 +113,7 @@ internal final class SessionStore: @unchecked Sendable {
 
   /// Cleans up timer and UserDefaults
   static func teardown() {
-    Task { @MainActor in
+    MainActor.assumeIsolated {
       saveTimer?.invalidate()
       saveTimer = nil
       pendingSession = nil

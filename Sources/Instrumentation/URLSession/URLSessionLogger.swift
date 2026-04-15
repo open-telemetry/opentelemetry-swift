@@ -16,7 +16,7 @@ class URLSessionLogger {
   static let runningSpansQueue = DispatchQueue(label: "io.opentelemetry.URLSessionLogger")
   #if os(iOS) && !targetEnvironment(macCatalyst)
 
-    static var netstatInjector: NetworkStatusInjector? = { () -> NetworkStatusInjector? in
+    nonisolated(unsafe) static var netstatInjector: NetworkStatusInjector? = { () -> NetworkStatusInjector? in
       do {
         let netstats = try NetworkStatus()
         return NetworkStatusInjector(netstat: netstats)

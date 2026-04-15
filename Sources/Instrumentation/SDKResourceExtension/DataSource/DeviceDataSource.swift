@@ -67,8 +67,9 @@ public class DeviceDataSource: IDeviceDataSource {
     #elseif os(macOS)
       return nil
     #else
-      return UIDevice.current.identifierForVendor?.uuidString
-
+      return MainActor.assumeIsolated {
+        UIDevice.current.identifierForVendor?.uuidString
+      }
     #endif
   }
 }
