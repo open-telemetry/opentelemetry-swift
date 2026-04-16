@@ -250,13 +250,14 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     let queue = DispatchQueue(label: "test.concurrent", attributes: .concurrent)
     let group = DispatchGroup()
     
+    let logRecord = self.testLogRecord!
     for i in 0..<10 {
       group.enter()
       queue.async {
         let sessionManager = MockSessionManager()
         sessionManager.sessionId = "session-\(i)"
         let processor = SessionLogRecordProcessor(nextProcessor: mockNextProcessor, sessionManager: sessionManager)
-        processor.onEmit(logRecord: self.testLogRecord)
+        processor.onEmit(logRecord: logRecord)
         group.leave()
       }
     }
