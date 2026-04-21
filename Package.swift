@@ -34,7 +34,7 @@ let package = Package(
     .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.27.5"),
     .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.36.1"),
     .package(url: "https://github.com/apple/swift-log.git", from: "1.10.1"),
-    .package(url: "https://github.com/apple/swift-metrics.git", from: "2.8.0")
+    .package(url: "https://github.com/apple/swift-metrics.git", from: "2.10.1")
   ],
   targets: [
     .target(
