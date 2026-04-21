@@ -93,7 +93,7 @@ jobs:
 
   linux:
     runs-on: ubuntu-latest
-    container: swift:6.2@sha256:7f7deb9dc8cc0c4e06772eccbac80a63bc3e710d557df49771ef1037eeb068fa
+    container: swift:6.3@sha256:af0181a2fe491b45c935a962a45ab77db3d0b867016e481ac164704f09c656fa
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Use opentelemetry-swift-core from main
