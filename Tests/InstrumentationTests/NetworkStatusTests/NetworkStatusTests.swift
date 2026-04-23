@@ -139,6 +139,29 @@
       XCTAssertNil(info)
       XCTAssertEqual("unavailable", type)
     }
+
+    func testConcurrentStatusAccess() {
+      let netStatus = NetworkStatus(
+        with: MockNetworkMonitor(connection: .cellular),
+        info: MockCTTelephonyNetworkInfo(
+          dataServiceIndentifier: "service1",
+          currentRadioAccessTechnology: "CTRadioAccessTechnologyLTE",
+          carrier: MockCTCarrier(
+            carrierName: "TestCarrier",
+            isoCountryCode: "US",
+            mobileCountryCode: "310",
+            mobileNetworkCode: "410"
+          )
+        )
+      )
+
+      DispatchQueue.concurrentPerform(iterations: 10_000) { _ in
+        let (type, subtype, carrier) = netStatus.status()
+        XCTAssertEqual("cell", type)
+        XCTAssertEqual("LTE", subtype)
+        XCTAssertEqual("TestCarrier", carrier?.carrierName)
+      }
+    }
   }
 
 #endif // os(iOS) && !targetEnvironment(macCatalyst)
