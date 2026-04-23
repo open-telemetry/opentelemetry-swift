@@ -140,9 +140,6 @@
       XCTAssertEqual("unavailable", type)
     }
 
-    /// Verify that `status()` can be called safely from many threads at once.
-    /// Before the thread-safety fix, concurrent reads of `CTTelephonyNetworkInfo`
-    /// properties could trigger `EXC_BAD_ACCESS` during `objc_autorelease`.
     func testConcurrentStatusAccess() {
       let netStatus = NetworkStatus(
         with: MockNetworkMonitor(connection: .cellular),
