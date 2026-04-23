@@ -16,16 +16,17 @@ class PrometheusExporterTests: XCTestCase {
   let metricPushIntervalSec = 0.05
   let waitDuration = 0.1 + 0.1
 
-  @MainActor func testMetricsHttpServerAsync() {
+  @MainActor func testMetricsHttpServerAsync() async {
     let promOptions = PrometheusExporterOptions(url: "http://localhost:9184/metrics/")
     let promExporter = PrometheusExporter(options: promOptions)
     let metricsHttpServer = PrometheusExporterHttpServer(exporter: promExporter)
 
     let expec = expectation(description: "Get metrics from server")
 
+    nonisolated(unsafe) let serverRef = metricsHttpServer
     DispatchQueue.global(qos: .default).async {
       do {
-        try metricsHttpServer.start()
+        try serverRef.start()
       } catch {
         XCTFail()
         return
@@ -36,12 +37,13 @@ class PrometheusExporterTests: XCTestCase {
     _ = retain_me // silence warning
     usleep(useconds_t(waitDuration * 1000000))
     let url = URL(string: "http://localhost:9184/metrics/")!
+    nonisolated(unsafe) let selfRef = self
     let task = URLSession.shared.dataTask(with: url) { data, response, error in
       if error == nil, let data, let response = response as? HTTPURLResponse {
         XCTAssert(response.statusCode == 200)
         let responseText = String(decoding: data, as: UTF8.self)
         print("Response from metric API is: \n\(responseText)")
-        self.validateResponse(responseText: responseText)
+        selfRef.validateResponse(responseText: responseText)
         // This is your file-variable:
         // data
         expec.fulfill()

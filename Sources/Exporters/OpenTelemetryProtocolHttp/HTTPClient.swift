@@ -43,6 +43,12 @@ public final class BaseHTTPClient: HTTPClient {
 
   public func send(request: URLRequest,
                    completion: @escaping (Result<HTTPURLResponse, Error>) -> Void) {
+    // URLSessionDataTask's completion closure is '@Sendable'. The public HTTPClient
+    // protocol intentionally does not require '@Sendable' on 'completion' (to avoid
+    // imposing Sendable constraints on captured exporter state). Wrap the non-Sendable
+    // completion in an 'nonisolated(unsafe)' box so it can be captured across the
+    // @Sendable boundary; callers are responsible for their own synchronization.
+    nonisolated(unsafe) let completion = completion
     let task = session.dataTask(with: request) { data, response, error in
       completion(httpClientResult(for: (data, response, error)))
     }
