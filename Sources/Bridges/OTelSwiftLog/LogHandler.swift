@@ -67,6 +67,12 @@ public struct OTelLogHandler: LogHandler, @unchecked Sendable {
     // Convert metadata from the struct property to AttributeValue and merge it with otelattributes
     otelattributes.merge(convertMetadata(self.metadata)) { _, new in new }
 
+    // Convert error from the event to AttributeValue and merge into otelattributes
+    if let error = event.error {
+      otelattributes[SemanticConventions.Exception.message.rawValue] = .string("\(error)")
+      otelattributes[SemanticConventions.Exception.type.rawValue] = .string(String(reflecting: type(of: error)))
+    }
+
     // Build the log record and emit it
     let record = logger.logRecordBuilder().setSeverity(convertSeverity(level: event.level))
       .setBody(AttributeValue.string(event.message.description))

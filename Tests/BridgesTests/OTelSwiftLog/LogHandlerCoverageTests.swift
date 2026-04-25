@@ -88,6 +88,18 @@ final class OTelLogHandlerCoverageTests: XCTestCase {
 
     XCTAssertEqual(processor.records.first?.attributes["env"], .string("test"))
   }
+    
+  func testLogHandlerIncludesErrorParameterAsAttributes() {
+    let (provider, processor) = makeProvider()
+    let handler = OTelLogHandler(loggerProvider: provider)
+
+    let logger = Logger(label: "OTelSwiftLogTests-err") { _ in handler }
+    logger.warning("warn-msg", error: TestError(message: "Something went wrong"))
+
+    let attrs = processor.records.first?.attributes ?? [:]
+    XCTAssertEqual(attrs["exception.message"], .string("Something went wrong"))
+    XCTAssertEqual(attrs["exception.type"], .string("OTelSwiftLogTests.TestError"))
+  }
 
   func testLogHandlerMapsAllSeverityLevels() {
     let (provider, processor) = makeProvider()
@@ -140,6 +152,16 @@ final class OTelLogHandlerCoverageTests: XCTestCase {
     }
 
     XCTAssertEqual(processor.records.first?.spanContext, span.context)
+  }
+}
+
+// MARK: - Error Types
+
+struct TestError: Error, CustomStringConvertible {
+  let message: String
+
+  var description: String {
+    return message
   }
 }
 
