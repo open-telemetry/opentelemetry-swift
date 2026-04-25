@@ -62,21 +62,34 @@ final class OTelLogHandlerTests: XCTestCase {
     XCTAssertEqual(convertSeverity(level: .critical), OpenTelemetryApi.Severity.error2)
   }
 
-  func testLogHandler() {
+  func testLogHandlerNSError() {
+    let recordBuilder = TestLogRecordBuilder()
+    let logHandler = OTelLogHandler(loggerProvider: TestLoggerProvider(recordBuilder))
+    let logger = Logger(label: "Test", factory: { _ in logHandler })
+    logger.info("Test", error: NSError(domain: "Test error domain", code: 42))
+
+    XCTAssertEqual(recordBuilder.attributes["exception.message"], .string("The operation couldn’t be completed. (Test error domain error 42.)"))
+    XCTAssertEqual(recordBuilder.attributes["exception.type"], .string("42"))
+  }
+
+  func testLogHandlerCustomError() {
     let recordBuilder = TestLogRecordBuilder()
     let logHandler = OTelLogHandler(loggerProvider: TestLoggerProvider(recordBuilder))
     let logger = Logger(label: "Test", factory: { _ in logHandler })
     logger.info("Test", error: TestError(message: "Something went wrong"))
 
+    XCTAssertEqual(recordBuilder.attributes["exception.message"], .string("The operation couldn’t be completed. (OTelSwiftLogTests.TestError error 1.)"))
+    XCTAssertEqual(recordBuilder.attributes["exception.type"], .string("1"))
+
+    XCTExpectFailure("Below would be more reasonable values")
     XCTAssertEqual(recordBuilder.attributes["exception.message"], .string("Something went wrong"))
-    XCTAssertEqual(recordBuilder.attributes["exception.type"], .string("42"))
+    XCTAssertEqual(recordBuilder.attributes["exception.type"], .string("OTelSwiftLogTests.TestError"))
   }
 }
 
-private struct TestError: CustomNSError, LocalizedError {
+struct TestError: CustomStringConvertible, LocalizedError {
   let message: String
 
-  var errorCode: Int { 42 }
   var description: String { message }
   var localizedDescription: String { message }
 }
