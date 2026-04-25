@@ -66,9 +66,9 @@ final class OTelLogHandlerTests: XCTestCase {
     let recordBuilder = TestLogRecordBuilder()
     let logHandler = OTelLogHandler(loggerProvider: TestLoggerProvider(recordBuilder))
     let logger = Logger(label: "Test", factory: { _ in logHandler })
-    logger.info("Test", error: NSError(domain: "Test error domain", code: 42))
+    logger.info("Test", error: NSError(domain: "Test", code: 42, userInfo: [NSLocalizedDescriptionKey: "Something went wrong"]))
 
-    XCTAssertEqual(recordBuilder.attributes["exception.message"], .string("The operation couldn’t be completed. (Test error domain error 42.)"))
+    XCTAssertEqual(recordBuilder.attributes["exception.message"], .string("Something went wrong"))
     XCTAssertEqual(recordBuilder.attributes["exception.type"], .string("42"))
   }
 
