@@ -61,4 +61,87 @@ final class OTelLogHandlerTests: XCTestCase {
     XCTAssertEqual(convertSeverity(level: .error), OpenTelemetryApi.Severity.error)
     XCTAssertEqual(convertSeverity(level: .critical), OpenTelemetryApi.Severity.error2)
   }
+
+  func testLogHandler() {
+    let recordBuilder = TestLogRecordBuilder()
+    let logHandler = OTelLogHandler(loggerProvider: TestLoggerProvider(recordBuilder))
+    let logger = Logger(label: "Test", factory: { _ in logHandler })
+    logger.info("Test", error: TestError(message: "Something went wrong"))
+
+    XCTAssertEqual(recordBuilder.attributes["exception.message"], .string("Something went wrong"))
+    XCTAssertEqual(recordBuilder.attributes["exception.type"], .string("42"))
+  }
+}
+
+private struct TestError: CustomNSError, LocalizedError {
+  let message: String
+
+  var errorCode: Int { 42 }
+  var description: String { message }
+  var localizedDescription: String { message }
+}
+
+private class TestLoggerProvider: LoggerProvider {
+  let recordBuilder: TestLogRecordBuilder
+
+  init(_ recordBuilder: TestLogRecordBuilder) {
+    self.recordBuilder = recordBuilder
+  }
+
+  func get(instrumentationScopeName: String) -> any OpenTelemetryApi.Logger {
+    return loggerBuilder(instrumentationScopeName: instrumentationScopeName).build()
+  }
+
+  func loggerBuilder(instrumentationScopeName: String) -> any LoggerBuilder {
+    TestLoggerBuilder(recordBuilder: recordBuilder)
+  }
+}
+
+private struct TestLoggerBuilder: LoggerBuilder {
+  let recordBuilder: TestLogRecordBuilder
+
+  func setEventDomain(_ eventDomain: String) -> TestLoggerBuilder {
+    self
+  }
+
+  func setSchemaUrl(_ schemaUrl: String) -> TestLoggerBuilder {
+    self
+  }
+
+  func setInstrumentationVersion(_ instrumentationVersion: String) -> TestLoggerBuilder {
+    self
+  }
+
+  func setIncludeTraceContext(_ includeTraceContext: Bool) -> TestLoggerBuilder {
+    self
+  }
+
+  func setAttributes(_ attributes: [String : OpenTelemetryApi.AttributeValue]) -> TestLoggerBuilder {
+    self
+  }
+
+  func build() -> any OpenTelemetryApi.Logger {
+    TestLogger(recordBuilder: recordBuilder)
+  }
+}
+
+private struct TestLogger: OpenTelemetryApi.Logger {
+  let recordBuilder: TestLogRecordBuilder
+
+  func eventBuilder(name: String) -> any OpenTelemetryApi.EventBuilder {
+    return recordBuilder
+  }
+
+  func logRecordBuilder() -> any OpenTelemetryApi.LogRecordBuilder {
+    return recordBuilder
+  }
+}
+
+private class TestLogRecordBuilder: EventBuilder {
+  var attributes: [String : AttributeValue] = [:]
+
+  func setAttributes(_ attributes: [String : AttributeValue]) -> Self {
+    self.attributes = attributes
+    return self
+  }
 }

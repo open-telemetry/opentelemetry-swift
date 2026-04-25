@@ -48,23 +48,17 @@ public struct OTelLogHandler: LogHandler {
       .build()
   }
 
-  public func log(level: Logging.Logger.Level,
-                  message: Logging.Logger.Message,
-                  metadata: Logging.Logger.Metadata?,
-                  source: String,
-                  file: String,
-                  function: String,
-                  line: UInt) {
+  public func log(event: LogEvent) {
     // This converts log atrributes to otel attributes
     var otelattributes: [String: AttributeValue] = [
-      "source": AttributeValue.string(source),
-      "file": AttributeValue.string(file),
-      "function": AttributeValue.string(function),
-      "line": AttributeValue.int(Int(line))
+      "source": AttributeValue.string(event.source),
+      "file": AttributeValue.string(event.file),
+      "function": AttributeValue.string(event.function),
+      "line": AttributeValue.int(Int(event.line))
     ]
 
     // Convert metadata from the method parameter to AttributeValue and assign it to otelattributes
-    if let metadata {
+    if let metadata = event.metadata {
       let methodMetadata = convertMetadata(metadata)
       otelattributes.merge(methodMetadata) { _, new in new }
     }
@@ -73,9 +67,14 @@ public struct OTelLogHandler: LogHandler {
     let structMetadata = convertMetadata(self.metadata)
     otelattributes.merge(structMetadata) { _, new in new }
 
+    if let error = event.error as? NSError {
+      otelattributes[SemanticConventions.Exception.message.rawValue] = .string(error.localizedDescription)
+      otelattributes[SemanticConventions.Exception.type.rawValue] = .string(String(error.code))
+    }
+
     // Build the log record and emit it
-    let event = logger.logRecordBuilder().setSeverity(convertSeverity(level: level))
-      .setBody(AttributeValue.string(message.description))
+    let event = logger.logRecordBuilder().setSeverity(convertSeverity(level: event.level))
+      .setBody(AttributeValue.string(event.message.description))
       .setAttributes(otelattributes)
 
     if let context = OpenTelemetry.instance.contextProvider.activeSpan?.context {
