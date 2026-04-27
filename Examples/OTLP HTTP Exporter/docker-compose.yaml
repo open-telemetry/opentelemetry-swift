@@ -25,7 +25,7 @@ services:
   # Prometheus
   prometheus:
     container_name: prometheus
-    image: prom/prometheus:latest@sha256:759ea6db49103737f2a6f420b0d1632062d8ad99dec086c76db605fd0bf23e15
+    image: prom/prometheus:latest@sha256:e4254400b85610324913f0dc4acf92603d9984e7519414c5a12811aa6146acc3
     volumes:
       - ./prometheus.yaml:/etc/prometheus/prometheus.yml
     ports:
