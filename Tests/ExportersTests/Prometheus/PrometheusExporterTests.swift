@@ -53,11 +53,10 @@ class PrometheusExporterTests: XCTestCase {
     }
     task.resume()
 
-    waitForExpectations(timeout: 30) { error in
-      if let error {
-        print("Error: \(error.localizedDescription)")
-        XCTFail()
-      }
+    let result = XCTWaiter().wait(for: [expec], timeout: 30)
+    if result != .completed {
+      print("Error: expectation not fulfilled (\(result))")
+      XCTFail()
     }
 
     metricsHttpServer.stop()

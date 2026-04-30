@@ -16,7 +16,7 @@ public func defaultOltpHttpTracesEndpoint() -> URL {
   URL(string: "http://localhost:4318/v1/traces")!
 }
 
-public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter {
+public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter, @unchecked Sendable {
   var pendingSpans: [SpanData] = []
 
   private let exporterLock = Lock()

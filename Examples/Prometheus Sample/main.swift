@@ -19,7 +19,7 @@ let promOptions = PrometheusExporterOptions(url: "http://\(localAddress):9184/me
 let promExporter = PrometheusExporter(options: promOptions)
 let metricsHttpServer = PrometheusExporterHttpServer(exporter: promExporter)
 
-DispatchQueue.global(qos: .default).async {
+Task { @MainActor in
   do {
     try metricsHttpServer.start()
   } catch {

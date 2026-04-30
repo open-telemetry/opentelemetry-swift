@@ -20,7 +20,7 @@ import Foundation
 /// let session = SessionManagerProvider.getInstance().getSession()
 /// ```
 public class SessionManagerProvider {
-  private static var _instance: SessionManager?
+  nonisolated(unsafe) private static var _instance: SessionManager?
   private static let lock = NSLock()
   
   /// Registers a SessionManager instance as the singleton.

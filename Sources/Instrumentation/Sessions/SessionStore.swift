@@ -7,7 +7,7 @@ import Foundation
 
 /// Handles persistence of OpenTelemetry sessions to UserDefaults
 /// Provides static methods for saving and loading session data
-internal class SessionStore {
+internal final class SessionStore {
   /// UserDefaults key for storing session ID
   static let idKey = "otel-session-id"
   /// UserDefaults key for storing previous session ID
@@ -23,13 +23,13 @@ internal class SessionStore {
   /// in memory and saves to disk on an interval (every 30 seconds).
 
   /// The most recent session to be saved to disk
-  private static var pendingSession: Session?
+  nonisolated(unsafe) private static var pendingSession: Session?
   /// The previous session
-  private static var prevSession: Session?
+  nonisolated(unsafe) private static var prevSession: Session?
   /// The interval period after which the current session is saved to disk
   private static let saveInterval: TimeInterval = 30 // in seconds
   /// The timer responsible for saving the current session to disk
-  private static var saveTimer: Timer?
+  nonisolated(unsafe) private static var saveTimer: Timer?
 
   /// Schedules a session to be saved to UserDefaults on the next timer interval
   /// - Parameter session: The session to save

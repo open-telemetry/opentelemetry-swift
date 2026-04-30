@@ -26,7 +26,7 @@ func simpleNetworkCall() {
   semaphore.wait()
 }
 
-class SessionDelegate: NSObject, URLSessionDataDelegate, URLSessionTaskDelegate {
+final class SessionDelegate: NSObject, URLSessionDataDelegate, URLSessionTaskDelegate, @unchecked Sendable {
   let semaphore = DispatchSemaphore(value: 0)
   var callCount = 0
 
