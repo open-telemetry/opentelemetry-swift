@@ -5,7 +5,7 @@
 
 import Foundation
 
-public struct ZipkinTraceExporterOptions: Sendable {
+public struct ZipkinTraceExporterOptions {
   let endpoint: String
   let timeoutSeconds: TimeInterval
   let serviceName: String

@@ -9,9 +9,9 @@ import OpenTelemetrySdk
   import FoundationNetworking
 #endif
 
-public final class ZipkinTraceExporter: SpanExporter {
-  public let options: ZipkinTraceExporterOptions
-  let localEndPoint: ZipkinEndpoint
+public class ZipkinTraceExporter: SpanExporter {
+  public var options: ZipkinTraceExporterOptions
+  var localEndPoint: ZipkinEndpoint
 
   public init(options: ZipkinTraceExporterOptions) {
     self.options = options

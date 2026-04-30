@@ -22,7 +22,7 @@ import Foundation
 /// 
 /// let manager = SessionManager(configuration: config)
 /// ```
-public struct SessionConfig: Sendable {
+public struct SessionConfig {
   /// Duration in seconds after which a session expires if left inactive
   public let sessionTimeout: TimeInterval
   

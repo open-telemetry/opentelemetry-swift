@@ -6,7 +6,7 @@
 import CoreMetrics
 import OpenTelemetryApi
 
-public final class OpenTelemetrySwiftMetrics: MetricsFactory, @unchecked Sendable {
+public class OpenTelemetrySwiftMetrics: MetricsFactory {
   let meter: any OpenTelemetryApi.Meter
   var metrics = [MetricKey: SwiftMetric]()
   let lock = Lock()

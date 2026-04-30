@@ -24,8 +24,8 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
       .cumulative
     }
 
-    nonisolated(unsafe) let onExport: @Sendable ([MetricData]) -> ExportResult
-    init(onExport: @escaping @Sendable ([MetricData]) -> ExportResult) {
+    let onExport: ([MetricData]) -> ExportResult
+    init(onExport: @escaping ([MetricData]) -> ExportResult) {
       self.onExport = onExport
     }
 
@@ -85,6 +85,6 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
 
     myCounter.add(value: 100, attributes: ["labelKey": AttributeValue.string("labelValue")])
 
-    wait(for: [metricsExportExpectation], timeout: 10)
+    waitForExpectations(timeout: 10, handler: nil)
   }
 }

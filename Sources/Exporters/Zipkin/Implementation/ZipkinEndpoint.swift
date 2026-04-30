@@ -5,7 +5,7 @@
 
 import Foundation
 
-final class ZipkinEndpoint: Encodable, @unchecked Sendable {
+class ZipkinEndpoint: Encodable {
   var serviceName: String
   var ipv4: String?
   var ipv6: String?

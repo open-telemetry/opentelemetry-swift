@@ -20,7 +20,7 @@ import Foundation
 /// let session = SessionManagerProvider.getInstance().getSession()
 /// ```
 public class SessionManagerProvider {
-  nonisolated(unsafe) private static var _instance: SessionManager?
+  private static var _instance: SessionManager?
   private static let lock = NSLock()
   
   /// Registers a SessionManager instance as the singleton.
@@ -28,9 +28,9 @@ public class SessionManagerProvider {
   /// Call this early in your app lifecycle to ensure consistent session management.
   /// - Parameter sessionManager: The SessionManager instance to register
   public static func register(sessionManager: SessionManager) {
-    lock.lock()
-    defer { lock.unlock() }
-    _instance = sessionManager
+    lock.withLock {
+      _instance = sessionManager
+    }
   }
   
   /// Returns the registered SessionManager instance or creates a default one.
@@ -39,11 +39,11 @@ public class SessionManagerProvider {
   /// If no instance has been registered, creates one with default configuration.
   /// - Returns: The singleton SessionManager instance
   public static func getInstance() -> SessionManager {
-    lock.lock()
-    defer { lock.unlock() }
-    if _instance == nil {
-      _instance = SessionManager()
+    return lock.withLock {
+      if _instance == nil {
+        _instance = SessionManager()
+      }
+      return _instance!
     }
-    return _instance!
   }
 }

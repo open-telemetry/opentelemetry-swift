@@ -48,7 +48,7 @@ class DataExportWorkerTests: XCTestCase {
                                   delay: DataExportDelay(performance: ExportPerformanceMock.veryQuick))
 
     // Then
-    wait(for: [v1ExportExpectation, v2ExportExpectation, v3ExportExpectation], timeout: 1)
+    waitForExpectations(timeout: 1, handler: nil)
 
     worker.cancelSynchronously()
 
@@ -124,7 +124,7 @@ class DataExportWorkerTests: XCTestCase {
                                   delay: mockDelay)
 
     // Then
-    wait(for: [delayChangeExpectation], timeout: 1)
+    waitForExpectations(timeout: 1, handler: nil)
     worker.cancelSynchronously()
   }
 
@@ -160,7 +160,7 @@ class DataExportWorkerTests: XCTestCase {
                                   delay: mockDelay)
 
     // Then
-    wait(for: [delayChangeExpectation, exportExpectation], timeout: 1)
+    waitForExpectations(timeout: 1, handler: nil)
     worker.cancelSynchronously()
   }
 
@@ -190,7 +190,7 @@ class DataExportWorkerTests: XCTestCase {
                                   delay: mockDelay)
 
     // Then
-    wait(for: [delayChangeExpectation, exportExpectation], timeout: 1)
+    waitForExpectations(timeout: 1, handler: nil)
     worker.cancelSynchronously()
   }
 
@@ -249,7 +249,7 @@ class DataExportWorkerTests: XCTestCase {
     XCTAssertTrue(worker.flush())
 
     // Then
-    wait(for: [v1ExportExpectation, v2ExportExpectation, v3ExportExpectation], timeout: 1)
+    waitForExpectations(timeout: 1, handler: nil)
     XCTAssertEqual(fileReader.files.count, 0)
   }
 }

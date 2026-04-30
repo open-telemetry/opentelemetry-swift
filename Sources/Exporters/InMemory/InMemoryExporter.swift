@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetrySdk
 
-public final class InMemoryExporter: SpanExporter, @unchecked Sendable {
+public class InMemoryExporter: SpanExporter {
   private var finishedSpanItems: [SpanData] = []
   private var isRunning: Bool = true
 

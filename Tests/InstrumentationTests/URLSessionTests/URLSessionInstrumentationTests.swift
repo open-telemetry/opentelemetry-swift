@@ -21,8 +21,8 @@ class URLSessionInstrumentationTests: XCTestCase {
     public var receivedErrorCalled: Bool = false
   }
 
-  final class SessionDelegate: NSObject, URLSessionDelegate, URLSessionDataDelegate, @unchecked Sendable {
-    let semaphore: DispatchSemaphore
+  class SessionDelegate: NSObject, URLSessionDelegate, URLSessionDataDelegate {
+    var semaphore: DispatchSemaphore
 
     init(semaphore: DispatchSemaphore) {
       self.semaphore = semaphore
@@ -37,39 +37,26 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
-  final class CountingSessionDelegate: NSObject, URLSessionDelegate, URLSessionDataDelegate, @unchecked Sendable {
-    private let lock = NSLock()
-    private var _callCount: Int = 0
-    
-    var callCount: Int {
-      lock.lock()
-      defer { lock.unlock() }
-      return _callCount
-    }
-    
-    private func incrementCallCount() {
-      lock.lock()
-      defer { lock.unlock() }
-      _callCount += 1
-    }
+  class CountingSessionDelegate: NSObject, URLSessionDelegate, URLSessionDataDelegate {
+    var callCount: Int = 0
 
     func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {
-      incrementCallCount()
+      callCount += 1
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-      incrementCallCount()
+      callCount += 1
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
-      incrementCallCount()
+      callCount += 1
     }
   }
 
   /// A minimal delegate that only implements didFinishCollecting.
   /// This tests that delegate classes are discovered even when they only implement
   /// urlSession(_:task:didFinishCollecting:) and no other delegate methods.
-  final class MinimalMetricsDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+  class MinimalMetricsDelegate: NSObject, URLSessionTaskDelegate {
     var didFinishCollectingCalled = false
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
@@ -77,13 +64,13 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
-  nonisolated(unsafe) static var requestCopy: URLRequest!
-  nonisolated(unsafe) static var responseCopy: HTTPURLResponse!
+  static var requestCopy: URLRequest!
+  static var responseCopy: HTTPURLResponse!
 
-  nonisolated(unsafe) static var activeBaggage: Baggage!
-  nonisolated(unsafe) static var customBaggage: Baggage!
+  static var activeBaggage: Baggage!
+  static var customBaggage: Baggage!
 
-  nonisolated(unsafe) static var config = URLSessionInstrumentationConfiguration(shouldRecordPayload: nil,
+  static var config = URLSessionInstrumentationConfiguration(shouldRecordPayload: nil,
                                                              shouldInstrument: { req in
                                                                checker.shouldInstrumentCalled = true
                                                                if req.url?.path == "/dontinstrument" || req.url?.host == "dontinstrument.com" {
@@ -122,13 +109,13 @@ class URLSessionInstrumentationTests: XCTestCase {
                                                                URLSessionInstrumentationTests.checker.receivedErrorCalled = true
                                                              },
                                                              baggageProvider: { _, _ in
-                                                               return customBaggage
+                                                               customBaggage
                                                              })
 
-  nonisolated(unsafe) static var checker = Check()
-  nonisolated(unsafe) static var semaphore: DispatchSemaphore!
+  static var checker = Check()
+  static var semaphore: DispatchSemaphore!
   var sessionDelegate: SessionDelegate!
-  nonisolated(unsafe) static var instrumentation: URLSessionInstrumentation!
+  static var instrumentation: URLSessionInstrumentation!
 
   static let server = HttpTestServer(url: URL(string: "http://localhost:33333"), config: nil)
 
@@ -818,7 +805,7 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
   }
 
-  @MainActor public func testNonInstrumentedRequestCompletes() {
+  public func testNonInstrumentedRequestCompletes() {
     let request = URLRequest(url: URL(string: "http://localhost:33333/dontinstrument")!)
     let expectation = expectation(description: "Non-instrumented request completes")
 

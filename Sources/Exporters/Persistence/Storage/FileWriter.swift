@@ -13,7 +13,7 @@ protocol FileWriter {
   func flush()
 }
 
-final class OrchestratedFileWriter: FileWriter, @unchecked Sendable {
+final class OrchestratedFileWriter: FileWriter {
   /// Orchestrator producing reference to writable file.
   private let orchestrator: FilesOrchestrator
   /// Queue used to synchronize files access (read / write) and perform decoding on background thread.

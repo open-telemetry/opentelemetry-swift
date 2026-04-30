@@ -250,14 +250,13 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     let queue = DispatchQueue(label: "test.concurrent", attributes: .concurrent)
     let group = DispatchGroup()
     
-    let logRecord = self.testLogRecord!
     for i in 0..<10 {
       group.enter()
       queue.async {
         let sessionManager = MockSessionManager()
         sessionManager.sessionId = "session-\(i)"
         let processor = SessionLogRecordProcessor(nextProcessor: mockNextProcessor, sessionManager: sessionManager)
-        processor.onEmit(logRecord: logRecord)
+        processor.onEmit(logRecord: self.testLogRecord)
         group.leave()
       }
     }
@@ -277,7 +276,7 @@ final class SessionLogRecordProcessorTests: XCTestCase {
 
 // MARK: - Mock Classes
 
-class MockLogRecordProcessor: LogRecordProcessor, @unchecked Sendable {
+class MockLogRecordProcessor: LogRecordProcessor {
   private let queue = DispatchQueue(label: "MockLogRecordProcessor")
   private var _receivedLogRecords: [ReadableLogRecord] = []
   

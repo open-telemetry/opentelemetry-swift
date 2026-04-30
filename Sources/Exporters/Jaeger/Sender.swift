@@ -9,7 +9,7 @@
   import Network
   import Thrift
 
-  public final class Sender: @unchecked Sendable {
+  public class Sender {
     private let host: String
     private let port = 6832
 

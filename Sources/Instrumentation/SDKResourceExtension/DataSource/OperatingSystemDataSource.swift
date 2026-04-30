@@ -28,9 +28,7 @@ public class OperatingSystemDataSource: IOperatingSystemDataSource {
     #elseif os(macOS)
       return "macOS"
     #else
-      return MainActor.assumeIsolated {
-        UIDevice.current.systemName
-      }
+      return UIDevice.current.systemName
     #endif
   }
 

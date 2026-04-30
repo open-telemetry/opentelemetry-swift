@@ -12,11 +12,11 @@ import os.log
 #endif // os(iOS) && !targetEnvironment(macCatalyst)
 
 class URLSessionLogger {
-  nonisolated(unsafe) static var runningSpans = [String: Span]()
-  static let runningSpansQueue = DispatchQueue(label: "io.opentelemetry.URLSessionLogger")
+  static var runningSpans = [String: Span]()
+  static var runningSpansQueue = DispatchQueue(label: "io.opentelemetry.URLSessionLogger")
   #if os(iOS) && !targetEnvironment(macCatalyst)
 
-    nonisolated(unsafe) static var netstatInjector: NetworkStatusInjector? = { () -> NetworkStatusInjector? in
+    static var netstatInjector: NetworkStatusInjector? = { () -> NetworkStatusInjector? in
       do {
         let netstats = try NetworkStatus()
         return NetworkStatusInjector(netstat: netstats)
@@ -97,7 +97,7 @@ class URLSessionLogger {
     }
 
     if let bodySize = request.httpBody?.count {
-      attributes[SemanticConventions.Http.requestBodySize.rawValue] = AttributeValue.int(bodySize)
+      attributes[SemanticAttributes.httpRequestBodySize.rawValue] = AttributeValue.int(bodySize)
     }
 
     var spanName = "HTTP " + (request.httpMethod ?? "")
@@ -160,7 +160,7 @@ class URLSessionLogger {
 
     if let contentLengthHeader = httpResponse.allHeaderFields["Content-Length"] as? String,
        let contentLength = Int(contentLengthHeader) {
-      span.setAttribute(key: SemanticConventions.Http.responseBodySize.rawValue,
+      span.setAttribute(key: SemanticAttributes.httpResponseBodySize.rawValue,
                         value: AttributeValue.int(contentLength))
     }
 

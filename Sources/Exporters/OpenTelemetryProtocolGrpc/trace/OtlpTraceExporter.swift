@@ -12,7 +12,7 @@ import OpenTelemetryApi
 import OpenTelemetryProtocolExporterCommon
 import OpenTelemetrySdk
 
-public final class OtlpTraceExporter: SpanExporter, @unchecked Sendable {
+public class OtlpTraceExporter: SpanExporter {
   let channel: GRPCChannel
   var traceClient: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceNIOClient
   let config: OtlpConfiguration

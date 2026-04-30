@@ -77,7 +77,7 @@ extension PersistencePerformancePreset {
 }
 
 /// `DateProvider` mock returning consecutive dates in custom intervals, starting from given reference date.
-final class RelativeDateProvider: DateProvider, @unchecked Sendable {
+class RelativeDateProvider: DateProvider {
   private(set) var date: Date
   let timeInterval: TimeInterval
   private let queue = DispatchQueue(label: "queue-RelativeDateProvider-\(UUID().uuidString)")

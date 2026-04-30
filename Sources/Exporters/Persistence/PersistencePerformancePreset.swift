@@ -49,7 +49,7 @@ protocol ExportPerformancePreset {
   var exportDelayChangeRate: Double { get }
 }
 
-public struct PersistencePerformancePreset: Equatable, StoragePerformancePreset, ExportPerformancePreset, Sendable {
+public struct PersistencePerformancePreset: Equatable, StoragePerformancePreset, ExportPerformancePreset {
   // MARK: - StoragePerformancePreset
 
   let maxFileSize: UInt64

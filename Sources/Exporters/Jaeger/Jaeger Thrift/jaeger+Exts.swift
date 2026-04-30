@@ -661,7 +661,7 @@
   }
 
   extension CollectorProcessor: TProcessor {
-    nonisolated(unsafe) static let processorHandlers: ProcessorHandlerDictionary = {
+    static let processorHandlers: ProcessorHandlerDictionary = {
       var processorHandlers = ProcessorHandlerDictionary()
 
       processorHandlers["submitBatches"] = { sequenceID, inProtocol, outProtocol, handler in

@@ -161,7 +161,7 @@ final class SessionManagerTests: XCTestCase {
 
   func testSessionStartNotificationPosted() {
     let expectation = XCTestExpectation(description: "Session start notification")
-    nonisolated(unsafe) var receivedSession: Session?
+    var receivedSession: Session?
 
     let observer = NotificationCenter.default.addObserver(
       forName: SessionEventNotification,
@@ -185,7 +185,7 @@ final class SessionManagerTests: XCTestCase {
     SessionStore.teardown()
     sessionManager = SessionManager(configuration: SessionConfig(sessionTimeout: 0))
 
-    nonisolated(unsafe) var receivedSessions: [String] = []
+    var receivedSessions: [String] = []
     let expectation = XCTestExpectation(description: "Multiple session notifications")
     expectation.expectedFulfillmentCount = 3
 

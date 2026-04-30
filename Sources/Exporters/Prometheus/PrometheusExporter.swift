@@ -7,7 +7,7 @@ import Foundation
 import NIOConcurrencyHelpers
 import OpenTelemetrySdk
 
-public final class PrometheusExporter: MetricExporter, @unchecked Sendable {
+public class PrometheusExporter: MetricExporter {
   var aggregationTemporalitySelector: AggregationTemporalitySelector
 
   public func getAggregationTemporality(for instrument: OpenTelemetrySdk.InstrumentType) -> OpenTelemetrySdk.AggregationTemporality {

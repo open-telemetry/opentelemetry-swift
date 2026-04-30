@@ -26,14 +26,9 @@ func simpleNetworkCall() {
   semaphore.wait()
 }
 
-final class SessionDelegate: NSObject, URLSessionDataDelegate, URLSessionTaskDelegate, @unchecked Sendable {
+class SessionDelegate: NSObject, URLSessionDataDelegate, URLSessionTaskDelegate {
   let semaphore = DispatchSemaphore(value: 0)
-  private let queue = DispatchQueue(label: "callCount")
-  private var _callCount = 0
-  var callCount: Int {
-    get { queue.sync { _callCount } }
-    set { queue.sync { _callCount = newValue } }
-  }
+  var callCount = 0
 
   func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
     semaphore.signal()

@@ -120,7 +120,7 @@ class PersistenceExporterDecoratorTests: XCTestCase {
 
     exporter.flush()
 
-    wait(for: [writerIsFlushedExpectation, workerIsFlushedExpectation], timeout: 1)
+    waitForExpectations(timeout: 1, handler: nil)
   }
 
   func testWhenObjectsDataIsExportedSeparately_thenObjectsAreExported() throws {
@@ -148,8 +148,8 @@ class PersistenceExporterDecoratorTests: XCTestCase {
                                                                           worker: &worker,
                                                                           decoratedExporter: decoratedExporter)
 
-    fileWriter.onWrite = { [weak worker] _, data in
-      if let dataExporter = worker?.dataExporter {
+    fileWriter.onWrite = { _, data in
+      if let dataExporter = worker.dataExporter {
         XCTAssertFalse(dataExporter.export(data: data).needsRetry)
       }
     }
@@ -158,7 +158,7 @@ class PersistenceExporterDecoratorTests: XCTestCase {
     try exporter.export(values: ["v2"])
     try exporter.export(values: ["v3"])
 
-    wait(for: [v1ExportExpectation, v2ExportExpectation, v3ExportExpectation], timeout: 1)
+    waitForExpectations(timeout: 1, handler: nil)
   }
 
   func testWhenObjectsDataIsExportedConcatenated_thenObjectsAreExported() throws {
@@ -199,6 +199,6 @@ class PersistenceExporterDecoratorTests: XCTestCase {
       XCTAssertFalse(dataExporter.export(data: writtenData).needsRetry)
     }
 
-    wait(for: [v1ExportExpectation, v2ExportExpectation, v3ExportExpectation], timeout: 1)
+    waitForExpectations(timeout: 1, handler: nil)
   }
 }
