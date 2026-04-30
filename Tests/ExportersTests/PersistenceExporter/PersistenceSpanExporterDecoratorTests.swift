@@ -47,7 +47,6 @@ class PersistenceSpanExporterDecoratorTests: XCTestCase {
     super.tearDown()
   }
 
-  @MainActor
   func testWhenExportSpansIsCalled_thenSpansAreExported() throws {
     let spansExportExpectation = expectation(description: "spans exported")
     let exporterShutdownExpectation = expectation(description: "exporter shut down")
@@ -86,10 +85,9 @@ class PersistenceSpanExporterDecoratorTests: XCTestCase {
     simpleSpan(tracer: tracer)
     spanProcessor.shutdown()
 
-    waitForExpectations(timeout: 10, handler: nil)
+    wait(for: [spansExportExpectation, exporterShutdownExpectation], timeout: 10)
   }
 
-  @MainActor
   func testWhenExportFails_thenSpansAreRetried() throws {
     nonisolated(unsafe) var exportAttempts = 0
     let firstExportExpectation = expectation(description: "first export attempt")
@@ -127,7 +125,7 @@ class PersistenceSpanExporterDecoratorTests: XCTestCase {
     simpleSpan(tracer: tracer)
     spanProcessor.shutdown()
 
-    waitForExpectations(timeout: 10, handler: nil)
+    wait(for: [firstExportExpectation, secondExportExpectation], timeout: 10)
     XCTAssertEqual(exportAttempts, 2, "Expected 2 export attempts (1 failure + 1 retry)")
   }
 

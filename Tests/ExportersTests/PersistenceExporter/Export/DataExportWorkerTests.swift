@@ -19,7 +19,7 @@ class DataExportWorkerTests: XCTestCase {
 
   // MARK: - Data Exports
 
-  @MainActor func testItExportsAllData() {
+  func testItExportsAllData() {
     let v1ExportExpectation = expectation(description: "V1 exported")
     let v2ExportExpectation = expectation(description: "V2 exported")
     let v3ExportExpectation = expectation(description: "V3 exported")
@@ -48,14 +48,13 @@ class DataExportWorkerTests: XCTestCase {
                                   delay: DataExportDelay(performance: ExportPerformanceMock.veryQuick))
 
     // Then
-    waitForExpectations(timeout: 1, handler: nil)
+    wait(for: [v1ExportExpectation, v2ExportExpectation, v3ExportExpectation], timeout: 1)
 
     worker.cancelSynchronously()
 
     XCTAssertEqual(fileReader.files.count, 0)
   }
 
-  @MainActor
   func testGivenDataToExport_whenExportFinishesAndDoesNotNeedToBeRetried_thenDataIsDeleted() {
     let startExportExpectation = expectation(description: "Export has started")
 
@@ -80,7 +79,6 @@ class DataExportWorkerTests: XCTestCase {
     XCTAssertEqual(fileReader.files.count, 0, "When export finishes with `needsRetry: false`, data should be deleted")
   }
 
-  @MainActor
   func testGivenDataToExport_whenExportFinishesAndNeedsToBeRetried_thenDataIsPreserved() {
     let startExportExpectation = expectation(description: "Export has started")
 
@@ -106,7 +104,7 @@ class DataExportWorkerTests: XCTestCase {
 
   // MARK: - Export Interval Changes
 
-  @MainActor func testWhenThereIsNoBatch_thenIntervalIncreases() {
+  func testWhenThereIsNoBatch_thenIntervalIncreases() {
     let delayChangeExpectation = expectation(description: "Export delay is increased")
     let mockDelay = MockDelay { command in
       if case .increase = command {
@@ -126,11 +124,11 @@ class DataExportWorkerTests: XCTestCase {
                                   delay: mockDelay)
 
     // Then
-    waitForExpectations(timeout: 1, handler: nil)
+    wait(for: [delayChangeExpectation], timeout: 1)
     worker.cancelSynchronously()
   }
 
-  @MainActor func testWhenBatchFails_thenIntervalIncreases() {
+  func testWhenBatchFails_thenIntervalIncreases() {
     let delayChangeExpectation = expectation(description: "Export delay is increased")
     let mockDelay = MockDelay { command in
       if case .increase = command {
@@ -162,11 +160,11 @@ class DataExportWorkerTests: XCTestCase {
                                   delay: mockDelay)
 
     // Then
-    waitForExpectations(timeout: 1, handler: nil)
+    wait(for: [delayChangeExpectation, exportExpectation], timeout: 1)
     worker.cancelSynchronously()
   }
 
-  @MainActor func testWhenBatchSucceeds_thenIntervalDecreases() {
+  func testWhenBatchSucceeds_thenIntervalDecreases() {
     let delayChangeExpectation = expectation(description: "Export delay is decreased")
     let mockDelay = MockDelay { command in
       if case .decrease = command {
@@ -192,13 +190,12 @@ class DataExportWorkerTests: XCTestCase {
                                   delay: mockDelay)
 
     // Then
-    waitForExpectations(timeout: 1, handler: nil)
+    wait(for: [delayChangeExpectation, exportExpectation], timeout: 1)
     worker.cancelSynchronously()
   }
 
   // MARK: - Tearing Down
 
-  @MainActor
   func testWhenCancelled_itPerformsNoMoreExports() {
     var mockDataExporter = DataExporterMock(exportStatus: .mockWith(needsRetry: false))
 
@@ -220,7 +217,7 @@ class DataExportWorkerTests: XCTestCase {
     worker.queue.sync(flags: .barrier) {}
   }
 
-  @MainActor func testItFlushesAllData() {
+  func testItFlushesAllData() {
     let v1ExportExpectation = expectation(description: "V1 exported")
     let v2ExportExpectation = expectation(description: "V2 exported")
     let v3ExportExpectation = expectation(description: "V3 exported")
@@ -252,7 +249,7 @@ class DataExportWorkerTests: XCTestCase {
     XCTAssertTrue(worker.flush())
 
     // Then
-    waitForExpectations(timeout: 1, handler: nil)
+    wait(for: [v1ExportExpectation, v2ExportExpectation, v3ExportExpectation], timeout: 1)
     XCTAssertEqual(fileReader.files.count, 0)
   }
 }

@@ -44,7 +44,7 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
     super.tearDown()
   }
 
-  @MainActor func testWhenExportMetricIsCalled_thenMetricsAreExported() throws {
+  func testWhenExportMetricIsCalled_thenMetricsAreExported() throws {
     let metricsExportExpectation = expectation(description: "metrics exported")
     let mockMetricExporter = MetricExporterMock(onExport: { metrics in
       metrics.forEach { metric in
@@ -85,6 +85,6 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
 
     myCounter.add(value: 100, attributes: ["labelKey": AttributeValue.string("labelValue")])
 
-    waitForExpectations(timeout: 10, handler: nil)
+    wait(for: [metricsExportExpectation], timeout: 10)
   }
 }

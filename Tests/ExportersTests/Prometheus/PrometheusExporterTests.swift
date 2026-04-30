@@ -16,7 +16,7 @@ class PrometheusExporterTests: XCTestCase {
   let metricPushIntervalSec = 0.05
   let waitDuration = 0.1 + 0.1
 
-  @MainActor func testMetricsHttpServerAsync() async {
+  func testMetricsHttpServerAsync() async {
     let promOptions = PrometheusExporterOptions(url: "http://localhost:9184/metrics/")
     let promExporter = PrometheusExporter(options: promOptions)
     let metricsHttpServer = PrometheusExporterHttpServer(exporter: promExporter)
@@ -55,12 +55,7 @@ class PrometheusExporterTests: XCTestCase {
     }
     task.resume()
 
-    waitForExpectations(timeout: 30) { error in
-      if let error {
-        print("Error: \(error.localizedDescription)")
-        XCTFail()
-      }
-    }
+    await fulfillment(of: [expec], timeout: 30)
 
     metricsHttpServer.stop()
   }

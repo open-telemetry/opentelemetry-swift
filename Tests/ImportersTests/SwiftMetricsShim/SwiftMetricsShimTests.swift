@@ -72,22 +72,22 @@ class SwiftMetricsShimTests: XCTestCase {
 
   // MARK: - Test Lifecycle
 
-  @MainActor func testDestroy() {
+  func testDestroy() {
     let handler = metrics.makeCounter(label: "my_label", dimensions: [])
     XCTAssertEqual(metrics.metrics.count, 1)
     handler.increment(by: 1)
-    waitForExpectations(timeout: 10, handler: nil)
+    wait(for: [metricsExportExpectation], timeout: 10)
     metrics.destroyCounter(handler)
     XCTAssertEqual(metrics.metrics.count, 0)
   }
 
   // MARK: - Test Metric: Counter
 
-  @MainActor func testCounter() throws {
+  func testCounter() throws {
     let counter = Counter(label: "my_counter")
     counter.increment()
 
-    waitForExpectations(timeout: 10, handler: nil)
+    wait(for: [metricsExportExpectation], timeout: 10)
 
     let metric = stableMetrics[0]
     let data = try XCTUnwrap(metric.data.points.last as? LongPointData)
@@ -97,11 +97,11 @@ class SwiftMetricsShimTests: XCTestCase {
     XCTAssertNil(data.attributes["label_one"])
   }
 
-  @MainActor func testCounter_withLabels() throws {
+  func testCounter_withLabels() throws {
     let counter = Counter(label: "my_counter", dimensions: [("label_one", "value")])
     counter.increment(by: 5)
 
-    waitForExpectations(timeout: 10, handler: nil)
+    wait(for: [metricsExportExpectation], timeout: 10)
 
     let metric = stableMetrics[0]
     let data = try XCTUnwrap(metric.data.points.last as? LongPointData)
@@ -113,11 +113,11 @@ class SwiftMetricsShimTests: XCTestCase {
 
   // MARK: - Test Metric: Gauge
 
-  @MainActor func testGauge() throws {
+  func testGauge() throws {
     let gauge = Gauge(label: "my_gauge")
     gauge.record(100)
 
-    waitForExpectations(timeout: 10, handler: nil)
+    wait(for: [metricsExportExpectation], timeout: 10)
 
     let metric = stableMetrics[0]
     let data = try XCTUnwrap(metric.data.points.last as? DoublePointData)
@@ -129,11 +129,11 @@ class SwiftMetricsShimTests: XCTestCase {
 
   // MARK: - Test Metric: Histogram
 
-  @MainActor func testHistogram() throws {
+  func testHistogram() throws {
     let histogram = Gauge(label: "my_histogram", dimensions: [], aggregate: true)
     histogram.record(100)
 
-    waitForExpectations(timeout: 10, handler: nil)
+    wait(for: [metricsExportExpectation], timeout: 10)
 
     let metric = stableMetrics[0]
     let data = try XCTUnwrap(metric.data.points.last as? HistogramPointData)
@@ -145,11 +145,11 @@ class SwiftMetricsShimTests: XCTestCase {
 
   // MARK: - Test Metric: Summary
 
-  @MainActor func testSummary() throws {
+  func testSummary() throws {
     let timer = CoreMetrics.Timer(label: "my_timer")
     timer.recordSeconds(1)
 
-    waitForExpectations(timeout: 10, handler: nil)
+    wait(for: [metricsExportExpectation], timeout: 10)
 
     let metric = stableMetrics[0]
     let data = try XCTUnwrap(metric.data.points.last as? DoublePointData)
@@ -161,13 +161,13 @@ class SwiftMetricsShimTests: XCTestCase {
 
   // MARK: - Test Concurrency
 
-  @MainActor func testConcurrency() throws {
+  func testConcurrency() throws {
     DispatchQueue.concurrentPerform(iterations: 5) { _ in
       let counter = Counter(label: "my_counter")
       counter.increment()
     }
 
-    waitForExpectations(timeout: 10, handler: nil)
+    wait(for: [metricsExportExpectation], timeout: 10)
 
     let metric = stableMetrics[0]
     let data = try XCTUnwrap(metric.data.points.last as? LongPointData)
