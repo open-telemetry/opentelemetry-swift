@@ -47,23 +47,17 @@ public struct OTelLogHandler: LogHandler, @unchecked Sendable {
       .build()
   }
 
-  public func log(level: Logging.Logger.Level,
-                  message: Logging.Logger.Message,
-                  metadata: Logging.Logger.Metadata?,
-                  source: String,
-                  file: String,
-                  function: String,
-                  line: UInt) {
+  public func log(event: Logging.LogEvent) {
     // This converts log atrributes to otel attributes
     var otelattributes: [String: AttributeValue] = [
-      "source": AttributeValue.string(source),
-      "file": AttributeValue.string(file),
-      "function": AttributeValue.string(function),
-      "line": AttributeValue.int(Int(line))
+      "source": AttributeValue.string(event.source),
+      "file": AttributeValue.string(event.file),
+      "function": AttributeValue.string(event.function),
+      "line": AttributeValue.int(Int(event.line))
     ]
 
-    // Convert metadata from the method parameter to AttributeValue and assign it to otelattributes
-    if let metadata {
+    // Convert metadata from the event to AttributeValue and assign it to otelattributes
+    if let metadata = event.metadata {
       let methodMetadata = convertMetadata(metadata)
       otelattributes.merge(methodMetadata) { _, new in new }
     }
@@ -73,14 +67,14 @@ public struct OTelLogHandler: LogHandler, @unchecked Sendable {
     otelattributes.merge(structMetadata) { _, new in new }
 
     // Build the log record and emit it
-    let event = logger.logRecordBuilder().setSeverity(convertSeverity(level: level))
-      .setBody(AttributeValue.string(message.description))
+    let record = logger.logRecordBuilder().setSeverity(convertSeverity(level: event.level))
+      .setBody(AttributeValue.string(event.message.description))
       .setAttributes(otelattributes)
 
     if let context = OpenTelemetry.instance.contextProvider.activeSpan?.context {
-      _ = event.setSpanContext(context)
+      _ = record.setSpanContext(context)
     }
-    event.emit()
+    record.emit()
   }
 }
 
