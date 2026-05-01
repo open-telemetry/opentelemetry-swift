@@ -79,9 +79,10 @@
   }
 
   // Create a Parent span (Main) and do some Work (child Spans). Repeat for another Span.
-  Task { @MainActor in
-    createSpans()
-  }
+  // Top-level code is @MainActor in Swift 6, so this @MainActor helper can be
+  // called directly — a `Task { @MainActor in ... }` here would enqueue on the
+  // main actor but never drain before the metrics loop below hogs the thread.
+  createSpans()
 
   // Metrics
 let otlpMetricExporter = OtlpMetricExporter(channel: client)

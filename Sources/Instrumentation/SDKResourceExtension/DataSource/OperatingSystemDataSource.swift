@@ -28,8 +28,15 @@ public class OperatingSystemDataSource: IOperatingSystemDataSource {
     #elseif os(macOS)
       return "macOS"
     #else
-      return MainActor.assumeIsolated {
-        UIDevice.current.systemName
+      // `UIDevice.current` is @MainActor in Swift 6. SDK resource detection
+      // often runs from background initialization, so fast-path when already on
+      // main (bare `assumeIsolated` would trap off-main) and hop synchronously
+      // otherwise.
+      if Thread.isMainThread {
+        return MainActor.assumeIsolated { UIDevice.current.systemName }
+      }
+      return DispatchQueue.main.sync {
+        MainActor.assumeIsolated { UIDevice.current.systemName }
       }
     #endif
   }

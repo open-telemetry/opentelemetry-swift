@@ -67,8 +67,19 @@ public class DeviceDataSource: IDeviceDataSource {
     #elseif os(macOS)
       return nil
     #else
-      return MainActor.assumeIsolated {
-        UIDevice.current.identifierForVendor?.uuidString
+      // `UIDevice.current` is @MainActor in Swift 6. SDK resource detection
+      // often runs from background initialization, so fast-path when already on
+      // main (bare `assumeIsolated` would trap off-main) and hop synchronously
+      // otherwise.
+      if Thread.isMainThread {
+        return MainActor.assumeIsolated {
+          UIDevice.current.identifierForVendor?.uuidString
+        }
+      }
+      return DispatchQueue.main.sync {
+        MainActor.assumeIsolated {
+          UIDevice.current.identifierForVendor?.uuidString
+        }
       }
     #endif
   }

@@ -14,9 +14,12 @@ import OpenTelemetrySdk
 
 public final class OtlpTraceExporter: SpanExporter, @unchecked Sendable {
   let channel: GRPCChannel
-  var traceClient: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceNIOClient
+  let traceClient: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceNIOClient
   let config: OtlpConfiguration
-  var callOptions: CallOptions
+  // Immutable base options captured at init. `export` derives a per-call copy
+  // with the desired timeLimit rather than mutating a shared instance field,
+  // so concurrent calls cannot race on `callOptions`.
+  let callOptions: CallOptions
 
   public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration(), logger: Logging.Logger = Logging.Logger(label: "io.grpc", factory: { _ in SwiftLogNoOpLogHandler() }), envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
     self.channel = channel
@@ -43,11 +46,12 @@ public final class OtlpTraceExporter: SpanExporter, @unchecked Sendable {
       $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
     }
     let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+    var perCallOptions = callOptions
     if timeout > 0 {
-      callOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(timeout.toNanoseconds)))
+      perCallOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(timeout.toNanoseconds)))
     }
 
-    let export = traceClient.export(exportRequest, callOptions: callOptions)
+    let export = traceClient.export(exportRequest, callOptions: perCallOptions)
 
     do {
       // wait() on the response to stop the program from exiting before the response is received.

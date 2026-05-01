@@ -67,11 +67,13 @@
     span.end()
   }
 
-  Task { @MainActor in
-    simpleSpan()
-    sleep(1)
-    childSpan()
-    sleep(1)
-  }
+  // Top-level code is @MainActor in Swift 6, so the @MainActor helpers above
+  // can be called directly. A `Task { @MainActor in ... }` here would be
+  // enqueued on the main actor but never drain (top-level has no `await`) —
+  // the process would exit before either span ran.
+  simpleSpan()
+  sleep(1)
+  childSpan()
+  sleep(1)
 
 #endif
