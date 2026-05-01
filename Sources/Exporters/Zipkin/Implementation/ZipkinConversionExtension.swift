@@ -142,9 +142,9 @@ enum ZipkinConversionExtension {
 
   private static func processResources(state: inout AttributeEnumerationState, key: String, value: AttributeValue) {
     if case let .string(val) = value {
-      if key == ResourceAttributes.serviceName {
+      if key == SemanticConventions.Service.name.rawValue {
         state.serviceName = val
-      } else if key == ResourceAttributes.serviceNamespace {
+      } else if key == SemanticConventions.Service.namespace.rawValue {
         state.serviceNamespace = val
       } else {
         state.tags[key] = val

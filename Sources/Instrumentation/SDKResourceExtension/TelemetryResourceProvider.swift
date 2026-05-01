@@ -17,12 +17,12 @@ public class TelemetryResourceProvider: ResourceProvider {
   override public var attributes: [String: AttributeValue] {
     var attributes = [String: AttributeValue]()
 
-    attributes[ResourceAttributes.telemetrySdkName.rawValue] = AttributeValue.string(telemetrySource.name)
+    attributes[SemanticConventions.Telemetry.sdkName.rawValue] = AttributeValue.string(telemetrySource.name)
 
-    attributes[ResourceAttributes.telemetrySdkLanguage.rawValue] = AttributeValue.string(telemetrySource.language)
+    attributes[SemanticConventions.Telemetry.sdkLanguage.rawValue] = AttributeValue.string(telemetrySource.language)
 
     if let frameworkVersion = telemetrySource.version {
-      attributes[ResourceAttributes.telemetrySdkVersion.rawValue] = AttributeValue.string(frameworkVersion)
+      attributes[SemanticConventions.Telemetry.sdkVersion.rawValue] = AttributeValue.string(frameworkVersion)
     }
 
     return attributes

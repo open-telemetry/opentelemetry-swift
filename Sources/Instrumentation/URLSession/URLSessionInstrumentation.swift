@@ -281,16 +281,16 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     [
       #selector(
         URLSession.dataTask(with:completionHandler:)
-          as (URLSession) -> (URLRequest, @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask),
+          as (URLSession) -> (URLRequest, @escaping @Sendable (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask),
       #selector(
         URLSession.dataTask(with:completionHandler:)
-          as (URLSession) -> (URL, @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask),
+          as (URLSession) -> (URL, @escaping @Sendable (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask),
       #selector(
         URLSession.downloadTask(with:completionHandler:)
-          as (URLSession) -> (URLRequest, @escaping (URL?, URLResponse?, Error?) -> Void) -> URLSessionDownloadTask),
+          as (URLSession) -> (URLRequest, @escaping @Sendable (URL?, URLResponse?, Error?) -> Void) -> URLSessionDownloadTask),
       #selector(
         URLSession.downloadTask(with:completionHandler:)
-          as (URLSession) -> (URL, @escaping (URL?, URLResponse?, Error?) -> Void) -> URLSessionDownloadTask),
+          as (URLSession) -> (URL, @escaping @Sendable (URL?, URLResponse?, Error?) -> Void) -> URLSessionDownloadTask),
       #selector(URLSession.downloadTask(withResumeData:completionHandler:))
     ].forEach {
       let selector = $0
@@ -303,21 +303,39 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       let block:
         @convention(block) (URLSession, AnyObject, ((Any?, URLResponse?, Error?) -> Void)?) -> URLSessionTask = { session, argument, completion in
 
+          // `URLSession.dataTask(with:completionHandler:)` / `downloadTask(with:completionHandler:)`
+          // require `@Sendable` completion handlers. The ObjC-swizzled `completion`
+          // above is typed non-Sendable because it's an arbitrary block from the
+          // calling exporter. Bridge through `nonisolated(unsafe)`; the caller
+          // owns the synchronization of anything they capture in their handler.
+          nonisolated(unsafe) let completion = completion
+
           if let url = argument as? URL {
             let request = URLRequest(url: url)
 
             if self.configuration.shouldInjectTracingHeaders?(request) ?? true {
               if selector == #selector(
                 URLSession.dataTask(with:completionHandler:)
-                  as (URLSession) -> (URL, @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask) {
+                  as (URLSession) -> (URL, @escaping @Sendable (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask) {
                 if let completion {
-                  return session.dataTask(with: request, completionHandler: completion)
+                  // Wrap the non-Sendable caller-supplied handler in an
+                  // @Sendable adapter. The caller owns any synchronization
+                  // required by what they capture in their block.
+                  nonisolated(unsafe) let unsafeCompletion = completion
+                  let sendableCompletion: @Sendable (Data?, URLResponse?, Error?) -> Void = { data, response, error in
+                    unsafeCompletion(data, response, error)
+                  }
+                  return session.dataTask(with: request, completionHandler: sendableCompletion)
                 } else {
                   return session.dataTask(with: request)
                 }
               } else {
                 if let completion {
-                  return session.downloadTask(with: request, completionHandler: completion)
+                  nonisolated(unsafe) let unsafeCompletion = completion
+                  let sendableCompletion: @Sendable (URL?, URLResponse?, Error?) -> Void = { url, response, error in
+                    unsafeCompletion(url, response, error)
+                  }
+                  return session.downloadTask(with: request, completionHandler: sendableCompletion)
                 } else {
                   return session.downloadTask(with: request)
                 }

@@ -19,11 +19,11 @@ public class DeviceResourceProvider: ResourceProvider {
     var attributes = [String: AttributeValue]()
 
     if let deviceModel = deviceSource.model {
-      attributes[ResourceAttributes.deviceModelIdentifier.rawValue] = AttributeValue.string(deviceModel)
+      attributes[SemanticConventions.Device.modelIdentifier.rawValue] = AttributeValue.string(deviceModel)
     }
 
     if let deviceId = deviceSource.identifier {
-      attributes[ResourceAttributes.deviceId.rawValue] = AttributeValue.string(deviceId)
+      attributes[SemanticConventions.Device.id.rawValue] = AttributeValue.string(deviceId)
     }
 
     return attributes

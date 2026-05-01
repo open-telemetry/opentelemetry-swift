@@ -42,24 +42,32 @@ final class CommonAdapterCoverageTests: XCTestCase {
     XCTAssertEqual(kv.value.arrayValue.values.count, 2)
   }
 
+  // These four tests exercise the deprecated .stringArray/.boolArray/.intArray/
+  // .doubleArray AttributeValue cases that CommonAdapter still handles for
+  // backward compatibility. Mark the tests themselves deprecated so building
+  // the test bundle stays warning-free while still covering the legacy paths.
+  @available(*, deprecated)
   func testStringArrayAttribute() {
     let kv = CommonAdapter.toProtoAttribute(key: "k", attributeValue: .stringArray(["a", "b"]))
     XCTAssertEqual(kv.value.arrayValue.values.count, 2)
     XCTAssertEqual(kv.value.arrayValue.values.first?.stringValue, "a")
   }
 
+  @available(*, deprecated)
   func testBoolArrayAttribute() {
     let kv = CommonAdapter.toProtoAttribute(key: "k", attributeValue: .boolArray([true, false]))
     XCTAssertEqual(kv.value.arrayValue.values.count, 2)
     XCTAssertTrue(kv.value.arrayValue.values.first?.boolValue ?? false)
   }
 
+  @available(*, deprecated)
   func testIntArrayAttribute() {
     let kv = CommonAdapter.toProtoAttribute(key: "k", attributeValue: .intArray([1, 2, 3]))
     XCTAssertEqual(kv.value.arrayValue.values.count, 3)
     XCTAssertEqual(kv.value.arrayValue.values.first?.intValue, 1)
   }
 
+  @available(*, deprecated)
   func testDoubleArrayAttribute() {
     let kv = CommonAdapter.toProtoAttribute(key: "k", attributeValue: .doubleArray([1.0, 2.0]))
     XCTAssertEqual(kv.value.arrayValue.values.count, 2)
@@ -78,6 +86,7 @@ final class CommonAdapterCoverageTests: XCTestCase {
     XCTAssertEqual(CommonAdapter.toProtoAnyValue(attributeValue: .double(2.5)).doubleValue, 2.5)
   }
 
+  @available(*, deprecated)
   func testProtoAnyValueForAllArrayVariants() {
     XCTAssertEqual(
       CommonAdapter.toProtoAnyValue(attributeValue: .stringArray(["x"])).arrayValue.values.count, 1)

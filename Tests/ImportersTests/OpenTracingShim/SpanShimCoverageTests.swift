@@ -33,7 +33,7 @@ final class SpanShimCoverageTests: XCTestCase {
   func testSetOperationNameRenamesSpan() {
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
     spanShim.setOperationName("new-name")
-    let recording = span as? RecordEventsReadableSpan
+    let recording = span as? SpanSdk
     XCTAssertEqual(recording?.name, "new-name")
   }
 
@@ -47,48 +47,48 @@ final class SpanShimCoverageTests: XCTestCase {
   func testSetStringTagSetsAttribute() {
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
     spanShim.setTag("custom", value: "value1")
-    let attrs = (span as? RecordEventsReadableSpan)?.toSpanData().attributes ?? [:]
+    let attrs = (span as? SpanSdk)?.toSpanData().attributes ?? [:]
     XCTAssertEqual(attrs["custom"], .string("value1"))
   }
 
   func testSetErrorTagStringTrueSetsErrorStatus() {
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
     spanShim.setTag("error", value: "true")
-    XCTAssertEqual((span as? RecordEventsReadableSpan)?.toSpanData().status, .error(description: "error"))
+    XCTAssertEqual((span as? SpanSdk)?.toSpanData().status, .error(description: "error"))
   }
 
   func testSetErrorTagStringFalseSetsOkStatus() {
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
     spanShim.setTag("error", value: "false")
-    XCTAssertEqual((span as? RecordEventsReadableSpan)?.toSpanData().status, .ok)
+    XCTAssertEqual((span as? SpanSdk)?.toSpanData().status, .ok)
   }
 
   func testSetBoolTagSetsAttribute() {
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
     spanShim.setTag("flag", boolValue: true)
-    let attrs = (span as? RecordEventsReadableSpan)?.toSpanData().attributes ?? [:]
+    let attrs = (span as? SpanSdk)?.toSpanData().attributes ?? [:]
     XCTAssertEqual(attrs["flag"], .bool(true))
   }
 
   func testSetErrorBoolTagSetsStatus() {
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
     spanShim.setTag("error", boolValue: true)
-    XCTAssertEqual((span as? RecordEventsReadableSpan)?.toSpanData().status, .error(description: "error"))
+    XCTAssertEqual((span as? SpanSdk)?.toSpanData().status, .error(description: "error"))
     spanShim.setTag("error", boolValue: false)
-    XCTAssertEqual((span as? RecordEventsReadableSpan)?.toSpanData().status, .ok)
+    XCTAssertEqual((span as? SpanSdk)?.toSpanData().status, .ok)
   }
 
   func testSetNumberTagConvertsInt() {
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
     spanShim.setTag("int-tag", numberValue: NSNumber(value: 42))
-    let attrs = (span as? RecordEventsReadableSpan)?.toSpanData().attributes ?? [:]
+    let attrs = (span as? SpanSdk)?.toSpanData().attributes ?? [:]
     XCTAssertEqual(attrs["int-tag"], .int(42))
   }
 
   func testSetNumberTagConvertsDouble() {
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
     spanShim.setTag("double-tag", numberValue: NSNumber(value: 1.5))
-    let attrs = (span as? RecordEventsReadableSpan)?.toSpanData().attributes ?? [:]
+    let attrs = (span as? SpanSdk)?.toSpanData().attributes ?? [:]
     XCTAssertEqual(attrs["double-tag"], .double(1.5))
   }
 
@@ -96,14 +96,14 @@ final class SpanShimCoverageTests: XCTestCase {
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
     // NSNumber(value: true/false) uses charType internally
     spanShim.setTag("bool-tag", numberValue: NSNumber(value: true))
-    let attrs = (span as? RecordEventsReadableSpan)?.toSpanData().attributes ?? [:]
+    let attrs = (span as? SpanSdk)?.toSpanData().attributes ?? [:]
     XCTAssertEqual(attrs["bool-tag"], .bool(true))
   }
 
   func testLogFieldsAddsEvent() {
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
     spanShim.log(["event": "click" as NSString, "detail": "left" as NSString])
-    let events = (span as? RecordEventsReadableSpan)?.toSpanData().events ?? []
+    let events = (span as? SpanSdk)?.toSpanData().events ?? []
     XCTAssertEqual(events.count, 1)
     XCTAssertEqual(events.first?.name, "click")
     XCTAssertEqual(events.first?.attributes["detail"], .string("left"))
@@ -112,7 +112,7 @@ final class SpanShimCoverageTests: XCTestCase {
   func testLogFieldsWithoutEventNameUsesDefault() {
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
     spanShim.log(["detail": "no-event-key" as NSString])
-    let events = (span as? RecordEventsReadableSpan)?.toSpanData().events ?? []
+    let events = (span as? SpanSdk)?.toSpanData().events ?? []
     XCTAssertEqual(events.first?.name, "log")
   }
 
@@ -120,7 +120,7 @@ final class SpanShimCoverageTests: XCTestCase {
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
     let ts = Date(timeIntervalSince1970: 1_700_000_000)
     spanShim.log(["event": "t" as NSString], timestamp: ts)
-    let events = (span as? RecordEventsReadableSpan)?.toSpanData().events ?? []
+    let events = (span as? SpanSdk)?.toSpanData().events ?? []
     XCTAssertEqual(events.first?.timestamp, ts)
   }
 
@@ -128,7 +128,7 @@ final class SpanShimCoverageTests: XCTestCase {
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
     let before = Date()
     spanShim.log(["event": "t" as NSString], timestamp: nil)
-    let events = (span as? RecordEventsReadableSpan)?.toSpanData().events ?? []
+    let events = (span as? SpanSdk)?.toSpanData().events ?? []
     XCTAssertNotNil(events.first?.timestamp)
     XCTAssertGreaterThanOrEqual(events.first!.timestamp, before.addingTimeInterval(-1))
   }
@@ -136,14 +136,14 @@ final class SpanShimCoverageTests: XCTestCase {
   func testLogEventName() {
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
     spanShim.logEvent("user-action")
-    let events = (span as? RecordEventsReadableSpan)?.toSpanData().events ?? []
+    let events = (span as? SpanSdk)?.toSpanData().events ?? []
     XCTAssertEqual(events.first?.name, "user-action")
   }
 
   func testLogEventWithPayload() {
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
     spanShim.logEvent("named", payload: "payload-value" as NSString)
-    let events = (span as? RecordEventsReadableSpan)?.toSpanData().events ?? []
+    let events = (span as? SpanSdk)?.toSpanData().events ?? []
     XCTAssertEqual(events.first?.name, "named")
     XCTAssertEqual(events.first?.attributes["named"], .string("payload-value"))
   }
@@ -151,7 +151,7 @@ final class SpanShimCoverageTests: XCTestCase {
   func testLogEventWithNilPayload() {
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
     spanShim.logEvent("no-payload", payload: nil)
-    let events = (span as? RecordEventsReadableSpan)?.toSpanData().events ?? []
+    let events = (span as? SpanSdk)?.toSpanData().events ?? []
     XCTAssertEqual(events.first?.name, "no-payload")
     XCTAssertEqual(events.first?.attributes.count, 0)
   }
@@ -160,7 +160,7 @@ final class SpanShimCoverageTests: XCTestCase {
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
     let ts = Date(timeIntervalSince1970: 1_700_000_001)
     spanShim.log("evt", timestamp: ts, payload: NSNumber(value: 9))
-    let events = (span as? RecordEventsReadableSpan)?.toSpanData().events ?? []
+    let events = (span as? SpanSdk)?.toSpanData().events ?? []
     XCTAssertEqual(events.first?.name, "evt")
     XCTAssertEqual(events.first?.timestamp, ts)
     XCTAssertEqual(events.first?.attributes["evt"], .int(9))
@@ -170,7 +170,7 @@ final class SpanShimCoverageTests: XCTestCase {
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: span)
     let ts = Date(timeIntervalSince1970: 1_700_000_002)
     spanShim.log("evt-no-payload", timestamp: ts, payload: nil)
-    let events = (span as? RecordEventsReadableSpan)?.toSpanData().events ?? []
+    let events = (span as? SpanSdk)?.toSpanData().events ?? []
     XCTAssertEqual(events.first?.name, "evt-no-payload")
     XCTAssertEqual(events.first?.attributes.count, 0)
     XCTAssertEqual(events.first?.timestamp, ts)
@@ -180,7 +180,7 @@ final class SpanShimCoverageTests: XCTestCase {
     let s = tracer.spanBuilder(spanName: "finish-test").startSpan()
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: s)
     spanShim.finish()
-    XCTAssertTrue((s as? RecordEventsReadableSpan)?.hasEnded ?? false)
+    XCTAssertTrue((s as? SpanSdk)?.hasEnded ?? false)
   }
 
   func testFinishWithTime() {
@@ -188,15 +188,15 @@ final class SpanShimCoverageTests: XCTestCase {
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: s)
     let end = Date(timeIntervalSince1970: 1_700_000_100)
     spanShim.finish(withTime: end)
-    XCTAssertTrue((s as? RecordEventsReadableSpan)?.hasEnded ?? false)
-    XCTAssertEqual((s as? RecordEventsReadableSpan)?.toSpanData().endTime, end)
+    XCTAssertTrue((s as? SpanSdk)?.hasEnded ?? false)
+    XCTAssertEqual((s as? SpanSdk)?.toSpanData().endTime, end)
   }
 
   func testFinishWithNilTimeFallsBackToNow() {
     let s = tracer.spanBuilder(spanName: "finish-nil").startSpan()
     let spanShim = SpanShim(telemetryInfo: telemetryInfo, span: s)
     spanShim.finish(withTime: nil)
-    XCTAssertTrue((s as? RecordEventsReadableSpan)?.hasEnded ?? false)
+    XCTAssertTrue((s as? SpanSdk)?.hasEnded ?? false)
   }
 
   func testConvertToAttributesStringNumberFallback() {

@@ -36,22 +36,27 @@ public final class ZipkinTraceExporter: SpanExporter {
       return .failure
     }
 
-    var status: SpanExporterResultCode = .failure
-
+    // The URLSession completion handler is `@Sendable`. Bridge the result
+    // through a class-backed locked box so the semaphore.wait() side observes
+    // a well-defined value without tripping Swift 6's concurrent-capture
+    // checks (which disallow mutating a captured `var` even under a lock).
+    final class StatusBox: @unchecked Sendable {
+      private let lock = NSLock()
+      private var value: SpanExporterResultCode = .failure
+      func set(_ v: SpanExporterResultCode) { lock.withLock { value = v } }
+      func get() -> SpanExporterResultCode { lock.withLock { value } }
+    }
+    let statusBox = StatusBox()
     let sem = DispatchSemaphore(value: 0)
 
     let task = URLSession.shared.dataTask(with: request) { _, _, error in
-      if error != nil {
-        status = .failure
-      } else {
-        status = .success
-      }
+      statusBox.set(error == nil ? .success : .failure)
       sem.signal()
     }
     task.resume()
     sem.wait()
 
-    return status
+    return statusBox.get()
   }
 
   public func flush(explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {

@@ -10,6 +10,7 @@
 #endif
 
 import Foundation
+import OpenTelemetryApi
 import OpenTelemetrySdk
 
 public class OperatingSystemDataSource: IOperatingSystemDataSource {
@@ -19,7 +20,7 @@ public class OperatingSystemDataSource: IOperatingSystemDataSource {
   }
 
   public var type: String {
-    ResourceAttributes.OsTypeValues.darwin.description
+    SemanticConventions.Os.TypeValues.darwin.description
   }
 
   public var name: String {

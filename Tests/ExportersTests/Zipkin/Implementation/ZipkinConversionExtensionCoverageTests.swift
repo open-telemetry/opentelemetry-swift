@@ -37,7 +37,7 @@ final class ZipkinConversionExtensionCoverageTests: XCTestCase {
 
   func testServiceNameFromResourceOverridesLocalEndpoint() {
     let span = spanWithResourceAttributes([
-      ResourceAttributes.serviceName.rawValue: .string("custom-svc")
+      SemanticConventions.Service.name.rawValue: .string("custom-svc")
     ])
     let zipkin = ZipkinConversionExtension.toZipkinSpan(
       otelSpan: span, defaultLocalEndpoint: defaultZipkinEndpoint)
@@ -46,7 +46,7 @@ final class ZipkinConversionExtensionCoverageTests: XCTestCase {
 
   func testServiceNamespaceAddedAsTag() {
     let span = spanWithResourceAttributes([
-      ResourceAttributes.serviceNamespace.rawValue: .string("ns")
+      SemanticConventions.Service.namespace.rawValue: .string("ns")
     ])
     let zipkin = ZipkinConversionExtension.toZipkinSpan(
       otelSpan: span, defaultLocalEndpoint: defaultZipkinEndpoint)
