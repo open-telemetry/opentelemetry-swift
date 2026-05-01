@@ -18,11 +18,11 @@ public class ApplicationResourceProvider: ResourceProvider {
     var attributes = [String: AttributeValue]()
 
     if let bundleName = applicationDataSource.name {
-      attributes[ResourceAttributes.serviceName.rawValue] = AttributeValue.string(bundleName)
+      attributes[SemanticConventions.Service.name.rawValue] = AttributeValue.string(bundleName)
     }
 
     if let version = applicationVersion() {
-      attributes[ResourceAttributes.serviceVersion.rawValue] = AttributeValue.string(version)
+      attributes[SemanticConventions.Service.version.rawValue] = AttributeValue.string(version)
     }
 
     return attributes

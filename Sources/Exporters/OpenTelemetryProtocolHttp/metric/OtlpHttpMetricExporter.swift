@@ -27,7 +27,7 @@ public typealias StableOtlpHTTPMetricExporter = OtlpHttpMetricExporter
 @available(*, deprecated, renamed: "OtlpHttpMetricExporter")
 public typealias OtlpHTTPMetricExporter = OtlpHttpMetricExporter
 
-public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
+public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter, @unchecked Sendable {
   var aggregationTemporalitySelector: AggregationTemporalitySelector
   var defaultAggregationSelector: DefaultAggregationSelector
 
@@ -122,6 +122,7 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
       pendingMetrics = self.pendingMetrics
     }
     if !pendingMetrics.isEmpty {
+      let sentCount = pendingMetrics.count
       let body =
         Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest
           .with {
@@ -134,9 +135,15 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter {
       httpClient.send(request: request) { [weak self] result in
         switch result {
         case .success:
-          self?.exporterMetrics?.addSuccess(value: pendingMetrics.count)
+          self?.exporterMetrics?.addSuccess(value: sentCount)
+          // Drop the records we successfully flushed from the pending queue.
+          self?.exporterLock.withLockVoid {
+            guard let self else { return }
+            let n = min(sentCount, self.pendingMetrics.count)
+            self.pendingMetrics.removeFirst(n)
+          }
         case let .failure(error):
-          self?.exporterMetrics?.addFailed(value: pendingMetrics.count)
+          self?.exporterMetrics?.addFailed(value: sentCount)
           OpenTelemetry.instance.feedbackHandler?("\(error)")
           exporterResult = .failure
         }

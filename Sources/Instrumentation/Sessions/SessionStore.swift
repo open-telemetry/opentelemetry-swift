@@ -7,7 +7,7 @@ import Foundation
 
 /// Handles persistence of OpenTelemetry sessions to UserDefaults
 /// Provides static methods for saving and loading session data
-internal class SessionStore {
+internal final class SessionStore {
   /// UserDefaults key for storing session ID
   static let idKey = "otel-session-id"
   /// UserDefaults key for storing previous session ID
@@ -22,48 +22,72 @@ internal class SessionStore {
   /// To avoid writing to disk too often, SessionStore only keeps the current session
   /// in memory and saves to disk on an interval (every 30 seconds).
 
+  /// Guards all static mutable state below; every access goes through this lock so
+  /// callers from different threads (`SessionManager.getSession()` callers, the
+  /// repeating `saveTimer` callback, and test `teardown`) do not race.
+  private static let lock = NSLock()
   /// The most recent session to be saved to disk
-  private static var pendingSession: Session?
+  nonisolated(unsafe) private static var pendingSession: Session?
   /// The previous session
-  private static var prevSession: Session?
+  nonisolated(unsafe) private static var prevSession: Session?
   /// The interval period after which the current session is saved to disk
   private static let saveInterval: TimeInterval = 30 // in seconds
   /// The timer responsible for saving the current session to disk
-  private static var saveTimer: Timer?
+  nonisolated(unsafe) private static var saveTimer: Timer?
 
   /// Schedules a session to be saved to UserDefaults on the next timer interval
   /// - Parameter session: The session to save
   static func scheduleSave(session: Session) {
-    pendingSession = session
+    let needsTimer: Bool = lock.withLock {
+      pendingSession = session
+      return saveTimer == nil
+    }
 
-    if saveTimer == nil {
+    if needsTimer {
       // save initial session
       saveImmediately(session: session)
 
-      // save future sessions on a interval
-      saveTimer = Timer.scheduledTimer(withTimeInterval: saveInterval, repeats: true) { _ in
-        // only write to disk if it is a new sesssion
-        if let pending = pendingSession, prevSession != pending {
-          saveImmediately(session: pending)
+      // `Timer.scheduledTimer` schedules on the current RunLoop; callers reach
+      // here from arbitrary threads (incl. GCD workers with no run loop), so
+      // pin the timer to RunLoop.main to guarantee it fires.
+      let timer = Timer(timeInterval: saveInterval, repeats: true) { _ in
+        let pendingToSave: Session? = lock.withLock {
+          if let pending = pendingSession, prevSession != pending {
+            return pending
+          }
+          return nil
+        }
+        if let pendingToSave {
+          saveImmediately(session: pendingToSave)
         }
       }
+      if Thread.isMainThread {
+        RunLoop.main.add(timer, forMode: .common)
+      } else {
+        nonisolated(unsafe) let timerRef = timer
+        DispatchQueue.main.async { RunLoop.main.add(timerRef, forMode: .common) }
+      }
+      lock.withLock { saveTimer = timer }
     }
   }
 
   /// Immediately saves a session to UserDefaults
   /// - Parameter session: The session to save
   static func saveImmediately(session: Session) {
-    // Persist session
+    // Persist session. UserDefaults is thread-safe so the writes themselves
+    // don't need our lock; only the in-memory bookkeeping does.
     UserDefaults.standard.set(session.id, forKey: idKey)
     UserDefaults.standard.set(session.expireTime, forKey: expireTimeKey)
     UserDefaults.standard.set(session.startTime, forKey: startTimeKey)
     UserDefaults.standard.set(session.previousId, forKey: previousIdKey)
     UserDefaults.standard.set(session.sessionTimeout, forKey: sessionTimeoutKey)
 
-    // update prev session
-    prevSession = session
-    // clear pending session, since it is now outdated
-    pendingSession = nil
+    lock.withLock {
+      // update prev session
+      prevSession = session
+      // clear pending session, since it is now outdated
+      pendingSession = nil
+    }
   }
 
   /// Loads a previously saved session from UserDefaults
@@ -79,24 +103,31 @@ internal class SessionStore {
 
     let previousId = UserDefaults.standard.string(forKey: previousIdKey)
 
-    // reset sessions so it does not get overridden in the next scheduled save
-    pendingSession = nil
-    prevSession = Session(
+    let session = Session(
       id: id,
       expireTime: expireTime,
       previousId: previousId,
       startTime: startTime,
       sessionTimeout: sessionTimeout
     )
-    return prevSession
+    lock.withLock {
+      // reset sessions so it does not get overridden in the next scheduled save
+      pendingSession = nil
+      prevSession = session
+    }
+    return session
   }
 
   /// Cleans up timer and UserDefaults
   static func teardown() {
-    saveTimer?.invalidate()
-    saveTimer = nil
-    pendingSession = nil
-    prevSession = nil
+    let timer: Timer? = lock.withLock {
+      let t = saveTimer
+      saveTimer = nil
+      pendingSession = nil
+      prevSession = nil
+      return t
+    }
+    timer?.invalidate()
     UserDefaults.standard.removeObject(forKey: idKey)
     UserDefaults.standard.removeObject(forKey: startTimeKey)
     UserDefaults.standard.removeObject(forKey: expireTimeKey)

@@ -12,11 +12,11 @@ import os.log
 #endif // os(iOS) && !targetEnvironment(macCatalyst)
 
 class URLSessionLogger {
-  static var runningSpans = [String: Span]()
-  static var runningSpansQueue = DispatchQueue(label: "io.opentelemetry.URLSessionLogger")
+  nonisolated(unsafe) static var runningSpans = [String: Span]()
+  static let runningSpansQueue = DispatchQueue(label: "io.opentelemetry.URLSessionLogger")
   #if os(iOS) && !targetEnvironment(macCatalyst)
 
-    static var netstatInjector: NetworkStatusInjector? = { () -> NetworkStatusInjector? in
+    nonisolated(unsafe) static var netstatInjector: NetworkStatusInjector? = { () -> NetworkStatusInjector? in
       do {
         let netstats = try NetworkStatus()
         return NetworkStatusInjector(netstat: netstats)
@@ -43,61 +43,65 @@ class URLSessionLogger {
     let useOld = instrumentation.configuration.semanticConvention == .old || instrumentation.configuration.semanticConvention == .httpDup
     let useStable = instrumentation.configuration.semanticConvention == .stable || instrumentation.configuration.semanticConvention == .httpDup
 
+    // Legacy (OTel v0) HTTP attribute keys. The semantic itself is deprecated
+    // by OpenTelemetry; we still emit them when callers opt into .old/.httpDup
+    // for backward compatibility. Using literal keys avoids the deprecation
+    // warning on each SemanticAttributes.* rawValue.
     let method = request.httpMethod ?? "unknown_method"
     if useOld {
-      attributes[SemanticAttributes.httpMethod.rawValue] = AttributeValue.string(method)
+      attributes["http.method"] = AttributeValue.string(method)
     }
     if useStable {
-      attributes[SemanticAttributes.httpRequestMethod.rawValue] = AttributeValue.string(method)
+      attributes[SemanticConventions.Http.requestMethod.rawValue] = AttributeValue.string(method)
     }
 
     if let requestURL = request.url {
       if useOld {
-        attributes[SemanticAttributes.httpUrl.rawValue] = AttributeValue.string(requestURL.absoluteString)
+        attributes["http.url"] = AttributeValue.string(requestURL.absoluteString)
       }
       if useStable {
-        attributes[SemanticAttributes.urlFull.rawValue] = AttributeValue.string(requestURL.absoluteString)
+        attributes[SemanticConventions.Url.full.rawValue] = AttributeValue.string(requestURL.absoluteString)
       }
     }
 
     if let requestURLPath = request.url?.path {
       if useOld {
-        attributes[SemanticAttributes.httpTarget.rawValue] = AttributeValue.string(requestURLPath)
+        attributes["http.target"] = AttributeValue.string(requestURLPath)
       }
       if useStable {
-        attributes[SemanticAttributes.urlPath.rawValue] = AttributeValue.string(requestURLPath)
+        attributes[SemanticConventions.Url.path.rawValue] = AttributeValue.string(requestURLPath)
       }
     }
 
     if let host = request.url?.host {
       if useOld {
-        attributes[SemanticAttributes.netPeerName.rawValue] = AttributeValue.string(host)
+        attributes["net.peer.name"] = AttributeValue.string(host)
       }
       if useStable {
-        attributes[SemanticAttributes.serverAddress.rawValue] = AttributeValue.string(host)
+        attributes[SemanticConventions.Server.address.rawValue] = AttributeValue.string(host)
       }
     }
 
     if let requestScheme = request.url?.scheme {
       if useOld {
-        attributes[SemanticAttributes.httpScheme.rawValue] = AttributeValue.string(requestScheme)
+        attributes["http.scheme"] = AttributeValue.string(requestScheme)
       }
       if useStable {
-        attributes[SemanticAttributes.urlScheme.rawValue] = AttributeValue.string(requestScheme)
+        attributes[SemanticConventions.Url.scheme.rawValue] = AttributeValue.string(requestScheme)
       }
     }
 
     if let port = request.url?.port {
       if useOld {
-        attributes[SemanticAttributes.netPeerPort.rawValue] = AttributeValue.int(port)
+        attributes["net.peer.port"] = AttributeValue.int(port)
       }
       if useStable {
-        attributes[SemanticAttributes.serverPort.rawValue] = AttributeValue.int(port)
+        attributes[SemanticConventions.Server.port.rawValue] = AttributeValue.int(port)
       }
     }
 
     if let bodySize = request.httpBody?.count {
-      attributes[SemanticAttributes.httpRequestBodySize.rawValue] = AttributeValue.int(bodySize)
+      attributes[SemanticConventions.Http.requestBodySize.rawValue] = AttributeValue.int(bodySize)
     }
 
     var spanName = "HTTP " + (request.httpMethod ?? "")
@@ -149,18 +153,18 @@ class URLSessionLogger {
     let useStable = instrumentation.configuration.semanticConvention == .stable || instrumentation.configuration.semanticConvention == .httpDup
 
     if useOld {
-      span.setAttribute(key: SemanticAttributes.httpStatusCode.rawValue,
+      span.setAttribute(key: "http.status_code",
                         value: AttributeValue.int(statusCode))
     }
     if useStable {
-      span.setAttribute(key: SemanticAttributes.httpResponseStatusCode.rawValue,
+      span.setAttribute(key: SemanticConventions.Http.responseStatusCode.rawValue,
                         value: AttributeValue.int(statusCode))
     }
     span.status = statusForStatusCode(code: statusCode)
 
     if let contentLengthHeader = httpResponse.allHeaderFields["Content-Length"] as? String,
        let contentLength = Int(contentLengthHeader) {
-      span.setAttribute(key: SemanticAttributes.httpResponseBodySize.rawValue,
+      span.setAttribute(key: SemanticConventions.Http.responseBodySize.rawValue,
                         value: AttributeValue.int(contentLength))
     }
 
@@ -181,10 +185,10 @@ class URLSessionLogger {
     let useStable = instrumentation.configuration.semanticConvention == .stable || instrumentation.configuration.semanticConvention == .httpDup
 
     if useOld {
-      span.setAttribute(key: SemanticAttributes.httpStatusCode.rawValue, value: AttributeValue.int(statusCode))
+      span.setAttribute(key: "http.status_code", value: AttributeValue.int(statusCode))
     }
     if useStable {
-      span.setAttribute(key: SemanticAttributes.httpResponseStatusCode.rawValue, value: AttributeValue.int(statusCode))
+      span.setAttribute(key: SemanticConventions.Http.responseStatusCode.rawValue, value: AttributeValue.int(statusCode))
     }
     span.status = URLSessionLogger.statusForStatusCode(code: statusCode)
     instrumentation.configuration.receivedError?(error, dataOrFile, statusCode, span)

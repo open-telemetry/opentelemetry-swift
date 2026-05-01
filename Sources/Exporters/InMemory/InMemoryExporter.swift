@@ -6,39 +6,44 @@
 import Foundation
 import OpenTelemetrySdk
 
-public class InMemoryExporter: SpanExporter {
+public final class InMemoryExporter: SpanExporter, @unchecked Sendable {
+  private let lock = NSLock()
   private var finishedSpanItems: [SpanData] = []
   private var isRunning: Bool = true
 
   public init() {}
 
   public func getFinishedSpanItems() -> [SpanData] {
-    return finishedSpanItems
+    return lock.withLock { finishedSpanItems }
   }
 
   public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
-    guard isRunning else {
-      return .failure
+    return lock.withLock {
+      guard isRunning else {
+        return .failure
+      }
+      finishedSpanItems.append(contentsOf: spans)
+      return .success
     }
-
-    finishedSpanItems.append(contentsOf: spans)
-    return .success
   }
 
   public func flush(explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
-    guard isRunning else {
-      return .failure
+    return lock.withLock {
+      guard isRunning else {
+        return .failure
+      }
+      return .success
     }
-
-    return .success
   }
 
   public func reset() {
-    finishedSpanItems.removeAll()
+    lock.withLock { finishedSpanItems.removeAll() }
   }
 
   public func shutdown(explicitTimeout: TimeInterval? = nil) {
-    finishedSpanItems.removeAll()
-    isRunning = false
+    lock.withLock {
+      finishedSpanItems.removeAll()
+      isRunning = false
+    }
   }
 }

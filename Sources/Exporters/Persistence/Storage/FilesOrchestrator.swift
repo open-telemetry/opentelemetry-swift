@@ -169,7 +169,7 @@ func fileCreationDateFrom(fileName: String) -> Date {
   return Date(timeIntervalSinceReferenceDate: TimeInterval(millisecondsSinceReferenceDate))
 }
 
-private enum FixedWidthIntegerError<T: BinaryFloatingPoint>: Error {
+private enum FixedWidthIntegerError<T: BinaryFloatingPoint & Sendable>: Error {
   case overflow(overflowingValue: T)
 }
 
@@ -182,7 +182,7 @@ private extension FixedWidthInteger {
 
    IMPORTANT: If you pass floatingPoint to Self(exactly:) without rounded(), it may return nil
    */
-  init<T: BinaryFloatingPoint>(withReportingOverflow floatingPoint: T) throws {
+  init<T: BinaryFloatingPoint & Sendable>(withReportingOverflow floatingPoint: T) throws {
     guard let converted = Self(exactly: floatingPoint.rounded()) else {
       throw FixedWidthIntegerError<T>.overflow(overflowingValue: floatingPoint)
     }

@@ -8,20 +8,22 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterCommon
 
-public class OtlpTraceJsonExporter: SpanExporter {
+public final class OtlpTraceJsonExporter: SpanExporter, @unchecked Sendable {
   // MARK: - Variables declaration
 
+  private let lock = NSLock()
   private var exportedSpans = [OtlpSpan]()
   private var isRunning: Bool = true
 
   // MARK: - Json Exporter helper methods
 
   public func getExportedSpans() -> [OtlpSpan] {
-    exportedSpans
+    lock.withLock { exportedSpans }
   }
 
   public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
-    guard isRunning else { return .failure }
+    let running = lock.withLock { isRunning }
+    guard running else { return .failure }
 
     let exportRequest = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
       $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
@@ -31,7 +33,7 @@ public class OtlpTraceJsonExporter: SpanExporter {
       let jsonData = try exportRequest.jsonUTF8Data()
       do {
         let span = try JSONDecoder().decode(OtlpSpan.self, from: jsonData)
-        exportedSpans.append(span)
+        lock.withLock { exportedSpans.append(span) }
       } catch {
         OpenTelemetry.instance.feedbackHandler?("Decode Error: \(error)")
       }
@@ -42,16 +44,17 @@ public class OtlpTraceJsonExporter: SpanExporter {
   }
 
   public func flush(explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
-    guard isRunning else { return .failure }
-    return .success
+    return lock.withLock { isRunning ? .success : .failure }
   }
 
   public func reset() {
-    exportedSpans.removeAll()
+    lock.withLock { exportedSpans.removeAll() }
   }
 
   public func shutdown(explicitTimeout: TimeInterval? = nil) {
-    exportedSpans.removeAll()
-    isRunning = false
+    lock.withLock {
+      exportedSpans.removeAll()
+      isRunning = false
+    }
   }
 }

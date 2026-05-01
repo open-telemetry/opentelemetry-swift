@@ -76,7 +76,7 @@ class SwiftMetricsShimTests: XCTestCase {
     let handler = metrics.makeCounter(label: "my_label", dimensions: [])
     XCTAssertEqual(metrics.metrics.count, 1)
     handler.increment(by: 1)
-    waitForExpectations(timeout: 10, handler: nil)
+    wait(for: [metricsExportExpectation], timeout: 10)
     metrics.destroyCounter(handler)
     XCTAssertEqual(metrics.metrics.count, 0)
   }
@@ -87,7 +87,7 @@ class SwiftMetricsShimTests: XCTestCase {
     let counter = Counter(label: "my_counter")
     counter.increment()
 
-    waitForExpectations(timeout: 10, handler: nil)
+    wait(for: [metricsExportExpectation], timeout: 10)
 
     let metric = stableMetrics[0]
     let data = try XCTUnwrap(metric.data.points.last as? LongPointData)
@@ -101,7 +101,7 @@ class SwiftMetricsShimTests: XCTestCase {
     let counter = Counter(label: "my_counter", dimensions: [("label_one", "value")])
     counter.increment(by: 5)
 
-    waitForExpectations(timeout: 10, handler: nil)
+    wait(for: [metricsExportExpectation], timeout: 10)
 
     let metric = stableMetrics[0]
     let data = try XCTUnwrap(metric.data.points.last as? LongPointData)
@@ -117,7 +117,7 @@ class SwiftMetricsShimTests: XCTestCase {
     let gauge = Gauge(label: "my_gauge")
     gauge.record(100)
 
-    waitForExpectations(timeout: 10, handler: nil)
+    wait(for: [metricsExportExpectation], timeout: 10)
 
     let metric = stableMetrics[0]
     let data = try XCTUnwrap(metric.data.points.last as? DoublePointData)
@@ -133,7 +133,7 @@ class SwiftMetricsShimTests: XCTestCase {
     let histogram = Gauge(label: "my_histogram", dimensions: [], aggregate: true)
     histogram.record(100)
 
-    waitForExpectations(timeout: 10, handler: nil)
+    wait(for: [metricsExportExpectation], timeout: 10)
 
     let metric = stableMetrics[0]
     let data = try XCTUnwrap(metric.data.points.last as? HistogramPointData)
@@ -149,7 +149,7 @@ class SwiftMetricsShimTests: XCTestCase {
     let timer = CoreMetrics.Timer(label: "my_timer")
     timer.recordSeconds(1)
 
-    waitForExpectations(timeout: 10, handler: nil)
+    wait(for: [metricsExportExpectation], timeout: 10)
 
     let metric = stableMetrics[0]
     let data = try XCTUnwrap(metric.data.points.last as? DoublePointData)
@@ -167,7 +167,7 @@ class SwiftMetricsShimTests: XCTestCase {
       counter.increment()
     }
 
-    waitForExpectations(timeout: 10, handler: nil)
+    wait(for: [metricsExportExpectation], timeout: 10)
 
     let metric = stableMetrics[0]
     let data = try XCTUnwrap(metric.data.points.last as? LongPointData)

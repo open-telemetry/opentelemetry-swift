@@ -10,6 +10,7 @@
 #endif
 
 import Foundation
+import OpenTelemetryApi
 import OpenTelemetrySdk
 
 public class OperatingSystemDataSource: IOperatingSystemDataSource {
@@ -19,7 +20,7 @@ public class OperatingSystemDataSource: IOperatingSystemDataSource {
   }
 
   public var type: String {
-    ResourceAttributes.OsTypeValues.darwin.description
+    SemanticConventions.Os.TypeValues.darwin.description
   }
 
   public var name: String {
@@ -28,7 +29,16 @@ public class OperatingSystemDataSource: IOperatingSystemDataSource {
     #elseif os(macOS)
       return "macOS"
     #else
-      return UIDevice.current.systemName
+      // `UIDevice.current` is @MainActor in Swift 6. SDK resource detection
+      // often runs from background initialization, so fast-path when already on
+      // main (bare `assumeIsolated` would trap off-main) and hop synchronously
+      // otherwise.
+      if Thread.isMainThread {
+        return MainActor.assumeIsolated { UIDevice.current.systemName }
+      }
+      return DispatchQueue.main.sync {
+        MainActor.assumeIsolated { UIDevice.current.systemName }
+      }
     #endif
   }
 

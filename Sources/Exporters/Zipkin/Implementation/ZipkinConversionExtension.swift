@@ -18,10 +18,20 @@ enum ZipkinConversionExtension {
                                                        "http.host": 3,
                                                        "db.instance": 4]
 
-  static var localEndpointCache = [String: ZipkinEndpoint]()
-  static var remoteEndpointCache = [String: ZipkinEndpoint]()
+  static let localEndpointCacheLock = NSLock()
+  nonisolated(unsafe) static var localEndpointCache = [String: ZipkinEndpoint]()
+  static let remoteEndpointCacheLock = NSLock()
+  nonisolated(unsafe) static var remoteEndpointCache = [String: ZipkinEndpoint]()
 
   static let defaultServiceName = "unknown_service:" + ProcessInfo.processInfo.processName
+
+  /// Test helper. The endpoint caches are process-global; tests that seed them
+  /// with deterministic service names should call this in `tearDown` so later
+  /// tests do not observe stale entries.
+  internal static func _resetCachesForTesting() {
+    localEndpointCacheLock.withLock { localEndpointCache.removeAll() }
+    remoteEndpointCacheLock.withLock { remoteEndpointCache.removeAll() }
+  }
 
   struct AttributeEnumerationState {
     var tags = [String: String]()
@@ -47,10 +57,12 @@ enum ZipkinConversionExtension {
     var localEndpoint = defaultLocalEndpoint
 
     if let serviceName = attributeEnumerationState.serviceName, !serviceName.isEmpty, defaultServiceName != serviceName {
-      if localEndpointCache[serviceName] == nil {
-        localEndpointCache[serviceName] = defaultLocalEndpoint.clone(serviceName: serviceName)
+      localEndpointCacheLock.withLock {
+        if localEndpointCache[serviceName] == nil {
+          localEndpointCache[serviceName] = defaultLocalEndpoint.clone(serviceName: serviceName)
+        }
+        localEndpoint = localEndpointCache[serviceName] ?? localEndpoint
       }
-      localEndpoint = localEndpointCache[serviceName] ?? localEndpoint
     }
 
     if let serviceNamespace = attributeEnumerationState.serviceNamespace, !serviceNamespace.isEmpty {
@@ -59,10 +71,12 @@ enum ZipkinConversionExtension {
 
     var remoteEndpoint: ZipkinEndpoint?
     if otelSpan.kind == .client || otelSpan.kind == .producer, attributeEnumerationState.RemoteEndpointServiceName != nil {
-      remoteEndpoint = remoteEndpointCache[attributeEnumerationState.RemoteEndpointServiceName!]
-      if remoteEndpoint == nil {
-        remoteEndpoint = ZipkinEndpoint(serviceName: attributeEnumerationState.RemoteEndpointServiceName!)
-        remoteEndpointCache[attributeEnumerationState.RemoteEndpointServiceName!] = remoteEndpoint!
+      remoteEndpointCacheLock.withLock {
+        remoteEndpoint = remoteEndpointCache[attributeEnumerationState.RemoteEndpointServiceName!]
+        if remoteEndpoint == nil {
+          remoteEndpoint = ZipkinEndpoint(serviceName: attributeEnumerationState.RemoteEndpointServiceName!)
+          remoteEndpointCache[attributeEnumerationState.RemoteEndpointServiceName!] = remoteEndpoint!
+        }
       }
     }
 
@@ -136,9 +150,9 @@ enum ZipkinConversionExtension {
 
   private static func processResources(state: inout AttributeEnumerationState, key: String, value: AttributeValue) {
     if case let .string(val) = value {
-      if key == ResourceAttributes.serviceName {
+      if key == SemanticConventions.Service.name.rawValue {
         state.serviceName = val
-      } else if key == ResourceAttributes.serviceNamespace {
+      } else if key == SemanticConventions.Service.namespace.rawValue {
         state.serviceNamespace = val
       } else {
         state.tags[key] = val

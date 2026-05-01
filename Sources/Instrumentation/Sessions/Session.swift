@@ -23,7 +23,7 @@ import Foundation
 ///     print("Duration: \(session.duration!) seconds")
 /// }
 /// ```
-public struct Session: Equatable {
+public struct Session: Equatable, Sendable {
   /// Unique identifier for the session
   public let id: String
   /// Expiration time for the session

@@ -85,6 +85,6 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
 
     myCounter.add(value: 100, attributes: ["labelKey": AttributeValue.string("labelValue")])
 
-    waitForExpectations(timeout: 10, handler: nil)
+    wait(for: [metricsExportExpectation], timeout: 10)
   }
 }

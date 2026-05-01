@@ -49,14 +49,14 @@
     tracerProviderSDK?.addSpanProcessor(SignPostIntegration())
   }
 
-  func simpleSpan() {
+  @MainActor func simpleSpan() {
     let span = tracer.spanBuilder(spanName: "SimpleSpan").setSpanKind(spanKind: .client).startSpan()
     span.setAttribute(key: sampleKey, value: sampleValue)
     Thread.sleep(forTimeInterval: 0.5)
     span.end()
   }
 
-  func childSpan() {
+  @MainActor func childSpan() {
     let span = tracer.spanBuilder(spanName: "parentSpan").setSpanKind(spanKind: .client).setActive(true).startSpan()
     span.setAttribute(key: sampleKey, value: sampleValue)
     Thread.sleep(forTimeInterval: 0.2)
@@ -67,6 +67,10 @@
     span.end()
   }
 
+  // Top-level code is @MainActor in Swift 6, so the @MainActor helpers above
+  // can be called directly. A `Task { @MainActor in ... }` here would be
+  // enqueued on the main actor but never drain (top-level has no `await`) —
+  // the process would exit before either span ran.
   simpleSpan()
   sleep(1)
   childSpan()

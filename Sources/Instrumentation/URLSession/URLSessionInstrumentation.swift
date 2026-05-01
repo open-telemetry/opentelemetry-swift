@@ -24,9 +24,9 @@ struct NetworkRequestState {
   }
 }
 
-private var idKey: Void?
+nonisolated(unsafe) private var idKey: Void?
 
-public class URLSessionInstrumentation {
+public final class URLSessionInstrumentation: @unchecked Sendable {
   private var requestMap = [String: NetworkRequestState]()
 
   private var _configuration: URLSessionInstrumentationConfiguration
@@ -44,7 +44,7 @@ public class URLSessionInstrumentation {
   private let configurationQueue = DispatchQueue(
       label: "io.opentelemetry.configuration")
 
-  static var instrumentedKey = "io.opentelemetry.instrumentedCall"
+  static let instrumentedKey = "io.opentelemetry.instrumentedCall"
 
   static let excludeList: [String] = [
     "__NSCFURLProxySessionConnection"
@@ -281,16 +281,16 @@ public class URLSessionInstrumentation {
     [
       #selector(
         URLSession.dataTask(with:completionHandler:)
-          as (URLSession) -> (URLRequest, @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask),
+          as (URLSession) -> (URLRequest, @escaping @Sendable (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask),
       #selector(
         URLSession.dataTask(with:completionHandler:)
-          as (URLSession) -> (URL, @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask),
+          as (URLSession) -> (URL, @escaping @Sendable (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask),
       #selector(
         URLSession.downloadTask(with:completionHandler:)
-          as (URLSession) -> (URLRequest, @escaping (URL?, URLResponse?, Error?) -> Void) -> URLSessionDownloadTask),
+          as (URLSession) -> (URLRequest, @escaping @Sendable (URL?, URLResponse?, Error?) -> Void) -> URLSessionDownloadTask),
       #selector(
         URLSession.downloadTask(with:completionHandler:)
-          as (URLSession) -> (URL, @escaping (URL?, URLResponse?, Error?) -> Void) -> URLSessionDownloadTask),
+          as (URLSession) -> (URL, @escaping @Sendable (URL?, URLResponse?, Error?) -> Void) -> URLSessionDownloadTask),
       #selector(URLSession.downloadTask(withResumeData:completionHandler:))
     ].forEach {
       let selector = $0
@@ -303,21 +303,39 @@ public class URLSessionInstrumentation {
       let block:
         @convention(block) (URLSession, AnyObject, ((Any?, URLResponse?, Error?) -> Void)?) -> URLSessionTask = { session, argument, completion in
 
+          // `URLSession.dataTask(with:completionHandler:)` / `downloadTask(with:completionHandler:)`
+          // require `@Sendable` completion handlers. The ObjC-swizzled `completion`
+          // above is typed non-Sendable because it's an arbitrary block from the
+          // calling exporter. Bridge through `nonisolated(unsafe)`; the caller
+          // owns the synchronization of anything they capture in their handler.
+          nonisolated(unsafe) let completion = completion
+
           if let url = argument as? URL {
             let request = URLRequest(url: url)
 
             if self.configuration.shouldInjectTracingHeaders?(request) ?? true {
               if selector == #selector(
                 URLSession.dataTask(with:completionHandler:)
-                  as (URLSession) -> (URL, @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask) {
+                  as (URLSession) -> (URL, @escaping @Sendable (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask) {
                 if let completion {
-                  return session.dataTask(with: request, completionHandler: completion)
+                  // Wrap the non-Sendable caller-supplied handler in an
+                  // @Sendable adapter. The caller owns any synchronization
+                  // required by what they capture in their block.
+                  nonisolated(unsafe) let unsafeCompletion = completion
+                  let sendableCompletion: @Sendable (Data?, URLResponse?, Error?) -> Void = { data, response, error in
+                    unsafeCompletion(data, response, error)
+                  }
+                  return session.dataTask(with: request, completionHandler: sendableCompletion)
                 } else {
                   return session.dataTask(with: request)
                 }
               } else {
                 if let completion {
-                  return session.downloadTask(with: request, completionHandler: completion)
+                  nonisolated(unsafe) let unsafeCompletion = completion
+                  let sendableCompletion: @Sendable (URL?, URLResponse?, Error?) -> Void = { url, response, error in
+                    unsafeCompletion(url, response, error)
+                  }
+                  return session.downloadTask(with: request, completionHandler: sendableCompletion)
                 } else {
                   return session.downloadTask(with: request)
                 }
@@ -837,13 +855,13 @@ public class URLSessionInstrumentation {
   }
 }
 
-class FakeDelegate: NSObject, URLSessionTaskDelegate {
+final class FakeDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
   func urlSession(_ session: URLSession, task: URLSessionTask,
                   didCompleteWithError error: Error?) {}
 }
 
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
-class AsyncTaskDelegate: NSObject, URLSessionTaskDelegate {
+final class AsyncTaskDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
   private weak var instrumentation: URLSessionInstrumentation?
   private let sessionTaskId: String
 

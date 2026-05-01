@@ -7,13 +7,13 @@ import Foundation
 import OpenTelemetryApi
 
 /// Enum to specify the type of session event
-public enum SessionEventType {
+public enum SessionEventType: Sendable {
   case start
   case end
 }
 
 /// Represents a session event with its associated session and event type
-public struct SessionEvent {
+public struct SessionEvent: Sendable {
   let session: Session
   let eventType: SessionEventType
 }
@@ -29,16 +29,19 @@ public struct SessionEvent {
 /// - Sessions created after instrumentation is applied trigger notifications
 /// - All session events are converted to OpenTelemetry log records with appropriate attributes
 /// - Session end events include duration and end time attributes
-public class SessionEventInstrumentation {
+public final class SessionEventInstrumentation: @unchecked Sendable {
   private static var logger: Logger {
     return OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: SessionEventInstrumentation.instrumentationKey)
   }
 
+  /// Guards `queue` and `isApplied` so `install()`, `addSession(session:eventType:)`,
+  /// and `processQueuedSessions()` can be invoked from different threads.
+  private static let lock = NSLock()
   /// Queue for storing session events that were created before instrumentation was initialized.
   /// This allows capturing session events that occur during application startup before
   /// the OpenTelemetry SDK is fully initialized.
   /// Limited to 20 items to prevent memory issues.
-  static var queue: [SessionEvent] = []
+  nonisolated(unsafe) static var queue: [SessionEvent] = []
 
   /// Maximum number of sessions that can be queued before instrumentation is applied
   static let maxQueueSize: UInt8 = 32
@@ -57,15 +60,16 @@ public class SessionEventInstrumentation {
 
   /// Flag to track if the instrumentation has been applied.
   /// Controls whether new sessions are queued or immediately processed via notifications.
-  static var isApplied = false
+  nonisolated(unsafe) static var isApplied = false
   public static func install() {
-    guard !isApplied else {
-      return
+    let shouldProcess: Bool = lock.withLock {
+      guard !isApplied else { return false }
+      isApplied = true
+      return true
     }
-
-    isApplied = true
-    // Process any queued sessions
-    processQueuedSessions()
+    if shouldProcess {
+      processQueuedSessions()
+    }
   }
 
   /// Process any sessions that were queued before instrumentation was applied.
@@ -74,17 +78,15 @@ public class SessionEventInstrumentation {
   /// were created before the instrumentation was initialized. It creates log records
   /// for all queued sessions and then clears the queue.
   private static func processQueuedSessions() {
-    let sessionEvents = SessionEventInstrumentation.queue
-
-    if sessionEvents.isEmpty {
-      return
+    let sessionEvents: [SessionEvent] = lock.withLock {
+      let snapshot = queue
+      queue.removeAll()
+      return snapshot
     }
 
     for sessionEvent in sessionEvents {
       createSessionEvent(session: sessionEvent.session, eventType: sessionEvent.eventType)
     }
-
-    SessionEventInstrumentation.queue.removeAll()
   }
 
   /// Create session start or end log record based on the specified event type.
@@ -159,15 +161,19 @@ public class SessionEventInstrumentation {
   ///
   /// - Parameter session: The session to process
   static func addSession(session: Session, eventType: SessionEventType) {
-    if isApplied {
-      createSessionEvent(session: session, eventType: eventType)
-    } else {
+    let shouldCreate: Bool = lock.withLock {
+      if isApplied {
+        return true
+      }
       /// SessionManager creates sessions before SessionEventInstrumentation is applied,
       /// which the notification observer cannot see. So we need to keep the sessions in a queue.
-      if queue.count >= maxQueueSize {
-        return
+      if queue.count < maxQueueSize {
+        queue.append(SessionEvent(session: session, eventType: eventType))
       }
-      queue.append(SessionEvent(session: session, eventType: eventType))
+      return false
+    }
+    if shouldCreate {
+      createSessionEvent(session: session, eventType: eventType)
     }
   }
 }

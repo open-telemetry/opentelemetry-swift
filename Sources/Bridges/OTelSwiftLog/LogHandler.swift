@@ -7,7 +7,7 @@ let bridgeName: String = "OTelSwiftLog"
 let version: String = "1.0.0"
 
 /// A  custom log handler to translate swift logs into otel logs
-public struct OTelLogHandler: LogHandler {
+public struct OTelLogHandler: LogHandler, @unchecked Sendable {
   /// Get or set the configured log level.
   ///
   /// - note: `LogHandler`s must treat the log level as a value type. This means that the change in metadata must
@@ -41,47 +41,41 @@ public struct OTelLogHandler: LogHandler {
     self.loggerProvider = loggerProvider
     logger = self.loggerProvider.loggerBuilder(instrumentationScopeName: bridgeName)
       .setInstrumentationVersion(version)
-      .setEventDomain("device")
       .setIncludeTraceContext(true)
       .setAttributes(attributes)
       .setIncludeTraceContext(includeTraceContext)
       .build()
   }
 
-  public func log(level: Logging.Logger.Level,
-                  message: Logging.Logger.Message,
-                  metadata: Logging.Logger.Metadata?,
-                  source: String,
-                  file: String,
-                  function: String,
-                  line: UInt) {
-    // This converts log atrributes to otel attributes
+  /// Implement `LogHandler.log(event:)` directly (the older
+  /// `log(level:message:metadata:source:file:function:line:)` is now just a
+  /// deprecated default shim on top of this).
+  public func log(event: Logging.LogEvent) {
+    // This converts log attributes to otel attributes
     var otelattributes: [String: AttributeValue] = [
-      "source": AttributeValue.string(source),
-      "file": AttributeValue.string(file),
-      "function": AttributeValue.string(function),
-      "line": AttributeValue.int(Int(line))
+      "source": AttributeValue.string(event.source),
+      "file": AttributeValue.string(event.file),
+      "function": AttributeValue.string(event.function),
+      "line": AttributeValue.int(Int(event.line))
     ]
 
-    // Convert metadata from the method parameter to AttributeValue and assign it to otelattributes
-    if let metadata {
-      let methodMetadata = convertMetadata(metadata)
-      otelattributes.merge(methodMetadata) { _, new in new }
+    // Convert metadata from the event to AttributeValue and merge into otelattributes.
+    if let metadata = event.metadata {
+      otelattributes.merge(convertMetadata(metadata)) { _, new in new }
     }
 
     // Convert metadata from the struct property to AttributeValue and merge it with otelattributes
-    let structMetadata = convertMetadata(self.metadata)
-    otelattributes.merge(structMetadata) { _, new in new }
+    otelattributes.merge(convertMetadata(self.metadata)) { _, new in new }
 
     // Build the log record and emit it
-    let event = logger.logRecordBuilder().setSeverity(convertSeverity(level: level))
-      .setBody(AttributeValue.string(message.description))
+    let record = logger.logRecordBuilder().setSeverity(convertSeverity(level: event.level))
+      .setBody(AttributeValue.string(event.message.description))
       .setAttributes(otelattributes)
 
     if let context = OpenTelemetry.instance.contextProvider.activeSpan?.context {
-      _ = event.setSpanContext(context)
+      _ = record.setSpanContext(context)
     }
-    event.emit()
+    record.emit()
   }
 }
 
