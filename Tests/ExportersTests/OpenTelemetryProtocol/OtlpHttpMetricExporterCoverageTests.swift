@@ -62,6 +62,8 @@ final class OtlpHttpMetricExporterCoverageTests: XCTestCase {
     _ = exporter.export(metrics: [.empty])
     XCTAssertEqual(exporter.flush(), .success)
     XCTAssertEqual(client.sentRequests.count, 2)
+    // flush() must drop successfully-flushed metrics.
+    XCTAssertEqual(exporter.pendingMetrics.count, 0)
   }
 
   func testFlushWithPendingFailureReturnsFailure() {

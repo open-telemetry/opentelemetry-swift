@@ -97,6 +97,9 @@ final class OtlpHttpLogExporterCoverageTests: XCTestCase {
     let flushResult = exporter.flush()
     XCTAssertEqual(flushResult, .success)
     XCTAssertEqual(client.sentRequests.count, 2)
+    // flush() must drop successfully-flushed records; otherwise every
+    // subsequent flush re-sends them.
+    XCTAssertEqual(exporter.pendingLogRecords.count, 0)
   }
 
   func testFlushWithNoPendingReturnsSuccess() {
@@ -170,6 +173,8 @@ final class OtlpHttpTraceExporterCoverageTests: XCTestCase {
     _ = exporter.export(spans: [sampleSpanData()])  // failure → back to pending
     XCTAssertEqual(exporter.flush(), .success)
     XCTAssertEqual(client.sentRequests.count, 2)
+    // flush() must drop successfully-flushed spans.
+    XCTAssertEqual(exporter.pendingSpans.count, 0)
   }
 
   func testFlushWithNoPendingReturnsSuccess() {

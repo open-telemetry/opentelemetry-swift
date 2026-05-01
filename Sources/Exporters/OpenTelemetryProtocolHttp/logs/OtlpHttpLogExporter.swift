@@ -16,7 +16,7 @@ public func defaultOltpHttpLoggingEndpoint() -> URL {
   URL(string: "http://localhost:4318/v1/logs")!
 }
 
-public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter {
+public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter, @unchecked Sendable {
   var pendingLogRecords: [ReadableLogRecord] = []
   private let exporterLock = Lock()
   private var exporterMetrics: ExporterMetrics?
@@ -99,6 +99,7 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter {
     }
 
     if !pendingLogRecords.isEmpty {
+      let sentCount = pendingLogRecords.count
       let body =
         Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest.with { request in
           request.resourceLogs = LogRecordAdapter.toProtoResourceRecordLog(
@@ -119,10 +120,18 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter {
       httpClient.send(request: request) { [weak self] result in
         switch result {
         case .success:
-          self?.exporterMetrics?.addSuccess(value: pendingLogRecords.count)
+          self?.exporterMetrics?.addSuccess(value: sentCount)
+          // Drop the records we successfully flushed from the pending queue.
+          // Remove only the `sentCount` oldest entries so any records that
+          // `export()` appended concurrently are preserved for the next flush.
+          self?.exporterLock.withLockVoid {
+            guard let self else { return }
+            let n = min(sentCount, self.pendingLogRecords.count)
+            self.pendingLogRecords.removeFirst(n)
+          }
           exporterResult = ExportResult.success
         case let .failure(error):
-          self?.exporterMetrics?.addFailed(value: pendingLogRecords.count)
+          self?.exporterMetrics?.addFailed(value: sentCount)
           OpenTelemetry.instance.feedbackHandler?("\(error)")
           exporterResult = ExportResult.failure
         }
