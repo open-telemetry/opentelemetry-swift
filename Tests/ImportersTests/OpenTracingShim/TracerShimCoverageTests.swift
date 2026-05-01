@@ -13,15 +13,22 @@ final class TracerShimCoverageTests: XCTestCase {
   let tracerProviderSdk = TracerProviderSdk()
   var telemetryInfo: TelemetryInfo!
   var tracerShim: TracerShim!
+  private var savedTracerProvider: TracerProvider!
 
   override func setUp() {
     super.setUp()
+    savedTracerProvider = OpenTelemetry.instance.tracerProvider
     OpenTelemetry.registerTracerProvider(tracerProvider: tracerProviderSdk)
     let tracer = tracerProviderSdk.get(instrumentationName: "TracerShimCoverageTests")
     telemetryInfo = TelemetryInfo(tracer: tracer,
                                   baggageManager: OpenTelemetry.instance.baggageManager,
                                   propagators: OpenTelemetry.instance.propagators)
     tracerShim = TracerShim(telemetryInfo: telemetryInfo)
+  }
+
+  override func tearDown() {
+    OpenTelemetry.registerTracerProvider(tracerProvider: savedTracerProvider)
+    super.tearDown()
   }
 
   func testStartSpanByName() {

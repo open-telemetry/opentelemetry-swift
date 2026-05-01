@@ -14,9 +14,13 @@ final class SpanShimCoverageTests: XCTestCase {
   var tracer: Tracer!
   var telemetryInfo: TelemetryInfo!
   var span: Span!
+  // Snapshot the process-global TracerProvider so tests in later classes don't
+  // inherit this SDK-backed one. `OpenTelemetry.instance` is a singleton.
+  private var savedTracerProvider: TracerProvider!
 
   override func setUp() {
     super.setUp()
+    savedTracerProvider = OpenTelemetry.instance.tracerProvider
     OpenTelemetry.registerTracerProvider(tracerProvider: tracerProviderSdk)
     tracer = tracerProviderSdk.get(instrumentationName: "SpanShimCoverageTests")
     telemetryInfo = TelemetryInfo(tracer: tracer,
@@ -27,6 +31,7 @@ final class SpanShimCoverageTests: XCTestCase {
 
   override func tearDown() {
     span.end()
+    OpenTelemetry.registerTracerProvider(tracerProvider: savedTracerProvider)
     super.tearDown()
   }
 

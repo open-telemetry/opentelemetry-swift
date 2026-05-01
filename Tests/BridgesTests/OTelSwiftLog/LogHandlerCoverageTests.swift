@@ -118,6 +118,11 @@ final class OTelLogHandlerCoverageTests: XCTestCase {
   }
 
   func testLogHandlerAttachesSpanContextWhenActiveSpanSet() {
+    // Snapshot + restore the process-global tracer provider so this test
+    // doesn't affect any test class that runs after it in the same bundle.
+    let savedTracerProvider = OpenTelemetry.instance.tracerProvider
+    defer { OpenTelemetry.registerTracerProvider(tracerProvider: savedTracerProvider) }
+
     OpenTelemetry.registerTracerProvider(tracerProvider: TracerProviderSdk())
     let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "t")
     let span = tracer.spanBuilder(spanName: "parent").startSpan()

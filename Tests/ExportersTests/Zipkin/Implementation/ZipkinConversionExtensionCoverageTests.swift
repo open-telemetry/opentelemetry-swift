@@ -12,6 +12,17 @@ import XCTest
 final class ZipkinConversionExtensionCoverageTests: XCTestCase {
   let defaultZipkinEndpoint = ZipkinEndpoint(serviceName: "TestService")
 
+  override func setUp() {
+    super.setUp()
+    // The endpoint caches are process-global; seed deterministic state.
+    ZipkinConversionExtension._resetCachesForTesting()
+  }
+
+  override func tearDown() {
+    ZipkinConversionExtension._resetCachesForTesting()
+    super.tearDown()
+  }
+
   // Build a span whose Resource carries service.name and service.namespace,
   // to exercise the local-endpoint override & namespace-tag branches in
   // toZipkinSpan that ZipkinSpanConverterTests doesn't cover.

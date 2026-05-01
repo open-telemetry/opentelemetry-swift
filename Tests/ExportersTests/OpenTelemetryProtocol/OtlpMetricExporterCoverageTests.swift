@@ -15,24 +15,31 @@ import XCTest
 
 final class OtlpMetricExporterCoverageTests: XCTestCase {
   private var fakeCollector: FakeMetricCollector!
-  private var server: EventLoopFuture<Server>!
+  private var runningServer: Server!
   private var channel: ClientConnection!
   private let serverGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
   private let channelGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-  private let port = 4327 // distinct from OtlpTraceExporterTests' 4317
 
   override func setUp() {
     super.setUp()
     fakeCollector = FakeMetricCollector()
-    server = Server.insecure(group: serverGroup)
+    // Bind to port 0 → kernel picks an ephemeral port. Wait synchronously so
+    // the first `export()` in any test doesn't race server bind. The channel
+    // also uses the assigned port rather than a hard-coded one (previously
+    // `4327`), eliminating port-collision flakes under parallel CI.
+    runningServer = try! Server.insecure(group: serverGroup)
       .withServiceProviders([fakeCollector])
-      .bind(host: "localhost", port: port)
-    channel = ClientConnection.insecure(group: channelGroup).connect(host: "localhost", port: port)
+      .bind(host: "localhost", port: 0)
+      .wait()
+    let assignedPort = runningServer.channel.localAddress!.port!
+    channel = ClientConnection.insecure(group: channelGroup)
+      .connect(host: "localhost", port: assignedPort)
   }
 
   override func tearDown() {
-    try! serverGroup.syncShutdownGracefully()
-    try! channelGroup.syncShutdownGracefully()
+    XCTAssertNoThrow(try runningServer.close().wait())
+    XCTAssertNoThrow(try serverGroup.syncShutdownGracefully())
+    XCTAssertNoThrow(try channelGroup.syncShutdownGracefully())
     super.tearDown()
   }
 

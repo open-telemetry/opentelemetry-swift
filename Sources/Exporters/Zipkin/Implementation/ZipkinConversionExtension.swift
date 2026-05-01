@@ -25,6 +25,14 @@ enum ZipkinConversionExtension {
 
   static let defaultServiceName = "unknown_service:" + ProcessInfo.processInfo.processName
 
+  /// Test helper. The endpoint caches are process-global; tests that seed them
+  /// with deterministic service names should call this in `tearDown` so later
+  /// tests do not observe stale entries.
+  internal static func _resetCachesForTesting() {
+    localEndpointCacheLock.withLock { localEndpointCache.removeAll() }
+    remoteEndpointCacheLock.withLock { remoteEndpointCache.removeAll() }
+  }
+
   struct AttributeEnumerationState {
     var tags = [String: String]()
     var RemoteEndpointServiceName: String?

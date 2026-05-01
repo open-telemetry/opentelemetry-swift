@@ -9,6 +9,25 @@ import OpenTelemetryApi
 import XCTest
 
 final class PropagationCoverageTests: XCTestCase {
+  // `OpenTelemetry.instance` is a process-global singleton; these tests mutate
+  // its tracerProvider and propagators. Snapshot them in setUp and restore in
+  // tearDown so later test classes don't observe leftover state.
+  private var savedTracerProvider: TracerProvider!
+  private var savedPropagators: ContextPropagators!
+
+  override func setUp() {
+    super.setUp()
+    savedTracerProvider = OpenTelemetry.instance.tracerProvider
+    savedPropagators = OpenTelemetry.instance.propagators
+  }
+
+  override func tearDown() {
+    OpenTelemetry.registerTracerProvider(tracerProvider: savedTracerProvider)
+    OpenTelemetry.registerPropagators(textPropagators: [savedPropagators.textMapPropagator],
+                                      baggagePropagator: savedPropagators.textMapBaggagePropagator)
+    super.tearDown()
+  }
+
   func testExtractReturnsNilWhenContextInvalid() {
     let tracerProvider = TracerProviderSdk()
     OpenTelemetry.registerTracerProvider(tracerProvider: tracerProvider)
@@ -25,7 +44,7 @@ final class PropagationCoverageTests: XCTestCase {
     XCTAssertNil(propagation.extractTextFormat(carrier: [:]))
   }
 
-  func testInjectTextFormatWritesEntries() {
+  func testInjectTextFormatWritesEntries() throws {
     let tracerProvider = TracerProviderSdk()
     OpenTelemetry.registerTracerProvider(tracerProvider: tracerProvider)
     OpenTelemetry.registerPropagators(textPropagators: [W3CTraceContextPropagator()],
@@ -39,7 +58,7 @@ final class PropagationCoverageTests: XCTestCase {
     let span = tracer.spanBuilder(spanName: "x").startSpan()
     defer { span.end() }
     let shim = SpanShim(telemetryInfo: telemetryInfo, span: span)
-    let ctxShim = shim.context() as! SpanContextShim
+    let ctxShim = try XCTUnwrap(shim.context() as? SpanContextShim)
     let carrier = NSMutableDictionary()
     propagation.injectTextFormat(contextShim: ctxShim, carrier: carrier)
     XCTAssertGreaterThan(carrier.count, 0)
