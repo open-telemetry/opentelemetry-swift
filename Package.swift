@@ -130,7 +130,10 @@ let package = Package(
     ),
     .testTarget(
       name: "OTelSwiftLogTests",
-      dependencies: ["OTelSwiftLog"],
+      dependencies: [
+        "OTelSwiftLog",
+        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+      ],
       path: "Tests/BridgesTests/OTelSwiftLog"
     ),
     .testTarget(
