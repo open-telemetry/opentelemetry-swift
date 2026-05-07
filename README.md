@@ -139,7 +139,6 @@ For more information about the maintainer role, see the [community repository](h
 
 ### Approvers
 
-- [Austin Emmons](https://github.com/atreat), Embrace
 - [Vinod Vydier](https://github.com/vvydier), Independent
 
 For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).
@@ -153,7 +152,6 @@ For more information about the triager role, see the [community repository](http
 
 ### Emeritus
 
-- [Alolita Sharma](https://github.com/alolita), Triager
 - [Austin Treat Emmons](https://github.com/atreat), Triager
 
 For more information about the emeritus role, see the
