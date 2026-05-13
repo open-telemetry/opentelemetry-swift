@@ -743,7 +743,7 @@ public class URLSessionInstrumentation {
     guard !task.isBackground else {
       return
     }
-    
+
     let taskId = idKeyForTask(task)
     if let request = task.currentRequest {
       queue.sync {
@@ -752,6 +752,17 @@ public class URLSessionInstrumentation {
         }
         requestMap[taskId]?.setRequest(request)
       }
+
+      // A span may have already been started for this task — either by a factory
+      // swizzle (e.g. dataTask(with:completionHandler:)) or by a previous resume
+      // (NSURLSession super-class chaining and redirect handling can both cause
+      // resume to fire more than once per logical request, most visibly on watchOS).
+      // Starting another one here would orphan the existing span: processAndLogRequest
+      // would overwrite runningSpans[taskId] and the first span would never be ended.
+      let alreadyTracked = URLSessionLogger.runningSpansQueue.sync {
+        URLSessionLogger.runningSpans[taskId] != nil
+      }
+      if alreadyTracked { return }
 
       // For iOS 15+/macOS 12+, handle async/await methods differently
       if #available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *) {
