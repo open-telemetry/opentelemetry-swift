@@ -69,3 +69,18 @@ and after.
   a comment unless you are also deleting the logic it describes.
 - When a refactor makes a comment partially stale, update it. Do not leave
   it as a lie.
+
+## Prefer named constants over string literals
+
+Symbolic identifiers — enum cases, `SemanticConventions.*`, file-private
+`let`s — are preferred over inline string literals for attribute keys,
+header names, queue labels, and similar "magic strings". They give
+readers something to grep for, surface typos at compile time, and let a
+rename propagate everywhere.
+
+If the upstream constant is unavailable or unsuitable (for example, it
+is deprecated and the call site must keep emitting the legacy value for
+backward compatibility), declare a small local constant in the same
+file rather than inlining the literal at every site. Add a one-line
+comment on the local constant explaining why it exists. Do not silently
+scatter raw strings across the codebase.

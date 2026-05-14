@@ -11,6 +11,22 @@ import os.log
   import NetworkStatus
 #endif // os(iOS) && !targetEnvironment(macCatalyst)
 
+// Legacy (OTel v0) HTTP attribute keys. These keys do NOT exist in
+// the current `SemanticConventions.*` namespace — the upstream
+// generator emits only the new-spec replacements (e.g.
+// `http.request.method`, `http.response.status_code`,
+// `server.address`, `server.port`, `url.full`). For backward compatibility, 
+//  we declare themlocally rather than depend on the deprecated enum.
+enum LegacyHTTPAttributes: String {
+  case method = "http.method"
+  case url = "http.url"
+  case target = "http.target"
+  case scheme = "http.scheme"
+  case statusCode = "http.status_code"
+  case netPeerName = "net.peer.name"
+  case netPeerPort = "net.peer.port"
+}
+
 class URLSessionLogger {
   nonisolated(unsafe) static var runningSpans = [String: Span]()
   static let runningSpansQueue = DispatchQueue(label: "io.opentelemetry.URLSessionLogger")
@@ -43,13 +59,9 @@ class URLSessionLogger {
     let useOld = instrumentation.configuration.semanticConvention == .old || instrumentation.configuration.semanticConvention == .httpDup
     let useStable = instrumentation.configuration.semanticConvention == .stable || instrumentation.configuration.semanticConvention == .httpDup
 
-    // Legacy (OTel v0) HTTP attribute keys. The semantic itself is deprecated
-    // by OpenTelemetry; we still emit them when callers opt into .old/.httpDup
-    // for backward compatibility. Using literal keys avoids the deprecation
-    // warning on each SemanticAttributes.* rawValue.
     let method = request.httpMethod ?? "unknown_method"
     if useOld {
-      attributes["http.method"] = AttributeValue.string(method)
+      attributes[LegacyHTTPAttributes.method.rawValue] = AttributeValue.string(method)
     }
     if useStable {
       attributes[SemanticConventions.Http.requestMethod.rawValue] = AttributeValue.string(method)
@@ -57,7 +69,7 @@ class URLSessionLogger {
 
     if let requestURL = request.url {
       if useOld {
-        attributes["http.url"] = AttributeValue.string(requestURL.absoluteString)
+        attributes[LegacyHTTPAttributes.url.rawValue] = AttributeValue.string(requestURL.absoluteString)
       }
       if useStable {
         attributes[SemanticConventions.Url.full.rawValue] = AttributeValue.string(requestURL.absoluteString)
@@ -66,7 +78,7 @@ class URLSessionLogger {
 
     if let requestURLPath = request.url?.path {
       if useOld {
-        attributes["http.target"] = AttributeValue.string(requestURLPath)
+        attributes[LegacyHTTPAttributes.target.rawValue] = AttributeValue.string(requestURLPath)
       }
       if useStable {
         attributes[SemanticConventions.Url.path.rawValue] = AttributeValue.string(requestURLPath)
@@ -75,7 +87,7 @@ class URLSessionLogger {
 
     if let host = request.url?.host {
       if useOld {
-        attributes["net.peer.name"] = AttributeValue.string(host)
+        attributes[LegacyHTTPAttributes.netPeerName.rawValue] = AttributeValue.string(host)
       }
       if useStable {
         attributes[SemanticConventions.Server.address.rawValue] = AttributeValue.string(host)
@@ -84,7 +96,7 @@ class URLSessionLogger {
 
     if let requestScheme = request.url?.scheme {
       if useOld {
-        attributes["http.scheme"] = AttributeValue.string(requestScheme)
+        attributes[LegacyHTTPAttributes.scheme.rawValue] = AttributeValue.string(requestScheme)
       }
       if useStable {
         attributes[SemanticConventions.Url.scheme.rawValue] = AttributeValue.string(requestScheme)
@@ -93,7 +105,7 @@ class URLSessionLogger {
 
     if let port = request.url?.port {
       if useOld {
-        attributes["net.peer.port"] = AttributeValue.int(port)
+        attributes[LegacyHTTPAttributes.netPeerPort.rawValue] = AttributeValue.int(port)
       }
       if useStable {
         attributes[SemanticConventions.Server.port.rawValue] = AttributeValue.int(port)
@@ -153,7 +165,7 @@ class URLSessionLogger {
     let useStable = instrumentation.configuration.semanticConvention == .stable || instrumentation.configuration.semanticConvention == .httpDup
 
     if useOld {
-      span.setAttribute(key: "http.status_code",
+      span.setAttribute(key: LegacyHTTPAttributes.statusCode.rawValue,
                         value: AttributeValue.int(statusCode))
     }
     if useStable {
@@ -185,7 +197,7 @@ class URLSessionLogger {
     let useStable = instrumentation.configuration.semanticConvention == .stable || instrumentation.configuration.semanticConvention == .httpDup
 
     if useOld {
-      span.setAttribute(key: "http.status_code", value: AttributeValue.int(statusCode))
+      span.setAttribute(key: LegacyHTTPAttributes.statusCode.rawValue, value: AttributeValue.int(statusCode))
     }
     if useStable {
       span.setAttribute(key: SemanticConventions.Http.responseStatusCode.rawValue, value: AttributeValue.int(statusCode))
