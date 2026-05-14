@@ -4,12 +4,13 @@
  */
 
 import Foundation
+import OpenTelemetryApi
 import OpenTelemetrySdk
 
 public class TelemetryDataSource: ITelemetryDataSource {
   public init() {}
   public var language: String {
-    ResourceAttributes.TelemetrySdkLanguageValues.swift.description
+    SemanticConventions.Telemetry.SdkLanguageValues.swift.description
   }
 
   public var name: String {

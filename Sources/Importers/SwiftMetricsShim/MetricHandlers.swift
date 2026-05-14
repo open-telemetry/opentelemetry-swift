@@ -6,7 +6,7 @@
 import CoreMetrics
 import OpenTelemetryApi
 
-class SwiftCounterMetric: CounterHandler, SwiftMetric {
+final class SwiftCounterMetric: CounterHandler, SwiftMetric, @unchecked Sendable {
   let metricName: String
   let metricType: MetricType = .counter
   let counter: Locked<LongCounter>
@@ -29,7 +29,7 @@ class SwiftCounterMetric: CounterHandler, SwiftMetric {
   func reset() {}
 }
 
-class SwiftGaugeMetric: RecorderHandler, SwiftMetric {
+final class SwiftGaugeMetric: RecorderHandler, SwiftMetric, @unchecked Sendable {
   let metricName: String
   let metricType: MetricType = .gauge
   var counter: DoubleGauge
@@ -54,7 +54,7 @@ class SwiftGaugeMetric: RecorderHandler, SwiftMetric {
   }
 }
 
-class SwiftHistogramMetric: RecorderHandler, SwiftMetric {
+final class SwiftHistogramMetric: RecorderHandler, SwiftMetric, @unchecked Sendable {
   let metricName: String
   let metricType: MetricType = .histogram
   var measure: DoubleHistogram
@@ -77,7 +77,7 @@ class SwiftHistogramMetric: RecorderHandler, SwiftMetric {
   }
 }
 
-class SwiftSummaryMetric: TimerHandler, SwiftMetric {
+final class SwiftSummaryMetric: TimerHandler, SwiftMetric, @unchecked Sendable {
   let metricName: String
   let metricType: MetricType = .summary
   var measure: DoubleCounter

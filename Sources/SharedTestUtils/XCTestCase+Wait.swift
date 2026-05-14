@@ -6,7 +6,7 @@
 import XCTest
 
 extension XCTestCase {
-  public func wait(timeout: TimeInterval = 3, interval: TimeInterval = 0.1, until block: @escaping () throws -> Bool) {
+  public func wait(timeout: TimeInterval = 3, interval: TimeInterval = 0.1, until block: @escaping @Sendable () throws -> Bool) {
     let expectation = expectation(description: "wait for block to pass")
     let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
       do {

@@ -128,7 +128,7 @@ class MockSessionManager: SessionManager {
   }
 }
 
-class MockReadableSpan: ReadableSpan {
+final class MockReadableSpan: ReadableSpan, @unchecked Sendable {
   var capturedAttributes: [String: AttributeValue] = [:]
 
   var hasEnded: Bool = false

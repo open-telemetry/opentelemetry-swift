@@ -42,7 +42,7 @@ class OrchestratedFileWriterTests: XCTestCase {
     data.append(value.utf8Data)
 
     waitForWritesCompletion(on: writer.queue, thenFulfill: expectation)
-    waitForExpectations(timeout: 1, handler: nil)
+    wait(for: [expectation], timeout: 1)
     XCTAssertEqual(try temporaryDirectory.files().count, 1)
     XCTAssertEqual(try temporaryDirectory.files()[0].read(), data)
   }
