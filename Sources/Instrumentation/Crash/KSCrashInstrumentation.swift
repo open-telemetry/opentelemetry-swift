@@ -20,71 +20,99 @@ import Sessions
 
 public class KSCrashInstrumentationConfig: KSCrashConfiguration {
   public var maxStackTraceBytes: Int = 25 * 1024
-  
+  /// On-device symbolication is best-effort and tends to diverge from
+  /// backend-produced symbolication, which makes it a poor source for
+  /// crash grouping. Default `false`; backends should symbolicate.
+  public var useOnDeviceSymbolication: Bool = false
+
   public static let `default` = KSCrashInstrumentationConfig()
+
+  override public init() {
+    super.init()
+    // SIGTERM is rarely a real crash signal in iOS lifecycles.
+    enableSigTermMonitoring = false
+    // Swap C++ throw improves C++ traces but adds launch cost; users with
+    // C++-heavy apps can re-enable.
+    enableSwapCxaThrow = false
+  }
 }
 
 public class KSCrashInstrumentation: Instrumentation {
-  public private(set) static var shared: KSCrashInstrumentation?
-  
-  private let config: KSCrashInstrumentationConfig
-  private let reporter = KSCrash.shared
-  private var observers: [NSObjectProtocol] = []
-  private let queue = DispatchQueue(label: "io.opentelemetry.kscrash", qos: .utility)
-  private let timestampFormatter: ISO8601DateFormatter = {
+  public private(set) static var isInstalled: Bool = false
+  public internal(set) static var maxStackTraceBytes = 25 * 1024
+  static let reporter = KSCrash.shared
+  static var observers: [NSObjectProtocol] = []
+
+  // Single serial queue is the only writer of `reporter.userInfo` and the
+  // only mutator of `observers`. Anything that touches that state must hop
+  // onto this queue.
+  private static let queue = DispatchQueue(label: "io.opentelemetry.kscrash", qos: .utility)
+  // Covers the install() check-then-set on `isInstalled`.
+  private static let installLock = NSLock()
+  private static var installedConfig: KSCrashInstrumentationConfig = .default
+  private static let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: "io.opentelemetry.kscrash")
+  private static let timestampFormatter: ISO8601DateFormatter = {
+    // Example KSCrash timestamp: `2025-10-28T03:30:53.604204Z`
     let formatter = ISO8601DateFormatter()
-    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    formatter.formatOptions = [
+      .withInternetDateTime,
+      .withFractionalSeconds
+    ]
     return formatter
   }()
 
   public init(config: KSCrashInstrumentationConfig = .default) {
-    self.config = config
     super.init(scope: "io.opentelemetry.kscrash")
-    queue.sync {
-      install()
-    }
+    Self.install(config: config)
   }
 
-  private func install() {
-    guard Self.shared == nil else {
+  /// Installs KSCrash if not already installed. Idempotent and thread-safe.
+  /// Subsequent work (caching context, processing stored crashes,
+  /// registering observers) is dispatched onto `queue`.
+  public static func install(config: KSCrashInstrumentationConfig = .default) {
+    installLock.lock()
+    defer { installLock.unlock() }
+    guard !isInstalled else {
       return
     }
 
     do {
       try reporter.install(with: config)
-      Self.shared = self
+      installedConfig = config
+      maxStackTraceBytes = config.maxStackTraceBytes
+      isInstalled = true
     } catch {
       return
     }
 
-    // Set initial user info
-    cacheCrashContext()
-
-    // Process any stored crashes asynchronously
-    queue.async { [weak self] in
-      self?.processStoredCrashes()
+    // Hand off remaining setup to the serial queue so all later writes to
+    // `reporter.userInfo` and `observers` happen from the same context.
+    queue.async {
+      cacheCrashContext()
+      processStoredCrashes()
+      setupNotificationObservers()
     }
-
-    // setup cache context subscribers
-    setupNotificationObservers()
   }
 
-  private func setupNotificationObservers() {
+  /// Must run on `queue`. Mutates static `observers`.
+  static func setupNotificationObservers() {
+    // Update crash context on session start
     let sessionObserver = NotificationCenter.default.addObserver(
       forName: Notification.Name(SessionConstants.sessionEventNotification),
       object: nil,
       queue: nil
-    ) { [weak self] notification in
+    ) { notification in
       if let session = notification.object as? Session {
-        self?.queue.async {
-          self?.cacheCrashContext(session: session)
+        queue.async {
+          cacheCrashContext(session: session)
         }
       }
     }
     observers.append(sessionObserver)
   }
 
-  private func cacheCrashContext(session: Session? = nil) {
+  /// Must run on `queue`. Sole writer of `reporter.userInfo`.
+  static func cacheCrashContext(session: Session? = nil) {
     var userInfo: [String: Any] = [:]
 
     let sessionManager = SessionManagerProvider.getInstance()
@@ -98,8 +126,9 @@ public class KSCrashInstrumentation: Instrumentation {
     reporter.userInfo = userInfo
   }
 
-  /// Report cached crashes from KSCrash store (just a local file)
-  private func processStoredCrashes() {
+  /// Report cached crashes from KSCrash store (just a local file).
+  /// Must run on `queue`.
+  static func processStoredCrashes() {
     guard let reportStore = reporter.reportStore else {
       return
     }
@@ -120,9 +149,9 @@ public class KSCrashInstrumentation: Instrumentation {
   }
 
   // Report a KSCrash report in Apple format
-  private func reportCrash(crashReport: CrashReportDictionary) {
+  private static func reportCrash(crashReport: CrashReportDictionary) {
     let rawCrash: [String: Any] = crashReport.value
-    let log: any LogRecordBuilder = self.logger.logRecordBuilder()
+    let log: any LogRecordBuilder = logger.logRecordBuilder()
       .setEventName("device.crash")
 
     var attributes: [String: AttributeValue] = [
@@ -132,21 +161,20 @@ public class KSCrashInstrumentation: Instrumentation {
     // Attempt to recover the original crash context
     attributes = recoverCrashContext(from: rawCrash, log: log, attributes: attributes)
 
-    // Get stack trace in Apple format and emit log event in async callback
-    // If the iOS application was built with `strip styles` set to `debugging symbols`, then KSCrash will
-    // also perform on-device symbolication.
-    let filter = CrashReportFilterAppleFmt(reportStyle: .unsymbolicated)
-    filter.filterReports([crashReport]) { [weak self] reports, _ in
-      guard let self = self else { return }
+    // Get stack trace in Apple format and emit log event in async callback.
+    // On-device symbolication is opt-in: it is best-effort, varies with
+    // optimization level, and can split groupings vs. backend symbolication.
+    let style: AppleReportStyle = installedConfig.useOnDeviceSymbolication ? .symbolicated : .unsymbolicated
+    let filter = CrashReportFilterAppleFmt(reportStyle: style)
+    filter.filterReports([crashReport]) { reports, _ in
       var appleFormatReport = (reports?.first as? CrashReportString)?.value ?? "Failed to format crash report"
-      let maxBytes = self.config.maxStackTraceBytes
-      if appleFormatReport.utf8.count > maxBytes {
-        appleFormatReport = String(appleFormatReport.utf8.prefix(maxBytes)) ?? appleFormatReport
+      if appleFormatReport.utf8.count > maxStackTraceBytes {
+        appleFormatReport = String(appleFormatReport.utf8.prefix(maxStackTraceBytes)) ?? appleFormatReport
       }
       attributes[SemanticConventions.Exception.stacktrace.rawValue] = AttributeValue.string(appleFormatReport)
 
       // `Crash detected on thread 0 at libswiftCore.dylib 0x000000019ed5c8c4 $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF + 172`
-      attributes[SemanticConventions.Exception.message.rawValue] = AttributeValue.string(self.extractCrashMessage(from: appleFormatReport))
+      attributes[SemanticConventions.Exception.message.rawValue] = AttributeValue.string(extractCrashMessage(from: appleFormatReport))
 
       _ = log.setAttributes(attributes)
       log.emit()
@@ -154,7 +182,7 @@ public class KSCrashInstrumentation: Instrumentation {
   }
 
   /// Get exception code information for the crash message. This is useful for grouping
-  private func extractCrashMessage(from stackTrace: String) -> String {
+  static func extractCrashMessage(from stackTrace: String) -> String {
     let lines = stackTrace.components(separatedBy: "\n")
 
     // Get exception type
@@ -189,9 +217,9 @@ public class KSCrashInstrumentation: Instrumentation {
   /// However, if user session context cannot be recovered, then we use the current timestamp
   /// and let sessions id processors do their work. For this edge case, users can look
   /// at the current `session.previous_id` to see if the previous session had crashed.
-  private func recoverCrashContext(from rawCrash: [String: Any],
-                                   log: LogRecordBuilder,
-                                   attributes: [String: AttributeValue]) -> [String: AttributeValue] {
+  static func recoverCrashContext(from rawCrash: [String: Any],
+                                  log: LogRecordBuilder,
+                                  attributes: [String: AttributeValue]) -> [String: AttributeValue] {
     guard let report = rawCrash["report"] as? [String: Any],
           let timestampString = report["timestamp"] as? String,
           let timestamp = timestampFormatter.date(from: timestampString),

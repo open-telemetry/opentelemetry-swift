@@ -417,7 +417,8 @@ extension Package {
             .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
             .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
             "Sessions",
-            .product(name: "Installations", package: "KSCrash")
+            .product(name: "Installations", package: "KSCrash"),
+            .product(name: "Filters", package: "KSCrash")
           ],
           path: "Sources/Instrumentation/Crash"
         ),

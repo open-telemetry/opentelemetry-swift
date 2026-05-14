@@ -11,28 +11,27 @@ Add the `Crash` product to your dependencies.
 ```swift
 import Crash
 
-// Basic usage with defaults
+// Defaults
 let crashInstrumentation = KSCrashInstrumentation()
 
 // Custom configuration
 let config = KSCrashInstrumentationConfig()
-config.maxStackTraceBytes = 50 * 1024  // 50 KB limit
-config.enableOnDeviceSymbolication = true  // Enable symbolication (default: false)
-config.enableSwapCxaThrow = true  // Better C++ exception traces
+config.maxStackTraceBytes = 50 * 1024
+config.useOnDeviceSymbolication = false      // default; backend should symbolicate
+config.enableSwapCxaThrow = true             // better C++ traces; small startup cost
 let crashInstrumentation = KSCrashInstrumentation(config: config)
 ```
 
-## Configuration Options
+## Configuration
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `maxStackTraceBytes` | 25 KB | Maximum size of stack trace in crash attributes |
-| `enableSwapCxaThrow` | `false` | Better C++ exception stack traces (slight startup cost) |
-| `enableSigTermMonitoring` | `false` | Monitor SIGTERM signals |
+`KSCrashInstrumentationConfig` extends `KSCrashConfiguration`, so every KSCrash option is available. Notable defaults this instrumentation overrides:
 
-All `KSCrashConfiguration` options are available since `KSCrashInstrumentationConfig` extends it.
-
-Note: On-device symbolication is disabled by default for performance. Crash reports use unsymbolicated format suitable for server-side symbolication.
+| Option | Default here | Notes |
+|--------|--------------|-------|
+| `maxStackTraceBytes` | 25 KB | Truncates `exception.stacktrace` to fit attribute size limits |
+| `useOnDeviceSymbolication` | `false` | On-device symbolication is best-effort and can diverge from backend symbolication; prefer backend symbolication for crash grouping |
+| `enableSigTermMonitoring` | `false` | SIGTERM is rarely a real crash signal |
+| `enableSwapCxaThrow` | `false` | Off by default to keep launch cost low |
 
 ## Crash Event Schema
 
