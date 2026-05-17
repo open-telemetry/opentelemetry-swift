@@ -31,12 +31,12 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", branch: "main"), // TODO: update to a released version once available (must contain https://github.com/open-telemetry/opentelemetry-swift-core/pull/56)
-    .package(url: "https://github.com/apple/swift-nio.git", from: "2.94.0"),
-    .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.27.1"),
-    .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.33.3"),
-    .package(url: "https://github.com/apple/swift-log.git", from: "1.9.1"),
+    .package(url: "https://github.com/apple/swift-nio.git", from: "2.97.1"),
+    .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.27.5"),
+    .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.36.1"),
+    .package(url: "https://github.com/apple/swift-log.git", from: "1.10.1"),
+    .package(url: "https://github.com/apple/swift-metrics.git", from: "2.10.1"),
     .package(url: "https://github.com/apple/swift-distributed-tracing.git", from: "1.0.0"),
-    .package(url: "https://github.com/apple/swift-metrics.git", from: "2.7.1")
   ],
   targets: [
     .target(

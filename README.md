@@ -1,6 +1,7 @@
 # <img src="https://opentelemetry.io/img/logos/opentelemetry-logo-nav.png" alt="OpenTelemetry Icon" width="45" height=""> opentelemetry-swift
 
 [![CI](https://github.com/open-telemetry/opentelemetry-swift/actions/workflows/BuildAndTest.yml/badge.svg)](https://github.com/open-telemetry/opentelemetry-swift/actions/workflows/BuildAndTest.yml?query=branch%3Amain+)
+[![Nightly Build](https://github.com/open-telemetry/opentelemetry-swift/actions/workflows/Nightly-Build-Core-Main.yml/badge.svg)](https://github.com/open-telemetry/opentelemetry-swift/actions/workflows/Nightly-Build-Core-Main.yml)
 [![codecov](https://codecov.io/gh/open-telemetry/opentelemetry-swift/branch/master/graph/badge.svg)](https://codecov.io/gh/open-telemetry/opentelemetry-swift)
 
 ## About
@@ -138,7 +139,6 @@ For more information about the maintainer role, see the [community repository](h
 
 ### Approvers
 
-- [Austin Emmons](https://github.com/atreat), Embrace
 - [Vinod Vydier](https://github.com/vvydier), Independent
 
 For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).
@@ -149,3 +149,10 @@ For more information about the approver role, see the [community repository](htt
 - [Billy Zhou](https://github.com/williazz), AWS
 
 For more information about the triager role, see the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#triager).
+
+### Emeritus
+
+- [Austin Treat Emmons](https://github.com/atreat), Triager
+
+For more information about the emeritus role, see the
+[community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#emeritus-maintainerapprovertriager).

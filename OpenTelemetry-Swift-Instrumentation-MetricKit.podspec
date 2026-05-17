@@ -19,7 +19,7 @@ Pod::Spec.new do |spec|
   spec.visionos.deployment_target = "1.0"
   spec.module_name = "MetricKitInstrumentation"
 
-  spec.dependency 'OpenTelemetry-Swift-Sdk', '~> 2.1.1'
+  spec.dependency 'OpenTelemetry-Swift-Sdk', '~> 2.4.1'
   spec.pod_target_xcconfig = { "OTHER_SWIFT_FLAGS" => "-module-name MetricKitInstrumentation -package-name opentelemetry_swift_metrickit_instrumentation" }
 
 end
