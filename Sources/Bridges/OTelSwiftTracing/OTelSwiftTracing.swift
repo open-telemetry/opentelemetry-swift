@@ -228,16 +228,13 @@ public final class OTelSpan: Tracing.Span, @unchecked Sendable {
     }
 
     public func addLink(_ link: Tracing.SpanLink) {
-        // OpenTelemetry Swift only supports links at span creation time (builder-time).
-        // Swift Distributed Tracing allows adding links after span creation.
-        
-        // Potentially workaround:
-        // Create a spanBuilder internally but DONT start it (but set its startDate)
-        // propagate that builder's spanContext as the "real" spanContext for parenting and propagation purposes
-        // only when ending the span we actualyly start the span using the builder, which allows us to add links until the end of the span.
-        //
-        // The consequence would be that activeSpan would not reflect the correct value
-        // This might be acceptable since users will likely rely on Swift DistributedTracing (which doesnt offer access to it)
+        guard let spanContext = link.context.otelSpanContext, spanContext.isValid else {
+            return
+        }
+        otelSpan.addLink(
+            spanContext: spanContext,
+            attributes: Self.convertAttributes(link.attributes)
+        )
     }
 
     public func end<Instant: TracerInstant>(at instant: @autoclosure () -> Instant) {

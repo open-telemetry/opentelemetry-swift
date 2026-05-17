@@ -30,7 +30,7 @@ let package = Package(
     .executable(name: "StableMetricSample", targets: ["StableMetricSample"])
   ],
   dependencies: [
-    .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.3.0"),
+    .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", branch: "main"), // TODO: update to a released version once available (must contain https://github.com/open-telemetry/opentelemetry-swift-core/pull/56)
     .package(url: "https://github.com/apple/swift-nio.git", from: "2.94.0"),
     .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.27.1"),
     .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.33.3"),
