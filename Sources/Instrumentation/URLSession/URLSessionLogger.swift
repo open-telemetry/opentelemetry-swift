@@ -34,16 +34,19 @@ class URLSessionLogger {
 
   /// This methods creates a Span for a request, and optionally injects tracing headers, returns a  new request if it was needed to create a new one to add the tracing headers
   @discardableResult static func processAndLogRequest(_ request: URLRequest, sessionTaskId: String, instrumentation: URLSessionInstrumentation, shouldInjectHeaders: Bool) -> URLRequest? {
-    // Some platforms (most visibly watchOS) re-route a single user-level URLSession
-    // call through two distinct URLSessionTask objects: an outer task whose `resume()`
-    // is intercepted by our swizzle, and an inner task that Foundation creates by
-    // re-entering the public `session.dataTask(with: URLRequest)` we also swizzle.
-    // The inner factory swizzle would then start a second span and orphan the first.
-    // Detect that case by recognising the `traceparent` header we just injected on
-    // the outer pass, and return without creating a duplicate.
+    #if os(watchOS)
+    // watchOS routes a single user-level URLSession call (e.g. `data(for:)`) through
+    // two distinct URLSessionTask objects: an outer task whose `resume()` is intercepted
+    // by our swizzle, and an inner task that Foundation creates by re-entering the public
+    // `session.dataTask(with: URLRequest)` we also swizzle. The inner factory swizzle
+    // would then start a second span and orphan the first. Detect that case by recognising
+    // the `traceparent` header we just injected on the outer pass, and return without
+    // creating a duplicate. Other platforms implement `data(for:)` without re-entering
+    // the public factory, so this lookup is unnecessary overhead there.
     if hasAlreadyInstrumentedSpan(for: request) {
       return nil
     }
+    #endif
     guard instrumentation.configuration.shouldInstrument?(request) ?? true else {
       return nil
     }
@@ -202,12 +205,12 @@ class URLSessionLogger {
     span.end()
   }
 
+  #if os(watchOS)
   /// Returns true when the request already carries a `traceparent` whose trace id
-  /// matches a currently running span. This is used to suppress duplicate spans on
-  /// paths where Foundation re-injects the already-instrumented request into one of
-  /// the swizzled task-creation factories (notably watchOS, where the outer
-  /// async-await task spawns an inner data task via the public dataTask(with:) API
-  /// after we have already injected headers on the outer task's currentRequest).
+  /// matches a currently running span. Used on watchOS to suppress duplicate spans
+  /// when Foundation re-injects an already-instrumented request into the swizzled
+  /// `dataTask(with:)` factory after the outer task's resume swizzle has already
+  /// started a span.
   private static func hasAlreadyInstrumentedSpan(for request: URLRequest) -> Bool {
     guard let traceparent = request.value(forHTTPHeaderField: "traceparent") else {
       return false
@@ -219,6 +222,7 @@ class URLSessionLogger {
       runningSpans.values.contains { $0.context.traceId.hexString.lowercased() == incomingTraceId }
     }
   }
+  #endif
 
   private static func statusForStatusCode(code: Int) -> Status {
     switch code {

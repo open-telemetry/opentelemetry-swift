@@ -753,16 +753,21 @@ public class URLSessionInstrumentation {
         requestMap[taskId]?.setRequest(request)
       }
 
-      // A span may have already been started for this task — either by a factory
-      // swizzle (e.g. dataTask(with:completionHandler:)) or by a previous resume
-      // (NSURLSession super-class chaining and redirect handling can both cause
-      // resume to fire more than once per logical request, most visibly on watchOS).
-      // Starting another one here would orphan the existing span: processAndLogRequest
-      // would overwrite runningSpans[taskId] and the first span would never be ended.
+      #if os(watchOS)
+      // watchOS-only defensive guard: a span may have already been started for this
+      // task by a factory swizzle (e.g. dataTask(with:completionHandler:)) re-entered
+      // from data(for:), or by a previous resume (NSURLSession super-class chaining
+      // and redirect handling can both cause resume to fire more than once per logical
+      // request). Starting another one here would orphan the existing span:
+      // processAndLogRequest would overwrite runningSpans[taskId] and the first span
+      // would never be ended. Other platforms don't exhibit these re-entries in
+      // practice (verified via URLSessionInstrumentationTests), so this lookup is
+      // gated to watchOS to avoid the per-resume queue sync.
       let alreadyTracked = URLSessionLogger.runningSpansQueue.sync {
         URLSessionLogger.runningSpans[taskId] != nil
       }
       if alreadyTracked { return }
+      #endif
 
       // For iOS 15+/macOS 12+, handle async/await methods differently
       if #available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *) {
