@@ -19,7 +19,7 @@ import Musl
 
 /// A unified HTTP test server using POSIX sockets
 /// Combines functionality from both OTLP exporter tests and URLSession instrumentation tests
-public class HttpTestServer {
+public class HttpTestServer: @unchecked Sendable {
     private var serverSocket: Int32 = -1
     public private(set) var serverPort: Int = 0
     private var isRunning = false
@@ -518,7 +518,7 @@ internal struct HTTPRequestData {
 }
 
 /// HTTPMethod for compatibility
-public struct HTTPMethod: Equatable, RawRepresentable {
+public struct HTTPMethod: Equatable, RawRepresentable, Sendable {
     public let rawValue: String
     
     public init(rawValue: String) {
@@ -573,7 +573,7 @@ public struct HTTPHeader {
 }
 
 /// HTTPResponseStatus for compatibility
-public struct HTTPResponseStatus {
+public struct HTTPResponseStatus: Sendable {
     public let code: UInt
     public let reasonPhrase: String
     

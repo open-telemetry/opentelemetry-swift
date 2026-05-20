@@ -43,7 +43,7 @@
     tracerProviderSDK?.addSpanProcessor(SignPostIntegration())
   }
 
-  func createSpans() {
+  @MainActor func createSpans() {
     let parentSpan1 = tracer.spanBuilder(spanName: "Main").setSpanKind(spanKind: .client).startSpan()
     parentSpan1.setAttribute(key: sampleKey, value: sampleValue)
     OpenTelemetry.instance.contextProvider.setActiveSpan(parentSpan1)
@@ -64,7 +64,7 @@
     parentSpan1.end()
   }
 
-  func doWork() {
+  @MainActor func doWork() {
     let childSpan = tracer.spanBuilder(spanName: "doWork").setSpanKind(spanKind: .client).startSpan()
     childSpan.setAttribute(key: sampleKey, value: sampleValue)
     Thread.sleep(forTimeInterval: Double.random(in: 0 ..< 10) / 100)
@@ -72,6 +72,9 @@
   }
 
   // Create a Parent span (Main) and do some Work (child Spans). Repeat for another Span.
+  // Top-level code is @MainActor in Swift 6, so this @MainActor helper can be
+  // called directly — a `Task { @MainActor in ... }` here would enqueue on the
+  // main actor but never drain before the metrics loop below hogs the thread.
   createSpans()
 
 // Metrics

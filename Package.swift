@@ -1,4 +1,4 @@
-// swift-tools-version:5.9
+// swift-tools-version:6.0
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import Foundation
@@ -39,8 +39,7 @@ let package = Package(
   targets: [
     .target(
       name: "SharedTestUtils",
-      dependencies: [],
-      path: "Tests/Shared/TestUtils"
+      dependencies: []
     ),
     .target(
       name: "OTelSwiftLog",
@@ -131,8 +130,16 @@ let package = Package(
     ),
     .testTarget(
       name: "OTelSwiftLogTests",
-      dependencies: ["OTelSwiftLog"],
+      dependencies: [
+        "OTelSwiftLog",
+        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+      ],
       path: "Tests/BridgesTests/OTelSwiftLog"
+    ),
+    .testTarget(
+      name: "SharedTestUtilsTests",
+      dependencies: ["SharedTestUtils"],
+      path: "Tests/SharedTestUtilsTests"
     ),
     .testTarget(
       name: "SwiftMetricsShimTests",

@@ -43,6 +43,11 @@ public class PrometheusExporterHttpServer {
   }
 
   private var serverBootstrap: ServerBootstrap {
+    // `childChannelInitializer`'s closure is `@Sendable`, but `self` (the
+    // server) and `PrometheusHTTPHandler` aren't Sendable. Capture the
+    // exporter through a nonisolated(unsafe) alias so the closure doesn't
+    // capture `self`; PrometheusExporter is already lock-protected internally.
+    nonisolated(unsafe) let exporter = self.exporter
     return ServerBootstrap(group: group)
       // Specify backlog and enable SO_REUSEADDR for the server itself
       .serverChannelOption(ChannelOptions.backlog, value: 256)
@@ -51,7 +56,7 @@ public class PrometheusExporterHttpServer {
       .childChannelInitializer { channel in
         // Ensure we don't read faster than we can write by adding the BackPressureHandler into the pipeline.
         channel.pipeline.configureHTTPServerPipeline(withErrorHandling: true).flatMap {
-          channel.pipeline.addHandler(PrometheusHTTPHandler(exporter: self.exporter))
+          channel.pipeline.addHandler(PrometheusHTTPHandler(exporter: exporter))
         }
       }
 
@@ -60,11 +65,13 @@ public class PrometheusExporterHttpServer {
       .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 1)
   }
 
-  private final class PrometheusHTTPHandler: ChannelInboundHandler {
+  private final class PrometheusHTTPHandler: ChannelInboundHandler, @unchecked Sendable {
     public typealias InboundIn = HTTPServerRequestPart
     public typealias OutboundOut = HTTPServerResponsePart
 
-    var exporter: PrometheusExporter
+    // Exporter is set at init and never reassigned; PrometheusExporter's own
+    // state is lock-protected for concurrent `getMetrics()` reads.
+    let exporter: PrometheusExporter
 
     init(exporter: PrometheusExporter) {
       self.exporter = exporter

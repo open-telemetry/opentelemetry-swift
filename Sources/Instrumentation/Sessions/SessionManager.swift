@@ -8,7 +8,7 @@ import Foundation
 /// Manages OpenTelemetry sessions with automatic expiration and persistence.
 /// Provides thread-safe access to session information and handles session lifecycle.
 /// Sessions are automatically extended on access and persisted to UserDefaults.
-public class SessionManager {
+public class SessionManager: @unchecked Sendable {
   private var configuration: SessionConfig
   private var session: Session?
   private let lock = NSLock()

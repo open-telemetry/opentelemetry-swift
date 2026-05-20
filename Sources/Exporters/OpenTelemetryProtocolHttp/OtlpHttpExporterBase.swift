@@ -14,7 +14,7 @@ import OpenTelemetryApi
 @available(*, deprecated, renamed: "OtlpHttpExporterBase")
 public typealias StableOtlpHTTPExporterBase = OtlpHttpExporterBase
 
-public class OtlpHttpExporterBase {
+public class OtlpHttpExporterBase: @unchecked Sendable {
   let endpoint: URL
   let httpClient: HTTPClient
   let envVarHeaders: [(String, String)]?

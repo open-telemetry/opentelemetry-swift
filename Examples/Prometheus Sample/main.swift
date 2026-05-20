@@ -19,12 +19,16 @@ let promOptions = PrometheusExporterOptions(url: "http://\(localAddress):9184/me
 let promExporter = PrometheusExporter(options: promOptions)
 let metricsHttpServer = PrometheusExporterHttpServer(exporter: promExporter)
 
+// Start the server on a background thread so top-level main-actor code can
+// enter the metrics loop below. `Task { @MainActor in ... }` would enqueue to
+// the main actor but never drain because top-level is already main-actor and
+// the `sleep(1)` loop never yields.
+nonisolated(unsafe) let serverRef = metricsHttpServer
 DispatchQueue.global(qos: .default).async {
   do {
-    try metricsHttpServer.start()
+    try serverRef.start()
   } catch {
-    print("Failed staring http server")
-    return
+    print("Failed starting http server")
   }
 }
 
