@@ -128,7 +128,7 @@ public struct OTelTracer: Tracing.Tracer, @unchecked Sendable {
         }
     }
 
-    private static func mapSpanKind(_ kind: Tracing.SpanKind) -> OpenTelemetryApi.SpanKind {
+    static func mapSpanKind(_ kind: Tracing.SpanKind) -> OpenTelemetryApi.SpanKind {
         switch kind {
         case .server:
             return .server
@@ -143,7 +143,7 @@ public struct OTelTracer: Tracing.Tracer, @unchecked Sendable {
         }
     }
 
-    private static func date(from instant: some TracerInstant) -> Date {
+    static func date(from instant: some TracerInstant) -> Date {
         let seconds = Double(instant.nanosecondsSinceEpoch) / 1_000_000_000
         return Date(timeIntervalSince1970: seconds)
     }
@@ -241,7 +241,7 @@ public final class OTelSpan: Tracing.Span, @unchecked Sendable {
         otelSpan.end(time: Self.date(from: instant()))
     }
 
-    private static func convertAttributes(_ attributes: Tracing.SpanAttributes) -> [String:
+    static func convertAttributes(_ attributes: Tracing.SpanAttributes) -> [String:
         AttributeValue]
     {
         var converted: [String: AttributeValue] = [:]
@@ -254,7 +254,7 @@ public final class OTelSpan: Tracing.Span, @unchecked Sendable {
         return converted
     }
 
-    private static func convertAttributeValue(_ value: Tracing.SpanAttribute) -> AttributeValue? {
+    static func convertAttributeValue(_ value: Tracing.SpanAttribute) -> AttributeValue? {
         switch value {
         case .int32(let v):
             return Int(exactly: v).map(AttributeValue.init) ?? .string(String(describing: v))
@@ -291,12 +291,12 @@ public final class OTelSpan: Tracing.Span, @unchecked Sendable {
         }
     }
 
-    private static func date(from instant: some TracerInstant) -> Date {
+    static func date(from instant: some TracerInstant) -> Date {
         let seconds = Double(instant.nanosecondsSinceEpoch) / 1_000_000_000
         return Date(timeIntervalSince1970: seconds)
     }
 
-    private static func date(fromNanosecondsSinceEpoch nanos: UInt64) -> Date {
+    static func date(fromNanosecondsSinceEpoch nanos: UInt64) -> Date {
         let seconds = Double(nanos) / 1_000_000_000
         return Date(timeIntervalSince1970: seconds)
     }
