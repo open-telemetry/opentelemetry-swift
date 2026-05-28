@@ -2,7 +2,7 @@ PROJECT_NAME="opentelemetry-swift-Package"
 
 XCODEBUILD_OPTIONS_IOS=\
 	-configuration Debug \
-	-destination 'platform=iOS Simulator,name=iPhone 16' \
+	-destination 'platform=iOS Simulator,name=iPhone 16,arch=arm64' \
 	-scheme $(PROJECT_NAME) \
 	-test-iterations 5 \
     -retry-tests-on-failure \
