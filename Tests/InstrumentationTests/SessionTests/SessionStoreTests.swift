@@ -11,7 +11,7 @@ final class SessionStoreTests: XCTestCase {
     let sessionId = "test-session-123"
     let expireTime = Date(timeIntervalSinceNow: 1800)
     let startTime = Date(timeIntervalSinceNow: -300)
-    let session = Session(id: sessionId, expireTime: expireTime, previousId: nil, startTime: startTime)
+    let session = Session(id: sessionId, expireTime: expireTime, previousId: nil, startTime: startTime, maxLifetime: 4 * 60 * 60)
 
     SessionStore.scheduleSave(session: session)
     let loadedSession = SessionStore.load()
@@ -21,6 +21,7 @@ final class SessionStoreTests: XCTestCase {
     XCTAssertEqual(loadedSession?.expireTime, expireTime)
     XCTAssertEqual(loadedSession?.startTime, startTime)
     XCTAssertNil(loadedSession?.previousId)
+    XCTAssertEqual(loadedSession?.maxLifetime, 4 * 60 * 60)
   }
 
   func testLoadSessionWhenNothingSaved() {
@@ -68,12 +69,38 @@ final class SessionStoreTests: XCTestCase {
     XCTAssertEqual(loaded2?.id, "session-2")
   }
 
+  func testSaveWithoutMaxLifetimeClearsPreviousMaxLifetime() {
+    let cappedSession = Session(
+      id: "session-1",
+      expireTime: Date(timeIntervalSinceNow: 1800),
+      startTime: Date(),
+      sessionTimeout: 1800,
+      maxLifetime: 4 * 60 * 60
+    )
+    let uncappedSession = Session(
+      id: "session-2",
+      expireTime: Date(timeIntervalSinceNow: 1800),
+      startTime: Date(),
+      sessionTimeout: 1800
+    )
+
+    SessionStore.saveImmediately(session: cappedSession)
+    XCTAssertNotNil(UserDefaults.standard.object(forKey: SessionStore.maxLifetimeKey))
+
+    SessionStore.saveImmediately(session: uncappedSession)
+    let loadedSession = SessionStore.load()
+
+    XCTAssertNil(UserDefaults.standard.object(forKey: SessionStore.maxLifetimeKey))
+    XCTAssertNil(loadedSession?.maxLifetime)
+  }
+
   func testStoreKeys() {
     XCTAssertEqual(SessionStore.idKey, "otel-session-id")
     XCTAssertEqual(SessionStore.expireTimeKey, "otel-session-expire-time")
     XCTAssertEqual(SessionStore.startTimeKey, "otel-session-start-time")
     XCTAssertEqual(SessionStore.previousIdKey, "otel-session-previous-id")
     XCTAssertEqual(SessionStore.sessionTimeoutKey, "otel-session-timeout")
+    XCTAssertEqual(SessionStore.maxLifetimeKey, "otel-session-max-lifetime")
   }
 
 
@@ -102,10 +129,11 @@ final class SessionStoreTests: XCTestCase {
   }
 
   func testTeardownClearsUserDefaults() {
-    let session = Session(id: "test-session", expireTime: Date(timeIntervalSinceNow: 1800), previousId: nil, startTime: Date(), sessionTimeout: 1800)
+    let session = Session(id: "test-session", expireTime: Date(timeIntervalSinceNow: 1800), previousId: nil, startTime: Date(), sessionTimeout: 1800, maxLifetime: 4 * 60 * 60)
     SessionStore.saveImmediately(session: session)
 
     XCTAssertNotNil(UserDefaults.standard.string(forKey: SessionStore.idKey))
+    XCTAssertNotNil(UserDefaults.standard.object(forKey: SessionStore.maxLifetimeKey))
 
     SessionStore.teardown()
 
@@ -114,6 +142,7 @@ final class SessionStoreTests: XCTestCase {
     XCTAssertNil(UserDefaults.standard.object(forKey: SessionStore.startTimeKey))
     XCTAssertNil(UserDefaults.standard.string(forKey: SessionStore.previousIdKey))
     XCTAssertNil(UserDefaults.standard.object(forKey: SessionStore.sessionTimeoutKey))
+    XCTAssertNil(UserDefaults.standard.object(forKey: SessionStore.maxLifetimeKey))
   }
 
   func testTeardownInvalidatesTimer() {

@@ -34,6 +34,8 @@ public struct Session: Equatable, Sendable {
   public let startTime: Date
   /// The duration in seconds after which this session expires if inactive
   public let sessionTimeout: TimeInterval
+  /// The maximum duration in seconds this session can remain active, regardless of activity
+  public let maxLifetime: TimeInterval?
 
   /// Creates a new session
   /// - Parameters:
@@ -42,16 +44,19 @@ public struct Session: Equatable, Sendable {
   ///   - previousId: Unique identifier of the user's previous session, if any
   ///   - startTime: Start time of the session, defaults to current time
   ///   - sessionTimeout: Duration in seconds after which the session expires if inactive
+  ///   - maxLifetime: Maximum duration in seconds the session can remain active, regardless of activity
   public init(id: String,
               expireTime: Date,
               previousId: String? = nil,
               startTime: Date = Date(),
-              sessionTimeout: TimeInterval = SessionConfig.default.sessionTimeout) {
+              sessionTimeout: TimeInterval = SessionConfig.default.sessionTimeout,
+              maxLifetime: TimeInterval? = SessionConfig.default.maxLifetime) {
     self.id = id
     self.expireTime = expireTime
     self.previousId = previousId
     self.startTime = startTime
     self.sessionTimeout = sessionTimeout
+    self.maxLifetime = maxLifetime
   }
 
   /// Two sessions are considered equal if they have the same ID, prevID, startTime, and expiry timestamp
@@ -60,13 +65,14 @@ public struct Session: Equatable, Sendable {
       lhs.id == rhs.id &&
       lhs.previousId == rhs.previousId &&
       lhs.startTime == rhs.startTime &&
-      lhs.sessionTimeout == rhs.sessionTimeout
+      lhs.sessionTimeout == rhs.sessionTimeout &&
+      lhs.maxLifetime == rhs.maxLifetime
   }
 
   /// Checks if the session has expired
-  /// - Returns: True if the current time is past the session's expireTime time
+  /// - Returns: True if the current time is past the session's inactivity expiry or maximum lifetime
   public func isExpired() -> Bool {
-    return expireTime <= Date()
+    return expirationTime <= Date()
   }
 
   /// The time when the session ended (only available for expired sessions).
@@ -76,6 +82,9 @@ public struct Session: Equatable, Sendable {
   /// - Returns: The session end time, or nil if the session is still active
   public var endTime: Date? {
     guard isExpired() else { return nil }
+    if let maxLifetimeExpirationTime, maxLifetimeExpirationTime <= expireTime {
+      return maxLifetimeExpirationTime
+    }
     return expireTime.addingTimeInterval(-Double(sessionTimeout))
   }
 
@@ -86,5 +95,19 @@ public struct Session: Equatable, Sendable {
   public var duration: TimeInterval? {
     guard let endTime else { return nil }
     return endTime.timeIntervalSince(startTime)
+  }
+
+  private var expirationTime: Date {
+    guard let maxLifetimeExpirationTime else {
+      return expireTime
+    }
+    return min(expireTime, maxLifetimeExpirationTime)
+  }
+
+  private var maxLifetimeExpirationTime: Date? {
+    guard let maxLifetime else {
+      return nil
+    }
+    return startTime.addingTimeInterval(maxLifetime)
   }
 }

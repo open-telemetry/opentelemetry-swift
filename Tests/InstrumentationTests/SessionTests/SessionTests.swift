@@ -49,6 +49,43 @@ final class SessionTests: XCTestCase {
     XCTAssertTrue(session.isExpired(), "Session with past expireTime should be expired")
   }
 
+  func testSessionExpiredByMaxLifetime() {
+    let startTime = Date(timeIntervalSinceNow: -4 * 60 * 60)
+    let inactivityExpiry = Date(timeIntervalSinceNow: 60 * 60)
+    let session = Session(
+      id: "test-id",
+      expireTime: inactivityExpiry,
+      startTime: startTime,
+      sessionTimeout: 60 * 60,
+      maxLifetime: 4 * 60 * 60
+    )
+
+    XCTAssertTrue(session.isExpired(), "Session should expire when maxLifetime is reached")
+    XCTAssertNotNil(session.endTime)
+    XCTAssertNotNil(session.duration)
+    XCTAssertEqual(session.endTime?.timeIntervalSince1970 ?? 0, startTime.addingTimeInterval(4 * 60 * 60).timeIntervalSince1970, accuracy: 1.0)
+    XCTAssertEqual(session.duration ?? 0, 4 * 60 * 60, accuracy: 1.0)
+  }
+
+  func testSessionExpiredByInactivityBeforeMaxLifetime() {
+    let startTime = Date(timeIntervalSinceNow: -2 * 60 * 60)
+    let sessionTimeout: TimeInterval = 60 * 60
+    let expectedEndTime = Date(timeIntervalSinceNow: -90 * 60)
+    let session = Session(
+      id: "test-id",
+      expireTime: expectedEndTime.addingTimeInterval(sessionTimeout),
+      startTime: startTime,
+      sessionTimeout: sessionTimeout,
+      maxLifetime: 4 * 60 * 60
+    )
+
+    XCTAssertTrue(session.isExpired(), "Session should expire when inactivity timeout is reached before maxLifetime")
+    XCTAssertNotNil(session.endTime)
+    XCTAssertNotNil(session.duration)
+    XCTAssertEqual(session.endTime?.timeIntervalSince1970 ?? 0, expectedEndTime.timeIntervalSince1970, accuracy: 1.0)
+    XCTAssertEqual(session.duration ?? 0, expectedEndTime.timeIntervalSince(startTime), accuracy: 1.0)
+  }
+
   func testSessionExpiryAtExactTime() {
     let currentTime = Date()
     let session = Session(id: "test-id", expireTime: currentTime)

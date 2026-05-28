@@ -11,13 +11,14 @@ import Foundation
 public class SessionManager: @unchecked Sendable {
   private var configuration: SessionConfig
   private var session: Session?
+  private var persistedPreviousSession: Session?
   private let lock = NSLock()
 
   /// Initializes the session manager and restores any previous session from disk
   /// - Parameter configuration: Session configuration settings
   public init(configuration: SessionConfig = .default) {
     self.configuration = configuration
-    restoreSessionFromDisk()
+    loadPersistedSessionFromDisk()
   }
 
   /// Gets the current session, creating or extending it as needed
@@ -26,7 +27,7 @@ public class SessionManager: @unchecked Sendable {
   @discardableResult
   public func getSession() -> Session {
     let (currentSession,
-         previousSession,
+         previousSessionToEnd,
          sessionDidExpire) = lock.withLock {
       if let session,
          !session.isExpired() {
@@ -36,17 +37,18 @@ public class SessionManager: @unchecked Sendable {
         return (extendedSession, nil as Session?, false)
       } else {
         // start new session
-        let prev = session
+        let prev = session ?? persistedPreviousSession
         let nextSession = locked_startSession()
         self.session = nextSession
+        self.persistedPreviousSession = nil
         return (nextSession, prev, true)
       }
     }
 
     // Call external code outside the lock only if new session was created
     if sessionDidExpire {
-      if let previousSession {
-        SessionEventInstrumentation.addSession(session: previousSession, eventType: .end)
+      if let previousSessionToEnd {
+        SessionEventInstrumentation.addSession(session: previousSessionToEnd, eventType: .end)
       }
       SessionEventInstrumentation.addSession(session: currentSession, eventType: .start)
       NotificationCenter.default.post(name: SessionEventNotification, object: currentSession)
@@ -70,9 +72,35 @@ public class SessionManager: @unchecked Sendable {
     return Session(
       id: UUID().uuidString,
       expireTime: now.addingTimeInterval(Double(configuration.sessionTimeout)),
-      previousId: session?.id,
+      previousId: session?.id ?? persistedPreviousSession?.id,
       startTime: now,
-      sessionTimeout: configuration.sessionTimeout
+      sessionTimeout: configuration.sessionTimeout,
+      maxLifetime: configuration.maxLifetime
+    )
+  }
+
+  /// Ends a restored historical session at its last known activity, capped at restore time
+  private func endPersistedPreviousSession(_ session: Session) -> Session {
+    guard !session.isExpired() else {
+      return session
+    }
+
+    let now = Date()
+    var inferredEndTime = session.expireTime.addingTimeInterval(-session.sessionTimeout)
+    if inferredEndTime < session.startTime {
+      inferredEndTime = session.startTime
+    }
+    if inferredEndTime > now {
+      inferredEndTime = now
+    }
+    return Session(
+      id: session.id,
+      expireTime: inferredEndTime,
+      previousId: session.previousId,
+      startTime: session.startTime,
+      // Pin `endTime` to `inferredEndTime`; `Session.endTime` subtracts `sessionTimeout`.
+      sessionTimeout: 0,
+      maxLifetime: nil
     )
   }
 
@@ -84,15 +112,20 @@ public class SessionManager: @unchecked Sendable {
       expireTime: Date(timeIntervalSinceNow: Double(configuration.sessionTimeout)),
       previousId: session.previousId,
       startTime: session.startTime,
-      sessionTimeout: configuration.sessionTimeout
+      sessionTimeout: configuration.sessionTimeout,
+      maxLifetime: session.maxLifetime
     )
   }
 
-  /// Restores a previously saved session from UserDefaults
-  private func restoreSessionFromDisk() {
+  /// Loads a saved session from UserDefaults according to the configured restore behavior
+  private func loadPersistedSessionFromDisk() {
     let loadedSession = SessionStore.load()
     lock.withLock {
-      session = loadedSession
+      if configuration.restorePersistedSession {
+        session = loadedSession
+      } else {
+        persistedPreviousSession = loadedSession.map { endPersistedPreviousSession($0) }
+      }
     }
   }
 }

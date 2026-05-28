@@ -18,6 +18,8 @@ internal final class SessionStore {
   static let startTimeKey = "otel-session-start-time"
   /// UserDefaults key for storing session timeout
   static let sessionTimeoutKey = "otel-session-timeout"
+  /// UserDefaults key for storing session maximum lifetime
+  static let maxLifetimeKey = "otel-session-max-lifetime"
 
   /// To avoid writing to disk too often, SessionStore only keeps the current session
   /// in memory and saves to disk on an interval (every 30 seconds).
@@ -81,6 +83,11 @@ internal final class SessionStore {
     UserDefaults.standard.set(session.startTime, forKey: startTimeKey)
     UserDefaults.standard.set(session.previousId, forKey: previousIdKey)
     UserDefaults.standard.set(session.sessionTimeout, forKey: sessionTimeoutKey)
+    if let maxLifetime = session.maxLifetime {
+      UserDefaults.standard.set(maxLifetime, forKey: maxLifetimeKey)
+    } else {
+      UserDefaults.standard.removeObject(forKey: maxLifetimeKey)
+    }
 
     lock.withLock {
       // update prev session
@@ -102,13 +109,15 @@ internal final class SessionStore {
     }
 
     let previousId = UserDefaults.standard.string(forKey: previousIdKey)
+    let maxLifetime = UserDefaults.standard.object(forKey: maxLifetimeKey) as? TimeInterval
 
     let session = Session(
       id: id,
       expireTime: expireTime,
       previousId: previousId,
       startTime: startTime,
-      sessionTimeout: sessionTimeout
+      sessionTimeout: sessionTimeout,
+      maxLifetime: maxLifetime
     )
     lock.withLock {
       // reset sessions so it does not get overridden in the next scheduled save
@@ -133,5 +142,6 @@ internal final class SessionStore {
     UserDefaults.standard.removeObject(forKey: expireTimeKey)
     UserDefaults.standard.removeObject(forKey: previousIdKey)
     UserDefaults.standard.removeObject(forKey: sessionTimeoutKey)
+    UserDefaults.standard.removeObject(forKey: maxLifetimeKey)
   }
 }
