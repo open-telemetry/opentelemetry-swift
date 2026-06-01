@@ -139,7 +139,6 @@ For more information about the maintainer role, see the [community repository](h
 
 ### Approvers
 
-- [Vinod Vydier](https://github.com/vvydier), Independent
 
 For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).
 
@@ -153,6 +152,7 @@ For more information about the triager role, see the [community repository](http
 ### Emeritus
 
 - [Austin Treat Emmons](https://github.com/atreat), Triager
+- [Vinod Vydier](https://github.com/vvydier), Approver
 
 For more information about the emeritus role, see the
 [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#emeritus-maintainerapprovertriager).
