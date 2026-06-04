@@ -56,49 +56,11 @@ jobs:
   
   cocoapods:
     name: Publish to CocoaPods
+    if: >
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'release/')
     needs: tag
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Publish to CocoaPods trunk
-        env: 
-          COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
-        run: |
-          VERSION="${{ needs.tag.outputs.version }}"
-          failed_pods=()
-          
-          # Define all pods to publish
-          pods=(
-            "OpenTelemetry-Swift-BaggagePropagationProcessor"
-            "OpenTelemetry-Swift-Instrumentation-NetworkStatus"
-            "OpenTelemetry-Swift-Instrumentation-URLSession"
-            "OpenTelemetry-Swift-SdkResourceExtension"
-            "OpenTelemetry-Swift-Protocol-Exporter-Common"
-            "OpenTelemetry-Swift-Protocol-Exporter-Http"
-            "OpenTelemetry-Swift-PersistenceExporter"
-          )
-          
-          # Process each pod
-          for pod_name in "${pods[@]}"; do
-            echo "Processing $pod_name..."
-            
-            if pod trunk info "$pod_name" 2>&1 | grep -F " - ${VERSION} (" >/dev/null; then
-              echo "::warning::$pod_name '${VERSION}' already exists on CocoaPods. Skipping."
-            else
-              if ! pod trunk push "${pod_name}.podspec" --allow-warnings --synchronous; then
-                echo "::error::Failed to push $pod_name"
-                failed_pods+=("$pod_name")
-              else
-                echo "Successfully pushed $pod_name"
-              fi
-            fi
-          done
-          
-          # Report results
-          if [ ${#failed_pods[@]} -gt 0 ]; then
-            echo "::error::The following pods failed to publish: ${failed_pods[*]}"
-            exit 1
-          else
-            echo "All pods published successfully!"
-          fi
-        
+    uses: ./.github/workflows/Push-CocoaPods.yml
+    with:
+      version: ${{ needs.tag.outputs.version }}
+    secrets: inherit
