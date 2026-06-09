@@ -78,6 +78,20 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
+  class EmptyTaskDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {}
+
+  final class InheritedEmptyTaskDelegate: EmptyTaskDelegate, @unchecked Sendable {}
+
+  final class NotURLSessionDelegate: NSObject, @unchecked Sendable {
+    @objc
+    func urlSession(_ session: URLSession,
+                    dataTask: URLSessionDataTask,
+                    didReceive response: URLResponse,
+                    completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+      completionHandler(.allow)
+    }
+  }
+
   nonisolated(unsafe) static var requestCopy: URLRequest!
   nonisolated(unsafe) static var responseCopy: HTTPURLResponse!
 
@@ -1027,6 +1041,24 @@ class URLSessionInstrumentationTests: XCTestCase {
       "Instrumentation should add missing completion callback implementation"
     )
     XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled, "Instrumentation should capture the response")
+  }
+
+  public func testDelegateDiscoveryRequiresURLSessionTaskDelegateConformance() {
+    let inheritedDelegate = InheritedEmptyTaskDelegate()
+    let nonDelegate = NotURLSessionDelegate()
+
+    XCTAssertTrue(
+      inheritedDelegate.responds(to: #selector(URLSessionTaskDelegate.urlSession(_:task:didCompleteWithError:))),
+      "Instrumentation should add missing methods to URLSessionTaskDelegate subtypes"
+    )
+    XCTAssertTrue(
+      nonDelegate.responds(to: #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:completionHandler:))),
+      "NotURLSessionDelegate responds to selector"
+    )
+    XCTAssertFalse(
+      nonDelegate.responds(to: #selector(URLSessionTaskDelegate.urlSession(_:task:didCompleteWithError:))),
+      "Instrumentation should ignore classes that are not URLSessionTaskDelegate types"
+    )
   }
 
   public func testOldSemanticConvention() {

@@ -71,59 +71,19 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
   }
 
   private func injectInNSURLClasses() {
-    let selectors = [
-      #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:)),
-      #selector(
-        URLSessionDataDelegate.urlSession(
-          _:dataTask:didReceive:completionHandler:)),
-      #selector(
-        URLSessionDataDelegate.urlSession(_:task:didCompleteWithError:)),
-      #selector(
-        URLSessionDataDelegate.urlSession(_:dataTask:didBecome:)
-          as (URLSessionDataDelegate) -> (
-            (URLSession, URLSessionDataTask, URLSessionDownloadTask) -> Void
-          )?),
-      #selector(
-        URLSessionDataDelegate.urlSession(_:dataTask:didBecome:)
-          as (URLSessionDataDelegate) -> (
-            (URLSession, URLSessionDataTask, URLSessionStreamTask) -> Void
-          )?),
-      #selector(
-        URLSessionTaskDelegate.urlSession(_:task:didFinishCollecting:))
-    ]
     let classes =
       configuration.delegateClassesToInstrument
         ?? InstrumentationUtils.objc_getClassList()
-    let selectorsCount = selectors.count
     DispatchQueue.concurrentPerform(iterations: classes.count) { iteration in
       let theClass: AnyClass = classes[iteration]
-      guard theClass != Self.self else { return }
-      var selectorFound = false
-      var methodCount: UInt32 = 0
-      guard let methodList = class_copyMethodList(theClass, &methodCount) else {
+      guard theClass != Self.self,
+            !Self.excludeList.contains(NSStringFromClass(theClass)),
+            Self.conformsToURLSessionTaskDelegate(theClass)
+      else {
         return
       }
-      defer { free(methodList) }
 
-      var foundClasses: [AnyClass] = []
-      for j in 0 ..< selectorsCount {
-        for i in 0 ..< Int(methodCount)
-          where method_getName(methodList[i]) == selectors[j] {
-          selectorFound = true
-          foundClasses.append(theClass)
-        }
-        if selectorFound {
-          break
-        }
-      }
-
-      foundClasses.removeAll { cls in
-        Self.excludeList.contains(NSStringFromClass(cls))
-      }
-
-      foundClasses.forEach { cls in
-        injectIntoDelegateClass(cls: cls)
-      }
+      injectIntoDelegateClass(cls: theClass)
     }
 
     if #available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
@@ -133,6 +93,17 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     injectIntoNSURLSessionAsyncDataAndDownloadTaskMethods()
     injectIntoNSURLSessionAsyncUploadTaskMethods()
     injectIntoNSURLSessionTaskResume()
+  }
+
+  private static func conformsToURLSessionTaskDelegate(_ cls: AnyClass) -> Bool {
+    var currentClass: AnyClass? = cls
+    while let candidate = currentClass {
+      if class_conformsToProtocol(candidate, URLSessionTaskDelegate.self) {
+        return true
+      }
+      currentClass = class_getSuperclass(candidate)
+    }
+    return false
   }
 
   private func injectIntoDelegateClass(cls: AnyClass) {
