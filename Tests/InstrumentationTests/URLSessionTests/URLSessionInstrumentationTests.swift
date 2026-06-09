@@ -64,6 +64,20 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
+  final class ResponseOnlyDataDelegate: NSObject, URLSessionDataDelegate, @unchecked Sendable {
+    var didReceiveResponseCalled = false
+    var statusCode: Int?
+
+    func urlSession(_ session: URLSession,
+                    dataTask: URLSessionDataTask,
+                    didReceive response: URLResponse,
+                    completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+      didReceiveResponseCalled = true
+      statusCode = (response as? HTTPURLResponse)?.statusCode
+      completionHandler(.allow)
+    }
+  }
+
   nonisolated(unsafe) static var requestCopy: URLRequest!
   nonisolated(unsafe) static var responseCopy: HTTPURLResponse!
 
@@ -987,6 +1001,31 @@ class URLSessionInstrumentationTests: XCTestCase {
 
     // Verify instrumentation worked (span was created and completed)
     XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled, "Instrumentation should capture the request")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled, "Instrumentation should capture the response")
+  }
+
+  public func testDelegateMissingCompletionCallbackReceivesInjectedImplementation() {
+    let request = URLRequest(url: URL(string: "http://localhost:33333/success")!)
+
+    let delegate = ResponseOnlyDataDelegate()
+    let session = URLSession(configuration: URLSessionConfiguration.default, delegate: delegate, delegateQueue: nil)
+
+    let task = session.dataTask(with: request)
+    task.resume()
+
+    wait(timeout: 5) {
+      delegate.didReceiveResponseCalled
+    }
+    wait(timeout: 5) {
+      URLSessionInstrumentationTests.instrumentation.startedRequestSpans.isEmpty
+    }
+
+    XCTAssertEqual(delegate.statusCode, 200, "Request should succeed")
+    XCTAssertTrue(delegate.didReceiveResponseCalled, "Delegate should receive response callback")
+    XCTAssertTrue(
+      delegate.responds(to: #selector(URLSessionTaskDelegate.urlSession(_:task:didCompleteWithError:))),
+      "Instrumentation should add missing completion callback implementation"
+    )
     XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled, "Instrumentation should capture the response")
   }
 
