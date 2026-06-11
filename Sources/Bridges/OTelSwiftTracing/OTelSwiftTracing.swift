@@ -51,7 +51,7 @@ public struct OTelTracer: Tracing.Tracer, @unchecked Sendable {
     ) -> OTelSpan {
         let parentContext = context()
         let spanBuilder = tracer.spanBuilder(spanName: operationName)
-            .setActive(false)
+            .setActive(true)
             .setSpanKind(spanKind: Self.mapSpanKind(kind))
             .setStartTime(time: Self.date(from: instant()))
 
