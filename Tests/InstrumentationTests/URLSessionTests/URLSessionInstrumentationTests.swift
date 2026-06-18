@@ -1043,21 +1043,41 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled, "Instrumentation should capture the response")
   }
 
-  public func testDelegateDiscoveryRequiresURLSessionTaskDelegateConformance() {
+  public func testDelegateDiscoveryUsesURLSessionSelectors() {
     let inheritedDelegate = InheritedEmptyTaskDelegate()
     let nonDelegate = NotURLSessionDelegate()
 
-    XCTAssertTrue(
+    XCTAssertFalse(
       inheritedDelegate.responds(to: #selector(URLSessionTaskDelegate.urlSession(_:task:didCompleteWithError:))),
-      "Instrumentation should add missing methods to URLSessionTaskDelegate subtypes"
+      "Selector-based discovery should not instrument classes without a matching selector"
     )
     XCTAssertTrue(
       nonDelegate.responds(to: #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:completionHandler:))),
       "NotURLSessionDelegate responds to selector"
     )
-    XCTAssertFalse(
+    XCTAssertTrue(
       nonDelegate.responds(to: #selector(URLSessionTaskDelegate.urlSession(_:task:didCompleteWithError:))),
-      "Instrumentation should ignore classes that are not URLSessionTaskDelegate types"
+      "Selector-based discovery should add missing methods to classes with matching selectors"
+    )
+  }
+
+  public func testExplicitDelegateClassesBypassSelectorDiscovery() {
+    let inheritedDelegateBeforeInstrumentation = InheritedEmptyTaskDelegate()
+    XCTAssertFalse(
+      inheritedDelegateBeforeInstrumentation.responds(to: #selector(URLSessionTaskDelegate.urlSession(_:task:didCompleteWithError:))),
+      "Auto-discovery should not instrument classes without a matching selector"
+    )
+
+    _ = URLSessionInstrumentation(
+      configuration: URLSessionInstrumentationConfiguration(
+        delegateClassesToInstrument: [InheritedEmptyTaskDelegate.self]
+      )
+    )
+
+    let inheritedDelegateAfterInstrumentation = InheritedEmptyTaskDelegate()
+    XCTAssertTrue(
+      inheritedDelegateAfterInstrumentation.responds(to: #selector(URLSessionTaskDelegate.urlSession(_:task:didCompleteWithError:))),
+      "Explicit delegate classes should be instrumented without selector discovery"
     )
   }
 
