@@ -216,7 +216,7 @@ class OtlpHttpMetricsExporterTest: XCTestCase {
   }
 }
 
-public class CustomDefaultAggregationSelector: DefaultAggregationSelector {
+public final class CustomDefaultAggregationSelector: DefaultAggregationSelector {
   public func getDefaultAggregation(for instrument: OpenTelemetrySdk.InstrumentType) -> OpenTelemetrySdk.Aggregation {
     switch instrument {
     case .counter, .histogram:

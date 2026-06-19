@@ -11,7 +11,7 @@ import XCTest
 final class PersistenceLogExporterDecoratorCoverageTests: XCTestCase {
   @UniqueTemporaryDirectory private var temporaryDirectory: Directory
 
-  final class LogExporterMock: LogRecordExporter {
+  final class LogExporterMock: LogRecordExporter, @unchecked Sendable {
     let onExport: ([ReadableLogRecord]) -> ExportResult
     var shutdownCalled = false
     var flushCalled = false

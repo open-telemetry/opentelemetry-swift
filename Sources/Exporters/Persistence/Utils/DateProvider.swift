@@ -6,7 +6,7 @@
 import Foundation
 
 /// Interface for date provider used for files orchestration.
-protocol DateProvider {
+protocol DateProvider: Sendable {
   func currentDate() -> Date
 }
 

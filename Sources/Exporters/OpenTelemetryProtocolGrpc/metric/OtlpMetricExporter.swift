@@ -11,17 +11,17 @@ import NIOHPACK
 import OpenTelemetryProtocolExporterCommon
 import OpenTelemetrySdk
 
-public class OtlpMetricExporter: MetricExporter {
+public final class OtlpMetricExporter: MetricExporter {
   public func getAggregationTemporality(for instrument: OpenTelemetrySdk.InstrumentType) -> OpenTelemetrySdk.AggregationTemporality {
     return aggregationTemporalitySelector.getAggregationTemporality(for: instrument)
   }
 
   let channel: GRPCChannel
-  var metricClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient
+  let metricClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient
   let config: OtlpConfiguration
-  var callOptions: CallOptions?
-  var aggregationTemporalitySelector: AggregationTemporalitySelector
-  var defaultAggregationSelector: DefaultAggregationSelector
+  let callOptions: CallOptions?
+  let aggregationTemporalitySelector: AggregationTemporalitySelector
+  let defaultAggregationSelector: DefaultAggregationSelector
 
   public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration(), aggregationTemporalitySelector: AggregationTemporalitySelector = AggregationTemporality.alwaysCumulative(),
               defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector.instance,
@@ -44,10 +44,16 @@ public class OtlpMetricExporter: MetricExporter {
     let exportRequest = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
       $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(metricData: metrics)
     }
+    var perCallOptions = callOptions
     if config.timeout > 0 {
-      metricClient.defaultCallOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(config.timeout.toNanoseconds)))
+      if var options = perCallOptions {
+        options.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(config.timeout.toNanoseconds)))
+        perCallOptions = options
+      } else {
+        perCallOptions = CallOptions(timeLimit: .timeout(TimeAmount.nanoseconds(Int64(config.timeout.toNanoseconds))))
+      }
     }
-    let export = metricClient.export(exportRequest, callOptions: callOptions)
+    let export = metricClient.export(exportRequest, callOptions: perCallOptions)
     do {
       _ = try export.response.wait()
       return .success
