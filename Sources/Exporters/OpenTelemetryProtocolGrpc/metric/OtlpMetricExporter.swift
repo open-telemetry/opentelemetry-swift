@@ -44,16 +44,11 @@ public final class OtlpMetricExporter: MetricExporter {
     let exportRequest = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
       $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(metricData: metrics)
     }
-    var perCallOptions = callOptions
+    var metricClient = self.metricClient
     if config.timeout > 0 {
-      if var options = perCallOptions {
-        options.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(config.timeout.toNanoseconds)))
-        perCallOptions = options
-      } else {
-        perCallOptions = CallOptions(timeLimit: .timeout(TimeAmount.nanoseconds(Int64(config.timeout.toNanoseconds))))
-      }
+        metricClient.defaultCallOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(config.timeout.toNanoseconds)))
     }
-    let export = metricClient.export(exportRequest, callOptions: perCallOptions)
+    let export = metricClient.export(exportRequest, callOptions: callOptions)
     do {
       _ = try export.response.wait()
       return .success
