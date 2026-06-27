@@ -19,7 +19,7 @@ services:
   # Zipkin
   zipkin-all-in-one:
     platform: linux/amd64
-    image: openzipkin/zipkin:latest@sha256:d17e856dcbba7ffeefbbfc252f89ab78a4ab6faed47e646d46daad78f91b5ee2
+    image: openzipkin/zipkin:3.6.1@sha256:d17e856dcbba7ffeefbbfc252f89ab78a4ab6faed47e646d46daad78f91b5ee2
     ports:
       - "9411:9411"
 
@@ -27,7 +27,7 @@ services:
   prometheus:
     platform: linux/amd64
     container_name: prometheus
-    image: prom/prometheus:latest@sha256:69f5241418838263316593f7274a304b095c40bcf22e57272865da91bd60a8ac
+    image: prom/prometheus:3.12.0@sha256:69f5241418838263316593f7274a304b095c40bcf22e57272865da91bd60a8ac
     volumes:
       - ./prometheus.yaml:/etc/prometheus/prometheus.yml
     ports:
