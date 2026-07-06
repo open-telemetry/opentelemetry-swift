@@ -12,11 +12,11 @@ import OpenTelemetryApi
 import OpenTelemetryProtocolExporterCommon
 import OpenTelemetrySdk
 
-public class OtlpLogExporter: LogRecordExporter {
+public final class OtlpLogExporter: LogRecordExporter {
   let channel: GRPCChannel
-  var logClient: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceNIOClient
+  let logClient: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceNIOClient
   let config: OtlpConfiguration
-  var callOptions: CallOptions
+  let callOptions: CallOptions
 
   public init(channel: GRPCChannel,
               config: OtlpConfiguration = OtlpConfiguration(),
@@ -46,6 +46,7 @@ public class OtlpLogExporter: LogRecordExporter {
       request.resourceLogs = LogRecordAdapter.toProtoResourceRecordLog(logRecordList: logRecords)
     }
     let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+    var callOptions = callOptions
     if timeout > 0 {
       callOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(timeout.toNanoseconds)))
     }

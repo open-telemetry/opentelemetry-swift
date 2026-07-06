@@ -103,4 +103,12 @@ class LoggingSpan: Span {
   public func end(time: Date) {
     Logger.log("Span.End, Name: \(name), time:\(time)) }")
   }
+    
+  public func addLink(spanContext: SpanContext) {
+    Logger.log("Span.addEvent(\(name))")
+  }
+  
+  public func addLink(spanContext: SpanContext, attributes: [String : AttributeValue]) {
+    Logger.log("Span.addEvent(\(name), attributes:\(attributes) )")
+  }
 }

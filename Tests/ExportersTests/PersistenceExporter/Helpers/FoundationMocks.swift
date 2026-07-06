@@ -90,7 +90,7 @@ struct ErrorMock: Error, CustomStringConvertible {
   }
 }
 
-struct FailingCodableMock: Codable {
+struct FailingCodableMock: Codable, Sendable {
   init() {}
 
   init(from decoder: Decoder) throws {

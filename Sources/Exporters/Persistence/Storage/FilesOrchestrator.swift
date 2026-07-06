@@ -4,19 +4,24 @@
  */
 
 import Foundation
+import OpenTelemetrySdk
 
-class FilesOrchestrator {
+final class FilesOrchestrator: Sendable {
+  private struct WritableState: Sendable {
+    /// Name of the last file returned by `getWritableFile()`.
+    var lastWritableFileName: String?
+    /// Tracks number of times the file at `lastWritableFileURL` was returned from `getWritableFile()`.
+    /// This should correspond with number of objects stored in file, assuming that majority of writes succeed (the difference is negligible).
+    var lastWritableFileUsesCount: Int = 0
+  }
+
   /// Directory where files are stored.
   private let directory: Directory
   /// Date provider.
   private let dateProvider: DateProvider
   /// Performance rules for writing and reading files.
   private let performance: StoragePerformancePreset
-  /// Name of the last file returned by `getWritableFile()`.
-  private var lastWritableFileName: String?
-  /// Tracks number of times the file at `lastWritableFileURL` was returned from `getWritableFile()`.
-  /// This should correspond with number of objects stored in file, assuming that majority of writes succeed (the difference is negligible).
-  private var lastWritableFileUsesCount: Int = 0
+  private let lastWritableState = Locked(initialValue: WritableState())
 
   init(directory: Directory,
        performance: StoragePerformancePreset,
@@ -33,10 +38,11 @@ class FilesOrchestrator {
       throw StorageError.dataExceedsMaxSizeError(dataSize: writeSize, maxSize: performance.maxObjectSize)
     }
 
-    let lastWritableFileOrNil = reuseLastWritableFileIfPossible(writeSize: writeSize)
+    let lastWritableFileOrNil = lastWritableState.locking { state in
+      reuseLastWritableFileIfPossible(writeSize: writeSize, state: &state)
+    }
 
     if let lastWritableFile = lastWritableFileOrNil { // if last writable file can be reused
-      lastWritableFileUsesCount += 1
       return lastWritableFile
     } else {
       // NOTE: As purging files directory is a memory-expensive operation, do it only when we know
@@ -47,14 +53,17 @@ class FilesOrchestrator {
 
       let newFileName = fileNameFrom(fileCreationDate: dateProvider.currentDate())
       let newFile = try directory.createFile(named: newFileName)
-      lastWritableFileName = newFile.name
-      lastWritableFileUsesCount = 1
+      lastWritableState.locking { state in
+        state.lastWritableFileName = newFile.name
+        state.lastWritableFileUsesCount = 1
+      }
       return newFile
     }
   }
 
-  private func reuseLastWritableFileIfPossible(writeSize: UInt64) -> WritableFile? {
-    if let lastFileName = lastWritableFileName {
+  private func reuseLastWritableFileIfPossible(writeSize: UInt64,
+                                               state: inout WritableState) -> WritableFile? {
+    if let lastFileName = state.lastWritableFileName {
       do {
         guard let lastFile = directory.file(named: lastFileName) else {
           return nil
@@ -64,9 +73,10 @@ class FilesOrchestrator {
 
         let fileIsRecentEnough = lastFileAge <= performance.maxFileAgeForWrite
         let fileHasRoomForMore = try (lastFile.size() + writeSize) <= performance.maxFileSize
-        let fileCanBeUsedMoreTimes = (lastWritableFileUsesCount + 1) <= performance.maxObjectsInFile
+        let fileCanBeUsedMoreTimes = (state.lastWritableFileUsesCount + 1) <= performance.maxObjectsInFile
 
         if fileIsRecentEnough, fileHasRoomForMore, fileCanBeUsedMoreTimes {
+          state.lastWritableFileUsesCount += 1
           return lastFile
         }
       } catch {

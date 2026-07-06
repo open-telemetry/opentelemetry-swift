@@ -9,7 +9,7 @@
 @testable import SwiftMetricsShim
 import XCTest
 
-class MetricExporterMock: MetricExporter {
+final class MetricExporterMock: MetricExporter, @unchecked Sendable {
   func flush() -> OpenTelemetrySdk.ExportResult {
     .success
   }

@@ -7,8 +7,8 @@ import Foundation
 import NIOConcurrencyHelpers
 import OpenTelemetrySdk
 
-public class PrometheusExporter: MetricExporter {
-  var aggregationTemporalitySelector: AggregationTemporalitySelector
+public final class PrometheusExporter: MetricExporter {
+  let aggregationTemporalitySelector: AggregationTemporalitySelector
 
   public func getAggregationTemporality(for instrument: OpenTelemetrySdk.InstrumentType) -> OpenTelemetrySdk.AggregationTemporality {
     return aggregationTemporalitySelector.getAggregationTemporality(for: instrument)
@@ -26,7 +26,9 @@ public class PrometheusExporter: MetricExporter {
 
   fileprivate let metricsLock = NIOLock()
   let options: PrometheusExporterOptions
-  private var metrics = [MetricData]()
+  
+  // nonisolated(unsafe) but protected by metricsLock
+  private nonisolated(unsafe) var metrics = [MetricData]()
 
   public init(options: PrometheusExporterOptions, aggregationTemoralitySelector: AggregationTemporalitySelector = AggregationTemporality.alwaysCumulative()) {
     self.options = options
@@ -49,7 +51,7 @@ public class PrometheusExporter: MetricExporter {
   }
 }
 
-public struct PrometheusExporterOptions {
+public struct PrometheusExporterOptions: Sendable {
   var url: String
 
   public init(url: String) {

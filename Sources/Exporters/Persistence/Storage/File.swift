@@ -6,7 +6,7 @@
 import Foundation
 
 /// Provides convenient interface for reading metadata and appending data to the file.
-protocol WritableFile {
+protocol WritableFile: Sendable {
   /// Name of this file.
   var name: String { get }
 
@@ -18,7 +18,7 @@ protocol WritableFile {
 }
 
 /// Provides convenient interface for reading contents and metadata of the file.
-protocol ReadableFile {
+protocol ReadableFile: Sendable {
   /// Name of this file.
   var name: String { get }
 

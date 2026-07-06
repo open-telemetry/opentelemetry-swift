@@ -5,7 +5,7 @@
 
 import Foundation
 
-protocol Delay {
+protocol Delay: Sendable {
   var current: TimeInterval { get }
   mutating func decrease()
   mutating func increase()

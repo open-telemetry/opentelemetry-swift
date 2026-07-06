@@ -254,12 +254,12 @@ class DataExportWorkerTests: XCTestCase {
   }
 }
 
-struct MockDelay: Delay {
+struct MockDelay: Delay, Sendable {
   enum Command {
     case increase, decrease
   }
 
-  var callback: ((Command) -> Void)?
+  var callback: (@Sendable (Command) -> Void)?
   let current: TimeInterval = 0.1
 
   mutating func decrease() {

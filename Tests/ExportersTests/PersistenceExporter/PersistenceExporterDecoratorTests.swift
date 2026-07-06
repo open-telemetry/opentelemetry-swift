@@ -7,7 +7,7 @@
 import XCTest
 
 class PersistenceExporterDecoratorTests: XCTestCase {
-  class DecoratedExporterMock<T>: DecoratedExporter {
+  final class DecoratedExporterMock<T: Sendable>: DecoratedExporter, @unchecked Sendable {
     typealias SignalType = T
     let exporter: ([T]) -> DataExportStatus
     init(exporter: @escaping ([T]) -> DataExportStatus) {
@@ -19,7 +19,7 @@ class PersistenceExporterDecoratorTests: XCTestCase {
     }
   }
 
-  class DataExportWorkerMock: DataExportWorkerProtocol {
+  final class DataExportWorkerMock: DataExportWorkerProtocol, @unchecked Sendable {
     var dataExporter: DataExporter? = nil
     var onFlush: (() -> Bool)? = nil
 
@@ -28,9 +28,9 @@ class PersistenceExporterDecoratorTests: XCTestCase {
     }
   }
 
-  private typealias PersistenceExporter<T: Codable> = PersistenceExporterDecorator<DecoratedExporterMock<T>>
+  private typealias PersistenceExporter<T: Codable & Sendable> = PersistenceExporterDecorator<DecoratedExporterMock<T>>
 
-  private func createPersistenceExporter<T: Codable>(fileWriter: FileWriterMock = FileWriterMock(),
+  private func createPersistenceExporter<T: Codable & Sendable>(fileWriter: FileWriterMock = FileWriterMock(),
                                                      worker: inout DataExportWorkerMock,
                                                      decoratedExporter: DecoratedExporterMock<T> = DecoratedExporterMock(exporter: { _ in
                                                        return DataExportStatus(needsRetry: false)
