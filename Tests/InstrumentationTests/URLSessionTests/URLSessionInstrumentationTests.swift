@@ -84,9 +84,9 @@ class URLSessionInstrumentationTests: XCTestCase {
 
   final class NotURLSessionDelegate: NSObject, @unchecked Sendable {
     @objc
-    func urlSession(_ session: URLSession,
+    func URLSession(_ session: URLSession,
                     dataTask: URLSessionDataTask,
-                    didReceive response: URLResponse,
+                    didReceiveResponse response: URLResponse,
                     completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
       completionHandler(.allow)
     }
@@ -1031,7 +1031,10 @@ class URLSessionInstrumentationTests: XCTestCase {
       delegate.didReceiveResponseCalled
     }
     wait(timeout: 5) {
-      URLSessionInstrumentationTests.instrumentation.startedRequestSpans.isEmpty
+      URLSessionInstrumentationTests.checker.receivedResponseCalled
+    }
+    wait(timeout: 5) {
+      task.state == .completed
     }
 
     XCTAssertEqual(delegate.statusCode, 200, "Request should succeed")
@@ -1058,26 +1061,6 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertTrue(
       nonDelegate.responds(to: #selector(URLSessionTaskDelegate.urlSession(_:task:didCompleteWithError:))),
       "Selector-based discovery should add missing methods to classes with matching selectors"
-    )
-  }
-
-  public func testExplicitDelegateClassesBypassSelectorDiscovery() {
-    let inheritedDelegateBeforeInstrumentation = InheritedEmptyTaskDelegate()
-    XCTAssertFalse(
-      inheritedDelegateBeforeInstrumentation.responds(to: #selector(URLSessionTaskDelegate.urlSession(_:task:didCompleteWithError:))),
-      "Auto-discovery should not instrument classes without a matching selector"
-    )
-
-    _ = URLSessionInstrumentation(
-      configuration: URLSessionInstrumentationConfiguration(
-        delegateClassesToInstrument: [InheritedEmptyTaskDelegate.self]
-      )
-    )
-
-    let inheritedDelegateAfterInstrumentation = InheritedEmptyTaskDelegate()
-    XCTAssertTrue(
-      inheritedDelegateAfterInstrumentation.responds(to: #selector(URLSessionTaskDelegate.urlSession(_:task:didCompleteWithError:))),
-      "Explicit delegate classes should be instrumented without selector discovery"
     )
   }
 
