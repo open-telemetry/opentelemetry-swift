@@ -8,7 +8,7 @@ import OpenTelemetrySdk
 
 // a persistence exporter decorator for `LogRecords`.
 // specialization of `PersistenceExporterDecorator` for `LogExporter`.
-public class PersistenceLogExporterDecorator: LogRecordExporter {
+public final class PersistenceLogExporterDecorator: LogRecordExporter {
   struct LogRecordDecoratedExporter: DecoratedExporter {
     typealias SignalType = ReadableLogRecord
 
@@ -30,7 +30,7 @@ public class PersistenceLogExporterDecorator: LogRecordExporter {
 
   public init(logRecordExporter: LogRecordExporter,
               storageURL: URL,
-              exportCondition: @escaping () -> Bool = { true },
+              exportCondition: @escaping @Sendable () -> Bool = { true },
               performancePreset: PersistencePerformancePreset = .default) throws {
     persistenceExporter =
       PersistenceExporterDecorator<LogRecordDecoratedExporter>(decoratedExporter: LogRecordDecoratedExporter(

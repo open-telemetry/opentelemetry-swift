@@ -8,7 +8,7 @@ import OpenTelemetrySdk
 
 // a persistence exporter decorator for `Metric`.
 // specialization of `PersistenceExporterDecorator` for `MetricExporter`.
-public class PersistenceMetricExporterDecorator: MetricExporter {
+public final class PersistenceMetricExporterDecorator: MetricExporter {
   struct MetricDecoratedExporter: DecoratedExporter {
     typealias SignalType = MetricData
 
@@ -30,7 +30,7 @@ public class PersistenceMetricExporterDecorator: MetricExporter {
 
   public init(metricExporter: MetricExporter,
               storageURL: URL,
-              exportCondition: @escaping () -> Bool = { true },
+              exportCondition: @escaping @Sendable () -> Bool = { true },
               performancePreset: PersistencePerformancePreset = .default) throws {
     persistenceExporter =
       PersistenceExporterDecorator<MetricDecoratedExporter>(decoratedExporter: MetricDecoratedExporter(

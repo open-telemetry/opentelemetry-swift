@@ -5,13 +5,13 @@
 
 import Foundation
 
-public enum CompressionType {
+public enum CompressionType: Sendable {
   case gzip
   case deflate
   case none
 }
 
-public struct OtlpConfiguration {
+public struct OtlpConfiguration: Sendable {
   public static let DefaultTimeoutInterval: TimeInterval = .init(10)
 
   /*

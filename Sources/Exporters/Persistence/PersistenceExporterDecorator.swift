@@ -7,19 +7,19 @@ import Foundation
 import OpenTelemetrySdk
 
 // protocol for exporters that can be decorated with `PersistenceExporterDecorator`
-protocol DecoratedExporter {
-  associatedtype SignalType
+protocol DecoratedExporter: Sendable {
+  associatedtype SignalType: Sendable
 
   func export(values: [SignalType]) -> DataExportStatus
 }
 
 // a generic decorator of `DecoratedExporter` adding filesystem persistence of batches of `[T.SignalType]`.
 // `T.SignalType` must conform to `Codable`.
-class PersistenceExporterDecorator<T>
+final class PersistenceExporterDecorator<T>: Sendable
   where T: DecoratedExporter, T.SignalType: Codable {
   // a wrapper of `DecoratedExporter` (T) to add conformance to `DataExporter` that can be
   // used with `DataExportWorker`.
-  private class DecoratedDataExporter: DataExporter {
+  private final class DecoratedDataExporter: DataExporter {
     private let decoratedExporter: T
 
     init(decoratedExporter: T) {
@@ -55,7 +55,7 @@ class PersistenceExporterDecorator<T>
 
   public convenience init(decoratedExporter: T,
                           storageURL: URL,
-                          exportCondition: @escaping () -> Bool = { true },
+                          exportCondition: @escaping @Sendable () -> Bool = { true },
                           performancePreset: PersistencePerformancePreset = .default) {
     // orchestrate writes and reads over the folder given by `storageURL`
     let filesOrchestrator = FilesOrchestrator(directory: Directory(url: storageURL),

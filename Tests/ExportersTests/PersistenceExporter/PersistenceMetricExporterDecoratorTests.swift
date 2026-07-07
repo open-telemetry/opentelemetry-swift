@@ -11,7 +11,7 @@ import XCTest
 class PersistenceMetricExporterDecoratorTests: XCTestCase {
   @UniqueTemporaryDirectory private var temporaryDirectory: Directory
 
-  class MetricExporterMock: MetricExporter {
+  final class MetricExporterMock: MetricExporter, @unchecked Sendable {
     func flush() -> OpenTelemetrySdk.ExportResult {
       .success
     }

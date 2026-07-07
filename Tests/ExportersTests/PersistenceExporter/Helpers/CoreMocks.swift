@@ -115,7 +115,7 @@ final class RelativeDateProvider: DateProvider, @unchecked Sendable {
   }
 }
 
-struct DataExporterMock: DataExporter {
+struct DataExporterMock: DataExporter, @unchecked Sendable {
   let exportStatus: DataExportStatus
 
   var onExport: ((Data) -> Void)? = nil
@@ -132,7 +132,7 @@ extension DataExportStatus {
   }
 }
 
-class FileWriterMock: FileWriter {
+final class FileWriterMock: FileWriter, @unchecked Sendable {
   var onWrite: ((Bool, Data) -> Void)? = nil
 
   func write(data: Data) {
@@ -150,8 +150,8 @@ class FileWriterMock: FileWriter {
   }
 }
 
-class FileReaderMock: FileReader {
-  private class ReadableFileMock: ReadableFile {
+final class FileReaderMock: FileReader, @unchecked Sendable {
+  private final class ReadableFileMock: ReadableFile, @unchecked Sendable {
     private var deleted = false
     private let data: Data
 

@@ -47,7 +47,7 @@ public class PrometheusExporterHttpServer {
     // server) and `PrometheusHTTPHandler` aren't Sendable. Capture the
     // exporter through a nonisolated(unsafe) alias so the closure doesn't
     // capture `self`; PrometheusExporter is already lock-protected internally.
-    nonisolated(unsafe) let exporter = self.exporter
+    let exporter = self.exporter
     return ServerBootstrap(group: group)
       // Specify backlog and enable SO_REUSEADDR for the server itself
       .serverChannelOption(ChannelOptions.backlog, value: 256)

@@ -10,9 +10,14 @@ import XCTest
 
 final class ExporterMetricsCoverageTests: XCTestCase {
   private final class CapturingMetricExporter: MetricExporter {
-    var captured: [MetricData] = []
+    private let capturedMetrics = Locked(initialValue: [MetricData]())
+
+    var captured: [MetricData] {
+      capturedMetrics.locking { $0 }
+    }
+
     func export(metrics: [MetricData]) -> ExportResult {
-      captured.append(contentsOf: metrics)
+      capturedMetrics.locking { $0.append(contentsOf: metrics) }
       return .success
     }
     func flush() -> ExportResult { .success }
