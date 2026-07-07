@@ -1,8 +1,14 @@
 PROJECT_NAME="opentelemetry-swift-Package"
 
+IOS_DESTINATION ?= platform=iOS Simulator,name=iPhone 16,arch=arm64
+TVOS_DESTINATION ?= platform=tvOS Simulator,name=Apple TV 4K (3rd generation)
+WATCHOS_DESTINATION ?= platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)
+VISIONOS_DESTINATION ?= platform=visionOS Simulator,name=Apple Vision Pro
+
+
 XCODEBUILD_OPTIONS_IOS=\
 	-configuration Debug \
-	-destination 'platform=iOS Simulator,name=iPhone 16,arch=arm64' \
+	-destination '$(IOS_DESTINATION)' \
 	-scheme $(PROJECT_NAME) \
 	-test-iterations 5 \
     -retry-tests-on-failure \
@@ -10,7 +16,7 @@ XCODEBUILD_OPTIONS_IOS=\
 
 XCODEBUILD_OPTIONS_TVOS=\
 	-configuration Debug \
-	-destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' \
+	-destination '$(TVOS_DESTINATION)' \
 	-scheme $(PROJECT_NAME) \
 	-test-iterations 5 \
     -retry-tests-on-failure \
@@ -18,7 +24,7 @@ XCODEBUILD_OPTIONS_TVOS=\
 
 XCODEBUILD_OPTIONS_WATCHOS=\
 	-configuration Debug \
-	-destination 'platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)' \
+	-destination '$(WATCHOS_DESTINATION)' \
 	-scheme $(PROJECT_NAME) \
 	-test-iterations 5 \
     -retry-tests-on-failure \
@@ -26,7 +32,7 @@ XCODEBUILD_OPTIONS_WATCHOS=\
 
 XCODEBUILD_OPTIONS_VISIONOS=\
 	-configuration Debug \
-	-destination 'platform=visionOS Simulator,name=Apple Vision Pro,OS=2.5' \
+	-destination '$(VISIONOS_DESTINATION)' \
 	-scheme $(PROJECT_NAME) \
 	-test-iterations 5 \
     -retry-tests-on-failure \
