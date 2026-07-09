@@ -87,10 +87,15 @@ jobs:
         xcode-version: latest-stable
     - name: Install Homebrew kegs
       run: make setup-brew
+    - name: Resolve simulator
+      id: ios-sim
+      run: | 
+        UDID=$(./Scripts/ci/resolve-simulator.sh iOS)
+        echo "destination=platform=iOS Simulator,id=$UDID,arch=arm64" >> "$GITHUB_OUTPUT"
     - name: Build for iOS
-      run: make build-for-testing-ios
+      run: make build-for-testing-ios IOS_DESTINATION='${{ steps.ios-sim.outputs.destination }}'
     - name: Test for iOS
-      run: make test-without-building-ios
+      run: make test-without-building-ios IOS_DESTINATION='${{ steps.ios-sim.outputs.destination }}'
   tvOS:
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run == 'true' }}
@@ -102,10 +107,15 @@ jobs:
         xcode-version: latest-stable
     - name: Install Homebrew kegs
       run: make setup-brew
+    - name: Resolve simulator
+      id: tvos-sim
+      run: |
+        UDID=$(./Scripts/ci/resolve-simulator.sh tvOS)
+        echo "destination=platform=tvOS Simulator,id=$UDID,arch=arm64" >> "$GITHUB_OUTPUT"
     - name: Build for tvOS
-      run: make build-for-testing-tvos
+      run: make build-for-testing-tvos TVOS_DESTINATION='${{ steps.tvos-sim.outputs.destination }}'
     - name: Test for tvOS
-      run: make test-without-building-tvos
+      run: make test-without-building-tvos TVOS_DESTINATION='${{ steps.tvos-sim.outputs.destination }}'
   watchOS:
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run == 'true' }}
@@ -117,10 +127,15 @@ jobs:
         xcode-version: latest-stable
     - name: Install Homebrew kegs
       run: make setup-brew
+    - name: Resolve simulator
+      id: watchos-sim
+      run: |
+        UDID=$(./Scripts/ci/resolve-simulator.sh watchOS)
+        echo "destination=platform=watchOS Simulator,id=$UDID,arch=arm64" >> "$GITHUB_OUTPUT"
     - name: Build for watchOS
-      run: make build-for-testing-watchos
+      run: make build-for-testing-watchos WATCHOS_DESTINATION='${{ steps.watchos-sim.outputs.destination }}'
     - name: Test for watchOS
-      run: make test-without-building-watchos
+      run: make test-without-building-watchos WATCHOS_DESTINATION='${{ steps.watchos-sim.outputs.destination }}'
   visionOS:
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run == 'true' }}
@@ -132,10 +147,15 @@ jobs:
         xcode-version: latest-stable
     - name: Install Homebrew kegs
       run: make setup-brew
+    - name: Resolve simulator
+      id: visionos-sim
+      run: |
+        UDID=$(./Scripts/ci/resolve-simulator.sh visionOS)
+        echo "destination=platform=visionOS Simulator,id=$UDID" >> "$GITHUB_OUTPUT"
     - name: Build for visionOS
-      run: make build-for-testing-visionos
+      run: make build-for-testing-visionos VISIONOS_DESTINATION='${{ steps.visionos-sim.outputs.destination }}'
     - name: Test for visionOS
-      run: make test-without-building-visionos
+      run: make test-without-building-visionos VISIONOS_DESTINATION='${{ steps.visionos-sim.outputs.destination }}'
   linux:
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run == 'true' }}
