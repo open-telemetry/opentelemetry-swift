@@ -10,7 +10,7 @@
   "packageRules": [
     {
       "groupName": "all patch versions",
-      "matchUpdateTypes": ["patch"],
+      "matchUpdateTypes": ["patch", "digest"],
       "schedule": ["before 8am every weekday"]
     },
     {

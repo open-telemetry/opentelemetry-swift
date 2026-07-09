@@ -39,8 +39,10 @@ let builder = LoggerProviderBuilder()
 **Custom Configuration**:
 
 ```swift
-let sessionConfig = SessionConfigBuilder()
+let sessionConfig = SessionConfig.builder()
     .with(sessionTimeout: 45 * 60) // 45 minutes
+    .with(maxLifetime: 4 * 60 * 60)
+    .with(restorePersistedSession: false)
     .build()
 let sessionManager = SessionManager(configuration: sessionConfig)
 SessionManagerProvider.register(sessionManager: sessionManager)
@@ -129,13 +131,17 @@ print("Expired: \(session.isExpired())")
 
 ### SessionConfig
 
-| Field            | Type  | Description                                                        | Default         | Required |
-| ---------------- | ----- | ------------------------------------------------------------------ | --------------- | -------- |
-| `sessionTimeout` | `TimeInterval` | Duration in seconds after which a session expires if left inactive | `1800` (30 min) | No       |
+| Field                     | Type            | Description                                                                 | Default         | Required |
+| ------------------------- | --------------- | --------------------------------------------------------------------------- | --------------- | -------- |
+| `sessionTimeout`          | `TimeInterval`  | Duration in seconds after which a session expires if left inactive          | `1800` (30 min) | No       |
+| `maxLifetime`             | `TimeInterval?` | Maximum duration in seconds a session can remain active, regardless of activity | `nil` (disabled) | No       |
+| `restorePersistedSession` | `Bool`          | Whether to resume a saved session as current; when `false`, start a new session and link the saved one as `previous_id` | `true`          | No       |
 
 ```swift
-let config = SessionConfigBuilder()
+let config = SessionConfig.builder()
     .with(sessionTimeout: 30 * 60)
+    .with(maxLifetime: 4 * 60 * 60)
+    .with(restorePersistedSession: false)
     .build()
 ```
 
@@ -143,6 +149,9 @@ let config = SessionConfigBuilder()
 
 - Sessions automatically expire after the configured timeout period of inactivity
 - Accessing a session via `getSession()` extends the expiration time
+- Sessions can also expire after `maxLifetime`, even if `getSession()` continues to extend inactivity
+- Set `restorePersistedSession` to `false` to start a new session on each clean application start while linking the persisted session as `previous_id`
+- When `restorePersistedSession` is `false`, the persisted session's `session.end` uses its last known activity time, capped at the new session start time
 - Expired sessions trigger `session.end` events and create new sessions with `previous_id` links
 
 ## Session Events
@@ -221,9 +230,10 @@ A `session.end` log record is created when a session expires.
 
 ## Persistence
 
-Sessions are automatically persisted to UserDefaults and restored on app restart:
+Sessions are automatically persisted to UserDefaults and can be resumed on app restart:
 
-- Active sessions continue from their previous state
+- By default, active persisted sessions continue from their previous state
+- Set `restorePersistedSession` to `false` to start a new session on clean start while linking and ending the persisted session
 - Expired sessions create new sessions with proper `previous_id` linking
 - Session data is saved periodically (every 30 seconds) to minimize disk I/O
 

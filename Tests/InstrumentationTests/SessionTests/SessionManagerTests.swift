@@ -57,6 +57,16 @@ final class SessionManagerTests: XCTestCase {
     XCTAssertGreaterThan(session2.startTime, session1.startTime)
   }
 
+  func testGetSessionExpiredByMaxLifetime() {
+    sessionManager = SessionManager(configuration: SessionConfig(sessionTimeout: 60 * 60, maxLifetime: 0))
+    let session1 = sessionManager.getSession()
+    let session2 = sessionManager.getSession()
+
+    XCTAssertNotEqual(session1.id, session2.id)
+    XCTAssertEqual(session2.previousId, session1.id)
+    XCTAssertGreaterThan(session1.expireTime, Date())
+  }
+
   func testGetSessionSavedToDisk() {
     let session = sessionManager.getSession()
     let savedId = UserDefaults.standard.object(forKey: SessionStore.idKey) as? String
@@ -64,6 +74,68 @@ final class SessionManagerTests: XCTestCase {
 
     XCTAssertEqual(session.id, savedId)
     XCTAssertEqual(session.sessionTimeout, TimeInterval(savedTimeout ?? -1))
+  }
+
+  func testRestorePersistedSessionFalseUsesPersistedSessionAsPreviousSession() {
+    let persistedSession = Session(
+      id: "persisted-session",
+      expireTime: Date(timeIntervalSinceNow: 60 * 60),
+      startTime: Date(),
+      sessionTimeout: 60 * 60
+    )
+    SessionStore.saveImmediately(session: persistedSession)
+
+    sessionManager = SessionManager(
+      configuration: SessionConfig(sessionTimeout: 60 * 60, restorePersistedSession: false)
+    )
+
+    XCTAssertNil(sessionManager.peekSession())
+
+    let newSession = sessionManager.getSession()
+    XCTAssertNotEqual(newSession.id, persistedSession.id)
+    XCTAssertEqual(newSession.previousId, persistedSession.id)
+  }
+
+  func testRestorePersistedSessionFalseEndsPersistedSessionAtLastActivity() {
+    SessionEventInstrumentation.queue = []
+    SessionEventInstrumentation.isApplied = false
+    defer {
+      SessionEventInstrumentation.queue = []
+      SessionEventInstrumentation.isApplied = false
+    }
+    let sessionTimeout: TimeInterval = 60 * 60
+    let lastActivity = Date(timeIntervalSinceNow: -5 * 60)
+    let persistedSession = Session(
+      id: "persisted-session",
+      expireTime: lastActivity.addingTimeInterval(sessionTimeout),
+      startTime: Date(timeIntervalSinceNow: -2 * 60 * 60),
+      sessionTimeout: sessionTimeout
+    )
+    SessionStore.saveImmediately(session: persistedSession)
+
+    sessionManager = SessionManager(
+      configuration: SessionConfig(sessionTimeout: sessionTimeout, restorePersistedSession: false)
+    )
+
+    let newSession = sessionManager.getSession()
+
+    XCTAssertEqual(SessionEventInstrumentation.queue.count, 2)
+    guard SessionEventInstrumentation.queue.count >= 2 else {
+      return
+    }
+    XCTAssertEqual(SessionEventInstrumentation.queue[0].session.id, persistedSession.id)
+    if case .end = SessionEventInstrumentation.queue[0].eventType {
+      XCTAssertEqual(SessionEventInstrumentation.queue[0].session.endTime?.timeIntervalSince1970 ?? 0, lastActivity.timeIntervalSince1970, accuracy: 1.0)
+    } else {
+      XCTFail("Expected a session.end event for the persisted session")
+    }
+    XCTAssertLessThanOrEqual(SessionEventInstrumentation.queue[0].session.endTime ?? .distantFuture, newSession.startTime)
+
+    XCTAssertEqual(SessionEventInstrumentation.queue[1].session.id, newSession.id)
+    if case .start = SessionEventInstrumentation.queue[1].eventType {
+      return
+    }
+    XCTFail("Expected a session.start event for the new session")
   }
 
   func testLoadSessionMissingExpiry() {
