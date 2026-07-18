@@ -6,8 +6,6 @@ The sample expects a local Jaeger installation as explained in [Jaeger docs](htt
 
 ```
 docker run -d --name jaeger \
-  -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
-  -e COLLECTOR_OTLP_ENABLED=true \
   -p 6831:6831/udp \
   -p 6832:6832/udp \
   -p 5778:5778 \
