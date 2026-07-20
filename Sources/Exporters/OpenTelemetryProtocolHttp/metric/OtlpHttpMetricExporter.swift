@@ -131,7 +131,8 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter, @unch
           }
       let semaphore = DispatchSemaphore(value: 0)
       var request = createRequest(body: body, endpoint: endpoint)
-      request.timeoutInterval = min(TimeInterval.greatestFiniteMagnitude, config.timeout)
+      let timeout = min(TimeInterval.greatestFiniteMagnitude, config.timeout)
+      request.timeoutInterval = timeout
       httpClient.send(request: request) { [weak self] result in
         switch result {
         case .success:
@@ -149,7 +150,12 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter, @unch
         }
         semaphore.signal()
       }
-      semaphore.wait()
+
+      let waitResult = semaphore.wait(timeout: .now() + timeout)
+      if waitResult == .timedOut {
+        exporterMetrics?.addFailed(value: sentCount)
+        return .failure
+      }
     }
 
     return exporterResult

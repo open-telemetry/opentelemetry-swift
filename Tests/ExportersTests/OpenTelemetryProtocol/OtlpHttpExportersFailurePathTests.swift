@@ -44,6 +44,20 @@ private final class StubHTTPClient: HTTPClient {
 
 private struct TransientNetworkError: Error {}
 
+/// Fails the first request, then never invokes the completion handler. This gives
+/// `flush()` pending data to send and no response to wait on — the shape that made
+/// an unbounded `semaphore.wait()` block the calling thread forever.
+private final class HangingAfterFirstFailureHTTPClient: HTTPClient {
+  private var sendCount = 0
+  func send(request: URLRequest,
+            completion: @escaping (Result<HTTPURLResponse, Error>) -> Void) {
+    sendCount += 1
+    if sendCount == 1 {
+      completion(.failure(TransientNetworkError()))
+    }
+  }
+}
+
 private func sampleLogRecord() -> ReadableLogRecord {
   let ctx = SpanContext.create(traceId: TraceId.random(),
                                spanId: SpanId.random(),
@@ -232,6 +246,35 @@ final class OtlpHttpTraceExporterCoverageTests: XCTestCase {
                                           httpClient: client,
                                           envVarHeaders: nil)
     XCTAssertNotNil(exporter)
+  }
+}
+
+final class OtlpHttpExporterFlushTimeoutTests: XCTestCase {
+  private let timeout: TimeInterval = 0.5
+
+  func testMetricFlushTimesOutWhenResponseNeverArrives() {
+    let client = HangingAfterFirstFailureHTTPClient()
+    let exporter = OtlpHttpMetricExporter(endpoint: URL(string: "http://localhost:4318/v1/metrics")!,
+                                          config: OtlpConfiguration(timeout: timeout),
+                                          httpClient: client)
+    _ = exporter.export(metrics: [.empty])
+    XCTAssertEqual(exporter.pendingMetrics.count, 1)
+
+    let start = Date()
+    XCTAssertEqual(exporter.flush(), .failure)
+    XCTAssertLessThan(Date().timeIntervalSince(start), timeout * 4)
+  }
+
+  func testLogFlushTimesOutWhenResponseNeverArrives() {
+    let client = HangingAfterFirstFailureHTTPClient()
+    let exporter = OtlpHttpLogExporter(config: OtlpConfiguration(timeout: timeout),
+                                       httpClient: client)
+    _ = exporter.export(logRecords: [sampleLogRecord()])
+    XCTAssertEqual(exporter.pendingLogRecords.count, 1)
+
+    let start = Date()
+    XCTAssertEqual(exporter.flush(), .failure)
+    XCTAssertLessThan(Date().timeIntervalSince(start), timeout * 4)
   }
 }
 
