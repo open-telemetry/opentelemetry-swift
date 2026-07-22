@@ -13,7 +13,7 @@ jobs:
   macOS:
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Use opentelemetry-swift-core from main
         run: |
           sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
@@ -26,7 +26,7 @@ jobs:
   iOS:
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Use opentelemetry-swift-core from main
         run: |
           sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
@@ -43,7 +43,7 @@ jobs:
   tvOS:
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Use opentelemetry-swift-core from main
         run: |
           sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
@@ -60,7 +60,7 @@ jobs:
   watchOS:
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Use opentelemetry-swift-core from main
         run: |
           sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
@@ -77,7 +77,7 @@ jobs:
   visionOS:
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Use opentelemetry-swift-core from main
         run: |
           sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
@@ -95,7 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     container: swift:6.3.3@sha256:66520bcba471018a34fd54ba09be97ba4abebd950a96ff5cb8c2bf50a2d33259
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Use opentelemetry-swift-core from main
         run: |
           sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
