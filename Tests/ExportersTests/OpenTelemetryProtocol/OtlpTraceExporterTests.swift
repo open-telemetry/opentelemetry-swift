@@ -131,10 +131,7 @@ class OtlpTraceExporterTests: XCTestCase {
     let expectedStatus = GRPCStatus(code: .unavailable, message: "collector unavailable")
     fakeCollector.returnedStatus = expectedStatus
     let recorder = LogRecorder()
-    let logger = Logging.Logger(label: "otlp-trace-exporter-test") { _ in
-      RecordingLogHandler(recorder: recorder)
-    }
-    let exporter = OtlpTraceExporter(channel: channel, logger: logger)
+    let exporter = OtlpTraceExporter(channel: channel, logger: makeLogger(recorder: recorder))
     defer { exporter.shutdown() }
 
     let result = exporter.export(spans: [generateFakeSpan()])
@@ -143,10 +140,81 @@ class OtlpTraceExporterTests: XCTestCase {
     let exportFailureEvents = recorder.events.filter {
       $0.message.description == "OTLP trace export failed"
     }
-    let event = try XCTUnwrap(exportFailureEvents.first)
     XCTAssertEqual(exportFailureEvents.count, 1)
+    let event = try XCTUnwrap(exportFailureEvents.first)
     XCTAssertEqual(event.level, .error)
     XCTAssertEqual(event.error as? GRPCStatus, expectedStatus)
+  }
+
+  func testRejectedSpansAreLogged() throws {
+    fakeCollector.returnedResponse = .with {
+      $0.partialSuccess = .with {
+        $0.rejectedSpans = 2
+        $0.errorMessage = "invalid span data"
+      }
+    }
+    let recorder = LogRecorder()
+    let exporter = OtlpTraceExporter(channel: channel, logger: makeLogger(recorder: recorder))
+    defer { exporter.shutdown() }
+
+    let result = exporter.export(spans: [generateFakeSpan()])
+
+    XCTAssertEqual(result, .success)
+    let partialSuccessEvents = recorder.events.filter {
+      $0.message.description == "OTLP trace export partially succeeded"
+    }
+    XCTAssertEqual(partialSuccessEvents.count, 1)
+    let event = try XCTUnwrap(partialSuccessEvents.first)
+    XCTAssertEqual(event.level, .error)
+    XCTAssertEqual(event.metadata?["rejected_spans"]?.description, "2")
+    XCTAssertEqual(event.metadata?["error_message"]?.description, "invalid span data")
+  }
+
+  func testPartialSuccessWarningIsLogged() throws {
+    fakeCollector.returnedResponse = .with {
+      $0.partialSuccess = .with {
+        $0.errorMessage = "consider reducing the batch size"
+      }
+    }
+    let recorder = LogRecorder()
+    let exporter = OtlpTraceExporter(channel: channel, logger: makeLogger(recorder: recorder))
+    defer { exporter.shutdown() }
+
+    let result = exporter.export(spans: [generateFakeSpan()])
+
+    XCTAssertEqual(result, .success)
+    let warningEvents = recorder.events.filter {
+      $0.message.description == "OTLP trace export succeeded with a warning"
+    }
+    XCTAssertEqual(warningEvents.count, 1)
+    let event = try XCTUnwrap(warningEvents.first)
+    XCTAssertEqual(event.level, .warning)
+    XCTAssertEqual(event.metadata?["rejected_spans"]?.description, "0")
+    XCTAssertEqual(event.metadata?["error_message"]?.description, "consider reducing the batch size")
+  }
+
+  func testEmptyPartialSuccessIsNotLogged() {
+    fakeCollector.returnedResponse = .with {
+      $0.partialSuccess = Opentelemetry_Proto_Collector_Trace_V1_ExportTracePartialSuccess()
+    }
+    let recorder = LogRecorder()
+    let exporter = OtlpTraceExporter(channel: channel, logger: makeLogger(recorder: recorder))
+    defer { exporter.shutdown() }
+
+    let result = exporter.export(spans: [generateFakeSpan()])
+
+    XCTAssertEqual(result, .success)
+    let partialSuccessEvents = recorder.events.filter {
+      $0.message.description == "OTLP trace export partially succeeded"
+        || $0.message.description == "OTLP trace export succeeded with a warning"
+    }
+    XCTAssertTrue(partialSuccessEvents.isEmpty)
+  }
+
+  private func makeLogger(recorder: LogRecorder) -> Logging.Logger {
+    Logging.Logger(label: "otlp-trace-exporter-test") { _ in
+      RecordingLogHandler(recorder: recorder)
+    }
   }
 
   private func generateFakeSpan() -> SpanData {
@@ -227,6 +295,7 @@ private struct RecordingLogHandler: LogHandler {
 class FakeCollector: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceProvider {
   var receivedSpans = [Opentelemetry_Proto_Trace_V1_ResourceSpans]()
   var returnedStatus = GRPCStatus.ok
+  var returnedResponse = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse()
   var interceptors: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceServerInterceptorFactoryProtocol?
 
   func export(request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse> {
@@ -234,6 +303,6 @@ class FakeCollector: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceProvider
     if returnedStatus != GRPCStatus.ok {
       return context.eventLoop.makeFailedFuture(returnedStatus)
     }
-    return context.eventLoop.makeSucceededFuture(Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse())
+    return context.eventLoop.makeSucceededFuture(returnedResponse)
   }
 }

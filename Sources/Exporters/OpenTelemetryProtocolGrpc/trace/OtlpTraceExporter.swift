@@ -55,7 +55,11 @@ public final class OtlpTraceExporter: SpanExporter, @unchecked Sendable {
 
     do {
       // wait() on the response to stop the program from exiting before the response is received.
-      _ = try export.response.wait()
+      let response = try export.response.wait()
+      if response.hasPartialSuccess {
+        logPartialSuccess(response.partialSuccess, logger: perCallOptions.logger)
+      }
+      // OTLP partial-success responses must not be retried.
       return .success
     } catch {
       perCallOptions.logger.error("OTLP trace export failed", error: error)
@@ -69,5 +73,29 @@ public final class OtlpTraceExporter: SpanExporter, @unchecked Sendable {
 
   public func shutdown(explicitTimeout: TimeInterval? = nil) {
     _ = channel.close()
+  }
+
+  private func logPartialSuccess(
+    _ partialSuccess: Opentelemetry_Proto_Collector_Trace_V1_ExportTracePartialSuccess,
+    logger: Logging.Logger
+  ) {
+    let rejectedSpans = partialSuccess.rejectedSpans
+    let errorMessage = partialSuccess.errorMessage
+    guard rejectedSpans != 0 || !errorMessage.isEmpty else {
+      return
+    }
+
+    var metadata: Logging.Logger.Metadata = [
+      "rejected_spans": .stringConvertible(rejectedSpans)
+    ]
+    if !errorMessage.isEmpty {
+      metadata["error_message"] = .string(errorMessage)
+    }
+
+    if rejectedSpans != 0 {
+      logger.error("OTLP trace export partially succeeded", metadata: metadata)
+    } else {
+      logger.warning("OTLP trace export succeeded with a warning", metadata: metadata)
+    }
   }
 }
