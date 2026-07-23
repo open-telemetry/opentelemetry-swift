@@ -107,7 +107,8 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter, @unch
         }
       let semaphore = DispatchSemaphore(value: 0)
       var request = createRequest(body: body, endpoint: endpoint)
-      request.timeoutInterval = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+      let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+      request.timeoutInterval = timeout
       if let headers = envVarHeaders {
         headers.forEach { key, value in
           request.addValue(value, forHTTPHeaderField: key)
@@ -137,7 +138,12 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter, @unch
         }
         semaphore.signal()
       }
-      semaphore.wait()
+
+      let waitResult = semaphore.wait(timeout: .now() + timeout)
+      if waitResult == .timedOut {
+        exporterMetrics?.addFailed(value: sentCount)
+        return .failure
+      }
     }
 
     return exporterResult
