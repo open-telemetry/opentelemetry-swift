@@ -58,6 +58,7 @@ public final class OtlpTraceExporter: SpanExporter, @unchecked Sendable {
       _ = try export.response.wait()
       return .success
     } catch {
+      perCallOptions.logger.error("OTLP trace export failed", error: error)
       return .failure
     }
   }

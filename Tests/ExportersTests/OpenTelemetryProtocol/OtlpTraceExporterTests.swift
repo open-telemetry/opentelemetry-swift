@@ -127,6 +127,28 @@ class OtlpTraceExporterTests: XCTestCase {
     exporter.shutdown()
   }
 
+  func testExportFailureIsLogged() throws {
+    let expectedStatus = GRPCStatus(code: .unavailable, message: "collector unavailable")
+    fakeCollector.returnedStatus = expectedStatus
+    let recorder = LogRecorder()
+    let logger = Logging.Logger(label: "otlp-trace-exporter-test") { _ in
+      RecordingLogHandler(recorder: recorder)
+    }
+    let exporter = OtlpTraceExporter(channel: channel, logger: logger)
+    defer { exporter.shutdown() }
+
+    let result = exporter.export(spans: [generateFakeSpan()])
+
+    XCTAssertEqual(result, .failure)
+    let exportFailureEvents = recorder.events.filter {
+      $0.message.description == "OTLP trace export failed"
+    }
+    let event = try XCTUnwrap(exportFailureEvents.first)
+    XCTAssertEqual(exportFailureEvents.count, 1)
+    XCTAssertEqual(event.level, .error)
+    XCTAssertEqual(event.error as? GRPCStatus, expectedStatus)
+  }
+
   private func generateFakeSpan() -> SpanData {
     let duration = 0.9
     let start = Date()
@@ -163,6 +185,42 @@ class OtlpTraceExporterTests: XCTestCase {
     let channel = ClientConnection.insecure(group: channelGroup)
       .connect(host: "localhost", port: 4317)
     return channel
+  }
+}
+
+private final class LogRecorder: @unchecked Sendable {
+  private let lock = NSLock()
+  private var recordedEvents = [LogEvent]()
+
+  var events: [LogEvent] {
+    lock.lock()
+    defer { lock.unlock() }
+    return recordedEvents
+  }
+
+  func record(_ event: LogEvent) {
+    lock.lock()
+    defer { lock.unlock() }
+    recordedEvents.append(event)
+  }
+}
+
+private struct RecordingLogHandler: LogHandler {
+  var metadata = Logging.Logger.Metadata()
+  var logLevel = Logging.Logger.Level.trace
+  private let recorder: LogRecorder
+
+  init(recorder: LogRecorder) {
+    self.recorder = recorder
+  }
+
+  subscript(metadataKey key: String) -> Logging.Logger.Metadata.Value? {
+    get { metadata[key] }
+    set { metadata[key] = newValue }
+  }
+
+  func log(event: LogEvent) {
+    recorder.record(event)
   }
 }
 
