@@ -64,6 +64,34 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
+  final class ResponseOnlyDataDelegate: NSObject, URLSessionDataDelegate, @unchecked Sendable {
+    var didReceiveResponseCalled = false
+    var statusCode: Int?
+
+    func urlSession(_ session: URLSession,
+                    dataTask: URLSessionDataTask,
+                    didReceive response: URLResponse,
+                    completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+      didReceiveResponseCalled = true
+      statusCode = (response as? HTTPURLResponse)?.statusCode
+      completionHandler(.allow)
+    }
+  }
+
+  class EmptyTaskDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {}
+
+  final class InheritedEmptyTaskDelegate: EmptyTaskDelegate, @unchecked Sendable {}
+
+  final class NotURLSessionDelegate: NSObject, @unchecked Sendable {
+    @objc
+    func URLSession(_ session: URLSession,
+                    dataTask: URLSessionDataTask,
+                    didReceiveResponse response: URLResponse,
+                    completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+      completionHandler(.allow)
+    }
+  }
+
   nonisolated(unsafe) static var requestCopy: URLRequest!
   nonisolated(unsafe) static var responseCopy: HTTPURLResponse!
 
@@ -988,6 +1016,52 @@ class URLSessionInstrumentationTests: XCTestCase {
     // Verify instrumentation worked (span was created and completed)
     XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled, "Instrumentation should capture the request")
     XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled, "Instrumentation should capture the response")
+  }
+
+  public func testDelegateMissingCompletionCallbackReceivesInjectedImplementation() {
+    let request = URLRequest(url: URL(string: "http://localhost:33333/success")!)
+
+    let delegate = ResponseOnlyDataDelegate()
+    let session = URLSession(configuration: URLSessionConfiguration.default, delegate: delegate, delegateQueue: nil)
+
+    let task = session.dataTask(with: request)
+    task.resume()
+
+    wait(timeout: 5) {
+      delegate.didReceiveResponseCalled
+    }
+    wait(timeout: 5) {
+      URLSessionInstrumentationTests.checker.receivedResponseCalled
+    }
+    wait(timeout: 5) {
+      task.state == .completed
+    }
+
+    XCTAssertEqual(delegate.statusCode, 200, "Request should succeed")
+    XCTAssertTrue(delegate.didReceiveResponseCalled, "Delegate should receive response callback")
+    XCTAssertTrue(
+      delegate.responds(to: #selector(URLSessionTaskDelegate.urlSession(_:task:didCompleteWithError:))),
+      "Instrumentation should add missing completion callback implementation"
+    )
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled, "Instrumentation should capture the response")
+  }
+
+  public func testDelegateDiscoveryUsesURLSessionSelectors() {
+    let inheritedDelegate = InheritedEmptyTaskDelegate()
+    let nonDelegate = NotURLSessionDelegate()
+
+    XCTAssertFalse(
+      inheritedDelegate.responds(to: #selector(URLSessionTaskDelegate.urlSession(_:task:didCompleteWithError:))),
+      "Selector-based discovery should not instrument classes without a matching selector"
+    )
+    XCTAssertTrue(
+      nonDelegate.responds(to: #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:completionHandler:))),
+      "NotURLSessionDelegate responds to selector"
+    )
+    XCTAssertTrue(
+      nonDelegate.responds(to: #selector(URLSessionTaskDelegate.urlSession(_:task:didCompleteWithError:))),
+      "Selector-based discovery should add missing methods to classes with matching selectors"
+    )
   }
 
   public func testOldSemanticConvention() {

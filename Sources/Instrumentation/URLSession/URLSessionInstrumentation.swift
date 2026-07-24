@@ -71,6 +71,26 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
   }
 
   private func injectInNSURLClasses() {
+    if let delegateClassesToInstrument = configuration.delegateClassesToInstrument {
+      DispatchQueue.concurrentPerform(iterations: delegateClassesToInstrument.count) { iteration in
+        let theClass: AnyClass = delegateClassesToInstrument[iteration]
+        guard theClass != Self.self else { return }
+        injectIntoDelegateClass(cls: theClass)
+      }
+    } else {
+      injectIntoDiscoveredDelegateClasses()
+    }
+
+    if #available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
+      injectIntoNSURLSessionCreateTaskMethods()
+    }
+    injectIntoNSURLSessionCreateTaskWithParameterMethods()
+    injectIntoNSURLSessionAsyncDataAndDownloadTaskMethods()
+    injectIntoNSURLSessionAsyncUploadTaskMethods()
+    injectIntoNSURLSessionTaskResume()
+  }
+
+  private func injectIntoDiscoveredDelegateClasses() {
     let selectors = [
       #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:)),
       #selector(
@@ -91,9 +111,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       #selector(
         URLSessionTaskDelegate.urlSession(_:task:didFinishCollecting:))
     ]
-    let classes =
-      configuration.delegateClassesToInstrument
-        ?? InstrumentationUtils.objc_getClassList()
+    let classes = InstrumentationUtils.objc_getClassList()
     let selectorsCount = selectors.count
     DispatchQueue.concurrentPerform(iterations: classes.count) { iteration in
       let theClass: AnyClass = classes[iteration]
@@ -125,14 +143,6 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
         injectIntoDelegateClass(cls: cls)
       }
     }
-
-    if #available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
-      injectIntoNSURLSessionCreateTaskMethods()
-    }
-    injectIntoNSURLSessionCreateTaskWithParameterMethods()
-    injectIntoNSURLSessionAsyncDataAndDownloadTaskMethods()
-    injectIntoNSURLSessionAsyncUploadTaskMethods()
-    injectIntoNSURLSessionTaskResume()
   }
 
   private func injectIntoDelegateClass(cls: AnyClass) {
@@ -492,6 +502,13 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     let selector = #selector(
       URLSessionDataDelegate.urlSession(_:dataTask:didReceive:))
     guard let original = class_getInstanceMethod(cls, selector) else {
+      let block:
+        @convention(block) (Any, URLSession, URLSessionDataTask, Data) -> Void = { _, session, dataTask, data in
+          self.urlSession(session, dataTask: dataTask, didReceive: data)
+        }
+      let imp = imp_implementationWithBlock(
+        unsafeBitCast(block, to: AnyObject.self))
+      class_addMethod(cls, selector, imp, "v@:@@@")
       return
     }
     var originalIMP: IMP?
@@ -517,6 +534,16 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       URLSessionDataDelegate.urlSession(
         _:dataTask:didReceive:completionHandler:))
     guard let original = class_getInstanceMethod(cls, selector) else {
+      let block:
+        @convention(block) (Any, URLSession, URLSessionDataTask, URLResponse,
+                            @escaping (URLSession.ResponseDisposition) -> Void) -> Void = { _, session, dataTask, response, completion in
+          self.urlSession(session, dataTask: dataTask, didReceive: response,
+                          completionHandler: completion)
+          completion(.allow)
+        }
+      let imp = imp_implementationWithBlock(
+        unsafeBitCast(block, to: AnyObject.self))
+      class_addMethod(cls, selector, imp, "v@:@@@@")
       return
     }
     var originalIMP: IMP?
@@ -544,6 +571,13 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     let selector = #selector(
       URLSessionDataDelegate.urlSession(_:task:didCompleteWithError:))
     guard let original = class_getInstanceMethod(cls, selector) else {
+      let block:
+        @convention(block) (Any, URLSession, URLSessionTask, Error?) -> Void = { _, session, task, error in
+          self.urlSession(session, task: task, didCompleteWithError: error)
+        }
+      let imp = imp_implementationWithBlock(
+        unsafeBitCast(block, to: AnyObject.self))
+      class_addMethod(cls, selector, imp, "v@:@@@")
       return
     }
     var originalIMP: IMP?
@@ -576,7 +610,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
         }
       let imp = imp_implementationWithBlock(
         unsafeBitCast(block, to: AnyObject.self))
-      class_addMethod(cls, selector, imp, "@@@")
+      class_addMethod(cls, selector, imp, "v@:@@@")
       return
     }
     var originalIMP: IMP?
@@ -629,6 +663,13 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
           (URLSession, URLSessionDataTask, URLSessionDownloadTask) -> Void
         )?)
     guard let original = class_getInstanceMethod(cls, selector) else {
+      let block:
+        @convention(block) (Any, URLSession, URLSessionDataTask, URLSessionDownloadTask) -> Void = { _, session, dataTask, downloadTask in
+          self.urlSession(session, dataTask: dataTask, didBecome: downloadTask)
+        }
+      let imp = imp_implementationWithBlock(
+        unsafeBitCast(block, to: AnyObject.self))
+      class_addMethod(cls, selector, imp, "v@:@@@")
       return
     }
     var originalIMP: IMP?
