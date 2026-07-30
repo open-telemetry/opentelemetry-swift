@@ -58,6 +58,32 @@ private final class HangingAfterFirstFailureHTTPClient: HTTPClient {
   }
 }
 
+private final class HangingHTTPClient: HTTPClient {
+  private(set) var sentRequests: [URLRequest] = []
+  func send(request: URLRequest,
+            completion: @escaping (Result<HTTPURLResponse, Error>) -> Void) {
+    sentRequests.append(request)
+  }
+}
+
+private final class DelayedFailureHTTPClient: HTTPClient {
+  private let delay: TimeInterval
+  private(set) var sentRequests: [URLRequest] = []
+
+  init(delay: TimeInterval) {
+    self.delay = delay
+  }
+
+  func send(request: URLRequest,
+            completion: @escaping (Result<HTTPURLResponse, Error>) -> Void) {
+    sentRequests.append(request)
+    nonisolated(unsafe) let completion = completion
+    DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
+      completion(.failure(TransientNetworkError()))
+    }
+  }
+}
+
 private func sampleLogRecord() -> ReadableLogRecord {
   let ctx = SpanContext.create(traceId: TraceId.random(),
                                spanId: SpanId.random(),
@@ -94,10 +120,36 @@ final class OtlpHttpLogExporterCoverageTests: XCTestCase {
 
     let rec = sampleLogRecord()
     let result = exporter.export(logRecords: [rec])
-    XCTAssertEqual(result, .success)
+    XCTAssertEqual(result, .failure)
 
     // Failure path should put the record back into pendingLogRecords.
     XCTAssertEqual(exporter.pendingLogRecords.count, 1)
+    XCTAssertEqual(client.sentRequests.count, 1)
+  }
+
+  func testExportWaitsForDelayedFailureBeforeReturning() {
+    let delay: TimeInterval = 0.05
+    let client = DelayedFailureHTTPClient(delay: delay)
+    let exporter = OtlpHttpLogExporter(httpClient: client)
+
+    let start = Date()
+    let result = exporter.export(logRecords: [sampleLogRecord()])
+
+    XCTAssertEqual(result, .failure)
+    XCTAssertGreaterThanOrEqual(Date().timeIntervalSince(start), delay)
+    XCTAssertEqual(exporter.pendingLogRecords.count, 1)
+    XCTAssertEqual(client.sentRequests.count, 1)
+  }
+
+  func testExportTimesOutWhenResponseNeverArrives() {
+    let timeout: TimeInterval = 0.05
+    let client = HangingHTTPClient()
+    let exporter = OtlpHttpLogExporter(config: OtlpConfiguration(timeout: timeout),
+                                       httpClient: client)
+
+    let start = Date()
+    XCTAssertEqual(exporter.export(logRecords: [sampleLogRecord()]), .failure)
+    XCTAssertLessThan(Date().timeIntervalSince(start), timeout * 4)
     XCTAssertEqual(client.sentRequests.count, 1)
   }
 
