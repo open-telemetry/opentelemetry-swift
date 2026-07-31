@@ -127,94 +127,87 @@ class OtlpTraceExporterTests: XCTestCase {
     exporter.shutdown()
   }
 
-  func testExportFailureIsLogged() throws {
+  func testExportFailureIsReported() {
     let expectedStatus = GRPCStatus(code: .unavailable, message: "collector unavailable")
     fakeCollector.returnedStatus = expectedStatus
-    let recorder = LogRecorder()
-    let exporter = OtlpTraceExporter(channel: channel, logger: makeLogger(recorder: recorder))
-    defer { exporter.shutdown() }
+    withFeedbackRecorder { recorder in
+      let exporter = OtlpTraceExporter(channel: channel)
+      defer { exporter.shutdown() }
 
-    let result = exporter.export(spans: [generateFakeSpan()])
+      let result = exporter.export(spans: [generateFakeSpan()])
 
-    XCTAssertEqual(result, .failure)
-    let exportFailureEvents = recorder.events.filter {
-      $0.message.description == "OTLP trace export failed"
+      XCTAssertEqual(result, .failure)
+      XCTAssertEqual(recorder.messages.count, 1)
+      guard let message = recorder.messages.first else {
+        return XCTFail("Expected export failure feedback")
+      }
+      XCTAssertTrue(message.contains("OTLP trace export failed"))
+      XCTAssertTrue(message.contains("collector unavailable"))
     }
-    XCTAssertEqual(exportFailureEvents.count, 1)
-    let event = try XCTUnwrap(exportFailureEvents.first)
-    XCTAssertEqual(event.level, .error)
-    XCTAssertEqual(event.error as? GRPCStatus, expectedStatus)
   }
 
-  func testRejectedSpansAreLogged() throws {
+  func testRejectedSpansAreReported() {
     fakeCollector.returnedResponse = .with {
       $0.partialSuccess = .with {
         $0.rejectedSpans = 2
         $0.errorMessage = "invalid span data"
       }
     }
-    let recorder = LogRecorder()
-    let exporter = OtlpTraceExporter(channel: channel, logger: makeLogger(recorder: recorder))
-    defer { exporter.shutdown() }
+    withFeedbackRecorder { recorder in
+      let exporter = OtlpTraceExporter(channel: channel)
+      defer { exporter.shutdown() }
 
-    let result = exporter.export(spans: [generateFakeSpan()])
+      let result = exporter.export(spans: [generateFakeSpan()])
 
-    XCTAssertEqual(result, .success)
-    let partialSuccessEvents = recorder.events.filter {
-      $0.message.description == "OTLP trace export partially succeeded"
+      XCTAssertEqual(result, .success)
+      XCTAssertEqual(recorder.messages, [
+        "OTLP trace export partially succeeded: rejected_spans=2, error_message=invalid span data"
+      ])
     }
-    XCTAssertEqual(partialSuccessEvents.count, 1)
-    let event = try XCTUnwrap(partialSuccessEvents.first)
-    XCTAssertEqual(event.level, .error)
-    XCTAssertEqual(event.metadata?["rejected_spans"]?.description, "2")
-    XCTAssertEqual(event.metadata?["error_message"]?.description, "invalid span data")
   }
 
-  func testPartialSuccessWarningIsLogged() throws {
+  func testPartialSuccessWarningIsReported() {
     fakeCollector.returnedResponse = .with {
       $0.partialSuccess = .with {
         $0.errorMessage = "consider reducing the batch size"
       }
     }
-    let recorder = LogRecorder()
-    let exporter = OtlpTraceExporter(channel: channel, logger: makeLogger(recorder: recorder))
-    defer { exporter.shutdown() }
+    withFeedbackRecorder { recorder in
+      let exporter = OtlpTraceExporter(channel: channel)
+      defer { exporter.shutdown() }
 
-    let result = exporter.export(spans: [generateFakeSpan()])
+      let result = exporter.export(spans: [generateFakeSpan()])
 
-    XCTAssertEqual(result, .success)
-    let warningEvents = recorder.events.filter {
-      $0.message.description == "OTLP trace export succeeded with a warning"
+      XCTAssertEqual(result, .success)
+      XCTAssertEqual(recorder.messages, [
+        "OTLP trace export succeeded with a warning: rejected_spans=0, error_message=consider reducing the batch size"
+      ])
     }
-    XCTAssertEqual(warningEvents.count, 1)
-    let event = try XCTUnwrap(warningEvents.first)
-    XCTAssertEqual(event.level, .warning)
-    XCTAssertEqual(event.metadata?["rejected_spans"]?.description, "0")
-    XCTAssertEqual(event.metadata?["error_message"]?.description, "consider reducing the batch size")
   }
 
-  func testEmptyPartialSuccessIsNotLogged() {
+  func testEmptyPartialSuccessIsNotReported() {
     fakeCollector.returnedResponse = .with {
       $0.partialSuccess = Opentelemetry_Proto_Collector_Trace_V1_ExportTracePartialSuccess()
     }
-    let recorder = LogRecorder()
-    let exporter = OtlpTraceExporter(channel: channel, logger: makeLogger(recorder: recorder))
-    defer { exporter.shutdown() }
+    withFeedbackRecorder { recorder in
+      let exporter = OtlpTraceExporter(channel: channel)
+      defer { exporter.shutdown() }
 
-    let result = exporter.export(spans: [generateFakeSpan()])
+      let result = exporter.export(spans: [generateFakeSpan()])
 
-    XCTAssertEqual(result, .success)
-    let partialSuccessEvents = recorder.events.filter {
-      $0.message.description == "OTLP trace export partially succeeded"
-        || $0.message.description == "OTLP trace export succeeded with a warning"
+      XCTAssertEqual(result, .success)
+      XCTAssertTrue(recorder.messages.isEmpty)
     }
-    XCTAssertTrue(partialSuccessEvents.isEmpty)
   }
 
-  private func makeLogger(recorder: LogRecorder) -> Logging.Logger {
-    Logging.Logger(label: "otlp-trace-exporter-test") { _ in
-      RecordingLogHandler(recorder: recorder)
+  private func withFeedbackRecorder(_ operation: (FeedbackRecorder) -> Void) {
+    let previousHandler = OpenTelemetry.instance.feedbackHandler
+    let recorder = FeedbackRecorder()
+    OpenTelemetry.registerFeedbackHandler(recorder.record)
+    defer {
+      OpenTelemetry.registerFeedbackHandler(previousHandler ?? { _ in })
     }
+    operation(recorder)
   }
 
   private func generateFakeSpan() -> SpanData {
@@ -256,39 +249,20 @@ class OtlpTraceExporterTests: XCTestCase {
   }
 }
 
-private final class LogRecorder: @unchecked Sendable {
+private final class FeedbackRecorder: @unchecked Sendable {
   private let lock = NSLock()
-  private var recordedEvents = [LogEvent]()
+  private var recordedMessages = [String]()
 
-  var events: [LogEvent] {
+  var messages: [String] {
     lock.lock()
     defer { lock.unlock() }
-    return recordedEvents
+    return recordedMessages
   }
 
-  func record(_ event: LogEvent) {
+  func record(_ message: String) {
     lock.lock()
     defer { lock.unlock() }
-    recordedEvents.append(event)
-  }
-}
-
-private struct RecordingLogHandler: LogHandler {
-  var metadata = Logging.Logger.Metadata()
-  var logLevel = Logging.Logger.Level.trace
-  private let recorder: LogRecorder
-
-  init(recorder: LogRecorder) {
-    self.recorder = recorder
-  }
-
-  subscript(metadataKey key: String) -> Logging.Logger.Metadata.Value? {
-    get { metadata[key] }
-    set { metadata[key] = newValue }
-  }
-
-  func log(event: LogEvent) {
-    recorder.record(event)
+    recordedMessages.append(message)
   }
 }
 

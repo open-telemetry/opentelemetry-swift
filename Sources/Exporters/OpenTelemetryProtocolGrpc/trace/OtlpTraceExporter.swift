@@ -57,12 +57,12 @@ public final class OtlpTraceExporter: SpanExporter, @unchecked Sendable {
       // wait() on the response to stop the program from exiting before the response is received.
       let response = try export.response.wait()
       if response.hasPartialSuccess {
-        logPartialSuccess(response.partialSuccess, logger: perCallOptions.logger)
+        reportPartialSuccess(response.partialSuccess)
       }
       // OTLP partial-success responses must not be retried.
       return .success
     } catch {
-      perCallOptions.logger.error("OTLP trace export failed", error: error)
+      OpenTelemetry.instance.feedbackHandler?("OTLP trace export failed: \(error)")
       return .failure
     }
   }
@@ -75,9 +75,8 @@ public final class OtlpTraceExporter: SpanExporter, @unchecked Sendable {
     _ = channel.close()
   }
 
-  private func logPartialSuccess(
-    _ partialSuccess: Opentelemetry_Proto_Collector_Trace_V1_ExportTracePartialSuccess,
-    logger: Logging.Logger
+  private func reportPartialSuccess(
+    _ partialSuccess: Opentelemetry_Proto_Collector_Trace_V1_ExportTracePartialSuccess
   ) {
     let rejectedSpans = partialSuccess.rejectedSpans
     let errorMessage = partialSuccess.errorMessage
@@ -85,17 +84,15 @@ public final class OtlpTraceExporter: SpanExporter, @unchecked Sendable {
       return
     }
 
-    var metadata: Logging.Logger.Metadata = [
-      "rejected_spans": .stringConvertible(rejectedSpans)
-    ]
+    var details = "rejected_spans=\(rejectedSpans)"
     if !errorMessage.isEmpty {
-      metadata["error_message"] = .string(errorMessage)
+      details += ", error_message=\(errorMessage)"
     }
 
     if rejectedSpans != 0 {
-      logger.error("OTLP trace export partially succeeded", metadata: metadata)
+      OpenTelemetry.instance.feedbackHandler?("OTLP trace export partially succeeded: \(details)")
     } else {
-      logger.warning("OTLP trace export succeeded with a warning", metadata: metadata)
+      OpenTelemetry.instance.feedbackHandler?("OTLP trace export succeeded with a warning: \(details)")
     }
   }
 }
