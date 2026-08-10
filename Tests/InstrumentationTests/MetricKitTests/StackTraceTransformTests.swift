@@ -252,6 +252,64 @@ class StackTraceTransformTests: XCTestCase {
         XCTAssertNotNil(json["callStacks"])
     }
 
+    func testTransformStackTrace_AcceptsUnwrappedTree() throws {
+        // MXCallStackTree.jsonRepresentation() emits the tree without a callStackTree
+        // wrapper, which is what the instrumentation actually feeds in.
+        let appleFormat = """
+        {
+          "callStackPerThread": true,
+          "callStacks": [
+            {
+              "threadAttributed": true,
+              "callStackRootFrames": [
+                {
+                  "binaryName": "MyApp",
+                  "binaryUUID": "A1B2C3D4-5678-90AB-CDEF-1234567890AB",
+                  "offsetIntoBinaryTextSegment": 100,
+                  "address": 12345678,
+                  "sampleCount": 1,
+                  "subFrames": [
+                    {
+                      "binaryName": "dyld",
+                      "binaryUUID": "B2C3D4E5-6789-01BC-DEF0-234567890ABC",
+                      "offsetIntoBinaryTextSegment": 200,
+                      "address": 23456789,
+                      "sampleCount": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "threadAttributed": false,
+              "callStackRootFrames": []
+            }
+          ]
+        }
+        """
+
+        let appleData = appleFormat.data(using: .utf8)!
+        let transformedData = transformStackTrace(appleData)
+        XCTAssertNotNil(transformedData, "Unwrapped trees must transform, not fall back")
+
+        let json = try JSONSerialization.jsonObject(with: transformedData!, options: []) as! [String: Any]
+        XCTAssertEqual(json["callStackPerThread"] as? Bool, true)
+
+        let callStacks = json["callStacks"] as! [[String: Any]]
+        XCTAssertEqual(callStacks.count, 2)
+
+        let frames = callStacks[0]["callStackFrames"] as! [[String: Any]]
+        XCTAssertEqual(frames.count, 2)
+        XCTAssertEqual(frames[0]["binaryName"] as? String, "MyApp")
+        XCTAssertEqual(frames[0]["offsetAddress"] as? Int, 100)
+        XCTAssertEqual(frames[1]["binaryName"] as? String, "dyld")
+        XCTAssertNil(frames[0]["subFrames"], "subFrames should be flattened away")
+        XCTAssertNil(frames[0]["sampleCount"], "sampleCount should be dropped")
+        XCTAssertNil(frames[0]["address"], "address should be dropped")
+
+        XCTAssertEqual((callStacks[1]["callStackFrames"] as! [[String: Any]]).count, 0)
+    }
+
     func testTransformStackTrace_HandlesInvalidJSON() {
         // Test with invalid JSON
         let invalidData = "not valid json".data(using: .utf8)!

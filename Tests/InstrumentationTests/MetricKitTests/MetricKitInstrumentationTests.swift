@@ -642,8 +642,10 @@ class MetricKitDiagnosticTests: XCTestCase {
         let json = try? JSONSerialization.jsonObject(with: stacktraceData) as? [String: Any]
 
         XCTAssertNotNil(json)
-        XCTAssertTrue(json?.keys.contains("callStackTree") ?? false, "Should have Apple's callStackTree wrapper")
-        XCTAssertFalse(json?.keys.contains("callStacks") ?? true, "Should not have OTel's callStacks")
+        let callStacks = json?["callStacks"] as? [[String: Any]]
+        XCTAssertNotNil(callStacks)
+        XCTAssertNotNil(callStacks?.first?["callStackRootFrames"], "Should have Apple's callStackRootFrames")
+        XCTAssertNil(callStacks?.first?["callStackFrames"], "Should not have OTel's flattened callStackFrames")
     }
 
     func testConfiguration_UseOTelStacktraceFormat() {
@@ -664,8 +666,10 @@ class MetricKitDiagnosticTests: XCTestCase {
         let json = try? JSONSerialization.jsonObject(with: stacktraceData) as? [String: Any]
 
         XCTAssertNotNil(json)
-        XCTAssertTrue(json?.keys.contains("callStacks") ?? false, "Should have OTel's callStacks")
-        XCTAssertFalse(json?.keys.contains("callStackTree") ?? true, "Should not have Apple's callStackTree wrapper")
+        let callStacks = json?["callStacks"] as? [[String: Any]]
+        XCTAssertNotNil(callStacks)
+        XCTAssertNotNil(callStacks?.first?["callStackFrames"], "Should have OTel's flattened callStackFrames")
+        XCTAssertNil(callStacks?.first?["callStackRootFrames"], "Should not have Apple's callStackRootFrames")
     }
 
     func testConfiguration_UsesCustomTracerForDiagnostics() {

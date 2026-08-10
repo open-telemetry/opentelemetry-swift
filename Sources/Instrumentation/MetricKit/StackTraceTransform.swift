@@ -68,12 +68,15 @@
         }
 
         do {
-            // Decode Apple's format
+            // Decode Apple's format. `MXCallStackTree.jsonRepresentation()` emits the tree
+            // unwrapped; the `callStackTree` wrapper only appears when a whole
+            // MXDiagnosticPayload is serialized. Accept both.
             let decoder = JSONDecoder()
-            let appleTree = try decoder.decode(AppleCallStackTree.self, from: appleJsonData)
+            let appleTree = try (try? decoder.decode(AppleCallStackTreeContent.self, from: appleJsonData))
+                ?? decoder.decode(AppleCallStackTree.self, from: appleJsonData).callStackTree
 
             // Transform to simplified format
-            let simplifiedCallStacks = appleTree.callStackTree.callStacks.map { appleStack in
+            let simplifiedCallStacks = appleTree.callStacks.map { appleStack in
                 // Flatten all root frames and their subframes
                 let allFrames = appleStack.callStackRootFrames.flatMap { flattenFrames($0) }
 
@@ -84,7 +87,7 @@
             }
 
             let simplifiedTree = SimplifiedCallStackTree(
-                callStackPerThread: appleTree.callStackTree.callStackPerThread,
+                callStackPerThread: appleTree.callStackPerThread,
                 callStacks: simplifiedCallStacks
             )
 
