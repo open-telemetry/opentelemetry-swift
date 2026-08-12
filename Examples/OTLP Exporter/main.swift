@@ -46,18 +46,13 @@
   let collectorHost = "localhost"
   let collectorPort = 4317
   let collectorTransport = CollectorTransport.plaintext
-  let eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+  let eventLoopGroup = PlatformSupport.makeEventLoopGroup(loopCount: 1)
   let client = makeCollectorClient(
     host: collectorHost,
     port: collectorPort,
     transport: collectorTransport,
     eventLoopGroup: eventLoopGroup
   )
-
-  defer {
-    try? client.close().wait()
-    try? eventLoopGroup.syncShutdownGracefully()
-  }
 
   let otlpTraceExporter = OtlpTraceExporter(channel: client)
   let stdoutExporter = StdoutSpanExporter()
