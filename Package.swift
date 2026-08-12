@@ -369,6 +369,8 @@ extension Package {
           dependencies: [
             .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
             "OpenTelemetryProtocolExporterGrpc",
+            .product(name: "GRPC", package: "grpc-swift"),
+            .product(name: "NIO", package: "swift-nio"),
             .product(name: "StdoutExporter", package: "opentelemetry-swift-core"),
             "ZipkinExporter", "ResourceExtension", "SignPostIntegration"
           ],
