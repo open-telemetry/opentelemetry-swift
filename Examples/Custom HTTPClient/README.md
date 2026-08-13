@@ -46,6 +46,25 @@ class AuthTokenHTTPClient: HTTPClient {
         }
         task.resume()
     }
+
+    func send(request: URLRequest) async throws -> HTTPURLResponse {
+        var authorizedRequest = request
+
+        if let token = authToken {
+            authorizedRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        let (data, response) = try await session.data(for: authorizedRequest)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if httpResponse.statusCode == 401 {
+            return try await refreshTokenAndRetry(request: request)
+        }
+
+        return httpResponse
+    }
     
     private func refreshTokenAndRetry(request: URLRequest, completion: @escaping (Result<HTTPURLResponse, Error>) -> Void) {
         // Implement your token refresh logic here
@@ -64,6 +83,24 @@ class AuthTokenHTTPClient: HTTPClient {
             }
         }
         task.resume()
+    }
+
+    private func refreshTokenAndRetry(request: URLRequest) async throws -> HTTPURLResponse {
+        var tokenRequest = URLRequest(url: tokenRefreshURL)
+        tokenRequest.httpMethod = "POST"
+
+        let (data, response) = try await session.data(for: tokenRequest)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let newToken = json["access_token"] as? String {
+            authToken = newToken
+            return try await send(request: request)
+        }
+
+        throw URLError(.userAuthenticationRequired)
     }
 }
 
@@ -90,6 +127,10 @@ class RetryHTTPClient: HTTPClient {
     func send(request: URLRequest, completion: @escaping (Result<HTTPURLResponse, Error>) -> Void) {
         sendWithRetry(request: request, attempt: 0, completion: completion)
     }
+
+    func send(request: URLRequest) async throws -> HTTPURLResponse {
+        try await sendWithRetry(request: request, attempt: 0)
+    }
     
     private func sendWithRetry(request: URLRequest, attempt: Int, completion: @escaping (Result<HTTPURLResponse, Error>) -> Void) {
         baseClient.send(request: request) { [weak self] result in
@@ -112,6 +153,23 @@ class RetryHTTPClient: HTTPClient {
                     completion(result)
                 }
             }
+        }
+    }
+
+    private func sendWithRetry(request: URLRequest, attempt: Int) async throws -> HTTPURLResponse {
+        do {
+            let response = try await baseClient.send(request: request)
+            if response.statusCode >= 500 && attempt < maxRetries {
+                try await Task.sleep(nanoseconds: UInt64(pow(2.0, Double(attempt)) * 1_000_000_000))
+                return try await sendWithRetry(request: request, attempt: attempt + 1)
+            }
+            return response
+        } catch {
+            if attempt < maxRetries {
+                try await Task.sleep(nanoseconds: UInt64(pow(2.0, Double(attempt)) * 1_000_000_000))
+                return try await sendWithRetry(request: request, attempt: attempt + 1)
+            }
+            throw error
         }
     }
 }
@@ -139,6 +197,16 @@ class CustomHeadersHTTPClient: HTTPClient {
         
         baseClient.send(request: modifiedRequest, completion: completion)
     }
+
+    func send(request: URLRequest) async throws -> HTTPURLResponse {
+        var modifiedRequest = request
+
+        for (key, value) in customHeaders {
+            modifiedRequest.setValue(value, forHTTPHeaderField: key)
+        }
+
+        return try await baseClient.send(request: modifiedRequest)
+    }
 }
 
 // Usage
@@ -155,6 +223,8 @@ let exporter = OtlpHttpLogExporter(
 ```
 
 ## Benefits
+
+Custom `HTTPClient` implementations must provide both the callback `send(request:completion:)` and the async `send(request:)`. Async export (Phase 1) calls the async method; sync export and persistence still use the callback API until those paths migrate.
 
 Using custom HTTPClient implementations allows you to:
 

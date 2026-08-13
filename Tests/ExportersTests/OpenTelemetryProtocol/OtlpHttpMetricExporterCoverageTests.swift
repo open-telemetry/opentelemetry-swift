@@ -34,6 +34,18 @@ private final class StubHTTPClient: HTTPClient {
       completion(.failure(err))
     }
   }
+
+  func send(request: URLRequest) async throws -> HTTPURLResponse {
+    sentRequests.append(request)
+    let next = outcomes.isEmpty ? .success : outcomes.removeFirst()
+    switch next {
+    case .success:
+      return HTTPURLResponse(url: request.url!, statusCode: 200,
+                             httpVersion: "HTTP/1.1", headerFields: nil)!
+    case .failure(let err):
+      throw err
+    }
+  }
 }
 
 private struct FakeError: Error {}
