@@ -17,9 +17,11 @@ public func defaultOltpHttpTracesEndpoint() -> URL {
 }
 
 public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter, @unchecked Sendable {
-  var pendingSpans: [SpanData] = []
+  private let pendingQueue = PendingQueue<SpanData>()
+  var pendingSpans: [SpanData] {
+    pendingQueue.snapshot()
+  }
 
-  private let exporterLock = Lock()
   private var exporterMetrics: ExporterMetrics?
 
   override public init(endpoint: URL = defaultOltpHttpTracesEndpoint(),
@@ -56,92 +58,77 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter, @uncheck
 
   public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil)
     -> SpanExporterResultCode {
-    var resultValue: SpanExporterResultCode = .success
-    var sendingSpans: [SpanData] = []
-    exporterLock.withLockVoid {
-      pendingSpans.append(contentsOf: spans)
-      sendingSpans = pendingSpans
-      pendingSpans = []
-    }
-
-    let body =
-      Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
-        $0.resourceSpans = SpanAdapter.toProtoResourceSpans(
-          spanDataList: sendingSpans)
-      }
-    let semaphore = DispatchSemaphore(value: 0)
-    var request = createRequest(body: body, endpoint: endpoint)
-
     let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
-    request.timeoutInterval = timeout
-
-    exporterMetrics?.addSeen(value: sendingSpans.count)
-    httpClient.send(request: request) { [weak self] result in
-      switch result {
-      case .success:
-        self?.exporterMetrics?.addSuccess(value: sendingSpans.count)
-      case let .failure(error):
-        self?.exporterMetrics?.addFailed(value: sendingSpans.count)
-        self?.exporterLock.withLockVoid {
-          self?.pendingSpans.append(contentsOf: sendingSpans)
-        }
-        OpenTelemetry.instance.feedbackHandler?("\(error)")
-        resultValue = .failure
-      }
-      semaphore.signal()
-    }
-
-    let waitResult = semaphore.wait(timeout: .now() + timeout)
-    if waitResult == .timedOut {
-      exporterMetrics?.addFailed(value: sendingSpans.count)
+    let estimatedCount = spans.count + pendingQueue.snapshot().count
+    return waitSynchronously(timeout: timeout) {
+      await self.export(spans: spans, explicitTimeout: explicitTimeout)
+    } ?? {
+      exporterMetrics?.addFailed(value: estimatedCount)
       return .failure
-    }
-    return resultValue
+    }()
+  }
+
+  @discardableResult
+  public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) async
+    -> SpanExporterResultCode {
+    let batch = pendingQueue.enqueueAndTakeAll(spans)
+    let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+    return await sendBatch(batch, timeout: timeout, isFlush: false)
   }
 
   public func flush(explicitTimeout: TimeInterval? = nil)
     -> SpanExporterResultCode {
-    var resultValue: SpanExporterResultCode = .success
-    var pendingSpans: [SpanData] = []
-    exporterLock.withLockVoid {
-      pendingSpans = self.pendingSpans
-    }
-    if !pendingSpans.isEmpty {
-      let sentCount = pendingSpans.count
-      let body =
-        Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
-          $0.resourceSpans = SpanAdapter.toProtoResourceSpans(
-            spanDataList: pendingSpans)
-        }
-      let semaphore = DispatchSemaphore(value: 0)
-      var request = createRequest(body: body, endpoint: endpoint)
-      let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
-      request.timeoutInterval = timeout
+    let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+    let pendingCount = pendingQueue.snapshot().count
+    return waitSynchronously(timeout: timeout) {
+      await self.flush(explicitTimeout: explicitTimeout)
+    } ?? {
+      exporterMetrics?.addFailed(value: pendingCount)
+      return .failure
+    }()
+  }
 
-      httpClient.send(request: request) { [weak self] result in
-        switch result {
-        case .success:
-          self?.exporterMetrics?.addSuccess(value: sentCount)
-          // Drop the records we successfully flushed from the pending queue.
-          self?.exporterLock.withLockVoid {
-            guard let self else { return }
-            let n = min(sentCount, self.pendingSpans.count)
-            self.pendingSpans.removeFirst(n)
-          }
-        case let .failure(error):
-          self?.exporterMetrics?.addFailed(value: sentCount)
-          OpenTelemetry.instance.feedbackHandler?("\(error)")
-          resultValue = .failure
-        }
-        semaphore.signal()
-      }
-
-      let waitResult = semaphore.wait(timeout: .now() + timeout)
-      if waitResult == .timedOut {
-        exporterMetrics?.addFailed(value: sentCount)
-        return .failure
-      }
+  public func flush(explicitTimeout: TimeInterval? = nil) async -> SpanExporterResultCode {
+    let pending = pendingQueue.snapshot()
+    guard !pending.isEmpty else { return .success }
+    let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+    let result = await sendBatch(pending, timeout: timeout, isFlush: true)
+    if case .success = result {
+      pendingQueue.dropPrefix(pending.count)
     }
-    return resultValue
+    return result
+  }
+
+  public func shutdown(explicitTimeout: TimeInterval?) async {}
+
+  private func sendBatch(_ batch: [SpanData],
+                         timeout: TimeInterval,
+                         isFlush: Bool) async -> SpanExporterResultCode {
+    let body =
+      Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
+        $0.resourceSpans = SpanAdapter.toProtoResourceSpans(
+          spanDataList: batch)
+      }
+    var request = createRequest(body: body, endpoint: endpoint)
+    request.timeoutInterval = timeout
+    if !isFlush {
+      exporterMetrics?.addSeen(value: batch.count)
+    }
+
+    let sendResult = await sendWithTimeout(httpClient: httpClient, timeout: timeout, request: request)
+    switch sendResult {
+    case .success:
+      exporterMetrics?.addSuccess(value: batch.count)
+      return .success
+    case let .failure(error):
+      exporterMetrics?.addFailed(value: batch.count)
+      if !isFlush, !(error is OtlpHttpExportTimeoutError) {
+        pendingQueue.requeue(batch)
+      }
+      if !(error is OtlpHttpExportTimeoutError) {
+        OpenTelemetry.instance.feedbackHandler?("\(error)")
+      }
+      return .failure
+    }
   }
 }

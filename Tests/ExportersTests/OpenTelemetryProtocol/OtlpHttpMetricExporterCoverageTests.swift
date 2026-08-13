@@ -64,7 +64,8 @@ final class OtlpHttpMetricExporterCoverageTests: XCTestCase {
   func testExportFailurePutsMetricsBackInPending() {
     let client = StubHTTPClient(outcomes: [.failure(FakeError())])
     let exporter = OtlpHttpMetricExporter(endpoint: endpoint, httpClient: client)
-    _ = exporter.export(metrics: [.empty])
+    let result = exporter.export(metrics: [.empty])
+    XCTAssertEqual(result, .failure)
     XCTAssertEqual(exporter.pendingMetrics.count, 1)
   }
 
