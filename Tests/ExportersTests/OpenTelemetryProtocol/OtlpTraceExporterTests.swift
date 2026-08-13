@@ -127,6 +127,89 @@ class OtlpTraceExporterTests: XCTestCase {
     exporter.shutdown()
   }
 
+  func testExportFailureIsReported() {
+    let expectedStatus = GRPCStatus(code: .unavailable, message: "collector unavailable")
+    fakeCollector.returnedStatus = expectedStatus
+    withFeedbackRecorder { recorder in
+      let exporter = OtlpTraceExporter(channel: channel)
+      defer { exporter.shutdown() }
+
+      let result = exporter.export(spans: [generateFakeSpan()])
+
+      XCTAssertEqual(result, .failure)
+      XCTAssertEqual(recorder.messages.count, 1)
+      guard let message = recorder.messages.first else {
+        return XCTFail("Expected export failure feedback")
+      }
+      XCTAssertTrue(message.contains("OTLP trace export failed"))
+      XCTAssertTrue(message.contains("collector unavailable"))
+    }
+  }
+
+  func testRejectedSpansAreReported() {
+    fakeCollector.returnedResponse = .with {
+      $0.partialSuccess = .with {
+        $0.rejectedSpans = 2
+        $0.errorMessage = "invalid span data"
+      }
+    }
+    withFeedbackRecorder { recorder in
+      let exporter = OtlpTraceExporter(channel: channel)
+      defer { exporter.shutdown() }
+
+      let result = exporter.export(spans: [generateFakeSpan()])
+
+      XCTAssertEqual(result, .success)
+      XCTAssertEqual(recorder.messages, [
+        "OTLP trace export partially succeeded: rejected_spans=2, error_message=invalid span data"
+      ])
+    }
+  }
+
+  func testPartialSuccessWarningIsReported() {
+    fakeCollector.returnedResponse = .with {
+      $0.partialSuccess = .with {
+        $0.errorMessage = "consider reducing the batch size"
+      }
+    }
+    withFeedbackRecorder { recorder in
+      let exporter = OtlpTraceExporter(channel: channel)
+      defer { exporter.shutdown() }
+
+      let result = exporter.export(spans: [generateFakeSpan()])
+
+      XCTAssertEqual(result, .success)
+      XCTAssertEqual(recorder.messages, [
+        "OTLP trace export succeeded with a warning: rejected_spans=0, error_message=consider reducing the batch size"
+      ])
+    }
+  }
+
+  func testEmptyPartialSuccessIsNotReported() {
+    fakeCollector.returnedResponse = .with {
+      $0.partialSuccess = Opentelemetry_Proto_Collector_Trace_V1_ExportTracePartialSuccess()
+    }
+    withFeedbackRecorder { recorder in
+      let exporter = OtlpTraceExporter(channel: channel)
+      defer { exporter.shutdown() }
+
+      let result = exporter.export(spans: [generateFakeSpan()])
+
+      XCTAssertEqual(result, .success)
+      XCTAssertTrue(recorder.messages.isEmpty)
+    }
+  }
+
+  private func withFeedbackRecorder(_ operation: (FeedbackRecorder) -> Void) {
+    let previousHandler = OpenTelemetry.instance.feedbackHandler
+    let recorder = FeedbackRecorder()
+    OpenTelemetry.registerFeedbackHandler(recorder.record)
+    defer {
+      OpenTelemetry.registerFeedbackHandler(previousHandler ?? { _ in })
+    }
+    operation(recorder)
+  }
+
   private func generateFakeSpan() -> SpanData {
     let duration = 0.9
     let start = Date()
@@ -166,9 +249,27 @@ class OtlpTraceExporterTests: XCTestCase {
   }
 }
 
+private final class FeedbackRecorder: @unchecked Sendable {
+  private let lock = NSLock()
+  private var recordedMessages = [String]()
+
+  var messages: [String] {
+    lock.lock()
+    defer { lock.unlock() }
+    return recordedMessages
+  }
+
+  func record(_ message: String) {
+    lock.lock()
+    defer { lock.unlock() }
+    recordedMessages.append(message)
+  }
+}
+
 class FakeCollector: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceProvider {
   var receivedSpans = [Opentelemetry_Proto_Trace_V1_ResourceSpans]()
   var returnedStatus = GRPCStatus.ok
+  var returnedResponse = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse()
   var interceptors: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceServerInterceptorFactoryProtocol?
 
   func export(request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse> {
@@ -176,6 +277,6 @@ class FakeCollector: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceProvider
     if returnedStatus != GRPCStatus.ok {
       return context.eventLoop.makeFailedFuture(returnedStatus)
     }
-    return context.eventLoop.makeSucceededFuture(Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse())
+    return context.eventLoop.makeSucceededFuture(returnedResponse)
   }
 }

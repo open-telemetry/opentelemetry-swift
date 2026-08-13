@@ -55,9 +55,14 @@ public final class OtlpTraceExporter: SpanExporter, @unchecked Sendable {
 
     do {
       // wait() on the response to stop the program from exiting before the response is received.
-      _ = try export.response.wait()
+      let response = try export.response.wait()
+      if response.hasPartialSuccess {
+        reportPartialSuccess(response.partialSuccess)
+      }
+      // OTLP partial-success responses must not be retried.
       return .success
     } catch {
+      OpenTelemetry.instance.feedbackHandler?("OTLP trace export failed: \(error)")
       return .failure
     }
   }
@@ -68,5 +73,26 @@ public final class OtlpTraceExporter: SpanExporter, @unchecked Sendable {
 
   public func shutdown(explicitTimeout: TimeInterval? = nil) {
     _ = channel.close()
+  }
+
+  private func reportPartialSuccess(
+    _ partialSuccess: Opentelemetry_Proto_Collector_Trace_V1_ExportTracePartialSuccess
+  ) {
+    let rejectedSpans = partialSuccess.rejectedSpans
+    let errorMessage = partialSuccess.errorMessage
+    guard rejectedSpans != 0 || !errorMessage.isEmpty else {
+      return
+    }
+
+    var details = "rejected_spans=\(rejectedSpans)"
+    if !errorMessage.isEmpty {
+      details += ", error_message=\(errorMessage)"
+    }
+
+    if rejectedSpans != 0 {
+      OpenTelemetry.instance.feedbackHandler?("OTLP trace export partially succeeded: \(details)")
+    } else {
+      OpenTelemetry.instance.feedbackHandler?("OTLP trace export succeeded with a warning: \(details)")
+    }
   }
 }
