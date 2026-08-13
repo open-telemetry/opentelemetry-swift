@@ -46,6 +46,21 @@ Note: It may take some time for the application metrics to appear on the Prometh
     ```
 This will create a service and spans with the name `my-swift-app`
 
+## Connect with TLS
+
+The checked-in example uses plaintext so it can connect to the local collector from the Docker
+setup above. To connect to a TLS-enabled collector, update the collector settings in `main.swift`:
+
+```swift
+let collectorHost = "collector.example.com"
+let collectorPort = 4317
+let collectorTransport = CollectorTransport.tls
+```
+
+The TLS configuration uses the platform's default trust roots and performs full certificate
+verification. The value of `collectorHost` must match a name or address covered by the collector
+certificate.
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

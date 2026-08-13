@@ -8,7 +8,6 @@
   import Foundation
   import GRPC
   import NIO
-  import NIOSSL
   import OpenTelemetryApi
   import OpenTelemetryProtocolExporterGrpc
   import OpenTelemetrySdk
@@ -25,9 +24,35 @@
   let instrumentationScopeName = "OTLPExporter"
   let instrumentationScopeVersion = "semver:0.1.0"
 
-  let configuration = ClientConnection.Configuration.default(target: .hostAndPort("localhost", 4317),
-                                                             eventLoopGroup: MultiThreadedEventLoopGroup(numberOfThreads: 1))
-  let client = ClientConnection(configuration: configuration)
+  enum CollectorTransport {
+    case plaintext
+    case tls
+  }
+
+  func makeCollectorClient(host: String,
+                           port: Int,
+                           transport: CollectorTransport,
+                           eventLoopGroup: EventLoopGroup) -> ClientConnection {
+    switch transport {
+    case .plaintext:
+      return .insecure(group: eventLoopGroup)
+        .connect(host: host, port: port)
+    case .tls:
+      return .usingPlatformAppropriateTLS(for: eventLoopGroup)
+        .connect(host: host, port: port)
+    }
+  }
+
+  let collectorHost = "localhost"
+  let collectorPort = 4317
+  let collectorTransport = CollectorTransport.plaintext
+  let eventLoopGroup = PlatformSupport.makeEventLoopGroup(loopCount: 1)
+  let client = makeCollectorClient(
+    host: collectorHost,
+    port: collectorPort,
+    transport: collectorTransport,
+    eventLoopGroup: eventLoopGroup
+  )
 
   let otlpTraceExporter = OtlpTraceExporter(channel: client)
   let stdoutExporter = StdoutSpanExporter()
