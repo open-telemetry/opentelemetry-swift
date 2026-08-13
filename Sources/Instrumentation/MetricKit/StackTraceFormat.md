@@ -85,7 +85,7 @@ This format is based on Apple's `MXCallStackTree.jsonRepresentation()` format bu
 
 ### 1. Removed `callStackTree` Wrapper
 
-The `callStackTree` wrapper adds an unnecessary level of nesting. Since the entire JSON document represents call stack data, the wrapper provides no additional information and only complicates parsing.
+`MXCallStackTree.jsonRepresentation()` emits the tree unwrapped; the `callStackTree` wrapper only appears when a whole `MXDiagnosticPayload` is serialized. Either way, the wrapper adds an unnecessary level of nesting: since the entire JSON document represents call stack data, it provides no additional information and only complicates parsing, so this format omits it and accepts both shapes as input.
 
 ### 2. Flattened Stack Frames
 
