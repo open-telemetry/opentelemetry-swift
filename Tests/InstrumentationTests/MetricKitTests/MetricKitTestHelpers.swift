@@ -439,24 +439,24 @@ class FakeMetricPayload: MXMetricPayload {
 @available(iOS 14.0, *)
 class FakeCallStackTree: MXCallStackTree {
     override func jsonRepresentation() -> Data {
+        // Matches the real MXCallStackTree.jsonRepresentation() output, which has no
+        // callStackTree wrapper.
         let appleFormat = """
         {
-            "callStackTree": {
-                "callStackPerThread": true,
-                "callStacks": [
-                    {
-                        "threadAttributed": true,
-                        "callStackRootFrames": [
-                            {
-                                "binaryName": "TestApp",
-                                "binaryUUID": "12345678-1234-1234-1234-123456789012",
-                                "offsetIntoBinaryTextSegment": 1000,
-                                "subFrames": []
-                            }
-                        ]
-                    }
-                ]
-            }
+            "callStackPerThread": true,
+            "callStacks": [
+                {
+                    "threadAttributed": true,
+                    "callStackRootFrames": [
+                        {
+                            "binaryName": "TestApp",
+                            "binaryUUID": "12345678-1234-1234-1234-123456789012",
+                            "offsetIntoBinaryTextSegment": 1000,
+                            "subFrames": []
+                        }
+                    ]
+                }
+            ]
         }
         """
         return Data(appleFormat.utf8)
