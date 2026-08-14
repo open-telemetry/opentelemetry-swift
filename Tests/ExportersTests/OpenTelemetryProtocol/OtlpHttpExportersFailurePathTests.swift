@@ -40,6 +40,20 @@ private final class StubHTTPClient: HTTPClient {
       completion(.failure(err))
     }
   }
+
+  func send(request: URLRequest) async throws -> HTTPURLResponse {
+    sentRequests.append(request)
+    let next = outcomes.isEmpty ? .success : outcomes.removeFirst()
+    switch next {
+    case .success:
+      return HTTPURLResponse(url: request.url!,
+                             statusCode: 200,
+                             httpVersion: "HTTP/1.1",
+                             headerFields: nil)!
+    case .failure(let err):
+      throw err
+    }
+  }
 }
 
 private struct TransientNetworkError: Error {}
@@ -55,6 +69,14 @@ private final class HangingAfterFirstFailureHTTPClient: HTTPClient {
     if sendCount == 1 {
       completion(.failure(TransientNetworkError()))
     }
+  }
+
+  func send(request: URLRequest) async throws -> HTTPURLResponse {
+    sendCount += 1
+    if sendCount == 1 {
+      throw TransientNetworkError()
+    }
+    return await withCheckedContinuation { (_: CheckedContinuation<HTTPURLResponse, Never>) in }
   }
 }
 
@@ -94,7 +116,7 @@ final class OtlpHttpLogExporterCoverageTests: XCTestCase {
 
     let rec = sampleLogRecord()
     let result = exporter.export(logRecords: [rec])
-    XCTAssertEqual(result, .success)
+    XCTAssertEqual(result, .failure)
 
     // Failure path should put the record back into pendingLogRecords.
     XCTAssertEqual(exporter.pendingLogRecords.count, 1)
@@ -251,6 +273,37 @@ final class OtlpHttpTraceExporterCoverageTests: XCTestCase {
 
 final class OtlpHttpExporterFlushTimeoutTests: XCTestCase {
   private let timeout: TimeInterval = 0.5
+
+  private final class HangingHTTPClient: HTTPClient {
+    func send(request: URLRequest,
+              completion: @escaping (Result<HTTPURLResponse, Error>) -> Void) {}
+
+    func send(request: URLRequest) async throws -> HTTPURLResponse {
+      await withCheckedContinuation { (_: CheckedContinuation<HTTPURLResponse, Never>) in }
+    }
+  }
+
+  func testLogExportTimesOutWhenResponseNeverArrives() {
+    let client = HangingHTTPClient()
+    let exporter = OtlpHttpLogExporter(config: OtlpConfiguration(timeout: timeout),
+                                       httpClient: client)
+
+    let start = Date()
+    XCTAssertEqual(exporter.export(logRecords: [sampleLogRecord()]), .failure)
+    XCTAssertLessThan(Date().timeIntervalSince(start), timeout * 4)
+  }
+
+  func testMetricExportTimesOutWhenResponseNeverArrives() {
+    let client = HangingHTTPClient()
+    let exporter = OtlpHttpMetricExporter(
+      endpoint: URL(string: "http://localhost:4318/v1/metrics")!,
+      config: OtlpConfiguration(timeout: timeout),
+      httpClient: client)
+
+    let start = Date()
+    XCTAssertEqual(exporter.export(metrics: [.empty]), .failure)
+    XCTAssertLessThan(Date().timeIntervalSince(start), timeout * 4)
+  }
 
   func testMetricFlushTimesOutWhenResponseNeverArrives() {
     let client = HangingAfterFirstFailureHTTPClient()

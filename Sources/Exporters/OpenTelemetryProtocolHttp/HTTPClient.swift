@@ -17,6 +17,11 @@ public protocol HTTPClient {
   ///   - completion: Completion handler called with Result<HTTPURLResponse, Error>
   func send(request: URLRequest,
             completion: @escaping (Result<HTTPURLResponse, Error>) -> Void)
+
+  /// Sends an HTTP request and returns the response on success.
+  /// - Parameter request: The URLRequest to send
+  /// - Returns: The HTTP response for successful (2xx) requests
+  func send(request: URLRequest) async throws -> HTTPURLResponse
 }
 
 /// Default implementation of HTTPClient using URLSession.
@@ -53,6 +58,11 @@ public final class BaseHTTPClient: HTTPClient {
       completion(httpClientResult(for: (data, response, error)))
     }
     task.resume()
+  }
+
+  public func send(request: URLRequest) async throws -> HTTPURLResponse {
+    let (data, response) = try await session.data(for: request)
+    return try httpClientResult(for: (data, response, nil)).get()
   }
 }
 

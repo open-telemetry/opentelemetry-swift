@@ -31,8 +31,10 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter, @unch
   var aggregationTemporalitySelector: AggregationTemporalitySelector
   var defaultAggregationSelector: DefaultAggregationSelector
 
-  var pendingMetrics: [MetricData] = []
-  private let exporterLock = Lock()
+  private let pendingQueue = PendingQueue<MetricData>()
+  var pendingMetrics: [MetricData] {
+    pendingQueue.snapshot()
+  }
   private var exporterMetrics: ExporterMetrics?
 
   // MARK: - Init
@@ -85,84 +87,50 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter, @unch
   // MARK: - StableMetricsExporter
 
   public func export(metrics: [MetricData]) -> ExportResult {
-    var sendingMetrics: [MetricData] = []
-    exporterLock.withLockVoid {
-      pendingMetrics.append(contentsOf: metrics)
-      sendingMetrics = pendingMetrics
-      pendingMetrics = []
-    }
-    let body =
-      Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
-        $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(
-          metricData: sendingMetrics)
-      }
-    exporterMetrics?.addSeen(value: sendingMetrics.count)
-    var request = createRequest(body: body, endpoint: endpoint)
-    request.timeoutInterval = min(TimeInterval.greatestFiniteMagnitude, config.timeout)
-    httpClient.send(request: request) { [weak self] result in
-      switch result {
-      case .success:
-        self?.exporterMetrics?.addSuccess(value: sendingMetrics.count)
-      case let .failure(error):
-        self?.exporterMetrics?.addFailed(value: sendingMetrics.count)
-        self?.exporterLock.withLockVoid {
-          self?.pendingMetrics.append(contentsOf: sendingMetrics)
-        }
-        OpenTelemetry.instance.feedbackHandler?("\(error)")
-      }
-    }
+    let timeout = min(TimeInterval.greatestFiniteMagnitude, config.timeout)
+    let estimatedCount = metrics.count + pendingQueue.snapshot().count
+    return waitSynchronously(timeout: timeout) {
+      await self.export(metrics: metrics)
+    } ?? {
+      exporterMetrics?.addFailed(value: estimatedCount)
+      return .failure
+    }()
+  }
 
-    return .success
+  public func export(metrics: [MetricData]) async -> ExportResult {
+    let batch = pendingQueue.enqueueAndTakeAll(metrics)
+    let timeout = min(TimeInterval.greatestFiniteMagnitude, config.timeout)
+    return await sendBatch(batch, timeout: timeout, isFlush: false)
   }
 
   public func flush() -> ExportResult {
-    var exporterResult: ExportResult = .success
-    var pendingMetrics: [MetricData] = []
-    exporterLock.withLockVoid {
-      pendingMetrics = self.pendingMetrics
-    }
-    if !pendingMetrics.isEmpty {
-      let sentCount = pendingMetrics.count
-      let body =
-        Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest
-          .with {
-            $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(
-              metricData: pendingMetrics)
-          }
-      let semaphore = DispatchSemaphore(value: 0)
-      var request = createRequest(body: body, endpoint: endpoint)
-      let timeout = min(TimeInterval.greatestFiniteMagnitude, config.timeout)
-      request.timeoutInterval = timeout
-      httpClient.send(request: request) { [weak self] result in
-        switch result {
-        case .success:
-          self?.exporterMetrics?.addSuccess(value: sentCount)
-          // Drop the records we successfully flushed from the pending queue.
-          self?.exporterLock.withLockVoid {
-            guard let self else { return }
-            let n = min(sentCount, self.pendingMetrics.count)
-            self.pendingMetrics.removeFirst(n)
-          }
-        case let .failure(error):
-          self?.exporterMetrics?.addFailed(value: sentCount)
-          OpenTelemetry.instance.feedbackHandler?("\(error)")
-          exporterResult = .failure
-        }
-        semaphore.signal()
-      }
+    let timeout = min(TimeInterval.greatestFiniteMagnitude, config.timeout)
+    let pendingCount = pendingQueue.snapshot().count
+    return waitSynchronously(timeout: timeout) {
+      await self.flush()
+    } ?? {
+      exporterMetrics?.addFailed(value: pendingCount)
+      return .failure
+    }()
+  }
 
-      let waitResult = semaphore.wait(timeout: .now() + timeout)
-      if waitResult == .timedOut {
-        exporterMetrics?.addFailed(value: sentCount)
-        return .failure
-      }
+  public func flush() async -> ExportResult {
+    let pending = pendingQueue.snapshot()
+    guard !pending.isEmpty else { return .success }
+    let timeout = min(TimeInterval.greatestFiniteMagnitude, config.timeout)
+    let result = await sendBatch(pending, timeout: timeout, isFlush: true)
+    if case .success = result {
+      pendingQueue.dropPrefix(pending.count)
     }
-
-    return exporterResult
+    return result
   }
 
   public func shutdown() -> ExportResult {
     return .success
+  }
+
+  public func shutdown() async -> ExportResult {
+    .success
   }
 
   // MARK: - AggregationTemporalitySelectorProtocol
@@ -180,5 +148,37 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter, @unch
     for instrument: OpenTelemetrySdk.InstrumentType
   ) -> OpenTelemetrySdk.Aggregation {
     return defaultAggregationSelector.getDefaultAggregation(for: instrument)
+  }
+
+  private func sendBatch(_ batch: [MetricData],
+                         timeout: TimeInterval,
+                         isFlush: Bool) async -> ExportResult {
+    let body =
+      Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest
+        .with {
+          $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(
+            metricData: batch)
+        }
+    var request = createRequest(body: body, endpoint: endpoint)
+    request.timeoutInterval = timeout
+    if !isFlush {
+      exporterMetrics?.addSeen(value: batch.count)
+    }
+
+    let sendResult = await sendWithTimeout(httpClient: httpClient, timeout: timeout, request: request)
+    switch sendResult {
+    case .success:
+      exporterMetrics?.addSuccess(value: batch.count)
+      return .success
+    case let .failure(error):
+      exporterMetrics?.addFailed(value: batch.count)
+      if !isFlush, !(error is OtlpHttpExportTimeoutError) {
+        pendingQueue.requeue(batch)
+      }
+      if !(error is OtlpHttpExportTimeoutError) {
+        OpenTelemetry.instance.feedbackHandler?("\(error)")
+      }
+      return .failure
+    }
   }
 }
