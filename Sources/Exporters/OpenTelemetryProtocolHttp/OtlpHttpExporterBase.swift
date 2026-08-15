@@ -52,12 +52,7 @@ public class OtlpHttpExporterBase: @unchecked Sendable {
   public func createRequest(body: Message, endpoint: URL) -> URLRequest {
     var request = URLRequest(url: endpoint)
 
-    if let headers = envVarHeaders {
-      headers.forEach { key, value in
-        request.addValue(value, forHTTPHeaderField: key)
-      }
-
-    } else if let headers = config.headers {
+    if let headers = envVarHeaders ?? config.headersForExport() {
       headers.forEach { key, value in
         request.addValue(value, forHTTPHeaderField: key)
       }

@@ -98,6 +98,42 @@ class OtlpTraceExporterTests: XCTestCase {
     verifyUserAgentIsSet(exporter: exporter)
   }
 
+  func testHeadersProviderIsEvaluatedForEveryExport() {
+    let provider = MutableHeadersProvider([("authorization", "Bearer first")])
+    let exporter = OtlpTraceExporter(
+      channel: channel,
+      config: OtlpConfiguration(headersProvider: provider.currentHeaders),
+      envVarHeaders: nil
+    )
+    defer { exporter.shutdown() }
+
+    XCTAssertEqual(exporter.export(spans: [generateFakeSpan()]), .success)
+    provider.update([("authorization", "Bearer second")])
+    XCTAssertEqual(exporter.export(spans: [generateFakeSpan()]), .success)
+
+    XCTAssertEqual(fakeCollector.receivedAuthorizationHeaders, ["Bearer first", "Bearer second"])
+    XCTAssertEqual(fakeCollector.receivedUserAgentHeaders, [
+      Headers.getUserAgentHeader(),
+      Headers.getUserAgentHeader()
+    ])
+    XCTAssertEqual(provider.callCount, 2)
+  }
+
+  func testEnvVarHeadersTakePrecedenceOverHeadersProvider() {
+    let provider = MutableHeadersProvider([("authorization", "Bearer provider")])
+    let exporter = OtlpTraceExporter(
+      channel: channel,
+      config: OtlpConfiguration(headersProvider: provider.currentHeaders),
+      envVarHeaders: [("authorization", "Bearer environment")]
+    )
+    defer { exporter.shutdown() }
+
+    XCTAssertEqual(exporter.export(spans: [generateFakeSpan()]), .success)
+
+    XCTAssertEqual(fakeCollector.receivedAuthorizationHeaders, ["Bearer environment"])
+    XCTAssertEqual(provider.callCount, 0)
+  }
+
   func testExportMultipleSpans() {
     var spans = [SpanData]()
     for _ in 0 ..< 10 {
@@ -268,12 +304,16 @@ private final class FeedbackRecorder: @unchecked Sendable {
 
 class FakeCollector: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceProvider {
   var receivedSpans = [Opentelemetry_Proto_Trace_V1_ResourceSpans]()
+  var receivedAuthorizationHeaders = [String?]()
+  var receivedUserAgentHeaders = [String?]()
   var returnedStatus = GRPCStatus.ok
   var returnedResponse = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse()
   var interceptors: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceServerInterceptorFactoryProtocol?
 
   func export(request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse> {
     receivedSpans.append(contentsOf: request.resourceSpans)
+    receivedAuthorizationHeaders.append(context.headers.first(name: "authorization"))
+    receivedUserAgentHeaders.append(context.headers.first(name: Constants.HTTP.userAgent))
     if returnedStatus != GRPCStatus.ok {
       return context.eventLoop.makeFailedFuture(returnedStatus)
     }

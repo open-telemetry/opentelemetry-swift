@@ -19,7 +19,8 @@ public final class OtlpMetricExporter: MetricExporter {
   let channel: GRPCChannel
   let metricClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient
   let config: OtlpConfiguration
-  let callOptions: CallOptions?
+  let callOptions: CallOptions
+  let envVarHeaders: [(String, String)]?
   let aggregationTemporalitySelector: AggregationTemporalitySelector
   let defaultAggregationSelector: DefaultAggregationSelector
 
@@ -30,10 +31,11 @@ public final class OtlpMetricExporter: MetricExporter {
     self.aggregationTemporalitySelector = aggregationTemporalitySelector
     self.channel = channel
     self.config = config
+    self.envVarHeaders = envVarHeaders
     metricClient = Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient(channel: self.channel)
     if let headers = envVarHeaders {
       callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
-    } else if let headers = config.headers {
+    } else if config.headersProvider == nil, let headers = config.headers {
       callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
     } else {
       callOptions = CallOptions(logger: logger)
@@ -48,6 +50,11 @@ public final class OtlpMetricExporter: MetricExporter {
     if config.timeout > 0 {
         metricClient.defaultCallOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(config.timeout.toNanoseconds)))
     }
+    let callOptions = makeOtlpGrpcCallOptions(
+      from: callOptions,
+      config: config,
+      envVarHeaders: envVarHeaders
+    )
     let export = metricClient.export(exportRequest, callOptions: callOptions)
     do {
       _ = try export.response.wait()

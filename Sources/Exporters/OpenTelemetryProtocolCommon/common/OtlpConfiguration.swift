@@ -26,17 +26,33 @@ public struct OtlpConfiguration: Sendable {
   // let endpoint : URL? = URL(string: "https://localhost:4317")
   // let certificateFile
   // let compression
+  /// Static headers included with every export when `headersProvider` is not set.
   public let headers: [(String, String)]?
+  /// Returns the current headers immediately before each export.
+  ///
+  /// This callback may be invoked concurrently. Callers must synchronize any mutable state
+  /// captured by the callback. When set, it takes precedence over `headers`. Headers supplied
+  /// through an exporter's `envVarHeaders` parameter retain their existing precedence.
+  public let headersProvider: (@Sendable () -> [(String, String)]?)?
   public let timeout: TimeInterval
   public let compression: CompressionType
   public let exportAsJson: Bool
   public init(timeout: TimeInterval = OtlpConfiguration.DefaultTimeoutInterval,
               compression: CompressionType = .gzip,
               headers: [(String, String)]? = nil,
-              exportAsJson: Bool = true) {
+              exportAsJson: Bool = true,
+              headersProvider: (@Sendable () -> [(String, String)]?)? = nil) {
     self.headers = headers
+    self.headersProvider = headersProvider
     self.timeout = timeout
     self.compression = compression
     self.exportAsJson = exportAsJson
+  }
+
+  package func headersForExport() -> [(String, String)]? {
+    if let headersProvider {
+      return headersProvider()
+    }
+    return headers
   }
 }
