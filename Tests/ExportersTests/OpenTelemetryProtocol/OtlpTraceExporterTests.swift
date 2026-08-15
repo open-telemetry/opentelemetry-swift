@@ -98,6 +98,19 @@ class OtlpTraceExporterTests: XCTestCase {
     verifyUserAgentIsSet(exporter: exporter)
   }
 
+  func testStaticConfigHeadersReachCollector() {
+    let exporter = OtlpTraceExporter(
+      channel: channel,
+      config: OtlpConfiguration(headers: [("authorization", "Bearer static")]),
+      envVarHeaders: nil
+    )
+    defer { exporter.shutdown() }
+
+    XCTAssertEqual(exporter.export(spans: [generateFakeSpan()]), .success)
+
+    XCTAssertEqual(fakeCollector.receivedAuthorizationHeaders, ["Bearer static"])
+  }
+
   func testHeadersProviderIsEvaluatedForEveryExport() {
     let provider = MutableHeadersProvider([("authorization", "Bearer first")])
     let exporter = OtlpTraceExporter(

@@ -71,10 +71,12 @@ final class OtlpMetricExporterCoverageTests: XCTestCase {
   }
 
   func testExportAppliesTimeout() {
+    fakeCollector.responseDelay = .milliseconds(100)
     let exporter = OtlpMetricExporter(
       channel: channel,
-      config: OtlpConfiguration(timeout: 5))
-    XCTAssertEqual(exporter.export(metrics: [sampleMetric()]), .success)
+      config: OtlpConfiguration(timeout: 0.01))
+
+    XCTAssertEqual(exporter.export(metrics: [sampleMetric()]), .failure)
     _ = exporter.shutdown()
   }
 
@@ -134,6 +136,7 @@ private final class FakeMetricCollector: Opentelemetry_Proto_Collector_Metrics_V
   var receivedMetrics = [Opentelemetry_Proto_Metrics_V1_ResourceMetrics]()
   var receivedAuthorizationHeaders = [String?]()
   var returnedStatus = GRPCStatus.ok
+  var responseDelay: TimeAmount?
   var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerInterceptorFactoryProtocol?
 
   func export(request: Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest,
@@ -143,6 +146,10 @@ private final class FakeMetricCollector: Opentelemetry_Proto_Collector_Metrics_V
     if returnedStatus != GRPCStatus.ok {
       return context.eventLoop.makeFailedFuture(returnedStatus)
     }
-    return context.eventLoop.makeSucceededFuture(Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse())
+    let response = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse()
+    if let responseDelay {
+      return context.eventLoop.scheduleTask(in: responseDelay) { response }.futureResult
+    }
+    return context.eventLoop.makeSucceededFuture(response)
   }
 }

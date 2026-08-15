@@ -30,9 +30,10 @@ public struct OtlpConfiguration: Sendable {
   public let headers: [(String, String)]?
   /// Returns the current headers immediately before each export.
   ///
-  /// This callback may be invoked concurrently. Callers must synchronize any mutable state
-  /// captured by the callback. When set, it takes precedence over `headers`. Headers supplied
-  /// through an exporter's `envVarHeaders` parameter retain their existing precedence.
+  /// This callback is invoked synchronously and may be called concurrently. It should return
+  /// cached credentials quickly rather than perform I/O. Callers must synchronize any mutable
+  /// state captured by the callback. When set, it takes precedence over `headers`. Headers
+  /// supplied through an exporter's `envVarHeaders` parameter retain their existing precedence.
   public let headersProvider: (@Sendable () -> [(String, String)]?)?
   public let timeout: TimeInterval
   public let compression: CompressionType
@@ -49,7 +50,11 @@ public struct OtlpConfiguration: Sendable {
     self.exportAsJson = exportAsJson
   }
 
-  package func headersForExport() -> [(String, String)]? {
+  /// Returns the headers to include in the next export.
+  ///
+  /// When a provider is configured, its result takes precedence over static headers, including
+  /// when the provider returns `nil`.
+  public func headersForExport() -> [(String, String)]? {
     if let headersProvider {
       return headersProvider()
     }
