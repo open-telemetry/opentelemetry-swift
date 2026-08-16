@@ -48,8 +48,23 @@ class URLSessionLogger {
     }()
   #endif // os(iOS) && !targetEnvironment(macCatalyst)
 
+  /// The HTTP semantic conventions describe http and https traffic. A request on any other scheme
+  /// is not an HTTP call, so a span carrying HTTP attributes would misreport it.
+  static func isHTTPScheme(_ url: URL?) -> Bool {
+    guard let scheme = url?.scheme?.lowercased() else {
+      return false
+    }
+    return scheme == "http" || scheme == "https"
+  }
+
   /// This methods creates a Span for a request, and optionally injects tracing headers, returns a  new request if it was needed to create a new one to add the tracing headers
   @discardableResult static func processAndLogRequest(_ request: URLRequest, sessionTaskId: String, instrumentation: URLSessionInstrumentation, shouldInjectHeaders: Bool) -> URLRequest? {
+    // Schemes such as file:, data:, ws: and app-specific URLProtocol schemes would otherwise get a
+    // span describing an HTTP call that never happened, and tracing headers no server will read.
+    guard isHTTPScheme(request.url) else {
+      return nil
+    }
+
     #if os(watchOS)
     // watchOS routes a single user-level URLSession call (e.g. `data(for:)`) through
     // two distinct URLSessionTask objects: an outer task whose `resume()` is intercepted

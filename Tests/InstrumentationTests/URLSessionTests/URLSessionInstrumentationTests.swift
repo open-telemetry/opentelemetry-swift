@@ -169,6 +169,25 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertEqual(0, URLSessionInstrumentationTests.instrumentation.startedRequestSpans.count)
   }
 
+  /// HTTP semantic attributes and `traceparent` injection are only meaningful for http/https.
+  /// Instrumenting other schemes produces a span describing an HTTP call that never happened,
+  /// and injects tracing headers into a request no HTTP server will ever see.
+  public func testNonHTTPSchemesAreNotInstrumented() {
+    for url in ["file:///tmp/opentelemetry-swift.txt", "ws://localhost:33333/socket", "data:text/plain,hello"] {
+      let request = URLRequest(url: URL(string: url)!)
+      let taskId = "non-http-\(url)"
+
+      URLSessionLogger.processAndLogRequest(request, sessionTaskId: taskId,
+                                            instrumentation: URLSessionInstrumentationTests.instrumentation,
+                                            shouldInjectHeaders: true)
+
+      let started = URLSessionLogger.runningSpansQueue.sync { URLSessionLogger.runningSpans[taskId] }
+      XCTAssertNil(started, "\(url) must not start an HTTP span")
+    }
+
+    XCTAssertFalse(URLSessionInstrumentationTests.checker.createdRequestCalled)
+  }
+
   public func testOverrideSpanName() {
     let request = URLRequest(url: URL(string: "http://google.com")!)
 
