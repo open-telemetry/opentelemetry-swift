@@ -169,6 +169,21 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertEqual(0, URLSessionInstrumentationTests.instrumentation.startedRequestSpans.count)
   }
 
+  /// Swizzling is a process-wide effect, so it must only be applied once. A second instrumentation
+  /// that swizzled again would capture the first one's implementation as its original and chain
+  /// itself in front of it, reporting every request once per instance.
+  public func testSecondInstrumentationDoesNotSwizzleAgain() {
+    let selector = #selector(URLSession.dataTask(with:) as (URLSession) -> (URLRequest) -> URLSessionDataTask)
+    let implementationBefore = class_getMethodImplementation(URLSession.self, selector)
+
+    let secondInstrumentation = URLSessionInstrumentation(configuration: URLSessionInstrumentationConfiguration())
+
+    let implementationAfter = class_getMethodImplementation(URLSession.self, selector)
+    XCTAssertEqual(implementationBefore, implementationAfter)
+
+    withExtendedLifetime(secondInstrumentation) {}
+  }
+
   public func testOverrideSpanName() {
     let request = URLRequest(url: URL(string: "http://google.com")!)
 
