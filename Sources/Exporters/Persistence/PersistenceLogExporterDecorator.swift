@@ -31,7 +31,7 @@ public final class PersistenceLogExporterDecorator: LogRecordExporter {
   public init(logRecordExporter: LogRecordExporter,
               storageURL: URL,
               exportCondition: @escaping @Sendable () -> Bool = { true },
-              performancePreset: PersistencePerformancePreset = .default) throws {
+              performancePreset: PersistencePerformancePreset = .default) {
     persistenceExporter =
       PersistenceExporterDecorator<LogRecordDecoratedExporter>(decoratedExporter: LogRecordDecoratedExporter(
         logRecordExporter: logRecordExporter),
