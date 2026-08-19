@@ -64,6 +64,8 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
+  nonisolated(unsafe) static var receivedDataOrFile: Any?
+
   nonisolated(unsafe) static var requestCopy: URLRequest!
   nonisolated(unsafe) static var responseCopy: HTTPURLResponse!
 
@@ -101,8 +103,9 @@ class URLSessionInstrumentationTests: XCTestCase {
                                                                requestCopy = request
                                                                checker.createdRequestCalled = true
                                                              },
-                                                             receivedResponse: { response, _, _ in
+                                                             receivedResponse: { response, dataOrFile, _ in
                                                                responseCopy = response as? HTTPURLResponse
+                                                               receivedDataOrFile = dataOrFile
                                                                checker.receivedResponseCalled = true
                                                              },
                                                              receivedError: { _, _, _, _ in
@@ -158,6 +161,7 @@ class URLSessionInstrumentationTests: XCTestCase {
     sessionDelegate = SessionDelegate(semaphore: URLSessionInstrumentationTests.semaphore)
     URLSessionInstrumentationTests.requestCopy = nil
     URLSessionInstrumentationTests.responseCopy = nil
+    URLSessionInstrumentationTests.receivedDataOrFile = nil
     XCTAssertEqual(0, URLSessionInstrumentationTests.instrumentation.startedRequestSpans.count)
     URLSessionInstrumentationTests.instrumentation.configuration.semanticConvention = .old
   }
@@ -1106,4 +1110,25 @@ class URLSessionInstrumentationTests: XCTestCase {
     // The test passes if tasks completes without crashing.
     wait { task.state == .completed }
   }
+
+  /// `shouldRecordPayload` defaults to off and the session-delegate path honours it, but the
+  /// completion handler path handed the response body to `receivedResponse` regardless. An app that
+  /// never opted in still received response bodies in its telemetry callback.
+  public func testCompletionHandlerHonoursShouldRecordPayload() {
+    let url = URL(string: "http://localhost:33333/success")!
+    nonisolated(unsafe) var callerReceivedBody: Data?
+
+    let task = URLSession.shared.dataTask(with: URLRequest(url: url)) { data, _, _ in
+      callerReceivedBody = data
+      URLSessionInstrumentationTests.semaphore.signal()
+    }
+    task.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertNotNil(callerReceivedBody, "the caller's completion handler must still get its data")
+    XCTAssertNil(URLSessionInstrumentationTests.receivedDataOrFile,
+                 "payload recording is disabled, so no body should reach receivedResponse")
+  }
+
 }

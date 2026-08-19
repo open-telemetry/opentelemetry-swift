@@ -353,13 +353,16 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
           if completionBlock != nil {
             if objc_getAssociatedObject(argument, &idKey) == nil {
               let completionWrapper: (Any?, URLResponse?, Error?) -> Void = { object, response, error in
+                // Payload recording is opt-in and off by default. The caller still receives
+                // `object` below; only what is handed to the telemetry callbacks is withheld.
+                let payload = (self.configuration.shouldRecordPayload?(session) ?? false) ? object : nil
                 if error != nil {
                   let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-                  URLSessionLogger.logError(error!, dataOrFile: object, statusCode: status,
+                  URLSessionLogger.logError(error!, dataOrFile: payload, statusCode: status,
                                             instrumentation: self, sessionTaskId: sessionTaskId)
                 } else {
                   if let response {
-                    URLSessionLogger.logResponse(response, dataOrFile: object, instrumentation: self,
+                    URLSessionLogger.logResponse(response, dataOrFile: payload, instrumentation: self,
                                                  sessionTaskId: sessionTaskId)
                   }
                 }
@@ -422,13 +425,16 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
           var completionBlock = completion
           if objc_getAssociatedObject(argument, &idKey) == nil {
             let completionWrapper: (Any?, URLResponse?, Error?) -> Void = { object, response, error in
+              // Payload recording is opt-in and off by default. The caller still receives
+              // `object` below; only what is handed to the telemetry callbacks is withheld.
+              let payload = (self.configuration.shouldRecordPayload?(session) ?? false) ? object : nil
               if error != nil {
                 let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-                URLSessionLogger.logError(error!, dataOrFile: object, statusCode: status,
+                URLSessionLogger.logError(error!, dataOrFile: payload, statusCode: status,
                                           instrumentation: self, sessionTaskId: sessionTaskId)
               } else {
                 if let response {
-                  URLSessionLogger.logResponse(response, dataOrFile: object, instrumentation: self,
+                  URLSessionLogger.logResponse(response, dataOrFile: payload, instrumentation: self,
                                                sessionTaskId: sessionTaskId)
                 }
               }
