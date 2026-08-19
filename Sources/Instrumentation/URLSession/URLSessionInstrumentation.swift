@@ -44,6 +44,11 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
   private let configurationQueue = DispatchQueue(
       label: "io.opentelemetry.configuration")
 
+  /// Delegate classes already injected into, so that a class discovered by both the startup scan
+  /// and a resuming task is only instrumented once.
+  nonisolated(unsafe) private static var instrumentedDelegateClasses = Set<ObjectIdentifier>()
+  private static let instrumentedDelegateClassesLock = NSLock()
+
   static let instrumentedKey = "io.opentelemetry.instrumentedCall"
 
   static let excludeList: [String] = [
@@ -122,7 +127,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       }
 
       foundClasses.forEach { cls in
-        injectIntoDelegateClass(cls: cls)
+        instrumentDelegateClassIfNeeded(cls)
       }
     }
 
@@ -133,6 +138,17 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     injectIntoNSURLSessionAsyncDataAndDownloadTaskMethods()
     injectIntoNSURLSessionAsyncUploadTaskMethods()
     injectIntoNSURLSessionTaskResume()
+  }
+
+  /// Instruments `cls` unless it already has been. Injecting twice would report each task
+  /// completion once per installation.
+  private func instrumentDelegateClassIfNeeded(_ cls: AnyClass) {
+    Self.instrumentedDelegateClassesLock.lock()
+    let isNew = Self.instrumentedDelegateClasses.insert(ObjectIdentifier(cls)).inserted
+    Self.instrumentedDelegateClassesLock.unlock()
+
+    guard isNew else { return }
+    injectIntoDelegateClass(cls: cls)
   }
 
   private func injectIntoDelegateClass(cls: AnyClass) {
@@ -763,6 +779,14 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     }
 
     let taskId = idKeyForTask(task)
+
+    // A session delegate that implements none of the selectors scanned in injectInNSURLClasses is
+    // never discovered there, so without this nothing would report this task's completion and the
+    // span started below would never be ended.
+    if let sessionDelegate = (task.value(forKey: "session") as? URLSession)?.delegate {
+      instrumentDelegateClassIfNeeded(type(of: sessionDelegate))
+    }
+
     if let request = task.currentRequest {
       queue.sync {
         if requestMap[taskId] == nil {
