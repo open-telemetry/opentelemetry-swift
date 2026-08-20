@@ -79,21 +79,19 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
   /// instance remains the one applied to instrumented requests.
   public init(configuration: URLSessionInstrumentationConfiguration) {
     self._configuration = configuration
-    guard Self.claimNSURLClassInjection() else { return }
-    injectInNSURLClasses()
-  }
 
-  /// Returns `true` for the first caller only.
-  ///
-  /// Each call to `injectInNSURLClasses()` captures the currently installed implementation as its
-  /// original and installs a new one in front of it. A second instrumentation would therefore
-  /// chain itself ahead of the first, and every request would be reported once per instance.
-  private static func claimNSURLClassInjection() -> Bool {
-    injectionLock.lock()
-    defer { injectionLock.unlock() }
-    guard !hasInjectedIntoNSURLClasses else { return false }
-    hasInjectedIntoNSURLClasses = true
-    return true
+    // The lock is held across the installation, not only across setting the flag. Each call to
+    // injectInNSURLClasses() captures the currently installed implementation as its original, so a
+    // second one would chain itself ahead of the first and every request would be reported twice.
+    // A later initializer therefore has to wait for the first installation to finish rather than
+    // return while it is still in progress, otherwise its caller starts issuing requests against a
+    // partially swizzled URLSession.
+    Self.injectionLock.lock()
+    defer { Self.injectionLock.unlock() }
+
+    guard !Self.hasInjectedIntoNSURLClasses else { return }
+    Self.hasInjectedIntoNSURLClasses = true
+    injectInNSURLClasses()
   }
 
   private func injectInNSURLClasses() {
