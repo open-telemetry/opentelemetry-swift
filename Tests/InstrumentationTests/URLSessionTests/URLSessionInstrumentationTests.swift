@@ -9,6 +9,30 @@
 import XCTest
 import SharedTestUtils
 
+/// Serves a fixed response body for one sentinel host, so tests can exercise the payload path.
+/// Scoped to that host so registering it cannot affect any other request in the process.
+final class PayloadStubURLProtocol: URLProtocol {
+  static let host = "payload.stub"
+  nonisolated(unsafe) static var body = Data("{\"message\":\"hello\"}".utf8)
+
+  override class func canInit(with request: URLRequest) -> Bool {
+    request.url?.host == host
+  }
+
+  override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+  override func startLoading() {
+    let url = request.url ?? URL(string: "http://\(Self.host)/")!
+    let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil,
+                                   headerFields: ["Content-Type": "application/json"])!
+    client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+    client?.urlProtocol(self, didLoad: Self.body)
+    client?.urlProtocolDidFinishLoading(self)
+  }
+
+  override func stopLoading() {}
+}
+
 class URLSessionInstrumentationTests: XCTestCase {
   class Check {
     public var shouldRecordPayloadCalled: Bool = false
@@ -32,6 +56,21 @@ class URLSessionInstrumentationTests: XCTestCase {
     func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {
       semaphore.signal()
     }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+      semaphore.signal()
+    }
+  }
+
+  /// Implements didReceive, so the instrumentation's payload path runs for this session.
+  final class DataReceivingDelegate: NSObject, URLSessionDelegate, URLSessionDataDelegate, @unchecked Sendable {
+    let semaphore: DispatchSemaphore
+
+    init(semaphore: DispatchSemaphore) {
+      self.semaphore = semaphore
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {}
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
       semaphore.signal()
@@ -64,6 +103,8 @@ class URLSessionInstrumentationTests: XCTestCase {
       didFinishCollectingCalled = true
     }
   }
+
+  nonisolated(unsafe) static var receivedDataOrFile: Any?
 
   nonisolated(unsafe) static var createdSpanIds = [String]()
 
@@ -106,8 +147,9 @@ class URLSessionInstrumentationTests: XCTestCase {
                                                                checker.createdRequestCount += 1
                                                                createdSpanIds.append(span.context.spanId.hexString)
                                                              },
-                                                             receivedResponse: { response, _, _ in
+                                                             receivedResponse: { response, dataOrFile, _ in
                                                                responseCopy = response as? HTTPURLResponse
+                                                               receivedDataOrFile = dataOrFile
                                                                checker.receivedResponseCalled = true
                                                              },
                                                              receivedError: { _, _, _, _ in
@@ -163,6 +205,8 @@ class URLSessionInstrumentationTests: XCTestCase {
     sessionDelegate = SessionDelegate(semaphore: URLSessionInstrumentationTests.semaphore)
     URLSessionInstrumentationTests.requestCopy = nil
     URLSessionInstrumentationTests.responseCopy = nil
+    URLSessionInstrumentationTests.receivedDataOrFile = nil
+
     URLSessionInstrumentationTests.createdSpanIds.removeAll()
     XCTAssertEqual(0, URLSessionInstrumentationTests.instrumentation.startedRequestSpans.count)
     URLSessionInstrumentationTests.instrumentation.configuration.semanticConvention = .old
@@ -1169,6 +1213,93 @@ class URLSessionInstrumentationTests: XCTestCase {
     
     // The test passes if tasks completes without crashing.
     wait { task.state == .completed }
+  }
+
+  /// The per-request payload callback is asked with the request it is deciding about, so an app can
+  /// record payloads for some endpoints without turning it on for the whole session.
+  public func testPerRequestPayloadCallbackIsAskedWithTheRequest() {
+    URLProtocol.registerClass(PayloadStubURLProtocol.self)
+    defer { URLProtocol.unregisterClass(PayloadStubURLProtocol.self) }
+
+    let url = URL(string: "http://\(PayloadStubURLProtocol.host)/body")!
+    nonisolated(unsafe) var askedFor = [URL]()
+    let askedLock = NSLock()
+
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayloadForRequest = { request in
+      if let requestURL = request.url {
+        askedLock.withLock { askedFor.append(requestURL) }
+      }
+      return true
+    }
+    defer {
+      URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayloadForRequest = nil
+    }
+
+    let delegate = DataReceivingDelegate(semaphore: URLSessionInstrumentationTests.semaphore)
+    let configuration = URLSessionConfiguration.default
+    configuration.protocolClasses = [PayloadStubURLProtocol.self]
+    let session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
+    let task = session.dataTask(with: URLRequest(url: url))
+    task.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    let observed = askedLock.withLock { askedFor }
+    XCTAssertEqual(observed.first, url, "the callback should be asked about the request being sent")
+  }
+
+  /// `shouldRecordPayload` defaults to off and the session-delegate path honours it, but the
+  /// completion handler path handed the response body to `receivedResponse` regardless. An app that
+  /// never opted in still received response bodies in its telemetry callback.
+  public func testCompletionHandlerHonoursShouldRecordPayload() {
+    let url = URL(string: "http://localhost:33333/success")!
+    nonisolated(unsafe) var callerReceivedBody: Data?
+
+    let task = URLSession.shared.dataTask(with: URLRequest(url: url)) { data, _, _ in
+      callerReceivedBody = data
+      URLSessionInstrumentationTests.semaphore.signal()
+    }
+    task.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertNotNil(callerReceivedBody, "the caller's completion handler must still get its data")
+    XCTAssertNil(URLSessionInstrumentationTests.receivedDataOrFile,
+                 "payload recording is disabled, so no body should reach receivedResponse")
+  }
+
+
+  /// The completion handler paths go through the same gate as the session delegate path, so the
+  /// per-request callback decides for them too rather than being silently ignored.
+  public func testCompletionHandlerHonoursPerRequestPayloadCallback() {
+    let url = URL(string: "http://\(PayloadStubURLProtocol.host)/body")!
+    nonisolated(unsafe) var askedFor = [URL]()
+    let askedLock = NSLock()
+
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayloadForRequest = { request in
+      if let requestURL = request.url {
+        askedLock.withLock { askedFor.append(requestURL) }
+      }
+      return true
+    }
+    defer {
+      URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayloadForRequest = nil
+    }
+
+    let configuration = URLSessionConfiguration.default
+    configuration.protocolClasses = [PayloadStubURLProtocol.self]
+    let session = URLSession(configuration: configuration)
+
+    let task = session.dataTask(with: URLRequest(url: url)) { _, _, _ in
+      URLSessionInstrumentationTests.semaphore.signal()
+    }
+    task.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertEqual(askedLock.withLock { askedFor }.first, url,
+                   "the per-request callback should decide for completion handler tasks too")
+    XCTAssertEqual((URLSessionInstrumentationTests.receivedDataOrFile as? Data),
+                   PayloadStubURLProtocol.body,
+                   "recording was allowed for this request, so the body should reach receivedResponse")
   }
 
   /// Checking for an existing span and starting one must be atomic. Two threads resuming the same
