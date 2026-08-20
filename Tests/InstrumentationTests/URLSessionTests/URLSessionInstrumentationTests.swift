@@ -65,6 +65,8 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
+  nonisolated(unsafe) static var receivedResponseRequest: URLRequest?
+
   nonisolated(unsafe) static var createdSpanIds = [String]()
 
   nonisolated(unsafe) static var requestCopy: URLRequest!
@@ -109,6 +111,9 @@ class URLSessionInstrumentationTests: XCTestCase {
                                                              receivedResponse: { response, _, _ in
                                                                responseCopy = response as? HTTPURLResponse
                                                                checker.receivedResponseCalled = true
+                                                             },
+                                                             receivedResponseWithRequest: { _, _, _, request in
+                                                               receivedResponseRequest = request
                                                              },
                                                              receivedError: { _, _, _, _ in
                                                                URLSessionInstrumentationTests.checker.receivedErrorCalled = true
@@ -163,6 +168,8 @@ class URLSessionInstrumentationTests: XCTestCase {
     sessionDelegate = SessionDelegate(semaphore: URLSessionInstrumentationTests.semaphore)
     URLSessionInstrumentationTests.requestCopy = nil
     URLSessionInstrumentationTests.responseCopy = nil
+    URLSessionInstrumentationTests.receivedResponseRequest = nil
+
     URLSessionInstrumentationTests.createdSpanIds.removeAll()
     XCTAssertEqual(0, URLSessionInstrumentationTests.instrumentation.startedRequestSpans.count)
     URLSessionInstrumentationTests.instrumentation.configuration.semanticConvention = .old
@@ -1169,6 +1176,19 @@ class URLSessionInstrumentationTests: XCTestCase {
     
     // The test passes if tasks completes without crashing.
     wait { task.state == .completed }
+  }
+
+  /// receivedResponse is given the request the response belongs to, so a consumer can correlate the
+  /// two without keeping its own table of in-flight requests keyed by task.
+  public func testReceivedResponseIsGivenTheOriginatingRequest() {
+    let url = URL(string: "http://localhost:33333/success")!
+    let session = URLSession(configuration: .default, delegate: sessionDelegate, delegateQueue: nil)
+    let task = session.dataTask(with: URLRequest(url: url))
+    task.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertEqual(URLSessionInstrumentationTests.receivedResponseRequest?.url, url)
   }
 
   /// Checking for an existing span and starting one must be atomic. Two threads resuming the same
