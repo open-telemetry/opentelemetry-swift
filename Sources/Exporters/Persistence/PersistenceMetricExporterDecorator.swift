@@ -31,7 +31,7 @@ public final class PersistenceMetricExporterDecorator: MetricExporter {
   public init(metricExporter: MetricExporter,
               storageURL: URL,
               exportCondition: @escaping @Sendable () -> Bool = { true },
-              performancePreset: PersistencePerformancePreset = .default) throws {
+              performancePreset: PersistencePerformancePreset = .default) {
     persistenceExporter =
       PersistenceExporterDecorator<MetricDecoratedExporter>(decoratedExporter: MetricDecoratedExporter(
         metricExporter: metricExporter),
