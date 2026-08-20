@@ -25,6 +25,7 @@ struct NetworkRequestState {
 }
 
 nonisolated(unsafe) private var idKey: Void?
+nonisolated(unsafe) private var completionHandlerKey: Void?
 
 public final class URLSessionInstrumentation: @unchecked Sendable {
   private var requestMap = [String: NetworkRequestState]()
@@ -133,6 +134,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     injectIntoNSURLSessionAsyncDataAndDownloadTaskMethods()
     injectIntoNSURLSessionAsyncUploadTaskMethods()
     injectIntoNSURLSessionTaskResume()
+    injectIntoNSURLSessionTaskSetState()
   }
 
   private func injectIntoDelegateClass(cls: AnyClass) {
@@ -387,6 +389,9 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
             }
           }
           self.setIdKey(value: sessionTaskId, for: task)
+          if completionBlock != nil {
+            self.markHasCompletionHandler(task)
+          }
           return task
         }
       let swizzledIMP = imp_implementationWithBlock(
@@ -447,6 +452,9 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
                            completionBlock)
 
           self.setIdKey(value: sessionTaskId, for: task)
+          if completionBlock != nil {
+            self.markHasCompletionHandler(task)
+          }
           return task
         }
       let swizzledIMP = imp_implementationWithBlock(
@@ -856,6 +864,75 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       objc_setAssociatedObject(task, &idKey, id, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     }
     return id!
+  }
+
+  /// Marks a task whose completion handler reports the response itself, so the setState fallback
+  /// does not report it a second time with less data than the handler has.
+  private func markHasCompletionHandler(_ task: URLSessionTask) {
+    objc_setAssociatedObject(task, &completionHandlerKey, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+  }
+
+  /// Reports completion for tasks that nothing else reports.
+  ///
+  /// A task with no session delegate and no completion handler has its span started by the factory
+  /// swizzle and then never ended, because there is nothing left to observe its completion. Third
+  /// party networking layers hit the same gap. `setState:` is the one place every task passes
+  /// through on its way to `.completed`.
+  private func injectIntoNSURLSessionTaskSetState() {
+    typealias SetStateIMP = @convention(c) (AnyObject, Selector, URLSessionTask.State) -> Void
+    let selector = NSSelectorFromString("setState:")
+
+    var classesToSwizzle = [AnyClass]()
+    if class_getInstanceMethod(URLSessionTask.self, selector) != nil {
+      classesToSwizzle.append(URLSessionTask.self)
+    }
+    if let cfTask = NSClassFromString("__NSCFURLSessionTask"),
+       class_getInstanceMethod(cfTask, selector) != nil {
+      classesToSwizzle.append(cfTask)
+    }
+
+    classesToSwizzle.forEach { cls in
+      guard let method = class_getInstanceMethod(cls, selector) else {
+        return
+      }
+      let originalIMP = method_getImplementation(method)
+
+      let block: @convention(block) (AnyObject, URLSessionTask.State) -> Void = { anyTask, state in
+        unsafeBitCast(originalIMP, to: SetStateIMP.self)(anyTask, selector, state)
+
+        guard state == .completed, let task = anyTask as? URLSessionTask else {
+          return
+        }
+        self.reportCompletionIfUnreported(task)
+      }
+      let swizzledIMP = imp_implementationWithBlock(
+        unsafeBitCast(block, to: AnyObject.self))
+      method_setImplementation(method, swizzledIMP)
+    }
+  }
+
+  /// Ends the task's span if it is still running. A task already reported by a delegate or a
+  /// completion handler has had its span removed from `runningSpans`, so logging here is a no-op.
+  private func reportCompletionIfUnreported(_ task: URLSessionTask) {
+    guard let taskId = objc_getAssociatedObject(task, &idKey) as? String,
+          objc_getAssociatedObject(task, &completionHandlerKey) == nil else {
+      return
+    }
+
+    var requestState: NetworkRequestState?
+    queue.sync {
+      requestState = requestMap[taskId]
+      requestMap[taskId] = nil
+    }
+
+    if let error = task.error {
+      let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
+      URLSessionLogger.logError(error, dataOrFile: requestState?.dataProcessed, statusCode: status,
+                                instrumentation: self, sessionTaskId: taskId)
+    } else if let response = task.response {
+      URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed,
+                                   instrumentation: self, sessionTaskId: taskId)
+    }
   }
 
   private func setIdKey(value: String, for task: URLSessionTask) {

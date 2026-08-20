@@ -1106,4 +1106,18 @@ class URLSessionInstrumentationTests: XCTestCase {
     // The test passes if tasks completes without crashing.
     wait { task.state == .completed }
   }
+
+  /// A task with no session delegate and no completion handler has its span started by the factory
+  /// swizzle, and before the setState fallback there was nothing left to end it: the span stayed in
+  /// runningSpans for the lifetime of the process.
+  public func testSpanIsEndedWithoutADelegateOrCompletionHandler() {
+    let session = URLSession(configuration: .ephemeral)
+    let task = session.dataTask(with: URLRequest(url: URL(string: "http://localhost:33333/success")!))
+    task.resume()
+    wait(timeout: 5) { task.state == .completed }
+
+    let leaked = URLSessionInstrumentationTests.instrumentation.startedRequestSpans
+    XCTAssertTrue(leaked.isEmpty, "nothing ended the span: \(leaked.count) still running")
+  }
+
 }
