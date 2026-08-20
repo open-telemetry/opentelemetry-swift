@@ -46,7 +46,10 @@ final class OtlpHttpExporterBaseCoverageTests: XCTestCase {
     let exporter = try OtlpHttpExporterBase(
       endpoint: XCTUnwrap(URL(string: "http://example.com")),
       config: OtlpConfiguration(
-        headers: [("Authorization", "Bearer static")],
+        headers: [
+          ("X-Static-Header", "static-value"),
+          ("authorization", "Bearer static")
+        ],
         headersProvider: provider.currentHeaders
       ),
       httpClient: BaseHTTPClient(),
@@ -65,6 +68,8 @@ final class OtlpHttpExporterBaseCoverageTests: XCTestCase {
 
     XCTAssertEqual(firstRequest.value(forHTTPHeaderField: "Authorization"), "Bearer first")
     XCTAssertEqual(secondRequest.value(forHTTPHeaderField: "Authorization"), "Bearer second")
+    XCTAssertEqual(firstRequest.value(forHTTPHeaderField: "X-Static-Header"), "static-value")
+    XCTAssertEqual(secondRequest.value(forHTTPHeaderField: "X-Static-Header"), "static-value")
     XCTAssertEqual(provider.callCount, 2)
   }
 
@@ -86,7 +91,7 @@ final class OtlpHttpExporterBaseCoverageTests: XCTestCase {
     XCTAssertEqual(provider.callCount, 0)
   }
 
-  func testNilHeadersProviderSuppressesStaticHeaders() throws {
+  func testNilHeadersProviderRetainsStaticHeaders() throws {
     let provider = MutableHeadersProvider(nil)
     let exporter = try OtlpHttpExporterBase(
       endpoint: XCTUnwrap(URL(string: "http://example.com")),
@@ -103,7 +108,7 @@ final class OtlpHttpExporterBaseCoverageTests: XCTestCase {
       endpoint: XCTUnwrap(URL(string: "http://example.com"))
     )
 
-    XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+    XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer static")
     XCTAssertEqual(provider.callCount, 1)
   }
 

@@ -115,7 +115,13 @@ class OtlpTraceExporterTests: XCTestCase {
     let provider = MutableHeadersProvider([("authorization", "Bearer first")])
     let exporter = OtlpTraceExporter(
       channel: channel,
-      config: OtlpConfiguration(headersProvider: provider.currentHeaders),
+      config: OtlpConfiguration(
+        headers: [
+          ("x-static-header", "static-value"),
+          ("Authorization", "Bearer static")
+        ],
+        headersProvider: provider.currentHeaders
+      ),
       envVarHeaders: nil
     )
     defer { exporter.shutdown() }
@@ -125,6 +131,7 @@ class OtlpTraceExporterTests: XCTestCase {
     XCTAssertEqual(exporter.export(spans: [generateFakeSpan()]), .success)
 
     XCTAssertEqual(fakeCollector.receivedAuthorizationHeaders, ["Bearer first", "Bearer second"])
+    XCTAssertEqual(fakeCollector.receivedStaticHeaders, ["static-value", "static-value"])
     XCTAssertEqual(fakeCollector.receivedUserAgentHeaders, [
       Headers.getUserAgentHeader(),
       Headers.getUserAgentHeader()
@@ -318,6 +325,7 @@ private final class FeedbackRecorder: @unchecked Sendable {
 class FakeCollector: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceProvider {
   var receivedSpans = [Opentelemetry_Proto_Trace_V1_ResourceSpans]()
   var receivedAuthorizationHeaders = [String?]()
+  var receivedStaticHeaders = [String?]()
   var receivedUserAgentHeaders = [String?]()
   var returnedStatus = GRPCStatus.ok
   var returnedResponse = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse()
@@ -326,6 +334,7 @@ class FakeCollector: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceProvider
   func export(request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse> {
     receivedSpans.append(contentsOf: request.resourceSpans)
     receivedAuthorizationHeaders.append(context.headers.first(name: "authorization"))
+    receivedStaticHeaders.append(context.headers.first(name: "x-static-header"))
     receivedUserAgentHeaders.append(context.headers.first(name: Constants.HTTP.userAgent))
     if returnedStatus != GRPCStatus.ok {
       return context.eventLoop.makeFailedFuture(returnedStatus)
