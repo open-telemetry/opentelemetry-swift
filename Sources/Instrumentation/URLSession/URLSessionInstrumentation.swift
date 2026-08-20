@@ -44,6 +44,13 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
   private let configurationQueue = DispatchQueue(
       label: "io.opentelemetry.configuration")
 
+  /// Guards the one-time swizzling performed by `injectInNSURLClasses()`.
+  ///
+  /// Swizzling replaces implementations on `URLSession` and on delegate classes, which is a
+  /// process-wide effect rather than a per-instance one, so it must happen at most once.
+  nonisolated(unsafe) private static var hasInjectedIntoNSURLClasses = false
+  private static let injectionLock = NSLock()
+
   static let instrumentedKey = "io.opentelemetry.instrumentedCall"
 
   static let excludeList: [String] = [
@@ -65,8 +72,25 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     return spans
   }
 
+  /// Creates the instrumentation and installs it into `URLSession`.
+  ///
+  /// Installation happens once per process. If an instrumentation has already been created, this
+  /// instance is still usable but does not re-install itself, and the configuration of the first
+  /// instance remains the one applied to instrumented requests.
   public init(configuration: URLSessionInstrumentationConfiguration) {
     self._configuration = configuration
+
+    // The lock is held across the installation, not only across setting the flag. Each call to
+    // injectInNSURLClasses() captures the currently installed implementation as its original, so a
+    // second one would chain itself ahead of the first and every request would be reported twice.
+    // A later initializer therefore has to wait for the first installation to finish rather than
+    // return while it is still in progress, otherwise its caller starts issuing requests against a
+    // partially swizzled URLSession.
+    Self.injectionLock.lock()
+    defer { Self.injectionLock.unlock() }
+
+    guard !Self.hasInjectedIntoNSURLClasses else { return }
+    Self.hasInjectedIntoNSURLClasses = true
     injectInNSURLClasses()
   }
 
