@@ -565,6 +565,16 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     let selector = #selector(
       URLSessionDataDelegate.urlSession(_:task:didCompleteWithError:))
     guard let original = class_getInstanceMethod(cls, selector) else {
+      // The method is optional and the delegate omits it, so nothing would report completion for
+      // its tasks. Add it, as injectTaskDidFinishCollectingMetricsIntoDelegateClass already does —
+      // that fallback only exists on newer platforms, so this is the one that covers the rest.
+      let block:
+        @convention(block) (Any, URLSession, URLSessionTask, Error?) -> Void = { _, session, task, error in
+          self.urlSession(session, task: task, didCompleteWithError: error)
+        }
+      let imp = imp_implementationWithBlock(
+        unsafeBitCast(block, to: AnyObject.self))
+      class_addMethod(cls, selector, imp, "v@:@@@")
       return
     }
     var originalIMP: IMP?
