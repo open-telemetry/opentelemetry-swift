@@ -64,6 +64,8 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
+  nonisolated(unsafe) static var receivedResponseRequest: URLRequest?
+
   nonisolated(unsafe) static var requestCopy: URLRequest!
   nonisolated(unsafe) static var responseCopy: HTTPURLResponse!
 
@@ -101,8 +103,9 @@ class URLSessionInstrumentationTests: XCTestCase {
                                                                requestCopy = request
                                                                checker.createdRequestCalled = true
                                                              },
-                                                             receivedResponse: { response, _, _ in
+                                                             receivedResponse: { response, _, _, request in
                                                                responseCopy = response as? HTTPURLResponse
+                                                               receivedResponseRequest = request
                                                                checker.receivedResponseCalled = true
                                                              },
                                                              receivedError: { _, _, _, _ in
@@ -158,6 +161,7 @@ class URLSessionInstrumentationTests: XCTestCase {
     sessionDelegate = SessionDelegate(semaphore: URLSessionInstrumentationTests.semaphore)
     URLSessionInstrumentationTests.requestCopy = nil
     URLSessionInstrumentationTests.responseCopy = nil
+    URLSessionInstrumentationTests.receivedResponseRequest = nil
     XCTAssertEqual(0, URLSessionInstrumentationTests.instrumentation.startedRequestSpans.count)
     URLSessionInstrumentationTests.instrumentation.configuration.semanticConvention = .old
   }
@@ -1106,4 +1110,18 @@ class URLSessionInstrumentationTests: XCTestCase {
     // The test passes if tasks completes without crashing.
     wait { task.state == .completed }
   }
+
+  /// receivedResponse is given the request the response belongs to, so a consumer can correlate the
+  /// two without keeping its own table of in-flight requests keyed by task.
+  public func testReceivedResponseIsGivenTheOriginatingRequest() {
+    let url = URL(string: "http://localhost:33333/success")!
+    let session = URLSession(configuration: .default, delegate: sessionDelegate, delegateQueue: nil)
+    let task = session.dataTask(with: URLRequest(url: url))
+    task.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertEqual(URLSessionInstrumentationTests.receivedResponseRequest?.url, url)
+  }
+
 }

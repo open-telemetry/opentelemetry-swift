@@ -31,7 +31,7 @@ public struct URLSessionInstrumentationConfiguration {
               shouldInjectTracingHeaders: ((URLRequest) -> (Bool)?)? = nil,
               injectCustomHeaders: ((inout URLRequest, Span?) -> Void)? = nil,
               createdRequest: ((URLRequest, Span) -> Void)? = nil,
-              receivedResponse: ((URLResponse, DataOrFile?, Span) -> Void)? = nil,
+              receivedResponse: ((URLResponse, DataOrFile?, Span, URLRequest?) -> Void)? = nil,
               receivedError: ((Error, DataOrFile?, HTTPStatus, Span) -> Void)? = nil,
               delegateClassesToInstrument: [AnyClass]? = nil,
               baggageProvider: ((inout URLRequest, Span?) -> (Baggage)?)? = nil,
@@ -84,8 +84,11 @@ public struct URLSessionInstrumentationConfiguration {
   ///  Called before the span is created, it allows to add extra information to the Span
   public var createdRequest: ((URLRequest, Span) -> Void)?
 
-  ///  Called before the span is ended, it allows to add extra information to the Span
-  public var receivedResponse: ((URLResponse, DataOrFile?, Span) -> Void)?
+  ///  Called before the span is ended, it allows to add extra information to the Span.
+  ///
+  ///  The last parameter is the request the response belongs to, where it is still known, so that a
+  ///  response can be correlated with what was sent without keeping a side table of requests.
+  public var receivedResponse: ((URLResponse, DataOrFile?, Span, URLRequest?) -> Void)?
 
   ///  Called before the span is ended, it allows to add extra information to the Span
   public var receivedError: ((Error, DataOrFile?, HTTPStatus, Span) -> Void)?
