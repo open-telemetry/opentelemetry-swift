@@ -142,12 +142,17 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
 
   /// Instruments `cls` unless it already has been. Injecting twice would report each task
   /// completion once per installation.
+  ///
+  /// The lock is held across the injection, not just the bookkeeping: a caller that finds the class
+  /// already recorded must be able to rely on its callbacks being installed, otherwise a task
+  /// resuming concurrently could start before the delegate has been modified.
   private func instrumentDelegateClassIfNeeded(_ cls: AnyClass) {
     Self.instrumentedDelegateClassesLock.lock()
-    let isNew = Self.instrumentedDelegateClasses.insert(ObjectIdentifier(cls)).inserted
-    Self.instrumentedDelegateClassesLock.unlock()
+    defer { Self.instrumentedDelegateClassesLock.unlock() }
 
-    guard isNew else { return }
+    guard Self.instrumentedDelegateClasses.insert(ObjectIdentifier(cls)).inserted else {
+      return
+    }
     injectIntoDelegateClass(cls: cls)
   }
 
