@@ -1125,4 +1125,25 @@ class URLSessionInstrumentationTests: XCTestCase {
     // The test passes if tasks completes without crashing.
     wait { task.state == .completed }
   }
+
+  /// A WebSocket opening handshake is an HTTP request, and `URLSessionWebSocketTask` reports it as
+  /// one: Foundation rewrites the `ws`/`wss` scheme to `http`/`https` on `currentRequest`. So the
+  /// scheme filter in `processAndLogRequest` leaves WebSocket instrumentation intact.
+  ///
+  /// Pinned here because that relies on Foundation's rewriting rather than anything in this
+  /// library, and the filter reads as though it would drop `ws://`.
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testWebSocketTaskIsStillInstrumented() async {
+    let session = URLSession(configuration: .ephemeral)
+    let task = session.webSocketTask(with: URL(string: "ws://localhost:33333/socket")!)
+
+    // urlSessionTaskWillResume only reaches the instrumentation from an async context.
+    await Task { task.resume() }.value
+    wait { URLSessionInstrumentationTests.checker.createdRequestCalled }
+    task.cancel()
+
+    XCTAssertEqual(URLSessionInstrumentationTests.requestCopy?.url?.scheme, "http",
+                   "Foundation reports the handshake with an http scheme, which is what lets it through")
+  }
+
 }
