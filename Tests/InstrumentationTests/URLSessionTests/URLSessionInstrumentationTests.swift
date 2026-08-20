@@ -1171,6 +1171,19 @@ class URLSessionInstrumentationTests: XCTestCase {
     wait { task.state == .completed }
   }
 
+  /// A task with no session delegate and no completion handler has its span started by the factory
+  /// swizzle, and before the setState fallback there was nothing left to end it: the span stayed in
+  /// runningSpans for the lifetime of the process.
+  public func testSpanIsEndedWithoutADelegateOrCompletionHandler() {
+    let session = URLSession(configuration: .ephemeral)
+    let task = session.dataTask(with: URLRequest(url: URL(string: "http://localhost:33333/success")!))
+    task.resume()
+    wait(timeout: 5) { task.state == .completed }
+
+    let leaked = URLSessionInstrumentationTests.instrumentation.startedRequestSpans
+    XCTAssertTrue(leaked.isEmpty, "nothing ended the span: \(leaked.count) still running")
+  }
+
   /// Checking for an existing span and starting one must be atomic. Two threads resuming the same
   /// task can otherwise both see no span, both start one, and the second replaces the first in
   /// `runningSpans` — the orphaned span and wire mismatch this guard exists to prevent.
