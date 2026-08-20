@@ -25,6 +25,7 @@ public enum HTTPSemanticConvention {
 
 public struct URLSessionInstrumentationConfiguration {
   public init(shouldRecordPayload: ((URLSession) -> (Bool)?)? = nil,
+              shouldRecordPayloadForRequest: ((URLRequest) -> (Bool)?)? = nil,
               shouldInstrument: ((URLRequest) -> (Bool)?)? = nil,
               nameSpan: ((URLRequest) -> (String)?)? = nil,
               spanCustomization: ((URLRequest, SpanBuilder) -> Void)? = nil,
@@ -39,6 +40,7 @@ public struct URLSessionInstrumentationConfiguration {
               ignoredClassPrefixes: [String]? = nil,
               semanticConvention: HTTPSemanticConvention = .old) {
     self.shouldRecordPayload = shouldRecordPayload
+    self.shouldRecordPayloadForRequest = shouldRecordPayloadForRequest
     self.shouldInstrument = shouldInstrument
     self.shouldInjectTracingHeaders = shouldInjectTracingHeaders
     self.injectCustomHeaders = injectCustomHeaders
@@ -65,6 +67,13 @@ public struct URLSessionInstrumentationConfiguration {
   /// Implement this callback if you want the session to record payload data, false by default.
   /// This callback is only necessary when using session delegate
   public var shouldRecordPayload: ((URLSession) -> (Bool)?)?
+
+  /// Implement this callback to decide payload recording per request rather than per session.
+  ///
+  /// A session is usually shared across every call an app makes, so `shouldRecordPayload` can only
+  /// answer for all of them at once. This is consulted first, and `shouldRecordPayload` is used when
+  /// it is not implemented or returns nil, so existing behaviour is unchanged.
+  public var shouldRecordPayloadForRequest: ((URLRequest) -> (Bool)?)?
 
   /// Implement this callback to filter which requests you want to inject headers to follow the trace,
   /// also must implement it if you want to inject custom headers

@@ -9,6 +9,30 @@
 import XCTest
 import SharedTestUtils
 
+/// Serves a fixed response body for one sentinel host, so tests can exercise the payload path.
+/// Scoped to that host so registering it cannot affect any other request in the process.
+final class PayloadStubURLProtocol: URLProtocol {
+  static let host = "payload.stub"
+  nonisolated(unsafe) static var body = Data("{\"message\":\"hello\"}".utf8)
+
+  override class func canInit(with request: URLRequest) -> Bool {
+    request.url?.host == host
+  }
+
+  override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+  override func startLoading() {
+    let url = request.url ?? URL(string: "http://\(Self.host)/")!
+    let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil,
+                                   headerFields: ["Content-Type": "application/json"])!
+    client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+    client?.urlProtocol(self, didLoad: Self.body)
+    client?.urlProtocolDidFinishLoading(self)
+  }
+
+  override func stopLoading() {}
+}
+
 class URLSessionInstrumentationTests: XCTestCase {
   class Check {
     public var shouldRecordPayloadCalled: Bool = false
@@ -31,6 +55,21 @@ class URLSessionInstrumentationTests: XCTestCase {
     func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {
       semaphore.signal()
     }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+      semaphore.signal()
+    }
+  }
+
+  /// Implements didReceive, so the instrumentation's payload path runs for this session.
+  final class DataReceivingDelegate: NSObject, URLSessionDelegate, URLSessionDataDelegate, @unchecked Sendable {
+    let semaphore: DispatchSemaphore
+
+    init(semaphore: DispatchSemaphore) {
+      self.semaphore = semaphore
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {}
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
       semaphore.signal()
@@ -1106,4 +1145,37 @@ class URLSessionInstrumentationTests: XCTestCase {
     // The test passes if tasks completes without crashing.
     wait { task.state == .completed }
   }
+
+  /// The per-request payload callback is asked with the request it is deciding about, so an app can
+  /// record payloads for some endpoints without turning it on for the whole session.
+  public func testPerRequestPayloadCallbackIsAskedWithTheRequest() {
+    URLProtocol.registerClass(PayloadStubURLProtocol.self)
+    defer { URLProtocol.unregisterClass(PayloadStubURLProtocol.self) }
+
+    let url = URL(string: "http://\(PayloadStubURLProtocol.host)/body")!
+    nonisolated(unsafe) var askedFor = [URL]()
+    let askedLock = NSLock()
+
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayloadForRequest = { request in
+      if let requestURL = request.url {
+        askedLock.withLock { askedFor.append(requestURL) }
+      }
+      return true
+    }
+    defer {
+      URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayloadForRequest = nil
+    }
+
+    let delegate = DataReceivingDelegate(semaphore: URLSessionInstrumentationTests.semaphore)
+    let configuration = URLSessionConfiguration.default
+    configuration.protocolClasses = [PayloadStubURLProtocol.self]
+    let session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
+    let task = session.dataTask(with: URLRequest(url: url))
+    task.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    let observed = askedLock.withLock { askedFor }
+    XCTAssertEqual(observed.first, url, "the callback should be asked about the request being sent")
+  }
+
 }
