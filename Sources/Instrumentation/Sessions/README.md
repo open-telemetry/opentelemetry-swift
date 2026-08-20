@@ -166,10 +166,10 @@ A `session.start` log record is created when a new session begins.
 
 ```json
 {
-  "body": "session.start",
+  "eventName": "session.start",
+  "timestamp": 1692123456789000000,
   "attributes": {
     "session.id": "550e8400-e29b-41d4-a716-446655440000",
-    "session.start_time": 1692123456789000000,
     "session.previous_id": "71260ACC-5286-455F-9955-5DA8C5109A07"
   }
 }
@@ -178,10 +178,11 @@ A `session.start` log record is created when a new session begins.
 **Session Start Attributes**:
 
 | Attribute             | Type   | Description                                   | Example                                  |
-| --------------------- | ------ | --------------------------------------------- | ---------------------------------------- |
+| --------------------- | ------ | ---------------------------------------------- | ---------------------------------------- |
 | `session.id`          | string | Unique identifier for the current session     | `"550e8400-e29b-41d4-a716-446655440000"` |
-| `session.start_time`  | double | Session start time in nanoseconds since epoch | `1692123456789000000`                    |
 | `session.previous_id` | string | Identifier of the previous session (if any)   | `"71260ACC-5286-455F-9955-5DA8C5109A07"`                  |
+
+The session's start time is carried on the log record's `timestamp` field, not as an attribute.
 
 ### Session End
 
@@ -191,11 +192,10 @@ A `session.end` log record is created when a session expires.
 
 ```json
 {
-  "body": "session.end",
+  "eventName": "session.end",
+  "timestamp": 1692125256789000000,
   "attributes": {
     "session.id": "550e8400-e29b-41d4-a716-446655440000",
-    "session.start_time": 1692123456789000000,
-    "session.end_time": 1692125256789000000,
     "session.previous_id": "71260ACC-5286-455F-9955-5DA8C5109A07"
   }
 }
@@ -206,9 +206,9 @@ A `session.end` log record is created when a session expires.
 | Attribute             | Type   | Description                                   | Example                                  |
 | --------------------- | ------ | --------------------------------------------- | ---------------------------------------- |
 | `session.id`          | string | Unique identifier for the ended session       | `"550e8400-e29b-41d4-a716-446655440000"` |
-| `session.start_time`  | double | Session start time in nanoseconds since epoch | `1692123456789000000`                    |
-| `session.end_time`    | double | Session end time in nanoseconds since epoch   | `1692125256789000000`                    |
 | `session.previous_id` | string | Identifier of the previous session (if any)   | `"71260ACC-5286-455F-9955-5DA8C5109A07"` |
+
+The session's end time is carried on the log record's `timestamp` field, not as an attribute.
 
 ## Span and Log Attribution
 

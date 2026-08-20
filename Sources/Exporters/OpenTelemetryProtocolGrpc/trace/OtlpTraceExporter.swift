@@ -20,17 +20,19 @@ public final class OtlpTraceExporter: SpanExporter, @unchecked Sendable {
   // with the desired timeLimit rather than mutating a shared instance field,
   // so concurrent calls cannot race on `callOptions`.
   let callOptions: CallOptions
+  let envVarHeaders: [(String, String)]?
 
   public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration(), logger: Logging.Logger = Logging.Logger(label: "io.grpc", factory: { _ in SwiftLogNoOpLogHandler() }), envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
     self.channel = channel
     traceClient = Opentelemetry_Proto_Collector_Trace_V1_TraceServiceNIOClient(channel: channel)
     self.config = config
+    self.envVarHeaders = envVarHeaders
     let userAgentHeader = (Constants.HTTP.userAgent, Headers.getUserAgentHeader())
     if let headers = envVarHeaders {
       var updatedHeaders = headers
       updatedHeaders.append(userAgentHeader)
       callOptions = CallOptions(customMetadata: HPACKHeaders(updatedHeaders), logger: logger)
-    } else if let headers = config.headers {
+    } else if config.headersProvider == nil, let headers = config.headers {
       var updatedHeaders = headers
       updatedHeaders.append(userAgentHeader)
       callOptions = CallOptions(customMetadata: HPACKHeaders(updatedHeaders), logger: logger)
@@ -46,7 +48,12 @@ public final class OtlpTraceExporter: SpanExporter, @unchecked Sendable {
       $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
     }
     let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
-    var perCallOptions = callOptions
+    var perCallOptions = makeOtlpGrpcCallOptions(
+      from: callOptions,
+      config: config,
+      envVarHeaders: envVarHeaders,
+      additionalHeaders: [(Constants.HTTP.userAgent, Headers.getUserAgentHeader())]
+    )
     if timeout > 0 {
       perCallOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(timeout.toNanoseconds)))
     }

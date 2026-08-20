@@ -109,6 +109,31 @@ class OtlpLogRecordExporterTests: XCTestCase {
     XCTAssertEqual("BAR", exporter.callOptions.customMetadata.first(name: "FOO"))
   }
 
+  func testHeadersProviderIsEvaluatedForEveryExport() {
+    let provider = MutableHeadersProvider([("authorization", "Bearer first")])
+    let exporter = OtlpLogExporter(
+      channel: channel,
+      config: OtlpConfiguration(headersProvider: provider.currentHeaders),
+      envVarHeaders: nil
+    )
+    defer { exporter.shutdown() }
+    let logRecord = ReadableLogRecord(resource: Resource(),
+                                      instrumentationScopeInfo: InstrumentationScopeInfo(name: "scope"),
+                                      timestamp: Date(),
+                                      observedTimestamp: Date.distantPast,
+                                      spanContext: spanContext,
+                                      severity: .info,
+                                      body: AttributeValue.string("message"),
+                                      attributes: [:])
+
+    XCTAssertEqual(exporter.export(logRecords: [logRecord]), .success)
+    provider.update([("authorization", "Bearer second")])
+    XCTAssertEqual(exporter.export(logRecords: [logRecord]), .success)
+
+    XCTAssertEqual(fakeCollector.receivedAuthorizationHeaders, ["Bearer first", "Bearer second"])
+    XCTAssertEqual(provider.callCount, 2)
+  }
+
   func testExportAfterShutdown() {
     let logRecord = ReadableLogRecord(resource: Resource(),
                                       instrumentationScopeInfo: InstrumentationScopeInfo(name: "scope"),
@@ -147,6 +172,7 @@ class FakeLogCollector: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceProvide
 
   func export(request: Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest, context: GRPC.StatusOnlyCallContext) -> NIOCore.EventLoopFuture<Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceResponse> {
     receivedLogs.append(contentsOf: request.resourceLogs)
+    receivedAuthorizationHeaders.append(context.headers.first(name: "authorization"))
     if returnedStatus != GRPCStatus.ok {
       return context.eventLoop.makeFailedFuture(returnedStatus)
     }
@@ -154,5 +180,6 @@ class FakeLogCollector: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceProvide
   }
 
   var receivedLogs = [Opentelemetry_Proto_Logs_V1_ResourceLogs]()
+  var receivedAuthorizationHeaders = [String?]()
   var returnedStatus = GRPCStatus.ok
 }

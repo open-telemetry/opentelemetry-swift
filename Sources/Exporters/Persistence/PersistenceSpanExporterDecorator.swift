@@ -31,7 +31,7 @@ public final class PersistenceSpanExporterDecorator: SpanExporter, @unchecked Se
   public init(spanExporter: SpanExporter,
               storageURL: URL,
               exportCondition: @escaping @Sendable () -> Bool = { true },
-              performancePreset: PersistencePerformancePreset = .default) throws {
+              performancePreset: PersistencePerformancePreset = .default) {
     self.spanExporter = spanExporter
 
     persistenceExporter =

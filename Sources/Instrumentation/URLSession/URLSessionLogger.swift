@@ -48,6 +48,29 @@ class URLSessionLogger {
     }()
   #endif // os(iOS) && !targetEnvironment(macCatalyst)
 
+  /// Task ids claimed by a caller that is about to start a span for them. Held only for the window
+  /// between deciding to instrument and the span landing in `runningSpans`, so that the decision and
+  /// the claim are one atomic step.
+  nonisolated(unsafe) private static var claimedTasks = Set<String>()
+
+  /// Atomically claims the right to start a span for `sessionTaskId`. Returns `false` when a span is
+  /// already running for it, or another caller has claimed it and not yet started one.
+  static func claimTaskForInstrumentation(_ sessionTaskId: String) -> Bool {
+    runningSpansQueue.sync {
+      guard runningSpans[sessionTaskId] == nil else {
+        return false
+      }
+      return claimedTasks.insert(sessionTaskId).inserted
+    }
+  }
+
+  /// Releases a claim taken by `claimTaskForInstrumentation`.
+  static func releaseTaskClaim(_ sessionTaskId: String) {
+    runningSpansQueue.sync {
+      claimedTasks.remove(sessionTaskId)
+    }
+  }
+
   /// This methods creates a Span for a request, and optionally injects tracing headers, returns a  new request if it was needed to create a new one to add the tracing headers
   @discardableResult static func processAndLogRequest(_ request: URLRequest, sessionTaskId: String, instrumentation: URLSessionInstrumentation, shouldInjectHeaders: Bool) -> URLRequest? {
     #if os(watchOS)

@@ -44,6 +44,13 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
   private let configurationQueue = DispatchQueue(
       label: "io.opentelemetry.configuration")
 
+  /// Guards the one-time swizzling performed by `injectInNSURLClasses()`.
+  ///
+  /// Swizzling replaces implementations on `URLSession` and on delegate classes, which is a
+  /// process-wide effect rather than a per-instance one, so it must happen at most once.
+  nonisolated(unsafe) private static var hasInjectedIntoNSURLClasses = false
+  private static let injectionLock = NSLock()
+
   static let instrumentedKey = "io.opentelemetry.instrumentedCall"
 
   static let excludeList: [String] = [
@@ -65,8 +72,25 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     return spans
   }
 
+  /// Creates the instrumentation and installs it into `URLSession`.
+  ///
+  /// Installation happens once per process. If an instrumentation has already been created, this
+  /// instance is still usable but does not re-install itself, and the configuration of the first
+  /// instance remains the one applied to instrumented requests.
   public init(configuration: URLSessionInstrumentationConfiguration) {
     self._configuration = configuration
+
+    // The lock is held across the installation, not only across setting the flag. Each call to
+    // injectInNSURLClasses() captures the currently installed implementation as its original, so a
+    // second one would chain itself ahead of the first and every request would be reported twice.
+    // A later initializer therefore has to wait for the first installation to finish rather than
+    // return while it is still in progress, otherwise its caller starts issuing requests against a
+    // partially swizzled URLSession.
+    Self.injectionLock.lock()
+    defer { Self.injectionLock.unlock() }
+
+    guard !Self.hasInjectedIntoNSURLClasses else { return }
+    Self.hasInjectedIntoNSURLClasses = true
     injectInNSURLClasses()
   }
 
@@ -763,21 +787,20 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
         requestMap[taskId]?.setRequest(request)
       }
 
-      #if os(watchOS)
-      // watchOS-only defensive guard: a span may have already been started for this
-      // task by a factory swizzle (e.g. dataTask(with:completionHandler:)) re-entered
-      // from data(for:), or by a previous resume (NSURLSession super-class chaining
-      // and redirect handling can both cause resume to fire more than once per logical
-      // request). Starting another one here would orphan the existing span:
-      // processAndLogRequest would overwrite runningSpans[taskId] and the first span
-      // would never be ended. Other platforms don't exhibit these re-entries in
-      // practice (verified via URLSessionInstrumentationTests), so this lookup is
-      // gated to watchOS to avoid the per-resume queue sync.
-      let alreadyTracked = URLSessionLogger.runningSpansQueue.sync {
-        URLSessionLogger.runningSpans[taskId] != nil
-      }
-      if alreadyTracked { return }
-      #endif
+      // A span may have already been started for this task by a factory swizzle
+      // (e.g. dataTask(with:completionHandler:)) re-entered from data(for:), or by a
+      // previous resume: suspend/resume, NSURLSession super-class chaining and redirect
+      // handling can all cause resume to fire more than once per logical request.
+      // Starting another one here would orphan the existing span, since
+      // processAndLogRequest overwrites runningSpans[taskId] and the first span would
+      // never be ended. It would also disagree with the wire, because the traceparent
+      // already sent to the server carries the first span's id.
+      // Claiming rather than merely checking: the lookup and the eventual insertion into
+      // runningSpans have to be one atomic step, or two threads resuming the same task both see
+      // nothing and both start a span. The claim is released once this call has either started a
+      // span or decided not to instrument.
+      guard URLSessionLogger.claimTaskForInstrumentation(taskId) else { return }
+      defer { URLSessionLogger.releaseTaskClaim(taskId) }
 
       // For iOS 15+/macOS 12+, handle async/await methods differently
       if #available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *) {
@@ -841,13 +864,20 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
   }
 
   // Helpers
+  /// The task's instrumentation id, assigning one if it does not have it yet.
+  ///
+  /// Synchronized on the task: reading and assigning have to be one step, or two threads resuming
+  /// the same task each generate their own id and it is then tracked as two separate requests.
   private func idKeyForTask(_ task: URLSessionTask) -> String {
-    var id = objc_getAssociatedObject(task, &idKey) as? String
-    if id == nil {
-      id = UUID().uuidString
-      objc_setAssociatedObject(task, &idKey, id, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+    objc_sync_enter(task)
+    defer { objc_sync_exit(task) }
+
+    if let id = objc_getAssociatedObject(task, &idKey) as? String {
+      return id
     }
-    return id!
+    let id = UUID().uuidString
+    objc_setAssociatedObject(task, &idKey, id, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+    return id
   }
 
   /// The request recorded for `taskId`, while the task is still being tracked.
