@@ -71,10 +71,12 @@ final class OtlpMetricExporterCoverageTests: XCTestCase {
   }
 
   func testExportAppliesTimeout() {
+    fakeCollector.responseDelay = .milliseconds(100)
     let exporter = OtlpMetricExporter(
       channel: channel,
-      config: OtlpConfiguration(timeout: 5))
-    XCTAssertEqual(exporter.export(metrics: [sampleMetric()]), .success)
+      config: OtlpConfiguration(timeout: 0.01))
+
+    XCTAssertEqual(exporter.export(metrics: [sampleMetric()]), .failure)
     _ = exporter.shutdown()
   }
 
@@ -83,7 +85,7 @@ final class OtlpMetricExporterCoverageTests: XCTestCase {
       channel: channel,
       config: OtlpConfiguration(headers: [("x-k", "x-v")]),
       envVarHeaders: nil)
-    XCTAssertTrue(exporter.callOptions?.customMetadata.contains(name: "x-k") ?? false)
+    XCTAssertTrue(exporter.callOptions.customMetadata.contains(name: "x-k"))
     _ = exporter.shutdown()
   }
 
@@ -91,8 +93,25 @@ final class OtlpMetricExporterCoverageTests: XCTestCase {
     let exporter = OtlpMetricExporter(
       channel: channel,
       envVarHeaders: [("x-env", "v")])
-    XCTAssertTrue(exporter.callOptions?.customMetadata.contains(name: "x-env") ?? false)
+    XCTAssertTrue(exporter.callOptions.customMetadata.contains(name: "x-env"))
     _ = exporter.shutdown()
+  }
+
+  func testHeadersProviderIsEvaluatedForEveryExport() {
+    let provider = MutableHeadersProvider([("authorization", "Bearer first")])
+    let exporter = OtlpMetricExporter(
+      channel: channel,
+      config: OtlpConfiguration(headersProvider: provider.currentHeaders),
+      envVarHeaders: nil
+    )
+    defer { _ = exporter.shutdown() }
+
+    XCTAssertEqual(exporter.export(metrics: [sampleMetric()]), .success)
+    provider.update([("authorization", "Bearer second")])
+    XCTAssertEqual(exporter.export(metrics: [sampleMetric()]), .success)
+
+    XCTAssertEqual(fakeCollector.receivedAuthorizationHeaders, ["Bearer first", "Bearer second"])
+    XCTAssertEqual(provider.callCount, 2)
   }
 
   func testGetAggregationTemporalityReturnsConfigured() {
@@ -115,15 +134,22 @@ final class OtlpMetricExporterCoverageTests: XCTestCase {
 
 private final class FakeMetricCollector: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceProvider, @unchecked Sendable {
   var receivedMetrics = [Opentelemetry_Proto_Metrics_V1_ResourceMetrics]()
+  var receivedAuthorizationHeaders = [String?]()
   var returnedStatus = GRPCStatus.ok
+  var responseDelay: TimeAmount?
   var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerInterceptorFactoryProtocol?
 
   func export(request: Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest,
               context: StatusOnlyCallContext) -> EventLoopFuture<Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse> {
     receivedMetrics.append(contentsOf: request.resourceMetrics)
+    receivedAuthorizationHeaders.append(context.headers.first(name: "authorization"))
     if returnedStatus != GRPCStatus.ok {
       return context.eventLoop.makeFailedFuture(returnedStatus)
     }
-    return context.eventLoop.makeSucceededFuture(Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse())
+    let response = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse()
+    if let responseDelay {
+      return context.eventLoop.scheduleTask(in: responseDelay) { response }.futureResult
+    }
+    return context.eventLoop.makeSucceededFuture(response)
   }
 }

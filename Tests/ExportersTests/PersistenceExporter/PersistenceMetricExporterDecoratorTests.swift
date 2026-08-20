@@ -44,7 +44,7 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
     super.tearDown()
   }
 
-  func testWhenExportMetricIsCalled_thenMetricsAreExported() throws {
+  func testWhenExportMetricIsCalled_thenMetricsAreExported() {
     let metricsExportExpectation = expectation(description: "metrics exported")
     let mockMetricExporter = MetricExporterMock(onExport: { metrics in
       metrics.forEach { metric in
@@ -60,12 +60,12 @@ class PersistenceMetricExporterDecoratorTests: XCTestCase {
     })
 
     let persistenceMetricExporter =
-      try PersistenceMetricExporterDecorator(metricExporter: mockMetricExporter,
-                                             storageURL: temporaryDirectory.url,
-                                             exportCondition: { return true },
-                                             performancePreset: PersistencePerformancePreset.mockWith(storagePerformance: StoragePerformanceMock.writeEachObjectToNewFileAndReadAllFiles,
-                                                                                                      synchronousWrite: true,
-                                                                                                      exportPerformance: ExportPerformanceMock.veryQuick))
+      PersistenceMetricExporterDecorator(metricExporter: mockMetricExporter,
+                                         storageURL: temporaryDirectory.url,
+                                         exportCondition: { return true },
+                                         performancePreset: PersistencePerformancePreset.mockWith(storagePerformance: StoragePerformanceMock.writeEachObjectToNewFileAndReadAllFiles,
+                                                                                                synchronousWrite: true,
+                                                                                                exportPerformance: ExportPerformanceMock.veryQuick))
 
     let provider = MeterProviderSdk.builder().registerMetricReader(
       reader: PeriodicMetricReaderBuilder(

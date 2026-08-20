@@ -15,7 +15,7 @@ An example of decorating a `MetricExporter`:
 
 ```swift
 let metricExporter = ... // create some MetricExporter
-let persistenceMetricExporter = try PersistenceMetricExporterDecorator(
+let persistenceMetricExporter = PersistenceMetricExporterDecorator(
   metricExporter: metricExporter,
   storageURL: metricsSubdirectoryURL)
 ```
@@ -30,12 +30,7 @@ in-memory pending queue (which would duplicate spans on the next export):
 let otlpExporter = OtlpHttpTraceExporter(
   config: OtlpConfiguration(),
   requeueOnFailure: false)
-let persistenceTraceExporter = try PersistenceSpanExporterDecorator(
+let persistenceTraceExporter = PersistenceSpanExporterDecorator(
   spanExporter: otlpExporter,
   storageURL: tracesSubdirectoryURL)
 ```
-
-The same `requeueOnFailure` flag exists on `OtlpHttpLogExporter` and
-`OtlpHttpMetricExporter` and prevents in-memory duplication when wrapped by
-Persistence. End-to-end Persistence retry for logs and metrics still requires
-separate failure-signaling work in those exporters.

@@ -49,7 +49,7 @@ final class PersistenceLogExporterDecoratorCoverageTests: XCTestCase {
                       attributes: [:])
   }
 
-  func testExportDelegatesToPersistenceExporter() throws {
+  func testExportDelegatesToPersistenceExporter() {
     let exportExpectation = expectation(description: "log record forwarded")
     exportExpectation.assertForOverFulfill = false
 
@@ -60,7 +60,7 @@ final class PersistenceLogExporterDecoratorCoverageTests: XCTestCase {
       return .success
     }
 
-    let decorator = try PersistenceLogExporterDecorator(
+    let decorator = PersistenceLogExporterDecorator(
       logRecordExporter: inner,
       storageURL: temporaryDirectory.url,
       exportCondition: { true },
@@ -75,18 +75,18 @@ final class PersistenceLogExporterDecoratorCoverageTests: XCTestCase {
     wait(for: [exportExpectation], timeout: 5)
   }
 
-  func testShutdownFlushesAndCallsInner() throws {
+  func testShutdownFlushesAndCallsInner() {
     let inner = LogExporterMock()
-    let decorator = try PersistenceLogExporterDecorator(
+    let decorator = PersistenceLogExporterDecorator(
       logRecordExporter: inner,
       storageURL: temporaryDirectory.url)
     decorator.shutdown()
     XCTAssertTrue(inner.shutdownCalled)
   }
 
-  func testForceFlushFlushesAndCallsInner() throws {
+  func testForceFlushFlushesAndCallsInner() {
     let inner = LogExporterMock()
-    let decorator = try PersistenceLogExporterDecorator(
+    let decorator = PersistenceLogExporterDecorator(
       logRecordExporter: inner,
       storageURL: temporaryDirectory.url)
     let result = decorator.forceFlush()

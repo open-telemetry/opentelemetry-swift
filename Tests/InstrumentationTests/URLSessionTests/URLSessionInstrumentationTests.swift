@@ -17,6 +17,7 @@ class URLSessionInstrumentationTests: XCTestCase {
     public var spanCustomizationCalled: Bool = false
     public var shouldInjectTracingHeadersCalled: Bool = false
     public var createdRequestCalled: Bool = false
+    public var createdRequestCount: Int = 0
     public var receivedResponseCalled: Bool = false
     public var receivedErrorCalled: Bool = false
   }
@@ -64,6 +65,8 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
+  nonisolated(unsafe) static var createdSpanIds = [String]()
+
   nonisolated(unsafe) static var requestCopy: URLRequest!
   nonisolated(unsafe) static var responseCopy: HTTPURLResponse!
 
@@ -97,9 +100,11 @@ class URLSessionInstrumentationTests: XCTestCase {
                                                                return true
 
                                                              },
-                                                             createdRequest: { request, _ in
+                                                             createdRequest: { request, span in
                                                                requestCopy = request
                                                                checker.createdRequestCalled = true
+                                                               checker.createdRequestCount += 1
+                                                               createdSpanIds.append(span.context.spanId.hexString)
                                                              },
                                                              receivedResponse: { response, _, _ in
                                                                responseCopy = response as? HTTPURLResponse
@@ -158,6 +163,7 @@ class URLSessionInstrumentationTests: XCTestCase {
     sessionDelegate = SessionDelegate(semaphore: URLSessionInstrumentationTests.semaphore)
     URLSessionInstrumentationTests.requestCopy = nil
     URLSessionInstrumentationTests.responseCopy = nil
+    URLSessionInstrumentationTests.createdSpanIds.removeAll()
     XCTAssertEqual(0, URLSessionInstrumentationTests.instrumentation.startedRequestSpans.count)
     URLSessionInstrumentationTests.instrumentation.configuration.semanticConvention = .old
   }
@@ -167,6 +173,21 @@ class URLSessionInstrumentationTests: XCTestCase {
       URLSessionLogger.runningSpans.removeAll()
     }
     XCTAssertEqual(0, URLSessionInstrumentationTests.instrumentation.startedRequestSpans.count)
+  }
+
+  /// Swizzling is a process-wide effect, so it must only be applied once. A second instrumentation
+  /// that swizzled again would capture the first one's implementation as its original and chain
+  /// itself in front of it, reporting every request once per instance.
+  public func testSecondInstrumentationDoesNotSwizzleAgain() {
+    let selector = #selector(URLSession.dataTask(with:) as (URLSession) -> (URLRequest) -> URLSessionDataTask)
+    let implementationBefore = class_getMethodImplementation(URLSession.self, selector)
+
+    let secondInstrumentation = URLSessionInstrumentation(configuration: URLSessionInstrumentationConfiguration())
+
+    let implementationAfter = class_getMethodImplementation(URLSession.self, selector)
+    XCTAssertEqual(implementationBefore, implementationAfter)
+
+    withExtendedLifetime(secondInstrumentation) {}
   }
 
   public func testOverrideSpanName() {
@@ -449,6 +470,49 @@ class URLSessionInstrumentationTests: XCTestCase {
 
     XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
     XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?.allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent])
+  }
+
+  /// The `traceparent` header is injected when the span is created. If a second span is created
+  /// for the same task, it replaces the first in `runningSpans` and becomes the one reported,
+  /// while the header already sent to the server still carries the first span's id. The reported
+  /// span and the wire then disagree, silently breaking correlation.
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testReportedSpanMatchesTraceparentSentOnTheWire() async throws {
+    let url = URL(string: "http://localhost:33333/success")!
+    let request = URLRequest(url: url)
+    let session = URLSession(configuration: .ephemeral)
+
+    _ = try? await session.data(for: request)
+
+    XCTAssertEqual(URLSessionInstrumentationTests.checker.createdRequestCount, 1,
+                   "one span per request; a second one orphans the first and diverges from the wire")
+
+    let traceparent = URLSessionInstrumentationTests.requestCopy?
+      .allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent]
+    let spanIdOnWire = traceparent.map { String($0.split(separator: "-")[2]) }
+    XCTAssertEqual(spanIdOnWire, URLSessionInstrumentationTests.createdSpanIds.last)
+  }
+
+  /// `resume()` can fire more than once for a single logical request (suspend/resume, superclass
+  /// chaining, redirects). Each resume that starts another span replaces the first in
+  /// `runningSpans`, leaving it unended and disagreeing with the header already on the wire.
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testRepeatedResumeDoesNotStartASecondSpan() async throws {
+    let url = URL(string: "http://localhost:33333/success")!
+    let request = URLRequest(url: url)
+    let session = URLSession(configuration: .ephemeral)
+
+    await Task {
+      let task = session.dataTask(with: request)
+      task.resume()
+      try? await Task.sleep(nanoseconds: 50_000_000)
+      task.suspend()
+      task.resume()
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }.value
+
+    XCTAssertEqual(URLSessionInstrumentationTests.checker.createdRequestCount, 1,
+                   "repeated resume must reuse the existing span, not start another")
   }
 
   public func testDownloadTaskWithUrlBlock() {
@@ -1106,4 +1170,34 @@ class URLSessionInstrumentationTests: XCTestCase {
     // The test passes if tasks completes without crashing.
     wait { task.state == .completed }
   }
+
+  /// Checking for an existing span and starting one must be atomic. Two threads resuming the same
+  /// task can otherwise both see no span, both start one, and the second replaces the first in
+  /// `runningSpans` — the orphaned span and wire mismatch this guard exists to prevent.
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testConcurrentResumesStartOneSpanOnly() async {
+    nonisolated(unsafe) var count = 0
+    let countLock = NSLock()
+    let original = URLSessionInstrumentationTests.instrumentation.configuration.createdRequest
+    URLSessionInstrumentationTests.instrumentation.configuration.createdRequest = { _, _ in
+      countLock.withLock { count += 1 }
+    }
+    defer { URLSessionInstrumentationTests.instrumentation.configuration.createdRequest = original }
+
+    // A webSocketTask is not instrumented when created, so resume is the only thing that can start
+    // its span, which is the window two threads can race through.
+    let session = URLSession(configuration: .ephemeral)
+    let task = session.webSocketTask(with: URL(string: "ws://localhost:33333/socket")!)
+
+    await withTaskGroup(of: Void.self) { group in
+      for _ in 0 ..< 2 {
+        group.addTask { task.resume() }
+      }
+    }
+    try? await Task.sleep(nanoseconds: 300_000_000)
+    task.cancel()
+
+    XCTAssertEqual(count, 1, "two concurrent resumes must start a single span")
+  }
+
 }
