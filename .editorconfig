@@ -1,0 +1,20 @@
+# editorconfig.org
+#
+# Xcode 16+ reads this file automatically when opening Package.swift.
+# Ensure Settings → Text Editing → Indentation → "Prefer Settings from EditorConfig" is on.
+# If indentation looks wrong after checkout, quit and reopen Xcode.
+#
+# Matches .swiftformat (--indent 2).
+
+root = true
+
+[*]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[Makefile]
+indent_style = tab
