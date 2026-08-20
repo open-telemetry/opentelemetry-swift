@@ -109,15 +109,6 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter, @unch
       var request = createRequest(body: body, endpoint: endpoint)
       let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
       request.timeoutInterval = timeout
-      if let headers = envVarHeaders {
-        headers.forEach { key, value in
-          request.addValue(value, forHTTPHeaderField: key)
-        }
-      } else if let headers = config.headers {
-        headers.forEach { key, value in
-          request.addValue(value, forHTTPHeaderField: key)
-        }
-      }
       httpClient.send(request: request) { [weak self] result in
         switch result {
         case .success:

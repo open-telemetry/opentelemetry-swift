@@ -47,7 +47,7 @@ class PersistenceSpanExporterDecoratorTests: XCTestCase {
     super.tearDown()
   }
 
-  func testWhenExportSpansIsCalled_thenSpansAreExported() throws {
+  func testWhenExportSpansIsCalled_thenSpansAreExported() {
     let spansExportExpectation = expectation(description: "spans exported")
     let exporterShutdownExpectation = expectation(description: "exporter shut down")
 
@@ -66,12 +66,12 @@ class PersistenceSpanExporterDecoratorTests: XCTestCase {
     })
 
     let persistenceSpanExporter =
-      try PersistenceSpanExporterDecorator(spanExporter: mockSpanExporter,
-                                           storageURL: temporaryDirectory.url,
-                                           exportCondition: { true },
-                                           performancePreset: PersistencePerformancePreset.mockWith(storagePerformance: StoragePerformanceMock.writeEachObjectToNewFileAndReadAllFiles,
-                                                                                                    synchronousWrite: true,
-                                                                                                    exportPerformance: ExportPerformanceMock.veryQuick))
+      PersistenceSpanExporterDecorator(spanExporter: mockSpanExporter,
+                                       storageURL: temporaryDirectory.url,
+                                       exportCondition: { true },
+                                       performancePreset: PersistencePerformancePreset.mockWith(storagePerformance: StoragePerformanceMock.writeEachObjectToNewFileAndReadAllFiles,
+                                                                                            synchronousWrite: true,
+                                                                                            exportPerformance: ExportPerformanceMock.veryQuick))
 
     let instrumentationScopeName = "SimpleExporter"
     let instrumentationScopeVersion = "semver:0.1.0"
@@ -88,7 +88,7 @@ class PersistenceSpanExporterDecoratorTests: XCTestCase {
     wait(for: [spansExportExpectation, exporterShutdownExpectation], timeout: 10)
   }
 
-  func testWhenExportFails_thenSpansAreRetried() throws {
+  func testWhenExportFails_thenSpansAreRetried() {
     let exportAttemptsLock = NSLock()
     nonisolated(unsafe) var exportAttempts = 0
     let firstExportExpectation = expectation(description: "first export attempt")
@@ -110,12 +110,12 @@ class PersistenceSpanExporterDecoratorTests: XCTestCase {
     })
 
     let persistenceSpanExporter =
-      try PersistenceSpanExporterDecorator(spanExporter: mockSpanExporter,
-                                           storageURL: temporaryDirectory.url,
-                                           exportCondition: { true },
-                                           performancePreset: PersistencePerformancePreset.mockWith(storagePerformance: StoragePerformanceMock.writeEachObjectToNewFileAndReadAllFiles,
-                                                                                                    synchronousWrite: true,
-                                                                                                    exportPerformance: ExportPerformanceMock.veryQuick))
+      PersistenceSpanExporterDecorator(spanExporter: mockSpanExporter,
+                                       storageURL: temporaryDirectory.url,
+                                       exportCondition: { true },
+                                       performancePreset: PersistencePerformancePreset.mockWith(storagePerformance: StoragePerformanceMock.writeEachObjectToNewFileAndReadAllFiles,
+                                                                                            synchronousWrite: true,
+                                                                                            exportPerformance: ExportPerformanceMock.veryQuick))
 
     let instrumentationScopeName = "RetryExporter"
     let instrumentationScopeVersion = "semver:0.1.0"
