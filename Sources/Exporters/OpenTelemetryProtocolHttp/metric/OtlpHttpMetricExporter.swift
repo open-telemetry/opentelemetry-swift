@@ -85,6 +85,7 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter, @unch
   // MARK: - StableMetricsExporter
 
   public func export(metrics: [MetricData]) -> ExportResult {
+    var resultValue: ExportResult = .success
     var sendingMetrics: [MetricData] = []
     exporterLock.withLockVoid {
       pendingMetrics.append(contentsOf: metrics)
@@ -95,10 +96,12 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter, @unch
       Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
         $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(
           metricData: sendingMetrics)
-      }
+    }
     exporterMetrics?.addSeen(value: sendingMetrics.count)
     var request = createRequest(body: body, endpoint: endpoint)
-    request.timeoutInterval = min(TimeInterval.greatestFiniteMagnitude, config.timeout)
+    let timeout = config.timeout
+    let semaphore = DispatchSemaphore(value: 0)
+    request.timeoutInterval = timeout
     httpClient.send(request: request) { [weak self] result in
       switch result {
       case .success:
@@ -109,10 +112,17 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter, @unch
           self?.pendingMetrics.append(contentsOf: sendingMetrics)
         }
         OpenTelemetry.instance.feedbackHandler?("\(error)")
+        resultValue = .failure
       }
+      semaphore.signal()
     }
 
-    return .success
+    let waitResult = semaphore.wait(timeout: .now() + timeout)
+    if waitResult == .timedOut {
+      exporterMetrics?.addFailed(value: sendingMetrics.count)
+      return .failure
+    }
+    return resultValue
   }
 
   public func flush() -> ExportResult {

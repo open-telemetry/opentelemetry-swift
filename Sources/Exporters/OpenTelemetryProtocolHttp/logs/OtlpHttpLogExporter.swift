@@ -55,6 +55,7 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter, @unch
 
   public func export(logRecords: [OpenTelemetrySdk.ReadableLogRecord],
                      explicitTimeout: TimeInterval? = nil) -> OpenTelemetrySdk.ExportResult {
+    var resultValue: ExportResult = .success
     var sendingLogRecords: [ReadableLogRecord] = []
     exporterLock.withLockVoid {
       pendingLogRecords.append(contentsOf: logRecords)
@@ -70,7 +71,9 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter, @unch
 
     var request = createRequest(body: body, endpoint: endpoint)
     exporterMetrics?.addSeen(value: sendingLogRecords.count)
-    request.timeoutInterval = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+    let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+    let semaphore = DispatchSemaphore(value: 0)
+    request.timeoutInterval = timeout
     httpClient.send(request: request) { [weak self] result in
       switch result {
       case .success:
@@ -81,10 +84,17 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter, @unch
           self?.pendingLogRecords.append(contentsOf: sendingLogRecords)
         }
         OpenTelemetry.instance.feedbackHandler?("\(error)")
+        resultValue = .failure
       }
+      semaphore.signal()
     }
 
-    return .success
+    let waitResult = semaphore.wait(timeout: .now() + timeout)
+    if waitResult == .timedOut {
+      exporterMetrics?.addFailed(value: sendingLogRecords.count)
+      return .failure
+    }
+    return resultValue
   }
 
   public func forceFlush(explicitTimeout: TimeInterval? = nil) -> ExportResult {
