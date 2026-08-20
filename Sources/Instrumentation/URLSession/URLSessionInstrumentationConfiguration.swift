@@ -31,7 +31,8 @@ public struct URLSessionInstrumentationConfiguration {
               shouldInjectTracingHeaders: ((URLRequest) -> (Bool)?)? = nil,
               injectCustomHeaders: ((inout URLRequest, Span?) -> Void)? = nil,
               createdRequest: ((URLRequest, Span) -> Void)? = nil,
-              receivedResponse: ((URLResponse, DataOrFile?, Span, URLRequest?) -> Void)? = nil,
+              receivedResponse: ((URLResponse, DataOrFile?, Span) -> Void)? = nil,
+              receivedResponseWithRequest: ((URLResponse, DataOrFile?, Span, URLRequest?) -> Void)? = nil,
               receivedError: ((Error, DataOrFile?, HTTPStatus, Span) -> Void)? = nil,
               delegateClassesToInstrument: [AnyClass]? = nil,
               baggageProvider: ((inout URLRequest, Span?) -> (Baggage)?)? = nil,
@@ -46,6 +47,7 @@ public struct URLSessionInstrumentationConfiguration {
     self.spanCustomization = spanCustomization
     self.createdRequest = createdRequest
     self.receivedResponse = receivedResponse
+    self.receivedResponseWithRequest = receivedResponseWithRequest
     self.receivedError = receivedError
     self.delegateClassesToInstrument = delegateClassesToInstrument
     self.baggageProvider = baggageProvider
@@ -84,11 +86,16 @@ public struct URLSessionInstrumentationConfiguration {
   ///  Called before the span is created, it allows to add extra information to the Span
   public var createdRequest: ((URLRequest, Span) -> Void)?
 
-  ///  Called before the span is ended, it allows to add extra information to the Span.
+  ///  Called before the span is ended, it allows to add extra information to the Span
+  public var receivedResponse: ((URLResponse, DataOrFile?, Span) -> Void)?
+
+  ///  Called before the span is ended, like `receivedResponse`, and additionally given the request
+  ///  the response belongs to where it is still known.
   ///
-  ///  The last parameter is the request the response belongs to, where it is still known, so that a
-  ///  response can be correlated with what was sent without keeping a side table of requests.
-  public var receivedResponse: ((URLResponse, DataOrFile?, Span, URLRequest?) -> Void)?
+  ///  Use this instead of `receivedResponse` when a response has to be correlated with what was
+  ///  sent, rather than keeping a side table of in flight requests. Both are called if both are
+  ///  implemented.
+  public var receivedResponseWithRequest: ((URLResponse, DataOrFile?, Span, URLRequest?) -> Void)?
 
   ///  Called before the span is ended, it allows to add extra information to the Span
   public var receivedError: ((Error, DataOrFile?, HTTPStatus, Span) -> Void)?

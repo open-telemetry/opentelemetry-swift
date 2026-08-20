@@ -24,7 +24,9 @@ This behaviour can be modified or augmented by using the optional callbacks defi
 
 `createdRequest: ((URLRequest, Span) -> Void)?` - Called after request is created,  it allows to add extra information to the Span
 
-`receivedResponse: ((URLResponse, DataOrFile?, Span, URLRequest?) -> Void)?`- Called after response is received,  it allows to add extra information to the Span. The last parameter is the request the response belongs to, where it is still known.
+`receivedResponse: ((URLResponse, DataOrFile?, Span) -> Void)?`- Called after response is received,  it allows to add extra information to the Span
+
+`receivedResponseWithRequest: ((URLResponse, DataOrFile?, Span, URLRequest?) -> Void)?`- Like `receivedResponse`, and additionally given the request the response belongs to, for correlating the two. Both are called if both are implemented.
 
 `receivedError: ((Error, DataOrFile?, HTTPStatus, Span) -> Void)?` -  Called after an error is received,  it allows to add extra information to the Span
 

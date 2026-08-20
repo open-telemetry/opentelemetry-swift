@@ -103,10 +103,12 @@ class URLSessionInstrumentationTests: XCTestCase {
                                                                requestCopy = request
                                                                checker.createdRequestCalled = true
                                                              },
-                                                             receivedResponse: { response, _, _, request in
+                                                             receivedResponse: { response, _, _ in
                                                                responseCopy = response as? HTTPURLResponse
-                                                               receivedResponseRequest = request
                                                                checker.receivedResponseCalled = true
+                                                             },
+                                                             receivedResponseWithRequest: { _, _, _, request in
+                                                               receivedResponseRequest = request
                                                              },
                                                              receivedError: { _, _, _, _ in
                                                                URLSessionInstrumentationTests.checker.receivedErrorCalled = true
