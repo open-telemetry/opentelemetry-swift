@@ -48,20 +48,24 @@ class URLSessionLogger {
     }()
   #endif // os(iOS) && !targetEnvironment(macCatalyst)
 
-  /// The HTTP semantic conventions describe http and https traffic. A request on any other scheme
-  /// is not an HTTP call, so a span carrying HTTP attributes would misreport it.
-  static func isHTTPScheme(_ url: URL?) -> Bool {
+  /// Whether a request on this scheme is an HTTP call, and so describable by the HTTP semantic
+  /// conventions.
+  ///
+  /// `ws` and `wss` count: a WebSocket opening handshake is an HTTP request. It has to be listed
+  /// explicitly because `webSocketTask(with: URLRequest)` keeps the original scheme, unlike the URL
+  /// overload which Foundation rewrites to `http`/`https`.
+  static func isInstrumentableScheme(_ url: URL?) -> Bool {
     guard let scheme = url?.scheme?.lowercased() else {
       return false
     }
-    return scheme == "http" || scheme == "https"
+    return scheme == "http" || scheme == "https" || scheme == "ws" || scheme == "wss"
   }
 
   /// This methods creates a Span for a request, and optionally injects tracing headers, returns a  new request if it was needed to create a new one to add the tracing headers
   @discardableResult static func processAndLogRequest(_ request: URLRequest, sessionTaskId: String, instrumentation: URLSessionInstrumentation, shouldInjectHeaders: Bool) -> URLRequest? {
-    // Schemes such as file:, data:, ws: and app-specific URLProtocol schemes would otherwise get a
-    // span describing an HTTP call that never happened, and tracing headers no server will read.
-    guard isHTTPScheme(request.url) else {
+    // Schemes such as file:, data: and app-specific URLProtocol schemes would otherwise get a span
+    // describing an HTTP call that never happened, and tracing headers no server will read.
+    guard isInstrumentableScheme(request.url) else {
       return nil
     }
 

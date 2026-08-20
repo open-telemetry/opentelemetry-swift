@@ -173,7 +173,7 @@ class URLSessionInstrumentationTests: XCTestCase {
   /// Instrumenting other schemes produces a span describing an HTTP call that never happened,
   /// and injects tracing headers into a request no HTTP server will ever see.
   public func testNonHTTPSchemesAreNotInstrumented() {
-    for url in ["file:///tmp/opentelemetry-swift.txt", "ws://localhost:33333/socket", "data:text/plain,hello"] {
+    for url in ["file:///tmp/opentelemetry-swift.txt", "data:text/plain,hello"] {
       let request = URLRequest(url: URL(string: url)!)
       let taskId = "non-http-\(url)"
 
@@ -1126,24 +1126,27 @@ class URLSessionInstrumentationTests: XCTestCase {
     wait { task.state == .completed }
   }
 
-  /// A WebSocket opening handshake is an HTTP request, and `URLSessionWebSocketTask` reports it as
-  /// one: Foundation rewrites the `ws`/`wss` scheme to `http`/`https` on `currentRequest`. So the
-  /// scheme filter in `processAndLogRequest` leaves WebSocket instrumentation intact.
+  /// A WebSocket opening handshake is an HTTP request, so it stays instrumented.
   ///
-  /// Pinned here because that relies on Foundation's rewriting rather than anything in this
-  /// library, and the filter reads as though it would drop `ws://`.
+  /// The two overloads differ: `webSocketTask(with: URL)` is rewritten by Foundation to `http`,
+  /// while `webSocketTask(with: URLRequest)` keeps `ws` on both `originalRequest` and
+  /// `currentRequest`. The scheme filter has to allow `ws`/`wss` for the second to work, so both are
+  /// covered here.
   @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
-  public func testWebSocketTaskIsStillInstrumented() async {
+  public func testWebSocketTaskWithURLRequestIsStillInstrumented() async {
     let session = URLSession(configuration: .ephemeral)
-    let task = session.webSocketTask(with: URL(string: "ws://localhost:33333/socket")!)
+    let task = session.webSocketTask(with: URLRequest(url: URL(string: "ws://localhost:33333/socket")!))
 
     // urlSessionTaskWillResume only reaches the instrumentation from an async context.
     await Task { task.resume() }.value
     wait { URLSessionInstrumentationTests.checker.createdRequestCalled }
     task.cancel()
 
-    XCTAssertEqual(URLSessionInstrumentationTests.requestCopy?.url?.scheme, "http",
-                   "Foundation reports the handshake with an http scheme, which is what lets it through")
+    XCTAssertEqual(URLSessionInstrumentationTests.requestCopy?.url?.scheme, "ws",
+                   "this overload keeps the ws scheme, so the filter has to allow it")
+    XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?
+      .allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent],
+                    "the handshake should still carry traceparent")
   }
 
 }
