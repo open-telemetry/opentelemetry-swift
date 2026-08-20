@@ -1155,4 +1155,34 @@ class URLSessionInstrumentationTests: XCTestCase {
     // The test passes if tasks completes without crashing.
     wait { task.state == .completed }
   }
+
+  /// Checking for an existing span and starting one must be atomic. Two threads resuming the same
+  /// task can otherwise both see no span, both start one, and the second replaces the first in
+  /// `runningSpans` — the orphaned span and wire mismatch this guard exists to prevent.
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testConcurrentResumesStartOneSpanOnly() async {
+    nonisolated(unsafe) var count = 0
+    let countLock = NSLock()
+    let original = URLSessionInstrumentationTests.instrumentation.configuration.createdRequest
+    URLSessionInstrumentationTests.instrumentation.configuration.createdRequest = { _, _ in
+      countLock.withLock { count += 1 }
+    }
+    defer { URLSessionInstrumentationTests.instrumentation.configuration.createdRequest = original }
+
+    // A webSocketTask is not instrumented when created, so resume is the only thing that can start
+    // its span, which is the window two threads can race through.
+    let session = URLSession(configuration: .ephemeral)
+    let task = session.webSocketTask(with: URL(string: "ws://localhost:33333/socket")!)
+
+    await withTaskGroup(of: Void.self) { group in
+      for _ in 0 ..< 2 {
+        group.addTask { task.resume() }
+      }
+    }
+    try? await Task.sleep(nanoseconds: 300_000_000)
+    task.cancel()
+
+    XCTAssertEqual(count, 1, "two concurrent resumes must start a single span")
+  }
+
 }

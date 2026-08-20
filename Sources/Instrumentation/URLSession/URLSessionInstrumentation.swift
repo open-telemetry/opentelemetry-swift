@@ -779,10 +779,12 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       // processAndLogRequest overwrites runningSpans[taskId] and the first span would
       // never be ended. It would also disagree with the wire, because the traceparent
       // already sent to the server carries the first span's id.
-      let alreadyTracked = URLSessionLogger.runningSpansQueue.sync {
-        URLSessionLogger.runningSpans[taskId] != nil
-      }
-      if alreadyTracked { return }
+      // Claiming rather than merely checking: the lookup and the eventual insertion into
+      // runningSpans have to be one atomic step, or two threads resuming the same task both see
+      // nothing and both start a span. The claim is released once this call has either started a
+      // span or decided not to instrument.
+      guard URLSessionLogger.claimTaskForInstrumentation(taskId) else { return }
+      defer { URLSessionLogger.releaseTaskClaim(taskId) }
 
       // For iOS 15+/macOS 12+, handle async/await methods differently
       if #available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *) {
@@ -846,13 +848,20 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
   }
 
   // Helpers
+  /// The task's instrumentation id, assigning one if it does not have it yet.
+  ///
+  /// Synchronized on the task: reading and assigning have to be one step, or two threads resuming
+  /// the same task each generate their own id and it is then tracked as two separate requests.
   private func idKeyForTask(_ task: URLSessionTask) -> String {
-    var id = objc_getAssociatedObject(task, &idKey) as? String
-    if id == nil {
-      id = UUID().uuidString
-      objc_setAssociatedObject(task, &idKey, id, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+    objc_sync_enter(task)
+    defer { objc_sync_exit(task) }
+
+    if let id = objc_getAssociatedObject(task, &idKey) as? String {
+      return id
     }
-    return id!
+    let id = UUID().uuidString
+    objc_setAssociatedObject(task, &idKey, id, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+    return id
   }
 
   private func setIdKey(value: String, for task: URLSessionTask) {
