@@ -12,7 +12,9 @@ This behaviour can be modified or augmented by using the optional callbacks defi
 
 `shouldInstrument: ((URLRequest) -> (Bool)?)?` :  Filter which requests you want to instrument, all by default
 
-`shouldRecordPayload: ((URLSession) -> (Bool)?)?`: Implement if you want the session to record payload data, false by default.
+`shouldRecordPayload: ((URLSession) -> (Bool)?)?`: Implement if you want the session to record payload data, false by default. It gates the payload passed to `receivedResponse` and `receivedError` on every path, whether the request uses the session delegate, a completion handler or async/await.
+
+`shouldRecordPayloadForRequest: ((URLRequest) -> (Bool)?)?`: Decide payload recording per request rather than per session, which is useful when one session serves endpoints that should be treated differently. Asked first, falling back to `shouldRecordPayload` when it is not implemented or returns nil.
 
 `shouldInjectTracingHeaders: ((URLRequest) -> (Bool)?)?`: Allows filtering which requests you want to inject headers to follow the trace, true by default. You must also return true if you want to inject custom headers.
 

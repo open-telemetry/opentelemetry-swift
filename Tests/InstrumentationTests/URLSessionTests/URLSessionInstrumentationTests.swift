@@ -1202,4 +1202,39 @@ class URLSessionInstrumentationTests: XCTestCase {
                  "payload recording is disabled, so no body should reach receivedResponse")
   }
 
+
+  /// The completion handler paths go through the same gate as the session delegate path, so the
+  /// per-request callback decides for them too rather than being silently ignored.
+  public func testCompletionHandlerHonoursPerRequestPayloadCallback() {
+    let url = URL(string: "http://\(PayloadStubURLProtocol.host)/body")!
+    nonisolated(unsafe) var askedFor = [URL]()
+    let askedLock = NSLock()
+
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayloadForRequest = { request in
+      if let requestURL = request.url {
+        askedLock.withLock { askedFor.append(requestURL) }
+      }
+      return true
+    }
+    defer {
+      URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayloadForRequest = nil
+    }
+
+    let configuration = URLSessionConfiguration.default
+    configuration.protocolClasses = [PayloadStubURLProtocol.self]
+    let session = URLSession(configuration: configuration)
+
+    let task = session.dataTask(with: URLRequest(url: url)) { _, _, _ in
+      URLSessionInstrumentationTests.semaphore.signal()
+    }
+    task.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertEqual(askedLock.withLock { askedFor }.first, url,
+                   "the per-request callback should decide for completion handler tasks too")
+    XCTAssertEqual((URLSessionInstrumentationTests.receivedDataOrFile as? Data),
+                   PayloadStubURLProtocol.body,
+                   "recording was allowed for this request, so the body should reach receivedResponse")
+  }
+
 }

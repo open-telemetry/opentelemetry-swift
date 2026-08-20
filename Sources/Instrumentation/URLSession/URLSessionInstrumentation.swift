@@ -355,7 +355,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
               let completionWrapper: (Any?, URLResponse?, Error?) -> Void = { object, response, error in
                 // Payload recording is opt-in and off by default. The caller still receives
                 // `object` below; only what is handed to the telemetry callbacks is withheld.
-                let payload = (self.configuration.shouldRecordPayload?(session) ?? false) ? object : nil
+                let payload = self.shouldRecordPayload(for: session, taskId: sessionTaskId) ? object : nil
                 if error != nil {
                   let status = (response as? HTTPURLResponse)?.statusCode ?? 0
                   URLSessionLogger.logError(error!, dataOrFile: payload, statusCode: status,
@@ -427,7 +427,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
             let completionWrapper: (Any?, URLResponse?, Error?) -> Void = { object, response, error in
               // Payload recording is opt-in and off by default. The caller still receives
               // `object` below; only what is handed to the telemetry callbacks is withheld.
-              let payload = (self.configuration.shouldRecordPayload?(session) ?? false) ? object : nil
+              let payload = self.shouldRecordPayload(for: session, taskId: sessionTaskId) ? object : nil
               if error != nil {
                 let status = (response as? HTTPURLResponse)?.statusCode ?? 0
                 URLSessionLogger.logError(error!, dataOrFile: payload, statusCode: status,
