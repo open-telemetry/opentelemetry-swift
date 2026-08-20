@@ -26,17 +26,44 @@ public struct OtlpConfiguration: Sendable {
   // let endpoint : URL? = URL(string: "https://localhost:4317")
   // let certificateFile
   // let compression
+  /// Static headers included with every export.
   public let headers: [(String, String)]?
+  /// Returns the current headers immediately before each export.
+  ///
+  /// This callback is invoked synchronously and may be called concurrently. It should return
+  /// cached credentials quickly rather than perform I/O. Callers must synchronize any mutable
+  /// state captured by the callback. Provider values replace static headers with matching names
+  /// case-insensitively. Headers supplied through an exporter's `envVarHeaders` parameter retain
+  /// their existing precedence.
+  public let headersProvider: (@Sendable () -> [(String, String)]?)?
   public let timeout: TimeInterval
   public let compression: CompressionType
   public let exportAsJson: Bool
   public init(timeout: TimeInterval = OtlpConfiguration.DefaultTimeoutInterval,
               compression: CompressionType = .gzip,
               headers: [(String, String)]? = nil,
-              exportAsJson: Bool = true) {
+              exportAsJson: Bool = true,
+              headersProvider: (@Sendable () -> [(String, String)]?)? = nil) {
     self.headers = headers
+    self.headersProvider = headersProvider
     self.timeout = timeout
     self.compression = compression
     self.exportAsJson = exportAsJson
+  }
+
+  /// Returns the headers to include in the next export.
+  ///
+  /// Provider values replace matching static headers case-insensitively. A `nil` provider result
+  /// leaves the static headers unchanged.
+  public func headersForExport() -> [(String, String)]? {
+    guard let providerHeaders = headersProvider?() else {
+      return headers
+    }
+
+    let providerHeaderNames = Set(providerHeaders.map { $0.0.lowercased() })
+    let retainedStaticHeaders = (headers ?? []).filter {
+      !providerHeaderNames.contains($0.0.lowercased())
+    }
+    return retainedStaticHeaders + providerHeaders
   }
 }
