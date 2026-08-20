@@ -41,6 +41,77 @@ final class OtlpHttpExporterBaseCoverageTests: XCTestCase {
     XCTAssertEqual(request.value(forHTTPHeaderField: "X-Cfg-Header"), "cfg-value")
   }
 
+  func testHeadersProviderIsEvaluatedForEveryRequest() throws {
+    let provider = MutableHeadersProvider([("Authorization", "Bearer first")])
+    let exporter = try OtlpHttpExporterBase(
+      endpoint: XCTUnwrap(URL(string: "http://example.com")),
+      config: OtlpConfiguration(
+        headers: [
+          ("X-Static-Header", "static-value"),
+          ("authorization", "Bearer static")
+        ],
+        headersProvider: provider.currentHeaders
+      ),
+      httpClient: BaseHTTPClient(),
+      envVarHeaders: nil
+    )
+
+    let firstRequest = try exporter.createRequest(
+      body: makeBody(),
+      endpoint: XCTUnwrap(URL(string: "http://example.com"))
+    )
+    provider.update([("Authorization", "Bearer second")])
+    let secondRequest = try exporter.createRequest(
+      body: makeBody(),
+      endpoint: XCTUnwrap(URL(string: "http://example.com"))
+    )
+
+    XCTAssertEqual(firstRequest.value(forHTTPHeaderField: "Authorization"), "Bearer first")
+    XCTAssertEqual(secondRequest.value(forHTTPHeaderField: "Authorization"), "Bearer second")
+    XCTAssertEqual(firstRequest.value(forHTTPHeaderField: "X-Static-Header"), "static-value")
+    XCTAssertEqual(secondRequest.value(forHTTPHeaderField: "X-Static-Header"), "static-value")
+    XCTAssertEqual(provider.callCount, 2)
+  }
+
+  func testEnvVarHeadersTakePrecedenceOverHeadersProvider() throws {
+    let provider = MutableHeadersProvider([("Authorization", "Bearer provider")])
+    let exporter = try OtlpHttpExporterBase(
+      endpoint: XCTUnwrap(URL(string: "http://example.com")),
+      config: OtlpConfiguration(headersProvider: provider.currentHeaders),
+      httpClient: BaseHTTPClient(),
+      envVarHeaders: [("Authorization", "Bearer environment")]
+    )
+
+    let request = try exporter.createRequest(
+      body: makeBody(),
+      endpoint: XCTUnwrap(URL(string: "http://example.com"))
+    )
+
+    XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer environment")
+    XCTAssertEqual(provider.callCount, 0)
+  }
+
+  func testNilHeadersProviderRetainsStaticHeaders() throws {
+    let provider = MutableHeadersProvider(nil)
+    let exporter = try OtlpHttpExporterBase(
+      endpoint: XCTUnwrap(URL(string: "http://example.com")),
+      config: OtlpConfiguration(
+        headers: [("Authorization", "Bearer static")],
+        headersProvider: provider.currentHeaders
+      ),
+      httpClient: BaseHTTPClient(),
+      envVarHeaders: nil
+    )
+
+    let request = try exporter.createRequest(
+      body: makeBody(),
+      endpoint: XCTUnwrap(URL(string: "http://example.com"))
+    )
+
+    XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer static")
+    XCTAssertEqual(provider.callCount, 1)
+  }
+
   func testContentTypeAndUserAgentSet() {
     let exporter = OtlpHttpExporterBase(
       endpoint: URL(string: "http://example.com")!,

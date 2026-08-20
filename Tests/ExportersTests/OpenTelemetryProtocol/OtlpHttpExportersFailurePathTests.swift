@@ -158,10 +158,7 @@ final class OtlpHttpLogExporterCoverageTests: XCTestCase {
       envVarHeaders: [("X-Test", "value")])
     _ = exporter.export(logRecords: [sampleLogRecord()])
     _ = exporter.flush()
-    // Header may be appended twice (export + flush); accept either "value" or
-    // the comma-joined duplicate form that URLRequest produces on addValue.
-    let header = client.sentRequests.last?.value(forHTTPHeaderField: "X-Test") ?? ""
-    XCTAssertTrue(header.contains("value"))
+    XCTAssertEqual(client.sentRequests.last?.value(forHTTPHeaderField: "X-Test"), "value")
   }
 
   func testFlushWithConfigHeadersAppliesHeaders() {
@@ -170,8 +167,25 @@ final class OtlpHttpLogExporterCoverageTests: XCTestCase {
     let exporter = OtlpHttpLogExporter(config: config, httpClient: client, envVarHeaders: nil)
     _ = exporter.export(logRecords: [sampleLogRecord()])
     _ = exporter.flush()
-    let header = client.sentRequests.last?.value(forHTTPHeaderField: "X-Config") ?? ""
-    XCTAssertTrue(header.contains("c-value"))
+    XCTAssertEqual(client.sentRequests.last?.value(forHTTPHeaderField: "X-Config"), "c-value")
+  }
+
+  func testFlushRefreshesHeadersProvider() {
+    let client = StubHTTPClient(outcomes: [.failure(TransientNetworkError()), .success])
+    let provider = MutableHeadersProvider([("Authorization", "Bearer first")])
+    let exporter = OtlpHttpLogExporter(
+      config: OtlpConfiguration(headersProvider: provider.currentHeaders),
+      httpClient: client,
+      envVarHeaders: nil
+    )
+
+    _ = exporter.export(logRecords: [sampleLogRecord()])
+    provider.update([("Authorization", "Bearer second")])
+    XCTAssertEqual(exporter.flush(), .success)
+
+    XCTAssertEqual(client.sentRequests[0].value(forHTTPHeaderField: "Authorization"), "Bearer first")
+    XCTAssertEqual(client.sentRequests[1].value(forHTTPHeaderField: "Authorization"), "Bearer second")
+    XCTAssertEqual(provider.callCount, 2)
   }
 
   func testFlushFailureAfterRetryReturnsFailure() {
