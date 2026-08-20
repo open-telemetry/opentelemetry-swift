@@ -24,11 +24,13 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter, @unch
   override public init(endpoint: URL = defaultOltpHttpLoggingEndpoint(),
                        config: OtlpConfiguration = OtlpConfiguration(),
                        httpClient: HTTPClient = BaseHTTPClient(),
-                       envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+                       envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
+                       requeueOnFailure: Bool = true) {
     super.init(endpoint: endpoint,
                config: config,
                httpClient: httpClient,
-               envVarHeaders: envVarHeaders)
+               envVarHeaders: envVarHeaders,
+               requeueOnFailure: requeueOnFailure)
   }
 
   /// A `convenience` constructor to provide support for exporter metric using`StableMeterProvider` type
@@ -38,13 +40,18 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter, @unch
   ///    - meterProvider: Injected `StableMeterProvider` for metric
   ///    - httpClient: Custom HTTPClient implementation
   ///    - envVarHeaders: Extra header key-values
+  ///    - requeueOnFailure: Re-append failed batches to the in-memory pending queue
   public convenience init(endpoint: URL = defaultOltpHttpLoggingEndpoint(),
                           config: OtlpConfiguration = OtlpConfiguration(),
                           meterProvider: any MeterProvider,
                           httpClient: HTTPClient = BaseHTTPClient(),
-                          envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
-    self.init(endpoint: endpoint, config: config, httpClient: httpClient,
-              envVarHeaders: envVarHeaders)
+                          envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
+                          requeueOnFailure: Bool = true) {
+    self.init(endpoint: endpoint,
+              config: config,
+              httpClient: httpClient,
+              envVarHeaders: envVarHeaders,
+              requeueOnFailure: requeueOnFailure)
     exporterMetrics = ExporterMetrics(type: "log",
                                       meterProvider: meterProvider,
                                       exporterName: "otlp",
@@ -77,8 +84,10 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter, @unch
         self?.exporterMetrics?.addSuccess(value: sendingLogRecords.count)
       case let .failure(error):
         self?.exporterMetrics?.addFailed(value: sendingLogRecords.count)
-        self?.exporterLock.withLockVoid {
-          self?.pendingLogRecords.append(contentsOf: sendingLogRecords)
+        if self?.requeueOnFailure == true {
+          self?.exporterLock.withLockVoid {
+            self?.pendingLogRecords.append(contentsOf: sendingLogRecords)
+          }
         }
         OpenTelemetry.instance.feedbackHandler?("\(error)")
       }
