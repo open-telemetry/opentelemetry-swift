@@ -64,8 +64,15 @@ public struct URLSessionInstrumentationConfiguration {
   /// Implement this callback to filter which requests you want to instrument, all by default
   public var shouldInstrument: ((URLRequest) -> (Bool)?)?
 
-  /// Implement this callback if you want the session to record payload data, false by default.
-  /// This callback is only necessary when using session delegate
+  /// Implement this callback if you want the instrumentation to record payload data, false by
+  /// default.
+  ///
+  /// It is the opt-in gate for the payload passed as `dataOrFile` to `receivedResponse` and
+  /// `receivedError`, on the session delegate and completion handler paths alike. Returning `false`,
+  /// or leaving this unimplemented, means those callbacks receive `nil` instead of the body.
+  ///
+  /// This does not affect the data delivered to the caller: a completion handler passed to
+  /// `dataTask(with:completionHandler:)` always receives its own data unchanged.
   public var shouldRecordPayload: ((URLSession) -> (Bool)?)?
 
   /// Implement this callback to decide payload recording per request rather than per session.
