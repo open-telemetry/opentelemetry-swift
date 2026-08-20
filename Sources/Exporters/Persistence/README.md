@@ -15,7 +15,7 @@ An example of decorating a `MetricExporter`:
 
 ```swift
 let metricExporter = ... // create some MetricExporter
-let persistenceMetricExporter = try PersistenceMetricExporterDecorator(
+let persistenceMetricExporter = PersistenceMetricExporterDecorator(
   metricExporter: metricExporter,
   storageURL: metricsSubdirectoryURL)
 ```
@@ -24,7 +24,7 @@ An example of decorating a `SpanExporter`:
 
 ```swift
 let spanExporter = ... // create some SpanExporter
-let persistenceTraceExporter = try PersistenceSpanExporterDecorator(
+let persistenceTraceExporter = PersistenceSpanExporterDecorator(
   spanExporter: spanExporter,
   storageURL: tracesSubdirectoryURL)
 ```
