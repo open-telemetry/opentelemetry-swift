@@ -26,20 +26,27 @@ jobs:
       - name: Parse version from branch name
         id: parse
         run: |
-          version=$(echo "${{ github.event.pull_request.head.ref }}" | sed 's/^release\///')
+          version=$(echo "${GITHUB_EVENT_PULL_REQUEST_HEAD_REF}" | sed 's/^release\///')
           echo "version=$version" >> $GITHUB_OUTPUT
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        env:
+          GITHUB_EVENT_PULL_REQUEST_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+      - name: Checkout release merge commit
+        # zizmor: ignore[artipacked] Credentials are required by git-auto-commit-action to push the release tag.
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
           fetch-depth: '0'
+          persist-credentials: true
       - name: Check if tag already exists
         id: tag_check
         run: |
-          if git rev-parse "refs/tags/${{ steps.parse.outputs.version }}" >/dev/null 2>&1; then
+          if git rev-parse "refs/tags/${STEPS_PARSE_OUTPUTS_VERSION}" >/dev/null 2>&1; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
+        env:
+          STEPS_PARSE_OUTPUTS_VERSION: ${{ steps.parse.outputs.version }}
       - name: Create tag
         if: steps.tag_check.outputs.exists == 'false'
         uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d # v7.2.0
@@ -48,11 +55,10 @@ jobs:
           tagging_message: '${{ steps.parse.outputs.version }}'
       - name: Create release
         if: steps.tag_check.outputs.exists == 'false'
-        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1.21.0
-        with: 
-          tag: ${{ steps.parse.outputs.version }}
-          prerelease: true
-          generateReleaseNotes: true
+        run: gh release create "${STEPS_PARSE_OUTPUTS_VERSION}" --verify-tag --prerelease --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STEPS_PARSE_OUTPUTS_VERSION: ${{ steps.parse.outputs.version }}
   
   cocoapods:
     name: Publish to CocoaPods
@@ -63,4 +69,5 @@ jobs:
     uses: ./.github/workflows/Push-CocoaPods.yml
     with:
       version: ${{ needs.tag.outputs.version }}
-    secrets: inherit
+    secrets:
+      COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
