@@ -19,13 +19,13 @@ jobs:
         persist-credentials: false
     - name: update Podspec
       run: | 
-        sed -i -e  's/spec.version = ".*"/spec.version = "${INPUTS_NEW_VERSION}"/' OpenTelemetry-Swift-BaggagePropagationProcessor.podspec
-        sed -i -e  's/spec.version = ".*"/spec.version = "${INPUTS_NEW_VERSION}"/' OpenTelemetry-Swift-Instrumentation-NetworkStatus.podspec
-        sed -i -e  's/spec.version = ".*"/spec.version = "${INPUTS_NEW_VERSION}"/' OpenTelemetry-Swift-Instrumentation-URLSession.podspec
-        sed -i -e  's/spec.version = ".*"/spec.version = "${INPUTS_NEW_VERSION}"/' OpenTelemetry-Swift-Protocol-Exporter-Common.podspec
-        sed -i -e  's/spec.version = ".*"/spec.version = "${INPUTS_NEW_VERSION}"/' OpenTelemetry-Swift-Protocol-Exporter-Http.podspec
-        sed -i -e  's/spec.version = ".*"/spec.version = "${INPUTS_NEW_VERSION}"/' OpenTelemetry-Swift-SdkResourceExtension.podspec
-        sed -i -e  's/spec.version = ".*"/spec.version = "${INPUTS_NEW_VERSION}"/' OpenTelemetry-Swift-PersistenceExporter.podspec
+        sed -i -e  "s/spec.version = \".*\"/spec.version = \"${INPUTS_NEW_VERSION}\"/" OpenTelemetry-Swift-BaggagePropagationProcessor.podspec
+        sed -i -e  "s/spec.version = \".*\"/spec.version = \"${INPUTS_NEW_VERSION}\"/" OpenTelemetry-Swift-Instrumentation-NetworkStatus.podspec
+        sed -i -e  "s/spec.version = \".*\"/spec.version = \"${INPUTS_NEW_VERSION}\"/" OpenTelemetry-Swift-Instrumentation-URLSession.podspec
+        sed -i -e  "s/spec.version = \".*\"/spec.version = \"${INPUTS_NEW_VERSION}\"/" OpenTelemetry-Swift-Protocol-Exporter-Common.podspec
+        sed -i -e  "s/spec.version = \".*\"/spec.version = \"${INPUTS_NEW_VERSION}\"/" OpenTelemetry-Swift-Protocol-Exporter-Http.podspec
+        sed -i -e  "s/spec.version = \".*\"/spec.version = \"${INPUTS_NEW_VERSION}\"/" OpenTelemetry-Swift-SdkResourceExtension.podspec
+        sed -i -e  "s/spec.version = \".*\"/spec.version = \"${INPUTS_NEW_VERSION}\"/" OpenTelemetry-Swift-PersistenceExporter.podspec
       env:
         INPUTS_NEW_VERSION: ${{ inputs.new_version }}
 
