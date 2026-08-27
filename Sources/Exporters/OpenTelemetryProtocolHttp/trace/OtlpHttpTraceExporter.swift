@@ -16,22 +16,24 @@ public func defaultOltpHttpTracesEndpoint() -> URL {
   URL(string: "http://localhost:4318/v1/traces")!
 }
 
-public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter, @unchecked Sendable {
-  var pendingSpans: [SpanData] = []
+public final class OtlpHttpTraceExporter: SpanExporter, @unchecked Sendable {
+  var pendingSpans: [SpanData] {
+    base.snapshotPending()
+  }
 
-  private let exporterLock = Lock()
+  private let base: OtlpHttpExporterBase<SpanData>
   private var exporterMetrics: ExporterMetrics?
 
-  override public init(endpoint: URL = defaultOltpHttpTracesEndpoint(),
-                       config: OtlpConfiguration = OtlpConfiguration(),
-                       httpClient: HTTPClient = BaseHTTPClient(),
-                       envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
-                       requeueOnFailure: Bool = true) {
-    super.init(endpoint: endpoint,
-               config: config,
-               httpClient: httpClient,
-               envVarHeaders: envVarHeaders,
-               requeueOnFailure: requeueOnFailure)
+  public init(endpoint: URL = defaultOltpHttpTracesEndpoint(),
+              config: OtlpConfiguration = OtlpConfiguration(),
+              httpClient: HTTPClient = BaseHTTPClient(),
+              envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
+              requeueOnFailure: Bool = true) {
+    base = OtlpHttpExporterBase(endpoint: endpoint,
+                                config: config,
+                                httpClient: httpClient,
+                                envVarHeaders: envVarHeaders,
+                                requeueOnFailure: requeueOnFailure)
   }
 
   /// A `convenience` constructor to provide support for exporter metric using`StableMeterProvider` type
@@ -64,12 +66,7 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter, @uncheck
   public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil)
     -> SpanExporterResultCode {
     var resultValue: SpanExporterResultCode = .success
-    var sendingSpans: [SpanData] = []
-    exporterLock.withLockVoid {
-      pendingSpans.append(contentsOf: spans)
-      sendingSpans = pendingSpans
-      pendingSpans = []
-    }
+    let sendingSpans = base.drainPending(adding: spans)
 
     let body =
       Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
@@ -77,23 +74,19 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter, @uncheck
           spanDataList: sendingSpans)
       }
     let semaphore = DispatchSemaphore(value: 0)
-    var request = createRequest(body: body, endpoint: endpoint)
+    var request = base.createRequest(body: body, endpoint: base.endpoint)
 
-    let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+    let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, base.config.timeout)
     request.timeoutInterval = timeout
 
     exporterMetrics?.addSeen(value: sendingSpans.count)
-    httpClient.send(request: request) { [weak self] result in
+    base.httpClient.send(request: request) { [weak self] result in
       switch result {
       case .success:
         self?.exporterMetrics?.addSuccess(value: sendingSpans.count)
       case let .failure(error):
         self?.exporterMetrics?.addFailed(value: sendingSpans.count)
-        if self?.requeueOnFailure == true {
-          self?.exporterLock.withLockVoid {
-            self?.pendingSpans.append(contentsOf: sendingSpans)
-          }
-        }
+        self?.base.requeue(sendingSpans)
         OpenTelemetry.instance.feedbackHandler?("\(error)")
         resultValue = .failure
       }
@@ -111,10 +104,7 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter, @uncheck
   public func flush(explicitTimeout: TimeInterval? = nil)
     -> SpanExporterResultCode {
     var resultValue: SpanExporterResultCode = .success
-    var pendingSpans: [SpanData] = []
-    exporterLock.withLockVoid {
-      pendingSpans = self.pendingSpans
-    }
+    let pendingSpans = base.snapshotPending()
     if !pendingSpans.isEmpty {
       let sentCount = pendingSpans.count
       let body =
@@ -123,20 +113,15 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter, @uncheck
             spanDataList: pendingSpans)
         }
       let semaphore = DispatchSemaphore(value: 0)
-      var request = createRequest(body: body, endpoint: endpoint)
-      let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+      var request = base.createRequest(body: body, endpoint: base.endpoint)
+      let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, base.config.timeout)
       request.timeoutInterval = timeout
 
-      httpClient.send(request: request) { [weak self] result in
+      base.httpClient.send(request: request) { [weak self] result in
         switch result {
         case .success:
           self?.exporterMetrics?.addSuccess(value: sentCount)
-          // Drop the records we successfully flushed from the pending queue.
-          self?.exporterLock.withLockVoid {
-            guard let self else { return }
-            let n = min(sentCount, self.pendingSpans.count)
-            self.pendingSpans.removeFirst(n)
-          }
+          self?.base.dropFlushed(count: sentCount)
         case let .failure(error):
           self?.exporterMetrics?.addFailed(value: sentCount)
           OpenTelemetry.instance.feedbackHandler?("\(error)")
@@ -153,4 +138,6 @@ public class OtlpHttpTraceExporter: OtlpHttpExporterBase, SpanExporter, @uncheck
     }
     return resultValue
   }
+
+  public func shutdown(explicitTimeout: TimeInterval? = nil) {}
 }

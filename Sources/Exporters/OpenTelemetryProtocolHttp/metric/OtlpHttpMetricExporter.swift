@@ -27,12 +27,15 @@ public typealias StableOtlpHTTPMetricExporter = OtlpHttpMetricExporter
 @available(*, deprecated, renamed: "OtlpHttpMetricExporter")
 public typealias OtlpHTTPMetricExporter = OtlpHttpMetricExporter
 
-public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter, @unchecked Sendable {
+public final class OtlpHttpMetricExporter: MetricExporter, @unchecked Sendable {
   var aggregationTemporalitySelector: AggregationTemporalitySelector
   var defaultAggregationSelector: DefaultAggregationSelector
 
-  var pendingMetrics: [MetricData] = []
-  private let exporterLock = Lock()
+  var pendingMetrics: [MetricData] {
+    base.snapshotPending()
+  }
+
+  private let base: OtlpHttpExporterBase<MetricData>
   private var exporterMetrics: ExporterMetrics?
 
   // MARK: - Init
@@ -46,12 +49,11 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter, @unch
               requeueOnFailure: Bool = true) {
     self.aggregationTemporalitySelector = aggregationTemporalitySelector
     self.defaultAggregationSelector = defaultAggregationSelector
-
-    super.init(endpoint: endpoint,
-               config: config,
-               httpClient: httpClient,
-               envVarHeaders: envVarHeaders,
-               requeueOnFailure: requeueOnFailure)
+    base = OtlpHttpExporterBase(endpoint: endpoint,
+                                config: config,
+                                httpClient: httpClient,
+                                envVarHeaders: envVarHeaders,
+                                requeueOnFailure: requeueOnFailure)
   }
 
   /// A `convenience` constructor to provide support for exporter metric using`StableMeterProvider` type
@@ -92,31 +94,22 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter, @unch
   // MARK: - StableMetricsExporter
 
   public func export(metrics: [MetricData]) -> ExportResult {
-    var sendingMetrics: [MetricData] = []
-    exporterLock.withLockVoid {
-      pendingMetrics.append(contentsOf: metrics)
-      sendingMetrics = pendingMetrics
-      pendingMetrics = []
-    }
+    let sendingMetrics = base.drainPending(adding: metrics)
     let body =
       Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
         $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(
           metricData: sendingMetrics)
       }
     exporterMetrics?.addSeen(value: sendingMetrics.count)
-    var request = createRequest(body: body, endpoint: endpoint)
-    request.timeoutInterval = min(TimeInterval.greatestFiniteMagnitude, config.timeout)
-    httpClient.send(request: request) { [weak self] result in
+    var request = base.createRequest(body: body, endpoint: base.endpoint)
+    request.timeoutInterval = min(TimeInterval.greatestFiniteMagnitude, base.config.timeout)
+    base.httpClient.send(request: request) { [weak self] result in
       switch result {
       case .success:
         self?.exporterMetrics?.addSuccess(value: sendingMetrics.count)
       case let .failure(error):
         self?.exporterMetrics?.addFailed(value: sendingMetrics.count)
-        if self?.requeueOnFailure == true {
-          self?.exporterLock.withLockVoid {
-            self?.pendingMetrics.append(contentsOf: sendingMetrics)
-          }
-        }
+        self?.base.requeue(sendingMetrics)
         OpenTelemetry.instance.feedbackHandler?("\(error)")
       }
     }
@@ -126,10 +119,7 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter, @unch
 
   public func flush() -> ExportResult {
     var exporterResult: ExportResult = .success
-    var pendingMetrics: [MetricData] = []
-    exporterLock.withLockVoid {
-      pendingMetrics = self.pendingMetrics
-    }
+    let pendingMetrics = base.snapshotPending()
     if !pendingMetrics.isEmpty {
       let sentCount = pendingMetrics.count
       let body =
@@ -139,19 +129,14 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter, @unch
               metricData: pendingMetrics)
           }
       let semaphore = DispatchSemaphore(value: 0)
-      var request = createRequest(body: body, endpoint: endpoint)
-      let timeout = min(TimeInterval.greatestFiniteMagnitude, config.timeout)
+      var request = base.createRequest(body: body, endpoint: base.endpoint)
+      let timeout = min(TimeInterval.greatestFiniteMagnitude, base.config.timeout)
       request.timeoutInterval = timeout
-      httpClient.send(request: request) { [weak self] result in
+      base.httpClient.send(request: request) { [weak self] result in
         switch result {
         case .success:
           self?.exporterMetrics?.addSuccess(value: sentCount)
-          // Drop the records we successfully flushed from the pending queue.
-          self?.exporterLock.withLockVoid {
-            guard let self else { return }
-            let n = min(sentCount, self.pendingMetrics.count)
-            self.pendingMetrics.removeFirst(n)
-          }
+          self?.base.dropFlushed(count: sentCount)
         case let .failure(error):
           self?.exporterMetrics?.addFailed(value: sentCount)
           OpenTelemetry.instance.feedbackHandler?("\(error)")
