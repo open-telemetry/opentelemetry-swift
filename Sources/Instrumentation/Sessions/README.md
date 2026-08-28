@@ -65,9 +65,15 @@ let sessionManager = try SessionManager(
 **Getting Session Information**:
 
 ```swift
-// Get current session (extends session if active)
+// Get the current session without extending inactivity
 let session = SessionManagerProvider.getInstance().getSession()
 print("Session ID: \(session.id)")
+
+// Record a meaningful user interaction or foreground transition
+SessionManagerProvider.getInstance().recordActivity()
+
+// End the current session after sign-out and start a linked replacement
+SessionManagerProvider.getInstance().resetSession()
 
 // Peek at session without extending it
 if let session = SessionManagerProvider.getInstance().peekSession() {
@@ -79,12 +85,14 @@ if let session = SessionManagerProvider.getInstance().peekSession() {
 
 ### SessionManager
 
-Manages session lifecycle with automatic expiration and renewal.
+Manages session lifecycle with automatic expiration and explicit activity tracking.
 
 ```swift
 let manager = SessionManager(configuration: SessionConfig(sessionTimeout: 1800))
-let session = manager.getSession() // Creates or extends session
-let session = manager.peekSession() // Peek without extending
+let session = manager.getSession() // Creates or retrieves without extending
+manager.recordActivity() // Extends inactivity after meaningful activity
+manager.resetSession() // Starts a linked replacement
+let current = manager.peekSession() // Peek without creating or extending
 ```
 
 ### SessionManagerProvider
@@ -162,8 +170,11 @@ let config = SessionConfig.builder()
 ### Session Timeout Behavior
 
 - Sessions automatically expire after the configured timeout period of inactivity
-- Accessing a session via `getSession()` extends the expiration time
-- Sessions can also expire after `maxLifetime`, even if `getSession()` continues to extend inactivity
+- `getSession()` creates or retrieves a session without extending inactivity
+- Call `recordActivity()` for meaningful interactions or lifecycle transitions that should extend inactivity
+- Passive spans, logs, and background work do not keep a session alive
+- Sessions can also expire after `maxLifetime`, even if `recordActivity()` continues to extend inactivity
+- `resetSession()` ends the current session and persists one linked replacement
 - Set `restorePersistedSession` to `false` to start a new session on each clean application start while linking the persisted session as `previous_id`
 - When `restorePersistedSession` is `false`, the persisted session's `session.end` uses its last known activity time, capped at the new session start time
 - Expired sessions trigger `session.end` events and create new sessions with `previous_id` links
@@ -239,8 +250,9 @@ The session's end time is carried on the log record's `timestamp` field, not as 
 
 1. **Use SessionManagerProvider** - Register your session manager as a singleton for consistent access
 2. **Configure Appropriate Timeouts** - Set session timeouts based on your app's usage patterns
-3. **Add Span Processor Early** - Register the SessionSpanProcessor before creating spans
-4. **Handle Session Events** - Set up SessionEventInstrumentation to capture session lifecycle
+3. **Record Meaningful Activity** - Call `recordActivity()` from user interactions or foreground transitions, not passive telemetry
+4. **Add Span Processor Early** - Register the SessionSpanProcessor before creating spans
+5. **Handle Session Events** - Set up SessionEventInstrumentation to capture session lifecycle
 
 ## Persistence
 

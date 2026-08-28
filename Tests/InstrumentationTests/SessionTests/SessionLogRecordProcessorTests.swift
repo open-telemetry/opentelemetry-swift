@@ -43,6 +43,21 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     }
   }
 
+  func testOnEmitDoesNotRefreshSessionActivity() {
+    SessionStore.teardown()
+    defer { SessionStore.teardown() }
+    let manager = SessionManager()
+    let session = manager.getSession()
+    let processor = SessionLogRecordProcessor(
+      nextProcessor: mockNextProcessor,
+      sessionManager: manager
+    )
+
+    processor.onEmit(logRecord: testLogRecord)
+
+    XCTAssertEqual(manager.peekSession()?.expireTime, session.expireTime)
+  }
+
   func testOnEmitPreservesOriginalAttributes() {
     mockSessionManager.sessionId = "test-session"
 
@@ -225,33 +240,33 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     XCTAssertEqual(enhancedRecord.severity, logRecordWithEventName.severity)
     XCTAssertEqual(enhancedRecord.body?.description, logRecordWithEventName.body?.description)
     XCTAssertEqual(enhancedRecord.spanContext, logRecordWithEventName.spanContext)
-    
+
     // Verify session attributes were added
     if case let .string(sessionId) = enhancedRecord.attributes[SemanticConventions.Session.id.rawValue] {
       XCTAssertEqual(sessionId, "test-session-123")
     } else {
       XCTFail("Expected session.id attribute to be added")
     }
-    
+
     // Verify original attributes preserved
     if case let .string(testValue) = enhancedRecord.attributes["test.key"] {
       XCTAssertEqual(testValue, "test.value")
     } else {
       XCTFail("Expected original attributes to be preserved")
     }
-    
+
     // Verify total attribute count (original + session attributes)
     XCTAssertEqual(enhancedRecord.attributes.count, 2, "Should have original attribute + session.id")
   }
 
-  func testConcurrentOnEmitThreadSafety() {
+  func testConcurrentOnEmitThreadSafety() throws {
     let mockNextProcessor = MockLogRecordProcessor()
     let expectation = XCTestExpectation(description: "Concurrent processing")
     let queue = DispatchQueue(label: "test.concurrent", attributes: .concurrent)
     let group = DispatchGroup()
-    
-    let logRecord = self.testLogRecord!
-    for i in 0..<10 {
+
+    let logRecord = try XCTUnwrap(testLogRecord)
+    for i in 0 ..< 10 {
       group.enter()
       queue.async {
         let sessionManager = MockSessionManager()
@@ -261,13 +276,13 @@ final class SessionLogRecordProcessorTests: XCTestCase {
         group.leave()
       }
     }
-    
+
     group.notify(queue: .main) {
       expectation.fulfill()
     }
-    
+
     wait(for: [expectation], timeout: 5.0)
-    
+
     XCTAssertEqual(mockNextProcessor.receivedLogRecords.count, 10)
     for record in mockNextProcessor.receivedLogRecords {
       XCTAssertTrue(record.attributes.keys.contains(SemanticConventions.Session.id.rawValue))
@@ -280,7 +295,7 @@ final class SessionLogRecordProcessorTests: XCTestCase {
 class MockLogRecordProcessor: LogRecordProcessor, @unchecked Sendable {
   private let queue = DispatchQueue(label: "MockLogRecordProcessor")
   private var _receivedLogRecords: [ReadableLogRecord] = []
-  
+
   var receivedLogRecords: [ReadableLogRecord] {
     return queue.sync { _receivedLogRecords }
   }
