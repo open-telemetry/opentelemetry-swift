@@ -6,7 +6,7 @@
 import Foundation
 
 struct PersistedSessionRecord: Codable, Equatable {
-  static let currentVersion = 1
+  static let currentVersion = 2
 
   let version: Int
   let session: PersistedSession
@@ -32,6 +32,7 @@ struct PersistedSession: Codable, Equatable {
   let startTime: Date
   let sessionTimeout: TimeInterval
   let maxLifetime: TimeInterval?
+  let samplingDecision: SessionSamplingDecision
 
   init(session: Session) {
     id = session.id
@@ -40,7 +41,34 @@ struct PersistedSession: Codable, Equatable {
     startTime = session.startTime
     sessionTimeout = session.sessionTimeout
     maxLifetime = session.maxLifetime
+    samplingDecision = session.samplingDecision
   }
+
+  var value: Session {
+    return Session(
+      id: id,
+      expireTime: expireTime,
+      previousId: previousId,
+      startTime: startTime,
+      sessionTimeout: sessionTimeout,
+      maxLifetime: maxLifetime,
+      samplingDecision: samplingDecision
+    )
+  }
+}
+
+private struct PersistedSessionRecordV1: Codable {
+  let version: Int
+  let session: PersistedSessionV1
+}
+
+private struct PersistedSessionV1: Codable {
+  let id: String
+  let expireTime: Date
+  let previousId: String?
+  let startTime: Date
+  let sessionTimeout: TimeInterval
+  let maxLifetime: TimeInterval?
 
   var value: Session {
     return Session(
@@ -51,6 +79,21 @@ struct PersistedSession: Codable, Equatable {
       sessionTimeout: sessionTimeout,
       maxLifetime: maxLifetime
     )
+  }
+}
+
+struct LoadedSession {
+  enum Source: Equatable {
+    case current
+    case version1
+    case legacyKeys
+  }
+
+  let session: Session
+  let source: Source
+
+  var requiresMigration: Bool {
+    return source != .current
   }
 }
 
@@ -116,7 +159,7 @@ final class SessionStore: @unchecked Sendable {
     shared.saveImmediately(session: session)
   }
 
-  static func load() -> Session? {
+  static func load() -> LoadedSession? {
     return shared.load()
   }
 
@@ -155,24 +198,36 @@ final class SessionStore: @unchecked Sendable {
   }
 
   func saveImmediately(session: Session) {
-    lock.withLock { locked_save(session: session) }
+    lock.withLock { _ = locked_save(session: session) }
   }
 
-  func load() -> Session? {
+  func load() -> LoadedSession? {
     return lock.withLock {
       if let data = persistence.read() {
-        if let storedVersion = try? PropertyListDecoder().decode(PersistedSessionRecordVersion.self, from: data),
-           storedVersion.version != PersistedSessionRecord.currentVersion {
+        guard let storedVersion = try? PropertyListDecoder().decode(PersistedSessionRecordVersion.self, from: data) else {
+          return nil
+        }
+
+        let loadedSession: LoadedSession
+        switch storedVersion.version {
+        case PersistedSessionRecord.currentVersion:
+          guard let record = try? PropertyListDecoder().decode(PersistedSessionRecord.self, from: data) else {
+            return nil
+          }
+          loadedSession = LoadedSession(session: record.session.value, source: .current)
+        case 1:
+          guard let record = try? PropertyListDecoder().decode(PersistedSessionRecordV1.self, from: data) else {
+            return nil
+          }
+          loadedSession = LoadedSession(session: record.session.value, source: .version1)
+        default:
           persistenceWritable = false
           return nil
         }
-        guard let record = try? PropertyListDecoder().decode(PersistedSessionRecord.self, from: data) else {
-          return nil
-        }
-        let session = record.session.value
+
         pendingSession = nil
-        previousSavedSession = session
-        return session
+        previousSavedSession = loadedSession.session
+        return loadedSession
       }
 
       guard let userDefaultsPersistence = persistence as? UserDefaultsSessionPersistence,
@@ -181,9 +236,21 @@ final class SessionStore: @unchecked Sendable {
         return nil
       }
 
-      locked_save(session: legacySession)
-      userDefaultsPersistence.clearLegacySession()
-      return legacySession
+      pendingSession = nil
+      previousSavedSession = legacySession
+      return LoadedSession(session: legacySession, source: .legacyKeys)
+    }
+  }
+
+  /// Replaces a legacy record after its missing fields have been supplied.
+  func migrate(_ loadedSession: LoadedSession, to session: Session) {
+    guard loadedSession.requiresMigration else { return }
+    lock.withLock {
+      guard locked_save(session: session) else { return }
+      if case .legacyKeys = loadedSession.source,
+         let userDefaultsPersistence = persistence as? UserDefaultsSessionPersistence {
+        userDefaultsPersistence.clearLegacySession()
+      }
     }
   }
 
@@ -213,13 +280,15 @@ final class SessionStore: @unchecked Sendable {
   }
 
   /// Persists a complete record while `lock` is held.
-  private func locked_save(session: Session) {
-    guard persistenceWritable else { return }
+  @discardableResult
+  private func locked_save(session: Session) -> Bool {
+    guard persistenceWritable else { return false }
     guard let data = try? PropertyListEncoder().encode(PersistedSessionRecord(session: session)) else {
-      return
+      return false
     }
     persistence.write(data)
     previousSavedSession = session
     pendingSession = nil
+    return true
   }
 }

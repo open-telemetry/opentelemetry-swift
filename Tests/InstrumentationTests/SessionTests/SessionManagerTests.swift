@@ -69,7 +69,7 @@ final class SessionManagerTests: XCTestCase {
 
     XCTAssertNotEqual(replacementSession.id, originalSession.id)
     XCTAssertEqual(replacementSession.previousId, originalSession.id)
-    XCTAssertEqual(SessionStore.load()?.id, replacementSession.id)
+    XCTAssertEqual(SessionStore.load()?.session.id, replacementSession.id)
     XCTAssertEqual(SessionEventInstrumentation.queue.count, 2)
     guard SessionEventInstrumentation.queue.count == 2 else { return }
     XCTAssertEqual(SessionEventInstrumentation.queue[0].session.id, originalSession.id)
@@ -144,7 +144,7 @@ final class SessionManagerTests: XCTestCase {
       XCTAssertEqual(startEvent.session.previousId, endEvent.session.id)
       expectedPreviousId = startEvent.session.id
     }
-    XCTAssertEqual(SessionStore.load()?.id, expectedPreviousId)
+    XCTAssertEqual(SessionStore.load()?.session.id, expectedPreviousId)
     XCTAssertEqual(manager.peekSession()?.id, expectedPreviousId)
   }
 
@@ -171,7 +171,7 @@ final class SessionManagerTests: XCTestCase {
 
   func testGetSessionSavedToDisk() {
     let session = sessionManager.getSession()
-    let savedSession = SessionStore.load()
+    let savedSession = SessionStore.load()?.session
 
     XCTAssertEqual(session, savedSession)
     XCTAssertNotNil(UserDefaults.standard.data(forKey: SessionStore.recordKey))

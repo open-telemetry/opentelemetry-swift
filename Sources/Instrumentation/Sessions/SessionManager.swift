@@ -57,10 +57,19 @@ public class SessionManager: @unchecked Sendable {
   @discardableResult
   public func getSession() -> Session {
     return operationLock.withLock {
-      let access = lock.withLock { locked_accessSession() }
+      let access = accessSession()
       completeAccess(access)
       return access.session
     }
+  }
+
+  /// Returns the persisted sampling decision for the active session.
+  ///
+  /// Trace, log, and metric integrations can call this method to apply the same decision.
+  /// Access may create a linked replacement if the previous session has expired, but it does
+  /// not extend the inactivity deadline.
+  public func samplingDecision() -> SessionSamplingDecision {
+    return getSession().samplingDecision
   }
 
   /// Records meaningful user activity and extends the current session's inactivity deadline.
@@ -71,27 +80,27 @@ public class SessionManager: @unchecked Sendable {
   @discardableResult
   public func recordActivity() -> Session {
     return operationLock.withLock {
-      let access = lock.withLock {
-        let access = locked_accessSession()
-        guard !access.startedNewSession else {
-          return access
-        }
-
-        let refreshedSession = locked_refreshSession(session: access.session)
-        session = refreshedSession
-        return SessionAccess(
-          session: refreshedSession,
-          previousSessionToEnd: nil,
-          startedNewSession: false
-        )
-      }
-
-      if access.startedNewSession {
-        completeAccess(access)
+      let access = accessSession()
+      let updatedAccess: SessionAccess = if access.startedNewSession {
+        access
       } else {
-        sessionStore.scheduleSave(session: access.session)
+        lock.withLock {
+          let refreshedSession = locked_refreshSession(session: access.session)
+          session = refreshedSession
+          return SessionAccess(
+            session: refreshedSession,
+            previousSessionToEnd: nil,
+            startedNewSession: false
+          )
+        }
       }
-      return access.session
+
+      if updatedAccess.startedNewSession {
+        completeAccess(updatedAccess)
+      } else {
+        sessionStore.scheduleSave(session: updatedAccess.session)
+      }
+      return updatedAccess.session
     }
   }
 
@@ -103,13 +112,13 @@ public class SessionManager: @unchecked Sendable {
   @discardableResult
   public func resetSession() -> Session {
     return operationLock.withLock {
+      let now = Date()
+      let previousSession = lock.withLock { session ?? persistedPreviousSession }
+      let previousSessionToEnd = previousSession.map { previous in
+        previous.isExpired() ? previous : endedSession(previous, at: now)
+      }
+      let nextSession = startSession(previousId: previousSession?.id, at: now)
       let access = lock.withLock {
-        let now = Date()
-        let previousSession = session ?? persistedPreviousSession
-        let previousSessionToEnd = previousSession.map { previous in
-          previous.isExpired() ? previous : locked_endSession(previous, at: now)
-        }
-        let nextSession = locked_startSession(previousId: previousSession?.id, at: now)
         session = nextSession
         persistedPreviousSession = nil
         return SessionAccess(
@@ -130,16 +139,18 @@ public class SessionManager: @unchecked Sendable {
     return lock.withLock { session }
   }
 
-  /// Creates a new session with a unique identifier
-  /// *Warning* - this must be a pure function since it is used inside a lock
-  private func locked_startSession(previousId: String?, at now: Date = Date()) -> Session {
+  /// Creates a new session and makes its one sampling decision.
+  /// Called under `operationLock`, but outside `lock`, because samplers are caller-provided code.
+  private func startSession(previousId: String?, at now: Date = Date()) -> Session {
+    let id = UUID().uuidString
     return Session(
-      id: UUID().uuidString,
+      id: id,
       expireTime: now.addingTimeInterval(Double(configuration.sessionTimeout)),
       previousId: previousId,
       startTime: now,
       sessionTimeout: configuration.sessionTimeout,
-      maxLifetime: configuration.maxLifetime
+      maxLifetime: configuration.maxLifetime,
+      samplingDecision: configuration.sampler.samplingDecision(for: id)
     )
   }
 
@@ -164,7 +175,8 @@ public class SessionManager: @unchecked Sendable {
       startTime: session.startTime,
       // Pin `endTime` to `inferredEndTime`; `Session.endTime` subtracts `sessionTimeout`.
       sessionTimeout: 0,
-      maxLifetime: nil
+      maxLifetime: nil,
+      samplingDecision: session.samplingDecision
     )
   }
 
@@ -177,26 +189,30 @@ public class SessionManager: @unchecked Sendable {
       previousId: session.previousId,
       startTime: session.startTime,
       sessionTimeout: configuration.sessionTimeout,
-      maxLifetime: session.maxLifetime
+      maxLifetime: session.maxLifetime,
+      samplingDecision: session.samplingDecision
     )
   }
 
   /// Returns the active session without changing its inactivity deadline.
-  /// *Warning* - call only while holding `lock`.
-  private func locked_accessSession() -> SessionAccess {
-    if let session,
-       !session.isExpired() {
+  /// Called under `operationLock`; state reads and writes remain protected by `lock`.
+  private func accessSession() -> SessionAccess {
+    let currentSession = lock.withLock { session }
+    if let currentSession,
+       !currentSession.isExpired() {
       return SessionAccess(
-        session: session,
+        session: currentSession,
         previousSessionToEnd: nil,
         startedNewSession: false
       )
     }
 
-    let previousSession = session ?? persistedPreviousSession
-    let nextSession = locked_startSession(previousId: previousSession?.id)
-    session = nextSession
-    persistedPreviousSession = nil
+    let previousSession = lock.withLock { session ?? persistedPreviousSession }
+    let nextSession = startSession(previousId: previousSession?.id)
+    lock.withLock {
+      session = nextSession
+      persistedPreviousSession = nil
+    }
     return SessionAccess(
       session: nextSession,
       previousSessionToEnd: previousSession,
@@ -205,15 +221,15 @@ public class SessionManager: @unchecked Sendable {
   }
 
   /// Creates an ended snapshot whose end time is fixed to `date`.
-  /// *Warning* - this must remain a pure function because it is called inside `lock`.
-  private func locked_endSession(_ session: Session, at date: Date) -> Session {
+  private func endedSession(_ session: Session, at date: Date) -> Session {
     return Session(
       id: session.id,
       expireTime: date,
       previousId: session.previousId,
       startTime: session.startTime,
       sessionTimeout: 0,
-      maxLifetime: nil
+      maxLifetime: nil,
+      samplingDecision: session.samplingDecision
     )
   }
 
@@ -231,13 +247,35 @@ public class SessionManager: @unchecked Sendable {
 
   /// Loads a saved session from UserDefaults according to the configured restore behavior
   private func loadPersistedSessionFromDisk() {
-    let loadedSession = sessionStore.load()
+    guard let loadedSession = sessionStore.load() else { return }
+    let restoredSession: Session
+    if loadedSession.requiresMigration {
+      let decision = configuration.sampler.samplingDecision(for: loadedSession.session.id)
+      restoredSession = sessionWithSamplingDecision(loadedSession.session, decision: decision)
+      sessionStore.migrate(loadedSession, to: restoredSession)
+    } else {
+      restoredSession = loadedSession.session
+    }
+
     lock.withLock {
       if configuration.restorePersistedSession {
-        session = loadedSession
+        session = restoredSession
       } else {
-        persistedPreviousSession = loadedSession.map { endPersistedPreviousSession($0) }
+        persistedPreviousSession = endPersistedPreviousSession(restoredSession)
       }
     }
+  }
+
+  private func sessionWithSamplingDecision(_ session: Session,
+                                           decision: SessionSamplingDecision) -> Session {
+    return Session(
+      id: session.id,
+      expireTime: session.expireTime,
+      previousId: session.previousId,
+      startTime: session.startTime,
+      sessionTimeout: session.sessionTimeout,
+      maxLifetime: session.maxLifetime,
+      samplingDecision: decision
+    )
   }
 }

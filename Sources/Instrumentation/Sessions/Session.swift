@@ -36,6 +36,8 @@ public struct Session: Equatable, Sendable {
   public let sessionTimeout: TimeInterval
   /// The maximum duration in seconds this session can remain active, regardless of activity
   public let maxLifetime: TimeInterval?
+  /// The sampling decision shared by trace, log, and metric integrations for this session
+  public let samplingDecision: SessionSamplingDecision
 
   /// Creates a new session
   /// - Parameters:
@@ -45,28 +47,21 @@ public struct Session: Equatable, Sendable {
   ///   - startTime: Start time of the session, defaults to current time
   ///   - sessionTimeout: Duration in seconds after which the session expires if inactive
   ///   - maxLifetime: Maximum duration in seconds the session can remain active, regardless of activity
+  ///   - samplingDecision: Decision signal integrations should apply for this session
   public init(id: String,
               expireTime: Date,
               previousId: String? = nil,
               startTime: Date = Date(),
               sessionTimeout: TimeInterval = SessionConfig.default.sessionTimeout,
-              maxLifetime: TimeInterval? = SessionConfig.default.maxLifetime) {
+              maxLifetime: TimeInterval? = SessionConfig.default.maxLifetime,
+              samplingDecision: SessionSamplingDecision = .sampled) {
     self.id = id
     self.expireTime = expireTime
     self.previousId = previousId
     self.startTime = startTime
     self.sessionTimeout = sessionTimeout
     self.maxLifetime = maxLifetime
-  }
-
-  /// Two sessions are considered equal if they have the same ID, prevID, startTime, and expiry timestamp
-  public static func == (lhs: Session, rhs: Session) -> Bool {
-    return lhs.expireTime == rhs.expireTime &&
-      lhs.id == rhs.id &&
-      lhs.previousId == rhs.previousId &&
-      lhs.startTime == rhs.startTime &&
-      lhs.sessionTimeout == rhs.sessionTimeout &&
-      lhs.maxLifetime == rhs.maxLifetime
+    self.samplingDecision = samplingDecision
   }
 
   /// Checks if the session has expired

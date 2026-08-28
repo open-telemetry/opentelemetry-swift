@@ -1,6 +1,6 @@
 # Session Instrumentation
 
-Automatic session tracking for OpenTelemetry Swift applications. Creates unique session identifiers, tracks session lifecycle events, and automatically adds session context to all telemetry data.
+Automatic session tracking for OpenTelemetry Swift applications. Creates unique session identifiers, tracks session lifecycle events, adds session context to spans and logs, and exposes a shared sampling decision to signal integrations.
 
 ## Features
 
@@ -8,6 +8,7 @@ Automatic session tracking for OpenTelemetry Swift applications. Creates unique 
 - **Session Events** - Emits OpenTelemetry log records for session start/end events
 - **Span Attribution** - Automatically adds session IDs to all spans via span processor
 - **Versioned Persistence** - Sessions persist as one versioned record across app restarts
+- **Cross-Signal Sampling** - Persists one sampling decision that trace, log, and metric pipelines can share
 - **Thread Safety** - All components are thread-safe for concurrent access
 
 ## Setup
@@ -43,6 +44,7 @@ let sessionConfig = SessionConfig.builder()
     .with(sessionTimeout: 45 * 60) // 45 minutes
     .with(maxLifetime: 4 * 60 * 60)
     .with(restorePersistedSession: false)
+    .with(sampler: AlwaysOnSessionSampler())
     .build()
 let sessionManager = SessionManager(configuration: sessionConfig)
 SessionManagerProvider.register(sessionManager: sessionManager)
@@ -74,6 +76,9 @@ SessionManagerProvider.getInstance().recordActivity()
 
 // End the current session after sign-out and start a linked replacement
 SessionManagerProvider.getInstance().resetSession()
+
+// Apply the same persisted decision in trace, log, and metric integrations
+let shouldRecord = SessionManagerProvider.getInstance().samplingDecision().isSampled
 
 // Peek at session without extending it
 if let session = SessionManagerProvider.getInstance().peekSession() {
@@ -158,13 +163,31 @@ print("Expired: \(session.isExpired())")
 | `sessionTimeout`          | `TimeInterval`  | Duration in seconds after which a session expires if left inactive          | `1800` (30 min) | No       |
 | `maxLifetime`             | `TimeInterval?` | Maximum duration in seconds a session can remain active, regardless of activity | `nil` (disabled) | No       |
 | `restorePersistedSession` | `Bool`          | Whether to resume a saved session as current; when `false`, start a new session and link the saved one as `previous_id` | `true`          | No       |
+| `sampler`                  | `SessionSampler` | Makes one decision whenever a new session is created                           | `AlwaysOnSessionSampler` | No       |
 
 ```swift
 let config = SessionConfig.builder()
     .with(sessionTimeout: 30 * 60)
     .with(maxLifetime: 4 * 60 * 60)
     .with(restorePersistedSession: false)
+    .with(sampler: AlwaysOnSessionSampler())
     .build()
+```
+
+### Cross-Signal Sampling
+
+`SessionManager` makes one sampling decision when it creates a session and stores that decision
+with the session. Restored sessions keep their original decision. Expiry and `resetSession()` each
+create one replacement session with one new decision.
+
+Call `samplingDecision()` from trace, log, and metric integrations so every signal applies the same
+persisted result. The session processors add attribution but do not drop telemetry themselves, so
+each signal pipeline remains responsible for enforcing the returned decision.
+
+```swift
+let decision = SessionManagerProvider.getInstance().samplingDecision()
+guard decision.isSampled else { return }
+// Record the signal.
 ```
 
 ### Session Timeout Behavior
