@@ -33,6 +33,18 @@ final class SessionSpanProcessorTests: XCTestCase {
     }
   }
 
+  func testOnStartDoesNotRefreshSessionActivity() {
+    SessionStore.teardown()
+    defer { SessionStore.teardown() }
+    let manager = SessionManager()
+    let session = manager.getSession()
+    let processor = SessionSpanProcessor(sessionManager: manager)
+
+    processor.onStart(parentContext: nil, span: mockSpan)
+
+    XCTAssertEqual(manager.peekSession()?.expireTime, session.expireTime)
+  }
+
   func testOnStartWithDifferentSessionIds() {
     mockSessionManager.sessionId = "session-1"
     spanProcessor.onStart(parentContext: nil, span: mockSpan)
@@ -103,7 +115,7 @@ final class SessionSpanProcessorTests: XCTestCase {
 
     XCTAssertNil(mockSpan.capturedAttributes["session.previous_id"], "Previous session ID should not be set when nil")
   }
-  
+
   func testInitializationWithNilSessionManager() {
     let processor = SessionSpanProcessor()
     XCTAssertTrue(processor.isStartRequired)
@@ -140,11 +152,11 @@ final class MockReadableSpan: ReadableSpan, @unchecked Sendable {
   var isRecording: Bool = true
   var status: Status = .unset
   var description: String = "MockReadableSpan"
-  
+
   func getAttributes() -> [String: AttributeValue] {
     return capturedAttributes
   }
-  
+
   func setAttributes(_ attributes: [String: AttributeValue]) {
     capturedAttributes.merge(attributes) { _, new in new }
   }
@@ -171,7 +183,7 @@ final class MockReadableSpan: ReadableSpan, @unchecked Sendable {
   }
 
   func setAttribute(key: String, value: AttributeValue?) {
-    if let value = value {
+    if let value {
       capturedAttributes[key] = value
     }
   }

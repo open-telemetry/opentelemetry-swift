@@ -11,7 +11,6 @@ final class SessionManagerTests: XCTestCase {
   }
 
   override func tearDown() {
-    NotificationCenter.default.removeObserver(self)
     SessionStore.teardown()
     super.tearDown()
   }
@@ -30,20 +29,123 @@ final class SessionManagerTests: XCTestCase {
     XCTAssertEqual(id1, id2)
   }
 
-  func testGetSessionRenewed() {
+  func testGetSessionDoesNotRecordActivity() {
     let t1 = sessionManager.getSession().expireTime
     let t2 = sessionManager.getSession().expireTime
-    XCTAssertGreaterThan(t2, t1)
+    XCTAssertEqual(t2, t1)
   }
 
-  func testStartTimePreservedWhenSessionExtended() {
+  func testRecordActivityExtendsSessionAndPreservesStartTime() {
     let originalSession = sessionManager.getSession()
     Thread.sleep(forTimeInterval: 0.1)
-    let extendedSession = sessionManager.getSession()
+    let extendedSession = sessionManager.recordActivity()
 
     XCTAssertEqual(originalSession.id, extendedSession.id)
     XCTAssertGreaterThan(extendedSession.expireTime, originalSession.expireTime)
     XCTAssertEqual(originalSession.startTime, extendedSession.startTime)
+  }
+
+  func testRecordActivityAfterExpiryStartsLinkedSession() {
+    sessionManager = SessionManager(configuration: SessionConfig(sessionTimeout: 0))
+    let expiredSession = sessionManager.getSession()
+
+    let activeSession = sessionManager.recordActivity()
+
+    XCTAssertNotEqual(activeSession.id, expiredSession.id)
+    XCTAssertEqual(activeSession.previousId, expiredSession.id)
+  }
+
+  func testResetSessionEndsCurrentSessionAndPersistsLinkedReplacement() {
+    SessionEventInstrumentation.queue = []
+    SessionEventInstrumentation.isApplied = false
+    defer {
+      SessionEventInstrumentation.queue = []
+      SessionEventInstrumentation.isApplied = false
+    }
+    let originalSession = sessionManager.getSession()
+    SessionEventInstrumentation.queue = []
+
+    let replacementSession = sessionManager.resetSession()
+
+    XCTAssertNotEqual(replacementSession.id, originalSession.id)
+    XCTAssertEqual(replacementSession.previousId, originalSession.id)
+    XCTAssertEqual(SessionStore.load()?.id, replacementSession.id)
+    XCTAssertEqual(SessionEventInstrumentation.queue.count, 2)
+    guard SessionEventInstrumentation.queue.count == 2 else { return }
+    XCTAssertEqual(SessionEventInstrumentation.queue[0].session.id, originalSession.id)
+    XCTAssertNotNil(SessionEventInstrumentation.queue[0].session.endTime)
+    if case .end = SessionEventInstrumentation.queue[0].eventType {} else {
+      XCTFail("Expected one session.end event")
+    }
+    XCTAssertEqual(SessionEventInstrumentation.queue[1].session.id, replacementSession.id)
+    if case .start = SessionEventInstrumentation.queue[1].eventType {} else {
+      XCTFail("Expected one session.start event")
+    }
+  }
+
+  func testConcurrentAccessAfterExpiryStartsOneReplacement() throws {
+    SessionEventInstrumentation.queue = []
+    SessionEventInstrumentation.isApplied = false
+    defer {
+      SessionEventInstrumentation.queue = []
+      SessionEventInstrumentation.isApplied = false
+    }
+    let expiredSession = Session(
+      id: "expired-session",
+      expireTime: Date(timeIntervalSinceNow: -60),
+      startTime: Date(timeIntervalSinceNow: -120),
+      sessionTimeout: 60
+    )
+    SessionStore.saveImmediately(session: expiredSession)
+    sessionManager = SessionManager()
+    let manager = try XCTUnwrap(sessionManager)
+
+    let resultLock = NSLock()
+    nonisolated(unsafe) var sessionIds: [String] = []
+    DispatchQueue.concurrentPerform(iterations: 50) { _ in
+      let sessionId = manager.getSession().id
+      resultLock.withLock { sessionIds.append(sessionId) }
+    }
+
+    XCTAssertEqual(Set(sessionIds).count, 1)
+    XCTAssertEqual(sessionManager.peekSession()?.previousId, expiredSession.id)
+    XCTAssertEqual(SessionEventInstrumentation.queue.count, 2)
+  }
+
+  func testConcurrentResetsPersistAndPublishOneLinkedChain() throws {
+    SessionEventInstrumentation.queue = []
+    SessionEventInstrumentation.isApplied = false
+    defer {
+      SessionEventInstrumentation.queue = []
+      SessionEventInstrumentation.isApplied = false
+    }
+    let originalSession = sessionManager.getSession()
+    let manager = try XCTUnwrap(sessionManager)
+    SessionEventInstrumentation.queue = []
+
+    DispatchQueue.concurrentPerform(iterations: 10) { _ in
+      manager.resetSession()
+    }
+
+    let events = SessionEventInstrumentation.queue
+    XCTAssertEqual(events.count, 20)
+    guard events.count == 20 else { return }
+    var expectedPreviousId = originalSession.id
+    for eventIndex in stride(from: 0, to: events.count, by: 2) {
+      let endEvent = events[eventIndex]
+      let startEvent = events[eventIndex + 1]
+      if case .end = endEvent.eventType {} else {
+        XCTFail("Expected session.end before each replacement")
+      }
+      if case .start = startEvent.eventType {} else {
+        XCTFail("Expected session.start after each ended session")
+      }
+      XCTAssertEqual(endEvent.session.id, expectedPreviousId)
+      XCTAssertEqual(startEvent.session.previousId, endEvent.session.id)
+      expectedPreviousId = startEvent.session.id
+    }
+    XCTAssertEqual(SessionStore.load()?.id, expectedPreviousId)
+    XCTAssertEqual(manager.peekSession()?.id, expectedPreviousId)
   }
 
   func testGetSessionExpired() {
