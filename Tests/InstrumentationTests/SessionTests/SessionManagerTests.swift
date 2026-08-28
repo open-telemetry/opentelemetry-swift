@@ -11,7 +11,6 @@ final class SessionManagerTests: XCTestCase {
   }
 
   override func tearDown() {
-    NotificationCenter.default.removeObserver(self)
     SessionStore.teardown()
     super.tearDown()
   }
@@ -69,11 +68,11 @@ final class SessionManagerTests: XCTestCase {
 
   func testGetSessionSavedToDisk() {
     let session = sessionManager.getSession()
-    let savedId = UserDefaults.standard.object(forKey: SessionStore.idKey) as? String
-    let savedTimeout = UserDefaults.standard.object(forKey: SessionStore.sessionTimeoutKey) as? Double
+    let savedSession = SessionStore.load()
 
-    XCTAssertEqual(session.id, savedId)
-    XCTAssertEqual(session.sessionTimeout, TimeInterval(savedTimeout ?? -1))
+    XCTAssertEqual(session, savedSession)
+    XCTAssertNotNil(UserDefaults.standard.data(forKey: SessionStore.recordKey))
+    XCTAssertNil(UserDefaults.standard.object(forKey: SessionStore.idKey))
   }
 
   func testRestorePersistedSessionFalseUsesPersistedSessionAsPreviousSession() {

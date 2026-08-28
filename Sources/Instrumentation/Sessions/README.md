@@ -7,7 +7,7 @@ Automatic session tracking for OpenTelemetry Swift applications. Creates unique 
 - **Automatic Session Management** - Creates and manages session lifecycles with configurable timeouts
 - **Session Events** - Emits OpenTelemetry log records for session start/end events
 - **Span Attribution** - Automatically adds session IDs to all spans via span processor
-- **Persistence** - Sessions persist across app restarts using UserDefaults
+- **Versioned Persistence** - Sessions persist as one versioned record across app restarts
 - **Thread Safety** - All components are thread-safe for concurrent access
 
 ## Setup
@@ -46,6 +46,20 @@ let sessionConfig = SessionConfig.builder()
     .build()
 let sessionManager = SessionManager(configuration: sessionConfig)
 SessionManagerProvider.register(sessionManager: sessionManager)
+```
+
+**Custom Persistence**:
+
+```swift
+let persistence = UserDefaultsSessionPersistence(
+    userDefaults: UserDefaults(suiteName: "group.example.telemetry")!,
+    namespace: "mobile-session"
+)
+let sessionManager = try SessionManager(
+    configuration: sessionConfig,
+    persistence: persistence,
+    persistenceAccess: .exclusive
+)
 ```
 
 **Getting Session Information**:
@@ -230,12 +244,20 @@ The session's end time is carried on the log record's `timestamp` field, not as 
 
 ## Persistence
 
-Sessions are automatically persisted to UserDefaults and can be resumed on app restart:
+Sessions are automatically persisted and can be resumed on app restart:
 
 - By default, active persisted sessions continue from their previous state
 - Set `restorePersistedSession` to `false` to start a new session on clean start while linking and ending the persisted session
 - Expired sessions create new sessions with proper `previous_id` linking
+- The built-in backend stores one versioned `Data` record instead of separate fields
+- Existing `otel-session-*` fields are migrated when first read
 - Session data is saved periodically (every 30 seconds) to minimize disk I/O
+
+### Ownership
+
+The default manager uses `UserDefaults.standard` and is intended to be the only writer in its process. Use `SessionManagerProvider` instead of creating multiple default managers. App extensions use their own standard defaults container and therefore start an independent session chain.
+
+`UserDefaultsSessionPersistence` accepts a suite and namespace, including an App Group suite, but one app or extension must own that record at a time. Requesting `.shared` access is currently rejected for every backend because a session transition requires an atomic cross-process read, update, and write. Use separate namespaces for independent processes until shared transitions have an explicit coordination API.
 
 ## Thread Safety
 

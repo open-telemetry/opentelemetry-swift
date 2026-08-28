@@ -12,12 +12,32 @@ public class SessionManager: @unchecked Sendable {
   private var configuration: SessionConfig
   private var session: Session?
   private var persistedPreviousSession: Session?
+  private let sessionStore: SessionStore
   private let lock = NSLock()
 
   /// Initializes the session manager and restores any previous session from disk
   /// - Parameter configuration: Session configuration settings
   public init(configuration: SessionConfig = .default) {
     self.configuration = configuration
+    sessionStore = SessionStore.shared
+    loadPersistedSessionFromDisk()
+  }
+
+  /// Initializes a session manager with an injected persistence backend.
+  /// - Parameters:
+  ///   - configuration: Session configuration settings
+  ///   - persistence: Backend that stores the complete versioned session record
+  ///   - persistenceAccess: Whether one writer or shared writers own the record
+  /// - Throws: ``SessionPersistenceConfigurationError/concurrentWritersUnsupported`` when
+  ///   shared access is requested. Cross-process session transitions are not yet supported.
+  public init(configuration: SessionConfig = .default,
+              persistence: any SessionPersistence,
+              persistenceAccess: SessionPersistenceAccess = .exclusive) throws {
+    if case .shared = persistenceAccess {
+      throw SessionPersistenceConfigurationError.concurrentWritersUnsupported
+    }
+    self.configuration = configuration
+    sessionStore = SessionStore(persistence: persistence)
     loadPersistedSessionFromDisk()
   }
 
@@ -54,7 +74,7 @@ public class SessionManager: @unchecked Sendable {
       NotificationCenter.default.post(name: SessionEventNotification, object: currentSession)
     }
 
-    SessionStore.scheduleSave(session: currentSession)
+    sessionStore.scheduleSave(session: currentSession)
     return currentSession
   }
 
@@ -119,7 +139,7 @@ public class SessionManager: @unchecked Sendable {
 
   /// Loads a saved session from UserDefaults according to the configured restore behavior
   private func loadPersistedSessionFromDisk() {
-    let loadedSession = SessionStore.load()
+    let loadedSession = sessionStore.load()
     lock.withLock {
       if configuration.restorePersistedSession {
         session = loadedSession
