@@ -34,6 +34,7 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     logRecordProcessor.onEmit(logRecord: testLogRecord)
 
     XCTAssertEqual(mockNextProcessor.receivedLogRecords.count, 1)
+    XCTAssertEqual(mockSessionManager.attributionAccessCount, 1)
     let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
 
     if case let .string(sessionId) = enhancedRecord.attributes[SemanticConventions.Session.id.rawValue] {
@@ -165,7 +166,8 @@ final class SessionLogRecordProcessorTests: XCTestCase {
       attributes: [
         SemanticConventions.Session.id.rawValue: AttributeValue.string("existing-session-123"),
         SemanticConventions.Session.previousId.rawValue: AttributeValue.string("existing-previous-456")
-      ]
+      ],
+      eventName: SessionConstants.sessionStartEvent
     )
 
     mockSessionManager.sessionId = "current-session-999"
@@ -184,6 +186,7 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     } else {
       XCTFail("Expected existing session.previous_id to be preserved")
     }
+    XCTAssertEqual(mockSessionManager.attributionAccessCount, 0)
   }
 
   func testSessionEndEventPreservesExistingAttributes() {
@@ -197,7 +200,8 @@ final class SessionLogRecordProcessorTests: XCTestCase {
       body: AttributeValue.string("session.end"),
       attributes: [
         SemanticConventions.Session.id.rawValue: AttributeValue.string("ending-session-789")
-      ]
+      ],
+      eventName: SessionConstants.sessionEndEvent
     )
 
     mockSessionManager.sessionId = "current-session-999"
@@ -210,6 +214,8 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     } else {
       XCTFail("Expected existing session.id to be preserved")
     }
+    XCTAssertNil(enhancedRecord.attributes[SemanticConventions.Session.previousId.rawValue])
+    XCTAssertEqual(mockSessionManager.attributionAccessCount, 0)
   }
 
   func testDataIsPreserved() {

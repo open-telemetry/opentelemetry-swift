@@ -1,17 +1,28 @@
 import XCTest
+import OpenTelemetryApi
 @testable import Sessions
+@testable import OpenTelemetrySdk
 
 final class SessionManagerTests: XCTestCase {
   var sessionManager: SessionManager!
+  private var previousQueuedEvents: [SessionEvent] = []
+  private var previousInstrumentationState = false
 
   override func setUp() {
     super.setUp()
+    previousQueuedEvents = SessionEventInstrumentation.queue
+    previousInstrumentationState = SessionEventInstrumentation.isApplied
+    SessionEventInstrumentation.queue = []
+    SessionEventInstrumentation.isApplied = false
     SessionStore.teardown()
     sessionManager = SessionManager()
   }
 
   override func tearDown() {
     SessionStore.teardown()
+    SessionEventInstrumentation.queue = previousQueuedEvents
+    SessionEventInstrumentation.isApplied = previousInstrumentationState
+    OpenTelemetry.registerLoggerProvider(loggerProvider: DefaultLoggerProvider.instance)
     super.tearDown()
   }
 
@@ -29,9 +40,16 @@ final class SessionManagerTests: XCTestCase {
     XCTAssertEqual(id1, id2)
   }
 
-  func testGetSessionDoesNotRecordActivity() {
+  func testGetSessionRecordsActivity() {
     let t1 = sessionManager.getSession().expireTime
+    Thread.sleep(forTimeInterval: 0.1)
     let t2 = sessionManager.getSession().expireTime
+    XCTAssertGreaterThan(t2, t1)
+  }
+
+  func testAttributionDoesNotRecordActivity() {
+    let t1 = sessionManager.getSessionForAttribution().expireTime
+    let t2 = sessionManager.getSessionForAttribution().expireTime
     XCTAssertEqual(t2, t1)
   }
 
@@ -56,12 +74,6 @@ final class SessionManagerTests: XCTestCase {
   }
 
   func testResetSessionEndsCurrentSessionAndPersistsLinkedReplacement() {
-    SessionEventInstrumentation.queue = []
-    SessionEventInstrumentation.isApplied = false
-    defer {
-      SessionEventInstrumentation.queue = []
-      SessionEventInstrumentation.isApplied = false
-    }
     let originalSession = sessionManager.getSession()
     SessionEventInstrumentation.queue = []
 
@@ -73,7 +85,10 @@ final class SessionManagerTests: XCTestCase {
     XCTAssertEqual(SessionEventInstrumentation.queue.count, 2)
     guard SessionEventInstrumentation.queue.count == 2 else { return }
     XCTAssertEqual(SessionEventInstrumentation.queue[0].session.id, originalSession.id)
-    XCTAssertNotNil(SessionEventInstrumentation.queue[0].session.endTime)
+    XCTAssertEqual(
+      SessionEventInstrumentation.queue[0].session.endTime,
+      replacementSession.startTime
+    )
     if case .end = SessionEventInstrumentation.queue[0].eventType {} else {
       XCTFail("Expected one session.end event")
     }
@@ -84,12 +99,6 @@ final class SessionManagerTests: XCTestCase {
   }
 
   func testConcurrentAccessAfterExpiryStartsOneReplacement() throws {
-    SessionEventInstrumentation.queue = []
-    SessionEventInstrumentation.isApplied = false
-    defer {
-      SessionEventInstrumentation.queue = []
-      SessionEventInstrumentation.isApplied = false
-    }
     let expiredSession = Session(
       id: "expired-session",
       expireTime: Date(timeIntervalSinceNow: -60),
@@ -113,12 +122,6 @@ final class SessionManagerTests: XCTestCase {
   }
 
   func testConcurrentResetsPersistAndPublishOneLinkedChain() throws {
-    SessionEventInstrumentation.queue = []
-    SessionEventInstrumentation.isApplied = false
-    defer {
-      SessionEventInstrumentation.queue = []
-      SessionEventInstrumentation.isApplied = false
-    }
     let originalSession = sessionManager.getSession()
     let manager = try XCTUnwrap(sessionManager)
     SessionEventInstrumentation.queue = []
@@ -146,6 +149,48 @@ final class SessionManagerTests: XCTestCase {
     }
     XCTAssertEqual(SessionStore.load()?.id, expectedPreviousId)
     XCTAssertEqual(manager.peekSession()?.id, expectedPreviousId)
+  }
+
+  func testResetSessionKeepsAnExpiredSessionEndTime() {
+    sessionManager = SessionManager(configuration: SessionConfig(sessionTimeout: 0))
+    let expiredSession = sessionManager.getSessionForAttribution()
+    let expiredEndTime = expiredSession.endTime
+    SessionEventInstrumentation.queue = []
+
+    let replacementSession = sessionManager.resetSession()
+
+    XCTAssertEqual(replacementSession.previousId, expiredSession.id)
+    XCTAssertEqual(SessionEventInstrumentation.queue.count, 2)
+    XCTAssertEqual(SessionEventInstrumentation.queue[0].session.id, expiredSession.id)
+    XCTAssertEqual(SessionEventInstrumentation.queue[0].session.endTime, expiredEndTime)
+  }
+
+  func testResetSessionUsesPersistedPreviousSessionBeforeFirstAccess() {
+    let sessionTimeout: TimeInterval = 60 * 60
+    let lastActivity = Date(timeIntervalSinceNow: -60)
+    let persistedSession = Session(
+      id: "persisted-session",
+      expireTime: lastActivity.addingTimeInterval(sessionTimeout),
+      startTime: Date(timeIntervalSinceNow: -120),
+      sessionTimeout: sessionTimeout
+    )
+    SessionStore.saveImmediately(session: persistedSession)
+    sessionManager = SessionManager(configuration: SessionConfig(
+      sessionTimeout: sessionTimeout,
+      restorePersistedSession: false
+    ))
+
+    let replacementSession = sessionManager.resetSession()
+
+    XCTAssertEqual(replacementSession.previousId, persistedSession.id)
+    XCTAssertEqual(SessionStore.load()?.id, replacementSession.id)
+    XCTAssertEqual(SessionEventInstrumentation.queue.count, 2)
+    XCTAssertEqual(SessionEventInstrumentation.queue[0].session.id, persistedSession.id)
+    XCTAssertEqual(
+      SessionEventInstrumentation.queue[0].session.endTime?.timeIntervalSince1970 ?? 0,
+      lastActivity.timeIntervalSince1970,
+      accuracy: 1.0
+    )
   }
 
   func testGetSessionExpired() {
@@ -199,12 +244,6 @@ final class SessionManagerTests: XCTestCase {
   }
 
   func testRestorePersistedSessionFalseEndsPersistedSessionAtLastActivity() {
-    SessionEventInstrumentation.queue = []
-    SessionEventInstrumentation.isApplied = false
-    defer {
-      SessionEventInstrumentation.queue = []
-      SessionEventInstrumentation.isApplied = false
-    }
     let sessionTimeout: TimeInterval = 60 * 60
     let lastActivity = Date(timeIntervalSinceNow: -5 * 60)
     let persistedSession = Session(
@@ -333,6 +372,88 @@ final class SessionManagerTests: XCTestCase {
     XCTAssertNotNil(session.id)
   }
 
+  func testAppliedSessionEventPipelineDoesNotReenterAttribution() {
+    let manager = CountingSessionManager()
+    let exporter = InMemoryLogRecordExporter()
+    let processor = SessionLogRecordProcessor(
+      nextProcessor: SimpleLogRecordProcessor(logRecordExporter: exporter),
+      sessionManager: manager
+    )
+    let loggerProvider = LoggerProviderBuilder()
+      .with(processors: [processor])
+      .build()
+    OpenTelemetry.registerLoggerProvider(loggerProvider: loggerProvider)
+    SessionEventInstrumentation.install()
+
+    let session = manager.getSessionForAttribution()
+
+    let records = exporter.getFinishedLogRecords()
+    XCTAssertEqual(manager.attributionAccessCount, 1)
+    XCTAssertEqual(records.count, 1)
+    XCTAssertEqual(records[0].eventName, SessionConstants.sessionStartEvent)
+    XCTAssertEqual(
+      records[0].attributes[SemanticConventions.Session.id.rawValue],
+      AttributeValue.string(session.id)
+    )
+  }
+
+  func testSlowSessionExporterDoesNotBlockPassiveAttribution() {
+    let manager = SessionManager()
+    let blockingProcessor = BlockingLogRecordProcessor()
+    let loggerProvider = LoggerProviderBuilder()
+      .with(processors: [blockingProcessor])
+      .build()
+    OpenTelemetry.registerLoggerProvider(loggerProvider: loggerProvider)
+    SessionEventInstrumentation.install()
+
+    let transitionFinished = expectation(description: "Session transition finished")
+    DispatchQueue.global().async {
+      manager.getSessionForAttribution()
+      transitionFinished.fulfill()
+    }
+    XCTAssertEqual(blockingProcessor.didStart.wait(timeout: .now() + 1), .success)
+    let passiveAccessFinished = expectation(description: "Passive attribution remained available")
+    DispatchQueue.global().async {
+      manager.getSessionForAttribution()
+      passiveAccessFinished.fulfill()
+    }
+    wait(for: [passiveAccessFinished], timeout: 0.5)
+
+    let activityFinished = expectation(description: "Activity update remained available")
+    DispatchQueue.global().async {
+      manager.recordActivity()
+      activityFinished.fulfill()
+    }
+    wait(for: [activityFinished], timeout: 0.5)
+
+    blockingProcessor.allowCompletion.signal()
+    wait(for: [transitionFinished], timeout: 1)
+  }
+
+  func testReentrantResetDrainsNestedTransition() {
+    let manager = SessionManager()
+    let processor = ReentrantResetLogRecordProcessor(sessionManager: manager)
+    let loggerProvider = LoggerProviderBuilder()
+      .with(processors: [processor])
+      .build()
+    OpenTelemetry.registerLoggerProvider(loggerProvider: loggerProvider)
+    SessionEventInstrumentation.install()
+
+    let transitionFinished = expectation(description: "Nested session transition finished")
+    DispatchQueue.global().async {
+      manager.getSessionForAttribution()
+      transitionFinished.fulfill()
+    }
+    wait(for: [transitionFinished], timeout: 1)
+
+    XCTAssertEqual(processor.eventNames, [
+      SessionConstants.sessionStartEvent,
+      SessionConstants.sessionEndEvent,
+      SessionConstants.sessionStartEvent
+    ])
+    XCTAssertEqual(SessionStore.load()?.id, manager.peekSession()?.id)
+  }
+
   func testSessionStartNotificationPosted() {
     let expectation = XCTestExpectation(description: "Session start notification")
     nonisolated(unsafe) var receivedSession: Session?
@@ -387,5 +508,84 @@ final class SessionManagerTests: XCTestCase {
     XCTAssertTrue(receivedSessions.contains(session1.id))
     XCTAssertTrue(receivedSessions.contains(session2.id))
     XCTAssertTrue(receivedSessions.contains(session3.id))
+  }
+}
+
+private final class CountingSessionManager: SessionManager, @unchecked Sendable {
+  private let countLock = NSLock()
+  private var _attributionAccessCount = 0
+
+  var attributionAccessCount: Int {
+    return countLock.withLock { _attributionAccessCount }
+  }
+
+  override func getSessionForAttribution() -> Session {
+    countLock.withLock { _attributionAccessCount += 1 }
+    return super.getSessionForAttribution()
+  }
+}
+
+private final class BlockingLogRecordProcessor: LogRecordProcessor, @unchecked Sendable {
+  let didStart = DispatchSemaphore(value: 0)
+  let allowCompletion = DispatchSemaphore(value: 0)
+  private let lock = NSLock()
+  private var shouldBlock = true
+
+  func onEmit(logRecord: ReadableLogRecord) {
+    let block = lock.withLock {
+      defer { shouldBlock = false }
+      return shouldBlock
+    }
+    guard block else { return }
+
+    didStart.signal()
+    _ = allowCompletion.wait(timeout: .now() + 5)
+  }
+
+  func shutdown(explicitTimeout: TimeInterval?) -> ExportResult {
+    return .success
+  }
+
+  func forceFlush(explicitTimeout: TimeInterval?) -> ExportResult {
+    return .success
+  }
+}
+
+private final class ReentrantResetLogRecordProcessor: LogRecordProcessor, @unchecked Sendable {
+  private let sessionManager: SessionManager
+  private let lock = NSLock()
+  private var didReset = false
+  private var _eventNames: [String] = []
+
+  init(sessionManager: SessionManager) {
+    self.sessionManager = sessionManager
+  }
+
+  var eventNames: [String] {
+    return lock.withLock { _eventNames }
+  }
+
+  func onEmit(logRecord: ReadableLogRecord) {
+    let shouldReset = lock.withLock {
+      if let eventName = logRecord.eventName {
+        _eventNames.append(eventName)
+      }
+      guard !didReset, logRecord.eventName == SessionConstants.sessionStartEvent else {
+        return false
+      }
+      didReset = true
+      return true
+    }
+    if shouldReset {
+      sessionManager.resetSession()
+    }
+  }
+
+  func shutdown(explicitTimeout: TimeInterval?) -> ExportResult {
+    return .success
+  }
+
+  func forceFlush(explicitTimeout: TimeInterval?) -> ExportResult {
+    return .success
   }
 }
