@@ -78,17 +78,23 @@ final class SessionStoreTests: XCTestCase {
     XCTAssertEqual(store.load()?.session.id, "session-2")
   }
 
-  func testRejectedWriteCanBeRetried() throws {
+  func testRejectedImmediateWriteRetriesWithoutAnotherSaveCall() throws {
     let persistence = ToggleSessionPersistence(acceptsWrites: false)
-    let store = SessionStore(persistence: persistence)
+    let store = SessionStore(persistence: persistence, saveInterval: 0.01)
     defer { store.teardown() }
     let session = Session(id: "retry-session", expireTime: Date(timeIntervalSinceNow: 1800))
+    let retryAccepted = expectation(description: "Failed immediate write was retried")
+    persistence.onWrite = { accepted in
+      if accepted {
+        retryAccepted.fulfill()
+      }
+    }
 
     store.saveImmediately(session: session)
     XCTAssertNil(persistence.read())
 
     persistence.acceptsWrites = true
-    store.saveImmediately(session: session)
+    wait(for: [retryAccepted], timeout: 1)
 
     let data = try XCTUnwrap(persistence.read())
     let record = try PropertyListDecoder().decode(PersistedSessionRecord.self, from: data)

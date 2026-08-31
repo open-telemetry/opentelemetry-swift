@@ -68,6 +68,7 @@ final class ToggleSessionPersistence: SessionPersistence, @unchecked Sendable {
   private let lock = NSLock()
   private var data: Data?
   private var writesAccepted: Bool
+  var onWrite: ((Bool) -> Void)?
 
   var acceptsWrites: Bool {
     get { lock.withLock { writesAccepted } }
@@ -84,11 +85,13 @@ final class ToggleSessionPersistence: SessionPersistence, @unchecked Sendable {
 
   @discardableResult
   func write(_ data: Data) -> Bool {
-    return lock.withLock {
+    let accepted = lock.withLock {
       guard writesAccepted else { return false }
       self.data = data
       return true
     }
+    onWrite?(accepted)
+    return accepted
   }
 
   @discardableResult
