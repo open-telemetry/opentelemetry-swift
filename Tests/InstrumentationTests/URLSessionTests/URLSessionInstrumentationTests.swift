@@ -1242,4 +1242,38 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertEqual(count, 1, "two concurrent resumes must start a single span")
   }
 
+
+  /// `ignoredClassPrefixes` was stored but never read, so setting it excluded nothing.
+  ///
+  /// The scan runs once per process, during the first initializer, so it cannot be re-run from a
+  /// test with a different configuration. This exercises the exclusion decision itself, which is
+  /// what the scan consults for every class it considers.
+  public func testIgnoredClassPrefixesExcludeMatchingClasses() {
+    let cls: AnyClass = SessionDelegate.self
+    let name = NSStringFromClass(cls)
+    XCTAssertFalse(name.isEmpty)
+
+    XCTAssertFalse(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: nil),
+                   "nothing is excluded when no prefixes are given")
+    XCTAssertFalse(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: []),
+                   "an empty list excludes nothing")
+    XCTAssertFalse(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: ["NotAPrefixOfAnything"]),
+                   "a prefix that does not match leaves the class instrumented")
+    XCTAssertFalse(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: [""]),
+                   "an empty prefix must not exclude everything")
+
+    XCTAssertTrue(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: [String(name.prefix(6))]),
+                  "a matching prefix excludes the class")
+    XCTAssertTrue(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: ["NotAMatch", String(name.prefix(6))]),
+                  "any one of the prefixes matching is enough")
+  }
+
+  /// The built in exclude list keeps working, now that it is applied in the same place.
+  public func testExcludeListStillExcludes() throws {
+    guard let proxy = NSClassFromString("__NSCFURLProxySessionConnection") else {
+      throw XCTSkip("__NSCFURLProxySessionConnection is not present on this platform")
+    }
+    XCTAssertTrue(URLSessionInstrumentation.isExcludedFromInstrumentation(proxy, ignoredPrefixes: nil))
+  }
+
 }

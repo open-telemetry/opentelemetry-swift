@@ -57,6 +57,19 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     "__NSCFURLProxySessionConnection"
   ]
 
+  /// Whether `cls` is excluded from delegate instrumentation, either by the built in exclude list
+  /// or by the caller's `ignoredClassPrefixes`.
+  static func isExcludedFromInstrumentation(_ cls: AnyClass, ignoredPrefixes: [String]?) -> Bool {
+    let name = NSStringFromClass(cls)
+    if excludeList.contains(name) {
+      return true
+    }
+    guard let ignoredPrefixes else {
+      return false
+    }
+    return ignoredPrefixes.contains { !$0.isEmpty && name.hasPrefix($0) }
+  }
+
   static let AVTaskClassList: [AnyClass] = [
     "__NSCFBackgroundAVAggregateAssetDownloadTask",
     "__NSCFBackgroundAVAssetDownloadTask",
@@ -119,9 +132,14 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       configuration.delegateClassesToInstrument
         ?? InstrumentationUtils.objc_getClassList()
     let selectorsCount = selectors.count
+    let ignoredPrefixes = configuration.ignoredClassPrefixes
     DispatchQueue.concurrentPerform(iterations: classes.count) { iteration in
       let theClass: AnyClass = classes[iteration]
       guard theClass != Self.self else { return }
+      // Checked before the method list is copied, so an excluded class costs nothing to skip.
+      guard !Self.isExcludedFromInstrumentation(theClass, ignoredPrefixes: ignoredPrefixes) else {
+        return
+      }
       var selectorFound = false
       var methodCount: UInt32 = 0
       guard let methodList = class_copyMethodList(theClass, &methodCount) else {
@@ -139,10 +157,6 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
         if selectorFound {
           break
         }
-      }
-
-      foundClasses.removeAll { cls in
-        Self.excludeList.contains(NSStringFromClass(cls))
       }
 
       foundClasses.forEach { cls in
