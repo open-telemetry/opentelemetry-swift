@@ -232,7 +232,7 @@ final class SessionStore: @unchecked Sendable {
         }
 
         // Session persistence is a cache. Drop unreadable records so later writes can recover.
-        persistence.clear()
+        _ = persistence.clear()
       }
 
       guard let userDefaultsPersistence = persistence as? UserDefaultsSessionPersistence,
@@ -265,7 +265,7 @@ final class SessionStore: @unchecked Sendable {
       saveTimer = nil
       pendingSession = nil
       previousSavedSession = nil
-      persistence.clear()
+      _ = persistence.clear()
       if let userDefaultsPersistence = persistence as? UserDefaultsSessionPersistence {
         userDefaultsPersistence.clearLegacySession()
       }
@@ -298,7 +298,9 @@ final class SessionStore: @unchecked Sendable {
     guard let data = try? PropertyListEncoder().encode(PersistedSessionRecord(session: session)) else {
       return false
     }
-    persistence.write(data)
+    guard persistence.write(data) else {
+      return false
+    }
     previousSavedSession = session
     pendingSession = nil
     return true

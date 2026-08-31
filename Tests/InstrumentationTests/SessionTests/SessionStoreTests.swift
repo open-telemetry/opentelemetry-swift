@@ -78,6 +78,23 @@ final class SessionStoreTests: XCTestCase {
     XCTAssertEqual(store.load()?.session.id, "session-2")
   }
 
+  func testRejectedWriteCanBeRetried() throws {
+    let persistence = ToggleSessionPersistence(acceptsWrites: false)
+    let store = SessionStore(persistence: persistence)
+    defer { store.teardown() }
+    let session = Session(id: "retry-session", expireTime: Date(timeIntervalSinceNow: 1800))
+
+    store.saveImmediately(session: session)
+    XCTAssertNil(persistence.read())
+
+    persistence.acceptsWrites = true
+    store.saveImmediately(session: session)
+
+    let data = try XCTUnwrap(persistence.read())
+    let record = try PropertyListDecoder().decode(PersistedSessionRecord.self, from: data)
+    XCTAssertEqual(record.session.id, session.id)
+  }
+
   func testSaveWithoutMaxLifetimeClearsPreviousMaxLifetime() {
     let cappedSession = Session(
       id: "session-1",

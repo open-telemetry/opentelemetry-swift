@@ -9,17 +9,22 @@ import Foundation
 ///
 /// Implementations must serialize access to each logical record within their supported
 /// ownership model. Calls run without the ``SessionManager`` state lock held, so a backend may
-/// inspect the current session with ``SessionManager/peekSession()``. A backend must not call
-/// session APIs that can write persistence from inside these methods.
+/// inspect the previously published session with ``SessionManager/peekSession()``. During initial
+/// creation this can be `nil`. A backend must not call session APIs that can write persistence
+/// from inside these methods.
 public protocol SessionPersistence: Sendable {
   /// Reads the complete encoded record, or `nil` when no record exists.
   func read() -> Data?
 
   /// Replaces the complete encoded record.
-  func write(_ data: Data)
+  /// - Returns: `true` when the backend accepted the write.
+  @discardableResult
+  func write(_ data: Data) -> Bool
 
   /// Removes the encoded record.
-  func clear()
+  /// - Returns: `true` when the backend accepted the removal.
+  @discardableResult
+  func clear() -> Bool
 }
 
 /// Declares how a ``SessionManager`` will own an injected persistence record.
@@ -103,12 +108,16 @@ public final class UserDefaultsSessionPersistence: SessionPersistence, @unchecke
     return lock.withLock { userDefaults.data(forKey: recordKey) }
   }
 
-  public func write(_ data: Data) {
+  @discardableResult
+  public func write(_ data: Data) -> Bool {
     lock.withLock { userDefaults.set(data, forKey: recordKey) }
+    return true
   }
 
-  public func clear() {
+  @discardableResult
+  public func clear() -> Bool {
     lock.withLock { userDefaults.removeObject(forKey: recordKey) }
+    return true
   }
 
   func loadLegacySession() -> Session? {
