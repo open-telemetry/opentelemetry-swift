@@ -377,13 +377,16 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
           if completionBlock != nil {
             if objc_getAssociatedObject(argument, &idKey) == nil {
               let completionWrapper: (Any?, URLResponse?, Error?) -> Void = { object, response, error in
+                // Payload recording is opt-in and off by default. The caller still receives
+                // `object` below; only what is handed to the telemetry callbacks is withheld.
+                let payload = self.shouldRecordPayload(for: session, taskId: sessionTaskId) ? object : nil
                 if error != nil {
                   let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-                  URLSessionLogger.logError(error!, dataOrFile: object, statusCode: status,
+                  URLSessionLogger.logError(error!, dataOrFile: payload, statusCode: status,
                                             instrumentation: self, sessionTaskId: sessionTaskId)
                 } else {
                   if let response {
-                    URLSessionLogger.logResponse(response, dataOrFile: object, instrumentation: self,
+                    URLSessionLogger.logResponse(response, dataOrFile: payload, instrumentation: self,
                                                  sessionTaskId: sessionTaskId)
                   }
                 }
@@ -446,13 +449,16 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
           var completionBlock = completion
           if objc_getAssociatedObject(argument, &idKey) == nil {
             let completionWrapper: (Any?, URLResponse?, Error?) -> Void = { object, response, error in
+              // Payload recording is opt-in and off by default. The caller still receives
+              // `object` below; only what is handed to the telemetry callbacks is withheld.
+              let payload = self.shouldRecordPayload(for: session, taskId: sessionTaskId) ? object : nil
               if error != nil {
                 let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-                URLSessionLogger.logError(error!, dataOrFile: object, statusCode: status,
+                URLSessionLogger.logError(error!, dataOrFile: payload, statusCode: status,
                                           instrumentation: self, sessionTaskId: sessionTaskId)
               } else {
                 if let response {
-                  URLSessionLogger.logResponse(response, dataOrFile: object, instrumentation: self,
+                  URLSessionLogger.logResponse(response, dataOrFile: payload, instrumentation: self,
                                                sessionTaskId: sessionTaskId)
                 }
               }
@@ -676,7 +682,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
 
   // URLSessionTask methods
   private func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-    guard configuration.shouldRecordPayload?(session) ?? false else { return }
+    guard shouldRecordPayload(for: session, taskId: objc_getAssociatedObject(dataTask, &idKey) as? String) else { return }
     guard let taskId = objc_getAssociatedObject(dataTask, &idKey) as? String
     else {
       return
@@ -696,7 +702,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
   private func urlSession(_ session: URLSession, dataTask: URLSessionDataTask,
                           didReceive response: URLResponse,
                           completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
-    guard configuration.shouldRecordPayload?(session) ?? false else { return }
+    guard shouldRecordPayload(for: session, taskId: objc_getAssociatedObject(dataTask, &idKey) as? String) else { return }
     guard let taskId = objc_getAssociatedObject(dataTask, &idKey) as? String
     else {
       return
@@ -886,6 +892,19 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     let id = UUID().uuidString
     objc_setAssociatedObject(task, &idKey, id, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     return id
+  }
+
+  /// Whether the payload should be recorded, asking per request first and falling back to the
+  /// per-session callback.
+  private func shouldRecordPayload(for session: URLSession, taskId: String?) -> Bool {
+    let config = configuration
+    if let perRequest = config.shouldRecordPayloadForRequest,
+       let taskId,
+       let request = queue.sync(execute: { requestMap[taskId]?.request }),
+       let answer = perRequest(request) {
+      return answer
+    }
+    return config.shouldRecordPayload?(session) ?? false
   }
 
   private func setIdKey(value: String, for task: URLSessionTask) {
