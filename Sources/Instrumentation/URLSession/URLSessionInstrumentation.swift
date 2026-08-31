@@ -719,13 +719,11 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     guard let taskId = objc_getAssociatedObject(task, &idKey) as? String else {
       return
     }
-    var requestState: NetworkRequestState?
-    queue.sync {
-      requestState = requestMap[taskId]
-      if requestState != nil {
-        requestMap[taskId] = nil
-      }
-    }
+    // The entry stays until after logging, so receivedResponse can be given the request it
+    // belongs to.
+    let requestState = queue.sync { requestMap[taskId] }
+    defer { queue.sync { requestMap[taskId] = nil } }
+
     if let error {
       let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
       URLSessionLogger.logError(error, dataOrFile: requestState?.dataProcessed, statusCode: status,
@@ -750,18 +748,12 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     guard let taskId = objc_getAssociatedObject(task, &idKey) as? String else {
       return
     }
-    var requestState: NetworkRequestState?
-    queue.sync {
-      requestState = requestMap[taskId]
-
-      if requestState?.request != nil {
-        requestMap[taskId] = nil
-      }
-    }
-
+    let requestState = queue.sync { requestMap[taskId] }
     guard requestState?.request != nil else {
       return
     }
+    // Cleared after logging so receivedResponse can be given the request.
+    defer { queue.sync { requestMap[taskId] = nil } }
 
     /// Code for instrumenting collection should be written here
     if let error = task.error {
@@ -886,6 +878,11 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     let id = UUID().uuidString
     objc_setAssociatedObject(task, &idKey, id, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     return id
+  }
+
+  /// The request recorded for `taskId`, while the task is still being tracked.
+  func request(forTaskId taskId: String) -> URLRequest? {
+    queue.sync { requestMap[taskId]?.request }
   }
 
   private func setIdKey(value: String, for task: URLSessionTask) {

@@ -236,6 +236,8 @@ class URLSessionLogger {
     }
 
     instrumentation.configuration.receivedResponse?(response, dataOrFile, span)
+    instrumentation.configuration.receivedResponseWithRequest?(response, dataOrFile, span,
+                                                              instrumentation.request(forTaskId: sessionTaskId))
     span.end()
   }
 
