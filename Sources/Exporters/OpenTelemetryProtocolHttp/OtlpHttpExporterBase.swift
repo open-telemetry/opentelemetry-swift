@@ -19,6 +19,7 @@ public class OtlpHttpExporterBase: @unchecked Sendable {
   let httpClient: HTTPClient
   let envVarHeaders: [(String, String)]?
   let config: OtlpConfiguration
+  let requeueOnFailure: Bool
 
   // MARK: - Init
 
@@ -26,22 +27,26 @@ public class OtlpHttpExporterBase: @unchecked Sendable {
   public init(endpoint: URL,
               config: OtlpConfiguration = OtlpConfiguration(),
               httpClient: HTTPClient = BaseHTTPClient(),
-              envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+              envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
+              requeueOnFailure: Bool = true) {
     self.envVarHeaders = envVarHeaders
     self.endpoint = endpoint
     self.config = config
     self.httpClient = httpClient
+    self.requeueOnFailure = requeueOnFailure
   }
 
   // Deprecated initializer for backward compatibility
-  @available(*, deprecated, message: "Use init(endpoint:config:httpClient:envVarHeaders:) instead")
+  @available(*, deprecated, message: "Use init(endpoint:config:httpClient:envVarHeaders:requeueOnFailure:) instead")
   public init(endpoint: URL,
               config: OtlpConfiguration = OtlpConfiguration(),
               useSession: URLSession? = nil,
-              envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+              envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
+              requeueOnFailure: Bool = true) {
     self.envVarHeaders = envVarHeaders
     self.endpoint = endpoint
     self.config = config
+    self.requeueOnFailure = requeueOnFailure
     if let providedSession = useSession {
       self.httpClient = BaseHTTPClient(session: providedSession)
     } else {

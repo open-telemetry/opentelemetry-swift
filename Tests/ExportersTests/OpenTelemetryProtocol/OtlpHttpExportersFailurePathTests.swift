@@ -123,6 +123,15 @@ final class OtlpHttpLogExporterCoverageTests: XCTestCase {
     XCTAssertEqual(client.sentRequests.count, 1)
   }
 
+  func testExportFailureWithRequeueDisabledLeavesPendingEmpty() {
+    let client = StubHTTPClient(outcomes: [.failure(TransientNetworkError())])
+    let exporter = OtlpHttpLogExporter(httpClient: client, requeueOnFailure: false)
+
+    _ = exporter.export(logRecords: [sampleLogRecord()])
+    XCTAssertEqual(exporter.pendingLogRecords.count, 0)
+    XCTAssertEqual(client.sentRequests.count, 1)
+  }
+
   func testFlushWithPendingLogRecordsSuccess() {
     let client = StubHTTPClient(outcomes: [.failure(TransientNetworkError()), .success])
     let exporter = OtlpHttpLogExporter(httpClient: client)
@@ -215,6 +224,15 @@ final class OtlpHttpTraceExporterCoverageTests: XCTestCase {
     let exporter = OtlpHttpTraceExporter(httpClient: client)
     let result = exporter.export(spans: [sampleSpanData()])
     XCTAssertEqual(result, .failure)
+  }
+
+  func testExportFailureWithRequeueDisabledLeavesPendingEmpty() {
+    let client = StubHTTPClient(outcomes: [.failure(TransientNetworkError())])
+    let exporter = OtlpHttpTraceExporter(httpClient: client, requeueOnFailure: false)
+    let result = exporter.export(spans: [sampleSpanData()])
+    XCTAssertEqual(result, .failure)
+    XCTAssertEqual(exporter.pendingSpans.count, 0)
+    XCTAssertEqual(client.sentRequests.count, 1)
   }
 
   func testFlushWithPendingSpans() {
@@ -311,6 +329,17 @@ final class OtlpHttpExporterFlushTimeoutTests: XCTestCase {
     let start = Date()
     XCTAssertEqual(exporter.flush(), .failure)
     XCTAssertLessThan(Date().timeIntervalSince(start), timeout * 4)
+  }
+
+  func testExportFailureWithRequeueDisabledLeavesPendingEmpty() {
+    let client = StubHTTPClient(outcomes: [.failure(TransientNetworkError())])
+    let exporter = OtlpHttpMetricExporter(
+      endpoint: URL(string: "http://localhost:4318/v1/metrics")!,
+      httpClient: client,
+      requeueOnFailure: false)
+    _ = exporter.export(metrics: [.empty])
+    XCTAssertEqual(exporter.pendingMetrics.count, 0)
+    XCTAssertEqual(client.sentRequests.count, 1)
   }
 }
 
