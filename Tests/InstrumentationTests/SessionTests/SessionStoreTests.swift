@@ -264,7 +264,7 @@ final class SessionStoreTests: XCTestCase {
     XCTAssertNil(userDefaults.object(forKey: persistence.startTimeKey))
   }
 
-  func testUnknownRecordVersionIsIgnoredWithoutOverwritingIt() throws {
+  func testUnknownRecordVersionIsClearedAndPersistenceResumes() throws {
     let session = Session(id: "future-session", expireTime: Date(timeIntervalSinceNow: 1800))
     let futureRecord = PersistedSessionRecord(
       version: PersistedSessionRecord.currentVersion + 1,
@@ -274,15 +274,25 @@ final class SessionStoreTests: XCTestCase {
     persistence.write(data)
 
     XCTAssertNil(store.load())
-    XCTAssertEqual(persistence.read(), data)
+    XCTAssertNil(persistence.read())
     store.saveImmediately(session: Session(id: "replacement", expireTime: Date()))
-    XCTAssertEqual(persistence.read(), data)
+    XCTAssertEqual(try decodeRecord().session.id, "replacement")
   }
 
-  func testCorruptedVersionedRecordIsIgnored() {
+  func testCorruptedVersionedRecordFallsBackToLegacySession() throws {
     persistence.write(Data("not-a-property-list".utf8))
+    let startTime = Date(timeIntervalSinceNow: -300)
+    let expireTime = Date(timeIntervalSinceNow: 1500)
+    userDefaults.set("legacy-session", forKey: persistence.idKey)
+    userDefaults.set(startTime, forKey: persistence.startTimeKey)
+    userDefaults.set(expireTime, forKey: persistence.expireTimeKey)
+    userDefaults.set(1800.0, forKey: persistence.sessionTimeoutKey)
 
-    XCTAssertNil(store.load())
+    let session = try XCTUnwrap(store.load())
+
+    XCTAssertEqual(session.id, "legacy-session")
+    XCTAssertEqual(try decodeRecord().session.value, session)
+    XCTAssertNil(userDefaults.object(forKey: persistence.idKey))
   }
 
   func testNamespacesIsolateRecordsInOneSuite() {

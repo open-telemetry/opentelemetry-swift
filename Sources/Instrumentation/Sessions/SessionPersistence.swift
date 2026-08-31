@@ -8,7 +8,9 @@ import Foundation
 /// Stores the encoded session record used by ``SessionManager``.
 ///
 /// Implementations must serialize access to each logical record within their supported
-/// ownership model.
+/// ownership model. Calls run without the ``SessionManager`` state lock held, so a backend may
+/// inspect the current session with ``SessionManager/peekSession()``. A backend must not call
+/// session APIs that can write persistence from inside these methods.
 public protocol SessionPersistence: Sendable {
   /// Reads the complete encoded record, or `nil` when no record exists.
   func read() -> Data?

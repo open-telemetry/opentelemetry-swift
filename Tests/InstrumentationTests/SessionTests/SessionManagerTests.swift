@@ -483,6 +483,22 @@ final class SessionManagerTests: XCTestCase {
     XCTAssertEqual(manager.peekSession()?.id, replacement.id)
   }
 
+  func testInjectedPersistenceCanInspectCurrentSessionDuringWrite() throws {
+    let persistence = InspectingSessionPersistence()
+    let manager = try SessionManager(persistence: persistence)
+    persistence.onWrite = { _ = manager.peekSession() }
+    let completed = expectation(description: "Persistence callback completed")
+
+    DispatchQueue.global().async {
+      _ = manager.resetSession()
+      completed.fulfill()
+    }
+
+    wait(for: [completed], timeout: 1)
+    XCTAssertEqual(persistence.writeCount, 1)
+    XCTAssertEqual(manager.peekSession()?.id, persistence.persistedSessionId)
+  }
+
   func testTransitionDoesNotWaitForCrossThreadDrainerCallback() {
     let manager = SessionManager()
     let callbackQueue = DispatchQueue(label: "io.opentelemetry.sessions.callback")

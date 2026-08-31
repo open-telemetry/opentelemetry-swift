@@ -92,7 +92,6 @@ final class SessionStore: @unchecked Sendable {
   private let lock = NSLock()
   private var pendingSession: Session?
   private var previousSavedSession: Session?
-  private var persistenceWritable = true
   private let saveInterval: TimeInterval
   private var saveTimer: Timer?
 
@@ -132,7 +131,7 @@ final class SessionStore: @unchecked Sendable {
       let timer = Timer(timeInterval: saveInterval, repeats: true) { [weak self] _ in
         self?.savePendingSession()
       }
-      locked_save(session: session)
+      _ = locked_save(session: session)
       saveTimer = timer
       return timer
     }
@@ -155,24 +154,23 @@ final class SessionStore: @unchecked Sendable {
   }
 
   func saveImmediately(session: Session) {
-    lock.withLock { locked_save(session: session) }
+    lock.withLock { _ = locked_save(session: session) }
   }
 
   func load() -> Session? {
     return lock.withLock {
       if let data = persistence.read() {
         if let storedVersion = try? PropertyListDecoder().decode(PersistedSessionRecordVersion.self, from: data),
-           storedVersion.version != PersistedSessionRecord.currentVersion {
-          persistenceWritable = false
-          return nil
+           storedVersion.version == PersistedSessionRecord.currentVersion,
+           let record = try? PropertyListDecoder().decode(PersistedSessionRecord.self, from: data) {
+          let session = record.session.value
+          pendingSession = nil
+          previousSavedSession = session
+          return session
         }
-        guard let record = try? PropertyListDecoder().decode(PersistedSessionRecord.self, from: data) else {
-          return nil
-        }
-        let session = record.session.value
-        pendingSession = nil
-        previousSavedSession = session
-        return session
+
+        // Session persistence is a cache. Drop unreadable records so later writes can recover.
+        persistence.clear()
       }
 
       guard let userDefaultsPersistence = persistence as? UserDefaultsSessionPersistence,
@@ -181,7 +179,7 @@ final class SessionStore: @unchecked Sendable {
         return nil
       }
 
-      locked_save(session: legacySession)
+      guard locked_save(session: legacySession) else { return legacySession }
       userDefaultsPersistence.clearLegacySession()
       return legacySession
     }
@@ -193,7 +191,6 @@ final class SessionStore: @unchecked Sendable {
       saveTimer = nil
       pendingSession = nil
       previousSavedSession = nil
-      persistenceWritable = true
       persistence.clear()
       if let userDefaultsPersistence = persistence as? UserDefaultsSessionPersistence {
         userDefaultsPersistence.clearLegacySession()
@@ -207,7 +204,7 @@ final class SessionStore: @unchecked Sendable {
     lock.withLock {
       if let pendingSession,
          previousSavedSession != pendingSession {
-        locked_save(session: pendingSession)
+        _ = locked_save(session: pendingSession)
       }
     }
   }
@@ -222,13 +219,13 @@ final class SessionStore: @unchecked Sendable {
   }
 
   /// Persists a complete record while `lock` is held.
-  private func locked_save(session: Session) {
-    guard persistenceWritable else { return }
+  private func locked_save(session: Session) -> Bool {
     guard let data = try? PropertyListEncoder().encode(PersistedSessionRecord(session: session)) else {
-      return
+      return false
     }
     persistence.write(data)
     previousSavedSession = session
     pendingSession = nil
+    return true
   }
 }

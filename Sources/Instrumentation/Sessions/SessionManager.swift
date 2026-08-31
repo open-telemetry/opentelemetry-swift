@@ -23,6 +23,7 @@ public class SessionManager: @unchecked Sendable {
   private var session: Session?
   private var persistedPreviousSession: Session?
   private let sessionStore: SessionStore
+  private let sessionMutationLock = NSLock()
   private let lock = NSLock()
   private let effectsLock = NSLock()
   private let effectDrainQueue = DispatchQueue(label: "io.opentelemetry.sessions.effects")
@@ -92,16 +93,18 @@ public class SessionManager: @unchecked Sendable {
   /// - Returns: The newly created session
   @discardableResult
   public func resetSession() -> Session {
-    let access: SessionAccess = lock.withLock {
+    let access: SessionAccess = sessionMutationLock.withLock {
       let now = Date()
-      let previousSession = session ?? persistedPreviousSession
+      let previousSession = lock.withLock { session ?? persistedPreviousSession }
       let previousSessionToEnd = previousSession.map { previous in
-        previous.isExpired() ? previous : locked_endSession(previous, at: now)
+        previous.isExpired() ? previous : endedSession(previous, at: now)
       }
-      let nextSession = locked_startSession(previousId: previousSession?.id, at: now)
-      session = nextSession
-      persistedPreviousSession = nil
+      let nextSession = startSession(previousId: previousSession?.id, at: now)
       sessionStore.saveImmediately(session: nextSession)
+      lock.withLock {
+        session = nextSession
+        persistedPreviousSession = nil
+      }
       let shouldDrainEffects = enqueueTransition(SessionTransition(
         session: nextSession,
         previousSessionToEnd: previousSessionToEnd
@@ -122,8 +125,7 @@ public class SessionManager: @unchecked Sendable {
   }
 
   /// Creates a new session with a unique identifier
-  /// *Warning* - this must be a pure function since it is used inside a lock
-  private func locked_startSession(previousId: String?, at now: Date = Date()) -> Session {
+  private func startSession(previousId: String?, at now: Date = Date()) -> Session {
     return Session(
       id: UUID().uuidString,
       expireTime: now.addingTimeInterval(Double(configuration.sessionTimeout)),
@@ -160,8 +162,7 @@ public class SessionManager: @unchecked Sendable {
   }
 
   /// Extends the current session expiry time
-  /// *Warning* - this must be a pure function since it is used inside a lock
-  private func locked_refreshSession(session: Session, at now: Date) -> Session {
+  private func refreshedSession(session: Session, at now: Date) -> Session {
     return Session(
       id: session.id,
       expireTime: now.addingTimeInterval(Double(configuration.sessionTimeout)),
@@ -172,36 +173,8 @@ public class SessionManager: @unchecked Sendable {
     )
   }
 
-  /// Returns the active session without changing its inactivity deadline.
-  /// *Warning* - call only while holding `lock`.
-  private func locked_accessSession(recordActivity: Bool, at now: Date) -> SessionAccess {
-    if let session,
-       !session.isExpired() {
-      guard recordActivity else {
-        return SessionAccess(session: session, shouldDrainEffects: false)
-      }
-
-      let refreshedSession = locked_refreshSession(session: session, at: now)
-      self.session = refreshedSession
-      sessionStore.scheduleSave(session: refreshedSession)
-      return SessionAccess(session: refreshedSession, shouldDrainEffects: false)
-    }
-
-    let previousSession = session ?? persistedPreviousSession
-    let nextSession = locked_startSession(previousId: previousSession?.id, at: now)
-    session = nextSession
-    persistedPreviousSession = nil
-    sessionStore.saveImmediately(session: nextSession)
-    let shouldDrainEffects = enqueueTransition(SessionTransition(
-      session: nextSession,
-      previousSessionToEnd: previousSession
-    ))
-    return SessionAccess(session: nextSession, shouldDrainEffects: shouldDrainEffects)
-  }
-
   /// Creates an ended snapshot whose end time is fixed to `date`.
-  /// *Warning* - this must remain a pure function because it is called inside `lock`.
-  private func locked_endSession(_ session: Session, at date: Date) -> Session {
+  private func endedSession(_ session: Session, at date: Date) -> Session {
     return Session(
       id: session.id,
       expireTime: date,
@@ -214,8 +187,50 @@ public class SessionManager: @unchecked Sendable {
 
   /// Retrieves a session and queues any persistence or lifecycle work in state order.
   private func accessSession(recordActivity: Bool) -> Session {
-    let access = lock.withLock {
-      locked_accessSession(recordActivity: recordActivity, at: Date())
+    if !recordActivity,
+       let activeSession = lock.withLock({ () -> Session? in
+         guard let session,
+               !session.isExpired()
+         else {
+           return nil
+         }
+         return session
+       }) {
+      return activeSession
+    }
+
+    let access: SessionAccess = sessionMutationLock.withLock {
+      let now = Date()
+      if let currentSession = lock.withLock({ () -> Session? in
+        guard let session,
+              !session.isExpired()
+        else {
+          return nil
+        }
+        return session
+      }) {
+        guard recordActivity else {
+          return SessionAccess(session: currentSession, shouldDrainEffects: false)
+        }
+
+        let updatedSession = refreshedSession(session: currentSession, at: now)
+        sessionStore.scheduleSave(session: updatedSession)
+        lock.withLock { session = updatedSession }
+        return SessionAccess(session: updatedSession, shouldDrainEffects: false)
+      }
+
+      let previousSession = lock.withLock { session ?? persistedPreviousSession }
+      let nextSession = startSession(previousId: previousSession?.id, at: now)
+      sessionStore.saveImmediately(session: nextSession)
+      lock.withLock {
+        session = nextSession
+        persistedPreviousSession = nil
+      }
+      let shouldDrainEffects = enqueueTransition(SessionTransition(
+        session: nextSession,
+        previousSessionToEnd: previousSession
+      ))
+      return SessionAccess(session: nextSession, shouldDrainEffects: shouldDrainEffects)
     }
     if access.shouldDrainEffects {
       drainClaimedTransition()
