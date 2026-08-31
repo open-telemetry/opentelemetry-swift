@@ -126,35 +126,22 @@ final class SessionStore: @unchecked Sendable {
   func scheduleSave(session: Session) {
     let timerToSchedule: Timer? = lock.withLock {
       pendingSession = session
-      guard saveTimer == nil else { return nil }
-
-      let timer = Timer(timeInterval: saveInterval, repeats: true) { [weak self] _ in
-        self?.savePendingSession()
-      }
+      guard let timer = locked_makeSaveTimerIfNeeded() else { return nil }
       _ = locked_save(session: session)
-      saveTimer = timer
       return timer
     }
 
-    if let timerToSchedule {
-      if Thread.isMainThread {
-        scheduleTimerIfCurrent(timerToSchedule)
-      } else {
-        nonisolated(unsafe) let timerRef = timerToSchedule
-        weak let weakSelf = self
-        DispatchQueue.main.async {
-          guard let weakSelf else {
-            timerRef.invalidate()
-            return
-          }
-          weakSelf.scheduleTimerIfCurrent(timerRef)
-        }
-      }
-    }
+    scheduleTimerOnMainIfNeeded(timerToSchedule)
   }
 
   func saveImmediately(session: Session) {
-    lock.withLock { _ = locked_save(session: session) }
+    let timerToSchedule: Timer? = lock.withLock {
+      pendingSession = session
+      guard !locked_save(session: session) else { return nil }
+      return locked_makeSaveTimerIfNeeded()
+    }
+
+    scheduleTimerOnMainIfNeeded(timerToSchedule)
   }
 
   func load() -> Session? {
@@ -205,6 +192,33 @@ final class SessionStore: @unchecked Sendable {
       if let pendingSession,
          previousSavedSession != pendingSession {
         _ = locked_save(session: pendingSession)
+      }
+    }
+  }
+
+  /// Creates the retry timer while `lock` is held, if this store does not already own one.
+  private func locked_makeSaveTimerIfNeeded() -> Timer? {
+    guard saveTimer == nil else { return nil }
+    let timer = Timer(timeInterval: saveInterval, repeats: true) { [weak self] _ in
+      self?.savePendingSession()
+    }
+    saveTimer = timer
+    return timer
+  }
+
+  private func scheduleTimerOnMainIfNeeded(_ timer: Timer?) {
+    guard let timer else { return }
+    if Thread.isMainThread {
+      scheduleTimerIfCurrent(timer)
+    } else {
+      nonisolated(unsafe) let timerRef = timer
+      weak let weakSelf = self
+      DispatchQueue.main.async {
+        guard let weakSelf else {
+          timerRef.invalidate()
+          return
+        }
+        weakSelf.scheduleTimerIfCurrent(timerRef)
       }
     }
   }
