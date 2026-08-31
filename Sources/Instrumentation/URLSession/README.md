@@ -30,8 +30,6 @@ This behaviour can be modified or augmented by using the optional callbacks defi
 
 `delegateClassesToInstrument: [AnyClass]?`: The session delegate classes to instrument. When this is `nil`, the instrumentation discovers them by examining **every class loaded in the process** at initialization, which is the default. Passing your delegate classes explicitly skips that search — see [Initialization cost](#initialization-cost) below.
 
-`ignoredClassPrefixes: [String]?`: Class name prefixes to leave out of that search.
-
 `baggageProvider: ((inout URLRequest, Span) -> (Baggage)?)?`: Provides baggage instance for instrumented requests that is merged with active baggage. The callback receives URLRequest and Span parameters to create dynamic baggage based on request context. The resulting baggage is injected into request headers using the configured propagator.
 
 ## Initialization cost
