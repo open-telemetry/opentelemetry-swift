@@ -26,11 +26,24 @@ final class SessionSpanProcessorTests: XCTestCase {
 
     spanProcessor.onStart(parentContext: nil, span: mockSpan)
 
+    XCTAssertEqual(mockSessionManager.attributionAccessCount, 1)
     if case let .string(sessionId) = mockSpan.capturedAttributes["session.id"] {
       XCTAssertEqual(sessionId, expectedSessionId)
     } else {
       XCTFail("Expected session.id attribute to be a string value")
     }
+  }
+
+  func testOnStartDoesNotRefreshSessionActivity() {
+    SessionStore.teardown()
+    defer { SessionStore.teardown() }
+    let manager = SessionManager()
+    let session = manager.getSession()
+    let processor = SessionSpanProcessor(sessionManager: manager)
+
+    processor.onStart(parentContext: nil, span: mockSpan)
+
+    XCTAssertEqual(manager.peekSession()?.expireTime, session.expireTime)
   }
 
   func testOnStartWithDifferentSessionIds() {
@@ -103,7 +116,7 @@ final class SessionSpanProcessorTests: XCTestCase {
 
     XCTAssertNil(mockSpan.capturedAttributes["session.previous_id"], "Previous session ID should not be set when nil")
   }
-  
+
   func testInitializationWithNilSessionManager() {
     let processor = SessionSpanProcessor()
     XCTAssertTrue(processor.isStartRequired)
@@ -113,12 +126,22 @@ final class SessionSpanProcessorTests: XCTestCase {
 
 // MARK: - Mock Classes
 
-class MockSessionManager: SessionManager {
+class MockSessionManager: SessionManager, @unchecked Sendable {
   var sessionId: String = "default-session-id"
   var previousSessionId: String?
   var startTime: Date = .init()
+  var attributionAccessCount = 0
 
   override func getSession() -> Session {
+    return mockSession()
+  }
+
+  override func getSessionForAttribution() -> Session {
+    attributionAccessCount += 1
+    return mockSession()
+  }
+
+  private func mockSession() -> Session {
     return Session(
       id: sessionId,
       expireTime: Date(timeIntervalSinceNow: 1800),
@@ -140,11 +163,11 @@ final class MockReadableSpan: ReadableSpan, @unchecked Sendable {
   var isRecording: Bool = true
   var status: Status = .unset
   var description: String = "MockReadableSpan"
-  
+
   func getAttributes() -> [String: AttributeValue] {
     return capturedAttributes
   }
-  
+
   func setAttributes(_ attributes: [String: AttributeValue]) {
     capturedAttributes.merge(attributes) { _, new in new }
   }
@@ -171,7 +194,7 @@ final class MockReadableSpan: ReadableSpan, @unchecked Sendable {
   }
 
   func setAttribute(key: String, value: AttributeValue?) {
-    if let value = value {
+    if let value {
       capturedAttributes[key] = value
     }
   }
@@ -184,4 +207,5 @@ final class MockReadableSpan: ReadableSpan, @unchecked Sendable {
   func recordException(_ exception: any SpanException, timestamp: Date) {}
   func recordException(_ exception: any SpanException, attributes: [String: AttributeValue]) {}
   func recordException(_ exception: any SpanException, attributes: [String: AttributeValue], timestamp: Date) {}
+  func addLink(spanContext: SpanContext, attributes: [String: AttributeValue]) {}
 }

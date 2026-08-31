@@ -34,6 +34,7 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     logRecordProcessor.onEmit(logRecord: testLogRecord)
 
     XCTAssertEqual(mockNextProcessor.receivedLogRecords.count, 1)
+    XCTAssertEqual(mockSessionManager.attributionAccessCount, 1)
     let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
 
     if case let .string(sessionId) = enhancedRecord.attributes[SemanticConventions.Session.id.rawValue] {
@@ -41,6 +42,21 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     } else {
       XCTFail("Expected session.id attribute to be a string value")
     }
+  }
+
+  func testOnEmitDoesNotRefreshSessionActivity() {
+    SessionStore.teardown()
+    defer { SessionStore.teardown() }
+    let manager = SessionManager()
+    let session = manager.getSession()
+    let processor = SessionLogRecordProcessor(
+      nextProcessor: mockNextProcessor,
+      sessionManager: manager
+    )
+
+    processor.onEmit(logRecord: testLogRecord)
+
+    XCTAssertEqual(manager.peekSession()?.expireTime, session.expireTime)
   }
 
   func testOnEmitPreservesOriginalAttributes() {
@@ -150,7 +166,8 @@ final class SessionLogRecordProcessorTests: XCTestCase {
       attributes: [
         SemanticConventions.Session.id.rawValue: AttributeValue.string("existing-session-123"),
         SemanticConventions.Session.previousId.rawValue: AttributeValue.string("existing-previous-456")
-      ]
+      ],
+      eventName: SessionConstants.sessionStartEvent
     )
 
     mockSessionManager.sessionId = "current-session-999"
@@ -169,6 +186,7 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     } else {
       XCTFail("Expected existing session.previous_id to be preserved")
     }
+    XCTAssertEqual(mockSessionManager.attributionAccessCount, 0)
   }
 
   func testSessionEndEventPreservesExistingAttributes() {
@@ -182,7 +200,8 @@ final class SessionLogRecordProcessorTests: XCTestCase {
       body: AttributeValue.string("session.end"),
       attributes: [
         SemanticConventions.Session.id.rawValue: AttributeValue.string("ending-session-789")
-      ]
+      ],
+      eventName: SessionConstants.sessionEndEvent
     )
 
     mockSessionManager.sessionId = "current-session-999"
@@ -194,6 +213,35 @@ final class SessionLogRecordProcessorTests: XCTestCase {
       XCTAssertEqual(sessionId, "ending-session-789", "Should preserve existing session ID for session.end")
     } else {
       XCTFail("Expected existing session.id to be preserved")
+    }
+    XCTAssertNil(enhancedRecord.attributes[SemanticConventions.Session.previousId.rawValue])
+    XCTAssertEqual(mockSessionManager.attributionAccessCount, 0)
+  }
+
+  func testApplicationEventsUsingLifecycleNamesStillGetSessionAttributes() {
+    mockSessionManager.sessionId = "current-session-123"
+
+    for eventName in [SessionConstants.sessionStartEvent, SessionConstants.sessionEndEvent] {
+      let applicationRecord = ReadableLogRecord(
+        resource: Resource(attributes: [:]),
+        instrumentationScopeInfo: InstrumentationScopeInfo(),
+        timestamp: Date(),
+        observedTimestamp: Date(),
+        spanContext: nil,
+        severity: .info,
+        body: AttributeValue.string("application event"),
+        attributes: [:],
+        eventName: eventName
+      )
+      logRecordProcessor.onEmit(logRecord: applicationRecord)
+    }
+
+    XCTAssertEqual(mockSessionManager.attributionAccessCount, 2)
+    for record in mockNextProcessor.receivedLogRecords {
+      XCTAssertEqual(
+        record.attributes[SemanticConventions.Session.id.rawValue],
+        AttributeValue.string("current-session-123")
+      )
     }
   }
 
@@ -225,33 +273,33 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     XCTAssertEqual(enhancedRecord.severity, logRecordWithEventName.severity)
     XCTAssertEqual(enhancedRecord.body?.description, logRecordWithEventName.body?.description)
     XCTAssertEqual(enhancedRecord.spanContext, logRecordWithEventName.spanContext)
-    
+
     // Verify session attributes were added
     if case let .string(sessionId) = enhancedRecord.attributes[SemanticConventions.Session.id.rawValue] {
       XCTAssertEqual(sessionId, "test-session-123")
     } else {
       XCTFail("Expected session.id attribute to be added")
     }
-    
+
     // Verify original attributes preserved
     if case let .string(testValue) = enhancedRecord.attributes["test.key"] {
       XCTAssertEqual(testValue, "test.value")
     } else {
       XCTFail("Expected original attributes to be preserved")
     }
-    
+
     // Verify total attribute count (original + session attributes)
     XCTAssertEqual(enhancedRecord.attributes.count, 2, "Should have original attribute + session.id")
   }
 
-  func testConcurrentOnEmitThreadSafety() {
+  func testConcurrentOnEmitThreadSafety() throws {
     let mockNextProcessor = MockLogRecordProcessor()
     let expectation = XCTestExpectation(description: "Concurrent processing")
     let queue = DispatchQueue(label: "test.concurrent", attributes: .concurrent)
     let group = DispatchGroup()
-    
-    let logRecord = self.testLogRecord!
-    for i in 0..<10 {
+
+    let logRecord = try XCTUnwrap(testLogRecord)
+    for i in 0 ..< 10 {
       group.enter()
       queue.async {
         let sessionManager = MockSessionManager()
@@ -261,13 +309,13 @@ final class SessionLogRecordProcessorTests: XCTestCase {
         group.leave()
       }
     }
-    
+
     group.notify(queue: .main) {
       expectation.fulfill()
     }
-    
+
     wait(for: [expectation], timeout: 5.0)
-    
+
     XCTAssertEqual(mockNextProcessor.receivedLogRecords.count, 10)
     for record in mockNextProcessor.receivedLogRecords {
       XCTAssertTrue(record.attributes.keys.contains(SemanticConventions.Session.id.rawValue))
@@ -280,7 +328,7 @@ final class SessionLogRecordProcessorTests: XCTestCase {
 class MockLogRecordProcessor: LogRecordProcessor, @unchecked Sendable {
   private let queue = DispatchQueue(label: "MockLogRecordProcessor")
   private var _receivedLogRecords: [ReadableLogRecord] = []
-  
+
   var receivedLogRecords: [ReadableLogRecord] {
     return queue.sync { _receivedLogRecords }
   }
