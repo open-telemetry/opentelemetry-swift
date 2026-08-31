@@ -190,7 +190,10 @@ let package = Package(
     ),
     .testTarget(
       name: "PersistenceExporterTests",
-      dependencies: ["PersistenceExporter"],
+      dependencies: [
+        "PersistenceExporter",
+        "OpenTelemetryProtocolExporterHttp",
+      ],
       path: "Tests/ExportersTests/PersistenceExporter"
     ),
     .testTarget(
