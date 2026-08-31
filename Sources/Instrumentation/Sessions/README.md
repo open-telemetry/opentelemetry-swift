@@ -195,8 +195,9 @@ is persisted. Expiry and `resetSession()` each create one replacement session wi
 Call `samplingDecision()` from trace, log, and metric integrations so every signal applies the same
 persisted result. The session processors add attribution but do not drop telemetry themselves, so
 each signal pipeline remains responsible for enforcing the returned decision. The method returns
-`nil` while another caller is making the decision, allowing telemetry emitted by a custom sampler
-to continue without waiting on itself.
+`nil` while another caller is making the decision. During that window, all passive callers continue
+without session attribution, including spans and logs emitted by other threads. Custom samplers
+should therefore return promptly and must not perform network or other unbounded work.
 
 ```swift
 guard let decision = SessionManagerProvider.getInstance().samplingDecision(),

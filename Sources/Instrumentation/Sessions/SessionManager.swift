@@ -77,7 +77,8 @@ public class SessionManager: @unchecked Sendable {
   ///
   /// Trace, log, and metric integrations can call this method to apply the same decision.
   /// Access may create a linked replacement if the previous session has expired, but it does
-  /// not extend the inactivity deadline.
+  /// not extend the inactivity deadline. This returns `nil` rather than blocking while any caller
+  /// is creating or rotating a session.
   public func samplingDecision() -> SessionSamplingDecision? {
     return getSessionForAttribution()?.samplingDecision
   }
@@ -96,7 +97,8 @@ public class SessionManager: @unchecked Sendable {
   ///
   /// Span, log, metric, and custom processors can use this path so passive telemetry cannot keep
   /// a session alive. It creates or rotates an expired session before returning it. If another
-  /// caller is currently sampling a replacement, this returns `nil` instead of blocking telemetry.
+  /// caller is currently sampling a replacement, every passive caller returns `nil` instead of
+  /// blocking telemetry; processors then forward that telemetry without session attribution.
   /// - Returns: The current active session, or `nil` while session creation is in progress
   @discardableResult
   public func getSessionForAttribution() -> Session? {
