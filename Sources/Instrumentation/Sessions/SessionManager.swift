@@ -19,16 +19,23 @@ public class SessionManager: @unchecked Sendable {
     let shouldDrainEffects: Bool
   }
 
+  private struct SessionCandidate {
+    let id: String
+    let samplingDecision: SessionSamplingDecision
+  }
+
   private let configuration: SessionConfig
   private var session: Session?
   private var persistedPreviousSession: Session?
   private let sessionStore: SessionStore
   private let sessionMutationLock = NSLock()
+  private let sessionCreationCondition = NSCondition()
   private let lock = NSLock()
   private let effectsLock = NSLock()
   private let effectDrainQueue = DispatchQueue(label: "io.opentelemetry.sessions.effects")
   private var pendingTransitions: [SessionTransition] = []
   private var isDrainingEffects = false
+  private var isCreatingSession = false
 
   /// Initializes the session manager and restores any previous session from disk
   /// - Parameter configuration: Session configuration settings
@@ -102,24 +109,24 @@ public class SessionManager: @unchecked Sendable {
   /// - Returns: The newly created session
   @discardableResult
   public func resetSession() -> Session {
+    let candidate = makeSessionCandidate()
     let access: SessionAccess = sessionMutationLock.withLock {
       let now = Date()
       let previousSession = lock.withLock { session ?? persistedPreviousSession }
       let previousSessionToEnd = previousSession.map { previous in
         previous.isExpired() ? previous : endedSession(previous, at: now)
       }
-      let nextSession = startSession(previousId: previousSession?.id, at: now)
-
-      return lock.withLock {
+      let nextSession = startSession(candidate: candidate, previousId: previousSession?.id, at: now)
+      sessionStore.saveImmediately(session: nextSession)
+      lock.withLock {
         session = nextSession
         persistedPreviousSession = nil
-        sessionStore.saveImmediately(session: nextSession)
-        let shouldDrainEffects = enqueueTransition(SessionTransition(
-          session: nextSession,
-          previousSessionToEnd: previousSessionToEnd
-        ))
-        return SessionAccess(session: nextSession, shouldDrainEffects: shouldDrainEffects)
       }
+      let shouldDrainEffects = enqueueTransition(SessionTransition(
+        session: nextSession,
+        previousSessionToEnd: previousSessionToEnd
+      ))
+      return SessionAccess(session: nextSession, shouldDrainEffects: shouldDrainEffects)
     }
 
     if access.shouldDrainEffects {
@@ -134,18 +141,25 @@ public class SessionManager: @unchecked Sendable {
     return lock.withLock { session }
   }
 
-  /// Creates a new session and makes its one sampling decision.
-  /// Called under `sessionMutationLock`, but outside `lock`, because samplers are caller-provided code.
-  private func startSession(previousId: String?, at now: Date = Date()) -> Session {
+  /// Creates an identifier and sampling decision without holding a manager lock.
+  private func makeSessionCandidate() -> SessionCandidate {
     let id = UUID().uuidString
-    return Session(
+    return SessionCandidate(
       id: id,
+      samplingDecision: configuration.sampler.samplingDecision(for: id)
+    )
+  }
+
+  /// Creates a new session from a previously sampled candidate.
+  private func startSession(candidate: SessionCandidate, previousId: String?, at now: Date) -> Session {
+    return Session(
+      id: candidate.id,
       expireTime: now.addingTimeInterval(Double(configuration.sessionTimeout)),
       previousId: previousId,
       startTime: now,
       sessionTimeout: configuration.sessionTimeout,
       maxLifetime: configuration.maxLifetime,
-      samplingDecision: configuration.sampler.samplingDecision(for: id)
+      samplingDecision: candidate.samplingDecision
     )
   }
 
@@ -176,8 +190,7 @@ public class SessionManager: @unchecked Sendable {
   }
 
   /// Extends the current session expiry time
-  /// *Warning* - this must be a pure function since it is used inside a lock
-  private func locked_refreshSession(session: Session, at now: Date) -> Session {
+  private func refreshedSession(session: Session, at now: Date) -> Session {
     return Session(
       id: session.id,
       expireTime: now.addingTimeInterval(Double(configuration.sessionTimeout)),
@@ -204,48 +217,120 @@ public class SessionManager: @unchecked Sendable {
 
   /// Retrieves a session and queues any persistence or lifecycle work in state order.
   private func accessSession(recordActivity: Bool) -> Session {
-    let access: SessionAccess = sessionMutationLock.withLock {
-      let now = Date()
-      if let currentAccess = lock.withLock({ () -> SessionAccess? in
-        guard let session,
-              !session.isExpired()
-        else {
-          return nil
-        }
-
-        guard recordActivity else {
-          return SessionAccess(session: session, shouldDrainEffects: false)
-        }
-
-        let refreshedSession = locked_refreshSession(session: session, at: now)
-        self.session = refreshedSession
-        sessionStore.scheduleSave(session: refreshedSession)
-        return SessionAccess(session: refreshedSession, shouldDrainEffects: false)
-      }) {
-        return currentAccess
-      }
-
-      let previousSession = lock.withLock { session ?? persistedPreviousSession }
-      let nextSession = startSession(previousId: previousSession?.id, at: now)
-      return lock.withLock {
-        session = nextSession
-        persistedPreviousSession = nil
-        sessionStore.saveImmediately(session: nextSession)
-        let shouldDrainEffects = enqueueTransition(SessionTransition(
-          session: nextSession,
-          previousSessionToEnd: previousSession
-        ))
-        return SessionAccess(session: nextSession, shouldDrainEffects: shouldDrainEffects)
-      }
+    if !recordActivity,
+       let currentSession = currentActiveSession() {
+      return currentSession
     }
 
-    if access.shouldDrainEffects {
-      drainClaimedTransition()
+    if let activeAccess = sessionMutationLock.withLock({
+      accessActiveSession(recordActivity: recordActivity, at: Date())
+    }) {
+      return activeAccess.session
     }
-    return access.session
+
+    while true {
+      guard claimSessionCreation() else {
+        if !recordActivity,
+           let currentSession = currentActiveSession() {
+          return currentSession
+        }
+        if let activeAccess = sessionMutationLock.withLock({
+          accessActiveSession(recordActivity: recordActivity, at: Date())
+        }) {
+          return activeAccess.session
+        }
+        continue
+      }
+
+      let access: SessionAccess = {
+        defer { releaseSessionCreation() }
+
+        if let activeAccess = sessionMutationLock.withLock({
+          accessActiveSession(recordActivity: recordActivity, at: Date())
+        }) {
+          return activeAccess
+        }
+
+        let candidate = makeSessionCandidate()
+        return sessionMutationLock.withLock {
+          let now = Date()
+          if let activeAccess = accessActiveSession(recordActivity: recordActivity, at: now) {
+            return activeAccess
+          }
+
+          let previousSession = lock.withLock { session ?? persistedPreviousSession }
+          let nextSession = startSession(candidate: candidate, previousId: previousSession?.id, at: now)
+          sessionStore.saveImmediately(session: nextSession)
+          lock.withLock {
+            session = nextSession
+            persistedPreviousSession = nil
+          }
+          let shouldDrainEffects = enqueueTransition(SessionTransition(
+            session: nextSession,
+            previousSessionToEnd: previousSession
+          ))
+          return SessionAccess(session: nextSession, shouldDrainEffects: shouldDrainEffects)
+        }
+      }()
+
+      if access.shouldDrainEffects {
+        drainClaimedTransition()
+      }
+      return access.session
+    }
   }
 
-  /// Enqueues a transition and claims its drain while a state transition holds `lock`.
+  /// Returns the active session, optionally recording activity. Call while holding
+  /// `sessionMutationLock` so persistence and in-memory state remain ordered.
+  private func accessActiveSession(recordActivity: Bool, at now: Date) -> SessionAccess? {
+    guard let currentSession = currentActiveSession() else {
+      return nil
+    }
+
+    guard recordActivity else {
+      return SessionAccess(session: currentSession, shouldDrainEffects: false)
+    }
+
+    let updatedSession = refreshedSession(session: currentSession, at: now)
+    sessionStore.scheduleSave(session: updatedSession)
+    lock.withLock { session = updatedSession }
+    return SessionAccess(session: updatedSession, shouldDrainEffects: false)
+  }
+
+  private func currentActiveSession() -> Session? {
+    return lock.withLock {
+      guard let session,
+            !session.isExpired()
+      else {
+        return nil
+      }
+      return session
+    }
+  }
+
+  /// Claims responsibility for creating a session. Waiters retry after the creator publishes it.
+  private func claimSessionCreation() -> Bool {
+    sessionCreationCondition.lock()
+    defer { sessionCreationCondition.unlock() }
+
+    guard !isCreatingSession else {
+      repeat {
+        sessionCreationCondition.wait()
+      } while isCreatingSession
+      return false
+    }
+    isCreatingSession = true
+    return true
+  }
+
+  private func releaseSessionCreation() {
+    sessionCreationCondition.lock()
+    isCreatingSession = false
+    sessionCreationCondition.broadcast()
+    sessionCreationCondition.unlock()
+  }
+
+  /// Enqueues a transition and claims its drain while mutation order is serialized.
   /// Transition draining never acquires `lock` while holding `effectsLock`.
   private func enqueueTransition(_ transition: SessionTransition) -> Bool {
     return effectsLock.withLock {

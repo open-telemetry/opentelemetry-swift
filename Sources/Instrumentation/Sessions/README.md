@@ -188,8 +188,9 @@ let config = SessionConfig.builder()
 ### Cross-Signal Sampling
 
 `SessionManager` makes one sampling decision when it creates a session and stores that decision
-with the session. Restored sessions keep their original decision. Expiry and `resetSession()` each
-create one replacement session with one new decision.
+with the session. Current-version restored sessions keep their persisted decision. Older records
+do not contain one, so the configured sampler supplies a decision during migration and that result
+is persisted. Expiry and `resetSession()` each create one replacement session with one new decision.
 
 Call `samplingDecision()` from trace, log, and metric integrations so every signal applies the same
 persisted result. The session processors add attribution but do not drop telemetry themselves, so
@@ -298,6 +299,7 @@ Sessions are automatically persisted and can be resumed on app restart:
 - Expired sessions create new sessions with proper `previous_id` linking
 - The built-in backend stores one versioned `Data` record instead of separate fields
 - Existing `otel-session-*` fields are migrated when first read
+- Unknown or malformed records are cleared so persistence can recover on the next write
 - Session starts and resets are saved immediately
 - Activity updates are coalesced and saved on a 30-second timer to minimize disk I/O
 

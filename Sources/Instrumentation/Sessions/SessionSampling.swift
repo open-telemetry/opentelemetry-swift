@@ -20,7 +20,8 @@ public enum SessionSamplingDecision: String, Codable, Sendable {
 public protocol SessionSampler: Sendable {
   /// Returns the decision for a newly generated session identifier.
   ///
-  /// Implementations must not call back into the ``SessionManager`` requesting the decision.
+  /// The callback runs without a session-manager lock held. Because its result is required to
+  /// create the session, implementations must not call manager APIs that create or reset sessions.
   func samplingDecision(for sessionId: String) -> SessionSamplingDecision
 }
 

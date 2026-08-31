@@ -32,6 +32,7 @@ struct PersistedSession: Codable, Equatable {
   let startTime: Date
   let sessionTimeout: TimeInterval
   let maxLifetime: TimeInterval?
+  /// Raw values are part of the record schema; new decision semantics require a version bump.
   let samplingDecision: SessionSamplingDecision
 
   init(session: Session) {
@@ -135,7 +136,6 @@ final class SessionStore: @unchecked Sendable {
   private let lock = NSLock()
   private var pendingSession: Session?
   private var previousSavedSession: Session?
-  private var persistenceWritable = true
   private let saveInterval: TimeInterval
   private var saveTimer: Timer?
 
@@ -175,7 +175,7 @@ final class SessionStore: @unchecked Sendable {
       let timer = Timer(timeInterval: saveInterval, repeats: true) { [weak self] _ in
         self?.savePendingSession()
       }
-      locked_save(session: session)
+      _ = locked_save(session: session)
       saveTimer = timer
       return timer
     }
@@ -204,30 +204,35 @@ final class SessionStore: @unchecked Sendable {
   func load() -> LoadedSession? {
     return lock.withLock {
       if let data = persistence.read() {
-        guard let storedVersion = try? PropertyListDecoder().decode(PersistedSessionRecordVersion.self, from: data) else {
-          return nil
+        let loadedSession: LoadedSession? = if let storedVersion = try? PropertyListDecoder().decode(PersistedSessionRecordVersion.self, from: data) {
+          switch storedVersion.version {
+          case PersistedSessionRecord.currentVersion:
+            if let record = try? PropertyListDecoder().decode(PersistedSessionRecord.self, from: data) {
+              LoadedSession(session: record.session.value, source: .current)
+            } else {
+              nil
+            }
+          case 1:
+            if let record = try? PropertyListDecoder().decode(PersistedSessionRecordV1.self, from: data) {
+              LoadedSession(session: record.session.value, source: .version1)
+            } else {
+              nil
+            }
+          default:
+            nil
+          }
+        } else {
+          nil
         }
 
-        let loadedSession: LoadedSession
-        switch storedVersion.version {
-        case PersistedSessionRecord.currentVersion:
-          guard let record = try? PropertyListDecoder().decode(PersistedSessionRecord.self, from: data) else {
-            return nil
-          }
-          loadedSession = LoadedSession(session: record.session.value, source: .current)
-        case 1:
-          guard let record = try? PropertyListDecoder().decode(PersistedSessionRecordV1.self, from: data) else {
-            return nil
-          }
-          loadedSession = LoadedSession(session: record.session.value, source: .version1)
-        default:
-          persistenceWritable = false
-          return nil
+        if let loadedSession {
+          pendingSession = nil
+          previousSavedSession = loadedSession.session
+          return loadedSession
         }
 
-        pendingSession = nil
-        previousSavedSession = loadedSession.session
-        return loadedSession
+        // Session persistence is a cache. Drop unreadable records so later writes can recover.
+        persistence.clear()
       }
 
       guard let userDefaultsPersistence = persistence as? UserDefaultsSessionPersistence,
@@ -260,7 +265,6 @@ final class SessionStore: @unchecked Sendable {
       saveTimer = nil
       pendingSession = nil
       previousSavedSession = nil
-      persistenceWritable = true
       persistence.clear()
       if let userDefaultsPersistence = persistence as? UserDefaultsSessionPersistence {
         userDefaultsPersistence.clearLegacySession()
@@ -274,7 +278,7 @@ final class SessionStore: @unchecked Sendable {
     lock.withLock {
       if let pendingSession,
          previousSavedSession != pendingSession {
-        locked_save(session: pendingSession)
+        _ = locked_save(session: pendingSession)
       }
     }
   }
@@ -291,7 +295,6 @@ final class SessionStore: @unchecked Sendable {
   /// Persists a complete record while `lock` is held.
   @discardableResult
   private func locked_save(session: Session) -> Bool {
-    guard persistenceWritable else { return false }
     guard let data = try? PropertyListEncoder().encode(PersistedSessionRecord(session: session)) else {
       return false
     }

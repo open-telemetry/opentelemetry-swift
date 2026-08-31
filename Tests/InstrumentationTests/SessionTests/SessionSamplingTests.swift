@@ -228,6 +228,56 @@ final class SessionSamplingTests: XCTestCase {
     wait(for: [creationFinished], timeout: 1)
   }
 
+  func testResetSamplerRunsOutsideSessionMutationLock() throws {
+    let sampler = CallbackSessionSampler()
+    let manager = try SessionManager(
+      configuration: SessionConfig(sampler: sampler),
+      persistence: TestSessionPersistence()
+    )
+    let firstSession = manager.getSession()
+    sampler.onSample = {
+      let accessFinished = DispatchSemaphore(value: 0)
+      DispatchQueue.global().async {
+        _ = manager.getSession()
+        accessFinished.signal()
+      }
+      XCTAssertEqual(accessFinished.wait(timeout: .now() + 0.5), .success)
+    }
+
+    let replacement = manager.resetSession()
+
+    XCTAssertEqual(replacement.previousId, firstSession.id)
+  }
+
+  func testSlowResetSamplerDoesNotBlockLiveAttribution() throws {
+    let sampler = BlockingAfterFirstSessionSampler()
+    let manager = try SessionManager(
+      configuration: SessionConfig(sampler: sampler),
+      persistence: TestSessionPersistence()
+    )
+    let firstSession = manager.getSession()
+    let resetFinished = expectation(description: "Reset finished")
+    DispatchQueue.global().async {
+      _ = manager.resetSession()
+      resetFinished.fulfill()
+    }
+    XCTAssertEqual(sampler.didStartBlocking.wait(timeout: .now() + 1), .success)
+
+    let attributionFinished = expectation(description: "Live attribution stayed available")
+    let resultLock = NSLock()
+    nonisolated(unsafe) var attributedSession: Session?
+    DispatchQueue.global().async {
+      let session = manager.getSessionForAttribution()
+      resultLock.withLock { attributedSession = session }
+      attributionFinished.fulfill()
+    }
+    wait(for: [attributionFinished], timeout: 0.5)
+    XCTAssertEqual(resultLock.withLock { attributedSession?.id }, firstSession.id)
+
+    sampler.allowCompletion.signal()
+    wait(for: [resetFinished], timeout: 1)
+  }
+
   private func decodeCurrentRecord(from persistence: TestSessionPersistence) throws -> PersistedSessionRecord {
     let data = try XCTUnwrap(persistence.read())
     return try PropertyListDecoder().decode(PersistedSessionRecord.self, from: data)
@@ -255,6 +305,41 @@ private final class BlockingSessionSampler: SessionSampler, @unchecked Sendable 
   func samplingDecision(for sessionId: String) -> SessionSamplingDecision {
     didStart.signal()
     _ = allowCompletion.wait(timeout: .now() + 5)
+    return .sampled
+  }
+}
+
+private final class CallbackSessionSampler: SessionSampler, @unchecked Sendable {
+  private let lock = NSLock()
+  private var callback: (() -> Void)?
+
+  var onSample: (() -> Void)? {
+    get { lock.withLock { callback } }
+    set { lock.withLock { callback = newValue } }
+  }
+
+  func samplingDecision(for sessionId: String) -> SessionSamplingDecision {
+    let callback = lock.withLock { self.callback }
+    callback?()
+    return .sampled
+  }
+}
+
+private final class BlockingAfterFirstSessionSampler: SessionSampler, @unchecked Sendable {
+  let didStartBlocking = DispatchSemaphore(value: 0)
+  let allowCompletion = DispatchSemaphore(value: 0)
+  private let lock = NSLock()
+  private var callCount = 0
+
+  func samplingDecision(for sessionId: String) -> SessionSamplingDecision {
+    let shouldBlock = lock.withLock {
+      callCount += 1
+      return callCount > 1
+    }
+    if shouldBlock {
+      didStartBlocking.signal()
+      _ = allowCompletion.wait(timeout: .now() + 5)
+    }
     return .sampled
   }
 }

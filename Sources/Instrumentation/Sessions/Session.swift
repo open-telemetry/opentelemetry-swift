@@ -39,7 +39,7 @@ public struct Session: Equatable, Sendable {
   /// The sampling decision shared by trace, log, and metric integrations for this session
   public let samplingDecision: SessionSamplingDecision
 
-  /// Creates a new session
+  /// Creates a new session with the default sampled decision.
   /// - Parameters:
   ///   - id: Unique identifier for the session
   ///   - expireTime: Expiration time for the session
@@ -47,14 +47,31 @@ public struct Session: Equatable, Sendable {
   ///   - startTime: Start time of the session, defaults to current time
   ///   - sessionTimeout: Duration in seconds after which the session expires if inactive
   ///   - maxLifetime: Maximum duration in seconds the session can remain active, regardless of activity
-  ///   - samplingDecision: Decision signal integrations should apply for this session
+  public init(id: String,
+              expireTime: Date,
+              previousId: String? = nil,
+              startTime: Date = Date(),
+              sessionTimeout: TimeInterval = SessionConfig.default.sessionTimeout,
+              maxLifetime: TimeInterval? = SessionConfig.default.maxLifetime) {
+    self.init(
+      id: id,
+      expireTime: expireTime,
+      previousId: previousId,
+      startTime: startTime,
+      sessionTimeout: sessionTimeout,
+      maxLifetime: maxLifetime,
+      samplingDecision: .sampled
+    )
+  }
+
+  /// Creates a new session with an explicit cross-signal sampling decision.
   public init(id: String,
               expireTime: Date,
               previousId: String? = nil,
               startTime: Date = Date(),
               sessionTimeout: TimeInterval = SessionConfig.default.sessionTimeout,
               maxLifetime: TimeInterval? = SessionConfig.default.maxLifetime,
-              samplingDecision: SessionSamplingDecision = .sampled) {
+              samplingDecision: SessionSamplingDecision) {
     self.id = id
     self.expireTime = expireTime
     self.previousId = previousId

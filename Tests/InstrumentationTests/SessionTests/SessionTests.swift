@@ -16,6 +16,15 @@ final class SessionTests: XCTestCase {
     XCTAssertLessThanOrEqual(Date().timeIntervalSince(session.startTime), 1.0, "Start time should be set to current time by default")
   }
 
+  func testOriginalInitializerRemainsAvailableAsFunctionValue() {
+    let initializer: (String, Date, String?, Date, TimeInterval, TimeInterval?) -> Session = Session.init
+    let startTime = Date()
+    let session = initializer("session", startTime.addingTimeInterval(1800), nil, startTime, 1800, nil)
+
+    XCTAssertEqual(session.id, "session")
+    XCTAssertEqual(session.samplingDecision, .sampled)
+  }
+
   func testSessionEquality() {
     let id = "test-session-id"
     let expireTime = Date()
