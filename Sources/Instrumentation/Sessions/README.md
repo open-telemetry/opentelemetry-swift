@@ -170,6 +170,7 @@ let config = SessionConfig.builder()
 - `getSession()` preserves its existing behavior and records activity
 - Call `recordActivity()` for meaningful interactions or lifecycle transitions that should extend inactivity
 - Span and log processors use passive access, so telemetry and background work do not keep a session alive
+- Without a `recordActivity()` call, a session ends at `sessionTimeout`; its duration is zero because no meaningful activity was recorded, and a longer `maxLifetime` does not apply
 - Sessions can also expire after `maxLifetime`, even if `recordActivity()` continues to extend inactivity
 - `resetSession()` ends the current session and persists one linked replacement
 - Set `restorePersistedSession` to `false` to start a new session on each clean application start while linking the persisted session as `previous_id`
@@ -266,5 +267,6 @@ Sessions are automatically persisted to UserDefaults and can be resumed on app r
 All components are designed for concurrent access:
 
 - `SessionManager` uses locks for thread-safe session access
+- Concurrent lifecycle effects are published in session order without making one caller wait on another thread's exporter or observer callbacks
 - `SessionManagerProvider` provides thread-safe singleton access
 - `SessionStore` handles concurrent persistence operations safely

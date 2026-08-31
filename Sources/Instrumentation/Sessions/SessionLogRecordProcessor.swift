@@ -23,7 +23,8 @@ public class SessionLogRecordProcessor: LogRecordProcessor {
   /// Called when a log record is emitted - adds session attributes and forwards to next processor
   public func onEmit(logRecord: ReadableLogRecord) {
     if logRecord.eventName == SessionConstants.sessionStartEvent ||
-      logRecord.eventName == SessionConstants.sessionEndEvent {
+      logRecord.eventName == SessionConstants.sessionEndEvent,
+      logRecord.attributes[SemanticConventions.Session.id.rawValue] != nil {
       // Lifecycle events already carry the historical session context they describe.
       nextProcessor.onEmit(logRecord: logRecord)
       return

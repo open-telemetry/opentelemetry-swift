@@ -218,6 +218,33 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     XCTAssertEqual(mockSessionManager.attributionAccessCount, 0)
   }
 
+  func testApplicationEventsUsingLifecycleNamesStillGetSessionAttributes() {
+    mockSessionManager.sessionId = "current-session-123"
+
+    for eventName in [SessionConstants.sessionStartEvent, SessionConstants.sessionEndEvent] {
+      let applicationRecord = ReadableLogRecord(
+        resource: Resource(attributes: [:]),
+        instrumentationScopeInfo: InstrumentationScopeInfo(),
+        timestamp: Date(),
+        observedTimestamp: Date(),
+        spanContext: nil,
+        severity: .info,
+        body: AttributeValue.string("application event"),
+        attributes: [:],
+        eventName: eventName
+      )
+      logRecordProcessor.onEmit(logRecord: applicationRecord)
+    }
+
+    XCTAssertEqual(mockSessionManager.attributionAccessCount, 2)
+    for record in mockNextProcessor.receivedLogRecords {
+      XCTAssertEqual(
+        record.attributes[SemanticConventions.Session.id.rawValue],
+        AttributeValue.string("current-session-123")
+      )
+    }
+  }
+
   func testDataIsPreserved() {
     let logRecordWithEventName = ReadableLogRecord(
       resource: Resource(attributes: [:]),

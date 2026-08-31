@@ -17,29 +17,11 @@ public class SessionManager: @unchecked Sendable {
   private enum EffectOperation {
     case save(Session)
     case transition(SessionTransition)
-
-    var requiresSynchronousCompletion: Bool {
-      switch self {
-      case .save:
-        return false
-      case .transition:
-        return true
-      }
-    }
-  }
-
-  private final class PendingEffect: @unchecked Sendable {
-    let operation: EffectOperation
-    let completion = DispatchSemaphore(value: 0)
-
-    init(operation: EffectOperation) {
-      self.operation = operation
-    }
   }
 
   private struct SessionAccess {
     let session: Session
-    let pendingEffect: PendingEffect?
+    let shouldDrainEffects: Bool
   }
 
   private let configuration: SessionConfig
@@ -47,9 +29,8 @@ public class SessionManager: @unchecked Sendable {
   private var persistedPreviousSession: Session?
   private let lock = NSLock()
   private let effectsLock = NSLock()
-  private var pendingEffects: [PendingEffect] = []
+  private var pendingEffects: [EffectOperation] = []
   private var isDrainingEffects = false
-  private let effectDrainerThreadKey = "io.opentelemetry.sessions.effect-drainer.\(UUID().uuidString)"
 
   /// Initializes the session manager and restores any previous session from disk
   /// - Parameter configuration: Session configuration settings
@@ -61,7 +42,7 @@ public class SessionManager: @unchecked Sendable {
   /// Gets the current session, creating or extending it as needed.
   ///
   /// This preserves the existing behavior where direct access records activity.
-  /// Automatic telemetry processors use a passive internal access path instead.
+  /// Automatic telemetry processors use the passive attribution access path instead.
   /// - Returns: The current active session
   @discardableResult
   public func getSession() -> Session {
@@ -80,10 +61,11 @@ public class SessionManager: @unchecked Sendable {
 
   /// Gets the session used to attribute telemetry without recording activity.
   ///
-  /// Span and log processors use this path so passive telemetry cannot keep a session alive.
+  /// Span, log, metric, and custom processors can use this path so passive telemetry cannot keep
+  /// a session alive. It creates or rotates an expired session before returning it.
   /// - Returns: The current active session
   @discardableResult
-  func getSessionForAttribution() -> Session {
+  public func getSessionForAttribution() -> Session {
     return accessSession(recordActivity: false)
   }
 
@@ -94,7 +76,7 @@ public class SessionManager: @unchecked Sendable {
   /// - Returns: The newly created session
   @discardableResult
   public func resetSession() -> Session {
-    let (nextSession, pendingEffect): (Session, PendingEffect) = lock.withLock {
+    let nextSession: Session = lock.withLock {
       let now = Date()
       let previousSession = session ?? persistedPreviousSession
       let previousSessionToEnd = previousSession.map { previous in
@@ -103,14 +85,14 @@ public class SessionManager: @unchecked Sendable {
       let nextSession = locked_startSession(previousId: previousSession?.id, at: now)
       session = nextSession
       persistedPreviousSession = nil
-      let effect = enqueueEffect(.transition(SessionTransition(
+      enqueueEffect(.transition(SessionTransition(
         session: nextSession,
         previousSessionToEnd: previousSessionToEnd
       )))
-      return (nextSession, effect)
+      return nextSession
     }
 
-    drainPendingEffects(through: pendingEffect)
+    drainPendingEffects()
     return nextSession
   }
 
@@ -177,29 +159,24 @@ public class SessionManager: @unchecked Sendable {
     if let session,
        !session.isExpired() {
       guard recordActivity else {
-        return SessionAccess(session: session, pendingEffect: nil)
+        return SessionAccess(session: session, shouldDrainEffects: false)
       }
 
       let refreshedSession = locked_refreshSession(session: session, at: now)
       self.session = refreshedSession
-      return SessionAccess(
-        session: refreshedSession,
-        pendingEffect: enqueueEffect(.save(refreshedSession))
-      )
+      enqueueEffect(.save(refreshedSession))
+      return SessionAccess(session: refreshedSession, shouldDrainEffects: true)
     }
 
     let previousSession = session ?? persistedPreviousSession
     let nextSession = locked_startSession(previousId: previousSession?.id, at: now)
     session = nextSession
     persistedPreviousSession = nil
-    let effect = enqueueEffect(.transition(SessionTransition(
+    enqueueEffect(.transition(SessionTransition(
       session: nextSession,
       previousSessionToEnd: previousSession
     )))
-    return SessionAccess(
-      session: nextSession,
-      pendingEffect: effect
-    )
+    return SessionAccess(session: nextSession, shouldDrainEffects: true)
   }
 
   /// Creates an ended snapshot whose end time is fixed to `date`.
@@ -220,44 +197,33 @@ public class SessionManager: @unchecked Sendable {
     let access = lock.withLock {
       locked_accessSession(recordActivity: recordActivity, at: Date())
     }
-    if let pendingEffect = access.pendingEffect {
-      drainPendingEffects(through: pendingEffect)
+    if access.shouldDrainEffects {
+      drainPendingEffects()
     }
     return access.session
   }
 
   /// Enqueues an effect while a state transition holds `lock`.
   /// Effect draining never acquires `lock` while holding `effectsLock`.
-  private func enqueueEffect(_ operation: EffectOperation) -> PendingEffect {
-    let effect = PendingEffect(operation: operation)
-    effectsLock.withLock { pendingEffects.append(effect) }
-    return effect
+  private func enqueueEffect(_ operation: EffectOperation) {
+    effectsLock.withLock { pendingEffects.append(operation) }
   }
 
   /// Drains ordered persistence and lifecycle effects without holding a lock around user code.
   ///
-  /// One caller claims the drain. Transition callers wait for persistence and publication, while
-  /// coalesced activity saves may return once queued. If an exporter calls back on the drainer
-  /// thread, the outer loop completes the nested effect after the callback returns.
-  private func drainPendingEffects(through pendingEffect: PendingEffect) {
+  /// One caller claims the drain. Other callers return after queuing their work so callbacks in
+  /// exporters and observers cannot create a cross-thread wait cycle. The drainer preserves state
+  /// order and completes effects that are enqueued while it is publishing.
+  private func drainPendingEffects() {
     let shouldDrain = effectsLock.withLock {
       guard !isDrainingEffects else { return false }
       isDrainingEffects = true
       return true
     }
-    guard shouldDrain else {
-      if pendingEffect.operation.requiresSynchronousCompletion,
-         Thread.current.threadDictionary[effectDrainerThreadKey] == nil {
-        pendingEffect.completion.wait()
-      }
-      return
-    }
-
-    Thread.current.threadDictionary[effectDrainerThreadKey] = true
-    defer { Thread.current.threadDictionary.removeObject(forKey: effectDrainerThreadKey) }
+    guard shouldDrain else { return }
 
     while true {
-      guard let effect = effectsLock.withLock({ () -> PendingEffect? in
+      guard let effect = effectsLock.withLock({ () -> EffectOperation? in
         guard !pendingEffects.isEmpty else {
           isDrainingEffects = false
           return nil
@@ -267,13 +233,12 @@ public class SessionManager: @unchecked Sendable {
         return
       }
 
-      switch effect.operation {
+      switch effect {
       case let .save(session):
         SessionStore.scheduleSave(session: session)
       case let .transition(transition):
         publish(transition)
       }
-      effect.completion.signal()
     }
   }
 

@@ -426,8 +426,44 @@ final class SessionManagerTests: XCTestCase {
     }
     wait(for: [activityFinished], timeout: 0.5)
 
+    let resetFinished = expectation(description: "Explicit reset remained available")
+    DispatchQueue.global().async {
+      manager.resetSession()
+      resetFinished.fulfill()
+    }
+    wait(for: [resetFinished], timeout: 0.5)
+
     blockingProcessor.allowCompletion.signal()
     wait(for: [transitionFinished], timeout: 1)
+    XCTAssertEqual(SessionStore.load()?.id, manager.peekSession()?.id)
+  }
+
+  func testTransitionDoesNotWaitForCrossThreadDrainerCallback() {
+    let manager = SessionManager()
+    let callbackQueue = DispatchQueue(label: "io.opentelemetry.sessions.callback")
+    let processor = QueueHoppingLogRecordProcessor(callbackQueue: callbackQueue)
+    let loggerProvider = LoggerProviderBuilder()
+      .with(processors: [processor])
+      .build()
+    OpenTelemetry.registerLoggerProvider(loggerProvider: loggerProvider)
+    SessionEventInstrumentation.install()
+
+    let resetFinished = expectation(description: "Reset returned from callback queue")
+    callbackQueue.async {
+      guard processor.didStart.wait(timeout: .now() + 1) == .success else { return }
+      manager.resetSession()
+      resetFinished.fulfill()
+    }
+
+    let transitionFinished = expectation(description: "Initial transition finished")
+    DispatchQueue.global().async {
+      manager.getSessionForAttribution()
+      transitionFinished.fulfill()
+    }
+
+    wait(for: [resetFinished, transitionFinished], timeout: 2)
+    XCTAssertEqual(processor.hopCount, 1)
+    XCTAssertEqual(SessionStore.load()?.id, manager.peekSession()?.id)
   }
 
   func testReentrantResetDrainsNestedTransition() {
@@ -578,6 +614,44 @@ private final class ReentrantResetLogRecordProcessor: LogRecordProcessor, @unche
     }
     if shouldReset {
       sessionManager.resetSession()
+    }
+  }
+
+  func shutdown(explicitTimeout: TimeInterval?) -> ExportResult {
+    return .success
+  }
+
+  func forceFlush(explicitTimeout: TimeInterval?) -> ExportResult {
+    return .success
+  }
+}
+
+private final class QueueHoppingLogRecordProcessor: LogRecordProcessor, @unchecked Sendable {
+  let didStart = DispatchSemaphore(value: 0)
+  private let callbackQueue: DispatchQueue
+  private let lock = NSLock()
+  private var shouldHop = true
+  private var _hopCount = 0
+
+  init(callbackQueue: DispatchQueue) {
+    self.callbackQueue = callbackQueue
+  }
+
+  var hopCount: Int {
+    return lock.withLock { _hopCount }
+  }
+
+  func onEmit(logRecord: ReadableLogRecord) {
+    let hop = lock.withLock {
+      guard shouldHop else { return false }
+      shouldHop = false
+      return true
+    }
+    guard hop else { return }
+
+    didStart.signal()
+    callbackQueue.sync {
+      lock.withLock { _hopCount += 1 }
     }
   }
 
