@@ -87,7 +87,7 @@ SessionManagerProvider.getInstance().recordActivity()
 SessionManagerProvider.getInstance().resetSession()
 
 // Apply the same persisted decision in trace, log, and metric integrations
-let shouldRecord = SessionManagerProvider.getInstance().samplingDecision().isSampled
+let shouldRecord = SessionManagerProvider.getInstance().samplingDecision()?.isSampled ?? false
 
 // Peek at session without extending it
 if let session = SessionManagerProvider.getInstance().peekSession() {
@@ -194,11 +194,13 @@ is persisted. Expiry and `resetSession()` each create one replacement session wi
 
 Call `samplingDecision()` from trace, log, and metric integrations so every signal applies the same
 persisted result. The session processors add attribution but do not drop telemetry themselves, so
-each signal pipeline remains responsible for enforcing the returned decision.
+each signal pipeline remains responsible for enforcing the returned decision. The method returns
+`nil` while another caller is making the decision, allowing telemetry emitted by a custom sampler
+to continue without waiting on itself.
 
 ```swift
-let decision = SessionManagerProvider.getInstance().samplingDecision()
-guard decision.isSampled else { return }
+guard let decision = SessionManagerProvider.getInstance().samplingDecision(),
+      decision.isSampled else { return }
 // Record the signal.
 ```
 

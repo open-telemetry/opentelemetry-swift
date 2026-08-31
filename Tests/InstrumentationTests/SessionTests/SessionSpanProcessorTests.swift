@@ -34,6 +34,15 @@ final class SessionSpanProcessorTests: XCTestCase {
     }
   }
 
+  func testOnStartSkipsAttributionWhileSessionCreationIsInProgress() {
+    mockSessionManager.returnsAttributionSession = false
+
+    spanProcessor.onStart(parentContext: nil, span: mockSpan)
+
+    XCTAssertEqual(mockSessionManager.attributionAccessCount, 1)
+    XCTAssertNil(mockSpan.capturedAttributes[SemanticConventions.Session.id.rawValue])
+  }
+
   func testOnStartDoesNotRefreshSessionActivity() {
     SessionStore.teardown()
     defer { SessionStore.teardown() }
@@ -131,14 +140,15 @@ class MockSessionManager: SessionManager, @unchecked Sendable {
   var previousSessionId: String?
   var startTime: Date = .init()
   var attributionAccessCount = 0
+  var returnsAttributionSession = true
 
   override func getSession() -> Session {
     return mockSession()
   }
 
-  override func getSessionForAttribution() -> Session {
+  override func getSessionForAttribution() -> Session? {
     attributionAccessCount += 1
-    return mockSession()
+    return returnsAttributionSession ? mockSession() : nil
   }
 
   private func mockSession() -> Session {

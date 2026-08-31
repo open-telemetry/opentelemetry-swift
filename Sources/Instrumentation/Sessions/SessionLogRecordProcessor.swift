@@ -33,9 +33,8 @@ public class SessionLogRecordProcessor: LogRecordProcessor {
     var enhancedRecord = logRecord
 
     // Only add session attributes if they don't already exist
-    if logRecord.attributes[SemanticConventions.Session.id.rawValue] == nil || logRecord.attributes[SemanticConventions.Session.previousId.rawValue] == nil {
-      let session = sessionManager.getSessionForAttribution()
-
+    if logRecord.attributes[SemanticConventions.Session.id.rawValue] == nil || logRecord.attributes[SemanticConventions.Session.previousId.rawValue] == nil,
+       let session = sessionManager.getSessionForAttribution() {
       // Add session.id if not already present
       if logRecord.attributes[SemanticConventions.Session.id.rawValue] == nil {
         enhancedRecord.setAttribute(key: SemanticConventions.Session.id.rawValue, value: session.id)

@@ -1,7 +1,22 @@
 import XCTest
+import OpenTelemetryApi
 @testable import Sessions
+@testable import OpenTelemetrySdk
 
 final class SessionSamplingTests: XCTestCase {
+  func testSamplingDecisionWireContract() {
+    XCTAssertEqual(PersistedSessionRecord.currentVersion, 2)
+    XCTAssertEqual(SessionSamplingDecision.sampled.rawValue, "sampled")
+    XCTAssertEqual(SessionSamplingDecision.notSampled.rawValue, "notSampled")
+    XCTAssertTrue(SessionSamplingDecision.sampled.isSampled)
+    XCTAssertFalse(SessionSamplingDecision.notSampled.isSampled)
+  }
+
+  func testBuiltInSamplersReturnTheirNamedDecision() {
+    XCTAssertEqual(AlwaysOnSessionSampler().samplingDecision(for: "session"), .sampled)
+    XCTAssertEqual(AlwaysOffSessionSampler().samplingDecision(for: "session"), .notSampled)
+  }
+
   func testNewSessionMakesOneDecisionSharedAcrossSignalAccess() throws {
     let sampler = TestSessionSampler(decisions: [.notSampled])
     let manager = try SessionManager(
@@ -10,9 +25,9 @@ final class SessionSamplingTests: XCTestCase {
     )
 
     let session = manager.getSession()
-    let traceDecision = manager.samplingDecision()
-    let logDecision = manager.samplingDecision()
-    let metricDecision = manager.samplingDecision()
+    let traceDecision = try XCTUnwrap(manager.samplingDecision())
+    let logDecision = try XCTUnwrap(manager.samplingDecision())
+    let metricDecision = try XCTUnwrap(manager.samplingDecision())
 
     XCTAssertEqual(session.samplingDecision, .notSampled)
     XCTAssertEqual(traceDecision, session.samplingDecision)
@@ -81,10 +96,10 @@ final class SessionSamplingTests: XCTestCase {
       configuration: SessionConfig(sampler: sampler),
       persistence: TestSessionPersistence()
     )
-    let session = manager.getSessionForAttribution()
+    let session = try XCTUnwrap(manager.getSessionForAttribution())
     Thread.sleep(forTimeInterval: 0.01)
 
-    let decision = manager.samplingDecision()
+    let decision = try XCTUnwrap(manager.samplingDecision())
 
     XCTAssertEqual(decision, .notSampled)
     XCTAssertEqual(manager.peekSession()?.expireTime, session.expireTime)
@@ -120,17 +135,7 @@ final class SessionSamplingTests: XCTestCase {
 
   func testVersionOneRecordGetsOneDecisionAndIsUpgraded() throws {
     let persistence = TestSessionPersistence()
-    let versionOneSession = VersionOneSession(
-      id: "version-one-session",
-      expireTime: Date(timeIntervalSinceNow: 1800),
-      previousId: "previous-session",
-      startTime: Date(timeIntervalSinceNow: -300),
-      sessionTimeout: 1800,
-      maxLifetime: 7200
-    )
-    try persistence.write(PropertyListEncoder().encode(
-      VersionOneRecord(version: 1, session: versionOneSession)
-    ))
+    XCTAssertTrue(persistence.write(Self.versionOneFixture))
     let sampler = TestSessionSampler(decisions: [.notSampled])
 
     let manager = try SessionManager(
@@ -140,7 +145,8 @@ final class SessionSamplingTests: XCTestCase {
     let restoredSession = try XCTUnwrap(manager.peekSession())
     let upgradedRecord = try decodeCurrentRecord(from: persistence)
 
-    XCTAssertEqual(restoredSession.id, versionOneSession.id)
+    XCTAssertEqual(restoredSession.id, "version-one-session")
+    XCTAssertEqual(restoredSession.previousId, "previous-session")
     XCTAssertEqual(restoredSession.samplingDecision, .notSampled)
     XCTAssertEqual(sampler.callCount, 1)
     XCTAssertEqual(upgradedRecord.version, PersistedSessionRecord.currentVersion)
@@ -153,6 +159,23 @@ final class SessionSamplingTests: XCTestCase {
     )
     XCTAssertEqual(secondManager.peekSession()?.samplingDecision, .notSampled)
     XCTAssertEqual(secondSampler.callCount, 0)
+  }
+
+  func testCurrentRecordFixtureRestoresWithoutResampling() throws {
+    let persistence = TestSessionPersistence()
+    XCTAssertTrue(persistence.write(Self.versionTwoFixture))
+    let sampler = TestSessionSampler(decisions: [.sampled])
+
+    let manager = try SessionManager(
+      configuration: SessionConfig(sampler: sampler),
+      persistence: persistence
+    )
+    let restoredSession = try XCTUnwrap(manager.peekSession())
+
+    XCTAssertEqual(restoredSession.id, "version-two-session")
+    XCTAssertEqual(restoredSession.previousId, "previous-session")
+    XCTAssertEqual(restoredSession.samplingDecision, .notSampled)
+    XCTAssertEqual(sampler.callCount, 0)
   }
 
   func testLegacyKeysGetOneDecisionAndAreUpgraded() throws {
@@ -224,8 +247,60 @@ final class SessionSamplingTests: XCTestCase {
     }
     wait(for: [peekFinished], timeout: 0.5)
 
+    let attributionFinished = expectation(description: "Passive attribution did not wait for sampling")
+    let resultLock = NSLock()
+    nonisolated(unsafe) var attributedSession: Session?
+    DispatchQueue.global().async {
+      let session = manager.getSessionForAttribution()
+      resultLock.withLock { attributedSession = session }
+      attributionFinished.fulfill()
+    }
+    wait(for: [attributionFinished], timeout: 0.5)
+    XCTAssertNil(resultLock.withLock { attributedSession })
+
     sampler.allowCompletion.signal()
     wait(for: [creationFinished], timeout: 1)
+  }
+
+  func testSamplerCanEmitLogDuringInitialCreation() throws {
+    let sampler = CallbackSessionSampler()
+    let manager = try SessionManager(
+      configuration: SessionConfig(sampler: sampler),
+      persistence: TestSessionPersistence()
+    )
+    let nextProcessor = MockLogRecordProcessor()
+    let processor = SessionLogRecordProcessor(nextProcessor: nextProcessor, sessionManager: manager)
+    sampler.onSample = { processor.onEmit(logRecord: Self.testLogRecord) }
+    defer { sampler.onSample = nil }
+
+    let session = manager.getSession()
+
+    XCTAssertEqual(nextProcessor.receivedLogRecords.count, 1)
+    XCTAssertNil(nextProcessor.receivedLogRecords[0].attributes[SemanticConventions.Session.id.rawValue])
+    processor.onEmit(logRecord: Self.testLogRecord)
+    XCTAssertEqual(
+      nextProcessor.receivedLogRecords[1].attributes[SemanticConventions.Session.id.rawValue],
+      AttributeValue.string(session.id)
+    )
+  }
+
+  func testSamplerCanEmitLogDuringExpiryRotation() throws {
+    let sampler = CallbackSessionSampler()
+    let manager = try SessionManager(
+      configuration: SessionConfig(sessionTimeout: 0, sampler: sampler),
+      persistence: TestSessionPersistence()
+    )
+    let firstSession = manager.getSession()
+    let nextProcessor = MockLogRecordProcessor()
+    let processor = SessionLogRecordProcessor(nextProcessor: nextProcessor, sessionManager: manager)
+    sampler.onSample = { processor.onEmit(logRecord: Self.testLogRecord) }
+    defer { sampler.onSample = nil }
+
+    let replacement = try XCTUnwrap(manager.getSessionForAttribution())
+
+    XCTAssertEqual(replacement.previousId, firstSession.id)
+    XCTAssertEqual(nextProcessor.receivedLogRecords.count, 1)
+    XCTAssertNil(nextProcessor.receivedLogRecords[0].attributes[SemanticConventions.Session.id.rawValue])
   }
 
   func testResetSamplerRunsOutsideSessionMutationLock() throws {
@@ -282,20 +357,50 @@ final class SessionSamplingTests: XCTestCase {
     let data = try XCTUnwrap(persistence.read())
     return try PropertyListDecoder().decode(PersistedSessionRecord.self, from: data)
   }
-}
 
-private struct VersionOneRecord: Codable {
-  let version: Int
-  let session: VersionOneSession
-}
+  private static let testLogRecord = ReadableLogRecord(
+    resource: Resource(attributes: [:]),
+    instrumentationScopeInfo: InstrumentationScopeInfo(),
+    timestamp: Date(),
+    observedTimestamp: Date(),
+    spanContext: nil,
+    severity: .info,
+    body: AttributeValue.string("sampler log"),
+    attributes: [:]
+  )
 
-private struct VersionOneSession: Codable {
-  let id: String
-  let expireTime: Date
-  let previousId: String?
-  let startTime: Date
-  let sessionTimeout: TimeInterval
-  let maxLifetime: TimeInterval?
+  private static let versionOneFixture = Data("""
+  <?xml version="1.0" encoding="UTF-8"?>
+  <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+  <plist version="1.0"><dict>
+    <key>version</key><integer>1</integer>
+    <key>session</key><dict>
+      <key>id</key><string>version-one-session</string>
+      <key>expireTime</key><date>2099-01-01T00:30:00Z</date>
+      <key>previousId</key><string>previous-session</string>
+      <key>startTime</key><date>2099-01-01T00:00:00Z</date>
+      <key>sessionTimeout</key><real>1800</real>
+      <key>maxLifetime</key><real>7200</real>
+    </dict>
+  </dict></plist>
+  """.utf8)
+
+  private static let versionTwoFixture = Data("""
+  <?xml version="1.0" encoding="UTF-8"?>
+  <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+  <plist version="1.0"><dict>
+    <key>version</key><integer>2</integer>
+    <key>session</key><dict>
+      <key>id</key><string>version-two-session</string>
+      <key>expireTime</key><date>2099-01-01T00:30:00Z</date>
+      <key>previousId</key><string>previous-session</string>
+      <key>startTime</key><date>2099-01-01T00:00:00Z</date>
+      <key>sessionTimeout</key><real>1800</real>
+      <key>maxLifetime</key><real>7200</real>
+      <key>samplingDecision</key><string>notSampled</string>
+    </dict>
+  </dict></plist>
+  """.utf8)
 }
 
 private final class BlockingSessionSampler: SessionSampler, @unchecked Sendable {

@@ -347,7 +347,8 @@ final class SessionStoreTests: XCTestCase {
         samplingDecision: "future-decision"
       )
     )
-    try persistence.write(PropertyListEncoder().encode(record))
+    let data = try PropertyListEncoder().encode(record)
+    XCTAssertTrue(persistence.write(data))
 
     XCTAssertNil(store.load())
     XCTAssertNil(persistence.read())

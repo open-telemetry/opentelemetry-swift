@@ -9,11 +9,13 @@ final class TestSessionPersistence: SessionPersistence, @unchecked Sendable {
     return lock.withLock { data }
   }
 
+  @discardableResult
   func write(_ data: Data) -> Bool {
     lock.withLock { self.data = data }
     return true
   }
 
+  @discardableResult
   func clear() -> Bool {
     lock.withLock { data = nil }
     return true
@@ -45,6 +47,7 @@ final class InspectingSessionPersistence: SessionPersistence, @unchecked Sendabl
     return lock.withLock { data }
   }
 
+  @discardableResult
   func write(_ data: Data) -> Bool {
     onWrite?()
     lock.withLock {
@@ -54,6 +57,7 @@ final class InspectingSessionPersistence: SessionPersistence, @unchecked Sendabl
     return true
   }
 
+  @discardableResult
   func clear() -> Bool {
     lock.withLock { data = nil }
     return true
@@ -78,6 +82,7 @@ final class ToggleSessionPersistence: SessionPersistence, @unchecked Sendable {
     return lock.withLock { data }
   }
 
+  @discardableResult
   func write(_ data: Data) -> Bool {
     return lock.withLock {
       guard writesAccepted else { return false }
@@ -86,6 +91,7 @@ final class ToggleSessionPersistence: SessionPersistence, @unchecked Sendable {
     }
   }
 
+  @discardableResult
   func clear() -> Bool {
     return lock.withLock {
       data = nil

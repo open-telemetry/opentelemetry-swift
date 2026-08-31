@@ -44,6 +44,16 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     }
   }
 
+  func testOnEmitContinuesWithoutAttributionWhileSessionCreationIsInProgress() {
+    mockSessionManager.returnsAttributionSession = false
+
+    logRecordProcessor.onEmit(logRecord: testLogRecord)
+
+    XCTAssertEqual(mockSessionManager.attributionAccessCount, 1)
+    XCTAssertEqual(mockNextProcessor.receivedLogRecords.count, 1)
+    XCTAssertNil(mockNextProcessor.receivedLogRecords[0].attributes[SemanticConventions.Session.id.rawValue])
+  }
+
   func testOnEmitDoesNotRefreshSessionActivity() {
     SessionStore.teardown()
     defer { SessionStore.teardown() }

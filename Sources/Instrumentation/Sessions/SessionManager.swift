@@ -70,7 +70,7 @@ public class SessionManager: @unchecked Sendable {
   /// - Returns: The current active session
   @discardableResult
   public func getSession() -> Session {
-    return accessSession(recordActivity: true)
+    return requiredSession(recordActivity: true)
   }
 
   /// Returns the persisted sampling decision for the active session.
@@ -78,8 +78,8 @@ public class SessionManager: @unchecked Sendable {
   /// Trace, log, and metric integrations can call this method to apply the same decision.
   /// Access may create a linked replacement if the previous session has expired, but it does
   /// not extend the inactivity deadline.
-  public func samplingDecision() -> SessionSamplingDecision {
-    return getSessionForAttribution().samplingDecision
+  public func samplingDecision() -> SessionSamplingDecision? {
+    return getSessionForAttribution()?.samplingDecision
   }
 
   /// Records meaningful user activity and extends the current session's inactivity deadline.
@@ -89,16 +89,17 @@ public class SessionManager: @unchecked Sendable {
   /// - Returns: The active session after recording activity
   @discardableResult
   public func recordActivity() -> Session {
-    return accessSession(recordActivity: true)
+    return requiredSession(recordActivity: true)
   }
 
   /// Gets the session used to attribute telemetry without recording activity.
   ///
   /// Span, log, metric, and custom processors can use this path so passive telemetry cannot keep
-  /// a session alive. It creates or rotates an expired session before returning it.
-  /// - Returns: The current active session
+  /// a session alive. It creates or rotates an expired session before returning it. If another
+  /// caller is currently sampling a replacement, this returns `nil` instead of blocking telemetry.
+  /// - Returns: The current active session, or `nil` while session creation is in progress
   @discardableResult
-  public func getSessionForAttribution() -> Session {
+  public func getSessionForAttribution() -> Session? {
     return accessSession(recordActivity: false)
   }
 
@@ -109,25 +110,29 @@ public class SessionManager: @unchecked Sendable {
   /// - Returns: The newly created session
   @discardableResult
   public func resetSession() -> Session {
-    let candidate = makeSessionCandidate()
-    let access: SessionAccess = sessionMutationLock.withLock {
-      let now = Date()
-      let previousSession = lock.withLock { session ?? persistedPreviousSession }
-      let previousSessionToEnd = previousSession.map { previous in
-        previous.isExpired() ? previous : endedSession(previous, at: now)
+    acquireSessionCreation()
+    let access: SessionAccess = {
+      defer { releaseSessionCreation() }
+      let candidate = makeSessionCandidate()
+      return sessionMutationLock.withLock {
+        let now = Date()
+        let previousSession = lock.withLock { session ?? persistedPreviousSession }
+        let previousSessionToEnd = previousSession.map { previous in
+          previous.isExpired() ? previous : endedSession(previous, at: now)
+        }
+        let nextSession = startSession(candidate: candidate, previousId: previousSession?.id, at: now)
+        sessionStore.saveImmediately(session: nextSession)
+        lock.withLock {
+          session = nextSession
+          persistedPreviousSession = nil
+        }
+        let shouldDrainEffects = enqueueTransition(SessionTransition(
+          session: nextSession,
+          previousSessionToEnd: previousSessionToEnd
+        ))
+        return SessionAccess(session: nextSession, shouldDrainEffects: shouldDrainEffects)
       }
-      let nextSession = startSession(candidate: candidate, previousId: previousSession?.id, at: now)
-      sessionStore.saveImmediately(session: nextSession)
-      lock.withLock {
-        session = nextSession
-        persistedPreviousSession = nil
-      }
-      let shouldDrainEffects = enqueueTransition(SessionTransition(
-        session: nextSession,
-        previousSessionToEnd: previousSessionToEnd
-      ))
-      return SessionAccess(session: nextSession, shouldDrainEffects: shouldDrainEffects)
-    }
+    }()
 
     if access.shouldDrainEffects {
       drainClaimedTransition()
@@ -215,69 +220,62 @@ public class SessionManager: @unchecked Sendable {
     )
   }
 
-  /// Retrieves a session and queues any persistence or lifecycle work in state order.
-  private func accessSession(recordActivity: Bool) -> Session {
-    if !recordActivity,
-       let currentSession = currentActiveSession() {
-      return currentSession
+  private func requiredSession(recordActivity: Bool) -> Session {
+    guard let session = accessSession(recordActivity: recordActivity) else {
+      preconditionFailure("Blocking session access must produce a session")
     }
+    return session
+  }
 
-    if let activeAccess = sessionMutationLock.withLock({
-      accessActiveSession(recordActivity: recordActivity, at: Date())
+  /// Retrieves a session and queues any persistence or lifecycle work in state order.
+  private func accessSession(recordActivity: Bool) -> Session? {
+    if !recordActivity {
+      if let currentSession = currentActiveSession() {
+        return currentSession
+      }
+      guard tryAcquireSessionCreation() else { return nil }
+    } else if let activeAccess = sessionMutationLock.withLock({
+      accessActiveSession(recordActivity: true, at: Date())
     }) {
       return activeAccess.session
+    } else {
+      acquireSessionCreation()
     }
+    let access: SessionAccess = {
+      defer { releaseSessionCreation() }
 
-    while true {
-      guard claimSessionCreation() else {
-        if !recordActivity,
-           let currentSession = currentActiveSession() {
-          return currentSession
-        }
-        if let activeAccess = sessionMutationLock.withLock({
-          accessActiveSession(recordActivity: recordActivity, at: Date())
-        }) {
-          return activeAccess.session
-        }
-        continue
+      if let activeAccess = sessionMutationLock.withLock({
+        accessActiveSession(recordActivity: recordActivity, at: Date())
+      }) {
+        return activeAccess
       }
 
-      let access: SessionAccess = {
-        defer { releaseSessionCreation() }
-
-        if let activeAccess = sessionMutationLock.withLock({
-          accessActiveSession(recordActivity: recordActivity, at: Date())
-        }) {
+      let candidate = makeSessionCandidate()
+      return sessionMutationLock.withLock {
+        let now = Date()
+        if let activeAccess = accessActiveSession(recordActivity: recordActivity, at: now) {
           return activeAccess
         }
 
-        let candidate = makeSessionCandidate()
-        return sessionMutationLock.withLock {
-          let now = Date()
-          if let activeAccess = accessActiveSession(recordActivity: recordActivity, at: now) {
-            return activeAccess
-          }
-
-          let previousSession = lock.withLock { session ?? persistedPreviousSession }
-          let nextSession = startSession(candidate: candidate, previousId: previousSession?.id, at: now)
-          sessionStore.saveImmediately(session: nextSession)
-          lock.withLock {
-            session = nextSession
-            persistedPreviousSession = nil
-          }
-          let shouldDrainEffects = enqueueTransition(SessionTransition(
-            session: nextSession,
-            previousSessionToEnd: previousSession
-          ))
-          return SessionAccess(session: nextSession, shouldDrainEffects: shouldDrainEffects)
+        let previousSession = lock.withLock { session ?? persistedPreviousSession }
+        let nextSession = startSession(candidate: candidate, previousId: previousSession?.id, at: now)
+        sessionStore.saveImmediately(session: nextSession)
+        lock.withLock {
+          session = nextSession
+          persistedPreviousSession = nil
         }
-      }()
-
-      if access.shouldDrainEffects {
-        drainClaimedTransition()
+        let shouldDrainEffects = enqueueTransition(SessionTransition(
+          session: nextSession,
+          previousSessionToEnd: previousSession
+        ))
+        return SessionAccess(session: nextSession, shouldDrainEffects: shouldDrainEffects)
       }
-      return access.session
+    }()
+
+    if access.shouldDrainEffects {
+      drainClaimedTransition()
     }
+    return access.session
   }
 
   /// Returns the active session, optionally recording activity. Call while holding
@@ -308,17 +306,21 @@ public class SessionManager: @unchecked Sendable {
     }
   }
 
-  /// Claims responsibility for creating a session. Waiters retry after the creator publishes it.
-  private func claimSessionCreation() -> Bool {
+  /// Waits for any current creator, then claims responsibility for the next session decision.
+  private func acquireSessionCreation() {
+    sessionCreationCondition.lock()
+    while isCreatingSession {
+      sessionCreationCondition.wait()
+    }
+    isCreatingSession = true
+    sessionCreationCondition.unlock()
+  }
+
+  /// Claims session creation only when it can proceed without blocking passive telemetry.
+  private func tryAcquireSessionCreation() -> Bool {
     sessionCreationCondition.lock()
     defer { sessionCreationCondition.unlock() }
-
-    guard !isCreatingSession else {
-      repeat {
-        sessionCreationCondition.wait()
-      } while isCreatingSession
-      return false
-    }
+    guard !isCreatingSession else { return false }
     isCreatingSession = true
     return true
   }

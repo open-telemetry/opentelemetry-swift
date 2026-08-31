@@ -47,9 +47,9 @@ final class SessionManagerTests: XCTestCase {
     XCTAssertGreaterThan(t2, t1)
   }
 
-  func testAttributionDoesNotRecordActivity() {
-    let t1 = sessionManager.getSessionForAttribution().expireTime
-    let t2 = sessionManager.getSessionForAttribution().expireTime
+  func testAttributionDoesNotRecordActivity() throws {
+    let t1 = try XCTUnwrap(sessionManager.getSessionForAttribution()).expireTime
+    let t2 = try XCTUnwrap(sessionManager.getSessionForAttribution()).expireTime
     XCTAssertEqual(t2, t1)
   }
 
@@ -162,9 +162,9 @@ final class SessionManagerTests: XCTestCase {
     XCTAssertEqual(manager.peekSession()?.id, expectedPreviousId)
   }
 
-  func testResetSessionKeepsAnExpiredSessionEndTime() {
+  func testResetSessionKeepsAnExpiredSessionEndTime() throws {
     sessionManager = SessionManager(configuration: SessionConfig(sessionTimeout: 0))
-    let expiredSession = sessionManager.getSessionForAttribution()
+    let expiredSession = try XCTUnwrap(sessionManager.getSessionForAttribution())
     let expiredEndTime = expiredSession.endTime
     SessionEventInstrumentation.queue = []
 
@@ -383,7 +383,7 @@ final class SessionManagerTests: XCTestCase {
     XCTAssertNotNil(session.id)
   }
 
-  func testAppliedSessionEventPipelineDoesNotReenterAttribution() {
+  func testAppliedSessionEventPipelineDoesNotReenterAttribution() throws {
     let manager = CountingSessionManager()
     let exporter = InMemoryLogRecordExporter()
     let processor = SessionLogRecordProcessor(
@@ -396,7 +396,7 @@ final class SessionManagerTests: XCTestCase {
     OpenTelemetry.registerLoggerProvider(loggerProvider: loggerProvider)
     SessionEventInstrumentation.install()
 
-    let session = manager.getSessionForAttribution()
+    let session = try XCTUnwrap(manager.getSessionForAttribution())
 
     let records = exporter.getFinishedLogRecords()
     XCTAssertEqual(manager.attributionAccessCount, 1)
@@ -655,7 +655,7 @@ private final class CountingSessionManager: SessionManager, @unchecked Sendable 
     return countLock.withLock { _attributionAccessCount }
   }
 
-  override func getSessionForAttribution() -> Session {
+  override func getSessionForAttribution() -> Session? {
     countLock.withLock { _attributionAccessCount += 1 }
     return super.getSessionForAttribution()
   }
