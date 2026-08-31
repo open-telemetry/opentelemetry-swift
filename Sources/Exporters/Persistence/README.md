@@ -22,9 +22,15 @@ let persistenceMetricExporter = PersistenceMetricExporterDecorator(
 
 An example of decorating a `SpanExporter`:
 
+When the decorated exporter is an OTLP HTTP exporter, set `requeueOnFailure: false` so
+Persistence owns disk retry and the HTTP exporter does not also hold a copy in its
+in-memory pending queue (which would duplicate spans on the next export):
+
 ```swift
-let spanExporter = ... // create some SpanExporter
+let otlpExporter = OtlpHttpTraceExporter(
+  config: OtlpConfiguration(),
+  requeueOnFailure: false)
 let persistenceTraceExporter = PersistenceSpanExporterDecorator(
-  spanExporter: spanExporter,
+  spanExporter: otlpExporter,
   storageURL: tracesSubdirectoryURL)
 ```

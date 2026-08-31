@@ -42,12 +42,16 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter, @unch
                 AggregationTemporality.alwaysCumulative(),
               defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector.instance,
               httpClient: HTTPClient = BaseHTTPClient(),
-              envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+              envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
+              requeueOnFailure: Bool = true) {
     self.aggregationTemporalitySelector = aggregationTemporalitySelector
     self.defaultAggregationSelector = defaultAggregationSelector
 
-    super.init(endpoint: endpoint, config: config, httpClient: httpClient,
-               envVarHeaders: envVarHeaders)
+    super.init(endpoint: endpoint,
+               config: config,
+               httpClient: httpClient,
+               envVarHeaders: envVarHeaders,
+               requeueOnFailure: requeueOnFailure)
   }
 
   /// A `convenience` constructor to provide support for exporter metric using`StableMeterProvider` type
@@ -59,6 +63,7 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter, @unch
   ///    - defaultAggregationSelector: default aggregator
   ///    - httpClient: Custom HTTPClient implementation
   ///    - envVarHeaders: Extra header key-values
+  ///    - requeueOnFailure: Re-append failed batches to the in-memory pending queue
   public convenience init(endpoint: URL,
                           config: OtlpConfiguration = OtlpConfiguration(),
                           meterProvider: any MeterProvider,
@@ -67,13 +72,15 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter, @unch
                           defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector
                             .instance,
                           httpClient: HTTPClient = BaseHTTPClient(),
-                          envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+                          envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
+                          requeueOnFailure: Bool = true) {
     self.init(endpoint: endpoint,
               config: config,
               aggregationTemporalitySelector: aggregationTemporalitySelector,
               defaultAggregationSelector: defaultAggregationSelector,
               httpClient: httpClient,
-              envVarHeaders: envVarHeaders)
+              envVarHeaders: envVarHeaders,
+              requeueOnFailure: requeueOnFailure)
     exporterMetrics = ExporterMetrics(type: "metric",
                                       meterProvider: meterProvider,
                                       exporterName: "otlp",
@@ -105,8 +112,10 @@ public class OtlpHttpMetricExporter: OtlpHttpExporterBase, MetricExporter, @unch
         self?.exporterMetrics?.addSuccess(value: sendingMetrics.count)
       case let .failure(error):
         self?.exporterMetrics?.addFailed(value: sendingMetrics.count)
-        self?.exporterLock.withLockVoid {
-          self?.pendingMetrics.append(contentsOf: sendingMetrics)
+        if self?.requeueOnFailure == true {
+          self?.exporterLock.withLockVoid {
+            self?.pendingMetrics.append(contentsOf: sendingMetrics)
+          }
         }
         OpenTelemetry.instance.feedbackHandler?("\(error)")
       }
