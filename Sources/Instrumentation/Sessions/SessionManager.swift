@@ -14,11 +14,6 @@ public class SessionManager: @unchecked Sendable {
     let previousSessionToEnd: Session?
   }
 
-  private enum EffectOperation {
-    case save(Session)
-    case transition(SessionTransition)
-  }
-
   private struct SessionAccess {
     let session: Session
     let shouldDrainEffects: Bool
@@ -30,7 +25,8 @@ public class SessionManager: @unchecked Sendable {
   private let sessionStore: SessionStore
   private let lock = NSLock()
   private let effectsLock = NSLock()
-  private var pendingEffects: [EffectOperation] = []
+  private let effectDrainQueue = DispatchQueue(label: "io.opentelemetry.sessions.effects")
+  private var pendingTransitions: [SessionTransition] = []
   private var isDrainingEffects = false
 
   /// Initializes the session manager and restores any previous session from disk
@@ -96,7 +92,7 @@ public class SessionManager: @unchecked Sendable {
   /// - Returns: The newly created session
   @discardableResult
   public func resetSession() -> Session {
-    let (nextSession, shouldDrainEffects): (Session, Bool) = lock.withLock {
+    let access: SessionAccess = lock.withLock {
       let now = Date()
       let previousSession = session ?? persistedPreviousSession
       let previousSessionToEnd = previousSession.map { previous in
@@ -105,17 +101,18 @@ public class SessionManager: @unchecked Sendable {
       let nextSession = locked_startSession(previousId: previousSession?.id, at: now)
       session = nextSession
       persistedPreviousSession = nil
-      let shouldDrainEffects = enqueueEffect(.transition(SessionTransition(
+      sessionStore.saveImmediately(session: nextSession)
+      let shouldDrainEffects = enqueueTransition(SessionTransition(
         session: nextSession,
         previousSessionToEnd: previousSessionToEnd
-      )))
-      return (nextSession, shouldDrainEffects)
+      ))
+      return SessionAccess(session: nextSession, shouldDrainEffects: shouldDrainEffects)
     }
 
-    if shouldDrainEffects {
-      drainPendingEffects()
+    if access.shouldDrainEffects {
+      drainClaimedTransition()
     }
-    return nextSession
+    return access.session
   }
 
   /// Gets the current session without extending its inactivity deadline
@@ -186,18 +183,19 @@ public class SessionManager: @unchecked Sendable {
 
       let refreshedSession = locked_refreshSession(session: session, at: now)
       self.session = refreshedSession
-      let shouldDrainEffects = enqueueEffect(.save(refreshedSession))
-      return SessionAccess(session: refreshedSession, shouldDrainEffects: shouldDrainEffects)
+      sessionStore.scheduleSave(session: refreshedSession)
+      return SessionAccess(session: refreshedSession, shouldDrainEffects: false)
     }
 
     let previousSession = session ?? persistedPreviousSession
     let nextSession = locked_startSession(previousId: previousSession?.id, at: now)
     session = nextSession
     persistedPreviousSession = nil
-    let shouldDrainEffects = enqueueEffect(.transition(SessionTransition(
+    sessionStore.saveImmediately(session: nextSession)
+    let shouldDrainEffects = enqueueTransition(SessionTransition(
       session: nextSession,
       previousSessionToEnd: previousSession
-    )))
+    ))
     return SessionAccess(session: nextSession, shouldDrainEffects: shouldDrainEffects)
   }
 
@@ -220,51 +218,60 @@ public class SessionManager: @unchecked Sendable {
       locked_accessSession(recordActivity: recordActivity, at: Date())
     }
     if access.shouldDrainEffects {
-      drainPendingEffects()
+      drainClaimedTransition()
     }
     return access.session
   }
 
-  /// Enqueues an effect while a state transition holds `lock`.
-  /// Effect draining never acquires `lock` while holding `effectsLock`.
-  private func enqueueEffect(_ operation: EffectOperation) -> Bool {
+  /// Enqueues a transition and claims its drain while a state transition holds `lock`.
+  /// Transition draining never acquires `lock` while holding `effectsLock`.
+  private func enqueueTransition(_ transition: SessionTransition) -> Bool {
     return effectsLock.withLock {
-      pendingEffects.append(operation)
+      pendingTransitions.append(transition)
       guard !isDrainingEffects else { return false }
       isDrainingEffects = true
       return true
     }
   }
 
-  /// Drains ordered persistence and lifecycle effects without holding a lock around user code.
+  /// Publishes the transition claimed by the caller without holding a lock around user code.
   ///
-  /// One caller claims the drain. Other callers return after queuing their work so callbacks in
-  /// exporters and observers cannot create a cross-thread wait cycle. The drainer preserves state
-  /// order and completes effects that are enqueued while it is publishing.
-  private func drainPendingEffects() {
-    while true {
-      guard let effect = effectsLock.withLock({ () -> EffectOperation? in
-        guard !pendingEffects.isEmpty else {
-          isDrainingEffects = false
-          return nil
-        }
-        return pendingEffects.removeFirst()
-      }) else {
-        return
-      }
+  /// Follow-on transitions queued by concurrent or reentrant callers are handed to a private
+  /// serial queue so one caller cannot absorb unrelated exporter or observer work.
+  private func drainClaimedTransition() {
+    guard let transition = takeNextTransitionOrReleaseClaim() else { return }
+    publish(transition)
 
-      switch effect {
-      case let .save(session):
-        sessionStore.scheduleSave(session: session)
-      case let .transition(transition):
-        publish(transition)
-      }
+    let shouldContinue = effectsLock.withLock {
+      guard pendingTransitions.isEmpty else { return true }
+      isDrainingEffects = false
+      return false
+    }
+    if shouldContinue {
+      effectDrainQueue.async { [self] in drainRemainingTransitions() }
     }
   }
 
-  /// Persists and publishes one session transition.
+  /// Drains transitions after caller-side work has been bounded to one transition.
+  private func drainRemainingTransitions() {
+    while let transition = takeNextTransitionOrReleaseClaim() {
+      publish(transition)
+    }
+  }
+
+  /// Returns the next transition or releases the drain claim atomically with the empty check.
+  private func takeNextTransitionOrReleaseClaim() -> SessionTransition? {
+    return effectsLock.withLock {
+      guard !pendingTransitions.isEmpty else {
+        isDrainingEffects = false
+        return nil
+      }
+      return pendingTransitions.removeFirst()
+    }
+  }
+
+  /// Publishes one already-persisted session transition.
   private func publish(_ transition: SessionTransition) {
-    sessionStore.saveImmediately(session: transition.session)
     if let previousSessionToEnd = transition.previousSessionToEnd {
       SessionEventInstrumentation.addSession(session: previousSessionToEnd, eventType: .end)
     }
@@ -272,7 +279,7 @@ public class SessionManager: @unchecked Sendable {
     NotificationCenter.default.post(name: SessionEventNotification, object: transition.session)
   }
 
-  /// Loads a saved session from UserDefaults according to the configured restore behavior
+  /// Loads a saved session from the configured persistence backend.
   private func loadPersistedSessionFromDisk() {
     let loadedSession = sessionStore.load()
     lock.withLock {

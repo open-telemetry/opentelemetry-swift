@@ -125,10 +125,21 @@ final class SessionManagerTests: XCTestCase {
     let originalSession = sessionManager.getSession()
     let manager = try XCTUnwrap(sessionManager)
     SessionEventInstrumentation.queue = []
+    let transitionsPublished = expectation(description: "Concurrent transitions published")
+    transitionsPublished.expectedFulfillmentCount = 10
+    let observer = NotificationCenter.default.addObserver(
+      forName: SessionEventNotification,
+      object: nil,
+      queue: nil
+    ) { _ in
+      transitionsPublished.fulfill()
+    }
+    defer { NotificationCenter.default.removeObserver(observer) }
 
     DispatchQueue.concurrentPerform(iterations: 10) { _ in
       manager.resetSession()
     }
+    wait(for: [transitionsPublished], timeout: 2)
 
     let events = SessionEventInstrumentation.queue
     XCTAssertEqual(events.count, 20)
@@ -427,21 +438,60 @@ final class SessionManagerTests: XCTestCase {
     wait(for: [activityFinished], timeout: 0.5)
 
     let resetFinished = expectation(description: "Explicit reset remained available")
+    let resetLock = NSLock()
+    nonisolated(unsafe) var resetSession: Session?
     DispatchQueue.global().async {
-      manager.resetSession()
+      let replacement = manager.resetSession()
+      resetLock.withLock { resetSession = replacement }
       resetFinished.fulfill()
     }
     wait(for: [resetFinished], timeout: 0.5)
+    let replacement = resetLock.withLock { resetSession }
+    XCTAssertEqual(SessionStore.load()?.id, replacement?.id)
+    XCTAssertEqual(SessionStore.load()?.id, manager.peekSession()?.id)
 
     blockingProcessor.allowCompletion.signal()
     wait(for: [transitionFinished], timeout: 1)
     XCTAssertEqual(SessionStore.load()?.id, manager.peekSession()?.id)
   }
 
+  func testInjectedPersistenceContainsResetBeforeReturnWhileEventsAreBlocked() throws {
+    let persistence = TestSessionPersistence()
+    let manager = try SessionManager(persistence: persistence)
+    let blockingProcessor = BlockingLogRecordProcessor()
+    let loggerProvider = LoggerProviderBuilder()
+      .with(processors: [blockingProcessor])
+      .build()
+    OpenTelemetry.registerLoggerProvider(loggerProvider: loggerProvider)
+    SessionEventInstrumentation.install()
+
+    let initialTransitionFinished = expectation(description: "Initial transition finished")
+    DispatchQueue.global().async {
+      manager.getSessionForAttribution()
+      initialTransitionFinished.fulfill()
+    }
+    XCTAssertEqual(blockingProcessor.didStart.wait(timeout: .now() + 1), .success)
+
+    let replacement = manager.resetSession()
+    let persistedDataBeforeUnblock = persistence.read()
+
+    blockingProcessor.allowCompletion.signal()
+    wait(for: [initialTransitionFinished], timeout: 1)
+    let data = try XCTUnwrap(persistedDataBeforeUnblock)
+    let record = try PropertyListDecoder().decode(PersistedSessionRecord.self, from: data)
+    XCTAssertEqual(record.session.id, replacement.id)
+    XCTAssertEqual(manager.peekSession()?.id, replacement.id)
+  }
+
   func testTransitionDoesNotWaitForCrossThreadDrainerCallback() {
     let manager = SessionManager()
     let callbackQueue = DispatchQueue(label: "io.opentelemetry.sessions.callback")
-    let processor = QueueHoppingLogRecordProcessor(callbackQueue: callbackQueue)
+    let eventsPublished = expectation(description: "Initial and reset events published")
+    eventsPublished.expectedFulfillmentCount = 3
+    let processor = QueueHoppingLogRecordProcessor(
+      callbackQueue: callbackQueue,
+      eventExpectation: eventsPublished
+    )
     let loggerProvider = LoggerProviderBuilder()
       .with(processors: [processor])
       .build()
@@ -461,14 +511,48 @@ final class SessionManagerTests: XCTestCase {
       transitionFinished.fulfill()
     }
 
-    wait(for: [resetFinished, transitionFinished], timeout: 2)
+    wait(for: [resetFinished, transitionFinished, eventsPublished], timeout: 2)
     XCTAssertEqual(processor.hopCount, 1)
+    XCTAssertEqual(SessionStore.load()?.id, manager.peekSession()?.id)
+  }
+
+  func testCallerDoesNotDrainTransitionsQueuedDuringCallback() {
+    let manager = SessionManager()
+    let callerQueue = DispatchQueue(label: "io.opentelemetry.sessions.caller")
+    let eventsPublished = expectation(description: "Contended transitions published")
+    eventsPublished.expectedFulfillmentCount = 11
+    let processor = ContendedTransitionLogRecordProcessor(
+      sessionManager: manager,
+      callerQueue: callerQueue,
+      eventExpectation: eventsPublished,
+      resetCount: 5
+    )
+    let loggerProvider = LoggerProviderBuilder()
+      .with(processors: [processor])
+      .build()
+    OpenTelemetry.registerLoggerProvider(loggerProvider: loggerProvider)
+    SessionEventInstrumentation.install()
+
+    let callerFinished = expectation(description: "Initial caller returned")
+    callerQueue.async {
+      manager.getSessionForAttribution()
+      callerFinished.fulfill()
+    }
+
+    wait(for: [callerFinished, eventsPublished], timeout: 2)
+    XCTAssertTrue(processor.producerFinishedSuccessfully)
+    XCTAssertEqual(processor.callerQueueEventCount, 1)
     XCTAssertEqual(SessionStore.load()?.id, manager.peekSession()?.id)
   }
 
   func testReentrantResetDrainsNestedTransition() {
     let manager = SessionManager()
-    let processor = ReentrantResetLogRecordProcessor(sessionManager: manager)
+    let eventsPublished = expectation(description: "Nested transition events published")
+    eventsPublished.expectedFulfillmentCount = 3
+    let processor = ReentrantResetLogRecordProcessor(
+      sessionManager: manager,
+      eventExpectation: eventsPublished
+    )
     let loggerProvider = LoggerProviderBuilder()
       .with(processors: [processor])
       .build()
@@ -480,7 +564,7 @@ final class SessionManagerTests: XCTestCase {
       manager.getSessionForAttribution()
       transitionFinished.fulfill()
     }
-    wait(for: [transitionFinished], timeout: 1)
+    wait(for: [transitionFinished, eventsPublished], timeout: 1)
 
     XCTAssertEqual(processor.eventNames, [
       SessionConstants.sessionStartEvent,
@@ -589,12 +673,14 @@ private final class BlockingLogRecordProcessor: LogRecordProcessor, @unchecked S
 
 private final class ReentrantResetLogRecordProcessor: LogRecordProcessor, @unchecked Sendable {
   private let sessionManager: SessionManager
+  private let eventExpectation: XCTestExpectation
   private let lock = NSLock()
   private var didReset = false
   private var _eventNames: [String] = []
 
-  init(sessionManager: SessionManager) {
+  init(sessionManager: SessionManager, eventExpectation: XCTestExpectation) {
     self.sessionManager = sessionManager
+    self.eventExpectation = eventExpectation
   }
 
   var eventNames: [String] {
@@ -602,6 +688,7 @@ private final class ReentrantResetLogRecordProcessor: LogRecordProcessor, @unche
   }
 
   func onEmit(logRecord: ReadableLogRecord) {
+    eventExpectation.fulfill()
     let shouldReset = lock.withLock {
       if let eventName = logRecord.eventName {
         _eventNames.append(eventName)
@@ -629,12 +716,14 @@ private final class ReentrantResetLogRecordProcessor: LogRecordProcessor, @unche
 private final class QueueHoppingLogRecordProcessor: LogRecordProcessor, @unchecked Sendable {
   let didStart = DispatchSemaphore(value: 0)
   private let callbackQueue: DispatchQueue
+  private let eventExpectation: XCTestExpectation
   private let lock = NSLock()
   private var shouldHop = true
   private var _hopCount = 0
 
-  init(callbackQueue: DispatchQueue) {
+  init(callbackQueue: DispatchQueue, eventExpectation: XCTestExpectation) {
     self.callbackQueue = callbackQueue
+    self.eventExpectation = eventExpectation
   }
 
   var hopCount: Int {
@@ -642,6 +731,7 @@ private final class QueueHoppingLogRecordProcessor: LogRecordProcessor, @uncheck
   }
 
   func onEmit(logRecord: ReadableLogRecord) {
+    eventExpectation.fulfill()
     let hop = lock.withLock {
       guard shouldHop else { return false }
       shouldHop = false
@@ -653,6 +743,66 @@ private final class QueueHoppingLogRecordProcessor: LogRecordProcessor, @uncheck
     callbackQueue.sync {
       lock.withLock { _hopCount += 1 }
     }
+  }
+
+  func shutdown(explicitTimeout: TimeInterval?) -> ExportResult {
+    return .success
+  }
+
+  func forceFlush(explicitTimeout: TimeInterval?) -> ExportResult {
+    return .success
+  }
+}
+
+private final class ContendedTransitionLogRecordProcessor: LogRecordProcessor, @unchecked Sendable {
+  private let sessionManager: SessionManager
+  private let callerQueueKey = DispatchSpecificKey<Void>()
+  private let eventExpectation: XCTestExpectation
+  private let resetCount: Int
+  private let producerFinished = DispatchSemaphore(value: 0)
+  private let lock = NSLock()
+  private var startedProducer = false
+  private var _producerFinishedSuccessfully = false
+  private var _callerQueueEventCount = 0
+
+  init(sessionManager: SessionManager,
+       callerQueue: DispatchQueue,
+       eventExpectation: XCTestExpectation,
+       resetCount: Int) {
+    self.sessionManager = sessionManager
+    self.eventExpectation = eventExpectation
+    self.resetCount = resetCount
+    callerQueue.setSpecific(key: callerQueueKey, value: ())
+  }
+
+  var producerFinishedSuccessfully: Bool {
+    return lock.withLock { _producerFinishedSuccessfully }
+  }
+
+  var callerQueueEventCount: Int {
+    return lock.withLock { _callerQueueEventCount }
+  }
+
+  func onEmit(logRecord: ReadableLogRecord) {
+    eventExpectation.fulfill()
+    let shouldProduce = lock.withLock {
+      if DispatchQueue.getSpecific(key: callerQueueKey) != nil {
+        _callerQueueEventCount += 1
+      }
+      guard !startedProducer else { return false }
+      startedProducer = true
+      return true
+    }
+    guard shouldProduce else { return }
+
+    DispatchQueue.global().async { [self] in
+      for _ in 0 ..< resetCount {
+        sessionManager.resetSession()
+      }
+      producerFinished.signal()
+    }
+    let finished = producerFinished.wait(timeout: .now() + 1) == .success
+    lock.withLock { _producerFinishedSuccessfully = finished }
   }
 
   func shutdown(explicitTimeout: TimeInterval?) -> ExportResult {
