@@ -182,16 +182,16 @@ final class SessionStore: @unchecked Sendable {
 
     if let timerToSchedule {
       if Thread.isMainThread {
-        RunLoop.main.add(timerToSchedule, forMode: .common)
+        scheduleTimerIfCurrent(timerToSchedule)
       } else {
         nonisolated(unsafe) let timerRef = timerToSchedule
         weak let weakSelf = self
         DispatchQueue.main.async {
-          guard weakSelf != nil else {
+          guard let weakSelf else {
             timerRef.invalidate()
             return
           }
-          RunLoop.main.add(timerRef, forMode: .common)
+          weakSelf.scheduleTimerIfCurrent(timerRef)
         }
       }
     }
@@ -277,6 +277,15 @@ final class SessionStore: @unchecked Sendable {
         locked_save(session: pendingSession)
       }
     }
+  }
+
+  /// Adds only the timer that still owns this store's pending-save slot.
+  private func scheduleTimerIfCurrent(_ timer: Timer) {
+    guard lock.withLock({ saveTimer === timer }) else {
+      timer.invalidate()
+      return
+    }
+    RunLoop.main.add(timer, forMode: .common)
   }
 
   /// Persists a complete record while `lock` is held.

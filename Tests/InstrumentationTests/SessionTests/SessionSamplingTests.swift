@@ -75,6 +75,22 @@ final class SessionSamplingTests: XCTestCase {
     XCTAssertEqual(sampler.callCount, 1)
   }
 
+  func testDecisionAccessDoesNotRecordActivity() throws {
+    let sampler = TestSessionSampler(decisions: [.notSampled])
+    let manager = try SessionManager(
+      configuration: SessionConfig(sampler: sampler),
+      persistence: TestSessionPersistence()
+    )
+    let session = manager.getSessionForAttribution()
+    Thread.sleep(forTimeInterval: 0.01)
+
+    let decision = manager.samplingDecision()
+
+    XCTAssertEqual(decision, .notSampled)
+    XCTAssertEqual(manager.peekSession()?.expireTime, session.expireTime)
+    XCTAssertEqual(sampler.callCount, 1)
+  }
+
   func testResetGetsOneNewDecisionAndPersistsIt() throws {
     SessionEventInstrumentation.queue = []
     SessionEventInstrumentation.isApplied = false
@@ -188,6 +204,30 @@ final class SessionSamplingTests: XCTestCase {
     XCTAssertEqual(sampler.callCount, 1)
   }
 
+  func testSamplerRunsOutsideSessionStateLock() throws {
+    let sampler = BlockingSessionSampler()
+    let manager = try SessionManager(
+      configuration: SessionConfig(sampler: sampler),
+      persistence: TestSessionPersistence()
+    )
+    let creationFinished = expectation(description: "Session creation finished")
+    DispatchQueue.global().async {
+      manager.getSessionForAttribution()
+      creationFinished.fulfill()
+    }
+    XCTAssertEqual(sampler.didStart.wait(timeout: .now() + 1), .success)
+
+    let peekFinished = expectation(description: "Read-only access remained available")
+    DispatchQueue.global().async {
+      _ = manager.peekSession()
+      peekFinished.fulfill()
+    }
+    wait(for: [peekFinished], timeout: 0.5)
+
+    sampler.allowCompletion.signal()
+    wait(for: [creationFinished], timeout: 1)
+  }
+
   private func decodeCurrentRecord(from persistence: TestSessionPersistence) throws -> PersistedSessionRecord {
     let data = try XCTUnwrap(persistence.read())
     return try PropertyListDecoder().decode(PersistedSessionRecord.self, from: data)
@@ -206,4 +246,15 @@ private struct VersionOneSession: Codable {
   let startTime: Date
   let sessionTimeout: TimeInterval
   let maxLifetime: TimeInterval?
+}
+
+private final class BlockingSessionSampler: SessionSampler, @unchecked Sendable {
+  let didStart = DispatchSemaphore(value: 0)
+  let allowCompletion = DispatchSemaphore(value: 0)
+
+  func samplingDecision(for sessionId: String) -> SessionSamplingDecision {
+    didStart.signal()
+    _ = allowCompletion.wait(timeout: .now() + 5)
+    return .sampled
+  }
 }

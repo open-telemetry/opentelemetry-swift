@@ -26,6 +26,7 @@ final class SessionSpanProcessorTests: XCTestCase {
 
     spanProcessor.onStart(parentContext: nil, span: mockSpan)
 
+    XCTAssertEqual(mockSessionManager.attributionAccessCount, 1)
     if case let .string(sessionId) = mockSpan.capturedAttributes["session.id"] {
       XCTAssertEqual(sessionId, expectedSessionId)
     } else {
@@ -125,12 +126,22 @@ final class SessionSpanProcessorTests: XCTestCase {
 
 // MARK: - Mock Classes
 
-class MockSessionManager: SessionManager {
+class MockSessionManager: SessionManager, @unchecked Sendable {
   var sessionId: String = "default-session-id"
   var previousSessionId: String?
   var startTime: Date = .init()
+  var attributionAccessCount = 0
 
   override func getSession() -> Session {
+    return mockSession()
+  }
+
+  override func getSessionForAttribution() -> Session {
+    attributionAccessCount += 1
+    return mockSession()
+  }
+
+  private func mockSession() -> Session {
     return Session(
       id: sessionId,
       expireTime: Date(timeIntervalSinceNow: 1800),
@@ -196,4 +207,5 @@ final class MockReadableSpan: ReadableSpan, @unchecked Sendable {
   func recordException(_ exception: any SpanException, timestamp: Date) {}
   func recordException(_ exception: any SpanException, attributes: [String: AttributeValue]) {}
   func recordException(_ exception: any SpanException, attributes: [String: AttributeValue], timestamp: Date) {}
+  func addLink(spanContext: SpanContext, attributes: [String: AttributeValue]) {}
 }

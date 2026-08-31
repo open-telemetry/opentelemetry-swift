@@ -28,10 +28,10 @@ public class SessionSpanProcessor: SpanProcessor {
   ///   - parentContext: The parent span context (unused)
   ///   - span: The span being started
   public func onStart(parentContext: SpanContext?, span: ReadableSpan) {
-    let session = sessionManager.getSession()
+    let session = sessionManager.getSessionForAttribution()
     span.setAttribute(key: SemanticConventions.Session.id.rawValue, value: session.id)
-    if session.previousId != nil {
-      span.setAttribute(key: SemanticConventions.Session.previousId.rawValue, value: session.previousId!)
+    if let previousId = session.previousId {
+      span.setAttribute(key: SemanticConventions.Session.previousId.rawValue, value: previousId)
     }
   }
 
