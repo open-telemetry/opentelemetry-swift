@@ -144,4 +144,79 @@ final class OtlpHttpExporterBaseCoverageTests: XCTestCase {
       envVarHeaders: nil)
     XCTAssertNotNil(exporter)
   }
+
+  private func makePendingQueueBase(requeueOnFailure: Bool = true) -> OtlpHttpExporterBase<String> {
+    OtlpHttpExporterBase<String>(endpoint: URL(string: "http://example.com")!,
+                                 httpClient: BaseHTTPClient(),
+                                 envVarHeaders: nil,
+                                 requeueOnFailure: requeueOnFailure)
+  }
+
+  func testSnapshotPendingStartsEmpty() {
+    XCTAssertEqual(makePendingQueueBase().snapshotPending(), [])
+  }
+
+  func testDrainPendingReturnsAddedSignalsAndClearsPending() {
+    let base = makePendingQueueBase()
+    XCTAssertEqual(base.drainPending(adding: ["a", "b"]), ["a", "b"])
+    XCTAssertEqual(base.snapshotPending(), [])
+  }
+
+  func testDrainPendingIncludesPreviouslyRequeuedSignals() {
+    let base = makePendingQueueBase()
+    base.requeue(["prev"])
+    XCTAssertEqual(base.drainPending(adding: ["new"]), ["prev", "new"])
+    XCTAssertEqual(base.snapshotPending(), [])
+  }
+
+  func testRequeueAppendsSignalsToPending() {
+    let base = makePendingQueueBase()
+    base.requeue(["a"])
+    base.requeue(["b", "c"])
+    XCTAssertEqual(base.snapshotPending(), ["a", "b", "c"])
+  }
+
+  func testRequeueIsNoOpWhenDisabled() {
+    let base = makePendingQueueBase(requeueOnFailure: false)
+    base.requeue(["a"])
+    XCTAssertEqual(base.snapshotPending(), [])
+  }
+
+  func testDropFlushedRemovesSentCountFromPending() {
+    let base = makePendingQueueBase()
+    base.requeue(["a", "b", "c"])
+    base.dropFlushed(count: 2)
+    XCTAssertEqual(base.snapshotPending(), ["c"])
+  }
+
+  func testDropFlushedDoesNotRemoveMoreThanPending() {
+    let base = makePendingQueueBase()
+    base.requeue(["a"])
+    base.dropFlushed(count: 5)
+    XCTAssertEqual(base.snapshotPending(), [])
+  }
+
+  func testDropFlushedOnEmptyPendingIsNoOp() {
+    let base = makePendingQueueBase()
+    base.dropFlushed(count: 1)
+    XCTAssertEqual(base.snapshotPending(), [])
+  }
+
+  func testPendingQueueOperationsAreThreadSafe() {
+    let base = makePendingQueueBase()
+    let iterations = 100
+    let group = DispatchGroup()
+
+    for i in 0 ..< iterations {
+      group.enter()
+      DispatchQueue.global().async {
+        base.requeue(["\(i)"])
+        _ = base.snapshotPending()
+        group.leave()
+      }
+    }
+
+    group.wait()
+    XCTAssertEqual(base.snapshotPending().count, iterations)
+  }
 }
