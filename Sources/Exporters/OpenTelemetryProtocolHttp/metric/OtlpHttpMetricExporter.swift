@@ -44,6 +44,15 @@ public final class OtlpHttpMetricExporter: MetricExporter, @unchecked Sendable {
     self.defaultAggregationSelector = defaultAggregationSelector
   }
 
+  /// A `convenience` constructor to configure the OTLP HTTP metric exporter
+  /// - Parameters:
+  ///    - endpoint: Exporter endpoint injected as dependency
+  ///    - config: Exporter configuration including type of exporter
+  ///    - aggregationTemporalitySelector: aggregator
+  ///    - defaultAggregationSelector: default aggregator
+  ///    - httpClient: Custom HTTPClient implementation
+  ///    - envVarHeaders: Extra header key-values
+  ///    - requeueOnFailure: Re-append failed batches to the in-memory pending queue
   public convenience init(endpoint: URL,
                           config: OtlpConfiguration = OtlpConfiguration(),
                           aggregationTemporalitySelector: AggregationTemporalitySelector =

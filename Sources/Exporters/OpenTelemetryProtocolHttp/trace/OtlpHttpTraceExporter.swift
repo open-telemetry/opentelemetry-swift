@@ -24,11 +24,18 @@ public final class OtlpHttpTraceExporter: SpanExporter, @unchecked Sendable {
     self.base = base
   }
 
+  /// A `convenience` constructor to configure the OTLP HTTP trace exporter
+  /// - Parameters:
+  ///    - endpoint: Exporter endpoint injected as dependency
+  ///    - config: Exporter configuration including type of exporter
+  ///    - httpClient: Custom HTTPClient implementation
+  ///    - envVarHeaders: Extra header key-values
+  ///    - requeueOnFailure: Re-append failed batches to the in-memory pending queue
   public convenience init(endpoint: URL = defaultOltpHttpTracesEndpoint(),
-              config: OtlpConfiguration = OtlpConfiguration(),
-              httpClient: HTTPClient = BaseHTTPClient(),
-              envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
-              requeueOnFailure: Bool = true) {
+                          config: OtlpConfiguration = OtlpConfiguration(),
+                          httpClient: HTTPClient = BaseHTTPClient(),
+                          envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
+                          requeueOnFailure: Bool = true) {
     self.init(base: OtlpHttpExporterBase(endpoint: endpoint,
                                          config: config,
                                          httpClient: httpClient,

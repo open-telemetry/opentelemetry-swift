@@ -24,6 +24,13 @@ public final class OtlpHttpLogExporter: LogRecordExporter, @unchecked Sendable {
     self.base = base
   }
 
+  /// A `convenience` constructor to configure the OTLP HTTP log exporter
+  /// - Parameters:
+  ///    - endpoint: Exporter endpoint injected as dependency
+  ///    - config: Exporter configuration including type of exporter
+  ///    - httpClient: Custom HTTPClient implementation
+  ///    - envVarHeaders: Extra header key-values
+  ///    - requeueOnFailure: Re-append failed batches to the in-memory pending queue
   public convenience init(endpoint: URL = defaultOltpHttpLoggingEndpoint(),
                           config: OtlpConfiguration = OtlpConfiguration(),
                           httpClient: HTTPClient = BaseHTTPClient(),
