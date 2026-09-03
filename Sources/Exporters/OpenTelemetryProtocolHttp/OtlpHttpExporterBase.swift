@@ -111,7 +111,7 @@ final class OtlpHttpExporterBase<Signal>: @unchecked Sendable {
             compressedData = data
             request.setValue("deflate", forHTTPHeaderField: "Content-Encoding")
           }
-        
+
         case .none:
           break
         }
