@@ -1242,4 +1242,55 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertEqual(count, 1, "two concurrent resumes must start a single span")
   }
 
+
+  /// `ignoredClassPrefixes` was stored but never read, so setting it excluded nothing.
+  ///
+  /// The scan runs once per process, during the first initializer, so it cannot be re-run from a
+  /// test with a different configuration. This exercises the exclusion decision itself, which is
+  /// what the scan consults for every class it considers.
+  public func testIgnoredClassPrefixesExcludeMatchingClasses() {
+    let cls: AnyClass = SessionDelegate.self
+    let name = NSStringFromClass(cls)
+    XCTAssertFalse(name.isEmpty)
+
+    XCTAssertFalse(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: nil),
+                   "nothing is excluded when no prefixes are given")
+    XCTAssertFalse(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: []),
+                   "an empty list excludes nothing")
+    XCTAssertFalse(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: ["NotAPrefixOfAnything"]),
+                   "a prefix that does not match leaves the class instrumented")
+    XCTAssertFalse(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: [""]),
+                   "an empty prefix must not exclude everything")
+
+    XCTAssertTrue(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: [String(name.prefix(6))]),
+                  "a matching prefix excludes the class")
+    XCTAssertTrue(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: ["NotAMatch", String(name.prefix(6))]),
+                  "any one of the prefixes matching is enough")
+  }
+
+
+
+  /// Covers the selection step the search performs, so that removing the exclusion check from it
+  /// fails here rather than only changing behaviour at runtime.
+  public func testScanOmitsClassesMatchingIgnoredPrefixes() {
+    let cls: AnyClass = SessionDelegate.self
+    let name = NSStringFromClass(cls)
+    let selectors = [#selector(URLSessionDataDelegate.urlSession(_:task:didCompleteWithError:))]
+
+    let selected = URLSessionInstrumentation.delegateClassesToInject(
+      from: [cls], matching: selectors, ignoredPrefixes: nil)
+    XCTAssertTrue(selected.contains { $0 === cls },
+                  "the class implements the selector, so the search should select it")
+
+    let withIgnoredPrefix = URLSessionInstrumentation.delegateClassesToInject(
+      from: [cls], matching: selectors, ignoredPrefixes: [String(name.prefix(6))])
+    XCTAssertTrue(withIgnoredPrefix.isEmpty,
+                  "a class matching an ignored prefix must not be selected")
+
+    let withUnrelatedPrefix = URLSessionInstrumentation.delegateClassesToInject(
+      from: [cls], matching: selectors, ignoredPrefixes: ["NotAPrefixOfAnything"])
+    XCTAssertTrue(withUnrelatedPrefix.contains { $0 === cls },
+                  "a prefix that does not match must leave the class selected")
+  }
+
 }
