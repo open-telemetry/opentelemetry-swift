@@ -138,6 +138,7 @@ final class SessionStore: @unchecked Sendable {
   private var previousSavedSession: Session?
   /// Prevents an older SDK from replacing a record written with a newer schema.
   private var isWriteBlockedByFutureRecord = false
+  private var shouldClearLegacyAfterNextSave = false
   private let saveInterval: TimeInterval
   private var saveTimer: Timer?
 
@@ -200,6 +201,7 @@ final class SessionStore: @unchecked Sendable {
             pendingSession = nil
             previousSavedSession = nil
             isWriteBlockedByFutureRecord = true
+            shouldClearLegacyAfterNextSave = false
             return nil
           }
 
@@ -224,12 +226,14 @@ final class SessionStore: @unchecked Sendable {
             pendingSession = nil
             previousSavedSession = loadedSession.session
             isWriteBlockedByFutureRecord = false
+            shouldClearLegacyAfterNextSave = false
             return loadedSession
           }
         }
 
         // Session persistence is a cache. Drop unreadable records so later writes can recover.
         isWriteBlockedByFutureRecord = false
+        shouldClearLegacyAfterNextSave = false
         _ = persistence.clear()
       } else {
         isWriteBlockedByFutureRecord = false
@@ -250,13 +254,17 @@ final class SessionStore: @unchecked Sendable {
   /// Replaces a legacy record after its missing fields have been supplied.
   func migrate(_ loadedSession: LoadedSession, to session: Session) {
     guard loadedSession.requiresMigration else { return }
-    lock.withLock {
-      guard locked_save(session: session) else { return }
-      if case .legacyKeys = loadedSession.source,
-         let userDefaultsPersistence = persistence as? UserDefaultsSessionPersistence {
-        userDefaultsPersistence.clearLegacySession()
-      }
+    let timerToSchedule: Timer? = lock.withLock {
+      pendingSession = session
+      shouldClearLegacyAfterNextSave = loadedSession.source == .legacyKeys
+      guard !locked_save(session: session) else { return nil }
+      // The decoded v1 session can equal the v2 value when the new decision is `.sampled`.
+      // Clear the deduplication baseline so the timer still writes the newer schema.
+      previousSavedSession = nil
+      return locked_makeSaveTimerIfNeeded()
     }
+
+    scheduleTimerOnMainIfNeeded(timerToSchedule)
   }
 
   func teardown() {
@@ -266,6 +274,7 @@ final class SessionStore: @unchecked Sendable {
       pendingSession = nil
       previousSavedSession = nil
       isWriteBlockedByFutureRecord = false
+      shouldClearLegacyAfterNextSave = false
       _ = persistence.clear()
       if let userDefaultsPersistence = persistence as? UserDefaultsSessionPersistence {
         userDefaultsPersistence.clearLegacySession()
@@ -330,6 +339,11 @@ final class SessionStore: @unchecked Sendable {
     guard persistence.write(data) else {
       return false
     }
+    if shouldClearLegacyAfterNextSave,
+       let userDefaultsPersistence = persistence as? UserDefaultsSessionPersistence {
+      userDefaultsPersistence.clearLegacySession()
+    }
+    shouldClearLegacyAfterNextSave = false
     previousSavedSession = session
     pendingSession = nil
     return true

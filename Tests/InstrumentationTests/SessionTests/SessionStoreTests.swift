@@ -354,6 +354,39 @@ final class SessionStoreTests: XCTestCase {
     XCTAssertNil(userDefaults.object(forKey: persistence.idKey))
   }
 
+  func testRejectedMigrationWriteRetriesWithoutAnotherSaveCall() throws {
+    let persistence = ToggleSessionPersistence(acceptsWrites: false)
+    let store = SessionStore(persistence: persistence, saveInterval: 0.01)
+    defer { store.teardown() }
+    let legacySession = Session(id: "version-one", expireTime: Date(timeIntervalSinceNow: 1800))
+    let migratedSession = Session(
+      id: legacySession.id,
+      expireTime: legacySession.expireTime,
+      previousId: legacySession.previousId,
+      startTime: legacySession.startTime,
+      sessionTimeout: legacySession.sessionTimeout,
+      maxLifetime: legacySession.maxLifetime,
+      samplingDecision: .sampled
+    )
+    let loadedSession = LoadedSession(session: legacySession, source: .version1)
+    let retryAccepted = expectation(description: "Failed migration was retried")
+    persistence.onWrite = { accepted in
+      if accepted {
+        retryAccepted.fulfill()
+      }
+    }
+
+    store.migrate(loadedSession, to: migratedSession)
+    XCTAssertNil(persistence.read())
+
+    persistence.acceptsWrites = true
+    wait(for: [retryAccepted], timeout: 1)
+
+    let data = try XCTUnwrap(persistence.read())
+    let record = try PropertyListDecoder().decode(PersistedSessionRecord.self, from: data)
+    XCTAssertEqual(record.session.value, migratedSession)
+  }
+
   func testUnknownSamplingDecisionClearsRecordAndPersistenceResumes() throws {
     let record = UnknownDecisionRecord(
       version: PersistedSessionRecord.currentVersion,
