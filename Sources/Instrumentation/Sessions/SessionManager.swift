@@ -99,7 +99,8 @@ public class SessionManager: @unchecked Sendable {
   /// Ends the current session and starts a linked replacement.
   ///
   /// Use this after a sign-out, account change, or another explicit session boundary.
-  /// The replacement is persisted before lifecycle events are emitted.
+  /// An immediate persistence attempt happens before lifecycle events are emitted. Rejected
+  /// writes are retried by the session store.
   /// - Returns: The newly created session
   @discardableResult
   public func resetSession() -> Session {
@@ -355,7 +356,7 @@ public class SessionManager: @unchecked Sendable {
     }
   }
 
-  /// Publishes one already-persisted session transition.
+  /// Publishes one transition after its immediate persistence attempt.
   private func publish(_ transition: SessionTransition) {
     if let previousSessionToEnd = transition.previousSessionToEnd {
       SessionEventInstrumentation.addSession(session: previousSessionToEnd, eventType: .end)
