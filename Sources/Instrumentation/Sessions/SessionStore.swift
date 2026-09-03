@@ -92,6 +92,8 @@ final class SessionStore: @unchecked Sendable {
   private let lock = NSLock()
   private var pendingSession: Session?
   private var previousSavedSession: Session?
+  /// Prevents an older SDK from replacing a record written with a newer schema.
+  private var isWriteBlockedByFutureRecord = false
   private let saveInterval: TimeInterval
   private var saveTimer: Timer?
 
@@ -125,6 +127,7 @@ final class SessionStore: @unchecked Sendable {
 
   func scheduleSave(session: Session) {
     let timerToSchedule: Timer? = lock.withLock {
+      guard !isWriteBlockedByFutureRecord else { return nil }
       pendingSession = session
       guard let timer = locked_makeSaveTimerIfNeeded() else { return nil }
       _ = locked_save(session: session)
@@ -136,6 +139,7 @@ final class SessionStore: @unchecked Sendable {
 
   func saveImmediately(session: Session) {
     let timerToSchedule: Timer? = lock.withLock {
+      guard !isWriteBlockedByFutureRecord else { return nil }
       pendingSession = session
       guard !locked_save(session: session) else { return nil }
       return locked_makeSaveTimerIfNeeded()
@@ -147,17 +151,28 @@ final class SessionStore: @unchecked Sendable {
   func load() -> Session? {
     return lock.withLock {
       if let data = persistence.read() {
-        if let storedVersion = try? PropertyListDecoder().decode(PersistedSessionRecordVersion.self, from: data),
-           storedVersion.version == PersistedSessionRecord.currentVersion,
-           let record = try? PropertyListDecoder().decode(PersistedSessionRecord.self, from: data) {
-          let session = record.session.value
-          pendingSession = nil
-          previousSavedSession = session
-          return session
+        if let storedVersion = try? PropertyListDecoder().decode(PersistedSessionRecordVersion.self, from: data) {
+          if storedVersion.version > PersistedSessionRecord.currentVersion {
+            pendingSession = nil
+            previousSavedSession = nil
+            isWriteBlockedByFutureRecord = true
+            return nil
+          }
+          if storedVersion.version == PersistedSessionRecord.currentVersion,
+             let record = try? PropertyListDecoder().decode(PersistedSessionRecord.self, from: data) {
+            let session = record.session.value
+            pendingSession = nil
+            previousSavedSession = session
+            isWriteBlockedByFutureRecord = false
+            return session
+          }
         }
 
         // Session persistence is a cache. Drop unreadable records so later writes can recover.
+        isWriteBlockedByFutureRecord = false
         _ = persistence.clear()
+      } else {
+        isWriteBlockedByFutureRecord = false
       }
 
       guard let userDefaultsPersistence = persistence as? UserDefaultsSessionPersistence,
@@ -178,6 +193,7 @@ final class SessionStore: @unchecked Sendable {
       saveTimer = nil
       pendingSession = nil
       previousSavedSession = nil
+      isWriteBlockedByFutureRecord = false
       _ = persistence.clear()
       if let userDefaultsPersistence = persistence as? UserDefaultsSessionPersistence {
         userDefaultsPersistence.clearLegacySession()
@@ -234,6 +250,7 @@ final class SessionStore: @unchecked Sendable {
 
   /// Persists a complete record while `lock` is held.
   private func locked_save(session: Session) -> Bool {
+    guard !isWriteBlockedByFutureRecord else { return false }
     guard let data = try? PropertyListEncoder().encode(PersistedSessionRecord(session: session)) else {
       return false
     }

@@ -487,6 +487,25 @@ final class SessionManagerTests: XCTestCase {
     XCTAssertEqual(manager.peekSession()?.id, replacement.id)
   }
 
+  func testFutureRecordIsNotOverwrittenBySessionCreation() throws {
+    let persistence = TestSessionPersistence()
+    let futureSession = Session(id: "future", expireTime: Date(timeIntervalSinceNow: 1800))
+    let futureRecord = PersistedSessionRecord(
+      version: PersistedSessionRecord.currentVersion + 1,
+      session: PersistedSession(session: futureSession)
+    )
+    let futureData = try PropertyListEncoder().encode(futureRecord)
+    XCTAssertTrue(persistence.write(futureData))
+
+    let manager = try SessionManager(persistence: persistence)
+    XCTAssertNil(manager.peekSession())
+
+    let localSession = manager.getSession()
+
+    XCTAssertEqual(manager.peekSession(), localSession)
+    XCTAssertEqual(persistence.read(), futureData)
+  }
+
   func testInjectedPersistenceCanInspectCurrentSessionDuringWrite() throws {
     let persistence = InspectingSessionPersistence()
     let manager = try SessionManager(persistence: persistence)
