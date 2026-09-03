@@ -46,6 +46,8 @@ final class BaggagePropagationProcessorConcurrencyTests: XCTestCase {
       span.end()
     }
 
+    // SimpleSpanProcessor exports asynchronously.
+    provider.forceFlush()
     let spans = exporter.getFinishedSpanItems()
     XCTAssertEqual(spans.count, threads * iterations)
     XCTAssertTrue(spans.allSatisfy { $0.attributes["keepme"] == .string("kept") })
@@ -77,6 +79,7 @@ final class BaggagePropagationProcessorConcurrencyTests: XCTestCase {
       }
     }
 
+    provider.forceFlush()
     let spans = exporter.getFinishedSpanItems()
     XCTAssertEqual(spans.count, threads * iterations)
     let mismatched = spans.filter { $0.attributes["thread"] != $0.attributes["expected"] }

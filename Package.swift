@@ -206,6 +206,7 @@ let package = Package(
         "SharedTestUtils",
         "PersistenceExporter",
         "OpenTelemetryProtocolExporterHttp",
+        "InMemoryExporter",
       ],
       path: "Tests/ExportersTests/PersistenceExporter"
     ),
