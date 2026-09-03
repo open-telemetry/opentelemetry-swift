@@ -213,6 +213,9 @@ jobs:
         xcode-version: latest-stable
     - name: Build and Test with Thread Sanitizer
       run: swift test --sanitize=thread
+      env:
+        # Enables the concurrency stress tests (skipped in the other jobs).
+        OTEL_CONCURRENCY_TESTS: "1"
   required-status-checks:
     needs: 
       - FormattingLint

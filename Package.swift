@@ -41,7 +41,10 @@ let package = Package(
   targets: [
     .target(
       name: "SharedTestUtils",
-      dependencies: []
+      dependencies: [
+        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
+        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+      ]
     ),
     .target(
       name: "OTelSwiftLog",
@@ -142,6 +145,7 @@ let package = Package(
     .testTarget(
       name: "OTelSwiftLogTests",
       dependencies: [
+        "SharedTestUtils",
         "OTelSwiftLog",
         .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
       ],
@@ -155,6 +159,7 @@ let package = Package(
     .testTarget(
       name: "OTelSwiftTracingTests",
       dependencies: [
+        "SharedTestUtils",
         "OTelSwiftTracing",
         "InMemoryExporter",
         .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
@@ -164,6 +169,7 @@ let package = Package(
     .testTarget(
       name: "SwiftMetricsShimTests",
       dependencies: [
+        "SharedTestUtils",
         "SwiftMetricsShim",
         .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
       ],
@@ -171,7 +177,10 @@ let package = Package(
     ),
     .testTarget(
       name: "PrometheusExporterTests",
-      dependencies: ["PrometheusExporter"],
+      dependencies: [
+        "PrometheusExporter",
+        "SharedTestUtils"
+      ],
       path: "Tests/ExportersTests/Prometheus"
     ),
     .testTarget(
@@ -185,12 +194,16 @@ let package = Package(
     ),
     .testTarget(
       name: "InMemoryExporterTests",
-      dependencies: ["InMemoryExporter"],
+      dependencies: [
+        "InMemoryExporter",
+        "SharedTestUtils"
+      ],
       path: "Tests/ExportersTests/InMemory"
     ),
     .testTarget(
       name: "PersistenceExporterTests",
       dependencies: [
+        "SharedTestUtils",
         "PersistenceExporter",
         "OpenTelemetryProtocolExporterHttp",
       ],
@@ -199,6 +212,7 @@ let package = Package(
     .testTarget(
       name: "ContribTests",
       dependencies: [
+        "SharedTestUtils",
         "BaggagePropagationProcessor",
         "InMemoryExporter"
       ]
@@ -206,6 +220,7 @@ let package = Package(
     .testTarget(
       name: "SessionTests",
       dependencies: [
+        "SharedTestUtils",
         "Sessions",
         .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
       ],
@@ -262,6 +277,7 @@ extension Package {
         .testTarget(
           name: "OpenTracingShimTests",
           dependencies: [
+            "SharedTestUtils",
             "OpenTracingShim",
             .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
           ],
@@ -300,7 +316,10 @@ extension Package {
         ),
         .testTarget(
           name: "JaegerExporterTests",
-          dependencies: ["JaegerExporter"],
+          dependencies: [
+            "JaegerExporter",
+            "SharedTestUtils"
+          ],
           path: "Tests/ExportersTests/Jaeger"
         ),
         .executableTarget(
@@ -364,7 +383,10 @@ extension Package {
         ),
         .testTarget(
           name: "ZipkinExporterTests",
-          dependencies: ["ZipkinExporter"],
+          dependencies: [
+            "ZipkinExporter",
+            "SharedTestUtils"
+          ],
           path: "Tests/ExportersTests/Zipkin"
         ),
         .executableTarget(
@@ -409,6 +431,7 @@ extension Package {
         .testTarget(
           name: "ResourceExtensionTests",
           dependencies: [
+            "SharedTestUtils",
             "ResourceExtension",
             .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
           ],
