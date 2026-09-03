@@ -98,24 +98,24 @@ final class OtlpHttpExporterBase<Signal>: @unchecked Sendable {
 
       var compressedData = rawData
 
-#if canImport(Compression)
-      switch config.compression {
-      case .gzip:
-        if let data = rawData.gzip() {
-          compressedData = data
-          request.setValue("gzip", forHTTPHeaderField: "Content-Encoding")
-        }
+      #if canImport(Compression)
+        switch config.compression {
+        case .gzip:
+          if let data = rawData.gzip() {
+            compressedData = data
+            request.setValue("gzip", forHTTPHeaderField: "Content-Encoding")
+          }
 
-      case .deflate:
-        if let data = rawData.deflate() {
-          compressedData = data
-          request.setValue("deflate", forHTTPHeaderField: "Content-Encoding")
-        }
+        case .deflate:
+          if let data = rawData.deflate() {
+            compressedData = data
+            request.setValue("deflate", forHTTPHeaderField: "Content-Encoding")
+          }
         
-      case .none:
-        break
-      }
-#endif
+        case .none:
+          break
+        }
+      #endif
 
       // Apply final data. Could be compressed or raw
       // but it doesn't matter here
