@@ -17,6 +17,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Check if the workflow should run
         id: check
         run: |
@@ -24,17 +25,17 @@ jobs:
 
           # github.base_ref is empty for workflow_dispatch runs; in that case,
           # skip diff-based checks and run all jobs.
-          if [ -z "${{ github.base_ref }}" ]; then
+          if [ -z "${GITHUB_BASE_REF}" ]; then
             SHOULD_RUN=true
           else
-            CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }} HEAD)
+            CHANGED_FILES=$(git diff --name-only origin/${GITHUB_BASE_REF} HEAD)
 
             # Run jobs if source code changed
             echo "$CHANGED_FILES" | grep -q "Sources/" && SHOULD_RUN=true
 
             # Run if any dependency is updated in Package.swift
             if echo "$CHANGED_FILES" | grep -q "Package.swift"; then
-              git diff origin/${{ github.base_ref }} HEAD -- Package.swift | grep -q . && SHOULD_RUN=true
+              git diff origin/${GITHUB_BASE_REF} HEAD -- Package.swift | grep -q . && SHOULD_RUN=true
             fi
           fi
 
@@ -45,6 +46,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: SwiftFormat
         run: echo swiftformat --lint `git diff --name-only HEAD^1 HEAD` --reporter github-actions-log
 
@@ -54,6 +57,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: GitHub Action for SwiftLint (Only files changed in the PR)
         uses: norio-nomura/action-swiftlint@9f4dcd7fd46b4e75d7935cf2f4df406d5cae3684 # 3.2.1
         env:
@@ -65,6 +70,8 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
       with:
         xcode-version: latest-stable
@@ -82,6 +89,8 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
       with:
         xcode-version: latest-stable
@@ -93,15 +102,21 @@ jobs:
         UDID=$(./Scripts/ci/resolve-simulator.sh iOS)
         echo "destination=platform=iOS Simulator,id=$UDID,arch=arm64" >> "$GITHUB_OUTPUT"
     - name: Build for iOS
-      run: make build-for-testing-ios IOS_DESTINATION='${{ steps.ios-sim.outputs.destination }}'
+      run: make build-for-testing-ios IOS_DESTINATION="${STEPS_IOS_SIM_OUTPUTS_DESTINATION}"
+      env:
+        STEPS_IOS_SIM_OUTPUTS_DESTINATION: ${{ steps.ios-sim.outputs.destination }}
     - name: Test for iOS
-      run: make test-without-building-ios IOS_DESTINATION='${{ steps.ios-sim.outputs.destination }}'
+      run: make test-without-building-ios IOS_DESTINATION="${STEPS_IOS_SIM_OUTPUTS_DESTINATION}"
+      env:
+        STEPS_IOS_SIM_OUTPUTS_DESTINATION: ${{ steps.ios-sim.outputs.destination }}
   tvOS:
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
       with:
         xcode-version: latest-stable
@@ -113,15 +128,21 @@ jobs:
         UDID=$(./Scripts/ci/resolve-simulator.sh tvOS)
         echo "destination=platform=tvOS Simulator,id=$UDID,arch=arm64" >> "$GITHUB_OUTPUT"
     - name: Build for tvOS
-      run: make build-for-testing-tvos TVOS_DESTINATION='${{ steps.tvos-sim.outputs.destination }}'
+      run: make build-for-testing-tvos TVOS_DESTINATION="${STEPS_TVOS_SIM_OUTPUTS_DESTINATION}"
+      env:
+        STEPS_TVOS_SIM_OUTPUTS_DESTINATION: ${{ steps.tvos-sim.outputs.destination }}
     - name: Test for tvOS
-      run: make test-without-building-tvos TVOS_DESTINATION='${{ steps.tvos-sim.outputs.destination }}'
+      run: make test-without-building-tvos TVOS_DESTINATION="${STEPS_TVOS_SIM_OUTPUTS_DESTINATION}"
+      env:
+        STEPS_TVOS_SIM_OUTPUTS_DESTINATION: ${{ steps.tvos-sim.outputs.destination }}
   watchOS:
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
       with:
         xcode-version: latest-stable
@@ -133,15 +154,21 @@ jobs:
         UDID=$(./Scripts/ci/resolve-simulator.sh watchOS)
         echo "destination=platform=watchOS Simulator,id=$UDID,arch=arm64" >> "$GITHUB_OUTPUT"
     - name: Build for watchOS
-      run: make build-for-testing-watchos WATCHOS_DESTINATION='${{ steps.watchos-sim.outputs.destination }}'
+      run: make build-for-testing-watchos WATCHOS_DESTINATION="${STEPS_WATCHOS_SIM_OUTPUTS_DESTINATION}"
+      env:
+        STEPS_WATCHOS_SIM_OUTPUTS_DESTINATION: ${{ steps.watchos-sim.outputs.destination }}
     - name: Test for watchOS
-      run: make test-without-building-watchos WATCHOS_DESTINATION='${{ steps.watchos-sim.outputs.destination }}'
+      run: make test-without-building-watchos WATCHOS_DESTINATION="${STEPS_WATCHOS_SIM_OUTPUTS_DESTINATION}"
+      env:
+        STEPS_WATCHOS_SIM_OUTPUTS_DESTINATION: ${{ steps.watchos-sim.outputs.destination }}
   visionOS:
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
       with:
         xcode-version: latest-stable
@@ -153,16 +180,22 @@ jobs:
         UDID=$(./Scripts/ci/resolve-simulator.sh visionOS)
         echo "destination=platform=visionOS Simulator,id=$UDID" >> "$GITHUB_OUTPUT"
     - name: Build for visionOS
-      run: make build-for-testing-visionos VISIONOS_DESTINATION='${{ steps.visionos-sim.outputs.destination }}'
+      run: make build-for-testing-visionos VISIONOS_DESTINATION="${STEPS_VISIONOS_SIM_OUTPUTS_DESTINATION}"
+      env:
+        STEPS_VISIONOS_SIM_OUTPUTS_DESTINATION: ${{ steps.visionos-sim.outputs.destination }}
     - name: Test for visionOS
-      run: make test-without-building-visionos VISIONOS_DESTINATION='${{ steps.visionos-sim.outputs.destination }}'
+      run: make test-without-building-visionos VISIONOS_DESTINATION="${STEPS_VISIONOS_SIM_OUTPUTS_DESTINATION}"
+      env:
+        STEPS_VISIONOS_SIM_OUTPUTS_DESTINATION: ${{ steps.visionos-sim.outputs.destination }}
   linux:
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: ubuntu-latest
-    container: swift:6.3.3@sha256:69bf1f0281e13d82c9e49d67c2dd1dcc8c00bad738c860f4323d7078787ec8ea
+    container: swift:6.3.3@sha256:56ef1be2c1ca36f4c52440357dc1fcdfdb5e113587134fcadeef57c225c71b54
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Build tests for Linux
         run: swift build --build-tests
       - name: Run tests for Linux
