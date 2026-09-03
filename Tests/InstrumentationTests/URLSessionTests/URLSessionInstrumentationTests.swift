@@ -1268,12 +1268,29 @@ class URLSessionInstrumentationTests: XCTestCase {
                   "any one of the prefixes matching is enough")
   }
 
-  /// The built in exclude list keeps working, now that it is applied in the same place.
-  public func testExcludeListStillExcludes() throws {
-    guard let proxy = NSClassFromString("__NSCFURLProxySessionConnection") else {
-      throw XCTSkip("__NSCFURLProxySessionConnection is not present on this platform")
-    }
-    XCTAssertTrue(URLSessionInstrumentation.isExcludedFromInstrumentation(proxy, ignoredPrefixes: nil))
+
+
+  /// Covers the selection step the search performs, so that removing the exclusion check from it
+  /// fails here rather than only changing behaviour at runtime.
+  public func testScanOmitsClassesMatchingIgnoredPrefixes() {
+    let cls: AnyClass = SessionDelegate.self
+    let name = NSStringFromClass(cls)
+    let selectors = [#selector(URLSessionDataDelegate.urlSession(_:task:didCompleteWithError:))]
+
+    let selected = URLSessionInstrumentation.delegateClassesToInject(
+      from: [cls], matching: selectors, ignoredPrefixes: nil)
+    XCTAssertTrue(selected.contains { $0 === cls },
+                  "the class implements the selector, so the search should select it")
+
+    let withIgnoredPrefix = URLSessionInstrumentation.delegateClassesToInject(
+      from: [cls], matching: selectors, ignoredPrefixes: [String(name.prefix(6))])
+    XCTAssertTrue(withIgnoredPrefix.isEmpty,
+                  "a class matching an ignored prefix must not be selected")
+
+    let withUnrelatedPrefix = URLSessionInstrumentation.delegateClassesToInject(
+      from: [cls], matching: selectors, ignoredPrefixes: ["NotAPrefixOfAnything"])
+    XCTAssertTrue(withUnrelatedPrefix.contains { $0 === cls },
+                  "a prefix that does not match must leave the class selected")
   }
 
 }
