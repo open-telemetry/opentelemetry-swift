@@ -135,7 +135,7 @@ final class SessionSamplingTests: XCTestCase {
 
   func testVersionOneRecordGetsOneDecisionAndIsUpgraded() throws {
     let persistence = TestSessionPersistence()
-    XCTAssertTrue(persistence.write(Self.versionOneFixture))
+    XCTAssertTrue(persistence.write(SessionPersistenceFixtures.versionOne))
     let sampler = TestSessionSampler(decisions: [.notSampled])
 
     let manager = try SessionManager(
@@ -386,22 +386,6 @@ final class SessionSamplingTests: XCTestCase {
     body: AttributeValue.string("sampler log"),
     attributes: [:]
   )
-
-  private static let versionOneFixture = Data("""
-  <?xml version="1.0" encoding="UTF-8"?>
-  <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-  <plist version="1.0"><dict>
-    <key>version</key><integer>1</integer>
-    <key>session</key><dict>
-      <key>id</key><string>version-one-session</string>
-      <key>expireTime</key><date>2099-01-01T00:30:00Z</date>
-      <key>previousId</key><string>previous-session</string>
-      <key>startTime</key><date>2099-01-01T00:00:00Z</date>
-      <key>sessionTimeout</key><real>1800</real>
-      <key>maxLifetime</key><real>7200</real>
-    </dict>
-  </dict></plist>
-  """.utf8)
 
   private static let versionTwoFixture = Data("""
   <?xml version="1.0" encoding="UTF-8"?>

@@ -355,10 +355,13 @@ final class SessionStoreTests: XCTestCase {
   }
 
   func testRejectedMigrationWriteRetriesWithoutAnotherSaveCall() throws {
-    let persistence = ToggleSessionPersistence(acceptsWrites: false)
+    let persistence = ToggleSessionPersistence(acceptsWrites: true)
+    XCTAssertTrue(persistence.write(SessionPersistenceFixtures.versionOne))
     let store = SessionStore(persistence: persistence, saveInterval: 0.01)
     defer { store.teardown() }
-    let legacySession = Session(id: "version-one", expireTime: Date(timeIntervalSinceNow: 1800))
+    let loadedSession = try XCTUnwrap(store.load())
+    XCTAssertEqual(loadedSession.source, .version1)
+    let legacySession = loadedSession.session
     let migratedSession = Session(
       id: legacySession.id,
       expireTime: legacySession.expireTime,
@@ -368,7 +371,6 @@ final class SessionStoreTests: XCTestCase {
       maxLifetime: legacySession.maxLifetime,
       samplingDecision: .sampled
     )
-    let loadedSession = LoadedSession(session: legacySession, source: .version1)
     let retryAccepted = expectation(description: "Failed migration was retried")
     persistence.onWrite = { accepted in
       if accepted {
@@ -376,8 +378,9 @@ final class SessionStoreTests: XCTestCase {
       }
     }
 
+    persistence.acceptsWrites = false
     store.migrate(loadedSession, to: migratedSession)
-    XCTAssertNil(persistence.read())
+    XCTAssertEqual(persistence.read(), SessionPersistenceFixtures.versionOne)
 
     persistence.acceptsWrites = true
     wait(for: [retryAccepted], timeout: 1)
