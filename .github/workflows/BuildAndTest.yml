@@ -200,6 +200,19 @@ jobs:
         run: swift build --build-tests
       - name: Run tests for Linux
         run: swift test
+  ThreadSanitizer:
+    needs: should-run
+    if: ${{ needs.should-run.outputs.should-run == 'true' }}
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
+      with:
+        xcode-version: latest-stable
+    - name: Build and Test with Thread Sanitizer
+      run: swift test --sanitize=thread
   required-status-checks:
     needs: 
       - FormattingLint
@@ -210,6 +223,7 @@ jobs:
       - watchOS
       - visionOS
       - linux
+      - ThreadSanitizer
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -222,7 +236,8 @@ jobs:
           ${{ needs.tvOS.result }} == 'failure' || \
           ${{ needs.watchOS.result }} == 'failure' || \
           ${{ needs.visionOS.result }} == 'failure' || \
-          ${{ needs.linux.result }} == 'failure' ]]; then
+          ${{ needs.linux.result }} == 'failure' || \
+          ${{ needs.ThreadSanitizer.result }} == 'failure' ]]; then
             echo "One or more required jobs failed. Failing the workflow."
             exit 1
           else
