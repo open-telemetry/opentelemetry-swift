@@ -4,7 +4,7 @@ Automatic session tracking for OpenTelemetry Swift applications. Creates unique 
 
 ## Features
 
-- **Session Management** - Creates and manages session lifecycles with configurable timeouts and explicit activity
+- **Session Management** - Creates and manages session lifecycles with configurable timeouts and explicit reset
 - **Session Events** - Emits OpenTelemetry log records for session start/end events
 - **Span Attribution** - Automatically adds session IDs to all spans via span processor
 - **Versioned Persistence** - Sessions persist as one versioned record across app restarts
@@ -40,10 +40,6 @@ let builder = LoggerProviderBuilder()
   .with(processors: [sessionProcessor])
   .with(resource: resource)
 
-// Call this from your app's foreground callback and other meaningful interactions.
-func applicationBecameActive() {
-    sessionManager.recordActivity()
-}
 ```
 
 **Custom Configuration**:
@@ -76,12 +72,9 @@ let sessionManager = try SessionManager(
 **Getting Session Information**:
 
 ```swift
-// Get the current session and record activity, preserving the existing API behavior
+// Get the current session and extend its inactivity deadline
 let session = SessionManagerProvider.getInstance().getSession()
 print("Session ID: \(session.id)")
-
-// Record a meaningful user interaction or foreground transition
-SessionManagerProvider.getInstance().recordActivity()
 
 // End the current session after sign-out and start a linked replacement
 SessionManagerProvider.getInstance().resetSession()
@@ -99,14 +92,12 @@ if let session = SessionManagerProvider.getInstance().peekSession() {
 
 ### SessionManager
 
-Manages session lifecycle with automatic expiration and explicit activity tracking. Direct
-`getSession()` calls continue to record activity for compatibility, while automatic span and log
-attribution is passive.
+Manages session lifecycle with automatic expiration and explicit reset. Session access, including
+automatic span and log attribution, extends the inactivity deadline.
 
 ```swift
 let manager = SessionManager(configuration: SessionConfig(sessionTimeout: 1800))
-let session = manager.getSession() // Creates or retrieves and records activity
-manager.recordActivity() // Extends inactivity after meaningful activity
+let session = manager.getSession() // Creates or retrieves and extends the session
 manager.resetSession() // Starts a linked replacement
 let current = manager.peekSession() // Peek without creating or extending
 ```
@@ -194,10 +185,12 @@ is persisted. Expiry and `resetSession()` each create one replacement session wi
 
 Call `samplingDecision()` from trace, log, and metric integrations so every signal applies the same
 persisted result. The session processors add attribution but do not drop telemetry themselves, so
-each signal pipeline remains responsible for enforcing the returned decision. The method returns
-`nil` while another caller is making the decision. During that window, all passive callers continue
-without session attribution, including spans and logs emitted by other threads. Custom samplers
-should therefore return promptly and must not perform network or other unbounded work.
+each signal pipeline remains responsible for enforcing the returned decision. This access follows
+the normal session behavior and refreshes inactivity. Concurrent callers wait while a new decision
+is being made so they receive the completed session. Telemetry emitted synchronously by the sampler
+itself proceeds without session attribution when no active session exists, which avoids recursive
+session creation. Custom samplers should return promptly, must not perform network or other
+unbounded work, and must not call session APIs that create or reset sessions.
 
 ```swift
 guard let decision = SessionManagerProvider.getInstance().samplingDecision(),
@@ -207,12 +200,9 @@ guard let decision = SessionManagerProvider.getInstance().samplingDecision(),
 
 ### Session Timeout Behavior
 
-- Sessions expire after the configured timeout since the most recent recorded activity
-- `getSession()` preserves its existing behavior and records activity
-- Call `recordActivity()` for meaningful interactions or lifecycle transitions that should extend inactivity
-- Span and log processors use passive access, so telemetry and background work do not keep a session alive
-- Without a `recordActivity()` call, a session ends at `sessionTimeout`; its duration is zero because no meaningful activity was recorded, and a longer `maxLifetime` does not apply
-- Sessions can also expire after `maxLifetime`, even if `recordActivity()` continues to extend inactivity
+- Sessions expire after the configured timeout since the most recent access
+- `getSession()` and automatic span and log attribution extend the inactivity deadline
+- Sessions can also expire after `maxLifetime`, even if access continues to extend inactivity
 - `resetSession()` ends the current session and persists one linked replacement
 - Set `restorePersistedSession` to `false` to start a new session on each clean application start while linking the persisted session as `previous_id`
 - When `restorePersistedSession` is `false`, the persisted session's `session.end` uses its last known activity time, capped at the new session start time
@@ -289,9 +279,8 @@ The session's end time is carried on the log record's `timestamp` field, not as 
 
 1. **Use SessionManagerProvider** - Register your session manager as a singleton for consistent access
 2. **Configure Appropriate Timeouts** - Set session timeouts based on your app's usage patterns
-3. **Record Meaningful Activity** - Wire `recordActivity()` to foreground transitions and meaningful user interactions
-4. **Add Span Processor Early** - Register the SessionSpanProcessor before creating spans
-5. **Handle Session Events** - Set up SessionEventInstrumentation to capture session lifecycle
+3. **Add Span Processor Early** - Register the SessionSpanProcessor before creating spans
+4. **Handle Session Events** - Set up SessionEventInstrumentation to capture session lifecycle
 
 ## Persistence
 
@@ -304,7 +293,7 @@ Sessions are automatically persisted and can be resumed on app restart:
 - Existing `otel-session-*` fields are migrated when first read
 - Unknown or malformed records are cleared so persistence can recover on the next write
 - Session starts and resets are saved immediately
-- Activity updates are coalesced and saved on a 30-second timer to minimize disk I/O
+- Access updates are coalesced and saved on a 30-second timer to minimize disk I/O
 
 ### Ownership
 

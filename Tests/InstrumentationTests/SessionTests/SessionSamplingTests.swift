@@ -75,7 +75,7 @@ final class SessionSamplingTests: XCTestCase {
     XCTAssertEqual(sampler.callCount, 2)
   }
 
-  func testActivityKeepsCurrentDecision() throws {
+  func testRepeatedAccessKeepsCurrentDecision() throws {
     let sampler = TestSessionSampler(decisions: [.notSampled])
     let manager = try SessionManager(
       configuration: SessionConfig(sampler: sampler),
@@ -83,26 +83,26 @@ final class SessionSamplingTests: XCTestCase {
     )
     let session = manager.getSession()
 
-    let activeSession = manager.recordActivity()
+    let activeSession = manager.getSession()
 
     XCTAssertEqual(activeSession.id, session.id)
     XCTAssertEqual(activeSession.samplingDecision, .notSampled)
     XCTAssertEqual(sampler.callCount, 1)
   }
 
-  func testDecisionAccessDoesNotRecordActivity() throws {
+  func testDecisionAccessRecordsActivity() throws {
     let sampler = TestSessionSampler(decisions: [.notSampled])
     let manager = try SessionManager(
       configuration: SessionConfig(sampler: sampler),
       persistence: TestSessionPersistence()
     )
-    let session = try XCTUnwrap(manager.getSessionForAttribution())
+    let session = manager.getSession()
     Thread.sleep(forTimeInterval: 0.01)
 
     let decision = try XCTUnwrap(manager.samplingDecision())
 
     XCTAssertEqual(decision, .notSampled)
-    XCTAssertEqual(manager.peekSession()?.expireTime, session.expireTime)
+    XCTAssertGreaterThan(manager.peekSession()?.expireTime ?? .distantPast, session.expireTime)
     XCTAssertEqual(sampler.callCount, 1)
   }
 
@@ -227,7 +227,7 @@ final class SessionSamplingTests: XCTestCase {
     XCTAssertEqual(sampler.callCount, 1)
   }
 
-  func testSamplerRunsOutsideSessionStateLock() throws {
+  func testConcurrentSignalWaitsForInitialSamplingDecision() throws {
     let sampler = BlockingSessionSampler()
     let manager = try SessionManager(
       configuration: SessionConfig(sampler: sampler),
@@ -235,7 +235,7 @@ final class SessionSamplingTests: XCTestCase {
     )
     let creationFinished = expectation(description: "Session creation finished")
     DispatchQueue.global().async {
-      manager.getSessionForAttribution()
+      manager.getSession()
       creationFinished.fulfill()
     }
     XCTAssertEqual(sampler.didStart.wait(timeout: .now() + 1), .success)
@@ -247,19 +247,21 @@ final class SessionSamplingTests: XCTestCase {
     }
     wait(for: [peekFinished], timeout: 0.5)
 
-    let attributionFinished = expectation(description: "Passive attribution did not wait for sampling")
-    let resultLock = NSLock()
-    nonisolated(unsafe) var attributedSession: Session?
+    let signalFinished = DispatchSemaphore(value: 0)
+    let span = MockReadableSpan()
     DispatchQueue.global().async {
-      let session = manager.getSessionForAttribution()
-      resultLock.withLock { attributedSession = session }
-      attributionFinished.fulfill()
+      SessionSpanProcessor(sessionManager: manager).onStart(parentContext: nil, span: span)
+      signalFinished.signal()
     }
-    wait(for: [attributionFinished], timeout: 0.5)
-    XCTAssertNil(resultLock.withLock { attributedSession })
+    XCTAssertEqual(signalFinished.wait(timeout: .now() + 0.1), .timedOut)
 
     sampler.allowCompletion.signal()
     wait(for: [creationFinished], timeout: 1)
+    XCTAssertEqual(signalFinished.wait(timeout: .now() + 1), .success)
+    XCTAssertEqual(
+      span.capturedAttributes[SemanticConventions.Session.id.rawValue],
+      manager.peekSession().map { AttributeValue.string($0.id) }
+    )
   }
 
   func testSamplerCanEmitLogDuringInitialCreation() throws {
@@ -284,6 +286,22 @@ final class SessionSamplingTests: XCTestCase {
     )
   }
 
+  func testSamplerCanReadDecisionDuringInitialCreationWithoutRecursing() throws {
+    let sampler = CallbackSessionSampler()
+    let manager = try SessionManager(
+      configuration: SessionConfig(sampler: sampler),
+      persistence: TestSessionPersistence()
+    )
+    var decisionDuringSampling: SessionSamplingDecision?
+    sampler.onSample = { decisionDuringSampling = manager.samplingDecision() }
+    defer { sampler.onSample = nil }
+
+    let session = manager.getSession()
+
+    XCTAssertNil(decisionDuringSampling)
+    XCTAssertEqual(manager.samplingDecision(), session.samplingDecision)
+  }
+
   func testSamplerCanEmitLogDuringExpiryRotation() throws {
     let sampler = CallbackSessionSampler()
     let manager = try SessionManager(
@@ -296,7 +314,7 @@ final class SessionSamplingTests: XCTestCase {
     sampler.onSample = { processor.onEmit(logRecord: Self.testLogRecord) }
     defer { sampler.onSample = nil }
 
-    let replacement = try XCTUnwrap(manager.getSessionForAttribution())
+    let replacement = manager.getSession()
 
     XCTAssertEqual(replacement.previousId, firstSession.id)
     XCTAssertEqual(nextProcessor.receivedLogRecords.count, 1)
@@ -338,11 +356,11 @@ final class SessionSamplingTests: XCTestCase {
     }
     XCTAssertEqual(sampler.didStartBlocking.wait(timeout: .now() + 1), .success)
 
-    let attributionFinished = expectation(description: "Live attribution stayed available")
+    let attributionFinished = expectation(description: "Live access stayed available")
     let resultLock = NSLock()
     nonisolated(unsafe) var attributedSession: Session?
     DispatchQueue.global().async {
-      let session = manager.getSessionForAttribution()
+      let session = manager.getSession()
       resultLock.withLock { attributedSession = session }
       attributionFinished.fulfill()
     }

@@ -7,7 +7,7 @@ import Foundation
 
 /// Manages OpenTelemetry sessions with automatic expiration and persistence.
 /// Provides thread-safe access to session information and handles session lifecycle.
-/// Direct access and explicit activity extend a session. Telemetry attribution is passive.
+/// Sessions are extended on access and persisted to UserDefaults.
 public class SessionManager: @unchecked Sendable {
   private struct SessionTransition {
     let session: Session
@@ -36,6 +36,7 @@ public class SessionManager: @unchecked Sendable {
   private var pendingTransitions: [SessionTransition] = []
   private var isDrainingEffects = false
   private var isCreatingSession = false
+  private var sessionCreatorThread: ObjectIdentifier?
 
   /// Initializes the session manager and restores any previous session from disk
   /// - Parameter configuration: Session configuration settings
@@ -65,44 +66,34 @@ public class SessionManager: @unchecked Sendable {
 
   /// Gets the current session, creating or extending it as needed.
   ///
-  /// This preserves the existing behavior where direct access records activity.
-  /// Automatic telemetry processors use the passive attribution access path instead.
+  /// Access records application activity and extends the inactivity deadline.
   /// - Returns: The current active session
   @discardableResult
   public func getSession() -> Session {
-    return requiredSession(recordActivity: true)
+    return accessSession()
   }
 
   /// Returns the persisted sampling decision for the active session.
   ///
   /// Trace, log, and metric integrations can call this method to apply the same decision.
-  /// Access may create a linked replacement if the previous session has expired, but it does
-  /// not extend the inactivity deadline. This returns `nil` rather than blocking while any caller
-  /// is creating or rotating a session.
+  /// Like other session access, this records application activity. It returns `nil` only when
+  /// called reentrantly by the configured sampler before an active session is available.
   public func samplingDecision() -> SessionSamplingDecision? {
-    return getSessionForAttribution()?.samplingDecision
+    return sessionForSignalAttribution()?.samplingDecision
   }
 
-  /// Records meaningful user activity and extends the current session's inactivity deadline.
+  /// Gets the session used by automatic signal processors.
   ///
-  /// If the previous session has already expired, this creates a linked replacement before
-  /// recording the activity.
-  /// - Returns: The active session after recording activity
-  @discardableResult
-  public func recordActivity() -> Session {
-    return requiredSession(recordActivity: true)
-  }
-
-  /// Gets the session used to attribute telemetry without recording activity.
-  ///
-  /// Span, log, metric, and custom processors can use this path so passive telemetry cannot keep
-  /// a session alive. It creates or rotates an expired session before returning it. If another
-  /// caller is currently sampling a replacement, every passive caller returns `nil` instead of
-  /// blocking telemetry; processors then forward that telemetry without session attribution.
-  /// - Returns: The current active session, or `nil` while session creation is in progress
-  @discardableResult
-  public func getSessionForAttribution() -> Session? {
-    return accessSession(recordActivity: false)
+  /// Normal signal access follows `getSession()` and refreshes inactivity. If the sampler itself
+  /// emits telemetry while creating a session, there is no decision to attach yet; returning the
+  /// existing active session, or `nil`, avoids recursively creating the same session.
+  func sessionForSignalAttribution() -> Session? {
+    guard isCurrentThreadCreatingSession() else {
+      return getSession()
+    }
+    return sessionMutationLock.withLock {
+      accessActiveSession(at: Date())?.session
+    }
   }
 
   /// Ends the current session and starts a linked replacement.
@@ -222,32 +213,20 @@ public class SessionManager: @unchecked Sendable {
     )
   }
 
-  private func requiredSession(recordActivity: Bool) -> Session {
-    guard let session = accessSession(recordActivity: recordActivity) else {
-      preconditionFailure("Blocking session access must produce a session")
-    }
-    return session
-  }
-
   /// Retrieves a session and queues any persistence or lifecycle work in state order.
-  private func accessSession(recordActivity: Bool) -> Session? {
-    if !recordActivity {
-      if let currentSession = currentActiveSession() {
-        return currentSession
-      }
-      guard tryAcquireSessionCreation() else { return nil }
-    } else if let activeAccess = sessionMutationLock.withLock({
-      accessActiveSession(recordActivity: true, at: Date())
+  private func accessSession() -> Session {
+    if let activeAccess = sessionMutationLock.withLock({
+      accessActiveSession(at: Date())
     }) {
       return activeAccess.session
-    } else {
-      acquireSessionCreation()
     }
+
+    acquireSessionCreation()
     let access: SessionAccess = {
       defer { releaseSessionCreation() }
 
       if let activeAccess = sessionMutationLock.withLock({
-        accessActiveSession(recordActivity: recordActivity, at: Date())
+        accessActiveSession(at: Date())
       }) {
         return activeAccess
       }
@@ -255,7 +234,7 @@ public class SessionManager: @unchecked Sendable {
       let candidate = makeSessionCandidate()
       return sessionMutationLock.withLock {
         let now = Date()
-        if let activeAccess = accessActiveSession(recordActivity: recordActivity, at: now) {
+        if let activeAccess = accessActiveSession(at: now) {
           return activeAccess
         }
 
@@ -280,15 +259,11 @@ public class SessionManager: @unchecked Sendable {
     return access.session
   }
 
-  /// Returns the active session, optionally recording activity. Call while holding
+  /// Returns and extends the active session. Call while holding
   /// `sessionMutationLock` so persistence and in-memory state remain ordered.
-  private func accessActiveSession(recordActivity: Bool, at now: Date) -> SessionAccess? {
+  private func accessActiveSession(at now: Date) -> SessionAccess? {
     guard let currentSession = currentActiveSession() else {
       return nil
-    }
-
-    guard recordActivity else {
-      return SessionAccess(session: currentSession, shouldDrainEffects: false)
     }
 
     let updatedSession = refreshedSession(session: currentSession, at: now)
@@ -315,23 +290,22 @@ public class SessionManager: @unchecked Sendable {
       sessionCreationCondition.wait()
     }
     isCreatingSession = true
+    sessionCreatorThread = ObjectIdentifier(Thread.current)
     sessionCreationCondition.unlock()
-  }
-
-  /// Claims session creation only when it can proceed without blocking passive telemetry.
-  private func tryAcquireSessionCreation() -> Bool {
-    sessionCreationCondition.lock()
-    defer { sessionCreationCondition.unlock() }
-    guard !isCreatingSession else { return false }
-    isCreatingSession = true
-    return true
   }
 
   private func releaseSessionCreation() {
     sessionCreationCondition.lock()
+    sessionCreatorThread = nil
     isCreatingSession = false
     sessionCreationCondition.broadcast()
     sessionCreationCondition.unlock()
+  }
+
+  private func isCurrentThreadCreatingSession() -> Bool {
+    sessionCreationCondition.lock()
+    defer { sessionCreationCondition.unlock() }
+    return isCreatingSession && sessionCreatorThread == ObjectIdentifier(Thread.current)
   }
 
   /// Enqueues a transition and claims its drain while mutation order is serialized.

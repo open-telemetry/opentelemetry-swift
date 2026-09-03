@@ -43,11 +43,27 @@ public struct SessionConfig: Sendable {
   ///   - maxLifetime: Maximum duration in seconds a session can remain active, regardless of activity (default disabled)
   ///   - restorePersistedSession: Whether a previously saved session should be resumed as current (default true).
   ///     When false, a new session starts and the saved session is linked as previous.
+  public init(sessionTimeout: TimeInterval = 30 * 60,
+              maxLifetime: TimeInterval? = nil,
+              restorePersistedSession: Bool = true) {
+    self.init(
+      sessionTimeout: sessionTimeout,
+      maxLifetime: maxLifetime,
+      restorePersistedSession: restorePersistedSession,
+      sampler: AlwaysOnSessionSampler()
+    )
+  }
+
+  /// Creates a session configuration with a cross-signal sampler.
+  /// - Parameters:
+  ///   - sessionTimeout: Duration in seconds after which a session expires if left inactive
+  ///   - maxLifetime: Maximum duration in seconds a session can remain active
+  ///   - restorePersistedSession: Whether a previously saved session should be resumed as current
   ///   - sampler: Sampler used once for each newly created session
   public init(sessionTimeout: TimeInterval = 30 * 60,
               maxLifetime: TimeInterval? = nil,
               restorePersistedSession: Bool = true,
-              sampler: any SessionSampler = AlwaysOnSessionSampler()) {
+              sampler: any SessionSampler) {
     self.sessionTimeout = sessionTimeout
     self.maxLifetime = maxLifetime
     self.restorePersistedSession = restorePersistedSession
