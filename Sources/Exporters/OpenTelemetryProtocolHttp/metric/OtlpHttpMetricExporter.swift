@@ -31,29 +31,34 @@ public final class OtlpHttpMetricExporter: MetricExporter, @unchecked Sendable {
   var aggregationTemporalitySelector: AggregationTemporalitySelector
   var defaultAggregationSelector: DefaultAggregationSelector
 
-  var pendingMetrics: [MetricData] {
-    base.snapshotPending()
-  }
-
   private let base: OtlpHttpExporterBase<MetricData>
   private var exporterMetrics: ExporterMetrics?
 
   // MARK: - Init
 
-  public init(endpoint: URL, config: OtlpConfiguration = OtlpConfiguration(),
-              aggregationTemporalitySelector: AggregationTemporalitySelector =
-                AggregationTemporality.alwaysCumulative(),
-              defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector.instance,
-              httpClient: HTTPClient = BaseHTTPClient(),
-              envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
-              requeueOnFailure: Bool = true) {
+  init(base: OtlpHttpExporterBase<MetricData>,
+       aggregationTemporalitySelector: AggregationTemporalitySelector,
+       defaultAggregationSelector: DefaultAggregationSelector) {
+    self.base = base
     self.aggregationTemporalitySelector = aggregationTemporalitySelector
     self.defaultAggregationSelector = defaultAggregationSelector
-    base = OtlpHttpExporterBase(endpoint: endpoint,
-                                config: config,
-                                httpClient: httpClient,
-                                envVarHeaders: envVarHeaders,
-                                requeueOnFailure: requeueOnFailure)
+  }
+
+  public convenience init(endpoint: URL,
+                          config: OtlpConfiguration = OtlpConfiguration(),
+                          aggregationTemporalitySelector: AggregationTemporalitySelector =
+                          AggregationTemporality.alwaysCumulative(),
+                          defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector.instance,
+                          httpClient: HTTPClient = BaseHTTPClient(),
+                          envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
+                          requeueOnFailure: Bool = true) {
+    self.init(base: OtlpHttpExporterBase(endpoint: endpoint,
+                                         config: config,
+                                         httpClient: httpClient,
+                                         envVarHeaders: envVarHeaders,
+                                         requeueOnFailure: requeueOnFailure),
+              aggregationTemporalitySelector: aggregationTemporalitySelector,
+              defaultAggregationSelector: defaultAggregationSelector)
   }
 
   /// A `convenience` constructor to provide support for exporter metric using`StableMeterProvider` type

@@ -17,23 +17,23 @@ public func defaultOltpHttpTracesEndpoint() -> URL {
 }
 
 public final class OtlpHttpTraceExporter: SpanExporter, @unchecked Sendable {
-  var pendingSpans: [SpanData] {
-    base.snapshotPending()
-  }
-
   private let base: OtlpHttpExporterBase<SpanData>
   private var exporterMetrics: ExporterMetrics?
 
-  public init(endpoint: URL = defaultOltpHttpTracesEndpoint(),
+  init(base: OtlpHttpExporterBase<SpanData>) {
+    self.base = base
+  }
+
+  public convenience init(endpoint: URL = defaultOltpHttpTracesEndpoint(),
               config: OtlpConfiguration = OtlpConfiguration(),
               httpClient: HTTPClient = BaseHTTPClient(),
               envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
               requeueOnFailure: Bool = true) {
-    base = OtlpHttpExporterBase(endpoint: endpoint,
-                                config: config,
-                                httpClient: httpClient,
-                                envVarHeaders: envVarHeaders,
-                                requeueOnFailure: requeueOnFailure)
+    self.init(base: OtlpHttpExporterBase(endpoint: endpoint,
+                                         config: config,
+                                         httpClient: httpClient,
+                                         envVarHeaders: envVarHeaders,
+                                         requeueOnFailure: requeueOnFailure))
   }
 
   /// A `convenience` constructor to provide support for exporter metric using`StableMeterProvider` type

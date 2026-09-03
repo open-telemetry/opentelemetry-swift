@@ -11,7 +11,7 @@ import FoundationNetworking
 #endif
 import OpenTelemetryApi
 
-final class OtlpHttpExporterBase<Signal>: @unchecked Sendable {
+final class OtlpHttpExporterBase<Signal: Sendable>: @unchecked Sendable {
   let endpoint: URL
   let httpClient: HTTPClient
   let envVarHeaders: [(String, String)]?
@@ -19,7 +19,7 @@ final class OtlpHttpExporterBase<Signal>: @unchecked Sendable {
   let requeueOnFailure: Bool
 
   private let lock = Lock()
-  var pendingSignals: [Signal] = []
+  private var pendingSignals: [Signal] = []
 
   // MARK: - Init
 

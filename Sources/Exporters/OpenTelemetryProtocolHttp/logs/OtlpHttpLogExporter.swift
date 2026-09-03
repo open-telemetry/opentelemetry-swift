@@ -17,23 +17,23 @@ public func defaultOltpHttpLoggingEndpoint() -> URL {
 }
 
 public final class OtlpHttpLogExporter: LogRecordExporter, @unchecked Sendable {
-  var pendingLogRecords: [ReadableLogRecord] {
-    base.snapshotPending()
-  }
-
   private let base: OtlpHttpExporterBase<ReadableLogRecord>
   private var exporterMetrics: ExporterMetrics?
 
-  public init(endpoint: URL = defaultOltpHttpLoggingEndpoint(),
-              config: OtlpConfiguration = OtlpConfiguration(),
-              httpClient: HTTPClient = BaseHTTPClient(),
-              envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
-              requeueOnFailure: Bool = true) {
-    base = OtlpHttpExporterBase(endpoint: endpoint,
-                                config: config,
-                                httpClient: httpClient,
-                                envVarHeaders: envVarHeaders,
-                                requeueOnFailure: requeueOnFailure)
+  init(base: OtlpHttpExporterBase<ReadableLogRecord>) {
+    self.base = base
+  }
+
+  public convenience init(endpoint: URL = defaultOltpHttpLoggingEndpoint(),
+                          config: OtlpConfiguration = OtlpConfiguration(),
+                          httpClient: HTTPClient = BaseHTTPClient(),
+                          envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
+                          requeueOnFailure: Bool = true) {
+    self.init(base: OtlpHttpExporterBase(endpoint: endpoint,
+                                         config: config,
+                                         httpClient: httpClient,
+                                         envVarHeaders: envVarHeaders,
+                                         requeueOnFailure: requeueOnFailure))
   }
 
   /// A `convenience` constructor to provide support for exporter metric using`StableMeterProvider` type
