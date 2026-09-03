@@ -298,7 +298,7 @@ final class SessionStoreTests: XCTestCase {
     XCTAssertNil(userDefaults.object(forKey: persistence.startTimeKey))
   }
 
-  func testUnknownRecordVersionIsClearedAndPersistenceResumes() throws {
+  func testUnknownFutureRecordIsPreservedAndBlocksWrites() throws {
     let session = Session(id: "future-session", expireTime: Date(timeIntervalSinceNow: 1800))
     let futureRecord = PersistedSessionRecord(
       version: PersistedSessionRecord.currentVersion + 1,
@@ -308,7 +308,21 @@ final class SessionStoreTests: XCTestCase {
     persistence.write(data)
 
     XCTAssertNil(store.load())
+    XCTAssertEqual(persistence.read(), data)
+
+    let replacement = Session(id: "replacement", expireTime: Date())
+    store.saveImmediately(session: replacement)
+    store.scheduleSave(session: replacement)
+
+    XCTAssertEqual(persistence.read(), data)
+  }
+
+  func testCorruptedVersionedRecordIsClearedAndPersistenceResumes() throws {
+    persistence.write(Data("not-a-property-list".utf8))
+
+    XCTAssertNil(store.load())
     XCTAssertNil(persistence.read())
+
     store.saveImmediately(session: Session(id: "replacement", expireTime: Date()))
     XCTAssertEqual(try decodeRecord().session.id, "replacement")
   }

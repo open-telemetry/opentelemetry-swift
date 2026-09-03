@@ -291,7 +291,8 @@ Sessions are automatically persisted and can be resumed on app restart:
 - Expired sessions create new sessions with proper `previous_id` linking
 - The built-in backend stores one versioned `Data` record instead of separate fields
 - Existing `otel-session-*` fields are migrated when first read
-- Unknown or malformed records are cleared so persistence can recover on the next write
+- Unknown future records are preserved and disable writes for that manager, preventing an older SDK from replacing newer data
+- Malformed records are cleared so persistence can recover on the next write
 - Session starts and resets are saved immediately
 - Access updates are coalesced and saved on a 30-second timer to minimize disk I/O
 
