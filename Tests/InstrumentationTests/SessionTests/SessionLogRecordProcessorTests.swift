@@ -34,7 +34,7 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     logRecordProcessor.onEmit(logRecord: testLogRecord)
 
     XCTAssertEqual(mockNextProcessor.receivedLogRecords.count, 1)
-    XCTAssertEqual(mockSessionManager.attributionAccessCount, 1)
+    XCTAssertEqual(mockSessionManager.sessionAccessCount, 1)
     let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
 
     if case let .string(sessionId) = enhancedRecord.attributes[SemanticConventions.Session.id.rawValue] {
@@ -44,7 +44,7 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     }
   }
 
-  func testOnEmitDoesNotRefreshSessionActivity() {
+  func testOnEmitRefreshesSessionActivity() {
     SessionStore.teardown()
     defer { SessionStore.teardown() }
     let manager = SessionManager()
@@ -54,9 +54,10 @@ final class SessionLogRecordProcessorTests: XCTestCase {
       sessionManager: manager
     )
 
+    Thread.sleep(forTimeInterval: 0.01)
     processor.onEmit(logRecord: testLogRecord)
 
-    XCTAssertEqual(manager.peekSession()?.expireTime, session.expireTime)
+    XCTAssertGreaterThan(manager.peekSession()?.expireTime ?? .distantPast, session.expireTime)
   }
 
   func testOnEmitPreservesOriginalAttributes() {
@@ -186,7 +187,7 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     } else {
       XCTFail("Expected existing session.previous_id to be preserved")
     }
-    XCTAssertEqual(mockSessionManager.attributionAccessCount, 0)
+    XCTAssertEqual(mockSessionManager.sessionAccessCount, 0)
   }
 
   func testSessionEndEventPreservesExistingAttributes() {
@@ -215,7 +216,7 @@ final class SessionLogRecordProcessorTests: XCTestCase {
       XCTFail("Expected existing session.id to be preserved")
     }
     XCTAssertNil(enhancedRecord.attributes[SemanticConventions.Session.previousId.rawValue])
-    XCTAssertEqual(mockSessionManager.attributionAccessCount, 0)
+    XCTAssertEqual(mockSessionManager.sessionAccessCount, 0)
   }
 
   func testApplicationEventsUsingLifecycleNamesStillGetSessionAttributes() {
@@ -236,7 +237,7 @@ final class SessionLogRecordProcessorTests: XCTestCase {
       logRecordProcessor.onEmit(logRecord: applicationRecord)
     }
 
-    XCTAssertEqual(mockSessionManager.attributionAccessCount, 2)
+    XCTAssertEqual(mockSessionManager.sessionAccessCount, 2)
     for record in mockNextProcessor.receivedLogRecords {
       XCTAssertEqual(
         record.attributes[SemanticConventions.Session.id.rawValue],
