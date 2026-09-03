@@ -12,6 +12,9 @@ on:
       version:
         required: true
         type: string
+    secrets:
+      COCOAPODS_TRUNK_TOKEN:
+        required: true
 
 permissions:
   contents: read
@@ -29,6 +32,7 @@ jobs:
         with:
           ref: ${{ inputs.version }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Publish to CocoaPods trunk
         run: |

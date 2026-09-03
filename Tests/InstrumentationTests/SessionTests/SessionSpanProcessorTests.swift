@@ -26,7 +26,7 @@ final class SessionSpanProcessorTests: XCTestCase {
 
     spanProcessor.onStart(parentContext: nil, span: mockSpan)
 
-    XCTAssertEqual(mockSessionManager.attributionAccessCount, 1)
+    XCTAssertEqual(mockSessionManager.sessionAccessCount, 1)
     if case let .string(sessionId) = mockSpan.capturedAttributes["session.id"] {
       XCTAssertEqual(sessionId, expectedSessionId)
     } else {
@@ -34,16 +34,17 @@ final class SessionSpanProcessorTests: XCTestCase {
     }
   }
 
-  func testOnStartDoesNotRefreshSessionActivity() {
+  func testOnStartRefreshesSessionActivity() {
     SessionStore.teardown()
     defer { SessionStore.teardown() }
     let manager = SessionManager()
     let session = manager.getSession()
     let processor = SessionSpanProcessor(sessionManager: manager)
 
+    Thread.sleep(forTimeInterval: 0.01)
     processor.onStart(parentContext: nil, span: mockSpan)
 
-    XCTAssertEqual(manager.peekSession()?.expireTime, session.expireTime)
+    XCTAssertGreaterThan(manager.peekSession()?.expireTime ?? .distantPast, session.expireTime)
   }
 
   func testOnStartWithDifferentSessionIds() {
@@ -130,14 +131,10 @@ class MockSessionManager: SessionManager, @unchecked Sendable {
   var sessionId: String = "default-session-id"
   var previousSessionId: String?
   var startTime: Date = .init()
-  var attributionAccessCount = 0
+  var sessionAccessCount = 0
 
   override func getSession() -> Session {
-    return mockSession()
-  }
-
-  override func getSessionForAttribution() -> Session {
-    attributionAccessCount += 1
+    sessionAccessCount += 1
     return mockSession()
   }
 

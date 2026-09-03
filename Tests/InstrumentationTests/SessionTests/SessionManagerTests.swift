@@ -47,27 +47,31 @@ final class SessionManagerTests: XCTestCase {
     XCTAssertGreaterThan(t2, t1)
   }
 
-  func testAttributionDoesNotRecordActivity() {
-    let t1 = sessionManager.getSessionForAttribution().expireTime
-    let t2 = sessionManager.getSessionForAttribution().expireTime
-    XCTAssertEqual(t2, t1)
+  func testResetWithoutExistingSessionCreatesInitialSession() {
+    let session = sessionManager.resetSession()
+
+    XCTAssertNil(session.previousId)
+    XCTAssertEqual(SessionStore.load()?.id, session.id)
+    XCTAssertEqual(SessionEventInstrumentation.queue.count, 1)
+    XCTAssertEqual(SessionEventInstrumentation.queue[0].eventType, .start)
+    XCTAssertEqual(SessionEventInstrumentation.queue[0].session.id, session.id)
   }
 
-  func testRecordActivityExtendsSessionAndPreservesStartTime() {
+  func testGetSessionExtendsSessionAndPreservesStartTime() {
     let originalSession = sessionManager.getSession()
     Thread.sleep(forTimeInterval: 0.1)
-    let extendedSession = sessionManager.recordActivity()
+    let extendedSession = sessionManager.getSession()
 
     XCTAssertEqual(originalSession.id, extendedSession.id)
     XCTAssertGreaterThan(extendedSession.expireTime, originalSession.expireTime)
     XCTAssertEqual(originalSession.startTime, extendedSession.startTime)
   }
 
-  func testRecordActivityAfterExpiryStartsLinkedSession() {
+  func testGetSessionAfterExpiryStartsLinkedSession() {
     sessionManager = SessionManager(configuration: SessionConfig(sessionTimeout: 0))
     let expiredSession = sessionManager.getSession()
 
-    let activeSession = sessionManager.recordActivity()
+    let activeSession = sessionManager.getSession()
 
     XCTAssertNotEqual(activeSession.id, expiredSession.id)
     XCTAssertEqual(activeSession.previousId, expiredSession.id)
@@ -164,7 +168,7 @@ final class SessionManagerTests: XCTestCase {
 
   func testResetSessionKeepsAnExpiredSessionEndTime() {
     sessionManager = SessionManager(configuration: SessionConfig(sessionTimeout: 0))
-    let expiredSession = sessionManager.getSessionForAttribution()
+    let expiredSession = sessionManager.getSession()
     let expiredEndTime = expiredSession.endTime
     SessionEventInstrumentation.queue = []
 
@@ -383,7 +387,7 @@ final class SessionManagerTests: XCTestCase {
     XCTAssertNotNil(session.id)
   }
 
-  func testAppliedSessionEventPipelineDoesNotReenterAttribution() {
+  func testAppliedSessionEventPipelineDoesNotReenterSessionAccess() {
     let manager = CountingSessionManager()
     let exporter = InMemoryLogRecordExporter()
     let processor = SessionLogRecordProcessor(
@@ -396,10 +400,10 @@ final class SessionManagerTests: XCTestCase {
     OpenTelemetry.registerLoggerProvider(loggerProvider: loggerProvider)
     SessionEventInstrumentation.install()
 
-    let session = manager.getSessionForAttribution()
+    let session = manager.getSession()
 
     let records = exporter.getFinishedLogRecords()
-    XCTAssertEqual(manager.attributionAccessCount, 1)
+    XCTAssertEqual(manager.sessionAccessCount, 1)
     XCTAssertEqual(records.count, 1)
     XCTAssertEqual(records[0].eventName, SessionConstants.sessionStartEvent)
     XCTAssertEqual(
@@ -408,7 +412,7 @@ final class SessionManagerTests: XCTestCase {
     )
   }
 
-  func testSlowSessionExporterDoesNotBlockPassiveAttribution() {
+  func testSlowSessionExporterDoesNotBlockConcurrentAccessOrReset() {
     let manager = SessionManager()
     let blockingProcessor = BlockingLogRecordProcessor()
     let loggerProvider = LoggerProviderBuilder()
@@ -419,23 +423,23 @@ final class SessionManagerTests: XCTestCase {
 
     let transitionFinished = expectation(description: "Session transition finished")
     DispatchQueue.global().async {
-      manager.getSessionForAttribution()
+      manager.getSession()
       transitionFinished.fulfill()
     }
     XCTAssertEqual(blockingProcessor.didStart.wait(timeout: .now() + 1), .success)
-    let passiveAccessFinished = expectation(description: "Passive attribution remained available")
+    let secondAccessFinished = expectation(description: "Second access remained available")
     DispatchQueue.global().async {
-      manager.getSessionForAttribution()
-      passiveAccessFinished.fulfill()
+      manager.getSession()
+      secondAccessFinished.fulfill()
     }
-    wait(for: [passiveAccessFinished], timeout: 0.5)
+    wait(for: [secondAccessFinished], timeout: 0.5)
 
-    let activityFinished = expectation(description: "Activity update remained available")
+    let thirdAccessFinished = expectation(description: "Third access remained available")
     DispatchQueue.global().async {
-      manager.recordActivity()
-      activityFinished.fulfill()
+      manager.getSession()
+      thirdAccessFinished.fulfill()
     }
-    wait(for: [activityFinished], timeout: 0.5)
+    wait(for: [thirdAccessFinished], timeout: 0.5)
 
     let resetFinished = expectation(description: "Explicit reset remained available")
     let resetLock = NSLock()
@@ -467,7 +471,7 @@ final class SessionManagerTests: XCTestCase {
 
     let initialTransitionFinished = expectation(description: "Initial transition finished")
     DispatchQueue.global().async {
-      manager.getSessionForAttribution()
+      manager.getSession()
       initialTransitionFinished.fulfill()
     }
     XCTAssertEqual(blockingProcessor.didStart.wait(timeout: .now() + 1), .success)
@@ -523,7 +527,7 @@ final class SessionManagerTests: XCTestCase {
 
     let transitionFinished = expectation(description: "Initial transition finished")
     DispatchQueue.global().async {
-      manager.getSessionForAttribution()
+      manager.getSession()
       transitionFinished.fulfill()
     }
 
@@ -551,7 +555,7 @@ final class SessionManagerTests: XCTestCase {
 
     let callerFinished = expectation(description: "Initial caller returned")
     callerQueue.async {
-      manager.getSessionForAttribution()
+      manager.getSession()
       callerFinished.fulfill()
     }
 
@@ -577,7 +581,7 @@ final class SessionManagerTests: XCTestCase {
 
     let transitionFinished = expectation(description: "Nested session transition finished")
     DispatchQueue.global().async {
-      manager.getSessionForAttribution()
+      manager.getSession()
       transitionFinished.fulfill()
     }
     wait(for: [transitionFinished, eventsPublished], timeout: 1)
@@ -649,15 +653,15 @@ final class SessionManagerTests: XCTestCase {
 
 private final class CountingSessionManager: SessionManager, @unchecked Sendable {
   private let countLock = NSLock()
-  private var _attributionAccessCount = 0
+  private var _sessionAccessCount = 0
 
-  var attributionAccessCount: Int {
-    return countLock.withLock { _attributionAccessCount }
+  var sessionAccessCount: Int {
+    return countLock.withLock { _sessionAccessCount }
   }
 
-  override func getSessionForAttribution() -> Session {
-    countLock.withLock { _attributionAccessCount += 1 }
-    return super.getSessionForAttribution()
+  override func getSession() -> Session {
+    countLock.withLock { _sessionAccessCount += 1 }
+    return super.getSession()
   }
 }
 

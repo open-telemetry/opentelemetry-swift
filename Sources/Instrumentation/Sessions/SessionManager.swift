@@ -7,7 +7,7 @@ import Foundation
 
 /// Manages OpenTelemetry sessions with automatic expiration and persistence.
 /// Provides thread-safe access to session information and handles session lifecycle.
-/// Direct access and explicit activity extend a session. Telemetry attribution is passive.
+/// Sessions are extended on access and persisted to UserDefaults.
 public class SessionManager: @unchecked Sendable {
   private struct SessionTransition {
     let session: Session
@@ -58,32 +58,11 @@ public class SessionManager: @unchecked Sendable {
 
   /// Gets the current session, creating or extending it as needed.
   ///
-  /// This preserves the existing behavior where direct access records activity.
-  /// Automatic telemetry processors use the passive attribution access path instead.
+  /// Access records application activity and extends the inactivity deadline.
   /// - Returns: The current active session
   @discardableResult
   public func getSession() -> Session {
-    return accessSession(recordActivity: true)
-  }
-
-  /// Records meaningful user activity and extends the current session's inactivity deadline.
-  ///
-  /// If the previous session has already expired, this creates a linked replacement before
-  /// recording the activity.
-  /// - Returns: The active session after recording activity
-  @discardableResult
-  public func recordActivity() -> Session {
-    return accessSession(recordActivity: true)
-  }
-
-  /// Gets the session used to attribute telemetry without recording activity.
-  ///
-  /// Span, log, metric, and custom processors can use this path so passive telemetry cannot keep
-  /// a session alive. It creates or rotates an expired session before returning it.
-  /// - Returns: The current active session
-  @discardableResult
-  public func getSessionForAttribution() -> Session {
-    return accessSession(recordActivity: false)
+    return accessSession()
   }
 
   /// Ends the current session and starts a linked replacement.
@@ -186,19 +165,7 @@ public class SessionManager: @unchecked Sendable {
   }
 
   /// Retrieves a session and queues any persistence or lifecycle work in state order.
-  private func accessSession(recordActivity: Bool) -> Session {
-    if !recordActivity,
-       let activeSession = lock.withLock({ () -> Session? in
-         guard let session,
-               !session.isExpired()
-         else {
-           return nil
-         }
-         return session
-       }) {
-      return activeSession
-    }
-
+  private func accessSession() -> Session {
     let access: SessionAccess = sessionMutationLock.withLock {
       let now = Date()
       if let currentSession = lock.withLock({ () -> Session? in
@@ -209,10 +176,6 @@ public class SessionManager: @unchecked Sendable {
         }
         return session
       }) {
-        guard recordActivity else {
-          return SessionAccess(session: currentSession, shouldDrainEffects: false)
-        }
-
         let updatedSession = refreshedSession(session: currentSession, at: now)
         sessionStore.scheduleSave(session: updatedSession)
         lock.withLock { session = updatedSession }
