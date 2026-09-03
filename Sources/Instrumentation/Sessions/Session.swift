@@ -7,7 +7,7 @@ import Foundation
 
 /// Represents an OpenTelemetry session with lifecycle management.
 ///
-/// A session tracks user activity with automatic expiration and renewal capabilities.
+/// A session tracks application and user activity with automatic expiration and renewal capabilities.
 /// Sessions include unique identifiers, timestamps, and linkage to previous sessions.
 ///
 /// Example:
