@@ -264,7 +264,7 @@ Sessions are automatically persisted and can be resumed on app restart:
 - Existing `otel-session-*` fields are migrated when first read
 - Unknown future records are preserved and disable writes for that manager, preventing an older SDK from replacing newer data
 - Malformed records are cleared so persistence can recover on the next write
-- Session starts and resets are saved immediately
+- Session starts and resets attempt an immediate save; rejected writes are retried
 - Access updates are coalesced and saved on a 30-second timer to minimize disk I/O
 
 ### Ownership
