@@ -61,6 +61,43 @@ private struct TransientNetworkError: Error {}
 /// Fails the first request, then never invokes the completion handler. This gives
 /// `flush()` pending data to send and no response to wait on — the shape that made
 /// an unbounded `semaphore.wait()` block the calling thread forever.
+private final class HangingHTTPClient: HTTPClient {
+  private(set) var sentRequests: [URLRequest] = []
+  func send(request: URLRequest,
+            completion: @escaping (Result<HTTPURLResponse, Error>) -> Void) {
+    sentRequests.append(request)
+  }
+
+  func send(request: URLRequest) async throws -> HTTPURLResponse {
+    sentRequests.append(request)
+    return await withCheckedContinuation { (_: CheckedContinuation<HTTPURLResponse, Never>) in }
+  }
+}
+
+private final class DelayedFailureHTTPClient: HTTPClient {
+  private let delay: TimeInterval
+  private(set) var sentRequests: [URLRequest] = []
+
+  init(delay: TimeInterval) {
+    self.delay = delay
+  }
+
+  func send(request: URLRequest,
+            completion: @escaping (Result<HTTPURLResponse, Error>) -> Void) {
+    sentRequests.append(request)
+    nonisolated(unsafe) let completion = completion
+    DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
+      completion(.failure(TransientNetworkError()))
+    }
+  }
+
+  func send(request: URLRequest) async throws -> HTTPURLResponse {
+    sentRequests.append(request)
+    try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+    throw TransientNetworkError()
+  }
+}
+
 private final class HangingAfterFirstFailureHTTPClient: HTTPClient {
   private var sendCount = 0
   func send(request: URLRequest,
@@ -116,10 +153,36 @@ final class OtlpHttpLogExporterCoverageTests: XCTestCase {
 
     let rec = sampleLogRecord()
     let result = exporter.export(logRecords: [rec])
-    XCTAssertEqual(result, .success)
+    XCTAssertEqual(result, .failure)
 
     // Failure path should put the record back into pendingLogRecords.
     XCTAssertEqual(exporter.pendingLogRecords.count, 1)
+    XCTAssertEqual(client.sentRequests.count, 1)
+  }
+
+  func testExportWaitsForDelayedFailureBeforeReturning() {
+    let delay: TimeInterval = 0.05
+    let client = DelayedFailureHTTPClient(delay: delay)
+    let exporter = OtlpHttpLogExporter(httpClient: client)
+
+    let start = Date()
+    let result = exporter.export(logRecords: [sampleLogRecord()])
+
+    XCTAssertEqual(result, .failure)
+    XCTAssertGreaterThanOrEqual(Date().timeIntervalSince(start), delay)
+    XCTAssertEqual(exporter.pendingLogRecords.count, 1)
+    XCTAssertEqual(client.sentRequests.count, 1)
+  }
+
+  func testExportTimesOutWhenResponseNeverArrives() {
+    let timeout: TimeInterval = 0.05
+    let client = HangingHTTPClient()
+    let exporter = OtlpHttpLogExporter(config: OtlpConfiguration(timeout: timeout),
+                                       httpClient: client)
+
+    let start = Date()
+    XCTAssertEqual(exporter.export(logRecords: [sampleLogRecord()]), .failure)
+    XCTAssertLessThan(Date().timeIntervalSince(start), timeout * 4)
     XCTAssertEqual(client.sentRequests.count, 1)
   }
 
