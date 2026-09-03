@@ -22,12 +22,22 @@ public class SessionLogRecordProcessor: LogRecordProcessor {
 
   /// Called when a log record is emitted - adds session attributes and forwards to next processor
   public func onEmit(logRecord: ReadableLogRecord) {
+    if logRecord.eventName == SessionConstants.sessionStartEvent ||
+      logRecord.eventName == SessionConstants.sessionEndEvent,
+      logRecord.attributes[SemanticConventions.Session.id.rawValue] != nil {
+      // Lifecycle events already carry the historical session context they describe.
+      nextProcessor.onEmit(logRecord: logRecord)
+      return
+    }
+
     var enhancedRecord = logRecord
 
-    // Only add session attributes if they don't already exist
+    // Only add session attributes if they don't already exist.
     if logRecord.attributes[SemanticConventions.Session.id.rawValue] == nil || logRecord.attributes[SemanticConventions.Session.previousId.rawValue] == nil {
-      let session = sessionManager.getSession()
-
+      guard let session = sessionManager.sessionForSignalAttribution() else {
+        nextProcessor.onEmit(logRecord: enhancedRecord)
+        return
+      }
       // Add session.id if not already present
       if logRecord.attributes[SemanticConventions.Session.id.rawValue] == nil {
         enhancedRecord.setAttribute(key: SemanticConventions.Session.id.rawValue, value: session.id)

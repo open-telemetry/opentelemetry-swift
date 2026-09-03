@@ -7,7 +7,7 @@ import Foundation
 
 /// Represents an OpenTelemetry session with lifecycle management.
 ///
-/// A session tracks user activity with automatic expiration and renewal capabilities.
+/// A session tracks application and user activity with automatic expiration and renewal capabilities.
 /// Sessions include unique identifiers, timestamps, and linkage to previous sessions.
 ///
 /// Example:
@@ -36,8 +36,10 @@ public struct Session: Equatable, Sendable {
   public let sessionTimeout: TimeInterval
   /// The maximum duration in seconds this session can remain active, regardless of activity
   public let maxLifetime: TimeInterval?
+  /// The sampling decision shared by trace, log, and metric integrations for this session
+  public let samplingDecision: SessionSamplingDecision
 
-  /// Creates a new session
+  /// Creates a new session with the default sampled decision.
   /// - Parameters:
   ///   - id: Unique identifier for the session
   ///   - expireTime: Expiration time for the session
@@ -51,22 +53,32 @@ public struct Session: Equatable, Sendable {
               startTime: Date = Date(),
               sessionTimeout: TimeInterval = SessionConfig.default.sessionTimeout,
               maxLifetime: TimeInterval? = SessionConfig.default.maxLifetime) {
+    self.init(
+      id: id,
+      expireTime: expireTime,
+      previousId: previousId,
+      startTime: startTime,
+      sessionTimeout: sessionTimeout,
+      maxLifetime: maxLifetime,
+      samplingDecision: .sampled
+    )
+  }
+
+  /// Creates a new session with an explicit cross-signal sampling decision.
+  public init(id: String,
+              expireTime: Date,
+              previousId: String? = nil,
+              startTime: Date = Date(),
+              sessionTimeout: TimeInterval = SessionConfig.default.sessionTimeout,
+              maxLifetime: TimeInterval? = SessionConfig.default.maxLifetime,
+              samplingDecision: SessionSamplingDecision) {
     self.id = id
     self.expireTime = expireTime
     self.previousId = previousId
     self.startTime = startTime
     self.sessionTimeout = sessionTimeout
     self.maxLifetime = maxLifetime
-  }
-
-  /// Two sessions are considered equal if they have the same ID, prevID, startTime, and expiry timestamp
-  public static func == (lhs: Session, rhs: Session) -> Bool {
-    return lhs.expireTime == rhs.expireTime &&
-      lhs.id == rhs.id &&
-      lhs.previousId == rhs.previousId &&
-      lhs.startTime == rhs.startTime &&
-      lhs.sessionTimeout == rhs.sessionTimeout &&
-      lhs.maxLifetime == rhs.maxLifetime
+    self.samplingDecision = samplingDecision
   }
 
   /// Checks if the session has expired

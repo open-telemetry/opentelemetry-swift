@@ -12,7 +12,17 @@ final class SessionTests: XCTestCase {
     XCTAssertEqual(session.id, id)
     XCTAssertEqual(session.expireTime, expireTime)
     XCTAssertNil(session.previousId, "Default initialization should have nil previousId")
+    XCTAssertEqual(session.samplingDecision, .sampled)
     XCTAssertLessThanOrEqual(Date().timeIntervalSince(session.startTime), 1.0, "Start time should be set to current time by default")
+  }
+
+  func testOriginalInitializerRemainsAvailableAsFunctionValue() {
+    let initializer: (String, Date, String?, Date, TimeInterval, TimeInterval?) -> Session = Session.init
+    let startTime = Date()
+    let session = initializer("session", startTime.addingTimeInterval(1800), nil, startTime, 1800, nil)
+
+    XCTAssertEqual(session.id, "session")
+    XCTAssertEqual(session.samplingDecision, .sampled)
   }
 
   func testSessionEquality() {
@@ -33,6 +43,14 @@ final class SessionTests: XCTestCase {
     let session2 = Session(id: "session-2", expireTime: expireTime)
 
     XCTAssertNotEqual(session1, session2, "Sessions with different IDs should not be equal")
+  }
+
+  func testSessionEqualityIncludesSamplingDecision() {
+    let expireTime = Date()
+    let sampled = Session(id: "session", expireTime: expireTime, samplingDecision: .sampled)
+    let notSampled = Session(id: "session", expireTime: expireTime, samplingDecision: .notSampled)
+
+    XCTAssertNotEqual(sampled, notSampled)
   }
 
   func testSessionNotExpired() {
@@ -107,38 +125,38 @@ final class SessionTests: XCTestCase {
     XCTAssertEqual(session.previousId, previousId)
     XCTAssertEqual(session.expireTime, expireTime)
   }
-  
+
   func testEndTimeForActiveSession() {
     let session = Session(id: "test-id", expireTime: Date(timeIntervalSinceNow: 1800))
     XCTAssertNil(session.endTime, "Active session should have nil endTime")
   }
-  
+
   func testEndTimeForExpiredSession() {
     let session = Session(id: "test-id", expireTime: Date(timeIntervalSinceNow: -1800), sessionTimeout: 1800)
     XCTAssertNotNil(session.endTime, "Expired session should have endTime")
   }
-  
+
   func testDurationForActiveSession() {
     let session = Session(id: "test-id", expireTime: Date(timeIntervalSinceNow: 1800))
     XCTAssertNil(session.duration, "Active session should have nil duration")
   }
-  
+
   func testDurationForExpiredSession() {
     let session = Session(id: "test-id", expireTime: Date(timeIntervalSinceNow: -1800), sessionTimeout: 1800)
     XCTAssertNotNil(session.duration, "Expired session should have duration")
   }
-  
+
   func testSafeUnwrappingInComputedProperties() {
     // Test that endTime and duration don't crash with force unwrapping
     let expiredSession = Session(id: "test-id", expireTime: Date(timeIntervalSinceNow: -1800), sessionTimeout: 1800)
     let activeSession = Session(id: "test-id", expireTime: Date(timeIntervalSinceNow: 1800))
-    
+
     // These should not crash
     _ = expiredSession.endTime
     _ = expiredSession.duration
     _ = activeSession.endTime
     _ = activeSession.duration
-    
+
     XCTAssertNotNil(expiredSession.endTime)
     XCTAssertNotNil(expiredSession.duration)
     XCTAssertNil(activeSession.endTime)

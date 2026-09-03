@@ -1,13 +1,14 @@
 # Session Instrumentation
 
-Automatic session tracking for OpenTelemetry Swift applications. Creates unique session identifiers, tracks session lifecycle events, and automatically adds session context to all telemetry data.
+Automatic session tracking for OpenTelemetry Swift applications. Creates unique session identifiers, tracks session lifecycle events, adds session context to spans and logs, and exposes a shared sampling decision to signal integrations.
 
 ## Features
 
-- **Automatic Session Management** - Creates and manages session lifecycles with configurable timeouts
+- **Session Management** - Creates and manages session lifecycles with configurable timeouts and explicit reset
 - **Session Events** - Emits OpenTelemetry log records for session start/end events
 - **Span Attribution** - Automatically adds session IDs to all spans via span processor
-- **Persistence** - Sessions persist across app restarts using UserDefaults
+- **Versioned Persistence** - Sessions persist as one versioned record across app restarts
+- **Cross-Signal Sampling** - Persists one sampling decision that trace, log, and metric pipelines can share
 - **Thread Safety** - All components are thread-safe for concurrent access
 
 ## Setup
@@ -18,22 +19,27 @@ Automatic session tracking for OpenTelemetry Swift applications. Creates unique 
 import Sessions
 import OpenTelemetrySdk
 
+let sessionManager = SessionManager()
+SessionManagerProvider.register(sessionManager: sessionManager)
+
 // Record session start and end events
 SessionEventInstrumentation.install()
 
 // Add session attributes to spans
-let sessionSpanProcessor = SessionSpanProcessor()
+let sessionSpanProcessor = SessionSpanProcessor(sessionManager: sessionManager)
 let tracerProvider = TracerProviderBuilder()
     .add(spanProcessor: sessionSpanProcessor)
     .build()
 
-// Add session atttributes to log records
+// Add session attributes to log records
 let sessionProcessor = SessionLogRecordProcessor(
-    nextProcessor: SimpleLogRecordProcessor(logRecordExporter: ConsoleLogRecordExporter())
+    nextProcessor: SimpleLogRecordProcessor(logRecordExporter: ConsoleLogRecordExporter()),
+    sessionManager: sessionManager
 )
 let builder = LoggerProviderBuilder()
   .with(processors: [sessionProcessor])
   .with(resource: resource)
+
 ```
 
 **Custom Configuration**:
@@ -43,17 +49,38 @@ let sessionConfig = SessionConfig.builder()
     .with(sessionTimeout: 45 * 60) // 45 minutes
     .with(maxLifetime: 4 * 60 * 60)
     .with(restorePersistedSession: false)
+    .with(sampler: AlwaysOnSessionSampler())
     .build()
 let sessionManager = SessionManager(configuration: sessionConfig)
 SessionManagerProvider.register(sessionManager: sessionManager)
 ```
 
+**Custom Persistence**:
+
+```swift
+let persistence = UserDefaultsSessionPersistence(
+    userDefaults: UserDefaults(suiteName: "group.example.telemetry")!,
+    namespace: "mobile-session"
+)
+let sessionManager = try SessionManager(
+    configuration: sessionConfig,
+    persistence: persistence,
+    persistenceAccess: .exclusive
+)
+```
+
 **Getting Session Information**:
 
 ```swift
-// Get current session (extends session if active)
+// Get the current session and extend its inactivity deadline
 let session = SessionManagerProvider.getInstance().getSession()
 print("Session ID: \(session.id)")
+
+// End the current session after sign-out and start a linked replacement
+SessionManagerProvider.getInstance().resetSession()
+
+// Apply the same persisted decision in trace, log, and metric integrations
+let shouldRecord = SessionManagerProvider.getInstance().samplingDecision()?.isSampled ?? false
 
 // Peek at session without extending it
 if let session = SessionManagerProvider.getInstance().peekSession() {
@@ -65,12 +92,14 @@ if let session = SessionManagerProvider.getInstance().peekSession() {
 
 ### SessionManager
 
-Manages session lifecycle with automatic expiration and renewal.
+Manages session lifecycle with automatic expiration and explicit reset. Session access, including
+automatic span and log attribution, extends the inactivity deadline.
 
 ```swift
 let manager = SessionManager(configuration: SessionConfig(sessionTimeout: 1800))
-let session = manager.getSession() // Creates or extends session
-let session = manager.peekSession() // Peek without extending
+let session = manager.getSession() // Creates or retrieves and extends the session
+manager.resetSession() // Starts a linked replacement
+let current = manager.peekSession() // Peek without creating or extending
 ```
 
 ### SessionManagerProvider
@@ -136,20 +165,45 @@ print("Expired: \(session.isExpired())")
 | `sessionTimeout`          | `TimeInterval`  | Duration in seconds after which a session expires if left inactive          | `1800` (30 min) | No       |
 | `maxLifetime`             | `TimeInterval?` | Maximum duration in seconds a session can remain active, regardless of activity | `nil` (disabled) | No       |
 | `restorePersistedSession` | `Bool`          | Whether to resume a saved session as current; when `false`, start a new session and link the saved one as `previous_id` | `true`          | No       |
+| `sampler`                  | `SessionSampler` | Makes one decision whenever a new session is created                           | `AlwaysOnSessionSampler` | No       |
 
 ```swift
 let config = SessionConfig.builder()
     .with(sessionTimeout: 30 * 60)
     .with(maxLifetime: 4 * 60 * 60)
     .with(restorePersistedSession: false)
+    .with(sampler: AlwaysOnSessionSampler())
     .build()
+```
+
+### Cross-Signal Sampling
+
+`SessionManager` makes one sampling decision when it creates a session and stores that decision
+with the session. Current-version restored sessions keep their persisted decision. Older records
+do not contain one, so the configured sampler supplies a decision during migration and that result
+is persisted. Expiry and `resetSession()` each create one replacement session with one new decision.
+
+Call `samplingDecision()` from trace, log, and metric integrations so every signal applies the same
+persisted result. The session processors add attribution but do not drop telemetry themselves, so
+each signal pipeline remains responsible for enforcing the returned decision. This access follows
+the normal session behavior and refreshes inactivity. Concurrent callers wait while a new decision
+is being made so they receive the completed session. Telemetry emitted synchronously by the sampler
+itself proceeds without session attribution when no active session exists, which avoids recursive
+session creation. Custom samplers should return promptly, must not perform network or other
+unbounded work, and must not call session APIs that create or reset sessions.
+
+```swift
+guard let decision = SessionManagerProvider.getInstance().samplingDecision(),
+      decision.isSampled else { return }
+// Record the signal.
 ```
 
 ### Session Timeout Behavior
 
-- Sessions automatically expire after the configured timeout period of inactivity
-- Accessing a session via `getSession()` extends the expiration time
-- Sessions can also expire after `maxLifetime`, even if `getSession()` continues to extend inactivity
+- Sessions expire after the configured timeout since the most recent access
+- `getSession()` and automatic span and log attribution extend the inactivity deadline
+- Sessions can also expire after `maxLifetime`, even if access continues to extend inactivity
+- `resetSession()` ends the current session and persists one linked replacement
 - Set `restorePersistedSession` to `false` to start a new session on each clean application start while linking the persisted session as `previous_id`
 - When `restorePersistedSession` is `false`, the persisted session's `session.end` uses its last known activity time, capped at the new session start time
 - Expired sessions trigger `session.end` events and create new sessions with `previous_id` links
@@ -230,17 +284,29 @@ The session's end time is carried on the log record's `timestamp` field, not as 
 
 ## Persistence
 
-Sessions are automatically persisted to UserDefaults and can be resumed on app restart:
+Sessions are automatically persisted and can be resumed on app restart:
 
 - By default, active persisted sessions continue from their previous state
 - Set `restorePersistedSession` to `false` to start a new session on clean start while linking and ending the persisted session
 - Expired sessions create new sessions with proper `previous_id` linking
-- Session data is saved periodically (every 30 seconds) to minimize disk I/O
+- The built-in backend stores one versioned `Data` record instead of separate fields
+- Existing `otel-session-*` fields are migrated when first read
+- Unknown future records are preserved and disable writes for that manager, preventing an older SDK from replacing newer data
+- Malformed records are cleared so persistence can recover on the next write
+- Session starts and resets attempt an immediate save; rejected writes are retried
+- Access updates are coalesced and saved on a 30-second timer to minimize disk I/O
+
+### Ownership
+
+The default manager uses `UserDefaults.standard` and is intended to be the only writer in its process. Use `SessionManagerProvider` instead of creating multiple default managers. App extensions use their own standard defaults container and therefore start an independent session chain.
+
+`UserDefaultsSessionPersistence` accepts a suite and namespace, including an App Group suite, but one app or extension must own that record at a time. Requesting `.shared` access is currently rejected for every backend because a session transition requires an atomic cross-process read, update, and write. Use separate namespaces for independent processes until shared transitions have an explicit coordination API.
 
 ## Thread Safety
 
 All components are designed for concurrent access:
 
 - `SessionManager` uses locks for thread-safe session access
+- Concurrent lifecycle effects are published in session order without making one caller wait on another thread's exporter or observer callbacks
 - `SessionManagerProvider` provides thread-safe singleton access
 - `SessionStore` handles concurrent persistence operations safely
