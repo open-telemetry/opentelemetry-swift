@@ -50,6 +50,43 @@ private final class StubHTTPClient: HTTPClient {
 
 private struct FakeError: Error {}
 
+private final class HangingHTTPClient: HTTPClient {
+  private(set) var sentRequests: [URLRequest] = []
+  func send(request: URLRequest,
+            completion: @escaping (Result<HTTPURLResponse, Error>) -> Void) {
+    sentRequests.append(request)
+  }
+
+  func send(request: URLRequest) async throws -> HTTPURLResponse {
+    sentRequests.append(request)
+    return await withCheckedContinuation { (_: CheckedContinuation<HTTPURLResponse, Never>) in }
+  }
+}
+
+private final class DelayedFailureHTTPClient: HTTPClient {
+  private let delay: TimeInterval
+  private(set) var sentRequests: [URLRequest] = []
+
+  init(delay: TimeInterval) {
+    self.delay = delay
+  }
+
+  func send(request: URLRequest,
+            completion: @escaping (Result<HTTPURLResponse, Error>) -> Void) {
+    sentRequests.append(request)
+    nonisolated(unsafe) let completion = completion
+    DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
+      completion(.failure(FakeError()))
+    }
+  }
+
+  func send(request: URLRequest) async throws -> HTTPURLResponse {
+    sentRequests.append(request)
+    try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+    throw FakeError()
+  }
+}
+
 final class OtlpHttpMetricExporterCoverageTests: XCTestCase {
   private let endpoint = URL(string: "http://localhost:4318/v1/metrics")!
 
@@ -64,8 +101,47 @@ final class OtlpHttpMetricExporterCoverageTests: XCTestCase {
   func testExportFailurePutsMetricsBackInPending() {
     let client = StubHTTPClient(outcomes: [.failure(FakeError())])
     let exporter = OtlpHttpMetricExporter(endpoint: endpoint, httpClient: client)
-    _ = exporter.export(metrics: [.empty])
+    let result = exporter.export(metrics: [.empty])
+    XCTAssertEqual(result, .failure)
     XCTAssertEqual(exporter.pendingMetrics.count, 1)
+  }
+
+  func testExportWaitsForDelayedFailureBeforeReturning() {
+    let delay: TimeInterval = 0.05
+    let client = DelayedFailureHTTPClient(delay: delay)
+    let exporter = OtlpHttpMetricExporter(endpoint: endpoint, httpClient: client)
+
+    let start = Date()
+    let result = exporter.export(metrics: [.empty])
+
+    XCTAssertEqual(result, .failure)
+    XCTAssertGreaterThanOrEqual(Date().timeIntervalSince(start), delay)
+    XCTAssertEqual(exporter.pendingMetrics.count, 1)
+    XCTAssertEqual(client.sentRequests.count, 1)
+  }
+
+  func testExportTimesOutWhenResponseNeverArrives() {
+    let timeout: TimeInterval = 0.05
+    let client = HangingHTTPClient()
+    let exporter = OtlpHttpMetricExporter(endpoint: endpoint,
+                                          config: OtlpConfiguration(timeout: timeout),
+                                          httpClient: client)
+
+    let start = Date()
+    XCTAssertEqual(exporter.export(metrics: [.empty]), .failure)
+    XCTAssertLessThan(Date().timeIntervalSince(start), timeout * 4)
+    XCTAssertEqual(client.sentRequests.count, 1)
+  }
+
+  func testExportFailureWithRequeueDisabledLeavesPendingEmpty() {
+    let client = StubHTTPClient(outcomes: [.failure(FakeError())])
+    let exporter = OtlpHttpMetricExporter(endpoint: endpoint,
+                                          httpClient: client,
+                                          requeueOnFailure: false)
+    let result = exporter.export(metrics: [.empty])
+    XCTAssertEqual(result, .failure)
+    XCTAssertEqual(exporter.pendingMetrics.count, 0)
+    XCTAssertEqual(client.sentRequests.count, 1)
   }
 
   func testFlushWithPendingReturnsSuccessAfterRetry() {
