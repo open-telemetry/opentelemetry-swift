@@ -389,8 +389,11 @@ final class SessionEventInstrumentationTests: XCTestCase {
       record.eventName == "session.start" &&
         record.attributes["session.id"] == AttributeValue.string(sessions[0].id)
     }
-    XCTAssertNotNil(firstStartRecord)
-    XCTAssertNil(firstStartRecord?.attributes["session.previous_id"])
+    guard let firstStartRecord else {
+      XCTFail("Expected a session.start event for the first session")
+      return
+    }
+    XCTAssertNil(firstStartRecord.attributes["session.previous_id"])
 
     // Verify session chain linking
     for i in 1 ..< sessions.count {
@@ -398,8 +401,11 @@ final class SessionEventInstrumentationTests: XCTestCase {
         record.eventName == "session.start" &&
           record.attributes["session.id"] == AttributeValue.string(sessions[i].id)
       }
-      XCTAssertNotNil(sessionStartRecord)
-      XCTAssertEqual(sessionStartRecord?.attributes["session.previous_id"], AttributeValue.string(sessions[i - 1].id))
+      guard let sessionStartRecord else {
+        XCTFail("Expected a session.start event for session \(i)")
+        continue
+      }
+      XCTAssertEqual(sessionStartRecord.attributes["session.previous_id"], AttributeValue.string(sessions[i - 1].id))
     }
   }
 
