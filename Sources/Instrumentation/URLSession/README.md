@@ -28,5 +28,24 @@ This behaviour can be modified or augmented by using the optional callbacks defi
 
 `receivedError: ((Error, DataOrFile?, HTTPStatus, Span) -> Void)?` -  Called after an error is received,  it allows to add extra information to the Span
 
+`delegateClassesToInstrument: [AnyClass]?`: The session delegate classes to instrument. When this is `nil`, the instrumentation discovers them by examining **every class loaded in the process** at initialization, which is the default. Passing your delegate classes explicitly skips that search — see [Initialization cost](#initialization-cost) below.
+
 `baggageProvider: ((inout URLRequest, Span) -> (Baggage)?)?`: Provides baggage instance for instrumented requests that is merged with active baggage. The callback receives URLRequest and Span parameters to create dynamic baggage based on request context. The resulting baggage is injected into request headers using the configured propagator.
 
+## Initialization cost
+
+Creating `URLSessionInstrumentation` searches every class loaded in the process for session delegate methods, so that delegates are instrumented before any request runs. The cost of that search grows with the number of classes an app links, and in large apps it has been measured in the hundreds of milliseconds. Because it happens during initialization, that time lands on whatever is waiting for it, usually app launch.
+
+If you know your session delegate classes, pass them and the search is skipped entirely:
+
+```swift
+URLSessionInstrumentation(
+  configuration: URLSessionInstrumentationConfiguration(
+    delegateClassesToInstrument: [MyAPIClientDelegate.self, MyUploadDelegate.self]
+  )
+)
+```
+
+Only the classes you list are instrumented, so a delegate you leave out is not, and requests made through it are not captured.
+
+Note that deferring the initialization to get it off the launch path is not equivalent: requests made before the instrumentation exists are not captured, so early network calls go missing instead.
