@@ -4,7 +4,7 @@ Automatic session tracking for OpenTelemetry Swift applications. Creates unique 
 
 ## Features
 
-- **Automatic Session Management** - Creates and manages session lifecycles with configurable timeouts
+- **Session Management** - Creates and manages session lifecycles with configurable timeouts and explicit reset
 - **Session Events** - Emits OpenTelemetry log records for session start/end events
 - **Span Attribution** - Automatically adds session IDs to all spans via span processor
 - **Persistence** - Sessions persist across app restarts using UserDefaults
@@ -18,22 +18,27 @@ Automatic session tracking for OpenTelemetry Swift applications. Creates unique 
 import Sessions
 import OpenTelemetrySdk
 
+let sessionManager = SessionManager()
+SessionManagerProvider.register(sessionManager: sessionManager)
+
 // Record session start and end events
 SessionEventInstrumentation.install()
 
 // Add session attributes to spans
-let sessionSpanProcessor = SessionSpanProcessor()
+let sessionSpanProcessor = SessionSpanProcessor(sessionManager: sessionManager)
 let tracerProvider = TracerProviderBuilder()
     .add(spanProcessor: sessionSpanProcessor)
     .build()
 
-// Add session atttributes to log records
+// Add session attributes to log records
 let sessionProcessor = SessionLogRecordProcessor(
-    nextProcessor: SimpleLogRecordProcessor(logRecordExporter: ConsoleLogRecordExporter())
+    nextProcessor: SimpleLogRecordProcessor(logRecordExporter: ConsoleLogRecordExporter()),
+    sessionManager: sessionManager
 )
 let builder = LoggerProviderBuilder()
   .with(processors: [sessionProcessor])
   .with(resource: resource)
+
 ```
 
 **Custom Configuration**:
@@ -51,9 +56,12 @@ SessionManagerProvider.register(sessionManager: sessionManager)
 **Getting Session Information**:
 
 ```swift
-// Get current session (extends session if active)
+// Get the current session and extend its inactivity deadline
 let session = SessionManagerProvider.getInstance().getSession()
 print("Session ID: \(session.id)")
+
+// End the current session after sign-out and start a linked replacement
+SessionManagerProvider.getInstance().resetSession()
 
 // Peek at session without extending it
 if let session = SessionManagerProvider.getInstance().peekSession() {
@@ -65,12 +73,14 @@ if let session = SessionManagerProvider.getInstance().peekSession() {
 
 ### SessionManager
 
-Manages session lifecycle with automatic expiration and renewal.
+Manages session lifecycle with automatic expiration and explicit reset. Session access, including
+automatic span and log attribution, extends the inactivity deadline.
 
 ```swift
 let manager = SessionManager(configuration: SessionConfig(sessionTimeout: 1800))
-let session = manager.getSession() // Creates or extends session
-let session = manager.peekSession() // Peek without extending
+let session = manager.getSession() // Creates or retrieves and extends the session
+manager.resetSession() // Starts a linked replacement
+let current = manager.peekSession() // Peek without creating or extending
 ```
 
 ### SessionManagerProvider
@@ -147,9 +157,10 @@ let config = SessionConfig.builder()
 
 ### Session Timeout Behavior
 
-- Sessions automatically expire after the configured timeout period of inactivity
-- Accessing a session via `getSession()` extends the expiration time
-- Sessions can also expire after `maxLifetime`, even if `getSession()` continues to extend inactivity
+- Sessions expire after the configured timeout since the most recent access
+- `getSession()` and automatic span and log attribution extend the inactivity deadline
+- Sessions can also expire after `maxLifetime`, even if access continues to extend inactivity
+- `resetSession()` ends the current session and persists one linked replacement
 - Set `restorePersistedSession` to `false` to start a new session on each clean application start while linking the persisted session as `previous_id`
 - When `restorePersistedSession` is `false`, the persisted session's `session.end` uses its last known activity time, capped at the new session start time
 - Expired sessions trigger `session.end` events and create new sessions with `previous_id` links
@@ -235,12 +246,14 @@ Sessions are automatically persisted to UserDefaults and can be resumed on app r
 - By default, active persisted sessions continue from their previous state
 - Set `restorePersistedSession` to `false` to start a new session on clean start while linking and ending the persisted session
 - Expired sessions create new sessions with proper `previous_id` linking
-- Session data is saved periodically (every 30 seconds) to minimize disk I/O
+- Session starts and resets are saved immediately
+- Access updates are coalesced and saved on a 30-second timer to minimize disk I/O
 
 ## Thread Safety
 
 All components are designed for concurrent access:
 
 - `SessionManager` uses locks for thread-safe session access
+- Concurrent lifecycle effects are published in session order without making one caller wait on another thread's exporter or observer callbacks
 - `SessionManagerProvider` provides thread-safe singleton access
 - `SessionStore` handles concurrent persistence operations safely
