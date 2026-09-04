@@ -30,7 +30,10 @@ let package = Package(
     .executable(name: "StableMetricSample", targets: ["StableMetricSample"])
   ],
   dependencies: [
-    .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.5.1"),
+    .package(
+      url: "https://github.com/yasuradodo/opentelemetry-swift-core.git",
+      branch: "tech/periodic-metric-reader-background-export"
+    ),
     .package(url: "https://github.com/apple/swift-nio.git", from: "2.101.3"),
     .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.27.6"),
     .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.38.1"),
