@@ -15,10 +15,22 @@ struct SettingsView: View {
   @State private var showingHangPicker = false
   @State private var showingCrashPicker = false
   @State private var showingUserIdEditor = false
+  @State private var showingSessionConfigEditor = false
+  @State private var showingOTelConfigEditor = false
   @State private var showingTelemetryGenerator = false
   @State private var showingCpuTest = false
   @State private var showingMemoryTest = false
   @State private var timer: Timer?
+
+  // Entries whose instrumentation is not available in this repo yet. They are
+  // shown disabled so nobody expects telemetry from them; the picker views
+  // stay in the file for when the instrumentations land.
+  private static let comingSoon: Set<String> = [
+    "Trigger App Hang",
+    "Trigger App Crash",
+    "CPU Test",
+    "Memory Test"
+  ]
 
   var body: some View {
     List {
@@ -35,19 +47,60 @@ struct SettingsView: View {
             .foregroundColor(.secondary)
         }
         .padding(.vertical, 4)
+        HStack {
+          Image(systemName: "clock")
+            .foregroundColor(.secondary)
+            .font(.caption)
+          Text("Gray fields")
+            .foregroundColor(.secondary)
+            .font(.system(.caption, design: .monospaced, weight: .medium))
+          Text("need an instrumentation that does not exist yet")
+            .font(.system(.caption, design: .monospaced))
+            .foregroundColor(.secondary)
+        }
+        .padding(.vertical, 4)
       }
 
       Section("OTel Config") {
         ForEach(configData, id: \.0) { item in
-          SettingsRow(title: item.0, value: item.1, isCopyable: true)
+          EditableRow(title: item.0, value: item.1, help: "Tap to edit the service name and exporter endpoints") {
+            showingOTelConfigEditor = true
+          }
         }
       }
 
       Section("User Session") {
         ForEach(sessionData, id: \.0) { item in
           if item.0 == "User ID" {
+            // TODO: enable once a user ID instrumentation exists; see UserIdStore.
+            ComingSoonRow(title: item.0)
+          } else if item.0 == "Session Config" {
+            EditableRow(title: item.0, value: item.1, help: "Tap to edit session timeout, max lifetime and restore behavior") {
+              showingSessionConfigEditor = true
+            }
+          } else {
+            SettingsRow(title: item.0, value: item.1, isCopyable: item.0 != "Session Expiry")
+          }
+        }
+      }
+
+      Section("Troubleshooting") {
+        ForEach(troubleshootingData, id: \.0) { item in
+          if Self.comingSoon.contains(item.0) {
+            ComingSoonRow(title: item.0)
+          } else {
             Button(action: {
-              showingUserIdEditor = true
+              if item.0 == "Trigger App Hang" {
+                showingHangPicker = true
+              } else if item.0 == "Trigger App Crash" {
+                showingCrashPicker = true
+              } else if item.0 == "Load Test" {
+                showingTelemetryGenerator = true
+              } else if item.0 == "CPU Test" {
+                showingCpuTest = true
+              } else if item.0 == "Memory Test" {
+                showingMemoryTest = true
+              }
             }) {
               HStack {
                 Text(item.0)
@@ -65,45 +118,8 @@ struct SettingsView: View {
                   .font(.caption)
               }
             }
-            .help("Tap to edit user identifier")
-          } else {
-            SettingsRow(title: item.0, value: item.1, isCopyable: item.0 != "Session Expiry")
+            .help("Tap to run load test with custom logs and spans")
           }
-        }
-      }
-
-      Section("Troubleshooting") {
-        ForEach(troubleshootingData, id: \.0) { item in
-          Button(action: {
-            if item.0 == "Trigger App Hang" {
-              showingHangPicker = true
-            } else if item.0 == "Trigger App Crash" {
-              showingCrashPicker = true
-            } else if item.0 == "Load Test" {
-              showingTelemetryGenerator = true
-            } else if item.0 == "CPU Test" {
-              showingCpuTest = true
-            } else if item.0 == "Memory Test" {
-              showingMemoryTest = true
-            }
-          }) {
-            HStack {
-              Text(item.0)
-                .font(.system(.caption, design: .monospaced, weight: .medium))
-                .foregroundColor(.primary)
-              Spacer(minLength: 20)
-              Text(item.1)
-                .font(.system(.caption, design: .monospaced))
-                .foregroundColor(.blue)
-                .multilineTextAlignment(.trailing)
-                .frame(maxWidth: 200, alignment: .trailing)
-                .lineLimit(nil)
-              Image(systemName: "chevron.right")
-                .foregroundColor(.secondary)
-                .font(.caption)
-            }
-          }
-          .help(item.0 == "Trigger App Hang" ? "Tap to configure app hang testing" : item.0 == "Trigger App Crash" ? "Tap to configure app crash testing" : item.0 == "Load Test" ? "Tap to run load test with custom logs and spans" : item.0 == "CPU Test" ? "Tap to run CPU intensive test with logging" : "Tap to run memory allocation test with logging")
         }
       }
     }
@@ -125,6 +141,12 @@ struct SettingsView: View {
     .sheet(isPresented: $showingUserIdEditor) {
       UserIdEditorView()
     }
+    .sheet(isPresented: $showingSessionConfigEditor) {
+      SessionConfigEditorView()
+    }
+    .sheet(isPresented: $showingOTelConfigEditor) {
+      OTelConfigEditorView()
+    }
     .sheet(isPresented: $showingTelemetryGenerator) {
       TelemetryGeneratorView()
     }
@@ -135,6 +157,16 @@ struct SettingsView: View {
       MemoryTestView()
     }
     .onChange(of: showingUserIdEditor) { isShowing in
+      if !isShowing {
+        loadSessionData()
+      }
+    }
+    .onChange(of: showingSessionConfigEditor) { isShowing in
+      if !isShowing {
+        loadSessionData()
+      }
+    }
+    .onChange(of: showingOTelConfigEditor) { isShowing in
       if !isShowing {
         loadSessionData()
       }
@@ -162,6 +194,7 @@ struct SettingsView: View {
     guard let currentSession = SessionManagerProvider.getInstance().peekSession() else {
       sessionData = [
         ("User ID", "nil"),
+        ("Session Config", sessionConfigSummary),
         ("Previous Session", "nil"),
         ("Current Session", "nil"),
         ("Session Expiry", "nil")
@@ -176,10 +209,20 @@ struct SettingsView: View {
 
     sessionData = [
       ("User ID", userId),
+      ("Session Config", sessionConfigSummary),
       ("Previous Session", previousSessionId),
       ("Current Session", currentSession.id),
       ("Session Expiry", "\(Int(timeToExpiry)) seconds")
     ]
+  }
+
+  // Shows the values that will be used on the next launch, since a
+  // SessionManager cannot be reconfigured once created.
+  private var sessionConfigSummary: String {
+    let config = SessionConfigStore.load()
+    let maxLifetime = config.maxLifetime.map { "\(Int($0))s" } ?? "off"
+    let restore = config.restorePersistedSession ? "restore" : "no restore"
+    return "timeout \(Int(config.sessionTimeout))s / max \(maxLifetime) / \(restore)"
   }
 
   private func startTimer() {
@@ -274,6 +317,287 @@ struct UserIdEditorView: View {
     .overlay(
       ToastView(isShowing: $showingToast)
     )
+  }
+}
+
+struct SessionConfigEditorView: View {
+  @Environment(\.dismiss) private var dismiss
+  @State private var sessionTimeout: TimeInterval = TelemetryConfig.defaultSessionTimeout
+  @State private var maxLifetimeEnabled = false
+  @State private var maxLifetime: TimeInterval = 4 * 60 * 60
+  @State private var restorePersistedSession = true
+
+  private var isValid: Bool {
+    sessionTimeout > 0 && (!maxLifetimeEnabled || maxLifetime > 0)
+  }
+
+  var body: some View {
+    NavigationView {
+      Form {
+        Section {
+          DurationPicker(title: "Session timeout", duration: $sessionTimeout)
+        } footer: {
+          Text("How long a session survives without activity.")
+            .font(.system(.caption2, design: .monospaced))
+        }
+
+        Section {
+          Toggle(isOn: $maxLifetimeEnabled) {
+            Text("Max lifetime")
+              .font(.system(.caption, design: .monospaced, weight: .medium))
+          }
+          if maxLifetimeEnabled {
+            DurationPicker(title: "Max lifetime", duration: $maxLifetime)
+          }
+        } footer: {
+          Text("Caps a session regardless of activity. Off by default.")
+            .font(.system(.caption2, design: .monospaced))
+        }
+
+        Section {
+          Toggle(isOn: $restorePersistedSession) {
+            Text("Restore persisted session")
+              .font(.system(.caption, design: .monospaced, weight: .medium))
+          }
+        } footer: {
+          Text("When off, a new session starts on launch and the saved one becomes its previous session.")
+            .font(.system(.caption2, design: .monospaced))
+        }
+
+        RestartNoteSection()
+      }
+      .navigationTitle("Session Config")
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .navigationBarLeading) {
+          Button("Cancel") {
+            dismiss()
+          }
+        }
+        ToolbarItem(placement: .navigationBarTrailing) {
+          Button("Save") {
+            SessionConfigStore.save(sessionTimeout: sessionTimeout,
+                                    maxLifetime: maxLifetimeEnabled ? maxLifetime : nil,
+                                    restorePersistedSession: restorePersistedSession)
+            dismiss()
+          }
+          .disabled(!isValid)
+        }
+      }
+      .onAppear {
+        let config = SessionConfigStore.load()
+        sessionTimeout = config.sessionTimeout
+        if let lifetime = config.maxLifetime {
+          maxLifetimeEnabled = true
+          maxLifetime = lifetime
+        }
+        restorePersistedSession = config.restorePersistedSession
+      }
+    }
+  }
+}
+
+struct OTelConfigEditorView: View {
+  @Environment(\.dismiss) private var dismiss
+  @State private var serviceName = ""
+  @State private var tracesEndpoint = ""
+  @State private var logsEndpoint = ""
+
+  private func parsedURL(_ text: String) -> URL? {
+    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard let url = URL(string: trimmed), let scheme = url.scheme?.lowercased(),
+          ["http", "https"].contains(scheme), url.host != nil else { return nil }
+    return url
+  }
+
+  private var isValid: Bool {
+    !serviceName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+      && parsedURL(tracesEndpoint) != nil
+      && parsedURL(logsEndpoint) != nil
+  }
+
+  var body: some View {
+    NavigationView {
+      Form {
+        Section {
+          configField("Service name", text: $serviceName, keyboard: .default)
+          configField("Traces endpoint", text: $tracesEndpoint, keyboard: .URL)
+          configField("Logs endpoint", text: $logsEndpoint, keyboard: .URL)
+        } footer: {
+          Text("Endpoints must be http(s) URLs including the /v1/traces or /v1/logs path. The simulator reaches the host machine through localhost.")
+            .font(.system(.caption2, design: .monospaced))
+        }
+
+        Section {
+          Button("Reset to defaults") {
+            serviceName = TelemetryConfig.defaultServiceName
+            tracesEndpoint = TelemetryConfig.defaultTracesEndpoint.absoluteString
+            logsEndpoint = TelemetryConfig.defaultLogsEndpoint.absoluteString
+          }
+          .font(.system(.caption, design: .monospaced, weight: .medium))
+        }
+
+        RestartNoteSection()
+      }
+      .navigationTitle("OTel Config")
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .navigationBarLeading) {
+          Button("Cancel") {
+            dismiss()
+          }
+        }
+        ToolbarItem(placement: .navigationBarTrailing) {
+          Button("Save") {
+            OTelConfigStore.serviceName = serviceName
+            OTelConfigStore.tracesEndpoint = parsedURL(tracesEndpoint)
+            OTelConfigStore.logsEndpoint = parsedURL(logsEndpoint)
+            dismiss()
+          }
+          .disabled(!isValid)
+        }
+      }
+      .onAppear {
+        serviceName = TelemetryConfig.serviceName
+        tracesEndpoint = TelemetryConfig.tracesEndpoint.absoluteString
+        logsEndpoint = TelemetryConfig.logsEndpoint.absoluteString
+      }
+    }
+  }
+
+  private func configField(_ title: String, text: Binding<String>, keyboard: UIKeyboardType) -> some View {
+    VStack(alignment: .leading, spacing: 4) {
+      Text(title)
+        .font(.system(.caption, design: .monospaced, weight: .medium))
+      TextField(title, text: text)
+        .font(.system(.body, design: .monospaced))
+        .keyboardType(keyboard)
+        .autocorrectionDisabled()
+        .textInputAutocapitalization(.never)
+    }
+  }
+}
+
+// Shared "takes effect on relaunch" notice for the config editors.
+struct RestartNoteSection: View {
+  var body: some View {
+    Section {
+      HStack {
+        Image(systemName: "arrow.clockwise.circle")
+          .foregroundColor(.orange)
+        Text("Changes apply on the next app launch.")
+          .font(.system(.caption, design: .monospaced))
+          .foregroundColor(.secondary)
+      }
+    }
+  }
+}
+
+// Wheel picker for a duration in hours, minutes and seconds.
+struct DurationPicker: View {
+  let title: String
+  @Binding var duration: TimeInterval
+
+  private var hours: Binding<Int> {
+    Binding(get: { Int(duration) / 3600 },
+            set: { duration = TimeInterval($0 * 3600 + minutes.wrappedValue * 60 + seconds.wrappedValue) })
+  }
+
+  private var minutes: Binding<Int> {
+    Binding(get: { Int(duration) / 60 % 60 },
+            set: { duration = TimeInterval(hours.wrappedValue * 3600 + $0 * 60 + seconds.wrappedValue) })
+  }
+
+  private var seconds: Binding<Int> {
+    Binding(get: { Int(duration) % 60 },
+            set: { duration = TimeInterval(hours.wrappedValue * 3600 + minutes.wrappedValue * 60 + $0) })
+  }
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      HStack {
+        Text(title)
+          .font(.system(.caption, design: .monospaced, weight: .medium))
+        Spacer()
+        Text("\(Int(duration))s")
+          .font(.system(.caption, design: .monospaced))
+          .foregroundColor(.secondary)
+      }
+      HStack(spacing: 0) {
+        column(hours, range: 0 ..< 24, unit: "h")
+        column(minutes, range: 0 ..< 60, unit: "m")
+        column(seconds, range: 0 ..< 60, unit: "s")
+      }
+      .frame(height: 150)
+    }
+  }
+
+  private func column(_ value: Binding<Int>, range: Range<Int>, unit: String) -> some View {
+    Picker(unit, selection: value) {
+      ForEach(range, id: \.self) { number in
+        Text("\(number) \(unit)")
+          .font(.system(.body, design: .monospaced))
+          .tag(number)
+      }
+    }
+    .pickerStyle(.wheel)
+    .frame(maxWidth: .infinity)
+    .clipped()
+  }
+}
+
+// Blue, tappable settings row with a chevron.
+struct EditableRow: View {
+  let title: String
+  let value: String
+  let help: String
+  let action: () -> Void
+
+  var body: some View {
+    Button(action: action) {
+      HStack {
+        Text(title)
+          .font(.system(.caption, design: .monospaced, weight: .medium))
+          .foregroundColor(.primary)
+        Spacer(minLength: 20)
+        Text(value)
+          .font(.system(.caption, design: .monospaced))
+          .foregroundColor(.blue)
+          .multilineTextAlignment(.trailing)
+          .frame(maxWidth: 200, alignment: .trailing)
+          .lineLimit(nil)
+        Image(systemName: "chevron.right")
+          .foregroundColor(.secondary)
+          .font(.caption)
+      }
+    }
+    .help(help)
+  }
+}
+
+struct ComingSoonRow: View {
+  let title: String
+
+  var body: some View {
+    HStack {
+      Text(title)
+        .font(.system(.caption, design: .monospaced, weight: .medium))
+        .foregroundColor(.secondary)
+      Spacer(minLength: 20)
+      Text("Coming soon")
+        .font(.system(.caption2, design: .monospaced, weight: .medium))
+        .foregroundColor(.secondary)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(Color.secondary.opacity(0.15))
+        .clipShape(Capsule())
+      Image(systemName: "clock")
+        .foregroundColor(.secondary)
+        .font(.caption)
+    }
+    .opacity(0.6)
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel("\(title), coming soon")
   }
 }
 

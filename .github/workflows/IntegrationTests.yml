@@ -41,6 +41,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
           xcode-version: latest-stable
@@ -66,9 +68,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-integration-app-
       - name: Build HackerNewsDemo
-        run: make integ-build-ios IOS_SIMULATOR_UDID='${{ steps.ios-sim.outputs.udid }}'
+        env:
+          IOS_SIMULATOR_UDID: ${{ steps.ios-sim.outputs.udid }}
+        run: make integ-build-ios
       - name: Run integration tests
-        run: make integ-tests-without-building-ios IOS_SIMULATOR_UDID='${{ steps.ios-sim.outputs.udid }}'
+        env:
+          IOS_SIMULATOR_UDID: ${{ steps.ios-sim.outputs.udid }}
+        run: make integ-tests-without-building-ios
       - name: Upload collected telemetry
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
