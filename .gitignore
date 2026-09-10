@@ -95,3 +95,6 @@ fastlane/test_output
 iOSInjectionProject/
 
 .DS_Store
+# Integration test output
+Tests/IntegrationTests/out/
+Tests/IntegrationTests/.derivedData/
