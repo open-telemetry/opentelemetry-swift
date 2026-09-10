@@ -13,7 +13,7 @@ Instrumentation used from this repo:
 - `ResourceExtension` - device/OS/app resource attributes
 - `OpenTelemetryProtocolExporterHTTP` - OTLP/HTTP trace and log export
 
-Not yet available natively (tracked as `TODO` comments in `Telemetry.swift` and `SettingsView.swift`): app startup, crash, app hang, UIKit/SwiftUI view instrumentation, and a user ID manager. The crash/hang pickers in Settings still trigger the conditions, but nothing records them.
+Not yet available natively (tracked as `TODO` comments in `Telemetry.swift` and `SettingsView.swift`): app startup, crash, app hang, UIKit/SwiftUI view instrumentation, and a user ID manager. The Settings rows that depend on these (User ID, Trigger App Hang, Trigger App Crash, CPU Test, Memory Test) are shown grayed out with a "Coming soon" badge; the picker views stay in `SettingsView.swift` for when the instrumentations land.
 
 1. The `Home` tab is built entirely with UIKit, and each post/comment involved triggers a separate HTTP request.
 2. And the `Settings` tab is built with SwiftUI! Both view types are tracked.
@@ -130,9 +130,8 @@ The Settings tab is primarily made with SwiftUI, though the root controller is m
 
 **Actions:**
 
-1. Click on userId to set a user ID
-2. Click on Tap to configure for "Trigger App Hang" to open hang modal
-3. Click on Tap to configure for "Trigger App Crash" to open crash picker
+1. Click on Tap to configure for "Load Test" to generate custom logs and spans
+2. "User ID", "Trigger App Hang", "Trigger App Crash", "CPU Test" and "Memory Test" are grayed out with a "Coming soon" badge until the matching instrumentation exists
 
 </td>
 <td width="300px" style="vertical-align: top;">
