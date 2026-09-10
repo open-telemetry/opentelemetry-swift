@@ -7,28 +7,28 @@ import Foundation
 import OpenTelemetryProtocolExporterCommon
 import SwiftProtobuf
 #if canImport(FoundationNetworking)
-  import FoundationNetworking
+import FoundationNetworking
 #endif
 import OpenTelemetryApi
 
-@available(*, deprecated, renamed: "OtlpHttpExporterBase")
-public typealias StableOtlpHTTPExporterBase = OtlpHttpExporterBase
-
-public class OtlpHttpExporterBase: @unchecked Sendable {
+final class OtlpHttpExporterBase<Signal: Sendable>: @unchecked Sendable {
   let endpoint: URL
   let httpClient: HTTPClient
   let envVarHeaders: [(String, String)]?
   let config: OtlpConfiguration
   let requeueOnFailure: Bool
 
+  private let lock = Lock()
+  private var pendingSignals: [Signal] = []
+
   // MARK: - Init
 
   // New initializer with HTTPClient support
-  public init(endpoint: URL,
-              config: OtlpConfiguration = OtlpConfiguration(),
-              httpClient: HTTPClient = BaseHTTPClient(),
-              envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
-              requeueOnFailure: Bool = true) {
+  init(endpoint: URL,
+       config: OtlpConfiguration = OtlpConfiguration(),
+       httpClient: HTTPClient = BaseHTTPClient(),
+       envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
+       requeueOnFailure: Bool = true) {
     self.envVarHeaders = envVarHeaders
     self.endpoint = endpoint
     self.config = config
@@ -38,11 +38,11 @@ public class OtlpHttpExporterBase: @unchecked Sendable {
 
   // Deprecated initializer for backward compatibility
   @available(*, deprecated, message: "Use init(endpoint:config:httpClient:envVarHeaders:requeueOnFailure:) instead")
-  public init(endpoint: URL,
-              config: OtlpConfiguration = OtlpConfiguration(),
-              useSession: URLSession? = nil,
-              envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
-              requeueOnFailure: Bool = true) {
+  init(endpoint: URL,
+       config: OtlpConfiguration = OtlpConfiguration(),
+       useSession: URLSession? = nil,
+       envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
+       requeueOnFailure: Bool = true) {
     self.envVarHeaders = envVarHeaders
     self.endpoint = endpoint
     self.config = config
@@ -54,7 +54,34 @@ public class OtlpHttpExporterBase: @unchecked Sendable {
     }
   }
 
-  public func createRequest(body: Message, endpoint: URL) -> URLRequest {
+  func drainPending(adding signals: [Signal]) -> [Signal] {
+    lock.withLock {
+      pendingSignals.append(contentsOf: signals)
+      let sending = pendingSignals
+      pendingSignals = []
+      return sending
+    }
+  }
+
+  func requeue(_ signals: [Signal]) {
+    guard requeueOnFailure else { return }
+    lock.withLockVoid {
+      pendingSignals.append(contentsOf: signals)
+    }
+  }
+
+  func snapshotPending() -> [Signal] {
+    lock.withLock { pendingSignals }
+  }
+
+  func dropFlushed(count sentCount: Int) {
+    lock.withLockVoid {
+      let n = min(sentCount, pendingSignals.count)
+      pendingSignals.removeFirst(n)
+    }
+  }
+
+  func createRequest(body: Message, endpoint: URL) -> URLRequest {
     var request = URLRequest(url: endpoint)
 
     if let headers = envVarHeaders ?? config.headersForExport() {
@@ -98,6 +125,4 @@ public class OtlpHttpExporterBase: @unchecked Sendable {
     }
     return request
   }
-
-  public func shutdown(explicitTimeout: TimeInterval? = nil) {}
 }

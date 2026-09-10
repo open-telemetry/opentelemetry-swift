@@ -16,21 +16,31 @@ public func defaultOltpHttpLoggingEndpoint() -> URL {
   URL(string: "http://localhost:4318/v1/logs")!
 }
 
-public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter, @unchecked Sendable {
-  var pendingLogRecords: [ReadableLogRecord] = []
-  private let exporterLock = Lock()
+public final class OtlpHttpLogExporter: LogRecordExporter, @unchecked Sendable {
+  private let base: OtlpHttpExporterBase<ReadableLogRecord>
   private var exporterMetrics: ExporterMetrics?
 
-  override public init(endpoint: URL = defaultOltpHttpLoggingEndpoint(),
-                       config: OtlpConfiguration = OtlpConfiguration(),
-                       httpClient: HTTPClient = BaseHTTPClient(),
-                       envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
-                       requeueOnFailure: Bool = true) {
-    super.init(endpoint: endpoint,
-               config: config,
-               httpClient: httpClient,
-               envVarHeaders: envVarHeaders,
-               requeueOnFailure: requeueOnFailure)
+  init(base: OtlpHttpExporterBase<ReadableLogRecord>) {
+    self.base = base
+  }
+
+  /// A `convenience` constructor to configure the OTLP HTTP log exporter
+  /// - Parameters:
+  ///    - endpoint: Exporter endpoint injected as dependency
+  ///    - config: Exporter configuration including type of exporter
+  ///    - httpClient: Custom HTTPClient implementation
+  ///    - envVarHeaders: Extra header key-values
+  ///    - requeueOnFailure: Re-append failed batches to the in-memory pending queue
+  public convenience init(endpoint: URL = defaultOltpHttpLoggingEndpoint(),
+                          config: OtlpConfiguration = OtlpConfiguration(),
+                          httpClient: HTTPClient = BaseHTTPClient(),
+                          envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes,
+                          requeueOnFailure: Bool = true) {
+    self.init(base: OtlpHttpExporterBase(endpoint: endpoint,
+                                         config: config,
+                                         httpClient: httpClient,
+                                         envVarHeaders: envVarHeaders,
+                                         requeueOnFailure: requeueOnFailure))
   }
 
   /// A `convenience` constructor to provide support for exporter metric using`StableMeterProvider` type
@@ -62,12 +72,7 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter, @unch
 
   public func export(logRecords: [OpenTelemetrySdk.ReadableLogRecord],
                      explicitTimeout: TimeInterval? = nil) -> OpenTelemetrySdk.ExportResult {
-    var sendingLogRecords: [ReadableLogRecord] = []
-    exporterLock.withLockVoid {
-      pendingLogRecords.append(contentsOf: logRecords)
-      sendingLogRecords = pendingLogRecords
-      pendingLogRecords = []
-    }
+    let sendingLogRecords = base.drainPending(adding: logRecords)
 
     let body =
       Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest.with { request in
@@ -75,20 +80,16 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter, @unch
           logRecordList: sendingLogRecords)
       }
 
-    var request = createRequest(body: body, endpoint: endpoint)
+    var request = base.createRequest(body: body, endpoint: base.endpoint)
     exporterMetrics?.addSeen(value: sendingLogRecords.count)
-    request.timeoutInterval = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
-    httpClient.send(request: request) { [weak self] result in
+    request.timeoutInterval = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, base.config.timeout)
+    base.httpClient.send(request: request) { [weak self] result in
       switch result {
       case .success:
         self?.exporterMetrics?.addSuccess(value: sendingLogRecords.count)
       case let .failure(error):
         self?.exporterMetrics?.addFailed(value: sendingLogRecords.count)
-        if self?.requeueOnFailure == true {
-          self?.exporterLock.withLockVoid {
-            self?.pendingLogRecords.append(contentsOf: sendingLogRecords)
-          }
-        }
+        self?.base.requeue(sendingLogRecords)
         OpenTelemetry.instance.feedbackHandler?("\(error)")
       }
     }
@@ -102,10 +103,7 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter, @unch
 
   public func flush(explicitTimeout: TimeInterval? = nil) -> ExportResult {
     var exporterResult: ExportResult = .success
-    var pendingLogRecords: [ReadableLogRecord] = []
-    exporterLock.withLockVoid {
-      pendingLogRecords = self.pendingLogRecords
-    }
+    let pendingLogRecords = base.snapshotPending()
 
     if !pendingLogRecords.isEmpty {
       let sentCount = pendingLogRecords.count
@@ -115,21 +113,14 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter, @unch
             logRecordList: pendingLogRecords)
         }
       let semaphore = DispatchSemaphore(value: 0)
-      var request = createRequest(body: body, endpoint: endpoint)
-      let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+      var request = base.createRequest(body: body, endpoint: base.endpoint)
+      let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, base.config.timeout)
       request.timeoutInterval = timeout
-      httpClient.send(request: request) { [weak self] result in
+      base.httpClient.send(request: request) { [weak self] result in
         switch result {
         case .success:
           self?.exporterMetrics?.addSuccess(value: sentCount)
-          // Drop the records we successfully flushed from the pending queue.
-          // Remove only the `sentCount` oldest entries so any records that
-          // `export()` appended concurrently are preserved for the next flush.
-          self?.exporterLock.withLockVoid {
-            guard let self else { return }
-            let n = min(sentCount, self.pendingLogRecords.count)
-            self.pendingLogRecords.removeFirst(n)
-          }
+          self?.base.dropFlushed(count: sentCount)
           exporterResult = ExportResult.success
         case let .failure(error):
           self?.exporterMetrics?.addFailed(value: sentCount)
@@ -148,4 +139,6 @@ public class OtlpHttpLogExporter: OtlpHttpExporterBase, LogRecordExporter, @unch
 
     return exporterResult
   }
+
+  public func shutdown(explicitTimeout: TimeInterval? = nil) {}
 }

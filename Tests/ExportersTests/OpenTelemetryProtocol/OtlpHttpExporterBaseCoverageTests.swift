@@ -22,7 +22,7 @@ final class OtlpHttpExporterBaseCoverageTests: XCTestCase {
   }
 
   func testEnvVarHeadersAppliedOnRequest() {
-    let exporter = OtlpHttpExporterBase(
+    let exporter = OtlpHttpExporterBase<SpanData>(
       endpoint: URL(string: "http://example.com")!,
       config: OtlpConfiguration(compression: .none),
       httpClient: BaseHTTPClient(),
@@ -32,7 +32,7 @@ final class OtlpHttpExporterBaseCoverageTests: XCTestCase {
   }
 
   func testConfigHeadersAppliedWhenEnvVarHeadersNil() {
-    let exporter = OtlpHttpExporterBase(
+    let exporter = OtlpHttpExporterBase<SpanData>(
       endpoint: URL(string: "http://example.com")!,
       config: OtlpConfiguration(headers: [("X-Cfg-Header", "cfg-value")]),
       httpClient: BaseHTTPClient(),
@@ -43,7 +43,7 @@ final class OtlpHttpExporterBaseCoverageTests: XCTestCase {
 
   func testHeadersProviderIsEvaluatedForEveryRequest() throws {
     let provider = MutableHeadersProvider([("Authorization", "Bearer first")])
-    let exporter = try OtlpHttpExporterBase(
+    let exporter = try OtlpHttpExporterBase<SpanData>(
       endpoint: XCTUnwrap(URL(string: "http://example.com")),
       config: OtlpConfiguration(
         headers: [
@@ -75,7 +75,7 @@ final class OtlpHttpExporterBaseCoverageTests: XCTestCase {
 
   func testEnvVarHeadersTakePrecedenceOverHeadersProvider() throws {
     let provider = MutableHeadersProvider([("Authorization", "Bearer provider")])
-    let exporter = try OtlpHttpExporterBase(
+    let exporter = try OtlpHttpExporterBase<SpanData>(
       endpoint: XCTUnwrap(URL(string: "http://example.com")),
       config: OtlpConfiguration(headersProvider: provider.currentHeaders),
       httpClient: BaseHTTPClient(),
@@ -93,7 +93,7 @@ final class OtlpHttpExporterBaseCoverageTests: XCTestCase {
 
   func testNilHeadersProviderRetainsStaticHeaders() throws {
     let provider = MutableHeadersProvider(nil)
-    let exporter = try OtlpHttpExporterBase(
+    let exporter = try OtlpHttpExporterBase<SpanData>(
       endpoint: XCTUnwrap(URL(string: "http://example.com")),
       config: OtlpConfiguration(
         headers: [("Authorization", "Bearer static")],
@@ -113,7 +113,7 @@ final class OtlpHttpExporterBaseCoverageTests: XCTestCase {
   }
 
   func testContentTypeAndUserAgentSet() {
-    let exporter = OtlpHttpExporterBase(
+    let exporter = OtlpHttpExporterBase<SpanData>(
       endpoint: URL(string: "http://example.com")!,
       config: OtlpConfiguration(compression: .none),
       httpClient: BaseHTTPClient(),
@@ -127,7 +127,7 @@ final class OtlpHttpExporterBaseCoverageTests: XCTestCase {
   @available(*, deprecated)
   func testDeprecatedInitWithURLSession() {
     let session = URLSession(configuration: .ephemeral)
-    let exporter = OtlpHttpExporterBase(
+    let exporter = OtlpHttpExporterBase<SpanData>(
       endpoint: URL(string: "http://example.com")!,
       config: OtlpConfiguration(),
       useSession: session,
@@ -137,11 +137,86 @@ final class OtlpHttpExporterBaseCoverageTests: XCTestCase {
 
   @available(*, deprecated)
   func testDeprecatedInitWithNilURLSessionUsesDefault() {
-    let exporter = OtlpHttpExporterBase(
+    let exporter = OtlpHttpExporterBase<SpanData>(
       endpoint: URL(string: "http://example.com")!,
       config: OtlpConfiguration(),
       useSession: nil,
       envVarHeaders: nil)
     XCTAssertNotNil(exporter)
+  }
+
+  private func makePendingQueueBase(requeueOnFailure: Bool = true) -> OtlpHttpExporterBase<String> {
+    OtlpHttpExporterBase<String>(endpoint: URL(string: "http://example.com")!,
+                                 httpClient: BaseHTTPClient(),
+                                 envVarHeaders: nil,
+                                 requeueOnFailure: requeueOnFailure)
+  }
+
+  func testSnapshotPendingStartsEmpty() {
+    XCTAssertEqual(makePendingQueueBase().snapshotPending(), [])
+  }
+
+  func testDrainPendingReturnsAddedSignalsAndClearsPending() {
+    let base = makePendingQueueBase()
+    XCTAssertEqual(base.drainPending(adding: ["a", "b"]), ["a", "b"])
+    XCTAssertEqual(base.snapshotPending(), [])
+  }
+
+  func testDrainPendingIncludesPreviouslyRequeuedSignals() {
+    let base = makePendingQueueBase()
+    base.requeue(["prev"])
+    XCTAssertEqual(base.drainPending(adding: ["new"]), ["prev", "new"])
+    XCTAssertEqual(base.snapshotPending(), [])
+  }
+
+  func testRequeueAppendsSignalsToPending() {
+    let base = makePendingQueueBase()
+    base.requeue(["a"])
+    base.requeue(["b", "c"])
+    XCTAssertEqual(base.snapshotPending(), ["a", "b", "c"])
+  }
+
+  func testRequeueIsNoOpWhenDisabled() {
+    let base = makePendingQueueBase(requeueOnFailure: false)
+    base.requeue(["a"])
+    XCTAssertEqual(base.snapshotPending(), [])
+  }
+
+  func testDropFlushedRemovesSentCountFromPending() {
+    let base = makePendingQueueBase()
+    base.requeue(["a", "b", "c"])
+    base.dropFlushed(count: 2)
+    XCTAssertEqual(base.snapshotPending(), ["c"])
+  }
+
+  func testDropFlushedDoesNotRemoveMoreThanPending() {
+    let base = makePendingQueueBase()
+    base.requeue(["a"])
+    base.dropFlushed(count: 5)
+    XCTAssertEqual(base.snapshotPending(), [])
+  }
+
+  func testDropFlushedOnEmptyPendingIsNoOp() {
+    let base = makePendingQueueBase()
+    base.dropFlushed(count: 1)
+    XCTAssertEqual(base.snapshotPending(), [])
+  }
+
+  func testPendingQueueOperationsAreThreadSafe() {
+    let base = makePendingQueueBase()
+    let iterations = 100
+    let group = DispatchGroup()
+
+    for i in 0 ..< iterations {
+      group.enter()
+      DispatchQueue.global().async {
+        base.requeue(["\(i)"])
+        _ = base.snapshotPending()
+        group.leave()
+      }
+    }
+
+    group.wait()
+    XCTAssertEqual(base.snapshotPending().count, iterations)
   }
 }
