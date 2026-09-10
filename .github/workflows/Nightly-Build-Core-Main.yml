@@ -21,7 +21,7 @@ jobs:
           sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
       - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
-          xcode-version: 16.4
+          xcode-version: 26.2.0
       - name: Build and Test for macOS
         run: swift test
 
@@ -36,7 +36,7 @@ jobs:
           sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
       - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
-          xcode-version: 16.4
+          xcode-version: 26.2.0
       - name: Install Homebrew kegs
         run: make setup-brew
       - name: Build for iOS
@@ -55,7 +55,7 @@ jobs:
           sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
       - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
-          xcode-version: 16.4
+          xcode-version: 26.2.0
       - name: Install Homebrew kegs
         run: make setup-brew
       - name: Build for tvOS
@@ -74,7 +74,7 @@ jobs:
           sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
       - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
-          xcode-version: 16.4
+          xcode-version: 26.2.0
       - name: Install Homebrew kegs
         run: make setup-brew
       - name: Build for watchOS
@@ -93,7 +93,7 @@ jobs:
           sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
       - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
-          xcode-version: 16.4
+          xcode-version: 26.2.0
       - name: Install Homebrew kegs
         run: make setup-brew
       - name: Build for visionOS
