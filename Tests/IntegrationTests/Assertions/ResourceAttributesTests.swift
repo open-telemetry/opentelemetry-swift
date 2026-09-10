@@ -6,7 +6,7 @@
 import XCTest
 
 final class ResourceAttributesTests: XCTestCase {
-  private func assertResource(_ resource: [OTLPKeyValue], file: StaticString = #filePath, line: UInt = #line) {
+  private func assertResource(_ resource: ProtoAttributes, file: StaticString = #filePath, line: UInt = #line) {
     XCTAssertEqual(resource.string("service.name"), "HackerNewsDemo", file: file, line: line)
     XCTAssertEqual(resource.string("service.version"), "1.0.0", file: file, line: line)
     XCTAssertEqual(resource.string("telemetry.sdk.name"), "opentelemetry", file: file, line: line)

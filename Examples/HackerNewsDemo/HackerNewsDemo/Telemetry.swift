@@ -47,12 +47,7 @@ enum TelemetryConfig {
   // span/log processors keep the manager they were built with, so edits made
   // in Settings are persisted by SessionConfigStore and applied on next launch.
   static var sessionConfig: SessionConfig {
-    if IntegrationTestScenario.isEnabled {
-      return SessionConfig.builder()
-        .with(sessionTimeout: IntegrationTestScenario.sessionTimeout)
-        .build()
-    }
-    return SessionConfigStore.load()
+    IntegrationTestScenario.isEnabled ? IntegrationTestScenario.sessionConfig : SessionConfigStore.load()
   }
 }
 
