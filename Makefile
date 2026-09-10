@@ -117,6 +117,17 @@ test-tsan:
 # See Tests/IntegrationTests/README.md.
 IOS_SIMULATOR_UDID ?=
 
+INTEG_SIMULATOR_FLAG=$(if $(IOS_SIMULATOR_UDID),--simulator '$(IOS_SIMULATOR_UDID)',)
+
 .PHONY: integ-tests-ios
 integ-tests-ios:
-	./Scripts/run-integration-tests.sh $(if $(IOS_SIMULATOR_UDID),--simulator '$(IOS_SIMULATOR_UDID)',)
+	./Scripts/run-integration-tests.sh $(INTEG_SIMULATOR_FLAG)
+
+# Split variants so CI can cache the demo app build between the two steps.
+.PHONY: integ-build-ios
+integ-build-ios:
+	./Scripts/run-integration-tests.sh $(INTEG_SIMULATOR_FLAG) --build-only
+
+.PHONY: integ-tests-without-building-ios
+integ-tests-without-building-ios:
+	./Scripts/run-integration-tests.sh $(INTEG_SIMULATOR_FLAG) --skip-build
