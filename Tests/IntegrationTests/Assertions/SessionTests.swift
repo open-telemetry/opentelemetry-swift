@@ -20,17 +20,17 @@ final class SessionTests: XCTestCase {
   private var sessionEvents: [ExportedLog] {
     OTLPOutput.logs
       .filter { $0.scope.name == Self.sessionsScope }
-      .sorted { ($0.record.timeUnixNano ?? "") < ($1.record.timeUnixNano ?? "") }
+      .sorted { $0.record.timeUnixNano < $1.record.timeUnixNano }
   }
 
   private func sessionId(ofSpan name: String) throws -> String {
-    try XCTUnwrap(OTLPOutput.spans.first { $0.span.name == name }?.span.attributes?.string(Self.sessionIdKey),
+    try XCTUnwrap(OTLPOutput.spans.first { $0.span.name == name }?.span.attributes.string(Self.sessionIdKey),
                   "missing \(Self.sessionIdKey) on \(name)")
   }
 
   private func event(_ name: String, forSession id: String) -> ExportedLog? {
     sessionEvents.first {
-      $0.record.eventName == name && $0.record.attributes?.string(Self.sessionIdKey) == id
+      $0.record.eventName == name && $0.record.attributes.string(Self.sessionIdKey) == id
     }
   }
 
@@ -42,7 +42,7 @@ final class SessionTests: XCTestCase {
     for (index, name) in names.enumerated() {
       XCTAssertEqual(name, index.isMultiple(of: 2) ? Self.startEvent : Self.endEvent, "event \(index) in \(names)")
     }
-    XCTAssertTrue(sessionEvents.allSatisfy { $0.record.timeUnixNano != nil })
+    XCTAssertTrue(sessionEvents.allSatisfy { $0.record.timeUnixNano > 0 })
   }
 
   func testSessionChainIsLinkedThroughPreviousId() throws {
@@ -50,22 +50,20 @@ final class SessionTests: XCTestCase {
     let ends = sessionEvents.filter { $0.record.eventName == Self.endEvent }
 
     let first = try XCTUnwrap(starts.first)
-    XCTAssertEqual(first.record.attributes?.string(Self.sessionIdKey), try sessionId(ofSpan: Scenario.rootSpanName))
-    XCTAssertNil(first.record.attributes?.string(Self.previousSessionIdKey), "the first session has no predecessor")
+    XCTAssertEqual(first.record.attributes.string(Self.sessionIdKey), try sessionId(ofSpan: Scenario.rootSpanName))
+    XCTAssertNil(first.record.attributes.string(Self.previousSessionIdKey), "the first session has no predecessor")
 
     for (previous, next) in zip(starts, starts.dropFirst()) {
-      let previousId = try XCTUnwrap(previous.record.attributes?.string(Self.sessionIdKey))
-      XCTAssertEqual(next.record.attributes?.string(Self.previousSessionIdKey), previousId)
+      let previousId = try XCTUnwrap(previous.record.attributes.string(Self.sessionIdKey))
+      XCTAssertEqual(next.record.attributes.string(Self.previousSessionIdKey), previousId)
     }
 
     XCTAssertEqual(ends.count, starts.count - 1, "every session but the last should have ended")
     for (start, end) in zip(starts, ends) {
-      XCTAssertEqual(end.record.attributes?.string(Self.sessionIdKey), start.record.attributes?.string(Self.sessionIdKey))
-      XCTAssertEqual(end.record.attributes?.string(Self.previousSessionIdKey),
-                     start.record.attributes?.string(Self.previousSessionIdKey))
-      let startTime = try XCTUnwrap(start.record.timeUnixNano.flatMap(UInt64.init))
-      let endTime = try XCTUnwrap(end.record.timeUnixNano.flatMap(UInt64.init))
-      XCTAssertGreaterThan(endTime, startTime)
+      XCTAssertEqual(end.record.attributes.string(Self.sessionIdKey), start.record.attributes.string(Self.sessionIdKey))
+      XCTAssertEqual(end.record.attributes.string(Self.previousSessionIdKey),
+                     start.record.attributes.string(Self.previousSessionIdKey))
+      XCTAssertGreaterThan(end.record.timeUnixNano, start.record.timeUnixNano)
     }
   }
 
@@ -76,37 +74,34 @@ final class SessionTests: XCTestCase {
 
     let end = try XCTUnwrap(event(Self.endEvent, forSession: firstSessionId), "first session never ended")
     let secondStart = try XCTUnwrap(event(Self.startEvent, forSession: secondSessionId))
-    let endTime = try XCTUnwrap(end.record.timeUnixNano.flatMap(UInt64.init))
-    let secondStartTime = try XCTUnwrap(secondStart.record.timeUnixNano.flatMap(UInt64.init))
-    XCTAssertLessThan(endTime, secondStartTime)
-    XCTAssertNotNil(secondStart.record.attributes?.string(Self.previousSessionIdKey))
+    XCTAssertLessThan(end.record.timeUnixNano, secondStart.record.timeUnixNano)
+    XCTAssertNotNil(secondStart.record.attributes.string(Self.previousSessionIdKey))
   }
 
   func testSpansAreAttributedToTheRightSession() throws {
     let firstSessionId = try sessionId(ofSpan: Scenario.rootSpanName)
     let secondSessionId = try sessionId(ofSpan: Scenario.secondSessionSpanName)
 
-    let firstSessionSpans = [Scenario.rootSpanName, Scenario.childSpanName]
-    for name in firstSessionSpans {
+    for name in [Scenario.rootSpanName, Scenario.childSpanName] {
       XCTAssertEqual(try sessionId(ofSpan: name), firstSessionId, name)
     }
     for code in Scenario.statusCodes {
-      let span = OTLPOutput.spans.first { $0.span.attributes?.string("http.target") == "/status/\(code)" }
-      XCTAssertEqual(span?.span.attributes?.string(Self.sessionIdKey), firstSessionId, "/status/\(code)")
+      let span = OTLPOutput.spans.first { $0.span.attributes.string("http.target") == "/status/\(code)" }
+      XCTAssertEqual(span?.span.attributes.string(Self.sessionIdKey), firstSessionId, "/status/\(code)")
     }
     XCTAssertEqual(try sessionId(ofSpan: Scenario.completionSpanName), secondSessionId,
                    "the completion marker is emitted right after the second-session span")
 
-    let unattributed = OTLPOutput.spans.filter { $0.span.attributes?.string(Self.sessionIdKey) == nil }
-    XCTAssertTrue(unattributed.isEmpty, "every span should carry \(Self.sessionIdKey): \(unattributed.map { $0.span.name ?? "?" })")
+    let unattributed = OTLPOutput.spans.filter { $0.span.attributes.string(Self.sessionIdKey) == nil }
+    XCTAssertTrue(unattributed.isEmpty, "every span should carry \(Self.sessionIdKey): \(unattributed.map(\.span.name))")
   }
 
   func testLogsCarryTheirSessionId() throws {
     let firstSessionId = try sessionId(ofSpan: Scenario.rootSpanName)
     let scenarioLog = try XCTUnwrap(OTLPOutput.logs.first { $0.scope.name == Scenario.scope })
-    XCTAssertEqual(scenarioLog.record.attributes?.string(Self.sessionIdKey), firstSessionId)
+    XCTAssertEqual(scenarioLog.record.attributes.string(Self.sessionIdKey), firstSessionId)
 
-    let unattributed = OTLPOutput.logs.filter { $0.record.attributes?.string(Self.sessionIdKey) == nil }
+    let unattributed = OTLPOutput.logs.filter { $0.record.attributes.string(Self.sessionIdKey) == nil }
     XCTAssertTrue(unattributed.isEmpty, "every log should carry \(Self.sessionIdKey)")
   }
 }

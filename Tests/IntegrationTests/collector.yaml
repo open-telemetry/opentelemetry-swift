@@ -1,18 +1,29 @@
+# OpenTelemetry Collector config used by Scripts/run-integration-tests.sh.
+# Receives OTLP/HTTP from the demo app and writes each signal as a stream of
+# length-prefixed OTLP protobuf messages (4-byte big-endian length, then an
+# Export<Signal>ServiceRequest) into $OTEL_INTEGRATION_OUTPUT_DIR. The
+# assertions decode them with the same generated structs the exporters use.
 receivers:
   otlp:
     protocols:
       http:
-        endpoint: 0.0.0.0:4318
+        endpoint: 127.0.0.1:${env:OTEL_INTEGRATION_PORT}
 
 exporters:
   file/traces:
-    path: /out/traces.jsonl
+    path: ${env:OTEL_INTEGRATION_OUTPUT_DIR}/traces.pb
+    format: proto
   file/logs:
-    path: /out/logs.jsonl
+    path: ${env:OTEL_INTEGRATION_OUTPUT_DIR}/logs.pb
+    format: proto
   file/metrics:
-    path: /out/metrics.jsonl
+    path: ${env:OTEL_INTEGRATION_OUTPUT_DIR}/metrics.pb
+    format: proto
 
 service:
+  telemetry:
+    logs:
+      level: warn
   pipelines:
     traces:
       receivers: [otlp]

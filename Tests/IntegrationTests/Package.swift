@@ -3,14 +3,14 @@ import PackageDescription
 
 // Standalone package so the root `swift test` never picks these targets up:
 // the assertions only make sense after Scripts/run-integration-tests.sh has
-// driven the demo app against the mock collector.
+// driven the demo app against the OpenTelemetry Collector.
 let package = Package(
   name: "opentelemetry-swift-integration-tests",
   platforms: [
     .macOS(.v12)
   ],
   products: [
-    .executable(name: "OTLPMockCollector", targets: ["OTLPMockCollector"])
+    .executable(name: "IntegrationStatusServer", targets: ["IntegrationStatusServer"])
   ],
   dependencies: [
     .package(name: "opentelemetry-swift", path: "../.."),
@@ -18,17 +18,21 @@ let package = Package(
   ],
   targets: [
     .executableTarget(
-      name: "OTLPMockCollector",
+      name: "IntegrationStatusServer",
       dependencies: [
-        .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
         .product(name: "NIO", package: "swift-nio"),
         .product(name: "NIOHTTP1", package: "swift-nio")
       ],
-      path: "MockCollector"
+      path: "StatusServer"
     ),
+    // The assertions decode the collector's output with the generated OTLP
+    // structs from OpenTelemetryProtocolExporterCommon, reached through the
+    // HTTP exporter product.
     .testTarget(
       name: "IntegrationTests",
-      dependencies: [],
+      dependencies: [
+        .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift")
+      ],
       path: "Assertions"
     )
   ]
