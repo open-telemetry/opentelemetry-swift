@@ -23,6 +23,10 @@ make integ-tests-ios
 Scripts/run-integration-tests.sh --simulator <udid> --collector docker --port 4319
 ```
 
+`make integ-build-ios` builds the demo app on its own and
+`make integ-tests-without-building-ios` runs the rest against that build, which
+is how CI splits the job so the app's DerivedData can be cached.
+
 Requirements: Xcode with an iOS simulator, and `jq` (used to resolve the
 simulator). `xcbeautify` is optional. Run `Scripts/run-integration-tests.sh --help`
 for the full list of flags. The collected files stay in `out/` after a run,

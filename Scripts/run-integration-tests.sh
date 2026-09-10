@@ -14,7 +14,11 @@ set -euo pipefail
 # 4. Runs the assertions in Tests/IntegrationTests against the dumped files.
 #
 # Usage: Scripts/run-integration-tests.sh [--simulator <udid>] [--collector swift|docker]
-#                                         [--port <port>] [--timeout <seconds>] [--skip-build]
+#                                         [--port <port>] [--timeout <seconds>]
+#                                         [--build-only | --skip-build]
+#
+# --build-only builds the demo app into $DERIVED_DATA and exits; --skip-build
+# reuses that build. CI runs them as two steps so the DerivedData can be cached.
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INTEGRATION_DIR="$PROJECT_ROOT/Tests/IntegrationTests"
@@ -30,6 +34,7 @@ COLLECTOR="swift"
 PORT=4318
 TIMEOUT=120
 SKIP_BUILD=false
+BUILD_ONLY=false
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -38,8 +43,9 @@ while [[ $# -gt 0 ]]; do
     --port) PORT="$2"; shift 2 ;;
     --timeout) TIMEOUT="$2"; shift 2 ;;
     --skip-build) SKIP_BUILD=true; shift ;;
+    --build-only) BUILD_ONLY=true; shift ;;
     -h|--help)
-      sed -n '3,17p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '3,21p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *) echo "Unknown option $1" >&2; exit 1 ;;
@@ -75,6 +81,25 @@ if [[ -z "$SIMULATOR_UDID" ]]; then
 fi
 log "Using simulator $SIMULATOR_UDID"
 
+if [[ "$SKIP_BUILD" == false ]]; then
+  log "Building $APP_SCHEME for the simulator"
+  set -o pipefail
+  xcodebuild \
+    -project "$APP_PROJECT" \
+    -scheme "$APP_SCHEME" \
+    -configuration Debug \
+    -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" \
+    -derivedDataPath "$DERIVED_DATA" \
+    CODE_SIGNING_ALLOWED=NO \
+    build | pipe_output
+fi
+APP_PATH="$DERIVED_DATA/Build/Products/Debug-iphonesimulator/$APP_SCHEME.app"
+[[ -d "$APP_PATH" ]] || { echo "App not found at $APP_PATH" >&2; exit 1; }
+if [[ "$BUILD_ONLY" == true ]]; then
+  log "Built $APP_PATH"
+  exit 0
+fi
+
 rm -rf "$OUTPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
 
@@ -100,20 +125,6 @@ for _ in $(seq 1 30); do
   sleep 1
 done
 
-if [[ "$SKIP_BUILD" == false ]]; then
-  log "Building $APP_SCHEME for the simulator"
-  set -o pipefail
-  xcodebuild \
-    -project "$APP_PROJECT" \
-    -scheme "$APP_SCHEME" \
-    -configuration Debug \
-    -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" \
-    -derivedDataPath "$DERIVED_DATA" \
-    CODE_SIGNING_ALLOWED=NO \
-    build | pipe_output
-fi
-APP_PATH="$DERIVED_DATA/Build/Products/Debug-iphonesimulator/$APP_SCHEME.app"
-[[ -d "$APP_PATH" ]] || { echo "App not found at $APP_PATH" >&2; exit 1; }
 
 log "Booting simulator"
 xcrun simctl boot "$SIMULATOR_UDID" >/dev/null 2>&1 || true
