@@ -6,6 +6,10 @@
 
 <!-- How did you verify the change? Paste relevant output, screenshots, or link a workflow run. -->
 
+## Limitations
+
+<!-- What's out of scope for this PR but should be called out? -->
+
 ## Checklist
 
 - [ ] `swift test` passes locally
