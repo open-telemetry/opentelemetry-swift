@@ -14,9 +14,21 @@ import URLSessionInstrumentation
 enum TelemetryConfig {
   static let serviceName = "HackerNewsDemo"
   static let serviceVersion = "1.0.0"
-  static let tracesEndpoint = URL(string: "http://localhost:4318/v1/traces")!
-  static let logsEndpoint = URL(string: "http://localhost:4318/v1/logs")!
-  static let sessionTimeout: TimeInterval = 300
+  // Overridable so the integration test runner can point the app at a
+  // collector on a different port: `SIMCTL_CHILD_OTEL_EXPORTER_OTLP_ENDPOINT`.
+  static let collectorBaseURL: URL = {
+    if let value = ProcessInfo.processInfo.environment["OTEL_EXPORTER_OTLP_ENDPOINT"],
+       let url = URL(string: value) {
+      return url
+    }
+    return URL(string: "http://localhost:4318")!
+  }()
+
+  static let tracesEndpoint = collectorBaseURL.appendingPathComponent("v1/traces")
+  static let logsEndpoint = collectorBaseURL.appendingPathComponent("v1/logs")
+  static var sessionTimeout: TimeInterval {
+    IntegrationTestScenario.isEnabled ? IntegrationTestScenario.sessionTimeout : 300
+  }
 }
 
 enum Telemetry {
@@ -54,7 +66,14 @@ enum Telemetry {
 
     SessionEventInstrumentation.install()
 
-    urlSessionInstrumentation = URLSessionInstrumentation(configuration: URLSessionInstrumentationConfiguration())
+    // Skip the exporter's own OTLP requests, otherwise every export produces
+    // a span that triggers another export.
+    urlSessionInstrumentation = URLSessionInstrumentation(configuration: URLSessionInstrumentationConfiguration(
+      shouldInstrument: { request in
+        guard let url = request.url else { return true }
+        return url != TelemetryConfig.tracesEndpoint && url != TelemetryConfig.logsEndpoint
+      }
+    ))
 
     // TODO: no app startup instrumentation
     // TODO: no crash instrumentation; MetricKit sources exist under

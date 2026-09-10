@@ -111,3 +111,12 @@ test-without-building-visionos:
 .PHONY: test-tsan
 test-tsan:
 	OTEL_CONCURRENCY_TESTS=1 swift test --sanitize=thread
+
+# Integration tests: runs Examples/HackerNewsDemo in the iOS simulator against a
+# local mock collector and asserts on the exported OTLP payloads.
+# See Tests/IntegrationTests/README.md.
+IOS_SIMULATOR_UDID ?=
+
+.PHONY: integ-tests-ios
+integ-tests-ios:
+	./Scripts/run-integration-tests.sh $(if $(IOS_SIMULATOR_UDID),--simulator '$(IOS_SIMULATOR_UDID)',)
