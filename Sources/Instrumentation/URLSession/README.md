@@ -46,6 +46,8 @@ URLSessionInstrumentation(
 )
 ```
 
-Only the classes you list are instrumented, so a delegate you leave out is not, and requests made through it are not captured.
+Only the delegate classes you list have their callbacks instrumented. Requests made with completion handlers or `async`/`await` are captured either way, since those are instrumented on `URLSession` itself rather than through the delegate.
+
+List every delegate class your app uses. A delegate-driven request through a class you omit still starts a span when the task is created, but the callback that ends it (`urlSession(_:task:didCompleteWithError:)`) is only swizzled on listed classes, so the span is never ended and never exported.
 
 Note that deferring the initialization to get it off the launch path is not equivalent: requests made before the instrumentation exists are not captured, so early network calls go missing instead.
