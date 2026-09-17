@@ -707,7 +707,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
 
   // URLSessionTask methods
   private func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-    guard configuration.shouldRecordPayload?(session) ?? false else { return }
+    guard shouldRecordPayload(for: session, response: dataTask.response) else { return }
     guard let taskId = objc_getAssociatedObject(dataTask, &idKey) as? String
     else {
       return
@@ -727,7 +727,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
   private func urlSession(_ session: URLSession, dataTask: URLSessionDataTask,
                           didReceive response: URLResponse,
                           completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
-    guard configuration.shouldRecordPayload?(session) ?? false else { return }
+    guard shouldRecordPayload(for: session, response: response) else { return }
     guard let taskId = objc_getAssociatedObject(dataTask, &idKey) as? String
     else {
       return
@@ -937,6 +937,12 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       state = NetworkRequestState()
       requestMap[id] = state
     }
+  }
+
+  private func shouldRecordPayload(for session: URLSession, response: URLResponse?) -> Bool {
+    let configuration = configuration
+    guard configuration.shouldRecordPayload?(session) ?? false else { return false }
+    return configuration.responsePayloadRecordingMode.shouldRecordPayload(for: response)
   }
 }
 

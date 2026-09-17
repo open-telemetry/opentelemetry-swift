@@ -23,8 +23,28 @@ public enum HTTPSemanticConvention {
   case httpDup  // Emit both old and stable (migration period)
 }
 
+/// Controls which response payloads are retained by URLSession instrumentation.
+public enum ResponsePayloadRecordingMode {
+  /// Records payloads for every response.
+  case all
+
+  /// Records payloads only for HTTP responses with a status code from 400 through 599.
+  case httpErrorsOnly
+
+  func shouldRecordPayload(for response: URLResponse?) -> Bool {
+    switch self {
+    case .all:
+      return true
+    case .httpErrorsOnly:
+      guard let response = response as? HTTPURLResponse else { return false }
+      return (400 ... 599).contains(response.statusCode)
+    }
+  }
+}
+
 public struct URLSessionInstrumentationConfiguration {
   public init(shouldRecordPayload: ((URLSession) -> (Bool)?)? = nil,
+              responsePayloadRecordingMode: ResponsePayloadRecordingMode = .all,
               shouldInstrument: ((URLRequest) -> (Bool)?)? = nil,
               nameSpan: ((URLRequest) -> (String)?)? = nil,
               spanCustomization: ((URLRequest, SpanBuilder) -> Void)? = nil,
@@ -39,6 +59,7 @@ public struct URLSessionInstrumentationConfiguration {
               ignoredClassPrefixes: [String]? = nil,
               semanticConvention: HTTPSemanticConvention = .old) {
     self.shouldRecordPayload = shouldRecordPayload
+    self.responsePayloadRecordingMode = responsePayloadRecordingMode
     self.shouldInstrument = shouldInstrument
     self.shouldInjectTracingHeaders = shouldInjectTracingHeaders
     self.injectCustomHeaders = injectCustomHeaders
@@ -65,6 +86,9 @@ public struct URLSessionInstrumentationConfiguration {
   /// Implement this callback if you want the session to record payload data, false by default.
   /// This callback is only necessary when using session delegate
   public var shouldRecordPayload: ((URLSession) -> (Bool)?)?
+
+  /// Controls whether all response payloads or only HTTP error payloads are recorded.
+  public var responsePayloadRecordingMode: ResponsePayloadRecordingMode
 
   /// Implement this callback to filter which requests you want to inject headers to follow the trace,
   /// also must implement it if you want to inject custom headers

@@ -12,7 +12,9 @@ This behaviour can be modified or augmented by using the optional callbacks defi
 
 `shouldInstrument: ((URLRequest) -> (Bool)?)?` :  Filter which requests you want to instrument, all by default
 
-`shouldRecordPayload: ((URLSession) -> (Bool)?)?`: Implement if you want the session to record payload data, false by default.
+`shouldRecordPayload: ((URLSession) -> (Bool)?)?`: Return true to enable response payload recording for the session, false by default. Use `responsePayloadRecordingMode` to select which response payloads are recorded.
+
+`responsePayloadRecordingMode: ResponsePayloadRecordingMode`: Record all response payloads (`.all`, the default) or only HTTP `400...599` response payloads (`.httpErrorsOnly`).
 
 `shouldInjectTracingHeaders: ((URLRequest) -> (Bool)?)?`: Allows filtering which requests you want to inject headers to follow the trace, true by default. You must also return true if you want to inject custom headers.
 
@@ -29,4 +31,3 @@ This behaviour can be modified or augmented by using the optional callbacks defi
 `receivedError: ((Error, DataOrFile?, HTTPStatus, Span) -> Void)?` -  Called after an error is received,  it allows to add extra information to the Span
 
 `baggageProvider: ((inout URLRequest, Span) -> (Baggage)?)?`: Provides baggage instance for instrumented requests that is merged with active baggage. The callback receives URLRequest and Span parameters to create dynamic baggage based on request context. The resulting baggage is injected into request headers using the configured propagator.
-
