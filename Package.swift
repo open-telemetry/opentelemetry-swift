@@ -398,6 +398,15 @@ extension Package {
           path: "Sources/Instrumentation/SignPostIntegration",
           exclude: ["README.md"]
         ),
+        .testTarget(
+          name: "SignPostIntegrationTests",
+          dependencies: [
+            "SignPostIntegration",
+            "InMemoryExporter",
+            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+          ],
+          path: "Tests/InstrumentationTests/SignPostIntegrationTests"
+        ),
         .target(
           name: "ResourceExtension",
           dependencies: [
