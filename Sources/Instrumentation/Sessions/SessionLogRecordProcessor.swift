@@ -32,17 +32,16 @@ public class SessionLogRecordProcessor: LogRecordProcessor {
 
     var enhancedRecord = logRecord
 
-    // Only add session attributes if they don't already exist
-    if logRecord.attributes[SemanticConventions.Session.id.rawValue] == nil || logRecord.attributes[SemanticConventions.Session.previousId.rawValue] == nil {
+    // A record that already carries session.id was stamped by its producer
+    // (e.g. a session.start/session.end event for a session that is no longer
+    // current), so its session attributes are left untouched: filling in
+    // session.previous_id from the current session would attach the wrong
+    // session's predecessor.
+    if logRecord.attributes[SemanticConventions.Session.id.rawValue] == nil {
       let session = sessionManager.getSession()
+      enhancedRecord.setAttribute(key: SemanticConventions.Session.id.rawValue, value: session.id)
 
-      // Add session.id if not already present
-      if logRecord.attributes[SemanticConventions.Session.id.rawValue] == nil {
-        enhancedRecord.setAttribute(key: SemanticConventions.Session.id.rawValue, value: session.id)
-      }
-
-      // Add session.previous_id if not already present and session has a previous ID
-      if logRecord.attributes[SemanticConventions.Session.previousId.rawValue] == nil, let previousId = session.previousId {
+      if let previousId = session.previousId {
         enhancedRecord.setAttribute(key: SemanticConventions.Session.previousId.rawValue, value: previousId)
       }
     }
