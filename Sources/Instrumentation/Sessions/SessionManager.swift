@@ -10,7 +10,7 @@ import Foundation
 /// Sessions are extended on access and persisted to UserDefaults.
 public class SessionManager: @unchecked Sendable {
   private struct SessionTransition {
-    let session: Session
+    let session: Session?
     let previousSessionToEnd: Session?
   }
 
@@ -72,6 +72,28 @@ public class SessionManager: @unchecked Sendable {
       drainClaimedTransition()
     }
     return access.session
+  }
+
+  /// Ends the current or pending previous session without starting a replacement.
+  /// Clears persisted session state and discards pending saves. Repeated calls without
+  /// a session do nothing. Later `getSession()` calls, including automatic span and log
+  /// attribution, start a fresh session without a previous-session link.
+  /// This does not pause telemetry collection.
+  public func endSession() {
+    let shouldDrainEffects = lock.withLock {
+      guard let previousSession = session ?? persistedPreviousSession else { return false }
+      let endedSession = previousSession.isExpired()
+        ? previousSession
+        : locked_endSession(previousSession, at: Date())
+      session = nil
+      persistedPreviousSession = nil
+      SessionStore.teardown()
+      return enqueueTransition(SessionTransition(session: nil, previousSessionToEnd: endedSession))
+    }
+
+    if shouldDrainEffects {
+      drainClaimedTransition()
+    }
   }
 
   /// Gets the current session without extending its inactivity deadline
@@ -230,8 +252,10 @@ public class SessionManager: @unchecked Sendable {
     if let previousSessionToEnd = transition.previousSessionToEnd {
       SessionEventInstrumentation.addSession(session: previousSessionToEnd, eventType: .end)
     }
-    SessionEventInstrumentation.addSession(session: transition.session, eventType: .start)
-    NotificationCenter.default.post(name: SessionEventNotification, object: transition.session)
+    if let session = transition.session {
+      SessionEventInstrumentation.addSession(session: session, eventType: .start)
+      NotificationCenter.default.post(name: SessionEventNotification, object: session)
+    }
   }
 
   /// Loads a saved session from UserDefaults according to the configured restore behavior

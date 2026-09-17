@@ -26,7 +26,7 @@ enum SessionStore {
 
   /// Guards all static mutable state below; every access goes through this lock so
   /// callers from different threads (`SessionManager.getSession()` callers, the
-  /// repeating `saveTimer` callback, and test `teardown`) do not race.
+  /// repeating `saveTimer` callback, and `teardown`) do not race.
   private static let lock = NSLock()
   /// The most recent session to be saved to disk
   private nonisolated(unsafe) static var pendingSession: Session?
