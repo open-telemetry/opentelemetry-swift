@@ -7,7 +7,7 @@ import Foundation
 
 /// Manages OpenTelemetry sessions with automatic expiration and persistence.
 /// Provides thread-safe access to session information and handles session lifecycle.
-/// Sessions are extended on access and persisted to UserDefaults.
+/// Sessions are extended on access and persisted through the configured backend.
 public class SessionManager: @unchecked Sendable {
   private struct SessionTransition {
     let session: Session?
@@ -22,6 +22,8 @@ public class SessionManager: @unchecked Sendable {
   private let configuration: SessionConfig
   private var session: Session?
   private var persistedPreviousSession: Session?
+  private let sessionStore: SessionStore
+  private let sessionMutationLock = NSLock()
   private let lock = NSLock()
   private let effectsLock = NSLock()
   private let effectDrainQueue = DispatchQueue(label: "io.opentelemetry.sessions.effects")
@@ -32,6 +34,25 @@ public class SessionManager: @unchecked Sendable {
   /// - Parameter configuration: Session configuration settings
   public init(configuration: SessionConfig = .default) {
     self.configuration = configuration
+    sessionStore = SessionStore.shared
+    loadPersistedSessionFromDisk()
+  }
+
+  /// Initializes a session manager with an injected persistence backend.
+  /// - Parameters:
+  ///   - configuration: Session configuration settings
+  ///   - persistence: Backend that stores the complete versioned session record
+  ///   - persistenceAccess: Whether one writer or shared writers own the record
+  /// - Throws: ``SessionPersistenceConfigurationError/concurrentWritersUnsupported`` when
+  ///   shared access is requested. Cross-process session transitions are not yet supported.
+  public init(configuration: SessionConfig = .default,
+              persistence: any SessionPersistence,
+              persistenceAccess: SessionPersistenceAccess = .exclusive) throws {
+    if case .shared = persistenceAccess {
+      throw SessionPersistenceConfigurationError.concurrentWritersUnsupported
+    }
+    self.configuration = configuration
+    sessionStore = SessionStore(persistence: persistence)
     loadPersistedSessionFromDisk()
   }
 
@@ -47,20 +68,23 @@ public class SessionManager: @unchecked Sendable {
   /// Ends the current session and starts a linked replacement.
   ///
   /// Use this after a sign-out, account change, or another explicit session boundary.
-  /// The replacement is persisted before lifecycle events are emitted.
+  /// An immediate persistence attempt happens before lifecycle events are emitted. Rejected
+  /// writes are retried by the session store.
   /// - Returns: The newly created session
   @discardableResult
   public func resetSession() -> Session {
-    let access: SessionAccess = lock.withLock {
+    let access: SessionAccess = sessionMutationLock.withLock {
       let now = Date()
-      let previousSession = session ?? persistedPreviousSession
+      let previousSession = lock.withLock { session ?? persistedPreviousSession }
       let previousSessionToEnd = previousSession.map { previous in
-        previous.isExpired() ? previous : locked_endSession(previous, at: now)
+        previous.isExpired() ? previous : endedSession(previous, at: now)
       }
-      let nextSession = locked_startSession(previousId: previousSession?.id, at: now)
-      session = nextSession
-      persistedPreviousSession = nil
-      SessionStore.saveImmediately(session: nextSession)
+      let nextSession = startSession(previousId: previousSession?.id, at: now)
+      sessionStore.saveImmediately(session: nextSession)
+      lock.withLock {
+        session = nextSession
+        persistedPreviousSession = nil
+      }
       let shouldDrainEffects = enqueueTransition(SessionTransition(
         session: nextSession,
         previousSessionToEnd: previousSessionToEnd
@@ -75,20 +99,23 @@ public class SessionManager: @unchecked Sendable {
   }
 
   /// Ends the current or pending previous session without starting a replacement.
-  /// Clears persisted session state and discards pending saves. Repeated calls without
+  /// Attempts to clear persisted session state and discards pending saves. Rejected
+  /// removals are retried; records from a newer schema are preserved. Repeated calls without
   /// a session do nothing. Later `getSession()` calls, including automatic span and log
   /// attribution, start a fresh session without a previous-session link.
   /// This does not pause telemetry collection.
   public func endSession() {
-    let shouldDrainEffects = lock.withLock {
-      guard let previousSession = session ?? persistedPreviousSession else { return false }
-      let endedSession = previousSession.isExpired()
+    let shouldDrainEffects = sessionMutationLock.withLock {
+      guard let previousSession = lock.withLock({ session ?? persistedPreviousSession }) else { return false }
+      let previousSessionToEnd = previousSession.isExpired()
         ? previousSession
-        : locked_endSession(previousSession, at: Date())
-      session = nil
-      persistedPreviousSession = nil
-      SessionStore.teardown()
-      return enqueueTransition(SessionTransition(session: nil, previousSessionToEnd: endedSession))
+        : endedSession(previousSession, at: Date())
+      sessionStore.clear()
+      lock.withLock {
+        session = nil
+        persistedPreviousSession = nil
+      }
+      return enqueueTransition(SessionTransition(session: nil, previousSessionToEnd: previousSessionToEnd))
     }
 
     if shouldDrainEffects {
@@ -103,8 +130,7 @@ public class SessionManager: @unchecked Sendable {
   }
 
   /// Creates a new session with a unique identifier
-  /// *Warning* - this must be a pure function since it is used inside a lock
-  private func locked_startSession(previousId: String?, at now: Date = Date()) -> Session {
+  private func startSession(previousId: String?, at now: Date = Date()) -> Session {
     return Session(
       id: UUID().uuidString,
       expireTime: now.addingTimeInterval(Double(configuration.sessionTimeout)),
@@ -141,8 +167,7 @@ public class SessionManager: @unchecked Sendable {
   }
 
   /// Extends the current session expiry time
-  /// *Warning* - this must be a pure function since it is used inside a lock
-  private func locked_refreshSession(session: Session, at now: Date) -> Session {
+  private func refreshedSession(session: Session, at now: Date) -> Session {
     return Session(
       id: session.id,
       expireTime: now.addingTimeInterval(Double(configuration.sessionTimeout)),
@@ -153,32 +178,8 @@ public class SessionManager: @unchecked Sendable {
     )
   }
 
-  /// Returns the active session and extends its inactivity deadline.
-  /// *Warning* - call only while holding `lock`.
-  private func locked_accessSession(at now: Date) -> SessionAccess {
-    if let session,
-       !session.isExpired() {
-      let refreshedSession = locked_refreshSession(session: session, at: now)
-      self.session = refreshedSession
-      SessionStore.scheduleSave(session: refreshedSession)
-      return SessionAccess(session: refreshedSession, shouldDrainEffects: false)
-    }
-
-    let previousSession = session ?? persistedPreviousSession
-    let nextSession = locked_startSession(previousId: previousSession?.id, at: now)
-    session = nextSession
-    persistedPreviousSession = nil
-    SessionStore.saveImmediately(session: nextSession)
-    let shouldDrainEffects = enqueueTransition(SessionTransition(
-      session: nextSession,
-      previousSessionToEnd: previousSession
-    ))
-    return SessionAccess(session: nextSession, shouldDrainEffects: shouldDrainEffects)
-  }
-
   /// Creates an ended snapshot whose end time is fixed to `date`.
-  /// *Warning* - this must remain a pure function because it is called inside `lock`.
-  private func locked_endSession(_ session: Session, at date: Date) -> Session {
+  private func endedSession(_ session: Session, at date: Date) -> Session {
     return Session(
       id: session.id,
       expireTime: date,
@@ -191,8 +192,34 @@ public class SessionManager: @unchecked Sendable {
 
   /// Retrieves a session and queues any persistence or lifecycle work in state order.
   private func accessSession() -> Session {
-    let access = lock.withLock {
-      locked_accessSession(at: Date())
+    let access: SessionAccess = sessionMutationLock.withLock {
+      let now = Date()
+      if let currentSession = lock.withLock({ () -> Session? in
+        guard let session,
+              !session.isExpired()
+        else {
+          return nil
+        }
+        return session
+      }) {
+        let updatedSession = refreshedSession(session: currentSession, at: now)
+        sessionStore.scheduleSave(session: updatedSession)
+        lock.withLock { session = updatedSession }
+        return SessionAccess(session: updatedSession, shouldDrainEffects: false)
+      }
+
+      let previousSession = lock.withLock { session ?? persistedPreviousSession }
+      let nextSession = startSession(previousId: previousSession?.id, at: now)
+      sessionStore.saveImmediately(session: nextSession)
+      lock.withLock {
+        session = nextSession
+        persistedPreviousSession = nil
+      }
+      let shouldDrainEffects = enqueueTransition(SessionTransition(
+        session: nextSession,
+        previousSessionToEnd: previousSession
+      ))
+      return SessionAccess(session: nextSession, shouldDrainEffects: shouldDrainEffects)
     }
     if access.shouldDrainEffects {
       drainClaimedTransition()
@@ -200,7 +227,7 @@ public class SessionManager: @unchecked Sendable {
     return access.session
   }
 
-  /// Enqueues a transition and claims its drain while a state transition holds `lock`.
+  /// Enqueues a transition and claims its drain while a state transition holds `sessionMutationLock`.
   /// Transition draining never acquires `lock` while holding `effectsLock`.
   private func enqueueTransition(_ transition: SessionTransition) -> Bool {
     return effectsLock.withLock {
@@ -247,7 +274,7 @@ public class SessionManager: @unchecked Sendable {
     }
   }
 
-  /// Publishes one already-persisted session transition.
+  /// Publishes one transition after its immediate persistence attempt.
   private func publish(_ transition: SessionTransition) {
     if let previousSessionToEnd = transition.previousSessionToEnd {
       SessionEventInstrumentation.addSession(session: previousSessionToEnd, eventType: .end)
@@ -258,9 +285,9 @@ public class SessionManager: @unchecked Sendable {
     }
   }
 
-  /// Loads a saved session from UserDefaults according to the configured restore behavior
+  /// Loads a saved session from the configured persistence backend.
   private func loadPersistedSessionFromDisk() {
-    let loadedSession = SessionStore.load()
+    let loadedSession = sessionStore.load()
     lock.withLock {
       if configuration.restorePersistedSession {
         session = loadedSession

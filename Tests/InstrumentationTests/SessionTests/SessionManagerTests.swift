@@ -231,11 +231,11 @@ final class SessionManagerTests: XCTestCase {
 
   func testGetSessionSavedToDisk() {
     let session = sessionManager.getSession()
-    let savedId = UserDefaults.standard.object(forKey: SessionStore.idKey) as? String
-    let savedTimeout = UserDefaults.standard.object(forKey: SessionStore.sessionTimeoutKey) as? Double
+    let savedSession = SessionStore.load()
 
-    XCTAssertEqual(session.id, savedId)
-    XCTAssertEqual(session.sessionTimeout, TimeInterval(savedTimeout ?? -1))
+    XCTAssertEqual(session, savedSession)
+    XCTAssertNotNil(UserDefaults.standard.data(forKey: SessionStore.recordKey))
+    XCTAssertNil(UserDefaults.standard.object(forKey: SessionStore.idKey))
   }
 
   func testRestorePersistedSessionFalseUsesPersistedSessionAsPreviousSession() {
@@ -457,6 +457,69 @@ final class SessionManagerTests: XCTestCase {
     blockingProcessor.allowCompletion.signal()
     wait(for: [transitionFinished], timeout: 1)
     XCTAssertEqual(SessionStore.load()?.id, manager.peekSession()?.id)
+  }
+
+  func testInjectedPersistenceContainsResetBeforeReturnWhileEventsAreBlocked() throws {
+    let persistence = TestSessionPersistence()
+    let manager = try SessionManager(persistence: persistence)
+    let blockingProcessor = BlockingLogRecordProcessor()
+    let loggerProvider = LoggerProviderBuilder()
+      .with(processors: [blockingProcessor])
+      .build()
+    OpenTelemetry.registerLoggerProvider(loggerProvider: loggerProvider)
+    SessionEventInstrumentation.install()
+
+    let initialTransitionFinished = expectation(description: "Initial transition finished")
+    DispatchQueue.global().async {
+      manager.getSession()
+      initialTransitionFinished.fulfill()
+    }
+    XCTAssertEqual(blockingProcessor.didStart.wait(timeout: .now() + 1), .success)
+
+    let replacement = manager.resetSession()
+    let persistedDataBeforeUnblock = persistence.read()
+
+    blockingProcessor.allowCompletion.signal()
+    wait(for: [initialTransitionFinished], timeout: 1)
+    let data = try XCTUnwrap(persistedDataBeforeUnblock)
+    let record = try PropertyListDecoder().decode(PersistedSessionRecord.self, from: data)
+    XCTAssertEqual(record.session.id, replacement.id)
+    XCTAssertEqual(manager.peekSession()?.id, replacement.id)
+  }
+
+  func testFutureRecordIsNotOverwrittenBySessionCreation() throws {
+    let persistence = TestSessionPersistence()
+    let futureSession = Session(id: "future", expireTime: Date(timeIntervalSinceNow: 1800))
+    let futureRecord = PersistedSessionRecord(
+      version: PersistedSessionRecord.currentVersion + 1,
+      session: PersistedSession(session: futureSession)
+    )
+    let futureData = try PropertyListEncoder().encode(futureRecord)
+    XCTAssertTrue(persistence.write(futureData))
+
+    let manager = try SessionManager(persistence: persistence)
+    XCTAssertNil(manager.peekSession())
+
+    let localSession = manager.getSession()
+
+    XCTAssertEqual(manager.peekSession(), localSession)
+    XCTAssertEqual(persistence.read(), futureData)
+  }
+
+  func testInjectedPersistenceCanInspectCurrentSessionDuringWrite() throws {
+    let persistence = InspectingSessionPersistence()
+    let manager = try SessionManager(persistence: persistence)
+    persistence.onWrite = { _ = manager.peekSession() }
+    let completed = expectation(description: "Persistence callback completed")
+
+    DispatchQueue.global().async {
+      _ = manager.resetSession()
+      completed.fulfill()
+    }
+
+    wait(for: [completed], timeout: 1)
+    XCTAssertEqual(persistence.writeCount, 1)
+    XCTAssertEqual(manager.peekSession()?.id, persistence.persistedSessionId)
   }
 
   func testTransitionDoesNotWaitForCrossThreadDrainerCallback() {

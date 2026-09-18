@@ -7,7 +7,7 @@ Automatic session tracking for OpenTelemetry Swift applications. Creates unique 
 - **Session Management** - Creates and manages session lifecycles with configurable timeouts, explicit reset, and explicit end
 - **Session Events** - Emits OpenTelemetry log records for session start/end events
 - **Span Attribution** - Automatically adds session IDs to all spans via span processor
-- **Persistence** - Sessions persist across app restarts using UserDefaults
+- **Versioned Persistence** - Sessions persist as one versioned record across app restarts
 - **Thread Safety** - All components are thread-safe for concurrent access
 
 ## Setup
@@ -53,6 +53,20 @@ let sessionManager = SessionManager(configuration: sessionConfig)
 SessionManagerProvider.register(sessionManager: sessionManager)
 ```
 
+**Custom Persistence**:
+
+```swift
+let persistence = UserDefaultsSessionPersistence(
+    userDefaults: UserDefaults(suiteName: "group.example.telemetry")!,
+    namespace: "mobile-session"
+)
+let sessionManager = try SessionManager(
+    configuration: sessionConfig,
+    persistence: persistence,
+    persistenceAccess: .exclusive
+)
+```
+
 **Getting Session Information**:
 
 ```swift
@@ -87,8 +101,9 @@ let current = manager.peekSession() // Peek without creating or extending
 manager.endSession() // Ends the session without creating a replacement
 ```
 
-`endSession()` clears the current and persisted session, including pending saves, and
+`endSession()` clears the current session, discards pending saves, attempts to clear persistence, and
 emits one `session.end` event when a current or pending previous session exists.
+Rejected persistence removals are retried; records from a newer schema are preserved.
 Calling it again without a session has no effect. It does not pause telemetry:
 a later `getSession()`, span, or log requiring session attribution starts a fresh,
 unlinked session. Existing spans keep the session attributes assigned when they started.
@@ -251,14 +266,24 @@ The session's end time is carried on the log record's `timestamp` field, not as 
 
 ## Persistence
 
-Sessions are automatically persisted to UserDefaults and can be resumed on app restart:
+Sessions are automatically persisted and can be resumed on app restart:
 
 - By default, active persisted sessions continue from their previous state
 - Set `restorePersistedSession` to `false` to start a new session on clean start while linking and ending the persisted session
 - Expired sessions create new sessions with proper `previous_id` linking
-- Session starts and resets are saved immediately
-- `endSession()` clears the saved session so it is not restored or linked on restart
+- The built-in backend stores one versioned `Data` record instead of separate fields
+- Existing `otel-session-*` fields are migrated when first read
+- Unknown future records are preserved and disable writes for that manager, preventing an older SDK from replacing newer data
+- Malformed records are cleared so persistence can recover on the next write
+- Session starts and resets attempt an immediate save; rejected writes are retried
+- `endSession()` attempts to clear the saved session so it is not restored or linked on restart; rejected removals are retried
 - Access updates are coalesced and saved on a 30-second timer to minimize disk I/O
+
+### Ownership
+
+The default manager uses `UserDefaults.standard` and is intended to be the only writer in its process. Use `SessionManagerProvider` instead of creating multiple default managers. App extensions use their own standard defaults container and therefore start an independent session chain.
+
+`UserDefaultsSessionPersistence` accepts a suite and namespace, including an App Group suite, but one app or extension must own that record at a time. Requesting `.shared` access is currently rejected for every backend because a session transition requires an atomic cross-process read, update, and write. Use separate namespaces for independent processes until shared transitions have an explicit coordination API.
 
 ## Thread Safety
 
