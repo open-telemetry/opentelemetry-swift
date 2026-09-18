@@ -51,4 +51,9 @@ final class SessionPublicAPITests: XCTestCase {
       XCTAssertFalse(equal(session, different))
     }
   }
+
+  func testEndSessionIsPublic() {
+    let end: (SessionManager) -> () -> Void = SessionManager.endSession
+    XCTAssertNotNil(end)
+  }
 }

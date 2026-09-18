@@ -136,6 +136,7 @@ final class SessionStore: @unchecked Sendable {
   private let lock = NSLock()
   private var pendingSession: Session?
   private var previousSavedSession: Session?
+  private var isClearPending = false
   /// Prevents an older SDK from replacing a record written with a newer schema.
   private var isWriteBlockedByFutureRecord = false
   private var shouldClearLegacyAfterNextSave = false
@@ -173,6 +174,7 @@ final class SessionStore: @unchecked Sendable {
   func scheduleSave(session: Session) {
     let timerToSchedule: Timer? = lock.withLock {
       guard !isWriteBlockedByFutureRecord else { return nil }
+      isClearPending = false
       pendingSession = session
       guard let timer = locked_makeSaveTimerIfNeeded() else { return nil }
       _ = locked_save(session: session)
@@ -185,6 +187,7 @@ final class SessionStore: @unchecked Sendable {
   func saveImmediately(session: Session) {
     let timerToSchedule: Timer? = lock.withLock {
       guard !isWriteBlockedByFutureRecord else { return nil }
+      isClearPending = false
       pendingSession = session
       guard !locked_save(session: session) else { return nil }
       return locked_makeSaveTimerIfNeeded()
@@ -195,6 +198,7 @@ final class SessionStore: @unchecked Sendable {
 
   func load() -> LoadedSession? {
     return lock.withLock {
+      guard !isClearPending else { return nil }
       if let data = persistence.read() {
         if let storedVersion = try? PropertyListDecoder().decode(PersistedSessionRecordVersion.self, from: data) {
           if storedVersion.version > PersistedSessionRecord.currentVersion {
@@ -267,12 +271,30 @@ final class SessionStore: @unchecked Sendable {
     scheduleTimerOnMainIfNeeded(timerToSchedule)
   }
 
+  func clear() {
+    let (timerToInvalidate, timerToSchedule): (Timer?, Timer?) = lock.withLock {
+      let timer = saveTimer
+      saveTimer = nil
+      pendingSession = nil
+      previousSavedSession = nil
+      isClearPending = false
+      shouldClearLegacyAfterNextSave = false
+      guard !isWriteBlockedByFutureRecord else { return (timer, nil) }
+      guard !locked_clear() else { return (timer, nil) }
+      isClearPending = true
+      return (timer, locked_makeSaveTimerIfNeeded())
+    }
+    timerToInvalidate?.invalidate()
+    scheduleTimerOnMainIfNeeded(timerToSchedule)
+  }
+
   func teardown() {
     let timer = lock.withLock {
       let timer = saveTimer
       saveTimer = nil
       pendingSession = nil
       previousSavedSession = nil
+      isClearPending = false
       isWriteBlockedByFutureRecord = false
       shouldClearLegacyAfterNextSave = false
       _ = persistence.clear()
@@ -285,12 +307,29 @@ final class SessionStore: @unchecked Sendable {
   }
 
   private func savePendingSession() {
-    lock.withLock {
+    let timerToInvalidate: Timer? = lock.withLock {
+      if isClearPending {
+        guard locked_clear() else { return nil }
+        isClearPending = false
+        let timer = saveTimer
+        saveTimer = nil
+        return timer
+      }
       if let pendingSession,
          previousSavedSession != pendingSession {
         _ = locked_save(session: pendingSession)
       }
+      return nil
     }
+    timerToInvalidate?.invalidate()
+  }
+
+  private func locked_clear() -> Bool {
+    guard persistence.clear() else { return false }
+    if let userDefaultsPersistence = persistence as? UserDefaultsSessionPersistence {
+      userDefaultsPersistence.clearLegacySession()
+    }
+    return true
   }
 
   /// Creates the retry timer while `lock` is held, if this store does not already own one.

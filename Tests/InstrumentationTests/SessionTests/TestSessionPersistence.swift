@@ -45,6 +45,7 @@ final class InspectingSessionPersistence: SessionPersistence, @unchecked Sendabl
   private var data: Data?
   private var writes = 0
   var onWrite: (() -> Void)?
+  var onClear: (() -> Void)?
 
   var writeCount: Int {
     return lock.withLock { writes }
@@ -77,6 +78,7 @@ final class InspectingSessionPersistence: SessionPersistence, @unchecked Sendabl
 
   @discardableResult
   func clear() -> Bool {
+    onClear?()
     lock.withLock { data = nil }
     return true
   }

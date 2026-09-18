@@ -213,6 +213,79 @@ final class SessionStoreTests: XCTestCase {
     XCTAssertEqual(store.load()?.session.id, session2.id)
   }
 
+  func testClearRemovesVersionedAndLegacySession() {
+    let session = Session(id: "ended-session", expireTime: Date(timeIntervalSinceNow: 1800))
+    store.saveImmediately(session: session)
+    userDefaults.set(session.id, forKey: persistence.idKey)
+    userDefaults.set(session.expireTime, forKey: persistence.expireTimeKey)
+    userDefaults.set(session.startTime, forKey: persistence.startTimeKey)
+    userDefaults.set(session.sessionTimeout, forKey: persistence.sessionTimeoutKey)
+
+    store.clear()
+
+    XCTAssertNil(persistence.read())
+    XCTAssertNil(store.load())
+    for key in [persistence.idKey, persistence.expireTimeKey, persistence.startTimeKey,
+                persistence.sessionTimeoutKey] {
+      XCTAssertNil(userDefaults.object(forKey: key))
+    }
+  }
+
+  func testRejectedClearRetriesWithoutRestoringEndedOrPendingSession() {
+    let persistence = RejectingClearSessionPersistence()
+    let store = SessionStore(persistence: persistence, saveInterval: 0.01)
+    defer {
+      persistence.onClear = nil
+      store.teardown()
+    }
+    let saved = Session(id: "ended-session", expireTime: Date(timeIntervalSinceNow: 1800))
+    let pending = Session(id: "pending-session", expireTime: Date(timeIntervalSinceNow: 1800))
+    store.scheduleSave(session: saved)
+    store.scheduleSave(session: pending)
+    let retryAccepted = expectation(description: "Rejected clear was retried")
+    persistence.onClear = { accepted in
+      if accepted {
+        retryAccepted.fulfill()
+      }
+    }
+
+    store.clear()
+
+    XCTAssertNotNil(persistence.read())
+    XCTAssertNil(store.load())
+    persistence.acceptsClears = true
+    wait(for: [retryAccepted], timeout: 1)
+    XCTAssertNil(persistence.read())
+    XCTAssertNil(store.load())
+    XCTAssertGreaterThanOrEqual(persistence.clearCount, 2)
+  }
+
+  func testNewSaveSupersedesRejectedClear() throws {
+    for saveImmediately in [true, false] {
+      let persistence = RejectingClearSessionPersistence()
+      let store = SessionStore(persistence: persistence, saveInterval: 0.01)
+      defer { store.teardown() }
+      store.saveImmediately(session: Session(id: "ended-session", expireTime: Date(timeIntervalSinceNow: 1800)))
+      store.clear()
+      let replacement = Session(id: "replacement-session", expireTime: Date(timeIntervalSinceNow: 1800))
+
+      persistence.acceptsClears = true
+      if saveImmediately {
+        store.saveImmediately(session: replacement)
+      } else {
+        store.scheduleSave(session: replacement)
+      }
+      let timerDeadline = expectation(description: "Passed the clear retry deadline")
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { timerDeadline.fulfill() }
+      wait(for: [timerDeadline], timeout: 1)
+
+      let data = try XCTUnwrap(persistence.read())
+      let record = try PropertyListDecoder().decode(PersistedSessionRecord.self, from: data)
+      XCTAssertEqual(record.session.value, replacement)
+      XCTAssertEqual(persistence.clearCount, 1)
+    }
+  }
+
   func testLoadSessionWithCorruptedId() {
     userDefaults.set(["invalid": "id"], forKey: persistence.idKey)
     userDefaults.set(Date(), forKey: persistence.expireTimeKey)
@@ -349,6 +422,24 @@ final class SessionStoreTests: XCTestCase {
     XCTAssertEqual(persistence.read(), data)
   }
 
+  func testClearPreservesUnknownFutureRecordAndWriteBlock() throws {
+    let futureRecord = PersistedSessionRecord(
+      version: PersistedSessionRecord.currentVersion + 1,
+      session: PersistedSession(session: Session(id: "future-session", expireTime: Date(timeIntervalSinceNow: 1800)))
+    )
+    let data = try PropertyListEncoder().encode(futureRecord)
+    persistence.write(data)
+    XCTAssertNil(store.load())
+
+    store.clear()
+
+    XCTAssertEqual(persistence.read(), data)
+    let replacement = Session(id: "replacement-session", expireTime: Date(timeIntervalSinceNow: 1800))
+    store.saveImmediately(session: replacement)
+    store.scheduleSave(session: replacement)
+    XCTAssertEqual(persistence.read(), data)
+  }
+
   func testCorruptedVersionedRecordIsClearedAndPersistenceResumes() throws {
     persistence.write(Data("not-a-property-list".utf8))
 
@@ -420,6 +511,30 @@ final class SessionStoreTests: XCTestCase {
     let data = try XCTUnwrap(persistence.read())
     let record = try PropertyListDecoder().decode(PersistedSessionRecord.self, from: data)
     XCTAssertEqual(record.session.value, migratedSession)
+  }
+
+  func testClearCancelsPendingSamplingMigration() throws {
+    let persistence = ToggleSessionPersistence(acceptsWrites: true)
+    XCTAssertTrue(persistence.write(SessionPersistenceFixtures.versionOne))
+    let store = SessionStore(persistence: persistence, saveInterval: 0.01)
+    defer { store.teardown() }
+    let loaded = try XCTUnwrap(store.load())
+    persistence.acceptsWrites = false
+    store.migrate(loaded, to: loaded.session)
+    XCTAssertEqual(persistence.read(), SessionPersistenceFixtures.versionOne)
+
+    store.clear()
+    persistence.acceptsWrites = true
+    let retryDeadline = expectation(description: "Passed the migration retry deadline")
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { retryDeadline.fulfill() }
+    wait(for: [retryDeadline], timeout: 1)
+
+    XCTAssertNil(persistence.read())
+    XCTAssertNil(store.load())
+    let replacement = Session(id: "replacement", expireTime: Date(timeIntervalSinceNow: 1800),
+                              samplingDecision: .notSampled)
+    store.saveImmediately(session: replacement)
+    XCTAssertEqual(store.load()?.session, replacement)
   }
 
   func testUnknownSamplingDecisionClearsRecordAndPersistenceResumes() throws {
@@ -548,4 +663,41 @@ private struct UnknownDecisionSession: Codable {
   let sessionTimeout: TimeInterval
   let maxLifetime: TimeInterval?
   let samplingDecision: String
+}
+
+private final class RejectingClearSessionPersistence: SessionPersistence, @unchecked Sendable {
+  private let lock = NSLock()
+  private var data: Data?
+  private var clearsAccepted = false
+  private var clears = 0
+  var onClear: ((Bool) -> Void)?
+
+  var acceptsClears: Bool {
+    get { lock.withLock { clearsAccepted } }
+    set { lock.withLock { clearsAccepted = newValue } }
+  }
+
+  var clearCount: Int {
+    return lock.withLock { clears }
+  }
+
+  func read() -> Data? {
+    return lock.withLock { data }
+  }
+
+  func write(_ data: Data) -> Bool {
+    lock.withLock { self.data = data }
+    return true
+  }
+
+  func clear() -> Bool {
+    let accepted = lock.withLock {
+      clears += 1
+      guard clearsAccepted else { return false }
+      data = nil
+      return true
+    }
+    onClear?(accepted)
+    return accepted
+  }
 }

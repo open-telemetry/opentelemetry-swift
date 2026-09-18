@@ -4,7 +4,7 @@ Automatic session tracking for OpenTelemetry Swift applications. Creates unique 
 
 ## Features
 
-- **Session Management** - Creates and manages session lifecycles with configurable timeouts and explicit reset
+- **Session Management** - Creates and manages session lifecycles with configurable timeouts, explicit reset, and explicit end
 - **Session Events** - Emits OpenTelemetry log records for session start/end events
 - **Span Attribution** - Automatically adds session IDs to all spans via span processor
 - **Versioned Persistence** - Sessions persist as one versioned record across app restarts
@@ -76,11 +76,14 @@ let sessionManager = try SessionManager(
 let session = SessionManagerProvider.getInstance().getSession()
 print("Session ID: \(session.id)")
 
-// End the current session after sign-out and start a linked replacement
+// End the current session and immediately start a linked replacement
 SessionManagerProvider.getInstance().resetSession()
 
 // Apply the same persisted decision in trace, log, and metric integrations
 let shouldRecord = SessionManagerProvider.getInstance().samplingDecision()?.isSampled ?? false
+
+// End the session on sign-out without immediately starting another
+SessionManagerProvider.getInstance().endSession()
 
 // Peek at session without extending it
 if let session = SessionManagerProvider.getInstance().peekSession() {
@@ -92,7 +95,7 @@ if let session = SessionManagerProvider.getInstance().peekSession() {
 
 ### SessionManager
 
-Manages session lifecycle with automatic expiration and explicit reset. Session access, including
+Manages session lifecycle with automatic expiration, explicit reset, and explicit end. Session access, including
 automatic span and log attribution, extends the inactivity deadline.
 
 ```swift
@@ -100,7 +103,15 @@ let manager = SessionManager(configuration: SessionConfig(sessionTimeout: 1800))
 let session = manager.getSession() // Creates or retrieves and extends the session
 manager.resetSession() // Starts a linked replacement
 let current = manager.peekSession() // Peek without creating or extending
+manager.endSession() // Ends the session without creating a replacement
 ```
+
+`endSession()` clears the current session, discards pending saves, attempts to clear persistence, and
+emits one `session.end` event when a current or pending previous session exists.
+Rejected persistence removals are retried; records from a newer schema are preserved.
+Calling it again without a session has no effect. It does not pause telemetry:
+a later `getSession()`, span, or log requiring session attribution starts a fresh,
+unlinked session. Existing spans keep the session attributes assigned when they started.
 
 ### SessionManagerProvider
 
@@ -240,7 +251,7 @@ The session's start time is carried on the log record's `timestamp` field, not a
 
 ### Session End
 
-A `session.end` log record is created when a session expires.
+A `session.end` log record is created when a session expires, is reset, or is explicitly ended.
 
 **Example session.end Event**:
 
@@ -294,6 +305,7 @@ Sessions are automatically persisted and can be resumed on app restart:
 - Unknown future records are preserved and disable writes for that manager, preventing an older SDK from replacing newer data
 - Malformed records are cleared so persistence can recover on the next write
 - Session starts and resets attempt an immediate save; rejected writes are retried
+- `endSession()` attempts to clear the saved session so it is not restored or linked on restart; rejected removals are retried
 - Access updates are coalesced and saved on a 30-second timer to minimize disk I/O
 
 ### Ownership
