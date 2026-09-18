@@ -91,7 +91,7 @@ final class FilesOrchestrator: Sendable {
 
   func getReadableFile(excludingFilesNamed excludedFileNames: Set<String> = []) -> ReadableFile? {
     do {
-      let filesWithCreationDate = try directory.files()
+      let filesWithCreationDate = try orchestratedFiles()
         .map { (file: $0, creationDate: fileCreationDateFrom(fileName: $0.name)) }
         .compactMap { try deleteFileIfItsObsolete(file: $0.file, fileCreationDate: $0.creationDate) }
 
@@ -114,7 +114,7 @@ final class FilesOrchestrator: Sendable {
 
   func getAllFiles(excludingFilesNamed excludedFileNames: Set<String> = []) -> [ReadableFile]? {
     do {
-      return try directory.files()
+      return try orchestratedFiles()
         .filter { excludedFileNames.contains($0.name) == false }
     } catch {
       return nil
@@ -127,16 +127,32 @@ final class FilesOrchestrator: Sendable {
     } catch {}
   }
 
+  // MARK: - Directory listing
+
+  /// Files managed by this orchestrator are named by their creation timestamp.
+  /// `FileManager` writes new files through a transient safe-save file in the
+  /// same directory, which a concurrent listing can observe before it is
+  /// renamed; such files must not be treated as batches.
+  private func orchestratedFiles() throws -> [File] {
+    try directory.files().filter { UInt64($0.name) != nil }
+  }
+
   // MARK: - Directory size management
 
   /// Removes oldest files from the directory if it becomes too big.
   private func purgeFilesDirectoryIfNeeded() throws {
-    let filesSortedByCreationDate = try directory.files()
+    let filesSortedByCreationDate = try orchestratedFiles()
       .map { (file: $0, creationDate: fileCreationDateFrom(fileName: $0.name)) }
       .sorted { $0.creationDate < $1.creationDate }
 
-    var filesWithSizeSortedByCreationDate = try filesSortedByCreationDate
-      .map { try (file: $0.file, size: $0.file.size()) }
+    // The reader runs on another queue and may delete a file between the
+    // directory listing and the size lookup. Such a file is already gone, so
+    // skip it instead of failing the write that triggered the purge.
+    var filesWithSizeSortedByCreationDate = filesSortedByCreationDate
+      .compactMap { entry -> (file: File, size: UInt64)? in
+        guard let size = try? entry.file.size() else { return nil }
+        return (file: entry.file, size: size)
+      }
 
     let accumulatedFilesSize = filesWithSizeSortedByCreationDate.map(\.size).reduce(0, +)
 
@@ -146,7 +162,7 @@ final class FilesOrchestrator: Sendable {
 
       while sizeFreed < sizeToFree, !filesWithSizeSortedByCreationDate.isEmpty {
         let fileWithSize = filesWithSizeSortedByCreationDate.removeFirst()
-        try fileWithSize.file.delete()
+        try? fileWithSize.file.delete() // may already be gone, see above
         sizeFreed += fileWithSize.size
       }
     }
