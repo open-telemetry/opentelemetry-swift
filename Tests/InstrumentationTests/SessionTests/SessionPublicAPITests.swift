@@ -6,4 +6,9 @@ final class SessionPublicAPITests: XCTestCase {
     let reset: (SessionManager) -> () -> Session = SessionManager.resetSession
     XCTAssertNotNil(reset)
   }
+
+  func testEndSessionIsPublic() {
+    let end: (SessionManager) -> () -> Void = SessionManager.endSession
+    XCTAssertNotNil(end)
+  }
 }
