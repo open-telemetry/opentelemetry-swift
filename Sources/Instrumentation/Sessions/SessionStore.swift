@@ -54,7 +54,7 @@ struct PersistedSession: Codable, Equatable {
   }
 }
 
-/// Encodes and schedules complete session-record writes through an injected backend.
+/// Encodes and schedules complete session-record writes through an injected storage implementation.
 final class SessionStore: @unchecked Sendable {
   private static let defaultPersistence = UserDefaultsSessionPersistence()
   static let shared = SessionStore(persistence: defaultPersistence)

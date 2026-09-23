@@ -524,7 +524,7 @@ final class SessionStoreTests: XCTestCase {
     }
   }
 
-  func testCustomBackendAlsoRejectsSharedWriterAccess() {
+  func testCustomStorageAlsoRejectsSharedWriterAccess() {
     XCTAssertThrowsError(
       try SessionManager(
         persistence: TestSessionPersistence(),

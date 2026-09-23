@@ -8,21 +8,21 @@ import Foundation
 /// Stores the encoded session record used by ``SessionManager``.
 ///
 /// Implementations must serialize access to each logical record within their supported
-/// ownership model. Calls run without the ``SessionManager`` state lock held, so a backend may
-/// inspect the previously published session with ``SessionManager/peekSession()``. During initial
-/// creation this can be `nil`. A backend must not call session APIs that can write persistence
+/// ownership model. Calls run without the ``SessionManager`` state lock held, so an implementation
+/// may inspect the previously published session with ``SessionManager/peekSession()``. During initial
+/// creation this can be `nil`. Implementations must not call session APIs that can write persistence
 /// from inside these methods.
 public protocol SessionPersistence: Sendable {
   /// Reads the complete encoded record, or `nil` when no record exists.
   func read() -> Data?
 
   /// Replaces the complete encoded record.
-  /// - Returns: `true` when the backend accepted the write.
+  /// - Returns: `true` when the storage implementation accepted the write.
   @discardableResult
   func write(_ data: Data) -> Bool
 
   /// Removes the encoded record.
-  /// - Returns: `true` when the backend accepted the removal.
+  /// - Returns: `true` when the storage implementation accepted the removal.
   @discardableResult
   func clear() -> Bool
 }
@@ -35,15 +35,15 @@ public enum SessionPersistenceAccess: Sendable {
   case shared
 }
 
-/// Errors raised when persistence ownership does not match the backend's guarantees.
+/// Errors raised when persistence ownership does not match the storage implementation's guarantees.
 public enum SessionPersistenceConfigurationError: Error, Equatable {
-  /// Shared access was requested from a backend that does not coordinate concurrent writers.
+  /// Shared access was requested from a storage implementation that does not coordinate concurrent writers.
   case concurrentWritersUnsupported
 }
 
 /// A namespaced session record stored in `UserDefaults`.
 ///
-/// This backend serializes calls made through one instance, but `UserDefaults` does not
+/// This storage implementation serializes calls made through one instance, but `UserDefaults` does not
 /// provide a cross-process transaction. Use `.exclusive` access and one writer for a given
 /// suite and namespace.
 public final class UserDefaultsSessionPersistence: SessionPersistence, @unchecked Sendable {

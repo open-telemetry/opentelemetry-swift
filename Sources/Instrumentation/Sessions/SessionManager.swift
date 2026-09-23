@@ -7,7 +7,7 @@ import Foundation
 
 /// Manages OpenTelemetry sessions with automatic expiration and persistence.
 /// Provides thread-safe access to session information and handles session lifecycle.
-/// Sessions are extended on access and persisted through the configured backend.
+/// Sessions are extended on access and persisted through the configured storage implementation.
 public class SessionManager: @unchecked Sendable {
   private struct SessionTransition {
     let session: Session?
@@ -38,10 +38,10 @@ public class SessionManager: @unchecked Sendable {
     loadPersistedSessionFromDisk()
   }
 
-  /// Initializes a session manager with an injected persistence backend.
+  /// Initializes a session manager with an injected storage implementation.
   /// - Parameters:
   ///   - configuration: Session configuration settings
-  ///   - persistence: Backend that stores the complete versioned session record
+  ///   - persistence: Storage implementation that stores the complete versioned session record
   ///   - persistenceAccess: Whether one writer or shared writers own the record
   /// - Throws: ``SessionPersistenceConfigurationError/concurrentWritersUnsupported`` when
   ///   shared access is requested. Cross-process session transitions are not yet supported.
@@ -285,7 +285,7 @@ public class SessionManager: @unchecked Sendable {
     }
   }
 
-  /// Loads a saved session from the configured persistence backend.
+  /// Loads a saved session from the configured storage implementation.
   private func loadPersistedSessionFromDisk() {
     let loadedSession = sessionStore.load()
     lock.withLock {
