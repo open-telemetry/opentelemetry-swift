@@ -187,9 +187,25 @@ final class SessionStoreTests: XCTestCase {
   }
 
   func testTeardownClearsUserDefaults() {
-    let session = Session(id: "test-session", expireTime: Date(timeIntervalSinceNow: 1800), startTime: Date())
+    let session = Session(
+      id: "test-session",
+      expireTime: Date(timeIntervalSinceNow: 1800),
+      previousId: "previous-session",
+      startTime: Date(),
+      maxLifetime: 7200
+    )
     store.saveImmediately(session: session)
     XCTAssertNotNil(persistence.read())
+    userDefaults.set(session.id, forKey: persistence.idKey)
+    userDefaults.set(session.expireTime, forKey: persistence.expireTimeKey)
+    userDefaults.set(session.startTime, forKey: persistence.startTimeKey)
+    userDefaults.set(session.previousId, forKey: persistence.previousIdKey)
+    userDefaults.set(session.sessionTimeout, forKey: persistence.sessionTimeoutKey)
+    userDefaults.set(session.maxLifetime, forKey: persistence.maxLifetimeKey)
+    for key in [persistence.idKey, persistence.expireTimeKey, persistence.startTimeKey,
+                persistence.previousIdKey, persistence.sessionTimeoutKey, persistence.maxLifetimeKey] {
+      XCTAssertNotNil(userDefaults.object(forKey: key), key)
+    }
 
     store.teardown()
 
@@ -214,21 +230,33 @@ final class SessionStoreTests: XCTestCase {
   }
 
   func testClearRemovesVersionedAndLegacySession() {
-    let session = Session(id: "ended-session", expireTime: Date(timeIntervalSinceNow: 1800))
+    let session = Session(
+      id: "ended-session",
+      expireTime: Date(timeIntervalSinceNow: 1800),
+      previousId: "previous-session",
+      maxLifetime: 7200
+    )
     store.saveImmediately(session: session)
+    XCTAssertNotNil(persistence.read())
     userDefaults.set(session.id, forKey: persistence.idKey)
     userDefaults.set(session.expireTime, forKey: persistence.expireTimeKey)
     userDefaults.set(session.startTime, forKey: persistence.startTimeKey)
+    userDefaults.set(session.previousId, forKey: persistence.previousIdKey)
     userDefaults.set(session.sessionTimeout, forKey: persistence.sessionTimeoutKey)
+    userDefaults.set(session.maxLifetime, forKey: persistence.maxLifetimeKey)
+    for key in [persistence.idKey, persistence.expireTimeKey, persistence.startTimeKey,
+                persistence.previousIdKey, persistence.sessionTimeoutKey, persistence.maxLifetimeKey] {
+      XCTAssertNotNil(userDefaults.object(forKey: key), key)
+    }
 
     store.clear()
 
     XCTAssertNil(persistence.read())
-    XCTAssertNil(store.load())
     for key in [persistence.idKey, persistence.expireTimeKey, persistence.startTimeKey,
-                persistence.sessionTimeoutKey] {
-      XCTAssertNil(userDefaults.object(forKey: key))
+                persistence.previousIdKey, persistence.sessionTimeoutKey, persistence.maxLifetimeKey] {
+      XCTAssertNil(userDefaults.object(forKey: key), key)
     }
+    XCTAssertNil(store.load())
   }
 
   func testRejectedClearRetriesWithoutRestoringEndedOrPendingSession() {
