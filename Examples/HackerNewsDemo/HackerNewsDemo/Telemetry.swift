@@ -62,7 +62,13 @@ enum Telemetry {
 
     SessionManagerProvider.register(sessionManager: SessionManager(configuration: TelemetryConfig.sessionConfig))
 
-    let spanExporter = OtlpHttpTraceExporter(endpoint: TelemetryConfig.tracesEndpoint)
+    // Captured once: endpoints edited in Settings only take effect on next
+    // launch, so the exporters and the instrumentation filter must agree on
+    // the URLs in use now.
+    let tracesEndpoint = TelemetryConfig.tracesEndpoint
+    let logsEndpoint = TelemetryConfig.logsEndpoint
+
+    let spanExporter = OtlpHttpTraceExporter(endpoint: tracesEndpoint)
     OpenTelemetry.registerTracerProvider(tracerProvider:
       TracerProviderBuilder()
         .with(resource: resource)
@@ -71,7 +77,7 @@ enum Telemetry {
         .build()
     )
 
-    let logExporter = OtlpHttpLogExporter(endpoint: TelemetryConfig.logsEndpoint)
+    let logExporter = OtlpHttpLogExporter(endpoint: logsEndpoint)
     OpenTelemetry.registerLoggerProvider(loggerProvider:
       LoggerProviderBuilder()
         .with(resource: resource)
@@ -88,7 +94,7 @@ enum Telemetry {
     urlSessionInstrumentation = URLSessionInstrumentation(configuration: URLSessionInstrumentationConfiguration(
       shouldInstrument: { request in
         guard let url = request.url else { return true }
-        return url != TelemetryConfig.tracesEndpoint && url != TelemetryConfig.logsEndpoint
+        return url != tracesEndpoint && url != logsEndpoint
       }
     ))
 
