@@ -9,7 +9,7 @@ final class NetworkSpanTests: XCTestCase {
   private static let urlSessionScope = "NSURLSession"
 
   // Only the requests the scenario makes against the status server's
-  // /status/<code> endpoints; the app also talks to the real Hacker News API.
+  // /status/<code> endpoints.
   private var statusSpans: [ExportedSpan] {
     OTLPOutput.spans.filter {
       $0.scope.name == Self.urlSessionScope
