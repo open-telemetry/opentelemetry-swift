@@ -96,6 +96,8 @@ class HackerNewsViewController: UIViewController {
   private var currentPage = 0
   private let pageSize = 20
   private var isLoadingMore = false
+  // Bumped on refresh and feed change so responses for a previous list are dropped.
+  private var loadGeneration = 0
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -141,18 +143,21 @@ class HackerNewsViewController: UIViewController {
 
   @objc private func feedTypeChanged(_ sender: UISegmentedControl) {
     currentFeed = FeedType.allCases[sender.selectedSegmentIndex]
+    resetAndLoadStories()
+  }
+
+  @objc private func refreshData() {
+    resetAndLoadStories()
+  }
+
+  private func resetAndLoadStories() {
+    loadGeneration += 1
     isLoading = true
+    isLoadingMore = false
     stories = []
     allStoryIds = []
     currentPage = 0
     tableView.reloadData()
-    loadStories()
-  }
-
-  @objc private func refreshData() {
-    stories = []
-    allStoryIds = []
-    currentPage = 0
     loadStories()
   }
 
@@ -162,14 +167,16 @@ class HackerNewsViewController: UIViewController {
 
   private func loadStories() {
     guard let url = URL(string: "https://hacker-news.firebaseio.com/v0/\(currentFeed.rawValue).json") else { return }
+    let generation = loadGeneration
 
     URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
       guard let data,
             let storyIds = try? JSONDecoder().decode([Int].self, from: data) else { return }
 
       DispatchQueue.main.async {
-        self?.allStoryIds = storyIds
-        self?.loadNextPage()
+        guard let self, generation == self.loadGeneration else { return }
+        self.allStoryIds = storyIds
+        self.loadNextPage()
       }
     }.resume()
   }
@@ -189,6 +196,7 @@ class HackerNewsViewController: UIViewController {
   }
 
   private func loadStoryDetails(ids: [Int], isLoadingMore: Bool = false) {
+    let generation = loadGeneration
     let group = DispatchGroup()
     var loadedStories: [HNStory] = []
 
@@ -223,6 +231,7 @@ class HackerNewsViewController: UIViewController {
 
     group.notify(queue: .main) {
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        guard generation == self.loadGeneration else { return }
         if isLoadingMore {
           self.stories.append(contentsOf: loadedStories.sorted { $0.score > $1.score })
         } else {
@@ -678,7 +687,9 @@ class CommentsViewController: UIViewController {
         return
       }
 
-      self?.loadCommentTree(ids: kids)
+      DispatchQueue.main.async {
+        self?.loadCommentTree(ids: kids)
+      }
     }.resume()
   }
 
