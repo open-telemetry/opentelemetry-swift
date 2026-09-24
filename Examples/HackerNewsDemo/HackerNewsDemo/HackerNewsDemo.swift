@@ -37,8 +37,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     window = UIWindow(frame: UIScreen.main.bounds)
 
-    let homeNavController = UINavigationController(rootViewController: HackerNewsViewController())
+    // Integration test mode must run offline, so the live Hacker News feed is
+    // never loaded and its tab is disabled.
+    let homeRootViewController = IntegrationTestScenario.isEnabled ? UIViewController() : HackerNewsViewController()
+    let homeNavController = UINavigationController(rootViewController: homeRootViewController)
     homeNavController.tabBarItem = UITabBarItem(title: nil, image: UIImage(systemName: "house"), tag: 0)
+    homeNavController.tabBarItem.isEnabled = !IntegrationTestScenario.isEnabled
     homeNavController.interactivePopGestureRecognizer?.isEnabled = true
 
     let settingsNavController = UINavigationController(rootViewController: SettingsHostingController())
@@ -47,6 +51,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     let tabBarController = UITabBarController()
     tabBarController.viewControllers = [homeNavController, settingsNavController]
+    if IntegrationTestScenario.isEnabled {
+      tabBarController.selectedViewController = settingsNavController
+    }
 
     window?.rootViewController = tabBarController
     window?.makeKeyAndVisible()
