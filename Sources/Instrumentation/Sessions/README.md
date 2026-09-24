@@ -300,19 +300,21 @@ Sessions are automatically persisted and can be resumed on app restart:
 - By default, active persisted sessions continue from their previous state
 - Set `restorePersistedSession` to `false` to start a new session on clean start while linking and ending the persisted session
 - Expired sessions create new sessions with proper `previous_id` linking
-- The built-in backend stores one versioned `Data` record instead of separate fields
-- Existing `otel-session-*` fields are migrated when first read
+- The built-in storage implementation stores one versioned `Data` record instead of separate fields
+- With the default configuration, existing `otel-session-*` fields in `UserDefaults.standard` are migrated on first read
 - Unknown future records are preserved and disable writes for that manager, preventing an older SDK from replacing newer data
 - Malformed records are cleared so persistence can recover on the next write
 - Session starts and resets attempt an immediate save; rejected writes are retried
 - `endSession()` attempts to clear the saved session so it is not restored or linked on restart; rejected removals are retried
 - Access updates are coalesced and saved on a 30-second timer to minimize disk I/O
 
+Migration only reads legacy fields in the configured `UserDefaults` suite and namespace. Changing either does not copy the previous session or remove its old keys. Unless a session already exists in the new location, the manager starts a new session chain.
+
 ### Ownership
 
 The default manager uses `UserDefaults.standard` and is intended to be the only writer in its process. Use `SessionManagerProvider` instead of creating multiple default managers. App extensions use their own standard defaults container and therefore start an independent session chain.
 
-`UserDefaultsSessionPersistence` accepts a suite and namespace, including an App Group suite, but one app or extension must own that record at a time. Requesting `.shared` access is currently rejected for every backend because a session transition requires an atomic cross-process read, update, and write. Use separate namespaces for independent processes until shared transitions have an explicit coordination API.
+`UserDefaultsSessionPersistence` accepts a suite and namespace, including an App Group suite, but one app or extension must own that record at a time. Requesting `.shared` access is currently rejected for every storage implementation because a session transition requires an atomic cross-process read, update, and write. Use separate namespaces for independent processes until shared transitions have an explicit coordination API.
 
 ## Thread Safety
 
