@@ -105,3 +105,9 @@ test-without-building-watchos:
 .PHONY: test-without-building-visionos
 test-without-building-visionos:
 	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) test-without-building | xcbeautify
+
+# Runs the whole suite under Thread Sanitizer with the concurrency stress
+# tests enabled (they are skipped in a normal `swift test`).
+.PHONY: test-tsan
+test-tsan:
+	OTEL_CONCURRENCY_TESTS=1 swift test --sanitize=thread

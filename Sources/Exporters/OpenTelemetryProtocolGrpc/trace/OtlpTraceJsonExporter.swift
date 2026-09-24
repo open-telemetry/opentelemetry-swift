@@ -33,7 +33,13 @@ public final class OtlpTraceJsonExporter: SpanExporter, @unchecked Sendable {
       let jsonData = try exportRequest.jsonUTF8Data()
       do {
         let span = try JSONDecoder().decode(OtlpSpan.self, from: jsonData)
-        lock.withLock { exportedSpans.append(span) }
+        // Re-check under the lock so an export racing `shutdown()` cannot
+        // append after the exporter has stopped.
+        lock.withLock {
+          if isRunning {
+            exportedSpans.append(span)
+          }
+        }
       } catch {
         OpenTelemetry.instance.feedbackHandler?("Decode Error: \(error)")
       }
