@@ -83,6 +83,116 @@ final class SessionEndTests: XCTestCase {
     XCTAssertEqual(SessionEventInstrumentation.queue.map(\.eventType), [.start, .end, .start])
   }
 
+  func testEndClearsOnlyInjectedPersistenceBeforePublishingEnd() throws {
+    let defaultManager = SessionManager()
+    let defaultSession = defaultManager.getSession()
+    SessionEventInstrumentation.queue = []
+    let persistence = TestSessionPersistence()
+    let manager = try SessionManager(persistence: persistence)
+    let recorder = EndSessionLogRecordProcessor { record in
+      if record.eventName == SessionConstants.sessionEndEvent {
+        XCTAssertNil(persistence.read())
+        XCTAssertNil(manager.peekSession())
+      }
+    }
+    install(recorder, manager: manager)
+    let original = manager.getSession()
+
+    manager.endSession()
+    manager.endSession()
+
+    XCTAssertNil(persistence.read())
+    XCTAssertEqual(SessionStore.load(), defaultSession)
+    XCTAssertEqual(recorder.records.map(\.eventName), [SessionConstants.sessionStartEvent, SessionConstants.sessionEndEvent])
+    XCTAssertEqual(recorder.records.last?.attributes[SemanticConventions.Session.id.rawValue], .string(original.id))
+    let relaunched = try SessionManager(persistence: persistence)
+    XCTAssertNil(relaunched.peekSession())
+    XCTAssertNil(relaunched.getSession().previousId)
+  }
+
+  func testInjectedPersistenceCanInspectCurrentSessionDuringClear() throws {
+    let persistence = InspectingSessionPersistence()
+    let manager = try SessionManager(persistence: persistence)
+    let original = manager.getSession()
+    persistence.onClear = { XCTAssertEqual(manager.peekSession(), original) }
+    defer { persistence.onClear = nil }
+    let completed = expectation(description: "Clear callback completed")
+
+    DispatchQueue.global().async {
+      manager.endSession()
+      completed.fulfill()
+    }
+    wait(for: [completed], timeout: 3)
+
+    XCTAssertNil(manager.peekSession())
+    XCTAssertNil(persistence.read())
+  }
+
+  func testEndWaitsForInFlightResetPersistence() throws {
+    let persistence = InspectingSessionPersistence()
+    let manager = try SessionManager(persistence: persistence)
+    let recorder = EndSessionLogRecordProcessor()
+    install(recorder, manager: manager)
+    manager.getSession()
+    let enteredWrite = DispatchSemaphore(value: 0)
+    let releaseWrite = DispatchSemaphore(value: 0)
+    persistence.onWrite = {
+      enteredWrite.signal()
+      XCTAssertEqual(releaseWrite.wait(timeout: .now() + 5), .success)
+    }
+    let resetReturned = expectation(description: "Reset returned")
+    DispatchQueue.global().async {
+      manager.resetSession()
+      resetReturned.fulfill()
+    }
+    XCTAssertEqual(enteredWrite.wait(timeout: .now() + 2), .success)
+    let endAttempted = DispatchSemaphore(value: 0)
+    let endReturned = DispatchSemaphore(value: 0)
+    DispatchQueue.global().async {
+      endAttempted.signal()
+      manager.endSession()
+      endReturned.signal()
+    }
+    XCTAssertEqual(endAttempted.wait(timeout: .now() + 2), .success)
+    XCTAssertEqual(endReturned.wait(timeout: .now() + 0.1), .timedOut)
+    releaseWrite.signal()
+    wait(for: [resetReturned], timeout: 3)
+    XCTAssertEqual(endReturned.wait(timeout: .now() + 3), .success)
+    let drained = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+      recorder.records.count == 4
+    }, object: nil)
+    wait(for: [drained], timeout: 3)
+
+    XCTAssertNil(manager.peekSession())
+    XCTAssertNil(persistence.read())
+    XCTAssertEqual(recorder.records.map(\.eventName), [SessionConstants.sessionStartEvent, SessionConstants.sessionEndEvent,
+                                                       SessionConstants.sessionStartEvent, SessionConstants.sessionEndEvent])
+    let records = recorder.records
+    guard records.count == 4 else { return }
+    XCTAssertEqual(records[2].attributes[SemanticConventions.Session.id.rawValue], records[3].attributes[SemanticConventions.Session.id.rawValue])
+  }
+
+  func testEndPreservesFutureRecordAndKeepsSubsequentWritesBlocked() throws {
+    let persistence = TestSessionPersistence()
+    let saved = Session(id: "future-session", expireTime: Date(timeIntervalSinceNow: 1800))
+    let data = try PropertyListEncoder().encode(PersistedSessionRecord(
+      version: PersistedSessionRecord.currentVersion + 1,
+      session: PersistedSession(session: saved)
+    ))
+    persistence.write(data)
+    let manager = try SessionManager(persistence: persistence)
+    let original = manager.getSession()
+
+    manager.endSession()
+
+    XCTAssertNil(manager.peekSession())
+    XCTAssertEqual(persistence.read(), data)
+    let next = manager.getSession()
+    XCTAssertNotEqual(next.id, original.id)
+    XCTAssertNil(next.previousId)
+    XCTAssertEqual(persistence.read(), data)
+  }
+
   func testResetAfterEndStartsUnlinkedSession() {
     let manager = SessionManager()
     let original = manager.getSession()
@@ -176,7 +286,7 @@ final class SessionEndTests: XCTestCase {
 
     XCTAssertNil(manager.peekSession())
     for key in [SessionStore.idKey, SessionStore.previousIdKey, SessionStore.startTimeKey,
-                SessionStore.expireTimeKey, SessionStore.sessionTimeoutKey, SessionStore.maxLifetimeKey] {
+                SessionStore.expireTimeKey, SessionStore.sessionTimeoutKey, SessionStore.maxLifetimeKey, SessionStore.recordKey] {
       XCTAssertNil(UserDefaults.standard.object(forKey: key), key)
     }
     let next = manager.getSession()
