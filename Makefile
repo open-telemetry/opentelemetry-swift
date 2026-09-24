@@ -105,3 +105,23 @@ test-without-building-watchos:
 .PHONY: test-without-building-visionos
 test-without-building-visionos:
 	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) test-without-building | xcbeautify
+
+# Integration tests: runs Examples/HackerNewsDemo in the iOS simulator against a
+# local mock collector and asserts on the exported OTLP payloads.
+# See Tests/IntegrationTests/README.md.
+IOS_SIMULATOR_UDID ?=
+
+INTEG_SIMULATOR_FLAG=$(if $(IOS_SIMULATOR_UDID),--simulator '$(IOS_SIMULATOR_UDID)',)
+
+.PHONY: integ-tests-ios
+integ-tests-ios:
+	./Scripts/run-integration-tests.sh $(INTEG_SIMULATOR_FLAG)
+
+# Split variants so CI can cache the demo app build between the two steps.
+.PHONY: integ-build-ios
+integ-build-ios:
+	./Scripts/run-integration-tests.sh $(INTEG_SIMULATOR_FLAG) --build-only
+
+.PHONY: integ-tests-without-building-ios
+integ-tests-without-building-ios:
+	./Scripts/run-integration-tests.sh $(INTEG_SIMULATOR_FLAG) --skip-build
