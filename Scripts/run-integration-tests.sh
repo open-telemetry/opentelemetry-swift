@@ -149,7 +149,7 @@ COLLECTOR_BIN="$(ensure_collector)"
 log "Using $("$COLLECTOR_BIN" --version)"
 
 log "Building IntegrationStatusServer"
-swift build --package-path "$INTEGRATION_DIR" --product IntegrationStatusServer 2>&1 | grep -v "warning:" || true
+swift build --package-path "$INTEGRATION_DIR" --product IntegrationStatusServer 2>&1 | sed '/warning:/d'
 STATUS_BIN="$(swift build --package-path "$INTEGRATION_DIR" --product IntegrationStatusServer --show-bin-path)/IntegrationStatusServer"
 "$STATUS_BIN" --port "$STATUS_PORT" &
 STATUS_PID=$!
@@ -228,6 +228,6 @@ log "Collected files"
 ls -la "$OUTPUT_DIR"/*
 
 log "Running assertions"
-OTEL_INTEGRATION_OUTPUT_DIR="$OUTPUT_DIR" swift test --package-path "$INTEGRATION_DIR" 2>&1 | grep -v "warning:"
+OTEL_INTEGRATION_OUTPUT_DIR="$OUTPUT_DIR" swift test --package-path "$INTEGRATION_DIR" 2>&1 | sed '/warning:/d'
 
 log "Integration tests passed"
