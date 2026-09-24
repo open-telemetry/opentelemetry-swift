@@ -724,7 +724,7 @@ class CommentsViewController: UIViewController {
       }
     }
 
-    group.notify(queue: .global()) {
+    group.notify(queue: .main) {
       completion(nodes)
     }
   }
@@ -759,7 +759,7 @@ class CommentsViewController: UIViewController {
         }
       }
 
-      group.notify(queue: .global()) {
+      group.notify(queue: .main) {
         let node = CommentNode(comment: comment, children: children, depth: depth)
         completion(node)
       }
@@ -792,7 +792,7 @@ class CommentsViewController: UIViewController {
       }
     }
 
-    group.notify(queue: .global()) {
+    group.notify(queue: .main) {
       completion(nodes)
     }
   }
@@ -829,7 +829,7 @@ class CommentsViewController: UIViewController {
     URLSession.shared.dataTask(with: url) { data, _, _ in
       guard let data,
             let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-        completion(nil)
+        DispatchQueue.main.async { completion(nil) }
         return
       }
 
@@ -844,7 +844,7 @@ class CommentsViewController: UIViewController {
         dead: json["dead"] as? Bool ?? false
       )
 
-      completion(comment)
+      DispatchQueue.main.async { completion(comment) }
     }.resume()
   }
 
@@ -2644,7 +2644,7 @@ class ParentCommentViewController: UIViewController {
         }
       }
 
-      group.notify(queue: .global()) {
+      group.notify(queue: .main) {
         let node = CommentNode(comment: comment, children: children, depth: depth)
         completion(node)
       }
@@ -2660,7 +2660,7 @@ class ParentCommentViewController: UIViewController {
     URLSession.shared.dataTask(with: url) { data, _, _ in
       guard let data,
             let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-        completion(nil)
+        DispatchQueue.main.async { completion(nil) }
         return
       }
 
@@ -2675,7 +2675,7 @@ class ParentCommentViewController: UIViewController {
         dead: json["dead"] as? Bool ?? false
       )
 
-      completion(comment)
+      DispatchQueue.main.async { completion(comment) }
     }.resume()
   }
 
