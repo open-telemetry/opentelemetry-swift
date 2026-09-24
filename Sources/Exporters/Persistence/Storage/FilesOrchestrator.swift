@@ -148,10 +148,13 @@ final class FilesOrchestrator: Sendable {
     // The reader runs on another queue and may delete a file between the
     // directory listing and the size lookup. Such a file is already gone, so
     // skip it instead of failing the write that triggered the purge.
-    var filesWithSizeSortedByCreationDate = filesSortedByCreationDate
+    var filesWithSizeSortedByCreationDate = try filesSortedByCreationDate
       .compactMap { entry -> (file: File, size: UInt64)? in
-        guard let size = try? entry.file.size() else { return nil }
-        return (file: entry.file, size: size)
+        do {
+          return try (file: entry.file, size: entry.file.size())
+        } catch CocoaError.fileReadNoSuchFile {
+          return nil
+        }
       }
 
     let accumulatedFilesSize = filesWithSizeSortedByCreationDate.map(\.size).reduce(0, +)
@@ -162,7 +165,9 @@ final class FilesOrchestrator: Sendable {
 
       while sizeFreed < sizeToFree, !filesWithSizeSortedByCreationDate.isEmpty {
         let fileWithSize = filesWithSizeSortedByCreationDate.removeFirst()
-        try? fileWithSize.file.delete() // may already be gone, see above
+        do {
+          try fileWithSize.file.delete()
+        } catch CocoaError.fileNoSuchFile {} // already gone, see above; its bytes are freed
         sizeFreed += fileWithSize.size
       }
     }
