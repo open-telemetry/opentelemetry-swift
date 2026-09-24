@@ -16,7 +16,7 @@ Instrumentation used from this repo:
 Not yet available natively (tracked as `TODO` comments in `Telemetry.swift` and `SettingsView.swift`): app startup, crash, app hang, UIKit/SwiftUI view instrumentation, and a user ID manager. The Settings rows that depend on these (User ID, Trigger App Hang, Trigger App Crash, CPU Test, Memory Test) are shown grayed out with a "Coming soon" badge; the picker views stay in `SettingsView.swift` for when the instrumentations land.
 
 1. The `Home` tab is built entirely with UIKit, and each post/comment involved triggers a separate HTTP request.
-2. And the `Settings` tab is built with SwiftUI! Both view types are tracked.
+2. And the `Settings` tab is built with SwiftUI!
 
 ## HackerNewsViewController
 
