@@ -13,9 +13,6 @@ import OpenTelemetrySdk
 import XCTest
 
 class PrometheusExporterTests: XCTestCase {
-  let metricPushIntervalSec = 0.05
-  let waitDuration = 0.1 + 0.1
-
   func testMetricsHttpServerAsync() {
     checkMetricsHttpServer(startupDelay: 0)
   }
@@ -60,9 +57,10 @@ class PrometheusExporterTests: XCTestCase {
       return
     }
 
-    let retain_me = collectMetrics(exporter: promExporter)
-    _ = retain_me // silence warning
-    usleep(useconds_t(waitDuration * 1000000))
+    let meterProvider = collectMetrics(exporter: promExporter)
+    defer { XCTAssertEqual(meterProvider.shutdown(), .success) }
+    // Collect before scraping instead of waiting for the periodic reader's timer.
+    XCTAssertEqual(meterProvider.forceFlush(), .success)
     let url = URL(string: "http://localhost:9184/metrics/")!
     nonisolated(unsafe) let selfRef = self
     let task = URLSession.shared.dataTask(with: url) { data, response, error in
@@ -95,7 +93,7 @@ class PrometheusExporterTests: XCTestCase {
         reader: PeriodicMetricReaderBuilder(
           exporter: exporter
         )
-        .setInterval(timeInterval: 0.01)
+        .setInterval(timeInterval: 60)
         .build()
       )
       .registerView(
