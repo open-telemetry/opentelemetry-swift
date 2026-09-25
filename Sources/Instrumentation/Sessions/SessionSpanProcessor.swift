@@ -30,8 +30,8 @@ public class SessionSpanProcessor: SpanProcessor {
   public func onStart(parentContext: SpanContext?, span: ReadableSpan) {
     let session = sessionManager.getSession()
     span.setAttribute(key: SemanticConventions.Session.id.rawValue, value: session.id)
-    if session.previousId != nil {
-      span.setAttribute(key: SemanticConventions.Session.previousId.rawValue, value: session.previousId!)
+    if let previousId = session.previousId {
+      span.setAttribute(key: SemanticConventions.Session.previousId.rawValue, value: previousId)
     }
   }
 
