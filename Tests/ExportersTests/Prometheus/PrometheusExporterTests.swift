@@ -13,29 +13,54 @@ import OpenTelemetrySdk
 import XCTest
 
 class PrometheusExporterTests: XCTestCase {
-  let metricPushIntervalSec = 0.05
-  let waitDuration = 0.1 + 0.1
-
   func testMetricsHttpServerAsync() {
+    checkMetricsHttpServer(startupDelay: 0)
+  }
+
+  func testMetricsHttpServerWithDelayedStartup() {
+    checkMetricsHttpServer(startupDelay: 1)
+  }
+
+  private func checkMetricsHttpServer(startupDelay: TimeInterval) {
     let promOptions = PrometheusExporterOptions(url: "http://localhost:9184/metrics/")
     let promExporter = PrometheusExporter(options: promOptions)
     let metricsHttpServer = PrometheusExporterHttpServer(exporter: promExporter)
 
+    let listening = expectation(description: "Metrics server is listening")
+    let stopped = expectation(description: "Metrics server stopped")
     let expec = expectation(description: "Get metrics from server")
+    let previousHandler = OpenTelemetry.instance.feedbackHandler
+    OpenTelemetry.registerFeedbackHandler { message in
+      if message.hasPrefix("Listening on ") {
+        listening.fulfill()
+      }
+    }
+    defer {
+      metricsHttpServer.stop()
+      XCTAssertEqual(XCTWaiter().wait(for: [stopped], timeout: 30), .completed)
+      OpenTelemetry.registerFeedbackHandler(previousHandler ?? { _ in })
+    }
 
     nonisolated(unsafe) let serverRef = metricsHttpServer
-    DispatchQueue.global(qos: .default).async {
+    DispatchQueue.global(qos: .default).asyncAfter(deadline: .now() + startupDelay) {
+      defer { stopped.fulfill() }
       do {
         try serverRef.start()
       } catch {
-        XCTFail()
+        XCTFail("Failed to start metrics server: \(error)")
         return
       }
     }
 
-    let retain_me = collectMetrics(exporter: promExporter)
-    _ = retain_me // silence warning
-    usleep(useconds_t(waitDuration * 1000000))
+    guard XCTWaiter().wait(for: [listening], timeout: 30) == .completed else {
+      XCTFail("Metrics server did not start listening")
+      return
+    }
+
+    let meterProvider = collectMetrics(exporter: promExporter)
+    defer { XCTAssertEqual(meterProvider.shutdown(), .success) }
+    // Collect before scraping instead of waiting for the periodic reader's timer.
+    XCTAssertEqual(meterProvider.forceFlush(), .success)
     let url = URL(string: "http://localhost:9184/metrics/")!
     nonisolated(unsafe) let selfRef = self
     let task = URLSession.shared.dataTask(with: url) { data, response, error in
@@ -48,7 +73,7 @@ class PrometheusExporterTests: XCTestCase {
         // data
         expec.fulfill()
       } else {
-        XCTFail()
+        XCTFail("Metrics request failed: \(String(describing: error)), response: \(String(describing: response))")
         expec.fulfill()
         return
       }
@@ -60,8 +85,6 @@ class PrometheusExporterTests: XCTestCase {
       print("Error: expectation not fulfilled (\(result))")
       XCTFail()
     }
-
-    metricsHttpServer.stop()
   }
 
   private func collectMetrics(exporter: any MetricExporter) -> MeterProviderSdk {
@@ -70,7 +93,7 @@ class PrometheusExporterTests: XCTestCase {
         reader: PeriodicMetricReaderBuilder(
           exporter: exporter
         )
-        .setInterval(timeInterval: 0.01)
+        .setInterval(timeInterval: 60)
         .build()
       )
       .registerView(
@@ -121,7 +144,7 @@ class PrometheusExporterTests: XCTestCase {
     // Validate measure.
     XCTAssert(responseText.contains("# TYPE testGauge gauge"))
     XCTAssert(responseText.contains("testGauge{dim2=\"value1\",dim1=\"value1\"} 500") ||
-              responseText.contains("testGauge{dim1=\"value1\",dim2=\"value1\"} 500"))
+      responseText.contains("testGauge{dim1=\"value1\",dim2=\"value1\"} 500"))
 
     // Validate histogram.
     XCTAssert(responseText.contains("# TYPE testHistogram histogram"))

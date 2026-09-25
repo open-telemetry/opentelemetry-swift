@@ -1,13 +1,14 @@
 # Session Instrumentation
 
-Automatic session tracking for OpenTelemetry Swift applications. Creates unique session identifiers, tracks session lifecycle events, and automatically adds session context to all telemetry data.
+Automatic session tracking for OpenTelemetry Swift applications. Creates unique session identifiers, tracks session lifecycle events, adds session context to spans and logs, and exposes a shared sampling decision to signal integrations.
 
 ## Features
 
 - **Session Management** - Creates and manages session lifecycles with configurable timeouts, explicit reset, and explicit end
 - **Session Events** - Emits OpenTelemetry log records for session start/end events
 - **Span Attribution** - Automatically adds session IDs to all spans via span processor
-- **Persistence** - Sessions persist across app restarts using UserDefaults
+- **Versioned Persistence** - Sessions persist as one versioned record across app restarts
+- **Cross-Signal Sampling** - Persists one sampling decision that trace, log, and metric pipelines can share
 - **Thread Safety** - All components are thread-safe for concurrent access
 
 ## Setup
@@ -48,9 +49,24 @@ let sessionConfig = SessionConfig.builder()
     .with(sessionTimeout: 45 * 60) // 45 minutes
     .with(maxLifetime: 4 * 60 * 60)
     .with(restorePersistedSession: false)
+    .with(sampler: AlwaysOnSessionSampler())
     .build()
 let sessionManager = SessionManager(configuration: sessionConfig)
 SessionManagerProvider.register(sessionManager: sessionManager)
+```
+
+**Custom Persistence**:
+
+```swift
+let persistence = UserDefaultsSessionPersistence(
+    userDefaults: UserDefaults(suiteName: "group.example.telemetry")!,
+    namespace: "mobile-session"
+)
+let sessionManager = try SessionManager(
+    configuration: sessionConfig,
+    persistence: persistence,
+    persistenceAccess: .exclusive
+)
 ```
 
 **Getting Session Information**:
@@ -62,6 +78,10 @@ print("Session ID: \(session.id)")
 
 // End the current session and immediately start a linked replacement
 SessionManagerProvider.getInstance().resetSession()
+
+// Keep the session ID and decision together when attributing new telemetry
+let signalSession = SessionManagerProvider.getInstance().getSession()
+let shouldRecord = signalSession.samplingDecision.isSampled
 
 // End the session on sign-out without immediately starting another
 SessionManagerProvider.getInstance().endSession()
@@ -87,8 +107,9 @@ let current = manager.peekSession() // Peek without creating or extending
 manager.endSession() // Ends the session without creating a replacement
 ```
 
-`endSession()` clears the current and persisted session, including pending saves, and
+`endSession()` clears the current session, discards pending saves, attempts to clear persistence, and
 emits one `session.end` event when a current or pending previous session exists.
+Rejected persistence removals are retried; records from a newer schema are preserved.
 Calling it again without a session has no effect. It does not pause telemetry:
 a later `getSession()`, span, or log requiring session attribution starts a fresh,
 unlinked session. Existing spans keep the session attributes assigned when they started.
@@ -156,14 +177,53 @@ print("Expired: \(session.isExpired())")
 | `sessionTimeout`          | `TimeInterval`  | Duration in seconds after which a session expires if left inactive          | `1800` (30 min) | No       |
 | `maxLifetime`             | `TimeInterval?` | Maximum duration in seconds a session can remain active, regardless of activity | `nil` (disabled) | No       |
 | `restorePersistedSession` | `Bool`          | Whether to resume a saved session as current; when `false`, start a new session and link the saved one as `previous_id` | `true`          | No       |
+| `sampler`                  | `SessionSampler` | Makes one decision whenever a new session is created                           | `AlwaysOnSessionSampler` | No       |
 
 ```swift
 let config = SessionConfig.builder()
     .with(sessionTimeout: 30 * 60)
     .with(maxLifetime: 4 * 60 * 60)
     .with(restorePersistedSession: false)
+    .with(sampler: AlwaysOnSessionSampler())
     .build()
 ```
+
+### Cross-Signal Sampling
+
+`SessionManager` makes one sampling decision when it creates a session and stores that decision
+with the session. Current-version restored sessions keep their persisted decision. Older records
+do not contain one, so the configured sampler supplies a decision during migration and that result
+is persisted. Expiry and `resetSession()` each create one replacement session with one new decision.
+
+`samplingDecision()` returns the current session's decision, not the decision for an earlier
+session ID already attached to telemetry. When attributing new telemetry, use the ID and decision
+from the same `Session` snapshot. The session processors add attribution but do not drop telemetry
+themselves, so each signal pipeline remains responsible for enforcing the decision.
+
+Session access refreshes inactivity. When there is no unexpired session, concurrent callers wait
+for the new decision. During reset, an unexpired outgoing session remains available with its
+original decision until the replacement is ready. Telemetry emitted synchronously by the sampler
+itself proceeds without session attribution when no active session exists, which avoids recursive
+session creation. Custom samplers should return promptly, must not perform network or other
+unbounded work, and must not call session APIs that create or reset sessions.
+
+Lifecycle logs carry their own saved decision in `SessionConstants.sessionSamplingDecision`
+(`session.sampling_decision`), alongside `session.id`. This SDK-specific attribute is not an
+OpenTelemetry semantic convention. It contains `sampled` or `notSampled` and stays with the event
+across reset, expiry, queued delivery and the end event for a persisted previous session after
+restart. Read it instead of calling the manager from a lifecycle log filter:
+
+```swift
+// Inside the session.start/session.end branch of a log processor:
+guard case let .string(value)? = logRecord.attributes[SessionConstants.sessionSamplingDecision],
+      let decision = SessionSamplingDecision(rawValue: value),
+      decision.isSampled else { return }
+nextProcessor.onEmit(logRecord: logRecord)
+```
+
+This example drops lifecycle events with a missing or invalid decision. Older or custom events
+need an explicit fallback policy; the current session's decision is not a substitute. Other
+historical logs and measurements must retain their original session decision in their integration.
 
 ### Session Timeout Behavior
 
@@ -251,14 +311,26 @@ The session's end time is carried on the log record's `timestamp` field, not as 
 
 ## Persistence
 
-Sessions are automatically persisted to UserDefaults and can be resumed on app restart:
+Sessions are automatically persisted and can be resumed on app restart:
 
 - By default, active persisted sessions continue from their previous state
 - Set `restorePersistedSession` to `false` to start a new session on clean start while linking and ending the persisted session
 - Expired sessions create new sessions with proper `previous_id` linking
-- Session starts and resets are saved immediately
-- `endSession()` clears the saved session so it is not restored or linked on restart
+- The built-in storage implementation stores one versioned `Data` record instead of separate fields
+- With the default configuration, existing `otel-session-*` fields in `UserDefaults.standard` are migrated on first read
+- Unknown future records are preserved and disable writes for that manager, preventing an older SDK from replacing newer data
+- Malformed records are cleared so persistence can recover on the next write
+- Session starts and resets attempt an immediate save; rejected writes are retried
+- `endSession()` attempts to clear the saved session so it is not restored or linked on restart; rejected removals are retried
 - Access updates are coalesced and saved on a 30-second timer to minimize disk I/O
+
+Migration only reads legacy fields in the configured `UserDefaults` suite and namespace. Changing either does not copy the previous session or remove its old keys. Unless a session already exists in the new location, the manager starts a new session chain.
+
+### Ownership
+
+The default manager uses `UserDefaults.standard` and is intended to be the only writer in its process. Use `SessionManagerProvider` instead of creating multiple default managers. App extensions use their own standard defaults container and therefore start an independent session chain.
+
+`UserDefaultsSessionPersistence` accepts a suite and namespace, including an App Group suite, but one app or extension must own that record at a time. Requesting `.shared` access is currently rejected for every storage implementation because a session transition requires an atomic cross-process read, update, and write. Use separate namespaces for independent processes until shared transitions have an explicit coordination API.
 
 ## Thread Safety
 
