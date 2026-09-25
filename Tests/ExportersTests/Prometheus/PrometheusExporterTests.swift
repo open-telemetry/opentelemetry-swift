@@ -15,6 +15,7 @@ import XCTest
 class PrometheusExporterTests: XCTestCase {
   let metricPushIntervalSec = 0.05
   let waitDuration = 0.1 + 0.1
+  let serverStartTimeout = 10.0
 
   func testMetricsHttpServerAsync() {
     let promOptions = PrometheusExporterOptions(url: "http://localhost:9184/metrics/")
@@ -38,22 +39,30 @@ class PrometheusExporterTests: XCTestCase {
     usleep(useconds_t(waitDuration * 1000000))
     let url = URL(string: "http://localhost:9184/metrics/")!
     nonisolated(unsafe) let selfRef = self
-    let task = URLSession.shared.dataTask(with: url) { data, response, error in
-      if error == nil, let data, let response = response as? HTTPURLResponse {
-        XCTAssert(response.statusCode == 200)
-        let responseText = String(decoding: data, as: UTF8.self)
-        print("Response from metric API is: \n\(responseText)")
-        selfRef.validateResponse(responseText: responseText)
-        // This is your file-variable:
-        // data
-        expec.fulfill()
-      } else {
-        XCTFail()
-        expec.fulfill()
-        return
+    // The server starts on a background queue, so on a busy machine it may not
+    // be listening yet; retry until it accepts the connection.
+    let deadline = Date().addingTimeInterval(serverStartTimeout)
+    @Sendable func fetchMetrics() {
+      let task = URLSession.shared.dataTask(with: url) { data, response, error in
+        if error == nil, let data, let response = response as? HTTPURLResponse {
+          XCTAssert(response.statusCode == 200)
+          let responseText = String(decoding: data, as: UTF8.self)
+          print("Response from metric API is: \n\(responseText)")
+          selfRef.validateResponse(responseText: responseText)
+          // This is your file-variable:
+          // data
+          expec.fulfill()
+        } else if Date() < deadline {
+          DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) { fetchMetrics() }
+        } else {
+          XCTFail("metrics request failed: \(String(describing: error))")
+          expec.fulfill()
+          return
+        }
       }
+      task.resume()
     }
-    task.resume()
+    fetchMetrics()
 
     let result = XCTWaiter().wait(for: [expec], timeout: 30)
     if result != .completed {
