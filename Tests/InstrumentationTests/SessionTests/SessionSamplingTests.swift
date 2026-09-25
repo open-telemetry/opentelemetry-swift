@@ -359,16 +359,23 @@ final class SessionSamplingTests: XCTestCase {
     let attributionFinished = expectation(description: "Live access stayed available")
     let resultLock = NSLock()
     nonisolated(unsafe) var attributedSession: Session?
+    nonisolated(unsafe) var attributedDecision: SessionSamplingDecision?
     DispatchQueue.global().async {
       let session = manager.getSession()
-      resultLock.withLock { attributedSession = session }
+      let decision = manager.samplingDecision()
+      resultLock.withLock {
+        attributedSession = session
+        attributedDecision = decision
+      }
       attributionFinished.fulfill()
     }
     wait(for: [attributionFinished], timeout: 0.5)
     XCTAssertEqual(resultLock.withLock { attributedSession?.id }, firstSession.id)
+    XCTAssertEqual(resultLock.withLock { attributedDecision }, .sampled)
 
     sampler.allowCompletion.signal()
     wait(for: [resetFinished], timeout: 1)
+    XCTAssertEqual(manager.peekSession()?.samplingDecision, .notSampled)
   }
 
   private func decodeCurrentRecord(from persistence: TestSessionPersistence) throws -> PersistedSessionRecord {
@@ -447,6 +454,6 @@ private final class BlockingAfterFirstSessionSampler: SessionSampler, @unchecked
       didStartBlocking.signal()
       _ = allowCompletion.wait(timeout: .now() + 5)
     }
-    return .sampled
+    return shouldBlock ? .notSampled : .sampled
   }
 }

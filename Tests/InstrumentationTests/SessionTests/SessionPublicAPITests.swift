@@ -17,6 +17,10 @@ final class SessionPublicAPITests: XCTestCase {
     XCTAssertNotNil(accessor)
   }
 
+  func testLifecycleSamplingDecisionAttributeIsPublic() {
+    XCTAssertEqual(SessionConstants.sessionSamplingDecision, "session.sampling_decision")
+  }
+
   func testResetSessionIsPublic() {
     let reset: (SessionManager) -> () -> Session = SessionManager.resetSession
     XCTAssertNotNil(reset)

@@ -79,8 +79,9 @@ print("Session ID: \(session.id)")
 // End the current session and immediately start a linked replacement
 SessionManagerProvider.getInstance().resetSession()
 
-// Apply the same persisted decision in trace, log, and metric integrations
-let shouldRecord = SessionManagerProvider.getInstance().samplingDecision()?.isSampled ?? false
+// Keep the session ID and decision together when attributing new telemetry
+let signalSession = SessionManagerProvider.getInstance().getSession()
+let shouldRecord = signalSession.samplingDecision.isSampled
 
 // End the session on sign-out without immediately starting another
 SessionManagerProvider.getInstance().endSession()
@@ -194,20 +195,35 @@ with the session. Current-version restored sessions keep their persisted decisio
 do not contain one, so the configured sampler supplies a decision during migration and that result
 is persisted. Expiry and `resetSession()` each create one replacement session with one new decision.
 
-Call `samplingDecision()` from trace, log, and metric integrations so every signal applies the same
-persisted result. The session processors add attribution but do not drop telemetry themselves, so
-each signal pipeline remains responsible for enforcing the returned decision. This access follows
-the normal session behavior and refreshes inactivity. Concurrent callers wait while a new decision
-is being made so they receive the completed session. Telemetry emitted synchronously by the sampler
+`samplingDecision()` returns the current session's decision, not the decision for an earlier
+session ID already attached to telemetry. When attributing new telemetry, use the ID and decision
+from the same `Session` snapshot. The session processors add attribution but do not drop telemetry
+themselves, so each signal pipeline remains responsible for enforcing the decision.
+
+Session access refreshes inactivity. When there is no unexpired session, concurrent callers wait
+for the new decision. During reset, an unexpired outgoing session remains available with its
+original decision until the replacement is ready. Telemetry emitted synchronously by the sampler
 itself proceeds without session attribution when no active session exists, which avoids recursive
 session creation. Custom samplers should return promptly, must not perform network or other
 unbounded work, and must not call session APIs that create or reset sessions.
 
+Lifecycle logs carry their own saved decision in `SessionConstants.sessionSamplingDecision`
+(`session.sampling_decision`), alongside `session.id`. This SDK-specific attribute is not an
+OpenTelemetry semantic convention. It contains `sampled` or `notSampled` and stays with the event
+across reset, expiry, queued delivery and the end event for a persisted previous session after
+restart. Read it instead of calling the manager from a lifecycle log filter:
+
 ```swift
-guard let decision = SessionManagerProvider.getInstance().samplingDecision(),
+// Inside the session.start/session.end branch of a log processor:
+guard case let .string(value)? = logRecord.attributes[SessionConstants.sessionSamplingDecision],
+      let decision = SessionSamplingDecision(rawValue: value),
       decision.isSampled else { return }
-// Record the signal.
+nextProcessor.onEmit(logRecord: logRecord)
 ```
+
+This example drops lifecycle events with a missing or invalid decision. Older or custom events
+need an explicit fallback policy; the current session's decision is not a substitute. Other
+historical logs and measurements must retain their original session decision in their integration.
 
 ### Session Timeout Behavior
 

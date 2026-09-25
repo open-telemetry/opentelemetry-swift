@@ -75,7 +75,9 @@ public class SessionManager: @unchecked Sendable {
 
   /// Returns the persisted sampling decision for the active session.
   ///
-  /// Trace, log, and metric integrations can call this method to apply the same decision.
+  /// This describes the current session, not an earlier session referenced by telemetry.
+  /// Lifecycle log integrations should read `SessionConstants.sessionSamplingDecision` from
+  /// the event instead. For other signals, keep attribution and sampling on one `Session` snapshot.
   /// Like other session access, this records application activity. It returns `nil` only when
   /// called reentrantly by the configured sampler before an active session is available.
   public func samplingDecision() -> SessionSamplingDecision? {
