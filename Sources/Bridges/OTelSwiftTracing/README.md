@@ -13,5 +13,5 @@ import Tracing
 
 let tracer = OTelTracer()
 
-OTelSwiftTracing.bootstrap(tracer)
+InstrumentationSystem.bootstrap(tracer)
 ```

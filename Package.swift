@@ -30,11 +30,11 @@ let package = Package(
     .executable(name: "StableMetricSample", targets: ["StableMetricSample"])
   ],
   dependencies: [
-    .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.5.1"),
+    .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.6.0"),
     .package(url: "https://github.com/apple/swift-nio.git", from: "2.101.3"),
-    .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.27.5"),
+    .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.27.6"),
     .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.38.1"),
-    .package(url: "https://github.com/apple/swift-log.git", from: "1.15.0"),
+    .package(url: "https://github.com/apple/swift-log.git", from: "1.15.1"),
     .package(url: "https://github.com/apple/swift-metrics.git", from: "2.11.0"),
     .package(url: "https://github.com/apple/swift-distributed-tracing.git", from: "1.4.1")
   ],
@@ -397,6 +397,15 @@ extension Package {
           ],
           path: "Sources/Instrumentation/SignPostIntegration",
           exclude: ["README.md"]
+        ),
+        .testTarget(
+          name: "SignPostIntegrationTests",
+          dependencies: [
+            "SignPostIntegration",
+            "InMemoryExporter",
+            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+          ],
+          path: "Tests/InstrumentationTests/SignPostIntegrationTests"
         ),
         .target(
           name: "ResourceExtension",

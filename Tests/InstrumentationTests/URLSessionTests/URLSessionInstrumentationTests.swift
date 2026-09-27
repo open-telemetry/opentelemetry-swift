@@ -1190,6 +1190,27 @@ class URLSessionInstrumentationTests: XCTestCase {
     wait { task.state == .completed }
   }
 
+  /// A session delegate implementing none of the instrumented selectors is never swizzled, so
+  /// nothing reports task completion for that session. The span started at resume is then never
+  /// ended and stays in `runningSpans` for the lifetime of the process.
+  final class OpaqueSessionDelegate: NSObject, URLSessionDelegate, @unchecked Sendable {
+    func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {}
+  }
+
+  public func testSpanIsEndedWhenSessionDelegateImplementsNoInstrumentedSelector() {
+    let session = URLSession(configuration: .ephemeral,
+                             delegate: OpaqueSessionDelegate(),
+                             delegateQueue: nil)
+    let task = session.dataTask(with: URLRequest(url: URL(string: "http://localhost:33333/success")!))
+    task.resume()
+
+    wait { task.state == .completed }
+
+    let leaked = URLSessionInstrumentationTests.instrumentation.startedRequestSpans
+    XCTAssertTrue(leaked.isEmpty,
+                  "the span started at resume was never ended: \(leaked.count) still running")
+  }
+
   /// A WebSocket opening handshake is an HTTP request, so it stays instrumented.
   ///
   /// The two overloads differ: `webSocketTask(with: URL)` is rewritten by Foundation to `http`,

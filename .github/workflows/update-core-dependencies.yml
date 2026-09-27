@@ -24,17 +24,23 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Validate version format
         run: |
-          if [[ ! "${{ github.event.inputs.core_version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$ ]]; then
+          if [[ ! "${GITHUB_EVENT_INPUTS_CORE_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$ ]]; then
             echo "Error: Version must follow semantic versioning"
             exit 1
           fi
+        env:
+          GITHUB_EVENT_INPUTS_CORE_VERSION: ${{ github.event.inputs.core_version }}
 
       - name: Update dependencies
         run: |
-          ./Scripts/versioning/update_core_dependencies.sh "${{ github.event.inputs.core_version }}"
+          ./Scripts/versioning/update_core_dependencies.sh "${GITHUB_EVENT_INPUTS_CORE_VERSION}"
+        env:
+          GITHUB_EVENT_INPUTS_CORE_VERSION: ${{ github.event.inputs.core_version }}
 
       - name: Check for changes
         id: changes
@@ -50,6 +56,7 @@ jobs:
         with:
           client-id: ${{ vars.OTELBOT_CLIENT_ID }}
           private-key: ${{ secrets.OTELBOT_PRIVATE_KEY }}
+          permission-pull-requests: write
 
       - name: Create Pull Request
         if: steps.changes.outputs.has_changes == 'true' && github.event.inputs.create_pr == 'true'
@@ -77,13 +84,17 @@ jobs:
 
       - name: Output result
         run: |
-          if [[ "${{ steps.changes.outputs.has_changes }}" == "true" ]]; then
-            echo "Dependencies updated to version ${{ github.event.inputs.core_version }}"
-            if [[ "${{ github.event.inputs.create_pr }}" == "true" ]]; then
+          if [[ "${STEPS_CHANGES_OUTPUTS_HAS_CHANGES}" == "true" ]]; then
+            echo "Dependencies updated to version ${GITHUB_EVENT_INPUTS_CORE_VERSION}"
+            if [[ "${GITHUB_EVENT_INPUTS_CREATE_PR}" == "true" ]]; then
               echo "Pull request created"
             else
               echo "Changes committed but no PR created"
             fi
           else
-            echo "No changes detected - dependencies might already be at version ${{ github.event.inputs.core_version }}"
+            echo "No changes detected - dependencies might already be at version ${GITHUB_EVENT_INPUTS_CORE_VERSION}"
           fi
+        env:
+          STEPS_CHANGES_OUTPUTS_HAS_CHANGES: ${{ steps.changes.outputs.has_changes }}
+          GITHUB_EVENT_INPUTS_CORE_VERSION: ${{ github.event.inputs.core_version }}
+          GITHUB_EVENT_INPUTS_CREATE_PR: ${{ github.event.inputs.create_pr }}
