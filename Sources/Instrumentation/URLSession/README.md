@@ -12,9 +12,9 @@ This behaviour can be modified or augmented by using the optional callbacks defi
 
 `shouldInstrument: ((URLRequest) -> (Bool)?)?` :  Filter which requests you want to instrument, all by default
 
-`shouldRecordPayload: ((URLSession) -> (Bool)?)?`: Return true to allow response payloads to be passed to the instrumentation callbacks, false by default. This does not affect the payload delivered to the application's completion handler. Use `responsePayloadRecordingMode` to select which response payloads are passed to the instrumentation callbacks.
+`shouldRecordPayload: ((URLSession) -> (Bool)?)?`: Return true to allow response payloads to be passed to the instrumentation callbacks, false by default. This applies to both delegate-based and completion-handler requests. Apps that rely on response bodies in `receivedResponse` or `receivedError` must set `shouldRecordPayload: { _ in true }`. It does not affect the payload delivered to the application's own delegate or completion handler.
 
-`responsePayloadRecordingMode: ResponsePayloadRecordingMode`: Pass all response payloads (`.all`, the default) or only HTTP `400...599` response payloads (`.httpErrorsOnly`) to the instrumentation callbacks after payload recording is enabled.
+`responsePayloadRecordingMode: ResponsePayloadRecordingMode`: After payload recording is enabled through `shouldRecordPayload`, pass all response payloads (`.all`, the default) or only HTTP `400...599` response payloads (`.httpErrorsOnly`) to the instrumentation callbacks.
 
 `shouldInjectTracingHeaders: ((URLRequest) -> (Bool)?)?`: Allows filtering which requests you want to inject headers to follow the trace, true by default. You must also return true if you want to inject custom headers.
 

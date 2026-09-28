@@ -359,7 +359,13 @@ public class HttpTestServer: @unchecked Sendable {
     }
 
     private func handleURLSessionRequest(socket: Int32, path: String) {
-        if path.hasPrefix("/success") || path.hasPrefix("/dontinstrument") {
+        if path.hasPrefix("/success-with-body") {
+            sendSuccessResponse(socket: socket, body: "success response body")
+            config?.successCallback?()
+        } else if path.hasPrefix("/forbidden-with-body") {
+            sendForbiddenResponse(socket: socket, body: "forbidden response body")
+            config?.errorCallback?()
+        } else if path.hasPrefix("/success") || path.hasPrefix("/dontinstrument") {
             sendSuccessResponse(socket: socket)
             config?.successCallback?()
         } else if path.hasPrefix("/forbidden") {
@@ -373,8 +379,8 @@ public class HttpTestServer: @unchecked Sendable {
         }
     }
 
-    private func sendSuccessResponse(socket: Int32) {
-        let response = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+    private func sendSuccessResponse(socket: Int32, body: String = "") {
+        let response = "HTTP/1.1 200 OK\r\nContent-Length: \(body.utf8.count)\r\nConnection: close\r\n\r\n\(body)"
         _ = response.withCString { ptr in
             send(socket, ptr, strlen(ptr), 0)
         }
@@ -387,8 +393,8 @@ public class HttpTestServer: @unchecked Sendable {
         }
     }
 
-    private func sendForbiddenResponse(socket: Int32) {
-        let response = "HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+    private func sendForbiddenResponse(socket: Int32, body: String = "") {
+        let response = "HTTP/1.1 403 Forbidden\r\nContent-Length: \(body.utf8.count)\r\nConnection: close\r\n\r\n\(body)"
         _ = response.withCString { ptr in
             send(socket, ptr, strlen(ptr), 0)
         }

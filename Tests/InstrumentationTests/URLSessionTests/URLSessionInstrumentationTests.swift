@@ -54,6 +54,30 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
+  final class PayloadSessionDelegate: NSObject, URLSessionDataDelegate, @unchecked Sendable {
+    let semaphore: DispatchSemaphore
+    private(set) var receivedData = Data()
+
+    init(semaphore: DispatchSemaphore) {
+      self.semaphore = semaphore
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask,
+                    didReceive response: URLResponse,
+                    completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+      completionHandler(.allow)
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+      receivedData.append(data)
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask,
+                    didCompleteWithError error: Error?) {
+      semaphore.signal()
+    }
+  }
+
   /// A minimal delegate that only implements didFinishCollecting.
   /// This tests that delegate classes are discovered even when they only implement
   /// urlSession(_:task:didFinishCollecting:) and no other delegate methods.
@@ -328,6 +352,46 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertEqual(URLSessionInstrumentationTests.responseCopy.statusCode, 403)
     XCTAssertNotNil(callerReceivedBody)
     XCTAssertNotNil(URLSessionInstrumentationTests.receivedDataOrFile as? Data)
+  }
+
+  public func testDelegateHTTPErrorOnlyDoesNotBufferSuccessfulResponsePayload() throws {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    URLSessionInstrumentationTests.instrumentation.configuration.responsePayloadRecordingMode = .httpErrorsOnly
+    let server = HttpTestServer(url: nil, config: HttpTestServerConfig())
+    try server.start()
+    defer { server.stop() }
+    let expectedBody = Data("success response body".utf8)
+    let delegate = PayloadSessionDelegate(semaphore: URLSessionInstrumentationTests.semaphore)
+    let session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
+    let request = URLRequest(url: URL(string: "http://127.0.0.1:\(server.serverPort)/success-with-body")!)
+
+    session.dataTask(with: request).resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertEqual(delegate.receivedData, expectedBody)
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertEqual(URLSessionInstrumentationTests.responseCopy.statusCode, 200)
+    XCTAssertNil(URLSessionInstrumentationTests.receivedDataOrFile)
+  }
+
+  public func testDelegateHTTPErrorOnlyBuffersHTTPErrorResponsePayload() throws {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    URLSessionInstrumentationTests.instrumentation.configuration.responsePayloadRecordingMode = .httpErrorsOnly
+    let server = HttpTestServer(url: nil, config: HttpTestServerConfig())
+    try server.start()
+    defer { server.stop() }
+    let expectedBody = Data("forbidden response body".utf8)
+    let delegate = PayloadSessionDelegate(semaphore: URLSessionInstrumentationTests.semaphore)
+    let session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
+    let request = URLRequest(url: URL(string: "http://127.0.0.1:\(server.serverPort)/forbidden-with-body")!)
+
+    session.dataTask(with: request).resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertEqual(delegate.receivedData, expectedBody)
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertEqual(URLSessionInstrumentationTests.responseCopy.statusCode, 403)
+    XCTAssertEqual(URLSessionInstrumentationTests.receivedDataOrFile as? Data, expectedBody)
   }
 
   public func testConfigurationCallbacksCalledWhenForbidden() throws {

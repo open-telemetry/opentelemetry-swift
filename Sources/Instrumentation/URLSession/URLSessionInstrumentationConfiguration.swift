@@ -84,12 +84,12 @@ public struct URLSessionInstrumentationConfiguration {
   public var shouldInstrument: ((URLRequest) -> (Bool)?)?
 
   /// Implement this callback if you want the instrumentation callbacks to receive payload data,
-  /// false by default. This does not affect the payload delivered to the application's completion
-  /// handler.
+  /// false by default. This applies to both delegate-based and completion-handler requests and
+  /// does not affect the payload delivered to the application's own delegate or completion handler.
   public var shouldRecordPayload: ((URLSession) -> (Bool)?)?
 
   /// Controls whether all response payloads or only HTTP error payloads are passed to the
-  /// instrumentation callbacks after payload recording is enabled.
+  /// instrumentation callbacks after payload recording is enabled through `shouldRecordPayload`.
   public var responsePayloadRecordingMode: ResponsePayloadRecordingMode
 
   /// Implement this callback to filter which requests you want to inject headers to follow the trace,
