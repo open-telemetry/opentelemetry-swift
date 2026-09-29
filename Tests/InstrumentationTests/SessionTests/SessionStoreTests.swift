@@ -69,6 +69,37 @@ final class SessionStoreTests: XCTestCase {
     XCTAssertEqual(loaded2?.id, "session-2")
   }
 
+  func testConcurrentSaveAndLoadReturnsCompleteSession() {
+    let first = Session(
+      id: "session-1",
+      expireTime: Date(timeIntervalSince1970: 1_000),
+      previousId: "previous-1",
+      startTime: Date(timeIntervalSince1970: 100),
+      sessionTimeout: 900,
+      maxLifetime: 1_800
+    )
+    let second = Session(
+      id: "session-2",
+      expireTime: Date(timeIntervalSince1970: 2_000),
+      previousId: "previous-2",
+      startTime: Date(timeIntervalSince1970: 200),
+      sessionTimeout: 1_800,
+      maxLifetime: nil
+    )
+    let resultLock = NSLock()
+    nonisolated(unsafe) var unexpectedSessions: [Session] = []
+
+    DispatchQueue.concurrentPerform(iterations: 200) { index in
+      if index.isMultiple(of: 2) {
+        SessionStore.saveImmediately(session: index.isMultiple(of: 4) ? first : second)
+      } else if let loaded = SessionStore.load(), loaded != first, loaded != second {
+        resultLock.withLock { unexpectedSessions.append(loaded) }
+      }
+    }
+
+    XCTAssertTrue(unexpectedSessions.isEmpty)
+  }
+
   func testSaveWithoutMaxLifetimeClearsPreviousMaxLifetime() {
     let cappedSession = Session(
       id: "session-1",
@@ -102,8 +133,6 @@ final class SessionStoreTests: XCTestCase {
     XCTAssertEqual(SessionStore.sessionTimeoutKey, "otel-session-timeout")
     XCTAssertEqual(SessionStore.maxLifetimeKey, "otel-session-max-lifetime")
   }
-
-
 
   func testSaveAndLoadSessionWithPreviousId() {
     let sessionId = "current-session-123"
@@ -157,81 +186,81 @@ final class SessionStoreTests: XCTestCase {
     let savedId = UserDefaults.standard.string(forKey: SessionStore.idKey)
     XCTAssertEqual(savedId, session2.id)
   }
-  
+
   func testLoadSessionWithCorruptedId() {
     UserDefaults.standard.set(["invalid": "id"], forKey: SessionStore.idKey)
     UserDefaults.standard.set(Date(), forKey: SessionStore.expireTimeKey)
     UserDefaults.standard.set(Date(), forKey: SessionStore.startTimeKey)
     UserDefaults.standard.set(1800.0, forKey: SessionStore.sessionTimeoutKey)
-    
+
     let loadedSession = SessionStore.load()
     XCTAssertNil(loadedSession)
   }
-  
+
   func testLoadSessionWithCorruptedExpireTime() {
     UserDefaults.standard.set("test-id", forKey: SessionStore.idKey)
     UserDefaults.standard.set("invalid-date", forKey: SessionStore.expireTimeKey)
     UserDefaults.standard.set(Date(), forKey: SessionStore.startTimeKey)
     UserDefaults.standard.set(1800.0, forKey: SessionStore.sessionTimeoutKey)
-    
+
     let loadedSession = SessionStore.load()
     XCTAssertNil(loadedSession)
   }
-  
+
   func testLoadSessionWithCorruptedStartTime() {
     UserDefaults.standard.set("test-id", forKey: SessionStore.idKey)
     UserDefaults.standard.set(Date(), forKey: SessionStore.expireTimeKey)
     UserDefaults.standard.set("invalid-date", forKey: SessionStore.startTimeKey)
     UserDefaults.standard.set(1800.0, forKey: SessionStore.sessionTimeoutKey)
-    
+
     let loadedSession = SessionStore.load()
     XCTAssertNil(loadedSession)
   }
-  
+
   func testLoadSessionWithCorruptedTimeout() {
     UserDefaults.standard.set("test-id", forKey: SessionStore.idKey)
     UserDefaults.standard.set(Date(), forKey: SessionStore.expireTimeKey)
     UserDefaults.standard.set(Date(), forKey: SessionStore.startTimeKey)
     UserDefaults.standard.set("invalid-timeout", forKey: SessionStore.sessionTimeoutKey)
-    
+
     let loadedSession = SessionStore.load()
     XCTAssertNil(loadedSession)
   }
-  
+
   func testLoadSessionMissingTimeout() {
     UserDefaults.standard.set("test-id", forKey: SessionStore.idKey)
     UserDefaults.standard.set(Date(), forKey: SessionStore.expireTimeKey)
     UserDefaults.standard.set(Date(), forKey: SessionStore.startTimeKey)
-    
+
     let loadedSession = SessionStore.load()
     XCTAssertNil(loadedSession)
   }
-  
+
   func testScheduleSaveWithSameSession() {
     let session1 = Session(id: "session-1", expireTime: Date(), startTime: Date())
-    
+
     SessionStore.scheduleSave(session: session1)
     let savedId1 = UserDefaults.standard.string(forKey: SessionStore.idKey)
     XCTAssertEqual(savedId1, session1.id)
-    
+
     // Schedule the same session again - should not trigger another save
     SessionStore.scheduleSave(session: session1)
     let savedId2 = UserDefaults.standard.string(forKey: SessionStore.idKey)
     XCTAssertEqual(savedId2, session1.id)
   }
-  
+
   func testScheduleSaveWithExistingTimer() {
     let session1 = Session(id: "session-1", expireTime: Date(), startTime: Date())
     let session2 = Session(id: "session-2", expireTime: Date(), startTime: Date())
-    
+
     // First call creates timer and saves session1
     SessionStore.scheduleSave(session: session1)
     let savedId1 = UserDefaults.standard.string(forKey: SessionStore.idKey)
     XCTAssertEqual(savedId1, session1.id)
-    
+
     // Second call should use existing timer and update pending session
     SessionStore.scheduleSave(session: session2)
-    
+
     // The first session is still saved until timer fires
     let savedId2 = UserDefaults.standard.string(forKey: SessionStore.idKey)
     XCTAssertEqual(savedId2, session1.id)

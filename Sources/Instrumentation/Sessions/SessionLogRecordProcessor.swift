@@ -22,6 +22,14 @@ public class SessionLogRecordProcessor: LogRecordProcessor {
 
   /// Called when a log record is emitted - adds session attributes and forwards to next processor
   public func onEmit(logRecord: ReadableLogRecord) {
+    if logRecord.eventName == SessionConstants.sessionStartEvent ||
+      logRecord.eventName == SessionConstants.sessionEndEvent,
+      logRecord.attributes[SemanticConventions.Session.id.rawValue] != nil {
+      // Lifecycle events already carry the historical session context they describe.
+      nextProcessor.onEmit(logRecord: logRecord)
+      return
+    }
+
     var enhancedRecord = logRecord
 
     // Only add session attributes if they don't already exist
@@ -42,13 +50,13 @@ public class SessionLogRecordProcessor: LogRecordProcessor {
     nextProcessor.onEmit(logRecord: enhancedRecord)
   }
 
-  /// Shuts down the processor - no cleanup needed
+  /// Shuts down the processor by delegating to the next processor in the chain
   public func shutdown(explicitTimeout: TimeInterval?) -> ExportResult {
-    return .success
+    return nextProcessor.shutdown(explicitTimeout: explicitTimeout)
   }
 
-  /// Forces a flush of any pending data - no action needed
+  /// Forces a flush of any pending data by delegating to the next processor in the chain
   public func forceFlush(explicitTimeout: TimeInterval?) -> ExportResult {
-    return .success
+    return nextProcessor.forceFlush(explicitTimeout: explicitTimeout)
   }
 }
