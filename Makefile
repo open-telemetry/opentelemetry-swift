@@ -125,3 +125,8 @@ integ-build-ios:
 .PHONY: integ-tests-without-building-ios
 integ-tests-without-building-ios:
 	./Scripts/run-integration-tests.sh $(INTEG_SIMULATOR_FLAG) --skip-build
+# Runs the whole suite under Thread Sanitizer with the concurrency stress
+# tests enabled (they are skipped in a normal `swift test`).
+.PHONY: test-tsan
+test-tsan:
+	OTEL_CONCURRENCY_TESTS=1 swift test --sanitize=thread

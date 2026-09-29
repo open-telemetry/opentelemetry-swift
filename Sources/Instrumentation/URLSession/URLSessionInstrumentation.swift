@@ -44,6 +44,11 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
   private let configurationQueue = DispatchQueue(
       label: "io.opentelemetry.configuration")
 
+  /// Delegate classes already injected into, so that a class discovered by both the startup scan
+  /// and a resuming task is only instrumented once.
+  nonisolated(unsafe) private static var instrumentedDelegateClasses = Set<ObjectIdentifier>()
+  private static let instrumentedDelegateClassesLock = NSLock()
+
   /// Guards the one-time swizzling performed by `injectInNSURLClasses()`.
   ///
   /// Swizzling replaces implementations on `URLSession` and on delegate classes, which is a
@@ -146,7 +151,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       }
 
       foundClasses.forEach { cls in
-        injectIntoDelegateClass(cls: cls)
+        instrumentDelegateClassIfNeeded(cls)
       }
     }
 
@@ -157,6 +162,22 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     injectIntoNSURLSessionAsyncDataAndDownloadTaskMethods()
     injectIntoNSURLSessionAsyncUploadTaskMethods()
     injectIntoNSURLSessionTaskResume()
+  }
+
+  /// Instruments `cls` unless it already has been. Injecting twice would report each task
+  /// completion once per installation.
+  ///
+  /// The lock is held across the injection, not just the bookkeeping: a caller that finds the class
+  /// already recorded must be able to rely on its callbacks being installed, otherwise a task
+  /// resuming concurrently could start before the delegate has been modified.
+  private func instrumentDelegateClassIfNeeded(_ cls: AnyClass) {
+    Self.instrumentedDelegateClassesLock.lock()
+    defer { Self.instrumentedDelegateClassesLock.unlock() }
+
+    guard Self.instrumentedDelegateClasses.insert(ObjectIdentifier(cls)).inserted else {
+      return
+    }
+    injectIntoDelegateClass(cls: cls)
   }
 
   private func injectIntoDelegateClass(cls: AnyClass) {
@@ -568,6 +589,16 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     let selector = #selector(
       URLSessionDataDelegate.urlSession(_:task:didCompleteWithError:))
     guard let original = class_getInstanceMethod(cls, selector) else {
+      // The method is optional and the delegate omits it, so nothing would report completion for
+      // its tasks. Add it, as injectTaskDidFinishCollectingMetricsIntoDelegateClass already does —
+      // that fallback only exists on newer platforms, so this is the one that covers the rest.
+      let block:
+        @convention(block) (Any, URLSession, URLSessionTask, Error?) -> Void = { _, session, task, error in
+          self.urlSession(session, task: task, didCompleteWithError: error)
+        }
+      let imp = imp_implementationWithBlock(
+        unsafeBitCast(block, to: AnyObject.self))
+      class_addMethod(cls, selector, imp, "v@:@@@")
       return
     }
     var originalIMP: IMP?
@@ -787,6 +818,14 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     }
 
     let taskId = idKeyForTask(task)
+
+    // A session delegate that implements none of the selectors scanned in injectInNSURLClasses is
+    // never discovered there, so without this nothing would report this task's completion and the
+    // span started below would never be ended.
+    if let sessionDelegate = (task.value(forKey: "session") as? URLSession)?.delegate {
+      instrumentDelegateClassIfNeeded(type(of: sessionDelegate))
+    }
+
     if let request = task.currentRequest {
       queue.sync {
         if requestMap[taskId] == nil {

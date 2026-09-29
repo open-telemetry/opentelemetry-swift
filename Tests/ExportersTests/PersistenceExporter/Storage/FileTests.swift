@@ -85,4 +85,22 @@ class FileTests: XCTestCase {
       XCTAssertTrue((error as NSError).localizedDescription.contains("doesn’t exist."))
     }
   }
+
+  func testWhenFileDoesNotExist_itThrowsFileNoSuchFileWhenDeleting() throws {
+    let file = try temporaryDirectory.createFile(named: "file")
+    try file.delete()
+
+    XCTAssertThrowsError(try file.delete()) { error in
+      XCTAssertEqual((error as? CocoaError)?.code, .fileNoSuchFile)
+    }
+  }
+
+  func testWhenFileDoesNotExist_itThrowsFileReadNoSuchFileWhenReadingSize() throws {
+    let file = try temporaryDirectory.createFile(named: "file")
+    try file.delete()
+
+    XCTAssertThrowsError(try file.size()) { error in
+      XCTAssertEqual((error as? CocoaError)?.code, .fileReadNoSuchFile)
+    }
+  }
 }
