@@ -197,14 +197,69 @@ is persisted. Expiry and `resetSession()` each create one replacement session wi
 
 `samplingDecision()` returns the current session's decision, not the decision for an earlier
 session ID already attached to telemetry. When attributing new telemetry, use the ID and decision
-from the same `Session` snapshot. The session processors add attribution but do not drop telemetry
-themselves, so each signal pipeline remains responsible for enforcing the decision.
+from the same `Session` snapshot. The original `SessionSpanProcessor` and `SessionLogRecordProcessor`
+only add attribution. Filtering is opt-in, using the integrations below.
+
+#### Filtering traces and logs
+
+```swift
+let traces = TracerProviderBuilder()
+    .with(sampler: SessionTraceSampler(sessionManager: sessionManager))
+    .add(spanProcessor: BatchSpanProcessor(spanExporter: spanExporter))
+    .build()
+
+let logs = LoggerProviderBuilder()
+    .with(processors: [SessionSamplingLogRecordProcessor(
+        nextProcessor: BatchLogRecordProcessor(logRecordExporter: logExporter),
+        sessionManager: sessionManager
+    )])
+    .build()
+```
+
+Register these providers with your instrumentation. The trace sampler supplies session attributes
+from the same snapshot it samples. Remove `SessionSpanProcessor` from this pipeline: it would look
+up the session again and could replace that snapshot during a reset. These integrations own the
+`session.*` attributes; do not supply conflicting values. By default, both the session and the
+parent-based trace sampler must allow recording. An unsampled parent stays unsampled, and a sampled parent does not
+override an unsampled session. A trace that crosses a session reset can therefore lose later child
+spans. A custom delegate can apply a different trace policy but cannot override the session decision.
+This controls local recording, not downstream propagation: Swift Core 2.6.0 can reuse an active
+parent's context for a dropped span. Correct propagation requires a Core version containing
+[the dropped-span context fix](https://github.com/open-telemetry/opentelemetry-swift-core/pull/123).
+
+Use `SessionSamplingLogRecordProcessor` instead of `SessionLogRecordProcessor`, wrapping every
+downstream export path. It filters before batching or persistence and forwards flush and shutdown
+calls. Newly attributed logs use one session snapshot. Logs already carrying a session ID are never
+reattributed to the current session. Only a saved decision on the record is used for filtering.
+Matching the active session's ID is not enough: migration may have assigned it a new decision.
+Records with unknown historical decisions are preserved, including old crash records. This is
+not strict filtering of legacy telemetry.
+
+For delayed logs, capture `session.samplingAttributes` when the operation occurs and attach them
+to the record, alongside your other attributes. This also retains the original decision across a
+restart. Do not replace them with the current session's attributes when replaying the record.
+
+#### Filtering metric measurements
+
+```swift
+let session = sessionManager.getSession()
+session.recordIfSampled { attributes in
+    counter.add(value: 1, attributes: attributes)
+}
+```
+
+Gate each measurement before aggregation, using the captured session's attributes. The helper does
+not install a meter-provider filter or change automatic metric instrumentation: those integrations
+must use the gate at their recording sites. Filtering a whole metric export batch is not equivalent,
+because it may already contain measurements from several sessions. For asynchronous instruments,
+capture the session when the measurement is taken, not when the instrument is created.
 
 Session access refreshes inactivity. When there is no unexpired session, concurrent callers wait
 for the new decision. During reset, an unexpired outgoing session remains available with its
 original decision until the replacement is ready. Telemetry emitted synchronously by the sampler
 itself proceeds without session attribution when no active session exists, which avoids recursive
-session creation. Custom samplers should return promptly, must not perform network or other
+session creation. The opt-in filters drop new spans and unattributed logs in that case because no
+decision exists yet. Custom samplers should return promptly, must not perform network or other
 unbounded work, and must not call session APIs that create or reset sessions.
 
 Lifecycle logs carry their own saved decision in `SessionConstants.sessionSamplingDecision`
