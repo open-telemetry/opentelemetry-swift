@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   macOS:
-    runs-on: macos-26
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -21,12 +21,12 @@ jobs:
           sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
       - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
-          xcode-version: 16.4
+          xcode-version: latest-stable
       - name: Build and Test for macOS
         run: swift test
 
   iOS:
-    runs-on: macos-26
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -36,16 +36,25 @@ jobs:
           sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
       - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
-          xcode-version: 16.4
+          xcode-version: latest-stable
       - name: Install Homebrew kegs
         run: make setup-brew
+      - name: Resolve simulator
+        id: ios-sim
+        run: |
+          UDID=$(./Scripts/ci/resolve-simulator.sh iOS)
+          echo "destination=platform=iOS Simulator,id=$UDID,arch=arm64" >> "$GITHUB_OUTPUT"
       - name: Build for iOS
-        run: make build-for-testing-ios
+        run: make build-for-testing-ios IOS_DESTINATION="${STEPS_IOS_SIM_OUTPUTS_DESTINATION}"
+        env:
+          STEPS_IOS_SIM_OUTPUTS_DESTINATION: ${{ steps.ios-sim.outputs.destination }}
       - name: Test for iOS
-        run: make test-without-building-ios
+        run: make test-without-building-ios IOS_DESTINATION="${STEPS_IOS_SIM_OUTPUTS_DESTINATION}"
+        env:
+          STEPS_IOS_SIM_OUTPUTS_DESTINATION: ${{ steps.ios-sim.outputs.destination }}
 
   tvOS:
-    runs-on: macos-26
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -55,16 +64,25 @@ jobs:
           sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
       - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
-          xcode-version: 16.4
+          xcode-version: latest-stable
       - name: Install Homebrew kegs
         run: make setup-brew
+      - name: Resolve simulator
+        id: tvos-sim
+        run: |
+          UDID=$(./Scripts/ci/resolve-simulator.sh tvOS)
+          echo "destination=platform=tvOS Simulator,id=$UDID,arch=arm64" >> "$GITHUB_OUTPUT"
       - name: Build for tvOS
-        run: make build-for-testing-tvos
+        run: make build-for-testing-tvos TVOS_DESTINATION="${STEPS_TVOS_SIM_OUTPUTS_DESTINATION}"
+        env:
+          STEPS_TVOS_SIM_OUTPUTS_DESTINATION: ${{ steps.tvos-sim.outputs.destination }}
       - name: Test for tvOS
-        run: make test-without-building-tvos
+        run: make test-without-building-tvos TVOS_DESTINATION="${STEPS_TVOS_SIM_OUTPUTS_DESTINATION}"
+        env:
+          STEPS_TVOS_SIM_OUTPUTS_DESTINATION: ${{ steps.tvos-sim.outputs.destination }}
 
   watchOS:
-    runs-on: macos-26
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -74,16 +92,25 @@ jobs:
           sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
       - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
-          xcode-version: 16.4
+          xcode-version: latest-stable
       - name: Install Homebrew kegs
         run: make setup-brew
+      - name: Resolve simulator
+        id: watchos-sim
+        run: |
+          UDID=$(./Scripts/ci/resolve-simulator.sh watchOS)
+          echo "destination=platform=watchOS Simulator,id=$UDID,arch=arm64" >> "$GITHUB_OUTPUT"
       - name: Build for watchOS
-        run: make build-for-testing-watchos
+        run: make build-for-testing-watchos WATCHOS_DESTINATION="${STEPS_WATCHOS_SIM_OUTPUTS_DESTINATION}"
+        env:
+          STEPS_WATCHOS_SIM_OUTPUTS_DESTINATION: ${{ steps.watchos-sim.outputs.destination }}
       - name: Test for watchOS
-        run: make test-without-building-watchos
+        run: make test-without-building-watchos WATCHOS_DESTINATION="${STEPS_WATCHOS_SIM_OUTPUTS_DESTINATION}"
+        env:
+          STEPS_WATCHOS_SIM_OUTPUTS_DESTINATION: ${{ steps.watchos-sim.outputs.destination }}
 
   visionOS:
-    runs-on: macos-26
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -93,13 +120,22 @@ jobs:
           sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
       - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
-          xcode-version: 16.4
+          xcode-version: latest-stable
       - name: Install Homebrew kegs
         run: make setup-brew
+      - name: Resolve simulator
+        id: visionos-sim
+        run: |
+          UDID=$(./Scripts/ci/resolve-simulator.sh visionOS)
+          echo "destination=platform=visionOS Simulator,id=$UDID" >> "$GITHUB_OUTPUT"
       - name: Build for visionOS
-        run: make build-for-testing-visionos
+        run: make build-for-testing-visionos VISIONOS_DESTINATION="${STEPS_VISIONOS_SIM_OUTPUTS_DESTINATION}"
+        env:
+          STEPS_VISIONOS_SIM_OUTPUTS_DESTINATION: ${{ steps.visionos-sim.outputs.destination }}
       - name: Test for visionOS
-        run: make test-without-building-visionos
+        run: make test-without-building-visionos VISIONOS_DESTINATION="${STEPS_VISIONOS_SIM_OUTPUTS_DESTINATION}"
+        env:
+          STEPS_VISIONOS_SIM_OUTPUTS_DESTINATION: ${{ steps.visionos-sim.outputs.destination }}
 
   linux:
     runs-on: ubuntu-latest
