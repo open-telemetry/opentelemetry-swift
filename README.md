@@ -139,6 +139,7 @@ For more information about the maintainer role, see the [community repository](h
 
 ### Approvers
 
+- [Ben Joseph](https://github.com/benjoseph-grafana), Grafana Labs
 - [Vinod Vydier](https://github.com/vvydier), Independent
 
 For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).
