@@ -79,6 +79,19 @@ To test from the command line you need `swift` version `5.0+`.
 ```sh
 swift test
 ```
+
+#### Integration tests
+
+Changes to instrumentations or the events they emit (new or renamed spans,
+log records, event names, or attributes under `Sources/Instrumentation`) must
+also update the integration tests in `Tests/IntegrationTests`, which run the
+`Examples/HackerNewsDemo` app in the iOS simulator against a local collector.
+See `Tests/IntegrationTests/README.md` and run:
+
+```sh
+make integ-tests-ios
+```
+
 ### Linting
 #### SwiftLint
 The SwiftLint Xcode plugin can be optionally enabled during development by using an environmental variable when opening the project from the commandline. 
