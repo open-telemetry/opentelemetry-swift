@@ -51,7 +51,7 @@ final class SessionManagerTests: XCTestCase {
     let session = sessionManager.resetSession()
 
     XCTAssertNil(session.previousId)
-    XCTAssertEqual(SessionStore.load()?.id, session.id)
+    XCTAssertEqual(SessionStore.load()?.session.id, session.id)
     XCTAssertEqual(SessionEventInstrumentation.queue.count, 1)
     XCTAssertEqual(SessionEventInstrumentation.queue[0].eventType, .start)
     XCTAssertEqual(SessionEventInstrumentation.queue[0].session.id, session.id)
@@ -85,7 +85,7 @@ final class SessionManagerTests: XCTestCase {
 
     XCTAssertNotEqual(replacementSession.id, originalSession.id)
     XCTAssertEqual(replacementSession.previousId, originalSession.id)
-    XCTAssertEqual(SessionStore.load()?.id, replacementSession.id)
+    XCTAssertEqual(SessionStore.load()?.session.id, replacementSession.id)
     XCTAssertEqual(SessionEventInstrumentation.queue.count, 2)
     guard SessionEventInstrumentation.queue.count == 2 else { return }
     XCTAssertEqual(SessionEventInstrumentation.queue[0].session.id, originalSession.id)
@@ -162,7 +162,7 @@ final class SessionManagerTests: XCTestCase {
       XCTAssertEqual(startEvent.session.previousId, endEvent.session.id)
       expectedPreviousId = startEvent.session.id
     }
-    XCTAssertEqual(SessionStore.load()?.id, expectedPreviousId)
+    XCTAssertEqual(SessionStore.load()?.session.id, expectedPreviousId)
     XCTAssertEqual(manager.peekSession()?.id, expectedPreviousId)
   }
 
@@ -198,7 +198,7 @@ final class SessionManagerTests: XCTestCase {
     let replacementSession = sessionManager.resetSession()
 
     XCTAssertEqual(replacementSession.previousId, persistedSession.id)
-    XCTAssertEqual(SessionStore.load()?.id, replacementSession.id)
+    XCTAssertEqual(SessionStore.load()?.session.id, replacementSession.id)
     XCTAssertEqual(SessionEventInstrumentation.queue.count, 2)
     XCTAssertEqual(SessionEventInstrumentation.queue[0].session.id, persistedSession.id)
     XCTAssertEqual(
@@ -231,7 +231,7 @@ final class SessionManagerTests: XCTestCase {
 
   func testGetSessionSavedToDisk() {
     let session = sessionManager.getSession()
-    let savedSession = SessionStore.load()
+    let savedSession = SessionStore.load()?.session
 
     XCTAssertEqual(session, savedSession)
     XCTAssertNotNil(UserDefaults.standard.data(forKey: SessionStore.recordKey))
@@ -414,7 +414,9 @@ final class SessionManagerTests: XCTestCase {
 
   func testSlowSessionExporterDoesNotBlockConcurrentAccessOrReset() {
     let manager = SessionManager()
-    let blockingProcessor = BlockingLogRecordProcessor()
+    let eventsPublished = expectation(description: "Initial and reset events published")
+    eventsPublished.expectedFulfillmentCount = 3
+    let blockingProcessor = BlockingLogRecordProcessor(eventExpectation: eventsPublished)
     let loggerProvider = LoggerProviderBuilder()
       .with(processors: [blockingProcessor])
       .build()
@@ -451,18 +453,20 @@ final class SessionManagerTests: XCTestCase {
     }
     wait(for: [resetFinished], timeout: 0.5)
     let replacement = resetLock.withLock { resetSession }
-    XCTAssertEqual(SessionStore.load()?.id, replacement?.id)
-    XCTAssertEqual(SessionStore.load()?.id, manager.peekSession()?.id)
+    XCTAssertEqual(SessionStore.load()?.session.id, replacement?.id)
+    XCTAssertEqual(SessionStore.load()?.session.id, manager.peekSession()?.id)
 
     blockingProcessor.allowCompletion.signal()
-    wait(for: [transitionFinished], timeout: 1)
-    XCTAssertEqual(SessionStore.load()?.id, manager.peekSession()?.id)
+    wait(for: [transitionFinished, eventsPublished], timeout: 1)
+    XCTAssertEqual(SessionStore.load()?.session.id, manager.peekSession()?.id)
   }
 
   func testInjectedPersistenceContainsResetBeforeReturnWhileEventsAreBlocked() throws {
     let persistence = TestSessionPersistence()
     let manager = try SessionManager(persistence: persistence)
-    let blockingProcessor = BlockingLogRecordProcessor()
+    let eventsPublished = expectation(description: "Initial and reset events published")
+    eventsPublished.expectedFulfillmentCount = 3
+    let blockingProcessor = BlockingLogRecordProcessor(eventExpectation: eventsPublished)
     let loggerProvider = LoggerProviderBuilder()
       .with(processors: [blockingProcessor])
       .build()
@@ -480,7 +484,7 @@ final class SessionManagerTests: XCTestCase {
     let persistedDataBeforeUnblock = persistence.read()
 
     blockingProcessor.allowCompletion.signal()
-    wait(for: [initialTransitionFinished], timeout: 1)
+    wait(for: [initialTransitionFinished, eventsPublished], timeout: 1)
     let data = try XCTUnwrap(persistedDataBeforeUnblock)
     let record = try PropertyListDecoder().decode(PersistedSessionRecord.self, from: data)
     XCTAssertEqual(record.session.id, replacement.id)
@@ -552,7 +556,7 @@ final class SessionManagerTests: XCTestCase {
 
     wait(for: [resetFinished, transitionFinished, eventsPublished], timeout: 2)
     XCTAssertEqual(processor.hopCount, 1)
-    XCTAssertEqual(SessionStore.load()?.id, manager.peekSession()?.id)
+    XCTAssertEqual(SessionStore.load()?.session.id, manager.peekSession()?.id)
   }
 
   func testCallerDoesNotDrainTransitionsQueuedDuringCallback() {
@@ -581,7 +585,7 @@ final class SessionManagerTests: XCTestCase {
     wait(for: [callerFinished, eventsPublished], timeout: 2)
     XCTAssertTrue(processor.producerFinishedSuccessfully)
     XCTAssertEqual(processor.callerQueueEventCount, 1)
-    XCTAssertEqual(SessionStore.load()?.id, manager.peekSession()?.id)
+    XCTAssertEqual(SessionStore.load()?.session.id, manager.peekSession()?.id)
   }
 
   func testReentrantResetDrainsNestedTransition() {
@@ -610,7 +614,7 @@ final class SessionManagerTests: XCTestCase {
       SessionConstants.sessionEndEvent,
       SessionConstants.sessionStartEvent
     ])
-    XCTAssertEqual(SessionStore.load()?.id, manager.peekSession()?.id)
+    XCTAssertEqual(SessionStore.load()?.session.id, manager.peekSession()?.id)
   }
 
   func testSessionStartNotificationPosted() {
@@ -687,18 +691,24 @@ private final class CountingSessionManager: SessionManager, @unchecked Sendable 
 private final class BlockingLogRecordProcessor: LogRecordProcessor, @unchecked Sendable {
   let didStart = DispatchSemaphore(value: 0)
   let allowCompletion = DispatchSemaphore(value: 0)
+  private let eventExpectation: XCTestExpectation
   private let lock = NSLock()
   private var shouldBlock = true
+
+  init(eventExpectation: XCTestExpectation) {
+    self.eventExpectation = eventExpectation
+  }
 
   func onEmit(logRecord: ReadableLogRecord) {
     let block = lock.withLock {
       defer { shouldBlock = false }
       return shouldBlock
     }
-    guard block else { return }
-
-    didStart.signal()
-    _ = allowCompletion.wait(timeout: .now() + 5)
+    if block {
+      didStart.signal()
+      _ = allowCompletion.wait(timeout: .now() + 5)
+    }
+    eventExpectation.fulfill()
   }
 
   func shutdown(explicitTimeout: TimeInterval?) -> ExportResult {

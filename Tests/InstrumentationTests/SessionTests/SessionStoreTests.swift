@@ -36,7 +36,7 @@ final class SessionStoreTests: XCTestCase {
 
     store.scheduleSave(session: session)
 
-    XCTAssertEqual(store.load(), session)
+    XCTAssertEqual(store.load()?.session, session)
   }
 
   func testLoadSessionWhenNothingSaved() {
@@ -72,10 +72,10 @@ final class SessionStoreTests: XCTestCase {
     let session2 = Session(id: "session-2", expireTime: Date(timeIntervalSinceNow: 1800), startTime: Date())
 
     store.saveImmediately(session: session1)
-    XCTAssertEqual(store.load()?.id, "session-1")
+    XCTAssertEqual(store.load()?.session.id, "session-1")
 
     store.saveImmediately(session: session2)
-    XCTAssertEqual(store.load()?.id, "session-2")
+    XCTAssertEqual(store.load()?.session.id, "session-2")
   }
 
   func testConcurrentSaveAndLoadReturnsCompleteSession() throws {
@@ -102,7 +102,7 @@ final class SessionStoreTests: XCTestCase {
     DispatchQueue.concurrentPerform(iterations: 200) { index in
       if index.isMultiple(of: 2) {
         store.saveImmediately(session: index.isMultiple(of: 4) ? first : second)
-      } else if let loaded = store.load(), loaded != first, loaded != second {
+      } else if let loaded = store.load()?.session, loaded != first, loaded != second {
         resultLock.withLock { unexpectedSessions.append(loaded) }
       }
     }
@@ -147,10 +147,10 @@ final class SessionStoreTests: XCTestCase {
     )
 
     store.saveImmediately(session: cappedSession)
-    XCTAssertEqual(store.load()?.maxLifetime, 4 * 60 * 60)
+    XCTAssertEqual(store.load()?.session.maxLifetime, 4 * 60 * 60)
 
     store.saveImmediately(session: uncappedSession)
-    XCTAssertNil(store.load()?.maxLifetime)
+    XCTAssertNil(store.load()?.session.maxLifetime)
   }
 
   func testStoreKeys() {
@@ -174,7 +174,7 @@ final class SessionStoreTests: XCTestCase {
 
     store.scheduleSave(session: session)
 
-    XCTAssertEqual(store.load(), session)
+    XCTAssertEqual(store.load()?.session, session)
   }
 
   func testScheduleSaveImmediatelySavesFirstSession() throws {
@@ -226,7 +226,7 @@ final class SessionStoreTests: XCTestCase {
     let session2 = Session(id: "test-session-2", expireTime: Date(timeIntervalSinceNow: 1800), startTime: Date())
     store.scheduleSave(session: session2)
 
-    XCTAssertEqual(store.load()?.id, session2.id)
+    XCTAssertEqual(store.load()?.session.id, session2.id)
   }
 
   func testClearRemovesVersionedAndLegacySession() {
@@ -407,8 +407,19 @@ final class SessionStoreTests: XCTestCase {
     userDefaults.set(1800.0, forKey: persistence.sessionTimeoutKey)
     userDefaults.set(7200.0, forKey: persistence.maxLifetimeKey)
 
-    let session = try XCTUnwrap(store.load())
+    let loadedSession = try XCTUnwrap(store.load())
+    let session = Session(
+      id: loadedSession.session.id,
+      expireTime: loadedSession.session.expireTime,
+      previousId: loadedSession.session.previousId,
+      startTime: loadedSession.session.startTime,
+      sessionTimeout: loadedSession.session.sessionTimeout,
+      maxLifetime: loadedSession.session.maxLifetime,
+      samplingDecision: .notSampled
+    )
+    store.migrate(loadedSession, to: session)
 
+    XCTAssertEqual(loadedSession.source, .legacyKeys)
     XCTAssertEqual(session.id, "legacy-session")
     XCTAssertEqual(session.previousId, "legacy-previous")
     XCTAssertEqual(session.startTime, startTime)
@@ -476,11 +487,105 @@ final class SessionStoreTests: XCTestCase {
     userDefaults.set(expireTime, forKey: persistence.expireTimeKey)
     userDefaults.set(1800.0, forKey: persistence.sessionTimeoutKey)
 
-    let session = try XCTUnwrap(store.load())
+    let loadedSession = try XCTUnwrap(store.load())
+    let session = Session(
+      id: loadedSession.session.id,
+      expireTime: loadedSession.session.expireTime,
+      previousId: loadedSession.session.previousId,
+      startTime: loadedSession.session.startTime,
+      sessionTimeout: loadedSession.session.sessionTimeout,
+      maxLifetime: loadedSession.session.maxLifetime,
+      samplingDecision: .notSampled
+    )
+    store.migrate(loadedSession, to: session)
 
+    XCTAssertEqual(loadedSession.source, .legacyKeys)
     XCTAssertEqual(session.id, "legacy-session")
     XCTAssertEqual(try decodeRecord().session.value, session)
     XCTAssertNil(userDefaults.object(forKey: persistence.idKey))
+  }
+
+  func testRejectedMigrationWriteRetriesWithoutAnotherSaveCall() throws {
+    let persistence = ToggleSessionPersistence(acceptsWrites: true)
+    XCTAssertTrue(persistence.write(SessionPersistenceFixtures.versionOne))
+    let store = SessionStore(persistence: persistence, saveInterval: 0.01)
+    defer { store.teardown() }
+    let loadedSession = try XCTUnwrap(store.load())
+    XCTAssertEqual(loadedSession.source, .version1)
+    let legacySession = loadedSession.session
+    let migratedSession = Session(
+      id: legacySession.id,
+      expireTime: legacySession.expireTime,
+      previousId: legacySession.previousId,
+      startTime: legacySession.startTime,
+      sessionTimeout: legacySession.sessionTimeout,
+      maxLifetime: legacySession.maxLifetime,
+      samplingDecision: .sampled
+    )
+    let retryAccepted = expectation(description: "Failed migration was retried")
+    persistence.onWrite = { accepted in
+      if accepted {
+        retryAccepted.fulfill()
+      }
+    }
+
+    persistence.acceptsWrites = false
+    store.migrate(loadedSession, to: migratedSession)
+    XCTAssertEqual(persistence.read(), SessionPersistenceFixtures.versionOne)
+
+    persistence.acceptsWrites = true
+    wait(for: [retryAccepted], timeout: 1)
+
+    let data = try XCTUnwrap(persistence.read())
+    let record = try PropertyListDecoder().decode(PersistedSessionRecord.self, from: data)
+    XCTAssertEqual(record.session.value, migratedSession)
+  }
+
+  func testClearCancelsPendingSamplingMigration() throws {
+    let persistence = ToggleSessionPersistence(acceptsWrites: true)
+    XCTAssertTrue(persistence.write(SessionPersistenceFixtures.versionOne))
+    let store = SessionStore(persistence: persistence, saveInterval: 0.01)
+    defer { store.teardown() }
+    let loaded = try XCTUnwrap(store.load())
+    persistence.acceptsWrites = false
+    store.migrate(loaded, to: loaded.session)
+    XCTAssertEqual(persistence.read(), SessionPersistenceFixtures.versionOne)
+
+    store.clear()
+    persistence.acceptsWrites = true
+    let retryDeadline = expectation(description: "Passed the migration retry deadline")
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { retryDeadline.fulfill() }
+    wait(for: [retryDeadline], timeout: 1)
+
+    XCTAssertNil(persistence.read())
+    XCTAssertNil(store.load())
+    let replacement = Session(id: "replacement", expireTime: Date(timeIntervalSinceNow: 1800),
+                              samplingDecision: .notSampled)
+    store.saveImmediately(session: replacement)
+    XCTAssertEqual(store.load()?.session, replacement)
+  }
+
+  func testUnknownSamplingDecisionClearsRecordAndPersistenceResumes() throws {
+    let record = UnknownDecisionRecord(
+      version: PersistedSessionRecord.currentVersion,
+      session: UnknownDecisionSession(
+        id: "future-session",
+        expireTime: Date(timeIntervalSinceNow: 1800),
+        previousId: nil,
+        startTime: Date(),
+        sessionTimeout: 1800,
+        maxLifetime: nil,
+        samplingDecision: "future-decision"
+      )
+    )
+    let data = try PropertyListEncoder().encode(record)
+    XCTAssertTrue(persistence.write(data))
+
+    XCTAssertNil(store.load())
+    XCTAssertNil(persistence.read())
+
+    store.saveImmediately(session: Session(id: "replacement", expireTime: Date()))
+    XCTAssertEqual(try decodeRecord().session.id, "replacement")
   }
 
   func testNamespacesIsolateRecordsInOneSuite() {
@@ -496,8 +601,8 @@ final class SessionStoreTests: XCTestCase {
     firstStore.saveImmediately(session: Session(id: "first", expireTime: Date(timeIntervalSinceNow: 1800)))
     secondStore.saveImmediately(session: Session(id: "second", expireTime: Date(timeIntervalSinceNow: 1800)))
 
-    XCTAssertEqual(firstStore.load()?.id, "first")
-    XCTAssertEqual(secondStore.load()?.id, "second")
+    XCTAssertEqual(firstStore.load()?.session.id, "first")
+    XCTAssertEqual(secondStore.load()?.session.id, "second")
   }
 
   func testInjectedPersistenceRestoresSessionInAnotherManager() throws {
@@ -571,6 +676,21 @@ final class SessionStoreTests: XCTestCase {
     let data = try XCTUnwrap(persistence.read())
     return try PropertyListDecoder().decode(PersistedSessionRecord.self, from: data)
   }
+}
+
+private struct UnknownDecisionRecord: Codable {
+  let version: Int
+  let session: UnknownDecisionSession
+}
+
+private struct UnknownDecisionSession: Codable {
+  let id: String
+  let expireTime: Date
+  let previousId: String?
+  let startTime: Date
+  let sessionTimeout: TimeInterval
+  let maxLifetime: TimeInterval?
+  let samplingDecision: String
 }
 
 private final class RejectingClearSessionPersistence: SessionPersistence, @unchecked Sendable {
