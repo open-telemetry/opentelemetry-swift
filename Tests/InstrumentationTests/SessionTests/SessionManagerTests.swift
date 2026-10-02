@@ -414,7 +414,9 @@ final class SessionManagerTests: XCTestCase {
 
   func testSlowSessionExporterDoesNotBlockConcurrentAccessOrReset() {
     let manager = SessionManager()
-    let blockingProcessor = BlockingLogRecordProcessor()
+    let eventsPublished = expectation(description: "Initial and reset events published")
+    eventsPublished.expectedFulfillmentCount = 3
+    let blockingProcessor = BlockingLogRecordProcessor(eventExpectation: eventsPublished)
     let loggerProvider = LoggerProviderBuilder()
       .with(processors: [blockingProcessor])
       .build()
@@ -455,14 +457,16 @@ final class SessionManagerTests: XCTestCase {
     XCTAssertEqual(SessionStore.load()?.session.id, manager.peekSession()?.id)
 
     blockingProcessor.allowCompletion.signal()
-    wait(for: [transitionFinished], timeout: 1)
+    wait(for: [transitionFinished, eventsPublished], timeout: 1)
     XCTAssertEqual(SessionStore.load()?.session.id, manager.peekSession()?.id)
   }
 
   func testInjectedPersistenceContainsResetBeforeReturnWhileEventsAreBlocked() throws {
     let persistence = TestSessionPersistence()
     let manager = try SessionManager(persistence: persistence)
-    let blockingProcessor = BlockingLogRecordProcessor()
+    let eventsPublished = expectation(description: "Initial and reset events published")
+    eventsPublished.expectedFulfillmentCount = 3
+    let blockingProcessor = BlockingLogRecordProcessor(eventExpectation: eventsPublished)
     let loggerProvider = LoggerProviderBuilder()
       .with(processors: [blockingProcessor])
       .build()
@@ -480,7 +484,7 @@ final class SessionManagerTests: XCTestCase {
     let persistedDataBeforeUnblock = persistence.read()
 
     blockingProcessor.allowCompletion.signal()
-    wait(for: [initialTransitionFinished], timeout: 1)
+    wait(for: [initialTransitionFinished, eventsPublished], timeout: 1)
     let data = try XCTUnwrap(persistedDataBeforeUnblock)
     let record = try PropertyListDecoder().decode(PersistedSessionRecord.self, from: data)
     XCTAssertEqual(record.session.id, replacement.id)
@@ -687,18 +691,24 @@ private final class CountingSessionManager: SessionManager, @unchecked Sendable 
 private final class BlockingLogRecordProcessor: LogRecordProcessor, @unchecked Sendable {
   let didStart = DispatchSemaphore(value: 0)
   let allowCompletion = DispatchSemaphore(value: 0)
+  private let eventExpectation: XCTestExpectation
   private let lock = NSLock()
   private var shouldBlock = true
+
+  init(eventExpectation: XCTestExpectation) {
+    self.eventExpectation = eventExpectation
+  }
 
   func onEmit(logRecord: ReadableLogRecord) {
     let block = lock.withLock {
       defer { shouldBlock = false }
       return shouldBlock
     }
-    guard block else { return }
-
-    didStart.signal()
-    _ = allowCompletion.wait(timeout: .now() + 5)
+    if block {
+      didStart.signal()
+      _ = allowCompletion.wait(timeout: .now() + 5)
+    }
+    eventExpectation.fulfill()
   }
 
   func shutdown(explicitTimeout: TimeInterval?) -> ExportResult {
