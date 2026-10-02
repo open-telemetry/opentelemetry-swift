@@ -110,15 +110,16 @@ public final class SessionEventInstrumentation: @unchecked Sendable {
   /// - Parameter session: The session that has started
   private static func createSessionStartEvent(session: Session) {
     var attributes: [String: AttributeValue] = [
-      SemanticConventions.Session.id.rawValue: AttributeValue.string(session.id)
+      SemanticConventions.Session.id.rawValue: AttributeValue.string(session.id),
+      SessionConstants.sessionSamplingDecision: .string(session.samplingDecision.rawValue)
     ]
 
     if let previousId = session.previousId {
       attributes[SemanticConventions.Session.previousId.rawValue] = AttributeValue.string(previousId)
     }
 
-    /// Create `session.start` log record according to otel semantic convention
-    /// https://opentelemetry.io/docs/specs/semconv/general/session/
+    // Create `session.start` log record according to otel semantic convention
+    // https://opentelemetry.io/docs/specs/semconv/general/session/
     logger.logRecordBuilder()
       .setEventName(SessionConstants.sessionStartEvent)
       .setAttributes(attributes)
@@ -137,15 +138,16 @@ public final class SessionEventInstrumentation: @unchecked Sendable {
     }
 
     var attributes: [String: AttributeValue] = [
-      SemanticConventions.Session.id.rawValue: AttributeValue.string(session.id)
+      SemanticConventions.Session.id.rawValue: AttributeValue.string(session.id),
+      SessionConstants.sessionSamplingDecision: .string(session.samplingDecision.rawValue)
     ]
 
     if let previousId = session.previousId {
       attributes[SemanticConventions.Session.previousId.rawValue] = AttributeValue.string(previousId)
     }
 
-    /// Create `session.end`` log record according to otel semantic convention
-    /// https://opentelemetry.io/docs/specs/semconv/general/session/
+    // Create `session.end`` log record according to otel semantic convention
+    // https://opentelemetry.io/docs/specs/semconv/general/session/
     logger.logRecordBuilder()
       .setEventName(SessionConstants.sessionEndEvent)
       .setAttributes(attributes)
@@ -165,8 +167,8 @@ public final class SessionEventInstrumentation: @unchecked Sendable {
       if isApplied {
         return true
       }
-      /// SessionManager creates sessions before SessionEventInstrumentation is applied,
-      /// which the notification observer cannot see. So we need to keep the sessions in a queue.
+      // SessionManager creates sessions before SessionEventInstrumentation is applied,
+      // which the notification observer cannot see. So we need to keep the sessions in a queue.
       if queue.count < maxQueueSize {
         queue.append(SessionEvent(session: session, eventType: eventType))
       }

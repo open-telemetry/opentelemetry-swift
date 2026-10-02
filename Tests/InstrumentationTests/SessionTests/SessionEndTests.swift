@@ -79,8 +79,68 @@ final class SessionEndTests: XCTestCase {
 
     XCTAssertNotEqual(next.id, original.id)
     XCTAssertNil(next.previousId)
-    XCTAssertEqual(SessionStore.load(), next)
+    XCTAssertEqual(SessionStore.load()?.session, next)
     XCTAssertEqual(SessionEventInstrumentation.queue.map(\.eventType), [.start, .end, .start])
+  }
+
+  func testEndKeepsDecisionAndNextSessionSamplesOnce() throws {
+    let persistence = TestSessionPersistence()
+    let sampler = TestSessionSampler(decisions: [.notSampled, .sampled])
+    let manager = try SessionManager(configuration: SessionConfig(sampler: sampler), persistence: persistence)
+    let original = manager.getSession()
+
+    manager.endSession()
+    manager.endSession()
+
+    XCTAssertNil(manager.peekSession())
+    XCTAssertNil(persistence.read())
+    XCTAssertEqual(sampler.callCount, 1)
+    XCTAssertEqual(SessionEventInstrumentation.queue.map(\.eventType), [.start, .end])
+    XCTAssertEqual(SessionEventInstrumentation.queue.map(\.session.samplingDecision), [.notSampled, .notSampled])
+    XCTAssertEqual(SessionEventInstrumentation.queue.last?.session.id, original.id)
+
+    let next = manager.getSession()
+
+    XCTAssertNotEqual(next.id, original.id)
+    XCTAssertNil(next.previousId)
+    XCTAssertEqual(next.samplingDecision, .sampled)
+    let record = try PropertyListDecoder().decode(PersistedSessionRecord.self, from: XCTUnwrap(persistence.read()))
+    XCTAssertEqual(record.session.value, next)
+    XCTAssertEqual(manager.samplingDecision(), .sampled)
+    XCTAssertEqual(sampler.sessionIds, [original.id, next.id])
+    XCTAssertEqual(SessionEventInstrumentation.queue.map(\.eventType), [.start, .end, .start])
+  }
+
+  func testEndRestoredSessionKeepsDecisionWithoutResampling() throws {
+    for restorePersistedSession in [true, false] {
+      SessionEventInstrumentation.queue = []
+      let persistence = TestSessionPersistence()
+      let original = Session(id: "restored-session", expireTime: Date(timeIntervalSinceNow: 1800),
+                             samplingDecision: .notSampled)
+      let record = try PropertyListEncoder().encode(PersistedSessionRecord(session: original))
+      XCTAssertTrue(persistence.write(record))
+      let sampler = TestSessionSampler(decisions: [.sampled])
+      let configuration = SessionConfig(restorePersistedSession: restorePersistedSession, sampler: sampler)
+      let manager = try SessionManager(configuration: configuration, persistence: persistence)
+
+      manager.endSession()
+
+      XCTAssertNil(manager.peekSession())
+      XCTAssertNil(persistence.read())
+      XCTAssertEqual(sampler.callCount, 0)
+      XCTAssertEqual(SessionEventInstrumentation.queue.map(\.eventType), [.end])
+      XCTAssertEqual(SessionEventInstrumentation.queue.first?.session.id, original.id)
+      XCTAssertEqual(SessionEventInstrumentation.queue.first?.session.samplingDecision, .notSampled)
+
+      let relaunched = try SessionManager(configuration: configuration, persistence: persistence)
+      XCTAssertNil(relaunched.peekSession())
+      let next = relaunched.getSession()
+      XCTAssertNotEqual(next.id, original.id)
+      XCTAssertNil(next.previousId)
+      XCTAssertEqual(next.samplingDecision, .sampled)
+      XCTAssertEqual(sampler.sessionIds, [next.id])
+      XCTAssertEqual(SessionEventInstrumentation.queue.map(\.eventType), [.end, .start])
+    }
   }
 
   func testEndClearsOnlyInjectedPersistenceBeforePublishingEnd() throws {
@@ -102,7 +162,7 @@ final class SessionEndTests: XCTestCase {
     manager.endSession()
 
     XCTAssertNil(persistence.read())
-    XCTAssertEqual(SessionStore.load(), defaultSession)
+    XCTAssertEqual(SessionStore.load()?.session, defaultSession)
     XCTAssertEqual(recorder.records.map(\.eventName), [SessionConstants.sessionStartEvent, SessionConstants.sessionEndEvent])
     XCTAssertEqual(recorder.records.last?.attributes[SemanticConventions.Session.id.rawValue], .string(original.id))
     let relaunched = try SessionManager(persistence: persistence)
@@ -291,7 +351,7 @@ final class SessionEndTests: XCTestCase {
     }
     let next = manager.getSession()
     let refreshed = manager.getSession()
-    XCTAssertEqual(SessionStore.load(), refreshed)
+    XCTAssertEqual(SessionStore.load()?.session, refreshed)
     XCTAssertEqual(next.id, refreshed.id)
     XCTAssertNil(next.previousId)
   }
