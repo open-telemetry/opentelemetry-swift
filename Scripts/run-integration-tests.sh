@@ -220,9 +220,9 @@ run_launch() {
 # and Tests/IntegrationTests/Assertions/SessionConfigTests.swift.
 run_launch main
 run_launch max-lifetime --sessionTimeout 60 --maxLifetime 3
-run_launch restore-first --sessionTimeout 60 --restorePersistedSession true
-run_launch restore-second --sessionTimeout 60 --restorePersistedSession true
-run_launch no-restore --sessionTimeout 60 --restorePersistedSession false
+run_launch restore-first --sessionTimeout 3600 --restorePersistedSession true
+run_launch restore-second --sessionTimeout 3600 --restorePersistedSession true
+run_launch no-restore --sessionTimeout 3600 --restorePersistedSession false
 
 log "Collected files"
 ls -la "$OUTPUT_DIR"/*
