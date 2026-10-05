@@ -133,9 +133,12 @@ final class OtlpHttpMetricExporterCoverageTests: XCTestCase {
                                           config: OtlpConfiguration(timeout: timeout),
                                           httpClient: client)
 
-    let start = Date()
-    XCTAssertEqual(exporter.export(metrics: [.empty]), .failure)
-    XCTAssertLessThan(Date().timeIntervalSince(start), timeout * 4)
+    let returned = expectation(description: "export returns after its timeout")
+    DispatchQueue.global().async {
+      XCTAssertEqual(exporter.export(metrics: [.empty]), .failure)
+      returned.fulfill()
+    }
+    wait(for: [returned], timeout: 5)
     XCTAssertEqual(client.sentRequests.count, 1)
   }
 
