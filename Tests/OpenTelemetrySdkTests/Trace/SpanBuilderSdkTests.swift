@@ -6,7 +6,7 @@
 @testable import OpenTelemetryApi
 @testable import OpenTelemetrySdk
 import XCTest
-import OpenTelemetryTestUtils
+import SharedTestUtils
 
 class SpanBuilderSdkTestInfo: OpenTelemetryContextTestCase {
   let spanName = "span_name"

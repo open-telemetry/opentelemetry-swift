@@ -4,7 +4,7 @@
  */
 
 #if canImport(_Concurrency) && canImport(OpenTelemetryConcurrency)
-  import OpenTelemetryTestUtils
+  import SharedTestUtils
   import XCTest
   import OpenTelemetrySdk
   import OpenTelemetryApi

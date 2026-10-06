@@ -5,7 +5,7 @@
 
 #if canImport(os.activity)
   @testable import OpenTelemetryApi
-  import OpenTelemetryTestUtils
+  import SharedTestUtils
   import XCTest
 
   @MainActor

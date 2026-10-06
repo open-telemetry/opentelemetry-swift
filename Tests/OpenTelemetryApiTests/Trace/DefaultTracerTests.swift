@@ -7,7 +7,7 @@ import Foundation
 
 @testable import OpenTelemetryApi
 import XCTest
-import OpenTelemetryTestUtils
+import SharedTestUtils
 
 private func createRandomPropagatedSpan() -> PropagatedSpan {
   return PropagatedSpan(context: SpanContext.create(traceId: TraceId.random(),

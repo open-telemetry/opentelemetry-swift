@@ -6,7 +6,7 @@
 import Foundation
 import OpenTelemetryApi
 import XCTest
-import OpenTelemetryTestUtils
+import SharedTestUtils
 @testable import OpenTelemetrySdk
 
 public class LoggerSdkTests: OpenTelemetryContextTestCase {

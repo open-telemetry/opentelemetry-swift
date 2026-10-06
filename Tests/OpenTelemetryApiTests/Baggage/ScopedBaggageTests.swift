@@ -5,7 +5,7 @@
 
 @testable import OpenTelemetryApi
 import XCTest
-import OpenTelemetryTestUtils
+import SharedTestUtils
 
 class ScopedBaggageTestsInfo: OpenTelemetryContextTestCase {
   let key1 = EntryKey(name: "key-1")!

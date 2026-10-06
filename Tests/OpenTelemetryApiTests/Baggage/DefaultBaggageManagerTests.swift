@@ -5,7 +5,7 @@
 
 @testable import OpenTelemetryApi
 import XCTest
-import OpenTelemetryTestUtils
+import SharedTestUtils
 
 private let key = EntryKey(name: "key")!
 private let value = EntryValue(string: "value")!
