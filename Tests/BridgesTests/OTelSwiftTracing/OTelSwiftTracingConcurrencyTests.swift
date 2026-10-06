@@ -90,6 +90,39 @@ final class OTelSwiftTracingConcurrencyTests: XCTestCase {
     XCTAssertEqual(exporter.getFinishedSpanItems().count, 1)
   }
 
+  func testConcurrentSpanLifetimesAreIndependent() {
+    let tracer = self.tracer!
+    ConcurrencyTesting.stress(iterations: 100) { _, _ in
+      var span: OTelSpan? = tracer.startSpan("concurrent")
+      weak var retainedSpan: OTelSpan?
+      retainedSpan = span
+      let context = span!.context
+      span = nil
+      XCTAssertNotNil(retainedSpan)
+      var active = tracer.activeSpan(identifiedBy: context)
+      XCTAssertTrue(active === retainedSpan)
+      active?.end()
+      XCTAssertNil(tracer.activeSpan(identifiedBy: context))
+      active = nil
+      XCTAssertNil(retainedSpan)
+    }
+  }
+
+  func testLookupRacingSpanEnd() {
+    let tracer = self.tracer!
+    let span = tracer.startSpan("racing-end")
+    let context = span.context
+    ConcurrencyTesting.stress(iterations: 100) { _, iteration in
+      if iteration.isMultiple(of: 2) {
+        span.end()
+        XCTAssertNil(tracer.activeSpan(identifiedBy: context))
+      } else if let active = tracer.activeSpan(identifiedBy: context) {
+        XCTAssertTrue(active === span)
+      }
+    }
+    XCTAssertNil(tracer.activeSpan(identifiedBy: context))
+  }
+
   func testInjectAndExtractFromManyThreads() {
     let tracer = self.tracer!
     let parent = tracer.startSpan("parent")
