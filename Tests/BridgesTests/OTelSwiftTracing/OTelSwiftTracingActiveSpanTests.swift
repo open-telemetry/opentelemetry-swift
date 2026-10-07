@@ -120,11 +120,18 @@ final class OTelSwiftTracingActiveSpanTests: XCTestCase {
   }
 
   func testNonRecordingSpanIsNotRetained() {
+    let previousNativeSpan = OpenTelemetry.instance.contextProvider.activeSpan
     let tracer = makeTracer(sampler: Samplers.alwaysOff)
     var span: OTelSpan? = tracer.startSpan("dropped")
     weak var releasedSpan: OTelSpan?
     releasedSpan = span
     let context = span!.context
+    let nativeSpan = OpenTelemetry.instance.contextProvider.activeSpan
+    defer {
+      if nativeSpan !== previousNativeSpan {
+        nativeSpan?.end()
+      }
+    }
     XCTAssertFalse(span!.isRecording)
     span = nil
     XCTAssertNil(releasedSpan)
