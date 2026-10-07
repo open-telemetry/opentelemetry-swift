@@ -34,19 +34,25 @@ public extension ContextManager where Self: ImperativeContextManager {
   @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
   func withCurrentContextValue<T>(forKey key: OpenTelemetryContextKeys, value: AnyObject?, _ operation: () async throws -> T) async rethrows -> T {
     var oldValue: AnyObject?
-    let previousValue = getCurrentContextValue(forKey: key)
-
     if let value {
       setCurrentContextValue(forKey: key, value: value)
-    } else if let previousValue {
-      removeContextValue(forKey: key, value: previousValue)
+    } else {
+      // Remove the current value for the key for the duration of the closure
+      oldValue = getCurrentContextValue(forKey: key)
+      if let oldValue {
+        removeContextValue(forKey: key, value: oldValue)
+      }
     }
 
     defer {
-      if let previousValue {
-        setCurrentContextValue(forKey: key, value: previousValue)
-      } else if let value {
-        removeContextValue(forKey: key, value: value)
+      if let value {
+        // Remove the given value from the context after the closure finishes
+        self.removeContextValue(forKey: key, value: value)
+      } else {
+        // Restore the previous value for the key after the closure exits
+        if let oldValue {
+          self.setCurrentContextValue(forKey: key, value: oldValue)
+        }
       }
     }
 
@@ -55,19 +61,25 @@ public extension ContextManager where Self: ImperativeContextManager {
 
   func withCurrentContextValue<T>(forKey key: OpenTelemetryContextKeys, value: AnyObject?, _ operation: () throws -> T) rethrows -> T {
     var oldValue: AnyObject?
-    let previousValue = getCurrentContextValue(forKey: key)
-
     if let value {
       setCurrentContextValue(forKey: key, value: value)
-    } else if let previousValue {
-      removeContextValue(forKey: key, value: previousValue)
+    } else {
+      // Remove the current value for the key for the duration of the closure
+      oldValue = getCurrentContextValue(forKey: key)
+      if let oldValue {
+        removeContextValue(forKey: key, value: oldValue)
+      }
     }
 
     defer {
-      if let previousValue {
-        setCurrentContextValue(forKey: key, value: previousValue)
-      } else if let value {
-        removeContextValue(forKey: key, value: value)
+      if let value {
+        // Remove the given value from the context after the closure finishes
+        self.removeContextValue(forKey: key, value: value)
+      } else {
+        // Restore the previous value for the key after the closure exits
+        if let oldValue {
+          self.setCurrentContextValue(forKey: key, value: oldValue)
+        }
       }
     }
 
