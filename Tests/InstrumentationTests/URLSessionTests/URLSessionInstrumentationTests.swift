@@ -235,6 +235,46 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
+  public func testDefaultSpanNameStableConventionIsMethodOnly() {
+    URLSessionInstrumentationTests.instrumentation.configuration.semanticConvention = .stable
+
+    var postRequest = URLRequest(url: URL(string: "http://defaultName.com/post")!)
+    postRequest.httpMethod = "POST"
+    let requests = [
+      "get": URLRequest(url: URL(string: "http://defaultName.com")!),
+      "post": postRequest
+    ]
+
+    for (id, request) in requests {
+      URLSessionLogger.processAndLogRequest(request, sessionTaskId: id, instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
+    }
+
+    XCTAssertEqual(2, URLSessionLogger.runningSpans.count)
+    XCTAssertEqual("GET", URLSessionLogger.runningSpans["get"]?.name)
+    XCTAssertEqual("POST", URLSessionLogger.runningSpans["post"]?.name)
+  }
+
+  public func testDefaultSpanNameHttpDupConventionKeepsLegacyName() {
+    URLSessionInstrumentationTests.instrumentation.configuration.semanticConvention = .httpDup
+
+    let request = URLRequest(url: URL(string: "http://defaultName.com")!)
+
+    URLSessionLogger.processAndLogRequest(request, sessionTaskId: "id", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
+
+    XCTAssertEqual("HTTP GET", URLSessionLogger.runningSpans["id"]?.name)
+  }
+
+  public func testOverrideSpanNameStableConvention() {
+    URLSessionInstrumentationTests.instrumentation.configuration.semanticConvention = .stable
+
+    let request = URLRequest(url: URL(string: "http://google.com")!)
+
+    URLSessionLogger.processAndLogRequest(request, sessionTaskId: "id", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.nameSpanCalled)
+    XCTAssertEqual("new name", URLSessionLogger.runningSpans["id"]?.name)
+  }
+
   public func testOverrideSpanCustomization() {
     let request = URLRequest(url: URL(string: "http://google.com")!)
 
