@@ -21,6 +21,11 @@ class ScopedBaggageTestsInfo: OpenTelemetryContextTestCase {
 
   var baggageManager = DefaultBaggageManager.instance
 
+  override func setUp() {
+    // Clear any lingering baggage context
+    OpenTelemetry.instance.contextProvider.setActiveBaggage(nil)
+  }
+  
   override func tearDown() {
     if baggageManager.getCurrentBaggage() != nil {
       XCTAssert(false, "Test must clean baggage context")
