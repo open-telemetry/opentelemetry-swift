@@ -23,7 +23,9 @@ class ScopedBaggageTestsInfo: OpenTelemetryContextTestCase {
 
   override func setUp() {
     // Clear any lingering baggage context
-    OpenTelemetry.instance.contextProvider.setActiveBaggage(nil)
+    if let baggage = OpenTelemetry.instance.contextProvider.activeBaggage {
+      OpenTelemetry.instance.contextProvider.removeContextForBaggage(baggage)
+    }
   }
   
   override func tearDown() {
