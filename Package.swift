@@ -597,6 +597,7 @@ extension Package {
             "Crash",
             "Sessions",
             "InMemoryExporter",
+            "SharedTestUtils",
             "OpenTelemetrySdk",
           ],
           path: "Tests/InstrumentationTests/CrashTests"

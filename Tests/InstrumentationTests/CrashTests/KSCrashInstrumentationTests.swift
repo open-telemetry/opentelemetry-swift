@@ -224,7 +224,7 @@ final class KSCrashInstrumentationTests: XCTestCase {
   }
 }
 
-private final class InMemorySessionPersistence: SessionPersistence, @unchecked Sendable {
+final class InMemorySessionPersistence: SessionPersistence, @unchecked Sendable {
   private let lock = NSLock()
   private var data: Data?
 
