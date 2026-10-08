@@ -518,6 +518,12 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       var originalIMP: IMP?
       let block: @convention(block) (URLSessionTask) -> Void = { anyTask in
         guard anyTask.responds(to: #selector(getter: URLSessionTask.currentRequest)) else { return }
+        // Instrumenting may assign a task delegate, which Foundation rejects once the task has
+        // resumed. Without this, a concurrent resume that loses the instrumentation claim would run
+        // the real resume while the claim holder is still between its state check and that
+        // assignment.
+        objc_sync_enter(anyTask)
+        defer { objc_sync_exit(anyTask) }
         self.urlSessionTaskWillResume(anyTask)
         guard anyTask.currentRequest != nil else { return }
         let key = String(theMethod.hashValue)

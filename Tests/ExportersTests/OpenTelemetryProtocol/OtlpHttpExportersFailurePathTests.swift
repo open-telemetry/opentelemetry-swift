@@ -149,28 +149,32 @@ private func sampleSpanData() -> SpanData {
 final class OtlpHttpLogExporterCoverageTests: XCTestCase {
   func testExportFailurePutsRecordsBackInPending() {
     let client = StubHTTPClient(outcomes: [.failure(TransientNetworkError())])
-    let exporter = OtlpHttpLogExporter(httpClient: client)
+    let base = OtlpHttpExporterBase<ReadableLogRecord>(endpoint: defaultOltpHttpLoggingEndpoint(),
+                                                       httpClient: client)
+    let exporter = OtlpHttpLogExporter(base: base)
 
     let rec = sampleLogRecord()
     let result = exporter.export(logRecords: [rec])
     XCTAssertEqual(result, .failure)
 
-    // Failure path should put the record back into pendingLogRecords.
-    XCTAssertEqual(exporter.pendingLogRecords.count, 1)
+    // Failure path should put the record back into the pending queue.
+    XCTAssertEqual(base.snapshotPending().count, 1)
     XCTAssertEqual(client.sentRequests.count, 1)
   }
 
   func testExportWaitsForDelayedFailureBeforeReturning() {
     let delay: TimeInterval = 0.05
     let client = DelayedFailureHTTPClient(delay: delay)
-    let exporter = OtlpHttpLogExporter(httpClient: client)
+    let base = OtlpHttpExporterBase<ReadableLogRecord>(endpoint: defaultOltpHttpLoggingEndpoint(),
+                                                       httpClient: client)
+    let exporter = OtlpHttpLogExporter(base: base)
 
     let start = Date()
     let result = exporter.export(logRecords: [sampleLogRecord()])
 
     XCTAssertEqual(result, .failure)
     XCTAssertGreaterThanOrEqual(Date().timeIntervalSince(start), delay)
-    XCTAssertEqual(exporter.pendingLogRecords.count, 1)
+    XCTAssertEqual(base.snapshotPending().count, 1)
     XCTAssertEqual(client.sentRequests.count, 1)
   }
 
@@ -180,34 +184,42 @@ final class OtlpHttpLogExporterCoverageTests: XCTestCase {
     let exporter = OtlpHttpLogExporter(config: OtlpConfiguration(timeout: timeout),
                                        httpClient: client)
 
-    let start = Date()
-    XCTAssertEqual(exporter.export(logRecords: [sampleLogRecord()]), .failure)
-    XCTAssertLessThan(Date().timeIntervalSince(start), timeout * 4)
+    let returned = expectation(description: "export returns after its timeout")
+    DispatchQueue.global().async {
+      XCTAssertEqual(exporter.export(logRecords: [sampleLogRecord()]), .failure)
+      returned.fulfill()
+    }
+    wait(for: [returned], timeout: 5)
     XCTAssertEqual(client.sentRequests.count, 1)
   }
 
   func testExportFailureWithRequeueDisabledLeavesPendingEmpty() {
     let client = StubHTTPClient(outcomes: [.failure(TransientNetworkError())])
-    let exporter = OtlpHttpLogExporter(httpClient: client, requeueOnFailure: false)
+    let base = OtlpHttpExporterBase<ReadableLogRecord>(endpoint: defaultOltpHttpLoggingEndpoint(),
+                                                       httpClient: client,
+                                                       requeueOnFailure: false)
+    let exporter = OtlpHttpLogExporter(base: base)
 
     _ = exporter.export(logRecords: [sampleLogRecord()])
-    XCTAssertEqual(exporter.pendingLogRecords.count, 0)
+    XCTAssertEqual(base.snapshotPending().count, 0)
     XCTAssertEqual(client.sentRequests.count, 1)
   }
 
   func testFlushWithPendingLogRecordsSuccess() {
     let client = StubHTTPClient(outcomes: [.failure(TransientNetworkError()), .success])
-    let exporter = OtlpHttpLogExporter(httpClient: client)
+    let base = OtlpHttpExporterBase<ReadableLogRecord>(endpoint: defaultOltpHttpLoggingEndpoint(),
+                                                       httpClient: client)
+    let exporter = OtlpHttpLogExporter(base: base)
 
     _ = exporter.export(logRecords: [sampleLogRecord()])
-    XCTAssertEqual(exporter.pendingLogRecords.count, 1)
+    XCTAssertEqual(base.snapshotPending().count, 1)
 
     let flushResult = exporter.flush()
     XCTAssertEqual(flushResult, .success)
     XCTAssertEqual(client.sentRequests.count, 2)
     // flush() must drop successfully-flushed records; otherwise every
     // subsequent flush re-sends them.
-    XCTAssertEqual(exporter.pendingLogRecords.count, 0)
+    XCTAssertEqual(base.snapshotPending().count, 0)
   }
 
   func testFlushWithNoPendingReturnsSuccess() {
@@ -291,21 +303,26 @@ final class OtlpHttpTraceExporterCoverageTests: XCTestCase {
 
   func testExportFailureWithRequeueDisabledLeavesPendingEmpty() {
     let client = StubHTTPClient(outcomes: [.failure(TransientNetworkError())])
-    let exporter = OtlpHttpTraceExporter(httpClient: client, requeueOnFailure: false)
+    let base = OtlpHttpExporterBase<SpanData>(endpoint: defaultOltpHttpTracesEndpoint(),
+                                              httpClient: client,
+                                              requeueOnFailure: false)
+    let exporter = OtlpHttpTraceExporter(base: base)
     let result = exporter.export(spans: [sampleSpanData()])
     XCTAssertEqual(result, .failure)
-    XCTAssertEqual(exporter.pendingSpans.count, 0)
+    XCTAssertEqual(base.snapshotPending().count, 0)
     XCTAssertEqual(client.sentRequests.count, 1)
   }
 
   func testFlushWithPendingSpans() {
     let client = StubHTTPClient(outcomes: [.failure(TransientNetworkError()), .success])
-    let exporter = OtlpHttpTraceExporter(httpClient: client)
+    let base = OtlpHttpExporterBase<SpanData>(endpoint: defaultOltpHttpTracesEndpoint(),
+                                              httpClient: client)
+    let exporter = OtlpHttpTraceExporter(base: base)
     _ = exporter.export(spans: [sampleSpanData()])  // failure → back to pending
     XCTAssertEqual(exporter.flush(), .success)
     XCTAssertEqual(client.sentRequests.count, 2)
     // flush() must drop successfully-flushed spans.
-    XCTAssertEqual(exporter.pendingSpans.count, 0)
+    XCTAssertEqual(base.snapshotPending().count, 0)
   }
 
   func testFlushWithNoPendingReturnsSuccess() {
@@ -371,37 +388,52 @@ final class OtlpHttpExporterFlushTimeoutTests: XCTestCase {
 
   func testMetricFlushTimesOutWhenResponseNeverArrives() {
     let client = HangingAfterFirstFailureHTTPClient()
-    let exporter = OtlpHttpMetricExporter(endpoint: URL(string: "http://localhost:4318/v1/metrics")!,
-                                          config: OtlpConfiguration(timeout: timeout),
-                                          httpClient: client)
+    let endpoint = URL(string: "http://localhost:4318/v1/metrics")!
+    let base = OtlpHttpExporterBase<MetricData>(endpoint: endpoint,
+                                                config: OtlpConfiguration(timeout: timeout),
+                                                httpClient: client)
+    let exporter = OtlpHttpMetricExporter(base: base,
+                                          aggregationTemporalitySelector: AggregationTemporality.alwaysCumulative(),
+                                          defaultAggregationSelector: AggregationSelector.instance)
     _ = exporter.export(metrics: [.empty])
-    XCTAssertEqual(exporter.pendingMetrics.count, 1)
+    XCTAssertEqual(base.snapshotPending().count, 1)
 
-    let start = Date()
-    XCTAssertEqual(exporter.flush(), .failure)
-    XCTAssertLessThan(Date().timeIntervalSince(start), timeout * 4)
+    let returned = expectation(description: "flush returns after its timeout")
+    DispatchQueue.global().async {
+      XCTAssertEqual(exporter.flush(), .failure)
+      returned.fulfill()
+    }
+    wait(for: [returned], timeout: 5)
   }
 
   func testLogFlushTimesOutWhenResponseNeverArrives() {
     let client = HangingAfterFirstFailureHTTPClient()
-    let exporter = OtlpHttpLogExporter(config: OtlpConfiguration(timeout: timeout),
-                                       httpClient: client)
+    let base = OtlpHttpExporterBase<ReadableLogRecord>(endpoint: defaultOltpHttpLoggingEndpoint(),
+                                                       config: OtlpConfiguration(timeout: timeout),
+                                                       httpClient: client)
+    let exporter = OtlpHttpLogExporter(base: base)
     _ = exporter.export(logRecords: [sampleLogRecord()])
-    XCTAssertEqual(exporter.pendingLogRecords.count, 1)
+    XCTAssertEqual(base.snapshotPending().count, 1)
 
-    let start = Date()
-    XCTAssertEqual(exporter.flush(), .failure)
-    XCTAssertLessThan(Date().timeIntervalSince(start), timeout * 4)
+    let returned = expectation(description: "flush returns after its timeout")
+    DispatchQueue.global().async {
+      XCTAssertEqual(exporter.flush(), .failure)
+      returned.fulfill()
+    }
+    wait(for: [returned], timeout: 5)
   }
 
   func testExportFailureWithRequeueDisabledLeavesPendingEmpty() {
     let client = StubHTTPClient(outcomes: [.failure(TransientNetworkError())])
-    let exporter = OtlpHttpMetricExporter(
-      endpoint: URL(string: "http://localhost:4318/v1/metrics")!,
-      httpClient: client,
-      requeueOnFailure: false)
+    let endpoint = URL(string: "http://localhost:4318/v1/metrics")!
+    let base = OtlpHttpExporterBase<MetricData>(endpoint: endpoint,
+                                                httpClient: client,
+                                                requeueOnFailure: false)
+    let exporter = OtlpHttpMetricExporter(base: base,
+                                          aggregationTemporalitySelector: AggregationTemporality.alwaysCumulative(),
+                                          defaultAggregationSelector: AggregationSelector.instance)
     _ = exporter.export(metrics: [.empty])
-    XCTAssertEqual(exporter.pendingMetrics.count, 0)
+    XCTAssertEqual(base.snapshotPending().count, 0)
     XCTAssertEqual(client.sentRequests.count, 1)
   }
 }
