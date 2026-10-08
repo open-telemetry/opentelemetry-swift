@@ -67,8 +67,7 @@ let package = Package(
         "OpenTelemetryApi",
         .product(
           name: "Atomics",
-          package: "
-          ",
+          package: "swift-atomics",
           condition: .when(platforms: [.linux])
         ),
       ]
