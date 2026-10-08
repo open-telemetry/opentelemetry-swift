@@ -7,6 +7,33 @@ private enum OTelSpanContextKey: ServiceContextKey {
     typealias Value = OpenTelemetryApi.SpanContext
 }
 
+private final class OTelSpanRegistry: Sendable {
+    private let spans = Locked<[OpenTelemetryApi.SpanContext: OTelSpan]>(initialValue: [:])
+
+    func insert(_ span: OTelSpan) {
+        guard span.isRecording, let context = span.context.otelSpanContext else { return }
+        spans.locking { $0[context] = span }
+    }
+
+    func activeSpan(identifiedBy context: OpenTelemetryApi.SpanContext) -> OTelSpan? {
+        guard let span = spans.locking({ $0[context] }) else { return nil }
+        guard span.isRecording else {
+            remove(span)
+            return nil
+        }
+        return span
+    }
+
+    func remove(_ span: OTelSpan) {
+        guard let context = span.context.otelSpanContext else { return }
+        spans.locking {
+            if $0[context] === span {
+                $0[context] = nil
+            }
+        }
+    }
+}
+
 extension ServiceContext {
     var otelSpanContext: OpenTelemetryApi.SpanContext? {
         get { self[OTelSpanContextKey.self] }
@@ -23,6 +50,7 @@ public struct OTelTracer: Tracing.Tracer, @unchecked Sendable {
     private let instrumentationName: String
     private let instrumentationVersion: String
     private let tracer: OpenTelemetryApi.Tracer
+    private let spans = OTelSpanRegistry()
 
     public init(
         tracerProvider: TracerProvider = OpenTelemetry.instance.tracerProvider,
@@ -65,7 +93,16 @@ public struct OTelTracer: Tracing.Tracer, @unchecked Sendable {
 
         var spanContext = parentContext
         spanContext.otelSpanContext = otelSpan.context
-        return OTelSpan(otelSpan: otelSpan, context: spanContext)
+        let span = OTelSpan(otelSpan: otelSpan, context: spanContext) { [weak spans] span in
+            spans?.remove(span)
+        }
+        spans.insert(span)
+        return span
+    }
+
+    public func activeSpan(identifiedBy context: ServiceContext) -> OTelSpan? {
+        guard let spanContext = context.otelSpanContext else { return nil }
+        return spans.activeSpan(identifiedBy: spanContext)
     }
 
     @available(*, deprecated, message: "prefer withSpan")
@@ -167,12 +204,18 @@ public final class OTelSpan: Tracing.Span, @unchecked Sendable {
     public let context: ServiceContext
 
     private let otelSpan: OpenTelemetryApi.Span
+    private let onEnd: (@Sendable (OTelSpan) -> Void)?
     private let lock = NSLock()
     private var storedAttributes: Tracing.SpanAttributes = [:]
 
-    internal init(otelSpan: OpenTelemetryApi.Span, context: ServiceContext) {
+    internal init(
+        otelSpan: OpenTelemetryApi.Span,
+        context: ServiceContext,
+        onEnd: (@Sendable (OTelSpan) -> Void)? = nil
+    ) {
         self.otelSpan = otelSpan
         self.context = context
+        self.onEnd = onEnd
     }
 
     public var operationName: String {
@@ -239,6 +282,7 @@ public final class OTelSpan: Tracing.Span, @unchecked Sendable {
 
     public func end<Instant: TracerInstant>(at instant: @autoclosure () -> Instant) {
         otelSpan.end(time: Self.date(from: instant()))
+        onEnd?(self)
     }
 
     static func convertAttributes(_ attributes: Tracing.SpanAttributes) -> [String:

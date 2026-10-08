@@ -28,7 +28,7 @@ class PrometheusExporterTests: XCTestCase {
       do {
         try serverRef.start()
       } catch {
-        XCTFail()
+        XCTFail("Server start failed: \(error)")
         return
       }
     }
@@ -48,7 +48,7 @@ class PrometheusExporterTests: XCTestCase {
         // data
         expec.fulfill()
       } else {
-        XCTFail()
+        XCTFail("HTTP request failed: \(String(describing: error)); response: \(String(describing: response)); bytes: \(data?.count ?? 0)")
         expec.fulfill()
         return
       }
