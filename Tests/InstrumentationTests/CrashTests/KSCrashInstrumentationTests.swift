@@ -14,6 +14,16 @@ import OpenTelemetryApi
 #endif
 
 final class KSCrashInstrumentationTests: XCTestCase {
+  /// KSCrash's default monitors, minus the watchdog. KSCrash is installed into the shared test
+  /// process, where every later test that blocks the main thread while it waits looks like a hang.
+  /// Capturing a hang pauses every thread to write a full report, which stalls unrelated suites
+  /// for minutes under Thread Sanitizer. Apps keep the default monitors.
+  static func testConfig() -> KSCrashInstrumentationConfig {
+    let config = KSCrashInstrumentationConfig()
+    config.monitors.remove(.watchdog)
+    return config
+  }
+
   override func setUp() {
     super.setUp()
   }
@@ -215,7 +225,7 @@ final class KSCrashInstrumentationTests: XCTestCase {
 
   func testInstallMethod() {
     XCTAssertFalse(KSCrashInstrumentation.isInstalled)
-    XCTAssertNoThrow(KSCrashInstrumentation.install())
+    XCTAssertNoThrow(KSCrashInstrumentation.install(config: Self.testConfig()))
     XCTAssertTrue(KSCrashInstrumentation.isInstalled)
   }
 

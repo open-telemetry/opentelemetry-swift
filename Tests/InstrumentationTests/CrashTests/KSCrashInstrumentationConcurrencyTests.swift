@@ -31,14 +31,14 @@ extension KSCrashInstrumentationTests {
     ConcurrencyTesting.stress(iterations: 50) { thread, _ in
       switch thread % 4 {
       case 0:
-        KSCrashInstrumentation.install()
+        KSCrashInstrumentation.install(config: Self.testConfig())
         // Once any install call has returned, the instrumentation must report itself installed.
         if !KSCrashInstrumentation.isInstalled {
           notInstalledAfterReturn.increment()
         }
       case 1:
         // A different configuration must not reinstall or register a second observer.
-        let config = KSCrashInstrumentationConfig()
+        let config = Self.testConfig()
         config.maxStackTraceBytes = 1024
         KSCrashInstrumentation.install(config: config)
       case 2:
@@ -62,7 +62,7 @@ extension KSCrashInstrumentationTests {
     let manager = try SessionManager(persistence: InMemorySessionPersistence())
 
     // Install calls race session starts, whose notifications write the crash context on `queue`.
-    let install: @Sendable () -> Void = { KSCrashInstrumentation.install() }
+    let install: @Sendable () -> Void = { KSCrashInstrumentation.install(config: Self.testConfig()) }
     let rollOver: @Sendable () -> Void = { for _ in 0 ..< 50 { manager.resetSession() } }
     ConcurrencyTesting.concurrently(Array(repeating: install, count: 4) + Array(repeating: rollOver, count: 4))
 

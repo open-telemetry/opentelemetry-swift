@@ -22,9 +22,10 @@ struct SettingsView: View {
   @State private var showingMemoryTest = false
   @State private var timer: Timer?
 
-  // Entries whose instrumentation is not available in this repo yet. They are
-  // shown disabled so nobody expects telemetry from them; the picker views
-  // stay in the file for when the instrumentations land.
+  // Entries whose instrumentation is not available in this repo yet, plus the
+  // crash trigger, which is not wired up to the installed crash instrumentation
+  // yet. They are shown disabled so nobody expects telemetry from them; the
+  // picker views stay in the file for when they are hooked up.
   private static let comingSoon: Set<String> = [
     "Trigger App Hang",
     "Trigger App Crash",
