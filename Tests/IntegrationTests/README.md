@@ -43,6 +43,24 @@ make integ-tests-ios
 Scripts/run-integration-tests.sh --simulator <udid> --port 4318 --status-port 4319
 ```
 
+### Crash examples
+
+```shell
+Scripts/run-integration-tests.sh --crash-examples
+```
+
+Instead of the launches above, crashes the demo app once per `CrashType` in
+`Examples/HackerNewsDemo/HackerNewsDemo/CrashType.swift` (Swift traps, an
+uncaught NSException, a bad memory access, a stack overflow) and reports each
+crash on the following launch. Each one is saved in
+`out/crash-examples/<type>/`: KSCrash's raw JSON report in `kscrash/`, and the
+exported telemetry, including the `device.crash` log, in `report/`. Only
+`CrashExamplesTests` runs, which checks every crash was reported with its kind,
+a description and the session it happened in, and prints a Markdown table of
+`exception.type` and `exception.message` per crash. The examples in
+`Sources/Instrumentation/Crash/README.md` come from this table. The normal run
+also keeps the `crash` launch's raw report in `out/crash/kscrash/`.
+
 `make integ-build-ios` builds the demo app on its own and
 `make integ-tests-without-building-ios` runs the rest against that build, which
 is how CI splits the job so the app's DerivedData can be cached.

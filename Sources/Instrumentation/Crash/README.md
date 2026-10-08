@@ -57,10 +57,31 @@ Crashes are reported on the next launch as log events with:
 
 - `eventName`: `device.crash`
 - timestamp: when the crash happened, not when it was reported
-- `exception.type`: `crash`
-- `exception.message`: the exception type, crashed thread and top frame as module + offset, e.g. `EXC_BREAKPOINT (SIGTRAP) detected on thread 0 at libswiftCore.dylib + 1053200`. The per-crash instruction address is left out so the message groups.
+- `exception.type`: the kind of crash, see below
+- `exception.message`: the most descriptive text KSCrash recorded, see below
 - `exception.stacktrace`: Apple-format crash report, see [Report size](#report-size)
 - `session.id` / `session.previous_id`: the session that was current when the crash happened
+
+`exception.type` and `exception.message` are read from KSCrash's structured report (its `Report` model), not parsed from the Apple-format text.
+
+`exception.type` is one of:
+
+- the exception name for an uncaught NSException (`NSRangeException`) or C++ exception (`std::runtime_error`)
+- the Mach exception and its signal, as in the Apple report's `Exception Type` line (`EXC_BAD_ACCESS (SIGSEGV)`)
+- the signal (`SIGABRT`) when there is no Mach exception
+- KSCrash's report type otherwise, e.g. `termination` for an app that was killed without crashing
+
+`exception.message` is the first of these that KSCrash recorded:
+
+1. the exception's name and reason: `NSRangeException: *** -[__NSArrayI objectAtIndex:]: index 10 beyond bounds [0 .. 2]`
+2. the message the Swift runtime (or another library) left when it trapped, e.g. `MyApp/Cart.swift:42: Fatal error: Unexpectedly found nil while unwrapping an Optional value`. Debug builds include the file and line; optimized builds often record a shorter message or none.
+3. KSCrash's diagnosis, e.g. `Attempted to dereference null pointer.` or `The app exceeded its memory limit and was terminated by the OS.`
+4. KSCrash's reason for the crash
+5. otherwise the type and where it happened: the first frame in the app's own binaries (or the crashed frame if there is none) as module + offset from the start of the image, e.g. `SIGABRT at MyApp + 383012`
+
+The message describes the crash for people. It is not meant as a grouping key: the same root cause can produce different text (an NSException reason or `fatalError` message can include values), and different causes can share text (every force unwrap reads the same). Backends should group on the symbolicated stack trace. If a report cannot be decoded, `exception.type` is `crash` and the message is taken from the Apple-format text.
+
+See [Examples](#examples) for what real crashes are reported as.
 
 ## Session Integration
 

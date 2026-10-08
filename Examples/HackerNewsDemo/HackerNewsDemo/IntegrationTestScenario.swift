@@ -22,6 +22,9 @@ enum IntegrationTestScenario {
   static let sessionTimeoutArgument = "--sessionTimeout"
   static let maxLifetimeArgument = "--maxLifetime"
   static let restorePersistedSessionArgument = "--restorePersistedSession"
+  // Optional for the crash launch: one of `CrashType`'s raw values. Without it the launch calls
+  // fatalError with a fixed message.
+  static let crashTypeArgument = "--crashType"
 
   static let scope = "HackerNewsDemo.IntegrationTest"
 
@@ -125,6 +128,9 @@ enum IntegrationTestScenario {
         // Crash context is cached asynchronously when the session starts, and
         // the runner needs the completion marker exported before the app dies.
         Thread.sleep(forTimeInterval: 2)
+        if let crashType = value(after: crashTypeArgument).flatMap(CrashType.init(rawValue:)) {
+          crashType.trigger()
+        }
         fatalError("integration test crash")
       }
     case .crashReport:

@@ -63,7 +63,7 @@ final class KSCrashInstrumentationTests: XCTestCase {
     """
 
     let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
-    XCTAssertEqual(result, "EXC_BREAKPOINT (SIGTRAP) detected on thread 0 at libswiftCore.dylib + 172")
+    XCTAssertEqual(result, "EXC_BREAKPOINT (SIGTRAP) at libswiftCore.dylib + 172")
   }
 
   func testExtractCrashMessageWithBadAccess() {
@@ -74,7 +74,7 @@ final class KSCrashInstrumentationTests: XCTestCase {
     """
 
     let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
-    XCTAssertEqual(result, "EXC_BAD_ACCESS (SIGSEGV) detected on thread 2 at MyApp + 456")
+    XCTAssertEqual(result, "EXC_BAD_ACCESS (SIGSEGV) at MyApp + 456")
   }
 
   func testExtractCrashMessageWithoutExceptionType() {
@@ -84,7 +84,7 @@ final class KSCrashInstrumentationTests: XCTestCase {
     """
 
     let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
-    XCTAssertEqual(result, "Unknown exception detected on thread 0 at libswiftCore.dylib + 172")
+    XCTAssertEqual(result, "Unknown exception at libswiftCore.dylib + 172")
   }
 
   func testExtractCrashMessageWithDifferentThread() {
@@ -95,15 +95,18 @@ final class KSCrashInstrumentationTests: XCTestCase {
     """
 
     let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
-    XCTAssertEqual(result, "EXC_CRASH (SIGABRT) detected on thread 5 at SomeFramework + 8")
+    XCTAssertEqual(result, "EXC_CRASH (SIGABRT) at SomeFramework + 8")
+    // The same crash on another thread must produce the same message, so it groups together.
+    let onThreadZero = stackTrace.replacingOccurrences(of: "Thread 5 Crashed:", with: "Thread 0 Crashed:")
+    XCTAssertEqual(KSCrashInstrumentation.extractCrashMessage(from: onThreadZero), result)
   }
 
   func testExtractCrashMessageEdgeCases() {
-    XCTAssertEqual(KSCrashInstrumentation.extractCrashMessage(from: ""), "Unknown exception detected at unknown location")
-    XCTAssertEqual(KSCrashInstrumentation.extractCrashMessage(from: "Thread Crashed:\n0   SomeFramework"), "Unknown exception detected at unknown location")
+    XCTAssertEqual(KSCrashInstrumentation.extractCrashMessage(from: ""), "Unknown exception at unknown location")
+    XCTAssertEqual(KSCrashInstrumentation.extractCrashMessage(from: "Thread Crashed:\n0   SomeFramework"), "Unknown exception at unknown location")
 
     let noThreadCrashed = "Some other content\nThread 1:\n0   libsystem_kernel.dylib"
-    XCTAssertEqual(KSCrashInstrumentation.extractCrashMessage(from: noThreadCrashed), "Unknown exception detected at unknown location")
+    XCTAssertEqual(KSCrashInstrumentation.extractCrashMessage(from: noThreadCrashed), "Unknown exception at unknown location")
   }
 
   func testExtractCrashMessageWithWhitespaceHandling() {
@@ -114,7 +117,7 @@ final class KSCrashInstrumentationTests: XCTestCase {
     """
 
     let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
-    XCTAssertEqual(result, "EXC_BAD_ACCESS (SIGSEGV) detected on thread 2 at MyFramework + 123")
+    XCTAssertEqual(result, "EXC_BAD_ACCESS (SIGSEGV) at MyFramework + 123")
   }
 
   func testExtractCrashMessageWithExceptionTypeOnly() {
@@ -123,7 +126,7 @@ final class KSCrashInstrumentationTests: XCTestCase {
     """
 
     let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
-    XCTAssertEqual(result, "EXC_CRASH (SIGABRT) detected at unknown location")
+    XCTAssertEqual(result, "EXC_CRASH (SIGABRT) at unknown location")
   }
 
   func testRecoverCrashContextSuccess() {

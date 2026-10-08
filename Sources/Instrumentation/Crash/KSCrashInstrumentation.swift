@@ -173,20 +173,26 @@ public class KSCrashInstrumentation: Instrumentation {
       }
 
       // Report crash as log event
-      reportCrash(crashReport: crashReport)
+      reportCrash(crashReport: crashReport, reportJSON: reportStore.reportData(for: id)?.value)
       // Delete processed report
       reportStore.deleteReport(with: id)
     }
   }
 
   // Report a KSCrash report in Apple format
-  private static func reportCrash(crashReport: CrashReportDictionary) {
+  private static func reportCrash(crashReport: CrashReportDictionary, reportJSON: Data?) {
     let rawCrash: [String: Any] = crashReport.value
     let log: any LogRecordBuilder = logger.logRecordBuilder()
       .setEventName("device.crash")
 
+    // Type and message come from KSCrash's structured report. The Apple-format text is only parsed
+    // for the message when the report cannot be decoded, e.g. one that was only partly written.
+    let summary = reportJSON.flatMap {
+      CrashSummary(reportJSON: $0, diagnosis: CrashReportFilterDoctor.diagnoseCrash(rawCrash))
+    }
+
     var attributes: [String: AttributeValue] = [
-      SemanticConventions.Exception.type.rawValue: AttributeValue.string("crash")
+      SemanticConventions.Exception.type.rawValue: AttributeValue.string(summary?.type ?? "crash")
     ]
 
     // Attempt to recover the original crash context
@@ -204,15 +210,18 @@ public class KSCrashInstrumentation: Instrumentation {
       )
       attributes[SemanticConventions.Exception.stacktrace.rawValue] = AttributeValue.string(appleFormatReport)
 
-      // `Crash detected on thread 0 at libswiftCore.dylib 0x000000019ed5c8c4 $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF + 172`
-      attributes[SemanticConventions.Exception.message.rawValue] = AttributeValue.string(extractCrashMessage(from: appleFormatReport))
+      attributes[SemanticConventions.Exception.message.rawValue] = AttributeValue.string(
+        summary?.message ?? extractCrashMessage(from: appleFormatReport)
+      )
 
       _ = log.setAttributes(attributes)
       log.emit()
     }
   }
 
-  /// Get exception code information for the crash message. This is useful for grouping
+  /// Fallback message parsed from the Apple-format text, used only when the structured report
+  /// cannot be decoded: the exception type and the crashed frame as module + offset. The thread
+  /// number is left out because the same crash can happen on a different thread each time.
   static func extractCrashMessage(from stackTrace: String) -> String {
     let lines = stackTrace.components(separatedBy: "\n")
 
@@ -221,15 +230,11 @@ public class KSCrashInstrumentation: Instrumentation {
       .replacingOccurrences(of: "Exception Type:", with: "")
       .trimmingCharacters(in: .whitespaces) ?? "Unknown exception"
 
-    // Fallback to thread and first frame
     guard let crashedLine = lines.first(where: { $0.range(of: #"Thread \d+ Crashed:"#, options: .regularExpression) != nil }),
-          let threadMatch = crashedLine.range(of: #"Thread (\d+) Crashed:"#, options: .regularExpression),
           let crashedIndex = lines.firstIndex(of: crashedLine),
           let firstFrame = lines.dropFirst(crashedIndex + 1).first(where: { $0.hasPrefix("0   ") }) else {
-      return "\(exceptionType) detected at unknown location"
+      return "\(exceptionType) at unknown location"
     }
-
-    let threadNumber = String(crashedLine[threadMatch]).replacingOccurrences(of: #"Thread (\d+) Crashed:"#, with: "$1", options: .regularExpression)
 
     // Extract module and offset (skip instruction pointer which is unique per crash and breaks grouping)
     // Frame format: "0   ModuleName   0x00000001dccb1658   0x1dccab000 + 26200"
@@ -238,10 +243,10 @@ public class KSCrashInstrumentation: Instrumentation {
     guard frameComponents.count >= 4,
           let module = frameComponents.dropFirst().first,
           let offset = frameComponents.last else {
-      return "\(exceptionType) detected on thread \(threadNumber) at unknown location"
+      return "\(exceptionType) at unknown location"
     }
 
-    return "\(exceptionType) detected on thread \(threadNumber) at \(module) + \(offset)"
+    return "\(exceptionType) at \(module) + \(offset)"
   }
 
   /// If sessionId and timestamp can be recovered, then attempt to restore original context.
