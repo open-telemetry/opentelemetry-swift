@@ -493,6 +493,7 @@ extension Package {
             "Crash",
             "Sessions",
             "InMemoryExporter",
+            "SharedTestUtils",
             .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
           ],
           path: "Tests/InstrumentationTests/CrashTests"
