@@ -40,7 +40,7 @@ final class CrashTests: XCTestCase {
     XCTAssertTrue(crashLogs(.crash).isEmpty, "the crashing launch cannot report its own crash")
 
     let crash = try reportedCrash()
-    XCTAssertEqual(crash.record.attributes.string(Self.exceptionTypeKey), "crash")
+    XCTAssertEqual(crash.record.attributes.string(Self.exceptionTypeKey), "EXC_BREAKPOINT (SIGTRAP)", "fatalError traps")
     XCTAssertFalse(crash.record.attributes.string(Self.exceptionMessageKey)?.isEmpty ?? true, "missing \(Self.exceptionMessageKey)")
     XCTAssertFalse(crash.record.attributes.string(Self.exceptionStacktraceKey)?.isEmpty ?? true, "missing \(Self.exceptionStacktraceKey)")
   }
@@ -128,18 +128,16 @@ final class CrashTests: XCTestCase {
     XCTAssertTrue(report.hasPrefix("Incident Identifier:"))
   }
 
-  func testCrashMessageDescribesTheCrashedFrame() throws {
-    let lines = try reportLines()
-    let crashed = try crashedThread(in: lines)
-    // Frame format: "0   libswiftCore.dylib   0x0000000198272210 0x198171000 + 1053200"
-    let topFrame = try XCTUnwrap(crashed.frames.first).split(whereSeparator: \.isWhitespace).map(String.init)
-    XCTAssertGreaterThanOrEqual(topFrame.count, 4)
-    let module = topFrame[1]
-    let offset = try XCTUnwrap(topFrame.last)
-    let exceptionType = try XCTUnwrap(headerValue("Exception Type", in: lines))
+  func testCrashTypeMatchesTheReportsExceptionType() throws {
+    let exceptionType = try XCTUnwrap(headerValue("Exception Type", in: reportLines()))
+    XCTAssertEqual(try reportedCrash().record.attributes.string(Self.exceptionTypeKey), exceptionType)
+  }
 
-    let message = try reportedCrash().record.attributes.string(Self.exceptionMessageKey)
-    XCTAssertEqual(message, "\(exceptionType) detected on thread \(crashed.number) at \(module) + \(offset)",
-                   "exception.message must name the exception, the crashed thread and its top frame without the per-crash address")
+  func testCrashMessageIsTheSwiftRuntimeFatalError() throws {
+    // The demo is built for Debug, where the Swift runtime records the file, line and message of a
+    // fatalError in its crash info, which KSCrash keeps in the raw report.
+    let message = try XCTUnwrap(reportedCrash().record.attributes.string(Self.exceptionMessageKey))
+    XCTAssertTrue(message.hasSuffix("Fatal error: integration test crash"), message)
+    XCTAssertTrue(message.contains("IntegrationTestScenario.swift:"), "missing the trapping file and line: \(message)")
   }
 }

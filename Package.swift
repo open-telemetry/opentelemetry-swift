@@ -483,7 +483,8 @@ extension Package {
             .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
             "Sessions",
             .product(name: "Installations", package: "KSCrash"),
-            .product(name: "Filters", package: "KSCrash")
+            .product(name: "Filters", package: "KSCrash"),
+            .product(name: "Report", package: "KSCrash")
           ],
           path: "Sources/Instrumentation/Crash"
         ),

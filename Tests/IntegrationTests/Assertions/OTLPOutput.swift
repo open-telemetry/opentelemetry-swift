@@ -68,6 +68,11 @@ struct OTLPOutput {
     OTLPOutput(launch: launch)
   }
 
+  /// Output collected into a subdirectory other than a launch tag, e.g. `crash-examples/<type>`.
+  static func subdirectory(_ path: String) -> OTLPOutput {
+    OTLPOutput(directory: baseDirectory.appendingPathComponent(path, isDirectory: true))
+  }
+
   // Convenience accessors for the main launch, which most suites assert on.
   static var spans: [ExportedSpan] { main.spans }
   static var logs: [ExportedLog] { main.logs }
@@ -76,6 +81,10 @@ struct OTLPOutput {
 
   private init(launch: Scenario.Launch) {
     directory = Self.baseDirectory.appendingPathComponent(launch.rawValue, isDirectory: true)
+  }
+
+  private init(directory: URL) {
+    self.directory = directory
   }
 
   var spans: [ExportedSpan] {

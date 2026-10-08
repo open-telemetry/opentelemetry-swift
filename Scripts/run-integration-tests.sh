@@ -17,10 +17,16 @@ set -euo pipefail
 #
 # Usage: Scripts/run-integration-tests.sh [--simulator <udid>] [--port <port>]
 #                                         [--status-port <port>] [--timeout <seconds>]
-#                                         [--build-only | --skip-build]
+#                                         [--build-only | --skip-build] [--crash-examples]
 #
 # --build-only builds the demo app into $DERIVED_DATA and exits; --skip-build
 # reuses that build. CI runs them as two steps so the DerivedData can be cached.
+#
+# --crash-examples replaces the launches above with one crash per demo
+# CrashType, each reported on the next launch. Every example lands in
+# Tests/IntegrationTests/out/crash-examples/<type>/ with KSCrash's raw JSON
+# report and the exported device.crash log, and the CrashExamplesTests
+# assertions print a summary table.
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INTEGRATION_DIR="$PROJECT_ROOT/Tests/IntegrationTests"
@@ -45,6 +51,9 @@ STATUS_PORT=4319
 TIMEOUT=120
 SKIP_BUILD=false
 BUILD_ONLY=false
+CRASH_EXAMPLES=false
+# Keep in sync with CrashType in Examples/HackerNewsDemo/HackerNewsDemo/CrashType.swift.
+CRASH_EXAMPLE_TYPES="fatal-error force-unwrap index-out-of-bounds divide-by-zero stack-overflow ns-exception bad-access"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -54,8 +63,9 @@ while [[ $# -gt 0 ]]; do
     --timeout) TIMEOUT="$2"; shift 2 ;;
     --skip-build) SKIP_BUILD=true; shift ;;
     --build-only) BUILD_ONLY=true; shift ;;
+    --crash-examples) CRASH_EXAMPLES=true; shift ;;
     -h|--help)
-      sed -n '3,23p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '3,29p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *) echo "Unknown option $1" >&2; exit 1 ;;
@@ -193,8 +203,14 @@ xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
 # $OUTPUT_DIR/<tag>. The app stays installed between launches so persisted
 # session state carries over, which the restore launches depend on.
 run_launch() {
+  run_launch_into "$1" "$@"
+}
+
+# run_launch_into <output subdirectory> <tag> [extra launch arguments...]
+# Like run_launch, but collects into $OUTPUT_DIR/<output subdirectory>.
+run_launch_into() {
+  local dir="$OUTPUT_DIR/$1"; shift
   local tag="$1"; shift
-  local dir="$OUTPUT_DIR/$tag"
   start_collector "$dir"
   log "Launch '$tag' ($*)"
   SIMCTL_CHILD_OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:$PORT" \
@@ -217,23 +233,47 @@ run_launch() {
   stop_collector
 }
 
-# Keep the tags and session configs in sync with IntegrationTestScenario.Launch
-# and Tests/IntegrationTests/Assertions/SessionConfigTests.swift.
-run_launch main
-run_launch max-lifetime --sessionTimeout 60 --maxLifetime 3
-run_launch restore-first --sessionTimeout 3600 --restorePersistedSession true
-run_launch restore-second --sessionTimeout 3600 --restorePersistedSession true
-run_launch no-restore --sessionTimeout 3600 --restorePersistedSession false
-# Each in a fresh session, so the crash report is emitted in a different session
-# from the one that crashed.
-run_launch crash --sessionTimeout 3600 --restorePersistedSession false
-run_launch crash-report --sessionTimeout 3600 --restorePersistedSession false
+# save_crash_reports <output subdirectory>
+# Copies the raw JSON reports KSCrash stored in the app's container into
+# $OUTPUT_DIR/<output subdirectory>/kscrash/, before the next launch reports
+# and deletes them.
+save_crash_reports() {
+  local dir="$OUTPUT_DIR/$1/kscrash"
+  local container
+  container="$(xcrun simctl get_app_container "$SIMULATOR_UDID" "$APP_BUNDLE_ID" data)"
+  mkdir -p "$dir"
+  find "$container/Library/Caches/KSCrash" -path '*/Reports/*.json' -exec cp {} "$dir/" \; 2>/dev/null || true
+}
+
+ASSERTION_FILTER=()
+if [[ "$CRASH_EXAMPLES" == true ]]; then
+  # One crash per type, each reported by the following launch in a new session.
+  for type in $CRASH_EXAMPLE_TYPES; do
+    run_launch_into "crash-examples/$type" crash --crashType "$type" --sessionTimeout 3600 --restorePersistedSession false
+    save_crash_reports "crash-examples/$type"
+    run_launch_into "crash-examples/$type/report" crash-report --sessionTimeout 3600 --restorePersistedSession false
+  done
+  ASSERTION_FILTER=(--filter CrashExamplesTests)
+else
+  # Keep the tags and session configs in sync with IntegrationTestScenario.Launch
+  # and Tests/IntegrationTests/Assertions/SessionConfigTests.swift.
+  run_launch main
+  run_launch max-lifetime --sessionTimeout 60 --maxLifetime 3
+  run_launch restore-first --sessionTimeout 3600 --restorePersistedSession true
+  run_launch restore-second --sessionTimeout 3600 --restorePersistedSession true
+  run_launch no-restore --sessionTimeout 3600 --restorePersistedSession false
+  # Each in a fresh session, so the crash report is emitted in a different session
+  # from the one that crashed.
+  run_launch crash --sessionTimeout 3600 --restorePersistedSession false
+  save_crash_reports crash
+  run_launch crash-report --sessionTimeout 3600 --restorePersistedSession false
+fi
 
 log "Collected files"
-ls -la "$OUTPUT_DIR"/*
+find "$OUTPUT_DIR" -type f | sort
 
 log "Running assertions"
 # Originally contributed by Cody Mitchell (@SproutSeeds)
-OTEL_INTEGRATION_OUTPUT_DIR="$OUTPUT_DIR" swift test --package-path "$INTEGRATION_DIR" 2>&1 | sed '/warning:/d'
+OTEL_INTEGRATION_OUTPUT_DIR="$OUTPUT_DIR" swift test --package-path "$INTEGRATION_DIR" ${ASSERTION_FILTER[@]+"${ASSERTION_FILTER[@]}"} 2>&1 | sed '/warning:/d'
 
 log "Integration tests passed"
