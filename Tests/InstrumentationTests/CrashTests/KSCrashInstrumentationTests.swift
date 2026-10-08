@@ -166,12 +166,14 @@ final class KSCrashInstrumentationTests: XCTestCase {
   }
 
   func testNotificationHandling() {
-    KSCrashInstrumentation.setupNotificationObservers()
+    KSCrashInstrumentation.queue.sync { KSCrashInstrumentation.setupNotificationObservers() }
     defer {
-      for observer in KSCrashInstrumentation.observers {
-        NotificationCenter.default.removeObserver(observer)
+      KSCrashInstrumentation.queue.sync {
+        for observer in KSCrashInstrumentation.observers {
+          NotificationCenter.default.removeObserver(observer)
+        }
+        KSCrashInstrumentation.observers.removeAll()
       }
-      KSCrashInstrumentation.observers.removeAll()
     }
 
     let session = Session(id: "notification-session", expireTime: Date(timeIntervalSinceNow: 1800))
@@ -187,6 +189,50 @@ final class KSCrashInstrumentationTests: XCTestCase {
     XCTAssertEqual(userInfo?[SemanticConventions.Session.id.rawValue], "notification-session")
   }
 
+  func testSessionRolloverUpdatesCrashContext() throws {
+    KSCrashInstrumentation.queue.sync { KSCrashInstrumentation.setupNotificationObservers() }
+    defer {
+      KSCrashInstrumentation.queue.sync {
+        for observer in KSCrashInstrumentation.observers {
+          NotificationCenter.default.removeObserver(observer)
+        }
+        KSCrashInstrumentation.observers.removeAll()
+      }
+    }
+
+    let manager = try SessionManager(persistence: InMemorySessionPersistence())
+    let first = manager.getSession()
+    let second = manager.resetSession()
+    XCTAssertNotEqual(first.id, second.id)
+
+    // The observer hops onto `queue`, so draining it makes the update visible.
+    KSCrashInstrumentation.queue.sync {}
+
+    let userInfo = KSCrashInstrumentation.reporter.userInfo as? [String: String]
+    XCTAssertEqual(userInfo?[SemanticConventions.Session.id.rawValue], second.id)
+    XCTAssertEqual(userInfo?[SemanticConventions.Session.previousId.rawValue], first.id)
+  }
+
+  func testTruncateLeavesShortStringsUnchanged() {
+    XCTAssertEqual(KSCrashInstrumentation.truncate("abc", toUTF8Bytes: 3), "abc")
+    XCTAssertEqual(KSCrashInstrumentation.truncate("abc", toUTF8Bytes: 10), "abc")
+  }
+
+  func testTruncateCutsAtCharacterBoundary() {
+    // "é" is 2 UTF-8 bytes, so a 2-byte limit lands inside it.
+    XCTAssertEqual(KSCrashInstrumentation.truncate("aé", toUTF8Bytes: 2), "a")
+    // Each emoji is 4 bytes; 6 bytes cuts through the second one.
+    XCTAssertEqual(KSCrashInstrumentation.truncate("😀😀", toUTF8Bytes: 6), "😀")
+    XCTAssertEqual(KSCrashInstrumentation.truncate("😀", toUTF8Bytes: 3), "")
+  }
+
+  func testTruncateNeverExceedsByteLimit() {
+    let report = String(repeating: "aé😀", count: 1000)
+    for limit in [0, 1, 2, 3, 5, 7, 100, 1023] {
+      XCTAssertLessThanOrEqual(KSCrashInstrumentation.truncate(report, toUTF8Bytes: limit).utf8.count, limit)
+    }
+  }
+
   func testInstallMethod() {
     XCTAssertFalse(KSCrashInstrumentation.isInstalled)
     XCTAssertNoThrow(KSCrashInstrumentation.install())
@@ -195,6 +241,23 @@ final class KSCrashInstrumentationTests: XCTestCase {
 
   func testProcessStoredCrashes() {
     XCTAssertNoThrow(KSCrashInstrumentation.processStoredCrashes())
+  }
+}
+
+private final class InMemorySessionPersistence: SessionPersistence, @unchecked Sendable {
+  private let lock = NSLock()
+  private var data: Data?
+
+  func read() -> Data? { lock.withLock { data } }
+
+  func write(_ data: Data) -> Bool {
+    lock.withLock { self.data = data }
+    return true
+  }
+
+  func clear() -> Bool {
+    lock.withLock { data = nil }
+    return true
   }
 }
 
