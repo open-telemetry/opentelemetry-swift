@@ -153,7 +153,9 @@ class URLSessionInstrumentationTests: XCTestCase {
 
   override class func tearDown() {
     server.stop()
-    OpenTelemetry.instance.contextProvider.removeContextForBaggage(customBaggage)
+    if customBaggage != nil {
+      OpenTelemetry.instance.contextProvider.removeContextForBaggage(customBaggage)
+    }
     customBaggage = nil
     OpenTelemetry.instance.contextProvider.removeContextForBaggage(activeBaggage)
   }
