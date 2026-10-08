@@ -19,9 +19,16 @@ repo work together inside a real iOS app. The flow is:
      the second launch must resume the first one's session.
    - `no-restore`: `restorePersistedSession: false`, so a new session starts
      with the persisted one as its previous session.
+   - `crash` / `crash-report`: `crash` records its session in a probe span and
+     then calls `fatalError`; KSCrash stores the report. `crash-report` runs in
+     a new session and reports it as a `device.crash` log, which must keep the
+     crashed session's id and the crash time, be an Apple-format report left
+     unsymbolicated and within `maxStackTraceBytes` (the defaults), and have an
+     `exception.message` that matches the report's crashed frame.
    Session config is passed as launch arguments because `SessionConfig` is
    only read when a `SessionManager` is created. The app stays installed
-   between launches so persisted session state carries over.
+   between launches so persisted session state and stored crash reports carry
+   over.
 3. The assertions in `Assertions/` are run with `swift test` against the
    dumped files. `OTLPOutput.main` is the main launch and
    `OTLPOutput.launch(...)` selects the others.
@@ -35,6 +42,24 @@ make integ-tests-ios
 # or, with options
 Scripts/run-integration-tests.sh --simulator <udid> --port 4318 --status-port 4319
 ```
+
+### Crash examples
+
+```shell
+Scripts/run-integration-tests.sh --crash-examples
+```
+
+Instead of the launches above, crashes the demo app once per `CrashType` in
+`Examples/HackerNewsDemo/HackerNewsDemo/CrashType.swift` (Swift traps, an
+uncaught NSException, a bad memory access, a stack overflow) and reports each
+crash on the following launch. Each one is saved in
+`out/crash-examples/<type>/`: KSCrash's raw JSON report in `kscrash/`, and the
+exported telemetry, including the `device.crash` log, in `report/`. Only
+`CrashExamplesTests` runs, which checks every crash was reported with its kind,
+a description and the session it happened in, and prints a Markdown table of
+`exception.type` and `exception.message` per crash. The examples in
+`Sources/Instrumentation/Crash/README.md` come from this table. The normal run
+also keeps the `crash` launch's raw report in `out/crash/kscrash/`.
 
 `make integ-build-ios` builds the demo app on its own and
 `make integ-tests-without-building-ios` runs the rest against that build, which

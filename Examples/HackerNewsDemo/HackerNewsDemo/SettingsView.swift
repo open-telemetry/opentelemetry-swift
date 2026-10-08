@@ -22,9 +22,10 @@ struct SettingsView: View {
   @State private var showingMemoryTest = false
   @State private var timer: Timer?
 
-  // Entries whose instrumentation is not available in this repo yet. They are
-  // shown disabled so nobody expects telemetry from them; the picker views
-  // stay in the file for when the instrumentations land.
+  // Entries whose instrumentation is not available in this repo yet, plus the
+  // crash trigger, which is not wired up to the installed crash instrumentation
+  // yet. They are shown disabled so nobody expects telemetry from them; the
+  // picker views stay in the file for when they are hooked up.
   private static let comingSoon: Set<String> = [
     "Trigger App Hang",
     "Trigger App Crash",
@@ -873,24 +874,6 @@ struct HangPickerView: View {
   }
 }
 
-enum CrashType: CaseIterable {
-  case forceUnwrap
-  case indexOutOfBounds
-  case fatalError
-  case divideByZero
-  case stackOverflow
-
-  var displayName: String {
-    switch self {
-    case .indexOutOfBounds: return "Index Out of Bounds"
-    case .fatalError: return "Fatal Error"
-    case .forceUnwrap: return "Force Unwrap Nil"
-    case .divideByZero: return "Divide by Zero"
-    case .stackOverflow: return "Stack Overflow"
-    }
-  }
-}
-
 struct CrashPickerView: View {
   @Environment(\.dismiss) private var dismiss
   @State private var selectedCrashType: CrashType = .forceUnwrap
@@ -974,24 +957,7 @@ struct CrashPickerView: View {
         // Log the crash event before it happens
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-          switch type {
-          case .indexOutOfBounds:
-            let array = [1, 2, 3]
-            _ = array[10] // Index out of bounds
-          case .fatalError:
-            fatalError("Intentional crash for testing")
-          case .forceUnwrap:
-            let nilValue: String? = nil
-            _ = nilValue! // Force unwrap nil
-          case .divideByZero:
-            let zero = Int.random(in: 0 ... 0) // Runtime zero
-            _ = 42 / zero // Division by zero
-          case .stackOverflow:
-            func recursiveFunction() {
-              recursiveFunction() // Infinite recursion
-            }
-            recursiveFunction()
-          }
+          type.trigger()
         }
       }
     }

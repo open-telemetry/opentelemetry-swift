@@ -1,0 +1,286 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import XCTest
+import OpenTelemetrySdk
+import OpenTelemetryApi
+@testable import Sessions
+@testable import Crash
+
+#if canImport(KSCrash)
+  import KSCrash
+#endif
+
+final class KSCrashInstrumentationTests: XCTestCase {
+  /// KSCrash's default monitors, minus the watchdog. KSCrash is installed into the shared test
+  /// process, where every later test that blocks the main thread while it waits looks like a hang.
+  /// Capturing a hang pauses every thread to write a full report, which stalls unrelated suites
+  /// for minutes under Thread Sanitizer. Apps keep the default monitors.
+  static func testConfig() -> KSCrashInstrumentationConfig {
+    let config = KSCrashInstrumentationConfig()
+    config.monitors.remove(.watchdog)
+    return config
+  }
+
+  override func setUp() {
+    super.setUp()
+  }
+
+  override func tearDown() {
+    NotificationCenter.default.removeObserver(self)
+    super.tearDown()
+  }
+
+  func testCacheCrashContext() {
+    let session = Session(
+      id: "cache-session-id",
+      expireTime: Date(timeIntervalSinceNow: 1800),
+      previousId: "cache-prev-id"
+    )
+
+    KSCrashInstrumentation.cacheCrashContext(session: session)
+
+    let userInfo = KSCrashInstrumentation.reporter.userInfo as? [String: String]
+    XCTAssertEqual(userInfo?[SemanticConventions.Session.id.rawValue], "cache-session-id")
+    XCTAssertEqual(userInfo?[SemanticConventions.Session.previousId.rawValue], "cache-prev-id")
+  }
+
+  func testReporterConfiguration() {
+    XCTAssertNotNil(KSCrashInstrumentation.reporter)
+  }
+
+  func testMaxStackTraceBytes() {
+    XCTAssertEqual(KSCrashInstrumentation.maxStackTraceBytes, 25 * 1024)
+  }
+
+  func testExtractCrashMessageWithExceptionType() {
+    let stackTrace = """
+    Exception Type:  EXC_BREAKPOINT (SIGTRAP)
+    Thread 0 Crashed:
+    0   libswiftCore.dylib            0x000000019ed5c8c4 $ss17_assertionFailure + 172
+    """
+
+    let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
+    XCTAssertEqual(result, "EXC_BREAKPOINT (SIGTRAP) at libswiftCore.dylib + 172")
+  }
+
+  func testExtractCrashMessageWithBadAccess() {
+    let stackTrace = """
+    Exception Type:  EXC_BAD_ACCESS (SIGSEGV)
+    Thread 2 Crashed:
+    0   MyApp                         0x0000000104abc123 main + 456
+    """
+
+    let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
+    XCTAssertEqual(result, "EXC_BAD_ACCESS (SIGSEGV) at MyApp + 456")
+  }
+
+  func testExtractCrashMessageWithoutExceptionType() {
+    let stackTrace = """
+    Thread 0 Crashed:
+    0   libswiftCore.dylib            0x000000019ed5c8c4 $ss17_assertionFailure + 172
+    """
+
+    let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
+    XCTAssertEqual(result, "Unknown exception at libswiftCore.dylib + 172")
+  }
+
+  func testExtractCrashMessageWithDifferentThread() {
+    let stackTrace = """
+    Exception Type:  EXC_CRASH (SIGABRT)
+    Thread 5 Crashed:
+    0   SomeFramework                 0x00000001f14e1a90 someFunction + 8
+    """
+
+    let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
+    XCTAssertEqual(result, "EXC_CRASH (SIGABRT) at SomeFramework + 8")
+    // The same crash on another thread must produce the same message, so it groups together.
+    let onThreadZero = stackTrace.replacingOccurrences(of: "Thread 5 Crashed:", with: "Thread 0 Crashed:")
+    XCTAssertEqual(KSCrashInstrumentation.extractCrashMessage(from: onThreadZero), result)
+  }
+
+  func testExtractCrashMessageEdgeCases() {
+    XCTAssertEqual(KSCrashInstrumentation.extractCrashMessage(from: ""), "Unknown exception at unknown location")
+    XCTAssertEqual(KSCrashInstrumentation.extractCrashMessage(from: "Thread Crashed:\n0   SomeFramework"), "Unknown exception at unknown location")
+
+    let noThreadCrashed = "Some other content\nThread 1:\n0   libsystem_kernel.dylib"
+    XCTAssertEqual(KSCrashInstrumentation.extractCrashMessage(from: noThreadCrashed), "Unknown exception at unknown location")
+  }
+
+  func testExtractCrashMessageWithWhitespaceHandling() {
+    let stackTrace = """
+    Exception Type:  EXC_BAD_ACCESS (SIGSEGV)
+    Thread 2 Crashed:
+    0     MyFramework     \t\t\t    0x123456789    myFunction    +    123
+    """
+
+    let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
+    XCTAssertEqual(result, "EXC_BAD_ACCESS (SIGSEGV) at MyFramework + 123")
+  }
+
+  func testExtractCrashMessageWithExceptionTypeOnly() {
+    let stackTrace = """
+    Exception Type:  EXC_CRASH (SIGABRT)
+    """
+
+    let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
+    XCTAssertEqual(result, "EXC_CRASH (SIGABRT) at unknown location")
+  }
+
+  func testRecoverCrashContextSuccess() {
+    let mockLogBuilder = MockLogRecordBuilder()
+    let initialAttributes: [String: AttributeValue] = [:]
+
+    let rawCrash: [String: Any] = [
+      "report": ["timestamp": "2025-10-28T21:38:55.554842Z"],
+      "user": [
+        SemanticConventions.Session.id.rawValue: "test-session-id",
+        SemanticConventions.Session.previousId.rawValue: "test-prev-session-id"
+      ]
+    ]
+
+    let result = KSCrashInstrumentation.recoverCrashContext(
+      from: rawCrash,
+      log: mockLogBuilder,
+      attributes: initialAttributes
+    )
+
+    XCTAssertEqual(result[SemanticConventions.Session.id.rawValue]?.description, "test-session-id")
+    XCTAssertEqual(result[SemanticConventions.Session.previousId.rawValue]?.description, "test-prev-session-id")
+  }
+
+  func testRecoverCrashContextNoSessionId() {
+    let mockLogBuilder = MockLogRecordBuilder()
+    let initialAttributes: [String: AttributeValue] = [:]
+
+    let result = KSCrashInstrumentation.recoverCrashContext(from: [:], log: mockLogBuilder, attributes: initialAttributes)
+    XCTAssertNil(result[SemanticConventions.Session.id.rawValue])
+  }
+
+  func testRecoverCrashContextMissingPreviousSessionId() {
+    let mockLogBuilder = MockLogRecordBuilder()
+    let initialAttributes: [String: AttributeValue] = [:]
+
+    let rawCrash: [String: Any] = [
+      "report": ["timestamp": "2025-10-28T21:38:55.554842Z"],
+      "user": [SemanticConventions.Session.id.rawValue: "test-session-id"]
+    ]
+
+    let result = KSCrashInstrumentation.recoverCrashContext(
+      from: rawCrash,
+      log: mockLogBuilder,
+      attributes: initialAttributes
+    )
+
+    XCTAssertEqual(result[SemanticConventions.Session.id.rawValue]?.description, "test-session-id")
+    XCTAssertNil(result[SemanticConventions.Session.previousId.rawValue])
+  }
+
+  func testNotificationHandling() {
+    KSCrashInstrumentation.queue.sync { KSCrashInstrumentation.setupNotificationObservers() }
+    defer {
+      KSCrashInstrumentation.queue.sync {
+        for observer in KSCrashInstrumentation.observers {
+          NotificationCenter.default.removeObserver(observer)
+        }
+        KSCrashInstrumentation.observers.removeAll()
+      }
+    }
+
+    let session = Session(id: "notification-session", expireTime: Date(timeIntervalSinceNow: 1800))
+    NotificationCenter.default.post(name: Notification.Name(SessionConstants.sessionEventNotification), object: session)
+
+    let expectation = XCTestExpectation(description: "Async crash context update")
+    DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 0.1) {
+      expectation.fulfill()
+    }
+    wait(for: [expectation], timeout: 1.0)
+
+    let userInfo = KSCrashInstrumentation.reporter.userInfo as? [String: String]
+    XCTAssertEqual(userInfo?[SemanticConventions.Session.id.rawValue], "notification-session")
+  }
+
+  func testSessionRolloverUpdatesCrashContext() throws {
+    KSCrashInstrumentation.queue.sync { KSCrashInstrumentation.setupNotificationObservers() }
+    defer {
+      KSCrashInstrumentation.queue.sync {
+        for observer in KSCrashInstrumentation.observers {
+          NotificationCenter.default.removeObserver(observer)
+        }
+        KSCrashInstrumentation.observers.removeAll()
+      }
+    }
+
+    let manager = try SessionManager(persistence: InMemorySessionPersistence())
+    let first = manager.getSession()
+    let second = manager.resetSession()
+    XCTAssertNotEqual(first.id, second.id)
+
+    // The observer hops onto `queue`, so draining it makes the update visible.
+    KSCrashInstrumentation.queue.sync {}
+
+    let userInfo = KSCrashInstrumentation.reporter.userInfo as? [String: String]
+    XCTAssertEqual(userInfo?[SemanticConventions.Session.id.rawValue], second.id)
+    XCTAssertEqual(userInfo?[SemanticConventions.Session.previousId.rawValue], first.id)
+  }
+
+  func testInstallMethod() {
+    XCTAssertFalse(KSCrashInstrumentation.isInstalled)
+    XCTAssertNoThrow(KSCrashInstrumentation.install(config: Self.testConfig()))
+    XCTAssertTrue(KSCrashInstrumentation.isInstalled)
+  }
+
+  func testProcessStoredCrashes() {
+    XCTAssertNoThrow(KSCrashInstrumentation.processStoredCrashes())
+  }
+}
+
+final class InMemorySessionPersistence: SessionPersistence, @unchecked Sendable {
+  private let lock = NSLock()
+  private var data: Data?
+
+  func read() -> Data? { lock.withLock { data } }
+
+  func write(_ data: Data) -> Bool {
+    lock.withLock { self.data = data }
+    return true
+  }
+
+  func clear() -> Bool {
+    lock.withLock { data = nil }
+    return true
+  }
+}
+
+class MockLogRecordBuilder: LogRecordBuilder {
+  var timestamp: Date?
+  var attributes: [String: AttributeValue] = [:]
+  var eventName: String?
+
+  func setTimestamp(_ timestamp: Date) -> LogRecordBuilder {
+    self.timestamp = timestamp
+    return self
+  }
+
+  func setObservedTimestamp(_ timestamp: Date) -> LogRecordBuilder { return self }
+  func setEventName(_ name: String) -> LogRecordBuilder {
+    eventName = name
+    return self
+  }
+
+  func setSeverity(_ severity: Severity) -> LogRecordBuilder { return self }
+  func setBody(_ body: AttributeValue) -> LogRecordBuilder { return self }
+  func setAttributes(_ attributes: [String: AttributeValue]) -> LogRecordBuilder {
+    self.attributes = attributes
+    return self
+  }
+
+  func addAttribute(key: String, value: AttributeValue) -> LogRecordBuilder {
+    attributes[key] = value
+    return self
+  }
+
+  func emit() {}
+}
