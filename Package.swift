@@ -364,12 +364,16 @@ extension Package {
     #endif
 
     #if canImport(Darwin)
-      dependencies.append(
+      dependencies.append(contentsOf: [
         .package(
           url: "https://github.com/undefinedlabs/Thrift-Swift",
           from: "1.1.1"
-        )
-      )
+        ),
+        .package(
+          url: "https://github.com/kstenerud/KSCrash.git",
+          exact: "2.5.0"
+        ),
+      ])
       products.append(contentsOf: [
         .library(name: "JaegerExporter", targets: ["JaegerExporter"]),
         .executable(name: "simpleExporter", targets: ["SimpleExporter"]),
@@ -387,6 +391,7 @@ extension Package {
           name: "MetricKitInstrumentation",
           targets: ["MetricKitInstrumentation"]
         ),
+        .library(name: "Crash", targets: ["Crash"]),
       ])
       targets.append(contentsOf: [
         .target(
@@ -574,6 +579,27 @@ extension Package {
           ],
           path: "Examples/Prometheus Sample",
           exclude: ["README.md"]
+        ),
+        .target(
+          name: "Crash",
+          dependencies: [
+            "OpenTelemetryApi",
+            "OpenTelemetrySdk",
+            "Sessions",
+            .product(name: "Installations", package: "KSCrash"),
+            .product(name: "Filters", package: "KSCrash"),
+          ],
+          path: "Sources/Instrumentation/Crash"
+        ),
+        .testTarget(
+          name: "CrashTests",
+          dependencies: [
+            "Crash",
+            "Sessions",
+            "InMemoryExporter",
+            "OpenTelemetrySdk",
+          ],
+          path: "Tests/InstrumentationTests/CrashTests"
         ),
       ])
     #endif
