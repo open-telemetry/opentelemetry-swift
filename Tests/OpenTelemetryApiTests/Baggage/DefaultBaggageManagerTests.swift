@@ -29,7 +29,9 @@ class DefaultBaggageManagerTestsInfo: OpenTelemetryContextTestCase {
   let baggage = TestBaggage()
 
   override func tearDown() {
-    XCTAssertNil(defaultBaggageManager.getCurrentBaggage(), "Test must clean baggage context")
+    if defaultBaggageManager.getCurrentBaggage() != nil {
+      XCTAssert(false, "Test must clean baggage context")
+    }
     super.tearDown()
   }
 }

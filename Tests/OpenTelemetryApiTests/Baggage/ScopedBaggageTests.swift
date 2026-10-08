@@ -32,6 +32,7 @@ class ScopedBaggageTestsInfo: OpenTelemetryContextTestCase {
     if baggageManager.getCurrentBaggage() != nil {
       XCTAssert(false, "Test must clean baggage context")
     }
+    super.tearDown()
   }
 }
 
