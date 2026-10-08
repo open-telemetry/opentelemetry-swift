@@ -290,7 +290,7 @@ extension Package {
     #if canImport(Darwin)
       dependencies.append(contentsOf: [
         .package(url: "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1"),
-        .package(url: "https://github.com/kstenerud/KSCrash.git", exact: "2.5.0")
+        .package(url: "https://github.com/kstenerud/KSCrash.git", .upToNextMinor(from: "2.6.0"))
       ])
       products.append(contentsOf: [
         .library(name: "JaegerExporter", targets: ["JaegerExporter"]),
