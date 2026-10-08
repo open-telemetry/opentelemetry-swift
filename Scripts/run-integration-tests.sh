@@ -224,6 +224,10 @@ run_launch max-lifetime --sessionTimeout 60 --maxLifetime 3
 run_launch restore-first --sessionTimeout 3600 --restorePersistedSession true
 run_launch restore-second --sessionTimeout 3600 --restorePersistedSession true
 run_launch no-restore --sessionTimeout 3600 --restorePersistedSession false
+# Each in a fresh session, so the crash report is emitted in a different session
+# from the one that crashed.
+run_launch crash --sessionTimeout 3600 --restorePersistedSession false
+run_launch crash-report --sessionTimeout 3600 --restorePersistedSession false
 
 log "Collected files"
 ls -la "$OUTPUT_DIR"/*
