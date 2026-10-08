@@ -327,6 +327,33 @@ final class SessionLogRecordProcessorTests: XCTestCase {
     }
   }
 
+  func testSessionEndEventDoesNotInheritCurrentSessionPreviousId() {
+    // The session.end for the very first session has no predecessor. The
+    // current session's previous_id is that ending session itself, so copying
+    // it over would mark the session as its own predecessor.
+    let sessionEndRecord = ReadableLogRecord(
+      resource: Resource(attributes: [:]),
+      instrumentationScopeInfo: InstrumentationScopeInfo(),
+      timestamp: Date(),
+      observedTimestamp: Date(),
+      spanContext: nil,
+      severity: .info,
+      body: AttributeValue.string("session.end"),
+      attributes: [
+        SemanticConventions.Session.id.rawValue: AttributeValue.string("ending-session-789")
+      ]
+    )
+
+    mockSessionManager.sessionId = "current-session-999"
+    mockSessionManager.previousSessionId = "ending-session-789"
+    logRecordProcessor.onEmit(logRecord: sessionEndRecord)
+
+    let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
+    XCTAssertEqual(enhancedRecord.attributes[SemanticConventions.Session.id.rawValue], AttributeValue.string("ending-session-789"))
+    XCTAssertNil(enhancedRecord.attributes[SemanticConventions.Session.previousId.rawValue],
+                 "session.previous_id must not be filled in from the current session")
+  }
+
   func testDataIsPreserved() {
     let logRecordWithEventName = ReadableLogRecord(
       resource: Resource(attributes: [:]),
