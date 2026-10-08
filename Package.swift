@@ -371,7 +371,7 @@ extension Package {
         ),
         .package(
           url: "https://github.com/kstenerud/KSCrash.git",
-          exact: "2.5.0"
+          .upToNextMinor(from: "2.6.0")
         ),
       ])
       products.append(contentsOf: [
