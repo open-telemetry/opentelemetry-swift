@@ -25,7 +25,10 @@ public class KSCrashInstrumentationConfig: KSCrashConfiguration {
   /// crash grouping. Default `false`; backends should symbolicate.
   public var useOnDeviceSymbolication: Bool = false
 
-  public static let `default` = KSCrashInstrumentationConfig()
+  /// A fresh configuration with the defaults, so changes made by one caller never leak to another.
+  public static var `default`: KSCrashInstrumentationConfig {
+    KSCrashInstrumentationConfig()
+  }
 
   override public init() {
     super.init()
@@ -38,20 +41,40 @@ public class KSCrashInstrumentationConfig: KSCrashConfiguration {
 }
 
 public class KSCrashInstrumentation: Instrumentation {
-  public private(set) static var isInstalled: Bool = false
-  public internal(set) static var maxStackTraceBytes = 25 * 1024
-  static let reporter = KSCrash.shared
-  static var observers: [NSObjectProtocol] = []
+  public static var isInstalled: Bool {
+    installLock.withLock { _isInstalled }
+  }
+
+  public internal(set) static var maxStackTraceBytes: Int {
+    get { installLock.withLock { _maxStackTraceBytes } }
+    set { installLock.withLock { _maxStackTraceBytes = newValue } }
+  }
+
+  // Only `userInfo` is written after install, and only from `queue`.
+  nonisolated(unsafe) static let reporter = KSCrash.shared
+  // Mutated only from `queue`.
+  nonisolated(unsafe) static var observers: [NSObjectProtocol] = []
 
   // Single serial queue is the only writer of `reporter.userInfo` and the
   // only mutator of `observers`. Anything that touches that state must hop
   // onto this queue.
-  private static let queue = DispatchQueue(label: "io.opentelemetry.kscrash", qos: .utility)
-  // Covers the install() check-then-set on `isInstalled`.
+  static let queue = DispatchQueue(label: "io.opentelemetry.kscrash", qos: .utility)
+  // Guards `_isInstalled`, `_maxStackTraceBytes` and `_installedConfig`, and makes the install()
+  // check-then-set on `_isInstalled` one step.
   private static let installLock = NSLock()
-  private static var installedConfig: KSCrashInstrumentationConfig = .default
-  private static let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: "io.opentelemetry.kscrash")
-  private static let timestampFormatter: ISO8601DateFormatter = {
+  nonisolated(unsafe) private static var _isInstalled = false
+  nonisolated(unsafe) private static var _maxStackTraceBytes = 25 * 1024
+  nonisolated(unsafe) private static var _installedConfig: KSCrashInstrumentationConfig = .default
+  private static var installedConfig: KSCrashInstrumentationConfig {
+    installLock.withLock { _installedConfig }
+  }
+
+  private static var logger: Logger {
+    OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: "io.opentelemetry.kscrash")
+  }
+
+  // ISO8601DateFormatter is thread-safe, and this one is never mutated after creation.
+  nonisolated(unsafe) private static let timestampFormatter: ISO8601DateFormatter = {
     // Example KSCrash timestamp: `2025-10-28T03:30:53.604204Z`
     let formatter = ISO8601DateFormatter()
     formatter.formatOptions = [
@@ -72,15 +95,15 @@ public class KSCrashInstrumentation: Instrumentation {
   public static func install(config: KSCrashInstrumentationConfig = .default) {
     installLock.lock()
     defer { installLock.unlock() }
-    guard !isInstalled else {
+    guard !_isInstalled else {
       return
     }
 
     do {
       try reporter.install(with: config)
-      installedConfig = config
-      maxStackTraceBytes = config.maxStackTraceBytes
-      isInstalled = true
+      _installedConfig = config
+      _maxStackTraceBytes = config.maxStackTraceBytes
+      _isInstalled = true
     } catch {
       return
     }
@@ -167,10 +190,10 @@ public class KSCrashInstrumentation: Instrumentation {
     let style: AppleReportStyle = installedConfig.useOnDeviceSymbolication ? .symbolicated : .unsymbolicated
     let filter = CrashReportFilterAppleFmt(reportStyle: style)
     filter.filterReports([crashReport]) { reports, _ in
-      var appleFormatReport = (reports?.first as? CrashReportString)?.value ?? "Failed to format crash report"
-      if appleFormatReport.utf8.count > maxStackTraceBytes {
-        appleFormatReport = String(appleFormatReport.utf8.prefix(maxStackTraceBytes)) ?? appleFormatReport
-      }
+      let appleFormatReport = truncate(
+        (reports?.first as? CrashReportString)?.value ?? "Failed to format crash report",
+        toUTF8Bytes: maxStackTraceBytes
+      )
       attributes[SemanticConventions.Exception.stacktrace.rawValue] = AttributeValue.string(appleFormatReport)
 
       // `Crash detected on thread 0 at libswiftCore.dylib 0x000000019ed5c8c4 $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF + 172`
@@ -179,6 +202,20 @@ public class KSCrashInstrumentation: Instrumentation {
       _ = log.setAttributes(attributes)
       log.emit()
     }
+  }
+
+  /// Cuts `string` to at most `maxBytes` of UTF-8, backing off to the previous character boundary
+  /// so a multi-byte character is never split.
+  static func truncate(_ string: String, toUTF8Bytes maxBytes: Int) -> String {
+    let utf8 = string.utf8
+    guard utf8.count > maxBytes else {
+      return string
+    }
+    var end = utf8.index(utf8.startIndex, offsetBy: max(maxBytes, 0))
+    while end > utf8.startIndex, String.Index(end, within: string) == nil {
+      end = utf8.index(before: end)
+    }
+    return String(string[..<end])
   }
 
   /// Get exception code information for the crash message. This is useful for grouping
