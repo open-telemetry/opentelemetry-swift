@@ -32,8 +32,6 @@ public class KSCrashInstrumentationConfig: KSCrashConfiguration {
 
   override public init() {
     super.init()
-    // SIGTERM is rarely a real crash signal in iOS lifecycles.
-    enableSigTermMonitoring = false
     // Swap C++ throw improves C++ traces but adds launch cost; users with
     // C++-heavy apps can re-enable.
     enableSwapCxaThrow = false
