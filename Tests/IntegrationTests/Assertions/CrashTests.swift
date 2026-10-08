@@ -71,4 +71,75 @@ final class CrashTests: XCTestCase {
     XCTAssertGreaterThan(crash.record.timeUnixNano, crashedAfter, "the crash happened after the crash launch's probe span")
     XCTAssertLessThan(crash.record.timeUnixNano, reportedAfter, "the crash must keep its own time, not the time it was reported")
   }
+
+  // MARK: - Report content (default KSCrashInstrumentationConfig)
+
+  /// Mirrors `KSCrashInstrumentationConfig.maxStackTraceBytes`'s default; the demo app installs with defaults.
+  private static let defaultMaxStackTraceBytes = 25 * 1024
+
+  private func reportLines() throws -> [String] {
+    let report = try XCTUnwrap(reportedCrash().record.attributes.string(Self.exceptionStacktraceKey))
+    return report.components(separatedBy: "\n")
+  }
+
+  private func headerValue(_ field: String, in lines: [String]) -> String? {
+    lines.first { $0.hasPrefix("\(field):") }?
+      .dropFirst(field.count + 1)
+      .trimmingCharacters(in: .whitespaces)
+  }
+
+  /// The frames under the "Thread N Crashed:" header, and N.
+  private func crashedThread(in lines: [String]) throws -> (number: String, frames: [String]) {
+    let headerIndex = try XCTUnwrap(lines.firstIndex { $0.range(of: #"^Thread \d+ Crashed:$"#, options: .regularExpression) != nil },
+                                    "no crashed thread section")
+    let number = lines[headerIndex].replacingOccurrences(of: #"^Thread (\d+) Crashed:$"#, with: "$1", options: .regularExpression)
+    let frames = lines[(headerIndex + 1)...].prefix { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+    return (number, Array(frames))
+  }
+
+  func testCrashReportIsInAppleFormat() throws {
+    let lines = try reportLines()
+    XCTAssertTrue(lines.first?.hasPrefix("Incident Identifier:") ?? false, "an Apple crash report starts with its incident identifier")
+    for field in ["Process", "Identifier", "OS Version", "Exception Type", "Triggered by Thread"] {
+      XCTAssertNotNil(headerValue(field, in: lines), "missing the \(field) header")
+    }
+    XCTAssertEqual(headerValue("Identifier", in: lines), "io.opentelemetry.HackerNewsDemo")
+    XCTAssertEqual(headerValue("Exception Type", in: lines), "EXC_BREAKPOINT (SIGTRAP)", "the scenario crashes with fatalError")
+
+    let crashed = try crashedThread(in: lines)
+    XCTAssertEqual(headerValue("Triggered by Thread", in: lines), crashed.number)
+    XCTAssertFalse(crashed.frames.isEmpty, "the crashed thread has no frames")
+  }
+
+  func testCrashReportIsUnsymbolicatedByDefault() throws {
+    // useOnDeviceSymbolication defaults to false, so frames are left as `<address> <load address> + <offset>`
+    // for the backend to symbolicate.
+    let frames = try crashedThread(in: reportLines()).frames
+    let unsymbolicated = #"^\d+\s+\S+\s+0x[0-9a-f]+ 0x[0-9a-f]+ \+ \d+$"#
+    for frame in frames {
+      XCTAssertNotNil(frame.range(of: unsymbolicated, options: .regularExpression), "symbolicated or malformed frame: \(frame)")
+    }
+  }
+
+  func testCrashReportFitsTheDefaultStackTraceLimit() throws {
+    let report = try XCTUnwrap(reportedCrash().record.attributes.string(Self.exceptionStacktraceKey))
+    XCTAssertLessThanOrEqual(report.utf8.count, Self.defaultMaxStackTraceBytes, "exception.stacktrace exceeds maxStackTraceBytes")
+    // Cut at the end, so the identifying header and the crashed thread are always kept.
+    XCTAssertTrue(report.hasPrefix("Incident Identifier:"))
+  }
+
+  func testCrashMessageDescribesTheCrashedFrame() throws {
+    let lines = try reportLines()
+    let crashed = try crashedThread(in: lines)
+    // Frame format: "0   libswiftCore.dylib   0x0000000198272210 0x198171000 + 1053200"
+    let topFrame = try XCTUnwrap(crashed.frames.first).split(whereSeparator: \.isWhitespace).map(String.init)
+    XCTAssertGreaterThanOrEqual(topFrame.count, 4)
+    let module = topFrame[1]
+    let offset = try XCTUnwrap(topFrame.last)
+    let exceptionType = try XCTUnwrap(headerValue("Exception Type", in: lines))
+
+    let message = try reportedCrash().record.attributes.string(Self.exceptionMessageKey)
+    XCTAssertEqual(message, "\(exceptionType) detected on thread \(crashed.number) at \(module) + \(offset)",
+                   "exception.message must name the exception, the crashed thread and its top frame without the per-crash address")
+  }
 }

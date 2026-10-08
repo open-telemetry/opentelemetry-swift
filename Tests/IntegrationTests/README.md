@@ -19,9 +19,16 @@ repo work together inside a real iOS app. The flow is:
      the second launch must resume the first one's session.
    - `no-restore`: `restorePersistedSession: false`, so a new session starts
      with the persisted one as its previous session.
+   - `crash` / `crash-report`: `crash` records its session in a probe span and
+     then calls `fatalError`; KSCrash stores the report. `crash-report` runs in
+     a new session and reports it as a `device.crash` log, which must keep the
+     crashed session's id and the crash time, be an Apple-format report left
+     unsymbolicated and within `maxStackTraceBytes` (the defaults), and have an
+     `exception.message` that matches the report's crashed frame.
    Session config is passed as launch arguments because `SessionConfig` is
    only read when a `SessionManager` is created. The app stays installed
-   between launches so persisted session state carries over.
+   between launches so persisted session state and stored crash reports carry
+   over.
 3. The assertions in `Assertions/` are run with `swift test` against the
    dumped files. `OTLPOutput.main` is the main launch and
    `OTLPOutput.launch(...)` selects the others.
