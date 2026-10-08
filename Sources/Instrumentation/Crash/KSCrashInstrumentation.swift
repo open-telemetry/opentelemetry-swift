@@ -200,9 +200,9 @@ public class KSCrashInstrumentation: Instrumentation {
     let style: AppleReportStyle = installedConfig.useOnDeviceSymbolication ? .symbolicated : .unsymbolicated
     let filter = CrashReportFilterAppleFmt(reportStyle: style)
     filter.filterReports([crashReport]) { reports, _ in
-      let appleFormatReport = truncate(
+      let appleFormatReport = UTF8Truncation.truncate(
         (reports?.first as? CrashReportString)?.value ?? "Failed to format crash report",
-        toUTF8Bytes: maxStackTraceBytes
+        maxBytes: maxStackTraceBytes
       )
       attributes[SemanticConventions.Exception.stacktrace.rawValue] = AttributeValue.string(appleFormatReport)
 
@@ -212,20 +212,6 @@ public class KSCrashInstrumentation: Instrumentation {
       _ = log.setAttributes(attributes)
       log.emit()
     }
-  }
-
-  /// Cuts `string` to at most `maxBytes` of UTF-8, backing off to the previous character boundary
-  /// so a multi-byte character is never split.
-  static func truncate(_ string: String, toUTF8Bytes maxBytes: Int) -> String {
-    let utf8 = string.utf8
-    guard utf8.count > maxBytes else {
-      return string
-    }
-    var end = utf8.index(utf8.startIndex, offsetBy: max(maxBytes, 0))
-    while end > utf8.startIndex, String.Index(end, within: string) == nil {
-      end = utf8.index(before: end)
-    }
-    return String(string[..<end])
   }
 
   /// Get exception code information for the crash message. This is useful for grouping
