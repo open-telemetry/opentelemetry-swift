@@ -51,6 +51,12 @@ enum IntegrationTestScenario {
     // restorePersistedSession = false: a new session starts and the persisted
     // one becomes its previous session.
     case noRestore = "no-restore"
+    // Records its session in a probe span, then crashes. KSCrash stores the
+    // report together with that session id.
+    case crash
+    // Next launch, in a new session (restorePersistedSession = false). Reports
+    // the stored crash, which must keep the crashed launch's session id.
+    case crashReport = "crash-report"
   }
 
   // Default session timeout for the main launch: short enough that the
@@ -110,6 +116,23 @@ enum IntegrationTestScenario {
     case .restoreFirst, .restoreSecond, .noRestore:
       DispatchQueue.global().async {
         span(tracer, probeSpanName).end()
+        complete(tracer: tracer)
+      }
+    case .crash:
+      DispatchQueue.global().async {
+        span(tracer, probeSpanName).end()
+        complete(tracer: tracer)
+        // Crash context is cached asynchronously when the session starts, and
+        // the runner needs the completion marker exported before the app dies.
+        Thread.sleep(forTimeInterval: 2)
+        fatalError("integration test crash")
+      }
+    case .crashReport:
+      DispatchQueue.global().async {
+        span(tracer, probeSpanName).end()
+        // The stored crash is reported asynchronously on install; give its log
+        // record time to reach the batch processor before signalling completion.
+        Thread.sleep(forTimeInterval: 2)
         complete(tracer: tracer)
       }
     }

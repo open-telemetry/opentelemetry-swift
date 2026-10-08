@@ -90,22 +90,33 @@ public class KSCrashInstrumentation: Instrumentation {
   }
 
   /// Installs KSCrash if not already installed. Idempotent and thread-safe.
-  /// Subsequent work (caching context, processing stored crashes,
-  /// registering observers) is dispatched onto `queue`.
+  /// The session observer is registered before this returns; caching context
+  /// and processing stored crashes are dispatched onto `queue`.
   public static func install(config: KSCrashInstrumentationConfig = .default) {
-    installLock.lock()
-    defer { installLock.unlock() }
-    guard !_isInstalled else {
-      return
-    }
-
-    do {
-      try reporter.install(with: config)
+    let didInstall: Bool = installLock.withLock {
+      guard !_isInstalled else {
+        return false
+      }
+      do {
+        try reporter.install(with: config)
+      } catch {
+        return false
+      }
       _installedConfig = config
       _maxStackTraceBytes = config.maxStackTraceBytes
       _isInstalled = true
-    } catch {
+      return true
+    }
+    guard didInstall else {
       return
+    }
+
+    // Registered before returning, otherwise a session that starts right after
+    // install would never reach `reporter.userInfo` and a crash in it would be
+    // reported without its session. Run on `queue`, outside `installLock`,
+    // because `observers` belongs to `queue` and work there reads install state.
+    queue.sync {
+      setupNotificationObservers()
     }
 
     // Hand off remaining setup to the serial queue so all later writes to
@@ -113,7 +124,6 @@ public class KSCrashInstrumentation: Instrumentation {
     queue.async {
       cacheCrashContext()
       processStoredCrashes()
-      setupNotificationObservers()
     }
   }
 
