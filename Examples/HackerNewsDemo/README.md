@@ -11,9 +11,10 @@ Instrumentation used from this repo:
 - `URLSessionInstrumentation` - spans for every Hacker News API request
 - `Sessions` - session IDs on spans/logs plus session start/end events
 - `ResourceExtension` - device/OS/app resource attributes
+- `Crash` - KSCrash crash reports, sent as `device.crash` logs on the next launch with the session the crash happened in
 - `OpenTelemetryProtocolExporterHTTP` - OTLP/HTTP trace and log export
 
-Not yet available natively (tracked as `TODO` comments in `Telemetry.swift` and `SettingsView.swift`): app startup, crash, app hang, UIKit/SwiftUI view instrumentation, and a user ID manager. The Settings rows that depend on these (User ID, Trigger App Hang, Trigger App Crash, CPU Test, Memory Test) are shown grayed out with a "Coming soon" badge; the picker views stay in `SettingsView.swift` for when the instrumentations land.
+Not yet available natively (tracked as `TODO` comments in `Telemetry.swift` and `SettingsView.swift`): app startup, app hang, UIKit/SwiftUI view instrumentation, and a user ID manager. The Settings rows that depend on these (User ID, Trigger App Hang, CPU Test, Memory Test) are shown grayed out with a "Coming soon" badge; the picker views stay in `SettingsView.swift` for when the instrumentations land. "Trigger App Crash" is also still grayed out: crash instrumentation is installed, but the crash picker is not wired up to it yet.
 
 1. The `Home` tab is built entirely with UIKit, and each post/comment involved triggers a separate HTTP request.
 2. And the `Settings` tab is built with SwiftUI!
@@ -131,7 +132,7 @@ The Settings tab is primarily made with SwiftUI, though the root controller is m
 **Actions:**
 
 1. Click on Tap to configure for "Load Test" to generate custom logs and spans
-2. "User ID", "Trigger App Hang", "Trigger App Crash", "CPU Test" and "Memory Test" are grayed out with a "Coming soon" badge until the matching instrumentation exists
+2. "User ID", "Trigger App Hang", "CPU Test" and "Memory Test" are grayed out with a "Coming soon" badge until the matching instrumentation exists; "Trigger App Crash" is grayed out until the crash picker is wired up to the crash instrumentation
 
 </td>
 <td width="300px" style="vertical-align: top;">
