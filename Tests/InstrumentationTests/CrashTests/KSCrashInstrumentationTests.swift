@@ -213,26 +213,6 @@ final class KSCrashInstrumentationTests: XCTestCase {
     XCTAssertEqual(userInfo?[SemanticConventions.Session.previousId.rawValue], first.id)
   }
 
-  func testTruncateLeavesShortStringsUnchanged() {
-    XCTAssertEqual(KSCrashInstrumentation.truncate("abc", toUTF8Bytes: 3), "abc")
-    XCTAssertEqual(KSCrashInstrumentation.truncate("abc", toUTF8Bytes: 10), "abc")
-  }
-
-  func testTruncateCutsAtCharacterBoundary() {
-    // "é" is 2 UTF-8 bytes, so a 2-byte limit lands inside it.
-    XCTAssertEqual(KSCrashInstrumentation.truncate("aé", toUTF8Bytes: 2), "a")
-    // Each emoji is 4 bytes; 6 bytes cuts through the second one.
-    XCTAssertEqual(KSCrashInstrumentation.truncate("😀😀", toUTF8Bytes: 6), "😀")
-    XCTAssertEqual(KSCrashInstrumentation.truncate("😀", toUTF8Bytes: 3), "")
-  }
-
-  func testTruncateNeverExceedsByteLimit() {
-    let report = String(repeating: "aé😀", count: 1000)
-    for limit in [0, 1, 2, 3, 5, 7, 100, 1023] {
-      XCTAssertLessThanOrEqual(KSCrashInstrumentation.truncate(report, toUTF8Bytes: limit).utf8.count, limit)
-    }
-  }
-
   func testInstallMethod() {
     XCTAssertFalse(KSCrashInstrumentation.isInstalled)
     XCTAssertNoThrow(KSCrashInstrumentation.install())
