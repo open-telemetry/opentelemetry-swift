@@ -1,5 +1,5 @@
 import XCTest
-import OpenTelemetryApi
+@testable import OpenTelemetryApi
 @testable import OpenTelemetrySdk
 @testable import Sessions
 import SharedTestUtils
@@ -92,22 +92,77 @@ final class SessionSamplingIntegrationTests: XCTestCase {
   }
 
   func testDroppedChildDoesNotExportWithAnActiveSampledParent() throws {
-    let sessions = try manager([.sampled, .notSampled])
+    let contextManagers = OpenTelemetryContextTestCase.allContextManagers()
+    XCTAssertFalse(contextManagers.isEmpty)
+    for contextManager in contextManagers {
+      try OpenTelemetry.withContextManager(contextManager) {
+        let sessions = try manager([.sampled, .notSampled, .sampled])
+        let spans = SamplingSpanExporter()
+        let provider = TracerProviderBuilder().with(sampler: SessionTraceSampler(sessionManager: sessions))
+          .add(spanProcessor: SimpleSpanProcessor(spanExporter: spans)).build()
+        defer { provider.shutdown() }
+        let tracer = provider.get(instrumentationName: "test")
+        let parent = tracer.spanBuilder(spanName: "parent").startSpan()
+        OpenTelemetry.instance.contextProvider.withActiveSpan(parent) {
+          sessions.resetSession()
+          let child = tracer.spanBuilder(spanName: "dropped child").startSpan()
+          XCTAssertFalse(child.isRecording)
+          XCTAssertTrue(child.context.isValid)
+          XCTAssertFalse(child.context.isSampled)
+          XCTAssertFalse(child.context.isRemote)
+          XCTAssertEqual(child.context.traceId, parent.context.traceId)
+          XCTAssertNotEqual(child.context.spanId, parent.context.spanId)
+          var carrier = [String: String]()
+          W3CTraceContextPropagator().inject(spanContext: child.context, carrier: &carrier,
+                                             setter: SamplingTraceContextSetter())
+          XCTAssertEqual(carrier["traceparent"], "00-\(parent.context.traceId.hexString)-\(child.context.spanId.hexString)-00")
+
+          OpenTelemetry.instance.contextProvider.withActiveSpan(child) {
+            XCTAssertTrue(sessions.resetSession().samplingDecision.isSampled)
+            let descendant = tracer.spanBuilder(spanName: "dropped descendant").startSpan()
+            XCTAssertFalse(descendant.isRecording)
+            XCTAssertFalse(descendant.context.isSampled)
+            XCTAssertEqual(descendant.context.traceId, child.context.traceId)
+            XCTAssertNotEqual(descendant.context.spanId, child.context.spanId)
+            descendant.end()
+            XCTAssertTrue(OpenTelemetry.instance.contextProvider.activeSpan === child)
+          }
+          child.end()
+          XCTAssertTrue(OpenTelemetry.instance.contextProvider.activeSpan === parent)
+          XCTAssertTrue(parent.isRecording)
+          XCTAssertTrue(parent.context.isSampled)
+        }
+        parent.end()
+        provider.forceFlush()
+        XCTAssertEqual(spans.finished.map(\.name), ["parent"])
+        XCTAssertNil(OpenTelemetry.instance.contextProvider.activeSpan)
+      }
+    }
+  }
+
+  func testDroppedSpanRetainsExplicitRemoteParentContext() throws {
+    let sessions = try manager([.notSampled])
     let spans = SamplingSpanExporter()
     let provider = TracerProviderBuilder().with(sampler: SessionTraceSampler(sessionManager: sessions))
       .add(spanProcessor: SimpleSpanProcessor(spanExporter: spans)).build()
     defer { provider.shutdown() }
-    let tracer = provider.get(instrumentationName: "test")
-    let parent = tracer.spanBuilder(spanName: "parent").startSpan()
-    OpenTelemetry.instance.contextProvider.withActiveSpan(parent) {
-      sessions.resetSession()
-      let child = tracer.spanBuilder(spanName: "dropped child").startSpan()
-      XCTAssertFalse(child.isRecording)
-      child.end()
-    }
-    parent.end()
+    let parent = SpanContext.createFromRemoteParent(
+      traceId: TraceId.random(), spanId: SpanId.random(),
+      traceFlags: TraceFlags().settingIsSampled(true),
+      traceState: TraceState().setting(key: "vendor", value: "parent")
+    )
+    let span = provider.get(instrumentationName: "test").spanBuilder(spanName: "dropped child")
+      .setParent(parent).startSpan()
+    XCTAssertFalse(span.isRecording)
+    XCTAssertTrue(span.context.isValid)
+    XCTAssertFalse(span.context.isSampled)
+    XCTAssertFalse(span.context.isRemote)
+    XCTAssertEqual(span.context.traceId, parent.traceId)
+    XCTAssertNotEqual(span.context.spanId, parent.spanId)
+    XCTAssertEqual(span.context.traceState, parent.traceState)
+    span.end()
     provider.forceFlush()
-    XCTAssertEqual(spans.finished.map(\.name), ["parent"])
+    XCTAssertTrue(spans.finished.isEmpty)
   }
 
   func testLimitedSpanAttributesNeverPickUpTheReplacementSession() throws {
@@ -339,6 +394,12 @@ final class SessionSamplingIntegrationTests: XCTestCase {
   private func manager(_ decisions: [SessionSamplingDecision],
                        persistence: TestSessionPersistence = TestSessionPersistence()) throws -> SessionManager {
     return try SessionManager(configuration: SessionConfig(sampler: TestSessionSampler(decisions: decisions)), persistence: persistence)
+  }
+}
+
+private struct SamplingTraceContextSetter: Setter {
+  func set(carrier: inout [String: String], key: String, value: String) {
+    carrier[key] = value
   }
 }
 

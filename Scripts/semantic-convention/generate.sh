@@ -1,17 +1,17 @@
 #!/bin/bash
-set -e
+set -e -x
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-ROOT_DIR="${SCRIPT_DIR}/../../"
+ROOT_DIR="${SCRIPT_DIR}/../.."
 
 # freeze the spec & generator tools versions to make SemanticAttributes generation reproducible
 
 # repository: https://github.com/open-telemetry/semantic-conventions
-SEMCONV_VERSION=1.21.0
+SEMCONV_VERSION=1.38.0
 SPEC_VERSION=v$SEMCONV_VERSION
 
 # repository: https://github.com/open-telemetry/build-tools
-GENERATOR_VERSION=0.21.0
+GENERATOR_VERSION=0.17.1
 
 cd ${SCRIPT_DIR}
 
@@ -28,26 +28,15 @@ cd ${SCRIPT_DIR}
 docker run --rm \
   -v ${SCRIPT_DIR}/semantic-conventions/model:/source \
   -v ${SCRIPT_DIR}/templates:/templates \
-  -v ${ROOT_DIR}/Sources/OpenTelemetryApi/Trace/:/output \
-  otel/semconvgen:$GENERATOR_VERSION \
-  --only span,event,attribute_group,scope \
-  -f /source code \
-  --template /templates/SemanticAttributes.swift.j2 \
-  --output /output/SemanticAttributes.swift \
-  -Dsemconv=trace \
-  -Denum=SemanticAttributes
-
-docker run --rm \
-  -v ${SCRIPT_DIR}/semantic-conventions/model:/source \
-  -v ${SCRIPT_DIR}/templates:/templates \
-  -v ${ROOT_DIR}/Sources/OpenTelemetrySdk/Resources/:/output \
-  otel/semconvgen:$GENERATOR_VERSION \
-  --only resource \
-  -f /source code \
-  --template /templates/SemanticAttributes.swift.j2 \
-  --output /output/ResourceAttributes.swift \
-  -Dsemconv=resource \
-  -Denum=ResourceAttributes
+  -v ${ROOT_DIR}/Sources/OpenTelemetryApi/Common/SemanticAttributes:/output \
+  otel/weaver:v$GENERATOR_VERSION \
+  registry \
+  generate \
+  --registry=/source \
+  --templates=/templates \
+  ./ \
+  /output \
+  -Doutput=/output/ \
 
 cd "$ROOT_DIR"
 

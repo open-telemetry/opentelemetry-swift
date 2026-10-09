@@ -223,9 +223,11 @@ up the session again and could replace that snapshot during a reset. These integ
 parent-based trace sampler must allow recording. An unsampled parent stays unsampled, and a sampled parent does not
 override an unsampled session. A trace that crosses a session reset can therefore lose later child
 spans. A custom delegate can apply a different trace policy but cannot override the session decision.
-This controls local recording, not downstream propagation: Swift Core 2.6.0 can reuse an active
-parent's context for a dropped span. Correct propagation requires a Core version containing
-[the dropped-span context fix](https://github.com/open-telemetry/opentelemetry-swift-core/pull/123).
+Correct downstream propagation requires
+[the dropped-span context fix](https://github.com/open-telemetry/opentelemetry-swift/pull/1222),
+now in this repository following the Core consolidation. With that fix, dropped spans retain a
+new span ID and an unsampled trace flag rather than reusing a sampled parent's context. Builds
+that still depend on Swift Core 2.6.0 do not have that propagation guarantee.
 
 Use `SessionSamplingLogRecordProcessor` instead of `SessionLogRecordProcessor`, wrapping every
 downstream export path. It filters before batching or persistence and forwards flush and shutdown
