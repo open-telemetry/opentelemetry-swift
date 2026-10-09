@@ -8,7 +8,13 @@ import XCTest
 import OpenTelemetryApi
 
 final class SpanExceptionTests: XCTestCase {
+  // Keep the fixtures function-local to exercise runtime-context removal.
+  // Linux bridges Swift type names into NSError domains, which must also be normalized.
   func testErrorAsSpanException() {
+    enum TestError: Error {
+      case test
+    }
+
     let error = TestError.test
 
     // `Error` can be converted to `NSError`, which automatically makes the cast to
@@ -21,6 +27,12 @@ final class SpanExceptionTests: XCTestCase {
   }
 
   func testErrorAsSpanExceptionWithProperBridgeToCustomNSError() {
+    enum TestCustomNSErrorEnum: Error, CustomNSError {
+      case test
+
+      var errorCode: Int { 5 }
+    }
+
     let error = TestCustomNSErrorEnum.test
 
     let exception = error as SpanException
@@ -31,6 +43,14 @@ final class SpanExceptionTests: XCTestCase {
   }
 
   func testCustomNSErrorAsSpanException() throws {
+    struct TestCustomNSError: Error, CustomNSError {
+      let additionalComments: String
+
+      var errorUserInfo: [String: Any] {
+        [NSLocalizedDescriptionKey: "This is a custom NSError: \(additionalComments)"]
+      }
+    }
+
     let error = TestCustomNSError(additionalComments: "SpanExceptionTests")
 
     // `Error` can be converted to `NSError`, which automatically makes the cast to
@@ -96,23 +116,5 @@ final class SpanExceptionTests: XCTestCase {
 
   private enum PrivateError: Error {
     case test
-  }
-
-  enum TestError: Error {
-    case test
-  }
-
-  enum TestCustomNSErrorEnum: Error, CustomNSError {
-    case test
-
-    var errorCode: Int { 5 }
-  }
-
-  struct TestCustomNSError: Error, CustomNSError {
-    let additionalComments: String
-
-    var errorUserInfo: [String: Any] {
-      [NSLocalizedDescriptionKey: "This is a custom NSError: \(additionalComments)"]
-    }
   }
 }
