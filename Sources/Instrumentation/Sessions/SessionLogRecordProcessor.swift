@@ -38,7 +38,10 @@ public class SessionLogRecordProcessor: LogRecordProcessor {
     // session.previous_id from the current session would attach the wrong
     // session's predecessor.
     if logRecord.attributes[SemanticConventions.Session.id.rawValue] == nil {
-      let session = sessionManager.getSession()
+      guard let session = sessionManager.sessionForSignalAttribution() else {
+        nextProcessor.onEmit(logRecord: enhancedRecord)
+        return
+      }
       enhancedRecord.setAttribute(key: SemanticConventions.Session.id.rawValue, value: session.id)
 
       if let previousId = session.previousId {
