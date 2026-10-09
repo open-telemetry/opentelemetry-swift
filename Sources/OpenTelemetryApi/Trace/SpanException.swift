@@ -14,7 +14,18 @@ public protocol SpanException {
 
 extension NSError: SpanException {
   public var type: String {
-    String(code)
+    let error = self as Error
+    let errorType = Swift.type(of: error) == NSError.self
+      ? domain
+      : String(reflecting: Swift.type(of: error))
+
+    // Manually supplied domains matching the runtime-context pattern are normalized too.
+    return errorType
+      .replacingOccurrences(
+        of: #"\(unknown context at \$[0-9a-fA-F]+\)\."#,
+        with: "",
+        options: .regularExpression
+      )
   }
 
   public var message: String? {
