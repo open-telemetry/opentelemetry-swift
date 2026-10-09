@@ -131,7 +131,7 @@ class SpanBuilderSdk: SpanBuilder {
                                          traceState: traceState)
 
     if !samplingDecision.isSampled {
-      return DefaultTracer.instance.spanBuilder(spanName: spanName).startSpan()
+      return DefaultTracer.instance.spanBuilder(spanName: spanName).setParent(spanContext).startSpan()
     }
 
     attributes.updateValues(attributes: samplingDecision.attributes)
