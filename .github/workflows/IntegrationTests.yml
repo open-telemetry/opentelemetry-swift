@@ -2,12 +2,6 @@ name: Integration Tests
 
 # Runs Examples/HackerNewsDemo in the iOS simulator against a local mock
 # collector and asserts on the exported OTLP payloads (Tests/IntegrationTests).
-#
-# Pull request runs are bound to the `integration-tests` environment. Configure
-# that environment with required reviewers in the repository settings so a
-# maintainer has to approve the run before it starts. Pushes to main, the
-# nightly schedule and manual runs use `integration-tests-main`, which is left
-# unprotected so they run without approval.
 
 on:
   push:
@@ -37,7 +31,6 @@ concurrency:
 jobs:
   ios:
     runs-on: macos-latest
-    environment: ${{ github.event_name == 'pull_request' && 'integration-tests' || 'integration-tests-main' }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
