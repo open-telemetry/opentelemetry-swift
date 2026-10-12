@@ -939,7 +939,7 @@ struct CrashPickerView: View {
     var countdown = Int(delay)
     let toast = createToast(text: "Crash Starting in \(countdown)...", in: window)
 
-    Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
+    let timer = Timer(timeInterval: 1.0, repeats: true) { timer in
       countdown -= 1
       if countdown > 0 {
         toast.text = "Crash Starting in \(countdown)..."
@@ -954,6 +954,9 @@ struct CrashPickerView: View {
         }
       }
     }
+    // Common modes include the tracking mode the main run loop is in while a scroll view is being
+    // dragged, so the countdown keeps going while the user scrolls.
+    RunLoop.main.add(timer, forMode: .common)
   }
 
   private func createToast(text: String, in window: UIWindow) -> UILabel {
