@@ -98,12 +98,14 @@ enum IntegrationTestScenario {
     return builder.build()
   }
 
-  // KSCrash's default monitors, minus Termination. The runner kills the app at the end of every
-  // launch, which KSCrash reports on the next launch as a `termination` crash in that launch's
-  // session. No assertion covers those, and they make it look like a launch reported a crash.
+  // KSCrash's default monitors, minus Termination and Watchdog. The runner kills the app at the end
+  // of every launch, which KSCrash reports on the next launch as a `termination` crash, or as a
+  // watchdog hang when the main thread was briefly blocked at the time. No assertion covers those,
+  // and they make it look like a launch reported a crash.
   static var crashConfig: KSCrashInstrumentationConfig {
     let config = KSCrashInstrumentationConfig()
     config.monitors.remove(.termination)
+    config.monitors.remove(.watchdog)
     return config
   }
 
