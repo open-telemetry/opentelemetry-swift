@@ -22,13 +22,11 @@ struct SettingsView: View {
   @State private var showingMemoryTest = false
   @State private var timer: Timer?
 
-  // Entries whose instrumentation is not available in this repo yet, plus the
-  // crash trigger, which is not wired up to the installed crash instrumentation
-  // yet. They are shown disabled so nobody expects telemetry from them; the
-  // picker views stay in the file for when they are hooked up.
+  // Entries whose instrumentation is not available in this repo yet. They are
+  // shown disabled so nobody expects telemetry from them; the picker views
+  // stay in the file for when the instrumentations land.
   private static let comingSoon: Set<String> = [
     "Trigger App Hang",
-    "Trigger App Crash",
     "CPU Test",
     "Memory Test"
   ]
@@ -44,18 +42,6 @@ struct SettingsView: View {
             .foregroundColor(.blue)
             .font(.system(.caption, design: .monospaced, weight: .medium))
           Text("can be interacted with!")
-            .font(.system(.caption, design: .monospaced))
-            .foregroundColor(.secondary)
-        }
-        .padding(.vertical, 4)
-        HStack {
-          Image(systemName: "clock")
-            .foregroundColor(.secondary)
-            .font(.caption)
-          Text("Gray fields")
-            .foregroundColor(.secondary)
-            .font(.system(.caption, design: .monospaced, weight: .medium))
-          Text("need an instrumentation that does not exist yet")
             .font(.system(.caption, design: .monospaced))
             .foregroundColor(.secondary)
         }
@@ -892,6 +878,13 @@ struct CrashPickerView: View {
           .frame(maxWidth: .infinity, alignment: .center)
           .padding(.horizontal, 20)
           .padding(.vertical, 8)
+
+        Text("The crash is reported as a device.crash log the next time the app launches.")
+          .font(.system(.caption, design: .monospaced))
+          .foregroundColor(.secondary)
+          .multilineTextAlignment(.center)
+          .frame(maxWidth: .infinity, alignment: .center)
+          .padding(.horizontal, 20)
 
         Picker("Crash Type", selection: $selectedCrashType) {
           ForEach(CrashType.allCases, id: \.self) { type in
