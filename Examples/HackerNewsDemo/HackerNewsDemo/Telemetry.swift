@@ -50,6 +50,10 @@ enum TelemetryConfig {
   static var sessionConfig: SessionConfig {
     IntegrationTestScenario.isEnabled ? IntegrationTestScenario.sessionConfig : SessionConfigStore.load()
   }
+
+  static var crashConfig: KSCrashInstrumentationConfig {
+    IntegrationTestScenario.isEnabled ? IntegrationTestScenario.crashConfig : .default
+  }
 }
 
 enum Telemetry {
@@ -93,7 +97,7 @@ enum Telemetry {
     // Installed after the session manager and logger provider are registered:
     // crashes from the previous run are reported on install, and each crash
     // records the session that was current when it happened.
-    KSCrashInstrumentation.install()
+    KSCrashInstrumentation.install(config: TelemetryConfig.crashConfig)
 
     // Skip the exporter's own OTLP requests, otherwise every export produces
     // a span that triggers another export.

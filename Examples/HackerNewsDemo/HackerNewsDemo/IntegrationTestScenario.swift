@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import Crash
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
@@ -95,6 +96,15 @@ enum IntegrationTestScenario {
       builder.with(restorePersistedSession: restore)
     }
     return builder.build()
+  }
+
+  // KSCrash's default monitors, minus Termination. The runner kills the app at the end of every
+  // launch, which KSCrash reports on the next launch as a `termination` crash in that launch's
+  // session. No assertion covers those, and they make it look like a launch reported a crash.
+  static var crashConfig: KSCrashInstrumentationConfig {
+    let config = KSCrashInstrumentationConfig()
+    config.monitors.remove(.termination)
+    return config
   }
 
   private static func value(after argument: String) -> String? {
