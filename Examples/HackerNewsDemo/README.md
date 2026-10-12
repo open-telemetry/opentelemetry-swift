@@ -6,6 +6,8 @@ Special thanks to maintainers of the HackerNews API! Checkout their work https:/
 
 Open `HackerNewsDemo.xcodeproj` and run the `HackerNewsDemo` scheme. Telemetry is configured in `HackerNewsDemo/Telemetry.swift` and exported over OTLP/HTTP to `http://localhost:4318` (see `Examples/OTLP HTTP Exporter` for a collector setup).
 
+To view the telemetry in Grafana, see [`Examples/GrafanaDashboard`](../GrafanaDashboard).
+
 Instrumentation used from this repo:
 
 - `URLSessionInstrumentation` - spans for every Hacker News API request

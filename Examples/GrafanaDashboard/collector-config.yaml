@@ -1,0 +1,33 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+exporters:
+  # SigNoz runs as its own stack (foundryctl); this collector joins its
+  # network and forwards to its ingester.
+  otlp_grpc/signoz:
+    endpoint: signoz-ingester:4317
+    tls:
+      insecure: true
+  otlp_grpc/lgtm:
+    endpoint: lgtm:4317
+    tls:
+      insecure: true
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [otlp_grpc/signoz, otlp_grpc/lgtm, debug]
+    logs:
+      receivers: [otlp]
+      exporters: [otlp_grpc/signoz, otlp_grpc/lgtm, debug]
+    metrics:
+      receivers: [otlp]
+      exporters: [otlp_grpc/signoz, otlp_grpc/lgtm, debug]

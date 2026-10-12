@@ -18,6 +18,7 @@ struct SettingsView: View {
   @State private var showingSessionConfigEditor = false
   @State private var showingOTelConfigEditor = false
   @State private var showingTelemetryGenerator = false
+  @State private var showingCustomTelemetry = false
   @State private var showingCpuTest = false
   @State private var showingMemoryTest = false
   @State private var timer: Timer?
@@ -83,6 +84,8 @@ struct SettingsView: View {
                 showingCrashPicker = true
               } else if item.0 == "Load Test" {
                 showingTelemetryGenerator = true
+              } else if item.0 == "Custom Span / Log" {
+                showingCustomTelemetry = true
               } else if item.0 == "CPU Test" {
                 showingCpuTest = true
               } else if item.0 == "Memory Test" {
@@ -137,6 +140,9 @@ struct SettingsView: View {
     .sheet(isPresented: $showingTelemetryGenerator) {
       TelemetryGeneratorView()
     }
+    .sheet(isPresented: $showingCustomTelemetry) {
+      CustomTelemetryView()
+    }
     .sheet(isPresented: $showingCpuTest) {
       CpuTestView()
     }
@@ -174,6 +180,7 @@ struct SettingsView: View {
       ("Trigger App Hang", "Tap to configure"),
       ("Trigger App Crash", "Tap to configure"),
       ("Load Test", "Tap to configure"),
+      ("Custom Span / Log", "Tap to configure"),
       ("CPU Test", "Tap to configure"),
       ("Memory Test", "Tap to configure")
     ]
@@ -1310,6 +1317,193 @@ struct TelemetryGeneratorView: View {
     let expireTime = currentSession.expireTime
     let timeToExpiry = expireTime.timeIntervalSinceNow
     sessionExpiry = timeToExpiry <= 0 ? "Expired" : "\(Int(timeToExpiry))s"
+  }
+}
+
+struct CustomTelemetryView: View {
+  enum Signal: String, CaseIterable {
+    case span = "Span"
+    case log = "Log"
+  }
+
+  enum StatusChoice: String, CaseIterable {
+    case unset, ok, error
+  }
+
+  struct AttributeEntry: Identifiable {
+    let id = UUID()
+    var key = ""
+    var value = ""
+  }
+
+  private static let spanKinds: [SpanKind] = [.internal, .client, .server, .producer, .consumer]
+  private static let severities: [Severity] = [.trace, .debug, .info, .warn, .error, .fatal]
+
+  @Environment(\.dismiss) private var dismiss
+  @State private var signal: Signal = .span
+  @State private var spanName = "Custom Span"
+  @State private var spanKind: SpanKind = .internal
+  @State private var status: StatusChoice = .unset
+  @State private var errorDescription = ""
+  @State private var durationMs = 100
+  @State private var logBody = "Custom log message"
+  @State private var eventName = ""
+  @State private var severity: Severity = .info
+  @State private var attributes: [AttributeEntry] = []
+  @State private var showingToast = false
+
+  private var isValid: Bool {
+    switch signal {
+    case .span: return !spanName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    case .log: return !logBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+  }
+
+  private var attributeValues: [String: AttributeValue] {
+    attributes.reduce(into: [:]) { result, entry in
+      let key = entry.key.trimmingCharacters(in: .whitespacesAndNewlines)
+      guard !key.isEmpty else { return }
+      result[key] = .string(entry.value)
+    }
+  }
+
+  var body: some View {
+    NavigationView {
+      Form {
+        Section {
+          Picker("Signal", selection: $signal) {
+            ForEach(Signal.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+          }
+          .pickerStyle(.segmented)
+        }
+
+        switch signal {
+        case .span:
+          Section("Span") {
+            field("Name", text: $spanName)
+            Picker("Kind", selection: $spanKind) {
+              ForEach(Self.spanKinds, id: \.self) { Text($0.rawValue).tag($0) }
+            }
+            .font(.system(.caption, design: .monospaced, weight: .medium))
+            Picker("Status", selection: $status) {
+              ForEach(StatusChoice.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            }
+            .font(.system(.caption, design: .monospaced, weight: .medium))
+            if status == .error {
+              field("Error description", text: $errorDescription)
+            }
+            Stepper(value: $durationMs, in: 0 ... 60000, step: 50) {
+              Text("Duration: \(durationMs) ms")
+                .font(.system(.caption, design: .monospaced, weight: .medium))
+            }
+          }
+        case .log:
+          Section("Log") {
+            field("Body", text: $logBody)
+            field("Event name (optional)", text: $eventName)
+            Picker("Severity", selection: $severity) {
+              ForEach(Self.severities, id: \.self) { Text($0.description).tag($0) }
+            }
+            .font(.system(.caption, design: .monospaced, weight: .medium))
+          }
+        }
+
+        Section {
+          ForEach($attributes) { $entry in
+            HStack {
+              TextField("key", text: $entry.key)
+              TextField("value", text: $entry.value)
+            }
+            .font(.system(.caption, design: .monospaced))
+            .autocorrectionDisabled()
+            .textInputAutocapitalization(.never)
+          }
+          .onDelete { attributes.remove(atOffsets: $0) }
+          Button("Add attribute") {
+            attributes.append(AttributeEntry())
+          }
+          .font(.system(.caption, design: .monospaced, weight: .medium))
+        } header: {
+          Text("Attributes")
+        } footer: {
+          Text("Values are sent as strings. Swipe to remove.")
+            .font(.system(.caption2, design: .monospaced))
+        }
+
+        Section {
+          Button("Publish \(signal.rawValue.lowercased())") {
+            publish()
+          }
+          .font(.system(.body, design: .monospaced, weight: .medium))
+          .disabled(!isValid)
+        } footer: {
+          Text("Exported through the batch processors, so it can take a few seconds to reach the collector.")
+            .font(.system(.caption2, design: .monospaced))
+        }
+      }
+      .navigationTitle("Custom Span / Log")
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .navigationBarLeading) {
+          Button("Done") {
+            dismiss()
+          }
+        }
+      }
+    }
+    .overlay(
+      TelemetryToastView(isShowing: $showingToast)
+    )
+  }
+
+  private func field(_ title: String, text: Binding<String>) -> some View {
+    VStack(alignment: .leading, spacing: 4) {
+      Text(title)
+        .font(.system(.caption, design: .monospaced, weight: .medium))
+      TextField(title, text: text)
+        .font(.system(.body, design: .monospaced))
+        .autocorrectionDisabled()
+        .textInputAutocapitalization(.never)
+    }
+  }
+
+  private func publish() {
+    switch signal {
+    case .span: publishSpan()
+    case .log: publishLog()
+    }
+    showingToast = true
+  }
+
+  private func publishSpan() {
+    let end = Date()
+    let start = end.addingTimeInterval(-Double(durationMs) / 1000)
+    let span = OpenTelemetry.instance.tracerProvider.get(instrumentationName: debugScope)
+      .spanBuilder(spanName: spanName.trimmingCharacters(in: .whitespacesAndNewlines))
+      .setSpanKind(spanKind: spanKind)
+      .setStartTime(time: start)
+      .startSpan()
+    span.setAttributes(attributeValues)
+    switch status {
+    case .unset: break
+    case .ok: span.status = .ok
+    case .error: span.status = .error(description: errorDescription)
+    }
+    span.end(time: end)
+  }
+
+  private func publishLog() {
+    let builder = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: debugScope)
+      .logRecordBuilder()
+      .setBody(.string(logBody))
+      .setSeverity(severity)
+      .setTimestamp(Date())
+      .setAttributes(attributeValues)
+    let trimmedEventName = eventName.trimmingCharacters(in: .whitespacesAndNewlines)
+    if !trimmedEventName.isEmpty {
+      _ = builder.setEventName(trimmedEventName)
+    }
+    builder.emit()
   }
 }
 

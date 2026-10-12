@@ -1,0 +1,41 @@
+services:
+  collector:
+    image: otel/opentelemetry-collector:0.162.0@sha256:310a800ad69ee430e7c541796852a242c9c7db97aaad4daa5ccf843c525fbdb2
+    command: ["--config=/conf/collector-config.yaml"]
+    volumes:
+      - ./collector-config.yaml:/conf/collector-config.yaml
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - default
+      - signoz-network
+    depends_on:
+      - lgtm
+
+  # Grafana + Tempo (traces) + Loki (logs) + Prometheus. Its own OTLP ports
+  # stay unpublished; the collector above forwards to it.
+  lgtm:
+    image: grafana/otel-lgtm:0.36.0@sha256:57c04cbd8e7022f32bb84c4ac005d79baf8b08e2c5be44facf11f5f1f9944ba2
+    ports:
+      - "3000:3000"
+    environment:
+      # Timeline panel on the HackerNewsDemo dashboard.
+      GF_PLUGINS_PREINSTALL: volkovlabs-echarts-panel
+      # Local-only: everyone is an anonymous Admin, with no login screen.
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_AUTH_DISABLE_LOGIN: "true"
+      OTELCOL_EXTRA_ARGS: --config=file:/otel-lgtm/otelcol-event-name.yaml
+    # Adds the HackerNewsDemo dashboard next to the image's own, and replaces the
+    # image's data sources with grafana/datasources.yaml.
+    volumes:
+      - ./grafana/dashboards.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/hackernews.yaml:ro
+      - ./grafana/hackernews-demo.json:/otel-lgtm/hackernews-dashboards/hackernews-demo.json:ro
+      - ./grafana/datasources.yaml:/otel-lgtm/grafana/conf/provisioning/datasources/grafana-datasources.yaml:ro
+      - ./otelcol-event-name.yaml:/otel-lgtm/otelcol-event-name.yaml:ro
+
+networks:
+  signoz-network:
+    external: true
