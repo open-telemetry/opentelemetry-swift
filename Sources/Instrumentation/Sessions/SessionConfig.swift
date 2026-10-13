@@ -15,13 +15,13 @@ import Foundation
 /// ```swift
 /// // Direct initialization
 /// let config = SessionConfig(sessionTimeout: 45 * 60) // 45 minutes
-/// 
+///
 /// // Using builder pattern
 /// let config = SessionConfig.builder()
 ///   .with(sessionTimeout: 45 * 60)
 ///   .with(maxLifetime: 4 * 60 * 60)
 ///   .build()
-/// 
+///
 /// let manager = SessionManager(configuration: config)
 /// ```
 public struct SessionConfig: Sendable {
@@ -34,6 +34,9 @@ public struct SessionConfig: Sendable {
   /// Whether a previously saved session should be resumed as the current session
   public let restorePersistedSession: Bool
 
+  /// Sampler used once whenever a new session identifier is created
+  public let sampler: any SessionSampler
+
   /// Creates a new session configuration
   /// - Parameters:
   ///   - sessionTimeout: Duration in seconds after which a session expires if left inactive (default 30 minutes)
@@ -43,9 +46,28 @@ public struct SessionConfig: Sendable {
   public init(sessionTimeout: TimeInterval = 30 * 60,
               maxLifetime: TimeInterval? = nil,
               restorePersistedSession: Bool = true) {
+    self.init(
+      sessionTimeout: sessionTimeout,
+      maxLifetime: maxLifetime,
+      restorePersistedSession: restorePersistedSession,
+      sampler: AlwaysOnSessionSampler()
+    )
+  }
+
+  /// Creates a session configuration with a cross-signal sampler.
+  /// - Parameters:
+  ///   - sessionTimeout: Duration in seconds after which a session expires if left inactive
+  ///   - maxLifetime: Maximum duration in seconds a session can remain active
+  ///   - restorePersistedSession: Whether a previously saved session should be resumed as current
+  ///   - sampler: Sampler used once for each newly created session
+  public init(sessionTimeout: TimeInterval = 30 * 60,
+              maxLifetime: TimeInterval? = nil,
+              restorePersistedSession: Bool = true,
+              sampler: any SessionSampler) {
     self.sessionTimeout = sessionTimeout
     self.maxLifetime = maxLifetime
     self.restorePersistedSession = restorePersistedSession
+    self.sampler = sampler
   }
 
   /// Default configuration with 30-minute session timeout
@@ -66,6 +88,7 @@ public class SessionConfigBuilder {
   public private(set) var sessionTimeout: TimeInterval = 30 * 60
   public private(set) var maxLifetime: TimeInterval?
   public private(set) var restorePersistedSession = true
+  public private(set) var sampler: any SessionSampler = AlwaysOnSessionSampler()
 
   /// Sets the session timeout duration
   /// - Parameter sessionTimeout: Duration in seconds after which a session expires if left inactive
@@ -92,13 +115,22 @@ public class SessionConfigBuilder {
     return self
   }
 
+  /// Sets the sampler used once for each new session
+  /// - Parameter sampler: Session sampler to use
+  /// - Returns: The builder instance for method chaining
+  public func with(sampler: any SessionSampler) -> Self {
+    self.sampler = sampler
+    return self
+  }
+
   /// Builds the SessionConfig with the configured settings
   /// - Returns: A new SessionConfig instance
   public func build() -> SessionConfig {
     return SessionConfig(
       sessionTimeout: sessionTimeout,
       maxLifetime: maxLifetime,
-      restorePersistedSession: restorePersistedSession
+      restorePersistedSession: restorePersistedSession,
+      sampler: sampler
     )
   }
 }

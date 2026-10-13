@@ -19,16 +19,24 @@ public class SessionManager: @unchecked Sendable {
     let shouldDrainEffects: Bool
   }
 
+  private struct SessionCandidate {
+    let id: String
+    let samplingDecision: SessionSamplingDecision
+  }
+
   private let configuration: SessionConfig
   private var session: Session?
   private var persistedPreviousSession: Session?
   private let sessionStore: SessionStore
   private let sessionMutationLock = NSLock()
+  private let sessionCreationCondition = NSCondition()
   private let lock = NSLock()
   private let effectsLock = NSLock()
   private let effectDrainQueue = DispatchQueue(label: "io.opentelemetry.sessions.effects")
   private var pendingTransitions: [SessionTransition] = []
   private var isDrainingEffects = false
+  private var isCreatingSession = false
+  private var sessionCreatorThread: ObjectIdentifier?
 
   /// Initializes the session manager and restores any previous session from disk
   /// - Parameter configuration: Session configuration settings
@@ -65,6 +73,31 @@ public class SessionManager: @unchecked Sendable {
     return accessSession()
   }
 
+  /// Returns the persisted sampling decision for the active session.
+  ///
+  /// This describes the current session, not an earlier session referenced by telemetry.
+  /// Lifecycle log integrations should read `SessionConstants.sessionSamplingDecision` from
+  /// the event instead. For other signals, keep attribution and sampling on one `Session` snapshot.
+  /// Like other session access, this records application activity. It returns `nil` only when
+  /// called reentrantly by the configured sampler before an active session is available.
+  public func samplingDecision() -> SessionSamplingDecision? {
+    return sessionForSignalAttribution()?.samplingDecision
+  }
+
+  /// Gets the session used by automatic signal processors.
+  ///
+  /// Normal signal access follows `getSession()` and refreshes inactivity. If the sampler itself
+  /// emits telemetry while creating a session, there is no decision to attach yet; returning the
+  /// existing active session, or `nil`, avoids recursively creating the same session.
+  func sessionForSignalAttribution() -> Session? {
+    guard isCurrentThreadCreatingSession() else {
+      return getSession()
+    }
+    return sessionMutationLock.withLock {
+      accessActiveSession(at: Date())?.session
+    }
+  }
+
   /// Ends the current session and starts a linked replacement.
   ///
   /// Use this after a sign-out, account change, or another explicit session boundary.
@@ -73,24 +106,29 @@ public class SessionManager: @unchecked Sendable {
   /// - Returns: The newly created session
   @discardableResult
   public func resetSession() -> Session {
-    let access: SessionAccess = sessionMutationLock.withLock {
-      let now = Date()
-      let previousSession = lock.withLock { session ?? persistedPreviousSession }
-      let previousSessionToEnd = previousSession.map { previous in
-        previous.isExpired() ? previous : endedSession(previous, at: now)
+    acquireSessionCreation()
+    let access: SessionAccess = {
+      defer { releaseSessionCreation() }
+      let candidate = makeSessionCandidate()
+      return sessionMutationLock.withLock {
+        let now = Date()
+        let previousSession = lock.withLock { session ?? persistedPreviousSession }
+        let previousSessionToEnd = previousSession.map { previous in
+          previous.isExpired() ? previous : endedSession(previous, at: now)
+        }
+        let nextSession = startSession(candidate: candidate, previousId: previousSession?.id, at: now)
+        sessionStore.saveImmediately(session: nextSession)
+        lock.withLock {
+          session = nextSession
+          persistedPreviousSession = nil
+        }
+        let shouldDrainEffects = enqueueTransition(SessionTransition(
+          session: nextSession,
+          previousSessionToEnd: previousSessionToEnd
+        ))
+        return SessionAccess(session: nextSession, shouldDrainEffects: shouldDrainEffects)
       }
-      let nextSession = startSession(previousId: previousSession?.id, at: now)
-      sessionStore.saveImmediately(session: nextSession)
-      lock.withLock {
-        session = nextSession
-        persistedPreviousSession = nil
-      }
-      let shouldDrainEffects = enqueueTransition(SessionTransition(
-        session: nextSession,
-        previousSessionToEnd: previousSessionToEnd
-      ))
-      return SessionAccess(session: nextSession, shouldDrainEffects: shouldDrainEffects)
-    }
+    }()
 
     if access.shouldDrainEffects {
       drainClaimedTransition()
@@ -129,15 +167,25 @@ public class SessionManager: @unchecked Sendable {
     return lock.withLock { session }
   }
 
-  /// Creates a new session with a unique identifier
-  private func startSession(previousId: String?, at now: Date = Date()) -> Session {
+  /// Creates an identifier and sampling decision without holding a manager lock.
+  private func makeSessionCandidate() -> SessionCandidate {
+    let id = UUID().uuidString
+    return SessionCandidate(
+      id: id,
+      samplingDecision: configuration.sampler.samplingDecision(for: id)
+    )
+  }
+
+  /// Creates a new session from a previously sampled candidate.
+  private func startSession(candidate: SessionCandidate, previousId: String?, at now: Date) -> Session {
     return Session(
-      id: UUID().uuidString,
+      id: candidate.id,
       expireTime: now.addingTimeInterval(Double(configuration.sessionTimeout)),
       previousId: previousId,
       startTime: now,
       sessionTimeout: configuration.sessionTimeout,
-      maxLifetime: configuration.maxLifetime
+      maxLifetime: configuration.maxLifetime,
+      samplingDecision: candidate.samplingDecision
     )
   }
 
@@ -162,7 +210,8 @@ public class SessionManager: @unchecked Sendable {
       startTime: session.startTime,
       // Pin `endTime` to `inferredEndTime`; `Session.endTime` subtracts `sessionTimeout`.
       sessionTimeout: 0,
-      maxLifetime: nil
+      maxLifetime: nil,
+      samplingDecision: session.samplingDecision
     )
   }
 
@@ -174,7 +223,8 @@ public class SessionManager: @unchecked Sendable {
       previousId: session.previousId,
       startTime: session.startTime,
       sessionTimeout: configuration.sessionTimeout,
-      maxLifetime: session.maxLifetime
+      maxLifetime: session.maxLifetime,
+      samplingDecision: session.samplingDecision
     )
   }
 
@@ -186,45 +236,104 @@ public class SessionManager: @unchecked Sendable {
       previousId: session.previousId,
       startTime: session.startTime,
       sessionTimeout: 0,
-      maxLifetime: nil
+      maxLifetime: nil,
+      samplingDecision: session.samplingDecision
     )
   }
 
   /// Retrieves a session and queues any persistence or lifecycle work in state order.
   private func accessSession() -> Session {
-    let access: SessionAccess = sessionMutationLock.withLock {
-      let now = Date()
-      if let currentSession = lock.withLock({ () -> Session? in
-        guard let session,
-              !session.isExpired()
-        else {
-          return nil
-        }
-        return session
+    if let activeAccess = sessionMutationLock.withLock({
+      accessActiveSession(at: Date())
+    }) {
+      return activeAccess.session
+    }
+
+    acquireSessionCreation()
+    let access: SessionAccess = {
+      defer { releaseSessionCreation() }
+
+      if let activeAccess = sessionMutationLock.withLock({
+        accessActiveSession(at: Date())
       }) {
-        let updatedSession = refreshedSession(session: currentSession, at: now)
-        sessionStore.scheduleSave(session: updatedSession)
-        lock.withLock { session = updatedSession }
-        return SessionAccess(session: updatedSession, shouldDrainEffects: false)
+        return activeAccess
       }
 
-      let previousSession = lock.withLock { session ?? persistedPreviousSession }
-      let nextSession = startSession(previousId: previousSession?.id, at: now)
-      sessionStore.saveImmediately(session: nextSession)
-      lock.withLock {
-        session = nextSession
-        persistedPreviousSession = nil
+      let candidate = makeSessionCandidate()
+      return sessionMutationLock.withLock {
+        let now = Date()
+        if let activeAccess = accessActiveSession(at: now) {
+          return activeAccess
+        }
+
+        let previousSession = lock.withLock { session ?? persistedPreviousSession }
+        let nextSession = startSession(candidate: candidate, previousId: previousSession?.id, at: now)
+        sessionStore.saveImmediately(session: nextSession)
+        lock.withLock {
+          session = nextSession
+          persistedPreviousSession = nil
+        }
+        let shouldDrainEffects = enqueueTransition(SessionTransition(
+          session: nextSession,
+          previousSessionToEnd: previousSession
+        ))
+        return SessionAccess(session: nextSession, shouldDrainEffects: shouldDrainEffects)
       }
-      let shouldDrainEffects = enqueueTransition(SessionTransition(
-        session: nextSession,
-        previousSessionToEnd: previousSession
-      ))
-      return SessionAccess(session: nextSession, shouldDrainEffects: shouldDrainEffects)
-    }
+    }()
+
     if access.shouldDrainEffects {
       drainClaimedTransition()
     }
     return access.session
+  }
+
+  /// Returns and extends the active session. Call while holding
+  /// `sessionMutationLock` so persistence and in-memory state remain ordered.
+  private func accessActiveSession(at now: Date) -> SessionAccess? {
+    guard let currentSession = currentActiveSession() else {
+      return nil
+    }
+
+    let updatedSession = refreshedSession(session: currentSession, at: now)
+    sessionStore.scheduleSave(session: updatedSession)
+    lock.withLock { session = updatedSession }
+    return SessionAccess(session: updatedSession, shouldDrainEffects: false)
+  }
+
+  private func currentActiveSession() -> Session? {
+    return lock.withLock {
+      guard let session,
+            !session.isExpired()
+      else {
+        return nil
+      }
+      return session
+    }
+  }
+
+  /// Waits for any current creator, then claims responsibility for the next session decision.
+  private func acquireSessionCreation() {
+    sessionCreationCondition.lock()
+    while isCreatingSession {
+      sessionCreationCondition.wait()
+    }
+    isCreatingSession = true
+    sessionCreatorThread = ObjectIdentifier(Thread.current)
+    sessionCreationCondition.unlock()
+  }
+
+  private func releaseSessionCreation() {
+    sessionCreationCondition.lock()
+    sessionCreatorThread = nil
+    isCreatingSession = false
+    sessionCreationCondition.broadcast()
+    sessionCreationCondition.unlock()
+  }
+
+  private func isCurrentThreadCreatingSession() -> Bool {
+    sessionCreationCondition.lock()
+    defer { sessionCreationCondition.unlock() }
+    return isCreatingSession && sessionCreatorThread == ObjectIdentifier(Thread.current)
   }
 
   /// Enqueues a transition and claims its drain while a state transition holds `sessionMutationLock`.
@@ -287,13 +396,35 @@ public class SessionManager: @unchecked Sendable {
 
   /// Loads a saved session from the configured storage implementation.
   private func loadPersistedSessionFromDisk() {
-    let loadedSession = sessionStore.load()
+    guard let loadedSession = sessionStore.load() else { return }
+    let restoredSession: Session
+    if loadedSession.requiresMigration {
+      let decision = configuration.sampler.samplingDecision(for: loadedSession.session.id)
+      restoredSession = sessionWithSamplingDecision(loadedSession.session, decision: decision)
+      sessionStore.migrate(loadedSession, to: restoredSession)
+    } else {
+      restoredSession = loadedSession.session
+    }
+
     lock.withLock {
       if configuration.restorePersistedSession {
-        session = loadedSession
+        session = restoredSession
       } else {
-        persistedPreviousSession = loadedSession.map { endPersistedPreviousSession($0) }
+        persistedPreviousSession = endPersistedPreviousSession(restoredSession)
       }
     }
+  }
+
+  private func sessionWithSamplingDecision(_ session: Session,
+                                           decision: SessionSamplingDecision) -> Session {
+    return Session(
+      id: session.id,
+      expireTime: session.expireTime,
+      previousId: session.previousId,
+      startTime: session.startTime,
+      sessionTimeout: session.sessionTimeout,
+      maxLifetime: session.maxLifetime,
+      samplingDecision: decision
+    )
   }
 }
