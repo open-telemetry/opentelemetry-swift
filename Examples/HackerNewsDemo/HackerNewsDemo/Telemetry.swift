@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import Crash
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetryProtocolExporterHttp
@@ -49,6 +50,10 @@ enum TelemetryConfig {
   static var sessionConfig: SessionConfig {
     IntegrationTestScenario.isEnabled ? IntegrationTestScenario.sessionConfig : SessionConfigStore.load()
   }
+
+  static var crashConfig: KSCrashInstrumentationConfig {
+    IntegrationTestScenario.isEnabled ? IntegrationTestScenario.crashConfig : .default
+  }
 }
 
 enum Telemetry {
@@ -89,6 +94,11 @@ enum Telemetry {
 
     SessionEventInstrumentation.install()
 
+    // Installed after the session manager and logger provider are registered:
+    // crashes from the previous run are reported on install, and each crash
+    // records the session that was current when it happened.
+    KSCrashInstrumentation.install(config: TelemetryConfig.crashConfig)
+
     // Skip the exporter's own OTLP requests, otherwise every export produces
     // a span that triggers another export.
     urlSessionInstrumentation = URLSessionInstrumentation(configuration: URLSessionInstrumentationConfiguration(
@@ -99,8 +109,6 @@ enum Telemetry {
     ))
 
     // TODO: no app startup instrumentation
-    // TODO: no crash instrumentation; MetricKit sources exist under
-    //       Sources/Instrumentation/MetricKit but are not exposed as a package product yet
     // TODO: no app hang instrumentation
     // TODO: no UIKit/SwiftUI view instrumentation
     // TODO: no user ID manager; see UserIdStore

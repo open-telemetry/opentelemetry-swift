@@ -1,3 +1,4 @@
+import SharedTestUtils
 import XCTest
 @testable import Sessions
 
@@ -303,6 +304,16 @@ final class SessionStoreTests: XCTestCase {
       } else {
         store.scheduleSave(session: replacement)
       }
+      // A scheduled save is written by the store's timer on the main run loop, which can take longer
+      // than the timer interval on a loaded machine, so wait for the write instead of a fixed time.
+      wait(timeout: 5, interval: 0.01) {
+        guard let data = persistence.read(),
+              let record = try? PropertyListDecoder().decode(PersistedSessionRecord.self, from: data) else {
+          return false
+        }
+        return record.session.value == replacement
+      }
+      // Then give a pending clear retry time to fire; it must not remove the replacement.
       let timerDeadline = expectation(description: "Passed the clear retry deadline")
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { timerDeadline.fulfill() }
       wait(for: [timerDeadline], timeout: 1)
