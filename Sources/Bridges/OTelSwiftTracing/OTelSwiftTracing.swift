@@ -1,5 +1,6 @@
 import Foundation
 import OpenTelemetryApi
+import ServiceContextModule
 import Tracing
 
 private enum OTelSpanContextKey: ServiceContextKey {
