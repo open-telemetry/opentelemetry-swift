@@ -202,7 +202,7 @@ public class KSCrashInstrumentation: Instrumentation {
     // On-device symbolication is opt-in: it is best-effort, varies with
     // optimization level, and can split groupings vs. backend symbolication.
     let style: AppleReportStyle = installedConfig.useOnDeviceSymbolication ? .symbolicated : .unsymbolicated
-    let filter = CrashReportFilterAppleFmt(reportStyle: style)
+    let filter: CrashReportFilterAppleFmt = CrashReportFilterAppleFmt(reportStyle: style)
     filter.filterReports([crashReport]) { reports, _ in
       let appleFormatReport = UTF8Truncation.truncate(
         (reports?.first as? CrashReportString)?.value ?? "Failed to format crash report",
@@ -211,7 +211,7 @@ public class KSCrashInstrumentation: Instrumentation {
       attributes[SemanticConventions.Exception.stacktrace.rawValue] = AttributeValue.string(appleFormatReport)
 
       attributes[SemanticConventions.Exception.message.rawValue] = AttributeValue.string(
-        summary?.message ?? extractCrashMessage(from: appleFormatReport)
+        summary?.message ?? extractBackupMessage(from: appleFormatReport)
       )
 
       _ = log.setAttributes(attributes)
@@ -222,7 +222,7 @@ public class KSCrashInstrumentation: Instrumentation {
   /// Fallback message parsed from the Apple-format text, used only when the structured report
   /// cannot be decoded: the exception type and the crashed frame as module + offset. The thread
   /// number is left out because the same crash can happen on a different thread each time.
-  static func extractCrashMessage(from stackTrace: String) -> String {
+  static func extractBackupMessage(from stackTrace: String) -> String {
     let lines = stackTrace.components(separatedBy: "\n")
 
     // Get exception type

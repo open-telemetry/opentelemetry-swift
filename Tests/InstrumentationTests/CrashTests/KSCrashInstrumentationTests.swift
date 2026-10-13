@@ -55,77 +55,77 @@ final class KSCrashInstrumentationTests: XCTestCase {
     XCTAssertEqual(KSCrashInstrumentation.maxStackTraceBytes, 25 * 1024)
   }
 
-  func testExtractCrashMessageWithExceptionType() {
+  func testExtractBackupMessageWithExceptionType() {
     let stackTrace = """
     Exception Type:  EXC_BREAKPOINT (SIGTRAP)
     Thread 0 Crashed:
     0   libswiftCore.dylib            0x000000019ed5c8c4 $ss17_assertionFailure + 172
     """
 
-    let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
+    let result = KSCrashInstrumentation.extractBackupMessage(from: stackTrace)
     XCTAssertEqual(result, "EXC_BREAKPOINT (SIGTRAP) at libswiftCore.dylib + 172")
   }
 
-  func testExtractCrashMessageWithBadAccess() {
+  func testExtractBackupMessageWithBadAccess() {
     let stackTrace = """
     Exception Type:  EXC_BAD_ACCESS (SIGSEGV)
     Thread 2 Crashed:
     0   MyApp                         0x0000000104abc123 main + 456
     """
 
-    let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
+    let result = KSCrashInstrumentation.extractBackupMessage(from: stackTrace)
     XCTAssertEqual(result, "EXC_BAD_ACCESS (SIGSEGV) at MyApp + 456")
   }
 
-  func testExtractCrashMessageWithoutExceptionType() {
+  func testExtractBackupMessageWithoutExceptionType() {
     let stackTrace = """
     Thread 0 Crashed:
     0   libswiftCore.dylib            0x000000019ed5c8c4 $ss17_assertionFailure + 172
     """
 
-    let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
+    let result = KSCrashInstrumentation.extractBackupMessage(from: stackTrace)
     XCTAssertEqual(result, "Unknown exception at libswiftCore.dylib + 172")
   }
 
-  func testExtractCrashMessageWithDifferentThread() {
+  func testExtractBackupMessageWithDifferentThread() {
     let stackTrace = """
     Exception Type:  EXC_CRASH (SIGABRT)
     Thread 5 Crashed:
     0   SomeFramework                 0x00000001f14e1a90 someFunction + 8
     """
 
-    let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
+    let result = KSCrashInstrumentation.extractBackupMessage(from: stackTrace)
     XCTAssertEqual(result, "EXC_CRASH (SIGABRT) at SomeFramework + 8")
     // The same crash on another thread must produce the same message, so it groups together.
     let onThreadZero = stackTrace.replacingOccurrences(of: "Thread 5 Crashed:", with: "Thread 0 Crashed:")
-    XCTAssertEqual(KSCrashInstrumentation.extractCrashMessage(from: onThreadZero), result)
+    XCTAssertEqual(KSCrashInstrumentation.extractBackupMessage(from: onThreadZero), result)
   }
 
-  func testExtractCrashMessageEdgeCases() {
-    XCTAssertEqual(KSCrashInstrumentation.extractCrashMessage(from: ""), "Unknown exception at unknown location")
-    XCTAssertEqual(KSCrashInstrumentation.extractCrashMessage(from: "Thread Crashed:\n0   SomeFramework"), "Unknown exception at unknown location")
+  func testExtractBackupMessageEdgeCases() {
+    XCTAssertEqual(KSCrashInstrumentation.extractBackupMessage(from: ""), "Unknown exception at unknown location")
+    XCTAssertEqual(KSCrashInstrumentation.extractBackupMessage(from: "Thread Crashed:\n0   SomeFramework"), "Unknown exception at unknown location")
 
     let noThreadCrashed = "Some other content\nThread 1:\n0   libsystem_kernel.dylib"
-    XCTAssertEqual(KSCrashInstrumentation.extractCrashMessage(from: noThreadCrashed), "Unknown exception at unknown location")
+    XCTAssertEqual(KSCrashInstrumentation.extractBackupMessage(from: noThreadCrashed), "Unknown exception at unknown location")
   }
 
-  func testExtractCrashMessageWithWhitespaceHandling() {
+  func testExtractBackupMessageWithWhitespaceHandling() {
     let stackTrace = """
     Exception Type:  EXC_BAD_ACCESS (SIGSEGV)
     Thread 2 Crashed:
     0     MyFramework     \t\t\t    0x123456789    myFunction    +    123
     """
 
-    let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
+    let result = KSCrashInstrumentation.extractBackupMessage(from: stackTrace)
     XCTAssertEqual(result, "EXC_BAD_ACCESS (SIGSEGV) at MyFramework + 123")
   }
 
-  func testExtractCrashMessageWithExceptionTypeOnly() {
+  func testExtractBackupMessageWithExceptionTypeOnly() {
     let stackTrace = """
     Exception Type:  EXC_CRASH (SIGABRT)
     """
 
-    let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
+    let result = KSCrashInstrumentation.extractBackupMessage(from: stackTrace)
     XCTAssertEqual(result, "EXC_CRASH (SIGABRT) at unknown location")
   }
 
