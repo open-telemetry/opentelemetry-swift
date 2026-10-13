@@ -28,6 +28,8 @@ enum Scenario {
     case restoreFirst = "restore-first"
     case restoreSecond = "restore-second"
     case noRestore = "no-restore"
+    case crash
+    case crashReport = "crash-report"
   }
 
   // Session config the runner passes to each launch.

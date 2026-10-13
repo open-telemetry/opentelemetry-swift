@@ -11,9 +11,10 @@ Instrumentation used from this repo:
 - `URLSessionInstrumentation` - spans for every Hacker News API request
 - `Sessions` - session IDs on spans/logs plus session start/end events
 - `ResourceExtension` - device/OS/app resource attributes
+- `Crash` - KSCrash crash reports, sent as `device.crash` logs on the next launch with the session the crash happened in
 - `OpenTelemetryProtocolExporterHTTP` - OTLP/HTTP trace and log export
 
-Not yet available natively (tracked as `TODO` comments in `Telemetry.swift` and `SettingsView.swift`): app startup, crash, app hang, UIKit/SwiftUI view instrumentation, and a user ID manager. The Settings rows that depend on these (User ID, Trigger App Hang, Trigger App Crash, CPU Test, Memory Test) are shown grayed out with a "Coming soon" badge; the picker views stay in `SettingsView.swift` for when the instrumentations land.
+Not yet available natively (tracked as `TODO` comments in `Telemetry.swift` and `SettingsView.swift`): app startup, app hang, UIKit/SwiftUI view instrumentation, and a user ID manager. The Settings rows that depend on these (User ID, Trigger App Hang, CPU Test, Memory Test) are shown grayed out with a "Coming soon" badge; the picker views stay in `SettingsView.swift` for when the instrumentations land.
 
 1. The `Home` tab is built entirely with UIKit, and each post/comment involved triggers a separate HTTP request.
 2. And the `Settings` tab is built with SwiftUI!
@@ -131,7 +132,8 @@ The Settings tab is primarily made with SwiftUI, though the root controller is m
 **Actions:**
 
 1. Click on Tap to configure for "Load Test" to generate custom logs and spans
-2. "User ID", "Trigger App Hang", "Trigger App Crash", "CPU Test" and "Memory Test" are grayed out with a "Coming soon" badge until the matching instrumentation exists
+2. Click on "Trigger App Crash" to crash the app on purpose; the crash is reported as a `device.crash` log the next time the app launches
+3. "User ID", "Trigger App Hang", "CPU Test" and "Memory Test" are grayed out with a "Coming soon" badge until the matching instrumentation exists
 
 </td>
 <td width="300px" style="vertical-align: top;">
@@ -165,7 +167,7 @@ The Settings tab is primarily made with SwiftUI, though the root controller is m
 <tr>
 <td width="600px" style="vertical-align: top;">
 
-**CrashPickerView** - this SwiftUI view allows you to cause crashes of various types e.g. force unwrap, index out of bounds, etc. Note that these crash types are sorted by frequency of occurrence in the real world.
+**CrashPickerView** - this SwiftUI view allows you to cause crashes of various types: Swift runtime traps (force unwrap, index out of bounds, `fatalError`, divide by zero), a stack overflow, an uncaught NSException and a bad memory access. The crash happens after a short countdown, and the `Crash` instrumentation reports it as a `device.crash` log the next time the app launches, with the session it happened in. The same crash types are defined in `CrashType.swift` and used by `Scripts/run-integration-tests.sh --crash-examples`.
 
 </td>
 <td width="300px" style="vertical-align: top;">

@@ -27,7 +27,6 @@ struct SettingsView: View {
   // stay in the file for when the instrumentations land.
   private static let comingSoon: Set<String> = [
     "Trigger App Hang",
-    "Trigger App Crash",
     "CPU Test",
     "Memory Test"
   ]
@@ -43,18 +42,6 @@ struct SettingsView: View {
             .foregroundColor(.blue)
             .font(.system(.caption, design: .monospaced, weight: .medium))
           Text("can be interacted with!")
-            .font(.system(.caption, design: .monospaced))
-            .foregroundColor(.secondary)
-        }
-        .padding(.vertical, 4)
-        HStack {
-          Image(systemName: "clock")
-            .foregroundColor(.secondary)
-            .font(.caption)
-          Text("Gray fields")
-            .foregroundColor(.secondary)
-            .font(.system(.caption, design: .monospaced, weight: .medium))
-          Text("need an instrumentation that does not exist yet")
             .font(.system(.caption, design: .monospaced))
             .foregroundColor(.secondary)
         }
@@ -873,24 +860,6 @@ struct HangPickerView: View {
   }
 }
 
-enum CrashType: CaseIterable {
-  case forceUnwrap
-  case indexOutOfBounds
-  case fatalError
-  case divideByZero
-  case stackOverflow
-
-  var displayName: String {
-    switch self {
-    case .indexOutOfBounds: return "Index Out of Bounds"
-    case .fatalError: return "Fatal Error"
-    case .forceUnwrap: return "Force Unwrap Nil"
-    case .divideByZero: return "Divide by Zero"
-    case .stackOverflow: return "Stack Overflow"
-    }
-  }
-}
-
 struct CrashPickerView: View {
   @Environment(\.dismiss) private var dismiss
   @State private var selectedCrashType: CrashType = .forceUnwrap
@@ -909,6 +878,13 @@ struct CrashPickerView: View {
           .frame(maxWidth: .infinity, alignment: .center)
           .padding(.horizontal, 20)
           .padding(.vertical, 8)
+
+        Text("The crash is reported as a device.crash log the next time the app launches.")
+          .font(.system(.caption, design: .monospaced))
+          .foregroundColor(.secondary)
+          .multilineTextAlignment(.center)
+          .frame(maxWidth: .infinity, alignment: .center)
+          .padding(.horizontal, 20)
 
         Picker("Crash Type", selection: $selectedCrashType) {
           ForEach(CrashType.allCases, id: \.self) { type in
@@ -963,7 +939,7 @@ struct CrashPickerView: View {
     var countdown = Int(delay)
     let toast = createToast(text: "Crash Starting in \(countdown)...", in: window)
 
-    Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
+    let timer = Timer(timeInterval: 1.0, repeats: true) { timer in
       countdown -= 1
       if countdown > 0 {
         toast.text = "Crash Starting in \(countdown)..."
@@ -974,27 +950,13 @@ struct CrashPickerView: View {
         // Log the crash event before it happens
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-          switch type {
-          case .indexOutOfBounds:
-            let array = [1, 2, 3]
-            _ = array[10] // Index out of bounds
-          case .fatalError:
-            fatalError("Intentional crash for testing")
-          case .forceUnwrap:
-            let nilValue: String? = nil
-            _ = nilValue! // Force unwrap nil
-          case .divideByZero:
-            let zero = Int.random(in: 0 ... 0) // Runtime zero
-            _ = 42 / zero // Division by zero
-          case .stackOverflow:
-            func recursiveFunction() {
-              recursiveFunction() // Infinite recursion
-            }
-            recursiveFunction()
-          }
+          type.trigger()
         }
       }
     }
+    // Common modes include the tracking mode the main run loop is in while a scroll view is being
+    // dragged, so the countdown keeps going while the user scrolls.
+    RunLoop.main.add(timer, forMode: .common)
   }
 
   private func createToast(text: String, in window: UIWindow) -> UILabel {
