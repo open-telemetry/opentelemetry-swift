@@ -588,6 +588,7 @@ extension Package {
             "Sessions",
             .product(name: "Installations", package: "KSCrash"),
             .product(name: "Filters", package: "KSCrash"),
+            .product(name: "DemangleFilter", package: "KSCrash"),
             .product(name: "Report", package: "KSCrash"),
           ],
           path: "Sources/Instrumentation/Crash"

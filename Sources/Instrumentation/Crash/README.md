@@ -10,6 +10,7 @@ Add the `Crash` product to your dependencies. It pulls in KSCrash 2.6.x and is a
 
 ```swift
 import Crash
+import KSCrashFilters  // for AppleReportStyle
 
 // Defaults
 let crashInstrumentation = KSCrashInstrumentation()
@@ -17,7 +18,7 @@ let crashInstrumentation = KSCrashInstrumentation()
 // Custom configuration
 let config = KSCrashInstrumentationConfig()
 config.maxStackTraceBytes = 50 * 1024
-config.useOnDeviceSymbolication = false      // default; backend should symbolicate
+config.reportStyle = .unsymbolicated         // default; backend should symbolicate
 config.enableSwapCxaThrow = true             // better C++ traces; small startup cost
 let crashInstrumentation = KSCrashInstrumentation(config: config)
 ```
@@ -33,7 +34,7 @@ KSCrash is installed once per process. Creating the instrumentation again is saf
 | Option | Default here | Notes |
 |--------|--------------|-------|
 | `maxStackTraceBytes` | 25 KB | Caps `exception.stacktrace` in UTF-8 bytes, see [Report size](#report-size) |
-| `useOnDeviceSymbolication` | `false` | See [Symbolication](#symbolication) |
+| `reportStyle` | `.unsymbolicated` | KSCrash's `AppleReportStyle`, see [Symbolication](#symbolication) |
 | `enableSwapCxaThrow` | `false` | Off by default to keep launch cost low; turn on for actionable C++ exception traces |
 
 ### Report size
@@ -42,12 +43,22 @@ KSCrash is installed once per process. Creating the instrumentation again is saf
 
 ### Symbolication
 
-By default frames are left unsymbolicated (`<address> <load address> + <offset>`) for the backend to symbolicate with the app's dSYMs, which gives function names with file and line numbers and keeps crash grouping stable.
+KSCrash records each frame's symbol name on the device when the app crashes. `reportStyle` only chooses whether those names appear in `exception.stacktrace`. Swift and C++ names are demangled before the report is formatted.
 
-With `useOnDeviceSymbolication = true`, KSCrash resolves frames on the device from each binary's symbol table. This is best-effort:
+The styles and demangling are KSCrash's own; its headers are the authoritative reference: [`KSCrashReportFilterAppleFmt.h`](https://github.com/kstenerud/KSCrash/blob/2.6.0/Sources/KSCrashFilters/include/KSCrashReportFilterAppleFmt.h) (`AppleReportStyle`) and [`KSCrashReportFilterDemangle.h`](https://github.com/kstenerud/KSCrash/blob/2.6.0/Sources/KSCrashDemangleFilter/include/KSCrashReportFilterDemangle.h). The table below summarizes them for KSCrash 2.6.0.
 
-- It names the function and offset, never file and line numbers, which only exist in the dSYM.
-- Swift symbols are reported mangled (for example `$s14HackerNewsDemo...`).
+| `reportStyle` | Frames | Backend can symbolicate |
+|---------------|--------|-------------------------|
+| `.unsymbolicated` (default) | `<address> <load address> + <offset>` | All frames |
+| `.partiallySymbolicated` | App frames as addresses, system and framework frames by name | App frames |
+| `.symbolicatedSideBySide` | Address followed by `(symbol + offset)` | All frames |
+| `.symbolicated` | `symbol + offset`, or the address when no name was found | Only frames left as addresses |
+
+Keep the default if your backend symbolicates with the app's dSYMs: that gives function names with file and line numbers and keeps crash grouping stable. If your backend does no crash processing, use `.symbolicated` so the report is readable as sent.
+
+Names resolved on the device are best-effort:
+
+- They name the function and offset, never file and line numbers, which only exist in the dSYM.
 - Release builds are normally stripped, so frames in your app resolve to the nearest symbol that survived stripping rather than the function that crashed.
 - Results vary with optimization level, so the same crash can group differently than with backend symbolication.
 

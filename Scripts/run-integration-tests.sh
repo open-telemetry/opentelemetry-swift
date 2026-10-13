@@ -267,6 +267,9 @@ else
   run_launch crash --sessionTimeout 3600 --restorePersistedSession false
   save_crash_reports crash
   run_launch crash-report --sessionTimeout 3600 --restorePersistedSession false
+  # A second crash, reported with on-device symbol names instead of the default style.
+  run_launch_into symbolicated/crash crash --sessionTimeout 3600 --restorePersistedSession false
+  run_launch_into symbolicated/crash-report crash-report --sessionTimeout 3600 --restorePersistedSession false --reportStyle symbolicated
 fi
 
 log "Collected files"

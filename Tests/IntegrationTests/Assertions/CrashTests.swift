@@ -112,7 +112,7 @@ final class CrashTests: XCTestCase {
   }
 
   func testCrashReportIsUnsymbolicatedByDefault() throws {
-    // useOnDeviceSymbolication defaults to false, so frames are left as `<address> <load address> + <offset>`
+    // reportStyle defaults to .unsymbolicated, so frames are left as `<address> <load address> + <offset>`
     // for the backend to symbolicate.
     let frames = try crashedThread(in: reportLines()).frames
     let unsymbolicated = #"^\d+\s+\S+\s+0x[0-9a-f]+ 0x[0-9a-f]+ \+ \d+$"#
@@ -139,5 +139,40 @@ final class CrashTests: XCTestCase {
     let message = try XCTUnwrap(reportedCrash().record.attributes.string(Self.exceptionMessageKey))
     XCTAssertTrue(message.hasSuffix("Fatal error: integration test crash"), message)
     XCTAssertTrue(message.contains("IntegrationTestScenario.swift:"), "missing the trapping file and line: \(message)")
+  }
+
+  // MARK: - Report content (reportStyle = .symbolicated)
+
+  /// The crash reported by the runner's second crash pair, whose reporting launch passes
+  /// `--reportStyle symbolicated`.
+  private func symbolicatedCrashLines() throws -> [String] {
+    let logs = OTLPOutput.subdirectory("symbolicated/crash-report").logs.filter {
+      $0.scope.name == Self.crashScope && $0.record.eventName == Self.crashEventName
+    }
+    XCTAssertEqual(logs.count, 1, "expected exactly one crash reported with the symbolicated style")
+    let report = try XCTUnwrap(logs.first?.record.attributes.string(Self.exceptionStacktraceKey))
+    return report.components(separatedBy: "\n")
+  }
+
+  func testSymbolicatedCrashReportNamesTheCrashedFrames() throws {
+    let frames = try crashedThread(in: symbolicatedCrashLines()).frames
+    let listing = frames.joined(separator: "\n")
+    // fatalError traps in the Swift runtime, so the top frame is its assertion failure, by name.
+    XCTAssertTrue(frames.first?.contains("Swift._assertionFailure(") ?? false, "the trapping frame is not named:\n\(listing)")
+    // The demo is a Debug build, so its own symbols survive. The scenario closure ends in a call to
+    // fatalError, so its own frame is gone and the app frame left is the dispatch block thunk.
+    let appFrames = frames.filter { $0.range(of: #"^\d+\s+HackerNewsDemo"#, options: .regularExpression) != nil }
+    XCTAssertFalse(appFrames.isEmpty, "no app frame on the crashed thread:\n\(listing)")
+    for frame in appFrames {
+      XCTAssertNil(frame.range(of: #"0x[0-9a-f]+ 0x[0-9a-f]+ \+ \d+$"#, options: .regularExpression), "unsymbolicated app frame: \(frame)")
+    }
+  }
+
+  func testSymbolicatedCrashReportIsDemangled() throws {
+    // Mangled Swift symbols start with `$s` (or `_$s` with the C prefix).
+    let frames = try crashedThread(in: symbolicatedCrashLines()).frames
+    for frame in frames {
+      XCTAssertNil(frame.range(of: #"\$s\w"#, options: .regularExpression), "mangled Swift symbol: \(frame)")
+    }
   }
 }

@@ -5,6 +5,7 @@
 
 import Crash
 import Foundation
+import KSCrashFilters
 import OpenTelemetryApi
 import OpenTelemetrySdk
 import Sessions
@@ -26,6 +27,15 @@ enum IntegrationTestScenario {
   // Optional for the crash launch: one of `CrashType`'s raw values. Without it the launch calls
   // fatalError with a fixed message.
   static let crashTypeArgument = "--crashType"
+  // Optional for the crash-report launch: the KSCrash report style used to format the stored crash.
+  // One of `reportStyles`' keys; without it the default style is used.
+  static let reportStyleArgument = "--reportStyle"
+  static let reportStyles: [String: AppleReportStyle] = [
+    "unsymbolicated": .unsymbolicated,
+    "partially-symbolicated": .partiallySymbolicated,
+    "symbolicated-side-by-side": .symbolicatedSideBySide,
+    "symbolicated": .symbolicated,
+  ]
 
   static let scope = "HackerNewsDemo.IntegrationTest"
 
@@ -106,6 +116,9 @@ enum IntegrationTestScenario {
     let config = KSCrashInstrumentationConfig()
     config.monitors.remove(.termination)
     config.monitors.remove(.watchdog)
+    if let style = value(after: reportStyleArgument).flatMap({ reportStyles[$0] }) {
+      config.reportStyle = style
+    }
     return config
   }
 

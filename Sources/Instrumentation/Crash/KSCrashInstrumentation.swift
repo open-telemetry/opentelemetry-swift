@@ -16,14 +16,22 @@ import OpenTelemetryApi
   import KSCrashFilters
 #endif
 
+#if canImport(KSCrashDemangleFilter)
+  import KSCrashDemangleFilter
+#endif
+
 import Sessions
 
 public class KSCrashInstrumentationConfig: KSCrashConfiguration {
   public var maxStackTraceBytes: Int = 25 * 1024
-  /// On-device symbolication is best-effort and tends to diverge from
-  /// backend-produced symbolication, which makes it a poor source for
-  /// crash grouping. Default `false`; backends should symbolicate.
-  public var useOnDeviceSymbolication: Bool = false
+  /// How frames are written in `exception.stacktrace`. KSCrash always records symbol names on the
+  /// device; this only chooses whether they appear in the text. The default leaves frames as
+  /// addresses for a backend that symbolicates with the app's dSYMs. Use `.symbolicated` if your
+  /// backend does no crash processing, so the report is readable as sent.
+  ///
+  /// See KSCrash's `KSCrashReportFilterAppleFmt.h` for what each style writes:
+  /// https://github.com/kstenerud/KSCrash/blob/2.6.0/Sources/KSCrashFilters/include/KSCrashReportFilterAppleFmt.h
+  public var reportStyle: AppleReportStyle = .unsymbolicated
 
   /// A fresh configuration with the defaults, so changes made by one caller never leak to another.
   public static var `default`: KSCrashInstrumentationConfig {
@@ -198,11 +206,12 @@ public class KSCrashInstrumentation: Instrumentation {
     // Attempt to recover the original crash context
     attributes = recoverCrashContext(from: rawCrash, log: log, attributes: attributes)
 
-    // Get stack trace in Apple format and emit log event in async callback.
-    // On-device symbolication is opt-in: it is best-effort, varies with
-    // optimization level, and can split groupings vs. backend symbolication.
-    let style: AppleReportStyle = installedConfig.useOnDeviceSymbolication ? .symbolicated : .unsymbolicated
-    let filter: CrashReportFilterAppleFmt = CrashReportFilterAppleFmt(reportStyle: style)
+    // Get stack trace in Apple format and emit log event in async callback. Symbols are demangled
+    // first so any that the report style shows are readable.
+    let filter = CrashReportFilterPipeline(filters: [
+      CrashReportFilterDemangle(),
+      CrashReportFilterAppleFmt(reportStyle: installedConfig.reportStyle),
+    ])
     filter.filterReports([crashReport]) { reports, _ in
       let appleFormatReport = UTF8Truncation.truncate(
         (reports?.first as? CrashReportString)?.value ?? "Failed to format crash report",

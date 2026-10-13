@@ -25,6 +25,9 @@ repo work together inside a real iOS app. The flow is:
      crashed session's id and the crash time, be an Apple-format report left
      unsymbolicated and within `maxStackTraceBytes` (the defaults), and have an
      `exception.message` that matches the report's crashed frame.
+   - `symbolicated/crash` / `symbolicated/crash-report`: the same crash again,
+     reported with `--reportStyle symbolicated`, so the crashed thread's frames
+     must carry demangled on-device symbol names.
    Session config is passed as launch arguments because `SessionConfig` is
    only read when a `SessionManager` is created. The app stays installed
    between launches so persisted session state and stored crash reports carry
