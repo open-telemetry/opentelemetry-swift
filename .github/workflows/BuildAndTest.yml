@@ -3,6 +3,8 @@ name: Build and Test
 on: 
   pull_request:
     types: [opened, synchronize]
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -23,8 +25,8 @@ jobs:
         run: |
           SHOULD_RUN=false
 
-          # github.base_ref is empty for workflow_dispatch runs; in that case,
-          # skip diff-based checks and run all jobs.
+          # github.base_ref is empty for push and workflow_dispatch runs; in
+          # that case, skip diff-based checks and run all jobs.
           if [ -z "${GITHUB_BASE_REF}" ]; then
             SHOULD_RUN=true
           else
@@ -53,7 +55,8 @@ jobs:
 
   SwiftLint:
     needs: should-run
-    if: ${{ needs.should-run.outputs.should-run == 'true' }}
+    # Lints only the files changed relative to github.base_ref, which is only set on pull_request.
+    if: ${{ github.event_name == 'pull_request' && needs.should-run.outputs.should-run == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
