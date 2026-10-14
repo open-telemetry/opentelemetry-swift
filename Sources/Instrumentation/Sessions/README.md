@@ -237,6 +237,12 @@ Matching the active session's ID is not enough: migration may have assigned it a
 Records with unknown historical decisions are preserved, including old crash records. This is
 not strict filtering of legacy telemetry.
 
+Attribute limits apply before this processor. A retained session attribute or a `session.start` /
+`session.end` event name identifies historical context even when the ID is missing. Any valid saved
+decision still applies; missing or invalid decisions are preserved without looking up a current
+session. If an ordinary log loses all session metadata, the processor cannot distinguish it from
+a new unattributed log. Configure limits to retain the metadata needed by your integration.
+
 For delayed logs, capture `session.samplingAttributes` when the operation occurs and attach them
 to the record, alongside your other attributes. This also retains the original decision across a
 restart. Do not replace them with the current session's attributes when replaying the record.

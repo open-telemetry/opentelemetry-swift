@@ -221,6 +221,87 @@ final class SessionSamplingIntegrationTests: XCTestCase {
     XCTAssertEqual(sink.receivedLogRecords.first?.spanContext, record.spanContext)
   }
 
+  func testAttributeLimitedHistoricalLogsKeepSavedDecisionWithoutId() throws {
+    for decision in [SessionSamplingDecision.sampled, .notSampled] {
+      let sessions = try manager([decision.isSampled ? .notSampled : .sampled])
+      let current = sessions.getSession()
+      let input = MockLogRecordProcessor()
+      let sink = MockLogRecordProcessor()
+      let provider = LoggerProviderBuilder().with(logLimits: LogLimits(maxAttributeCount: 1))
+        .with(processors: [input, SessionSamplingLogRecordProcessor(nextProcessor: sink, sessionManager: sessions)]).build()
+      provider.get(instrumentationScopeName: "test").logRecordBuilder()
+        .setAttributes([SemanticConventions.Session.id.rawValue: .string("historical-session")])
+        .setAttributes([SessionConstants.sessionSamplingDecision: .string(decision.rawValue)])
+        .setBody(.string("delayed log"))
+        .emit()
+
+      let attributes = [SessionConstants.sessionSamplingDecision: AttributeValue.string(decision.rawValue)]
+      XCTAssertEqual(input.receivedLogRecords.count, 1)
+      XCTAssertEqual(input.receivedLogRecords.first?.attributes, attributes)
+      XCTAssertEqual(sink.receivedLogRecords.count, decision.isSampled ? 1 : 0)
+      if decision.isSampled {
+        XCTAssertEqual(sink.receivedLogRecords.first?.attributes, attributes)
+      }
+      XCTAssertEqual(sessions.peekSession(), current)
+    }
+  }
+
+  func testAttributeLimitedUnknownHistoricalMetadataDoesNotCreateSession() throws {
+    let retainedAttributes: [[String: AttributeValue]] = [
+      [SessionConstants.sessionSamplingDecision: .string("invalid")],
+      [SessionConstants.sessionSamplingDecision: .bool(false)],
+      [SemanticConventions.Session.previousId.rawValue: .string("previous-session")]
+    ]
+    for attributes in retainedAttributes {
+      let sessions = try manager([.sampled])
+      let input = MockLogRecordProcessor()
+      let sink = MockLogRecordProcessor()
+      let provider = LoggerProviderBuilder().with(logLimits: LogLimits(maxAttributeCount: 1))
+        .with(processors: [input, SessionSamplingLogRecordProcessor(nextProcessor: sink, sessionManager: sessions)]).build()
+      provider.get(instrumentationScopeName: "test").logRecordBuilder()
+        .setAttributes([SemanticConventions.Session.id.rawValue: .string("historical-session")])
+        .setAttributes(attributes).emit()
+
+      XCTAssertEqual(input.receivedLogRecords.first?.attributes, attributes)
+      XCTAssertEqual(sink.receivedLogRecords.count, 1)
+      XCTAssertEqual(sink.receivedLogRecords.first?.attributes, attributes)
+      XCTAssertNil(sessions.peekSession())
+    }
+  }
+
+  func testTruncatedHistoricalDecisionIsPreservedWithoutCreatingSession() throws {
+    let sessions = try manager([.notSampled])
+    let sink = MockLogRecordProcessor()
+    let provider = LoggerProviderBuilder().with(logLimits: LogLimits(maxAttributeCount: 1, maxAttributeLength: 3))
+      .with(processors: [SessionSamplingLogRecordProcessor(nextProcessor: sink, sessionManager: sessions)]).build()
+    provider.get(instrumentationScopeName: "test").logRecordBuilder()
+      .setAttributes([SemanticConventions.Session.id.rawValue: .string("historical-session")])
+      .setAttributes([SessionConstants.sessionSamplingDecision: .string(SessionSamplingDecision.notSampled.rawValue)])
+      .emit()
+
+    XCTAssertEqual(sink.receivedLogRecords.count, 1)
+    XCTAssertEqual(sink.receivedLogRecords.first?.attributes, [SessionConstants.sessionSamplingDecision: .string("not")])
+    XCTAssertNil(sessions.peekSession())
+  }
+
+  func testZeroAttributeLifecycleEventsDoNotRestartEndedSession() throws {
+    let sampler = TestSessionSampler(decisions: [.notSampled, .sampled])
+    let sessions = try SessionManager(configuration: SessionConfig(sampler: sampler), persistence: TestSessionPersistence())
+    let sink = MockLogRecordProcessor()
+    let provider = LoggerProviderBuilder().with(logLimits: LogLimits(maxAttributeCount: 0))
+      .with(processors: [SessionSamplingLogRecordProcessor(nextProcessor: sink, sessionManager: sessions)]).build()
+    OpenTelemetry.registerLoggerProvider(loggerProvider: provider)
+    let original = sessions.getSession()
+    SessionEventInstrumentation.install()
+    sessions.endSession()
+
+    XCTAssertNil(sessions.peekSession())
+    XCTAssertEqual(sampler.callCount, 1)
+    XCTAssertEqual(sink.receivedLogRecords.map(\.eventName), [SessionConstants.sessionStartEvent, SessionConstants.sessionEndEvent])
+    XCTAssertTrue(sink.receivedLogRecords.allSatisfy(\.attributes.isEmpty))
+    XCTAssertEqual(sink.receivedLogRecords.first?.timestamp, original.startTime)
+  }
+
   func testCurrentAttributedLogWithoutSavedDecisionIsPreserved() throws {
     let sessions = try manager([.notSampled])
     let original = sessions.getSession()

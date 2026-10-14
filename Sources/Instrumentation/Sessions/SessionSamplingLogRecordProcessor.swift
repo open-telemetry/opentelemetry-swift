@@ -22,7 +22,12 @@ public final class SessionSamplingLogRecordProcessor: LogRecordProcessor {
   public func onEmit(logRecord: ReadableLogRecord) {
     let idKey = SemanticConventions.Session.id.rawValue
     let decisionKey = SessionConstants.sessionSamplingDecision
-    if logRecord.attributes[idKey] != nil {
+    // Attribute limits can remove the ID without removing all historical context.
+    if logRecord.attributes[idKey] != nil ||
+      logRecord.attributes[decisionKey] != nil ||
+      logRecord.attributes[SemanticConventions.Session.previousId.rawValue] != nil ||
+      logRecord.eventName == SessionConstants.sessionStartEvent ||
+      logRecord.eventName == SessionConstants.sessionEndEvent {
       if case let .string(rawDecision) = logRecord.attributes[decisionKey],
          let decision = SessionSamplingDecision(rawValue: rawDecision) {
         if decision.isSampled {

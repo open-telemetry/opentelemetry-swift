@@ -270,6 +270,7 @@ else
   # A second crash, reported with on-device symbol names instead of the default style.
   run_launch_into symbolicated/crash crash --sessionTimeout 3600 --restorePersistedSession false
   run_launch_into symbolicated/crash-report crash-report --sessionTimeout 3600 --restorePersistedSession false --reportStyle symbolicated
+  run_launch log-limits --sessionTimeout 3600 --restorePersistedSession false
 fi
 
 log "Collected files"
