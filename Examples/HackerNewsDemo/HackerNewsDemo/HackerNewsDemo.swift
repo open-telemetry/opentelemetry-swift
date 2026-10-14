@@ -23,8 +23,6 @@ let debugScope = "HackerNewsDemo.Debug"
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
-  var window: UIWindow?
-
   var tracer: Tracer?
   var logger: Logger?
 
@@ -35,7 +33,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       IntegrationTestScenario.run()
     }
 
-    window = UIWindow(frame: UIScreen.main.bounds)
+    return true
+  }
+}
+
+class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+  var window: UIWindow?
+
+  func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+    guard let windowScene = scene as? UIWindowScene else { return }
+
+    window = UIWindow(windowScene: windowScene)
 
     // Integration test mode must run offline, so the live Hacker News feed is
     // never loaded and its tab is disabled.
@@ -57,9 +65,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     window?.rootViewController = tabBarController
     window?.makeKeyAndVisible()
-    print("AppDelegate: Window setup complete")
-
-    return true
+    print("SceneDelegate: Window setup complete")
   }
 }
 
