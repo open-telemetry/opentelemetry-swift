@@ -92,21 +92,21 @@ final class PeriodicMetricReaderSdkTests: XCTestCase {
     counter.add(value: 1)
     blockingExporter.waitUntilIsBlocked()
 
+    let flushStarted = expectation(description: "forceFlush started")
     let flushCompleted = expectation(description: "forceFlush completed")
+    let flushReturned = DispatchSemaphore(value: 0)
     let flushFinished = Locked(initialValue: false)
     let flushSucceeded = Locked(initialValue: false)
     flushQueue.async {
+      flushStarted.fulfill()
       flushSucceeded.locking { $0 = reader.forceFlush() == .success }
       flushFinished.locking { $0 = true }
+      flushReturned.signal()
       flushCompleted.fulfill()
     }
 
-    let stillBlocked = expectation(description: "flush still blocked")
-    verifyQueue.async {
-      Thread.sleep(forTimeInterval: 0.1)
-      stillBlocked.fulfill()
-    }
-    wait(for: [stillBlocked], timeout: 0.2)
+    wait(for: [flushStarted], timeout: 1.0)
+    XCTAssertEqual(flushReturned.wait(timeout: .now() + 0.2), .timedOut)
     XCTAssertFalse(flushFinished.locking { $0 })
 
     blockingExporter.unblock()
@@ -137,21 +137,21 @@ final class PeriodicMetricReaderSdkTests: XCTestCase {
     counter.add(value: 1)
     blockingExporter.waitUntilIsBlocked()
 
+    let shutdownStarted = expectation(description: "shutdown started")
     let shutdownCompleted = expectation(description: "shutdown completed")
+    let shutdownReturned = DispatchSemaphore(value: 0)
     let shutdownFinished = Locked(initialValue: false)
     let shutdownSucceeded = Locked(initialValue: false)
     flushQueue.async {
+      shutdownStarted.fulfill()
       shutdownSucceeded.locking { $0 = reader.shutdown() == .success }
       shutdownFinished.locking { $0 = true }
+      shutdownReturned.signal()
       shutdownCompleted.fulfill()
     }
 
-    let stillBlocked = expectation(description: "shutdown still blocked")
-    verifyQueue.async {
-      Thread.sleep(forTimeInterval: 0.1)
-      stillBlocked.fulfill()
-    }
-    wait(for: [stillBlocked], timeout: 0.2)
+    wait(for: [shutdownStarted], timeout: 1.0)
+    XCTAssertEqual(shutdownReturned.wait(timeout: .now() + 0.2), .timedOut)
     XCTAssertFalse(shutdownFinished.locking { $0 })
 
     blockingExporter.unblock()
