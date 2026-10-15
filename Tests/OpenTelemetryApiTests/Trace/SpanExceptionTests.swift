@@ -21,7 +21,11 @@ final class SpanExceptionTests: XCTestCase {
     // `SpanException` possible since `NSError` conforms to `SpanException`.
     let exception = error as SpanException
 
-    XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestError")
+    #if os(Linux)
+      XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestError (0)")
+    #else
+      XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestError")
+    #endif
     XCTAssertEqual(exception.message, error.localizedDescription)
     XCTAssertNil(exception.stackTrace)
   }
@@ -37,7 +41,11 @@ final class SpanExceptionTests: XCTestCase {
 
     let exception = error as SpanException
 
-    XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestCustomNSErrorEnum")
+    #if os(Linux)
+      XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestCustomNSErrorEnum (5)")
+    #else
+      XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestCustomNSErrorEnum")
+    #endif
     XCTAssertEqual(exception.message, error.localizedDescription)
     XCTAssertNil(exception.stackTrace)
   }
@@ -57,7 +65,11 @@ final class SpanExceptionTests: XCTestCase {
     // `SpanException` possible since `NSError` conforms to `SpanException`.
     let exception = error as SpanException
 
-    XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestCustomNSError")
+    #if os(Linux)
+      XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestCustomNSError (1)")
+    #else
+      XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestCustomNSError")
+    #endif
     XCTAssertEqual(exception.message, error.localizedDescription)
     XCTAssertNil(exception.stackTrace)
 
@@ -70,7 +82,11 @@ final class SpanExceptionTests: XCTestCase {
   func testPrivateErrorType() {
     let exception = PrivateError.test as SpanException
 
-    XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.PrivateError")
+    #if os(Linux)
+      XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.PrivateError (0)")
+    #else
+      XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.PrivateError")
+    #endif
   }
 
   func testFunctionLocalErrorType() {
@@ -80,14 +96,18 @@ final class SpanExceptionTests: XCTestCase {
 
     let exception = LocalError.test as SpanException
 
-    XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.LocalError")
+    #if os(Linux)
+      XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.LocalError (0)")
+    #else
+      XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.LocalError")
+    #endif
   }
 
   func testNSError() {
     let nsError = NSError(domain: "Test Domain", code: 1)
     let exception = nsError as SpanException
 
-    XCTAssertEqual(exception.type, "Test Domain")
+    XCTAssertEqual(exception.type, "Test Domain (1)")
     XCTAssertEqual(exception.message, nsError.localizedDescription)
     XCTAssertNil(exception.stackTrace)
   }

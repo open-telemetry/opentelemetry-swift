@@ -16,7 +16,7 @@ extension NSError: SpanException {
   public var type: String {
     let error = self as Error
     let errorType = Swift.type(of: error) == NSError.self
-      ? domain
+      ? "\(domain) (\(code))"
       : String(reflecting: Swift.type(of: error))
 
     // Manually supplied domains matching the runtime-context pattern are normalized too.
