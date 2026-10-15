@@ -5,11 +5,11 @@ set -euo pipefail
 # receiving OTLP on 4317/4318, forwarding to grafana/otel-lgtm (Grafana on
 # http://localhost:3000 with the HackerNewsDemo dashboard).
 #
-# Usage: Examples/GrafanaDashboard/run.sh [up | down | logs]
+# Usage: Examples/GrafanaDashboard/run.sh [up | down | logs | reset]
 #
-# up (the default) creates the external signoz-network if it is missing, starts
-# the stack in the background and opens Grafana. down stops it, logs follows
-# the Grafana container's output.
+# up (the default) starts the stack in the background and opens Grafana. down
+# stops it, logs follows the Grafana container's output, and reset stops it and
+# deletes the stored telemetry.
 
 DASHBOARD_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_FILE="$DASHBOARD_DIR/docker-compose.yaml"
@@ -21,8 +21,6 @@ compose() {
 
 case "${1:-up}" in
   up)
-    docker network inspect signoz-network >/dev/null 2>&1 \
-      || docker network create signoz-network >/dev/null
     compose up -d
     echo "Grafana: $GRAFANA_URL (first start can take a minute while plugins install)"
     if command -v open >/dev/null 2>&1; then
@@ -35,8 +33,11 @@ case "${1:-up}" in
   logs)
     compose logs -f lgtm
     ;;
+  reset)
+    compose down --volumes
+    ;;
   *)
-    echo "Usage: $0 [up | down | logs]" >&2
+    echo "Usage: $0 [up | down | logs | reset]" >&2
     exit 1
     ;;
 esac

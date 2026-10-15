@@ -1,4 +1,4 @@
-.PHONY: up down logs
+.PHONY: up down logs reset
 
 up:
 	./run.sh up
@@ -8,3 +8,6 @@ down:
 
 logs:
 	./run.sh logs
+
+reset:
+	./run.sh reset

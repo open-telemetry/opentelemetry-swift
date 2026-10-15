@@ -2,8 +2,10 @@
 
 A local Grafana view for the telemetry sent by [`HackerNewsDemo`](../HackerNewsDemo). It runs with Docker Compose:
 
-- `collector`: an OpenTelemetry Collector that receives OTLP on `4317` (gRPC) and `4318` (HTTP), which is where the demo app exports. It forwards everything to `lgtm`, and also to SigNoz's ingester on the external `signoz-network`.
+- `collector`: an OpenTelemetry Collector that receives OTLP on `4317` (gRPC) and `4318` (HTTP), which is where the demo app exports, and forwards everything to `lgtm`.
 - `lgtm`: [`grafana/otel-lgtm`](https://github.com/grafana/docker-otel-lgtm) (Grafana with Tempo, Loki and Prometheus). Grafana is on http://localhost:3000.
+
+All ports listen on localhost only, since Grafana has no login (everyone is an anonymous Admin). Telemetry is kept in the `lgtm-data` Docker volume across restarts.
 
 ## Usage
 
@@ -13,9 +15,10 @@ From the repo root:
 Examples/GrafanaDashboard/run.sh          # start the stack and open Grafana
 Examples/GrafanaDashboard/run.sh logs     # follow Grafana's logs
 Examples/GrafanaDashboard/run.sh down     # stop the stack
+Examples/GrafanaDashboard/run.sh reset    # stop the stack and delete the stored telemetry
 ```
 
-Or from this directory: `make` (same as `make up`), `make logs`, `make down`.
+Or from this directory: `make` (same as `make up`), `make logs`, `make down`, `make reset`.
 
 Then run the `HackerNewsDemo` app and open the **HackerNewsDemo** dashboard. The first start can take a minute while Grafana installs the echarts panel plugin.
 
