@@ -59,13 +59,13 @@ public struct OTelLogHandler: LogHandler, @unchecked Sendable {
       "line": AttributeValue.int(Int(event.line))
     ]
 
+    // Convert metadata from the struct property to AttributeValue and merge it with otelattributes
+    otelattributes.merge(convertMetadata(self.metadata)) { _, new in new }
+
     // Convert metadata from the event to AttributeValue and merge into otelattributes.
     if let metadata = event.metadata {
       otelattributes.merge(convertMetadata(metadata)) { _, new in new }
     }
-
-    // Convert metadata from the struct property to AttributeValue and merge it with otelattributes
-    otelattributes.merge(convertMetadata(self.metadata)) { _, new in new }
 
     // Convert error from the event to AttributeValue and merge into otelattributes
     if let error = event.error {
