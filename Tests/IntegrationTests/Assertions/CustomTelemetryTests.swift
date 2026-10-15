@@ -30,6 +30,7 @@ enum Scenario {
     case noRestore = "no-restore"
     case crash
     case crashReport = "crash-report"
+    case logLimits = "log-limits"
   }
 
   // Session config the runner passes to each launch.

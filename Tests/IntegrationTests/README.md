@@ -28,6 +28,9 @@ repo work together inside a real iOS app. The flow is:
    - `symbolicated/crash` / `symbolicated/crash-report`: the same crash again,
      reported with `--reportStyle symbolicated`, so the crashed thread's frames
      must carry demangled on-device symbol names.
+   - `log-limits`: opt-in session log filtering with zero and one attribute
+     limits. Retained decisions control historical logs, unknown decisions are
+     preserved, and stripped lifecycle records must not start another session.
    Session config is passed as launch arguments because `SessionConfig` is
    only read when a `SessionManager` is created. The app stays installed
    between launches so persisted session state and stored crash reports carry

@@ -7,6 +7,7 @@ import Crash
 import Foundation
 import KSCrashFilters
 import OpenTelemetryApi
+import OpenTelemetryProtocolExporterHttp
 import OpenTelemetrySdk
 import Sessions
 
@@ -51,6 +52,8 @@ enum IntegrationTestScenario {
   static let secondSessionSpanName = "integration.test.second-session"
   static let heartbeatSpanName = "integration.test.heartbeat"
   static let probeSpanName = "integration.test.probe"
+  static let logLimitsScope = "HackerNewsDemo.IntegrationTest.LogLimits"
+  static let sessionCreatedAttributeKey = "integration.test.session-created"
 
   enum Launch: String {
     // Fresh install. Exercises spans, logs, network and session expiry.
@@ -71,6 +74,7 @@ enum IntegrationTestScenario {
     // Next launch, in a new session (restorePersistedSession = false). Reports
     // the stored crash, which must keep the crashed launch's session id.
     case crashReport = "crash-report"
+    case logLimits = "log-limits"
   }
 
   // Default session timeout for the main launch: short enough that the
@@ -166,6 +170,11 @@ enum IntegrationTestScenario {
         Thread.sleep(forTimeInterval: 2)
         complete(tracer: tracer)
       }
+    case .logLimits:
+      DispatchQueue.global().async {
+        runLogLimits(tracer: tracer)
+        complete(tracer: tracer)
+      }
     }
   }
 
@@ -215,6 +224,39 @@ enum IntegrationTestScenario {
   private static func complete(tracer: Tracer) {
     span(tracer, completionSpanName).end()
     (OpenTelemetry.instance.tracerProvider as? TracerProviderSdk)?.forceFlush()
+  }
+
+  private static func runLogLimits(tracer: Tracer) {
+    let sessions = SessionManagerProvider.getInstance()
+    let original = sessions.getSession()
+    let processor = SessionSamplingLogRecordProcessor(
+      nextProcessor: SimpleLogRecordProcessor(logRecordExporter: OtlpHttpLogExporter(endpoint: TelemetryConfig.logsEndpoint)),
+      sessionManager: sessions
+    )
+    defer { _ = processor.shutdown() }
+    let limitedLogger = LoggerProviderBuilder().with(logLimits: LogLimits(maxAttributeCount: 1))
+      .with(processors: [processor]).build().get(instrumentationScopeName: logLimitsScope)
+    for decision in [SessionSamplingDecision.sampled.rawValue, SessionSamplingDecision.notSampled.rawValue, "invalid"] {
+      limitedLogger.logRecordBuilder()
+        .setBody(.string(decision))
+        .setAttributes([SemanticConventions.Session.id.rawValue: .string(original.id)])
+        .setAttributes([SessionConstants.sessionSamplingDecision: .string(decision)])
+        .emit()
+    }
+
+    sessions.endSession()
+    let zeroAttributeLogger = LoggerProviderBuilder().with(logLimits: LogLimits(maxAttributeCount: 0))
+      .with(processors: [processor]).build().get(instrumentationScopeName: logLimitsScope)
+    for name in [SessionConstants.sessionStartEvent, SessionConstants.sessionEndEvent] {
+      zeroAttributeLogger.logRecordBuilder().setEventName(name)
+        .setAttributes(original.samplingAttributes).emit()
+    }
+    // Capture before the probe span intentionally starts the next session.
+    let sessionCreated = sessions.peekSession() != nil
+    let probe = span(tracer, probeSpanName)
+    probe.setAttribute(key: sessionCreatedAttributeKey, value: sessionCreated)
+    probe.end()
+    _ = processor.forceFlush()
   }
 
   private static func span(_ tracer: Tracer, _ name: String, parent: Span? = nil) -> Span {
