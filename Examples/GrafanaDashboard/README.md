@@ -1,34 +1,21 @@
 # Grafana Dashboard
 
-A local Grafana view for the telemetry sent by [`HackerNewsDemo`](../HackerNewsDemo). It runs with Docker Compose:
+A local Grafana view for the telemetry sent by [`HackerNewsDemo`](../HackerNewsDemo): an OpenTelemetry Collector on `localhost:4317`/`4318` forwarding to [`grafana/otel-lgtm`](https://github.com/grafana/docker-otel-lgtm) (Grafana, Tempo, Loki, Prometheus) on http://localhost:3000.
 
-- `collector`: an OpenTelemetry Collector that receives OTLP on `4317` (gRPC) and `4318` (HTTP), which is where the demo app exports, and forwards everything to `lgtm`.
-- `lgtm`: [`grafana/otel-lgtm`](https://github.com/grafana/docker-otel-lgtm) (Grafana with Tempo, Loki and Prometheus). Grafana is on http://localhost:3000.
-
-All ports listen on localhost only, since Grafana has no login (everyone is an anonymous Admin). Telemetry is kept in the `lgtm-data` Docker volume across restarts.
+![The HackerNewsDemo dashboard: sessions on the left, the timeline and events in the middle, a selected span's details on the right](img/dashboard.png)
 
 ## Usage
 
-From the repo root:
+Needs Docker with Compose v2, and the app running in the iOS simulator (a physical device can't reach `localhost`). From the repo root:
 
 ```sh
-Examples/GrafanaDashboard/run.sh          # start the stack and open Grafana
-Examples/GrafanaDashboard/run.sh logs     # follow Grafana's logs
-Examples/GrafanaDashboard/run.sh down     # stop the stack
-Examples/GrafanaDashboard/run.sh reset    # stop the stack and delete the stored telemetry
+Examples/GrafanaDashboard/run.sh          # start and open Grafana
+Examples/GrafanaDashboard/run.sh down     # stop (telemetry is kept)
+Examples/GrafanaDashboard/run.sh reset    # stop and delete the stored telemetry
 ```
 
-Or from this directory: `make` (same as `make up`), `make logs`, `make down`, `make reset`.
+Or `make`, `make down`, `make reset` from this directory. Then run the app and open http://localhost:3000/d/hackernews-demo. **Settings → Custom Span / Log** in the app sends test data on demand.
 
-Then run the `HackerNewsDemo` app and open the **HackerNewsDemo** dashboard. The first start can take a minute while Grafana installs the echarts panel plugin.
+The first start (and the first after a reset) downloads Grafana plugins, which takes a few minutes; the Timeline shows an error until then.
 
-## Files
-
-- `docker-compose.yaml`: the two services.
-- `collector-config.yaml`: the collector's OTLP receivers and exporters.
-- `otelcol-event-name.yaml`: merged over `otel-lgtm`'s built-in collector config. It copies each log record's `event_name` into the `event.name` attribute, because Loki drops the OTLP field.
-- `grafana/hackernews-demo.json`: the HackerNewsDemo dashboard.
-- `grafana/dashboards.yaml`: provisions the dashboard alongside the image's own.
-- `grafana/datasources.yaml`: replaces the image's data source provisioning (adds `timeRangeForTags` on Tempo).
-
-Dashboard edits made in the UI aren't saved back to the repo. To keep them, export the dashboard as JSON and replace `grafana/hackernews-demo.json`.
+Grafana has no login and the ports listen on localhost only. Telemetry is kept in the `lgtm-data` volume.
