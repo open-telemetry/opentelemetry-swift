@@ -22,8 +22,9 @@ compose() {
 case "${1:-up}" in
   up)
     compose up -d
-    echo "Grafana: $GRAFANA_URL (first start can take a minute while plugins install)"
-    if command -v open >/dev/null 2>&1; then
+    echo "Grafana: $GRAFANA_URL (first start can take a few minutes while plugins install)"
+    # macOS only: on Linux, open is usually openvt.
+    if [[ "$(uname)" == Darwin ]]; then
       open "$GRAFANA_URL"
     fi
     ;;

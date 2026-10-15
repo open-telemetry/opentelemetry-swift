@@ -1478,12 +1478,14 @@ struct CustomTelemetryView: View {
   private func publishSpan() {
     let end = Date()
     let start = end.addingTimeInterval(-Double(durationMs) / 1000)
-    let span = OpenTelemetry.instance.tracerProvider.get(instrumentationName: debugScope)
+    let builder = OpenTelemetry.instance.tracerProvider.get(instrumentationName: debugScope)
       .spanBuilder(spanName: spanName.trimmingCharacters(in: .whitespacesAndNewlines))
       .setSpanKind(spanKind: spanKind)
       .setStartTime(time: start)
-      .startSpan()
-    span.setAttributes(attributeValues)
+    for (key, value) in attributeValues {
+      builder.setAttribute(key: key, value: value)
+    }
+    let span = builder.startSpan()
     switch status {
     case .unset: break
     case .ok: span.status = .ok
