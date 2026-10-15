@@ -541,7 +541,7 @@
       "id": 2,
       "type": "table",
       "title": "Events",
-      "description": "Every span and log record. Event is the log record's event name or the span's event name; rows without one are unnamed. Click an event name to open its details on the right.",
+      "description": "Every span and log record. Event is the span's name or the log record's event name (unnamed if it has none). Click an event to open its details on the right.",
       "datasource": {
         "type": "datasource",
         "uid": "-- Mixed --"
@@ -563,7 +563,7 @@
           "tableType": "spans",
           "limit": 200,
           "spss": 100,
-          "query": "{resource.service.name=\"$service\" && span.session.id =~ \"${session:regex}\"} | select(name, event:name, instrumentation:name, span.session.id)"
+          "query": "{resource.service.name=\"$service\" && span.session.id =~ \"${session:regex}\"} | select(name, instrumentation:name, span.session.id)"
         },
         {
           "refId": "B",
@@ -653,24 +653,6 @@
           "id": "calculateField",
           "options": {
             "alias": "ev_event",
-            "replaceFields": false,
-            "mode": "reduceRow",
-            "reduce": {
-              "include": [
-                "event:name"
-              ],
-              "reducer": "firstNotNull"
-            }
-          },
-          "filter": {
-            "id": "byRefId",
-            "options": "A"
-          }
-        },
-        {
-          "id": "calculateField",
-          "options": {
-            "alias": "ev_name",
             "replaceFields": false,
             "mode": "reduceRow",
             "reduce": {
@@ -815,24 +797,6 @@
         {
           "id": "calculateField",
           "options": {
-            "alias": "ev_name",
-            "replaceFields": false,
-            "mode": "reduceRow",
-            "reduce": {
-              "include": [
-                "Line"
-              ],
-              "reducer": "firstNotNull"
-            }
-          },
-          "filter": {
-            "id": "byRefId",
-            "options": "B"
-          }
-        },
-        {
-          "id": "calculateField",
-          "options": {
             "alias": "ev_scope",
             "replaceFields": false,
             "mode": "reduceRow",
@@ -894,10 +858,6 @@
                 "destinationType": "string"
               },
               {
-                "targetField": "ev_name",
-                "destinationType": "string"
-              },
-              {
                 "targetField": "ev_scope",
                 "destinationType": "string"
               },
@@ -928,7 +888,6 @@
                 "ev_time",
                 "ev_type",
                 "ev_event",
-                "ev_name",
                 "ev_scope",
                 "ev_duration",
                 "ev_session",
@@ -973,19 +932,17 @@
               "ev_time": 0,
               "ev_type": 1,
               "ev_event": 2,
-              "ev_name": 3,
-              "ev_scope": 4,
-              "ev_duration": 5,
-              "ev_session": 6,
-              "ev_trace": 7,
-              "ev_span": 8,
-              "ev_log": 9
+              "ev_scope": 3,
+              "ev_duration": 4,
+              "ev_session": 5,
+              "ev_trace": 6,
+              "ev_span": 7,
+              "ev_log": 8
             },
             "renameByName": {
               "ev_time": "Time",
               "ev_type": "Type",
               "ev_event": "Event",
-              "ev_name": "Name",
               "ev_scope": "Scope",
               "ev_duration": "Duration",
               "ev_session": "Session",
