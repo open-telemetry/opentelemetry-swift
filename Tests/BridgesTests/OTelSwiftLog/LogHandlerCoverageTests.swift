@@ -88,7 +88,21 @@ final class OTelLogHandlerCoverageTests: XCTestCase {
 
     XCTAssertEqual(processor.records.first?.attributes["env"], .string("test"))
   }
-    
+
+  func testLogHandlerPerCallMetadataOverridesHandlerMetadata() {
+    let (provider, processor) = makeProvider()
+    var handler = OTelLogHandler(loggerProvider: provider)
+    handler.metadata = ["scope": "handler", "handler-only": "kept"]
+
+    let logger = Logger(label: "OTelSwiftLogTests-precedence") { _ in handler }
+    logger.info("msg", metadata: ["scope": "call", "call-only": "kept"])
+
+    let attributes = processor.records.first?.attributes
+    XCTAssertEqual(attributes?["scope"], .string("call"))
+    XCTAssertEqual(attributes?["handler-only"], .string("kept"))
+    XCTAssertEqual(attributes?["call-only"], .string("kept"))
+  }
+
   func testLogHandlerIncludesErrorParameterAsAttributes() {
     let (provider, processor) = makeProvider()
     let handler = OTelLogHandler(loggerProvider: provider)
