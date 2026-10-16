@@ -290,10 +290,10 @@ export default (context) => {
   };
 
   const statusText = { 0: 'Unset', 1: 'OK', 2: 'Error' };
-  const showSpan = async (traceId, spanId) => {
+  const showSpan = async (traceId, spanId, show) => {
     const span = (await query({ datasource: { type: 'tempo', uid: 'tempo' }, queryType: 'traceId', query: traceId }))
       .find((s) => s.spanID === spanId);
-    if (!span) return render('Span not found', `${spanId} isn't in the selected time range.`, []);
+    if (!span) return show('Span not found', `${spanId} isn't in the selected time range.`, []);
     const overview = section('Span');
     overview.appendChild(keyValues([
       ['kind', span.kind], ['status', statusText[span.statusCode] + (span.statusMessage ? `: ${span.statusMessage}` : '')],
@@ -314,7 +314,7 @@ export default (context) => {
     const resource = section('Resource');
     resource.appendChild(keyValues(sorted((span.serviceTags || []).map((t) => [t.key, t.value]))));
     sections.push(resource);
-    render(span.operationName, `span · ${fmtTime(span.startTime)} · ${fmtDur(span.duration)}`, sections, {
+    show(span.operationName, `span · ${fmtTime(span.startTime)} · ${fmtDur(span.duration)}`, sections, {
       text: 'Open trace in Explore ↗',
       href: explore({
         datasource: 'tempo', queries: [{ refId: 'A', datasource: { type: 'tempo', uid: 'tempo' }, queryType: 'traceql', query: traceId }],
@@ -325,21 +325,21 @@ export default (context) => {
 
   // The Timeline's own log query, so Loki's row ids (a hash of labels and line) match.
   const logsExpr = replaceVariables(context.panel.data.request.targets.find((t) => t.refId === 'B').expr);
-  const showLog = async (id) => {
+  const showLog = async (id, show) => {
     // Loki's row id starts with the record's timestamp in nanoseconds, so ask for that moment only;
     // searching the whole time range returns at most maxLines records and can miss it.
     const ms = Number(id.split('_')[0]) / 1e6;
     const around = Number.isFinite(ms) ? [Math.floor(ms) - 1, Math.ceil(ms) + 1] : [];
     const record = (await query({ datasource: { type: 'loki', uid: 'loki' }, queryType: 'range', maxLines: 1000, expr: logsExpr }, ...around))
       .find((r) => r.id === id);
-    if (!record) return render('Log record not found', "It isn't in the selected time range.", []);
+    if (!record) return show('Log record not found', "It isn't in the selected time range.", []);
     const labels = record.labels || {};
     const body = section('Body');
     body.appendChild(el('div', { whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: theme.typography.fontFamilyMonospace }, record.Line || '(empty)'));
     const attributes = section('Attributes');
     attributes.appendChild(keyValues(sorted(Object.entries(labels))));
     const t = record.Time;
-    render(labels.event_name || 'unnamed', `log · ${fmtTime(t)} · ${labels.scope_name || ''}`, [body, attributes], {
+    show(labels.event_name || 'unnamed', `log · ${fmtTime(t)} · ${labels.scope_name || ''}`, [body, attributes], {
       text: 'Open in Explore ↗',
       href: explore({
         datasource: 'loki', queries: [{ refId: 'A', datasource: { type: 'loki', uid: 'loki' }, expr: logsExpr }],
@@ -507,8 +507,10 @@ export default (context) => {
     layout();
     if (!key) return;
     render('Loading…', '', []);
-    const load = q['var-span'] ? showSpan(q['var-trace'], q['var-span']) : showLog(q['var-event']);
-    load.catch((e) => drawer.dataset.key === key && render('Could not load details', e.message, []));
+    // A slower response for an earlier selection mustn't replace this one's details.
+    const show = (...args) => drawer.dataset.key === key && render(...args);
+    const load = q['var-span'] ? showSpan(q['var-trace'], q['var-span'], show) : showLog(q['var-event'], show);
+    load.catch((e) => show('Could not load details', e.message, []));
   };
 
   // This code reruns on every refresh, so replace the handlers instead of adding more.
