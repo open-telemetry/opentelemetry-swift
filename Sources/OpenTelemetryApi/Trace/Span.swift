@@ -187,7 +187,7 @@ public extension SpanExceptionRecorder {
   ///   - attributes: Dictionary of attributes name/value pairs associated with the event.
   ///   - timestamp: the explicit event timestamp in nanos since epoch.
   func recordException(_ exception: Error, attributes: [String: AttributeValue]? = nil, timestamp: Date? = nil) {
-    let exception = exception as NSError
+    let exception: SpanException = ErrorException(error: exception)
 
     switch (attributes, timestamp) {
     case (.none, .none): recordException(exception)

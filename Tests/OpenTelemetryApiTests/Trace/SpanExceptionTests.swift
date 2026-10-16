@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import CoreFoundation
 import Foundation
 import XCTest
-import OpenTelemetryApi
+@testable import OpenTelemetryApi
 
 final class SpanExceptionTests: XCTestCase {
   // Keep the fixtures function-local to exercise runtime-context removal.
-  // Linux bridges Swift type names into NSError domains, which must also be normalized.
   func testErrorAsSpanException() {
     enum TestError: Error {
       case test
@@ -17,15 +17,9 @@ final class SpanExceptionTests: XCTestCase {
 
     let error = TestError.test
 
-    // `Error` can be converted to `NSError`, which automatically makes the cast to
-    // `SpanException` possible since `NSError` conforms to `SpanException`.
-    let exception = error as SpanException
+    let exception = ErrorException(error: error)
 
-    #if os(Linux)
-      XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestError (0)")
-    #else
-      XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestError")
-    #endif
+    XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestError")
     XCTAssertEqual(exception.message, error.localizedDescription)
     XCTAssertNil(exception.stackTrace)
   }
@@ -39,13 +33,9 @@ final class SpanExceptionTests: XCTestCase {
 
     let error = TestCustomNSErrorEnum.test
 
-    let exception = error as SpanException
+    let exception = ErrorException(error: error)
 
-    #if os(Linux)
-      XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestCustomNSErrorEnum (5)")
-    #else
-      XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestCustomNSErrorEnum")
-    #endif
+    XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestCustomNSErrorEnum")
     XCTAssertEqual(exception.message, error.localizedDescription)
     XCTAssertNil(exception.stackTrace)
   }
@@ -61,32 +51,21 @@ final class SpanExceptionTests: XCTestCase {
 
     let error = TestCustomNSError(additionalComments: "SpanExceptionTests")
 
-    // `Error` can be converted to `NSError`, which automatically makes the cast to
-    // `SpanException` possible since `NSError` conforms to `SpanException`.
-    let exception = error as SpanException
+    let exception = ErrorException(error: error)
 
-    #if os(Linux)
-      XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestCustomNSError (1)")
-    #else
-      XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestCustomNSError")
-    #endif
+    XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestCustomNSError")
     XCTAssertEqual(exception.message, error.localizedDescription)
     XCTAssertNil(exception.stackTrace)
 
-    // `TestCustomNSError` conforms to `CustomNSError`, so the conversion to `NSError` when casting to
-    // `SpanException` should utilize that protocol and result in a custom `localizedDescription`.
+    // CustomNSError supplies the localized description through errorUserInfo.
     let localizedDescription = try XCTUnwrap(error.errorUserInfo[NSLocalizedDescriptionKey] as? String)
     XCTAssertEqual(exception.message, localizedDescription)
   }
 
   func testPrivateErrorType() {
-    let exception = PrivateError.test as SpanException
+    let exception = ErrorException(error: PrivateError.test)
 
-    #if os(Linux)
-      XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.PrivateError (0)")
-    #else
-      XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.PrivateError")
-    #endif
+    XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.PrivateError")
   }
 
   func testFunctionLocalErrorType() {
@@ -94,13 +73,9 @@ final class SpanExceptionTests: XCTestCase {
       case test
     }
 
-    let exception = LocalError.test as SpanException
+    let exception = ErrorException(error: LocalError.test)
 
-    #if os(Linux)
-      XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.LocalError (0)")
-    #else
-      XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.LocalError")
-    #endif
+    XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.LocalError")
   }
 
   func testNSError() {
@@ -108,11 +83,35 @@ final class SpanExceptionTests: XCTestCase {
     let exception = nsError as SpanException
 
     XCTAssertEqual(exception.type, "Test Domain (1)")
+    XCTAssertEqual(ErrorException(error: nsError).type, "Test Domain (1)")
+    XCTAssertEqual(exception.message, nsError.localizedDescription)
+    XCTAssertNil(exception.stackTrace)
+  }
+
+  func testNSErrorSubclassPreservesDomainAndCode() {
+    final class TestError: NSError, @unchecked Sendable {}
+
+    let nsError = TestError(domain: "Subclass Domain", code: -123)
+    let exception = nsError as SpanException
+
+    XCTAssertEqual(exception.type, "Subclass Domain (-123)")
+    XCTAssertEqual(ErrorException(error: nsError).type, "Subclass Domain (-123)")
     XCTAssertEqual(exception.message, nsError.localizedDescription)
     XCTAssertNil(exception.stackTrace)
   }
 
   #if !os(Linux)
+    func testCFErrorPreservesDomainAndCode() throws {
+      let cfError = try XCTUnwrap(CFErrorCreate(kCFAllocatorDefault, "CFError Domain" as CFString, -42, nil))
+      let nsError = cfError as Error as NSError
+      let exception = nsError as SpanException
+
+      XCTAssertEqual(exception.type, "CFError Domain (-42)")
+      XCTAssertEqual(ErrorException(error: nsError).type, "CFError Domain (-42)")
+      XCTAssertEqual(exception.message, nsError.localizedDescription)
+      XCTAssertNil(exception.stackTrace)
+    }
+
     func testNSException() {
       final class TestException: NSException {
         override var callStackSymbols: [String] {

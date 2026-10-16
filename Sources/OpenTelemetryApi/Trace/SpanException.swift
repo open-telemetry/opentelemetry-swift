@@ -12,20 +12,34 @@ public protocol SpanException {
   var stackTrace: [String]? { get }
 }
 
-extension NSError: SpanException {
-  public var type: String {
-    let error = self as Error
-    let errorType = Swift.type(of: error) == NSError.self
-      ? "\(domain) (\(code))"
-      : String(reflecting: Swift.type(of: error))
+struct ErrorException: SpanException {
+  let error: Error
 
-    // Manually supplied domains matching the runtime-context pattern are normalized too.
-    return errorType
+  var type: String {
+    if Swift.type(of: error) is NSError.Type {
+      return (error as NSError).type
+    }
+
+    return String(reflecting: Swift.type(of: error))
       .replacingOccurrences(
         of: #"\(unknown context at \$[0-9a-fA-F]+\)\."#,
         with: "",
         options: .regularExpression
       )
+  }
+
+  var message: String? {
+    error.localizedDescription
+  }
+
+  var stackTrace: [String]? {
+    nil
+  }
+}
+
+extension NSError: SpanException {
+  public var type: String {
+    "\(domain) (\(code))"
   }
 
   public var message: String? {
