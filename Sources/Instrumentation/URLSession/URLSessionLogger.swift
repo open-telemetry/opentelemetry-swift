@@ -171,7 +171,12 @@ class URLSessionLogger {
       attributes[SemanticConventions.Http.requestBodySize.rawValue] = AttributeValue.int(bodySize)
     }
 
-    var spanName = "HTTP " + (request.httpMethod ?? "")
+    var spanName: String
+    if instrumentation.configuration.semanticConvention == .stable {
+      spanName = request.httpMethod ?? "HTTP"
+    } else {
+      spanName = "HTTP " + (request.httpMethod ?? "")
+    }
     if let customSpanName = instrumentation.configuration.nameSpan?(request) {
       spanName = customSpanName
     }

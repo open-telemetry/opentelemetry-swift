@@ -43,24 +43,6 @@ or
     ])
 ```
 
-### Cocoapods
-
-As of version 1.11.0, OpenTelemetry-Swift support cocoapods. 
-Two pods are provided: 
-
-- `OpenTelemetry-Swift-Api`
-
-- `OpenTelemetry-Swift-Sdk`
-
-`OpenTelemetry-Swift-Api` is a dependency of `OpenTelemetry-Swift-Sdk`. 
-
-Most users will want to add the following to their pod file:
-
-`pod 'OpenTelemetry-Swift-Sdk'`
-
-This will add both the API and SDK. If you're only interesting in Adding the API add the following: 
-
-`pod 'OpenTelemetry-Swift-Api'`
 
 ## Documentation
 
@@ -76,9 +58,9 @@ Official documentation for the library can be found in the official opentelemetr
 
 Tracing and Baggage are considered stable
 
-Logs are considered beta quality
+Logs are considered stable. 
 
-Metrics is implemented using an outdated spec, is fully functional but will change in the future
+Metrics is considered stable.
 
 ### Supported exporters and importers
 
@@ -96,7 +78,6 @@ Metrics is implemented using an outdated spec, is fully functional but will chan
 
 * Exporters: OpenTelemetry (OTLP) grpc/http
 
-> **_NOTE:_** OTLP exporters are supported both in GRPC and HTTP, only GRPC is production ready, HTTP is still experimental
 
 ### Instrumentation libraries
 
@@ -139,6 +120,8 @@ For more information about the maintainer role, see the [community repository](h
 
 ### Approvers
 
+- [Vishwan Aranha](https://github.com/aranhave), Grafana Labs
+- [Ben Joseph](https://github.com/benjoseph-grafana), Grafana Labs
 - [Vinod Vydier](https://github.com/vvydier), Independent
 
 For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).

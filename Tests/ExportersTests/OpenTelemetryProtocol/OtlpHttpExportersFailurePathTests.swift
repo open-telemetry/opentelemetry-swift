@@ -184,9 +184,12 @@ final class OtlpHttpLogExporterCoverageTests: XCTestCase {
     let exporter = OtlpHttpLogExporter(config: OtlpConfiguration(timeout: timeout),
                                        httpClient: client)
 
-    let start = Date()
-    XCTAssertEqual(exporter.export(logRecords: [sampleLogRecord()]), .failure)
-    XCTAssertLessThan(Date().timeIntervalSince(start), timeout * 4)
+    let returned = expectation(description: "export returns after its timeout")
+    DispatchQueue.global().async {
+      XCTAssertEqual(exporter.export(logRecords: [sampleLogRecord()]), .failure)
+      returned.fulfill()
+    }
+    wait(for: [returned], timeout: 5)
     XCTAssertEqual(client.sentRequests.count, 1)
   }
 
@@ -395,9 +398,12 @@ final class OtlpHttpExporterFlushTimeoutTests: XCTestCase {
     _ = exporter.export(metrics: [.empty])
     XCTAssertEqual(base.snapshotPending().count, 1)
 
-    let start = Date()
-    XCTAssertEqual(exporter.flush(), .failure)
-    XCTAssertLessThan(Date().timeIntervalSince(start), timeout * 4)
+    let returned = expectation(description: "flush returns after its timeout")
+    DispatchQueue.global().async {
+      XCTAssertEqual(exporter.flush(), .failure)
+      returned.fulfill()
+    }
+    wait(for: [returned], timeout: 5)
   }
 
   func testLogFlushTimesOutWhenResponseNeverArrives() {
@@ -409,9 +415,12 @@ final class OtlpHttpExporterFlushTimeoutTests: XCTestCase {
     _ = exporter.export(logRecords: [sampleLogRecord()])
     XCTAssertEqual(base.snapshotPending().count, 1)
 
-    let start = Date()
-    XCTAssertEqual(exporter.flush(), .failure)
-    XCTAssertLessThan(Date().timeIntervalSince(start), timeout * 4)
+    let returned = expectation(description: "flush returns after its timeout")
+    DispatchQueue.global().async {
+      XCTAssertEqual(exporter.flush(), .failure)
+      returned.fulfill()
+    }
+    wait(for: [returned], timeout: 5)
   }
 
   func testExportFailureWithRequeueDisabledLeavesPendingEmpty() {

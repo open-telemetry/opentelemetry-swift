@@ -72,7 +72,7 @@ class FileTests: XCTestCase {
     try file.delete()
 
     XCTAssertThrowsError(try file.append(data: .mock(ofSize: 5))) { error in
-      XCTAssertTrue((error as NSError).localizedDescription.contains("doesn’t exist."))
+      XCTAssertTrue((error as NSError).description.contains("No such file or directory"))
     }
   }
 
@@ -82,7 +82,7 @@ class FileTests: XCTestCase {
     try file.delete()
 
     XCTAssertThrowsError(try file.read()) { error in
-      XCTAssertTrue((error as NSError).localizedDescription.contains("doesn’t exist."))
+      XCTAssertTrue((error as NSError).description.contains("No such file or directory"))
     }
   }
 

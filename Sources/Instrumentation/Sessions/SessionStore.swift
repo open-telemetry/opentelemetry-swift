@@ -6,7 +6,7 @@
 import Foundation
 
 struct PersistedSessionRecord: Codable, Equatable {
-  static let currentVersion = 1
+  static let currentVersion = 2
 
   let version: Int
   let session: PersistedSession
@@ -32,6 +32,8 @@ struct PersistedSession: Codable, Equatable {
   let startTime: Date
   let sessionTimeout: TimeInterval
   let maxLifetime: TimeInterval?
+  /// Raw values are part of the record schema; new decision semantics require a version bump.
+  let samplingDecision: SessionSamplingDecision
 
   init(session: Session) {
     id = session.id
@@ -40,7 +42,34 @@ struct PersistedSession: Codable, Equatable {
     startTime = session.startTime
     sessionTimeout = session.sessionTimeout
     maxLifetime = session.maxLifetime
+    samplingDecision = session.samplingDecision
   }
+
+  var value: Session {
+    return Session(
+      id: id,
+      expireTime: expireTime,
+      previousId: previousId,
+      startTime: startTime,
+      sessionTimeout: sessionTimeout,
+      maxLifetime: maxLifetime,
+      samplingDecision: samplingDecision
+    )
+  }
+}
+
+private struct PersistedSessionRecordV1: Codable {
+  let version: Int
+  let session: PersistedSessionV1
+}
+
+private struct PersistedSessionV1: Codable {
+  let id: String
+  let expireTime: Date
+  let previousId: String?
+  let startTime: Date
+  let sessionTimeout: TimeInterval
+  let maxLifetime: TimeInterval?
 
   var value: Session {
     return Session(
@@ -51,6 +80,21 @@ struct PersistedSession: Codable, Equatable {
       sessionTimeout: sessionTimeout,
       maxLifetime: maxLifetime
     )
+  }
+}
+
+struct LoadedSession {
+  enum Source: Equatable {
+    case current
+    case version1
+    case legacyKeys
+  }
+
+  let session: Session
+  let source: Source
+
+  var requiresMigration: Bool {
+    return source != .current
   }
 }
 
@@ -95,6 +139,7 @@ final class SessionStore: @unchecked Sendable {
   private var isClearPending = false
   /// Prevents an older SDK from replacing a record written with a newer schema.
   private var isWriteBlockedByFutureRecord = false
+  private var shouldClearLegacyAfterNextSave = false
   private let saveInterval: TimeInterval
   private var saveTimer: Timer?
 
@@ -118,7 +163,7 @@ final class SessionStore: @unchecked Sendable {
     shared.saveImmediately(session: session)
   }
 
-  static func load() -> Session? {
+  static func load() -> LoadedSession? {
     return shared.load()
   }
 
@@ -151,7 +196,7 @@ final class SessionStore: @unchecked Sendable {
     scheduleTimerOnMainIfNeeded(timerToSchedule)
   }
 
-  func load() -> Session? {
+  func load() -> LoadedSession? {
     return lock.withLock {
       guard !isClearPending else { return nil }
       if let data = persistence.read() {
@@ -160,20 +205,39 @@ final class SessionStore: @unchecked Sendable {
             pendingSession = nil
             previousSavedSession = nil
             isWriteBlockedByFutureRecord = true
+            shouldClearLegacyAfterNextSave = false
             return nil
           }
-          if storedVersion.version == PersistedSessionRecord.currentVersion,
-             let record = try? PropertyListDecoder().decode(PersistedSessionRecord.self, from: data) {
-            let session = record.session.value
+
+          let loadedSession: LoadedSession? = switch storedVersion.version {
+          case PersistedSessionRecord.currentVersion:
+            if let record = try? PropertyListDecoder().decode(PersistedSessionRecord.self, from: data) {
+              LoadedSession(session: record.session.value, source: .current)
+            } else {
+              nil
+            }
+          case 1:
+            if let record = try? PropertyListDecoder().decode(PersistedSessionRecordV1.self, from: data) {
+              LoadedSession(session: record.session.value, source: .version1)
+            } else {
+              nil
+            }
+          default:
+            nil
+          }
+
+          if let loadedSession {
             pendingSession = nil
-            previousSavedSession = session
+            previousSavedSession = loadedSession.session
             isWriteBlockedByFutureRecord = false
-            return session
+            shouldClearLegacyAfterNextSave = false
+            return loadedSession
           }
         }
 
         // Session persistence is a cache. Drop unreadable records so later writes can recover.
         isWriteBlockedByFutureRecord = false
+        shouldClearLegacyAfterNextSave = false
         _ = persistence.clear()
       } else {
         isWriteBlockedByFutureRecord = false
@@ -185,10 +249,26 @@ final class SessionStore: @unchecked Sendable {
         return nil
       }
 
-      guard locked_save(session: legacySession) else { return legacySession }
-      userDefaultsPersistence.clearLegacySession()
-      return legacySession
+      pendingSession = nil
+      previousSavedSession = legacySession
+      return LoadedSession(session: legacySession, source: .legacyKeys)
     }
+  }
+
+  /// Replaces a legacy record after its missing fields have been supplied.
+  func migrate(_ loadedSession: LoadedSession, to session: Session) {
+    guard loadedSession.requiresMigration else { return }
+    let timerToSchedule: Timer? = lock.withLock {
+      pendingSession = session
+      shouldClearLegacyAfterNextSave = loadedSession.source == .legacyKeys
+      guard !locked_save(session: session) else { return nil }
+      // The decoded v1 session can equal the v2 value when the new decision is `.sampled`.
+      // Clear the deduplication baseline so the timer still writes the newer schema.
+      previousSavedSession = nil
+      return locked_makeSaveTimerIfNeeded()
+    }
+
+    scheduleTimerOnMainIfNeeded(timerToSchedule)
   }
 
   func clear() {
@@ -198,6 +278,7 @@ final class SessionStore: @unchecked Sendable {
       pendingSession = nil
       previousSavedSession = nil
       isClearPending = false
+      shouldClearLegacyAfterNextSave = false
       guard !isWriteBlockedByFutureRecord else { return (timer, nil) }
       guard !locked_clear() else { return (timer, nil) }
       isClearPending = true
@@ -215,6 +296,7 @@ final class SessionStore: @unchecked Sendable {
       previousSavedSession = nil
       isClearPending = false
       isWriteBlockedByFutureRecord = false
+      shouldClearLegacyAfterNextSave = false
       _ = persistence.clear()
       if let userDefaultsPersistence = persistence as? UserDefaultsSessionPersistence {
         userDefaultsPersistence.clearLegacySession()
@@ -287,6 +369,7 @@ final class SessionStore: @unchecked Sendable {
   }
 
   /// Persists a complete record while `lock` is held.
+  @discardableResult
   private func locked_save(session: Session) -> Bool {
     guard !isWriteBlockedByFutureRecord else { return false }
     guard let data = try? PropertyListEncoder().encode(PersistedSessionRecord(session: session)) else {
@@ -295,6 +378,11 @@ final class SessionStore: @unchecked Sendable {
     guard persistence.write(data) else {
       return false
     }
+    if shouldClearLegacyAfterNextSave,
+       let userDefaultsPersistence = persistence as? UserDefaultsSessionPersistence {
+      userDefaultsPersistence.clearLegacySession()
+    }
+    shouldClearLegacyAfterNextSave = false
     previousSavedSession = session
     pendingSession = nil
     return true
