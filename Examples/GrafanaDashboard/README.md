@@ -19,3 +19,7 @@ Or `make`, `make down`, `make reset` from this directory. Then run the app and o
 The first start (and the first after a reset) downloads Grafana plugins, which takes a few minutes; the Timeline shows an error until then.
 
 Grafana has no login and the ports listen on localhost only. Telemetry is kept in the `lgtm-data` volume.
+
+## Editing the Timeline
+
+The Timeline panel is drawn by [`grafana/timeline.js`](grafana/timeline.js), which the [Business Charts](https://grafana.com/grafana/plugins/volkovlabs-echarts-panel/) plugin imports from Grafana at `/public/hackernews-demo/timeline.js`. Edit it and refresh the dashboard; no restart needed.

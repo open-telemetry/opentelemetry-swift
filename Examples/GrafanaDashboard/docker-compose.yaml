@@ -38,6 +38,8 @@ services:
       - lgtm-data:/data
       - ./grafana/dashboards.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/hackernews.yaml:ro
       - ./grafana/hackernews-demo.json:/otel-lgtm/hackernews-dashboards/hackernews-demo.json:ro
+      # The Timeline panel's code, which the panel imports from /public/hackernews-demo/timeline.js.
+      - ./grafana/timeline.js:/otel-lgtm/grafana/public/hackernews-demo/timeline.js:ro
       - ./grafana/datasources.yaml:/otel-lgtm/grafana/conf/provisioning/datasources/grafana-datasources.yaml:ro
       - ./otelcol-event-name.yaml:/otel-lgtm/otelcol-event-name.yaml:ro
 
