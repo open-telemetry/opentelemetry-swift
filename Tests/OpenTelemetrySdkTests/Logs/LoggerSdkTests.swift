@@ -96,6 +96,37 @@ public class LoggerSdkTests: OpenTelemetryContextTestCase {
     XCTAssertNotNil(processor.onEmitCalledLogRecord)
   }
 
+  func testWithoutTraceContextDoesNotAttachActiveSpanContext() {
+    let processor = LogRecordProcessorMock()
+    let sharedState = LoggerSharedState(resource: Resource(), logLimits: LogLimits(), processors: [processor], clock: MillisClock())
+    let context = SpanContext.create(traceId: TraceId(idHi: 0, idLo: 16), spanId: SpanId(id: 8), traceFlags: TraceFlags(),
+                                     traceState: TraceState())
+    let span = SpanSdk.startSpan(context: context,
+                                 name: "Test",
+                                 instrumentationScopeInfo: InstrumentationScopeInfo(name: "test"),
+                                 kind: .client,
+                                 parentContext: nil,
+                                 hasRemoteParent: false,
+                                 spanLimits: SpanLimits(),
+                                 spanProcessor: NoopSpanProcessor(),
+                                 clock: MillisClock(),
+                                 resource: Resource(),
+                                 attributes: AttributesDictionary(capacity: 1),
+                                 links: [SpanData.Link](),
+                                 totalRecordedLinks: 1,
+                                 startTime: Date())
+    let logger = LoggerSdk(sharedState: sharedState, instrumentationScope: InstrumentationScopeInfo(name: "test"), eventDomain: nil)
+
+    OpenTelemetry.instance.contextProvider.withActiveSpan(span) {
+      logger.logRecordBuilder().setBody(AttributeValue.string("ctx")).emit()
+      XCTAssertEqual(processor.onEmitCalledLogRecord?.spanContext, context)
+
+      logger.withoutTraceContext().logRecordBuilder().setBody(AttributeValue.string("no ctx")).emit()
+      XCTAssertEqual(processor.onEmitCalledLogRecord?.body?.description, "no ctx")
+      XCTAssertNil(processor.onEmitCalledLogRecord?.spanContext)
+    }
+  }
+
   func testContextPropogation() {
     let processor = LogRecordProcessorMock()
     let sharedState = LoggerSharedState(resource: Resource(), logLimits: LogLimits(), processors: [processor], clock: MillisClock())
