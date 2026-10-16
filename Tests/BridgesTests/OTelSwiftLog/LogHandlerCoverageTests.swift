@@ -153,6 +153,27 @@ final class OTelLogHandlerCoverageTests: XCTestCase {
 
     XCTAssertEqual(processor.records.first?.spanContext, span.context)
   }
+
+  func testLogHandlerOmitsSpanContextWhenIncludeTraceContextIsFalse() {
+    let savedTracerProvider = OpenTelemetry.instance.tracerProvider
+    defer { OpenTelemetry.registerTracerProvider(tracerProvider: savedTracerProvider) }
+
+    OpenTelemetry.registerTracerProvider(tracerProvider: TracerProviderSdk())
+    let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "t")
+    let span = tracer.spanBuilder(spanName: "parent").startSpan()
+    defer { span.end() }
+
+    let (provider, processor) = makeProvider()
+    let handler = OTelLogHandler(loggerProvider: provider, includeTraceContext: false)
+    let logger = Logger(label: "OTelSwiftLogTests-noctx") { _ in handler }
+
+    OpenTelemetry.instance.contextProvider.withActiveSpan(span) {
+      logger.info("without-span-context")
+    }
+
+    XCTAssertEqual(processor.records.count, 1)
+    XCTAssertNil(processor.records.first?.spanContext)
+  }
 }
 
 // MARK: - Error Types
