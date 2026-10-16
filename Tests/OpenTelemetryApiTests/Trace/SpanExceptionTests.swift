@@ -17,7 +17,7 @@ final class SpanExceptionTests: XCTestCase {
 
     let error = TestError.test
 
-    let exception = ErrorException(error: error)
+    let exception = SwiftErrorAdapter(error: error)
 
     XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestError")
     XCTAssertEqual(exception.message, error.localizedDescription)
@@ -33,7 +33,7 @@ final class SpanExceptionTests: XCTestCase {
 
     let error = TestCustomNSErrorEnum.test
 
-    let exception = ErrorException(error: error)
+    let exception = SwiftErrorAdapter(error: error)
 
     XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestCustomNSErrorEnum")
     XCTAssertEqual(exception.message, error.localizedDescription)
@@ -51,7 +51,7 @@ final class SpanExceptionTests: XCTestCase {
 
     let error = TestCustomNSError(additionalComments: "SpanExceptionTests")
 
-    let exception = ErrorException(error: error)
+    let exception = SwiftErrorAdapter(error: error)
 
     XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.TestCustomNSError")
     XCTAssertEqual(exception.message, error.localizedDescription)
@@ -63,7 +63,7 @@ final class SpanExceptionTests: XCTestCase {
   }
 
   func testPrivateErrorType() {
-    let exception = ErrorException(error: PrivateError.test)
+    let exception = SwiftErrorAdapter(error: PrivateError.test)
 
     XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.PrivateError")
   }
@@ -73,7 +73,7 @@ final class SpanExceptionTests: XCTestCase {
       case test
     }
 
-    let exception = ErrorException(error: LocalError.test)
+    let exception = SwiftErrorAdapter(error: LocalError.test)
 
     XCTAssertEqual(exception.type, "OpenTelemetryApiTests.SpanExceptionTests.LocalError")
   }
@@ -83,7 +83,7 @@ final class SpanExceptionTests: XCTestCase {
     let exception = nsError as SpanException
 
     XCTAssertEqual(exception.type, "Test Domain (1)")
-    XCTAssertEqual(ErrorException(error: nsError).type, "Test Domain (1)")
+    XCTAssertEqual(SwiftErrorAdapter(error: nsError).type, "Test Domain (1)")
     XCTAssertEqual(exception.message, nsError.localizedDescription)
     XCTAssertNil(exception.stackTrace)
   }
@@ -95,7 +95,7 @@ final class SpanExceptionTests: XCTestCase {
     let exception = nsError as SpanException
 
     XCTAssertEqual(exception.type, "Subclass Domain (-123)")
-    XCTAssertEqual(ErrorException(error: nsError).type, "Subclass Domain (-123)")
+    XCTAssertEqual(SwiftErrorAdapter(error: nsError).type, "Subclass Domain (-123)")
     XCTAssertEqual(exception.message, nsError.localizedDescription)
     XCTAssertNil(exception.stackTrace)
   }
@@ -107,7 +107,7 @@ final class SpanExceptionTests: XCTestCase {
       let exception = nsError as SpanException
 
       XCTAssertEqual(exception.type, "CFError Domain (-42)")
-      XCTAssertEqual(ErrorException(error: nsError).type, "CFError Domain (-42)")
+      XCTAssertEqual(SwiftErrorAdapter(error: nsError).type, "CFError Domain (-42)")
       XCTAssertEqual(exception.message, nsError.localizedDescription)
       XCTAssertNil(exception.stackTrace)
     }

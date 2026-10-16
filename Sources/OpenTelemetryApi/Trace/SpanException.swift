@@ -12,7 +12,7 @@ public protocol SpanException {
   var stackTrace: [String]? { get }
 }
 
-struct ErrorException: SpanException {
+struct SwiftErrorAdapter: SpanException {
   let error: Error
 
   var type: String {
