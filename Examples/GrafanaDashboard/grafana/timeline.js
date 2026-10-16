@@ -424,6 +424,13 @@ export default (context) => {
   };
   const SESSION_TRACES = 1000, SESSION_SPANS_PER_TRACE = 100, SESSION_LOGS = 5000;
   const loadSessions = async () => {
+    // No service means no telemetry in the time range; Loki rejects a query for an empty one.
+    if (!service) {
+      state.sessions = [];
+      state.sessionsTruncated = false;
+      renderSessions();
+      return;
+    }
     const [spans, logs] = await Promise.all([
       query({ datasource: { type: 'tempo', uid: 'tempo' }, queryType: 'traceql', tableType: 'spans', limit: SESSION_TRACES, spss: SESSION_SPANS_PER_TRACE,
         query: `{resource.service.name=${JSON.stringify(service)} && span.session.id != nil} | select(span.session.id)` }),
@@ -531,7 +538,17 @@ export default (context) => {
   const first = Math.min(...rows.map((r) => r.start)), last = Math.max(...rows.map((r) => r.end));
   const pad = Math.max((last - first) * 0.03, 1000);
   if (rows.length === 0) {
-    return { title: { text: 'No data', left: 'center', top: 'middle', textStyle: { color: theme.colors.text.secondary } } };
+    return {
+      title: {
+        text: 'No telemetry in this time range',
+        subtext: 'Run HackerNewsDemo in the simulator, or pick a longer time range.',
+        left: 'center',
+        top: 'middle',
+        itemGap: 8,
+        textStyle: { color: theme.colors.text.primary, fontSize: 16, fontWeight: 500 },
+        subtextStyle: { color: theme.colors.text.secondary, fontSize: 13 },
+      },
+    };
   }
   return {
     backgroundColor: 'transparent',

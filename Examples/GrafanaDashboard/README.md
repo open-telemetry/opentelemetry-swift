@@ -22,4 +22,4 @@ Grafana has no login and the ports listen on localhost only. Telemetry is kept i
 
 ## Editing the Timeline
 
-The Timeline panel is drawn by [`grafana/timeline.js`](grafana/timeline.js), which the [Business Charts](https://grafana.com/grafana/plugins/volkovlabs-echarts-panel/) plugin imports from Grafana at `/public/hackernews-demo/timeline.js`. Edit it and refresh the dashboard; no restart needed.
+The Timeline panel is drawn by [`grafana/timeline.js`](grafana/timeline.js), which the [Business Charts](https://grafana.com/grafana/plugins/volkovlabs-echarts-panel/) plugin imports from Grafana at `/public/hackernews-demo/timeline.js`. Edit it and refresh the dashboard; no restart needed. Grafana only reads `grafana/hackernews-demo.json` at startup, so after editing that, run `docker compose restart lgtm` from this directory.

@@ -138,7 +138,7 @@
           },
           "queryType": "range",
           "maxLines": 1000,
-          "expr": "{service_name=\"$service\"} | session_id =~ \"${session:regex}\""
+          "expr": "{service_name=\"$service\", service_name=~\".+\"} | session_id =~ \"${session:regex}\""
         }
       ],
       "transformations": [
@@ -573,7 +573,7 @@
           },
           "queryType": "range",
           "maxLines": 1000,
-          "expr": "{service_name=\"$service\"} | session_id =~ \"${session:regex}\""
+          "expr": "{service_name=\"$service\", service_name=~\".+\"} | session_id =~ \"${session:regex}\""
         }
       ],
       "transformations": [
