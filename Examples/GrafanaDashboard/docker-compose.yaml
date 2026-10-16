@@ -1,0 +1,47 @@
+services:
+  collector:
+    image: otel/opentelemetry-collector:0.162.0@sha256:310a800ad69ee430e7c541796852a242c9c7db97aaad4daa5ccf843c525fbdb2
+    command: ["--config=/conf/collector-config.yaml"]
+    volumes:
+      - ./collector-config.yaml:/conf/collector-config.yaml
+    # Local-only: Grafana below has no login, so nothing is reachable from other machines.
+    ports:
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
+    depends_on:
+      - lgtm
+
+  # Grafana + Tempo (traces) + Loki (logs) + Prometheus. Its own OTLP ports
+  # stay unpublished; the collector above forwards to it.
+  lgtm:
+    image: grafana/otel-lgtm:0.36.0@sha256:57c04cbd8e7022f32bb84c4ac005d79baf8b08e2c5be44facf11f5f1f9944ba2
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      # Timeline panel on the HackerNewsDemo dashboard.
+      GF_PLUGINS_PREINSTALL: volkovlabs-echarts-panel
+      # Local-only: everyone is an anonymous Admin, with no login screen.
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_AUTH_DISABLE_LOGIN: "true"
+      OTELCOL_EXTRA_ARGS: --config=file:/otel-lgtm/otelcol-event-name.yaml
+      # Loki keeps recent logs in memory; write them out on stop instead of losing them,
+      # and give it time to (the image force-kills its components after 5s by default).
+      LOKI_EXTRA_ARGS: -ingester.flush-on-shutdown=true
+      LGTM_SHUTDOWN_TIMEOUT_SECONDS: "20"
+    stop_grace_period: 30s
+    # Adds the HackerNewsDemo dashboard next to the image's own, and replaces the
+    # image's data sources with grafana/datasources.yaml. Telemetry is kept in the
+    # lgtm-data volume across restarts (run.sh reset deletes it).
+    volumes:
+      - lgtm-data:/data
+      - ./grafana/dashboards.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/hackernews.yaml:ro
+      - ./grafana/hackernews-demo.json:/otel-lgtm/hackernews-dashboards/hackernews-demo.json:ro
+      # The Timeline panel's code, which the panel imports from /public/hackernews-demo/timeline.js.
+      - ./grafana/timeline.js:/otel-lgtm/grafana/public/hackernews-demo/timeline.js:ro
+      - ./grafana/datasources.yaml:/otel-lgtm/grafana/conf/provisioning/datasources/grafana-datasources.yaml:ro
+      - ./otelcol-event-name.yaml:/otel-lgtm/otelcol-event-name.yaml:ro
+
+volumes:
+  lgtm-data:

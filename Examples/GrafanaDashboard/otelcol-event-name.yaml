@@ -1,0 +1,12 @@
+# Merged over grafana/otel-lgtm's own collector config (see OTELCOL_EXTRA_ARGS in
+# docker-compose.yaml). Loki drops the OTLP log record's event_name field, so copy it
+# into the event.name attribute, which Loki keeps as structured metadata (event_name).
+processors:
+  transform/event-name:
+    log_statements:
+      - set(log.attributes["event.name"], log.event_name) where log.event_name != ""
+
+service:
+  pipelines:
+    logs:
+      processors: [transform/event-name, batch]
