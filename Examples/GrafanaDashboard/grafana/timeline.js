@@ -15,14 +15,26 @@ export default (context) => {
   const traceIds = col('traceId'), keys = col('key'), eventNames = col('eventName');
   // Log records are labeled with their event name, else their body, else their scope. The string
   // conversion turns a missing event name into "null".
-  const textOf = (i) => (eventNames[i] && eventNames[i] !== 'null' && eventNames[i]) || texts[i] || `[${scopes[i] || 'unknown'}]`;
+  const textOf = (i) => {
+    if (eventNames[i] && eventNames[i] !== 'null') return eventNames[i];
+    if (texts[i]) return texts[i];
+    return `[${scopes[i] || 'unknown'}]`;
+  };
 
   // key is the span ID for spans (16 hex digits) and Loki's row id for log records.
-  const rows = starts.map((s, i) => ({
-    start: Number(s), end: Number(ends[i]), text: textOf(i), scope: scopes[i] || 'unknown',
-    session: sessions[i] && sessions[i] !== 'null' ? sessions[i] : 'no session', traceId: traceIds[i] || '', key: keys[i] || '',
-    isSpan: /^[0-9a-f]{16}$/.test(keys[i] || ''),
-  })).filter((r) => !Number.isNaN(r.start)).sort((a, b) => a.start - b.start);
+  const rows = starts
+    .map((s, i) => ({
+      start: Number(s),
+      end: Number(ends[i]),
+      text: textOf(i),
+      scope: scopes[i] || 'unknown',
+      session: sessions[i] && sessions[i] !== 'null' ? sessions[i] : 'no session',
+      traceId: traceIds[i] || '',
+      key: keys[i] || '',
+      isSpan: /^[0-9a-f]{16}$/.test(keys[i] || ''),
+    }))
+    .filter((r) => !Number.isNaN(r.start))
+    .sort((a, b) => a.start - b.start);
 
   const { locationService, replaceVariables } = context.grafana;
   // The selection lives in the URL (var-trace/var-span/var-event), so the Events table's links
@@ -67,7 +79,11 @@ export default (context) => {
 
   const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   const fmtTime = (t) => new Date(t).toLocaleTimeString([], { hour12: false }) + '.' + String(Math.floor(t % 1000)).padStart(3, '0');
-  const fmtDur = (ms) => ms < 1 ? (ms * 1000).toFixed(0) + ' µs' : ms < 1000 ? ms.toFixed(1) + ' ms' : (ms / 1000).toFixed(2) + ' s';
+  const fmtDur = (ms) => {
+    if (ms < 1) return (ms * 1000).toFixed(0) + ' µs';
+    if (ms < 1000) return ms.toFixed(1) + ' ms';
+    return (ms / 1000).toFixed(2) + ' s';
+  };
 
   // Each lane: a strip at the top for event markers, the rest for span bars.
   const renderItem = (params, api) => {
@@ -94,11 +110,13 @@ export default (context) => {
     const h = Math.max(3, spanHeight / subRows - 2);
     const y = spanTop + r.subRow * (spanHeight / subRows);
     const width = Math.max(2, api.coord([r.end, lane])[0] - x0);
+    const showLabel = width > 60 && h >= 12;
+    const label = { style: { text: r.text, fill: '#111', fontSize: 11, overflow: 'truncate', width: width - 6 } };
     return {
       type: 'rect',
       shape: { x: x0, y, width, height: h, r: 2 },
       style: { fill: color, opacity: 0.85 * opacity, ...outline },
-      textContent: width > 60 && h >= 12 ? { style: { text: r.text, fill: '#111', fontSize: 11, overflow: 'truncate', width: width - 6 } } : undefined,
+      textContent: showLabel ? label : undefined,
       textConfig: { position: 'insideLeft' },
     };
   };
@@ -129,11 +147,24 @@ export default (context) => {
     });
     return node;
   };
+  // localStorage can be unavailable (private windows, blocked storage); fall back to false.
+  const readFlag = (key) => {
+    try {
+      return localStorage.getItem(key) === 'true';
+    } catch (e) {
+      return false;
+    }
+  };
+  const writeFlag = (key, value) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {}
+  };
+  const DETAILS_JSON_KEY = 'hackernews-demo.details-json';
+  const SESSIONS_COLLAPSED_KEY = 'hackernews-demo.sessions-collapsed';
   const drawer = sidebar('hackernews-demo-details', 'borderLeft');
   const sessionsBar = sidebar('hackernews-demo-sessions', 'borderRight');
-  try {
-    sessionsBar.dataset.collapsed = localStorage.getItem('hackernews-demo.sessions-collapsed') === 'true';
-  } catch (e) {}
+  sessionsBar.dataset.collapsed = readFlag(SESSIONS_COLLAPSED_KEY);
 
   // Split the page instead of covering it: pad Grafana's panel area by the sidebars' widths and
   // put the sidebars in the padding. The panels reflow to the narrower width.
@@ -168,9 +199,11 @@ export default (context) => {
     return node;
   };
   const muted = { color: theme.colors.text.secondary };
+  const headingStyle = { fontSize: '12px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.04em', ...muted };
+  const plainButtonStyle = { background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' };
   const section = (title) => {
     const box = el('section', { padding: '12px 16px', borderTop: `1px solid ${theme.colors.border.weak}` });
-    box.appendChild(el('h4', { margin: '0 0 8px', fontSize: '12px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.04em', ...muted }, title));
+    box.appendChild(el('h4', { ...headingStyle, margin: '0 0 8px' }, title));
     return box;
   };
   const keyValues = (pairs) => {
@@ -187,7 +220,7 @@ export default (context) => {
   const close = () => locationService.partial({ 'var-trace': '', 'var-span': '', 'var-event': '' });
   // raw is the record as Tempo or Loki returned it, shown instead of the sections in JSON view.
   const headerButton = (text, title, onclick) => {
-    const button = el('button', { background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', lineHeight: '1', padding: '0 2px' }, text);
+    const button = el('button', { ...plainButtonStyle, lineHeight: '1', padding: '0 2px' }, text);
     button.title = title;
     button.onclick = onclick;
     return button;
@@ -203,16 +236,19 @@ export default (context) => {
     header.appendChild(heading);
     const body = el('div', { flex: '1', overflowY: 'auto' });
     if (raw) {
-      const showRaw = (() => { try { return localStorage.getItem('hackernews-demo.details-json') === 'true'; } catch (e) { return false; } })();
+      const showRaw = readFlag(DETAILS_JSON_KEY);
       const toggle = headerButton(showRaw ? 'Fields' : 'JSON', showRaw ? 'Show fields' : 'Show the raw record as JSON', () => {
-        try { localStorage.setItem('hackernews-demo.details-json', !showRaw); } catch (e) {}
+        writeFlag(DETAILS_JSON_KEY, !showRaw);
         render(title, subtitle, sections, link, raw);
       });
       Object.assign(toggle.style, { fontSize: '12px', border: `1px solid ${theme.colors.border.medium}`, borderRadius: '2px', padding: '2px 6px' });
       header.appendChild(toggle);
       if (showRaw) {
         const json = JSON.stringify(raw, null, 2);
-        const copy = headerButton('Copy', 'Copy the JSON', () => navigator.clipboard.writeText(json).then(() => { copy.textContent = 'Copied'; }));
+        const copy = headerButton('Copy', 'Copy the JSON', async () => {
+          await navigator.clipboard.writeText(json);
+          copy.textContent = 'Copied';
+        });
         Object.assign(copy.style, { ...muted, fontSize: '12px' });
         const toolbar = el('div', { display: 'flex', justifyContent: 'flex-end', padding: '8px 16px 0' });
         toolbar.appendChild(copy);
@@ -331,9 +367,7 @@ export default (context) => {
   };
   const setCollapsed = (collapsed) => {
     sessionsBar.dataset.collapsed = collapsed;
-    try {
-      localStorage.setItem('hackernews-demo.sessions-collapsed', collapsed);
-    } catch (e) {}
+    writeFlag(SESSIONS_COLLAPSED_KEY, collapsed);
     renderSessions(true);
     layout();
   };
@@ -344,7 +378,7 @@ export default (context) => {
     if (!force && signature === sessionsBar.dataset.signature) return;
     sessionsBar.dataset.signature = signature;
     sessionsBar.replaceChildren();
-    const toggle = el('button', { background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '16px', padding: '4px 8px' });
+    const toggle = el('button', { ...plainButtonStyle, fontSize: '16px', padding: '4px 8px' });
     if (sessionsBar.dataset.collapsed === 'true') {
       toggle.textContent = '»';
       toggle.title = 'Show sessions';
@@ -356,7 +390,8 @@ export default (context) => {
     toggle.title = 'Hide sessions';
     toggle.onclick = () => setCollapsed(true);
     const header = el('header', { display: 'flex', alignItems: 'center', padding: '12px 8px 8px 16px' });
-    header.append(el('h4', { flex: '1', margin: '0', fontSize: '12px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.04em', ...muted }, `Sessions (${sessions.length})`), toggle);
+    const heading = el('h4', { ...headingStyle, flex: '1', margin: '0' }, `Sessions (${sessions.length})`);
+    header.append(heading, toggle);
     const list = el('div', { flex: '1', overflowY: 'auto' });
     if (state.sessionsTruncated) {
       list.appendChild(el('div', { ...muted, fontSize: '12px', padding: '0 16px 8px' }, 'Too much data in this time range: some sessions or counts may be missing.'));
@@ -408,7 +443,8 @@ export default (context) => {
     spans.forEach((s) => add(s['session.id'], s.time, s.time + s.duration / 1e6, 'spans', false));
     logs.forEach((l) => {
       const labels = l.labels || {};
-      add(labels.session_id, l.Time, l.Time, 'logs', labels.event_name === 'device.crash' || labels.scope_name === 'io.opentelemetry.kscrash');
+      const isCrash = labels.event_name === 'device.crash' || labels.scope_name === 'io.opentelemetry.kscrash';
+      add(labels.session_id, l.Time, l.Time, 'logs', isCrash);
     });
     state.sessions = [...byId.values()].sort((a, b) => b.start - a.start);
     // The queries return at most SESSION_TRACES traces, SESSION_SPANS_PER_TRACE spans per trace
