@@ -100,6 +100,13 @@ public struct OTelTracer: Tracing.Tracer, @unchecked Sendable {
         return span
     }
 
+    /// Returns this tracer's recording span for the given context, if available.
+    ///
+    /// The registry is shared by tracer copies and strongly retains recording spans
+    /// until `end()` removes them. Prefer `withSpan`, which ends spans automatically,
+    /// or always end spans created with `startSpan`. Dropping a span without ending
+    /// it keeps it retained while the tracer or any copy is alive. Repeatedly
+    /// abandoning spans can cause unbounded memory growth.
     public func activeSpan(identifiedBy context: ServiceContext) -> OTelSpan? {
         guard let spanContext = context.otelSpanContext else { return nil }
         return spans.activeSpan(identifiedBy: spanContext)
