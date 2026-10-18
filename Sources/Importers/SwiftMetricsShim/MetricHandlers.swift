@@ -11,12 +11,14 @@ final class SwiftCounterMetric: CounterHandler, SwiftMetric, @unchecked Sendable
   let metricType: MetricType = .counter
   let counter: Locked<LongCounter>
   let labels: [String: AttributeValue]
+  let dimensions: [String: String]
 
   required init(name: String,
                 labels: [String: String],
                 meter: any OpenTelemetryApi.Meter) {
     metricName = name
     counter = .init(initialValue: meter.counterBuilder(name: name).build())
+    dimensions = labels
     self.labels = labels.mapValues { value in
       return AttributeValue.string(value)
     }
@@ -34,12 +36,14 @@ final class SwiftGaugeMetric: RecorderHandler, SwiftMetric, @unchecked Sendable 
   let metricType: MetricType = .gauge
   let counter: Locked<DoubleGauge>
   let labels: [String: AttributeValue]
+  let dimensions: [String: String]
 
   required init(name: String,
                 labels: [String: String],
                 meter: any OpenTelemetryApi.Meter) {
     metricName = name
     counter = .init(initialValue: meter.gaugeBuilder(name: name).build())
+    dimensions = labels
     self.labels = labels.mapValues { value in
       return AttributeValue.string(value)
     }
@@ -59,10 +63,12 @@ final class SwiftHistogramMetric: RecorderHandler, SwiftMetric, @unchecked Senda
   let metricType: MetricType = .histogram
   let measure: Locked<DoubleHistogram>
   let labels: [String: AttributeValue]
+  let dimensions: [String: String]
 
   required init(name: String, labels: [String: String], meter: any OpenTelemetryApi.Meter) {
     metricName = name
     measure = .init(initialValue: meter.histogramBuilder(name: name).build())
+    dimensions = labels
     self.labels = labels.mapValues { value in
       return AttributeValue.string(value)
     }
@@ -82,10 +88,12 @@ final class SwiftSummaryMetric: TimerHandler, SwiftMetric, @unchecked Sendable {
   let metricType: MetricType = .summary
   let measure: Locked<DoubleCounter>
   let labels: [String: AttributeValue]
+  let dimensions: [String: String]
 
   required init(name: String, labels: [String: String], meter: any OpenTelemetryApi.Meter) {
     metricName = name
     measure = .init(initialValue: meter.counterBuilder(name: name).ofDoubles().build())
+    dimensions = labels
     self.labels = labels.mapValues { value in
       return AttributeValue.string(value)
     }
@@ -99,6 +107,7 @@ final class SwiftSummaryMetric: TimerHandler, SwiftMetric, @unchecked Sendable {
 protocol SwiftMetric {
   var metricName: String { get }
   var metricType: MetricType { get }
+  var dimensions: [String: String] { get }
   init(name: String, labels: [String: String], meter: any OpenTelemetryApi.Meter)
 }
 
@@ -112,4 +121,18 @@ enum MetricType: String {
 struct MetricKey: Hashable {
   let name: String
   let type: MetricType
+  let dimensions: [String: String]
+
+  static func == (lhs: MetricKey, rhs: MetricKey) -> Bool {
+    lhs.name == rhs.name && lhs.type == rhs.type && lhs.dimensions == rhs.dimensions
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine(name)
+    hasher.combine(type)
+    for key in dimensions.keys.sorted() {
+      hasher.combine(key)
+      hasher.combine(dimensions[key])
+    }
+  }
 }

@@ -111,6 +111,24 @@ class SwiftMetricsShimTests: XCTestCase {
     XCTAssertEqual(data.attributes["label_one"]?.description, "value")
   }
 
+  func testCounter_sameLabelDifferentDimensions() throws {
+    let counterA = metrics.makeCounter(label: "requests", dimensions: [("env", "a")])
+    let counterB = metrics.makeCounter(label: "requests", dimensions: [("env", "b")])
+    counterA.increment(by: 1)
+    counterB.increment(by: 1)
+
+    XCTAssertEqual(metrics.metrics.count, 2)
+
+    wait(for: [metricsExportExpectation], timeout: 10)
+
+    let dataPoints = try stableMetrics.first { $0.name == "requests" }?.data.points.compactMap { $0 as? LongPointData }
+    let valueForEnv: (String) -> Int64? = { env in
+      dataPoints?.first { $0.attributes["env"]?.description == env }?.value
+    }
+    XCTAssertEqual(valueForEnv("a"), 1)
+    XCTAssertEqual(valueForEnv("b"), 1)
+  }
+
   // MARK: - Test Metric: Gauge
 
   func testGauge() throws {
