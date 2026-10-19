@@ -52,7 +52,7 @@ let package = Package(
       url: "https://github.com/apple/swift-protobuf.git",
       from: "1.38.1"
     ),
-    .package(url: "https://github.com/apple/swift-log.git", from: "1.15.1"),
+    .package(url: "https://github.com/apple/swift-log.git", from: "1.16.1"),
     .package(url: "https://github.com/apple/swift-metrics.git", from: "2.12.0"),
     .package(url: "https://github.com/apple/swift-distributed-tracing.git", from: "1.7.2")
   ],
