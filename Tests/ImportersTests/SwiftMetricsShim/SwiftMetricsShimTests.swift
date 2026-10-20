@@ -122,7 +122,7 @@ class SwiftMetricsShimTests: XCTestCase {
     wait(for: [metricsExportExpectation], timeout: 10)
 
     let dataPoints = stableMetrics.first { $0.name == "requests" }?.data.points.compactMap { $0 as? LongPointData }
-    let valueForEnv: (_ env: String) -> Int? = {
+    let valueForEnv: (_ env: String) -> Int? = { env in
       dataPoints?.first { $0.attributes["env"]?.description == env }?.value
     }
     XCTAssertEqual(valueForEnv("a"), 1)
