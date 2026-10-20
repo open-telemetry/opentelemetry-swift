@@ -194,7 +194,7 @@ jobs:
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: ubuntu-latest
-    container: swift:6.4.1@sha256:870edbd7f37b77dc01ebab7eb4e0475d16be82796a06734d0bdc010cd24ea32f
+    container: swift:6.4.1@sha256:6fbd5978b56a5a9ff05a48f8f678079fc45be496ecda15b4e74e8944fab857be
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
