@@ -16,7 +16,7 @@
   import XCTest
 
   class OtlpHttpExporterBaseTests: XCTestCase {
-    var exporter: OtlpHttpExporterBase!
+    var exporter: OtlpHttpExporterBase<SpanData>!
     var spans: [SpanData] = []
 
     override func setUp() {
@@ -33,7 +33,7 @@
     func testCreateRequestWithGzipCompression() {
       let config = OtlpConfiguration(compression: .gzip)
 
-      exporter = OtlpHttpExporterBase(
+      exporter = OtlpHttpExporterBase<SpanData>(
         endpoint: URL(
           string: "http://example.com"
         )!,
@@ -60,7 +60,7 @@
     func testCreateRequestWithDeflateCompression() {
       let config = OtlpConfiguration(compression: .deflate)
 
-      exporter = OtlpHttpExporterBase(
+      exporter = OtlpHttpExporterBase<SpanData>(
         endpoint: URL(
           string: "http://example.com"
         )!,
@@ -87,7 +87,7 @@
     func testCreateRequestWithNoCompression() {
       let config = OtlpConfiguration(compression: .none)
 
-      exporter = OtlpHttpExporterBase(
+      exporter = OtlpHttpExporterBase<SpanData>(
         endpoint: URL(
           string: "http://example.com"
         )!,

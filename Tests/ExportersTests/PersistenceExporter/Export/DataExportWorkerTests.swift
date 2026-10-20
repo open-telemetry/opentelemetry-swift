@@ -81,6 +81,9 @@ class DataExportWorkerTests: XCTestCase {
 
   func testGivenDataToExport_whenExportFinishesAndNeedsToBeRetried_thenDataIsPreserved() {
     let startExportExpectation = expectation(description: "Export has started")
+    // The export asks to be retried, so on a slow machine the worker can export again before it is
+    // cancelled. Only the first export matters here, and a second fulfill must not abort the run.
+    startExportExpectation.assertForOverFulfill = false
 
     var mockDataExporter = DataExporterMock(exportStatus: .mockWith(needsRetry: true))
     mockDataExporter.onExport = { _ in startExportExpectation.fulfill() }

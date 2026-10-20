@@ -16,21 +16,25 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with: 
         ref: ${{ github.head_ref }}
+        persist-credentials: false
     - name: update Podspec
       run: | 
-        sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-BaggagePropagationProcessor.podspec
-        sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-Instrumentation-NetworkStatus.podspec
-        sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-Instrumentation-URLSession.podspec
-        sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-Protocol-Exporter-Common.podspec
-        sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-Protocol-Exporter-Http.podspec
-        sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-SdkResourceExtension.podspec
-        sed -i -e  's/spec.version = ".*"/spec.version = "${{ inputs.new_version }}"/' OpenTelemetry-Swift-PersistenceExporter.podspec
+        sed -i -e  "s/spec.version = \".*\"/spec.version = \"${INPUTS_NEW_VERSION}\"/" OpenTelemetry-Swift-BaggagePropagationProcessor.podspec
+        sed -i -e  "s/spec.version = \".*\"/spec.version = \"${INPUTS_NEW_VERSION}\"/" OpenTelemetry-Swift-Instrumentation-NetworkStatus.podspec
+        sed -i -e  "s/spec.version = \".*\"/spec.version = \"${INPUTS_NEW_VERSION}\"/" OpenTelemetry-Swift-Instrumentation-URLSession.podspec
+        sed -i -e  "s/spec.version = \".*\"/spec.version = \"${INPUTS_NEW_VERSION}\"/" OpenTelemetry-Swift-Protocol-Exporter-Common.podspec
+        sed -i -e  "s/spec.version = \".*\"/spec.version = \"${INPUTS_NEW_VERSION}\"/" OpenTelemetry-Swift-Protocol-Exporter-Http.podspec
+        sed -i -e  "s/spec.version = \".*\"/spec.version = \"${INPUTS_NEW_VERSION}\"/" OpenTelemetry-Swift-SdkResourceExtension.podspec
+        sed -i -e  "s/spec.version = \".*\"/spec.version = \"${INPUTS_NEW_VERSION}\"/" OpenTelemetry-Swift-PersistenceExporter.podspec
+      env:
+        INPUTS_NEW_VERSION: ${{ inputs.new_version }}
 
     - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
       id: otelbot-token
       with:
         client-id: ${{ vars.OTELBOT_CLIENT_ID }}
         private-key: ${{ secrets.OTELBOT_PRIVATE_KEY }}
+        permission-pull-requests: write
 
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1

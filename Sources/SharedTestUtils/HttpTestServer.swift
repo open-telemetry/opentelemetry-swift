@@ -20,9 +20,21 @@ import Musl
 /// A unified HTTP test server using POSIX sockets
 /// Combines functionality from both OTLP exporter tests and URLSession instrumentation tests
 public class HttpTestServer: @unchecked Sendable {
-    private var serverSocket: Int32 = -1
+    // `serverSocket` and `isRunning` are written by `start()`/`stop()` on the
+    // caller's thread and read by `acceptLoop()` on `serverQueue`, so guard
+    // them with a lock to keep Thread Sanitizer happy.
+    private let stateLock = NSLock()
+    private var _serverSocket: Int32 = -1
+    private var _isRunning = false
+    private var serverSocket: Int32 {
+        get { stateLock.lock(); defer { stateLock.unlock() }; return _serverSocket }
+        set { stateLock.lock(); defer { stateLock.unlock() }; _serverSocket = newValue }
+    }
+    private var isRunning: Bool {
+        get { stateLock.lock(); defer { stateLock.unlock() }; return _isRunning }
+        set { stateLock.lock(); defer { stateLock.unlock() }; _isRunning = newValue }
+    }
     public private(set) var serverPort: Int = 0
-    private var isRunning = false
     private var serverQueue: DispatchQueue?
     private let startSemaphore = DispatchSemaphore(value: 0)
 
@@ -130,20 +142,23 @@ public class HttpTestServer: @unchecked Sendable {
     }
 
     public func stop() {
-        isRunning = false
+        stateLock.lock()
+        _isRunning = false
+        let socketToClose = _serverSocket
+        _serverSocket = -1
+        stateLock.unlock()
 
         // Close server socket
-        if serverSocket >= 0 {
+        if socketToClose >= 0 {
             // Use platform-specific shutdown
             #if canImport(Darwin)
-            Darwin.shutdown(serverSocket, SHUT_RDWR)
+            Darwin.shutdown(socketToClose, SHUT_RDWR)
             #elseif canImport(Glibc)
-            Glibc.shutdown(serverSocket, Int32(SHUT_RDWR))
+            Glibc.shutdown(socketToClose, Int32(SHUT_RDWR))
             #elseif canImport(Musl)
-            Musl.shutdown(serverSocket, Int32(SHUT_RDWR))
+            Musl.shutdown(socketToClose, Int32(SHUT_RDWR))
             #endif
-            close(serverSocket)
-            serverSocket = -1
+            close(socketToClose)
         }
 
         // Clear received requests
@@ -222,8 +237,11 @@ public class HttpTestServer: @unchecked Sendable {
             var clientAddr = sockaddr_in()
             var clientAddrLen = socklen_t(MemoryLayout<sockaddr_in>.size)
 
+            let listeningSocket = serverSocket
+            guard listeningSocket >= 0 else { break }
+
             let clientSocket = withUnsafeMutablePointer(to: &clientAddr) { ptr in
-                accept(serverSocket, UnsafeMutableRawPointer(ptr).assumingMemoryBound(to: sockaddr.self), &clientAddrLen)
+                accept(listeningSocket, UnsafeMutableRawPointer(ptr).assumingMemoryBound(to: sockaddr.self), &clientAddrLen)
             }
 
             if clientSocket < 0 {
@@ -359,7 +377,13 @@ public class HttpTestServer: @unchecked Sendable {
     }
 
     private func handleURLSessionRequest(socket: Int32, path: String) {
-        if path.hasPrefix("/success") || path.hasPrefix("/dontinstrument") {
+        if path.hasPrefix("/success-with-body") {
+            sendSuccessResponse(socket: socket, body: "success response body")
+            config?.successCallback?()
+        } else if path.hasPrefix("/forbidden-with-body") {
+            sendForbiddenResponse(socket: socket, body: "forbidden response body")
+            config?.errorCallback?()
+        } else if path.hasPrefix("/success") || path.hasPrefix("/dontinstrument") {
             sendSuccessResponse(socket: socket)
             config?.successCallback?()
         } else if path.hasPrefix("/forbidden") {
@@ -373,8 +397,8 @@ public class HttpTestServer: @unchecked Sendable {
         }
     }
 
-    private func sendSuccessResponse(socket: Int32) {
-        let response = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+    private func sendSuccessResponse(socket: Int32, body: String = "") {
+        let response = "HTTP/1.1 200 OK\r\nContent-Length: \(body.utf8.count)\r\nConnection: close\r\n\r\n\(body)"
         _ = response.withCString { ptr in
             send(socket, ptr, strlen(ptr), 0)
         }
@@ -387,8 +411,8 @@ public class HttpTestServer: @unchecked Sendable {
         }
     }
 
-    private func sendForbiddenResponse(socket: Int32) {
-        let response = "HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+    private func sendForbiddenResponse(socket: Int32, body: String = "") {
+        let response = "HTTP/1.1 403 Forbidden\r\nContent-Length: \(body.utf8.count)\r\nConnection: close\r\n\r\n\(body)"
         _ = response.withCString { ptr in
             send(socket, ptr, strlen(ptr), 0)
         }

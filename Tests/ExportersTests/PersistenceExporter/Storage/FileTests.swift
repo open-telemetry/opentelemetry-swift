@@ -72,7 +72,7 @@ class FileTests: XCTestCase {
     try file.delete()
 
     XCTAssertThrowsError(try file.append(data: .mock(ofSize: 5))) { error in
-      XCTAssertTrue((error as NSError).localizedDescription.contains("doesn’t exist."))
+      XCTAssertTrue((error as NSError).description.contains("No such file or directory"))
     }
   }
 
@@ -82,7 +82,25 @@ class FileTests: XCTestCase {
     try file.delete()
 
     XCTAssertThrowsError(try file.read()) { error in
-      XCTAssertTrue((error as NSError).localizedDescription.contains("doesn’t exist."))
+      XCTAssertTrue((error as NSError).description.contains("No such file or directory"))
+    }
+  }
+
+  func testWhenFileDoesNotExist_itThrowsFileNoSuchFileWhenDeleting() throws {
+    let file = try temporaryDirectory.createFile(named: "file")
+    try file.delete()
+
+    XCTAssertThrowsError(try file.delete()) { error in
+      XCTAssertEqual((error as? CocoaError)?.code, .fileNoSuchFile)
+    }
+  }
+
+  func testWhenFileDoesNotExist_itThrowsFileReadNoSuchFileWhenReadingSize() throws {
+    let file = try temporaryDirectory.createFile(named: "file")
+    try file.delete()
+
+    XCTAssertThrowsError(try file.size()) { error in
+      XCTAssertEqual((error as? CocoaError)?.code, .fileReadNoSuchFile)
     }
   }
 }

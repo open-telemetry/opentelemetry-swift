@@ -22,19 +22,29 @@ public class SessionLogRecordProcessor: LogRecordProcessor {
 
   /// Called when a log record is emitted - adds session attributes and forwards to next processor
   public func onEmit(logRecord: ReadableLogRecord) {
+    if logRecord.eventName == SessionConstants.sessionStartEvent ||
+      logRecord.eventName == SessionConstants.sessionEndEvent,
+      logRecord.attributes[SemanticConventions.Session.id.rawValue] != nil {
+      // Lifecycle events already carry the historical session context they describe.
+      nextProcessor.onEmit(logRecord: logRecord)
+      return
+    }
+
     var enhancedRecord = logRecord
 
-    // Only add session attributes if they don't already exist
-    if logRecord.attributes[SemanticConventions.Session.id.rawValue] == nil || logRecord.attributes[SemanticConventions.Session.previousId.rawValue] == nil {
-      let session = sessionManager.getSession()
-
-      // Add session.id if not already present
-      if logRecord.attributes[SemanticConventions.Session.id.rawValue] == nil {
-        enhancedRecord.setAttribute(key: SemanticConventions.Session.id.rawValue, value: session.id)
+    // A record that already carries session.id was stamped by its producer
+    // (e.g. a session.start/session.end event for a session that is no longer
+    // current), so its session attributes are left untouched: filling in
+    // session.previous_id from the current session would attach the wrong
+    // session's predecessor.
+    if logRecord.attributes[SemanticConventions.Session.id.rawValue] == nil {
+      guard let session = sessionManager.sessionForSignalAttribution() else {
+        nextProcessor.onEmit(logRecord: enhancedRecord)
+        return
       }
+      enhancedRecord.setAttribute(key: SemanticConventions.Session.id.rawValue, value: session.id)
 
-      // Add session.previous_id if not already present and session has a previous ID
-      if logRecord.attributes[SemanticConventions.Session.previousId.rawValue] == nil, let previousId = session.previousId {
+      if let previousId = session.previousId {
         enhancedRecord.setAttribute(key: SemanticConventions.Session.previousId.rawValue, value: previousId)
       }
     }
@@ -42,13 +52,13 @@ public class SessionLogRecordProcessor: LogRecordProcessor {
     nextProcessor.onEmit(logRecord: enhancedRecord)
   }
 
-  /// Shuts down the processor - no cleanup needed
+  /// Shuts down the processor by delegating to the next processor in the chain
   public func shutdown(explicitTimeout: TimeInterval?) -> ExportResult {
-    return .success
+    return nextProcessor.shutdown(explicitTimeout: explicitTimeout)
   }
 
-  /// Forces a flush of any pending data - no action needed
+  /// Forces a flush of any pending data by delegating to the next processor in the chain
   public func forceFlush(explicitTimeout: TimeInterval?) -> ExportResult {
-    return .success
+    return nextProcessor.forceFlush(explicitTimeout: explicitTimeout)
   }
 }

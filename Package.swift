@@ -1,4 +1,4 @@
-// swift-tools-version:6.0
+// swift-tools-version:6.2
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import Foundation
@@ -8,46 +8,84 @@ let package = Package(
   name: "opentelemetry-swift",
   platforms: [
     .macOS(.v12),
-    .iOS(.v13),
-    .tvOS(.v13),
-    .watchOS(.v6),
-    .visionOS(.v1)
+    .iOS(.v15),
+    .tvOS(.v15),
+    .watchOS(.v8),
+    .visionOS(.v1),
   ],
   products: [
+    .library(name: "OpenTelemetryApi", targets: ["OpenTelemetryApi"]),
+    .library(
+      name: "OpenTelemetryConcurrency",
+      targets: ["OpenTelemetryConcurrency"]
+    ),
+    .library(name: "OpenTelemetrySdk", targets: ["OpenTelemetrySdk"]),
+    .library(name: "StdoutExporter", targets: ["StdoutExporter"]),
     .library(name: "SwiftMetricsShim", targets: ["SwiftMetricsShim"]),
     .library(name: "PrometheusExporter", targets: ["PrometheusExporter"]),
-    .library(name: "OpenTelemetryProtocolExporter", targets: ["OpenTelemetryProtocolExporterGrpc"]),
     .library(
-      name: "OpenTelemetryProtocolExporterHTTP", targets: ["OpenTelemetryProtocolExporterHttp"]
+      name: "OpenTelemetryProtocolExporter",
+      targets: ["OpenTelemetryProtocolExporterGrpc"]
+    ),
+    .library(
+      name: "OpenTelemetryProtocolExporterHTTP",
+      targets: ["OpenTelemetryProtocolExporterHttp"]
     ),
     .library(name: "PersistenceExporter", targets: ["PersistenceExporter"]),
     .library(name: "InMemoryExporter", targets: ["InMemoryExporter"]),
     .library(name: "OTelSwiftLog", targets: ["OTelSwiftLog"]),
     .library(name: "OTelSwiftTracing", targets: ["OTelSwiftTracing"]),
-    .library(name: "BaggagePropagationProcessor", targets: ["BaggagePropagationProcessor"]),
+    .library(
+      name: "BaggagePropagationProcessor",
+      targets: ["BaggagePropagationProcessor"]
+    ),
     .library(name: "Sessions", targets: ["Sessions"]),
+    .executable(name: "ConcurrencyContext", targets: ["ConcurrencyContext"]),
     .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
-    .executable(name: "StableMetricSample", targets: ["StableMetricSample"])
+    .executable(name: "StableMetricSample", targets: ["StableMetricSample"]),
   ],
   dependencies: [
-    .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.5.1"),
-    .package(url: "https://github.com/apple/swift-nio.git", from: "2.101.3"),
-    .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.27.5"),
-    .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.38.1"),
-    .package(url: "https://github.com/apple/swift-log.git", from: "1.15.0"),
-    .package(url: "https://github.com/apple/swift-metrics.git", from: "2.11.0"),
-    .package(url: "https://github.com/apple/swift-distributed-tracing.git", from: "1.4.1")
+    .package(url: "https://github.com/apple/swift-atomics.git", from: "1.3.1"),
+    .package(url: "https://github.com/apple/swift-nio.git", from: "2.104.0"),
+    .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.27.6"),
+    .package(
+      url: "https://github.com/apple/swift-protobuf.git",
+      from: "1.38.1"
+    ),
+    .package(url: "https://github.com/apple/swift-log.git", from: "1.16.1"),
+    .package(url: "https://github.com/apple/swift-metrics.git", from: "2.12.0"),
+    .package(url: "https://github.com/apple/swift-distributed-tracing.git", from: "1.7.2")
   ],
   targets: [
     .target(
-      name: "SharedTestUtils",
+      name: "OpenTelemetryApi",
       dependencies: []
+    ),
+    .target(
+      name: "OpenTelemetrySdk",
+      dependencies: [
+        "OpenTelemetryApi",
+        .product(
+          name: "Atomics",
+          package: "swift-atomics",
+          condition: .when(platforms: [.linux])
+        ),
+      ]
+    ),
+    .target(
+      name: "OpenTelemetryConcurrency",
+      dependencies: ["OpenTelemetryApi"]
+    ),
+    .target(
+      name: "StdoutExporter",
+      dependencies: ["OpenTelemetrySdk"],
+      path: "Sources/Exporters/Stdout"
     ),
     .target(
       name: "OTelSwiftLog",
       dependencies: [
-        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
-        .product(name: "Logging", package: "swift-log")
+        "OpenTelemetryApi",
+        .product(name: "Logging", package: "swift-log"),
       ],
       path: "Sources/Bridges/OTelSwiftLog",
       exclude: ["README.md"]
@@ -55,8 +93,8 @@ let package = Package(
     .target(
       name: "OTelSwiftTracing",
       dependencies: [
-        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
-        .product(name: "Tracing", package: "swift-distributed-tracing")
+        "OpenTelemetryApi",
+        .product(name: "Tracing", package: "swift-distributed-tracing"),
       ],
       path: "Sources/Bridges/OTelSwiftTracing",
       exclude: ["README.md"]
@@ -64,8 +102,8 @@ let package = Package(
     .target(
       name: "SwiftMetricsShim",
       dependencies: [
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
-        .product(name: "CoreMetrics", package: "swift-metrics")
+        "OpenTelemetrySdk",
+        .product(name: "CoreMetrics", package: "swift-metrics"),
       ],
       path: "Sources/Importers/SwiftMetricsShim",
       exclude: ["README.md"]
@@ -73,49 +111,49 @@ let package = Package(
     .target(
       name: "PrometheusExporter",
       dependencies: [
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
+        "OpenTelemetrySdk",
         .product(name: "NIO", package: "swift-nio"),
-        .product(name: "NIOHTTP1", package: "swift-nio")
+        .product(name: "NIOHTTP1", package: "swift-nio"),
       ],
       path: "Sources/Exporters/Prometheus"
     ),
     .target(
       name: "OpenTelemetryProtocolExporterCommon",
       dependencies: [
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
+        "OpenTelemetrySdk",
         .product(name: "Logging", package: "swift-log"),
-        .product(name: "SwiftProtobuf", package: "swift-protobuf")
+        .product(name: "SwiftProtobuf", package: "swift-protobuf"),
       ],
       path: "Sources/Exporters/OpenTelemetryProtocolCommon"
     ),
     .target(
       name: "OpenTelemetryProtocolExporterHttp",
       dependencies: [
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
-        "OpenTelemetryProtocolExporterCommon"
+        "OpenTelemetrySdk",
+        "OpenTelemetryProtocolExporterCommon",
       ],
       path: "Sources/Exporters/OpenTelemetryProtocolHttp"
     ),
     .target(
       name: "OpenTelemetryProtocolExporterGrpc",
       dependencies: [
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
+        "OpenTelemetrySdk",
         "OpenTelemetryProtocolExporterCommon",
-        .product(name: "GRPC", package: "grpc-swift")
+        .product(name: "GRPC", package: "grpc-swift"),
       ],
       path: "Sources/Exporters/OpenTelemetryProtocolGrpc"
     ),
     .target(
       name: "InMemoryExporter",
       dependencies: [
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+        "OpenTelemetrySdk"
       ],
       path: "Sources/Exporters/InMemory"
     ),
     .target(
       name: "PersistenceExporter",
       dependencies: [
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+        "OpenTelemetrySdk"
       ],
       path: "Sources/Exporters/Persistence",
       exclude: ["README.md"]
@@ -123,8 +161,8 @@ let package = Package(
     .target(
       name: "BaggagePropagationProcessor",
       dependencies: [
-        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+        "OpenTelemetryApi",
+        "OpenTelemetrySdk",
 
       ],
       path: "Sources/Contrib/Processors/BaggagePropagationProcessor"
@@ -132,18 +170,47 @@ let package = Package(
     .target(
       name: "Sessions",
       dependencies: [
-        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+        "OpenTelemetryApi",
+        "OpenTelemetrySdk",
 
       ],
       path: "Sources/Instrumentation/Sessions",
       exclude: ["README.md"]
     ),
+    .target(
+      name: "SharedTestUtils",
+      dependencies: [
+        "OpenTelemetryApi",
+        "OpenTelemetrySdk",
+      ]
+    ),
+    .testTarget(
+      name: "OpenTelemetryApiTests",
+      dependencies: ["OpenTelemetryApi", "SharedTestUtils"],
+      path: "Tests/OpenTelemetryApiTests",
+      swiftSettings: [
+        .unsafeFlags(["-Xfrontend", "-disable-availability-checking"])
+      ]
+    ),
+    .testTarget(
+      name: "OpenTelemetrySdkTests",
+      dependencies: [
+        "OpenTelemetrySdk",
+        "OpenTelemetryConcurrency",
+        "SharedTestUtils",
+      ],
+      path: "Tests/OpenTelemetrySdkTests",
+      swiftSettings: [
+        .unsafeFlags(["-Xfrontend", "-disable-availability-checking"])
+      ]
+    ),
+
     .testTarget(
       name: "OTelSwiftLogTests",
       dependencies: [
+        "SharedTestUtils",
         "OTelSwiftLog",
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+        "OpenTelemetrySdk",
       ],
       path: "Tests/BridgesTests/OTelSwiftLog"
     ),
@@ -155,23 +222,28 @@ let package = Package(
     .testTarget(
       name: "OTelSwiftTracingTests",
       dependencies: [
+        "SharedTestUtils",
         "OTelSwiftTracing",
         "InMemoryExporter",
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+        "OpenTelemetrySdk",
       ],
       path: "Tests/BridgesTests/OTelSwiftTracing"
     ),
     .testTarget(
       name: "SwiftMetricsShimTests",
       dependencies: [
+        "SharedTestUtils",
         "SwiftMetricsShim",
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+        "OpenTelemetrySdk",
       ],
       path: "Tests/ImportersTests/SwiftMetricsShim"
     ),
     .testTarget(
       name: "PrometheusExporterTests",
-      dependencies: ["PrometheusExporter"],
+      dependencies: [
+        "PrometheusExporter",
+        "SharedTestUtils",
+      ],
       path: "Tests/ExportersTests/Prometheus"
     ),
     .testTarget(
@@ -185,58 +257,72 @@ let package = Package(
     ),
     .testTarget(
       name: "InMemoryExporterTests",
-      dependencies: ["InMemoryExporter"],
+      dependencies: [
+        "InMemoryExporter",
+        "SharedTestUtils",
+      ],
       path: "Tests/ExportersTests/InMemory"
     ),
     .testTarget(
       name: "PersistenceExporterTests",
       dependencies: [
+        "SharedTestUtils",
         "PersistenceExporter",
         "OpenTelemetryProtocolExporterHttp",
+        "InMemoryExporter",
       ],
       path: "Tests/ExportersTests/PersistenceExporter"
     ),
     .testTarget(
       name: "ContribTests",
       dependencies: [
+        "SharedTestUtils",
         "BaggagePropagationProcessor",
-        "InMemoryExporter"
+        "InMemoryExporter",
       ]
     ),
     .testTarget(
       name: "SessionTests",
       dependencies: [
+        "SharedTestUtils",
         "Sessions",
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+        "OpenTelemetrySdk",
       ],
       path: "Tests/InstrumentationTests/SessionTests"
     ),
     .executableTarget(
+      name: "ConcurrencyContext",
+      dependencies: [
+        "OpenTelemetrySdk", "OpenTelemetryConcurrency", "StdoutExporter",
+      ],
+      path: "Examples/ConcurrencyContext"
+    ),
+    .executableTarget(
       name: "LoggingTracer",
       dependencies: [
-        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core")
+        "OpenTelemetryApi"
       ],
       path: "Examples/Logging Tracer"
     ),
     .executableTarget(
       name: "LogsSample",
       dependencies: [
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
+        "OpenTelemetrySdk",
         "OpenTelemetryProtocolExporterGrpc",
-        .product(name: "GRPC", package: "grpc-swift")
+        .product(name: "GRPC", package: "grpc-swift"),
       ],
       path: "Examples/Logs Sample"
     ),
     .executableTarget(
       name: "StableMetricSample",
       dependencies: [
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
+        "OpenTelemetrySdk",
         "OpenTelemetryProtocolExporterGrpc",
-        .product(name: "StdoutExporter", package: "opentelemetry-swift-core")
+        "StdoutExporter",
       ],
       path: "Examples/Stable Metric Sample",
       exclude: ["README.md"]
-    )
+    ),
   ]
 ).addPlatformSpecific()
 
@@ -244,17 +330,23 @@ extension Package {
   func addPlatformSpecific() -> Self {
     #if canImport(ObjectiveC)
       dependencies.append(
-        .package(url: "https://github.com/undefinedlabs/opentracing-objc", from: "0.5.2")
+        .package(
+          url: "https://github.com/undefinedlabs/opentracing-objc",
+          from: "0.5.2"
+        )
       )
       products.append(
-        .library(name: "OpenTracingShim-experimental", targets: ["OpenTracingShim"])
+        .library(
+          name: "OpenTracingShim-experimental",
+          targets: ["OpenTracingShim"]
+        )
       )
       targets.append(contentsOf: [
         .target(
           name: "OpenTracingShim",
           dependencies: [
-            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
-            .product(name: "Opentracing", package: "opentracing-objc")
+            "OpenTelemetrySdk",
+            .product(name: "Opentracing", package: "opentracing-objc"),
           ],
           path: "Sources/Importers/OpenTracingShim",
           exclude: ["README.md"]
@@ -262,55 +354,76 @@ extension Package {
         .testTarget(
           name: "OpenTracingShimTests",
           dependencies: [
+            "SharedTestUtils",
             "OpenTracingShim",
-            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+            "OpenTelemetrySdk",
           ],
           path: "Tests/ImportersTests/OpenTracingShim"
-        )
+        ),
       ])
     #endif
 
     #if canImport(Darwin)
-      dependencies.append(
-        .package(url: "https://github.com/undefinedlabs/Thrift-Swift", from: "1.1.1")
-      )
+      dependencies.append(contentsOf: [
+        .package(
+          url: "https://github.com/undefinedlabs/Thrift-Swift",
+          from: "1.1.1"
+        ),
+        .package(
+          url: "https://github.com/kstenerud/KSCrash.git",
+          .upToNextMinor(from: "2.6.0")
+        ),
+      ])
       products.append(contentsOf: [
         .library(name: "JaegerExporter", targets: ["JaegerExporter"]),
         .executable(name: "simpleExporter", targets: ["SimpleExporter"]),
         .library(name: "NetworkStatus", targets: ["NetworkStatus"]),
-        .library(name: "URLSessionInstrumentation", targets: ["URLSessionInstrumentation"]),
+        .library(
+          name: "URLSessionInstrumentation",
+          targets: ["URLSessionInstrumentation"]
+        ),
         .library(name: "ZipkinExporter", targets: ["ZipkinExporter"]),
         .executable(name: "OTLPExporter", targets: ["OTLPExporter"]),
         .executable(name: "OTLPHTTPExporter", targets: ["OTLPHTTPExporter"]),
         .library(name: "SignPostIntegration", targets: ["SignPostIntegration"]),
         .library(name: "ResourceExtension", targets: ["ResourceExtension"]),
-        .library(name: "MetricKitInstrumentation", targets: ["MetricKitInstrumentation"])
+        .library(
+          name: "MetricKitInstrumentation",
+          targets: ["MetricKitInstrumentation"]
+        ),
+        .library(name: "Crash", targets: ["Crash"]),
       ])
       targets.append(contentsOf: [
         .target(
           name: "JaegerExporter",
           dependencies: [
-            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
+            "OpenTelemetrySdk",
             .product(
-              name: "Thrift", package: "Thrift-Swift",
-              condition: .when(platforms: [.iOS, .macOS, .tvOS, .macCatalyst, .linux])
-            )
+              name: "Thrift",
+              package: "Thrift-Swift",
+              condition: .when(platforms: [
+                .iOS, .macOS, .tvOS, .macCatalyst, .linux,
+              ])
+            ),
           ],
           path: "Sources/Exporters/Jaeger"
         ),
         .testTarget(
           name: "JaegerExporterTests",
-          dependencies: ["JaegerExporter"],
+          dependencies: [
+            "JaegerExporter",
+            "SharedTestUtils",
+          ],
           path: "Tests/ExportersTests/Jaeger"
         ),
         .executableTarget(
           name: "SimpleExporter",
           dependencies: [
-            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
-            .product(name: "StdoutExporter", package: "opentelemetry-swift-core"),
+            "OpenTelemetrySdk",
+            "StdoutExporter",
             "JaegerExporter",
             "ZipkinExporter",
-            "ResourceExtension", "SignPostIntegration"
+            "ResourceExtension", "SignPostIntegration",
           ],
           path: "Examples/Simple Exporter",
           exclude: ["README.md"]
@@ -318,10 +431,12 @@ extension Package {
         .target(
           name: "NetworkStatus",
           dependencies: [
-            .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core")
+            "OpenTelemetryApi"
           ],
           path: "Sources/Instrumentation/NetworkStatus",
-          linkerSettings: [.linkedFramework("CoreTelephony", .when(platforms: [.iOS]))]
+          linkerSettings: [
+            .linkedFramework("CoreTelephony", .when(platforms: [.iOS]))
+          ]
         ),
         .testTarget(
           name: "NetworkStatusTests",
@@ -333,8 +448,9 @@ extension Package {
         .target(
           name: "URLSessionInstrumentation",
           dependencies: [
-            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
-            "NetworkStatus"],
+            "OpenTelemetrySdk",
+            "NetworkStatus",
+          ],
           path: "Sources/Instrumentation/URLSession",
           exclude: ["README.md"]
         ),
@@ -350,7 +466,7 @@ extension Package {
           name: "NetworkSample",
           dependencies: [
             "URLSessionInstrumentation",
-            .product(name: "StdoutExporter", package: "opentelemetry-swift-core")
+            "StdoutExporter",
           ],
           path: "Examples/Network Sample",
           exclude: ["README.md"]
@@ -358,50 +474,73 @@ extension Package {
         .target(
           name: "ZipkinExporter",
           dependencies: [
-            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+            "OpenTelemetrySdk"
           ],
           path: "Sources/Exporters/Zipkin"
         ),
         .testTarget(
           name: "ZipkinExporterTests",
-          dependencies: ["ZipkinExporter"],
+          dependencies: [
+            "ZipkinExporter",
+            "SharedTestUtils",
+          ],
           path: "Tests/ExportersTests/Zipkin"
         ),
         .executableTarget(
           name: "OTLPExporter",
           dependencies: [
-            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
+            "OpenTelemetrySdk",
             "OpenTelemetryProtocolExporterGrpc",
+            "StdoutExporter",
             .product(name: "GRPC", package: "grpc-swift"),
             .product(name: "NIO", package: "swift-nio"),
-            .product(name: "StdoutExporter", package: "opentelemetry-swift-core"),
-            "ZipkinExporter", "ResourceExtension", "SignPostIntegration"
+            "ZipkinExporter",
+            "ResourceExtension",
+            "SignPostIntegration",
           ],
           path: "Examples/OTLP Exporter",
-          exclude: ["README.md", "prometheus.yaml", "collector-config.yaml", "docker-compose.yaml", "images"]
+          exclude: [
+            "README.md", "prometheus.yaml", "collector-config.yaml",
+            "docker-compose.yaml", "images",
+          ]
         ),
         .executableTarget(
           name: "OTLPHTTPExporter",
           dependencies: [
-            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
-            "OpenTelemetryProtocolExporterHttp", .product(name: "StdoutExporter", package: "opentelemetry-swift-core"),
-            "ZipkinExporter", "ResourceExtension", "SignPostIntegration",
+            "OpenTelemetrySdk",
+            "OpenTelemetryProtocolExporterHttp",
+            "StdoutExporter",
+            "ZipkinExporter",
+            "ResourceExtension",
+            "SignPostIntegration",
           ],
           path: "Examples/OTLP HTTP Exporter",
-          exclude: ["README.md", "collector-config.yaml", "docker-compose.yaml", "prometheus.yaml", "images"]
+          exclude: [
+            "README.md", "collector-config.yaml", "docker-compose.yaml",
+            "prometheus.yaml", "images",
+          ]
         ),
         .target(
           name: "SignPostIntegration",
           dependencies: [
-            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+            "OpenTelemetrySdk"
           ],
           path: "Sources/Instrumentation/SignPostIntegration",
           exclude: ["README.md"]
         ),
+        .testTarget(
+          name: "SignPostIntegrationTests",
+          dependencies: [
+            "SignPostIntegration",
+            "InMemoryExporter",
+            "OpenTelemetrySdk",
+          ],
+          path: "Tests/InstrumentationTests/SignPostIntegrationTests"
+        ),
         .target(
           name: "ResourceExtension",
           dependencies: [
-            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+            "OpenTelemetrySdk"
           ],
           path: "Sources/Instrumentation/SDKResourceExtension",
           exclude: ["README.md"]
@@ -409,15 +548,16 @@ extension Package {
         .testTarget(
           name: "ResourceExtensionTests",
           dependencies: [
+            "SharedTestUtils",
             "ResourceExtension",
-            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+            "OpenTelemetrySdk",
           ],
           path: "Tests/InstrumentationTests/SDKResourceExtensionTests"
         ),
         .target(
           name: "MetricKitInstrumentation",
           dependencies: [
-            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+            "OpenTelemetrySdk"
           ],
           path: "Sources/Instrumentation/MetricKit",
           exclude: ["README.md"]
@@ -427,18 +567,43 @@ extension Package {
           dependencies: [
             "MetricKitInstrumentation",
             "InMemoryExporter",
-            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+            "OpenTelemetrySdk",
           ],
           path: "Tests/InstrumentationTests/MetricKitTests"
         ),
         .executableTarget(
           name: "PrometheusSample",
           dependencies: [
-            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
-            "PrometheusExporter"],
+            "OpenTelemetrySdk",
+            "PrometheusExporter",
+          ],
           path: "Examples/Prometheus Sample",
           exclude: ["README.md"]
-        )
+        ),
+        .target(
+          name: "Crash",
+          dependencies: [
+            "OpenTelemetryApi",
+            "OpenTelemetrySdk",
+            "Sessions",
+            .product(name: "Installations", package: "KSCrash"),
+            .product(name: "Filters", package: "KSCrash"),
+            .product(name: "DemangleFilter", package: "KSCrash"),
+            .product(name: "Report", package: "KSCrash"),
+          ],
+          path: "Sources/Instrumentation/Crash"
+        ),
+        .testTarget(
+          name: "CrashTests",
+          dependencies: [
+            "Crash",
+            "Sessions",
+            "InMemoryExporter",
+            "SharedTestUtils",
+            "OpenTelemetrySdk",
+          ],
+          path: "Tests/InstrumentationTests/CrashTests"
+        ),
       ])
     #endif
 
@@ -448,7 +613,10 @@ extension Package {
 
 if ProcessInfo.processInfo.environment["OTEL_ENABLE_SWIFTLINT"] != nil {
   package.dependencies.append(contentsOf: [
-    .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.57.1")
+    .package(
+      url: "https://github.com/SimplyDanny/SwiftLintPlugins",
+      from: "0.57.1"
+    )
   ])
 
   for target in package.targets {
