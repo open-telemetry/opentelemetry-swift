@@ -121,7 +121,7 @@ class SwiftMetricsShimTests: XCTestCase {
 
     wait(for: [metricsExportExpectation], timeout: 10)
 
-    let dataPoints = try stableMetrics.first { $0.name == "requests" }?.data.points.compactMap { $0 as? LongPointData }
+    let dataPoints = stableMetrics.first { $0.name == "requests" }?.data.points.compactMap { $0 as? LongPointData }
     let valueForEnv: (String) -> Int64? = { env in
       dataPoints?.first { $0.attributes["env"]?.description == env }?.value
     }
