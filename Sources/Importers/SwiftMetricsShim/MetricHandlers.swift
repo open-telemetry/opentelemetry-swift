@@ -123,16 +123,4 @@ struct MetricKey: Hashable {
   let type: MetricType
   let dimensions: [String: String]
 
-  static func == (lhs: MetricKey, rhs: MetricKey) -> Bool {
-    lhs.name == rhs.name && lhs.type == rhs.type && lhs.dimensions == rhs.dimensions
-  }
-
-  func hash(into hasher: inout Hasher) {
-    hasher.combine(name)
-    hasher.combine(type)
-    for key in dimensions.keys.sorted() {
-      hasher.combine(key)
-      hasher.combine(dimensions[key])
-    }
-  }
 }
