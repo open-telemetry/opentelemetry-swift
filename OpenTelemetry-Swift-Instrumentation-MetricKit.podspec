@@ -12,7 +12,7 @@ Pod::Spec.new do |spec|
   spec.source_files = "Sources/Instrumentation/MetricKit/*.swift"
   spec.exclude_files = "Sources/Instrumentation/MetricKit/README.md"
 
-  spec.swift_version = "5.10"
+  spec.swift_version = "6.3.1"
   spec.ios.deployment_target = "13.0"
   spec.osx.deployment_target = "12.0"
   spec.watchos.deployment_target = "6.0"
