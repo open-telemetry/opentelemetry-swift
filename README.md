@@ -123,13 +123,13 @@ For more information about the maintainer role, see the [community repository](h
 - [Vishwan Aranha](https://github.com/aranhave), Grafana Labs
 - [Ben Joseph](https://github.com/benjoseph-grafana), Grafana Labs
 - [Vinod Vydier](https://github.com/vvydier), Independent
+- [Billy Zhou](https://github.com/williazz), Independent
 
 For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).
 
 ### Triager ([@open-telemetry/swift-triagers](https://github.com/orgs/open-telemetry/teams/swift-triagers))
 
 - [Alolita Sharma](https://github.com/alolita), Apple
-- [Billy Zhou](https://github.com/williazz), AWS
 
 For more information about the triager role, see the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#triager).
 
