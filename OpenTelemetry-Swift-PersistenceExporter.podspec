@@ -12,9 +12,9 @@ Pod::Spec.new do |spec|
   spec.source_files = "Sources/Exporters/Persistence/**/*.swift"
 
   spec.swift_version = "6.3.1"
-  spec.ios.deployment_target = "13.0"
-  spec.tvos.deployment_target = "13.0"
-  spec.watchos.deployment_target = "6.0"
+  spec.ios.deployment_target = "15.0"
+  spec.tvos.deployment_target = "15.0"
+  spec.watchos.deployment_target = "9.0"
   spec.visionos.deployment_target = "1.0"
   spec.module_name = "PersistenceExporter"
 
