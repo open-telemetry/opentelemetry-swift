@@ -54,11 +54,17 @@ final class MetricHandlersCoverageTests: XCTestCase {
   }
 
   func testMetricKeyHashableEqualityAndInequality() {
-    let a = MetricKey(name: "m", type: .counter)
-    let b = MetricKey(name: "m", type: .counter)
-    let c = MetricKey(name: "m", type: .gauge)
+    let a = MetricKey(name: "m", type: .counter, dimensions: [:])
+    let b = MetricKey(name: "m", type: .counter, dimensions: [:])
+    let c = MetricKey(name: "m", type: .gauge, dimensions: [:])
     XCTAssertEqual(a, b)
     XCTAssertNotEqual(a, c)
     XCTAssertEqual(a.hashValue, b.hashValue)
+  }
+
+  func testMetricKeyDifferentDimensionsAreNotEqual() {
+    let a = MetricKey(name: "m", type: .counter, dimensions: ["env": "a"])
+    let b = MetricKey(name: "m", type: .counter, dimensions: ["env": "b"])
+    XCTAssertNotEqual(a, b)
   }
 }
