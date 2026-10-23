@@ -1,0 +1,25 @@
+name: Reply to Assignment Requests
+on:
+  # no checkout or untrusted code runs; the comment body is only read via env
+  issue_comment: # zizmor: ignore[dangerous-triggers]
+    types: [created]
+permissions: {}
+jobs:
+  reply:
+    if: >-
+      !github.event.issue.pull_request &&
+      !contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: reply if the comment asks to be assigned
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BODY: ${{ github.event.comment.body }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: |
+          grep -qiE "assign(ed)? (it |this )?(to )?me|can i (work on|take|pick)|i'?d (like|love) to (work on|take|fix)|(work on|take|pick up) this|would a pr be welcome" <<< "$BODY" || exit 0
+          gh issue view "$ISSUE" --json comments --jq '.comments[].author.login' | grep -qx 'github-actions' && exit 0
+          gh issue comment "$ISSUE" --body "Thanks for your interest! There's no need to wait to be assigned. If the issue has no assignee, please go ahead and open a PR. See [Picking up an issue](https://github.com/open-telemetry/opentelemetry-swift/blob/main/CONTRIBUTING.md#picking-up-an-issue)."
