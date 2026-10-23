@@ -15,16 +15,17 @@ enum TraceStateUtils {
   ///   - traceStateString: String with comma separated traceState key value pairs.
   ///   - traceState: Array to set traceState pairs on.
   static func appendTraceState(traceStateString: String, traceState: inout [TraceState.Entry]) -> Bool {
-    guard !traceState.isEmpty else { return false }
-
     var names = Set<String>()
 
-    let traceStateString = traceStateString.trimmingCharacters(in: CharacterSet(charactersIn: " ,"))
+    let optionalWhitespace = CharacterSet(charactersIn: " \t")
 
     // traceState: rojo=00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01,congo=BleGNlZWRzIHRohbCBwbGVhc3VyZS4
     let pair = traceStateString.components(separatedBy: ",")
-    for entry in pair {
-      if let entry = TraceStateUtils.parseKeyValue(pairString: entry), !names.contains(entry.key) {
+    for member in pair {
+      let member = member.trimmingCharacters(in: optionalWhitespace)
+      // Empty members and optional whitespace are permitted by the tracestate list grammar.
+      if member.isEmpty { continue }
+      if let entry = TraceStateUtils.parseKeyValue(pairString: member), !names.contains(entry.key) {
         names.update(with: entry.key)
         traceState.append(entry)
       } else {
