@@ -35,7 +35,7 @@ public struct OTelLogHandler: LogHandler, @unchecked Sendable {
   ///  - Parameter loggerProvider: The logger provider to use in the bridge. Defaults to the global logger provider.
   ///  - Parameter includeTraceContext : boolean flag used for the logger builder
   ///  - Parameter attributes: attributes to apply to the logger builder
-  public init(loggerProvider: LoggerProvider = OpenTelemetryApi.DefaultLoggerProvider.instance,
+  public init(loggerProvider: LoggerProvider = OpenTelemetry.instance.loggerProvider,
               includeTraceContext: Bool = true,
               attributes: [String: AttributeValue] = [String: AttributeValue]()) {
     self.loggerProvider = loggerProvider
