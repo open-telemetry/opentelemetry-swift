@@ -8,6 +8,8 @@ import Foundation
 enum TraceStateUtils {
   private static let keyMaxSize = 256
   private static let valueMaxSize = 256
+  private static let tenantIdMaxSize = 241
+  private static let systemIdMaxSize = 14
   private static let maxKeyValuePairsCount = 32
 
   /// Extracts traceState pairs from the given string and appends it to provided traceState list
@@ -96,7 +98,23 @@ enum TraceStateUtils {
 
   private static func parseKeyValue(pairString: String) -> TraceState.Entry? {
     let pair = pairString.components(separatedBy: "=")
-    guard pair.count == 2 else { return nil }
+    guard pair.count == 2, !pair[1].isEmpty else { return nil }
+
+    // Enforce the wire grammar here without changing the public Entry construction API.
+    let keyParts = pair[0].split(separator: "@", omittingEmptySubsequences: false)
+    let lowercase = UInt8(ascii: "a") ... UInt8(ascii: "z")
+    switch keyParts.count {
+    case 1:
+      guard let first = keyParts[0].utf8.first, lowercase.contains(first) else { return nil }
+    case 2:
+      guard let tenantFirst = keyParts[0].utf8.first,
+            lowercase.contains(tenantFirst) || (UInt8(ascii: "0") ... UInt8(ascii: "9")).contains(tenantFirst),
+            keyParts[0].utf8.count <= tenantIdMaxSize,
+            let systemFirst = keyParts[1].utf8.first, lowercase.contains(systemFirst),
+            keyParts[1].utf8.count <= systemIdMaxSize else { return nil }
+    default:
+      return nil
+    }
 
     return TraceState.Entry(key: pair[0], value: pair[1])
   }

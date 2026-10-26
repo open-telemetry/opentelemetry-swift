@@ -301,6 +301,48 @@ class W3CTraceContextPropagatorTest: XCTestCase {
     }
   }
 
+  func testExtract_MalformedTraceStateEntriesAreNotReinjected() throws {
+    let malformed = [
+      "foo=", "foo= \t", "tenant@=bar", "@vendor=bar", "tenant@@vendor=bar",
+      "1key=bar", "_key=bar", "-tenant@vendor=bar", "tenant@1vendor=bar",
+      "tenant@_vendor=bar", "Foo=bar", "tenant@Vendor=bar", "foo=bar=baz",
+      "foo=bad\nvalue", "foo=" + String(repeating: "v", count: 257),
+      String(repeating: "a", count: 257) + "=bar",
+      String(repeating: "a", count: 242) + "@vendor=bar",
+      "tenant@" + String(repeating: "a", count: 15) + "=bar"
+    ]
+    for member in malformed {
+      for states in [[member], ["valid=one", member, "other=two"]] {
+        let context = try extractWithTraceStates(states)
+        XCTAssertEqual(context.traceId, traceId, "Member: \(member)")
+        XCTAssertEqual(context.spanId, spanId, "Member: \(member)")
+        XCTAssertEqual(context.traceFlags, sampledTraceOptions, "Member: \(member)")
+        XCTAssertTrue(context.isRemote)
+        XCTAssertTrue(context.traceState.entries.isEmpty, "Member: \(member)")
+        var output = [String: String]()
+        httpTraceContext.inject(spanContext: context, carrier: &output, setter: setter)
+        XCTAssertEqual(output[W3CTraceContextPropagator.traceparent], traceParentHeaderSampled)
+        XCTAssertNil(output[W3CTraceContextPropagator.traceState], "Member: \(member)")
+      }
+    }
+  }
+
+  func testExtract_ValidTraceStateEntryGrammarRoundTrips() throws {
+    for member in [
+      "a=b", "a0_-*/=bar baz", "0tenant@vendor=value", "tenant@v0_-*/=value",
+      String(repeating: "a", count: 256) + "=v",
+      String(repeating: "a", count: 241) + "@" + String(repeating: "b", count: 14) + "=v",
+      "a=" + String(repeating: "v", count: 256)
+    ] {
+      let context = try extractWithTraceStates([member])
+      XCTAssertEqual(context.traceState.entries.count, 1, "Member: \(member)")
+      var output = [String: String]()
+      httpTraceContext.inject(spanContext: context, carrier: &output, setter: setter)
+      XCTAssertEqual(output[W3CTraceContextPropagator.traceparent], traceParentHeaderSampled)
+      XCTAssertEqual(output[W3CTraceContextPropagator.traceState], member)
+    }
+  }
+
   func testFieldsList() {
     XCTAssertTrue(httpTraceContext.fields.contains(W3CTraceContextPropagator.traceparent))
     XCTAssertTrue(httpTraceContext.fields.contains(W3CTraceContextPropagator.traceparent))
