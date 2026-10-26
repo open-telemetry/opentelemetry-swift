@@ -38,6 +38,20 @@ final class OTelLogHandlerCoverageTests: XCTestCase {
     return (provider, processor)
   }
 
+  func testLogHandlerUsesRegisteredGlobalProviderByDefault() {
+    let savedProvider = OpenTelemetry.instance.loggerProvider
+    defer { OpenTelemetry.registerLoggerProvider(loggerProvider: savedProvider) }
+
+    let (provider, processor) = makeProvider()
+    OpenTelemetry.registerLoggerProvider(loggerProvider: provider)
+
+    let logger = Logger(label: "OTelSwiftLogTests-global") { _ in OTelLogHandler() }
+    logger.info("global-provider")
+
+    XCTAssertEqual(processor.records.count, 1)
+    XCTAssertEqual(processor.records.first?.body, .string("global-provider"))
+  }
+
   func testLogHandlerDefaultLogLevelIsInfo() {
     let handler = OTelLogHandler()
     XCTAssertEqual(handler.logLevel, .info)
