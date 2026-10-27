@@ -53,6 +53,39 @@ if #available(iOS 13.0, *) {
 | `tracer`                    | (a default tracer)  | Custom tracer for creating spans                                |
 | `useAppleStacktraceFormat`  | `false`             | Use Apple's native JSON format for stacktraces instead of OTel  |
 
+## iOS 27 and newer
+
+On iOS 27 and newer, use `MetricManagerInstrumentation` to consume Apple's asynchronous
+`MetricManager` report streams. Keep the instrumentation alive and start it during app startup:
+
+```swift
+let metricKitInstrumentation = MetricManagerInstrumentation(
+    enabledStateReportingDomains: ["com.example.app.tabs"]
+)
+
+Task {
+    await metricKitInstrumentation.start()
+}
+```
+
+For state-aware metrics, report transitions through `StateReporting` using a domain enabled when
+creating the instrumentation:
+
+```swift
+import StateReporting
+
+let tabReporter = StateReporter<Never, Never>.reporter(for: "com.example.app.tabs")
+tabReporter.reportTransition(to: "Reports")
+```
+
+Each `MetricReport` is emitted as a `MetricReport` span with the complete Codable report in the
+`metrickit.metric_report` attribute. State entries are encoded by reporting domain. Each
+`DiagnosticReport` is emitted as a log record with the complete report in the
+`metrickit.diagnostic_report` attribute, preserving new data such as Metal frame rate,
+memory-exception diagnostics, and termination categories. This native Codable representation is
+not affected by `useAppleStacktraceFormat`. On earlier OS versions, continue using
+`MetricKitInstrumentation` with `MXMetricManager`.
+
 ## Data Structure Overview
 
 MetricKit reports data in two categories: **Metrics** and **Diagnostics**.
