@@ -13,6 +13,18 @@ import XCTest
 
 @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, *)
 final class MetricManagerInstrumentationTests: XCTestCase {
+    func testUnifiedInstrumentationSupportsLegacyRegistration() {
+        let configuration = MetricKitConfiguration()
+        let instrumentation = MetricKitInstrumentation(
+            configuration: configuration,
+            enabledStateReportingDomains: ["com.example.app.tabs"]
+        )
+
+        MXMetricManager.shared.add(instrumentation)
+
+        XCTAssertTrue(instrumentation.configuration.tracer === configuration.tracer)
+    }
+
     func testReportMetricsPreservesTheCompleteMetricReport() throws {
         let start = Date(timeIntervalSince1970: 1_800_000_000)
         let timeRange = DateInterval(start: start, duration: 60)

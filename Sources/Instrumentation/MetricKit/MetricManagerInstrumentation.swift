@@ -14,18 +14,23 @@ private let diagnosticReportEventName = "metrickit.diagnostic_report"
 private let diagnosticReportAttributeName = "metrickit.diagnostic_report"
 private let reportEncodingErrorEventName = "metrickit.report_encoding_error"
 
+// MetricKit report tasks share OTel API references that are not declared Sendable.
+struct MetricKitConfigurationForReportStream: @unchecked Sendable {
+    let configuration: MetricKitConfiguration
+}
+
 @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, *)
-public actor MetricManagerInstrumentation {
+actor MetricManagerStream {
     private let configuration: MetricKitConfiguration
     private let metricManager: MetricManager
     private var metricReportsTask: Task<Void, Never>?
     private var diagnosticReportsTask: Task<Void, Never>?
 
-    public init(
-        configuration: MetricKitConfiguration = MetricKitConfiguration(),
+    init(
+        configuration: MetricKitConfigurationForReportStream,
         enabledStateReportingDomains: Set<StateReportingDomain> = []
     ) {
-        self.configuration = configuration
+        self.configuration = configuration.configuration
         self.metricManager = MetricManager(
             enabledStateReportingDomains: enabledStateReportingDomains
         )
@@ -36,7 +41,7 @@ public actor MetricManagerInstrumentation {
         diagnosticReportsTask?.cancel()
     }
 
-    public func start() {
+    func start() {
         guard metricReportsTask == nil, diagnosticReportsTask == nil else {
             return
         }
@@ -61,7 +66,7 @@ public actor MetricManagerInstrumentation {
         }
     }
 
-    public func stop() {
+    func stop() {
         metricReportsTask?.cancel()
         metricReportsTask = nil
         diagnosticReportsTask?.cancel()

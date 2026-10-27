@@ -55,17 +55,18 @@ if #available(iOS 13.0, *) {
 
 ## iOS 27 and newer
 
-On iOS 27 and newer, use `MetricManagerInstrumentation` to consume Apple's asynchronous
-`MetricManager` report streams. Keep the instrumentation alive and start it during app startup:
+`MetricKitInstrumentation` automatically uses Apple's asynchronous `MetricManager` report streams
+on iOS 27 and newer. Existing initialization and `MXMetricManager.shared.add(_:)` call sites
+continue to work, so existing applications do not need to switch to a new instrumentation type or
+start method. The legacy subscriber callback path remains in use on earlier OS versions.
+
+To enable state-aware metrics, use the iOS 27 initializer with the reporting domains your app
+reports:
 
 ```swift
-let metricKitInstrumentation = MetricManagerInstrumentation(
+let metricKitInstrumentation = MetricKitInstrumentation(
     enabledStateReportingDomains: ["com.example.app.tabs"]
 )
-
-Task {
-    await metricKitInstrumentation.start()
-}
 ```
 
 For state-aware metrics, report transitions through `StateReporting` using a domain enabled when
@@ -83,8 +84,9 @@ Each `MetricReport` is emitted as a `MetricReport` span with the complete Codabl
 `DiagnosticReport` is emitted as a log record with the complete report in the
 `metrickit.diagnostic_report` attribute, preserving new data such as Metal frame rate,
 memory-exception diagnostics, and termination categories. This native Codable representation is
-not affected by `useAppleStacktraceFormat`. On earlier OS versions, continue using
-`MetricKitInstrumentation` with `MXMetricManager`.
+not affected by `useAppleStacktraceFormat`. The existing initializers are deprecated on iOS 27 to
+encourage callers to opt in to state-reporting domains; they still select the new reporting path
+automatically.
 
 ## Data Structure Overview
 
