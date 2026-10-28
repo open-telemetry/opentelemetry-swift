@@ -140,11 +140,13 @@ class W3CTraceContextPropagatorTest: XCTestCase {
     XCTAssertEqual(httpTraceContext.extract(carrier: carrier, getter: getter), SpanContext.createFromRemoteParent(traceId: traceId, spanId: spanId, traceFlags: TraceFlags(), traceState: traceState_default))
   }
 
-  func testExtract_NotSampledContext_TraceStateWithSpaces() {
+  func testExtract_NotSampledContext_TraceStateWithSpaces() throws {
     var carrier = [String: String]()
     carrier[W3CTraceContextPropagator.traceparent] = traceParentHeaderNotSampled
     carrier[W3CTraceContextPropagator.traceState] = "foo=bar   ,    bar=baz"
-    XCTAssertEqual(httpTraceContext.extract(carrier: carrier, getter: getter), SpanContext.createFromRemoteParent(traceId: traceId, spanId: spanId, traceFlags: TraceFlags(), traceState: traceState_not_default))
+    let context = try XCTUnwrap(httpTraceContext.extract(carrier: carrier, getter: getter))
+    XCTAssertEqual(context, SpanContext.createFromRemoteParent(traceId: traceId, spanId: spanId, traceFlags: TraceFlags(), traceState: traceState_not_default))
+    XCTAssertEqual(context.traceState.entries, traceState_not_default.entries)
   }
 
   func testExtract_InvalidTraceId() {
@@ -201,6 +203,145 @@ class W3CTraceContextPropagatorTest: XCTestCase {
 //        invalidHeaders[W3CTraceContextPropagator.traceState] = "test-test"
 //        XCTAssertNil(httpTraceContext.extract(carrier: invalidHeaders, getter: getter))
 //    }
+
+  func testExtract_InvalidVersionCharacters() {
+    for version in ["zz", "g0", "0g", " 0", "0 ", "é0", "0é"] {
+      let carrier = [W3CTraceContextPropagator.traceparent: version + "-" + traceId_base16 + "-" + spanId_base16 + "-01"]
+      XCTAssertNil(httpTraceContext.extract(carrier: carrier, getter: getter), "Version: \(version)")
+    }
+  }
+
+  func testExtract_ReservedVersion() {
+    let carrier = [W3CTraceContextPropagator.traceparent: "ff-" + traceId_base16 + "-" + spanId_base16 + "-01"]
+    XCTAssertNil(httpTraceContext.extract(carrier: carrier, getter: getter))
+  }
+
+  func testExtract_TraceStateRoundTrip() throws {
+    let carrier = try [W3CTraceContextPropagator.traceparent: XCTUnwrap(traceParentHeaderSampled),
+                       W3CTraceContextPropagator.traceState: traceStateNotDefaultEncoding]
+    let context = try XCTUnwrap(httpTraceContext.extract(carrier: carrier, getter: getter))
+    // SpanContext equality does not compare tracestate, so inspect it explicitly.
+    XCTAssertEqual(context.traceState.entries, traceState_not_default.entries)
+    var output = [String: String]()
+    httpTraceContext.inject(spanContext: context, carrier: &output, setter: setter)
+    XCTAssertEqual(output[W3CTraceContextPropagator.traceState], traceStateNotDefaultEncoding)
+  }
+
+  func testExtract_InvalidTraceStatePreservesParent() throws {
+    for state in ["", "missing-equals", "foo=bar,foo=baz"] {
+      let carrier = try [W3CTraceContextPropagator.traceparent: XCTUnwrap(traceParentHeaderSampled),
+                         W3CTraceContextPropagator.traceState: state]
+      let context = try XCTUnwrap(httpTraceContext.extract(carrier: carrier, getter: getter))
+      XCTAssertEqual(context.traceId, traceId)
+      XCTAssertEqual(context.spanId, spanId)
+      XCTAssertTrue(context.traceState.entries.isEmpty)
+    }
+  }
+
+  private struct MultiHeaderGetter: Getter {
+    let traceStates: [String]
+
+    func get(carrier: [String: String], key: String) -> [String]? {
+      key == W3CTraceContextPropagator.traceState ? traceStates : carrier[key].map { [$0] }
+    }
+  }
+
+  private func extractWithTraceStates(_ states: [String]) throws -> SpanContext {
+    let carrier = try [W3CTraceContextPropagator.traceparent: XCTUnwrap(traceParentHeaderSampled)]
+    return try XCTUnwrap(httpTraceContext.extract(carrier: carrier, getter: MultiHeaderGetter(traceStates: states)))
+  }
+
+  func testExtract_MultipleTraceStateHeadersPreserveOrder() throws {
+    let context = try extractWithTraceStates(["first=1,second=2", "third=3"])
+    XCTAssertEqual(context.traceState.entries.map(\.key), ["first", "second", "third"])
+    var output = [String: String]()
+    httpTraceContext.inject(spanContext: context, carrier: &output, setter: setter)
+    XCTAssertEqual(output[W3CTraceContextPropagator.traceState], "first=1,second=2,third=3")
+  }
+
+  func testExtract_DuplicateTraceStateKeysAcrossHeadersPreserveParent() throws {
+    let context = try extractWithTraceStates(["same=1", "same=2"])
+    XCTAssertEqual(context.traceId, traceId)
+    XCTAssertEqual(context.spanId, spanId)
+    XCTAssertTrue(context.traceState.entries.isEmpty)
+  }
+
+  func testExtract_TraceStateOptionalWhitespaceAndEmptyMembers() throws {
+    for states in [
+      ["foo=bar   ,    bar=baz"],
+      ["\tfoo=bar\t,\tbar=baz\t"],
+      ["", " \t", "foo=bar", "", "bar=baz", ""],
+      [", ,foo=bar,,\t,bar=baz, "]
+    ] {
+      let context = try extractWithTraceStates(states)
+      XCTAssertEqual(context.traceState.entries, traceState_not_default.entries, "Headers: \(states)")
+    }
+  }
+
+  func testExtract_TraceStateDoesNotTrimWhitespaceInsideMembers() throws {
+    for state in ["foo =bar", "foo=ba\tr", "foo=bar\n", "foo=bar\r"] {
+      let context = try extractWithTraceStates([state])
+      XCTAssertTrue(context.traceState.entries.isEmpty, "Header: \(state)")
+      XCTAssertEqual(context.traceId, traceId)
+    }
+    let context = try extractWithTraceStates(["foo=bar baz"])
+    XCTAssertEqual(context.traceState.get(key: "foo"), "bar baz")
+  }
+
+  func testExtract_TraceStateLimitAppliesAcrossHeaders() throws {
+    let members = (0 ..< 33).map { "k\($0)=v" }
+    for states in [
+      [members.prefix(32).joined(separator: ",")],
+      [members.prefix(16).joined(separator: ","), members.dropFirst(16).prefix(16).joined(separator: ",")],
+      [members.joined(separator: ",")],
+      [members.prefix(32).joined(separator: ","), members[32]]
+    ] {
+      let context = try extractWithTraceStates(states)
+      XCTAssertEqual(context.traceState.entries.map(\.key), (0 ..< 32).map { "k\($0)" })
+    }
+  }
+
+  func testExtract_MalformedTraceStateEntriesAreNotReinjected() throws {
+    let malformed = [
+      "foo=", "foo= \t", "tenant@=bar", "@vendor=bar", "tenant@@vendor=bar",
+      "1key=bar", "_key=bar", "-tenant@vendor=bar", "tenant@1vendor=bar",
+      "tenant@_vendor=bar", "Foo=bar", "tenant@Vendor=bar", "foo=bar=baz",
+      "foo=bad\nvalue", "foo=" + String(repeating: "v", count: 257),
+      String(repeating: "a", count: 257) + "=bar",
+      String(repeating: "a", count: 242) + "@vendor=bar",
+      "tenant@" + String(repeating: "a", count: 15) + "=bar"
+    ]
+    for member in malformed {
+      for states in [[member], ["valid=one", member, "other=two"]] {
+        let context = try extractWithTraceStates(states)
+        XCTAssertEqual(context.traceId, traceId, "Member: \(member)")
+        XCTAssertEqual(context.spanId, spanId, "Member: \(member)")
+        XCTAssertEqual(context.traceFlags, sampledTraceOptions, "Member: \(member)")
+        XCTAssertTrue(context.isRemote)
+        XCTAssertTrue(context.traceState.entries.isEmpty, "Member: \(member)")
+        var output = [String: String]()
+        httpTraceContext.inject(spanContext: context, carrier: &output, setter: setter)
+        XCTAssertEqual(output[W3CTraceContextPropagator.traceparent], traceParentHeaderSampled)
+        XCTAssertNil(output[W3CTraceContextPropagator.traceState], "Member: \(member)")
+      }
+    }
+  }
+
+  func testExtract_ValidTraceStateEntryGrammarRoundTrips() throws {
+    for member in [
+      "a=b", "a0_-*/=bar baz", "0tenant@vendor=value", "tenant@v0_-*/=value",
+      String(repeating: "a", count: 256) + "=v",
+      String(repeating: "a", count: 241) + "@" + String(repeating: "b", count: 14) + "=v",
+      "a=" + String(repeating: "v", count: 256)
+    ] {
+      let context = try extractWithTraceStates([member])
+      XCTAssertEqual(context.traceState.entries.count, 1, "Member: \(member)")
+      var output = [String: String]()
+      httpTraceContext.inject(spanContext: context, carrier: &output, setter: setter)
+      XCTAssertEqual(output[W3CTraceContextPropagator.traceparent], traceParentHeaderSampled)
+      XCTAssertEqual(output[W3CTraceContextPropagator.traceState], member)
+    }
+  }
 
   func testFieldsList() {
     XCTAssertTrue(httpTraceContext.fields.contains(W3CTraceContextPropagator.traceparent))
