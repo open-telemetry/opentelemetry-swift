@@ -14,7 +14,7 @@ services:
   # Grafana + Tempo (traces) + Loki (logs) + Prometheus. Its own OTLP ports
   # stay unpublished; the collector above forwards to it.
   lgtm:
-    image: grafana/otel-lgtm:0.36.0@sha256:57c04cbd8e7022f32bb84c4ac005d79baf8b08e2c5be44facf11f5f1f9944ba2
+    image: grafana/otel-lgtm:0.38.1@sha256:0df9bc14142000b161344bd24caf6ddd319b7319055aedaf9b0692b125730af7
     ports:
       - "127.0.0.1:3000:3000"
     environment:
