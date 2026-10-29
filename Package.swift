@@ -259,6 +259,18 @@ let package = Package(
       exclude: ["README.md"]
     ),
     .target(
+      name: "InstrumentationCommon",
+      dependencies: [
+        "OpenTelemetryApi"
+      ],
+      path: "Sources/Instrumentation/Common"
+    ),
+    .target(
+      name: "InstrumentationSemanticConventions",
+      path: "Sources/Instrumentation/SemanticConventions",
+      exclude: ["README.md", "generate.sh", "model", "templates"]
+    ),
+    .target(
       name: "SharedTestUtils",
       dependencies: [
         "OpenTelemetryApi",
@@ -481,6 +493,10 @@ extension Package {
           targets: ["MetricKitInstrumentation"]
         ),
         .library(name: "Crash", targets: ["Crash"]),
+        .library(
+          name: "AppLaunchInstrumentation",
+          targets: ["AppLaunchInstrumentation"]
+        ),
       ])
       targets.append(contentsOf: [
         .target(
@@ -685,6 +701,7 @@ extension Package {
             "OpenTelemetryApi",
             "OpenTelemetrySdk",
             "Sessions",
+            "InstrumentationCommon",
             .product(
               name: "Installations",
               package: "KSCrash",
@@ -718,6 +735,31 @@ extension Package {
             "OpenTelemetrySdk",
           ],
           path: "Tests/InstrumentationTests/CrashTests"
+        ),
+        .target(
+          name: "AppLaunchEnvironment",
+          path: "Sources/Instrumentation/AppLaunch/LaunchEnvironment"
+        ),
+        .target(
+          name: "AppLaunchInstrumentation",
+          dependencies: [
+            "OpenTelemetryApi",
+            "InstrumentationCommon",
+            "InstrumentationSemanticConventions",
+            "AppLaunchEnvironment",
+          ],
+          path: "Sources/Instrumentation/AppLaunch",
+          exclude: ["README.md", "LaunchEnvironment"]
+        ),
+        .testTarget(
+          name: "AppLaunchInstrumentationTests",
+          dependencies: [
+            "AppLaunchInstrumentation",
+            "InMemoryExporter",
+            "OpenTelemetrySdk",
+            "SharedTestUtils",
+          ],
+          path: "Tests/InstrumentationTests/AppLaunchTests"
         ),
       ])
     #endif

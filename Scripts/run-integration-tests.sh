@@ -36,6 +36,7 @@ APP_PROJECT="$PROJECT_ROOT/Examples/HackerNewsDemo/HackerNewsDemo.xcodeproj"
 APP_SCHEME="HackerNewsDemo"
 APP_BUNDLE_ID="io.opentelemetry.HackerNewsDemo"
 COMPLETION_MARKER="integration.test.complete"
+READY_MARKER="integration.test.ready"
 
 # Pinned collector release. Bump the version and both checksums together; the
 # checksums are the published <asset>.sha256 files from
@@ -213,24 +214,62 @@ run_launch_into() {
   local tag="$1"; shift
   start_collector "$dir"
   log "Launch '$tag' ($*)"
+  launch_app "$tag" "$@"
+
+  if [[ "$tag" == "app-start-resume" ]]; then
+    # Once the launch's first frame is displayed, move the app to the background
+    # by opening Settings, then back to the foreground. `simctl launch` of a
+    # running app brings it to the foreground without starting a new process.
+    wait_for_marker "$dir" "$READY_MARKER"
+    log "Moving '$tag' to the background and back"
+    xcrun simctl launch "$SIMULATOR_UDID" com.apple.Preferences >/dev/null
+    sleep 3
+    launch_app "$tag" "$@"
+  fi
+
+  wait_for_marker "$dir" "$COMPLETION_MARKER"
+  # Logs are batched on a fixed 5s schedule; give the last batch time to land.
+  sleep 6
+  xcrun simctl terminate "$SIMULATOR_UDID" "$APP_BUNDLE_ID" >/dev/null 2>&1 || true
+  stop_collector
+}
+
+# launch_app <tag> [extra launch arguments...]
+launch_app() {
+  local tag="$1"; shift
   SIMCTL_CHILD_OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:$PORT" \
   SIMCTL_CHILD_INTEGRATION_STATUS_BASE_URL="http://localhost:$STATUS_PORT" \
     xcrun simctl launch "$SIMULATOR_UDID" "$APP_BUNDLE_ID" --integrationTestMode --integrationLaunch "$tag" "$@"
+}
 
+# wait_for_marker <output directory> <span name>
+wait_for_marker() {
+  local dir="$1" marker="$2"
   local deadline=$((SECONDS + TIMEOUT))
-  until grep -aqs "$COMPLETION_MARKER" "$dir/traces.pb"; do
+  until grep -aqs "$marker" "$dir/traces.pb"; do
     if (( SECONDS >= deadline )); then
-      echo "Timed out waiting for '$COMPLETION_MARKER' in $dir/traces.pb" >&2
+      echo "Timed out waiting for '$marker' in $dir/traces.pb" >&2
       ls -la "$dir" >&2 || true
       cat "$dir/collector.log" >&2 || true
       exit 1
     fi
     sleep 1
   done
-  # Logs are batched on a fixed 5s schedule; give the last batch time to land.
-  sleep 6
-  xcrun simctl terminate "$SIMULATOR_UDID" "$APP_BUNDLE_ID" >/dev/null 2>&1 || true
-  stop_collector
+}
+
+# install_new_build
+# Reinstalls the app with its build number bumped, as an app update does. The
+# app's data container is kept, so its previous launch is still recorded.
+install_new_build() {
+  local copy
+  copy="$(mktemp -d)/$APP_SCHEME.app"
+  cp -R "$APP_PATH" "$copy"
+  local build
+  build="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$copy/Info.plist")"
+  /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $((build + 1))" "$copy/Info.plist"
+  log "Installing $APP_BUNDLE_ID build $((build + 1))"
+  xcrun simctl install "$SIMULATOR_UDID" "$copy"
+  rm -rf "$(dirname "$copy")"
 }
 
 # save_crash_reports <output subdirectory>
@@ -271,6 +310,13 @@ else
   run_launch_into symbolicated/crash crash --sessionTimeout 3600 --restorePersistedSession false
   run_launch_into symbolicated/crash-report crash-report --sessionTimeout 3600 --restorePersistedSession false --reportStyle symbolicated
   run_launch log-limits --sessionTimeout 3600 --restorePersistedSession false
+  # AppStart: a warm launch followed by a resume, and the cold first launch
+  # after an update. `main` above is the cold first launch after installation.
+  # Prewarming isn't covered: setting ActivePrewarm makes the system hold the
+  # process before main() until a real launch resumes it, which never comes.
+  run_launch app-start-resume
+  install_new_build
+  run_launch app-start-update
 fi
 
 log "Collected files"

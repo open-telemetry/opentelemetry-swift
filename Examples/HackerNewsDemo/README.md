@@ -14,9 +14,10 @@ Instrumentation used from this repo:
 - `Sessions` - session IDs on spans/logs plus session start/end events
 - `ResourceExtension` - device/OS/app resource attributes
 - `Crash` - KSCrash crash reports, sent as `device.crash` logs on the next launch with the session the crash happened in
+- `AppLaunchInstrumentation` - an `AppStart` span for every launch (`start.type` = `cold` or `warm`, with `start.active_prewarmed`) and every resume (`resume`), ending at the first frame
 - `OpenTelemetryProtocolExporterHTTP` - OTLP/HTTP trace and log export
 
-Not yet available natively (tracked as `TODO` comments in `Telemetry.swift` and `SettingsView.swift`): app startup, app hang, UIKit/SwiftUI view instrumentation, and a user ID manager. The Settings rows that depend on these (User ID, Trigger App Hang, CPU Test, Memory Test) are shown grayed out with a "Coming soon" badge; the picker views stay in `SettingsView.swift` for when the instrumentations land.
+Not yet available natively (tracked as `TODO` comments in `Telemetry.swift` and `SettingsView.swift`): app hang, UIKit/SwiftUI view instrumentation, and a user ID manager. The Settings rows that depend on these (User ID, Trigger App Hang, CPU Test, Memory Test) are shown grayed out with a "Coming soon" badge; the picker views stay in `SettingsView.swift` for when the instrumentations land.
 
 1. The `Home` tab is built entirely with UIKit, and each post/comment involved triggers a separate HTTP request.
 2. And the `Settings` tab is built with SwiftUI!

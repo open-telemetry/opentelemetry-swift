@@ -10,6 +10,7 @@ import OpenTelemetryApi
 import OpenTelemetryProtocolExporterHttp
 import OpenTelemetrySdk
 import Sessions
+import UIKit
 
 // Driven by Scripts/run-integration-tests.sh. When the app is launched with
 // `--integrationTestMode` it produces a fixed set of telemetry against the local
@@ -54,6 +55,17 @@ enum IntegrationTestScenario {
   static let probeSpanName = "integration.test.probe"
   static let logLimitsScope = "HackerNewsDemo.IntegrationTest.LogLimits"
   static let sessionCreatedAttributeKey = "integration.test.session-created"
+  // Lifecycle markers for the AppStart assertions. Each is a zero-length span at the time of the
+  // event: process start, every `willEnterForeground` and every `didBecomeActive`.
+  static let processStartSpanName = "integration.test.process-start"
+  static let foregroundSpanName = "integration.test.will-enter-foreground"
+  static let activeSpanName = "integration.test.did-become-active"
+  // Exported once the launch's first frame is displayed, so the runner can move the app to the
+  // background and back.
+  static let readySpanName = "integration.test.ready"
+  // Long enough for the first frame after an activation to be displayed and its AppStart span to
+  // end.
+  static let firstFrameWait: TimeInterval = 2
 
   enum Launch: String {
     // Fresh install. Exercises spans, logs, network and session expiry.
@@ -75,6 +87,11 @@ enum IntegrationTestScenario {
     // the stored crash, which must keep the crashed launch's session id.
     case crashReport = "crash-report"
     case logLimits = "log-limits"
+    // The runner moves the app to the background after `ready` and back again, so it records a
+    // warm launch and then a resume.
+    case appStartResume = "app-start-resume"
+    // First launch after the runner installed the app with a new build number, so it's cold.
+    case appStartUpdate = "app-start-update"
   }
 
   // Default session timeout for the main launch: short enough that the
@@ -133,6 +150,7 @@ enum IntegrationTestScenario {
 
   static func run() {
     let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: scope)
+    recordLifecycle(tracer: tracer)
     switch launch {
     case .main:
       runMain(tracer: tracer)
@@ -175,7 +193,56 @@ enum IntegrationTestScenario {
         runLogLimits(tracer: tracer)
         complete(tracer: tracer)
       }
+    case .appStartResume, .appStartUpdate:
+      // Completed from `recordLifecycle` once the expected activations have been displayed.
+      break
     }
+  }
+
+  // How many activations each app-start launch waits for before it completes.
+  private static let appStartActivations: [Launch: Int] = [.appStartResume: 2, .appStartUpdate: 1]
+
+  // Records the markers the AppStart assertions compare the spans' timestamps with. Called from
+  // `didFinishLaunching`, before the app first becomes active.
+  private static func recordLifecycle(tracer: Tracer) {
+    if let processStart = processStartTime() {
+      marker(tracer, processStartSpanName, at: processStart)
+    }
+    let center = NotificationCenter.default
+    center.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: nil) { _ in
+      marker(tracer, foregroundSpanName, at: Date())
+    }
+    var activations = 0
+    center.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: nil) { _ in
+      marker(tracer, activeSpanName, at: Date())
+      activations += 1
+      guard let expectedActivations = appStartActivations[launch], activations <= expectedActivations else { return }
+      let isLast = activations == expectedActivations
+      DispatchQueue.global().asyncAfter(deadline: .now() + firstFrameWait) {
+        if isLast {
+          complete(tracer: tracer)
+        } else {
+          marker(tracer, readySpanName, at: Date())
+          (OpenTelemetry.instance.tracerProvider as? TracerProviderSdk)?.forceFlush()
+        }
+      }
+    }
+  }
+
+  private static func marker(_ tracer: Tracer, _ name: String, at time: Date) {
+    let builder = tracer.spanBuilder(spanName: name).setStartTime(time: time)
+    builder.setAttribute(key: launchAttributeKey, value: launch.rawValue)
+    builder.startSpan().end(time: time)
+  }
+
+  // Read independently of AppLaunchInstrumentation, so the assertions don't take its word for it.
+  private static func processStartTime() -> Date? {
+    var info = kinfo_proc()
+    var size = MemoryLayout<kinfo_proc>.stride
+    var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid()]
+    guard sysctl(&mib, u_int(mib.count), &info, &size, nil, 0) == 0 else { return nil }
+    let start = info.kp_proc.p_starttime
+    return Date(timeIntervalSince1970: TimeInterval(start.tv_sec) + TimeInterval(start.tv_usec) / 1_000_000)
   }
 
   private static func runMain(tracer: Tracer) {

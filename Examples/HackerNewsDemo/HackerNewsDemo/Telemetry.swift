@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import AppLaunchInstrumentation
 import Crash
 import Foundation
 import OpenTelemetryApi
@@ -94,6 +95,10 @@ enum Telemetry {
 
     SessionEventInstrumentation.install()
 
+    // Installed in didFinishLaunching, before the app first becomes active, so it sees the
+    // activation that ends the cold start.
+    AppLaunchInstrumentation.install()
+
     // Installed after the session manager and logger provider are registered:
     // crashes from the previous run are reported on install, and each crash
     // records the session that was current when it happened.
@@ -108,7 +113,6 @@ enum Telemetry {
       }
     ))
 
-    // TODO: no app startup instrumentation
     // TODO: no app hang instrumentation
     // TODO: no UIKit/SwiftUI view instrumentation
     // TODO: no user ID manager; see UserIdStore
