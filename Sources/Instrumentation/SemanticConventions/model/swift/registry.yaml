@@ -1,0 +1,44 @@
+groups:
+  - id: registry.swift.start
+    type: attribute_group
+    brief: >
+      App start attributes that are not currently defined by upstream OpenTelemetry semantic
+      conventions.
+    stability: development
+    attributes:
+      - id: start.type
+        type:
+          members:
+            - id: cold
+              value: "cold"
+              stability: development
+              brief: >
+                A launch the system is unlikely to have cached: the app's first launch, or its first
+                launch after a reboot or an app update.
+            - id: warm
+              value: "warm"
+              stability: development
+              brief: >
+                A launch the system is likely to still have cached.
+            - id: resume
+              value: "resume"
+              stability: development
+              brief: >
+                A resume, where the app's process was still alive, even if suspended.
+        stability: development
+        brief: >
+          The kind of app activation, as Apple defines it.
+        note: >
+          The key and the `cold` and `warm` values are the same as the OpenTelemetry Android
+          `start.type` attribute, but their meanings follow Apple's definitions of cold and warm
+          launches and resumes in
+          [Reducing your app's launch time](https://developer.apple.com/documentation/xcode/reducing-your-app-s-launch-time).
+          A resume is `resume` instead of Android's `hot`, after Apple's term.
+      - id: start.active_prewarmed
+        type: boolean
+        stability: development
+        brief: >
+          Whether the system prewarmed the process before the user launched the app.
+        note: >
+          Detected from the `ActivePrewarm` environment variable being `1` at process start. A
+          prewarmed launch starts when app code first ran, instead of at process start.

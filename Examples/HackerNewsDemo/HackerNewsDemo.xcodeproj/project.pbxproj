@@ -12,6 +12,7 @@
 		DB286F4C2EC3007300F39808 /* Sessions in Frameworks */ = {isa = PBXBuildFile; productRef = DB286F4B2EC3007300F39808 /* Sessions */; };
 		DB286F4E2EC3007300F39808 /* ResourceExtension in Frameworks */ = {isa = PBXBuildFile; productRef = DB286F4D2EC3007300F39808 /* ResourceExtension */; };
 		DB286F502EC3007300F39808 /* Crash in Frameworks */ = {isa = PBXBuildFile; productRef = DB286F4F2EC3007300F39808 /* Crash */; };
+		DB286F522EC3007300F39808 /* AppLaunchInstrumentation in Frameworks */ = {isa = PBXBuildFile; productRef = DB286F512EC3007300F39808 /* AppLaunchInstrumentation */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +37,7 @@
 				DB286F4C2EC3007300F39808 /* Sessions in Frameworks */,
 				DB286F4E2EC3007300F39808 /* ResourceExtension in Frameworks */,
 				DB286F502EC3007300F39808 /* Crash in Frameworks */,
+				DB286F522EC3007300F39808 /* AppLaunchInstrumentation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -91,6 +93,7 @@
 				DB286F4B2EC3007300F39808 /* Sessions */,
 				DB286F4D2EC3007300F39808 /* ResourceExtension */,
 				DB286F4F2EC3007300F39808 /* Crash */,
+				DB286F512EC3007300F39808 /* AppLaunchInstrumentation */,
 			);
 			productName = HackerNewsDemo;
 			productReference = 306BC6982E00C6AA00F19E48 /* HackerNewsDemo.app */;
@@ -401,6 +404,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 5E6803F12E1306FC00D1DBD3 /* XCLocalSwiftPackageReference "../.." */;
 			productName = Crash;
+		};
+		DB286F512EC3007300F39808 /* AppLaunchInstrumentation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5E6803F12E1306FC00D1DBD3 /* XCLocalSwiftPackageReference "../.." */;
+			productName = AppLaunchInstrumentation;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -27,11 +27,15 @@ let package = Package(
     ),
     // The assertions decode the collector's output with the generated OTLP
     // structs from OpenTelemetryProtocolExporterCommon, reached through the
-    // HTTP exporter product.
+    // HTTP exporter product. AppStartTests checks the AppStart spans with the
+    // constants generated from the federated semantic conventions in
+    // InstrumentationSemanticConventions, reached through the app launch
+    // instrumentation product.
     .testTarget(
       name: "IntegrationTests",
       dependencies: [
-        .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift")
+        .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
+        .product(name: "AppLaunchInstrumentation", package: "opentelemetry-swift")
       ],
       path: "Assertions"
     )

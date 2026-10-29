@@ -31,6 +31,22 @@ repo work together inside a real iOS app. The flow is:
    - `log-limits`: opt-in session log filtering with zero and one attribute
      limits. Retained decisions control historical logs, unknown decisions are
      preserved, and stripped lifecycle records must not start another session.
+   - `app-start-resume`: a warm launch. Once its first frame is displayed, the
+     runner opens Settings and then launches the app again, which brings the
+     running process back to the foreground for a `resume`.
+   - `app-start-update`: the runner first reinstalls the app with its build
+     number bumped, as an app update does, so the launch must be `cold`.
+   Every launch also records its process start and each `willEnterForeground`
+   and `didBecomeActive` as zero-length marker spans. `AppStartTests` compares
+   every `AppStart` span's timestamps with them, following the span definition
+   in `Sources/Instrumentation/SemanticConventions/model/swift/spans.yaml`.
+   Attribute keys and values come from `FederatedSemanticConventions`, which is
+   generated from that registry, so a span with a key that isn't in the
+   registry fails.
+   `main` is the first launch after installation, so its `AppStart` is `cold`,
+   and the launches after it are `warm`. Prewarming isn't covered: setting
+   `ActivePrewarm` makes the system hold the process before `main()` until a
+   real launch resumes it.
    Session config is passed as launch arguments because `SessionConfig` is
    only read when a `SessionManager` is created. The app stays installed
    between launches so persisted session state and stored crash reports carry
