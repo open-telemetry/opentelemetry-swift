@@ -54,7 +54,7 @@ let package = Package(
     ),
     .package(url: "https://github.com/apple/swift-log.git", from: "1.16.2"),
     .package(url: "https://github.com/apple/swift-metrics.git", from: "2.12.0"),
-    .package(url: "https://github.com/apple/swift-distributed-tracing.git", from: "1.7.2")
+    .package(url: "https://github.com/apple/swift-distributed-tracing.git", from: "1.7.3")
   ],
   targets: [
     .target(
