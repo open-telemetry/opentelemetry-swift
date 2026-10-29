@@ -1,0 +1,22 @@
+params:
+  excluded_namespaces: []
+comment_formats:
+  default:
+    format: markdown
+whitespace_control:
+  trim_blocks: true
+  lstrip_blocks: true
+templates:
+  - pattern: SemanticAttributes.swift.j2
+    filter: >
+      semconv_grouped_attributes({
+        "exclude_deprecated": true,
+        "exclude_root_namespace": $excluded_namespaces,
+      })
+      | map({
+        root_namespace: .root_namespace,
+        attributes: .attributes,
+        output: $output + "Attributes/",
+      })
+    file_name: "{{ params.enum }}.swift"
+    application_mode: each
