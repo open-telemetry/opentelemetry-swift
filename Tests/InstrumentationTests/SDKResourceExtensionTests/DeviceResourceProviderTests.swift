@@ -18,5 +18,6 @@ class DeviceResourceProviderTests: XCTestCase {
 
     XCTAssertEqual(mock.model, resource.attributes[ResourceAttributes.deviceModelIdentifier.rawValue]?.description)
     XCTAssertEqual(mock.identifier, resource.attributes[ResourceAttributes.deviceId.rawValue]?.description)
+    XCTAssertEqual(mock.identifier, resource.attributes[SemanticConventions.App.installationId.rawValue]?.description)
   }
 }
