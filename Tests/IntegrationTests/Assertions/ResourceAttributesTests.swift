@@ -17,6 +17,7 @@ final class ResourceAttributesTests: XCTestCase {
     XCTAssertNotNil(resource.string("os.version"), file: file, line: line)
     XCTAssertNotNil(resource.string("os.description"), file: file, line: line)
     XCTAssertNotNil(resource.string("device.id"), file: file, line: line)
+    XCTAssertEqual(resource.string("app.installation.id"), resource.string("device.id"), file: file, line: line)
     XCTAssertNotNil(resource.string("device.model.identifier"), file: file, line: line)
   }
 
