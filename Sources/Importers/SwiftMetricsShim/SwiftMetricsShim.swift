@@ -21,7 +21,7 @@ public final class OpenTelemetrySwiftMetrics: MetricsFactory, @unchecked Sendabl
   /// restart. For example, you can use a counter to represent the number of requests served, tasks completed, or errors.
   public func makeCounter(label: String, dimensions: [(String, String)]) -> CounterHandler {
     lock.withLock {
-      if let existing = metrics[.init(name: label, type: .counter)] {
+      if let existing = metrics[.init(name: label, type: .counter, dimensions: dimensions.dictionary)] {
         return existing as! CounterHandler
       }
 
@@ -40,11 +40,11 @@ public final class OpenTelemetrySwiftMetrics: MetricsFactory, @unchecked Sendabl
   /// Recorder with a sample size of 1 that does not perform any aggregation.
   public func makeRecorder(label: String, dimensions: [(String, String)], aggregate: Bool) -> RecorderHandler {
     lock.withLock {
-      if let existing = metrics[.init(name: label, type: .histogram)] {
+      if let existing = metrics[.init(name: label, type: .histogram, dimensions: dimensions.dictionary)] {
         return existing as! RecorderHandler
       }
 
-      if let existing = metrics[.init(name: label, type: .gauge)] {
+      if let existing = metrics[.init(name: label, type: .gauge, dimensions: dimensions.dictionary)] {
         return existing as! RecorderHandler
       }
 
@@ -61,7 +61,7 @@ public final class OpenTelemetrySwiftMetrics: MetricsFactory, @unchecked Sendabl
   /// for example min, max and various quantiles. It is similar to a Recorder but specialized for values that represent durations.
   public func makeTimer(label: String, dimensions: [(String, String)]) -> TimerHandler {
     lock.withLock {
-      if let existing = metrics[.init(name: label, type: .summary)] {
+      if let existing = metrics[.init(name: label, type: .summary, dimensions: dimensions.dictionary)] {
         return existing as! TimerHandler
       }
 
@@ -73,7 +73,7 @@ public final class OpenTelemetrySwiftMetrics: MetricsFactory, @unchecked Sendabl
   }
 
   private func storeMetric(_ metric: SwiftMetric) {
-    metrics[.init(name: metric.metricName, type: metric.metricType)] = metric
+    metrics[.init(name: metric.metricName, type: metric.metricType, dimensions: metric.dimensions)] = metric
   }
 
   // MARK: - Destroy
@@ -92,8 +92,8 @@ public final class OpenTelemetrySwiftMetrics: MetricsFactory, @unchecked Sendabl
 
   private func destroyMetric(_ metric: SwiftMetric?) {
     lock.withLock {
-      if let name = metric?.metricName, let type = metric?.metricType {
-        metrics.removeValue(forKey: .init(name: name, type: type))
+      if let name = metric?.metricName, let type = metric?.metricType, let dimensions = metric?.dimensions {
+        metrics.removeValue(forKey: .init(name: name, type: type, dimensions: dimensions))
       }
     }
   }
