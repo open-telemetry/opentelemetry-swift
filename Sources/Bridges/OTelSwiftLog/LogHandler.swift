@@ -41,7 +41,6 @@ public struct OTelLogHandler: LogHandler, @unchecked Sendable {
     self.loggerProvider = loggerProvider
     logger = self.loggerProvider.loggerBuilder(instrumentationScopeName: bridgeName)
       .setInstrumentationVersion(version)
-      .setIncludeTraceContext(true)
       .setAttributes(attributes)
       .setIncludeTraceContext(includeTraceContext)
       .build()
@@ -78,9 +77,8 @@ public struct OTelLogHandler: LogHandler, @unchecked Sendable {
       .setBody(AttributeValue.string(event.message.description))
       .setAttributes(otelattributes)
 
-    if let context = OpenTelemetry.instance.contextProvider.activeSpan?.context {
-      _ = record.setSpanContext(context)
-    }
+    // The span context is attached by the log record builder, which honours
+    // the `includeTraceContext` setting the logger was built with.
     record.emit()
   }
 }
