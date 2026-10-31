@@ -28,7 +28,7 @@ public struct AppLaunchInstrumentationConfiguration: Equatable, Sendable {
   public var dropPrewarmed: Bool
 
   /// The longest launch, in seconds, that's recorded. A longer launch wasn't waited through by the
-  /// user, for example because the system launched the app in the background. Like Datadog, it's
+  /// user, for example because a background launch wasn't detected. Like Datadog, it's
   /// measured from process start, or from when app code first ran for a prewarmed launch, and
   /// the default is 60 seconds.
   public var maxLaunchDuration: TimeInterval

@@ -21,12 +21,13 @@ groups:
       | `warm` | `false` or not set | Process start, as for `cold`. | As for `cold`. |
       | `cold` | `true` | The earliest time app code ran in the process, recorded by a C `constructor` function before `main()`. Process start can be long before the user launched a prewarmed app, so it isn't used. | As for `cold`. |
       | `warm` | `true` | As for prewarmed `cold`. | As for `cold`. |
-      | `resume` | not set | `UIApplication.willEnterForegroundNotification`. If the system discarded the app's scene while the app was in the background, the new scene connects first, and the span starts at `UIScene.willConnectNotification` instead. | The first frame displayed after the next `UIApplication.didBecomeActiveNotification`. |
+      | `resume` | not set | `UIApplication.willEnterForegroundNotification`, including the first time the app enters the foreground after the system started its process in the background. If the system discarded the app's scene while the app was in the background, the new scene connects first, and the span starts at `UIScene.willConnectNotification` instead, as long as the app starts entering the foreground while handling the same event. | The first frame displayed after the next `UIApplication.didBecomeActiveNotification`. |
 
-      The first frame is read with a one-shot `CADisplayLink`, and its timestamp is converted to
-      wall-clock time. This matches Apple's launch-time metric, which runs to the first frame. The
-      end timestamp is never earlier than the `didBecomeActiveNotification`, because the display
-      link can report the frame displayed just before it. On platforms without `CADisplayLink`,
+      The first frame is read with a `CADisplayLink`. A frame committed before a display refresh
+      is rendered during it and displayed at the next one, so the end timestamp is the link's
+      `timestamp` at its second callback, converted to wall-clock time. This matches Apple's
+      launch-time metric, which runs to the first frame. The end timestamp is never earlier than
+      the `didBecomeActiveNotification`. On platforms without `CADisplayLink`,
       such as macOS, the span ends at the app's `didBecomeActiveNotification` instead.
 
       If the time of the earliest app code can't be read, a prewarmed launch starts at process
@@ -39,11 +40,15 @@ groups:
       - The app enters the background after it becomes active but before the first frame is
         displayed, for every `start.type`.
       - A `cold` or `warm` span would be longer than the maximum launch duration (60 seconds by
-        default). The user can't have waited through all of it, for example because the system
-        launched the app in the background.
+        default). The user can't have waited through all of it, for example because a background
+        launch wasn't detected.
       - The launch was prewarmed and the instrumentation is configured to drop prewarmed launches.
       - The app becomes active without first entering the background, for example after the user
         dismisses Control Center or a system alert. The app only lost input focus.
+
+      A process the system started in the background, or that entered the background before it
+      first became active, has no `cold` or `warm` span. Its first activation is a `resume`,
+      because the process was already alive.
     attributes:
       - ref: start.type
         requirement_level: required

@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import Darwin
 import InstrumentationSemanticConventions
 import XCTest
 
@@ -15,9 +16,13 @@ import XCTest
 //
 // Launches: `main` is the first after installation, so it's cold. The other session launches and
 // `app-start-resume` run after it in the same boot with the same build, so they're warm, and
-// `app-start-resume` then returns to the foreground for a resume. `app-start-update` is the first
-// launch after the runner installed a new build, so it's cold. Prewarming can't be triggered in
-// the simulator, so it's only covered by the unit tests.
+// `app-start-resume` then returns to the foreground for a resume. `app-start-late-install` installs the instrumentation after the app became active, and is moved
+// to the background before one activation's first frame. `app-start-background` is launched in
+// the background by a silent push and later brought to the foreground. `app-start-update` is the
+// first launch after the runner installed a new build, so it's cold. Prewarming can't be
+// triggered in the simulator, focus loss needs a system alert dismissed, and an iPhone app can't
+// destroy its only scene to have a new one connect when it resumes, so they're only covered by
+// the unit tests.
 final class AppStartTests: XCTestCase {
   private static let scope = "io.opentelemetry.lifecycle"
   private static let spanName = "AppStart"
@@ -47,8 +52,10 @@ final class AppStartTests: XCTestCase {
   // AppStart span may not be exported.
   private static let launches: [Scenario.Launch] = [
     .main, .maxLifetime, .restoreFirst, .restoreSecond, .noRestore, .crashReport, .logLimits,
-    .appStartResume, .appStartUpdate,
+    .appStartResume, .appStartLateInstall, .appStartBackground, .appStartUpdate,
   ]
+  // Launches where every activation is recorded.
+  private static let fullyRecordedLaunches = launches.filter { $0 != .appStartLateInstall }
   private static let warmLaunches: [Scenario.Launch] = [
     .maxLifetime, .restoreFirst, .restoreSecond, .noRestore, .crashReport, .logLimits,
   ]
@@ -74,6 +81,24 @@ final class AppStartTests: XCTestCase {
     let spans = appStarts(launch)
     XCTAssertEqual(spans.count, 1, "AppStart spans in \(launch)")
     return try XCTUnwrap(spans.first, "no AppStart span in \(launch)").span
+  }
+
+  private func assertIsResume(_ span: ProtoSpan, activation: UInt64, in launch: Scenario.Launch,
+                              file: StaticString = #filePath, line: UInt = #line) throws {
+    XCTAssertEqual(span.attributes.string(Self.typeKey), Self.resume, "\(launch)", file: file, line: line)
+    // None of the launches has a scene connect as the app returns to the foreground, so every
+    // resume starts at `willEnterForeground`.
+    let foreground = try XCTUnwrap(markers(Scenario.foregroundSpanName, in: launch).last { $0 < activation },
+                                   "\(launch): no willEnterForeground before the activation", file: file, line: line)
+    assertDiffer(span.startTimeUnixNano, from: foreground, byAtMost: Self.observerTolerance,
+                 "\(launch): a resume starts when the app begins returning to the foreground", file: file, line: line)
+    assertEndsAtFirstFrame(span, activation: activation, in: launch, file: file, line: line)
+  }
+
+  private func processStartTaskRole(_ launch: Scenario.Launch) -> Int64? {
+    OTLPOutput.launch(launch).spans
+      .first { $0.scope.name == Scenario.scope && $0.span.name == Scenario.processStartSpanName }?
+      .span.attributes.int(Scenario.taskRoleAttributeKey)
   }
 
   private func assertEndsAtFirstFrame(_ span: ProtoSpan, activation: UInt64, in launch: Scenario.Launch,
@@ -119,7 +144,7 @@ final class AppStartTests: XCTestCase {
   }
 
   func testOneAppStartPerActivation() {
-    for launch in Self.launches {
+    for launch in Self.fullyRecordedLaunches {
       XCTAssertEqual(appStarts(launch).count, markers(Scenario.activeSpanName, in: launch).count,
                      "\(launch): AppStart spans vs didBecomeActive notifications")
     }
@@ -153,6 +178,8 @@ final class AppStartTests: XCTestCase {
     XCTAssertEqual(span.attributes.bool(Self.activePrewarmedKey), false)
     assertDiffer(span.startTimeUnixNano, from: try processStart(.appStartUpdate), byAtMost: Self.clockTolerance,
                  "cold starts at process start")
+    assertEndsAtFirstFrame(span, activation: try XCTUnwrap(markers(Scenario.activeSpanName, in: .appStartUpdate).first),
+                           in: .appStartUpdate)
   }
 
   // MARK: resume
@@ -175,5 +202,73 @@ final class AppStartTests: XCTestCase {
                  "resume starts at willEnterForeground")
     XCTAssertGreaterThan(resume.startTimeUnixNano, launch.endTimeUnixNano)
     assertEndsAtFirstFrame(resume, activation: activations[1], in: .appStartResume)
+  }
+
+  // MARK: Late installation and interrupted activations
+
+  func testInstallAfterAppBecameActiveSkipsLaunch() throws {
+    let launch = Scenario.Launch.appStartLateInstall
+    let activations = markers(Scenario.activeSpanName, in: launch)
+    XCTAssertEqual(activations.count, 3, "activations")
+    let spans = appStarts(launch).map(\.span)
+    XCTAssertEqual(spans.map { $0.attributes.string(Self.typeKey) }, [Self.resume],
+                   "the launch isn't recorded, the interrupted activation is dropped, and the last one is a resume")
+    let first = try XCTUnwrap(activations.first)
+    XCTAssertFalse(spans.contains { $0.startTimeUnixNano <= first }, "no span for the launch")
+  }
+
+  func testEnteringBackgroundBeforeFirstFrameDropsActivation() throws {
+    let launch = Scenario.Launch.appStartLateInstall
+    let activations = markers(Scenario.activeSpanName, in: launch)
+    guard activations.count == 3 else { return XCTFail("expected 3 activations") }
+    XCTAssertNotNil(markers(Scenario.backgroundSpanName, in: launch).first { $0 > activations[1] && $0 < activations[2] },
+                    "the runner moved the app to the background during the second activation")
+    let spans = appStarts(launch).map(\.span)
+    XCTAssertFalse(spans.contains { $0.endTimeUnixNano > activations[1] && $0.endTimeUnixNano < activations[2] },
+                   "the interrupted activation isn't recorded")
+    let resume = try XCTUnwrap(spans.last)
+    try assertIsResume(resume, activation: activations[2], in: launch)
+  }
+
+  // MARK: Background launch
+
+  func testFirstForegroundAfterBackgroundLaunchIsResume() throws {
+    let launch = Scenario.Launch.appStartBackground
+    let processStart = try processStart(launch)
+    let activations = markers(Scenario.activeSpanName, in: launch)
+    XCTAssertEqual(activations.count, 1, "activations")
+    let activation = try XCTUnwrap(activations.first)
+    XCTAssertGreaterThan(activation, processStart + Self.nanosecondsPerSecond,
+                         "the app was in the background for a while before the runner brought it to the foreground")
+
+    let spans = appStarts(launch).map(\.span)
+    XCTAssertEqual(spans.map { $0.attributes.string(Self.typeKey) }, [Self.resume],
+                   "the process was alive, so its first activation is a resume, not a launch from process start")
+    let span = try XCTUnwrap(spans.first)
+    try assertIsResume(span, activation: activation, in: launch)
+    XCTAssertNil(span.attributes[Self.activePrewarmedKey])
+
+    // The system connected the scene while the app was in the background, which isn't when the
+    // user started waiting.
+    let sceneConnected = try XCTUnwrap(markers(Scenario.sceneConnectSpanName, in: launch).first)
+    let foreground = try XCTUnwrap(markers(Scenario.foregroundSpanName, in: launch).first)
+    XCTAssertGreaterThan(foreground, sceneConnected + Self.nanosecondsPerSecond,
+                         "the scene connected in the background, well before the app entered the foreground")
+    XCTAssertGreaterThan(span.startTimeUnixNano, sceneConnected + Self.nanosecondsPerSecond,
+                         "the resume doesn't start when the scene connected in the background")
+  }
+
+  // The instrumentation detects a background launch from the role the system gave the process.
+  // It reads the role before `main()` and the app in `didFinishLaunching`, so this checks the
+  // premise; that the earlier read works shows in the launches' `start.type`.
+  func testTaskRoleDistinguishesBackgroundLaunches() throws {
+    let backgroundRoles = [TASK_BACKGROUND_APPLICATION, TASK_DARWINBG_APPLICATION, TASK_NONUI_APPLICATION]
+      .map { Int64($0.rawValue) }
+    let role = try XCTUnwrap(processStartTaskRole(.appStartBackground), "no role on the background launch")
+    XCTAssertTrue(backgroundRoles.contains(role), "background launch role: \(role)")
+    for launch in Self.launches where launch != .appStartBackground {
+      let role = try XCTUnwrap(processStartTaskRole(launch), "no role on \(launch)")
+      XCTAssertFalse(backgroundRoles.contains(role), "\(launch) role: \(role)")
+    }
   }
 }

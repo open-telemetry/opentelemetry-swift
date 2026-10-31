@@ -36,7 +36,11 @@ APP_PROJECT="$PROJECT_ROOT/Examples/HackerNewsDemo/HackerNewsDemo.xcodeproj"
 APP_SCHEME="HackerNewsDemo"
 APP_BUNDLE_ID="io.opentelemetry.HackerNewsDemo"
 COMPLETION_MARKER="integration.test.complete"
+# Followed by `-<activations>`; see IntegrationTestScenario.readySpanName.
 READY_MARKER="integration.test.ready"
+# The variables a launch the system starts in the background reads from the
+# simulator's launchd environment, since it gets no launch arguments.
+BACKGROUND_LAUNCH_ENVIRONMENT="OTEL_EXPORTER_OTLP_ENDPOINT INTEGRATION_STATUS_BASE_URL INTEGRATION_LAUNCH"
 
 # Pinned collector release. Bump the version and both checksums together; the
 # checksums are the published <asset>.sha256 files from
@@ -79,11 +83,19 @@ pipe_output() {
   if command -v xcbeautify >/dev/null 2>&1; then xcbeautify; else cat; fi
 }
 
+clear_background_launch_environment() {
+  local name
+  for name in $BACKGROUND_LAUNCH_ENVIRONMENT; do
+    xcrun simctl spawn "$SIMULATOR_UDID" launchctl unsetenv "$name" >/dev/null 2>&1 || true
+  done
+}
+
 COLLECTOR_PID=""
 STATUS_PID=""
 cleanup() {
   log "Cleaning up"
   xcrun simctl terminate "$SIMULATOR_UDID" "$APP_BUNDLE_ID" >/dev/null 2>&1 || true
+  clear_background_launch_environment
   for pid in "$COLLECTOR_PID" "$STATUS_PID"; do
     if [[ -n "$pid" ]]; then
       kill "$pid" >/dev/null 2>&1 || true
@@ -214,18 +226,34 @@ run_launch_into() {
   local tag="$1"; shift
   start_collector "$dir"
   log "Launch '$tag' ($*)"
-  launch_app "$tag" "$@"
-
-  if [[ "$tag" == "app-start-resume" ]]; then
-    # Once the launch's first frame is displayed, move the app to the background
-    # by opening Settings, then back to the foreground. `simctl launch` of a
-    # running app brings it to the foreground without starting a new process.
-    wait_for_marker "$dir" "$READY_MARKER"
-    log "Moving '$tag' to the background and back"
-    xcrun simctl launch "$SIMULATOR_UDID" com.apple.Preferences >/dev/null
-    sleep 3
-    launch_app "$tag" "$@"
-  fi
+  case "$tag" in
+    app-start-resume)
+      launch_app "$tag" "$@"
+      wait_for_marker "$dir" "$READY_MARKER-1"
+      move_to_background_and_back 3 "$tag" "$@"
+      ;;
+    app-start-late-install)
+      launch_app "$tag" "$@"
+      wait_for_marker "$dir" "$READY_MARKER-1"
+      move_to_background_and_back 3 "$tag" "$@"
+      # The second activation blocks the main thread, so the app is moved to the
+      # background before its first frame. Wait for the block to end before
+      # bringing it back.
+      wait_for_marker "$dir" "$READY_MARKER-2"
+      move_to_background_and_back 6 "$tag" "$@"
+      ;;
+    app-start-background)
+      launch_app_in_background "$tag"
+      wait_for_marker "$dir" "$READY_MARKER-0"
+      clear_background_launch_environment
+      sleep 2
+      log "Bringing '$tag' to the foreground"
+      launch_app "$tag" "$@"
+      ;;
+    *)
+      launch_app "$tag" "$@"
+      ;;
+  esac
 
   wait_for_marker "$dir" "$COMPLETION_MARKER"
   # Logs are batched on a fixed 5s schedule; give the last batch time to land.
@@ -240,6 +268,31 @@ launch_app() {
   SIMCTL_CHILD_OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:$PORT" \
   SIMCTL_CHILD_INTEGRATION_STATUS_BASE_URL="http://localhost:$STATUS_PORT" \
     xcrun simctl launch "$SIMULATOR_UDID" "$APP_BUNDLE_ID" --integrationTestMode --integrationLaunch "$tag" "$@"
+}
+
+# launch_app_in_background <tag>
+# Has the system launch the app in the background, as for a background fetch,
+# by sending it a silent push.
+launch_app_in_background() {
+  local tag="$1"
+  local payload="$OUTPUT_DIR/silent-push.json"
+  xcrun simctl spawn "$SIMULATOR_UDID" launchctl setenv OTEL_EXPORTER_OTLP_ENDPOINT "http://localhost:$PORT"
+  xcrun simctl spawn "$SIMULATOR_UDID" launchctl setenv INTEGRATION_STATUS_BASE_URL "http://localhost:$STATUS_PORT"
+  xcrun simctl spawn "$SIMULATOR_UDID" launchctl setenv INTEGRATION_LAUNCH "$tag"
+  echo '{"aps":{"content-available":1}}' >"$payload"
+  xcrun simctl push "$SIMULATOR_UDID" "$APP_BUNDLE_ID" "$payload" >/dev/null
+  rm -f "$payload"
+}
+
+# move_to_background_and_back <seconds in the background> <tag> [extra launch arguments...]
+# Opens Settings, then brings the app back. `simctl launch` of a running app
+# brings it to the foreground without starting a new process.
+move_to_background_and_back() {
+  local seconds="$1"; shift
+  log "Moving '$1' to the background and back"
+  xcrun simctl launch "$SIMULATOR_UDID" com.apple.Preferences >/dev/null
+  sleep "$seconds"
+  launch_app "$@"
 }
 
 # wait_for_marker <output directory> <span name>
@@ -310,11 +363,14 @@ else
   run_launch_into symbolicated/crash crash --sessionTimeout 3600 --restorePersistedSession false
   run_launch_into symbolicated/crash-report crash-report --sessionTimeout 3600 --restorePersistedSession false --reportStyle symbolicated
   run_launch log-limits --sessionTimeout 3600 --restorePersistedSession false
-  # AppStart: a warm launch followed by a resume, and the cold first launch
-  # after an update. `main` above is the cold first launch after installation.
+  # AppStart: a warm launch followed by a resume, a late installation with an
+  # interrupted activation, a background launch, and the cold first launch after
+  # an update. `main` above is the cold first launch after installation.
   # Prewarming isn't covered: setting ActivePrewarm makes the system hold the
   # process before main() until a real launch resumes it, which never comes.
   run_launch app-start-resume
+  run_launch app-start-late-install
+  run_launch app-start-background
   install_new_build
   run_launch app-start-update
 fi

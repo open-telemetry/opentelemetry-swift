@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import AppLaunchInstrumentation
 import Crash
 import Foundation
 import KSCrashFilters
@@ -23,6 +24,9 @@ import UIKit
 enum IntegrationTestScenario {
   static let launchArgument = "--integrationTestMode"
   static let launchTagArgument = "--integrationLaunch"
+  // A launch the system starts in the background gets no launch arguments, so the runner passes
+  // its tag in the environment instead.
+  static let launchTagEnvironmentVariable = "INTEGRATION_LAUNCH"
   static let sessionTimeoutArgument = "--sessionTimeout"
   static let maxLifetimeArgument = "--maxLifetime"
   static let restorePersistedSessionArgument = "--restorePersistedSession"
@@ -56,16 +60,28 @@ enum IntegrationTestScenario {
   static let logLimitsScope = "HackerNewsDemo.IntegrationTest.LogLimits"
   static let sessionCreatedAttributeKey = "integration.test.session-created"
   // Lifecycle markers for the AppStart assertions. Each is a zero-length span at the time of the
-  // event: process start, every `willEnterForeground` and every `didBecomeActive`.
+  // event: process start, and every scene connection, `willEnterForeground`, `didBecomeActive`
+  // and `didEnterBackground`.
   static let processStartSpanName = "integration.test.process-start"
+  static let sceneConnectSpanName = "integration.test.scene-will-connect"
   static let foregroundSpanName = "integration.test.will-enter-foreground"
   static let activeSpanName = "integration.test.did-become-active"
-  // Exported once the launch's first frame is displayed, so the runner can move the app to the
-  // background and back.
-  static let readySpanName = "integration.test.ready"
+  static let backgroundSpanName = "integration.test.did-enter-background"
+  // On the process start marker: the role the system gave the process (`task_role_t`), read in
+  // `didFinishLaunching`.
+  static let taskRoleAttributeKey = "integration.test.task-role"
+  // Exported when the runner can drive the app's next step: after an activation's first frame is
+  // displayed, while an interrupted activation blocks the main thread, or, for a background launch,
+  // once it has started. Numbered by the activations before it, so each is waited for separately.
+  static func readySpanName(activations: Int) -> String {
+    "integration.test.ready-\(activations)"
+  }
   // Long enough for the first frame after an activation to be displayed and its AppStart span to
   // end.
   static let firstFrameWait: TimeInterval = 2
+  // How long an interrupted activation blocks the main thread, so the runner can move the app to
+  // the background before its first frame is displayed.
+  static let interruptionBlock: TimeInterval = 5
 
   enum Launch: String {
     // Fresh install. Exercises spans, logs, network and session expiry.
@@ -87,9 +103,16 @@ enum IntegrationTestScenario {
     // the stored crash, which must keep the crashed launch's session id.
     case crashReport = "crash-report"
     case logLimits = "log-limits"
-    // The runner moves the app to the background after `ready` and back again, so it records a
-    // warm launch and then a resume.
+    // The runner moves the app to the background after its first frame and back again, so it
+    // records a warm launch and then a resume.
     case appStartResume = "app-start-resume"
+    // AppLaunchInstrumentation is installed after the app first became active, so the launch isn't
+    // recorded. The runner moves the app to the background while the second activation blocks the
+    // main thread, so that one ends before its first frame. The third activation is a resume.
+    case appStartLateInstall = "app-start-late-install"
+    // Launched in the background by a silent push, where the system connects its scene, then
+    // brought to the foreground by the runner.
+    case appStartBackground = "app-start-background"
     // First launch after the runner installed the app with a new build number, so it's cold.
     case appStartUpdate = "app-start-update"
   }
@@ -111,12 +134,20 @@ enum IntegrationTestScenario {
     return TelemetryConfig.collectorBaseURL
   }
 
+  private static let environmentLaunchTag = ProcessInfo.processInfo.environment[launchTagEnvironmentVariable]
+
   static var isEnabled: Bool {
-    arguments.contains(launchArgument)
+    arguments.contains(launchArgument) || environmentLaunchTag != nil
   }
 
   static var launch: Launch {
-    value(after: launchTagArgument).flatMap(Launch.init(rawValue:)) ?? .main
+    (value(after: launchTagArgument) ?? environmentLaunchTag).flatMap(Launch.init(rawValue:)) ?? .main
+  }
+
+  // Telemetry skips installing AppLaunchInstrumentation, and the scenario installs it after the
+  // app first became active.
+  static var installsAppLaunchLate: Bool {
+    isEnabled && launch == .appStartLateInstall
   }
 
   static var sessionConfig: SessionConfig {
@@ -193,46 +224,92 @@ enum IntegrationTestScenario {
         runLogLimits(tracer: tracer)
         complete(tracer: tracer)
       }
-    case .appStartResume, .appStartUpdate:
+    case .appStartBackground:
+      signalReady(tracer: tracer, activations: 0)
+    case .appStartResume, .appStartLateInstall, .appStartUpdate:
       // Completed from `recordLifecycle` once the expected activations have been displayed.
       break
     }
   }
 
   // How many activations each app-start launch waits for before it completes.
-  private static let appStartActivations: [Launch: Int] = [.appStartResume: 2, .appStartUpdate: 1]
+  private static let appStartActivations: [Launch: Int] = [
+    .appStartResume: 2, .appStartLateInstall: 3, .appStartBackground: 1, .appStartUpdate: 1,
+  ]
+  // The activation the runner interrupts by moving the app to the background before its first
+  // frame is displayed.
+  private static let interruptedActivation: [Launch: Int] = [.appStartLateInstall: 2]
 
   // Records the markers the AppStart assertions compare the spans' timestamps with. Called from
   // `didFinishLaunching`, before the app first becomes active.
   private static func recordLifecycle(tracer: Tracer) {
     if let processStart = processStartTime() {
-      marker(tracer, processStartSpanName, at: processStart)
+      let builder = markerBuilder(tracer, processStartSpanName, at: processStart)
+      if let role = taskRole() {
+        builder.setAttribute(key: taskRoleAttributeKey, value: role)
+      }
+      builder.startSpan().end(time: processStart)
     }
     let center = NotificationCenter.default
+    center.addObserver(forName: UIScene.willConnectNotification, object: nil, queue: nil) { _ in
+      marker(tracer, sceneConnectSpanName, at: Date())
+    }
     center.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: nil) { _ in
       marker(tracer, foregroundSpanName, at: Date())
     }
     var activations = 0
+    center.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil) { _ in
+      marker(tracer, backgroundSpanName, at: Date())
+    }
     center.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: nil) { _ in
       marker(tracer, activeSpanName, at: Date())
       activations += 1
+      if installsAppLaunchLate, activations == 1 {
+        AppLaunchInstrumentation.install()
+      }
       guard let expectedActivations = appStartActivations[launch], activations <= expectedActivations else { return }
-      let isLast = activations == expectedActivations
+      let current = activations
+      if interruptedActivation[launch] == current {
+        DispatchQueue.global().async { signalReady(tracer: tracer, activations: current) }
+        Thread.sleep(forTimeInterval: interruptionBlock)
+        return
+      }
       DispatchQueue.global().asyncAfter(deadline: .now() + firstFrameWait) {
-        if isLast {
+        if current == expectedActivations {
           complete(tracer: tracer)
         } else {
-          marker(tracer, readySpanName, at: Date())
-          (OpenTelemetry.instance.tracerProvider as? TracerProviderSdk)?.forceFlush()
+          signalReady(tracer: tracer, activations: current)
         }
       }
     }
   }
 
+  private static func signalReady(tracer: Tracer, activations: Int) {
+    marker(tracer, readySpanName(activations: activations), at: Date())
+    (OpenTelemetry.instance.tracerProvider as? TracerProviderSdk)?.forceFlush()
+  }
+
   private static func marker(_ tracer: Tracer, _ name: String, at time: Date) {
+    markerBuilder(tracer, name, at: time).startSpan().end(time: time)
+  }
+
+  private static func markerBuilder(_ tracer: Tracer, _ name: String, at time: Date) -> SpanBuilder {
     let builder = tracer.spanBuilder(spanName: name).setStartTime(time: time)
     builder.setAttribute(key: launchAttributeKey, value: launch.rawValue)
-    builder.startSpan().end(time: time)
+    return builder
+  }
+
+  private static func taskRole() -> Int? {
+    var policy = task_category_policy_data_t()
+    var count = mach_msg_type_number_t(MemoryLayout<task_category_policy_data_t>.size / MemoryLayout<integer_t>.size)
+    var getDefault: boolean_t = 0
+    let result = withUnsafeMutablePointer(to: &policy) {
+      $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+        task_policy_get(mach_task_self_, task_policy_flavor_t(TASK_CATEGORY_POLICY), $0, &count, &getDefault)
+      }
+    }
+    guard result == KERN_SUCCESS, getDefault == 0 else { return nil }
+    return Int(policy.role.rawValue)
   }
 
   // Read independently of AppLaunchInstrumentation, so the assertions don't take its word for it.
