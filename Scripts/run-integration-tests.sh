@@ -373,6 +373,9 @@ else
   run_launch app-start-background
   install_new_build
   run_launch app-start-update
+  # Copies the same original build, so this reinstalls the build just launched.
+  install_new_build
+  run_launch app-start-reinstall
 fi
 
 log "Collected files"

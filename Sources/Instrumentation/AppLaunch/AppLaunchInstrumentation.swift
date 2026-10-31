@@ -25,6 +25,8 @@
   ///
   /// Launches that iOS prewarmed are marked with `start.active_prewarmed` and start when app code
   /// first ran. On macOS only launches are recorded, and they end when the app becomes active.
+  ///
+  /// Supported on iOS, iPadOS, tvOS, visionOS, Mac Catalyst and macOS. On watchOS this does nothing.
   public class AppLaunchInstrumentation: Instrumentation {
     // Matches the instrumentation scope used by OpenTelemetry Android.
     static let instrumentationScope = "io.opentelemetry.lifecycle"
@@ -137,18 +139,26 @@
     }
 
     static func install(dependencies: Dependencies) {
-      // Reported outside `installLock`, because the handler is the app's code and could call
-      // `install` again.
-      let installedConfiguration = installLock.withLock { installLocked(dependencies: dependencies) }
-      if let installedConfiguration, installedConfiguration != dependencies.configuration {
-        OpenTelemetry.instance.feedbackHandler?(
-          "AppLaunchInstrumentation is already installed, so the new configuration is ignored."
+      // Logged outside `installLock`, because the feedback handler is the app's code and could
+      // call `install` again.
+      switch installLock.withLock({ installLocked(dependencies: dependencies) }) {
+      case let .alreadyInstalled(configuration):
+        if configuration != dependencies.configuration {
+          InternalLogger.error("AppLaunchInstrumentation is already installed, so the new configuration is ignored.")
+        }
+      case let .installed(launchType, isAppActive, isBackgroundLaunch):
+        InternalLogger.info(
+          "AppLaunchInstrumentation installed: launch type \(launchType), app active \(isAppActive), background launch \(isBackgroundLaunch)."
         )
       }
     }
 
-    /// Returns the installed configuration if the instrumentation was already installed.
-    private static func installLocked(dependencies: Dependencies) -> AppLaunchInstrumentationConfiguration? {
+    private enum InstallResult {
+      case alreadyInstalled(AppLaunchInstrumentationConfiguration)
+      case installed(LaunchType, isAppActive: Bool, isBackgroundLaunch: Bool)
+    }
+
+    private static func installLocked(dependencies: Dependencies) -> InstallResult {
       let installedConfiguration: AppLaunchInstrumentationConfiguration? = lock.withLock {
         if let installed = _dependencies {
           return installed.configuration
@@ -157,7 +167,7 @@
         return nil
       }
       if let installedConfiguration {
-        return installedConfiguration
+        return .alreadyInstalled(installedConfiguration)
       }
 
       // Outside `lock` because reading and writing the launch history does I/O. Only the install
@@ -194,7 +204,7 @@
       ].compactMap { $0 }
 
       lock.withLock { _observers = observers }
-      return nil
+      return .installed(launchType, isAppActive: isAppActive, isBackgroundLaunch: isBackgroundLaunch)
     }
 
     /// Removes the observers and clears all state so the next install starts over. Tests only.
@@ -261,7 +271,8 @@
     }
 
     private static func appDidEnterBackground() {
-      lock.withLock {
+      let isBeforeFirstActivation: Bool = lock.withLock {
+        let isBeforeFirstActivation = _dependencies != nil && !_hasHandledLaunch
         // Before the app first became active, this means the system launched it into the
         // background, or the user left before the launch finished. The process stays alive, so
         // the next activation is a resume.
@@ -271,6 +282,10 @@
         _pendingResumeStart = nil
         _sceneConnectTime = nil
         _backgroundCount += 1
+        return isBeforeFirstActivation
+      }
+      if isBeforeFirstActivation {
+        InternalLogger.debug("AppLaunchInstrumentation: no launch recorded, because the app entered the background before it became active. The next activation is a resume.")
       }
     }
 
@@ -301,7 +316,10 @@
       case let .launch(type): type
       case .resume: .resume
       }
-      guard dependencies.configuration.launchTypes.contains(launchType) else { return }
+      guard dependencies.configuration.launchTypes.contains(launchType) else {
+        InternalLogger.debug("AppLaunchInstrumentation: not recording a \(launchType) start, because it isn't in `launchTypes`.")
+        return
+      }
 
       let didBecomeActiveTime = dependencies.now()
       // Read when the app becomes active, so a tracer provider registered after install is used.
@@ -310,7 +328,10 @@
       let recordActivation: (Date) -> Void
       switch activation {
       case let .launch(type):
-        guard let processStartTime = dependencies.processStartTime() else { return }
+        guard let processStartTime = dependencies.processStartTime() else {
+          InternalLogger.warn("AppLaunchInstrumentation: dropped a \(type) launch, because the process start time can't be read.")
+          return
+        }
         recordActivation = { end in
           recordLaunch(tracer: tracer, type: type, processStartTime: processStartTime, end: end, dependencies: dependencies)
         }
@@ -321,6 +342,7 @@
             .setAttribute(key: StartAttributes.type.rawValue, value: StartAttributes.TypeValues.resume.description)
             .startSpan()
             .end(time: end)
+          InternalLogger.debug("AppLaunchInstrumentation: recorded a resume of \(milliseconds(end.timeIntervalSince(start))) ms.")
         }
       }
 
@@ -331,16 +353,24 @@
       firstFrameReader.readFirstFrame { firstFrameTime in
         // A display link pauses in the background, so if the app left the foreground before the
         // first frame, the frame it reports is from the next time the app returned.
-        guard lock.withLock({ _backgroundCount == backgroundCount }) else { return }
+        guard lock.withLock({ _backgroundCount == backgroundCount }) else {
+          InternalLogger.debug("AppLaunchInstrumentation: dropped a \(launchType) start, because the app entered the background before the first frame.")
+          return
+        }
         // A start never ends before the app became active, whatever the reader reports.
         recordActivation(max(firstFrameTime, didBecomeActiveTime))
       }
+    }
+
+    private static func milliseconds(_ seconds: TimeInterval) -> Int {
+      Int((seconds * 1_000).rounded())
     }
 
     private static func recordLaunch(tracer: Tracer, type: LaunchType, processStartTime: Date, end: Date, dependencies: Dependencies) {
       let configuration = dependencies.configuration
       let isPrewarmed = dependencies.isActivePrewarm()
       if isPrewarmed, configuration.dropPrewarmed {
+        InternalLogger.debug("AppLaunchInstrumentation: dropped a prewarmed \(type) launch, because `dropPrewarmed` is set.")
         return
       }
       // A prewarmed process started long before the user launched the app, so time the launch
@@ -350,6 +380,9 @@
       // detected, the prewarm ran app code, or the instrumentation was installed off the main
       // thread after the app first became active.
       if end.timeIntervalSince(startTime) > configuration.maxLaunchDuration {
+        InternalLogger.warn(
+          "AppLaunchInstrumentation: dropped a \(type) launch of \(milliseconds(end.timeIntervalSince(startTime))) ms, which is longer than `maxLaunchDuration`."
+        )
         return
       }
 
@@ -359,6 +392,9 @@
         .setAttribute(key: StartAttributes.activePrewarmed.rawValue, value: isPrewarmed)
         .startSpan()
         .end(time: end)
+      InternalLogger.debug(
+        "AppLaunchInstrumentation: recorded a \(type) launch of \(milliseconds(end.timeIntervalSince(startTime))) ms, prewarmed \(isPrewarmed)."
+      )
     }
   }
 
@@ -370,5 +406,22 @@
       case .resume: .resume
       }
     }
+  }
+#else
+  import InstrumentationCommon
+
+  /// Does nothing, because this platform isn't supported, so code shared with a supported platform
+  /// doesn't need its own check. Supported on iOS, iPadOS, tvOS, visionOS, Mac Catalyst and macOS.
+  public class AppLaunchInstrumentation: Instrumentation {
+    static let instrumentationScope = "io.opentelemetry.lifecycle"
+
+    /// Always `false`.
+    public static var isInstalled: Bool { false }
+
+    public init(configuration: AppLaunchInstrumentationConfiguration = .init()) {
+      super.init(scope: Self.instrumentationScope)
+    }
+
+    public static func install(configuration: AppLaunchInstrumentationConfiguration = .init()) {}
   }
 #endif

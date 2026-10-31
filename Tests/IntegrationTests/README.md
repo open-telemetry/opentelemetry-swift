@@ -48,6 +48,8 @@ repo work together inside a real iOS app. The flow is:
      simulator.
    - `app-start-update`: the runner first reinstalls the app with its build
      number bumped, as an app update does, so the launch must be `cold`.
+   - `app-start-reinstall`: the runner installs that same build again, so only
+     the install directory differs and the launch must still be `cold`.
    Every launch also records its process start (with the process's task role)
    and each scene connection, `willEnterForeground`, `didBecomeActive` and
    `didEnterBackground` as zero-length marker spans. `AppStartTests` compares

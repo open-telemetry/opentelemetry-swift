@@ -115,6 +115,7 @@ enum IntegrationTestScenario {
     case appStartBackground = "app-start-background"
     // First launch after the runner installed the app with a new build number, so it's cold.
     case appStartUpdate = "app-start-update"
+    case appStartReinstall = "app-start-reinstall"
   }
 
   // Default session timeout for the main launch: short enough that the
@@ -226,7 +227,7 @@ enum IntegrationTestScenario {
       }
     case .appStartBackground:
       signalReady(tracer: tracer, activations: 0)
-    case .appStartResume, .appStartLateInstall, .appStartUpdate:
+    case .appStartResume, .appStartLateInstall, .appStartUpdate, .appStartReinstall:
       // Completed from `recordLifecycle` once the expected activations have been displayed.
       break
     }
@@ -234,7 +235,7 @@ enum IntegrationTestScenario {
 
   // How many activations each app-start launch waits for before it completes.
   private static let appStartActivations: [Launch: Int] = [
-    .appStartResume: 2, .appStartLateInstall: 3, .appStartBackground: 1, .appStartUpdate: 1,
+    .appStartResume: 2, .appStartLateInstall: 3, .appStartBackground: 1, .appStartUpdate: 1, .appStartReinstall: 1,
   ]
   // The activation the runner interrupts by moving the app to the background before its first
   // frame is displayed.

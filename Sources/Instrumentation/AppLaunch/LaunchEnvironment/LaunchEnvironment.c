@@ -18,6 +18,7 @@ static bool isActivePrewarm = false;
 static bool isBackgroundLaunch = false;
 static double initializerTime = 0;
 
+#if !TARGET_OS_WATCH
 // Like Datadog, reads the role the system gave the process when it started it. Only roles that
 // say the app isn't in the foreground count, so a role that's unknown or can't be read doesn't
 // turn a launch the user waited for into a background launch.
@@ -53,6 +54,7 @@ __attribute__((constructor)) static void otel_app_launch_read_launch_environment
   // A prewarmed process isn't in the foreground either, but the user launches it.
   isBackgroundLaunch = !isActivePrewarm && readIsBackgroundRole();
 }
+#endif
 
 bool otel_app_launch_is_active_prewarm(void) {
   return isActivePrewarm;
