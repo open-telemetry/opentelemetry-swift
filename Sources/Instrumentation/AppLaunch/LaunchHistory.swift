@@ -17,10 +17,22 @@
     var bootSessionID: String?
     var appVersion: String?
     var appBuild: String?
+    // The system puts every install in a new directory, even of the same build, so the path
+    // tells installs apart the way a salt would. A stored salt couldn't, because installing over
+    // the app keeps its `UserDefaults`.
+    var installPath: String?
 
-    /// Whether the device hasn't rebooted and the app hasn't been updated since `previous`.
+    /// Whether the device hasn't rebooted and the app hasn't been reinstalled or updated since
+    /// `previous`.
     func isSameState(as previous: LaunchContext) -> Bool {
-      appVersion == previous.appVersion && appBuild == previous.appBuild && isSameBoot(as: previous)
+      appVersion == previous.appVersion && appBuild == previous.appBuild && isSameInstall(as: previous)
+        && isSameBoot(as: previous)
+    }
+
+    private func isSameInstall(as previous: LaunchContext) -> Bool {
+      // A record saved before this field existed can't say, so the other checks decide.
+      guard let installPath, let previousInstallPath = previous.installPath else { return true }
+      return installPath == previousInstallPath
     }
 
     private func isSameBoot(as previous: LaunchContext) -> Bool {
@@ -43,7 +55,8 @@
       bootTime: bootTime.timeIntervalSince1970,
       bootSessionID: readBootSessionID(),
       appVersion: info?[shortVersionKey] as? String,
-      appBuild: info?[buildKey] as? String
+      appBuild: info?[buildKey] as? String,
+      installPath: Bundle.main.bundlePath
     )
   }
 

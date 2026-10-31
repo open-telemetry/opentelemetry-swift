@@ -97,7 +97,7 @@
     let appCodeStart = Date(timeIntervalSince1970: 1_001)
     let becameActive = Date(timeIntervalSince1970: 1_002.5)
     let firstFrame = Date(timeIntervalSince1970: 1_002.6)
-    let launchContext = LaunchContext(bootTime: 500, appVersion: "1.0", appBuild: "1")
+    var launchContext = LaunchContext(bootTime: 500, appVersion: "1.0", appBuild: "1")
 
     var spanExporter: InMemoryExporter!
     var tracerProvider: TracerProviderSdk!
@@ -836,6 +836,118 @@
       XCTAssertEqual(messages.values.count, 1)
     }
 
+    func testReinstallOfSameBuildIsCold() {
+      var previous = launchContext
+      previous.installPath = "/containers/old/App.app"
+      launchContext.installPath = "/containers/new/App.app"
+      launchHistory = FakeLaunchHistory(previous: previous)
+      install()
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertEqual(finishedSpans().first?.attributes["start.type"], .string("cold"))
+    }
+
+    func testSameInstallPathIsWarm() {
+      launchContext.installPath = "/containers/same/App.app"
+      launchHistory = FakeLaunchHistory(previous: launchContext)
+      install()
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertEqual(finishedSpans().first?.attributes["start.type"], .string("warm"))
+    }
+
+    func testRecordWithoutInstallPathIsStillWarm() {
+      launchHistory = FakeLaunchHistory(previous: launchContext)
+      launchContext.installPath = "/containers/new/App.app"
+      install()
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertEqual(finishedSpans().first?.attributes["start.type"], .string("warm"))
+    }
+
+    func testDebugModeLogsEnteringBackgroundBeforeFirstActivation() {
+      let messages = captureFeedback()
+      OpenTelemetry.setDebugEnabled(true)
+      install()
+
+      post(didEnterBackground)
+      post(didEnterBackground)
+
+      XCTAssertEqual(messages.values.filter { $0.contains("no launch recorded") }.count, 1)
+    }
+
+    func testDebugModeLogsDurationsInWholeMilliseconds() {
+      let messages = captureFeedback()
+      OpenTelemetry.setDebugEnabled(true)
+      install()
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertTrue(messages.values.last?.contains("launch of 2600 ms") ?? false, "\(messages.values)")
+    }
+
+    func testNothingButErrorsIsLoggedWithoutDebugMode() {
+      let messages = captureFeedback()
+      install()
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertEqual(finishedSpans().count, 1)
+      XCTAssertTrue(messages.values.isEmpty)
+    }
+
+    func testDebugModeLogsInstallAndRecordedStart() {
+      let messages = captureFeedback()
+      OpenTelemetry.setDebugEnabled(true)
+      install()
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertEqual(messages.values.count, 2)
+      XCTAssertTrue(messages.values.first?.hasPrefix("[info] AppLaunchInstrumentation installed") ?? false)
+      XCTAssertTrue(messages.values.last?.hasPrefix("[debug] AppLaunchInstrumentation: recorded a cold launch") ?? false)
+    }
+
+    func testDebugModeLogsDroppedLaunchAsWarning() {
+      let messages = captureFeedback()
+      OpenTelemetry.setDebugEnabled(true)
+      install(processStartTime: { nil })
+
+      post(didBecomeActive)
+
+      XCTAssertTrue(messages.values.last?.hasPrefix("[warn] AppLaunchInstrumentation: dropped a cold launch") ?? false)
+    }
+
+    func testFeedbackHandlerCanCallInstallDuringDebugLogging() {
+      let messages = captureFeedback()
+      OpenTelemetry.setDebugEnabled(true)
+      let dependencies = makeDependencies()
+      OpenTelemetry.registerFeedbackHandler { message in
+        messages.append(message)
+        AppLaunchInstrumentation.install(dependencies: dependencies)
+      }
+      let finished = expectation(description: "activation recorded")
+
+      DispatchQueue.global().async { [notificationCenter, didBecomeActive, firstFrameReader, firstFrame] in
+        AppLaunchInstrumentation.install(dependencies: dependencies)
+        notificationCenter!.post(name: didBecomeActive, object: nil)
+        firstFrameReader!.displayFrame(at: firstFrame)
+        finished.fulfill()
+      }
+
+      wait(for: [finished], timeout: 5)
+      XCTAssertEqual(messages.values.count, 2)
+    }
+
     func testSecondInstallWithSameConfigurationIsNotReported() {
       let messages = captureFeedback()
       install()
@@ -1133,6 +1245,7 @@
       let messages = FeedbackMessages()
       OpenTelemetry.registerFeedbackHandler { messages.append($0) }
       addTeardownBlock {
+        OpenTelemetry.setDebugEnabled(false)
         OpenTelemetry.registerFeedbackHandler { message in os_log("%{public}s", message) }
       }
       return messages

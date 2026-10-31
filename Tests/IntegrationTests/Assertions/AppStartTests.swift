@@ -19,7 +19,8 @@ import XCTest
 // `app-start-resume` then returns to the foreground for a resume. `app-start-late-install` installs the instrumentation after the app became active, and is moved
 // to the background before one activation's first frame. `app-start-background` is launched in
 // the background by a silent push and later brought to the foreground. `app-start-update` is the
-// first launch after the runner installed a new build, so it's cold. Prewarming can't be
+// first launch after the runner installed a new build, and `app-start-reinstall` the first after it
+// installed that build again, so both are cold. Prewarming can't be
 // triggered in the simulator, focus loss needs a system alert dismissed, and an iPhone app can't
 // destroy its only scene to have a new one connect when it resumes, so they're only covered by
 // the unit tests.
@@ -52,7 +53,7 @@ final class AppStartTests: XCTestCase {
   // AppStart span may not be exported.
   private static let launches: [Scenario.Launch] = [
     .main, .maxLifetime, .restoreFirst, .restoreSecond, .noRestore, .crashReport, .logLimits,
-    .appStartResume, .appStartLateInstall, .appStartBackground, .appStartUpdate,
+    .appStartResume, .appStartLateInstall, .appStartBackground, .appStartUpdate, .appStartReinstall,
   ]
   // Launches where every activation is recorded.
   private static let fullyRecordedLaunches = launches.filter { $0 != .appStartLateInstall }
@@ -172,14 +173,17 @@ final class AppStartTests: XCTestCase {
     }
   }
 
-  func testFirstLaunchAfterUpdateIsCold() throws {
-    let span = try appStart(.appStartUpdate)
-    XCTAssertEqual(span.attributes.string(Self.typeKey), Self.cold)
-    XCTAssertEqual(span.attributes.bool(Self.activePrewarmedKey), false)
-    assertDiffer(span.startTimeUnixNano, from: try processStart(.appStartUpdate), byAtMost: Self.clockTolerance,
-                 "cold starts at process start")
-    assertEndsAtFirstFrame(span, activation: try XCTUnwrap(markers(Scenario.activeSpanName, in: .appStartUpdate).first),
-                           in: .appStartUpdate)
+  // `app-start-reinstall` installs the same build as `app-start-update`, so only the install differs.
+  func testFirstLaunchAfterUpdateOrReinstallIsCold() throws {
+    for launch in [Scenario.Launch.appStartUpdate, .appStartReinstall] {
+      let span = try appStart(launch)
+      XCTAssertEqual(span.attributes.string(Self.typeKey), Self.cold, "\(launch)")
+      XCTAssertEqual(span.attributes.bool(Self.activePrewarmedKey), false, "\(launch)")
+      assertDiffer(span.startTimeUnixNano, from: try processStart(launch), byAtMost: Self.clockTolerance,
+                   "cold starts at process start")
+      assertEndsAtFirstFrame(span, activation: try XCTUnwrap(markers(Scenario.activeSpanName, in: launch).first),
+                             in: launch)
+    }
   }
 
   // MARK: resume
