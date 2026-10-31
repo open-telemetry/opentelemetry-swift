@@ -8,9 +8,29 @@ The span name, the `start.type` key, its `cold` and `warm` values and the instru
 
 ## Implementation status
 
-`cold`, `warm` and `resume` starts and `start.active_prewarmed` are implemented on iOS, iPadOS, tvOS, visionOS and Mac Catalyst. Every span ends at the first frame displayed after the app becomes active, read with a `CADisplayLink`. On macOS only launches (`cold` and `warm`) are recorded, and they end at the first `NSApplication.didBecomeActiveNotification`, because macOS has neither `CADisplayLink` nor a background state. watchOS isn't supported.
+Every span ends at the first frame displayed after the app becomes active, read with a `CADisplayLink`.
+
+## Platform support
+
+| Platform       | Status      | What's recorded                                                                                                                                                                           |
+| -------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| iOS, iPadOS    | Supported   | `cold`, `warm`, `resume` and `start.active_prewarmed`. Tested with real telemetry on the iOS simulator, except prewarming, which the simulator can't produce.                             |
+| visionOS       | Supported   | `cold`, `warm` and `resume`, and `start.active_prewarmed` if the system sets `ActivePrewarm`. Not tested with real telemetry.                                                             |
+| Mac Catalyst   | Supported   | `cold`, `warm` and `resume`, and `start.active_prewarmed` if the system sets `ActivePrewarm`. Not tested with real telemetry.                                                             |
+| tvOS           | Supported   | `cold`, `warm` and `resume`, and `start.active_prewarmed` if the system sets `ActivePrewarm`. A background launch isn't detected from the process's role. Not tested with real telemetry. |
+| macOS          | Partial     | Only `cold` and `warm`, ending at the first `NSApplication.didBecomeActiveNotification`, because macOS has neither `CADisplayLink` nor a background state.                                |
+| watchOS        | Unsupported | Nothing. The API compiles, so shared code doesn't need a check, but `install` does nothing, `isInstalled` is always `false`, and no code runs at process start.                           |
+| Linux, Windows | Unavailable | The product isn't built, so it can't be added as a dependency.                                                                                                                            |
 
 When the system started the process in the background, the first time the app reaches the foreground is a [`resume`](#resume). Other launches the user can't have waited through are dropped by the [dropped-start rules](#dropped-starts).
+
+## Debugging
+
+Only errors are logged by default. To see why a start was or wasn't recorded, turn on debug mode, which logs every level through `OpenTelemetry.instance.feedbackHandler`:
+
+```swift
+OpenTelemetry.setDebugEnabled(true)
+```
 
 ## Setup
 
@@ -96,9 +116,10 @@ A launch is `cold` when any of these is true, and `warm` otherwise:
 - No previous launch is recorded, for example on the app's first launch after it's installed.
 - The device booted after the previous launch, detected from a change in the kernel's boot session ID (`sysctl` `kern.bootsessionuuid`). If either launch's boot session ID couldn't be read, a change in the kernel boot time (`sysctl` `KERN_BOOTTIME`) of more than 1 second is used instead; setting the system clock also moves the boot time, so in that case it's treated like a reboot.
 - The app's version (`CFBundleShortVersionString`) or build (`CFBundleVersion`) changed since the previous launch, so its new code isn't cached.
+- The app was reinstalled since the previous launch, detected from a change in its bundle path, because the system puts every install in a new directory. The same build installed again is `cold` too, since its files were just rewritten.
 - The boot time can't be read.
 
-The previous launch's boot session ID, boot time, version and build are stored in `UserDefaults.standard` under `io.opentelemetry.lifecycle.lastLaunchContext` when the instrumentation is installed. A launch is recorded even if it never reaches the foreground, because the system still loaded the app's code. So after a reboot or an update, if the system first starts the app in the background, that process produces no `cold` span and the user's next launch is `warm`.
+The previous launch's boot session ID, boot time, version, build and bundle path are stored in `UserDefaults.standard` under `io.opentelemetry.lifecycle.lastLaunchContext` when the instrumentation is installed. A launch is recorded even if it never reaches the foreground, because the system still loaded the app's code. So after a reboot or an update, if the system first starts the app in the background, that process produces no `cold` span and the user's next launch is `warm`.
 
 Apple also calls a launch cold when the system evicted the app from memory to make room for other apps. Code inside the process can't tell, so such a launch is reported as `warm` if none of the rules above applies.
 

@@ -41,6 +41,7 @@ enum Scenario {
     case appStartLateInstall = "app-start-late-install"
     case appStartBackground = "app-start-background"
     case appStartUpdate = "app-start-update"
+    case appStartReinstall = "app-start-reinstall"
   }
 
   // Session config the runner passes to each launch.

@@ -61,6 +61,8 @@ enum Telemetry {
   nonisolated(unsafe) private static var urlSessionInstrumentation: URLSessionInstrumentation?
 
   static func start() {
+    OpenTelemetry.setDebugEnabled(true)
+
     let resource = DefaultResources().get().merging(other: Resource(attributes: [
       ResourceAttributes.serviceName.rawValue: .string(TelemetryConfig.serviceName),
       ResourceAttributes.serviceVersion.rawValue: .string(TelemetryConfig.serviceVersion)
