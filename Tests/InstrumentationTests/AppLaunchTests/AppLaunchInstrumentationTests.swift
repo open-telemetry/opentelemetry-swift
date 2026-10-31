@@ -70,6 +70,24 @@
     }
   }
 
+  /// Holds the blocks the instrumentation runs after the current event, until the test runs them.
+  final class FakeEventQueue: @unchecked Sendable {
+    private let lock = NSLock()
+    private var blocks: [@Sendable () -> Void] = []
+
+    func enqueue(_ block: @escaping @Sendable () -> Void) {
+      lock.withLock { blocks.append(block) }
+    }
+
+    func finishCurrentEvent() {
+      let pending = lock.withLock {
+        defer { blocks = [] }
+        return blocks
+      }
+      pending.forEach { $0() }
+    }
+  }
+
   class AppLaunchInstrumentationTests: XCTestCase {
     let didBecomeActive = Notification.Name("AppLaunchInstrumentationTests.didBecomeActive")
     let willEnterForeground = Notification.Name("AppLaunchInstrumentationTests.willEnterForeground")
@@ -87,6 +105,7 @@
     var firstFrameReader: FakeFirstFrameReader!
     var clock: TestClock!
     var launchHistory: FakeLaunchHistory!
+    var eventQueue: FakeEventQueue!
 
     override func setUp() {
       super.setUp()
@@ -99,6 +118,7 @@
       firstFrameReader = FakeFirstFrameReader()
       clock = TestClock(now: becameActive)
       launchHistory = FakeLaunchHistory(previous: nil)
+      eventQueue = FakeEventQueue()
     }
 
     override func tearDown() {
@@ -113,6 +133,7 @@
       isActivePrewarm: Bool = false,
       earliestAppCodeTime: Date? = Date(timeIntervalSince1970: 1_001),
       isAppActive: Bool = false,
+      isBackgroundLaunch: Bool = false,
       configuration: AppLaunchInstrumentationConfiguration = .init()
     ) -> AppLaunchInstrumentation.Dependencies {
       AppLaunchInstrumentation.Dependencies(
@@ -126,10 +147,12 @@
         earliestAppCodeTime: { earliestAppCodeTime },
         isActivePrewarm: { isActivePrewarm },
         isAppActive: { isAppActive },
+        isBackgroundLaunch: { isBackgroundLaunch },
         configuration: configuration,
         currentLaunchContext: { [launchContext] in launchContext },
         launchHistory: launchHistory,
-        now: { [clock] in clock!.now }
+        now: { [clock] in clock!.now },
+        afterCurrentEvent: { [eventQueue] in eventQueue!.enqueue($0) }
       )
     }
 
@@ -138,6 +161,7 @@
                  isActivePrewarm: Bool = false,
                  earliestAppCodeTime: Date? = Date(timeIntervalSince1970: 1_001),
                  isAppActive: Bool = false,
+                 isBackgroundLaunch: Bool = false,
                  configuration: AppLaunchInstrumentationConfiguration = .init()) {
       AppLaunchInstrumentation.install(
         dependencies: makeDependencies(
@@ -146,6 +170,7 @@
           isActivePrewarm: isActivePrewarm,
           earliestAppCodeTime: earliestAppCodeTime,
           isAppActive: isAppActive,
+          isBackgroundLaunch: isBackgroundLaunch,
           configuration: configuration
         )
       )
@@ -194,6 +219,23 @@
 
       _ = AppLaunchInstrumentation()
 
+      XCTAssertTrue(AppLaunchInstrumentation.isInstalled)
+    }
+
+    func testIsNotInstalledUntilObservingActivations() {
+      final class Observation: @unchecked Sendable {
+        var isInstalled: Bool?
+      }
+      let observation = Observation()
+      var dependencies = makeDependencies()
+      dependencies.isAppActive = {
+        observation.isInstalled = AppLaunchInstrumentation.isInstalled
+        return false
+      }
+
+      AppLaunchInstrumentation.install(dependencies: dependencies)
+
+      XCTAssertEqual(observation.isInstalled, false)
       XCTAssertTrue(AppLaunchInstrumentation.isInstalled)
     }
 
@@ -600,6 +642,7 @@
       post(didEnterBackground)
       post(sceneWillConnect, at: sceneConnected)
       post(willEnterForeground, at: Date(timeIntervalSince1970: 2_000.1))
+      eventQueue.finishCurrentEvent()
       post(didBecomeActive, at: Date(timeIntervalSince1970: 2_000.4))
       firstFrameReader.displayFrame(at: resumedFrame)
 
@@ -773,6 +816,26 @@
       XCTAssertTrue(messages.values.first?.contains("already installed") ?? false)
     }
 
+    func testFeedbackHandlerCanCallInstall() {
+      let messages = captureFeedback()
+      install()
+      let dependencies = makeDependencies()
+      OpenTelemetry.registerFeedbackHandler { message in
+        messages.append(message)
+        AppLaunchInstrumentation.install(dependencies: dependencies)
+      }
+      let finished = expectation(description: "install returned")
+      let conflicting = makeDependencies(configuration: AppLaunchInstrumentationConfiguration(launchTypes: [.resume]))
+
+      DispatchQueue.global().async {
+        AppLaunchInstrumentation.install(dependencies: conflicting)
+        finished.fulfill()
+      }
+
+      wait(for: [finished], timeout: 5)
+      XCTAssertEqual(messages.values.count, 1)
+    }
+
     func testSecondInstallWithSameConfigurationIsNotReported() {
       let messages = captureFeedback()
       install()
@@ -819,6 +882,113 @@
       install(isAppActive: true)
 
       XCTAssertEqual(launchHistory.exchangeCount, 1)
+    }
+
+    func testFirstForegroundAfterBackgroundLaunchIsResume() {
+      install(isBackgroundLaunch: true)
+      let enteredForeground = Date(timeIntervalSince1970: 2_000)
+      let resumedFrame = Date(timeIntervalSince1970: 2_000.3)
+
+      post(willEnterForeground, at: enteredForeground)
+      post(didBecomeActive, at: Date(timeIntervalSince1970: 2_000.2))
+      firstFrameReader.displayFrame(at: resumedFrame)
+
+      let spans = finishedSpans()
+      XCTAssertEqual(spans.count, 1)
+      XCTAssertEqual(spans.first?.attributes["start.type"], .string("resume"))
+      XCTAssertEqual(spans.first?.startTime, enteredForeground)
+      XCTAssertEqual(spans.first?.endTime, resumedFrame)
+      XCTAssertNil(spans.first?.attributes["start.active_prewarmed"])
+    }
+
+    func testFirstForegroundAfterBackgroundLaunchRunsFromSceneConnecting() {
+      install(isBackgroundLaunch: true)
+      let sceneConnected = Date(timeIntervalSince1970: 2_000)
+
+      post(sceneWillConnect, at: sceneConnected)
+      post(willEnterForeground, at: Date(timeIntervalSince1970: 2_000.1))
+      post(didBecomeActive, at: Date(timeIntervalSince1970: 2_000.4))
+      firstFrameReader.displayFrame(at: Date(timeIntervalSince1970: 2_000.5))
+
+      let spans = finishedSpans()
+      XCTAssertEqual(spans.map(\.attributes["start.type"]), [.string("resume")])
+      XCTAssertEqual(spans.first?.startTime, sceneConnected)
+    }
+
+    func testEnteringBackgroundBeforeFirstActivationMakesItAResume() {
+      install()
+      let enteredForeground = Date(timeIntervalSince1970: 2_000)
+
+      post(didEnterBackground)
+      post(willEnterForeground, at: enteredForeground)
+      post(didBecomeActive, at: Date(timeIntervalSince1970: 2_000.2))
+      firstFrameReader.displayFrame(at: Date(timeIntervalSince1970: 2_000.3))
+
+      let spans = finishedSpans()
+      XCTAssertEqual(spans.map(\.attributes["start.type"]), [.string("resume")])
+      XCTAssertEqual(spans.first?.startTime, enteredForeground)
+    }
+
+    func testSceneConnectingInBackgroundDoesNotStartResume() {
+      install(isBackgroundLaunch: true)
+      let enteredForeground = Date(timeIntervalSince1970: 2_000)
+
+      post(sceneWillConnect, at: Date(timeIntervalSince1970: 1_500))
+      eventQueue.finishCurrentEvent()
+      post(willEnterForeground, at: enteredForeground)
+      post(didBecomeActive, at: Date(timeIntervalSince1970: 2_000.2))
+      firstFrameReader.displayFrame(at: Date(timeIntervalSince1970: 2_000.3))
+
+      let spans = finishedSpans()
+      XCTAssertEqual(spans.map(\.attributes["start.type"]), [.string("resume")])
+      XCTAssertEqual(spans.first?.startTime, enteredForeground)
+    }
+
+    func testBackgroundRoleWithoutEnteringForegroundIsRecordedAsLaunch() {
+      install(isBackgroundLaunch: true)
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      let spans = finishedSpans()
+      XCTAssertEqual(spans.map(\.attributes["start.type"]), [.string("cold")])
+      XCTAssertEqual(spans.first?.startTime, processStart)
+    }
+
+    func testRegainingFocusAfterLaunchWithBackgroundRoleIsNotAStart() {
+      install(isBackgroundLaunch: true)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: Date(timeIntervalSince1970: 2_000))
+
+      XCTAssertEqual(finishedSpans().count, 1)
+    }
+
+    func testEnteringBackgroundAfterBackgroundRoleKeepsNextActivationAResume() {
+      install(isBackgroundLaunch: true)
+
+      post(didEnterBackground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertTrue(finishedSpans().isEmpty)
+    }
+
+    func testBackgroundLaunchStillUpdatesLaunchHistory() {
+      install(isBackgroundLaunch: true)
+
+      XCTAssertEqual(launchHistory.exchangeCount, 1)
+    }
+
+    func testRegainingFocusAfterInstallInBackgroundLaunchedActiveAppIsNotAStart() {
+      install(isAppActive: true, isBackgroundLaunch: true)
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertTrue(finishedSpans().isEmpty)
     }
 
     func testReadIsAppActiveIsFalseOffMainThread() {

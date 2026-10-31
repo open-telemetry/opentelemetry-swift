@@ -14,7 +14,8 @@
   #if canImport(UIKit) && !os(watchOS)
     import QuartzCore
 
-    /// Reads the next frame with a one-shot `CADisplayLink` on the main run loop.
+    /// Reads the next frame with a `CADisplayLink` on the main run loop, which it invalidates once
+    /// the frame is displayed.
     struct DisplayLinkFirstFrameReader: FirstFrameReader {
       func readFirstFrame(_ completion: @escaping (Date) -> Void) {
         let target = DisplayLinkTarget(completion: completion)
@@ -25,12 +26,19 @@
 
     private final class DisplayLinkTarget: NSObject {
       private var completion: ((Date) -> Void)?
+      private var hasTicked = false
 
       init(completion: @escaping (Date) -> Void) {
         self.completion = completion
       }
 
       @objc func tick(_ link: CADisplayLink) {
+        // A frame committed before a display refresh is rendered during it and displayed at the
+        // next one, so the first callback's `timestamp` is a refresh before the frame appeared.
+        guard hasTicked else {
+          hasTicked = true
+          return
+        }
         link.invalidate()
         guard let completion else { return }
         self.completion = nil
