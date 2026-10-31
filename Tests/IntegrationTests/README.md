@@ -34,10 +34,23 @@ repo work together inside a real iOS app. The flow is:
    - `app-start-resume`: a warm launch. Once its first frame is displayed, the
      runner opens Settings and then launches the app again, which brings the
      running process back to the foreground for a `resume`.
+   - `app-start-late-install`: installs `AppLaunchInstrumentation` after the
+     app first became active, so the launch must not be recorded. The second
+     activation blocks the main thread while the runner opens Settings, so the
+     app is in the background before its first frame and that activation must
+     not be recorded either. The third must be a `resume`.
+   - `app-start-background`: the runner sends a silent push, so the system
+     launches the app in the background (as for a background fetch) and
+     connects its scene there, then brings it to the foreground. The first
+     activation must be a `resume` from `willEnterForeground`. A process the
+     system starts gets no launch arguments, so the runner passes the
+     collector endpoint and launch tag with `launchctl setenv` in the
+     simulator.
    - `app-start-update`: the runner first reinstalls the app with its build
      number bumped, as an app update does, so the launch must be `cold`.
-   Every launch also records its process start and each `willEnterForeground`
-   and `didBecomeActive` as zero-length marker spans. `AppStartTests` compares
+   Every launch also records its process start (with the process's task role)
+   and each scene connection, `willEnterForeground`, `didBecomeActive` and
+   `didEnterBackground` as zero-length marker spans. `AppStartTests` compares
    every `AppStart` span's timestamps with them, following the span definition
    in `Sources/Instrumentation/SemanticConventions/model/swift/spans.yaml`.
    Attribute keys and values come from `FederatedSemanticConventions`, which is
@@ -46,7 +59,9 @@ repo work together inside a real iOS app. The flow is:
    `main` is the first launch after installation, so its `AppStart` is `cold`,
    and the launches after it are `warm`. Prewarming isn't covered: setting
    `ActivePrewarm` makes the system hold the process before `main()` until a
-   real launch resumes it.
+   real launch resumes it. Focus loss isn't covered, because only UI automation
+   can dismiss a system alert, and neither is a new scene connecting as the app
+   resumes, because an iPhone app can't destroy its only scene.
    Session config is passed as launch arguments because `SessionConfig` is
    only read when a `SessionManager` is created. The app stays installed
    between launches so persisted session state and stored crash reports carry

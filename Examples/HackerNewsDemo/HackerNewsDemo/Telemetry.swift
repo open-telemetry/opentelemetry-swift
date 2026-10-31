@@ -97,7 +97,9 @@ enum Telemetry {
 
     // Installed in didFinishLaunching, before the app first becomes active, so it sees the
     // activation that ends the cold start.
-    AppLaunchInstrumentation.install()
+    if !IntegrationTestScenario.installsAppLaunchLate {
+      AppLaunchInstrumentation.install()
+    }
 
     // Installed after the session manager and logger provider are registered:
     // crashes from the previous run are reported on install, and each crash
