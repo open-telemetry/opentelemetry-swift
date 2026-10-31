@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import AppLaunchInstrumentation
+import InferredAppLaunchInstrumentation
+import MeasuredAppLaunchInstrumentation
 import Crash
 import Foundation
 import OpenTelemetryApi
@@ -100,7 +101,11 @@ enum Telemetry {
     // Installed in didFinishLaunching, before the app first becomes active, so it sees the
     // activation that ends the cold start.
     if !IntegrationTestScenario.installsAppLaunchLate {
-      AppLaunchInstrumentation.install()
+      if IntegrationTestScenario.measuresAppLaunch {
+        MeasuredAppLaunchInstrumentation.install()
+      } else {
+        InferredAppLaunchInstrumentation.install()
+      }
     }
 
     // Installed after the session manager and logger provider are registered:

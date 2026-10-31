@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import AppLaunchInstrumentation
+import InferredAppLaunchInstrumentation
 import Crash
 import Foundation
 import KSCrashFilters
@@ -106,7 +106,7 @@ enum IntegrationTestScenario {
     // The runner moves the app to the background after its first frame and back again, so it
     // records a warm launch and then a resume.
     case appStartResume = "app-start-resume"
-    // AppLaunchInstrumentation is installed after the app first became active, so the launch isn't
+    // InferredAppLaunchInstrumentation is installed after the app first became active, so the launch isn't
     // recorded. The runner moves the app to the background while the second activation blocks the
     // main thread, so that one ends before its first frame. The third activation is a resume.
     case appStartLateInstall = "app-start-late-install"
@@ -116,6 +116,9 @@ enum IntegrationTestScenario {
     // First launch after the runner installed the app with a new build number, so it's cold.
     case appStartUpdate = "app-start-update"
     case appStartReinstall = "app-start-reinstall"
+    // Uses MeasuredAppLaunchInstrumentation. The simulator shares the Mac's page cache, so the type
+    // isn't predictable, but it must agree with the span's sampled pages.
+    case appStartMeasured = "app-start-measured"
   }
 
   // Default session timeout for the main launch: short enough that the
@@ -145,8 +148,12 @@ enum IntegrationTestScenario {
     (value(after: launchTagArgument) ?? environmentLaunchTag).flatMap(Launch.init(rawValue:)) ?? .main
   }
 
-  // Telemetry skips installing AppLaunchInstrumentation, and the scenario installs it after the
+  // Telemetry skips installing InferredAppLaunchInstrumentation, and the scenario installs it after the
   // app first became active.
+  static var measuresAppLaunch: Bool {
+    isEnabled && launch == .appStartMeasured
+  }
+
   static var installsAppLaunchLate: Bool {
     isEnabled && launch == .appStartLateInstall
   }
@@ -227,7 +234,7 @@ enum IntegrationTestScenario {
       }
     case .appStartBackground:
       signalReady(tracer: tracer, activations: 0)
-    case .appStartResume, .appStartLateInstall, .appStartUpdate, .appStartReinstall:
+    case .appStartResume, .appStartLateInstall, .appStartUpdate, .appStartReinstall, .appStartMeasured:
       // Completed from `recordLifecycle` once the expected activations have been displayed.
       break
     }
@@ -235,7 +242,7 @@ enum IntegrationTestScenario {
 
   // How many activations each app-start launch waits for before it completes.
   private static let appStartActivations: [Launch: Int] = [
-    .appStartResume: 2, .appStartLateInstall: 3, .appStartBackground: 1, .appStartUpdate: 1, .appStartReinstall: 1,
+    .appStartResume: 2, .appStartLateInstall: 3, .appStartBackground: 1, .appStartUpdate: 1, .appStartReinstall: 1, .appStartMeasured: 1,
   ]
   // The activation the runner interrupts by moving the app to the background before its first
   // frame is displayed.
@@ -266,7 +273,7 @@ enum IntegrationTestScenario {
       marker(tracer, activeSpanName, at: Date())
       activations += 1
       if installsAppLaunchLate, activations == 1 {
-        AppLaunchInstrumentation.install()
+        InferredAppLaunchInstrumentation.install()
       }
       guard let expectedActivations = appStartActivations[launch], activations <= expectedActivations else { return }
       let current = activations
@@ -313,7 +320,7 @@ enum IntegrationTestScenario {
     return Int(policy.role.rawValue)
   }
 
-  // Read independently of AppLaunchInstrumentation, so the assertions don't take its word for it.
+  // Read independently of the app launch libraries, so the assertions don't take its word for it.
   private static func processStartTime() -> Date? {
     var info = kinfo_proc()
     var size = MemoryLayout<kinfo_proc>.stride
