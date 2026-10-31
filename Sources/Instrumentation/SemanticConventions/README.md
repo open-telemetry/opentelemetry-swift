@@ -26,8 +26,11 @@ The span definition is the authoritative description of when each `AppStart` spa
 
 | Attribute | Type | Values | Used by |
 | --- | --- | --- | --- |
-| `start.type` | string | `cold`, `warm`, `resume` | [App Launch](../AppLaunch/README.md) |
+| `start.type` | string | `cold`, `warm`, `resume`, `prewarmed` | [App Launch](../AppLaunch/README.md) |
 | `start.active_prewarmed` | boolean | | [App Launch](../AppLaunch/README.md) |
+| `start.sampled_pages.resident_at_end` | int | | [App Launch](../AppLaunch/README.md) |
+| `start.sampled_pages.paged_in` | int | | [App Launch](../AppLaunch/README.md) |
+| `start.sampled_page_in_ratio` | double | | [App Launch](../AppLaunch/README.md) |
 
 `start.type` uses the same key and `cold` and `warm` values as the `start.type` attribute in OpenTelemetry Android's registry, but its values follow Apple's definitions, and a resume is `resume` instead of Android's `hot`. See the [App Launch README](../AppLaunch/README.md#start-types).
 

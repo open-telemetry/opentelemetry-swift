@@ -4,7 +4,8 @@
  */
 
 #if canImport(Darwin) && ((canImport(UIKit) && !os(watchOS)) || canImport(AppKit))
-  @testable import AppLaunchInstrumentation
+  @testable import AppLaunchInstrumentationCore
+  @testable import InferredAppLaunchInstrumentation
   import Foundation
   import os.log
   import InMemoryExporter
@@ -88,7 +89,7 @@
     }
   }
 
-  class AppLaunchInstrumentationTests: XCTestCase {
+  class InferredAppLaunchInstrumentationTests: XCTestCase {
     let didBecomeActive = Notification.Name("AppLaunchInstrumentationTests.didBecomeActive")
     let willEnterForeground = Notification.Name("AppLaunchInstrumentationTests.willEnterForeground")
     let didEnterBackground = Notification.Name("AppLaunchInstrumentationTests.didEnterBackground")
@@ -109,7 +110,7 @@
 
     override func setUp() {
       super.setUp()
-      AppLaunchInstrumentation.reset()
+      InferredAppLaunchInstrumentation.reset()
       spanExporter = InMemoryExporter()
       tracerProvider = TracerProviderSdk()
       tracerProvider.addSpanProcessor(SimpleSpanProcessor(spanExporter: spanExporter))
@@ -122,7 +123,7 @@
     }
 
     override func tearDown() {
-      AppLaunchInstrumentation.reset()
+      InferredAppLaunchInstrumentation.reset()
       spanExporter.reset()
       super.tearDown()
     }
@@ -135,8 +136,8 @@
       isAppActive: Bool = false,
       isBackgroundLaunch: Bool = false,
       configuration: AppLaunchInstrumentationConfiguration = .init()
-    ) -> AppLaunchInstrumentation.Dependencies {
-      AppLaunchInstrumentation.Dependencies(
+    ) -> InferredAppLaunchInstrumentation.Dependencies {
+      InferredAppLaunchInstrumentation.Dependencies(
         notificationCenter: notificationCenter,
         didBecomeActiveNotification: didBecomeActive,
         willEnterForegroundNotification: willEnterForeground,
@@ -163,7 +164,7 @@
                  isAppActive: Bool = false,
                  isBackgroundLaunch: Bool = false,
                  configuration: AppLaunchInstrumentationConfiguration = .init()) {
-      AppLaunchInstrumentation.install(
+      InferredAppLaunchInstrumentation.install(
         dependencies: makeDependencies(
           useFirstFrameReader: useFirstFrameReader,
           processStartTime: processStartTime,
@@ -215,11 +216,11 @@
     func testInitInstalls() {
       // The real dependencies record the launch in the test runner's standard defaults.
       defer { UserDefaults.standard.removeObject(forKey: UserDefaultsLaunchHistory.key) }
-      XCTAssertFalse(AppLaunchInstrumentation.isInstalled)
+      XCTAssertFalse(InferredAppLaunchInstrumentation.isInstalled)
 
-      _ = AppLaunchInstrumentation()
+      _ = InferredAppLaunchInstrumentation()
 
-      XCTAssertTrue(AppLaunchInstrumentation.isInstalled)
+      XCTAssertTrue(InferredAppLaunchInstrumentation.isInstalled)
     }
 
     func testIsNotInstalledUntilObservingActivations() {
@@ -229,14 +230,14 @@
       let observation = Observation()
       var dependencies = makeDependencies()
       dependencies.isAppActive = {
-        observation.isInstalled = AppLaunchInstrumentation.isInstalled
+        observation.isInstalled = InferredAppLaunchInstrumentation.isInstalled
         return false
       }
 
-      AppLaunchInstrumentation.install(dependencies: dependencies)
+      InferredAppLaunchInstrumentation.install(dependencies: dependencies)
 
       XCTAssertEqual(observation.isInstalled, false)
-      XCTAssertTrue(AppLaunchInstrumentation.isInstalled)
+      XCTAssertTrue(InferredAppLaunchInstrumentation.isInstalled)
     }
 
     func testFirstFrameIsReadOnlyAfterAppBecomesActive() {
@@ -295,18 +296,18 @@
       notificationCenter.post(name: didBecomeActive, object: nil)
       firstFrameReader.displayFrame(at: firstFrame)
 
-      XCTAssertFalse(AppLaunchInstrumentation.isInstalled)
+      XCTAssertFalse(InferredAppLaunchInstrumentation.isInstalled)
       XCTAssertTrue(finishedSpans().isEmpty)
     }
 
     func testNoSpanAfterReset() {
       install()
-      AppLaunchInstrumentation.reset()
+      InferredAppLaunchInstrumentation.reset()
 
       notificationCenter.post(name: didBecomeActive, object: nil)
       firstFrameReader.displayFrame(at: firstFrame)
 
-      XCTAssertFalse(AppLaunchInstrumentation.isInstalled)
+      XCTAssertFalse(InferredAppLaunchInstrumentation.isInstalled)
       XCTAssertTrue(finishedSpans().isEmpty)
     }
 
@@ -356,7 +357,7 @@
 
     func testDefaultMaxLaunchDurationIs60Seconds() {
       XCTAssertEqual(AppLaunchInstrumentationConfiguration().maxLaunchDuration, 60)
-      XCTAssertEqual(AppLaunchInstrumentation.Dependencies().configuration.maxLaunchDuration, 60)
+      XCTAssertEqual(InferredAppLaunchInstrumentation.Dependencies().configuration.maxLaunchDuration, 60)
     }
 
     func testLongLaunchWithoutActivePrewarmIsNotPrewarmed() {
@@ -667,7 +668,7 @@
 
     func testNoResumeAfterReset() {
       launch()
-      AppLaunchInstrumentation.reset()
+      InferredAppLaunchInstrumentation.reset()
 
       post(didEnterBackground)
       post(sceneWillConnect)
@@ -740,7 +741,7 @@
 
     func testLaunchIsColdWhenLaunchContextIsUnavailable() {
       launchHistory = FakeLaunchHistory(previous: launchContext)
-      AppLaunchInstrumentation.install(dependencies: {
+      InferredAppLaunchInstrumentation.install(dependencies: {
         var dependencies = makeDependencies()
         dependencies.currentLaunchContext = { nil }
         return dependencies
@@ -774,7 +775,7 @@
     }
 
     func testUserDefaultsLaunchHistoryReturnsPreviousLaunch() throws {
-      let suiteName = "AppLaunchInstrumentationTests.\(UUID().uuidString)"
+      let suiteName = "InferredAppLaunchInstrumentationTests.\(UUID().uuidString)"
       defer { UserDefaults().removePersistentDomain(forName: suiteName) }
       let history = UserDefaultsLaunchHistory(suiteName: suiteName)
       var next = launchContext
@@ -822,13 +823,13 @@
       let dependencies = makeDependencies()
       OpenTelemetry.registerFeedbackHandler { message in
         messages.append(message)
-        AppLaunchInstrumentation.install(dependencies: dependencies)
+        InferredAppLaunchInstrumentation.install(dependencies: dependencies)
       }
       let finished = expectation(description: "install returned")
       let conflicting = makeDependencies(configuration: AppLaunchInstrumentationConfiguration(launchTypes: [.resume]))
 
       DispatchQueue.global().async {
-        AppLaunchInstrumentation.install(dependencies: conflicting)
+        InferredAppLaunchInstrumentation.install(dependencies: conflicting)
         finished.fulfill()
       }
 
@@ -933,12 +934,12 @@
       let dependencies = makeDependencies()
       OpenTelemetry.registerFeedbackHandler { message in
         messages.append(message)
-        AppLaunchInstrumentation.install(dependencies: dependencies)
+        InferredAppLaunchInstrumentation.install(dependencies: dependencies)
       }
       let finished = expectation(description: "activation recorded")
 
       DispatchQueue.global().async { [notificationCenter, didBecomeActive, firstFrameReader, firstFrame] in
-        AppLaunchInstrumentation.install(dependencies: dependencies)
+        InferredAppLaunchInstrumentation.install(dependencies: dependencies)
         notificationCenter!.post(name: didBecomeActive, object: nil)
         firstFrameReader!.displayFrame(at: firstFrame)
         finished.fulfill()
@@ -1106,7 +1107,7 @@
     func testReadIsAppActiveIsFalseOffMainThread() {
       let isActive = expectation(description: "read off the main thread")
       DispatchQueue.global().async {
-        XCTAssertFalse(AppLaunchInstrumentation.readIsAppActive())
+        XCTAssertFalse(InferredAppLaunchInstrumentation.readIsAppActive())
         isActive.fulfill()
       }
       wait(for: [isActive], timeout: 5)
@@ -1239,7 +1240,7 @@
     }
   }
 
-  extension AppLaunchInstrumentationTests {
+  extension InferredAppLaunchInstrumentationTests {
     /// Captures feedback messages until the test ends, then restores the default handler.
     func captureFeedback() -> FeedbackMessages {
       let messages = FeedbackMessages()

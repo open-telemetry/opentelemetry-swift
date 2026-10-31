@@ -20,6 +20,31 @@ extension FederatedSemanticConventions {
     case activePrewarmed = "start.active_prewarmed"
 
     /**
+     `start.sampled_pages.paged_in` divided by `start.sampled_pages.resident_at_end`, from 0 to 1. Higher means less of the launch's code was already in memory.
+
+     - Note: A launch is `cold` when this is at least 0.5, and `warm` otherwise.
+
+     - Requires: Value type should be `Double`
+    */
+    case sampledPageInRatio = "start.sampled_page_in_ratio"
+
+    /**
+     How many of `start.sampled_pages.resident_at_end` weren't in memory when the process started, so the launch brought them in.
+
+     - Requires: Value type should be `Int`
+    */
+    case sampledPagesPagedIn = "start.sampled_pages.paged_in"
+
+    /**
+     How many sampled pages of the app's code were in memory when the app became active.
+
+     - Note: Up to 256 pages evenly spaced through the `__TEXT` segment of the app's largest image are sampled with `mincore`. The kernel reads ahead, so this includes pages the launch didn't use.
+
+     - Requires: Value type should be `Int`
+    */
+    case sampledPagesResidentAtEnd = "start.sampled_pages.resident_at_end"
+
+    /**
      The kind of app activation, as Apple defines it.
 
      - Note: The key and the `cold` and `warm` values are the same as the OpenTelemetry Android `start.type` attribute, but their meanings follow Apple's definitions of cold and warm launches and resumes in [Reducing your app's launch time](https://developer.apple.com/documentation/xcode/reducing-your-app-s-launch-time). A resume is `resume` instead of Android's `hot`, after Apple's term.
@@ -41,6 +66,9 @@ extension FederatedSemanticConventions {
       
       /// A resume, where the app's process was still alive, even if suspended.
       public static let resume = TypeValues("resume") 
+      
+      /// A launch the system prewarmed, so the libraries were already loaded when the user launched the app. Only reported when the launch type is measured.
+      public static let prewarmed = TypeValues("prewarmed") 
 
       internal let value: String 
 

@@ -41,6 +41,11 @@ extension Array where Element == Opentelemetry_Proto_Common_V1_KeyValue {
     return value
   }
 
+  func double(_ key: String) -> Double? {
+    guard case let .doubleValue(value)? = self[key]?.value else { return nil }
+    return value
+  }
+
   func bool(_ key: String) -> Bool? {
     guard case let .boolValue(value)? = self[key]?.value else { return nil }
     return value
