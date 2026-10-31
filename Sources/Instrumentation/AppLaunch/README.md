@@ -6,6 +6,33 @@ Measures how long it takes the app to become usable after a user brings it to th
 
 The span name, the `start.type` key, its `cold` and `warm` values and the instrumentation scope are the same as in the [OpenTelemetry Android](https://github.com/open-telemetry/opentelemetry-android/tree/main/instrumentation/activity) activity instrumentation. What each `start.type` value means follows Apple's definitions instead of Android's, and a resume is `resume`, Apple's term, instead of Android's `hot`. See [Start types](#start-types).
 
+## Choosing a library
+
+There are two libraries, which record the same `AppStart` spans and differ in how they tell `cold` from `warm`. Link only one. If both are installed, the first wins, and the second install is ignored and reported as an error.
+
+|                              | `InferredAppLaunchInstrumentation`              | `MeasuredAppLaunchInstrumentation`                         |
+| ---------------------------- | ----------------------------------------------- | ---------------------------------------------------------- |
+| How it decides               | What changed since the previous launch          | Whether the launch had to bring the app's code into memory |
+| Detects eviction from memory | No, reported as `warm`                          | Yes                                                        |
+| Needs a saved record         | Yes                                             | Only for its fallback                                      |
+| Runs code before `main()`    | Reads the environment                           | Also calls `mincore`, and can't be turned off at runtime   |
+| Prewarmed launches           | `cold` or `warm`, with `start.active_prewarmed` | `prewarmed`, with `start.active_prewarmed`                 |
+| Tested on a real device      | No                                              | No, so don't ship it without checking it on one            |
+
+## Measured launch types
+
+`MeasuredAppLaunchInstrumentation` samples up to 256 pages evenly spaced through the `__TEXT` segment of the app's largest image, which is the largest image in the executable's directory. It reads them with `mincore` before `main()` and again when the app first becomes active, and reports:
+
+| Attribute                             | Meaning                                                      |
+| ------------------------------------- | ------------------------------------------------------------ |
+| `start.sampled_pages.resident_at_end` | Sampled pages in memory when the app became active           |
+| `start.sampled_pages.paged_in`        | How many of those weren't in memory when the process started |
+| `start.sampled_page_in_ratio`         | `paged_in` divided by `resident_at_end`, from 0 to 1         |
+
+A launch is `cold` when the ratio is at least 0.5, and `warm` otherwise. The share of `__TEXT` in memory can't be used directly, because a launch only touches part of the app's code, so even a warm launch can be far from 100%. Comparing the pages a launch ended up with to the ones it started with removes that difference between apps.
+
+A launch that can't be sampled falls back to the [inferred rules](#cold-and-warm) without these attributes, or is `prewarmed` if the system prewarmed it. Code in other images, such as system frameworks, isn't sampled. A debug build's simulator launch reads the Mac's page cache, so it says nothing about a device.
+
 ## Implementation status
 
 Every span ends at the first frame displayed after the app becomes active, read with a `CADisplayLink`.
@@ -37,15 +64,15 @@ OpenTelemetry.setDebugEnabled(true)
 Install the instrumentation as early as possible, before the app first becomes active. Installing is idempotent and thread-safe, and each span is recorded with the tracer provider that is registered when the app becomes active:
 
 ```swift
-import AppLaunchInstrumentation
+import InferredAppLaunchInstrumentation
 
-AppLaunchInstrumentation.install()
+InferredAppLaunchInstrumentation.install()
 ```
 
 To change what's recorded, pass a configuration:
 
 ```swift
-AppLaunchInstrumentation.install(
+InferredAppLaunchInstrumentation.install(
   configuration: AppLaunchInstrumentationConfiguration(
     launchTypes: [.cold, .warm],
     dropPrewarmed: false,

@@ -8,32 +8,44 @@
   import InstrumentationSemanticConventions
   import OpenTelemetryApi
 
+  /// An activation, with its launch classified.
+  enum AppStart {
+    case launch(LaunchClassification)
+    case resume(start: Date)
+
+    var launchType: AppLaunchInstrumentationConfiguration.LaunchType {
+      switch self {
+      case let .launch(classification): classification.type
+      case .resume: .resume
+      }
+    }
+  }
+
   /// Decides which activations are recorded, and records them as `AppStart` spans.
   struct AppStartRecorder: Sendable {
     private typealias StartAttributes = FederatedSemanticConventions.Start
 
-    let dependencies: AppLaunchInstrumentation.Dependencies
+    let dependencies: AppLaunchRuntime.Dependencies
 
-    /// Returns what records `activation` once its end time is known, or `nil` if it won't be
-    /// recorded.
-    func prepare(_ activation: Activation) -> ((Date) -> Void)? {
-      let launchType = activation.launchType
+    /// Returns what records `start` once its end time is known, or `nil` if it won't be recorded.
+    func prepare(_ start: AppStart) -> ((Date) -> Void)? {
+      let launchType = start.launchType
       guard dependencies.configuration.launchTypes.contains(launchType) else {
         InternalLogger.debug("AppLaunchInstrumentation: not recording a \(launchType) start, because it isn't in `launchTypes`.")
         return nil
       }
 
       // Read when the app becomes active, so a tracer provider registered after install is used.
-      let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: AppLaunchInstrumentation.instrumentationScope)
+      let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: AppLaunchRuntime.instrumentationScope)
 
-      switch activation {
-      case let .launch(type):
+      switch start {
+      case let .launch(classification):
         guard let processStartTime = dependencies.processStartTime() else {
-          InternalLogger.warn("AppLaunchInstrumentation: dropped a \(type) launch, because the process start time can't be read.")
+          InternalLogger.warn("AppLaunchInstrumentation: dropped a \(launchType) launch, because the process start time can't be read.")
           return nil
         }
         return { end in
-          recordLaunch(tracer: tracer, type: type, processStartTime: processStartTime, end: end)
+          recordLaunch(tracer: tracer, classification: classification, processStartTime: processStartTime, end: end)
         }
       case let .resume(start):
         return { end in
@@ -43,7 +55,7 @@
     }
 
     private func recordResume(tracer: Tracer, start: Date, end: Date) {
-      tracer.spanBuilder(spanName: AppLaunchInstrumentation.spanName)
+      tracer.spanBuilder(spanName: AppLaunchRuntime.spanName)
         .setStartTime(time: start)
         .setAttribute(key: StartAttributes.type.rawValue, value: StartAttributes.TypeValues.resume.description)
         .startSpan()
@@ -51,7 +63,8 @@
       InternalLogger.debug("AppLaunchInstrumentation: recorded a resume of \(milliseconds(end.timeIntervalSince(start))) ms.")
     }
 
-    private func recordLaunch(tracer: Tracer, type: AppLaunchInstrumentationConfiguration.LaunchType, processStartTime: Date, end: Date) {
+    private func recordLaunch(tracer: Tracer, classification: LaunchClassification, processStartTime: Date, end: Date) {
+      let type = classification.type
       let configuration = dependencies.configuration
       let isPrewarmed = dependencies.isActivePrewarm()
       if isPrewarmed, configuration.dropPrewarmed {
@@ -71,12 +84,13 @@
         return
       }
 
-      tracer.spanBuilder(spanName: AppLaunchInstrumentation.spanName)
+      let span = tracer.spanBuilder(spanName: AppLaunchRuntime.spanName)
         .setStartTime(time: startTime)
         .setAttribute(key: StartAttributes.type.rawValue, value: type.startTypeValue.description)
         .setAttribute(key: StartAttributes.activePrewarmed.rawValue, value: isPrewarmed)
         .startSpan()
-        .end(time: end)
+      classification.attributes.forEach { span.setAttribute(key: $0.key, value: $0.value) }
+      span.end(time: end)
       InternalLogger.debug(
         "AppLaunchInstrumentation: recorded a \(type) launch of \(milliseconds(end.timeIntervalSince(startTime))) ms, prewarmed \(isPrewarmed)."
       )
@@ -93,6 +107,7 @@
       case .cold: .cold
       case .warm: .warm
       case .resume: .resume
+      case .prewarmed: .prewarmed
       }
     }
   }

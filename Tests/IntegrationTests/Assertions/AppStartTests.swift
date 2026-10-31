@@ -10,7 +10,7 @@ import XCTest
 // Checks the AppStart spans against their definition in the federated semantic conventions
 // (Sources/Instrumentation/SemanticConventions/model/swift/spans.yaml). The app records its process
 // start and lifecycle notifications as zero-length marker spans, read independently of
-// AppLaunchInstrumentation, so each span's timestamps are compared with them. Attribute keys and
+// the app launch libraries, so each span's timestamps are compared with them. Attribute keys and
 // values come from the constants generated from that registry, so the spans are checked against
 // the registry rather than against copies of its strings.
 //
@@ -53,7 +53,7 @@ final class AppStartTests: XCTestCase {
   // AppStart span may not be exported.
   private static let launches: [Scenario.Launch] = [
     .main, .maxLifetime, .restoreFirst, .restoreSecond, .noRestore, .crashReport, .logLimits,
-    .appStartResume, .appStartLateInstall, .appStartBackground, .appStartUpdate, .appStartReinstall,
+    .appStartResume, .appStartLateInstall, .appStartBackground, .appStartUpdate, .appStartReinstall, .appStartMeasured,
   ]
   // Launches where every activation is recorded.
   private static let fullyRecordedLaunches = launches.filter { $0 != .appStartLateInstall }
@@ -183,6 +183,33 @@ final class AppStartTests: XCTestCase {
                    "cold starts at process start")
       assertEndsAtFirstFrame(span, activation: try XCTUnwrap(markers(Scenario.activeSpanName, in: launch).first),
                              in: launch)
+    }
+  }
+
+  // MARK: measured
+
+  func testMeasuredLaunchAgreesWithItsSampledPages() throws {
+    let span = try appStart(.appStartMeasured)
+    let residentAtEnd = try XCTUnwrap(span.attributes.int(Start.sampledPagesResidentAtEnd.rawValue))
+    let pagedIn = try XCTUnwrap(span.attributes.int(Start.sampledPagesPagedIn.rawValue))
+    let ratio = try XCTUnwrap(span.attributes.double(Start.sampledPageInRatio.rawValue))
+
+    XCTAssertGreaterThan(residentAtEnd, 0)
+    XCTAssertLessThanOrEqual(residentAtEnd, 256)
+    XCTAssertLessThanOrEqual(pagedIn, residentAtEnd)
+    XCTAssertEqual(ratio, Double(pagedIn) / Double(residentAtEnd), accuracy: 1e-9)
+    XCTAssertEqual(span.attributes.string(Self.typeKey), ratio >= 0.5 ? Self.cold : Self.warm)
+    assertDiffer(span.startTimeUnixNano, from: try processStart(.appStartMeasured), byAtMost: Self.clockTolerance,
+                 "a measured launch starts at process start")
+    assertEndsAtFirstFrame(span, activation: try XCTUnwrap(markers(Scenario.activeSpanName, in: .appStartMeasured).first),
+                           in: .appStartMeasured)
+  }
+
+  func testInferredLaunchesHaveNoSampledPages() {
+    for launch in Self.launches where launch != .appStartMeasured {
+      for exported in appStarts(launch) {
+        XCTAssertNil(exported.span.attributes[Start.sampledPageInRatio.rawValue], "\(launch)")
+      }
     }
   }
 

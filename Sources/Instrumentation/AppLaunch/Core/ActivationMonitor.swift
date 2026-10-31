@@ -10,7 +10,9 @@
   /// Feeds the app's lifecycle notifications to an `ActivationTracker`, and hands each activation to
   /// an `AppStartRecorder` when its first frame is displayed.
   final class ActivationMonitor: @unchecked Sendable {
-    private let dependencies: AppLaunchInstrumentation.Dependencies
+    let classifier: LaunchClassifier
+    private let dependencies: AppLaunchRuntime.Dependencies
+    private let classification: @Sendable () -> LaunchClassification
     private let recorder: AppStartRecorder
     // Guards every `_` property below.
     private let lock = NSLock()
@@ -20,8 +22,13 @@
 
     var configuration: AppLaunchInstrumentationConfiguration { dependencies.configuration }
 
-    init(dependencies: AppLaunchInstrumentation.Dependencies, tracker: ActivationTracker) {
+    init(dependencies: AppLaunchRuntime.Dependencies,
+         classifier: LaunchClassifier,
+         classification: @escaping @Sendable () -> LaunchClassification,
+         tracker: ActivationTracker) {
       self.dependencies = dependencies
+      self.classifier = classifier
+      self.classification = classification
       recorder = AppStartRecorder(dependencies: dependencies)
       _tracker = tracker
     }
@@ -87,7 +94,11 @@
       guard let (activation, backgroundCount) = state else { return }
 
       let didBecomeActiveTime = dependencies.now()
-      guard let record = recorder.prepare(activation) else { return }
+      let start: AppStart = switch activation {
+      case .launch: .launch(classification())
+      case let .resume(start): .resume(start: start)
+      }
+      guard let record = recorder.prepare(start) else { return }
 
       guard let firstFrameReader = dependencies.firstFrameReader else {
         record(didBecomeActiveTime)
@@ -97,7 +108,7 @@
         // A display link pauses in the background, so if the app left the foreground before the
         // first frame, the frame it reports is from the next time the app returned.
         guard lock.withLock({ !_isStopped && _tracker.backgroundCount == backgroundCount }) else {
-          InternalLogger.debug("AppLaunchInstrumentation: dropped a \(activation.launchType) start, because the app entered the background before the first frame.")
+          InternalLogger.debug("AppLaunchInstrumentation: dropped a \(start.launchType) start, because the app entered the background before the first frame.")
           return
         }
         // A start never ends before the app became active, whatever the reader reports.

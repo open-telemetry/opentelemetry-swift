@@ -8,21 +8,13 @@
 
   /// A time the app became active, and what kind of start that was.
   enum Activation {
-    case launch(type: AppLaunchInstrumentationConfiguration.LaunchType)
+    case launch
     case resume(start: Date)
-
-    var launchType: AppLaunchInstrumentationConfiguration.LaunchType {
-      switch self {
-      case let .launch(type): type
-      case .resume: .resume
-      }
-    }
   }
 
   /// Turns the app's lifecycle events into activations. It holds no lock and reads no clock, so its
   /// owner serializes the calls and passes the time in.
   struct ActivationTracker {
-    private let launchType: AppLaunchInstrumentationConfiguration.LaunchType
     private var hasHandledLaunch: Bool
     private var isInForeground: Bool
     // When the resume that hasn't reached `didBecomeActive` yet began.
@@ -37,8 +29,7 @@
     // before then doesn't record an activation that spans the time in the background.
     private(set) var backgroundCount = 0
 
-    init(launchType: AppLaunchInstrumentationConfiguration.LaunchType, isAppActive: Bool, isBackgroundLaunch: Bool) {
-      self.launchType = launchType
+    init(isAppActive: Bool, isBackgroundLaunch: Bool) {
       hasHandledLaunch = isAppActive || isBackgroundLaunch
       isInForeground = isAppActive || !isBackgroundLaunch
       isUnconfirmedBackgroundLaunch = isBackgroundLaunch && !isAppActive
@@ -92,7 +83,7 @@
         hasHandledLaunch = true
         isInForeground = true
         isUnconfirmedBackgroundLaunch = false
-        return .launch(type: launchType)
+        return .launch
       }
       // Without a pending resume the app only lost input focus, for example to Control Center
       // or a system alert, and never left the foreground.

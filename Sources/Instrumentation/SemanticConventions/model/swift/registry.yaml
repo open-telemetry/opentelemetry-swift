@@ -25,6 +25,12 @@ groups:
               stability: development
               brief: >
                 A resume, where the app's process was still alive, even if suspended.
+            - id: prewarmed
+              value: "prewarmed"
+              stability: development
+              brief: >
+                A launch the system prewarmed, so the libraries were already loaded when the user
+                launched the app. Only reported when the launch type is measured.
         stability: development
         brief: >
           The kind of app activation, as Apple defines it.
@@ -42,3 +48,26 @@ groups:
         note: >
           Detected from the `ActivePrewarm` environment variable being `1` at process start. A
           prewarmed launch starts when app code first ran, instead of at process start.
+      - id: start.sampled_pages.resident_at_end
+        type: int
+        stability: development
+        brief: >
+          How many sampled pages of the app's code were in memory when the app became active.
+        note: >
+          Up to 256 pages evenly spaced through the `__TEXT` segment of the app's largest image are
+          sampled with `mincore`. The kernel reads ahead, so this includes pages the launch didn't
+          use.
+      - id: start.sampled_pages.paged_in
+        type: int
+        stability: development
+        brief: >
+          How many of `start.sampled_pages.resident_at_end` weren't in memory when the process
+          started, so the launch brought them in.
+      - id: start.sampled_page_in_ratio
+        type: double
+        stability: development
+        brief: >
+          `start.sampled_pages.paged_in` divided by `start.sampled_pages.resident_at_end`, from 0 to
+          1. Higher means less of the launch's code was already in memory.
+        note: >
+          A launch is `cold` when this is at least 0.5, and `warm` otherwise.

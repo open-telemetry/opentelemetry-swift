@@ -12,7 +12,7 @@
   #endif
 
   /// The notifications and app state each platform reports its lifecycle with.
-  extension AppLaunchInstrumentation {
+  extension AppLaunchRuntime {
     #if canImport(UIKit)
       static let defaultDidBecomeActiveNotification = UIApplication.didBecomeActiveNotification
       static let defaultWillEnterForegroundNotification: Notification.Name? = UIApplication.willEnterForegroundNotification
@@ -21,7 +21,7 @@
       static var defaultFirstFrameReader: FirstFrameReader? { DisplayLinkFirstFrameReader() }
 
       /// Whether the app is active, or `false` if that can't be read off the main thread.
-      static func readIsAppActive() -> Bool {
+      package static func readIsAppActive() -> Bool {
         guard Thread.isMainThread else { return false }
         return MainActor.assumeIsolated {
           // `UIApplication.shared` is unavailable in app extensions, so look it up dynamically, as
@@ -38,7 +38,7 @@
       static var defaultFirstFrameReader: FirstFrameReader? { nil }
 
       /// Whether the app is active, or `false` if that can't be read off the main thread.
-      static func readIsAppActive() -> Bool {
+      package static func readIsAppActive() -> Bool {
         guard Thread.isMainThread else { return false }
         return MainActor.assumeIsolated {
           // `NSApp` is nil until the app creates its `NSApplication`, so this doesn't create one.

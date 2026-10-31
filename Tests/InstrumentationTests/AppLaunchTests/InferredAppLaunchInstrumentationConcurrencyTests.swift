@@ -4,23 +4,24 @@
  */
 
 #if canImport(Darwin) && ((canImport(UIKit) && !os(watchOS)) || canImport(AppKit))
-  @testable import AppLaunchInstrumentation
+  @testable import AppLaunchInstrumentationCore
+  @testable import InferredAppLaunchInstrumentation
   import Foundation
   import SharedTestUtils
   import XCTest
 
   /// Stress tests for install, activation and reset. They only run under Thread Sanitizer (or
   /// with `OTEL_CONCURRENCY_TESTS=1`).
-  extension AppLaunchInstrumentationTests {
+  extension InferredAppLaunchInstrumentationTests {
     func testInstallUnderContentionObservesOnce() throws {
       try ConcurrencyTesting.skipUnlessEnabled()
       let dependencies = makeDependencies()
       let notInstalledAfterReturn = ConcurrentCounter()
 
       ConcurrencyTesting.stress(iterations: 50) { _, _ in
-        AppLaunchInstrumentation.install(dependencies: dependencies)
+        InferredAppLaunchInstrumentation.install(dependencies: dependencies)
         // Once any install call has returned, the instrumentation must report itself installed.
-        if !AppLaunchInstrumentation.isInstalled {
+        if !InferredAppLaunchInstrumentation.isInstalled {
           notInstalledAfterReturn.increment()
         }
       }
@@ -56,7 +57,7 @@
       let name = didBecomeActive
 
       let install: @Sendable () -> Void = {
-        for _ in 0 ..< 50 { AppLaunchInstrumentation.install(dependencies: dependencies) }
+        for _ in 0 ..< 50 { InferredAppLaunchInstrumentation.install(dependencies: dependencies) }
       }
       let activate: @Sendable () -> Void = {
         for _ in 0 ..< 50 { center.post(name: name, object: nil) }
@@ -67,7 +68,7 @@
       center.post(name: name, object: nil)
       firstFrameReader.displayFrame(at: firstFrame)
 
-      XCTAssertTrue(AppLaunchInstrumentation.isInstalled)
+      XCTAssertTrue(InferredAppLaunchInstrumentation.isInstalled)
       XCTAssertEqual(firstFrameReader.readCount, 1)
       XCTAssertEqual(finishedSpans().count, 1)
     }
@@ -81,16 +82,16 @@
       ConcurrencyTesting.stress(iterations: 50) { thread, _ in
         switch thread % 3 {
         case 0:
-          AppLaunchInstrumentation.install(dependencies: dependencies)
+          InferredAppLaunchInstrumentation.install(dependencies: dependencies)
         case 1:
           center.post(name: name, object: nil)
         default:
-          AppLaunchInstrumentation.reset()
+          InferredAppLaunchInstrumentation.reset()
         }
       }
 
       // After a final reset, no observer registered during the race may still record.
-      AppLaunchInstrumentation.reset()
+      InferredAppLaunchInstrumentation.reset()
       let readsBefore = firstFrameReader.readCount
       center.post(name: name, object: nil)
 

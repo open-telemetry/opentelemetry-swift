@@ -21,6 +21,7 @@ groups:
       | `warm` | `false` or not set | Process start, as for `cold`. | As for `cold`. |
       | `cold` | `true` | The earliest time app code ran in the process, recorded by a C `constructor` function before `main()`. Process start can be long before the user launched a prewarmed app, so it isn't used. | As for `cold`. |
       | `warm` | `true` | As for prewarmed `cold`. | As for `cold`. |
+      | `prewarmed` | `true` | As for prewarmed `cold`. | As for `cold`. |
       | `resume` | not set | `UIApplication.willEnterForegroundNotification`, including the first time the app enters the foreground after the system started its process in the background. If the system discarded the app's scene while the app was in the background, the new scene connects first, and the span starts at `UIScene.willConnectNotification` instead, as long as the app starts entering the foreground while handling the same event. | The first frame displayed after the next `UIApplication.didBecomeActiveNotification`. |
 
       The first frame is read with a `CADisplayLink`. A frame committed before a display refresh
@@ -54,4 +55,13 @@ groups:
         requirement_level: required
       - ref: start.active_prewarmed
         requirement_level:
-          conditionally_required: If `start.type` is `cold` or `warm`.
+          conditionally_required: If `start.type` is `cold`, `warm` or `prewarmed`.
+      - ref: start.sampled_pages.resident_at_end
+        requirement_level:
+          conditionally_required: If the launch type was measured.
+      - ref: start.sampled_pages.paged_in
+        requirement_level:
+          conditionally_required: If the launch type was measured.
+      - ref: start.sampled_page_in_ratio
+        requirement_level:
+          conditionally_required: If the launch type was measured.

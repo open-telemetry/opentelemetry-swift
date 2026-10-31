@@ -371,6 +371,7 @@ else
   run_launch app-start-resume
   run_launch app-start-late-install
   run_launch app-start-background
+  run_launch app-start-measured
   install_new_build
   run_launch app-start-update
   # Copies the same original build, so this reinstalls the build just launched.

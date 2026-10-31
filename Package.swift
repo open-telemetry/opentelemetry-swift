@@ -405,8 +405,12 @@ extension Package {
         ),
         .library(name: "Crash", targets: ["Crash"]),
         .library(
-          name: "AppLaunchInstrumentation",
-          targets: ["AppLaunchInstrumentation"]
+          name: "InferredAppLaunchInstrumentation",
+          targets: ["InferredAppLaunchInstrumentation"]
+        ),
+        .library(
+          name: "MeasuredAppLaunchInstrumentation",
+          targets: ["MeasuredAppLaunchInstrumentation"]
         ),
       ])
       targets.append(contentsOf: [
@@ -626,20 +630,44 @@ extension Package {
           path: "Sources/Instrumentation/AppLaunch/LaunchEnvironment"
         ),
         .target(
-          name: "AppLaunchInstrumentation",
+          name: "AppLaunchPageSampling",
+          path: "Sources/Instrumentation/AppLaunch/PageSampling"
+        ),
+        .target(
+          name: "AppLaunchInstrumentationCore",
+          dependencies: [
+            "OpenTelemetryApi",
+            "InstrumentationSemanticConventions",
+            "AppLaunchEnvironment",
+          ],
+          path: "Sources/Instrumentation/AppLaunch/Core"
+        ),
+        .target(
+          name: "InferredAppLaunchInstrumentation",
+          dependencies: [
+            "OpenTelemetryApi",
+            "InstrumentationCommon",
+            "AppLaunchInstrumentationCore",
+          ],
+          path: "Sources/Instrumentation/AppLaunch/Inferred"
+        ),
+        .target(
+          name: "MeasuredAppLaunchInstrumentation",
           dependencies: [
             "OpenTelemetryApi",
             "InstrumentationCommon",
             "InstrumentationSemanticConventions",
-            "AppLaunchEnvironment",
+            "AppLaunchInstrumentationCore",
+            "AppLaunchPageSampling",
           ],
-          path: "Sources/Instrumentation/AppLaunch",
-          exclude: ["README.md", "LaunchEnvironment"]
+          path: "Sources/Instrumentation/AppLaunch/Measured"
         ),
         .testTarget(
           name: "AppLaunchInstrumentationTests",
           dependencies: [
-            "AppLaunchInstrumentation",
+            "AppLaunchInstrumentationCore",
+            "InferredAppLaunchInstrumentation",
+            "MeasuredAppLaunchInstrumentation",
             "InMemoryExporter",
             "OpenTelemetrySdk",
             "SharedTestUtils",

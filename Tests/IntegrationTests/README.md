@@ -34,7 +34,7 @@ repo work together inside a real iOS app. The flow is:
    - `app-start-resume`: a warm launch. Once its first frame is displayed, the
      runner opens Settings and then launches the app again, which brings the
      running process back to the foreground for a `resume`.
-   - `app-start-late-install`: installs `AppLaunchInstrumentation` after the
+   - `app-start-late-install`: installs `InferredAppLaunchInstrumentation` after the
      app first became active, so the launch must not be recorded. The second
      activation blocks the main thread while the runner opens Settings, so the
      app is in the background before its first frame and that activation must
@@ -50,6 +50,9 @@ repo work together inside a real iOS app. The flow is:
      number bumped, as an app update does, so the launch must be `cold`.
    - `app-start-reinstall`: the runner installs that same build again, so only
      the install directory differs and the launch must still be `cold`.
+   - `app-start-measured`: uses `MeasuredAppLaunchInstrumentation`. The
+     simulator shares the Mac's page cache, so the launch type isn't predictable,
+     but it must agree with the sampled pages on the span.
    Every launch also records its process start (with the process's task role)
    and each scene connection, `willEnterForeground`, `didBecomeActive` and
    `didEnterBackground` as zero-length marker spans. `AppStartTests` compares
