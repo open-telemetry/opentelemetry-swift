@@ -371,7 +371,9 @@ else
   run_launch app-start-resume
   run_launch app-start-late-install
   run_launch app-start-background
-  run_launch app-start-mincore
+  # Xcode inserts libraries ahead of the app in dyld's image list, so this launch has one too.
+  SIMCTL_CHILD_DYLD_INSERT_LIBRARIES="$(xcrun simctl getenv "$SIMULATOR_UDID" IPHONE_SIMULATOR_ROOT)/usr/lib/libLogRedirect.dylib" \
+    run_launch app-start-mincore
   install_new_build
   run_launch app-start-update
   # Copies the same original build, so this reinstalls the build just launched.

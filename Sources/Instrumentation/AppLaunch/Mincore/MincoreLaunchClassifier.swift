@@ -13,6 +13,7 @@
   struct LaunchPageSample: Equatable, Sendable {
     var residentAtEnd: Int
     var pagedIn: Int
+    var sampled = 256
 
     /// How much of what the launch ended up with in memory it had to bring in, from 0 to 1, or
     /// `nil` if nothing was in memory to compare.
@@ -35,10 +36,11 @@
   /// Compares the pages now with the sample the `AppLaunchPageSampling` initializer took.
   struct KernelLaunchPageSampler: LaunchPageSampler {
     func readSample() -> LaunchPageSample? {
+      var sampled: Int32 = 0
       var residentAtEnd: Int32 = 0
       var pagedIn: Int32 = 0
-      guard otel_app_launch_read_page_sample(&residentAtEnd, &pagedIn) else { return nil }
-      return LaunchPageSample(residentAtEnd: Int(residentAtEnd), pagedIn: Int(pagedIn))
+      guard otel_app_launch_read_page_sample(&sampled, &residentAtEnd, &pagedIn) else { return nil }
+      return LaunchPageSample(residentAtEnd: Int(residentAtEnd), pagedIn: Int(pagedIn), sampled: Int(sampled))
     }
 
     func readPageIns() -> LaunchPageIns? {
@@ -56,6 +58,9 @@
 
     // At least half of the launch's code had to come from disk.
     static let coldPageInRatio = 0.5
+    // Fewer resident pages than this are too few for a ratio to mean anything, unless that's all
+    // the app has. Real launches had over 100 in testing.
+    static let minimumResidentPages = 16
 
     let fallback: LaunchClassifier
     let pageSampler: LaunchPageSampler
@@ -66,7 +71,9 @@
       let inferred = fallback.begin()
       return { [pageSampler, isActivePrewarm] in
         let isPrewarmed = isActivePrewarm()
-        guard let sample = pageSampler.readSample(), let ratio = sample.pageInRatio else {
+        guard let sample = pageSampler.readSample(),
+              sample.residentAtEnd >= min(Self.minimumResidentPages, sample.sampled),
+              let ratio = sample.pageInRatio else {
           InternalLogger.warn("MincoreLaunchInstrumentation: couldn't sample the launch's pages, so the launch type is inferred.")
           if isPrewarmed {
             return LaunchClassification(type: .prewarmed, attributes: Self.determinedBy(.prewarmFlag))
@@ -78,6 +85,7 @@
         let isCold = ratio >= Self.coldPageInRatio
         let type: AppLaunchInstrumentationConfiguration.LaunchType = isPrewarmed ? .prewarmed : isCold ? .cold : .warm
         var attributes = Self.determinedBy(isPrewarmed ? .prewarmFlag : .pageSampling)
+        attributes[App.startSampledPagesTotal.rawValue] = .int(sample.sampled)
         attributes[App.startSampledPagesResidentAtEnd.rawValue] = .int(sample.residentAtEnd)
         attributes[App.startSampledPagesPagedIn.rawValue] = .int(sample.pagedIn)
         attributes[App.startSampledPageInRatio.rawValue] = .double(ratio)

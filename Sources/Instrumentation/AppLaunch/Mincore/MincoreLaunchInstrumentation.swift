@@ -39,7 +39,7 @@ import OpenTelemetryApi
     /// possible, before the app first becomes active, so the launch is recorded. Only the first
     /// call takes effect.
     public static func install(configuration: AppLaunchInstrumentationConfiguration = defaultConfiguration) {
-      var dependencies = Dependencies(configuration: configuration)
+      var dependencies = Dependencies(configuration: resolved(configuration))
       let pageSampler = KernelLaunchPageSampler()
       dependencies.makeClassifier = { dependencies in
         MincoreLaunchClassifier(
@@ -54,6 +54,15 @@ import OpenTelemetryApi
 
     static func install(dependencies: Dependencies) {
       AppLaunchRuntime.install(dependencies: dependencies)
+    }
+
+    /// A configuration that didn't choose its launch types gets this library's, so setting another
+    /// option doesn't stop prewarmed launches being recorded.
+    static func resolved(_ configuration: AppLaunchInstrumentationConfiguration) -> AppLaunchInstrumentationConfiguration {
+      guard configuration.usesDefaultLaunchTypes else { return configuration }
+      var resolved = configuration
+      resolved.launchTypes = defaultConfiguration.launchTypes
+      return resolved
     }
   }
 #else

@@ -67,7 +67,7 @@
                               end: AppStartEnd) {
       let type = classification.type
       let configuration = dependencies.configuration
-      let isPrewarmed = dependencies.isActivePrewarm()
+      let isPrewarmed = type == .prewarmed
       if isPrewarmed, configuration.dropPrewarmed {
         InternalLogger.debug("MincoreLaunchInstrumentation: dropped a prewarmed \(type) launch, because `dropPrewarmed` is set.")
         return
@@ -164,7 +164,9 @@
     }
 
     private func recordDuration(_ name: String, seconds: TimeInterval, attributes: [String: AttributeValue]) {
-      let meter = OpenTelemetry.instance.meterProvider.get(name: AppLaunchRuntime.instrumentationScope)
+      let meter = OpenTelemetry.instance.meterProvider.meterBuilder(name: AppLaunchRuntime.instrumentationScope)
+        .setInstrumentationVersion(instrumentationVersion: Self.schemaVersion)
+        .build()
       var histogram = meter.histogramBuilder(name: name).build()
       histogram.record(value: seconds, attributes: attributes)
     }
