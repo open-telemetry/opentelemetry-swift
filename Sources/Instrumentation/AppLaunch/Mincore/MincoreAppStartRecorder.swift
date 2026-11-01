@@ -32,7 +32,7 @@
     func prepare(_ start: AppStart) -> ((AppStartEnd) -> Void)? {
       let launchType = start.launchType
       guard dependencies.configuration.launchTypes.contains(launchType) else {
-        InternalLogger.debug("MincoreLaunchInstrumentation: not recording a \(launchType) start, because it isn't in `launchTypes`.")
+        InternalLogger.debug("not recording a \(launchType) start, because it isn't in `launchTypes`.")
         return nil
       }
 
@@ -42,7 +42,7 @@
       switch start {
       case let .launch(classification, marks):
         guard let processStartTime = dependencies.processStartTime() else {
-          InternalLogger.warn("MincoreLaunchInstrumentation: dropped a \(launchType) launch, because the process start time can't be read.")
+          InternalLogger.warn("dropped a \(launchType) launch, because the process start time can't be read.")
           return nil
         }
         return { end in
@@ -69,9 +69,19 @@
       let startTime = isPrewarmed ? initializerTime ?? processStartTime : processStartTime
       let endTime = end.time
       let duration = endTime.timeIntervalSince(startTime)
+      // Every timestamp in the chain is wall clock, so a backward step between process start and
+      // the first frame would emit a span that ended before it started, and a negative duration
+      // sample. A launch with a bogus origin has nothing usable in it, so drop it rather than
+      // clamp it, which would report a 0 ms launch.
+      if duration < 0 {
+        InternalLogger.warn(
+          "dropped a \(type) launch of \(milliseconds(duration)) ms, which ended before it started, so the clock stepped backward."
+        )
+        return
+      }
       if duration > configuration.maxLaunchDuration {
         InternalLogger.warn(
-          "MincoreLaunchInstrumentation: dropped a \(type) launch of \(milliseconds(duration)) ms, which is longer than `maxLaunchDuration`."
+          "dropped a \(type) launch of \(milliseconds(duration)) ms, which is longer than `maxLaunchDuration`."
         )
         return
       }
@@ -103,9 +113,11 @@
           .setParent(root)
           .setStartTime(time: renderStart)
           .startSpan()
-        _ = recordPhase(tracer, Name.sceneSetup, parent: render, start: marks.sceneConnectStart, end: endTime)
+        // UIKit connects a scene after `didFinishLaunching`, so floor the phase at its parent's
+        // start in case a clock step or an out-of-order notification says otherwise.
+        _ = recordPhase(tracer, Name.sceneSetup, parent: render, start: marks.sceneConnectStart.map { max($0, renderStart) }, end: endTime)
         render.end(time: endTime)
-        root.setAttribute(key: App.startRenderDelayDuration.rawValue, value: endTime.timeIntervalSince(renderStart))
+        root.setAttribute(key: App.startRenderDuration.rawValue, value: endTime.timeIntervalSince(renderStart))
       }
       root.end(time: endTime)
 
@@ -113,12 +125,21 @@
         recordDuration(Name.appStartDuration, seconds: duration, attributes: [App.startType.rawValue: .string(type.schemaValue.description)])
       }
       InternalLogger.debug(
-        "MincoreLaunchInstrumentation: recorded a \(type) launch of \(milliseconds(duration)) ms, prewarmed \(isPrewarmed), completed \(end.isCompleted)."
+        "recorded a \(type) launch of \(milliseconds(duration)) ms, prewarmed \(isPrewarmed), completed \(end.isCompleted)."
       )
     }
 
     private func recordResume(tracer: Tracer, resume: AppResume, end: AppStartEnd) {
       let endTime = end.time
+      let duration = endTime.timeIntervalSince(resume.start)
+      // As for a launch, a backward wall-clock step would emit a span that ended before it
+      // started, and a negative duration sample.
+      if duration < 0 {
+        InternalLogger.warn(
+          "dropped a \(resume.kind) resume of \(milliseconds(duration)) ms, which ended before it started, so the clock stepped backward."
+        )
+        return
+      }
       let root = tracer.spanBuilder(spanName: Name.appResume)
         .setNoParent()
         .setStartTime(time: resume.start)
@@ -131,11 +152,10 @@
       _ = recordPhase(tracer, Name.resumeSceneSetup, parent: root, start: resume.sceneConnectStart, end: endTime)
       root.end(time: endTime)
 
-      let duration = endTime.timeIntervalSince(resume.start)
       if end.isCompleted {
         recordDuration(Name.appResumeDuration, seconds: duration, attributes: [App.resumeType.rawValue: .string(resume.kind.schemaValue.description)])
       }
-      InternalLogger.debug("MincoreLaunchInstrumentation: recorded a \(resume.kind) resume of \(milliseconds(duration)) ms, completed \(end.isCompleted).")
+      InternalLogger.debug("recorded a \(resume.kind) resume of \(milliseconds(duration)) ms, completed \(end.isCompleted).")
     }
 
     /// Records a phase if both of its timestamps are known, and returns its duration. It ends no

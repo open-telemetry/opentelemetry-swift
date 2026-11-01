@@ -316,7 +316,27 @@
 
       XCTAssertEqual(root.attributes["app.start.pre_init.duration"], .double(1))
       XCTAssertEqual(root.attributes["app.start.app_init.duration"], .double(didFinish.timeIntervalSince(appCodeStart)))
-      XCTAssertEqual(root.attributes["app.start.render_delay.duration"], .double(firstFrame.timeIntervalSince(didFinish)))
+      XCTAssertEqual(root.attributes["app.start.render.duration"], .double(firstFrame.timeIntervalSince(didFinish)))
+    }
+
+    func testSceneSetupStartsWithItsParentWhenTheSceneConnectedFirst() throws {
+      // Documented UIKit order puts `willConnectTo` after `didFinishLaunching`, so this only
+      // happens if a clock step or an out-of-order notification says otherwise.
+      let sceneConnect = Date(timeIntervalSince1970: 1_001.5)
+      let didFinish = Date(timeIntervalSince1970: 1_002.1)
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 120))
+      post(sceneWillConnect, at: sceneConnect)
+      post(didFinishLaunching, at: didFinish)
+
+      post(didBecomeActive, at: becameActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      let render = try XCTUnwrap(span("app.start.render"))
+      let sceneSetup = try XCTUnwrap(span("app.start.scene_setup"))
+      XCTAssertEqual(render.startTime, didFinish)
+      XCTAssertEqual(sceneSetup.parentSpanId, render.spanId)
+      XCTAssertEqual(sceneSetup.startTime, didFinish, "a child span must not start before its parent")
+      XCTAssertEqual(sceneSetup.endTime, firstFrame)
     }
 
     func testPrewarmedLaunchStartsAtActivation() throws {
@@ -352,7 +372,7 @@
 
       XCTAssertEqual(Set(finishedSpans().map(\.name)), ["app.start", "app.start.pre_init"])
       XCTAssertNil(launchSpan()?.attributes["app.start.app_init.duration"])
-      XCTAssertNil(launchSpan()?.attributes["app.start.render_delay.duration"])
+      XCTAssertNil(launchSpan()?.attributes["app.start.render.duration"])
     }
 
     func testInferredLaunchSaysItWasDeterminedByLaunchHistory() {
@@ -489,6 +509,60 @@
       let names = Set(exporter.metrics.map(\.name))
       XCTAssertTrue(names.contains("app.start.duration"))
       XCTAssertFalse(names.contains("app.resume.duration"), "an abandoned resume has no metric value")
+    }
+
+    func testLaunchThatEndedBeforeItStartedIsDropped() throws {
+      let exporter = CapturingMetricExporter()
+      let meterProvider = MeterProviderSdk.builder()
+        .registerMetricReader(reader: PeriodicMetricReaderBuilder(exporter: exporter).build())
+        .registerView(selector: InstrumentSelectorBuilder().build(), view: View.builder().build())
+        .build()
+      OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
+      defer { OpenTelemetry.registerMeterProvider(meterProvider: DefaultMeterProvider.instance) }
+      let messages = captureFeedback()
+      OpenTelemetry.setDebugEnabled(true)
+      // The wall clock stepped backward after the process started, so process start is now later
+      // than the first frame and the duration would be negative.
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 120),
+              processStartTime: { Date(timeIntervalSince1970: 2_000) })
+
+      activate()
+      _ = meterProvider.forceFlush()
+
+      XCTAssertTrue(finishedSpans().isEmpty, "no span may end before it started")
+      XCTAssertFalse(Set(exporter.metrics.map(\.name)).contains("app.start.duration"),
+                     "a dropped launch records no duration")
+      XCTAssertTrue(messages.values.contains { $0.hasPrefix("[warn]") && $0.contains("ended before it started") },
+                    "\(messages.values)")
+    }
+
+    func testResumeThatEndedBeforeItStartedIsDropped() throws {
+      let exporter = CapturingMetricExporter()
+      let meterProvider = MeterProviderSdk.builder()
+        .registerMetricReader(reader: PeriodicMetricReaderBuilder(exporter: exporter).build())
+        .registerView(selector: InstrumentSelectorBuilder().build(), view: View.builder().build())
+        .build()
+      OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
+      defer { OpenTelemetry.registerMeterProvider(meterProvider: DefaultMeterProvider.instance) }
+      let messages = captureFeedback()
+      OpenTelemetry.setDebugEnabled(true)
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
+      activate()
+
+      // The wall clock stepped backward after the resume began, so its first frame is earlier.
+      post(didEnterBackground, at: firstFrame.addingTimeInterval(10))
+      post(willEnterForeground, at: Date(timeIntervalSince1970: 3_000))
+      post(didBecomeActive, at: Date(timeIntervalSince1970: 2_000))
+      firstFrameReader.displayFrame(at: Date(timeIntervalSince1970: 2_000.1))
+      _ = meterProvider.forceFlush()
+
+      XCTAssertNotNil(launchSpan(), "the launch before the step is still recorded")
+      XCTAssertNil(span("app.resume"), "no span may end before it started")
+      XCTAssertNil(span("app.resume.scene_setup"))
+      XCTAssertFalse(Set(exporter.metrics.map(\.name)).contains("app.resume.duration"),
+                     "a dropped resume records no duration")
+      XCTAssertTrue(messages.values.contains { $0.hasPrefix("[warn]") && $0.contains("ended before it started") },
+                    "\(messages.values)")
     }
 
     func testDurationMetricUsesTheLifecycleScope() throws {

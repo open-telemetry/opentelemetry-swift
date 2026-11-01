@@ -18,6 +18,7 @@ Usage:
   Scripts/compare-app-launch-accuracy.py --mode warm --launches 3
   Scripts/compare-app-launch-accuracy.py --mode reboot --launches 1 --device <udid>
   Scripts/compare-app-launch-accuracy.py --reanalyze .build/app-launch-accuracy/<run>
+  Scripts/compare-app-launch-accuracy.py --reanalyze .build/app-launch-accuracy/<run> --dump-periods
 
 The demo app is built for the device, and a copy is patched so it can reach this Mac over plain
 HTTP. The device must be unlocked, on the same network as this Mac, and allow the app local network
@@ -55,7 +56,17 @@ CACHE_HIT = "Page Cache Hit"
 STATIC_INIT_PERIOD = "Initializing - Static Runtime Initialization"
 FRAME_PERIOD = "Launching - Initial Frame Rendering"
 ACTIVE_PERIOD = "Foreground - Active"
+# Apple documents UIKit initialization and UIKit initial scene rendering as separate launch phases, and
+# app.start.scene_setup would line up with the second. Nobody has confirmed on a device which
+# life-cycle-period labels exist for them, so this one is only a guess that --dump-periods marks and
+# no comparison uses. To finish the mapping, run with --dump-periods on a real trace (or --reanalyze
+# an existing run with it), find the period whose start and end match the scene connecting until the
+# first frame, and compare that period's start to the span's. Check it on several launches and iOS
+# versions before trusting it.
 FIRST_SCENE_PERIOD = "Launching - UIKit Initialization"
+# The durations the script knows about. compare() warns about any other app.start.*.duration attribute,
+# which is what a renamed attribute looks like from here.
+KNOWN_DURATIONS = ("pre_init", "pre_activation", "app_init", "render")
 
 
 def log(message):
@@ -316,8 +327,10 @@ def export_toc(trace):
 def export_table(trace, schema, path):
     xpath = '/trace-toc/run[@number="1"]/data/table[@schema="%s"]' % schema
     with open(path, "w") as output:
-        subprocess.call(["xcrun", "xctrace", "export", "--input", trace, "--xpath", xpath],
-                        stdout=output, stderr=subprocess.DEVNULL, timeout=600)
+        status = subprocess.call(["xcrun", "xctrace", "export", "--input", trace, "--xpath", xpath],
+                                 stdout=output, stderr=subprocess.DEVNULL, timeout=600)
+    if status != 0:
+        log("Warning: exporting the %s table failed with status %d, so it reads as empty" % (schema, status))
     return path
 
 
@@ -391,9 +404,17 @@ def analyze_trace(trace, app, directory):
         return next((entry for entry in periods if entry[0] == name), None)
 
     static_init, frame, active = period(STATIC_INIT_PERIOD), period(FRAME_PERIOD), period(ACTIVE_PERIOD)
+    did_finish = next((entry for entry in periods if "didFinishLaunching" in entry[0]), None)
+    for name, entry in ((STATIC_INIT_PERIOD, static_init), (FRAME_PERIOD, frame), (ACTIVE_PERIOD, active),
+                        ("a period containing didFinishLaunching", did_finish)):
+        if entry is None:
+            raise ValueError("the trace has no %r period. It has: %s" % (name, ", ".join(entry[0] for entry in periods)))
+    # This is the end of all static runtime initialization. The span's pre_init instead ends at this
+    # library's own constructor, which runs somewhere inside that period, so pre_init and app_init
+    # compare differently defined boundaries. The trace can't say where the constructor ran, so the
+    # difference is reported but isn't a pure measurement error.
     initializer_end = static_init[1] + static_init[2]
     frame_end = frame[1] + frame[2]
-    did_finish = next(entry for entry in periods if "didFinishLaunching" in entry[0])
     did_finish_end = did_finish[1] + did_finish[2]
 
     memory_path = export_table(trace, "virtual-memory", os.path.join(directory, "virtual-memory.xml"))
@@ -409,6 +430,8 @@ def analyze_trace(trace, app, directory):
             events.append((int(row["start"].text) / 1e6, label(row["operation"]),
                            int(row["address"].text), int(row["size"].text or 0)))
     events.sort()
+    if not events:
+        log("Warning: the trace has no virtual memory events for the app, so every page count is zero")
     page_size = next((size for _, _, _, size in events if size), 16384)
 
     def in_text(address):
@@ -433,6 +456,7 @@ def analyze_trace(trace, app, directory):
     all_reads = [event for event in events if event[1] == DISK_READ]
 
     return {
+        "periods": periods,
         "images": [name for _, _, name in segments],
         "page_size": page_size,
         "text_pages": sum(size // page_size for _, size, _ in segments),
@@ -463,6 +487,14 @@ def compare(span, trace):
     def seconds(name):
         return attributes.get("app.start.%s.duration" % name)
 
+    # A phase can be legitimately absent, such as pre_init on a prewarmed launch, so only an
+    # attribute this script doesn't know is surprising. That is what a rename looks like.
+    unknown = sorted(key for key in attributes if re.match(r"^app\.start\.[a-z_]+\.duration$", key)
+                     and key.split(".")[2] not in KNOWN_DURATIONS)
+    if unknown:
+        log("Warning: the span has duration attributes this script doesn't compare: %s. "
+            "If one was renamed, update seconds() calls in compare()." % ", ".join(unknown))
+
     sampled_total = integer("sampled_pages.total") or trace["sampled_pages"]
     touched_estimate = trace["touched_sampled_pages"] * max(trace["text_pages"] - len(trace["images"]), 1) / max(sampled_total, 1)
     total = (span["end"] - span["start"]) / 1e9
@@ -482,16 +514,26 @@ def compare(span, trace):
         "page_ins_post_initializer_error": None if integer("page_ins.post_initializer") is None
         else integer("page_ins.post_initializer") - trace["disk_reads_after_initializer"],
         "total_error_seconds": total - trace["total_seconds"],
-        "pre_init_error_seconds": seconds("pre_init") - trace["pre_init_seconds"] if seconds("pre_init") else None,
-        "app_init_error_seconds": seconds("app_init") - trace["app_init_seconds"] if seconds("app_init") else None,
-        "render_error_seconds": seconds("render_delay") - trace["render_seconds"] if seconds("render_delay") else None,
+        "pre_init_error_seconds": None if seconds("pre_init") is None else seconds("pre_init") - trace["pre_init_seconds"],
+        "app_init_error_seconds": None if seconds("app_init") is None else seconds("app_init") - trace["app_init_seconds"],
+        "render_error_seconds": None if seconds("render") is None else seconds("render") - trace["render_seconds"],
     }
 
 
 # Reporting.
 
 
-def print_launch(index, trace, comparison):
+def print_periods(trace):
+    """Lists every life cycle period the trace has, to find the labels a comparison could use."""
+    print("  Life cycle periods (start, duration):")
+    for name, start, duration in sorted(trace["periods"], key=lambda entry: entry[1]):
+        note = "  <- unverified candidate for app.start.scene_setup" if name == FIRST_SCENE_PERIOD else ""
+        print("    %-52s %9.1f ms %9.1f ms%s" % (name, start, duration, note))
+    if not any(name == FIRST_SCENE_PERIOD for name, _, _ in trace["periods"]):
+        print("    (no period is labelled %r on this OS version)" % FIRST_SCENE_PERIOD)
+
+
+def print_launch(index, trace, comparison, dump_periods=False):
     print("\nLaunch %d" % index)
     print("  %-34s %-12s %s" % ("", "span", "xctrace"))
     rows = [
@@ -508,6 +550,9 @@ def print_launch(index, trace, comparison):
     print("  total %+.1f ms, pre_init %s, app_init %s, render %s" % (
         comparison["total_error_seconds"] * 1e3, milliseconds(comparison["pre_init_error_seconds"]),
         milliseconds(comparison["app_init_error_seconds"]), milliseconds(comparison["render_error_seconds"])))
+    print("  pre_init and app_init compare against the end of static runtime initialization, not the span's own boundary.")
+    if dump_periods:
+        print_periods(trace)
 
 
 def milliseconds(value):
@@ -530,6 +575,8 @@ def print_summary(mode, comparisons):
         if values:
             print("  %-40s median %+.1f %s, range %+.1f to %+.1f" % (
                 name, statistics.median(values), unit, min(values), max(values)))
+    print("  pre_init and app_init split the launch at the library's constructor in the span, but at the end of")
+    print("  static runtime initialization in xctrace, so their errors aren't pure measurement error. Their sum is.")
     print("  paged_in includes read-ahead the launch didn't fault on, so it can exceed the disk reads.")
     print("  xctrace's type is `warm` if most touched __TEXT pages were cached before any was read.")
 
@@ -541,11 +588,11 @@ def load_launches(directory):
     return [os.path.join(directory, name) for name in names]
 
 
-def score_launch(index, launch_directory, app):
+def score_launch(index, launch_directory, app, dump_periods=False):
     trace = analyze_trace(os.path.join(launch_directory, "launch.trace"), app, launch_directory)
     with open(os.path.join(launch_directory, "span.json")) as span_file:
         comparison = compare(json.load(span_file), trace)
-    print_launch(index, trace, comparison)
+    print_launch(index, trace, comparison, dump_periods)
     return {"launch": index, "trace": trace, "comparison": comparison}
 
 
@@ -556,11 +603,11 @@ def write_report(directory, mode, results):
     print("\nReport: %s" % os.path.join(directory, "report.json"))
 
 
-def reanalyze(directory):
+def reanalyze(directory, dump_periods):
     with open(os.path.join(directory, "run.json")) as run_file:
         mode = json.load(run_file)["mode"]
     app = os.path.join(directory, SCHEME + ".app")
-    results = [score_launch(index, path, app) for index, path in enumerate(load_launches(directory), 1)
+    results = [score_launch(index, path, app, dump_periods) for index, path in enumerate(load_launches(directory), 1)
                if os.path.exists(os.path.join(path, "span.json"))]
     write_report(directory, mode, results)
 
@@ -578,11 +625,12 @@ def main():
     parser.add_argument("--record-seconds", type=int, default=20)
     parser.add_argument("--settle", type=int, default=60, help="seconds to wait after unlocking in reboot mode")
     parser.add_argument("--work-dir", default=os.path.join(REPO_ROOT, ".build/app-launch-accuracy"))
+    parser.add_argument("--dump-periods", action="store_true", help="print every life cycle period in each trace")
     parser.add_argument("--reanalyze", metavar="RUN_DIRECTORY", help="score a previous run again without a device")
     args = parser.parse_args()
 
     if args.reanalyze:
-        reanalyze(args.reanalyze)
+        reanalyze(args.reanalyze, args.dump_periods)
         return
 
     args.device = args.device or find_device()
@@ -619,7 +667,7 @@ def main():
         with open(os.path.join(launch_directory, "spans.json"), "w") as spans_file:
             json.dump(spans, spans_file, indent=2)
         try:
-            results.append(score_launch(index, launch_directory, app))
+            results.append(score_launch(index, launch_directory, app, args.dump_periods))
         except (ValueError, KeyError, AttributeError, StopIteration, TypeError, ET.ParseError) as error:
             failures["couldn't read the trace: %s" % error] += 1
 

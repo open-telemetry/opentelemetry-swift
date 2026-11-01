@@ -19,7 +19,7 @@ groups:
       | Timestamp | Marks | W3C analog |
       | --- | --- | --- |
       | `processStart` | Process start, the time origin (`sysctl` `KERN_PROC_PID`, `kp_proc.p_starttime`) | `startTime` |
-      | `initializerStart` | The C `constructor` function of the instrumentation ran | none |
+      | `initializerStart` | The launch-environment C `constructor` function, `otel_app_launch_read_launch_environment`, ran. Not the `constructor` function that bounds `app.start.page_ins.pre_initializer` | none |
       | `activationStart` | A prewarmed launch resumed. The same time as `initializerStart`, because Apple says a prewarm runs no application code | `activationStart` |
       | `didFinishLaunchingEnd` | `didFinishLaunchingNotification`, if the instrumentation was installed before it | `domContentLoadedEventEnd` |
       | `sceneConnectStart` | The first `UIScene.willConnectNotification` of the launch | none |
@@ -76,9 +76,9 @@ groups:
         requirement_level:
           conditionally_required: If `app.start.type` is `prewarmed` and the pages could be sampled.
       - ref: app.start.page_ins.pre_initializer
-        requirement_level: recommended
+        requirement_level: opt_in
       - ref: app.start.page_ins.post_initializer
-        requirement_level: recommended
+        requirement_level: opt_in
       - ref: app.start.pre_activation.duration
         requirement_level:
           conditionally_required: If `app.start.type` is `prewarmed`.
@@ -88,7 +88,7 @@ groups:
       - ref: app.start.app_init.duration
         requirement_level:
           conditionally_required: If `app.start.app_init` is recorded.
-      - ref: app.start.render_delay.duration
+      - ref: app.start.render.duration
         requirement_level:
           conditionally_required: If `app.start.render` is recorded.
   - id: span.app_resume

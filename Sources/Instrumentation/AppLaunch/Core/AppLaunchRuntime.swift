@@ -62,10 +62,10 @@
       switch installLock.withLock({ installLocked(dependencies: dependencies) }) {
       case let .alreadyInstalled(monitor):
         if monitor.configuration != dependencies.configuration {
-          InternalLogger.error("AppLaunchInstrumentation is already installed, so the new configuration is ignored.")
+          InternalLogger.error("already installed, so the new configuration is ignored.")
         }
       case let .installed(isAppActive, isBackgroundLaunch):
-        InternalLogger.info("AppLaunchInstrumentation installed: app active \(isAppActive), background launch \(isBackgroundLaunch).")
+        InternalLogger.info("installed with the app active \(isAppActive) and background launch \(isBackgroundLaunch).")
       }
     }
 
