@@ -7,12 +7,10 @@
   import Foundation
   import OpenTelemetryApi
 
-  /// Installs and resets the activation monitor. There's one per process, shared by every app
-  /// launch library, so linking two of them can't record each start twice.
+  /// Installs and resets the activation monitor. There's one per process.
   package enum AppLaunchRuntime {
     // Matches the instrumentation scope used by OpenTelemetry Android.
     package static let instrumentationScope = "io.opentelemetry.lifecycle"
-    static let spanName = "AppStart"
 
     package typealias LaunchType = AppLaunchInstrumentationConfiguration.LaunchType
 
@@ -35,19 +33,15 @@
       var now: @Sendable () -> Date = Date.init
       // Runs the block once the main thread has finished handling the current event.
       var afterCurrentEvent: @Sendable (@escaping @Sendable () -> Void) -> Void = { DispatchQueue.main.async(execute: $0) }
-      // Builds the classifier, or `nil` to infer the launch type.
-      package var makeClassifier: (@Sendable (Dependencies) -> LaunchClassifier)?
+      // Builds the classifier that decides what kind of launch this process is.
+      package var makeClassifier: @Sendable (Dependencies) -> LaunchClassifier
 
-      // Builds the recorder, or `nil` to record `AppStart` spans.
-      package var makeRecorder: (@Sendable (Dependencies) -> AppStartRecording)?
+      // Builds the recorder that decides which activations are recorded, and records them.
+      package var makeRecorder: @Sendable (Dependencies) -> AppStartRecording
 
-      var classifier: LaunchClassifier {
-        makeClassifier?(self) ?? InferredLaunchClassifier(dependencies: self)
-      }
+      var classifier: LaunchClassifier { makeClassifier(self) }
 
-      var recorder: AppStartRecording {
-        makeRecorder?(self) ?? AppStartRecorder(dependencies: self)
-      }
+      var recorder: AppStartRecording { makeRecorder(self) }
     }
 
     /// Whether the instrumentation is installed and observing app activations.
@@ -67,9 +61,7 @@
       // call `install` again.
       switch installLock.withLock({ installLocked(dependencies: dependencies) }) {
       case let .alreadyInstalled(monitor):
-        if type(of: monitor.classifier) != type(of: dependencies.classifier) {
-          InternalLogger.error("AppLaunchInstrumentation is already installed with a different library, so this install is ignored.")
-        } else if monitor.configuration != dependencies.configuration {
+        if monitor.configuration != dependencies.configuration {
           InternalLogger.error("AppLaunchInstrumentation is already installed, so the new configuration is ignored.")
         }
       case let .installed(isAppActive, isBackgroundLaunch):
@@ -123,8 +115,10 @@
 
   // An extension, so `Dependencies` keeps its memberwise initializer.
   extension AppLaunchRuntime.Dependencies {
-    package init(configuration: AppLaunchInstrumentationConfiguration) {
-      self.init()
+    package init(configuration: AppLaunchInstrumentationConfiguration,
+                 makeClassifier: @escaping @Sendable (Self) -> LaunchClassifier,
+                 makeRecorder: @escaping @Sendable (Self) -> AppStartRecording) {
+      self.init(makeClassifier: makeClassifier, makeRecorder: makeRecorder)
       self.configuration = configuration
     }
   }

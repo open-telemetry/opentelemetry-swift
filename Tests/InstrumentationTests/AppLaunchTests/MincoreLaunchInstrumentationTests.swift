@@ -5,9 +5,10 @@
 
 #if canImport(Darwin) && ((canImport(UIKit) && !os(watchOS)) || canImport(AppKit))
   @testable import AppLaunchInstrumentationCore
-  @testable import InferredAppLaunchInstrumentation
   @testable import MincoreLaunchInstrumentation
   import Foundation
+  import os.log
+  import InMemoryExporter
   import OpenTelemetryApi
   import OpenTelemetrySdk
   import XCTest
@@ -25,583 +26,1237 @@
     }
   }
 
-  private let didFinishLaunching = Notification.Name("MincoreLaunchInstrumentationTests.didFinishLaunching")
-
-  private final class CapturingMetricExporter: MetricExporter, @unchecked Sendable {
+  final class FakeFirstFrameReader: FirstFrameReader, @unchecked Sendable {
     private let lock = NSLock()
-    private var _metrics: [MetricData] = []
+    private var completions: [(Date) -> Void] = []
+    private var reads = 0
 
-    var metrics: [MetricData] { lock.withLock { _metrics } }
+    var pendingCount: Int { lock.withLock { completions.count } }
+    var readCount: Int { lock.withLock { reads } }
 
-    func export(metrics: [MetricData]) -> ExportResult {
-      lock.withLock { _metrics.append(contentsOf: metrics) }
-      return .success
+    func readFirstFrame(_ completion: @escaping (Date) -> Void) {
+      lock.withLock {
+        reads += 1
+        completions.append(completion)
+      }
     }
 
-    func flush() -> ExportResult { .success }
-    func shutdown() -> ExportResult { .success }
-    func getAggregationTemporality(for instrument: InstrumentType) -> AggregationTemporality { .cumulative }
+    func displayFrame(at date: Date) {
+      let pending: [(Date) -> Void] = lock.withLock {
+        defer { completions.removeAll() }
+        return completions
+      }
+      pending.forEach { $0(date) }
+    }
   }
 
-  extension InferredAppLaunchInstrumentationTests {
-    private func installMincore(sample: LaunchPageSample?,
-                                pageIns: LaunchPageIns? = nil,
-                                isActivePrewarm: Bool = false,
-                                isBackgroundLaunch: Bool = false,
-                                configuration: AppLaunchInstrumentationConfiguration = MincoreLaunchInstrumentation.defaultConfiguration) {
-      MincoreLaunchInstrumentation.install(
-        dependencies: mincoreDependencies(sample: sample,
-                                          pageIns: pageIns,
-                                          isActivePrewarm: isActivePrewarm,
-                                          isBackgroundLaunch: isBackgroundLaunch,
-                                          configuration: configuration)
+  final class TestClock: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _now: Date
+
+    init(now: Date) {
+      _now = now
+    }
+
+    var now: Date {
+      get { lock.withLock { _now } }
+      set { lock.withLock { _now = newValue } }
+    }
+  }
+
+  final class FakeLaunchHistory: LaunchHistory, @unchecked Sendable {
+    private let lock = NSLock()
+    private var _previous: LaunchContext?
+    private var _exchangeCount = 0
+
+    init(previous: LaunchContext?) {
+      _previous = previous
+    }
+
+    var exchangeCount: Int { lock.withLock { _exchangeCount } }
+
+    func exchange(_ current: LaunchContext) -> LaunchContext? {
+      lock.withLock {
+        _exchangeCount += 1
+        defer { _previous = current }
+        return _previous
+      }
+    }
+  }
+
+  /// Holds the blocks the instrumentation runs after the current event, until the test runs them.
+  final class FakeEventQueue: @unchecked Sendable {
+    private let lock = NSLock()
+    private var blocks: [@Sendable () -> Void] = []
+
+    func enqueue(_ block: @escaping @Sendable () -> Void) {
+      lock.withLock { blocks.append(block) }
+    }
+
+    func finishCurrentEvent() {
+      let pending = lock.withLock {
+        defer { blocks = [] }
+        return blocks
+      }
+      pending.forEach { $0() }
+    }
+  }
+
+  /// The start type a root span describes: `app.start.type` for a launch, `resume` for an `app.resume`.
+  func startType(_ span: SpanData?) -> AttributeValue? {
+    guard let span else { return nil }
+    return span.name == "app.resume" ? .string("resume") : span.attributes["app.start.type"]
+  }
+
+  class MincoreLaunchInstrumentationTests: XCTestCase {
+    let didBecomeActive = Notification.Name("AppLaunchInstrumentationTests.didBecomeActive")
+    let willEnterForeground = Notification.Name("AppLaunchInstrumentationTests.willEnterForeground")
+    let didEnterBackground = Notification.Name("AppLaunchInstrumentationTests.didEnterBackground")
+    let sceneWillConnect = Notification.Name("AppLaunchInstrumentationTests.sceneWillConnect")
+    let didFinishLaunching = Notification.Name("AppLaunchInstrumentationTests.didFinishLaunching")
+    let processStart = Date(timeIntervalSince1970: 1_000)
+    let appCodeStart = Date(timeIntervalSince1970: 1_001)
+    let becameActive = Date(timeIntervalSince1970: 1_002.5)
+    let firstFrame = Date(timeIntervalSince1970: 1_002.6)
+    var launchContext = LaunchContext(bootTime: 500, appVersion: "1.0", appBuild: "1")
+
+    var spanExporter: InMemoryExporter!
+    var tracerProvider: TracerProviderSdk!
+    var notificationCenter: NotificationCenter!
+    var firstFrameReader: FakeFirstFrameReader!
+    var clock: TestClock!
+    var launchHistory: FakeLaunchHistory!
+    var eventQueue: FakeEventQueue!
+
+    override func setUp() {
+      super.setUp()
+      AppLaunchRuntime.reset()
+      spanExporter = InMemoryExporter()
+      tracerProvider = TracerProviderSdk()
+      tracerProvider.addSpanProcessor(SimpleSpanProcessor(spanExporter: spanExporter))
+      OpenTelemetry.registerTracerProvider(tracerProvider: tracerProvider)
+      notificationCenter = NotificationCenter()
+      firstFrameReader = FakeFirstFrameReader()
+      clock = TestClock(now: becameActive)
+      launchHistory = FakeLaunchHistory(previous: nil)
+      eventQueue = FakeEventQueue()
+    }
+
+    override func tearDown() {
+      AppLaunchRuntime.reset()
+      spanExporter.reset()
+      super.tearDown()
+    }
+
+    func makeDependencies(
+      sample: LaunchPageSample? = nil,
+      pageIns: LaunchPageIns? = nil,
+      useFirstFrameReader: Bool = true,
+      processStartTime: @escaping @Sendable () -> Date? = { Date(timeIntervalSince1970: 1_000) },
+      isActivePrewarm: Bool = false,
+      earliestAppCodeTime: Date? = Date(timeIntervalSince1970: 1_001),
+      isAppActive: Bool = false,
+      isBackgroundLaunch: Bool = false,
+      configuration: AppLaunchInstrumentationConfiguration = .init()
+    ) -> MincoreLaunchInstrumentation.Dependencies {
+      let pageSampler = FakeLaunchPageSampler(sample: sample, pageIns: pageIns)
+      return MincoreLaunchInstrumentation.Dependencies(
+        notificationCenter: notificationCenter,
+        didBecomeActiveNotification: didBecomeActive,
+        willEnterForegroundNotification: willEnterForeground,
+        didEnterBackgroundNotification: didEnterBackground,
+        sceneWillConnectNotification: sceneWillConnect,
+        didFinishLaunchingNotification: didFinishLaunching,
+        firstFrameReader: useFirstFrameReader ? firstFrameReader : nil,
+        processStartTime: processStartTime,
+        earliestAppCodeTime: { earliestAppCodeTime },
+        isActivePrewarm: { isActivePrewarm },
+        isAppActive: { isAppActive },
+        isBackgroundLaunch: { isBackgroundLaunch },
+        configuration: configuration,
+        currentLaunchContext: { [launchContext] in launchContext },
+        launchHistory: launchHistory,
+        now: { [clock] in clock!.now },
+        afterCurrentEvent: { [eventQueue] in eventQueue!.enqueue($0) },
+        makeClassifier: { dependencies in
+          MincoreLaunchClassifier(
+            fallback: InferredLaunchClassifier(dependencies: dependencies),
+            pageSampler: pageSampler,
+            isActivePrewarm: dependencies.isActivePrewarm,
+            coldPageInRatio: dependencies.configuration.coldPageInRatio
+          )
+        },
+        makeRecorder: { MincoreAppStartRecorder(dependencies: $0, pageSampler: pageSampler) }
       )
     }
 
-    private func mincoreDependencies(sample: LaunchPageSample?,
-                                     pageIns: LaunchPageIns? = nil,
-                                     isActivePrewarm: Bool = false,
-                                     isBackgroundLaunch: Bool = false,
-                                     configuration: AppLaunchInstrumentationConfiguration = MincoreLaunchInstrumentation.defaultConfiguration) -> MincoreLaunchInstrumentation.Dependencies {
-      var dependencies = makeDependencies(isActivePrewarm: isActivePrewarm, isBackgroundLaunch: isBackgroundLaunch, configuration: configuration)
-      let pageSampler = FakeLaunchPageSampler(sample: sample, pageIns: pageIns)
-      dependencies.didFinishLaunchingNotification = didFinishLaunching
-      dependencies.makeClassifier = { dependencies in
-        MincoreLaunchClassifier(
-          fallback: InferredLaunchClassifier(dependencies: dependencies),
-          pageSampler: pageSampler,
-          isActivePrewarm: dependencies.isActivePrewarm,
-          coldPageInRatio: dependencies.configuration.coldPageInRatio
+    func install(sample: LaunchPageSample? = nil,
+                 pageIns: LaunchPageIns? = nil,
+                 useFirstFrameReader: Bool = true,
+                 processStartTime: @escaping @Sendable () -> Date? = { Date(timeIntervalSince1970: 1_000) },
+                 isActivePrewarm: Bool = false,
+                 earliestAppCodeTime: Date? = Date(timeIntervalSince1970: 1_001),
+                 isAppActive: Bool = false,
+                 isBackgroundLaunch: Bool = false,
+                 configuration: AppLaunchInstrumentationConfiguration = .init()) {
+      MincoreLaunchInstrumentation.install(
+        dependencies: makeDependencies(
+          sample: sample,
+          pageIns: pageIns,
+          useFirstFrameReader: useFirstFrameReader,
+          processStartTime: processStartTime,
+          isActivePrewarm: isActivePrewarm,
+          earliestAppCodeTime: earliestAppCodeTime,
+          isAppActive: isAppActive,
+          isBackgroundLaunch: isBackgroundLaunch,
+          configuration: configuration
         )
+      )
+    }
+
+    func post(_ name: Notification.Name, at time: Date? = nil) {
+      if let time {
+        clock.now = time
       }
-      dependencies.makeRecorder = { MincoreAppStartRecorder(dependencies: $0, pageSampler: pageSampler) }
-      return dependencies
+      notificationCenter.post(name: name, object: nil)
     }
 
-    private func launchSpan() -> SpanData? {
-      finishedSpans().first { $0.name == "app.start" }
-    }
-
-    private func span(_ name: String) -> SpanData? {
-      finishedSpans().first { $0.name == name }
-    }
-
-    private func activate() {
+    /// Installs and completes the cold start.
+    func launch() {
+      install()
       post(didBecomeActive)
       firstFrameReader.displayFrame(at: firstFrame)
     }
 
-    func testMincoreLaunchThatPagedInMostOfItsCodeIsCold() {
-      launchHistory = FakeLaunchHistory(previous: launchContext)
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 120))
-
-      activate()
-
-      let attributes = launchSpan()?.attributes
-      XCTAssertEqual(attributes?["app.start.type"], .string("cold"))
-      XCTAssertEqual(attributes?["app.start.sampled_pages.resident_at_end"], .int(128))
-      XCTAssertEqual(attributes?["app.start.sampled_pages.paged_in"], .int(120))
-      XCTAssertEqual(attributes?["app.start.sampled_page_in_ratio"], .double(0.9375))
+    func finishedSpans() -> [SpanData] {
+      tracerProvider.forceFlush()
+      return spanExporter.getFinishedSpanItems()
     }
 
-    func testMincoreLaunchThatFoundItsCodeInMemoryIsWarm() {
-      // No launch history, so inference would have said `cold`.
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
-
-      activate()
-
-      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("warm"))
-      XCTAssertEqual(launchSpan()?.attributes["app.start.sampled_page_in_ratio"], .double(0))
+    /// The `app.start` and `app.resume` spans, without their phases.
+    func rootSpans() -> [SpanData] {
+      finishedSpans().filter { $0.name == "app.start" || $0.name == "app.resume" }
     }
 
-    func testMincoreLaunchAtTheThresholdIsCold() {
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 64))
+    func testColdStartSpanCoversProcessStartToFirstFrame() {
+      install()
 
-      activate()
+      notificationCenter.post(name: didBecomeActive, object: nil)
+      firstFrameReader.displayFrame(at: firstFrame)
 
-      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("cold"))
+      let spans = rootSpans()
+      XCTAssertEqual(spans.count, 1)
+      let span = spans[0]
+      XCTAssertEqual(span.name, "app.start")
+      XCTAssertEqual(span.instrumentationScope.name, "io.opentelemetry.lifecycle")
+      XCTAssertEqual(span.startTime, processStart)
+      XCTAssertEqual(span.endTime, firstFrame)
+      XCTAssertEqual(startType(span), .string("cold"))
     }
 
-    func testMincoreLaunchJustBelowTheThresholdIsWarm() {
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 63))
+    func testInitInstalls() {
+      // The real dependencies record the launch in the test runner's standard defaults.
+      defer { UserDefaults.standard.removeObject(forKey: UserDefaultsLaunchHistory.key) }
+      XCTAssertFalse(MincoreLaunchInstrumentation.isInstalled)
 
-      activate()
+      _ = MincoreLaunchInstrumentation()
 
-      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("warm"))
+      XCTAssertTrue(MincoreLaunchInstrumentation.isInstalled)
     }
 
-    func testColdPageInRatioDefaultsToHalf() {
-      XCTAssertEqual(AppLaunchInstrumentationConfiguration().coldPageInRatio, 0.5)
-      XCTAssertEqual(MincoreLaunchInstrumentation.defaultConfiguration.coldPageInRatio, 0.5)
-    }
-
-    func testLaunchBelowAConfiguredThresholdIsWarm() {
-      installMincore(sample: LaunchPageSample(residentAtEnd: 100, pagedIn: 70),
-                     configuration: AppLaunchInstrumentationConfiguration(coldPageInRatio: 0.75))
-
-      activate()
-
-      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("warm"))
-      XCTAssertEqual(launchSpan()?.attributes["app.start.sampled_page_in_ratio"], .double(0.7))
-    }
-
-    func testLaunchAtAConfiguredThresholdIsCold() {
-      installMincore(sample: LaunchPageSample(residentAtEnd: 100, pagedIn: 25),
-                     configuration: AppLaunchInstrumentationConfiguration(coldPageInRatio: 0.25))
-
-      activate()
-
-      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("cold"))
-    }
-
-    func testPrewarmCacheStateUsesTheConfiguredThreshold() {
-      installMincore(sample: LaunchPageSample(residentAtEnd: 100, pagedIn: 70),
-                     isActivePrewarm: true,
-                     configuration: AppLaunchInstrumentationConfiguration(launchTypes: [.prewarmed], coldPageInRatio: 0.75))
-
-      activate()
-
-      XCTAssertEqual(launchSpan()?.attributes["app.start.prewarm.cache_state"], .string("warm"))
-    }
-
-    func testColdPageInRatioOutOfRangeUsesTheDefault() {
-      let messages = captureFeedback()
-
-      for ratio in [0, -1, 1.5, Double.nan] {
-        let configuration = AppLaunchInstrumentationConfiguration(coldPageInRatio: ratio)
-
-        XCTAssertEqual(MincoreLaunchInstrumentation.resolved(configuration).coldPageInRatio, 0.5)
+    func testIsNotInstalledUntilObservingActivations() {
+      final class Observation: @unchecked Sendable {
+        var isInstalled: Bool?
+      }
+      let observation = Observation()
+      var dependencies = makeDependencies()
+      dependencies.isAppActive = {
+        observation.isInstalled = MincoreLaunchInstrumentation.isInstalled
+        return false
       }
 
-      XCTAssertEqual(messages.values.filter { $0.contains("coldPageInRatio") }.count, 4)
+      MincoreLaunchInstrumentation.install(dependencies: dependencies)
+
+      XCTAssertEqual(observation.isInstalled, false)
+      XCTAssertTrue(MincoreLaunchInstrumentation.isInstalled)
     }
 
-    func testColdPageInRatioAtTheEndsOfItsRangeIsKept() {
-      for ratio in [0.01, 1] {
-        let configuration = AppLaunchInstrumentationConfiguration(coldPageInRatio: ratio)
+    func testFirstFrameIsReadOnlyAfterAppBecomesActive() {
+      install()
 
-        XCTAssertEqual(MincoreLaunchInstrumentation.resolved(configuration).coldPageInRatio, ratio)
-      }
+      XCTAssertEqual(firstFrameReader.readCount, 0)
+
+      notificationCenter.post(name: didBecomeActive, object: nil)
+
+      XCTAssertEqual(firstFrameReader.readCount, 1)
     }
 
-    func testPrewarmedMincoreLaunchIsPrewarmedAndKeepsItsSample() {
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 120), isActivePrewarm: true)
+    func testNoSpanUntilFirstFrameIsDisplayed() {
+      install()
 
-      activate()
+      notificationCenter.post(name: didBecomeActive, object: nil)
 
-      let attributes = launchSpan()?.attributes
-      XCTAssertEqual(attributes?["app.start.type"], .string("prewarmed"))
-      XCTAssertEqual(attributes?["app.start.determined_by"], .string("prewarm_flag"))
-      XCTAssertEqual(attributes?["app.start.sampled_pages.paged_in"], .int(120))
+      XCTAssertTrue(rootSpans().isEmpty)
     }
 
-    func testPrewarmedLaunchThatCantBeSampledIsStillPrewarmed() {
-      installMincore(sample: nil, isActivePrewarm: true)
+    func testColdStartEndsWhenAppBecomesActiveWithoutFirstFrameReader() {
+      install(useFirstFrameReader: false)
 
-      activate()
+      notificationCenter.post(name: didBecomeActive, object: nil)
 
-      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("prewarmed"))
-      XCTAssertNil(launchSpan()?.attributes["app.start.sampled_page_in_ratio"])
+      let spans = rootSpans()
+      XCTAssertEqual(spans.count, 1)
+      XCTAssertEqual(spans.first?.startTime, processStart)
+      XCTAssertEqual(spans.first?.endTime, becameActive)
     }
 
-    func testPrewarmedCanBeLeftOutOfLaunchTypes() {
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0),
-                      isActivePrewarm: true,
-                      configuration: AppLaunchInstrumentationConfiguration(launchTypes: [.cold, .warm, .resume]))
+    func testColdStartIsRecordedOnlyOnce() {
+      install()
 
-      activate()
+      notificationCenter.post(name: didBecomeActive, object: nil)
+      notificationCenter.post(name: didBecomeActive, object: nil)
+      install()
+      notificationCenter.post(name: didBecomeActive, object: nil)
+      firstFrameReader.displayFrame(at: firstFrame)
 
-      XCTAssertTrue(finishedSpans().isEmpty)
+      XCTAssertEqual(firstFrameReader.readCount, 1)
+      XCTAssertEqual(rootSpans().count, 1)
     }
 
-    func testLaunchThatCantBeSampledIsInferredWithoutSampleAttributes() {
-      launchHistory = FakeLaunchHistory(previous: launchContext)
-      let messages = captureFeedback()
-      OpenTelemetry.setDebugEnabled(true)
-      installMincore(sample: nil)
+    func testRepeatedInstallRecordsOneSpan() {
+      install()
+      install()
 
-      activate()
+      notificationCenter.post(name: didBecomeActive, object: nil)
+      firstFrameReader.displayFrame(at: firstFrame)
 
-      let attributes = launchSpan()?.attributes
-      XCTAssertEqual(attributes?["app.start.type"], .string("warm"))
-      XCTAssertNil(attributes?["app.start.sampled_pages.resident_at_end"])
-      XCTAssertNil(attributes?["app.start.sampled_pages.paged_in"])
-      XCTAssertNil(attributes?["app.start.sampled_page_in_ratio"])
-      XCTAssertTrue(messages.values.contains { $0.hasPrefix("[warn]") && $0.contains("inferred") })
+      XCTAssertEqual(rootSpans().count, 1)
     }
 
-    func testLaunchWithNoResidentPagesIsInferred() {
-      launchHistory = FakeLaunchHistory(previous: launchContext)
-      installMincore(sample: LaunchPageSample(residentAtEnd: 0, pagedIn: 0))
+    func testNoSpanBeforeInstall() {
+      notificationCenter.post(name: didBecomeActive, object: nil)
+      firstFrameReader.displayFrame(at: firstFrame)
 
-      activate()
-
-      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("warm"))
-      XCTAssertNil(launchSpan()?.attributes["app.start.sampled_page_in_ratio"])
+      XCTAssertFalse(MincoreLaunchInstrumentation.isInstalled)
+      XCTAssertTrue(rootSpans().isEmpty)
     }
 
-    func testLaunchWithTooFewResidentPagesIsInferred() {
-      // No launch history, so inference says `cold`, where the ratio of 0 would have said `warm`.
-      installMincore(sample: LaunchPageSample(residentAtEnd: 3, pagedIn: 0))
+    func testNoSpanAfterReset() {
+      install()
+      AppLaunchRuntime.reset()
 
-      activate()
+      notificationCenter.post(name: didBecomeActive, object: nil)
+      firstFrameReader.displayFrame(at: firstFrame)
 
-      let attributes = launchSpan()?.attributes
-      XCTAssertEqual(attributes?["app.start.type"], .string("cold"))
-      XCTAssertEqual(attributes?["app.start.determined_by"], .string("launch_history"))
-      XCTAssertNil(attributes?["app.start.sampled_page_in_ratio"])
-      XCTAssertNil(attributes?["app.start.sampled_pages.total"])
+      XCTAssertFalse(MincoreLaunchInstrumentation.isInstalled)
+      XCTAssertTrue(rootSpans().isEmpty)
     }
 
-    func testLaunchWithTheMinimumResidentPagesIsMeasured() {
-      launchHistory = FakeLaunchHistory(previous: launchContext)
-      installMincore(sample: LaunchPageSample(residentAtEnd: MincoreLaunchClassifier.minimumResidentPages, pagedIn: 16))
+    func testNoSpanWhenProcessStartTimeIsUnavailable() {
+      install(processStartTime: { nil })
 
-      activate()
+      notificationCenter.post(name: didBecomeActive, object: nil)
+      firstFrameReader.displayFrame(at: firstFrame)
 
-      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("cold"))
-      XCTAssertEqual(launchSpan()?.attributes["app.start.determined_by"], .string("page_sampling"))
+      XCTAssertTrue(rootSpans().isEmpty)
     }
 
-    func testAppSmallerThanTheMinimumIsMeasured() {
-      launchHistory = FakeLaunchHistory(previous: launchContext)
-      installMincore(sample: LaunchPageSample(residentAtEnd: 8, pagedIn: 8, sampled: 8))
+    func testOtherNotificationsAreIgnored() {
+      install()
 
-      activate()
+      notificationCenter.post(name: Notification.Name("unrelated"), object: nil)
 
-      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("cold"))
-      XCTAssertEqual(launchSpan()?.attributes["app.start.determined_by"], .string("page_sampling"))
-      XCTAssertEqual(launchSpan()?.attributes["app.start.sampled_pages.total"], .int(8))
+      XCTAssertEqual(firstFrameReader.readCount, 0)
+      XCTAssertTrue(rootSpans().isEmpty)
     }
 
-    func testPrewarmedLaunchWithTooFewResidentPagesIsStillPrewarmed() {
-      installMincore(sample: LaunchPageSample(residentAtEnd: 3, pagedIn: 0), isActivePrewarm: true)
+    func testActivePrewarmColdStartStartsWhenAppCodeFirstRan() {
+      install(isActivePrewarm: true)
 
-      activate()
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
 
-      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("prewarmed"))
-      XCTAssertNil(launchSpan()?.attributes["app.start.prewarm.cache_state"])
+      let spans = rootSpans()
+      XCTAssertEqual(spans.count, 1)
+      XCTAssertEqual(spans.first?.startTime, appCodeStart)
+      XCTAssertEqual(spans.first?.endTime, firstFrame)
+      XCTAssertEqual(startType(spans.first), .string("prewarmed"))
     }
 
-    func testLaunchRecordsHowManyPagesWereSampled() {
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0, sampled: 200))
+    func testColdStartWithoutActivePrewarmIsNotPrewarmed() {
+      install(processStartTime: { Date(timeIntervalSince1970: 1_002.6 - 29) })
 
-      activate()
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
 
-      XCTAssertEqual(launchSpan()?.attributes["app.start.sampled_pages.total"], .int(200))
+      let spans = rootSpans()
+      XCTAssertEqual(spans.count, 1)
+      XCTAssertEqual(spans.first?.startTime, Date(timeIntervalSince1970: 1_002.6 - 29))
+      XCTAssertNotEqual(startType(spans.first), .string("prewarmed"))
     }
 
-    func testConfigurationThatDidntChooseLaunchTypesRecordsPrewarmed() {
-      let configuration = MincoreLaunchInstrumentation.resolved(AppLaunchInstrumentationConfiguration(maxLaunchDuration: 30))
-
-      XCTAssertTrue(configuration.launchTypes.contains(.prewarmed))
-      XCTAssertEqual(configuration.maxLaunchDuration, 30)
+    func testDefaultMaxLaunchDurationIs60Seconds() {
+      XCTAssertEqual(AppLaunchInstrumentationConfiguration().maxLaunchDuration, 60)
+      XCTAssertEqual(makeDependencies().configuration.maxLaunchDuration, 60)
     }
 
-    func testConfigurationThatChoseLaunchTypesKeepsThem() {
-      let chosen = AppLaunchInstrumentationConfiguration(launchTypes: [.cold, .warm, .resume])
-      var changed = AppLaunchInstrumentationConfiguration()
-      changed.launchTypes = [.cold]
+    func testLongLaunchWithoutActivePrewarmIsNotPrewarmed() {
+      install(processStartTime: { Date(timeIntervalSince1970: 1_002.6 - 59) })
 
-      XCTAssertEqual(MincoreLaunchInstrumentation.resolved(chosen).launchTypes, [.cold, .warm, .resume])
-      XCTAssertEqual(MincoreLaunchInstrumentation.resolved(changed).launchTypes, [.cold])
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      let span = rootSpans().first
+      XCTAssertEqual(span?.startTime, Date(timeIntervalSince1970: 1_002.6 - 59))
+      XCTAssertNotEqual(startType(span), .string("prewarmed"))
     }
 
-    func testInferredLibraryDefaultLeavesOutPrewarmed() {
-      XCTAssertFalse(AppLaunchInstrumentationConfiguration().launchTypes.contains(.prewarmed))
+    func testLaunchExactlyMaxLaunchDurationIsRecorded() {
+      install(useFirstFrameReader: false,
+              configuration: AppLaunchInstrumentationConfiguration(maxLaunchDuration: 2.5))
+
+      post(didBecomeActive)
+
+      XCTAssertEqual(rootSpans().first?.endTime, processStart.addingTimeInterval(2.5))
     }
 
-    func testMincoreInstallStillUpdatesLaunchHistory() {
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
+    func testLaunchLongerThanMaxLaunchDurationFromProcessStartIsDropped() {
+      install(processStartTime: { Date(timeIntervalSince1970: 1_002.6 - 61) })
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertTrue(rootSpans().isEmpty)
+    }
+
+    func testPrewarmedLaunchWithinMaxLaunchDurationFromAppCodeIsRecorded() {
+      install(processStartTime: { Date(timeIntervalSince1970: 1_002.6 - 3_600) },
+              isActivePrewarm: true,
+              earliestAppCodeTime: Date(timeIntervalSince1970: 1_002.6 - 59))
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      let span = rootSpans().first
+      XCTAssertEqual(span?.startTime, Date(timeIntervalSince1970: 1_002.6 - 59))
+      XCTAssertEqual(startType(span), .string("prewarmed"))
+    }
+
+    func testMaxLaunchDurationIsConfigurable() {
+      install(configuration: AppLaunchInstrumentationConfiguration(maxLaunchDuration: 2))
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertTrue(rootSpans().isEmpty)
+    }
+
+    func testExcludedLaunchTypeIsNotRecorded() {
+      install(configuration: AppLaunchInstrumentationConfiguration(launchTypes: [.warm, .resume]))
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertEqual(firstFrameReader.readCount, 0)
+      XCTAssertTrue(rootSpans().isEmpty)
+    }
+
+    func testExcludedLaunchStillUpdatesLaunchHistory() {
+      install(configuration: AppLaunchInstrumentationConfiguration(launchTypes: [.resume]))
+
+      post(didBecomeActive)
 
       XCTAssertEqual(launchHistory.exchangeCount, 1)
     }
 
-    func testResumeHasNoSampleAttributes() {
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
-      activate()
+    func testExcludedWarmLaunchIsNotRecorded() {
+      launchHistory = FakeLaunchHistory(previous: launchContext)
+      install(configuration: AppLaunchInstrumentationConfiguration(launchTypes: [.cold, .resume]))
 
-      post(didEnterBackground)
-      post(willEnterForeground)
       post(didBecomeActive)
-      firstFrameReader.displayFrame(at: firstFrame.addingTimeInterval(10))
-
-      let resume = finishedSpans().last
-      XCTAssertEqual(resume?.name, "app.resume")
-      XCTAssertEqual(resume?.attributes["app.resume.type"], .string("hot"))
-      XCTAssertNil(resume?.attributes["app.start.sampled_page_in_ratio"])
-    }
-
-    func testLaunchIsARootSpanWithAChildSpanPerPhase() throws {
-      let didFinish = Date(timeIntervalSince1970: 1_002.1)
-      let sceneConnect = Date(timeIntervalSince1970: 1_002.2)
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 120))
-      post(didFinishLaunching, at: didFinish)
-      post(sceneWillConnect, at: sceneConnect)
-
-      post(didBecomeActive, at: becameActive)
       firstFrameReader.displayFrame(at: firstFrame)
 
-      let root = try XCTUnwrap(launchSpan())
-      XCTAssertEqual(root.kind, .internal)
-      XCTAssertNil(root.parentSpanId)
-      XCTAssertEqual(root.instrumentationScope.name, "io.opentelemetry.lifecycle")
-      XCTAssertEqual(root.instrumentationScope.version, "2.0.0")
-      XCTAssertEqual(root.startTime, processStart)
-      XCTAssertEqual(root.endTime, firstFrame)
-      XCTAssertEqual(root.attributes["app.start.outcome"], .string("completed"))
-      XCTAssertEqual(root.attributes["app.start.determined_by"], .string("page_sampling"))
-      XCTAssertNil(root.attributes["start.type"])
-
-      let preInit = try XCTUnwrap(span("app.start.pre_init"))
-      let appInit = try XCTUnwrap(span("app.start.app_init"))
-      let render = try XCTUnwrap(span("app.start.render"))
-      let sceneSetup = try XCTUnwrap(span("app.start.scene_setup"))
-      XCTAssertEqual(preInit.parentSpanId, root.spanId)
-      XCTAssertEqual(appInit.parentSpanId, root.spanId)
-      XCTAssertEqual(render.parentSpanId, root.spanId)
-      XCTAssertEqual(sceneSetup.parentSpanId, render.spanId)
-      XCTAssertEqual(preInit.startTime, processStart)
-      XCTAssertEqual(preInit.endTime, appCodeStart)
-      XCTAssertEqual(appInit.startTime, appCodeStart)
-      XCTAssertEqual(appInit.endTime, didFinish)
-      XCTAssertEqual(render.startTime, didFinish)
-      XCTAssertEqual(render.endTime, firstFrame)
-      XCTAssertEqual(sceneSetup.startTime, sceneConnect)
-      XCTAssertEqual(sceneSetup.endTime, firstFrame)
-      XCTAssertTrue(appInit.attributes.isEmpty, "child spans have no attributes")
-
-      XCTAssertEqual(root.attributes["app.start.pre_init.duration"], .double(1))
-      XCTAssertEqual(root.attributes["app.start.app_init.duration"], .double(didFinish.timeIntervalSince(appCodeStart)))
-      XCTAssertEqual(root.attributes["app.start.render_delay.duration"], .double(firstFrame.timeIntervalSince(didFinish)))
+      XCTAssertTrue(rootSpans().isEmpty)
     }
 
-    func testPrewarmedLaunchStartsAtActivation() throws {
-      let didFinish = Date(timeIntervalSince1970: 1_002.1)
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 120), isActivePrewarm: true)
-      post(didFinishLaunching, at: didFinish)
+    func testResumeIsRecordedWhenLaunchTypeIsExcluded() {
+      install(configuration: AppLaunchInstrumentationConfiguration(launchTypes: [.resume]))
 
-      post(didBecomeActive, at: becameActive)
-      firstFrameReader.displayFrame(at: firstFrame)
-
-      let root = try XCTUnwrap(launchSpan())
-      XCTAssertEqual(root.startTime, appCodeStart)
-      XCTAssertEqual(root.endTime, firstFrame)
-      XCTAssertEqual(root.attributes["app.start.pre_activation.duration"], .double(1))
-      XCTAssertEqual(root.attributes["app.start.prewarm.cache_state"], .string("cold"))
-      XCTAssertNil(span("app.start.pre_init"), "a phase before the span starts isn't recorded")
-      XCTAssertNil(root.attributes["app.start.pre_init.duration"])
-      XCTAssertEqual(span("app.start.app_init")?.startTime, appCodeStart)
-    }
-
-    func testPrewarmedLaunchThatFoundItsCodeInMemoryHasAWarmCache() {
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0), isActivePrewarm: true)
-
-      activate()
-
-      XCTAssertEqual(launchSpan()?.attributes["app.start.prewarm.cache_state"], .string("warm"))
-    }
-
-    func testPhaseMissingATimestampIsNotRecorded() {
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
-
-      activate()
-
-      XCTAssertEqual(Set(finishedSpans().map(\.name)), ["app.start", "app.start.pre_init"])
-      XCTAssertNil(launchSpan()?.attributes["app.start.app_init.duration"])
-      XCTAssertNil(launchSpan()?.attributes["app.start.render_delay.duration"])
-    }
-
-    func testInferredLaunchSaysItWasDeterminedByLaunchHistory() {
-      installMincore(sample: nil)
-
-      activate()
-
-      XCTAssertEqual(launchSpan()?.attributes["app.start.determined_by"], .string("launch_history"))
-    }
-
-    func testLaunchRecordsPageIns() {
-      installMincore(sample: nil, pageIns: LaunchPageIns(preInitializer: 1_180, postInitializer: 96))
-
-      activate()
-
-      XCTAssertEqual(launchSpan()?.attributes["app.start.page_ins.pre_initializer"], .int(1_180))
-      XCTAssertEqual(launchSpan()?.attributes["app.start.page_ins.post_initializer"], .int(96))
-    }
-
-    func testLaunchAbandonedBeforeItsFirstFrameEndsWhenTheAppLeft() throws {
-      let left = Date(timeIntervalSince1970: 1_002.55)
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
-      post(sceneWillConnect, at: Date(timeIntervalSince1970: 1_002.2))
-      post(didBecomeActive, at: becameActive)
-
-      post(didEnterBackground, at: left)
-      firstFrameReader.displayFrame(at: firstFrame.addingTimeInterval(60))
-
-      let root = try XCTUnwrap(launchSpan())
-      XCTAssertEqual(root.attributes["app.start.outcome"], .string("abandoned"))
-      XCTAssertEqual(root.endTime, left)
-      XCTAssertEqual(finishedSpans().filter { $0.name == "app.start" }.count, 1)
-    }
-
-    func testCompletedLaunchIsNotAbandonedByLeavingLater() {
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
-      activate()
-
+      post(didBecomeActive)
       post(didEnterBackground)
-
-      XCTAssertEqual(finishedSpans().filter { $0.name == "app.start" }.count, 1)
-      XCTAssertEqual(launchSpan()?.attributes["app.start.outcome"], .string("completed"))
-    }
-
-    func testHotResumeReportsItsTimeInTheBackground() throws {
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
-      activate()
-      let left = firstFrame.addingTimeInterval(10)
-      let back = firstFrame.addingTimeInterval(14)
-      let end = firstFrame.addingTimeInterval(15)
-
-      post(didEnterBackground, at: left)
-      post(willEnterForeground, at: back)
-      post(didBecomeActive, at: back)
-      firstFrameReader.displayFrame(at: end)
-
-      let resume = try XCTUnwrap(span("app.resume"))
-      XCTAssertNil(resume.parentSpanId)
-      XCTAssertEqual(resume.startTime, back)
-      XCTAssertEqual(resume.endTime, end)
-      XCTAssertEqual(resume.attributes["app.resume.type"], .string("hot"))
-      XCTAssertEqual(resume.attributes["app.resume.outcome"], .string("completed"))
-      XCTAssertEqual(resume.attributes["app.resume.background.duration"], .double(4))
-      XCTAssertNil(span("app.resume.scene_setup"))
-    }
-
-    func testSceneReconnectStartsTheResumeWhenTheSceneConnected() throws {
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
-      activate()
-      let connect = firstFrame.addingTimeInterval(13)
-      let foreground = firstFrame.addingTimeInterval(14)
-      let end = firstFrame.addingTimeInterval(15)
-
-      post(didEnterBackground, at: firstFrame.addingTimeInterval(10))
-      post(sceneWillConnect, at: connect)
-      post(willEnterForeground, at: foreground)
-      post(didBecomeActive, at: foreground)
-      firstFrameReader.displayFrame(at: end)
-
-      let resume = try XCTUnwrap(span("app.resume"))
-      let sceneSetup = try XCTUnwrap(span("app.resume.scene_setup"))
-      XCTAssertEqual(resume.startTime, connect)
-      XCTAssertEqual(resume.attributes["app.resume.type"], .string("scene_reconnect"))
-      XCTAssertEqual(sceneSetup.parentSpanId, resume.spanId)
-      XCTAssertEqual(sceneSetup.startTime, connect, "a child span must not start before its parent")
-      XCTAssertEqual(sceneSetup.endTime, end)
-    }
-
-    func testFirstForegroundAfterABackgroundLaunchIsBackgroundLaunched() {
-      installMincore(sample: nil, isBackgroundLaunch: true)
-
       post(willEnterForeground)
       post(didBecomeActive)
       firstFrameReader.displayFrame(at: firstFrame)
 
-      XCTAssertEqual(span("app.resume")?.attributes["app.resume.type"], .string("background_launched"))
-      XCTAssertNil(span("app.resume")?.attributes["app.resume.background.duration"])
-      XCTAssertNil(launchSpan())
+      XCTAssertEqual(rootSpans().map { startType($0) }, [.string("resume")])
     }
 
-    func testAbandonedResumeIsRecorded() throws {
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
-      activate()
-      let back = firstFrame.addingTimeInterval(14)
-      let left = firstFrame.addingTimeInterval(14.1)
+    func testExcludedResumeIsNotRecorded() {
+      install(configuration: AppLaunchInstrumentationConfiguration(launchTypes: [.cold, .warm]))
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
 
-      post(didEnterBackground)
-      post(willEnterForeground, at: back)
-      post(didBecomeActive, at: back)
-      post(didEnterBackground, at: left)
-
-      let resume = try XCTUnwrap(span("app.resume"))
-      XCTAssertEqual(resume.attributes["app.resume.outcome"], .string("abandoned"))
-      XCTAssertEqual(resume.endTime, left)
-    }
-
-    func testOnlyCompletedStartsRecordADurationMetric() throws {
-      let exporter = CapturingMetricExporter()
-      let meterProvider = MeterProviderSdk.builder()
-        .registerMetricReader(reader: PeriodicMetricReaderBuilder(exporter: exporter).build())
-        .registerView(selector: InstrumentSelectorBuilder().build(), view: View.builder().build())
-        .build()
-      OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
-      defer { OpenTelemetry.registerMeterProvider(meterProvider: DefaultMeterProvider.instance) }
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
-
-      activate()
       post(didEnterBackground)
       post(willEnterForeground)
       post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertEqual(firstFrameReader.readCount, 1)
+      XCTAssertEqual(rootSpans().map { startType($0) }, [.string("cold")])
+    }
+
+    func testColdLaunchSceneAndForegroundNotificationsAreNotSeparateStarts() {
+      install()
+
+      post(sceneWillConnect)
+      post(willEnterForeground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      let spans = rootSpans()
+      XCTAssertEqual(spans.count, 1)
+      XCTAssertEqual(startType(spans.first), .string("cold"))
+    }
+
+    func testResumeRunsFromEnteringForegroundToFirstFrame() {
+      launch()
+      let enteredForeground = Date(timeIntervalSince1970: 2_000)
+      let resumedFrame = Date(timeIntervalSince1970: 2_000.3)
+
       post(didEnterBackground)
-      _ = meterProvider.forceFlush()
+      post(willEnterForeground, at: enteredForeground)
+      post(didBecomeActive, at: Date(timeIntervalSince1970: 2_000.2))
+      firstFrameReader.displayFrame(at: resumedFrame)
 
-      let names = Set(exporter.metrics.map(\.name))
-      XCTAssertTrue(names.contains("app.start.duration"))
-      XCTAssertFalse(names.contains("app.resume.duration"), "an abandoned resume has no metric value")
+      let spans = rootSpans()
+      XCTAssertEqual(spans.count, 2)
+      let span = spans[1]
+      XCTAssertEqual(span.name, "app.resume")
+      XCTAssertEqual(span.instrumentationScope.name, "io.opentelemetry.lifecycle")
+      XCTAssertEqual(span.startTime, enteredForeground)
+      XCTAssertEqual(span.endTime, resumedFrame)
+      XCTAssertEqual(startType(span), .string("resume"))
     }
 
-    func testDurationMetricHasTheSchemaVersion() throws {
-      let exporter = CapturingMetricExporter()
-      let meterProvider = MeterProviderSdk.builder()
-        .registerMetricReader(reader: PeriodicMetricReaderBuilder(exporter: exporter).build())
-        .registerView(selector: InstrumentSelectorBuilder().build(), view: View.builder().build())
-        .build()
-      OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
-      defer { OpenTelemetry.registerMeterProvider(meterProvider: DefaultMeterProvider.instance) }
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
+    func testResumeInPrewarmedProcessIsNotPrewarmed() {
+      install(isActivePrewarm: true)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+      let enteredForeground = Date(timeIntervalSince1970: 2_000)
+      let resumedFrame = Date(timeIntervalSince1970: 2_000.3)
 
-      activate()
-      _ = meterProvider.forceFlush()
+      post(didEnterBackground)
+      post(willEnterForeground, at: enteredForeground)
+      post(didBecomeActive, at: Date(timeIntervalSince1970: 2_000.2))
+      firstFrameReader.displayFrame(at: resumedFrame)
 
-      let metric = try XCTUnwrap(exporter.metrics.first { $0.name == "app.start.duration" })
-      XCTAssertEqual(metric.instrumentationScopeInfo.name, "io.opentelemetry.lifecycle")
-      XCTAssertEqual(metric.instrumentationScopeInfo.version, "2.0.0")
+      let spans = rootSpans()
+      XCTAssertEqual(spans.map { startType($0) }, [.string("prewarmed"), .string("resume")])
+      let span = spans[1]
+      XCTAssertEqual(span.startTime, enteredForeground)
+      XCTAssertEqual(span.endTime, resumedFrame)
     }
 
-    func testSecondLibraryIsIgnoredAndReported() {
+    func testEveryReturnToForegroundIsAResume() {
+      launch()
+
+      for _ in 0 ..< 2 {
+        post(didEnterBackground)
+        post(willEnterForeground)
+        post(didBecomeActive)
+        firstFrameReader.displayFrame(at: firstFrame)
+      }
+
+      XCTAssertEqual(rootSpans().map { startType($0) }, [.string("cold"), .string("resume"), .string("resume")])
+    }
+
+    func testResumeWithoutFirstFrameReaderEndsWhenAppBecomesActive() {
+      install(useFirstFrameReader: false)
+      post(didBecomeActive)
+      let becameActiveAgain = Date(timeIntervalSince1970: 2_000.2)
+
+      post(didEnterBackground)
+      post(willEnterForeground, at: Date(timeIntervalSince1970: 2_000))
+      post(didBecomeActive, at: becameActiveAgain)
+
+      let spans = rootSpans()
+      XCTAssertEqual(spans.count, 2)
+      XCTAssertEqual(spans.last?.endTime, becameActiveAgain)
+    }
+
+    func testRegainingFocusIsNotAStart() {
+      launch()
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertEqual(firstFrameReader.readCount, 1)
+      XCTAssertEqual(rootSpans().count, 1)
+    }
+
+    func testReturningToBackgroundBeforeBecomingActiveAbandonsTheStart() {
+      launch()
+
+      post(didEnterBackground)
+      post(willEnterForeground)
+      post(didEnterBackground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertEqual(rootSpans().count, 1)
+    }
+
+    func testResumeWithRecreatedSceneRunsFromSceneConnectingToFirstFrame() {
+      launch()
+      let sceneConnected = Date(timeIntervalSince1970: 2_000)
+      let resumedFrame = Date(timeIntervalSince1970: 2_000.5)
+
+      post(didEnterBackground)
+      post(sceneWillConnect, at: sceneConnected)
+      post(willEnterForeground, at: Date(timeIntervalSince1970: 2_000.1))
+      eventQueue.finishCurrentEvent()
+      post(didBecomeActive, at: Date(timeIntervalSince1970: 2_000.4))
+      firstFrameReader.displayFrame(at: resumedFrame)
+
+      let spans = rootSpans()
+      XCTAssertEqual(spans.count, 2)
+      let span = spans[1]
+      XCTAssertEqual(span.startTime, sceneConnected)
+      XCTAssertEqual(span.endTime, resumedFrame)
+      XCTAssertEqual(startType(span), .string("resume"))
+    }
+
+    func testSceneConnectingInTheForegroundIsNotAStart() {
+      launch()
+
+      post(sceneWillConnect)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertEqual(rootSpans().count, 1)
+    }
+
+    func testNoResumeAfterReset() {
+      launch()
+      AppLaunchRuntime.reset()
+
+      post(didEnterBackground)
+      post(sceneWillConnect)
+      post(willEnterForeground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertEqual(firstFrameReader.readCount, 1)
+      XCTAssertEqual(rootSpans().count, 1)
+    }
+
+    func testFirstLaunchIsCold() {
+      launch()
+
+      XCTAssertEqual(startType(rootSpans().first), .string("cold"))
+      XCTAssertEqual(launchHistory.exchangeCount, 1)
+    }
+
+    func testLaunchInSameStateAsPreviousLaunchIsWarm() {
+      launchHistory = FakeLaunchHistory(previous: launchContext)
+
+      launch()
+
+      let span = rootSpans().first
+      XCTAssertEqual(startType(span), .string("warm"))
+      XCTAssertEqual(span?.startTime, processStart)
+      XCTAssertEqual(span?.endTime, firstFrame)
+    }
+
+    func testLaunchAfterRebootIsCold() {
+      var previous = launchContext
+      previous.bootTime -= 3_600
+      launchHistory = FakeLaunchHistory(previous: previous)
+
+      launch()
+
+      XCTAssertEqual(startType(rootSpans().first), .string("cold"))
+    }
+
+    func testBootTimeAdjustedWithinToleranceIsSameState() {
+      var previous = launchContext
+      previous.bootTime -= 0.5
+      launchHistory = FakeLaunchHistory(previous: previous)
+
+      launch()
+
+      XCTAssertEqual(startType(rootSpans().first), .string("warm"))
+    }
+
+    func testLaunchAfterAppVersionUpdateIsCold() {
+      var previous = launchContext
+      previous.appVersion = "0.9"
+      launchHistory = FakeLaunchHistory(previous: previous)
+
+      launch()
+
+      XCTAssertEqual(startType(rootSpans().first), .string("cold"))
+    }
+
+    func testLaunchAfterAppBuildUpdateIsCold() {
+      var previous = launchContext
+      previous.appBuild = "0"
+      launchHistory = FakeLaunchHistory(previous: previous)
+
+      launch()
+
+      XCTAssertEqual(startType(rootSpans().first), .string("cold"))
+    }
+
+    func testLaunchIsColdWhenLaunchContextIsUnavailable() {
+      launchHistory = FakeLaunchHistory(previous: launchContext)
+      MincoreLaunchInstrumentation.install(dependencies: {
+        var dependencies = makeDependencies()
+        dependencies.currentLaunchContext = { nil }
+        return dependencies
+      }())
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertEqual(startType(rootSpans().first), .string("cold"))
+      XCTAssertEqual(launchHistory.exchangeCount, 0)
+    }
+
+    func testWarmLaunchCanBePrewarmed() {
+      launchHistory = FakeLaunchHistory(previous: launchContext)
+      install(isActivePrewarm: true)
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      let span = rootSpans().first
+      XCTAssertEqual(startType(span), .string("prewarmed"))
+      XCTAssertEqual(span?.startTime, appCodeStart)
+    }
+
+    func testRepeatedInstallRecordsLaunchHistoryOnce() {
+      install()
+      install()
+
+      XCTAssertEqual(launchHistory.exchangeCount, 1)
+    }
+
+    func testUserDefaultsLaunchHistoryReturnsPreviousLaunch() throws {
+      let suiteName = "MincoreLaunchInstrumentationTests.\(UUID().uuidString)"
+      defer { UserDefaults().removePersistentDomain(forName: suiteName) }
+      let history = UserDefaultsLaunchHistory(suiteName: suiteName)
+      var next = launchContext
+      next.appBuild = "2"
+
+      XCTAssertNil(history.exchange(launchContext))
+      XCTAssertEqual(history.exchange(next), launchContext)
+      XCTAssertEqual(history.exchange(next), next)
+    }
+
+    func testReadCurrentLaunchContextUsesBootTime() throws {
+      let context = try XCTUnwrap(readCurrentLaunchContext())
+      let bootTime = try XCTUnwrap(readBootTime())
+
+      XCTAssertEqual(context.bootTime, bootTime.timeIntervalSince1970, accuracy: LaunchContext.bootTimeTolerance)
+    }
+
+    func testReadBootSessionIDIsStable() throws {
+      let id = try XCTUnwrap(readBootSessionID())
+
+      XCTAssertFalse(id.isEmpty)
+      XCTAssertEqual(readBootSessionID(), id)
+    }
+
+    func testReadBootTimeIsBeforeProcessStart() throws {
+      let bootTime = try XCTUnwrap(readBootTime())
+      let processStart = try XCTUnwrap(readProcessStartTime())
+
+      XCTAssertLessThanOrEqual(bootTime, processStart)
+    }
+
+    func testSecondInstallWithDifferentConfigurationIsReported() {
       let messages = captureFeedback()
       install()
 
-      installMincore(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 120),
-                      configuration: AppLaunchInstrumentationConfiguration())
-      activate()
+      install(configuration: AppLaunchInstrumentationConfiguration(launchTypes: [.resume]))
 
       XCTAssertEqual(messages.values.count, 1)
-      XCTAssertTrue(messages.values.first?.contains("different library") ?? false)
-      XCTAssertEqual(finishedSpans().count, 1, "a start must only be recorded once")
-      XCTAssertNil(finishedSpans().first?.attributes["start.sampled_page_in_ratio"])
+      XCTAssertTrue(messages.values.first?.contains("already installed") ?? false)
     }
 
-    func testPageInRatio() {
-      XCTAssertEqual(LaunchPageSample(residentAtEnd: 4, pagedIn: 1).pageInRatio, 0.25)
-      XCTAssertNil(LaunchPageSample(residentAtEnd: 0, pagedIn: 0).pageInRatio)
+    func testFeedbackHandlerCanCallInstall() {
+      let messages = captureFeedback()
+      install()
+      let dependencies = makeDependencies()
+      OpenTelemetry.registerFeedbackHandler { message in
+        messages.append(message)
+        MincoreLaunchInstrumentation.install(dependencies: dependencies)
+      }
+      let finished = expectation(description: "install returned")
+      let conflicting = makeDependencies(configuration: AppLaunchInstrumentationConfiguration(launchTypes: [.resume]))
+
+      DispatchQueue.global().async {
+        MincoreLaunchInstrumentation.install(dependencies: conflicting)
+        finished.fulfill()
+      }
+
+      wait(for: [finished], timeout: 5)
+      XCTAssertEqual(messages.values.count, 1)
     }
 
-    // The test host decides what can be sampled: plain `xctest` is a single page, the header the
-    // sampler skips, so a sample may not exist here. The `app-start-mincore` integration launch
-    // covers the sampler in a real app.
-    func testKernelSamplerReadsPageIns() throws {
-      let pageIns = try XCTUnwrap(KernelLaunchPageSampler().readPageIns())
+    func testReinstallOfSameBuildIsCold() {
+      var previous = launchContext
+      previous.installPath = "/containers/old/App.app"
+      launchContext.installPath = "/containers/new/App.app"
+      launchHistory = FakeLaunchHistory(previous: previous)
+      install()
 
-      XCTAssertGreaterThanOrEqual(pageIns.preInitializer, 0)
-      XCTAssertGreaterThanOrEqual(pageIns.postInitializer, 0)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertEqual(startType(rootSpans().first), .string("cold"))
     }
 
-    func testKernelSamplerSampleIsConsistent() {
-      guard let sample = KernelLaunchPageSampler().readSample() else { return }
+    func testSameInstallPathIsWarm() {
+      launchContext.installPath = "/containers/same/App.app"
+      launchHistory = FakeLaunchHistory(previous: launchContext)
+      install()
 
-      XCTAssertLessThanOrEqual(sample.residentAtEnd, 256)
-      XCTAssertLessThanOrEqual(sample.pagedIn, sample.residentAtEnd)
-      XCTAssertLessThanOrEqual(sample.residentAtEnd, sample.sampled)
-      XCTAssertLessThanOrEqual(sample.sampled, 256)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertEqual(startType(rootSpans().first), .string("warm"))
+    }
+
+    func testRecordWithoutInstallPathIsStillWarm() {
+      launchHistory = FakeLaunchHistory(previous: launchContext)
+      launchContext.installPath = "/containers/new/App.app"
+      install()
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertEqual(startType(rootSpans().first), .string("warm"))
+    }
+
+    func testDebugModeLogsEnteringBackgroundBeforeFirstActivation() {
+      let messages = captureFeedback()
+      OpenTelemetry.setDebugEnabled(true)
+      install()
+
+      post(didEnterBackground)
+      post(didEnterBackground)
+
+      XCTAssertEqual(messages.values.filter { $0.contains("no launch recorded") }.count, 1)
+    }
+
+    func testDebugModeLogsDurationsInWholeMilliseconds() {
+      let messages = captureFeedback()
+      OpenTelemetry.setDebugEnabled(true)
+      install()
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertTrue(messages.values.last?.contains("launch of 2600 ms") ?? false, "\(messages.values)")
+    }
+
+    func testNothingButErrorsIsLoggedWithoutDebugMode() {
+      let messages = captureFeedback()
+      install()
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertEqual(rootSpans().count, 1)
+      XCTAssertTrue(messages.values.isEmpty)
+    }
+
+    func testDebugModeLogsInstallAndRecordedStart() {
+      let messages = captureFeedback()
+      OpenTelemetry.setDebugEnabled(true)
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 120))
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertEqual(messages.values.count, 2)
+      XCTAssertTrue(messages.values.first?.hasPrefix("[info] AppLaunchInstrumentation installed") ?? false)
+      XCTAssertTrue(messages.values.last?.hasPrefix("[debug] MincoreLaunchInstrumentation: recorded a cold launch") ?? false)
+    }
+
+    func testDebugModeLogsDroppedLaunchAsWarning() {
+      let messages = captureFeedback()
+      OpenTelemetry.setDebugEnabled(true)
+      install(processStartTime: { nil })
+
+      post(didBecomeActive)
+
+      XCTAssertTrue(messages.values.last?.hasPrefix("[warn] MincoreLaunchInstrumentation: dropped a cold launch") ?? false)
+    }
+
+    func testFeedbackHandlerCanCallInstallDuringDebugLogging() {
+      let messages = captureFeedback()
+      OpenTelemetry.setDebugEnabled(true)
+      let dependencies = makeDependencies(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 120))
+      OpenTelemetry.registerFeedbackHandler { message in
+        messages.append(message)
+        MincoreLaunchInstrumentation.install(dependencies: dependencies)
+      }
+      let finished = expectation(description: "activation recorded")
+
+      DispatchQueue.global().async { [notificationCenter, didBecomeActive, firstFrameReader, firstFrame] in
+        MincoreLaunchInstrumentation.install(dependencies: dependencies)
+        notificationCenter!.post(name: didBecomeActive, object: nil)
+        firstFrameReader!.displayFrame(at: firstFrame)
+        finished.fulfill()
+      }
+
+      wait(for: [finished], timeout: 5)
+      XCTAssertEqual(messages.values.count, 2)
+    }
+
+    func testSecondInstallWithSameConfigurationIsNotReported() {
+      let messages = captureFeedback()
+      install()
+
+      install()
+
+      XCTAssertTrue(messages.values.isEmpty)
+    }
+
+    func testFirstInstallConfigurationIsKept() {
+      install(configuration: AppLaunchInstrumentationConfiguration(launchTypes: [.resume]))
+      install()
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertTrue(rootSpans().isEmpty)
+    }
+
+    func testInstallAfterAppBecameActiveSkipsLaunch() {
+      install(isAppActive: true)
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertEqual(firstFrameReader.readCount, 0)
+      XCTAssertTrue(rootSpans().isEmpty)
+    }
+
+    func testInstallAfterAppBecameActiveRecordsNextActivationAsResume() {
+      install(isAppActive: true)
+
+      post(didEnterBackground, at: Date(timeIntervalSince1970: 2_000))
+      post(willEnterForeground, at: Date(timeIntervalSince1970: 2_010))
+      post(didBecomeActive, at: Date(timeIntervalSince1970: 2_010.2))
+      firstFrameReader.displayFrame(at: Date(timeIntervalSince1970: 2_010.3))
+
+      let spans = rootSpans()
+      XCTAssertEqual(spans.map { startType($0) }, [.string("resume")])
+      XCTAssertEqual(spans.first?.startTime, Date(timeIntervalSince1970: 2_010))
+    }
+
+    func testInstallAfterAppBecameActiveStillUpdatesLaunchHistory() {
+      install(isAppActive: true)
+
+      XCTAssertEqual(launchHistory.exchangeCount, 1)
+    }
+
+    func testFirstForegroundAfterBackgroundLaunchIsResume() {
+      install(isBackgroundLaunch: true)
+      let enteredForeground = Date(timeIntervalSince1970: 2_000)
+      let resumedFrame = Date(timeIntervalSince1970: 2_000.3)
+
+      post(willEnterForeground, at: enteredForeground)
+      post(didBecomeActive, at: Date(timeIntervalSince1970: 2_000.2))
+      firstFrameReader.displayFrame(at: resumedFrame)
+
+      let spans = rootSpans()
+      XCTAssertEqual(spans.count, 1)
+      XCTAssertEqual(startType(spans.first), .string("resume"))
+      XCTAssertEqual(spans.first?.startTime, enteredForeground)
+      XCTAssertEqual(spans.first?.endTime, resumedFrame)
+    }
+
+    func testFirstForegroundAfterBackgroundLaunchRunsFromSceneConnecting() {
+      install(isBackgroundLaunch: true)
+      let sceneConnected = Date(timeIntervalSince1970: 2_000)
+
+      post(sceneWillConnect, at: sceneConnected)
+      post(willEnterForeground, at: Date(timeIntervalSince1970: 2_000.1))
+      post(didBecomeActive, at: Date(timeIntervalSince1970: 2_000.4))
+      firstFrameReader.displayFrame(at: Date(timeIntervalSince1970: 2_000.5))
+
+      let spans = rootSpans()
+      XCTAssertEqual(spans.map { startType($0) }, [.string("resume")])
+      XCTAssertEqual(spans.first?.startTime, sceneConnected)
+    }
+
+    func testEnteringBackgroundBeforeFirstActivationMakesItAResume() {
+      install()
+      let enteredForeground = Date(timeIntervalSince1970: 2_000)
+
+      post(didEnterBackground)
+      post(willEnterForeground, at: enteredForeground)
+      post(didBecomeActive, at: Date(timeIntervalSince1970: 2_000.2))
+      firstFrameReader.displayFrame(at: Date(timeIntervalSince1970: 2_000.3))
+
+      let spans = rootSpans()
+      XCTAssertEqual(spans.map { startType($0) }, [.string("resume")])
+      XCTAssertEqual(spans.first?.startTime, enteredForeground)
+    }
+
+    func testSceneConnectingInBackgroundDoesNotStartResume() {
+      install(isBackgroundLaunch: true)
+      let enteredForeground = Date(timeIntervalSince1970: 2_000)
+
+      post(sceneWillConnect, at: Date(timeIntervalSince1970: 1_500))
+      eventQueue.finishCurrentEvent()
+      post(willEnterForeground, at: enteredForeground)
+      post(didBecomeActive, at: Date(timeIntervalSince1970: 2_000.2))
+      firstFrameReader.displayFrame(at: Date(timeIntervalSince1970: 2_000.3))
+
+      let spans = rootSpans()
+      XCTAssertEqual(spans.map { startType($0) }, [.string("resume")])
+      XCTAssertEqual(spans.first?.startTime, enteredForeground)
+    }
+
+    func testBackgroundRoleWithoutEnteringForegroundIsRecordedAsLaunch() {
+      install(isBackgroundLaunch: true)
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      let spans = rootSpans()
+      XCTAssertEqual(spans.map { startType($0) }, [.string("cold")])
+      XCTAssertEqual(spans.first?.startTime, processStart)
+    }
+
+    func testRegainingFocusAfterLaunchWithBackgroundRoleIsNotAStart() {
+      install(isBackgroundLaunch: true)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: Date(timeIntervalSince1970: 2_000))
+
+      XCTAssertEqual(rootSpans().count, 1)
+    }
+
+    func testEnteringBackgroundAfterBackgroundRoleKeepsNextActivationAResume() {
+      install(isBackgroundLaunch: true)
+
+      post(didEnterBackground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertTrue(rootSpans().isEmpty)
+    }
+
+    func testBackgroundLaunchStillUpdatesLaunchHistory() {
+      install(isBackgroundLaunch: true)
+
+      XCTAssertEqual(launchHistory.exchangeCount, 1)
+    }
+
+    func testRegainingFocusAfterInstallInBackgroundLaunchedActiveAppIsNotAStart() {
+      install(isAppActive: true, isBackgroundLaunch: true)
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertTrue(rootSpans().isEmpty)
+    }
+
+    func testReadIsAppActiveIsFalseOffMainThread() {
+      let isActive = expectation(description: "read off the main thread")
+      DispatchQueue.global().async {
+        XCTAssertFalse(AppLaunchRuntime.readIsAppActive())
+        isActive.fulfill()
+      }
+      wait(for: [isActive], timeout: 5)
+    }
+
+    func testEnteringBackgroundBeforeFirstFrameAbandonsLaunch() {
+      install()
+
+      post(didBecomeActive)
+      post(didEnterBackground)
+      firstFrameReader.displayFrame(at: Date(timeIntervalSince1970: 5_000))
+
+      XCTAssertEqual(firstFrameReader.readCount, 1)
+      let spans = rootSpans()
+      XCTAssertEqual(spans.count, 1)
+      XCTAssertEqual(spans.first?.attributes["app.start.outcome"], .string("abandoned"))
+      XCTAssertEqual(spans.first?.endTime, becameActive, "the late frame must not end the launch")
+    }
+
+    func testEnteringBackgroundBeforeFirstFrameAbandonsResume() {
+      launch()
+
+      post(didEnterBackground)
+      post(willEnterForeground)
+      post(didBecomeActive)
+      post(didEnterBackground)
+      firstFrameReader.displayFrame(at: Date(timeIntervalSince1970: 5_000))
+
+      XCTAssertEqual(firstFrameReader.readCount, 2)
+      let spans = rootSpans()
+      XCTAssertEqual(spans.map(\.name), ["app.start", "app.resume"])
+      XCTAssertEqual(spans.last?.attributes["app.resume.outcome"], .string("abandoned"))
+      XCTAssertNotEqual(spans.last?.endTime, Date(timeIntervalSince1970: 5_000), "the late frame must not end the resume")
+    }
+
+    func testStartAfterAbandonedFirstFrameIsRecorded() {
+      install()
+      post(didBecomeActive)
+      post(didEnterBackground)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      post(willEnterForeground, at: Date(timeIntervalSince1970: 2_000))
+      post(didBecomeActive, at: Date(timeIntervalSince1970: 2_000.2))
+      firstFrameReader.displayFrame(at: Date(timeIntervalSince1970: 2_000.3))
+
+      XCTAssertEqual(rootSpans().map { startType($0) }, [.string("cold"), .string("resume")])
+    }
+
+    func testSpanDoesNotEndBeforeAppBecameActive() {
+      install()
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: becameActive.addingTimeInterval(-0.008))
+
+      XCTAssertEqual(rootSpans().first?.endTime, becameActive)
+    }
+
+    func testBackgroundLaunchLongerThanMaxLaunchDurationIsDropped() {
+      // A background launch: app code ran right after process start, long before the first frame.
+      install(processStartTime: { Date(timeIntervalSince1970: 1_002.6 - 3_600) },
+              earliestAppCodeTime: Date(timeIntervalSince1970: 1_002.6 - 3_599.9))
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertTrue(rootSpans().isEmpty)
+    }
+
+    func testPrewarmedLaunchWithoutEarliestAppCodeTimeIsDroppedWhenLongerThanMaxLaunchDuration() {
+      install(processStartTime: { Date(timeIntervalSince1970: 1_002.6 - 3_600) },
+              isActivePrewarm: true,
+              earliestAppCodeTime: nil)
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertTrue(rootSpans().isEmpty)
+    }
+
+    func testSameBootSessionIsWarmEvenWhenBootTimeMoved() {
+      var current = launchContext
+      current.bootSessionID = "boot-a"
+      var previous = current
+      previous.bootTime -= 120
+
+      XCTAssertTrue(current.isSameState(as: previous))
+    }
+
+    func testDifferentBootSessionIsCold() {
+      var current = launchContext
+      current.bootSessionID = "boot-b"
+      var previous = launchContext
+      previous.bootSessionID = "boot-a"
+
+      XCTAssertFalse(current.isSameState(as: previous))
+    }
+
+    func testBootTimeIsComparedWhenEitherBootSessionIDIsMissing() {
+      var current = launchContext
+      current.bootSessionID = "boot-a"
+      var previous = launchContext
+      previous.bootTime -= 120
+
+      XCTAssertFalse(current.isSameState(as: previous))
+    }
+
+    func testReadIsActivePrewarmIsFalseWhenNotPrewarmed() {
+      XCTAssertFalse(readIsActivePrewarm())
+    }
+
+    func testReadEarliestAppCodeTimeIsBetweenProcessStartAndNow() throws {
+      let earliestAppCode = try XCTUnwrap(readEarliestAppCodeTime())
+      let processStart = try XCTUnwrap(readProcessStartTime())
+
+      // `p_starttime` has microsecond precision, so allow for rounding.
+      XCTAssertGreaterThanOrEqual(earliestAppCode, processStart.addingTimeInterval(-0.001))
+      XCTAssertLessThanOrEqual(earliestAppCode, Date())
+    }
+
+    func testReadProcessStartTimeIsInThePast() throws {
+      let start = try XCTUnwrap(readProcessStartTime())
+
+      XCTAssertLessThanOrEqual(start, Date())
+      XCTAssertGreaterThan(start, Date(timeIntervalSinceNow: -24 * 60 * 60))
     }
   }
+
+  final class FeedbackMessages: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _values: [String] = []
+
+    var values: [String] { lock.withLock { _values } }
+
+    func append(_ message: String) {
+      lock.withLock { _values.append(message) }
+    }
+  }
+
+  extension MincoreLaunchInstrumentationTests {
+    /// Captures feedback messages until the test ends, then restores the default handler.
+    func captureFeedback() -> FeedbackMessages {
+      let messages = FeedbackMessages()
+      OpenTelemetry.registerFeedbackHandler { messages.append($0) }
+      addTeardownBlock {
+        OpenTelemetry.setDebugEnabled(false)
+        OpenTelemetry.registerFeedbackHandler { message in os_log("%{public}s", message) }
+      }
+      return messages
+    }
+  }
+
+  #if canImport(UIKit)
+    final class DisplayLinkFirstFrameReaderTests: XCTestCase {
+      func testReportsFrameTimeCloseToNow() {
+        let frameDisplayed = expectation(description: "frame displayed")
+        let before = Date()
+        var frameTime: Date?
+
+        DisplayLinkFirstFrameReader().readFirstFrame { date in
+          frameTime = date
+          frameDisplayed.fulfill()
+        }
+
+        wait(for: [frameDisplayed], timeout: 5)
+        XCTAssertNotNil(frameTime)
+        if let frameTime {
+          XCTAssertGreaterThan(frameTime, before.addingTimeInterval(-1))
+          XCTAssertLessThanOrEqual(frameTime, Date())
+        }
+      }
+
+      func testReportsOnlyOnce() {
+        let frameDisplayed = expectation(description: "frame displayed")
+        frameDisplayed.assertForOverFulfill = true
+
+        DisplayLinkFirstFrameReader().readFirstFrame { _ in
+          frameDisplayed.fulfill()
+        }
+
+        wait(for: [frameDisplayed], timeout: 5)
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.2))
+      }
+    }
+  #endif
 #endif

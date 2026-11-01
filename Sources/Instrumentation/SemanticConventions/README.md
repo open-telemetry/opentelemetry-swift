@@ -18,25 +18,16 @@ The conventions are modeled as a federated semantic convention registry, the sam
 
 | Span | Group | Used by |
 | --- | --- | --- |
-| `AppStart` | `span.app_start.internal` | `InferredAppLaunchInstrumentation` |
 | `app.start`, version 2 | `span.app_start.v2` | `MincoreLaunchInstrumentation` |
 | `app.resume`, version 2 | `span.app_resume.v2` | `MincoreLaunchInstrumentation` |
 
-The span definition is the authoritative description of when each `AppStart` span starts and ends for every combination of `start.type` and `start.active_prewarmed`.
+The span definitions are the authoritative description of when each span starts and ends for every `app.start.type` and `app.resume.type`.
 
 ## Attributes
 
-| Attribute | Type | Values | Used by |
-| --- | --- | --- | --- |
-| `start.type` | string | `cold`, `warm`, `resume`, `prewarmed` | [App Launch](../AppLaunch/README.md) |
-| `start.active_prewarmed` | boolean | | [App Launch](../AppLaunch/README.md) |
-| `start.sampled_pages.resident_at_end` | int | | [App Launch](../AppLaunch/README.md) |
-| `start.sampled_pages.paged_in` | int | | [App Launch](../AppLaunch/README.md) |
-| `start.sampled_page_in_ratio` | double | | [App Launch](../AppLaunch/README.md) |
+The attributes are in the `app.start` and `app.resume` namespaces, and there are the `app.start.duration` and `app.resume.duration` metrics, in `model/swift/`. See [`app.start` version 2](../AppLaunch/README.md#appstart-version-2).
 
-Version 2 of the schema defines its attributes in the `app.start` and `app.resume` namespaces, and the `app.start.duration` and `app.resume.duration` metrics, in `model/swift/`. See [`app.start` version 2](../AppLaunch/README.md#appstart-version-2).
-
-`start.type` uses the same key and `cold` and `warm` values as the `start.type` attribute in OpenTelemetry Android's registry, but its values follow Apple's definitions, and a resume is `resume` instead of Android's `hot`. See the [App Launch README](../AppLaunch/README.md#start-types).
+`app.start.type` uses the same `cold` and `warm` values as the `start.type` attribute in OpenTelemetry Android's registry, but its values follow Apple's definitions, and a resume is its own span instead of Android's `hot`. See the [App Launch README](../AppLaunch/README.md#start-types).
 
 ## Usage
 
@@ -46,8 +37,8 @@ The constants follow the same shape as `SemanticConventions` in `OpenTelemetryAp
 import InstrumentationSemanticConventions
 
 spanBuilder.setAttribute(
-  key: FederatedSemanticConventions.Start.type.rawValue,
-  value: FederatedSemanticConventions.Start.TypeValues.cold.description
+  key: FederatedSemanticConventions.App.startType.rawValue,
+  value: FederatedSemanticConventions.App.StartTypeValues.cold.description
 )
 ```
 

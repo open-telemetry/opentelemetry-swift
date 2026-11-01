@@ -405,10 +405,6 @@ extension Package {
         ),
         .library(name: "Crash", targets: ["Crash"]),
         .library(
-          name: "InferredAppLaunchInstrumentation",
-          targets: ["InferredAppLaunchInstrumentation"]
-        ),
-        .library(
           name: "MincoreLaunchInstrumentation",
           targets: ["MincoreLaunchInstrumentation"]
         ),
@@ -643,15 +639,6 @@ extension Package {
           path: "Sources/Instrumentation/AppLaunch/Core"
         ),
         .target(
-          name: "InferredAppLaunchInstrumentation",
-          dependencies: [
-            "OpenTelemetryApi",
-            "InstrumentationCommon",
-            "AppLaunchInstrumentationCore",
-          ],
-          path: "Sources/Instrumentation/AppLaunch/Inferred"
-        ),
-        .target(
           name: "MincoreLaunchInstrumentation",
           dependencies: [
             "OpenTelemetryApi",
@@ -666,7 +653,6 @@ extension Package {
           name: "AppLaunchInstrumentationTests",
           dependencies: [
             "AppLaunchInstrumentationCore",
-            "InferredAppLaunchInstrumentation",
             "MincoreLaunchInstrumentation",
             "InMemoryExporter",
             "OpenTelemetrySdk",

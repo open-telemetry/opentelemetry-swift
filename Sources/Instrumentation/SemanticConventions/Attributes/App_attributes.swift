@@ -125,7 +125,7 @@ extension FederatedSemanticConventions {
     case startRenderDelayDuration = "app.start.render_delay.duration"
 
     /**
-     `app.start.sampled_pages.paged_in` divided by `app.start.sampled_pages.resident_at_end`, from 0 to 1. Higher means less of the sampled code was already in memory.
+     The share of the sampled code that the launch paged in from disk (Apple's term for reading a page into memory): `app.start.sampled_pages.paged_in` divided by `app.start.sampled_pages.resident_at_end`, from 0 to 1. A launch is `cold` when this is at least the configured threshold, 0.5 by default.
 
      - Requires: Value type should be `Double`
     */
@@ -244,7 +244,7 @@ extension FederatedSemanticConventions {
     */
     public struct StartDeterminedByValues: CustomStringConvertible, Sendable {
       
-      /// `app.start.sampled_page_in_ratio` compared with the configured threshold, 0.5 by default.
+      /// `app.start.sampled_page_in_ratio` compared with the configured page-in threshold, 0.5 by default.
       public static let pageSampling = StartDeterminedByValues("page_sampling") 
       
       /// The launch's pages couldn't be sampled, so the type was inferred from what changed since the previous launch.
@@ -375,10 +375,10 @@ extension FederatedSemanticConventions {
     */
     public struct StartTypeValues: CustomStringConvertible, Sendable {
       
-      /// Most of the code the launch ended up with had to be brought into memory.
+      /// The launch had to page in the app's code from disk: `app.start.sampled_page_in_ratio` was at least the configured threshold, 0.5 by default. If the code couldn't be sampled, the launch is classified from launch history instead.
       public static let cold = StartTypeValues("cold") 
       
-      /// The process was gone, but most of the app's code was still in memory.
+      /// The process was gone, but the app's code was already in memory: the page-in ratio was below the configured threshold. If the code couldn't be sampled, the launch is classified from launch history instead.
       public static let warm = StartTypeValues("warm") 
       
       /// The system started the process before the user launched the app.

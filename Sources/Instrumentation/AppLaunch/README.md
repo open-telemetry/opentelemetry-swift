@@ -2,25 +2,9 @@
 
 Status: development
 
-Measures how long it takes the app to become usable after a user brings it to the foreground, and reports each activation as an `AppStart` span.
+Measures how long it takes the app to become usable after a user brings it to the foreground. `MincoreLaunchInstrumentation` reports each launch as an `app.start` span and each resume as an `app.resume` span, in the `io.opentelemetry.lifecycle` scope that [OpenTelemetry Android](https://github.com/open-telemetry/opentelemetry-android/tree/main/instrumentation/activity) also uses. What each start type means follows Apple's definitions instead of Android's. See [Start types](#start-types).
 
-The span name, the `start.type` key, its `cold` and `warm` values and the instrumentation scope are the same as in the [OpenTelemetry Android](https://github.com/open-telemetry/opentelemetry-android/tree/main/instrumentation/activity) activity instrumentation. What each `start.type` value means follows Apple's definitions instead of Android's, and a resume is `resume`, Apple's term, instead of Android's `hot`. See [Start types](#start-types).
-
-## Choosing a library
-
-There are two libraries. Link only one. If both are installed, the first wins, and the second install is ignored and reported as an error.
-
-|                              | `InferredAppLaunchInstrumentation`              | `MincoreLaunchInstrumentation`                                    |
-| ---------------------------- | ----------------------------------------------- | ----------------------------------------------------------------- |
-| Schema                       | `AppStart` version 1, matching Android          | [`app.start` version 2](#appstart-version-2), matching W3C timing |
-| How it decides               | What changed since the previous launch          | Whether the launch had to bring the app's code into memory        |
-| Detects eviction from memory | No, reported as `warm`                          | Yes                                                               |
-| Needs a saved record         | Yes                                             | Only for its fallback                                             |
-| Runs code before `main()`    | Reads the environment                           | Also calls `mincore`, and can't be turned off at runtime          |
-| Prewarmed launches           | `cold` or `warm`, with `start.active_prewarmed` | `prewarmed`                                                       |
-| Tested on a real device      | No                                              | [One device](#accuracy-compared-with-instruments), partly cached untested |
-
-The rest of this page describes `AppStart`, except for the next section.
+Linking this library runs `mincore` before `main()`, so unlike a configuration option it can't be turned off at runtime. It has been tested on [one device](#accuracy-compared-with-instruments), and not with partly cached launches.
 
 ## `app.start` version 2
 
@@ -55,11 +39,11 @@ The library samples up to 256 pages evenly spaced through the `__TEXT` segments 
 | `app.start.sampled_pages.paged_in`        | Those not in it at this library's initializer                |
 | `app.start.sampled_page_in_ratio`         | `paged_in` divided by `resident_at_end`, from 0 to 1         |
 
-A launch is `cold` when the ratio is at least `coldPageInRatio`, which is 0.5 by default, and `warm` otherwise. On an iPhone 16 Pro Max, launches after a reboot had ratios from 0.70 to 0.72 and warm launches were at most 0.03. It doesn't reach 1, because some pages were already resident when this library's initializer ran. The share of `__TEXT` in memory can't be used directly, because a launch only touches part of the app's code, so even a warm launch can be far from 100%. Comparing the pages a launch ended up with to the ones it started with removes that difference between apps.
+A _page in_ is the system reading a page of the app's code from disk into memory, which is what Apple's definition of a cold launch is about. The ratio is the share of the launch's code that was paged in. A launch is `cold` when the ratio is at least `coldPageInRatio`, which is 0.5 by default, and `warm` otherwise. On an iPhone 16 Pro Max, launches after a reboot had ratios from 0.70 to 0.72 and warm launches were at most 0.03. It doesn't reach 1, because some pages were already resident when this library's initializer ran. The share of `__TEXT` in memory can't be used directly, because a launch only touches part of the app's code, so even a warm launch can be far from 100%. Comparing the pages a launch ended up with to the ones it started with removes that difference between apps.
 
 `mincore` reports the system's page cache, not what this process used, so these attributes describe what was cached. On one warm launch on an iPhone 16 Pro Max, Instruments showed the launch touching 55% of `__TEXT` while 93% of the sampled pages were resident. A cold launch's `paged_in` also includes pages the kernel read ahead.
 
-A launch that can't be sampled, or with fewer than 16 resident pages when more were sampled, falls back to the [inferred rules](#cold-and-warm) without these attributes, with `app.start.determined_by` set to `launch_history`, or is `prewarmed` if the system prewarmed it. Code in other images, such as system frameworks, isn't sampled. A debug build's simulator launch reads the Mac's page cache, so it says nothing about a device.
+A launch that can't be sampled, or with fewer than 16 resident pages when more were sampled, falls back to the [launch history](#launch-history-fallback) without these attributes, with `app.start.determined_by` set to `launch_history`, or is `prewarmed` if the system prewarmed it. Code in other images, such as system frameworks, isn't sampled. A debug build's simulator launch reads the Mac's page cache, so it says nothing about a device.
 
 ### Accuracy compared with Instruments
 
@@ -106,7 +90,7 @@ Scripts/compare-app-launch-accuracy.py --mode reboot --launches 3
 ### Known limits
 
 - The initializers of images this library depends on run before it. If it's linked into the executable and the app's code is in a framework, pages those initializers bring in count as already in memory, so a cold launch can report a lower ratio.
-- `cold` and `warm` only say whether the app's code was already in memory. The first launch after an install or update is `warm` if it was: on an iPhone 16 Pro Max, launches seconds after installing either read none of their `__TEXT` from disk or read most of what they touched, and it isn't known why they differ. This differs from `InferredAppLaunchInstrumentation`, which reports that launch as `cold`.
+- `cold` and `warm` only say whether the app's code was already in memory. The first launch after an install or update is `warm` if it was: on an iPhone 16 Pro Max, launches seconds after installing either read none of their `__TEXT` from disk or read most of what they touched, and it isn't known why they differ.
 - App Store builds haven't been tested. Encrypted `__TEXT` might not report residency the same way as a development build, so compare a TestFlight build before relying on the 0.5 threshold.
 - `app.start.page_ins.pre_initializer` and `app.start.page_ins.post_initializer` count the whole process, not the app's code, and are [higher than Instruments reports](#accuracy-compared-with-instruments) for a reason that isn't known. Use them to compare launches, not as disk reads.
 
@@ -125,11 +109,11 @@ Every span ends at the first frame displayed after the app becomes active, read 
 
 | Platform       | Status      | What's recorded                                                                                                                                                                           |
 | -------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| iOS, iPadOS    | Supported   | `cold`, `warm`, `resume` and `start.active_prewarmed`. Tested with real telemetry on the iOS simulator, except prewarming, which the simulator can't produce.                             |
-| visionOS       | Supported   | `cold`, `warm` and `resume`, and `start.active_prewarmed` if the system sets `ActivePrewarm`. Not tested with real telemetry.                                                             |
-| Mac Catalyst   | Supported   | `cold`, `warm` and `resume`, and `start.active_prewarmed` if the system sets `ActivePrewarm`. Not tested with real telemetry.                                                             |
-| tvOS           | Supported   | `cold`, `warm` and `resume`, and `start.active_prewarmed` if the system sets `ActivePrewarm`. A background launch isn't detected from the process's role. Not tested with real telemetry. |
-| macOS          | Partial     | Only `cold` and `warm`, ending at the first `NSApplication.didBecomeActiveNotification`, because macOS has neither `CADisplayLink` nor a background state.                                |
+| iOS, iPadOS    | Supported   | `cold`, `warm`, `resume` and `prewarmed`. Tested with real telemetry on the iOS simulator, except prewarming, which the simulator can't produce.                             |
+| visionOS       | Supported   | `cold`, `warm`, `resume`, and `prewarmed` if the system sets `ActivePrewarm`. Not tested with real telemetry.                                                             |
+| Mac Catalyst   | Supported   | `cold`, `warm`, `resume`, and `prewarmed` if the system sets `ActivePrewarm`. Not tested with real telemetry.                                                             |
+| tvOS           | Supported   | `cold`, `warm`, `resume`, and `prewarmed` if the system sets `ActivePrewarm`. A background launch isn't detected from the process's role. Not tested with real telemetry. |
+| macOS          | Partial     | Only `cold`, `warm` and `prewarmed`, ending at the first `NSApplication.didBecomeActiveNotification`, because macOS has neither `CADisplayLink` nor a background state.                                |
 | watchOS        | Unsupported | Nothing. The API compiles, so shared code doesn't need a check, but `install` does nothing, `isInstalled` is always `false`, and no code runs at process start.                           |
 | Linux, Windows | Unavailable | The product isn't built, so it can't be added as a dependency.                                                                                                                            |
 
@@ -143,87 +127,53 @@ Only errors are logged by default. To see why a start was or wasn't recorded, tu
 OpenTelemetry.setDebugEnabled(true)
 ```
 
+
 ## Setup
 
 Install the instrumentation as early as possible, before the app first becomes active. Installing is idempotent and thread-safe, and each span is recorded with the tracer provider that is registered when the app becomes active:
 
 ```swift
-import InferredAppLaunchInstrumentation
+import MincoreLaunchInstrumentation
 
-InferredAppLaunchInstrumentation.install()
+MincoreLaunchInstrumentation.install()
 ```
 
 To change what's recorded, pass a configuration:
 
 ```swift
-InferredAppLaunchInstrumentation.install(
+MincoreLaunchInstrumentation.install(
   configuration: AppLaunchInstrumentationConfiguration(
-    launchTypes: [.cold, .warm],
-    dropPrewarmed: false,
-    maxLaunchDuration: 60
+    launchTypes: [.cold, .warm, .resume],
+    maxLaunchDuration: 60,
+    coldPageInRatio: 0.5
   )
 )
 ```
 
-| Option              | Default                   | Description                                                                                                                                                                                                                                                                                                                         |
-| ------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `launchTypes`       | `[.cold, .warm, .resume]` | The [start types](#start-types) to record. Activations of other types don't produce spans, but are still tracked so that later ones are classified correctly.                                                                                                                                                                       |
-| `dropPrewarmed`     | `false`                   | Whether to drop [prewarmed](#prewarming) launches instead of recording them. Prewarmed launches are timed from when app code first ran, so they leave out the work the system did ahead of time. As in Sentry (`enablePreWarmedAppStartTracing`) and Datadog, they're recorded by default and marked with `start.active_prewarmed`. |
-| `maxLaunchDuration` | `60`                      | The longest launch, in seconds, that's recorded. Longer launches are [dropped](#dropped-starts). It's measured from process start, or from when app code first ran for a prewarmed launch. The default matches Datadog.                                                                                                             |
-| `coldPageInRatio`   | `0.5`                     | The `app.start.sampled_page_in_ratio` from which a launch is `cold`, above 0 and at most 1. A value outside that range is reported as an error and replaced with the default. Only `MincoreLaunchInstrumentation` uses it. How high the ratio goes depends on the app, so check the ratios it reports before changing this.         |
-
-## Telemetry
-
-### Application Start
-
-- Type: Span
-- Name: `AppStart`
-- Instrumentation scope: `io.opentelemetry.lifecycle`
-- Span kind: `INTERNAL`
-- Attributes:
-
-| Attribute                | Type    | Requirement                              | Description                                                                                   | Values                       |
-| ------------------------ | ------- | ---------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------- |
-| `start.type`             | string  | Required                                 | The kind of activation, as Apple defines it. See [Start types](#start-types).                 | `cold` \| `warm` \| `resume` |
-| `start.active_prewarmed` | boolean | Conditionally required: `cold` or `warm` | Whether iOS prewarmed the process before the user launched it. See [Prewarming](#prewarming). | `true` \| `false`            |
-
-The `start.type` key and its `cold` and `warm` values are the same as the `start.type` attribute in the OpenTelemetry Android [semantic convention registry](https://github.com/open-telemetry/opentelemetry-android/blob/main/semconv/model/android/registry.yaml), but their meanings follow Apple's definitions, so they don't describe the same states as on Android. A resume is `resume` instead of Android's `hot`. `start.active_prewarmed` is an iOS-only addition, named after the `ActivePrewarm` environment variable it's read from, because Android has no equivalent of prewarming. The span and both attributes, including each start type's start and end timestamps, are defined in the [federated semantic conventions](../SemanticConventions/README.md) registry, because upstream OpenTelemetry semantic conventions don't define app start conventions yet.
+| Option              | Default                              | Description                                                                                                                                                                                                                                                                                    |
+| ------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `launchTypes`       | `[.cold, .warm, .resume, .prewarmed]` | The [start types](#start-types) to record. Activations of other types don't produce spans, but are still tracked so that later ones are classified correctly. Leave out `.prewarmed` to drop [prewarmed](#prewarming) launches.                                                                |
+| `maxLaunchDuration` | `60`                                 | The longest launch, in seconds, that's recorded. Longer launches are [dropped](#dropped-starts). It's measured from process start, or from when app code first ran for a prewarmed launch. The default matches Datadog.                                                                        |
+| `coldPageInRatio`   | `0.5`                                | The share of sampled code a launch must page in from disk to be `cold` (`app.start.sampled_page_in_ratio`), above 0 and at most 1. Apple describes cold and warm as a spectrum, so this is where the line is drawn. A value outside that range is reported as an error and replaced with the default. How high the ratio goes depends on the app, so check the ratios it reports before changing this.                  |
 
 Spans also get `session.id` and `session.previous_id` when the [Sessions](../Sessions/README.md) span processor is registered.
 
-**Example `AppStart` span**:
-
-```json
-{
-  "name": "AppStart",
-  "kind": "INTERNAL",
-  "instrumentationScope": { "name": "io.opentelemetry.lifecycle" },
-  "startTimeUnixNano": 1761148800000000000,
-  "endTimeUnixNano": 1761148800642000000,
-  "attributes": {
-    "start.type": "cold",
-    "start.active_prewarmed": false
-  }
-}
-```
-
 ## Start types
 
-Apple's [Reducing your app's launch time](https://developer.apple.com/documentation/xcode/reducing-your-app-s-launch-time) defines an _activation_ as the user clicking the app's icon or otherwise going back to the app. An activation is either a _launch_, when the process needs to start, or a _resume_, when the app already had a process alive, even if suspended. Apple calls a launch _warm_ when the system still has the app and its dependencies in memory, and _cold_ when it has to page them in from disk, for example in a launch immediately after boot. This schema uses Apple's term, `resume`, where Android uses `hot`.
+Apple's [Reducing your app's launch time](https://developer.apple.com/documentation/xcode/reducing-your-app-s-launch-time) defines an _activation_ as the user clicking the app's icon or otherwise going back to the app. An activation is either a _launch_, when the process needs to start, or a _resume_, when the app already had a process alive, even if suspended. Apple calls a launch _warm_ when the system still has the app and its dependencies in memory, and _cold_ when it has to _page them in_ from disk, for example in a launch immediately after boot.
 
-| `start.type` | Apple term  | Meaning                                                                                      | Android's equivalent value and its meaning                                                      |
-| ------------ | ----------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `cold`       | Cold launch | A new process, and the system is unlikely to have the app's code and data cached.            | `cold`: "The application started from scratch, with no process or activity reused."             |
-| `warm`       | Warm launch | A new process, and the system is likely to still have the app's code and data cached.        | `warm`: "The application process was reused but the activity had to be recreated."              |
-| `resume`     | Resume      | The app's process was still alive, even if suspended, and the app returns to the foreground. | `hot`: "The application and its activity were already in memory and brought to the foreground." |
+| `app.start.type` | Apple term  | Meaning                                                                                                             |
+| ---------------- | ----------- | ------------------------------------------------------------------------------------------------------------------- |
+| `cold`           | Cold launch | A new process, and the launch had to page in the app's code from disk: its page-in ratio is at least `coldPageInRatio`. |
+| `warm`           | Warm launch | A new process, and the app's code was already in memory: its page-in ratio is below `coldPageInRatio`.              |
+| `prewarmed`      | Warm launch | A new process the system prewarmed. See [Prewarming](#prewarming).                                                  |
+| `resume`         | Resume      | The app's process was still alive, even if suspended, and the app returns to the foreground. Recorded as `app.resume`. |
 
-Apple describes cold and warm launches as a spectrum, because how much the system still has cached depends on what else ran on the device. Code inside the process can't observe the cache, so `cold` and `warm` are inferred from the causes Apple names. A resume after Android's `warm` case, where the system discarded the app's UI but kept its process, is `resume` here, because the process was still alive.
+Apple describes cold and warm launches as a spectrum, because how much the system still has cached depends on what else ran on the device. This library turns the spectrum into two types with its own threshold: a launch is `cold` when it paged in at least `coldPageInRatio` of the app's sampled code, which is [measured from the app's pages](#measuring-cold-and-warm). The threshold is configurable, because the ratios an app reports depend on the app.
 
-### `cold` and `warm`
+### Launch history fallback
 
-Emitted once per process, for the first time the app reaches the foreground, unless the system started the process in the background.
-
-A launch is `cold` when any of these is true, and `warm` otherwise:
+When a launch can't be sampled, there is no page-in ratio, so it is classified from what changed since the previous launch, and `app.start.determined_by` is `launch_history`. These are the causes after which the system is unlikely to have the app's code in memory, so the launch would have to page it in. It is `cold` when any of them is true, and `warm` otherwise:
 
 - No previous launch is recorded, for example on the app's first launch after it's installed.
 - The device booted after the previous launch, detected from a change in the kernel's boot session ID (`sysctl` `kern.bootsessionuuid`). If either launch's boot session ID couldn't be read, a change in the kernel boot time (`sysctl` `KERN_BOOTTIME`) of more than 1 second is used instead; setting the system clock also moves the boot time, so in that case it's treated like a reboot.
@@ -231,14 +181,9 @@ A launch is `cold` when any of these is true, and `warm` otherwise:
 - The app was reinstalled since the previous launch, detected from a change in its bundle path, because the system puts every install in a new directory. The same build installed again is `cold` too, since its files were just rewritten.
 - The boot time can't be read.
 
-The previous launch's boot session ID, boot time, version, build and bundle path are stored in `UserDefaults.standard` under `io.opentelemetry.lifecycle.lastLaunchContext` when the instrumentation is installed. A launch is recorded even if it never reaches the foreground, because the system still loaded the app's code. So after a reboot or an update, if the system first starts the app in the background, that process produces no `cold` span and the user's next launch is `warm`.
+The previous launch's boot session ID, boot time, version, build and bundle path are stored in `UserDefaults.standard` under `io.opentelemetry.lifecycle.lastLaunchContext` when the instrumentation is installed, so the history stays current even for launches that are sampled. A launch is recorded even if it never reaches the foreground, because the system still loaded the app's code.
 
-Apple also calls a launch cold when the system evicted the app from memory to make room for other apps. Code inside the process can't tell, so such a launch is reported as `warm` if none of the rules above applies.
-
-|       | Timestamp                                                                                                                                                                                                                 |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Start | Process start time, read from the kernel (`sysctl` `KERN_PROC_PID`, `kp_proc.p_starttime`). For a prewarmed launch, the time this module's C initializer ran instead. See [Prewarming](#prewarming).                      |
-| End   | The first frame displayed after the app first becomes active, read with a `CADisplayLink` started on `UIApplication.didBecomeActiveNotification`. This matches Apple's launch-time metric, which runs to the first frame. |
+A launch is timed from process start to the first frame displayed after the app first becomes active, read with a `CADisplayLink` started on `UIApplication.didBecomeActiveNotification`. This matches Apple's launch-time metric, which runs to the first frame. A cold or warm launch is emitted once per process, for the first time the app reaches the foreground, unless the system started the process in the background.
 
 ### `resume`
 
@@ -266,39 +211,37 @@ Not emitted when:
 
 On iOS 15 and later the system can prewarm an app: it creates the process ahead of time and suspends it before any app code runs, then resumes it when the user launches the app. The process start time of a prewarmed launch can be minutes or hours before the user tapped the icon, so it can't be used as the span start.
 
-A launch (`cold` or `warm`) is reported as prewarmed when the `ActivePrewarm` environment variable was `1` when the process started. Apple doesn't document this variable, but Apple engineers have confirmed on the Developer Forums that the system sets it and that `UIApplication` clears it during launch. The module reads it from a C `constructor` function in the `AppLaunchEnvironment` target, which runs before `main()`.
+A launch is `prewarmed` when the `ActivePrewarm` environment variable was `1` when the process started. Apple doesn't document this variable, but Apple engineers have confirmed on the Developer Forums that the system sets it and that `UIApplication` clears it during launch. The module reads it from a C `constructor` function in the `AppLaunchEnvironment` target, which runs before `main()`.
 Like Sentry and Datadog, this is the only signal used. A prewarmed launch without `ActivePrewarm` starts at process start, so it's usually longer than `maxLaunchDuration` and dropped.
 
-Prewarming is independent of caching: a prewarmed launch can be `cold` or `warm`. For a prewarmed launch:
-
-- `start.active_prewarmed` is `true`.
-- The span starts at the time the `AppLaunchEnvironment` constructor ran, the earliest timestamp recorded by app code, instead of at process start.
+Prewarming is independent of caching, so `app.start.prewarm.cache_state` says whether the app's code was `cold` or `warm` when the launch was sampled. A prewarmed launch's span starts at the time the `AppLaunchEnvironment` constructor ran, the earliest timestamp recorded by app code, instead of at process start.
 
 The constructor time is a good start time because Apple's [About the app launch sequence](https://developer.apple.com/documentation/uikit/about-the-app-launch-sequence) says prewarming "creates your process and loads the libraries your app links against, then suspends your process without allowing any application code to run". Earlier versions of that page said prewarming runs the launch sequence up to `UIApplicationMain`, which would include the constructor. If a system does that, the span is usually longer than `maxLaunchDuration` and is dropped.
 
 ## Dropped starts
 
-No `AppStart` span is emitted in these cases:
+No `app.start` or `app.resume` span is emitted in these cases:
 
 | Case                                             | Rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Android equivalent                                    |
 | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
 | Launch longer than the maximum                   | A launch is longer than `maxLaunchDuration` (60 seconds by default), measured from process start, or from when app code first ran for a prewarmed launch (see [Prewarming](#prewarming)), so the user can't have waited through all of it. This covers a launch the system started in the background whose role couldn't be read, for example on tvOS; a prewarm that ran app code before the user launched the app; and installing the instrumentation off the main thread after the app first became active.                                                                                                                                                                                                                 | `MAX_TIME_TO_UI_INIT` (1 minute) in `AppStartupTimer` |
-| Backgrounded before the first frame              | The app entered the background after it became active but before its first frame was displayed. The display link pauses in the background, so the frame it reports is from the next time the app returned to the foreground. Applies to every start type.                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | —                                                     |
-| Prewarmed launch, when `dropPrewarmed` is `true` | The system prewarmed the process: `ActivePrewarm` was `1` (see [Prewarming](#prewarming)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | —                                                     |
 | Late installation                                | The instrumentation was installed after the app first became active, so the process can no longer get a `cold` or `warm` span, and the next activation is reported as `resume`. This is detected only when `install` runs on the main thread while the app is active. Later than that, while the app is inactive or in the background, it can't be told apart from a normal launch, because a scene-based app is in the background state during launch, so the next activation is reported as a launch from process start, and dropped if it's longer than `maxLaunchDuration`. Off the main thread, the next activation is reported as a launch from process start, which is dropped if it's longer than `maxLaunchDuration`. | —                                                     |
+
+
+An activation the app left before its first frame is not dropped: its span ends when the app left, with `app.start.outcome` or `app.resume.outcome` set to `abandoned`.
 
 ## Differences from Android
 
 |                                               | Android                                                             | iOS                                                                                                         |
 | --------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `start.type` meanings                         | Which parts of the app (process, activity) were reused              | Apple's launch and resume definitions: `cold` and `warm` are both new processes, and `resume` is any resume |
-| Resume `start.type` value                     | `hot`                                                               | `resume`                                                                                                    |
-| Process alive, UI recreated                   | `warm`                                                              | `resume`                                                                                                    |
+| Span name and attributes                      | `AppStart`, `start.type`                                            | `app.start` and `app.resume`, `app.start.type` and `app.resume.type`                                        |
+| Meaning of the types                          | Which parts of the app (process, activity) were reused              | Apple's launch and resume definitions: `cold`, `warm` and `prewarmed` are new processes, and a resume is any resume |
+| Process alive, UI recreated                   | `warm`                                                              | `app.resume`                                                                                                |
 | New process, recently run                     | `cold`                                                              | `warm`                                                                                                      |
 | Launch start timestamp                        | When the instrumentation is installed                               | Process start, or the first app-code timestamp for prewarmed launches                                       |
 | Resumes in multi-activity or multi-scene apps | Only emitted for single-activity apps                               | Emitted whenever the app as a whole returns from the background                                             |
 | End timestamp                                 | `onActivityPostResumed`                                             | First frame displayed after the app becomes active                                                          |
-| Prewarming                                    | Not applicable                                                      | Reported with `start.active_prewarmed`                                                                      |
+| Prewarming                                    | Not applicable                                                      | `prewarmed`                                                                                                 |
 | Per-screen lifecycle spans                    | `Created`, `Resumed`, `Paused`, … from the activity instrumentation | Not part of this module                                                                                     |
 
 ## References
