@@ -1,16 +1,16 @@
 groups:
-  - id: span.app_start.v2
+  - id: span.app_start
     type: span
     span_kind: internal
     stability: development
     brief: >
-      Version 2 of the app launch span, from when the launch began to the first frame displayed.
+      The app launch span, from when the launch began to the first frame displayed.
     note: |
       **Span name** MUST be `app.start`.
 
       **Span kind** MUST be `INTERNAL`.
 
-      **Instrumentation scope** MUST be `io.opentelemetry.lifecycle` with version `2.0.0`.
+      **Instrumentation scope** MUST be `io.opentelemetry.lifecycle`.
 
       This schema models a launch on W3C `PerformanceNavigationTiming`: a time origin, `xxxStart`
       and `xxxEnd` timestamps, a `type` and an `activationStart`. It uses no span events, because
@@ -91,19 +91,19 @@ groups:
       - ref: app.start.render_delay.duration
         requirement_level:
           conditionally_required: If `app.start.render` is recorded.
-  - id: span.app_resume.v2
+  - id: span.app_resume
     type: span
     span_kind: internal
     stability: development
     brief: >
-      Version 2 of the app resume span. A resume is its own span, not a launch type, because the
+      The app resume span. A resume is its own span, not a launch type, because the
       process is already alive and there's no `processStart`.
     note: |
       **Span name** MUST be `app.resume`.
 
       **Span kind** MUST be `INTERNAL`.
 
-      **Instrumentation scope** MUST be `io.opentelemetry.lifecycle` with version `2.0.0`.
+      **Instrumentation scope** MUST be `io.opentelemetry.lifecycle`.
 
       The span starts at `sceneConnectStart` if a scene connected as the app returned to the
       foreground, because UIKit connects it first, and otherwise at
