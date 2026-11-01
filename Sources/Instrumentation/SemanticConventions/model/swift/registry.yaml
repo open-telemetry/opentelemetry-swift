@@ -71,3 +71,288 @@ groups:
           1. Higher means less of the launch's code was already in memory.
         note: >
           A launch is `cold` when this is at least 0.5, and `warm` otherwise.
+  - id: registry.swift.app_start
+    type: attribute_group
+    brief: >
+      Version 2 of the app start attributes, recorded by `MincoreLaunchInstrumentation`.
+    stability: development
+    attributes:
+      - id: app.start.type
+        type:
+          members:
+            - id: cold
+              value: "cold"
+              stability: development
+              brief: >
+                Most of the code the launch ended up with had to be brought into memory.
+            - id: warm
+              value: "warm"
+              stability: development
+              brief: >
+                The process was gone, but most of the app's code was still in memory.
+            - id: prewarmed
+              value: "prewarmed"
+              stability: development
+              brief: >
+                The system started the process before the user launched the app.
+        stability: development
+        brief: >
+          How the launch began, as `PerformanceNavigationTiming.type` describes a navigation.
+      - id: app.start.outcome
+        type:
+          members:
+            - id: completed
+              value: "completed"
+              stability: development
+              brief: >
+                The launch reached its first frame.
+            - id: abandoned
+              value: "abandoned"
+              stability: development
+              brief: >
+                The app became active, then left the foreground before its first frame.
+            - id: crashed
+              value: "crashed"
+              stability: development
+              brief: >
+                The process crashed before its first frame. Reported by a crash reporter on the next
+                launch, if at all.
+        stability: development
+        brief: >
+          How the launch ended.
+      - id: app.start.reason
+        type:
+          members:
+            - id: user
+              value: "user"
+              stability: development
+              brief: >
+                The user launched the app directly.
+            - id: notification
+              value: "notification"
+              stability: development
+              brief: >
+                The user opened a notification.
+            - id: url
+              value: "url"
+              stability: development
+              brief: >
+                The system opened a URL in the app.
+            - id: shortcut
+              value: "shortcut"
+              stability: development
+              brief: >
+                The user chose a Home Screen quick action.
+            - id: user_activity
+              value: "user_activity"
+              stability: development
+              brief: >
+                The app continued a user activity.
+        stability: development
+        brief: >
+          Why the app started.
+      - id: app.start.determined_by
+        type:
+          members:
+            - id: page_sampling
+              value: "page_sampling"
+              stability: development
+              brief: >
+                `app.start.sampled_page_in_ratio` compared with 0.5.
+            - id: launch_history
+              value: "launch_history"
+              stability: development
+              brief: >
+                The launch's pages couldn't be sampled, so the type was inferred from what changed
+                since the previous launch.
+            - id: prewarm_flag
+              value: "prewarm_flag"
+              stability: development
+              brief: >
+                The `ActivePrewarm` environment variable was `1` when the process started.
+        stability: development
+        brief: >
+          What decided `app.start.type`.
+        note: >
+          Not named `app.start.type.determined_by`, because OpenTelemetry attribute names can't also
+          be namespaces.
+      - id: app.start.sampled_pages.resident_at_end
+        type: int
+        stability: development
+        brief: >
+          How many sampled pages of the app's code were in memory when the app became active.
+        note: >
+          Up to 256 pages evenly spaced through the `__TEXT` segment of the app's largest image are
+          sampled with `mincore`. The kernel reads ahead, so this includes pages the launch didn't
+          use.
+      - id: app.start.sampled_pages.paged_in
+        type: int
+        stability: development
+        brief: >
+          How many of `app.start.sampled_pages.resident_at_end` weren't in memory when the first
+          initializer ran.
+      - id: app.start.sampled_page_in_ratio
+        type: double
+        stability: development
+        brief: >
+          `app.start.sampled_pages.paged_in` divided by `app.start.sampled_pages.resident_at_end`,
+          from 0 to 1. Higher means less of the launch's code was already in memory.
+      - id: app.start.page_ins.pre_initializer
+        type: int
+        stability: development
+        brief: >
+          The process's page-ins from process start to the first initializer.
+      - id: app.start.page_ins.post_initializer
+        type: int
+        stability: development
+        brief: >
+          The process's page-ins from the first initializer to the end of the span.
+      - id: app.start.prewarm.cache_state
+        type:
+          members:
+            - id: cold
+              value: "cold"
+              stability: development
+              brief: >
+                `app.start.sampled_page_in_ratio` is at least 0.5.
+            - id: warm
+              value: "warm"
+              stability: development
+              brief: >
+                `app.start.sampled_page_in_ratio` is less than 0.5.
+        stability: development
+        brief: >
+          Whether a prewarmed launch still had to bring the app's code into memory. Diagnostic only:
+          it doesn't change `app.start.type`.
+      - id: app.start.previous_exit
+        type:
+          members:
+            - id: clean
+              value: "clean"
+              stability: development
+              brief: >
+                The previous process exited normally.
+            - id: crash
+              value: "crash"
+              stability: development
+              brief: >
+                The previous process crashed.
+            - id: background_kill
+              value: "background_kill"
+              stability: development
+              brief: >
+                The system ended the previous process in the background.
+            - id: unknown
+              value: "unknown"
+              stability: development
+              brief: >
+                How the previous process ended isn't known.
+        stability: development
+        brief: >
+          How the previous process ended.
+      - id: app.start.pre_activation.duration
+        type: double
+        stability: development
+        brief: >
+          Seconds from process start to `activationStart` on a prewarmed launch, which the span
+          doesn't cover. Not part of the launch's duration.
+      - id: app.start.pre_init.duration
+        type: double
+        stability: development
+        brief: >
+          The duration of `app.start.pre_init` in seconds.
+      - id: app.start.app_init.duration
+        type: double
+        stability: development
+        brief: >
+          The duration of `app.start.app_init` in seconds.
+      - id: app.start.render_delay.duration
+        type: double
+        stability: development
+        brief: >
+          The duration of `app.start.render` in seconds.
+  - id: registry.swift.app_resume
+    type: attribute_group
+    brief: >
+      Version 2 of the app resume attributes, recorded by `MincoreLaunchInstrumentation`.
+    stability: development
+    attributes:
+      - id: app.resume.type
+        type:
+          members:
+            - id: hot
+              value: "hot"
+              stability: development
+              brief: >
+                The process was alive with its scene still connected, so its UI was already built.
+            - id: scene_reconnect
+              value: "scene_reconnect"
+              stability: development
+              brief: >
+                The system discarded the scene in the background, so it reconnected.
+            - id: background_launched
+              value: "background_launched"
+              stability: development
+              brief: >
+                The process started in the background and had never been active.
+        stability: development
+        brief: >
+          How much UI the resume had to rebuild.
+      - id: app.resume.outcome
+        type:
+          members:
+            - id: completed
+              value: "completed"
+              stability: development
+              brief: >
+                The resume reached its first frame.
+            - id: abandoned
+              value: "abandoned"
+              stability: development
+              brief: >
+                The app became active, then left the foreground before its first frame.
+        stability: development
+        brief: >
+          How the resume ended.
+      - id: app.resume.reason
+        type:
+          members:
+            - id: user
+              value: "user"
+              stability: development
+              brief: >
+                The user returned to the app directly.
+            - id: notification
+              value: "notification"
+              stability: development
+              brief: >
+                The user opened a notification.
+            - id: url
+              value: "url"
+              stability: development
+              brief: >
+                The system opened a URL in the app.
+            - id: shortcut
+              value: "shortcut"
+              stability: development
+              brief: >
+                The user chose a Home Screen quick action.
+            - id: user_activity
+              value: "user_activity"
+              stability: development
+              brief: >
+                The app continued a user activity.
+        stability: development
+        brief: >
+          Why the app resumed.
+      - id: app.resume.background.duration
+        type: double
+        stability: development
+        brief: >
+          Seconds from when the app last entered the background to the start of the resume.
+      - id: app.resume.page_ins
+        type: int
+        stability: development
+        brief: >
+          The process's page-ins during the resume, which reveal pages evicted while it was
+          suspended.

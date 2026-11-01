@@ -22,9 +22,10 @@
       var willEnterForegroundNotification: Notification.Name? = defaultWillEnterForegroundNotification
       var didEnterBackgroundNotification: Notification.Name? = defaultDidEnterBackgroundNotification
       var sceneWillConnectNotification: Notification.Name? = defaultSceneWillConnectNotification
+      var didFinishLaunchingNotification: Notification.Name? = defaultDidFinishLaunchingNotification
       var firstFrameReader: FirstFrameReader? = defaultFirstFrameReader
-      var processStartTime: @Sendable () -> Date? = readProcessStartTime
-      var earliestAppCodeTime: @Sendable () -> Date? = readEarliestAppCodeTime
+      package var processStartTime: @Sendable () -> Date? = readProcessStartTime
+      package var earliestAppCodeTime: @Sendable () -> Date? = readEarliestAppCodeTime
       package var isActivePrewarm: @Sendable () -> Bool = readIsActivePrewarm
       var isAppActive: @Sendable () -> Bool = readIsAppActive
       var isBackgroundLaunch: @Sendable () -> Bool = readIsBackgroundLaunch
@@ -37,8 +38,15 @@
       // Builds the classifier, or `nil` to infer the launch type.
       package var makeClassifier: (@Sendable (Dependencies) -> LaunchClassifier)?
 
+      // Builds the recorder, or `nil` to record `AppStart` spans.
+      package var makeRecorder: (@Sendable (Dependencies) -> AppStartRecording)?
+
       var classifier: LaunchClassifier {
         makeClassifier?(self) ?? InferredLaunchClassifier(dependencies: self)
+      }
+
+      var recorder: AppStartRecording {
+        makeRecorder?(self) ?? AppStartRecorder(dependencies: self)
       }
     }
 

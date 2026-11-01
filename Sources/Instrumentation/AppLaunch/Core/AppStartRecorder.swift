@@ -8,27 +8,46 @@
   import InstrumentationSemanticConventions
   import OpenTelemetryApi
 
-  /// An activation, with its launch classified.
-  enum AppStart {
-    case launch(LaunchClassification)
-    case resume(start: Date)
+  /// When the parts of a launch between the process starting and the app becoming active happened,
+  /// if they were observed.
+  package struct AppLaunchMarks: Sendable {
+    package var didFinishLaunchingEnd: Date?
+    package var sceneConnectStart: Date?
+  }
 
-    var launchType: AppLaunchInstrumentationConfiguration.LaunchType {
+  /// An activation, with its launch classified.
+  package enum AppStart {
+    case launch(LaunchClassification, AppLaunchMarks)
+    case resume(AppResume)
+
+    package var launchType: AppLaunchInstrumentationConfiguration.LaunchType {
       switch self {
-      case let .launch(classification): classification.type
+      case let .launch(classification, _): classification.type
       case .resume: .resume
       }
     }
   }
 
+  /// How an activation ended.
+  package enum AppStartEnd {
+    case firstFrame(Date)
+    /// The app entered the background before the first frame.
+    case abandoned(Date)
+  }
+
+  /// Decides which activations are recorded, and records them.
+  package protocol AppStartRecording: Sendable {
+    /// Returns what records `start` once it has ended, or `nil` if it won't be recorded.
+    func prepare(_ start: AppStart) -> ((AppStartEnd) -> Void)?
+  }
+
   /// Decides which activations are recorded, and records them as `AppStart` spans.
-  struct AppStartRecorder: Sendable {
+  struct AppStartRecorder: AppStartRecording {
     private typealias StartAttributes = FederatedSemanticConventions.Start
 
     let dependencies: AppLaunchRuntime.Dependencies
 
-    /// Returns what records `start` once its end time is known, or `nil` if it won't be recorded.
-    func prepare(_ start: AppStart) -> ((Date) -> Void)? {
+    func prepare(_ start: AppStart) -> ((AppStartEnd) -> Void)? {
       let launchType = start.launchType
       guard dependencies.configuration.launchTypes.contains(launchType) else {
         InternalLogger.debug("AppLaunchInstrumentation: not recording a \(launchType) start, because it isn't in `launchTypes`.")
@@ -39,17 +58,19 @@
       let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: AppLaunchRuntime.instrumentationScope)
 
       switch start {
-      case let .launch(classification):
+      case let .launch(classification, _):
         guard let processStartTime = dependencies.processStartTime() else {
           InternalLogger.warn("AppLaunchInstrumentation: dropped a \(launchType) launch, because the process start time can't be read.")
           return nil
         }
         return { end in
+          guard case let .firstFrame(end) = end else { return }
           recordLaunch(tracer: tracer, classification: classification, processStartTime: processStartTime, end: end)
         }
-      case let .resume(start):
+      case let .resume(resume):
         return { end in
-          recordResume(tracer: tracer, start: start, end: end)
+          guard case let .firstFrame(end) = end else { return }
+          recordResume(tracer: tracer, start: resume.start, end: end)
         }
       }
     }
