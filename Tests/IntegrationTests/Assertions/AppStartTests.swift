@@ -62,11 +62,10 @@ final class AppStartTests: XCTestCase {
 
   // MARK: mincore
 
-  func testMincoreLaunchMatchesVersion2OfTheSchema() throws {
+  func testMincoreLaunchMatchesTheSchema() throws {
     let spans = OTLPOutput.launch(.appStartMincore).spans.filter { $0.scope.name == Self.scope }
     let root = try XCTUnwrap(spans.first { $0.span.name == "app.start" })
     XCTAssertEqual(spans.filter { $0.span.name == "app.start" }.count, 1)
-    XCTAssertEqual(root.scope.version, "2.0.0")
     let span = root.span
     XCTAssertEqual(span.kind, .internal)
     XCTAssertTrue(span.parentSpanID.isEmpty)

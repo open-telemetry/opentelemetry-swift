@@ -56,11 +56,9 @@ repo work together inside a real iOS app. The flow is:
      isn't the first image in dyld's list.
    Every launch also records its process start (with the process's task role)
    and each scene connection, `willEnterForeground`, `didBecomeActive` and
-   `didEnterBackground` as zero-length marker spans. The app records `app.start`
-   version 2, so `AppStartTests` checks the `app-start-mincore` launch and the
-   task roles, and skips its version 1 `AppStart` assertions. The assertions on
-   the launch types and resumes described here are among those skipped. They
-   compare each span's timestamps with the markers, following the span definition
+   `didEnterBackground` as zero-length marker spans. The app records `app.start`,
+   so `AppStartTests` checks the `app-start-mincore` launch and the task roles.
+   They compare each span's timestamps with the markers, following the span definition
    in `Sources/Instrumentation/SemanticConventions/model/swift/spans.yaml`.
    Attribute keys and values come from `FederatedSemanticConventions`, which is
    generated from that registry, so a span with a key that isn't in the
