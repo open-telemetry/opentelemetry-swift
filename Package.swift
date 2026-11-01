@@ -409,8 +409,8 @@ extension Package {
           targets: ["InferredAppLaunchInstrumentation"]
         ),
         .library(
-          name: "MeasuredAppLaunchInstrumentation",
-          targets: ["MeasuredAppLaunchInstrumentation"]
+          name: "MincoreLaunchInstrumentation",
+          targets: ["MincoreLaunchInstrumentation"]
         ),
       ])
       targets.append(contentsOf: [
@@ -652,7 +652,7 @@ extension Package {
           path: "Sources/Instrumentation/AppLaunch/Inferred"
         ),
         .target(
-          name: "MeasuredAppLaunchInstrumentation",
+          name: "MincoreLaunchInstrumentation",
           dependencies: [
             "OpenTelemetryApi",
             "InstrumentationCommon",
@@ -660,14 +660,14 @@ extension Package {
             "AppLaunchInstrumentationCore",
             "AppLaunchPageSampling",
           ],
-          path: "Sources/Instrumentation/AppLaunch/Measured"
+          path: "Sources/Instrumentation/AppLaunch/Mincore"
         ),
         .testTarget(
           name: "AppLaunchInstrumentationTests",
           dependencies: [
             "AppLaunchInstrumentationCore",
             "InferredAppLaunchInstrumentation",
-            "MeasuredAppLaunchInstrumentation",
+            "MincoreLaunchInstrumentation",
             "InMemoryExporter",
             "OpenTelemetrySdk",
             "SharedTestUtils",

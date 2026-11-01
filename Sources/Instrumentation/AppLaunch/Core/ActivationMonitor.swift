@@ -13,12 +13,15 @@
     let classifier: LaunchClassifier
     private let dependencies: AppLaunchRuntime.Dependencies
     private let classification: @Sendable () -> LaunchClassification
-    private let recorder: AppStartRecorder
+    private let recorder: AppStartRecording
     // Guards every `_` property below.
     private let lock = NSLock()
     private var _tracker: ActivationTracker
     private var _observers: [NSObjectProtocol] = []
     private var _isStopped = false
+    private var _didFinishLaunchingTime: Date?
+    // Records the start that's waiting for its first frame as abandoned.
+    private var _abandon: ((AppStartEnd) -> Void)?
 
     var configuration: AppLaunchInstrumentationConfiguration { dependencies.configuration }
 
@@ -29,7 +32,7 @@
       self.dependencies = dependencies
       self.classifier = classifier
       self.classification = classification
-      recorder = AppStartRecorder(dependencies: dependencies)
+      recorder = dependencies.recorder
       _tracker = tracker
     }
 
@@ -43,6 +46,7 @@
         name.map { center.addObserver(forName: $0, object: nil, queue: nil) { _ in handler() } }
       }
       let observers = [
+        observe(dependencies.didFinishLaunchingNotification) { [self] in appDidFinishLaunching() },
         observe(dependencies.didBecomeActiveNotification) { [self] in appDidBecomeActive() },
         observe(dependencies.willEnterForegroundNotification) { [self] in appWillEnterForeground() },
         observe(dependencies.didEnterBackgroundNotification) { [self] in appDidEnterBackground() },
@@ -63,6 +67,11 @@
       observers.forEach(dependencies.notificationCenter.removeObserver)
     }
 
+    private func appDidFinishLaunching() {
+      let time = dependencies.now()
+      lock.withLock { _didFinishLaunchingTime = time }
+    }
+
     private func sceneWillConnect() {
       let didKeepTime = lock.withLock { _tracker.sceneWillConnect(at: dependencies.now()) }
       guard didKeepTime else { return }
@@ -80,30 +89,37 @@
     }
 
     private func appDidEnterBackground() {
-      let isBeforeFirstActivation = lock.withLock { _tracker.didEnterBackground() }
+      let time = dependencies.now()
+      let (isBeforeFirstActivation, abandon) = lock.withLock {
+        defer { _abandon = nil }
+        return (_tracker.didEnterBackground(at: time), _abandon)
+      }
+      abandon?(.abandoned(time))
       if isBeforeFirstActivation {
         InternalLogger.debug("AppLaunchInstrumentation: no launch recorded, because the app entered the background before it became active. The next activation is a resume.")
       }
     }
 
     private func appDidBecomeActive() {
-      let state: (Activation, backgroundCount: Int)? = lock.withLock {
+      let state: (Activation, backgroundCount: Int, didFinishLaunchingTime: Date?)? = lock.withLock {
         guard !_isStopped, let activation = _tracker.didBecomeActive() else { return nil }
-        return (activation, _tracker.backgroundCount)
+        return (activation, _tracker.backgroundCount, _didFinishLaunchingTime)
       }
-      guard let (activation, backgroundCount) = state else { return }
+      guard let (activation, backgroundCount, didFinishLaunchingTime) = state else { return }
 
       let didBecomeActiveTime = dependencies.now()
       let start: AppStart = switch activation {
-      case .launch: .launch(classification())
-      case let .resume(start): .resume(start: start)
+      case let .launch(sceneConnectStart):
+        .launch(classification(), AppLaunchMarks(didFinishLaunchingEnd: didFinishLaunchingTime, sceneConnectStart: sceneConnectStart))
+      case let .resume(resume): .resume(resume)
       }
       guard let record = recorder.prepare(start) else { return }
 
       guard let firstFrameReader = dependencies.firstFrameReader else {
-        record(didBecomeActiveTime)
+        record(.firstFrame(didBecomeActiveTime))
         return
       }
+      lock.withLock { _abandon = record }
       firstFrameReader.readFirstFrame { [self] firstFrameTime in
         // A display link pauses in the background, so if the app left the foreground before the
         // first frame, the frame it reports is from the next time the app returned.
@@ -112,7 +128,8 @@
           return
         }
         // A start never ends before the app became active, whatever the reader reports.
-        record(max(firstFrameTime, didBecomeActiveTime))
+        lock.withLock { _abandon = nil }
+        record(.firstFrame(max(firstFrameTime, didBecomeActiveTime)))
       }
     }
   }

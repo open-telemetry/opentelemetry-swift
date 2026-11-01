@@ -65,3 +65,148 @@ groups:
       - ref: start.sampled_page_in_ratio
         requirement_level:
           conditionally_required: If the launch type was measured.
+  - id: span.app_start.v2
+    type: span
+    span_kind: internal
+    stability: development
+    brief: >
+      Version 2 of the app launch span, from when the launch began to the first frame displayed.
+    note: |
+      **Span name** MUST be `app.start`.
+
+      **Span kind** MUST be `INTERNAL`.
+
+      **Instrumentation scope** MUST be `io.opentelemetry.lifecycle` with version `2.0.0`.
+
+      This schema models a launch on W3C `PerformanceNavigationTiming`: a time origin, `xxxStart`
+      and `xxxEnd` timestamps, a `type` and an `activationStart`. It uses no span events, because
+      OpenTelemetry is deprecating them. Each phase between two timestamps is a child span.
+
+      | Timestamp | Marks | W3C analog |
+      | --- | --- | --- |
+      | `processStart` | Process start, the time origin (`sysctl` `KERN_PROC_PID`, `kp_proc.p_starttime`) | `startTime` |
+      | `initializerStart` | The C `constructor` function of the instrumentation ran | none |
+      | `activationStart` | A prewarmed launch resumed. The same time as `initializerStart`, because Apple says a prewarm runs no application code | `activationStart` |
+      | `didFinishLaunchingEnd` | `didFinishLaunchingNotification`, if the instrumentation was installed before it | `domContentLoadedEventEnd` |
+      | `sceneConnectStart` | The first `UIScene.willConnectNotification` of the launch | none |
+      | `firstFrameDisplayed` | The first frame displayed after `didBecomeActive`, read as for `AppStart` | First paint |
+
+      The span's timestamps depend on `app.start.type`:
+
+      | `app.start.type` | Start timestamp | End timestamp |
+      | --- | --- | --- |
+      | `cold`, `warm` | `processStart` | `firstFrameDisplayed` |
+      | `prewarmed` | `activationStart`, or `processStart` if that can't be read | `firstFrameDisplayed` |
+
+      If `app.start.outcome` is `abandoned`, the span and its open children end when the app entered
+      the background instead. Leaving before the app first becomes active records no span, because
+      that can't be told apart from a background launch.
+
+      A phase is only recorded if both of its timestamps are known:
+
+      | Span | Parent | Start | End | When |
+      | --- | --- | --- | --- | --- |
+      | `app.start.pre_init` | `app.start` | `processStart` | `initializerStart` | Not prewarmed |
+      | `app.start.app_init` | `app.start` | `initializerStart` | `didFinishLaunchingEnd` | |
+      | `app.start.render` | `app.start` | `didFinishLaunchingEnd` | The end of `app.start` | |
+      | `app.start.scene_setup` | `app.start.render` | `sceneConnectStart` | The end of `app.start` | |
+
+      Child spans have no attributes. `app.start.pre_init`, `app.start.app_init` and
+      `app.start.render` cover the whole span with no gaps, so their durations add up to its
+      duration. The duration attributes copy them onto the root, so they can be queried without
+      joining spans.
+    attributes:
+      - ref: app.start.type
+        requirement_level: required
+      - ref: app.start.outcome
+        requirement_level: required
+      - ref: app.start.determined_by
+        requirement_level: required
+      - ref: app.start.reason
+        requirement_level: opt_in
+      - ref: app.start.previous_exit
+        requirement_level: opt_in
+      - ref: app.start.sampled_pages.resident_at_end
+        requirement_level:
+          conditionally_required: If the launch's pages could be sampled.
+      - ref: app.start.sampled_pages.paged_in
+        requirement_level:
+          conditionally_required: If the launch's pages could be sampled.
+      - ref: app.start.sampled_page_in_ratio
+        requirement_level:
+          conditionally_required: If the launch's pages could be sampled.
+      - ref: app.start.prewarm.cache_state
+        requirement_level:
+          conditionally_required: If `app.start.type` is `prewarmed` and the pages could be sampled.
+      - ref: app.start.page_ins.pre_initializer
+        requirement_level: recommended
+      - ref: app.start.page_ins.post_initializer
+        requirement_level: recommended
+      - ref: app.start.pre_activation.duration
+        requirement_level:
+          conditionally_required: If `app.start.type` is `prewarmed`.
+      - ref: app.start.pre_init.duration
+        requirement_level:
+          conditionally_required: If `app.start.pre_init` is recorded.
+      - ref: app.start.app_init.duration
+        requirement_level:
+          conditionally_required: If `app.start.app_init` is recorded.
+      - ref: app.start.render_delay.duration
+        requirement_level:
+          conditionally_required: If `app.start.render` is recorded.
+  - id: span.app_resume.v2
+    type: span
+    span_kind: internal
+    stability: development
+    brief: >
+      Version 2 of the app resume span. A resume is its own span, not a launch type, because the
+      process is already alive and there's no `processStart`.
+    note: |
+      **Span name** MUST be `app.resume`.
+
+      **Span kind** MUST be `INTERNAL`.
+
+      **Instrumentation scope** MUST be `io.opentelemetry.lifecycle` with version `2.0.0`.
+
+      The span starts at `sceneConnectStart` if a scene connected as the app returned to the
+      foreground, because UIKit connects it first, and otherwise at
+      `UIApplication.willEnterForegroundNotification`. It ends at the first frame displayed after
+      the next `UIApplication.didBecomeActiveNotification`, or when the app entered the background
+      if `app.resume.outcome` is `abandoned`.
+
+      A child span `app.resume.scene_setup` runs from `sceneConnectStart` to the end of `app.resume`
+      if a scene connected. Regaining focus without entering the background records no span.
+    attributes:
+      - ref: app.resume.type
+        requirement_level: required
+      - ref: app.resume.outcome
+        requirement_level: required
+      - ref: app.resume.reason
+        requirement_level: opt_in
+      - ref: app.resume.background.duration
+        requirement_level:
+          conditionally_required: If the app entered the background earlier in this process.
+      - ref: app.resume.page_ins
+        requirement_level: opt_in
+  - id: metric.app.start.duration
+    type: metric
+    metric_name: app.start.duration
+    instrument: histogram
+    unit: s
+    stability: development
+    brief: >
+      The duration of each completed `app.start` span.
+    attributes:
+      - ref: app.start.type
+        requirement_level: required
+  - id: metric.app.resume.duration
+    type: metric
+    metric_name: app.resume.duration
+    instrument: histogram
+    unit: s
+    stability: development
+    brief: >
+      The duration of each completed `app.resume` span.
+    attributes:
+      - ref: app.resume.type
+        requirement_level: required

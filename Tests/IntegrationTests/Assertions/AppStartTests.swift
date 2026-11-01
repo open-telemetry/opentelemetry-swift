@@ -28,6 +28,7 @@ final class AppStartTests: XCTestCase {
   private static let scope = "io.opentelemetry.lifecycle"
   private static let spanName = "AppStart"
   private typealias Start = FederatedSemanticConventions.Start
+  private typealias App = FederatedSemanticConventions.App
   private static let typeKey = Start.type.rawValue
   private static let activePrewarmedKey = Start.activePrewarmed.rawValue
   private static let registryKeys = Set(Start.allCases.map(\.rawValue))
@@ -53,7 +54,7 @@ final class AppStartTests: XCTestCase {
   // AppStart span may not be exported.
   private static let launches: [Scenario.Launch] = [
     .main, .maxLifetime, .restoreFirst, .restoreSecond, .noRestore, .crashReport, .logLimits,
-    .appStartResume, .appStartLateInstall, .appStartBackground, .appStartUpdate, .appStartReinstall, .appStartMeasured,
+    .appStartResume, .appStartLateInstall, .appStartBackground, .appStartUpdate, .appStartReinstall,
   ]
   // Launches where every activation is recorded.
   private static let fullyRecordedLaunches = launches.filter { $0 != .appStartLateInstall }
@@ -186,27 +187,58 @@ final class AppStartTests: XCTestCase {
     }
   }
 
-  // MARK: measured
+  // MARK: mincore
 
-  func testMeasuredLaunchAgreesWithItsSampledPages() throws {
-    let span = try appStart(.appStartMeasured)
-    let residentAtEnd = try XCTUnwrap(span.attributes.int(Start.sampledPagesResidentAtEnd.rawValue))
-    let pagedIn = try XCTUnwrap(span.attributes.int(Start.sampledPagesPagedIn.rawValue))
-    let ratio = try XCTUnwrap(span.attributes.double(Start.sampledPageInRatio.rawValue))
+  func testMincoreLaunchMatchesVersion2OfTheSchema() throws {
+    let spans = OTLPOutput.launch(.appStartMincore).spans.filter { $0.scope.name == Self.scope }
+    XCTAssertTrue(appStarts(.appStartMincore).isEmpty, "the schemas are recorded by different libraries")
+    let root = try XCTUnwrap(spans.first { $0.span.name == "app.start" })
+    XCTAssertEqual(spans.filter { $0.span.name == "app.start" }.count, 1)
+    XCTAssertEqual(root.scope.version, "2.0.0")
+    let span = root.span
+    XCTAssertEqual(span.kind, .internal)
+    XCTAssertTrue(span.parentSpanID.isEmpty)
 
+    let residentAtEnd = try XCTUnwrap(span.attributes.int(App.startSampledPagesResidentAtEnd.rawValue))
+    let pagedIn = try XCTUnwrap(span.attributes.int(App.startSampledPagesPagedIn.rawValue))
+    let ratio = try XCTUnwrap(span.attributes.double(App.startSampledPageInRatio.rawValue))
     XCTAssertGreaterThan(residentAtEnd, 0)
     XCTAssertLessThanOrEqual(residentAtEnd, 256)
     XCTAssertLessThanOrEqual(pagedIn, residentAtEnd)
     XCTAssertEqual(ratio, Double(pagedIn) / Double(residentAtEnd), accuracy: 1e-9)
-    XCTAssertEqual(span.attributes.string(Self.typeKey), ratio >= 0.5 ? Self.cold : Self.warm)
-    assertDiffer(span.startTimeUnixNano, from: try processStart(.appStartMeasured), byAtMost: Self.clockTolerance,
-                 "a measured launch starts at process start")
-    assertEndsAtFirstFrame(span, activation: try XCTUnwrap(markers(Scenario.activeSpanName, in: .appStartMeasured).first),
-                           in: .appStartMeasured)
+    let type = ratio >= 0.5 ? App.StartTypeValues.cold : App.StartTypeValues.warm
+    XCTAssertEqual(span.attributes.string(App.startType.rawValue), type.description)
+    XCTAssertEqual(span.attributes.string(App.startOutcome.rawValue), App.StartOutcomeValues.completed.description)
+    XCTAssertEqual(span.attributes.string(App.startDeterminedBy.rawValue), App.StartDeterminedByValues.pageSampling.description)
+    XCTAssertNotNil(span.attributes.int(App.startPageInsPreInitializer.rawValue))
+    XCTAssertNotNil(span.attributes.int(App.startPageInsPostInitializer.rawValue))
+
+    assertDiffer(span.startTimeUnixNano, from: try processStart(.appStartMincore), byAtMost: Self.clockTolerance,
+                 "a launch that wasn't prewarmed starts at process start")
+    assertEndsAtFirstFrame(span, activation: try XCTUnwrap(markers(Scenario.activeSpanName, in: .appStartMincore).first),
+                           in: .appStartMincore)
+
+    // The three top-level phases cover the span with no gaps.
+    let phases = try ["app.start.pre_init", "app.start.app_init", "app.start.render"].map { name in
+      try XCTUnwrap(spans.first { $0.span.name == name }, name).span
+    }
+    XCTAssertEqual(phases.first?.startTimeUnixNano, span.startTimeUnixNano)
+    XCTAssertEqual(phases.last?.endTimeUnixNano, span.endTimeUnixNano)
+    for (phase, next) in zip(phases, phases.dropFirst()) {
+      XCTAssertEqual(phase.endTimeUnixNano, next.startTimeUnixNano)
+    }
+    for phase in phases {
+      XCTAssertEqual(phase.traceID, span.traceID)
+      XCTAssertEqual(phase.parentSpanID, span.spanID)
+    }
+    let sceneSetup = try XCTUnwrap(spans.first { $0.span.name == "app.start.scene_setup" }).span
+    XCTAssertEqual(sceneSetup.parentSpanID, phases[2].spanID)
+    XCTAssertGreaterThanOrEqual(sceneSetup.startTimeUnixNano, phases[2].startTimeUnixNano)
+    XCTAssertEqual(sceneSetup.endTimeUnixNano, span.endTimeUnixNano)
   }
 
   func testInferredLaunchesHaveNoSampledPages() {
-    for launch in Self.launches where launch != .appStartMeasured {
+    for launch in Self.launches {
       for exported in appStarts(launch) {
         XCTAssertNil(exported.span.attributes[Start.sampledPageInRatio.rawValue], "\(launch)")
       }

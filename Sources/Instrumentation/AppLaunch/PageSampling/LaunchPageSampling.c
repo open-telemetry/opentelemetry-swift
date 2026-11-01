@@ -12,6 +12,7 @@
   #include <limits.h>
   #include <mach-o/dyld.h>
   #include <mach-o/loader.h>
+  #include <mach/mach.h>
   #include <stdint.h>
   #include <string.h>
   #include <sys/mman.h>
@@ -23,6 +24,16 @@
 static uintptr_t sampledPages[MAX_SAMPLED_PAGES];
 static bool wasResident[MAX_SAMPLED_PAGES];
 static int sampledPageCount = 0;
+static int pageInsAtInitializer = -1;
+
+static int readPageIns(void) {
+  task_events_info_data_t info;
+  mach_msg_type_number_t count = TASK_EVENTS_INFO_COUNT;
+  if (task_info(mach_task_self(), TASK_EVENTS_INFO, (task_info_t)&info, &count) != KERN_SUCCESS) {
+    return -1;
+  }
+  return info.pageins;
+}
 
 static bool isResident(uintptr_t page, bool *resident) {
   char status = 0;
@@ -87,6 +98,7 @@ static bool largestAppImageText(uintptr_t *start, uint64_t *size) {
 }
 
 __attribute__((constructor)) static void otel_app_launch_sample_pages_at_start(void) {
+  pageInsAtInitializer = readPageIns();
   uintptr_t start = 0;
   uint64_t size = 0;
   if (!largestAppImageText(&start, &size)) {
@@ -135,8 +147,22 @@ bool otel_app_launch_read_page_sample(int *residentAtEnd, int *pagedIn) {
   *pagedIn = pagedInCount;
   return true;
 }
+
+bool otel_app_launch_read_page_ins(int *preInitializer, int *postInitializer) {
+  int pageIns = readPageIns();
+  if (pageInsAtInitializer < 0 || pageIns < pageInsAtInitializer) {
+    return false;
+  }
+  *preInitializer = pageInsAtInitializer;
+  *postInitializer = pageIns - pageInsAtInitializer;
+  return true;
+}
 #else
 bool otel_app_launch_read_page_sample(int *residentAtEnd, int *pagedIn) {
+  return false;
+}
+
+bool otel_app_launch_read_page_ins(int *preInitializer, int *postInitializer) {
   return false;
 }
 #endif

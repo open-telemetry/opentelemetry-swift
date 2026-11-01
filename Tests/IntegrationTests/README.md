@@ -50,7 +50,7 @@ repo work together inside a real iOS app. The flow is:
      number bumped, as an app update does, so the launch must be `cold`.
    - `app-start-reinstall`: the runner installs that same build again, so only
      the install directory differs and the launch must still be `cold`.
-   - `app-start-measured`: uses `MeasuredAppLaunchInstrumentation`. The
+   - `app-start-mincore`: uses `MincoreLaunchInstrumentation`. The
      simulator shares the Mac's page cache, so the launch type isn't predictable,
      but it must agree with the sampled pages on the span.
    Every launch also records its process start (with the process's task role)

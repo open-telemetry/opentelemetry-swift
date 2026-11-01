@@ -1,7 +1,7 @@
 file_format: definition_manifest/2.0
 name: opentelemetry-swift
 description: Local semantic conventions for opentelemetry-swift instrumentations.
-schema_url: https://opentelemetry.io/schemas/opentelemetry-swift/0.1.0
+schema_url: https://opentelemetry.io/schemas/opentelemetry-swift/0.2.0
 dependencies:
   - name: otel
     registry_path: https://github.com/open-telemetry/semantic-conventions@v1.38.0[model]

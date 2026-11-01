@@ -16,7 +16,7 @@ public struct AppLaunchInstrumentationConfiguration: Equatable, Sendable {
     /// The app's process was still alive.
     case resume
     /// A launch the system prewarmed, so the libraries were already loaded when the user launched
-    /// it. Only `MeasuredAppLaunchInstrumentation` reports this type. It's opt-in here so
+    /// it. Only `MincoreLaunchInstrumentation` reports this type. It's opt-in here so
     /// `InferredAppLaunchInstrumentation` keeps reporting these launches as `cold` or `warm`.
     case prewarmed
   }

@@ -18,6 +18,7 @@
       static let defaultWillEnterForegroundNotification: Notification.Name? = UIApplication.willEnterForegroundNotification
       static let defaultDidEnterBackgroundNotification: Notification.Name? = UIApplication.didEnterBackgroundNotification
       static let defaultSceneWillConnectNotification: Notification.Name? = UIScene.willConnectNotification
+      static let defaultDidFinishLaunchingNotification: Notification.Name? = UIApplication.didFinishLaunchingNotification
       static var defaultFirstFrameReader: FirstFrameReader? { DisplayLinkFirstFrameReader() }
 
       /// Whether the app is active, or `false` if that can't be read off the main thread.
@@ -35,6 +36,7 @@
       static let defaultWillEnterForegroundNotification: Notification.Name? = nil
       static let defaultDidEnterBackgroundNotification: Notification.Name? = nil
       static let defaultSceneWillConnectNotification: Notification.Name? = nil
+      static let defaultDidFinishLaunchingNotification: Notification.Name? = NSApplication.didFinishLaunchingNotification
       static var defaultFirstFrameReader: FirstFrameReader? { nil }
 
       /// Whether the app is active, or `false` if that can't be read off the main thread.
