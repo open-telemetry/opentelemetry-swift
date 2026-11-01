@@ -112,7 +112,6 @@ We are also available in the [#otel-swift](https://cloud-native.slack.com/archiv
 
 ### Maintainers
 
-- [Ariel Demarco](https://github.com/arieldemarco), Embrace
 - [Bryce Buchanan](https://github.com/bryce-b), Elastic
 - [Ignacio Bonafonte](https://github.com/nachobonafonte), Independent
 
@@ -135,6 +134,8 @@ For more information about the triager role, see the [community repository](http
 
 ### Emeritus
 
+- [Alolita Sharma](https://github.com/alolita), Triager
+- [Ariel Demarco](https://github.com/ArielDemarco), Maintainer
 - [Austin Treat Emmons](https://github.com/atreat), Triager
 
 For more information about the emeritus role, see the
