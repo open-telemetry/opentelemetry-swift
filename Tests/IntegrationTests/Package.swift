@@ -35,7 +35,7 @@ let package = Package(
       name: "IntegrationTests",
       dependencies: [
         .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
-        .product(name: "InferredAppLaunchInstrumentation", package: "opentelemetry-swift")
+        .product(name: "MincoreLaunchInstrumentation", package: "opentelemetry-swift")
       ],
       path: "Assertions"
     )

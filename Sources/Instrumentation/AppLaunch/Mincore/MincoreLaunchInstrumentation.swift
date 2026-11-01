@@ -14,23 +14,18 @@ import OpenTelemetryApi
   /// the same pages when the app becomes active. Prewarmed launches are `prewarmed`.
   ///
   /// Linking this library runs `mincore` before `main()`, so unlike a configuration option it can't
-  /// be turned off at runtime. Link only one app launch library.
+  /// be turned off at runtime.
   ///
   /// Supported on iOS, iPadOS, tvOS, visionOS, Mac Catalyst and macOS. On watchOS this does nothing.
   public class MincoreLaunchInstrumentation: Instrumentation {
     typealias Dependencies = AppLaunchRuntime.Dependencies
-
-    /// Records every launch type, including `prewarmed`.
-    public static let defaultConfiguration = AppLaunchInstrumentationConfiguration(
-      launchTypes: Set(AppLaunchInstrumentationConfiguration.LaunchType.allCases)
-    )
 
     /// Whether the instrumentation is installed and observing app activations.
     public static var isInstalled: Bool { AppLaunchRuntime.isInstalled }
 
     /// Installs the instrumentation, the same as `install(configuration:)`. If it's already
     /// installed, `configuration` is ignored.
-    public init(configuration: AppLaunchInstrumentationConfiguration = defaultConfiguration) {
+    public init(configuration: AppLaunchInstrumentationConfiguration = .init()) {
       super.init(scope: AppLaunchRuntime.instrumentationScope)
       Self.install(configuration: configuration)
     }
@@ -38,38 +33,35 @@ import OpenTelemetryApi
     /// Starts observing app activations. Idempotent and thread-safe. Call it as early as
     /// possible, before the app first becomes active, so the launch is recorded. Only the first
     /// call takes effect.
-    public static func install(configuration: AppLaunchInstrumentationConfiguration = defaultConfiguration) {
-      var dependencies = Dependencies(configuration: resolved(configuration))
+    public static func install(configuration: AppLaunchInstrumentationConfiguration = .init()) {
       let pageSampler = KernelLaunchPageSampler()
-      dependencies.makeClassifier = { dependencies in
-        MincoreLaunchClassifier(
-          fallback: InferredLaunchClassifier(dependencies: dependencies),
-          pageSampler: pageSampler,
-          isActivePrewarm: dependencies.isActivePrewarm,
-          coldPageInRatio: dependencies.configuration.coldPageInRatio
-        )
-      }
-      dependencies.makeRecorder = { MincoreAppStartRecorder(dependencies: $0, pageSampler: pageSampler) }
-      install(dependencies: dependencies)
+      install(dependencies: Dependencies(
+        configuration: validated(configuration),
+        makeClassifier: { dependencies in
+          MincoreLaunchClassifier(
+            fallback: InferredLaunchClassifier(dependencies: dependencies),
+            pageSampler: pageSampler,
+            isActivePrewarm: dependencies.isActivePrewarm,
+            coldPageInRatio: dependencies.configuration.coldPageInRatio
+          )
+        },
+        makeRecorder: { MincoreAppStartRecorder(dependencies: $0, pageSampler: pageSampler) }
+      ))
     }
 
     static func install(dependencies: Dependencies) {
       AppLaunchRuntime.install(dependencies: dependencies)
     }
 
-    /// A configuration that didn't choose its launch types gets this library's, so setting another
-    /// option doesn't stop prewarmed launches being recorded. A threshold outside its range would
-    /// make every launch the same type, so it's replaced with the default.
-    static func resolved(_ configuration: AppLaunchInstrumentationConfiguration) -> AppLaunchInstrumentationConfiguration {
-      var resolved = configuration
-      if configuration.usesDefaultLaunchTypes {
-        resolved.launchTypes = defaultConfiguration.launchTypes
-      }
+    /// A threshold outside its range would make every launch the same type, so it's replaced with
+    /// the default.
+    static func validated(_ configuration: AppLaunchInstrumentationConfiguration) -> AppLaunchInstrumentationConfiguration {
+      var validated = configuration
       if !(configuration.coldPageInRatio > 0 && configuration.coldPageInRatio <= 1) {
         InternalLogger.error("MincoreLaunchInstrumentation: `coldPageInRatio` must be above 0 and at most 1, so the default is used.")
-        resolved.coldPageInRatio = defaultConfiguration.coldPageInRatio
+        validated.coldPageInRatio = AppLaunchInstrumentationConfiguration().coldPageInRatio
       }
-      return resolved
+      return validated
     }
   }
 #else
@@ -78,18 +70,13 @@ import OpenTelemetryApi
   public class MincoreLaunchInstrumentation: Instrumentation {
     private static let instrumentationScope = "io.opentelemetry.lifecycle"
 
-    /// Records every launch type, including `prewarmed`.
-    public static let defaultConfiguration = AppLaunchInstrumentationConfiguration(
-      launchTypes: Set(AppLaunchInstrumentationConfiguration.LaunchType.allCases)
-    )
-
     /// Always `false`.
     public static var isInstalled: Bool { false }
 
-    public init(configuration: AppLaunchInstrumentationConfiguration = defaultConfiguration) {
+    public init(configuration: AppLaunchInstrumentationConfiguration = .init()) {
       super.init(scope: Self.instrumentationScope)
     }
 
-    public static func install(configuration: AppLaunchInstrumentationConfiguration = defaultConfiguration) {}
+    public static func install(configuration: AppLaunchInstrumentationConfiguration = .init()) {}
   }
 #endif

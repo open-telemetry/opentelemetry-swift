@@ -5,23 +5,23 @@
 
 #if canImport(Darwin) && ((canImport(UIKit) && !os(watchOS)) || canImport(AppKit))
   @testable import AppLaunchInstrumentationCore
-  @testable import InferredAppLaunchInstrumentation
+  @testable import MincoreLaunchInstrumentation
   import Foundation
   import SharedTestUtils
   import XCTest
 
   /// Stress tests for install, activation and reset. They only run under Thread Sanitizer (or
   /// with `OTEL_CONCURRENCY_TESTS=1`).
-  extension InferredAppLaunchInstrumentationTests {
+  extension MincoreLaunchInstrumentationTests {
     func testInstallUnderContentionObservesOnce() throws {
       try ConcurrencyTesting.skipUnlessEnabled()
       let dependencies = makeDependencies()
       let notInstalledAfterReturn = ConcurrentCounter()
 
       ConcurrencyTesting.stress(iterations: 50) { _, _ in
-        InferredAppLaunchInstrumentation.install(dependencies: dependencies)
+        MincoreLaunchInstrumentation.install(dependencies: dependencies)
         // Once any install call has returned, the instrumentation must report itself installed.
-        if !InferredAppLaunchInstrumentation.isInstalled {
+        if !MincoreLaunchInstrumentation.isInstalled {
           notInstalledAfterReturn.increment()
         }
       }
@@ -32,7 +32,7 @@
       XCTAssertEqual(notInstalledAfterReturn.value, 0, "install() returned before the instrumentation was marked installed")
       XCTAssertEqual(firstFrameReader.readCount, 1, "the activation observer must be registered exactly once")
       XCTAssertEqual(launchHistory.exchangeCount, 1, "the launch history must be updated exactly once")
-      XCTAssertEqual(finishedSpans().count, 1)
+      XCTAssertEqual(rootSpans().count, 1)
     }
 
     func testConcurrentActivationsRecordOneColdStart() throws {
@@ -47,7 +47,7 @@
       firstFrameReader.displayFrame(at: firstFrame)
 
       XCTAssertEqual(firstFrameReader.readCount, 1)
-      XCTAssertEqual(finishedSpans().count, 1)
+      XCTAssertEqual(rootSpans().count, 1)
     }
 
     func testInstallRacingActivationRecordsAtMostOneColdStart() throws {
@@ -57,7 +57,7 @@
       let name = didBecomeActive
 
       let install: @Sendable () -> Void = {
-        for _ in 0 ..< 50 { InferredAppLaunchInstrumentation.install(dependencies: dependencies) }
+        for _ in 0 ..< 50 { MincoreLaunchInstrumentation.install(dependencies: dependencies) }
       }
       let activate: @Sendable () -> Void = {
         for _ in 0 ..< 50 { center.post(name: name, object: nil) }
@@ -68,9 +68,9 @@
       center.post(name: name, object: nil)
       firstFrameReader.displayFrame(at: firstFrame)
 
-      XCTAssertTrue(InferredAppLaunchInstrumentation.isInstalled)
+      XCTAssertTrue(MincoreLaunchInstrumentation.isInstalled)
       XCTAssertEqual(firstFrameReader.readCount, 1)
-      XCTAssertEqual(finishedSpans().count, 1)
+      XCTAssertEqual(rootSpans().count, 1)
     }
 
     func testResetRacingActivationLeavesNoObserverBehind() throws {
@@ -82,16 +82,16 @@
       ConcurrencyTesting.stress(iterations: 50) { thread, _ in
         switch thread % 3 {
         case 0:
-          InferredAppLaunchInstrumentation.install(dependencies: dependencies)
+          MincoreLaunchInstrumentation.install(dependencies: dependencies)
         case 1:
           center.post(name: name, object: nil)
         default:
-          InferredAppLaunchInstrumentation.reset()
+          AppLaunchRuntime.reset()
         }
       }
 
       // After a final reset, no observer registered during the race may still record.
-      InferredAppLaunchInstrumentation.reset()
+      AppLaunchRuntime.reset()
       let readsBefore = firstFrameReader.readCount
       center.post(name: name, object: nil)
 
@@ -112,7 +112,7 @@
       // Every span comes from a first frame read, and reads interrupted by a background event are
       // dropped, so there can't be more spans than reads.
       XCTAssertGreaterThanOrEqual(firstFrameReader.readCount, 1)
-      XCTAssertLessThanOrEqual(finishedSpans().count, firstFrameReader.readCount)
+      XCTAssertLessThanOrEqual(rootSpans().count, firstFrameReader.readCount)
     }
   }
 #endif
