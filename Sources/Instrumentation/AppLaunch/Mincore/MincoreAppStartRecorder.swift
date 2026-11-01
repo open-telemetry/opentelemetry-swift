@@ -68,10 +68,6 @@
       let type = classification.type
       let configuration = dependencies.configuration
       let isPrewarmed = type == .prewarmed
-      if isPrewarmed, configuration.dropPrewarmed {
-        InternalLogger.debug("MincoreLaunchInstrumentation: dropped a prewarmed \(type) launch, because `dropPrewarmed` is set.")
-        return
-      }
       let initializerTime = dependencies.earliestAppCodeTime()
       // A prewarmed process started long before the user launched the app, so time the launch
       // from when app code first ran instead.

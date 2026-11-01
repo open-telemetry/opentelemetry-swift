@@ -25,7 +25,8 @@
     func begin() -> @Sendable () -> LaunchClassification
   }
 
-  /// Infers the launch type by comparing the current launch's state with the previous launch's.
+  /// Infers the launch type by comparing the current launch's state with the previous launch's. It's
+  /// the fallback for a launch whose pages can't be sampled.
   package struct InferredLaunchClassifier: LaunchClassifier {
     private let currentLaunchContext: @Sendable () -> LaunchContext?
     private let launchHistory: LaunchHistory
