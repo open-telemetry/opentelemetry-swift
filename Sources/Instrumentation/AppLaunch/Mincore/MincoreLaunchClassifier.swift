@@ -56,8 +56,6 @@
   struct MincoreLaunchClassifier: LaunchClassifier {
     private typealias App = FederatedSemanticConventions.App
 
-    // At least half of the launch's code had to come from disk.
-    static let coldPageInRatio = 0.5
     // Fewer resident pages than this are too few for a ratio to mean anything, unless that's all
     // the app has. Real launches had over 100 in testing.
     static let minimumResidentPages = 16
@@ -65,11 +63,12 @@
     let fallback: LaunchClassifier
     let pageSampler: LaunchPageSampler
     let isActivePrewarm: @Sendable () -> Bool
+    let coldPageInRatio: Double
 
     func begin() -> @Sendable () -> LaunchClassification {
       // Always started, so the launch history stays current for launches that can't be measured.
       let inferred = fallback.begin()
-      return { [pageSampler, isActivePrewarm] in
+      return { [pageSampler, isActivePrewarm, coldPageInRatio] in
         let isPrewarmed = isActivePrewarm()
         guard let sample = pageSampler.readSample(),
               sample.residentAtEnd >= min(Self.minimumResidentPages, sample.sampled),
@@ -82,7 +81,7 @@
           classification.attributes = Self.determinedBy(.launchHistory)
           return classification
         }
-        let isCold = ratio >= Self.coldPageInRatio
+        let isCold = ratio >= coldPageInRatio
         let type: AppLaunchInstrumentationConfiguration.LaunchType = isPrewarmed ? .prewarmed : isCold ? .cold : .warm
         var attributes = Self.determinedBy(isPrewarmed ? .prewarmFlag : .pageSampling)
         attributes[App.startSampledPagesTotal.rawValue] = .int(sample.sampled)

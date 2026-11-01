@@ -45,7 +45,8 @@ import OpenTelemetryApi
         MincoreLaunchClassifier(
           fallback: InferredLaunchClassifier(dependencies: dependencies),
           pageSampler: pageSampler,
-          isActivePrewarm: dependencies.isActivePrewarm
+          isActivePrewarm: dependencies.isActivePrewarm,
+          coldPageInRatio: dependencies.configuration.coldPageInRatio
         )
       }
       dependencies.makeRecorder = { MincoreAppStartRecorder(dependencies: $0, pageSampler: pageSampler) }
@@ -57,11 +58,17 @@ import OpenTelemetryApi
     }
 
     /// A configuration that didn't choose its launch types gets this library's, so setting another
-    /// option doesn't stop prewarmed launches being recorded.
+    /// option doesn't stop prewarmed launches being recorded. A threshold outside its range would
+    /// make every launch the same type, so it's replaced with the default.
     static func resolved(_ configuration: AppLaunchInstrumentationConfiguration) -> AppLaunchInstrumentationConfiguration {
-      guard configuration.usesDefaultLaunchTypes else { return configuration }
       var resolved = configuration
-      resolved.launchTypes = defaultConfiguration.launchTypes
+      if configuration.usesDefaultLaunchTypes {
+        resolved.launchTypes = defaultConfiguration.launchTypes
+      }
+      if !(configuration.coldPageInRatio > 0 && configuration.coldPageInRatio <= 1) {
+        InternalLogger.error("MincoreLaunchInstrumentation: `coldPageInRatio` must be above 0 and at most 1, so the default is used.")
+        resolved.coldPageInRatio = defaultConfiguration.coldPageInRatio
+      }
       return resolved
     }
   }
