@@ -34,7 +34,7 @@ repo work together inside a real iOS app. The flow is:
    - `app-start-resume`: a warm launch. Once its first frame is displayed, the
      runner opens Settings and then launches the app again, which brings the
      running process back to the foreground for a `resume`.
-   - `app-start-late-install`: installs `InferredAppLaunchInstrumentation` after the
+   - `app-start-late-install`: installs `MincoreLaunchInstrumentation` after the
      app first became active, so the launch must not be recorded. The second
      activation blocks the main thread while the runner opens Settings, so the
      app is in the background before its first frame and that activation must
@@ -50,18 +50,21 @@ repo work together inside a real iOS app. The flow is:
      number bumped, as an app update does, so the launch must be `cold`.
    - `app-start-reinstall`: the runner installs that same build again, so only
      the install directory differs and the launch must still be `cold`.
-   - `app-start-mincore`: uses `MincoreLaunchInstrumentation`. The
-     simulator shares the Mac's page cache, so the launch type isn't predictable,
-     but it must agree with the sampled pages on the span.
+   - `app-start-mincore`: the simulator shares the Mac's page cache, so the
+     launch type isn't predictable, but it must agree with the sampled pages on
+     the span.
    Every launch also records its process start (with the process's task role)
    and each scene connection, `willEnterForeground`, `didBecomeActive` and
-   `didEnterBackground` as zero-length marker spans. `AppStartTests` compares
-   every `AppStart` span's timestamps with them, following the span definition
+   `didEnterBackground` as zero-length marker spans. The app records `app.start`
+   version 2, so `AppStartTests` checks the `app-start-mincore` launch and the
+   task roles, and skips its version 1 `AppStart` assertions. The assertions on
+   the launch types and resumes described here are among those skipped. They
+   compare each span's timestamps with the markers, following the span definition
    in `Sources/Instrumentation/SemanticConventions/model/swift/spans.yaml`.
    Attribute keys and values come from `FederatedSemanticConventions`, which is
    generated from that registry, so a span with a key that isn't in the
    registry fails.
-   `main` is the first launch after installation, so its `AppStart` is `cold`,
+   `main` is the first launch after installation, so it's `cold`,
    and the launches after it are `warm`. Prewarming isn't covered: setting
    `ActivePrewarm` makes the system hold the process before `main()` until a
    real launch resumes it. Focus loss isn't covered, because only UI automation

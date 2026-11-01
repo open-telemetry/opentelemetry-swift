@@ -24,6 +24,9 @@ import XCTest
 // triggered in the simulator, focus loss needs a system alert dismissed, and an iPhone app can't
 // destroy its only scene to have a new one connect when it resumes, so they're only covered by
 // the unit tests.
+//
+// The app now records version 2 of the schema, so only `versionTwoTests` run. The others check the
+// version 1 `AppStart` span, which no launch exports.
 final class AppStartTests: XCTestCase {
   private static let scope = "io.opentelemetry.lifecycle"
   private static let spanName = "AppStart"
@@ -61,6 +64,13 @@ final class AppStartTests: XCTestCase {
   private static let warmLaunches: [Scenario.Launch] = [
     .maxLifetime, .restoreFirst, .restoreSecond, .noRestore, .crashReport, .logLimits,
   ]
+
+  private static let versionTwoTests = ["testMincoreLaunchMatchesVersion2OfTheSchema", "testTaskRoleDistinguishesBackgroundLaunches"]
+
+  override func setUpWithError() throws {
+    guard !Self.versionTwoTests.contains(where: name.contains) else { return }
+    throw XCTSkip("The app records app.start version 2, not the version 1 AppStart span")
+  }
 
   private func appStarts(_ launch: Scenario.Launch) -> [ExportedSpan] {
     OTLPOutput.launch(launch).spans
