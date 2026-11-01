@@ -43,14 +43,22 @@ public struct AppLaunchInstrumentationConfiguration: Equatable, Sendable {
   /// the default is 60 seconds.
   public var maxLaunchDuration: TimeInterval
 
+  /// The `app.start.sampled_page_in_ratio` from which a launch is `cold`, above 0 and at most 1. Only
+  /// `MincoreLaunchInstrumentation` uses this. The default of 0.5 means at least half of the launch's
+  /// code had to come from disk. Check the ratios your app reports before changing it, because how
+  /// high they go depends on the app.
+  public var coldPageInRatio: Double
+
   /// - Parameter launchTypes: The launch types to record. By default `[.cold, .warm, .resume]`, and
   ///   also `.prewarmed` for `MincoreLaunchInstrumentation`.
   public init(launchTypes: Set<LaunchType>? = nil,
               dropPrewarmed: Bool = false,
-              maxLaunchDuration: TimeInterval = 60) {
+              maxLaunchDuration: TimeInterval = 60,
+              coldPageInRatio: Double = 0.5) {
     self.launchTypes = launchTypes ?? [.cold, .warm, .resume]
     usesDefaultLaunchTypes = launchTypes == nil
     self.dropPrewarmed = dropPrewarmed
     self.maxLaunchDuration = maxLaunchDuration
+    self.coldPageInRatio = coldPageInRatio
   }
 }

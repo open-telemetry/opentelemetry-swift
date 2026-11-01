@@ -48,7 +48,7 @@ SCHEME = "HackerNewsDemo"
 BUNDLE_ID = "io.opentelemetry.HackerNewsDemo"
 LAUNCH_SPAN = "app.start"
 MAX_SAMPLED_PAGES = 256  # MAX_SAMPLED_PAGES in LaunchPageSampling.c.
-COLD_RATIO = 0.5  # MincoreLaunchClassifier.coldPageInRatio.
+COLD_RATIO = 0.5  # The default AppLaunchInstrumentationConfiguration.coldPageInRatio.
 
 DISK_READ = "File Backed Page In"
 CACHE_HIT = "Page Cache Hit"

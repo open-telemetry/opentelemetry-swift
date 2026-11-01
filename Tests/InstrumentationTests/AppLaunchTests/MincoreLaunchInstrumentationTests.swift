@@ -70,7 +70,8 @@
         MincoreLaunchClassifier(
           fallback: InferredLaunchClassifier(dependencies: dependencies),
           pageSampler: pageSampler,
-          isActivePrewarm: dependencies.isActivePrewarm
+          isActivePrewarm: dependencies.isActivePrewarm,
+          coldPageInRatio: dependencies.configuration.coldPageInRatio
         )
       }
       dependencies.makeRecorder = { MincoreAppStartRecorder(dependencies: $0, pageSampler: pageSampler) }
@@ -127,6 +128,60 @@
       activate()
 
       XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("warm"))
+    }
+
+    func testColdPageInRatioDefaultsToHalf() {
+      XCTAssertEqual(AppLaunchInstrumentationConfiguration().coldPageInRatio, 0.5)
+      XCTAssertEqual(MincoreLaunchInstrumentation.defaultConfiguration.coldPageInRatio, 0.5)
+    }
+
+    func testLaunchBelowAConfiguredThresholdIsWarm() {
+      installMincore(sample: LaunchPageSample(residentAtEnd: 100, pagedIn: 70),
+                     configuration: AppLaunchInstrumentationConfiguration(coldPageInRatio: 0.75))
+
+      activate()
+
+      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("warm"))
+      XCTAssertEqual(launchSpan()?.attributes["app.start.sampled_page_in_ratio"], .double(0.7))
+    }
+
+    func testLaunchAtAConfiguredThresholdIsCold() {
+      installMincore(sample: LaunchPageSample(residentAtEnd: 100, pagedIn: 25),
+                     configuration: AppLaunchInstrumentationConfiguration(coldPageInRatio: 0.25))
+
+      activate()
+
+      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("cold"))
+    }
+
+    func testPrewarmCacheStateUsesTheConfiguredThreshold() {
+      installMincore(sample: LaunchPageSample(residentAtEnd: 100, pagedIn: 70),
+                     isActivePrewarm: true,
+                     configuration: AppLaunchInstrumentationConfiguration(launchTypes: [.prewarmed], coldPageInRatio: 0.75))
+
+      activate()
+
+      XCTAssertEqual(launchSpan()?.attributes["app.start.prewarm.cache_state"], .string("warm"))
+    }
+
+    func testColdPageInRatioOutOfRangeUsesTheDefault() {
+      let messages = captureFeedback()
+
+      for ratio in [0, -1, 1.5, Double.nan] {
+        let configuration = AppLaunchInstrumentationConfiguration(coldPageInRatio: ratio)
+
+        XCTAssertEqual(MincoreLaunchInstrumentation.resolved(configuration).coldPageInRatio, 0.5)
+      }
+
+      XCTAssertEqual(messages.values.filter { $0.contains("coldPageInRatio") }.count, 4)
+    }
+
+    func testColdPageInRatioAtTheEndsOfItsRangeIsKept() {
+      for ratio in [0.01, 1] {
+        let configuration = AppLaunchInstrumentationConfiguration(coldPageInRatio: ratio)
+
+        XCTAssertEqual(MincoreLaunchInstrumentation.resolved(configuration).coldPageInRatio, ratio)
+      }
     }
 
     func testPrewarmedMincoreLaunchIsPrewarmedAndKeepsItsSample() {

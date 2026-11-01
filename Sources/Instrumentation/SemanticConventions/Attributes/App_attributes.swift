@@ -244,7 +244,7 @@ extension FederatedSemanticConventions {
     */
     public struct StartDeterminedByValues: CustomStringConvertible, Sendable {
       
-      /// `app.start.sampled_page_in_ratio` compared with 0.5.
+      /// `app.start.sampled_page_in_ratio` compared with the configured threshold, 0.5 by default.
       public static let pageSampling = StartDeterminedByValues("page_sampling") 
       
       /// The launch's pages couldn't be sampled, so the type was inferred from what changed since the previous launch.
@@ -322,10 +322,10 @@ extension FederatedSemanticConventions {
     */
     public struct StartPrewarmCacheStateValues: CustomStringConvertible, Sendable {
       
-      /// `app.start.sampled_page_in_ratio` is at least 0.5.
+      /// `app.start.sampled_page_in_ratio` is at least the configured threshold, 0.5 by default.
       public static let cold = StartPrewarmCacheStateValues("cold") 
       
-      /// `app.start.sampled_page_in_ratio` is less than 0.5.
+      /// `app.start.sampled_page_in_ratio` is less than the configured threshold, 0.5 by default.
       public static let warm = StartPrewarmCacheStateValues("warm") 
 
       internal let value: String 
