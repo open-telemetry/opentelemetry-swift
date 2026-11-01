@@ -103,3 +103,7 @@ Tests/IntegrationTests/.derivedData/
 !Examples/HackerNewsDemo/HackerNewsDemo.xcodeproj/
 Tests/IntegrationTests/.derivedData-*/
 Tests/IntegrationTests/.collector/
+
+# oh-my-claudecode
+.omc/
+.claude/CLAUDE.md

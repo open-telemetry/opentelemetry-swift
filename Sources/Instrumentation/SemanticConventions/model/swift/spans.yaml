@@ -126,6 +126,9 @@ groups:
         requirement_level: opt_in
       - ref: app.start.previous_exit
         requirement_level: opt_in
+      - ref: app.start.sampled_pages.total
+        requirement_level:
+          conditionally_required: If the launch's pages could be sampled.
       - ref: app.start.sampled_pages.resident_at_end
         requirement_level:
           conditionally_required: If the launch's pages could be sampled.
