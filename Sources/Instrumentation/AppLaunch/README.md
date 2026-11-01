@@ -8,30 +8,62 @@ The span name, the `start.type` key, its `cold` and `warm` values and the instru
 
 ## Choosing a library
 
-There are two libraries, which record the same `AppStart` spans and differ in how they tell `cold` from `warm`. Link only one. If both are installed, the first wins, and the second install is ignored and reported as an error.
+There are two libraries. Link only one. If both are installed, the first wins, and the second install is ignored and reported as an error.
 
-|                              | `InferredAppLaunchInstrumentation`              | `MeasuredAppLaunchInstrumentation`                         |
-| ---------------------------- | ----------------------------------------------- | ---------------------------------------------------------- |
-| How it decides               | What changed since the previous launch          | Whether the launch had to bring the app's code into memory |
-| Detects eviction from memory | No, reported as `warm`                          | Yes                                                        |
-| Needs a saved record         | Yes                                             | Only for its fallback                                      |
-| Runs code before `main()`    | Reads the environment                           | Also calls `mincore`, and can't be turned off at runtime   |
-| Prewarmed launches           | `cold` or `warm`, with `start.active_prewarmed` | `prewarmed`, with `start.active_prewarmed`                 |
-| Tested on a real device      | No                                              | No, so don't ship it without checking it on one            |
+|                              | `InferredAppLaunchInstrumentation`              | `MincoreLaunchInstrumentation`                                    |
+| ---------------------------- | ----------------------------------------------- | ----------------------------------------------------------------- |
+| Schema                       | `AppStart` version 1, matching Android          | [`app.start` version 2](#appstart-version-2), matching W3C timing |
+| How it decides               | What changed since the previous launch          | Whether the launch had to bring the app's code into memory        |
+| Detects eviction from memory | No, reported as `warm`                          | Yes                                                               |
+| Needs a saved record         | Yes                                             | Only for its fallback                                             |
+| Runs code before `main()`    | Reads the environment                           | Also calls `mincore`, and can't be turned off at runtime          |
+| Prewarmed launches           | `cold` or `warm`, with `start.active_prewarmed` | `prewarmed`                                                       |
+| Tested on a real device      | No                                              | No, so don't ship it without checking it on one                   |
 
-## Measured launch types
+The rest of this page describes `AppStart`, except for the next section.
 
-`MeasuredAppLaunchInstrumentation` samples up to 256 pages evenly spaced through the `__TEXT` segment of the app's largest image, which is the largest image in the executable's directory. It reads them with `mincore` before `main()` and again when the app first becomes active, and reports:
+## `app.start` version 2
 
-| Attribute                             | Meaning                                                      |
-| ------------------------------------- | ------------------------------------------------------------ |
-| `start.sampled_pages.resident_at_end` | Sampled pages in memory when the app became active           |
-| `start.sampled_pages.paged_in`        | How many of those weren't in memory when the process started |
-| `start.sampled_page_in_ratio`         | `paged_in` divided by `resident_at_end`, from 0 to 1         |
+`MincoreLaunchInstrumentation` records a launch as one `app.start` span and a resume as one `app.resume` span, in the `io.opentelemetry.lifecycle` scope with version `2.0.0`. The [federated registry](../SemanticConventions/model/swift/spans.yaml) is the authoritative definition. The schema follows W3C `PerformanceNavigationTiming`: a time origin, `xxxStart` and `xxxEnd` timestamps, a `type` and an `activationStart`. Each phase is a child span, because OpenTelemetry is deprecating span events.
+
+| `app.start.type` | Span start                                                      | Span end              |
+| ---------------- | --------------------------------------------------------------- | --------------------- |
+| `cold`, `warm`   | Process start                                                   | First frame displayed |
+| `prewarmed`      | When app code first ran, or process start if that can't be read | First frame displayed |
+
+| Child span              | Parent             | Runs from                | To                       |
+| ----------------------- | ------------------ | ------------------------ | ------------------------ |
+| `app.start.pre_init`    | `app.start`        | Process start            | First initializer        |
+| `app.start.app_init`    | `app.start`        | First initializer        | `didFinishLaunching` end |
+| `app.start.render`      | `app.start`        | `didFinishLaunching` end | End of `app.start`       |
+| `app.start.scene_setup` | `app.start.render` | First scene connecting   | End of `app.start`       |
+
+`app.start.pre_init` isn't recorded for a prewarmed launch, which reports `app.start.pre_activation.duration` instead. A phase is only recorded if both of its timestamps are known, so `app.start.app_init` and `app.start.render` need the instrumentation installed before `didFinishLaunching` returns.
+
+If the app became active and then left before its first frame, the span ends at that moment with `app.start.outcome` set to `abandoned`. `app.start.duration` and `app.resume.duration` histograms record completed starts, in seconds. The metrics API can't set a unit, and the SDK only collects instruments that match a registered view.
+
+`app.resume.type` is `hot`, `scene_reconnect` or `background_launched`. A resume starts when its scene connected, if one did, because UIKit connects it first, and otherwise at `willEnterForeground`.
+
+### Measuring `cold` and `warm`
+
+The library samples up to 256 pages evenly spaced through the `__TEXT` segment of the app's largest image, which is the largest image in the executable's directory. It reads them with `mincore` before `main()` and again when the app first becomes active, and reports:
+
+| Attribute                                 | Meaning                                                      |
+| ----------------------------------------- | ------------------------------------------------------------ |
+| `app.start.sampled_pages.resident_at_end` | Sampled pages in memory when the app became active           |
+| `app.start.sampled_pages.paged_in`        | How many of those weren't in memory at the first initializer |
+| `app.start.sampled_page_in_ratio`         | `paged_in` divided by `resident_at_end`, from 0 to 1         |
 
 A launch is `cold` when the ratio is at least 0.5, and `warm` otherwise. The share of `__TEXT` in memory can't be used directly, because a launch only touches part of the app's code, so even a warm launch can be far from 100%. Comparing the pages a launch ended up with to the ones it started with removes that difference between apps.
 
-A launch that can't be sampled falls back to the [inferred rules](#cold-and-warm) without these attributes, or is `prewarmed` if the system prewarmed it. Code in other images, such as system frameworks, isn't sampled. A debug build's simulator launch reads the Mac's page cache, so it says nothing about a device.
+A launch that can't be sampled falls back to the [inferred rules](#cold-and-warm) without these attributes, with `app.start.determined_by` set to `launch_history`, or is `prewarmed` if the system prewarmed it. Code in other images, such as system frameworks, isn't sampled. A debug build's simulator launch reads the Mac's page cache, so it says nothing about a device.
+
+### Not recorded yet
+
+- `app.start.reason`, `app.resume.reason`, `app.start.previous_exit` and `app.resume.page_ins` are in the registry, but this library doesn't set them.
+- `crashed` is only for a crash reporter to send on the next launch.
+- `mainStart`, `didFinishLaunchingStart` and scene and delegate handler spans would need method swizzling, so they aren't part of the schema.
+- A launch the user leaves before the app first becomes active records no span, because that can't be told apart from a background launch.
 
 ## Implementation status
 

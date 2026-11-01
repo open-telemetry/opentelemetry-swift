@@ -23,7 +23,7 @@ import OpenTelemetryApi
   /// Supported on iOS, iPadOS, tvOS, visionOS, Mac Catalyst and macOS. On watchOS this does nothing.
   ///
   /// This library infers `cold` and `warm` from what changed since the previous launch.
-  /// `MeasuredAppLaunchInstrumentation` measures them instead. Link only one of them.
+  /// `MincoreLaunchInstrumentation` measures them instead. Link only one of them.
   public class InferredAppLaunchInstrumentation: Instrumentation {
     typealias Dependencies = AppLaunchRuntime.Dependencies
 

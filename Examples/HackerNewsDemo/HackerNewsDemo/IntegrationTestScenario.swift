@@ -116,9 +116,9 @@ enum IntegrationTestScenario {
     // First launch after the runner installed the app with a new build number, so it's cold.
     case appStartUpdate = "app-start-update"
     case appStartReinstall = "app-start-reinstall"
-    // Uses MeasuredAppLaunchInstrumentation. The simulator shares the Mac's page cache, so the type
+    // Uses MincoreLaunchInstrumentation. The simulator shares the Mac's page cache, so the type
     // isn't predictable, but it must agree with the span's sampled pages.
-    case appStartMeasured = "app-start-measured"
+    case appStartMincore = "app-start-mincore"
   }
 
   // Default session timeout for the main launch: short enough that the
@@ -150,8 +150,8 @@ enum IntegrationTestScenario {
 
   // Telemetry skips installing InferredAppLaunchInstrumentation, and the scenario installs it after the
   // app first became active.
-  static var measuresAppLaunch: Bool {
-    isEnabled && launch == .appStartMeasured
+  static var usesMincoreLaunch: Bool {
+    isEnabled && launch == .appStartMincore
   }
 
   static var installsAppLaunchLate: Bool {
@@ -234,7 +234,7 @@ enum IntegrationTestScenario {
       }
     case .appStartBackground:
       signalReady(tracer: tracer, activations: 0)
-    case .appStartResume, .appStartLateInstall, .appStartUpdate, .appStartReinstall, .appStartMeasured:
+    case .appStartResume, .appStartLateInstall, .appStartUpdate, .appStartReinstall, .appStartMincore:
       // Completed from `recordLifecycle` once the expected activations have been displayed.
       break
     }
@@ -242,7 +242,7 @@ enum IntegrationTestScenario {
 
   // How many activations each app-start launch waits for before it completes.
   private static let appStartActivations: [Launch: Int] = [
-    .appStartResume: 2, .appStartLateInstall: 3, .appStartBackground: 1, .appStartUpdate: 1, .appStartReinstall: 1, .appStartMeasured: 1,
+    .appStartResume: 2, .appStartLateInstall: 3, .appStartBackground: 1, .appStartUpdate: 1, .appStartReinstall: 1, .appStartMincore: 1,
   ]
   // The activation the runner interrupts by moving the app to the background before its first
   // frame is displayed.

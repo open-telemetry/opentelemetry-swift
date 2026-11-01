@@ -6,10 +6,25 @@
 #if canImport(Darwin) && ((canImport(UIKit) && !os(watchOS)) || canImport(AppKit))
   import Foundation
 
+  /// How much UI a resume had to rebuild.
+  package enum ResumeKind: Sendable {
+    case hot
+    case sceneReconnect
+    case backgroundLaunched
+  }
+
+  /// A return to the foreground while the process was alive.
+  package struct AppResume: Sendable {
+    package var start: Date
+    package var kind: ResumeKind
+    package var sceneConnectStart: Date?
+    package var backgroundDuration: TimeInterval?
+  }
+
   /// A time the app became active, and what kind of start that was.
   enum Activation {
-    case launch
-    case resume(start: Date)
+    case launch(sceneConnectStart: Date?)
+    case resume(AppResume)
   }
 
   /// Turns the app's lifecycle events into activations. It holds no lock and reads no clock, so its
@@ -17,8 +32,12 @@
   struct ActivationTracker {
     private var hasHandledLaunch: Bool
     private var isInForeground: Bool
-    // When the resume that hasn't reached `didBecomeActive` yet began.
-    private var pendingResumeStart: Date?
+    // The resume that hasn't reached `didBecomeActive` yet.
+    private var pendingResume: AppResume?
+    private var hasBecomeActive: Bool
+    private var lastBackgroundTime: Date?
+    // When the launch's first scene connected.
+    private var launchSceneConnectTime: Date?
     // When a scene connected while the app was in the background, until the main thread finishes
     // handling that event.
     private var sceneConnectTime: Date?
@@ -31,12 +50,16 @@
 
     init(isAppActive: Bool, isBackgroundLaunch: Bool) {
       hasHandledLaunch = isAppActive || isBackgroundLaunch
+      hasBecomeActive = isAppActive
       isInForeground = isAppActive || !isBackgroundLaunch
       isUnconfirmedBackgroundLaunch = isBackgroundLaunch && !isAppActive
     }
 
     /// Returns whether the time was kept, so it must be cleared once the event has been handled.
     mutating func sceneWillConnect(at time: Date) -> Bool {
+      if !hasBecomeActive, launchSceneConnectTime == nil {
+        launchSceneConnectTime = time
+      }
       // The system recreates a scene it discarded while the app was in the background before
       // the app enters the foreground, so a resume starts when that scene connects. A scene
       // connecting while the app is in the foreground, such as a second window on iPad, isn't
@@ -54,14 +77,19 @@
       guard hasHandledLaunch else { return }
       isInForeground = true
       isUnconfirmedBackgroundLaunch = false
-      if pendingResumeStart == nil {
-        pendingResumeStart = sceneConnectTime ?? time
+      if pendingResume == nil {
+        let start = sceneConnectTime ?? time
+        let kind: ResumeKind = !hasBecomeActive ? .backgroundLaunched : sceneConnectTime != nil ? .sceneReconnect : .hot
+        pendingResume = AppResume(start: start,
+                                  kind: kind,
+                                  sceneConnectStart: sceneConnectTime,
+                                  backgroundDuration: lastBackgroundTime.map(start.timeIntervalSince))
       }
       sceneConnectTime = nil
     }
 
     /// Returns whether this happened before the first activation, so no launch will be recorded.
-    mutating func didEnterBackground() -> Bool {
+    mutating func didEnterBackground(at time: Date) -> Bool {
       let isBeforeFirstActivation = !hasHandledLaunch
       // Before the app first became active, this means the system launched it into the
       // background, or the user left before the launch finished. The process stays alive, so
@@ -69,8 +97,9 @@
       hasHandledLaunch = true
       isInForeground = false
       isUnconfirmedBackgroundLaunch = false
-      pendingResumeStart = nil
+      pendingResume = nil
       sceneConnectTime = nil
+      lastBackgroundTime = time
       backgroundCount += 1
       return isBeforeFirstActivation
     }
@@ -83,13 +112,15 @@
         hasHandledLaunch = true
         isInForeground = true
         isUnconfirmedBackgroundLaunch = false
-        return .launch
+        hasBecomeActive = true
+        return .launch(sceneConnectStart: launchSceneConnectTime)
       }
       // Without a pending resume the app only lost input focus, for example to Control Center
       // or a system alert, and never left the foreground.
-      guard let resumeStart = pendingResumeStart else { return nil }
-      pendingResumeStart = nil
-      return .resume(start: resumeStart)
+      guard let resume = pendingResume else { return nil }
+      pendingResume = nil
+      hasBecomeActive = true
+      return .resume(resume)
     }
   }
 #endif

@@ -8,16 +8,16 @@ import InstrumentationCommon
 import OpenTelemetryApi
 
 #if canImport(Darwin) && ((canImport(UIKit) && !os(watchOS)) || canImport(AppKit))
-  /// Records each activation of the app as an `AppStart` span, like
-  /// `InferredAppLaunchInstrumentation`, but measures `cold` and `warm` instead of inferring them:
-  /// it compares a sample of the app's code pages before `main()` with the same pages when the app
-  /// becomes active. Prewarmed launches are `prewarmed`.
+  /// Records each launch as an `app.start` span and each resume as an `app.resume` span, version 2
+  /// of the schema, with a child span per phase and a duration metric. It measures `cold` and `warm`
+  /// instead of inferring them: it compares a sample of the app's code pages before `main()` with
+  /// the same pages when the app becomes active. Prewarmed launches are `prewarmed`.
   ///
   /// Linking this library runs `mincore` before `main()`, so unlike a configuration option it can't
   /// be turned off at runtime. Link only one app launch library.
   ///
   /// Supported on iOS, iPadOS, tvOS, visionOS, Mac Catalyst and macOS. On watchOS this does nothing.
-  public class MeasuredAppLaunchInstrumentation: Instrumentation {
+  public class MincoreLaunchInstrumentation: Instrumentation {
     typealias Dependencies = AppLaunchRuntime.Dependencies
 
     /// Records every launch type, including `prewarmed`.
@@ -40,13 +40,15 @@ import OpenTelemetryApi
     /// call takes effect.
     public static func install(configuration: AppLaunchInstrumentationConfiguration = defaultConfiguration) {
       var dependencies = Dependencies(configuration: configuration)
+      let pageSampler = KernelLaunchPageSampler()
       dependencies.makeClassifier = { dependencies in
-        MeasuredLaunchClassifier(
+        MincoreLaunchClassifier(
           fallback: InferredLaunchClassifier(dependencies: dependencies),
-          pageSampler: KernelLaunchPageSampler(),
+          pageSampler: pageSampler,
           isActivePrewarm: dependencies.isActivePrewarm
         )
       }
+      dependencies.makeRecorder = { MincoreAppStartRecorder(dependencies: $0, pageSampler: pageSampler) }
       install(dependencies: dependencies)
     }
 
@@ -57,7 +59,7 @@ import OpenTelemetryApi
 #else
   /// Does nothing, because this platform isn't supported, so code shared with a supported platform
   /// doesn't need its own check. Supported on iOS, iPadOS, tvOS, visionOS, Mac Catalyst and macOS.
-  public class MeasuredAppLaunchInstrumentation: Instrumentation {
+  public class MincoreLaunchInstrumentation: Instrumentation {
     private static let instrumentationScope = "io.opentelemetry.lifecycle"
 
     /// Records every launch type, including `prewarmed`.

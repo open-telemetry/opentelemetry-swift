@@ -4,7 +4,7 @@
  */
 
 import InferredAppLaunchInstrumentation
-import MeasuredAppLaunchInstrumentation
+import MincoreLaunchInstrumentation
 import Crash
 import Foundation
 import OpenTelemetryApi
@@ -101,8 +101,8 @@ enum Telemetry {
     // Installed in didFinishLaunching, before the app first becomes active, so it sees the
     // activation that ends the cold start.
     if !IntegrationTestScenario.installsAppLaunchLate {
-      if IntegrationTestScenario.measuresAppLaunch {
-        MeasuredAppLaunchInstrumentation.install()
+      if IntegrationTestScenario.usesMincoreLaunch {
+        MincoreLaunchInstrumentation.install()
       } else {
         InferredAppLaunchInstrumentation.install()
       }
