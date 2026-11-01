@@ -882,7 +882,7 @@
       firstFrameReader.displayFrame(at: firstFrame)
 
       XCTAssertEqual(messages.values.count, 2)
-      XCTAssertTrue(messages.values.first?.hasPrefix("[info] AppLaunchInstrumentation installed") ?? false)
+      XCTAssertTrue(messages.values.first?.hasPrefix("[info] AppLaunchInstrumentationCore: installed") ?? false)
       XCTAssertTrue(messages.values.last?.hasPrefix("[debug] MincoreLaunchInstrumentation: recorded a cold launch") ?? false)
     }
 

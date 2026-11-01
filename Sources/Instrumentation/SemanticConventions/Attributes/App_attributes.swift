@@ -69,14 +69,16 @@ extension FederatedSemanticConventions {
     case startOutcome = "app.start.outcome"
 
     /**
-     The process's page-ins from the first initializer to the end of the span.
+     The process's page-ins from the page-sampling `constructor` function, `otel_app_launch_sample_pages_at_start`, to the end of the span.
 
      - Requires: Value type should be `Int`
     */
     case startPageInsPostInitializer = "app.start.page_ins.post_initializer"
 
     /**
-     The process's page-ins from process start to the first initializer.
+     The process's page-ins from process start to the page-sampling `constructor` function, `otel_app_launch_sample_pages_at_start`.
+
+     - Note: Not the same `constructor` function as `initializerStart`, which is `otel_app_launch_read_launch_environment` in a separate module, and the order the two run in isn't defined. So this isn't the boundary `app.start.pre_init` ends at, even though both are an initializer.
 
      - Requires: Value type should be `Int`
     */
@@ -122,7 +124,7 @@ extension FederatedSemanticConventions {
 
      - Requires: Value type should be `Double`
     */
-    case startRenderDelayDuration = "app.start.render_delay.duration"
+    case startRenderDuration = "app.start.render.duration"
 
     /**
      The share of the sampled code that the launch paged in from disk (Apple's term for reading a page into memory): `app.start.sampled_pages.paged_in` divided by `app.start.sampled_pages.resident_at_end`, from 0 to 1. A launch is `cold` when this is at least the configured threshold, 0.5 by default.

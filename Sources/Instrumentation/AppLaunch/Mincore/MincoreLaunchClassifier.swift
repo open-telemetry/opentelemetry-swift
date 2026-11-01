@@ -73,7 +73,7 @@
         guard let sample = pageSampler.readSample(),
               sample.residentAtEnd >= min(Self.minimumResidentPages, sample.sampled),
               let ratio = sample.pageInRatio else {
-          InternalLogger.warn("MincoreLaunchInstrumentation: couldn't sample the launch's pages, so the launch type is inferred.")
+          InternalLogger.warn("couldn't sample the launch's pages, so the launch type is inferred.")
           if isPrewarmed {
             return LaunchClassification(type: .prewarmed, attributes: Self.determinedBy(.prewarmFlag))
           }
