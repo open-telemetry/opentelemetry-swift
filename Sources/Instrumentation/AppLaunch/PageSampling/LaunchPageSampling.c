@@ -64,10 +64,22 @@ static bool textSegment(uint32_t image, uintptr_t *start, uint64_t *size) {
   return false;
 }
 
+// Inserted libraries come before the executable in dyld's image list, so it isn't always image 0.
+static const char *mainExecutablePath(void) {
+  uint32_t imageCount = _dyld_image_count();
+  for (uint32_t image = 0; image < imageCount; image++) {
+    const struct mach_header *header = _dyld_get_image_header(image);
+    if (header != NULL && header->filetype == MH_EXECUTE) {
+      return _dyld_get_image_name(image);
+    }
+  }
+  return NULL;
+}
+
 // The app's code is in its main executable, a framework, or in a debug build a `.debug.dylib` next
 // to the executable, so this takes the largest image in the executable's directory.
 static bool largestAppImageText(uintptr_t *start, uint64_t *size) {
-  const char *executable = _dyld_get_image_name(0);
+  const char *executable = mainExecutablePath();
   if (executable == NULL || strlen(executable) >= PATH_MAX) {
     return false;
   }
