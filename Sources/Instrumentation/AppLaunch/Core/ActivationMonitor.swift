@@ -96,7 +96,7 @@
       }
       abandon?(.abandoned(time))
       if isBeforeFirstActivation {
-        InternalLogger.debug("AppLaunchInstrumentation: no launch recorded, because the app entered the background before it became active. The next activation is a resume.")
+        InternalLogger.debug("no launch recorded, because the app entered the background before it became active. The next activation is a resume.")
       }
     }
 
@@ -124,7 +124,7 @@
         // A display link pauses in the background, so if the app left the foreground before the
         // first frame, the frame it reports is from the next time the app returned.
         guard lock.withLock({ !_isStopped && _tracker.backgroundCount == backgroundCount }) else {
-          InternalLogger.debug("AppLaunchInstrumentation: dropped a \(start.launchType) start, because the app entered the background before the first frame.")
+          InternalLogger.debug("dropped a \(start.launchType) start, because the app entered the background before the first frame.")
           return
         }
         // A start never ends before the app became active, whatever the reader reports.

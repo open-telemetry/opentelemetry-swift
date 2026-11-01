@@ -57,7 +57,7 @@ import OpenTelemetryApi
     static func validated(_ configuration: AppLaunchInstrumentationConfiguration) -> AppLaunchInstrumentationConfiguration {
       var validated = configuration
       if !(configuration.coldPageInRatio > 0 && configuration.coldPageInRatio <= 1) {
-        InternalLogger.error("MincoreLaunchInstrumentation: `coldPageInRatio` must be above 0 and at most 1, so the default is used.")
+        InternalLogger.error("`coldPageInRatio` must be above 0 and at most 1, so the default is used.")
         validated.coldPageInRatio = AppLaunchInstrumentationConfiguration().coldPageInRatio
       }
       return validated

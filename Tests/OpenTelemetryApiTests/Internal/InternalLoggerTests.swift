@@ -44,7 +44,7 @@ final class InternalLoggerTests: XCTestCase {
   func testOnlyErrorsAreLoggedWithoutDebugMode() {
     logAllLevels()
 
-    XCTAssertEqual(lines.values, ["[error] four"])
+    XCTAssertEqual(lines.values, ["[error] OpenTelemetryApiTests: four"])
   }
 
   func testEveryLevelIsLoggedInDebugMode() {
@@ -52,7 +52,10 @@ final class InternalLoggerTests: XCTestCase {
 
     logAllLevels()
 
-    XCTAssertEqual(lines.values, ["[debug] one", "[info] two", "[warn] three", "[error] four"])
+    XCTAssertEqual(lines.values, ["[debug] OpenTelemetryApiTests: one",
+                                  "[info] OpenTelemetryApiTests: two",
+                                  "[warn] OpenTelemetryApiTests: three",
+                                  "[error] OpenTelemetryApiTests: four"])
   }
 
   func testTurningDebugModeOffStopsLogging() {
@@ -61,7 +64,19 @@ final class InternalLoggerTests: XCTestCase {
 
     logAllLevels()
 
-    XCTAssertEqual(lines.values, ["[error] four"])
+    XCTAssertEqual(lines.values, ["[error] OpenTelemetryApiTests: four"])
+  }
+
+  func testEachLineNamesTheModuleItCameFrom() {
+    InternalLogger.error("message", fileID: "SomeInstrumentation/SomeFile.swift")
+
+    XCTAssertEqual(lines.values, ["[error] SomeInstrumentation: message"])
+  }
+
+  func testAFileIDWithoutAModuleIsUsedWhole() {
+    InternalLogger.error("message", fileID: "NoModule.swift")
+
+    XCTAssertEqual(lines.values, ["[error] NoModule.swift: message"])
   }
 
   func testMessageThatIsNotLoggedIsNotBuilt() {

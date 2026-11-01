@@ -142,12 +142,19 @@ groups:
         type: int
         stability: development
         brief: >
-          The process's page-ins from process start to the first initializer.
+          The process's page-ins from process start to the page-sampling `constructor` function,
+          `otel_app_launch_sample_pages_at_start`.
+        note: >
+          Not the same `constructor` function as `initializerStart`, which is
+          `otel_app_launch_read_launch_environment` in a separate module, and the order the two run
+          in isn't defined. So this isn't the boundary `app.start.pre_init` ends at, even though
+          both are an initializer.
       - id: app.start.page_ins.post_initializer
         type: int
         stability: development
         brief: >
-          The process's page-ins from the first initializer to the end of the span.
+          The process's page-ins from the page-sampling `constructor` function,
+          `otel_app_launch_sample_pages_at_start`, to the end of the span.
       - id: app.start.prewarm.cache_state
         type:
           members:
@@ -207,7 +214,7 @@ groups:
         stability: development
         brief: >
           The duration of `app.start.app_init` in seconds.
-      - id: app.start.render_delay.duration
+      - id: app.start.render.duration
         type: double
         stability: development
         brief: >
