@@ -9,14 +9,12 @@
   import InstrumentationSemanticConventions
   import OpenTelemetryApi
 
-  /// Records activations with version 2 of the `app.start` schema: a root span per launch or
+  /// Records activations with the `app.start` schema: a root span per launch or
   /// resume, a child span per phase, and a duration metric.
   struct MincoreAppStartRecorder: AppStartRecording {
     private typealias App = FederatedSemanticConventions.App
 
-    static let schemaVersion = "2.0.0"
-
-    private enum Name {
+      private enum Name {
       static let appStart = "app.start"
       static let preInit = "app.start.pre_init"
       static let appInit = "app.start.app_init"
@@ -39,10 +37,7 @@
       }
 
       // Read when the app becomes active, so a tracer provider registered after install is used.
-      let tracer = OpenTelemetry.instance.tracerProvider.get(
-        instrumentationName: AppLaunchRuntime.instrumentationScope,
-        instrumentationVersion: Self.schemaVersion
-      )
+      let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: AppLaunchRuntime.instrumentationScope)
 
       switch start {
       case let .launch(classification, marks):
@@ -160,9 +155,7 @@
     }
 
     private func recordDuration(_ name: String, seconds: TimeInterval, attributes: [String: AttributeValue]) {
-      let meter = OpenTelemetry.instance.meterProvider.meterBuilder(name: AppLaunchRuntime.instrumentationScope)
-        .setInstrumentationVersion(instrumentationVersion: Self.schemaVersion)
-        .build()
+      let meter = OpenTelemetry.instance.meterProvider.meterBuilder(name: AppLaunchRuntime.instrumentationScope).build()
       var histogram = meter.histogramBuilder(name: name).build()
       histogram.record(value: seconds, attributes: attributes)
     }

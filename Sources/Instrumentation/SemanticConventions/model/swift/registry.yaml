@@ -2,7 +2,7 @@ groups:
   - id: registry.swift.app_start
     type: attribute_group
     brief: >
-      Version 2 of the app start attributes, recorded by `MincoreLaunchInstrumentation`.
+      The app start attributes, recorded by `MincoreLaunchInstrumentation`.
     stability: development
     attributes:
       - id: app.start.type
@@ -215,7 +215,7 @@ groups:
   - id: registry.swift.app_resume
     type: attribute_group
     brief: >
-      Version 2 of the app resume attributes, recorded by `MincoreLaunchInstrumentation`.
+      The app resume attributes, recorded by `MincoreLaunchInstrumentation`.
     stability: development
     attributes:
       - id: app.resume.type

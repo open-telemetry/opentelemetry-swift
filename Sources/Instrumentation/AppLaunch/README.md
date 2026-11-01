@@ -6,9 +6,9 @@ Measures how long it takes the app to become usable after a user brings it to th
 
 Linking this library runs `mincore` before `main()`, so unlike a configuration option it can't be turned off at runtime. It has been tested on [one device](#accuracy-compared-with-instruments), and not with partly cached launches.
 
-## `app.start` version 2
+## `app.start` and `app.resume`
 
-`MincoreLaunchInstrumentation` records a launch as one `app.start` span and a resume as one `app.resume` span, in the `io.opentelemetry.lifecycle` scope with version `2.0.0`. The [federated registry](../SemanticConventions/model/swift/spans.yaml) is the authoritative definition. The schema follows W3C `PerformanceNavigationTiming`: a time origin, `xxxStart` and `xxxEnd` timestamps, a `type` and an `activationStart`. Each phase is a child span, because OpenTelemetry is deprecating span events.
+`MincoreLaunchInstrumentation` records a launch as one `app.start` span and a resume as one `app.resume` span, in the `io.opentelemetry.lifecycle` scope. The [federated registry](../SemanticConventions/model/swift/spans.yaml) is the authoritative definition. The schema follows W3C `PerformanceNavigationTiming`: a time origin, `xxxStart` and `xxxEnd` timestamps, a `type` and an `activationStart`. Each phase is a child span, because OpenTelemetry is deprecating span events.
 
 | `app.start.type` | Span start                                                      | Span end              |
 | ---------------- | --------------------------------------------------------------- | --------------------- |

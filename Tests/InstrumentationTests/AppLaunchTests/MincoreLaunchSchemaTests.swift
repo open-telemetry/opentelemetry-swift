@@ -290,7 +290,6 @@
       XCTAssertEqual(root.kind, .internal)
       XCTAssertNil(root.parentSpanId)
       XCTAssertEqual(root.instrumentationScope.name, "io.opentelemetry.lifecycle")
-      XCTAssertEqual(root.instrumentationScope.version, "2.0.0")
       XCTAssertEqual(root.startTime, processStart)
       XCTAssertEqual(root.endTime, firstFrame)
       XCTAssertEqual(root.attributes["app.start.outcome"], .string("completed"))
@@ -492,7 +491,7 @@
       XCTAssertFalse(names.contains("app.resume.duration"), "an abandoned resume has no metric value")
     }
 
-    func testDurationMetricHasTheSchemaVersion() throws {
+    func testDurationMetricUsesTheLifecycleScope() throws {
       let exporter = CapturingMetricExporter()
       let meterProvider = MeterProviderSdk.builder()
         .registerMetricReader(reader: PeriodicMetricReaderBuilder(exporter: exporter).build())
@@ -507,7 +506,6 @@
 
       let metric = try XCTUnwrap(exporter.metrics.first { $0.name == "app.start.duration" })
       XCTAssertEqual(metric.instrumentationScopeInfo.name, "io.opentelemetry.lifecycle")
-      XCTAssertEqual(metric.instrumentationScopeInfo.version, "2.0.0")
     }
 
     func testPageInRatio() {
