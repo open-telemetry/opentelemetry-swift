@@ -18,7 +18,7 @@ There are two libraries. Link only one. If both are installed, the first wins, a
 | Needs a saved record         | Yes                                             | Only for its fallback                                             |
 | Runs code before `main()`    | Reads the environment                           | Also calls `mincore`, and can't be turned off at runtime          |
 | Prewarmed launches           | `cold` or `warm`, with `start.active_prewarmed` | `prewarmed`                                                       |
-| Tested on a real device      | No                                              | Eleven launches, none partly cached, so 0.5 is still unproven     |
+| Tested on a real device      | No                                              | [One device](#accuracy-compared-with-instruments), partly cached untested |
 
 The rest of this page describes `AppStart`, except for the next section.
 
@@ -55,19 +55,60 @@ The library samples up to 256 pages evenly spaced through the `__TEXT` segments 
 | `app.start.sampled_pages.paged_in`        | Those not in it at this library's initializer                |
 | `app.start.sampled_page_in_ratio`         | `paged_in` divided by `resident_at_end`, from 0 to 1         |
 
-A launch is `cold` when the ratio is at least 0.5, and `warm` otherwise. On an iPhone 16 Pro Max, launches after a reboot had ratios from 0.70 to 0.72 and warm launches were at most 0.03. It doesn't reach 1, because some pages were already resident when this library's initializer ran. The share of `__TEXT` in memory can't be used directly, because a launch only touches part of the app's code, so even a warm launch can be far from 100%. Comparing the pages a launch ended up with to the ones it started with removes that difference between apps.
+A launch is `cold` when the ratio is at least `coldPageInRatio`, which is 0.5 by default, and `warm` otherwise. On an iPhone 16 Pro Max, launches after a reboot had ratios from 0.70 to 0.72 and warm launches were at most 0.03. It doesn't reach 1, because some pages were already resident when this library's initializer ran. The share of `__TEXT` in memory can't be used directly, because a launch only touches part of the app's code, so even a warm launch can be far from 100%. Comparing the pages a launch ended up with to the ones it started with removes that difference between apps.
 
 `mincore` reports the system's page cache, not what this process used, so these attributes describe what was cached. On one warm launch on an iPhone 16 Pro Max, Instruments showed the launch touching 55% of `__TEXT` while 93% of the sampled pages were resident. A cold launch's `paged_in` also includes pages the kernel read ahead.
 
 A launch that can't be sampled, or with fewer than 16 resident pages when more were sampled, falls back to the [inferred rules](#cold-and-warm) without these attributes, with `app.start.determined_by` set to `launch_history`, or is `prewarmed` if the system prewarmed it. Code in other images, such as system frameworks, isn't sampled. A debug build's simulator launch reads the Mac's page cache, so it says nothing about a device.
+
+### Accuracy compared with Instruments
+
+Each launch below was recorded by this library and by the Instruments App Launch template at the same time, using [`Scripts/compare-app-launch-accuracy.py`](../../../Scripts/compare-app-launch-accuracy.py). They're Release builds of the demo app signed for development, so App Store encryption isn't covered, and Instruments slows the launch it's recording.
+
+| Device                             | OS           | `__TEXT` pages | Cold | Warm | Partly cached |
+| ---------------------------------- | ------------ | -------------- | ---- | ---- | ------------- |
+| iPhone 16 Pro Max (`iPhone17,2`)   | iOS 26.6.2   | 261            | 4    | 6    | Not tested    |
+| Other devices                      | Not tested   |                |      |      |               |
+
+Results on the iPhone 16 Pro Max, as the range across launches:
+
+| Measurement                                                | Cold launches (4)  | Warm launches (6) |
+| ---------------------------------------------------------- | ------------------ | ----------------- |
+| Launch type agreed with Instruments                        | 4 of 4             | 6 of 6            |
+| `app.start.sampled_page_in_ratio`                          | 0.695 to 0.764     | 0 to 0.029        |
+| `app.start.sampled_pages.paged_in`                         | 125 to 159         | 0 to 5            |
+| Sampled pages Instruments saw read from disk               | 105 to 108         | 0 to 5            |
+| `app.start.sampled_pages.resident_at_end`                  | 174 to 220         | 165 to 256        |
+| Sampled pages Instruments saw the launch touch             | 144                | 141 to 147        |
+| `__TEXT` pages touched: estimate from the sample, minus actual | +0.2           | +0.2 to +0.3      |
+| `app.start` duration                                       | 1,292 to 1,808 ms  | 923 to 1,143 ms   |
+| Instruments launch duration                                | 1,169 to 1,719 ms  | 850 to 1,061 ms   |
+| `app.start` minus Instruments                              | +85 to +123 ms     | +40 to +82 ms     |
+| `app.start.pre_init` minus Instruments                     | +55 to +87 ms      | +35 to +58 ms     |
+| `app.start.app_init` minus Instruments                     | +1.3 to +2.4 ms    | +1.4 to +2.0 ms   |
+| `app.start.render` minus Instruments                       | +24 to +34 ms      | +3 to +31 ms      |
+| `app.start.page_ins.pre_initializer` minus Instruments     | +50 to +125        | +16 to +60        |
+| `app.start.page_ins.post_initializer` minus Instruments    | +62 to +2,981      | +11 to +17        |
+
+- Three of the cold launches followed a reboot and one followed an install. The warm launches include ones right after an install.
+- The script calls a launch `warm` if most of the `__TEXT` pages it touched were cached before the first one was read from disk. Instruments doesn't report a launch type, so agreement means the two are consistent.
+- `paged_in` matched Instruments exactly on warm launches. It's higher on cold launches, which fits the kernel reading ahead, because it counts pages the launch didn't fault on.
+- `resident_at_end` has no equivalent in Instruments, which sees this process's faults and not the page cache.
+- Instruments marks phases differently from these spans, so the phase differences don't show which is right.
+
+These results don't cover partly cached launches, where `coldPageInRatio` matters most, or apps with more than 256 pages of `__TEXT`, which this one barely reaches. To add a device, run the script with each `--mode` on it and add a row:
+
+```sh
+Scripts/compare-app-launch-accuracy.py --mode warm --launches 3
+Scripts/compare-app-launch-accuracy.py --mode reboot --launches 3
+```
 
 ### Known limits
 
 - The initializers of images this library depends on run before it. If it's linked into the executable and the app's code is in a framework, pages those initializers bring in count as already in memory, so a cold launch can report a lower ratio.
 - `cold` and `warm` only say whether the app's code was already in memory. The first launch after an install or update is `warm` if it was: on an iPhone 16 Pro Max, launches seconds after installing either read none of their `__TEXT` from disk or read most of what they touched, and it isn't known why they differ. This differs from `InferredAppLaunchInstrumentation`, which reports that launch as `cold`.
 - App Store builds haven't been tested. Encrypted `__TEXT` might not report residency the same way as a development build, so compare a TestFlight build before relying on the 0.5 threshold.
-- `app.start.page_ins.pre_initializer` and `app.start.page_ins.post_initializer` count the whole process, not the app's code. On the launch above they reported 91 page-ins where Instruments showed 40, and that difference isn't explained, so use them to compare launches, not as absolute counts.
-- On that launch `app.start` was 77 ms longer than Instruments' launch phases: 46 ms in `app.start.pre_init` and 29 ms in `app.start.render`, with `app.start.app_init` within 3 ms.
+- `app.start.page_ins.pre_initializer` and `app.start.page_ins.post_initializer` count the whole process, not the app's code, and are [higher than Instruments reports](#accuracy-compared-with-instruments) for a reason that isn't known. Use them to compare launches, not as disk reads.
 
 ### Not recorded yet
 
@@ -129,6 +170,7 @@ InferredAppLaunchInstrumentation.install(
 | `launchTypes`       | `[.cold, .warm, .resume]` | The [start types](#start-types) to record. Activations of other types don't produce spans, but are still tracked so that later ones are classified correctly.                                                                                                                                                                       |
 | `dropPrewarmed`     | `false`                   | Whether to drop [prewarmed](#prewarming) launches instead of recording them. Prewarmed launches are timed from when app code first ran, so they leave out the work the system did ahead of time. As in Sentry (`enablePreWarmedAppStartTracing`) and Datadog, they're recorded by default and marked with `start.active_prewarmed`. |
 | `maxLaunchDuration` | `60`                      | The longest launch, in seconds, that's recorded. Longer launches are [dropped](#dropped-starts). It's measured from process start, or from when app code first ran for a prewarmed launch. The default matches Datadog.                                                                                                             |
+| `coldPageInRatio`   | `0.5`                     | The `app.start.sampled_page_in_ratio` from which a launch is `cold`, above 0 and at most 1. A value outside that range is reported as an error and replaced with the default. Only `MincoreLaunchInstrumentation` uses it. How high the ratio goes depends on the app, so check the ratios it reports before changing this.         |
 
 ## Telemetry
 
