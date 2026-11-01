@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import InferredAppLaunchInstrumentation
+import MincoreLaunchInstrumentation
 import Crash
 import Foundation
 import KSCrashFilters
@@ -76,7 +76,7 @@ enum IntegrationTestScenario {
   static func readySpanName(activations: Int) -> String {
     "integration.test.ready-\(activations)"
   }
-  // Long enough for the first frame after an activation to be displayed and its AppStart span to
+  // Long enough for the first frame after an activation to be displayed and its `app.start` span to
   // end.
   static let firstFrameWait: TimeInterval = 2
   // How long an interrupted activation blocks the main thread, so the runner can move the app to
@@ -106,7 +106,7 @@ enum IntegrationTestScenario {
     // The runner moves the app to the background after its first frame and back again, so it
     // records a warm launch and then a resume.
     case appStartResume = "app-start-resume"
-    // InferredAppLaunchInstrumentation is installed after the app first became active, so the launch isn't
+    // MincoreLaunchInstrumentation is installed after the app first became active, so the launch isn't
     // recorded. The runner moves the app to the background while the second activation blocks the
     // main thread, so that one ends before its first frame. The third activation is a resume.
     case appStartLateInstall = "app-start-late-install"
@@ -116,8 +116,8 @@ enum IntegrationTestScenario {
     // First launch after the runner installed the app with a new build number, so it's cold.
     case appStartUpdate = "app-start-update"
     case appStartReinstall = "app-start-reinstall"
-    // Uses MincoreLaunchInstrumentation. The simulator shares the Mac's page cache, so the type
-    // isn't predictable, but it must agree with the span's sampled pages.
+    // The simulator shares the Mac's page cache, so the type isn't predictable, but it must agree
+    // with the span's sampled pages.
     case appStartMincore = "app-start-mincore"
   }
 
@@ -148,12 +148,8 @@ enum IntegrationTestScenario {
     (value(after: launchTagArgument) ?? environmentLaunchTag).flatMap(Launch.init(rawValue:)) ?? .main
   }
 
-  // Telemetry skips installing InferredAppLaunchInstrumentation, and the scenario installs it after the
+  // Telemetry skips installing MincoreLaunchInstrumentation, and the scenario installs it after the
   // app first became active.
-  static var usesMincoreLaunch: Bool {
-    isEnabled && launch == .appStartMincore
-  }
-
   static var installsAppLaunchLate: Bool {
     isEnabled && launch == .appStartLateInstall
   }
@@ -273,7 +269,7 @@ enum IntegrationTestScenario {
       marker(tracer, activeSpanName, at: Date())
       activations += 1
       if installsAppLaunchLate, activations == 1 {
-        InferredAppLaunchInstrumentation.install()
+        MincoreLaunchInstrumentation.install()
       }
       guard let expectedActivations = appStartActivations[launch], activations <= expectedActivations else { return }
       let current = activations
