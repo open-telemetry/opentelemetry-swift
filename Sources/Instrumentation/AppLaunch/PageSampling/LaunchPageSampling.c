@@ -8,8 +8,6 @@
 #include <TargetConditionals.h>
 
 #if !TARGET_OS_WATCH
-  #include <libgen.h>
-  #include <limits.h>
   #include <mach-o/dyld.h>
   #include <mach-o/loader.h>
   #include <mach/mach.h>
@@ -76,68 +74,85 @@ static const char *mainExecutablePath(void) {
   return NULL;
 }
 
-// The app's code is in its main executable, a framework, or in a debug build a `.debug.dylib` next
-// to the executable, so this takes the largest image in the executable's directory.
-static bool largestAppImageText(uintptr_t *start, uint64_t *size) {
+// The app's code can be in its main executable, its frameworks or in a debug build a `.debug.dylib`,
+// so every image under its bundle counts. An executable outside a bundle has only its directory.
+// The trailing separator keeps a sibling directory with the same prefix from matching.
+static bool appImageRoot(const char **root, size_t *length) {
   const char *executable = mainExecutablePath();
-  if (executable == NULL || strlen(executable) >= PATH_MAX) {
+  if (executable == NULL) {
     return false;
   }
-  char buffer[PATH_MAX];
-  strcpy(buffer, executable);
-  const char *directory = dirname(buffer);
-  if (directory == NULL) {
+  const char *bundle = strstr(executable, ".app/");
+  const char *separator = bundle != NULL ? bundle + strlen(".app") : strrchr(executable, '/');
+  if (separator == NULL) {
     return false;
   }
-  size_t directoryLength = strlen(directory);
+  *root = executable;
+  *length = (size_t)(separator - executable) + 1;
+  return true;
+}
 
-  bool found = false;
-  uint32_t imageCount = _dyld_image_count();
-  for (uint32_t image = 0; image < imageCount; image++) {
-    const char *name = _dyld_get_image_name(image);
-    if (name == NULL || strncmp(name, directory, directoryLength) != 0) {
-      continue;
-    }
-    uintptr_t imageStart = 0;
-    uint64_t imageSize = 0;
-    if (textSegment(image, &imageStart, &imageSize) && (!found || imageSize > *size)) {
-      *start = imageStart;
-      *size = imageSize;
-      found = true;
-    }
-  }
-  return found;
+static bool appImageText(uint32_t image, const char *root, size_t rootLength, uintptr_t *start, uint64_t *size) {
+  const char *name = _dyld_get_image_name(image);
+  return name != NULL && strncmp(name, root, rootLength) == 0 && textSegment(image, start, size);
+}
+
+// The first page holds the headers dyld just read, so it says nothing about the launch.
+static uint64_t samplablePages(uint64_t size, uint64_t pageSize) {
+  uint64_t pageCount = size / pageSize;
+  return pageCount > 1 ? pageCount - 1 : 0;
 }
 
 __attribute__((constructor)) static void otel_app_launch_sample_pages_at_start(void) {
   pageInsAtInitializer = readPageIns();
-  uintptr_t start = 0;
-  uint64_t size = 0;
-  if (!largestAppImageText(&start, &size)) {
+  const char *root = NULL;
+  size_t rootLength = 0;
+  if (!appImageRoot(&root, &rootLength)) {
     return;
   }
   uint64_t pageSize = (uint64_t)getpagesize();
-  // The first page holds the headers dyld just read, so it says nothing about the launch.
-  uint64_t pageCount = size / pageSize;
-  if (pageCount < 2) {
+  uint32_t imageCount = _dyld_image_count();
+  uint64_t candidates = 0;
+  for (uint32_t image = 0; image < imageCount; image++) {
+    uintptr_t start = 0;
+    uint64_t size = 0;
+    if (appImageText(image, root, rootLength, &start, &size)) {
+      candidates += samplablePages(size, pageSize);
+    }
+  }
+  if (candidates == 0) {
     return;
   }
-  uint64_t candidates = pageCount - 1;
   int count = candidates < MAX_SAMPLED_PAGES ? (int)candidates : MAX_SAMPLED_PAGES;
-  for (int i = 0; i < count; i++) {
-    uintptr_t page = start + (uintptr_t)((1 + (uint64_t)i * candidates / (uint64_t)count) * pageSize);
-    bool resident = false;
-    if (!isResident(page, &resident)) {
-      sampledPageCount = 0;
-      return;
+  int next = 0;
+  uint64_t imageOffset = 0;
+  for (uint32_t image = 0; image < imageCount && next < count; image++) {
+    uintptr_t start = 0;
+    uint64_t size = 0;
+    if (!appImageText(image, root, rootLength, &start, &size)) {
+      continue;
     }
-    sampledPages[i] = page;
-    wasResident[i] = resident;
+    uint64_t imagePages = samplablePages(size, pageSize);
+    while (next < count) {
+      uint64_t candidate = (uint64_t)next * candidates / (uint64_t)count;
+      if (candidate >= imageOffset + imagePages) {
+        break;
+      }
+      uintptr_t page = start + (uintptr_t)((1 + candidate - imageOffset) * pageSize);
+      bool resident = false;
+      if (!isResident(page, &resident)) {
+        return;
+      }
+      sampledPages[next] = page;
+      wasResident[next] = resident;
+      next++;
+    }
+    imageOffset += imagePages;
   }
-  sampledPageCount = count;
+  sampledPageCount = next;
 }
 
-bool otel_app_launch_read_page_sample(int *residentAtEnd, int *pagedIn) {
+bool otel_app_launch_read_page_sample(int *sampled, int *residentAtEnd, int *pagedIn) {
   if (sampledPageCount == 0) {
     return false;
   }
@@ -155,6 +170,7 @@ bool otel_app_launch_read_page_sample(int *residentAtEnd, int *pagedIn) {
       }
     }
   }
+  *sampled = sampledPageCount;
   *residentAtEnd = resident;
   *pagedIn = pagedInCount;
   return true;
@@ -170,7 +186,7 @@ bool otel_app_launch_read_page_ins(int *preInitializer, int *postInitializer) {
   return true;
 }
 #else
-bool otel_app_launch_read_page_sample(int *residentAtEnd, int *pagedIn) {
+bool otel_app_launch_read_page_sample(int *sampled, int *residentAtEnd, int *pagedIn) {
   return false;
 }
 

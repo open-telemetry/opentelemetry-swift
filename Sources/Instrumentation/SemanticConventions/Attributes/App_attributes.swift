@@ -125,27 +125,34 @@ extension FederatedSemanticConventions {
     case startRenderDelayDuration = "app.start.render_delay.duration"
 
     /**
-     `app.start.sampled_pages.paged_in` divided by `app.start.sampled_pages.resident_at_end`, from 0 to 1. Higher means less of the launch's code was already in memory.
+     `app.start.sampled_pages.paged_in` divided by `app.start.sampled_pages.resident_at_end`, from 0 to 1. Higher means less of the sampled code was already in memory.
 
      - Requires: Value type should be `Double`
     */
     case startSampledPageInRatio = "app.start.sampled_page_in_ratio"
 
     /**
-     How many of `app.start.sampled_pages.resident_at_end` weren't in memory when the first initializer ran.
+     How many of `app.start.sampled_pages.resident_at_end` weren't in the page cache when this library's initializer ran, which is after the initializers of images it depends on.
 
      - Requires: Value type should be `Int`
     */
     case startSampledPagesPagedIn = "app.start.sampled_pages.paged_in"
 
     /**
-     How many sampled pages of the app's code were in memory when the app became active.
+     How many sampled pages of the app's code were in the system's page cache when the app became active.
 
-     - Note: Up to 256 pages evenly spaced through the `__TEXT` segment of the app's largest image are sampled with `mincore`. The kernel reads ahead, so this includes pages the launch didn't use.
+     - Note: Up to 256 pages evenly spaced through the `__TEXT` segments of the app's images are sampled with `mincore`, which reports the page cache, so this includes pages left by earlier launches and read ahead by the kernel that this launch didn't use.
 
      - Requires: Value type should be `Int`
     */
     case startSampledPagesResidentAtEnd = "app.start.sampled_pages.resident_at_end"
+
+    /**
+     How many pages of the app's code were sampled.
+
+     - Requires: Value type should be `Int`
+    */
+    case startSampledPagesTotal = "app.start.sampled_pages.total"
 
     /**
      How the launch began, as `PerformanceNavigationTiming.type` describes a navigation.

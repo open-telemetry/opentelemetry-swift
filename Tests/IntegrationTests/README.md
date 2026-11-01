@@ -52,7 +52,8 @@ repo work together inside a real iOS app. The flow is:
      the install directory differs and the launch must still be `cold`.
    - `app-start-mincore`: the simulator shares the Mac's page cache, so the
      launch type isn't predictable, but it must agree with the sampled pages on
-     the span.
+     the span. The launch has a library inserted, as Xcode does, so the app
+     isn't the first image in dyld's list.
    Every launch also records its process start (with the process's task role)
    and each scene connection, `willEnterForeground`, `didBecomeActive` and
    `didEnterBackground` as zero-length marker spans. The app records `app.start`

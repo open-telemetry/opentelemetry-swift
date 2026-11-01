@@ -9,7 +9,8 @@ public struct AppLaunchInstrumentationConfiguration: Equatable, Sendable {
   /// The kind of activation an `AppStart` span describes, reported as its `start.type`.
   public enum LaunchType: CaseIterable, Sendable {
     /// A new process the system is unlikely to have cached: the app's first launch, or its first
-    /// launch after a reboot or an app update.
+    /// launch after a reboot or an app update. `MincoreLaunchInstrumentation` measures this instead,
+    /// so a launch that found the app's code in memory is `warm` even if it's the first.
     case cold
     /// Any other new process.
     case warm
@@ -23,7 +24,12 @@ public struct AppLaunchInstrumentationConfiguration: Equatable, Sendable {
 
   /// The launch types to record. Activations of other types are still tracked, so later ones are
   /// classified correctly, but don't produce spans.
-  public var launchTypes: Set<LaunchType>
+  public var launchTypes: Set<LaunchType> {
+    didSet { usesDefaultLaunchTypes = false }
+  }
+
+  // Lets a library use its own default when the app didn't choose launch types.
+  package private(set) var usesDefaultLaunchTypes: Bool
 
   /// Whether to drop launches that the system prewarmed instead of recording them. A prewarmed
   /// launch is timed from when app code first ran, so it leaves out the work the system did ahead
@@ -37,10 +43,13 @@ public struct AppLaunchInstrumentationConfiguration: Equatable, Sendable {
   /// the default is 60 seconds.
   public var maxLaunchDuration: TimeInterval
 
-  public init(launchTypes: Set<LaunchType> = [.cold, .warm, .resume],
+  /// - Parameter launchTypes: The launch types to record. By default `[.cold, .warm, .resume]`, and
+  ///   also `.prewarmed` for `MincoreLaunchInstrumentation`.
+  public init(launchTypes: Set<LaunchType>? = nil,
               dropPrewarmed: Bool = false,
               maxLaunchDuration: TimeInterval = 60) {
-    self.launchTypes = launchTypes
+    self.launchTypes = launchTypes ?? [.cold, .warm, .resume]
+    usesDefaultLaunchTypes = launchTypes == nil
     self.dropPrewarmed = dropPrewarmed
     self.maxLaunchDuration = maxLaunchDuration
   }

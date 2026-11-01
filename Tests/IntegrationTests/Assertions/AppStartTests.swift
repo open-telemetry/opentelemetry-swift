@@ -215,6 +215,9 @@ final class AppStartTests: XCTestCase {
     XCTAssertGreaterThan(residentAtEnd, 0)
     XCTAssertLessThanOrEqual(residentAtEnd, 256)
     XCTAssertLessThanOrEqual(pagedIn, residentAtEnd)
+    let sampled = try XCTUnwrap(span.attributes.int(App.startSampledPagesTotal.rawValue))
+    XCTAssertGreaterThanOrEqual(sampled, residentAtEnd)
+    XCTAssertLessThanOrEqual(sampled, 256)
     XCTAssertEqual(ratio, Double(pagedIn) / Double(residentAtEnd), accuracy: 1e-9)
     let type = ratio >= 0.5 ? App.StartTypeValues.cold : App.StartTypeValues.warm
     XCTAssertEqual(span.attributes.string(App.startType.rawValue), type.description)

@@ -180,23 +180,29 @@ groups:
         type: int
         stability: development
         brief: >
-          How many sampled pages of the app's code were in memory when the app became active.
+          How many sampled pages of the app's code were in the system's page cache when the app
+          became active.
         note: >
-          Up to 256 pages evenly spaced through the `__TEXT` segment of the app's largest image are
-          sampled with `mincore`. The kernel reads ahead, so this includes pages the launch didn't
-          use.
+          Up to 256 pages evenly spaced through the `__TEXT` segments of the app's images are
+          sampled with `mincore`, which reports the page cache, so this includes pages left by
+          earlier launches and read ahead by the kernel that this launch didn't use.
+      - id: app.start.sampled_pages.total
+        type: int
+        stability: development
+        brief: >
+          How many pages of the app's code were sampled.
       - id: app.start.sampled_pages.paged_in
         type: int
         stability: development
         brief: >
-          How many of `app.start.sampled_pages.resident_at_end` weren't in memory when the first
-          initializer ran.
+          How many of `app.start.sampled_pages.resident_at_end` weren't in the page cache when this
+          library's initializer ran, which is after the initializers of images it depends on.
       - id: app.start.sampled_page_in_ratio
         type: double
         stability: development
         brief: >
           `app.start.sampled_pages.paged_in` divided by `app.start.sampled_pages.resident_at_end`,
-          from 0 to 1. Higher means less of the launch's code was already in memory.
+          from 0 to 1. Higher means less of the sampled code was already in memory.
       - id: app.start.page_ins.pre_initializer
         type: int
         stability: development

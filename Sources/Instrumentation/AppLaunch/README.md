@@ -18,7 +18,7 @@ There are two libraries. Link only one. If both are installed, the first wins, a
 | Needs a saved record         | Yes                                             | Only for its fallback                                             |
 | Runs code before `main()`    | Reads the environment                           | Also calls `mincore`, and can't be turned off at runtime          |
 | Prewarmed launches           | `cold` or `warm`, with `start.active_prewarmed` | `prewarmed`                                                       |
-| Tested on a real device      | No                                              | No, so don't ship it without checking it on one                   |
+| Tested on a real device      | No                                              | Eleven launches, none partly cached, so 0.5 is still unproven     |
 
 The rest of this page describes `AppStart`, except for the next section.
 
@@ -46,17 +46,28 @@ If the app became active and then left before its first frame, the span ends at 
 
 ### Measuring `cold` and `warm`
 
-The library samples up to 256 pages evenly spaced through the `__TEXT` segment of the app's largest image, which is the largest image in the executable's directory. It reads them with `mincore` before `main()` and again when the app first becomes active, and reports:
+The library samples up to 256 pages evenly spaced through the `__TEXT` segments of the app's images, which are the images in its bundle, or in the executable's directory if it isn't in one. It reads them with `mincore` in its initializer before `main()` and again when the app first becomes active, and reports:
 
 | Attribute                                 | Meaning                                                      |
 | ----------------------------------------- | ------------------------------------------------------------ |
-| `app.start.sampled_pages.resident_at_end` | Sampled pages in memory when the app became active           |
-| `app.start.sampled_pages.paged_in`        | How many of those weren't in memory at the first initializer |
+| `app.start.sampled_pages.total`           | Pages sampled                                                |
+| `app.start.sampled_pages.resident_at_end` | Sampled pages in the page cache when the app became active   |
+| `app.start.sampled_pages.paged_in`        | Those not in it at this library's initializer                |
 | `app.start.sampled_page_in_ratio`         | `paged_in` divided by `resident_at_end`, from 0 to 1         |
 
-A launch is `cold` when the ratio is at least 0.5, and `warm` otherwise. The share of `__TEXT` in memory can't be used directly, because a launch only touches part of the app's code, so even a warm launch can be far from 100%. Comparing the pages a launch ended up with to the ones it started with removes that difference between apps.
+A launch is `cold` when the ratio is at least 0.5, and `warm` otherwise. On an iPhone 16 Pro Max, launches after a reboot had ratios from 0.70 to 0.72 and warm launches were at most 0.03. It doesn't reach 1, because some pages were already resident when this library's initializer ran. The share of `__TEXT` in memory can't be used directly, because a launch only touches part of the app's code, so even a warm launch can be far from 100%. Comparing the pages a launch ended up with to the ones it started with removes that difference between apps.
 
-A launch that can't be sampled falls back to the [inferred rules](#cold-and-warm) without these attributes, with `app.start.determined_by` set to `launch_history`, or is `prewarmed` if the system prewarmed it. Code in other images, such as system frameworks, isn't sampled. A debug build's simulator launch reads the Mac's page cache, so it says nothing about a device.
+`mincore` reports the system's page cache, not what this process used, so these attributes describe what was cached. On one warm launch on an iPhone 16 Pro Max, Instruments showed the launch touching 55% of `__TEXT` while 93% of the sampled pages were resident. A cold launch's `paged_in` also includes pages the kernel read ahead.
+
+A launch that can't be sampled, or with fewer than 16 resident pages when more were sampled, falls back to the [inferred rules](#cold-and-warm) without these attributes, with `app.start.determined_by` set to `launch_history`, or is `prewarmed` if the system prewarmed it. Code in other images, such as system frameworks, isn't sampled. A debug build's simulator launch reads the Mac's page cache, so it says nothing about a device.
+
+### Known limits
+
+- The initializers of images this library depends on run before it. If it's linked into the executable and the app's code is in a framework, pages those initializers bring in count as already in memory, so a cold launch can report a lower ratio.
+- `cold` and `warm` only say whether the app's code was already in memory. The first launch after an install or update is `warm` if it was: on an iPhone 16 Pro Max, launches seconds after installing either read none of their `__TEXT` from disk or read most of what they touched, and it isn't known why they differ. This differs from `InferredAppLaunchInstrumentation`, which reports that launch as `cold`.
+- App Store builds haven't been tested. Encrypted `__TEXT` might not report residency the same way as a development build, so compare a TestFlight build before relying on the 0.5 threshold.
+- `app.start.page_ins.pre_initializer` and `app.start.page_ins.post_initializer` count the whole process, not the app's code. On the launch above they reported 91 page-ins where Instruments showed 40, and that difference isn't explained, so use them to compare launches, not as absolute counts.
+- On that launch `app.start` was 77 ms longer than Instruments' launch phases: 46 ms in `app.start.pre_init` and 29 ms in `app.start.render`, with `app.start.app_init` within 3 ms.
 
 ### Not recorded yet
 
