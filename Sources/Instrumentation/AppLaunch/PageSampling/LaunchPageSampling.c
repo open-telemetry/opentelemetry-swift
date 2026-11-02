@@ -21,6 +21,9 @@
 // Fixed size because this runs before `main()`, and the bound means a sample can't overflow.
 static uintptr_t sampledPages[MAX_SAMPLED_PAGES];
 static bool wasResident[MAX_SAMPLED_PAGES];
+// The same pages' residency when the app last entered the background, for measuring a resume.
+static bool wasResidentAtBackground[MAX_SAMPLED_PAGES];
+static bool hasBackgroundSample = false;
 static int sampledPageCount = 0;
 static int pageInsAtInitializer = -1;
 
@@ -152,7 +155,9 @@ __attribute__((constructor)) static void otel_app_launch_sample_pages_at_start(v
   sampledPageCount = next;
 }
 
-bool otel_app_launch_read_page_sample(int *sampled, int *residentAtEnd, int *pagedIn) {
+// `pagedIn` counts pages in memory now that weren't in `baseline`, so the caller's choice of
+// baseline decides which window is measured.
+static bool readSampleAgainst(const bool *baseline, int *sampled, int *residentAtEnd, int *pagedIn) {
   if (sampledPageCount == 0) {
     return false;
   }
@@ -165,7 +170,7 @@ bool otel_app_launch_read_page_sample(int *sampled, int *residentAtEnd, int *pag
     }
     if (isInMemory) {
       resident++;
-      if (!wasResident[i]) {
+      if (!baseline[i]) {
         pagedInCount++;
       }
     }
@@ -174,6 +179,34 @@ bool otel_app_launch_read_page_sample(int *sampled, int *residentAtEnd, int *pag
   *residentAtEnd = resident;
   *pagedIn = pagedInCount;
   return true;
+}
+
+bool otel_app_launch_read_page_sample(int *sampled, int *residentAtEnd, int *pagedIn) {
+  return readSampleAgainst(wasResident, sampled, residentAtEnd, pagedIn);
+}
+
+bool otel_app_launch_sample_pages_at_background(void) {
+  if (sampledPageCount == 0) {
+    return false;
+  }
+  for (int i = 0; i < sampledPageCount; i++) {
+    bool resident = false;
+    if (!isResident(sampledPages[i], &resident)) {
+      // A half-written baseline would undercount, so there's no baseline rather than a wrong one.
+      hasBackgroundSample = false;
+      return false;
+    }
+    wasResidentAtBackground[i] = resident;
+  }
+  hasBackgroundSample = true;
+  return true;
+}
+
+bool otel_app_launch_read_background_page_sample(int *sampled, int *residentAtEnd, int *pagedIn) {
+  if (!hasBackgroundSample) {
+    return false;
+  }
+  return readSampleAgainst(wasResidentAtBackground, sampled, residentAtEnd, pagedIn);
 }
 
 bool otel_app_launch_read_page_ins(int *preInitializer, int *postInitializer) {
@@ -185,12 +218,33 @@ bool otel_app_launch_read_page_ins(int *preInitializer, int *postInitializer) {
   *postInitializer = pageIns - pageInsAtInitializer;
   return true;
 }
+
+bool otel_app_launch_read_page_ins_now(int *pageIns) {
+  int now = readPageIns();
+  if (now < 0) {
+    return false;
+  }
+  *pageIns = now;
+  return true;
+}
 #else
 bool otel_app_launch_read_page_sample(int *sampled, int *residentAtEnd, int *pagedIn) {
   return false;
 }
 
+bool otel_app_launch_sample_pages_at_background(void) {
+  return false;
+}
+
+bool otel_app_launch_read_background_page_sample(int *sampled, int *residentAtEnd, int *pagedIn) {
+  return false;
+}
+
 bool otel_app_launch_read_page_ins(int *preInitializer, int *postInitializer) {
+  return false;
+}
+
+bool otel_app_launch_read_page_ins_now(int *pageIns) {
   return false;
 }
 #endif

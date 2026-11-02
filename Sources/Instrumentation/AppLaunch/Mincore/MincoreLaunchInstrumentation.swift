@@ -36,6 +36,8 @@ import OpenTelemetryApi
       let pageSampler = KernelLaunchPageSampler()
       install(dependencies: Dependencies(
         configuration: validated(configuration),
+        readPageIns: { pageSampler.readPageInsNow() },
+        samplePagesAtBackground: { pageSampler.samplePagesAtBackground() },
         makeClassifier: { dependencies in
           MincoreLaunchClassifier(
             fallback: InferredLaunchClassifier(dependencies: dependencies),

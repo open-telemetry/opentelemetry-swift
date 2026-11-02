@@ -19,6 +19,8 @@
     package var kind: ResumeKind
     package var sceneConnectStart: Date?
     package var backgroundDuration: TimeInterval?
+    /// The process's page-ins when the resume started, to diff against its end.
+    package var pageInsAtStart: Int?
   }
 
   /// A time the app became active, and what kind of start that was.
@@ -73,7 +75,7 @@
       sceneConnectTime = nil
     }
 
-    mutating func willEnterForeground(at time: Date) {
+    mutating func willEnterForeground(at time: Date, pageIns: Int?) {
       guard hasHandledLaunch else { return }
       isInForeground = true
       isUnconfirmedBackgroundLaunch = false
@@ -83,7 +85,8 @@
         pendingResume = AppResume(start: start,
                                   kind: kind,
                                   sceneConnectStart: sceneConnectTime,
-                                  backgroundDuration: lastBackgroundTime.map(start.timeIntervalSince))
+                                  backgroundDuration: lastBackgroundTime.map(start.timeIntervalSince),
+                                  pageInsAtStart: pageIns)
       }
       sceneConnectTime = nil
     }

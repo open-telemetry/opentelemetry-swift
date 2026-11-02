@@ -13,9 +13,33 @@
   import OpenTelemetrySdk
   import XCTest
 
+  /// Mirrors the C baseline: reading gives nothing until the app has entered the background, so a
+  /// test can't accidentally assert on a sample the app never took.
+  final class FakeBackgroundSample: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _didTake = false
+    private var _sample: LaunchPageSample?
+
+    func configure(_ sample: LaunchPageSample?) {
+      lock.withLock { _sample = sample }
+    }
+
+    func take() {
+      lock.withLock { _didTake = true }
+    }
+
+    func read() -> LaunchPageSample? {
+      lock.withLock { _didTake ? _sample : nil }
+    }
+
+    var didTake: Bool { lock.withLock { _didTake } }
+  }
+
   struct FakeLaunchPageSampler: LaunchPageSampler {
     var sample: LaunchPageSample?
     var pageIns: LaunchPageIns?
+    var pageInsNow: @Sendable () -> Int? = { nil }
+    var background: FakeBackgroundSample?
 
     func readSample() -> LaunchPageSample? {
       sample
@@ -23,6 +47,18 @@
 
     func readPageIns() -> LaunchPageIns? {
       pageIns
+    }
+
+    func readPageInsNow() -> Int? {
+      pageInsNow()
+    }
+
+    func samplePagesAtBackground() {
+      background?.take()
+    }
+
+    func readBackgroundSample() -> LaunchPageSample? {
+      background?.read()
     }
   }
 
@@ -127,6 +163,7 @@
     var clock: TestClock!
     var launchHistory: FakeLaunchHistory!
     var eventQueue: FakeEventQueue!
+    var backgroundPageSample: FakeBackgroundSample!
 
     override func setUp() {
       super.setUp()
@@ -151,6 +188,8 @@
     func makeDependencies(
       sample: LaunchPageSample? = nil,
       pageIns: LaunchPageIns? = nil,
+      pageInsNow: @escaping @Sendable () -> Int? = { nil },
+      backgroundSample: LaunchPageSample? = nil,
       useFirstFrameReader: Bool = true,
       processStartTime: @escaping @Sendable () -> Date? = { Date(timeIntervalSince1970: 1_000) },
       isActivePrewarm: Bool = false,
@@ -159,7 +198,11 @@
       isBackgroundLaunch: Bool = false,
       configuration: AppLaunchInstrumentationConfiguration = .init()
     ) -> MincoreLaunchInstrumentation.Dependencies {
-      let pageSampler = FakeLaunchPageSampler(sample: sample, pageIns: pageIns)
+      let background = FakeBackgroundSample()
+      background.configure(backgroundSample)
+      backgroundPageSample = background
+      let pageSampler = FakeLaunchPageSampler(sample: sample, pageIns: pageIns, pageInsNow: pageInsNow,
+                                              background: background)
       return MincoreLaunchInstrumentation.Dependencies(
         notificationCenter: notificationCenter,
         didBecomeActiveNotification: didBecomeActive,
@@ -178,6 +221,8 @@
         launchHistory: launchHistory,
         now: { [clock] in clock!.now },
         afterCurrentEvent: { [eventQueue] in eventQueue!.enqueue($0) },
+        readPageIns: pageInsNow,
+        samplePagesAtBackground: { pageSampler.samplePagesAtBackground() },
         makeClassifier: { dependencies in
           MincoreLaunchClassifier(
             fallback: InferredLaunchClassifier(dependencies: dependencies),
@@ -192,6 +237,8 @@
 
     func install(sample: LaunchPageSample? = nil,
                  pageIns: LaunchPageIns? = nil,
+                 pageInsNow: @escaping @Sendable () -> Int? = { nil },
+                 backgroundSample: LaunchPageSample? = nil,
                  useFirstFrameReader: Bool = true,
                  processStartTime: @escaping @Sendable () -> Date? = { Date(timeIntervalSince1970: 1_000) },
                  isActivePrewarm: Bool = false,
@@ -203,6 +250,8 @@
         dependencies: makeDependencies(
           sample: sample,
           pageIns: pageIns,
+          pageInsNow: pageInsNow,
+          backgroundSample: backgroundSample,
           useFirstFrameReader: useFirstFrameReader,
           processStartTime: processStartTime,
           isActivePrewarm: isActivePrewarm,

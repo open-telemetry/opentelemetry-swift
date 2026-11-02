@@ -149,6 +149,21 @@
       if let backgroundDuration = resume.backgroundDuration {
         root.setAttribute(key: App.resumeBackgroundDuration.rawValue, value: backgroundDuration)
       }
+      // The counter is cumulative for the process, so only the difference belongs to this resume. A
+      // counter that went backwards means it was reset or couldn't be read, so nothing is reported.
+      if let atStart = resume.pageInsAtStart, let atEnd = pageSampler.readPageInsNow(), atEnd >= atStart {
+        root.setAttribute(key: App.resumePageIns.rawValue, value: atEnd - atStart)
+      }
+      // Only the app's own code, unlike the page-in counter above, and only for a resume the app
+      // entered the background before, since that's when the baseline is taken.
+      if let sample = pageSampler.readBackgroundSample() {
+        root.setAttribute(key: App.resumeSampledPagesTotal.rawValue, value: sample.sampled)
+        root.setAttribute(key: App.resumeSampledPagesResidentAtEnd.rawValue, value: sample.residentAtEnd)
+        root.setAttribute(key: App.resumeSampledPagesPagedIn.rawValue, value: sample.pagedIn)
+        if let ratio = sample.pageInRatio {
+          root.setAttribute(key: App.resumeSampledPageInRatio.rawValue, value: ratio)
+        }
+      }
       _ = recordPhase(tracer, Name.resumeSceneSetup, parent: root, start: resume.sceneConnectStart, end: endTime)
       root.end(time: endTime)
 

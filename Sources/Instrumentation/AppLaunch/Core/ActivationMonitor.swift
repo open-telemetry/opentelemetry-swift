@@ -85,7 +85,10 @@
     }
 
     private func appWillEnterForeground() {
-      lock.withLock { _tracker.willEnterForeground(at: dependencies.now()) }
+      // Read outside the lock, because it's a `task_info` call.
+      let time = dependencies.now()
+      let pageIns = dependencies.readPageIns()
+      lock.withLock { _tracker.willEnterForeground(at: time, pageIns: pageIns) }
     }
 
     private func appDidEnterBackground() {
@@ -95,6 +98,9 @@
         return (_tracker.didEnterBackground(at: time), _abandon)
       }
       abandon?(.abandoned(time))
+      // Taken here rather than when the app returns, because it's one `mincore` call per sampled
+      // page and that would land inside the window the resume is measured over.
+      dependencies.samplePagesAtBackground()
       if isBeforeFirstActivation {
         InternalLogger.debug("no launch recorded, because the app entered the background before it became active. The next activation is a resume.")
       }

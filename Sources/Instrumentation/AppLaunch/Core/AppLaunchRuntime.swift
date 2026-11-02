@@ -33,6 +33,10 @@
       var now: @Sendable () -> Date = Date.init
       // Runs the block once the main thread has finished handling the current event.
       var afterCurrentEvent: @Sendable (@escaping @Sendable () -> Void) -> Void = { DispatchQueue.main.async(execute: $0) }
+      // The process's page-ins so far, read when a resume starts so the recorder can diff it.
+      package var readPageIns: @Sendable () -> Int? = { nil }
+      // Records the baseline a resume's page sample is measured against, when the app backgrounds.
+      package var samplePagesAtBackground: @Sendable () -> Void = {}
       // Builds the classifier that decides what kind of launch this process is.
       package var makeClassifier: @Sendable (Dependencies) -> LaunchClassifier
 
@@ -116,10 +120,14 @@
   // An extension, so `Dependencies` keeps its memberwise initializer.
   extension AppLaunchRuntime.Dependencies {
     package init(configuration: AppLaunchInstrumentationConfiguration,
+                 readPageIns: @escaping @Sendable () -> Int? = { nil },
+                 samplePagesAtBackground: @escaping @Sendable () -> Void = {},
                  makeClassifier: @escaping @Sendable (Self) -> LaunchClassifier,
                  makeRecorder: @escaping @Sendable (Self) -> AppStartRecording) {
       self.init(makeClassifier: makeClassifier, makeRecorder: makeRecorder)
       self.configuration = configuration
+      self.readPageIns = readPageIns
+      self.samplePagesAtBackground = samplePagesAtBackground
     }
   }
 #endif

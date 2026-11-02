@@ -27,6 +27,20 @@
     func getAggregationTemporality(for instrument: InstrumentType) -> AggregationTemporality { .cumulative }
   }
 
+  /// A cumulative page-in counter, which reports each value once and then repeats the last.
+  private final class PageInCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _values: [Int]
+
+    init(_ values: [Int]) {
+      _values = values
+    }
+
+    func read() -> Int? {
+      lock.withLock { _values.count > 1 ? _values.removeFirst() : _values.first }
+    }
+  }
+
   extension MincoreLaunchInstrumentationTests {
     private func launchSpan() -> SpanData? {
       finishedSpans().first { $0.name == "app.start" }
@@ -274,6 +288,121 @@
       XCTAssertEqual(resume?.name, "app.resume")
       XCTAssertEqual(resume?.attributes["app.resume.type"], .string("hot"))
       XCTAssertNil(resume?.attributes["app.start.sampled_page_in_ratio"])
+    }
+
+    func testResumeRecordsThePageInsBetweenItsStartAndEnd() {
+      // The counter is cumulative for the process, so 140 - 100 belongs to this resume.
+      let counter = PageInCounter([100, 140])
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0), pageInsNow: { counter.read() })
+      activate()
+
+      post(didEnterBackground)
+      post(willEnterForeground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame.addingTimeInterval(10))
+
+      XCTAssertEqual(span("app.resume")?.attributes["app.resume.page_ins"], .int(40))
+    }
+
+    func testTheLaunchSpanHasNoResumePageIns() {
+      let counter = PageInCounter([100, 140])
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0), pageInsNow: { counter.read() })
+      activate()
+
+      XCTAssertNil(launchSpan()?.attributes["app.resume.page_ins"],
+                   "the counter is only read when a resume starts")
+    }
+
+    func testAResumeHasNoPageInsWhenTheCounterCantBeRead() {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
+      activate()
+
+      post(didEnterBackground)
+      post(willEnterForeground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame.addingTimeInterval(10))
+
+      let resume = span("app.resume")
+      XCTAssertNotNil(resume, "the resume is still recorded")
+      XCTAssertNil(resume?.attributes["app.resume.page_ins"])
+    }
+
+    func testAPageInCounterThatWentBackwardsIsNotRecorded() {
+      // A counter can only go up, so a lower reading at the end means it was reset or misread.
+      let counter = PageInCounter([140, 100])
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0), pageInsNow: { counter.read() })
+      activate()
+
+      post(didEnterBackground)
+      post(willEnterForeground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame.addingTimeInterval(10))
+
+      let resume = span("app.resume")
+      XCTAssertNotNil(resume, "the resume is still recorded")
+      XCTAssertNil(resume?.attributes["app.resume.page_ins"],
+                   "a negative count would be worse than none")
+    }
+
+    func testResumeRecordsThePageSampleTakenWhenTheAppBackgrounded() {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0),
+              backgroundSample: LaunchPageSample(residentAtEnd: 200, pagedIn: 50))
+      activate()
+
+      post(didEnterBackground)
+      post(willEnterForeground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame.addingTimeInterval(10))
+
+      XCTAssertTrue(backgroundPageSample.didTake, "the baseline is taken when the app backgrounds")
+      let resume = span("app.resume")
+      XCTAssertEqual(resume?.attributes["app.resume.sampled_pages.total"], .int(256))
+      XCTAssertEqual(resume?.attributes["app.resume.sampled_pages.resident_at_end"], .int(200))
+      XCTAssertEqual(resume?.attributes["app.resume.sampled_pages.paged_in"], .int(50))
+      XCTAssertEqual(resume?.attributes["app.resume.sampled_page_in_ratio"], .double(0.25))
+    }
+
+    func testAResumeTheAppDidNotEnterTheBackgroundBeforeHasNoPageSample() {
+      // A background launch's first foreground is a resume, and the app was never in the
+      // foreground to leave, so there's no baseline to measure against.
+      install(sample: nil, backgroundSample: LaunchPageSample(residentAtEnd: 200, pagedIn: 50),
+              isBackgroundLaunch: true)
+
+      post(willEnterForeground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertFalse(backgroundPageSample.didTake)
+      let resume = span("app.resume")
+      XCTAssertEqual(resume?.attributes["app.resume.type"], .string("background_launched"),
+                     "the resume is still recorded")
+      XCTAssertNil(resume?.attributes["app.resume.sampled_pages.paged_in"])
+      XCTAssertNil(resume?.attributes["app.resume.sampled_page_in_ratio"])
+    }
+
+    func testTheLaunchSpanHasNoResumePageSample() {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0),
+              backgroundSample: LaunchPageSample(residentAtEnd: 200, pagedIn: 50))
+      activate()
+
+      XCTAssertNil(launchSpan()?.attributes["app.resume.sampled_pages.paged_in"],
+                   "a launch is measured against the initializer's baseline, not the background one")
+    }
+
+    func testAResumePageSampleWithNothingResidentHasNoRatio() {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0),
+              backgroundSample: LaunchPageSample(residentAtEnd: 0, pagedIn: 0))
+      activate()
+
+      post(didEnterBackground)
+      post(willEnterForeground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame.addingTimeInterval(10))
+
+      let resume = span("app.resume")
+      XCTAssertEqual(resume?.attributes["app.resume.sampled_pages.resident_at_end"], .int(0))
+      XCTAssertNil(resume?.attributes["app.resume.sampled_page_in_ratio"],
+                   "nothing was in memory to compare, so a ratio would divide by zero")
     }
 
     func testLaunchIsARootSpanWithAChildSpanPerPhase() throws {
@@ -595,6 +724,20 @@
 
       XCTAssertGreaterThanOrEqual(pageIns.preInitializer, 0)
       XCTAssertGreaterThanOrEqual(pageIns.postInitializer, 0)
+    }
+
+    // The test host's own page-ins are whatever the process happened to do, so this checks the
+    // cumulative reader against the pair that's already trusted instead of a fixed number.
+    func testKernelSamplerReadsTheCumulativePageInCounter() throws {
+      let sampler = KernelLaunchPageSampler()
+      // `preInitializer` plus `postInitializer` is the total at the moment of that call.
+      let pair = try XCTUnwrap(sampler.readPageIns())
+      let now = try XCTUnwrap(sampler.readPageInsNow())
+      let later = try XCTUnwrap(sampler.readPageInsNow())
+
+      XCTAssertGreaterThanOrEqual(now, pair.preInitializer + pair.postInitializer,
+                                  "a cumulative counter can't be behind a total read earlier")
+      XCTAssertGreaterThanOrEqual(later, now, "a cumulative counter can't go backwards")
     }
 
     func testKernelSamplerSampleIsConsistent() {

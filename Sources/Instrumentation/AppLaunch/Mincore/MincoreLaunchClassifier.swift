@@ -31,6 +31,12 @@
   protocol LaunchPageSampler: Sendable {
     func readSample() -> LaunchPageSample?
     func readPageIns() -> LaunchPageIns?
+    /// The process's page-ins so far, for a window this module didn't bound, such as a resume.
+    func readPageInsNow() -> Int?
+    /// Records the sampled pages' residency as the baseline a resume is measured against.
+    func samplePagesAtBackground()
+    /// The sampled pages compared with the baseline taken when the app entered the background.
+    func readBackgroundSample() -> LaunchPageSample?
   }
 
   /// Compares the pages now with the sample the `AppLaunchPageSampling` initializer took.
@@ -48,6 +54,24 @@
       var postInitializer: Int32 = 0
       guard otel_app_launch_read_page_ins(&preInitializer, &postInitializer) else { return nil }
       return LaunchPageIns(preInitializer: Int(preInitializer), postInitializer: Int(postInitializer))
+    }
+
+    func readPageInsNow() -> Int? {
+      var pageIns: Int32 = 0
+      guard otel_app_launch_read_page_ins_now(&pageIns) else { return nil }
+      return Int(pageIns)
+    }
+
+    func samplePagesAtBackground() {
+      _ = otel_app_launch_sample_pages_at_background()
+    }
+
+    func readBackgroundSample() -> LaunchPageSample? {
+      var sampled: Int32 = 0
+      var residentAtEnd: Int32 = 0
+      var pagedIn: Int32 = 0
+      guard otel_app_launch_read_background_page_sample(&sampled, &residentAtEnd, &pagedIn) else { return nil }
+      return LaunchPageSample(residentAtEnd: Int(residentAtEnd), pagedIn: Int(pagedIn), sampled: Int(sampled))
     }
   }
 
