@@ -27,6 +27,8 @@ extension FederatedSemanticConventions {
     /**
      The process's page-ins during the resume, which reveal pages evicted while it was suspended.
 
+     - Note: Counts the whole process, not the app's code, from the system telling the app it will enter the foreground to the end of the span. Not reported if the counter can't be read, or if it went backwards, which would mean it was reset.
+
      - Requires: Value type should be `Int`
     */
     case resumePageIns = "app.resume.page_ins"
@@ -34,9 +36,41 @@ extension FederatedSemanticConventions {
     /**
      Why the app resumed.
 
+     - Note: Not recorded by this implementation yet. The connection options that carry it reach only the scene delegate, which this library doesn't hook.
+
      - Requires: Value should be one of ``ResumeReasonValues`` (of type `String`)
     */
     case resumeReason = "app.resume.reason"
+
+    /**
+     `app.resume.sampled_pages.paged_in` divided by `app.resume.sampled_pages.resident_at_end`, from 0 to 1.
+
+     - Requires: Value type should be `Double`
+    */
+    case resumeSampledPageInRatio = "app.resume.sampled_page_in_ratio"
+
+    /**
+     How many sampled pages of the app's code came back into memory between the app entering the background and the end of the resume, so how much of its own code the system had reclaimed while it was away.
+
+     - Note: Unlike `app.resume.page_ins`, this counts only the app's code, so it isn't affected by the rest of what the process read. It's recorded only for a resume the app entered the background before, because that's when the baseline is taken.
+
+     - Requires: Value type should be `Int`
+    */
+    case resumeSampledPagesPagedIn = "app.resume.sampled_pages.paged_in"
+
+    /**
+     How many sampled pages of the app's code were in memory at the end of the resume.
+
+     - Requires: Value type should be `Int`
+    */
+    case resumeSampledPagesResidentAtEnd = "app.resume.sampled_pages.resident_at_end"
+
+    /**
+     How many pages of the app's code were sampled, the same pages the launch sampled.
+
+     - Requires: Value type should be `Int`
+    */
+    case resumeSampledPagesTotal = "app.resume.sampled_pages.total"
 
     /**
      How much UI the resume had to rebuild.
@@ -101,6 +135,8 @@ extension FederatedSemanticConventions {
     /**
      How the previous process ended.
 
+     - Note: Not recorded by this implementation yet. It needs state carried over from the previous process, such as a crash report or an exit metric.
+
      - Requires: Value should be one of ``StartPreviousExitValues`` (of type `String`)
     */
     case startPreviousExit = "app.start.previous_exit"
@@ -114,6 +150,8 @@ extension FederatedSemanticConventions {
 
     /**
      Why the app started.
+
+     - Note: Not recorded by this implementation yet. The launch options that carry it reach only the app delegate and the scene delegate, which this library doesn't hook.
 
      - Requires: Value should be one of ``StartReasonValues`` (of type `String`)
     */
