@@ -125,6 +125,18 @@ groups:
           conditionally_required: If the app entered the background earlier in this process.
       - ref: app.resume.page_ins
         requirement_level: opt_in
+      - ref: app.resume.sampled_pages.total
+        requirement_level:
+          conditionally_required: If the app's pages could be sampled when it entered the background.
+      - ref: app.resume.sampled_pages.resident_at_end
+        requirement_level:
+          conditionally_required: If the app's pages could be sampled when it entered the background.
+      - ref: app.resume.sampled_pages.paged_in
+        requirement_level:
+          conditionally_required: If the app's pages could be sampled when it entered the background.
+      - ref: app.resume.sampled_page_in_ratio
+        requirement_level:
+          conditionally_required: If the app's pages could be sampled when it entered the background.
   - id: metric.app.start.duration
     type: metric
     metric_name: app.start.duration
