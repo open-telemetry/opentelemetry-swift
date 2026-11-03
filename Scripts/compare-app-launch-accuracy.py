@@ -495,7 +495,7 @@ def compare(span, trace):
         log("Warning: the span has duration attributes this script doesn't compare: %s. "
             "If one was renamed, update seconds() calls in compare()." % ", ".join(unknown))
 
-    sampled_total = integer("sampled_pages.total") or trace["sampled_pages"]
+    sampled_total = integer("text_pages.sampled") or trace["sampled_pages"]
     touched_estimate = trace["touched_sampled_pages"] * max(trace["text_pages"] - len(trace["images"]), 1) / max(sampled_total, 1)
     total = (span["end"] - span["start"]) / 1e9
     return {
@@ -503,11 +503,11 @@ def compare(span, trace):
         "trace_type": trace["launch_type"],
         "types_agree": attributes.get("app.start.type") == trace["launch_type"],
         "determined_by": attributes.get("app.start.determined_by"),
-        "sampled_total": integer("sampled_pages.total"),
-        "resident_at_end": integer("sampled_pages.resident_at_end"),
-        "paged_in": integer("sampled_pages.paged_in"),
-        "paged_in_error": None if integer("sampled_pages.paged_in") is None
-        else integer("sampled_pages.paged_in") - trace["sampled_disk_reads_after_initializer"],
+        "sampled_total": integer("text_pages.sampled"),
+        "resident_at_end": integer("text_pages.resident_at_end"),
+        "paged_in": integer("text_pages.paged_in"),
+        "paged_in_error": None if integer("text_pages.paged_in") is None
+        else integer("text_pages.paged_in") - trace["sampled_disk_reads_after_initializer"],
         "touched_estimate_error": touched_estimate - trace["touched_pages"],
         "page_ins_pre_initializer_error": None if integer("page_ins.pre_initializer") is None
         else integer("page_ins.pre_initializer") - trace["disk_reads_before_initializer"],

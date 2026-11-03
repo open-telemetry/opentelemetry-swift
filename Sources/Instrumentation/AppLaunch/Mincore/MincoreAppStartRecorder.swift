@@ -14,16 +14,17 @@
   struct MincoreAppStartRecorder: AppStartRecording {
     private typealias App = FederatedSemanticConventions.App
 
-      private enum Name {
-      static let appStart = "app.start"
-      static let preInit = "app.start.pre_init"
-      static let appInit = "app.start.app_init"
-      static let render = "app.start.render"
-      static let sceneSetup = "app.start.scene_setup"
-      static let appResume = "app.resume"
-      static let resumeSceneSetup = "app.resume.scene_setup"
-      static let appStartDuration = "app.start.duration"
-      static let appResumeDuration = "app.resume.duration"
+    // From the federated registry, so a rename there reaches the recorder instead of diverging.
+    private enum Name {
+      static let appStart = FederatedSemanticConventions.SpanName.appStart.rawValue
+      static let preInit = FederatedSemanticConventions.SpanName.appStartPreInit.rawValue
+      static let appInit = FederatedSemanticConventions.SpanName.appStartAppInit.rawValue
+      static let render = FederatedSemanticConventions.SpanName.appStartRender.rawValue
+      static let sceneSetup = FederatedSemanticConventions.SpanName.appStartSceneSetup.rawValue
+      static let appResume = FederatedSemanticConventions.SpanName.appResume.rawValue
+      static let resumeSceneSetup = FederatedSemanticConventions.SpanName.appResumeSceneSetup.rawValue
+      static let appStartDuration = FederatedSemanticConventions.MetricName.appStartDuration.rawValue
+      static let appResumeDuration = FederatedSemanticConventions.MetricName.appResumeDuration.rawValue
     }
 
     let dependencies: AppLaunchRuntime.Dependencies
@@ -154,14 +155,19 @@
       if let atStart = resume.pageInsAtStart, let atEnd = pageSampler.readPageInsNow(), atEnd >= atStart {
         root.setAttribute(key: App.resumePageIns.rawValue, value: atEnd - atStart)
       }
+      // A property of the binary rather than of this resume, so it doesn't depend on the baseline
+      // below and is reported even when the app never entered the background.
+      if let total = pageSampler.readTextPageTotal() {
+        root.setAttribute(key: App.resumeTextPagesTotal.rawValue, value: total)
+      }
       // Only the app's own code, unlike the page-in counter above, and only for a resume the app
       // entered the background before, since that's when the baseline is taken.
       if let sample = pageSampler.readBackgroundSample() {
-        root.setAttribute(key: App.resumeSampledPagesTotal.rawValue, value: sample.sampled)
-        root.setAttribute(key: App.resumeSampledPagesResidentAtEnd.rawValue, value: sample.residentAtEnd)
-        root.setAttribute(key: App.resumeSampledPagesPagedIn.rawValue, value: sample.pagedIn)
+        root.setAttribute(key: App.resumeTextPagesSampled.rawValue, value: sample.sampled)
+        root.setAttribute(key: App.resumeTextPagesResidentAtEnd.rawValue, value: sample.residentAtEnd)
+        root.setAttribute(key: App.resumeTextPagesPagedIn.rawValue, value: sample.pagedIn)
         if let ratio = sample.pageInRatio {
-          root.setAttribute(key: App.resumeSampledPageInRatio.rawValue, value: ratio)
+          root.setAttribute(key: App.resumeTextPagesPageInRatio.rawValue, value: ratio)
         }
       }
       _ = recordPhase(tracer, Name.resumeSceneSetup, parent: root, start: resume.sceneConnectStart, end: endTime)

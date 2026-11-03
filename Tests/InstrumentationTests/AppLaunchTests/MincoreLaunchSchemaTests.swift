@@ -63,9 +63,9 @@
 
       let attributes = launchSpan()?.attributes
       XCTAssertEqual(attributes?["app.start.type"], .string("cold"))
-      XCTAssertEqual(attributes?["app.start.sampled_pages.resident_at_end"], .int(128))
-      XCTAssertEqual(attributes?["app.start.sampled_pages.paged_in"], .int(120))
-      XCTAssertEqual(attributes?["app.start.sampled_page_in_ratio"], .double(0.9375))
+      XCTAssertEqual(attributes?["app.start.text_pages.resident_at_end"], .int(128))
+      XCTAssertEqual(attributes?["app.start.text_pages.paged_in"], .int(120))
+      XCTAssertEqual(attributes?["app.start.text_pages.page_in_ratio"], .double(0.9375))
     }
 
     func testMincoreLaunchThatFoundItsCodeInMemoryIsWarm() {
@@ -75,7 +75,7 @@
       activate()
 
       XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("warm"))
-      XCTAssertEqual(launchSpan()?.attributes["app.start.sampled_page_in_ratio"], .double(0))
+      XCTAssertEqual(launchSpan()?.attributes["app.start.text_pages.page_in_ratio"], .double(0))
     }
 
     func testMincoreLaunchAtTheThresholdIsCold() {
@@ -105,7 +105,7 @@
       activate()
 
       XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("warm"))
-      XCTAssertEqual(launchSpan()?.attributes["app.start.sampled_page_in_ratio"], .double(0.7))
+      XCTAssertEqual(launchSpan()?.attributes["app.start.text_pages.page_in_ratio"], .double(0.7))
     }
 
     func testLaunchAtAConfiguredThresholdIsCold() {
@@ -155,7 +155,7 @@
       let attributes = launchSpan()?.attributes
       XCTAssertEqual(attributes?["app.start.type"], .string("prewarmed"))
       XCTAssertEqual(attributes?["app.start.determined_by"], .string("prewarm_flag"))
-      XCTAssertEqual(attributes?["app.start.sampled_pages.paged_in"], .int(120))
+      XCTAssertEqual(attributes?["app.start.text_pages.paged_in"], .int(120))
     }
 
     func testPrewarmedLaunchThatCantBeSampledIsStillPrewarmed() {
@@ -164,7 +164,7 @@
       activate()
 
       XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("prewarmed"))
-      XCTAssertNil(launchSpan()?.attributes["app.start.sampled_page_in_ratio"])
+      XCTAssertNil(launchSpan()?.attributes["app.start.text_pages.page_in_ratio"])
     }
 
     func testPrewarmedCanBeLeftOutOfLaunchTypes() {
@@ -187,9 +187,9 @@
 
       let attributes = launchSpan()?.attributes
       XCTAssertEqual(attributes?["app.start.type"], .string("warm"))
-      XCTAssertNil(attributes?["app.start.sampled_pages.resident_at_end"])
-      XCTAssertNil(attributes?["app.start.sampled_pages.paged_in"])
-      XCTAssertNil(attributes?["app.start.sampled_page_in_ratio"])
+      XCTAssertNil(attributes?["app.start.text_pages.resident_at_end"])
+      XCTAssertNil(attributes?["app.start.text_pages.paged_in"])
+      XCTAssertNil(attributes?["app.start.text_pages.page_in_ratio"])
       XCTAssertTrue(messages.values.contains { $0.hasPrefix("[warn]") && $0.contains("inferred") })
     }
 
@@ -200,7 +200,7 @@
       activate()
 
       XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("warm"))
-      XCTAssertNil(launchSpan()?.attributes["app.start.sampled_page_in_ratio"])
+      XCTAssertNil(launchSpan()?.attributes["app.start.text_pages.page_in_ratio"])
     }
 
     func testLaunchWithTooFewResidentPagesIsInferred() {
@@ -212,8 +212,8 @@
       let attributes = launchSpan()?.attributes
       XCTAssertEqual(attributes?["app.start.type"], .string("cold"))
       XCTAssertEqual(attributes?["app.start.determined_by"], .string("launch_history"))
-      XCTAssertNil(attributes?["app.start.sampled_page_in_ratio"])
-      XCTAssertNil(attributes?["app.start.sampled_pages.total"])
+      XCTAssertNil(attributes?["app.start.text_pages.page_in_ratio"])
+      XCTAssertNil(attributes?["app.start.text_pages.sampled"])
     }
 
     func testLaunchWithTheMinimumResidentPagesIsMeasured() {
@@ -234,7 +234,7 @@
 
       XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("cold"))
       XCTAssertEqual(launchSpan()?.attributes["app.start.determined_by"], .string("page_sampling"))
-      XCTAssertEqual(launchSpan()?.attributes["app.start.sampled_pages.total"], .int(8))
+      XCTAssertEqual(launchSpan()?.attributes["app.start.text_pages.sampled"], .int(8))
     }
 
     func testPrewarmedLaunchWithTooFewResidentPagesIsStillPrewarmed() {
@@ -251,7 +251,7 @@
 
       activate()
 
-      XCTAssertEqual(launchSpan()?.attributes["app.start.sampled_pages.total"], .int(200))
+      XCTAssertEqual(launchSpan()?.attributes["app.start.text_pages.sampled"], .int(200))
     }
 
     func testDefaultConfigurationRecordsEveryLaunchType() {
@@ -287,7 +287,7 @@
       let resume = finishedSpans().last
       XCTAssertEqual(resume?.name, "app.resume")
       XCTAssertEqual(resume?.attributes["app.resume.type"], .string("hot"))
-      XCTAssertNil(resume?.attributes["app.start.sampled_page_in_ratio"])
+      XCTAssertNil(resume?.attributes["app.start.text_pages.page_in_ratio"])
     }
 
     func testResumeRecordsThePageInsBetweenItsStartAndEnd() {
@@ -356,10 +356,10 @@
 
       XCTAssertTrue(backgroundPageSample.didTake, "the baseline is taken when the app backgrounds")
       let resume = span("app.resume")
-      XCTAssertEqual(resume?.attributes["app.resume.sampled_pages.total"], .int(256))
-      XCTAssertEqual(resume?.attributes["app.resume.sampled_pages.resident_at_end"], .int(200))
-      XCTAssertEqual(resume?.attributes["app.resume.sampled_pages.paged_in"], .int(50))
-      XCTAssertEqual(resume?.attributes["app.resume.sampled_page_in_ratio"], .double(0.25))
+      XCTAssertEqual(resume?.attributes["app.resume.text_pages.sampled"], .int(256))
+      XCTAssertEqual(resume?.attributes["app.resume.text_pages.resident_at_end"], .int(200))
+      XCTAssertEqual(resume?.attributes["app.resume.text_pages.paged_in"], .int(50))
+      XCTAssertEqual(resume?.attributes["app.resume.text_pages.page_in_ratio"], .double(0.25))
     }
 
     func testAResumeTheAppDidNotEnterTheBackgroundBeforeHasNoPageSample() {
@@ -376,8 +376,8 @@
       let resume = span("app.resume")
       XCTAssertEqual(resume?.attributes["app.resume.type"], .string("background_launched"),
                      "the resume is still recorded")
-      XCTAssertNil(resume?.attributes["app.resume.sampled_pages.paged_in"])
-      XCTAssertNil(resume?.attributes["app.resume.sampled_page_in_ratio"])
+      XCTAssertNil(resume?.attributes["app.resume.text_pages.paged_in"])
+      XCTAssertNil(resume?.attributes["app.resume.text_pages.page_in_ratio"])
     }
 
     func testTheLaunchSpanHasNoResumePageSample() {
@@ -385,7 +385,7 @@
               backgroundSample: LaunchPageSample(residentAtEnd: 200, pagedIn: 50))
       activate()
 
-      XCTAssertNil(launchSpan()?.attributes["app.resume.sampled_pages.paged_in"],
+      XCTAssertNil(launchSpan()?.attributes["app.resume.text_pages.paged_in"],
                    "a launch is measured against the initializer's baseline, not the background one")
     }
 
@@ -400,8 +400,8 @@
       firstFrameReader.displayFrame(at: firstFrame.addingTimeInterval(10))
 
       let resume = span("app.resume")
-      XCTAssertEqual(resume?.attributes["app.resume.sampled_pages.resident_at_end"], .int(0))
-      XCTAssertNil(resume?.attributes["app.resume.sampled_page_in_ratio"],
+      XCTAssertEqual(resume?.attributes["app.resume.text_pages.resident_at_end"], .int(0))
+      XCTAssertNil(resume?.attributes["app.resume.text_pages.page_in_ratio"],
                    "nothing was in memory to compare, so a ratio would divide by zero")
     }
 
@@ -747,6 +747,51 @@
       XCTAssertLessThanOrEqual(sample.pagedIn, sample.residentAtEnd)
       XCTAssertLessThanOrEqual(sample.residentAtEnd, sample.sampled)
       XCTAssertLessThanOrEqual(sample.sampled, 256)
+    }
+
+    func testTheLaunchSpanRecordsHowManyTextPagesCouldBeSampled() {
+      // More pages than the sample covers, which is the point of reporting both: the sample stands
+      // for a share of the app's code, and only the total says what share.
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 96), textPageTotal: 1_024)
+      activate()
+
+      let launch = launchSpan()
+      XCTAssertEqual(launch?.attributes["app.start.text_pages.total"], .int(1_024))
+      XCTAssertEqual(launch?.attributes["app.start.text_pages.sampled"], .int(256),
+                     "the sample stays capped, so it doesn't follow the total")
+    }
+
+    func testAResumeRecordsTheTextPageTotalEvenWithoutABackgroundSample() {
+      // The total describes the binary, not the window being measured, so unlike `paged_in` it
+      // doesn't depend on a baseline taken when the app backgrounded.
+      install(sample: nil, backgroundSample: nil, textPageTotal: 1_024, isBackgroundLaunch: true)
+
+      post(willEnterForeground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      let resume = span("app.resume")
+      XCTAssertEqual(resume?.attributes["app.resume.text_pages.total"], .int(1_024))
+      XCTAssertNil(resume?.attributes["app.resume.text_pages.paged_in"],
+                   "no baseline was taken, so there's nothing to compare")
+    }
+
+    func testNoTextPageTotalIsRecordedWhenItCantBeRead() {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 96), textPageTotal: nil)
+      activate()
+
+      XCTAssertNil(launchSpan()?.attributes["app.start.text_pages.total"])
+      XCTAssertEqual(launchSpan()?.attributes["app.start.text_pages.sampled"], .int(256),
+                     "a missing total doesn't suppress the sample")
+    }
+
+    func testKernelSamplerReadsATextPageTotalNoSmallerThanTheSample() {
+      guard let total = KernelLaunchPageSampler().readTextPageTotal(),
+            let sample = KernelLaunchPageSampler().readSample() else { return }
+
+      XCTAssertGreaterThan(total, 0)
+      XCTAssertGreaterThanOrEqual(total, sample.sampled,
+                                  "the sample is drawn from the total, so it can't exceed it")
     }
   }
 #endif
