@@ -40,6 +40,7 @@
     var pageIns: LaunchPageIns?
     var pageInsNow: @Sendable () -> Int? = { nil }
     var background: FakeBackgroundSample?
+    var textPageTotal: Int?
 
     func readSample() -> LaunchPageSample? {
       sample
@@ -59,6 +60,10 @@
 
     func readBackgroundSample() -> LaunchPageSample? {
       background?.read()
+    }
+
+    func readTextPageTotal() -> Int? {
+      textPageTotal
     }
   }
 
@@ -190,6 +195,7 @@
       pageIns: LaunchPageIns? = nil,
       pageInsNow: @escaping @Sendable () -> Int? = { nil },
       backgroundSample: LaunchPageSample? = nil,
+      textPageTotal: Int? = nil,
       useFirstFrameReader: Bool = true,
       processStartTime: @escaping @Sendable () -> Date? = { Date(timeIntervalSince1970: 1_000) },
       isActivePrewarm: Bool = false,
@@ -202,7 +208,7 @@
       background.configure(backgroundSample)
       backgroundPageSample = background
       let pageSampler = FakeLaunchPageSampler(sample: sample, pageIns: pageIns, pageInsNow: pageInsNow,
-                                              background: background)
+                                              background: background, textPageTotal: textPageTotal)
       return MincoreLaunchInstrumentation.Dependencies(
         notificationCenter: notificationCenter,
         didBecomeActiveNotification: didBecomeActive,
@@ -239,6 +245,7 @@
                  pageIns: LaunchPageIns? = nil,
                  pageInsNow: @escaping @Sendable () -> Int? = { nil },
                  backgroundSample: LaunchPageSample? = nil,
+                 textPageTotal: Int? = nil,
                  useFirstFrameReader: Bool = true,
                  processStartTime: @escaping @Sendable () -> Date? = { Date(timeIntervalSince1970: 1_000) },
                  isActivePrewarm: Bool = false,
@@ -252,6 +259,7 @@
           pageIns: pageIns,
           pageInsNow: pageInsNow,
           backgroundSample: backgroundSample,
+          textPageTotal: textPageTotal,
           useFirstFrameReader: useFirstFrameReader,
           processStartTime: processStartTime,
           isActivePrewarm: isActivePrewarm,

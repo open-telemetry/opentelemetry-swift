@@ -1,6 +1,8 @@
 groups:
   - id: span.app_start
     type: span
+    annotations:
+      span_name: app.start
     span_kind: internal
     stability: development
     brief: >
@@ -56,20 +58,19 @@ groups:
         requirement_level: required
       - ref: app.start.determined_by
         requirement_level: required
-      - ref: app.start.reason
-        requirement_level: opt_in
-      - ref: app.start.previous_exit
-        requirement_level: opt_in
-      - ref: app.start.sampled_pages.total
+      - ref: app.start.text_pages.sampled
         requirement_level:
           conditionally_required: If the launch's pages could be sampled.
-      - ref: app.start.sampled_pages.resident_at_end
+      - ref: app.start.text_pages.total
+        requirement_level:
+          conditionally_required: If the app's code could be measured.
+      - ref: app.start.text_pages.resident_at_end
         requirement_level:
           conditionally_required: If the launch's pages could be sampled.
-      - ref: app.start.sampled_pages.paged_in
+      - ref: app.start.text_pages.paged_in
         requirement_level:
           conditionally_required: If the launch's pages could be sampled.
-      - ref: app.start.sampled_page_in_ratio
+      - ref: app.start.text_pages.page_in_ratio
         requirement_level:
           conditionally_required: If the launch's pages could be sampled.
       - ref: app.start.prewarm.cache_state
@@ -93,6 +94,8 @@ groups:
           conditionally_required: If `app.start.render` is recorded.
   - id: span.app_resume
     type: span
+    annotations:
+      span_name: app.resume
     span_kind: internal
     stability: development
     brief: >
@@ -118,25 +121,115 @@ groups:
         requirement_level: required
       - ref: app.resume.outcome
         requirement_level: required
-      - ref: app.resume.reason
-        requirement_level: opt_in
       - ref: app.resume.background.duration
         requirement_level:
           conditionally_required: If the app entered the background earlier in this process.
       - ref: app.resume.page_ins
         requirement_level: opt_in
-      - ref: app.resume.sampled_pages.total
+      - ref: app.resume.text_pages.sampled
         requirement_level:
           conditionally_required: If the app's pages could be sampled when it entered the background.
-      - ref: app.resume.sampled_pages.resident_at_end
+      - ref: app.resume.text_pages.total
+        requirement_level:
+          conditionally_required: If the app's code could be measured.
+      - ref: app.resume.text_pages.resident_at_end
         requirement_level:
           conditionally_required: If the app's pages could be sampled when it entered the background.
-      - ref: app.resume.sampled_pages.paged_in
+      - ref: app.resume.text_pages.paged_in
         requirement_level:
           conditionally_required: If the app's pages could be sampled when it entered the background.
-      - ref: app.resume.sampled_page_in_ratio
+      - ref: app.resume.text_pages.page_in_ratio
         requirement_level:
           conditionally_required: If the app's pages could be sampled when it entered the background.
+  - id: span.app_start.pre_init
+    type: span
+    annotations:
+      span_name: app.start.pre_init
+    span_kind: internal
+    stability: development
+    brief: >
+      Process start to the launch-environment `constructor` function, on a launch that wasn't prewarmed.
+    note: |
+      **Span name** MUST be `app.start.pre_init`.
+
+      **Parent** MUST be `app.start`.
+
+      Recorded only if both of its timestamps are known, and never on a prewarmed launch, because a
+      prewarm runs no application code. Its duration is copied onto the root span as
+      `app.start.pre_init.duration`.
+    # Child spans carry no attributes; the field is required even so.
+    attributes: []
+  - id: span.app_start.app_init
+    type: span
+    annotations:
+      span_name: app.start.app_init
+    span_kind: internal
+    stability: development
+    brief: >
+      The `constructor` function to `didFinishLaunchingNotification`, covering static initializers and the app delegate's launch work.
+    note: |
+      **Span name** MUST be `app.start.app_init`.
+
+      **Parent** MUST be `app.start`.
+
+      Holds both the app's remaining static initializers and its app-delegate work, which Apple's
+      launch-time guidance treats as two problems with different fixes. Splitting them would need
+      method swizzling, so a high duration doesn't say which to look at. Its duration is copied onto
+      the root span as `app.start.app_init.duration`.
+    # Child spans carry no attributes; the field is required even so.
+    attributes: []
+  - id: span.app_start.render
+    type: span
+    annotations:
+      span_name: app.start.render
+    span_kind: internal
+    stability: development
+    brief: >
+      `didFinishLaunchingNotification` to the first frame displayed.
+    note: |
+      **Span name** MUST be `app.start.render`.
+
+      **Parent** MUST be `app.start`.
+
+      Its duration is copied onto the root span as `app.start.render.duration`. With
+      `app.start.pre_init` and `app.start.app_init` it covers the root span with no gaps, so the three
+      durations add up to the root's.
+    # Child spans carry no attributes; the field is required even so.
+    attributes: []
+  - id: span.app_start.scene_setup
+    type: span
+    annotations:
+      span_name: app.start.scene_setup
+    span_kind: internal
+    stability: development
+    brief: >
+      The first scene connecting during a launch, to the first frame displayed.
+    note: |
+      **Span name** MUST be `app.start.scene_setup`.
+
+      **Parent** MUST be `app.start.render`.
+
+      A child of `app.start.render` rather than of the root, and floored at its parent's start because
+      UIKit connects a scene after `didFinishLaunching`. Recorded only if a scene connected.
+    # Child spans carry no attributes; the field is required even so.
+    attributes: []
+  - id: span.app_resume.scene_setup
+    type: span
+    annotations:
+      span_name: app.resume.scene_setup
+    span_kind: internal
+    stability: development
+    brief: >
+      A scene connecting during a resume, to the first frame displayed.
+    note: |
+      **Span name** MUST be `app.resume.scene_setup`.
+
+      **Parent** MUST be `app.resume`.
+
+      Recorded only if a scene connected, which happens when the system discarded the scene while the
+      app was in the background. A hot resume has no such span.
+    # Child spans carry no attributes; the field is required even so.
+    attributes: []
   - id: metric.app.start.duration
     type: metric
     metric_name: app.start.duration

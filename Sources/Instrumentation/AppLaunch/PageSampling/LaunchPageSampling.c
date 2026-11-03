@@ -9,6 +9,7 @@
 
 #if !TARGET_OS_WATCH
   #include <mach-o/dyld.h>
+  #include <limits.h>
   #include <mach-o/loader.h>
   #include <mach/mach.h>
   #include <stdint.h>
@@ -16,6 +17,15 @@
   #include <sys/mman.h>
   #include <unistd.h>
 
+  // 256 is sized for iOS, where an app's own code is a few hundred pages: the demo app's device
+  // build has 413 samplable pages, covered 62%, and across 150 iOS system apps the median is 6,
+  // because their code is in the shared cache rather than their bundles, so the sample is a census.
+  // It covers a large app thinly. Across 53 bundles in macOS `/Applications` the median is 10,830
+  // pages, covered 2.4%, and Xcode's 158,554 are covered 0.16%. Sampling error isn't what breaks
+  // there: 256 pages hold the standard error on a proportion to 3.1% whatever the app's size. What
+  // breaks is that fewer sampled pages come back resident, so a large app can fall below
+  // `MincoreLaunchClassifier.minimumResidentPages` and be classified from launch history instead.
+  // Intel Macs make it worse, because 4 KB pages mean four times the pages for the same binary.
   #define MAX_SAMPLED_PAGES 256
 
 // Fixed size because this runs before `main()`, and the bound means a sample can't overflow.
@@ -25,6 +35,9 @@ static bool wasResident[MAX_SAMPLED_PAGES];
 static bool wasResidentAtBackground[MAX_SAMPLED_PAGES];
 static bool hasBackgroundSample = false;
 static int sampledPageCount = 0;
+// Every samplable page of the app's code, not only the ones the sample covers, so a reader can
+// tell what share of the app's code the sample stands for.
+static int samplablePageCount = 0;
 static int pageInsAtInitializer = -1;
 
 static int readPageIns(void) {
@@ -45,6 +58,11 @@ static bool isResident(uintptr_t page, bool *resident) {
   return true;
 }
 
+// Only `__TEXT` is sampled. It holds the app's code and is read-only, so the kernel maps it once
+// and can discard its pages and re-read them from disk whenever it needs memory, which is what
+// makes residency say something about the launch. A writable segment is copy-on-write, so its
+// pages are resident whether or not the launch read them. See
+// https://developer.apple.com/library/archive/documentation/Performance/Conceptual/CodeFootprint/Articles/MachOOverview.html
 static bool textSegment(uint32_t image, uintptr_t *start, uint64_t *size) {
   const struct mach_header_64 *header = (const struct mach_header_64 *)_dyld_get_image_header(image);
   if (header == NULL || header->magic != MH_MAGIC_64) {
@@ -126,6 +144,7 @@ __attribute__((constructor)) static void otel_app_launch_sample_pages_at_start(v
   if (candidates == 0) {
     return;
   }
+  samplablePageCount = candidates > (uint64_t)INT_MAX ? INT_MAX : (int)candidates;
   int count = candidates < MAX_SAMPLED_PAGES ? (int)candidates : MAX_SAMPLED_PAGES;
   int next = 0;
   uint64_t imageOffset = 0;
@@ -227,6 +246,14 @@ bool otel_app_launch_read_page_ins_now(int *pageIns) {
   *pageIns = now;
   return true;
 }
+
+bool otel_app_launch_read_text_page_total(int *total) {
+  if (samplablePageCount == 0) {
+    return false;
+  }
+  *total = samplablePageCount;
+  return true;
+}
 #else
 bool otel_app_launch_read_page_sample(int *sampled, int *residentAtEnd, int *pagedIn) {
   return false;
@@ -245,6 +272,10 @@ bool otel_app_launch_read_page_ins(int *preInitializer, int *postInitializer) {
 }
 
 bool otel_app_launch_read_page_ins_now(int *pageIns) {
+  return false;
+}
+
+bool otel_app_launch_read_text_page_total(int *total) {
   return false;
 }
 #endif

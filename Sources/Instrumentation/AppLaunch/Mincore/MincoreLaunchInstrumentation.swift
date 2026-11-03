@@ -9,7 +9,7 @@ import OpenTelemetryApi
 
 #if canImport(Darwin) && ((canImport(UIKit) && !os(watchOS)) || canImport(AppKit))
   /// Records each launch as an `app.start` span and each resume as an `app.resume` span, with a child span per phase and a duration metric. It measures `cold` and `warm`
-  /// instead of inferring them: it compares a sample of the app's code pages before `main()` with
+  /// instead of inferring them: it compares a sample of the app's `__TEXT` pages before `main()` with
   /// the same pages when the app becomes active. Prewarmed launches are `prewarmed`.
   ///
   /// Linking this library runs `mincore` before `main()`, so unlike a configuration option it can't
