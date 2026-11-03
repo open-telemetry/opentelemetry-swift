@@ -22,6 +22,8 @@ public struct OTelLogHandler: LogHandler, @unchecked Sendable {
 
   // Define metadata for this handler
   public var metadata: Logging.Logger.Metadata = [:]
+
+  public var metadataProvider: Logging.Logger.MetadataProvider?
   public subscript(metadataKey key: String) -> Logging.Logger.Metadata.Value? {
     get {
       return metadata[key]
@@ -61,6 +63,10 @@ public struct OTelLogHandler: LogHandler, @unchecked Sendable {
 
     // Convert metadata from the struct property to AttributeValue and merge it with otelattributes
     otelattributes.merge(convertMetadata(self.metadata)) { _, new in new }
+
+    if let providedMetadata = metadataProvider?.get() {
+      otelattributes.merge(convertMetadata(providedMetadata)) { _, new in new }
+    }
 
     // Convert metadata from the event to AttributeValue and merge into otelattributes.
     if let metadata = event.metadata {
