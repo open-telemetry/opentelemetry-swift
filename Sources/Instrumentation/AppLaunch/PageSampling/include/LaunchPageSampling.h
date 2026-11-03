@@ -34,4 +34,10 @@ bool otel_app_launch_read_page_ins(int *preInitializer, int *postInitializer);
 /// resume. Returns `false` if they can't be read, or on watchOS, where nothing is sampled.
 bool otel_app_launch_read_page_ins_now(int *pageIns);
 
+/// Every samplable page of the app's code, which is the `__TEXT` segments of the images in its
+/// bundle, less the first page of each, whether or not the sample covers it. Together with the
+/// sampled count it says what share of the app's code the sample stands for. Returns `false` if the
+/// code couldn't be measured.
+bool otel_app_launch_read_text_page_total(int *total);
+
 #endif

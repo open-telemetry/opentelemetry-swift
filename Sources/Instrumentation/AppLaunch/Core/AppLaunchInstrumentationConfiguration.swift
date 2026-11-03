@@ -34,11 +34,20 @@ public struct AppLaunchInstrumentationConfiguration: Equatable, Sendable {
   /// the default is 60 seconds.
   public var maxLaunchDuration: TimeInterval
 
-  /// The share of sampled code, `app.start.sampled_page_in_ratio`, that a launch must page in from
+  /// The share of sampled code, `app.start.text_pages.page_in_ratio`, that a launch must page in from
   /// disk to be `cold`, above 0 and at most 1. Apple describes cold and warm launches as a
   /// spectrum, so this is where this library draws the line. The default of 0.5 means at least half
   /// of the launch's code had to come from disk. Check the ratios your app reports before changing
   /// it, because how high they go depends on the app.
+  ///
+  /// The line is drawn on the device, so `app.start.type` carries this library's verdict rather
+  /// than a property of the launch. The measurements it was computed from are reported too:
+  /// `app.start.text_pages.page_in_ratio` and the `paged_in`, `resident_at_end`, `sampled` and
+  /// `total` counts behind it. A backend that prefers a different line can recalculate from those
+  /// and ignore `app.start.type`. Two caveats: this threshold isn't reported, so a span doesn't say
+  /// which line produced its label, and the measurements are only present when
+  /// `app.start.determined_by` is `page_sampling` — a launch that fell back to `launch_history` has
+  /// no ratio to recalculate from.
   public var coldPageInRatio: Double
 
   /// - Parameter launchTypes: The launch types to record. By default all of them.

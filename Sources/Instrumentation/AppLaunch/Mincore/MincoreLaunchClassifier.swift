@@ -37,6 +37,8 @@
     func samplePagesAtBackground()
     /// The sampled pages compared with the baseline taken when the app entered the background.
     func readBackgroundSample() -> LaunchPageSample?
+    /// Every samplable page of the app's code, whether or not the sample covers it.
+    func readTextPageTotal() -> Int?
   }
 
   /// Compares the pages now with the sample the `AppLaunchPageSampling` initializer took.
@@ -73,6 +75,12 @@
       guard otel_app_launch_read_background_page_sample(&sampled, &residentAtEnd, &pagedIn) else { return nil }
       return LaunchPageSample(residentAtEnd: Int(residentAtEnd), pagedIn: Int(pagedIn), sampled: Int(sampled))
     }
+
+    func readTextPageTotal() -> Int? {
+      var total: Int32 = 0
+      guard otel_app_launch_read_text_page_total(&total) else { return nil }
+      return Int(total)
+    }
   }
 
   /// Measures the launch type from how much of the app's code the launch had to bring into memory.
@@ -108,10 +116,13 @@
         let isCold = ratio >= coldPageInRatio
         let type: AppLaunchInstrumentationConfiguration.LaunchType = isPrewarmed ? .prewarmed : isCold ? .cold : .warm
         var attributes = Self.determinedBy(isPrewarmed ? .prewarmFlag : .pageSampling)
-        attributes[App.startSampledPagesTotal.rawValue] = .int(sample.sampled)
-        attributes[App.startSampledPagesResidentAtEnd.rawValue] = .int(sample.residentAtEnd)
-        attributes[App.startSampledPagesPagedIn.rawValue] = .int(sample.pagedIn)
-        attributes[App.startSampledPageInRatio.rawValue] = .double(ratio)
+        attributes[App.startTextPagesSampled.rawValue] = .int(sample.sampled)
+        if let total = pageSampler.readTextPageTotal() {
+          attributes[App.startTextPagesTotal.rawValue] = .int(total)
+        }
+        attributes[App.startTextPagesResidentAtEnd.rawValue] = .int(sample.residentAtEnd)
+        attributes[App.startTextPagesPagedIn.rawValue] = .int(sample.pagedIn)
+        attributes[App.startTextPagesPageInRatio.rawValue] = .double(ratio)
         if isPrewarmed {
           let cacheState: App.StartPrewarmCacheStateValues = isCold ? .cold : .warm
           attributes[App.startPrewarmCacheState.rawValue] = .string(cacheState.description)

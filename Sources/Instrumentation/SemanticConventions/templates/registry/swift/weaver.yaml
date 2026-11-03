@@ -20,3 +20,13 @@ templates:
       })
     file_name: "{{ params.enum }}.swift"
     application_mode: each
+  - pattern: SpanNames.swift.j2
+    filter: >
+      .groups
+      | map(select(.type == "span" or .type == "metric"))
+      | map({
+        kind: .type,
+        name: (.annotations.span_name // .metric_name),
+        brief: .brief,
+      })
+    application_mode: single
