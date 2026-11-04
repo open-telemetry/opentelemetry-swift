@@ -4,6 +4,55 @@
 import Foundation
 import PackageDescription
 
+enum PackageTraitName {
+  static let otlpGRPC = "OTLPGRPC"
+  static let prometheus = "Prometheus"
+  static let swiftObservabilityAPIBridges = "SwiftObservabilityAPIBridges"
+  static let jaeger = "Jaeger"
+  static let openTracing = "OpenTracing"
+  static let crashReporting = "CrashReporting"
+}
+
+let packageTraits: [Trait] = [
+  .trait(
+    name: PackageTraitName.otlpGRPC,
+    description: "Adds the OTLP exporter over gRPC."
+  ),
+  .trait(
+    name: PackageTraitName.prometheus,
+    description: "Adds the Prometheus exporter."
+  ),
+  .trait(
+    name: PackageTraitName.swiftObservabilityAPIBridges,
+    description: "Adds bridges for the Swift Log, Swift Metrics, and Swift Distributed Tracing APIs."
+  ),
+  .trait(
+    name: PackageTraitName.jaeger,
+    description: "Adds the Jaeger exporter."
+  ),
+  .trait(
+    name: PackageTraitName.openTracing,
+    description: "Adds the experimental OpenTracing shim."
+  ),
+  .trait(
+    name: PackageTraitName.crashReporting,
+    description: "Adds crash reporting."
+  ),
+]
+
+extension TargetDependencyCondition {
+  // Swift 6.2.0 resolves trait conditions incorrectly (swiftlang/swift-package-manager#9141),
+  // so it ignores the trait there but keeps any platform restriction.
+  static func whenTrait(_ trait: String, platforms: [Platform]? = nil) -> TargetDependencyCondition? {
+    #if compiler(>=6.2.0) && compiler(<6.2.1)
+      return platforms.flatMap { .when(platforms: $0) }
+    #else
+      if let platforms { return .when(platforms: platforms, traits: [trait]) }
+      return .when(traits: [trait])
+    #endif
+  }
+}
+
 let package = Package(
   name: "opentelemetry-swift",
   platforms: [
@@ -44,6 +93,7 @@ let package = Package(
     .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
     .executable(name: "StableMetricSample", targets: ["StableMetricSample"]),
   ],
+  traits: Set(packageTraits + [.default(enabledTraits: Set(packageTraits.map(\.name)))]),
   dependencies: [
     .package(url: "https://github.com/apple/swift-atomics.git", from: "1.3.1"),
     .package(url: "https://github.com/apple/swift-nio.git", from: "2.104.0"),
@@ -85,7 +135,11 @@ let package = Package(
       name: "OTelSwiftLog",
       dependencies: [
         "OpenTelemetryApi",
-        .product(name: "Logging", package: "swift-log"),
+        .product(
+          name: "Logging",
+          package: "swift-log",
+          condition: .whenTrait(PackageTraitName.swiftObservabilityAPIBridges)
+        ),
       ],
       path: "Sources/Bridges/OTelSwiftLog",
       exclude: ["README.md"]
@@ -94,7 +148,11 @@ let package = Package(
       name: "OTelSwiftTracing",
       dependencies: [
         "OpenTelemetryApi",
-        .product(name: "Tracing", package: "swift-distributed-tracing"),
+        .product(
+          name: "Tracing",
+          package: "swift-distributed-tracing",
+          condition: .whenTrait(PackageTraitName.swiftObservabilityAPIBridges)
+        ),
       ],
       path: "Sources/Bridges/OTelSwiftTracing",
       exclude: ["README.md"]
@@ -103,7 +161,11 @@ let package = Package(
       name: "SwiftMetricsShim",
       dependencies: [
         "OpenTelemetrySdk",
-        .product(name: "CoreMetrics", package: "swift-metrics"),
+        .product(
+          name: "CoreMetrics",
+          package: "swift-metrics",
+          condition: .whenTrait(PackageTraitName.swiftObservabilityAPIBridges)
+        ),
       ],
       path: "Sources/Importers/SwiftMetricsShim",
       exclude: ["README.md"]
@@ -112,8 +174,16 @@ let package = Package(
       name: "PrometheusExporter",
       dependencies: [
         "OpenTelemetrySdk",
-        .product(name: "NIO", package: "swift-nio"),
-        .product(name: "NIOHTTP1", package: "swift-nio"),
+        .product(
+          name: "NIO",
+          package: "swift-nio",
+          condition: .whenTrait(PackageTraitName.prometheus)
+        ),
+        .product(
+          name: "NIOHTTP1",
+          package: "swift-nio",
+          condition: .whenTrait(PackageTraitName.prometheus)
+        ),
       ],
       path: "Sources/Exporters/Prometheus"
     ),
@@ -121,7 +191,6 @@ let package = Package(
       name: "OpenTelemetryProtocolExporterCommon",
       dependencies: [
         "OpenTelemetrySdk",
-        .product(name: "Logging", package: "swift-log"),
         .product(name: "SwiftProtobuf", package: "swift-protobuf"),
       ],
       path: "Sources/Exporters/OpenTelemetryProtocolCommon"
@@ -139,7 +208,16 @@ let package = Package(
       dependencies: [
         "OpenTelemetrySdk",
         "OpenTelemetryProtocolExporterCommon",
-        .product(name: "GRPC", package: "grpc-swift"),
+        .product(
+          name: "GRPC",
+          package: "grpc-swift",
+          condition: .whenTrait(PackageTraitName.otlpGRPC)
+        ),
+        .product(
+          name: "Logging",
+          package: "swift-log",
+          condition: .whenTrait(PackageTraitName.otlpGRPC)
+        ),
       ],
       path: "Sources/Exporters/OpenTelemetryProtocolGrpc"
     ),
@@ -309,7 +387,11 @@ let package = Package(
       dependencies: [
         "OpenTelemetrySdk",
         "OpenTelemetryProtocolExporterGrpc",
-        .product(name: "GRPC", package: "grpc-swift"),
+        .product(
+          name: "GRPC",
+          package: "grpc-swift",
+          condition: .whenTrait(PackageTraitName.otlpGRPC)
+        ),
       ],
       path: "Examples/Logs Sample"
     ),
@@ -346,7 +428,11 @@ extension Package {
           name: "OpenTracingShim",
           dependencies: [
             "OpenTelemetrySdk",
-            .product(name: "Opentracing", package: "opentracing-objc"),
+            .product(
+              name: "Opentracing",
+              package: "opentracing-objc",
+              condition: .whenTrait(PackageTraitName.openTracing)
+            ),
           ],
           path: "Sources/Importers/OpenTracingShim",
           exclude: ["README.md"]
@@ -401,9 +487,10 @@ extension Package {
             .product(
               name: "Thrift",
               package: "Thrift-Swift",
-              condition: .when(platforms: [
-                .iOS, .macOS, .tvOS, .macCatalyst, .linux,
-              ])
+              condition: .whenTrait(
+                PackageTraitName.jaeger,
+                platforms: [.iOS, .macOS, .tvOS, .macCatalyst, .linux]
+              )
             ),
           ],
           path: "Sources/Exporters/Jaeger"
@@ -492,8 +579,16 @@ extension Package {
             "OpenTelemetrySdk",
             "OpenTelemetryProtocolExporterGrpc",
             "StdoutExporter",
-            .product(name: "GRPC", package: "grpc-swift"),
-            .product(name: "NIO", package: "swift-nio"),
+            .product(
+              name: "GRPC",
+              package: "grpc-swift",
+              condition: .whenTrait(PackageTraitName.otlpGRPC)
+            ),
+            .product(
+              name: "NIO",
+              package: "swift-nio",
+              condition: .whenTrait(PackageTraitName.otlpGRPC)
+            ),
             "ZipkinExporter",
             "ResourceExtension",
             "SignPostIntegration",
@@ -586,10 +681,26 @@ extension Package {
             "OpenTelemetryApi",
             "OpenTelemetrySdk",
             "Sessions",
-            .product(name: "Installations", package: "KSCrash"),
-            .product(name: "Filters", package: "KSCrash"),
-            .product(name: "DemangleFilter", package: "KSCrash"),
-            .product(name: "Report", package: "KSCrash"),
+            .product(
+              name: "Installations",
+              package: "KSCrash",
+              condition: .whenTrait(PackageTraitName.crashReporting)
+            ),
+            .product(
+              name: "Filters",
+              package: "KSCrash",
+              condition: .whenTrait(PackageTraitName.crashReporting)
+            ),
+            .product(
+              name: "DemangleFilter",
+              package: "KSCrash",
+              condition: .whenTrait(PackageTraitName.crashReporting)
+            ),
+            .product(
+              name: "Report",
+              package: "KSCrash",
+              condition: .whenTrait(PackageTraitName.crashReporting)
+            ),
           ],
           path: "Sources/Instrumentation/Crash"
         ),
