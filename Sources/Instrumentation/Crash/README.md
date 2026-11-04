@@ -1,5 +1,11 @@
 # KSCrash Instrumentation
 
+This module requires the `CrashReporting` package trait:
+
+```swift
+.package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", from: "3.0.0", traits: ["CrashReporting"])
+```
+
 Crash reporting instrumentation using [KSCrash](https://github.com/kstenerud/KSCrash) for OpenTelemetry Swift.
 
 ## Installation
