@@ -42,4 +42,8 @@ cd "$ROOT_DIR"
 
 
 # update spec version reported by library
-sed -E -i '' 's/public static var version = ".+"/public static var version = "'$SPEC_VERSION\"/ ${ROOT_DIR}/Sources/OpenTelemetryApi/OpenTelemetry.swift
+VERSION_FILE="${ROOT_DIR}/Sources/OpenTelemetryApi/OpenTelemetry.swift"
+VERSION_PATTERN='public static (var|let) version = ".+"'
+grep -Eq "$VERSION_PATTERN" "$VERSION_FILE" || { echo "error: no version declaration found in ${VERSION_FILE}" >&2; exit 1; }
+sed -E -i.bak "s/${VERSION_PATTERN}/public static \1 version = \"${SPEC_VERSION}\"/" "$VERSION_FILE"
+rm "${VERSION_FILE}.bak"
