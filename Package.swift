@@ -40,6 +40,9 @@ let packageTraits: [Trait] = [
   ),
 ]
 
+// xcodebuild can't pass trait flags, so CI's simulator jobs enable every trait through this variable.
+let enableAllTraits = ProcessInfo.processInfo.environment["OTEL_SWIFT_ENABLE_ALL_TRAITS"] != nil
+
 extension TargetDependencyCondition {
   // Swift 6.2.0 resolves trait conditions incorrectly (swiftlang/swift-package-manager#9141),
   // so it ignores the trait there but keeps any platform restriction.
@@ -93,7 +96,7 @@ let package = Package(
     .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
     .executable(name: "StableMetricSample", targets: ["StableMetricSample"]),
   ],
-  traits: Set(packageTraits + [.default(enabledTraits: Set(packageTraits.map(\.name)))]),
+  traits: Set(packageTraits + [.default(enabledTraits: enableAllTraits ? Set(packageTraits.map(\.name)) : [])]),
   dependencies: [
     .package(url: "https://github.com/apple/swift-atomics.git", from: "1.3.1"),
     .package(url: "https://github.com/apple/swift-nio.git", from: "2.104.0"),

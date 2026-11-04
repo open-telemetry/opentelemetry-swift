@@ -79,7 +79,7 @@ jobs:
       with:
         xcode-version: latest-stable
     - name: Build and Test for macOS
-      run: swift test --enable-code-coverage
+      run: swift test --enable-all-traits --enable-code-coverage
     - name: Upload Code coverage
       run: |
         curl -Os https://uploader.codecov.io/latest/macos/codecov
@@ -200,9 +200,9 @@ jobs:
         with:
           persist-credentials: false
       - name: Build tests for Linux
-        run: swift build --build-tests
+        run: swift build --build-tests --enable-all-traits
       - name: Run tests for Linux
-        run: swift test
+        run: swift test --enable-all-traits
   ThreadSanitizer:
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run == 'true' }}
@@ -215,7 +215,7 @@ jobs:
       with:
         xcode-version: latest-stable
     - name: Build and Test with Thread Sanitizer
-      run: swift test --sanitize=thread
+      run: swift test --enable-all-traits --sanitize=thread
       env:
         # Enables the concurrency stress tests (skipped in the other jobs).
         OTEL_CONCURRENCY_TESTS: "1"
