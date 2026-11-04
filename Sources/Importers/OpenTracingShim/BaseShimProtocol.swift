@@ -3,27 +3,31 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import Foundation
-import OpenTelemetryApi
+#if OpenTracing
 
-protocol BaseShimProtocol {
-  var telemetryInfo: TelemetryInfo { get }
-}
+  import Foundation
+  import OpenTelemetryApi
 
-extension BaseShimProtocol {
-  var tracer: Tracer {
-    return telemetryInfo.tracer
+  protocol BaseShimProtocol {
+    var telemetryInfo: TelemetryInfo { get }
   }
 
-  var spanContextTable: SpanContextShimTable {
-    return telemetryInfo.spanContextTable
+  extension BaseShimProtocol {
+    var tracer: Tracer {
+      return telemetryInfo.tracer
+    }
+
+    var spanContextTable: SpanContextShimTable {
+      return telemetryInfo.spanContextTable
+    }
+
+    var baggageManager: BaggageManager {
+      return telemetryInfo.baggageManager
+    }
+
+    var propagators: ContextPropagators {
+      return telemetryInfo.propagators
+    }
   }
 
-  var baggageManager: BaggageManager {
-    return telemetryInfo.baggageManager
-  }
-
-  var propagators: ContextPropagators {
-    return telemetryInfo.propagators
-  }
-}
+#endif
