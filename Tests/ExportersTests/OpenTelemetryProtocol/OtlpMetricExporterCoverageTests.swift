@@ -3,153 +3,157 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import Foundation
-import GRPC
-import Logging
-import NIO
-import OpenTelemetryApi
-import OpenTelemetryProtocolExporterCommon
-@testable import OpenTelemetryProtocolExporterGrpc
-@testable import OpenTelemetrySdk
-import XCTest
+#if OTLPGRPC
 
-final class OtlpMetricExporterCoverageTests: XCTestCase {
-  private var fakeCollector: FakeMetricCollector!
-  private var runningServer: Server!
-  private var channel: ClientConnection!
-  private let serverGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-  private let channelGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+  import Foundation
+  import GRPC
+  import Logging
+  import NIO
+  import OpenTelemetryApi
+  import OpenTelemetryProtocolExporterCommon
+  @testable import OpenTelemetryProtocolExporterGrpc
+  @testable import OpenTelemetrySdk
+  import XCTest
 
-  override func setUp() {
-    super.setUp()
-    fakeCollector = FakeMetricCollector()
-    // Bind to port 0 → kernel picks an ephemeral port. Wait synchronously so
-    // the first `export()` in any test doesn't race server bind. The channel
-    // also uses the assigned port rather than a hard-coded one (previously
-    // `4327`), eliminating port-collision flakes under parallel CI.
-    runningServer = try! Server.insecure(group: serverGroup)
-      .withServiceProviders([fakeCollector])
-      .bind(host: "localhost", port: 0)
-      .wait()
-    let assignedPort = runningServer.channel.localAddress!.port!
-    channel = ClientConnection.insecure(group: channelGroup)
-      .connect(host: "localhost", port: assignedPort)
-  }
+  final class OtlpMetricExporterCoverageTests: XCTestCase {
+    private var fakeCollector: FakeMetricCollector!
+    private var runningServer: Server!
+    private var channel: ClientConnection!
+    private let serverGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+    private let channelGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
 
-  override func tearDown() {
-    XCTAssertNoThrow(try runningServer.close().wait())
-    XCTAssertNoThrow(try serverGroup.syncShutdownGracefully())
-    XCTAssertNoThrow(try channelGroup.syncShutdownGracefully())
-    super.tearDown()
-  }
-
-  private func sampleMetric() -> MetricData {
-    let point = LongPointData(startEpochNanos: 0, endEpochNanos: 1,
-                              attributes: [:], exemplars: [], value: 1)
-    return MetricData.createLongSum(
-      resource: Resource(attributes: ["s": .string("v")]),
-      instrumentationScopeInfo: InstrumentationScopeInfo(name: "scope"),
-      name: "sum",
-      description: "",
-      unit: "",
-      isMonotonic: true,
-      data: SumData(aggregationTemporality: .cumulative, points: [point]))
-  }
-
-  func testExportSuccess() {
-    let exporter = OtlpMetricExporter(channel: channel)
-    XCTAssertEqual(exporter.export(metrics: [sampleMetric()]), .success)
-    XCTAssertFalse(fakeCollector.receivedMetrics.isEmpty)
-    _ = exporter.shutdown()
-  }
-
-  func testExportFailurePropagatesStatus() {
-    fakeCollector.returnedStatus = GRPCStatus(code: .cancelled, message: nil)
-    let exporter = OtlpMetricExporter(channel: channel)
-    XCTAssertEqual(exporter.export(metrics: [sampleMetric()]), .failure)
-    _ = exporter.shutdown()
-  }
-
-  func testExportAppliesTimeout() {
-    fakeCollector.responseDelay = .milliseconds(100)
-    let exporter = OtlpMetricExporter(
-      channel: channel,
-      config: OtlpConfiguration(timeout: 0.01))
-
-    XCTAssertEqual(exporter.export(metrics: [sampleMetric()]), .failure)
-    _ = exporter.shutdown()
-  }
-
-  func testConfigHeadersSetOnCallOptions() {
-    let exporter = OtlpMetricExporter(
-      channel: channel,
-      config: OtlpConfiguration(headers: [("x-k", "x-v")]),
-      envVarHeaders: nil)
-    XCTAssertTrue(exporter.callOptions.customMetadata.contains(name: "x-k"))
-    _ = exporter.shutdown()
-  }
-
-  func testEnvVarHeadersSetOnCallOptions() {
-    let exporter = OtlpMetricExporter(
-      channel: channel,
-      envVarHeaders: [("x-env", "v")])
-    XCTAssertTrue(exporter.callOptions.customMetadata.contains(name: "x-env"))
-    _ = exporter.shutdown()
-  }
-
-  func testHeadersProviderIsEvaluatedForEveryExport() {
-    let provider = MutableHeadersProvider([("authorization", "Bearer first")])
-    let exporter = OtlpMetricExporter(
-      channel: channel,
-      config: OtlpConfiguration(headersProvider: provider.currentHeaders),
-      envVarHeaders: nil
-    )
-    defer { _ = exporter.shutdown() }
-
-    XCTAssertEqual(exporter.export(metrics: [sampleMetric()]), .success)
-    provider.update([("authorization", "Bearer second")])
-    XCTAssertEqual(exporter.export(metrics: [sampleMetric()]), .success)
-
-    XCTAssertEqual(fakeCollector.receivedAuthorizationHeaders, ["Bearer first", "Bearer second"])
-    XCTAssertEqual(provider.callCount, 2)
-  }
-
-  func testGetAggregationTemporalityReturnsConfigured() {
-    let exporter = OtlpMetricExporter(channel: channel)
-    XCTAssertEqual(exporter.getAggregationTemporality(for: .counter), .cumulative)
-    _ = exporter.shutdown()
-  }
-
-  func testFlushReturnsSuccess() {
-    let exporter = OtlpMetricExporter(channel: channel)
-    XCTAssertEqual(exporter.flush(), .success)
-    _ = exporter.shutdown()
-  }
-
-  func testShutdownReturnsSuccess() {
-    let exporter = OtlpMetricExporter(channel: channel)
-    XCTAssertEqual(exporter.shutdown(), .success)
-  }
-}
-
-private final class FakeMetricCollector: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceProvider, @unchecked Sendable {
-  var receivedMetrics = [Opentelemetry_Proto_Metrics_V1_ResourceMetrics]()
-  var receivedAuthorizationHeaders = [String?]()
-  var returnedStatus = GRPCStatus.ok
-  var responseDelay: TimeAmount?
-  var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerInterceptorFactoryProtocol?
-
-  func export(request: Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest,
-              context: StatusOnlyCallContext) -> EventLoopFuture<Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse> {
-    receivedMetrics.append(contentsOf: request.resourceMetrics)
-    receivedAuthorizationHeaders.append(context.headers.first(name: "authorization"))
-    if returnedStatus != GRPCStatus.ok {
-      return context.eventLoop.makeFailedFuture(returnedStatus)
+    override func setUp() {
+      super.setUp()
+      fakeCollector = FakeMetricCollector()
+      // Bind to port 0 → kernel picks an ephemeral port. Wait synchronously so
+      // the first `export()` in any test doesn't race server bind. The channel
+      // also uses the assigned port rather than a hard-coded one (previously
+      // `4327`), eliminating port-collision flakes under parallel CI.
+      runningServer = try! Server.insecure(group: serverGroup)
+        .withServiceProviders([fakeCollector])
+        .bind(host: "localhost", port: 0)
+        .wait()
+      let assignedPort = runningServer.channel.localAddress!.port!
+      channel = ClientConnection.insecure(group: channelGroup)
+        .connect(host: "localhost", port: assignedPort)
     }
-    let response = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse()
-    if let responseDelay {
-      return context.eventLoop.scheduleTask(in: responseDelay) { response }.futureResult
+
+    override func tearDown() {
+      XCTAssertNoThrow(try runningServer.close().wait())
+      XCTAssertNoThrow(try serverGroup.syncShutdownGracefully())
+      XCTAssertNoThrow(try channelGroup.syncShutdownGracefully())
+      super.tearDown()
     }
-    return context.eventLoop.makeSucceededFuture(response)
+
+    private func sampleMetric() -> MetricData {
+      let point = LongPointData(startEpochNanos: 0, endEpochNanos: 1,
+                                attributes: [:], exemplars: [], value: 1)
+      return MetricData.createLongSum(
+        resource: Resource(attributes: ["s": .string("v")]),
+        instrumentationScopeInfo: InstrumentationScopeInfo(name: "scope"),
+        name: "sum",
+        description: "",
+        unit: "",
+        isMonotonic: true,
+        data: SumData(aggregationTemporality: .cumulative, points: [point]))
+    }
+
+    func testExportSuccess() {
+      let exporter = OtlpMetricExporter(channel: channel)
+      XCTAssertEqual(exporter.export(metrics: [sampleMetric()]), .success)
+      XCTAssertFalse(fakeCollector.receivedMetrics.isEmpty)
+      _ = exporter.shutdown()
+    }
+
+    func testExportFailurePropagatesStatus() {
+      fakeCollector.returnedStatus = GRPCStatus(code: .cancelled, message: nil)
+      let exporter = OtlpMetricExporter(channel: channel)
+      XCTAssertEqual(exporter.export(metrics: [sampleMetric()]), .failure)
+      _ = exporter.shutdown()
+    }
+
+    func testExportAppliesTimeout() {
+      fakeCollector.responseDelay = .milliseconds(100)
+      let exporter = OtlpMetricExporter(
+        channel: channel,
+        config: OtlpConfiguration(timeout: 0.01))
+
+      XCTAssertEqual(exporter.export(metrics: [sampleMetric()]), .failure)
+      _ = exporter.shutdown()
+    }
+
+    func testConfigHeadersSetOnCallOptions() {
+      let exporter = OtlpMetricExporter(
+        channel: channel,
+        config: OtlpConfiguration(headers: [("x-k", "x-v")]),
+        envVarHeaders: nil)
+      XCTAssertTrue(exporter.callOptions.customMetadata.contains(name: "x-k"))
+      _ = exporter.shutdown()
+    }
+
+    func testEnvVarHeadersSetOnCallOptions() {
+      let exporter = OtlpMetricExporter(
+        channel: channel,
+        envVarHeaders: [("x-env", "v")])
+      XCTAssertTrue(exporter.callOptions.customMetadata.contains(name: "x-env"))
+      _ = exporter.shutdown()
+    }
+
+    func testHeadersProviderIsEvaluatedForEveryExport() {
+      let provider = MutableHeadersProvider([("authorization", "Bearer first")])
+      let exporter = OtlpMetricExporter(
+        channel: channel,
+        config: OtlpConfiguration(headersProvider: provider.currentHeaders),
+        envVarHeaders: nil
+      )
+      defer { _ = exporter.shutdown() }
+
+      XCTAssertEqual(exporter.export(metrics: [sampleMetric()]), .success)
+      provider.update([("authorization", "Bearer second")])
+      XCTAssertEqual(exporter.export(metrics: [sampleMetric()]), .success)
+
+      XCTAssertEqual(fakeCollector.receivedAuthorizationHeaders, ["Bearer first", "Bearer second"])
+      XCTAssertEqual(provider.callCount, 2)
+    }
+
+    func testGetAggregationTemporalityReturnsConfigured() {
+      let exporter = OtlpMetricExporter(channel: channel)
+      XCTAssertEqual(exporter.getAggregationTemporality(for: .counter), .cumulative)
+      _ = exporter.shutdown()
+    }
+
+    func testFlushReturnsSuccess() {
+      let exporter = OtlpMetricExporter(channel: channel)
+      XCTAssertEqual(exporter.flush(), .success)
+      _ = exporter.shutdown()
+    }
+
+    func testShutdownReturnsSuccess() {
+      let exporter = OtlpMetricExporter(channel: channel)
+      XCTAssertEqual(exporter.shutdown(), .success)
+    }
   }
-}
+
+  private final class FakeMetricCollector: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceProvider, @unchecked Sendable {
+    var receivedMetrics = [Opentelemetry_Proto_Metrics_V1_ResourceMetrics]()
+    var receivedAuthorizationHeaders = [String?]()
+    var returnedStatus = GRPCStatus.ok
+    var responseDelay: TimeAmount?
+    var interceptors: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceServerInterceptorFactoryProtocol?
+
+    func export(request: Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest,
+                context: StatusOnlyCallContext) -> EventLoopFuture<Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse> {
+      receivedMetrics.append(contentsOf: request.resourceMetrics)
+      receivedAuthorizationHeaders.append(context.headers.first(name: "authorization"))
+      if returnedStatus != GRPCStatus.ok {
+        return context.eventLoop.makeFailedFuture(returnedStatus)
+      }
+      let response = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceResponse()
+      if let responseDelay {
+        return context.eventLoop.scheduleTask(in: responseDelay) { response }.futureResult
+      }
+      return context.eventLoop.makeSucceededFuture(response)
+    }
+  }
+
+#endif

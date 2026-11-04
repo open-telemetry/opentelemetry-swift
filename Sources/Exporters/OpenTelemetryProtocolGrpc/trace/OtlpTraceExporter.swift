@@ -3,103 +3,107 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import Foundation
-import GRPC
-import Logging
-import NIO
-import NIOHPACK
-import OpenTelemetryApi
-import OpenTelemetryProtocolExporterCommon
-import OpenTelemetrySdk
+#if OTLPGRPC
 
-public final class OtlpTraceExporter: SpanExporter, @unchecked Sendable {
-  let channel: GRPCChannel
-  let traceClient: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceNIOClient
-  let config: OtlpConfiguration
-  // Immutable base options captured at init. `export` derives a per-call copy
-  // with the desired timeLimit rather than mutating a shared instance field,
-  // so concurrent calls cannot race on `callOptions`.
-  let callOptions: CallOptions
-  let envVarHeaders: [(String, String)]?
+  import Foundation
+  import GRPC
+  import Logging
+  import NIO
+  import NIOHPACK
+  import OpenTelemetryApi
+  import OpenTelemetryProtocolExporterCommon
+  import OpenTelemetrySdk
 
-  public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration(), logger: Logging.Logger = Logging.Logger(label: "io.grpc", factory: { _ in SwiftLogNoOpLogHandler() }), envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
-    self.channel = channel
-    traceClient = Opentelemetry_Proto_Collector_Trace_V1_TraceServiceNIOClient(channel: channel)
-    self.config = config
-    self.envVarHeaders = envVarHeaders
-    let userAgentHeader = (Constants.HTTP.userAgent, Headers.getUserAgentHeader())
-    if let headers = envVarHeaders {
-      var updatedHeaders = headers
-      updatedHeaders.append(userAgentHeader)
-      callOptions = CallOptions(customMetadata: HPACKHeaders(updatedHeaders), logger: logger)
-    } else if config.headersProvider == nil, let headers = config.headers {
-      var updatedHeaders = headers
-      updatedHeaders.append(userAgentHeader)
-      callOptions = CallOptions(customMetadata: HPACKHeaders(updatedHeaders), logger: logger)
-    } else {
-      var headers = [(String, String)]()
-      headers.append(userAgentHeader)
-      callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
-    }
-  }
+  public final class OtlpTraceExporter: SpanExporter, @unchecked Sendable {
+    let channel: GRPCChannel
+    let traceClient: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceNIOClient
+    let config: OtlpConfiguration
+    // Immutable base options captured at init. `export` derives a per-call copy
+    // with the desired timeLimit rather than mutating a shared instance field,
+    // so concurrent calls cannot race on `callOptions`.
+    let callOptions: CallOptions
+    let envVarHeaders: [(String, String)]?
 
-  public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
-    let exportRequest = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
-      $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
-    }
-    let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
-    var perCallOptions = makeOtlpGrpcCallOptions(
-      from: callOptions,
-      config: config,
-      envVarHeaders: envVarHeaders,
-      additionalHeaders: [(Constants.HTTP.userAgent, Headers.getUserAgentHeader())]
-    )
-    if timeout > 0 {
-      perCallOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(timeout.toNanoseconds)))
-    }
-
-    let export = traceClient.export(exportRequest, callOptions: perCallOptions)
-
-    do {
-      // wait() on the response to stop the program from exiting before the response is received.
-      let response = try export.response.wait()
-      if response.hasPartialSuccess {
-        reportPartialSuccess(response.partialSuccess)
+    public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration(), logger: Logging.Logger = Logging.Logger(label: "io.grpc", factory: { _ in SwiftLogNoOpLogHandler() }), envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+      self.channel = channel
+      traceClient = Opentelemetry_Proto_Collector_Trace_V1_TraceServiceNIOClient(channel: channel)
+      self.config = config
+      self.envVarHeaders = envVarHeaders
+      let userAgentHeader = (Constants.HTTP.userAgent, Headers.getUserAgentHeader())
+      if let headers = envVarHeaders {
+        var updatedHeaders = headers
+        updatedHeaders.append(userAgentHeader)
+        callOptions = CallOptions(customMetadata: HPACKHeaders(updatedHeaders), logger: logger)
+      } else if config.headersProvider == nil, let headers = config.headers {
+        var updatedHeaders = headers
+        updatedHeaders.append(userAgentHeader)
+        callOptions = CallOptions(customMetadata: HPACKHeaders(updatedHeaders), logger: logger)
+      } else {
+        var headers = [(String, String)]()
+        headers.append(userAgentHeader)
+        callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
       }
-      // OTLP partial-success responses must not be retried.
+    }
+
+    public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
+      let exportRequest = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
+        $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
+      }
+      let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+      var perCallOptions = makeOtlpGrpcCallOptions(
+        from: callOptions,
+        config: config,
+        envVarHeaders: envVarHeaders,
+        additionalHeaders: [(Constants.HTTP.userAgent, Headers.getUserAgentHeader())]
+      )
+      if timeout > 0 {
+        perCallOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(timeout.toNanoseconds)))
+      }
+
+      let export = traceClient.export(exportRequest, callOptions: perCallOptions)
+
+      do {
+        // wait() on the response to stop the program from exiting before the response is received.
+        let response = try export.response.wait()
+        if response.hasPartialSuccess {
+          reportPartialSuccess(response.partialSuccess)
+        }
+        // OTLP partial-success responses must not be retried.
+        return .success
+      } catch {
+        OpenTelemetry.instance.feedbackHandler?("OTLP trace export failed: \(error)")
+        return .failure
+      }
+    }
+
+    public func flush(explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
       return .success
-    } catch {
-      OpenTelemetry.instance.feedbackHandler?("OTLP trace export failed: \(error)")
-      return .failure
+    }
+
+    public func shutdown(explicitTimeout: TimeInterval? = nil) {
+      _ = channel.close()
+    }
+
+    private func reportPartialSuccess(
+      _ partialSuccess: Opentelemetry_Proto_Collector_Trace_V1_ExportTracePartialSuccess
+    ) {
+      let rejectedSpans = partialSuccess.rejectedSpans
+      let errorMessage = partialSuccess.errorMessage
+      guard rejectedSpans != 0 || !errorMessage.isEmpty else {
+        return
+      }
+
+      var details = "rejected_spans=\(rejectedSpans)"
+      if !errorMessage.isEmpty {
+        details += ", error_message=\(errorMessage)"
+      }
+
+      if rejectedSpans != 0 {
+        OpenTelemetry.instance.feedbackHandler?("OTLP trace export partially succeeded: \(details)")
+      } else {
+        OpenTelemetry.instance.feedbackHandler?("OTLP trace export succeeded with a warning: \(details)")
+      }
     }
   }
 
-  public func flush(explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
-    return .success
-  }
-
-  public func shutdown(explicitTimeout: TimeInterval? = nil) {
-    _ = channel.close()
-  }
-
-  private func reportPartialSuccess(
-    _ partialSuccess: Opentelemetry_Proto_Collector_Trace_V1_ExportTracePartialSuccess
-  ) {
-    let rejectedSpans = partialSuccess.rejectedSpans
-    let errorMessage = partialSuccess.errorMessage
-    guard rejectedSpans != 0 || !errorMessage.isEmpty else {
-      return
-    }
-
-    var details = "rejected_spans=\(rejectedSpans)"
-    if !errorMessage.isEmpty {
-      details += ", error_message=\(errorMessage)"
-    }
-
-    if rejectedSpans != 0 {
-      OpenTelemetry.instance.feedbackHandler?("OTLP trace export partially succeeded: \(details)")
-    } else {
-      OpenTelemetry.instance.feedbackHandler?("OTLP trace export succeeded with a warning: \(details)")
-    }
-  }
-}
+#endif

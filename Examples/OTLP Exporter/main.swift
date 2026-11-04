@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if os(macOS)
+#if OTLPGRPC && os(macOS)
 
   import Foundation
   import GRPC
@@ -147,5 +147,9 @@ var exampleObserver = meter.gaugeBuilder(
     exampleCounter.add(value: 1, attributes: labels1)
     sleep(1)
   }
+
+#elseif os(macOS)
+
+  print("This example requires the OTLPGRPC package trait.")
 
 #endif

@@ -3,23 +3,31 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-import Foundation
-import OpenTelemetryApi
-import OpenTelemetrySdk
-import OpenTelemetryProtocolExporterGrpc
-import Logging
-import GRPC
-import NIO
+#if OTLPGRPC
 
-func configure() {
-  let configuration = ClientConnection.Configuration.default(target: .hostAndPort("localhost", 4317),
-                                                             eventLoopGroup: MultiThreadedEventLoopGroup(numberOfThreads: 1))
+  import Foundation
+  import OpenTelemetryApi
+  import OpenTelemetrySdk
+  import OpenTelemetryProtocolExporterGrpc
+  import Logging
+  import GRPC
+  import NIO
 
-  OpenTelemetry.registerLoggerProvider(loggerProvider: LoggerProviderBuilder().with(processors: [
-    BatchLogRecordProcessor(logRecordExporter: OtlpLogExporter(channel: ClientConnection(configuration: configuration)))
-  ]).build())
-}
+  func configure() {
+    let configuration = ClientConnection.Configuration.default(target: .hostAndPort("localhost", 4317),
+                                                               eventLoopGroup: MultiThreadedEventLoopGroup(numberOfThreads: 1))
 
-configure()
+    OpenTelemetry.registerLoggerProvider(loggerProvider: LoggerProviderBuilder().with(processors: [
+      BatchLogRecordProcessor(logRecordExporter: OtlpLogExporter(channel: ClientConnection(configuration: configuration)))
+    ]).build())
+  }
 
-let eventProvider = OpenTelemetry.instance.loggerProvider.loggerBuilder(instrumentationScopeName: "myScope").setEventDomain("device").build()
+  configure()
+
+  let eventProvider = OpenTelemetry.instance.loggerProvider.loggerBuilder(instrumentationScopeName: "myScope").setEventDomain("device").build()
+
+#else
+
+  print("This example requires the OTLPGRPC package trait.")
+
+#endif
