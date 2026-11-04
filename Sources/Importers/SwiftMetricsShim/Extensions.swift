@@ -3,11 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import Foundation
-import CoreMetrics
+#if SwiftObservabilityAPIBridges
 
-extension [(String, String)] {
-  var dictionary: [String: String] {
-    Dictionary(self, uniquingKeysWith: { lhs, _ in lhs })
+  import Foundation
+  import CoreMetrics
+
+  extension [(String, String)] {
+    var dictionary: [String: String] {
+      Dictionary(self, uniquingKeysWith: { lhs, _ in lhs })
+    }
   }
-}
+
+#endif

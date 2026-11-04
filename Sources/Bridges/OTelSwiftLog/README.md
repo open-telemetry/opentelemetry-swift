@@ -1,4 +1,10 @@
-### How to use OTelLogHandler 
+### How to use OTelLogHandler
+
+This module requires the `SwiftObservabilityAPIBridges` package trait:
+
+```swift
+.package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", from: "3.0.0", traits: ["SwiftObservabilityAPIBridges"])
+```
 
 1. Using Default Scope:
 
