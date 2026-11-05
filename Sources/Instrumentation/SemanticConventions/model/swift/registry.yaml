@@ -1,0 +1,339 @@
+groups:
+  - id: registry.swift.app_start
+    type: attribute_group
+    brief: >
+      The app start attributes, recorded by `MincoreLaunchInstrumentation`.
+    stability: development
+    attributes:
+      - id: app.start.type
+        type:
+          members:
+            - id: cold
+              value: "cold"
+              stability: development
+              brief: >
+                The launch had to page in the app's code from disk: `app.start.pages.text.page_in_ratio`
+                was at least the configured threshold, 0.5 by default. If the code couldn't be sampled,
+                or too few of the sampled pages were resident to compare, the launch is classified from
+                launch history instead.
+            - id: warm
+              value: "warm"
+              stability: development
+              brief: >
+                The process was gone, but the app's code was already in memory: the page-in ratio was
+                below the configured threshold. If the code couldn't be sampled, or too few of the
+                sampled pages were resident to compare, the launch is classified from launch history
+                instead.
+            - id: prewarmed
+              value: "prewarmed"
+              stability: development
+              brief: >
+                The system started the process before the user launched the app.
+        stability: development
+        brief: >
+          How the launch began, as `PerformanceNavigationTiming.type` describes a navigation.
+        note: >
+          `cold` and `warm` are decided on the device, by comparing
+          `app.start.pages.text.page_in_ratio` with a threshold the app configures,
+          `coldPageInRatio`, which is 0.5 by default. So this attribute carries the
+          instrumentation's verdict rather than a property of the launch, and the threshold itself
+          isn't reported. The measurements behind it are: a consumer that prefers a different line
+          can recalculate from `app.start.pages.text.page_in_ratio` and ignore this attribute. That
+          works only when `app.start.determined_by` is `page_sampling`, because a launch classified
+          from `launch_history` reports no ratio. On a prewarmed launch this attribute is
+          `prewarmed` whatever the ratio, and the same comparison is reported separately as
+          `app.start.prewarm.cache_state`.
+      - id: app.start.outcome
+        type:
+          members:
+            - id: completed
+              value: "completed"
+              stability: development
+              brief: >
+                The launch reached its first frame.
+            - id: abandoned
+              value: "abandoned"
+              stability: development
+              brief: >
+                The app became active, then left the foreground before its first frame.
+        stability: development
+        brief: >
+          How the launch ended.
+      - id: app.start.determined_by
+        type:
+          members:
+            - id: page_sampling
+              value: "page_sampling"
+              stability: development
+              brief: >
+                `app.start.pages.text.page_in_ratio` compared with the configured page-in threshold, 0.5
+                by default.
+            - id: launch_history
+              value: "launch_history"
+              stability: development
+              brief: >
+                The launch's pages couldn't be sampled, or fewer than 16 of them were resident when
+                more than that were sampled, so no ratio could be compared and the type was inferred
+                from what changed since the previous launch.
+            - id: prewarm_flag
+              value: "prewarm_flag"
+              stability: development
+              brief: >
+                The `ActivePrewarm` environment variable was `1` when the process started.
+        stability: development
+        brief: >
+          What decided `app.start.type`.
+        note: >
+          Not named `app.start.type.determined_by`, because OpenTelemetry attribute names can't also
+          be namespaces.
+      # The segment is a namespace component, not part of the attribute name, so another segment
+      # can be sampled later without renaming this family: `app.start.pages.linkedit.*` is left
+      # open for `__LINKEDIT`, on request. `__DATA` can't be sampled at all, because a writable
+      # segment's pages are resident whether or not the launch read them.
+      - id: app.start.pages.text.resident_at_end
+        type: int
+        stability: development
+        brief: >
+          How many sampled pages of the app's code were in the system's page cache when the app
+          became active.
+        note: >
+          Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds
+          the app's executable code together with its constant data, and residency can only be measured
+          per page, which belongs to the segment because sections aren't page-aligned.
+          `__TEXT` is sampled because it's read-only, so the kernel can discard its pages and
+          re-read them, which is the behaviour this measures:
+          https://developer.apple.com/library/archive/documentation/Performance/Conceptual/CodeFootprint/Articles/MachOOverview.html.
+          Up to 256 pages evenly spaced through the `__TEXT` segments of the app's images are
+          sampled with `mincore`, which reports the page cache, so this includes pages left by
+          earlier launches and read ahead by the kernel that this launch didn't use.
+      - id: app.start.pages.text.sampled
+        type: int
+        stability: development
+        brief: >
+          How many pages of the app's code were sampled.
+        note: >
+          Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds
+          the app's executable code together with its constant data, and residency can only be measured
+          per page, which belongs to the segment because sections aren't page-aligned.
+      - id: app.start.pages.text.total
+        type: int
+        stability: development
+        brief: >
+          How many pages of the app's code could be sampled, whether or not the sample covers them.
+        note: >
+          Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds
+          the app's executable code together with its constant data, and residency can only be measured
+          per page, which belongs to the segment because sections aren't page-aligned.
+          The pages of the `__TEXT` segments of the images in the app's bundle, less the first page
+          of each, which holds the headers dyld has already read. Compared with
+          `app.start.pages.text.sampled` it says what share of the app's code the sample stands for,
+          because the sample is capped: a large app is covered more thinly than a small one.
+      - id: app.start.pages.text.paged_in
+        type: int
+        stability: development
+        brief: >
+          How many of `app.start.pages.text.resident_at_end` weren't in the page cache when this
+          library's initializer ran, which is after the initializers of images it depends on.
+        note: >
+          Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds
+          the app's executable code together with its constant data, and residency can only be measured
+          per page, which belongs to the segment because sections aren't page-aligned.
+      - id: app.start.pages.text.page_in_ratio
+        type: double
+        stability: development
+        brief: >
+          The share of the sampled code that the launch paged in from disk (Apple's term for
+          reading a page into memory): `app.start.pages.text.paged_in` divided by
+          `app.start.pages.text.resident_at_end`, from 0 to 1. A launch is `cold` when this is
+          at least the configured threshold, 0.5 by default. This is the raw measurement, reported
+          so a consumer can apply its own threshold instead of the one the device used.
+        note: >
+          Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds
+          the app's executable code together with its constant data, and residency can only be measured
+          per page, which belongs to the segment because sections aren't page-aligned.
+      - id: app.start.page_ins.before_text_sample
+        type: int
+        stability: development
+        brief: >
+          The whole process's page-ins from process start to the moment the `__TEXT` page sample's
+          baseline was taken, before `main()`.
+        note: |
+          Counts the whole process, not only the app's code, unlike the `app.start.pages.text`
+          attributes it shares its boundary with.
+
+          Counts page-ins, which are the faults that had to fetch a page from a backing store, or
+          `major` in the terms of `system.paging.fault.type`. Minor faults, such as zero-fill and
+          copy-on-write, aren't counted, and the process's total fault count and its
+          copy-on-write faults aren't reported at all. Each of those is a superset or a subset of
+          another, so reporting them side by side would invite summing them.
+
+          This is the window `app.start.pages.text.paged_in` can't see: a page of the app's code
+          fetched before the baseline was taken is already resident in that baseline, so it never
+          counts as paged in however much paging it took. This attribute says how much paging
+          happened there.
+
+          Not bounded by the same `constructor` function as `initializerStart`, which is
+          `otel_app_launch_read_launch_environment` in a separate module, and the order the two run
+          in isn't defined. So this isn't the boundary `app.start.pre_init` ends at.
+      - id: app.start.page_ins.after_text_sample
+        type: int
+        stability: development
+        brief: >
+          The whole process's page-ins from the moment the `__TEXT` page sample's baseline was
+          taken to the end of the span.
+        note: >
+          The window `app.start.pages.text.paged_in` measures, but for the whole process rather
+          than the app's sampled code, so it's the larger of the two and the two aren't expected to
+          agree. See `app.start.page_ins.before_text_sample` for which faults are counted.
+      - id: app.start.prewarm.cache_state
+        type:
+          members:
+            - id: cold
+              value: "cold"
+              stability: development
+              brief: >
+                `app.start.pages.text.page_in_ratio` is at least the configured threshold, 0.5 by default.
+            - id: warm
+              value: "warm"
+              stability: development
+              brief: >
+                `app.start.pages.text.page_in_ratio` is less than the configured threshold, 0.5 by default.
+        stability: development
+        brief: >
+          Whether a prewarmed launch still had to bring the app's code into memory. Diagnostic only:
+          it doesn't change `app.start.type`.
+      - id: app.start.pre_activation.duration
+        type: double
+        stability: development
+        brief: >
+          Seconds from process start to `activationStart` on a prewarmed launch, which the span
+          doesn't cover. Not part of the launch's duration.
+      - id: app.start.pre_init.duration
+        type: double
+        stability: development
+        brief: >
+          The duration of `app.start.pre_init` in seconds.
+      - id: app.start.app_init.duration
+        type: double
+        stability: development
+        brief: >
+          The duration of `app.start.app_init` in seconds.
+      - id: app.start.render.duration
+        type: double
+        stability: development
+        brief: >
+          The duration of `app.start.render` in seconds.
+  - id: registry.swift.app_resume
+    type: attribute_group
+    brief: >
+      The app resume attributes, recorded by `MincoreLaunchInstrumentation`.
+    stability: development
+    attributes:
+      - id: app.resume.type
+        type:
+          members:
+            - id: hot
+              value: "hot"
+              stability: development
+              brief: >
+                The process was alive with its scene still connected, so its UI was already built.
+            - id: scene_reconnect
+              value: "scene_reconnect"
+              stability: development
+              brief: >
+                The system discarded the scene in the background, so it reconnected.
+            - id: background_launched
+              value: "background_launched"
+              stability: development
+              brief: >
+                The process started in the background and had never been active.
+        stability: development
+        brief: >
+          How much UI the resume had to rebuild.
+      - id: app.resume.outcome
+        type:
+          members:
+            - id: completed
+              value: "completed"
+              stability: development
+              brief: >
+                The resume reached its first frame.
+            - id: abandoned
+              value: "abandoned"
+              stability: development
+              brief: >
+                The app became active, then left the foreground before its first frame.
+        stability: development
+        brief: >
+          How the resume ended.
+      - id: app.resume.background.duration
+        type: double
+        stability: development
+        brief: >
+          Seconds from when the app last entered the background to the start of the resume.
+      - id: app.resume.page_ins
+        type: int
+        stability: development
+        brief: >
+          The process's page-ins during the resume, which reveal pages evicted while it was
+          suspended.
+        note: >
+          Counts the whole process, not the app's code, from the system telling the app it will
+          enter the foreground to the end of the span. Counts page-ins only, as
+          `app.start.page_ins.before_text_sample` describes. Not reported if the counter can't be
+          read, or if it went backwards, which would mean it was reset.
+      - id: app.resume.pages.text.sampled
+        type: int
+        stability: development
+        brief: >
+          How many pages of the app's code were sampled, the same pages the launch sampled.
+        note: >
+          Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds
+          the app's executable code together with its constant data, and residency can only be measured
+          per page, which belongs to the segment because sections aren't page-aligned.
+      - id: app.resume.pages.text.total
+        type: int
+        stability: development
+        brief: >
+          How many pages of the app's code could be sampled, whether or not the sample covers them.
+        note: >
+          Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds
+          the app's executable code together with its constant data, and residency can only be measured
+          per page, which belongs to the segment because sections aren't page-aligned.
+          The pages of the `__TEXT` segments of the images in the app's bundle, less the first page
+          of each, which holds the headers dyld has already read. Compared with
+          `app.resume.pages.text.sampled` it says what share of the app's code the sample stands for,
+          because the sample is capped: a large app is covered more thinly than a small one.
+      - id: app.resume.pages.text.resident_at_end
+        type: int
+        stability: development
+        brief: >
+          How many sampled pages of the app's code were in memory at the end of the resume.
+        note: >
+          Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds
+          the app's executable code together with its constant data, and residency can only be measured
+          per page, which belongs to the segment because sections aren't page-aligned.
+      - id: app.resume.pages.text.paged_in
+        type: int
+        stability: development
+        brief: >
+          How many sampled pages of the app's code came back into memory between the app entering
+          the background and the end of the resume, so how much of its own code the system had
+          reclaimed while it was away.
+        note: >
+          Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds
+          the app's executable code together with its constant data, and residency can only be measured
+          per page, which belongs to the segment because sections aren't page-aligned.
+          Unlike `app.resume.page_ins`, this counts only the app's code, so it isn't affected by
+          the rest of what the process read. It's recorded only for a resume the app entered the
+          background before, because that's when the baseline is taken.
+      - id: app.resume.pages.text.page_in_ratio
+        type: double
+        stability: development
+        brief: >
+          `app.resume.pages.text.paged_in` divided by
+          `app.resume.pages.text.resident_at_end`, from 0 to 1.
+        note: >
+          Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds
+          the app's executable code together with its constant data, and residency can only be measured
+          per page, which belongs to the segment because sections aren't page-aligned.

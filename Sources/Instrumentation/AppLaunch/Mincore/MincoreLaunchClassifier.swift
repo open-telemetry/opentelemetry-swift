@@ -1,0 +1,139 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#if canImport(Darwin) && ((canImport(UIKit) && !os(watchOS)) || canImport(AppKit))
+  import AppLaunchInstrumentationCore
+  import AppLaunchPageSampling
+  import InstrumentationSemanticConventions
+  import OpenTelemetryApi
+
+  /// How the app's sampled pages changed between process start and the app becoming active.
+  struct LaunchPageSample: Equatable, Sendable {
+    var residentAtEnd: Int
+    var pagedIn: Int
+    var sampled = 256
+
+    /// How much of what the launch ended up with in memory it had to bring in, from 0 to 1, or
+    /// `nil` if nothing was in memory to compare.
+    var pageInRatio: Double? {
+      residentAtEnd > 0 ? Double(pagedIn) / Double(residentAtEnd) : nil
+    }
+  }
+
+  /// The whole process's page-ins on either side of the moment the `AppLaunchPageSampling`
+  /// initializer took the `__TEXT` page sample's baseline.
+  struct LaunchPageIns: Equatable, Sendable {
+    var beforeTextSample: Int
+    var afterTextSample: Int
+  }
+
+  protocol LaunchPageSampler: Sendable {
+    func readSample() -> LaunchPageSample?
+    func readPageIns() -> LaunchPageIns?
+    /// The process's page-ins so far, for a window this module didn't bound, such as a resume.
+    func readPageInsNow() -> Int?
+    /// Records the sampled pages' residency as the baseline a resume is measured against.
+    func samplePagesAtBackground()
+    /// The sampled pages compared with the baseline taken when the app entered the background.
+    func readBackgroundSample() -> LaunchPageSample?
+    /// Every samplable page of the app's code, whether or not the sample covers it.
+    func readTextPageTotal() -> Int?
+  }
+
+  /// Compares the pages now with the sample the `AppLaunchPageSampling` initializer took.
+  struct KernelLaunchPageSampler: LaunchPageSampler {
+    func readSample() -> LaunchPageSample? {
+      var sampled: Int32 = 0
+      var residentAtEnd: Int32 = 0
+      var pagedIn: Int32 = 0
+      guard otel_app_launch_read_page_sample(&sampled, &residentAtEnd, &pagedIn) else { return nil }
+      return LaunchPageSample(residentAtEnd: Int(residentAtEnd), pagedIn: Int(pagedIn), sampled: Int(sampled))
+    }
+
+    func readPageIns() -> LaunchPageIns? {
+      var beforeTextSample: Int32 = 0
+      var afterTextSample: Int32 = 0
+      guard otel_app_launch_read_page_ins(&beforeTextSample, &afterTextSample) else { return nil }
+      return LaunchPageIns(beforeTextSample: Int(beforeTextSample), afterTextSample: Int(afterTextSample))
+    }
+
+    func readPageInsNow() -> Int? {
+      var pageIns: Int32 = 0
+      guard otel_app_launch_read_page_ins_now(&pageIns) else { return nil }
+      return Int(pageIns)
+    }
+
+    func samplePagesAtBackground() {
+      _ = otel_app_launch_sample_pages_at_background()
+    }
+
+    func readBackgroundSample() -> LaunchPageSample? {
+      var sampled: Int32 = 0
+      var residentAtEnd: Int32 = 0
+      var pagedIn: Int32 = 0
+      guard otel_app_launch_read_background_page_sample(&sampled, &residentAtEnd, &pagedIn) else { return nil }
+      return LaunchPageSample(residentAtEnd: Int(residentAtEnd), pagedIn: Int(pagedIn), sampled: Int(sampled))
+    }
+
+    func readTextPageTotal() -> Int? {
+      var total: Int32 = 0
+      guard otel_app_launch_read_text_page_total(&total) else { return nil }
+      return Int(total)
+    }
+  }
+
+  /// Measures the launch type from how much of the app's code the launch had to bring into memory.
+  /// Infers it instead if that can't be read.
+  struct MincoreLaunchClassifier: LaunchClassifier {
+    private typealias App = FederatedSemanticConventions.App
+
+    // Fewer resident pages than this are too few for a ratio to mean anything, unless that's all
+    // the app has. Real launches had over 100 in testing.
+    static let minimumResidentPages = 16
+
+    let fallback: LaunchClassifier
+    let pageSampler: LaunchPageSampler
+    let isActivePrewarm: @Sendable () -> Bool
+    let coldPageInRatio: Double
+
+    func begin() -> @Sendable () -> LaunchClassification {
+      // Always started, so the launch history stays current for launches that can't be measured.
+      let inferred = fallback.begin()
+      return { [pageSampler, isActivePrewarm, coldPageInRatio] in
+        let isPrewarmed = isActivePrewarm()
+        guard let sample = pageSampler.readSample(),
+              sample.residentAtEnd >= min(Self.minimumResidentPages, sample.sampled),
+              let ratio = sample.pageInRatio else {
+          InternalLogger.warn("couldn't sample the launch's pages, so the launch type is inferred.")
+          if isPrewarmed {
+            return LaunchClassification(type: .prewarmed, attributes: Self.determinedBy(.prewarmFlag))
+          }
+          var classification = inferred()
+          classification.attributes = Self.determinedBy(.launchHistory)
+          return classification
+        }
+        let isCold = ratio >= coldPageInRatio
+        let type: AppLaunchInstrumentationConfiguration.LaunchType = isPrewarmed ? .prewarmed : isCold ? .cold : .warm
+        var attributes = Self.determinedBy(isPrewarmed ? .prewarmFlag : .pageSampling)
+        attributes[App.startPagesTextSampled.rawValue] = .int(sample.sampled)
+        if let total = pageSampler.readTextPageTotal() {
+          attributes[App.startPagesTextTotal.rawValue] = .int(total)
+        }
+        attributes[App.startPagesTextResidentAtEnd.rawValue] = .int(sample.residentAtEnd)
+        attributes[App.startPagesTextPagedIn.rawValue] = .int(sample.pagedIn)
+        attributes[App.startPagesTextPageInRatio.rawValue] = .double(ratio)
+        if isPrewarmed {
+          let cacheState: App.StartPrewarmCacheStateValues = isCold ? .cold : .warm
+          attributes[App.startPrewarmCacheState.rawValue] = .string(cacheState.description)
+        }
+        return LaunchClassification(type: type, attributes: attributes)
+      }
+    }
+
+    private static func determinedBy(_ value: App.StartDeterminedByValues) -> [String: AttributeValue] {
+      [App.startDeterminedBy.rawValue: .string(value.description)]
+    }
+  }
+#endif

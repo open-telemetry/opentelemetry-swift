@@ -52,6 +52,11 @@ public struct OpenTelemetry: Sendable {
     OpenTelemetryStorage.instance.feedbackHandler
   }
 
+  /// Whether `InternalLogger` logs every level instead of only errors. Off by default.
+  public var isDebugEnabled: Bool {
+    OpenTelemetryStorage.instance.isDebugEnabled
+  }
+
   private init() {}
 
   @available(*, deprecated, renamed: "registerMeterProvider")
@@ -89,6 +94,11 @@ public struct OpenTelemetry: Sendable {
   }
 
   /// Register a function to be called when the library has warnings or informative messages to relay back to the developer
+  /// Turns `InternalLogger`'s debug mode on or off.
+  public static func setDebugEnabled(_ enabled: Bool) {
+    OpenTelemetryStorage.instance.setDebugEnabled(enabled)
+  }
+
   public static func registerFeedbackHandler(
     _ handler: @escaping (String) -> Void
   ) {
@@ -125,6 +135,7 @@ private final class OpenTelemetryStorage: @unchecked Sendable {
   private var _propagators: ContextPropagators
   private var _contextProvider: OpenTelemetryContextProvider
   private var _feedbackHandler: ((String) -> Void)?
+  private var _isDebugEnabled = false
 
   private init() {
     _meterProvider = DefaultMeterProvider.instance
@@ -181,6 +192,10 @@ private final class OpenTelemetryStorage: @unchecked Sendable {
     lock.withReaderLock { _feedbackHandler }
   }
 
+  var isDebugEnabled: Bool {
+    lock.withReaderLock { _isDebugEnabled }
+  }
+
   // MARK: - Thread-safe write accessors
 
   func setTracerProvider(_ provider: TracerProvider) {
@@ -213,5 +228,9 @@ private final class OpenTelemetryStorage: @unchecked Sendable {
 
   func setFeedbackHandler(_ handler: @escaping (String) -> Void) {
     lock.withWriterLock { _feedbackHandler = handler }
+  }
+
+  func setDebugEnabled(_ enabled: Bool) {
+    lock.withWriterLock { _isDebugEnabled = enabled }
   }
 }

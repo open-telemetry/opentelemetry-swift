@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import MincoreLaunchInstrumentation
 import Crash
 import Foundation
 import OpenTelemetryApi
@@ -60,6 +61,8 @@ enum Telemetry {
   nonisolated(unsafe) private static var urlSessionInstrumentation: URLSessionInstrumentation?
 
   static func start() {
+    OpenTelemetry.setDebugEnabled(true)
+
     let resource = DefaultResources().get().merging(other: Resource(attributes: [
       ResourceAttributes.serviceName.rawValue: .string(TelemetryConfig.serviceName),
       ResourceAttributes.serviceVersion.rawValue: .string(TelemetryConfig.serviceVersion)
@@ -94,6 +97,12 @@ enum Telemetry {
 
     SessionEventInstrumentation.install()
 
+    // Installed in didFinishLaunching, before the app first becomes active, so it sees the
+    // activation that ends the cold start.
+    if !IntegrationTestScenario.installsAppLaunchLate {
+      MincoreLaunchInstrumentation.install()
+    }
+
     // Installed after the session manager and logger provider are registered:
     // crashes from the previous run are reported on install, and each crash
     // records the session that was current when it happened.
@@ -108,7 +117,6 @@ enum Telemetry {
       }
     ))
 
-    // TODO: no app startup instrumentation
     // TODO: no app hang instrumentation
     // TODO: no UIKit/SwiftUI view instrumentation
     // TODO: no user ID manager; see UserIdStore
