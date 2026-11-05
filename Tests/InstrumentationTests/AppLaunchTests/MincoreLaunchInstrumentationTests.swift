@@ -271,6 +271,18 @@
       )
     }
 
+    /// A monitor observing activations, built the way `AppLaunchRuntime.install` builds one, so a
+    /// test can put a second one in the process without going through the idempotent install.
+    func makeMonitor(_ dependencies: MincoreLaunchInstrumentation.Dependencies) -> ActivationMonitor {
+      let classifier = dependencies.classifier
+      let monitor = ActivationMonitor(dependencies: dependencies,
+                                      classifier: classifier,
+                                      classification: classifier.begin(),
+                                      tracker: ActivationTracker(isAppActive: false, isBackgroundLaunch: false))
+      monitor.start()
+      return monitor
+    }
+
     func post(_ name: Notification.Name, at time: Date? = nil) {
       if let time {
         clock.now = time
@@ -388,6 +400,36 @@
       firstFrameReader.displayFrame(at: firstFrame)
 
       XCTAssertEqual(rootSpans().count, 1)
+    }
+
+    func testOneLaunchIsRecordedPerProcess() {
+      // Two monitors in one process, which only a `reset` between installs can produce. The
+      // process launched once, so one of them records it and the other drops it.
+      let monitors = [makeMonitor(makeDependencies()), makeMonitor(makeDependencies())]
+      defer { monitors.forEach { $0.stop() } }
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertEqual(firstFrameReader.readCount, 1)
+      XCTAssertEqual(rootSpans().map(\.name), ["app.start"])
+    }
+
+    func testLaunchRecordDoesNotBlockResumes() {
+      // The claim covers the launch only. The monitor that lost it has still handled its launch,
+      // so its returns to the foreground are resumes, and a resume is never deduplicated: both
+      // monitors record one, the same way two monitors duplicate everything else.
+      let monitors = [makeMonitor(makeDependencies()), makeMonitor(makeDependencies())]
+      defer { monitors.forEach { $0.stop() } }
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+      post(didEnterBackground, at: Date(timeIntervalSince1970: 1_003))
+      post(willEnterForeground, at: Date(timeIntervalSince1970: 2_000))
+      post(didBecomeActive, at: Date(timeIntervalSince1970: 2_000.2))
+      firstFrameReader.displayFrame(at: Date(timeIntervalSince1970: 2_000.3))
+
+      XCTAssertEqual(rootSpans().map(\.name), ["app.start", "app.resume", "app.resume"])
     }
 
     func testNoSpanBeforeInstall() {
