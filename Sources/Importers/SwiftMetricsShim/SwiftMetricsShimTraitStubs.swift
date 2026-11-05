@@ -5,7 +5,11 @@
 
 #if !SwiftObservabilityAPIBridges
 
+  import OpenTelemetryApi
+
   @available(*, unavailable, message: "SwiftMetricsShim requires the `SwiftObservabilityAPIBridges` package trait.")
-  public final class OpenTelemetrySwiftMetrics {}
+  public final class OpenTelemetrySwiftMetrics {
+    public init(meter: any OpenTelemetryApi.Meter) {}
+  }
 
 #endif

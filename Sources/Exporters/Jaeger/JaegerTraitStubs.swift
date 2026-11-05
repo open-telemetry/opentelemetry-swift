@@ -6,6 +6,8 @@
 #if !Jaeger && !os(watchOS) && !os(visionOS)
 
   @available(*, unavailable, message: "JaegerExporter requires the `Jaeger` package trait.")
-  public final class JaegerSpanExporter {}
+  public final class JaegerSpanExporter {
+    public init(serviceName: String, collectorAddress: String) {}
+  }
 
 #endif
