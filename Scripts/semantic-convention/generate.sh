@@ -10,8 +10,8 @@ ROOT_DIR="${SCRIPT_DIR}/../.."
 SEMCONV_VERSION=1.38.0
 SPEC_VERSION=v$SEMCONV_VERSION
 
-# repository: https://github.com/open-telemetry/build-tools
-GENERATOR_VERSION=0.17.1
+# repository: https://github.com/open-telemetry/weaver
+GENERATOR_VERSION=0.28.0
 
 cd ${SCRIPT_DIR}
 
