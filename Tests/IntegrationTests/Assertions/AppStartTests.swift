@@ -70,13 +70,13 @@ final class AppStartTests: XCTestCase {
     XCTAssertEqual(span.kind, .internal)
     XCTAssertTrue(span.parentSpanID.isEmpty)
 
-    let residentAtEnd = try XCTUnwrap(span.attributes.int(App.startTextPagesResidentAtEnd.rawValue))
-    let pagedIn = try XCTUnwrap(span.attributes.int(App.startTextPagesPagedIn.rawValue))
-    let ratio = try XCTUnwrap(span.attributes.double(App.startTextPagesPageInRatio.rawValue))
+    let residentAtEnd = try XCTUnwrap(span.attributes.int(App.startPagesTextResidentAtEnd.rawValue))
+    let pagedIn = try XCTUnwrap(span.attributes.int(App.startPagesTextPagedIn.rawValue))
+    let ratio = try XCTUnwrap(span.attributes.double(App.startPagesTextPageInRatio.rawValue))
     XCTAssertGreaterThan(residentAtEnd, 0)
     XCTAssertLessThanOrEqual(residentAtEnd, 256)
     XCTAssertLessThanOrEqual(pagedIn, residentAtEnd)
-    let sampled = try XCTUnwrap(span.attributes.int(App.startTextPagesSampled.rawValue))
+    let sampled = try XCTUnwrap(span.attributes.int(App.startPagesTextSampled.rawValue))
     XCTAssertGreaterThanOrEqual(sampled, residentAtEnd)
     XCTAssertLessThanOrEqual(sampled, 256)
     XCTAssertEqual(ratio, Double(pagedIn) / Double(residentAtEnd), accuracy: 1e-9)
@@ -84,8 +84,8 @@ final class AppStartTests: XCTestCase {
     XCTAssertEqual(span.attributes.string(App.startType.rawValue), type.description)
     XCTAssertEqual(span.attributes.string(App.startOutcome.rawValue), App.StartOutcomeValues.completed.description)
     XCTAssertEqual(span.attributes.string(App.startDeterminedBy.rawValue), App.StartDeterminedByValues.pageSampling.description)
-    XCTAssertNotNil(span.attributes.int(App.startPageInsPreInitializer.rawValue))
-    XCTAssertNotNil(span.attributes.int(App.startPageInsPostInitializer.rawValue))
+    XCTAssertNotNil(span.attributes.int(App.startPageInsBeforeTextSample.rawValue))
+    XCTAssertNotNil(span.attributes.int(App.startPageInsAfterTextSample.rawValue))
 
     assertDiffer(span.startTimeUnixNano, from: try processStart(.appStartMincore), byAtMost: Self.clockTolerance,
                  "a launch that wasn't prewarmed starts at process start")
