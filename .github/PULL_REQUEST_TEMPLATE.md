@@ -12,7 +12,7 @@
 
 ## Checklist
 
-- [ ] `swift test` passes locally
+- [ ] `swift test --enable-all-traits` passes locally
 - [ ] Unit tests added or updated for the change
 - [ ] **Instrumentation and event changes only:** the integration tests in
       `Tests/IntegrationTests` are updated. Anything that adds, removes or
