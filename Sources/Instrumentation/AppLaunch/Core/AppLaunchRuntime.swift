@@ -53,12 +53,25 @@
       lock.withLock { _monitor != nil }
     }
 
-    // Guards `_monitor`.
+    // Guards `_monitor` and `_didRecordLaunch`.
     private static let lock = NSLock()
     // Held for a whole install, so a concurrent install returns only once the first one is
     // observing activations. Notification callbacks never take it.
     private static let installLock = NSLock()
     nonisolated(unsafe) private static var _monitor: ActivationMonitor?
+    nonisolated(unsafe) private static var _didRecordLaunch = false
+
+    /// Takes the process's one launch record, and returns whether the caller got it. A process
+    /// launches once, so only the first `cold`, `warm` or `prewarmed` activation in it is recorded
+    /// and every activation after that is a resume. A monitor's own tracker already hands out one
+    /// launch, so this guards the case of a second monitor, which only `reset` can produce.
+    static func takeLaunchRecord() -> Bool {
+      lock.withLock {
+        if _didRecordLaunch { return false }
+        _didRecordLaunch = true
+        return true
+      }
+    }
 
     package static func install(dependencies: Dependencies) {
       // Logged outside `installLock`, because the feedback handler is the app's code and could
@@ -109,7 +122,10 @@
     package static func reset() {
       installLock.withLock {
         let monitor = lock.withLock {
-          defer { _monitor = nil }
+          defer {
+            _monitor = nil
+            _didRecordLaunch = false
+          }
           return _monitor
         }
         monitor?.stop()

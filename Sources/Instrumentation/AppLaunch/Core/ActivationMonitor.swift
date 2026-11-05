@@ -114,10 +114,19 @@
       guard let (activation, backgroundCount, didFinishLaunchingTime) = state else { return }
 
       let didBecomeActiveTime = dependencies.now()
-      let start: AppStart = switch activation {
+      let start: AppStart
+      switch activation {
       case let .launch(sceneConnectStart):
-        .launch(classification(), AppLaunchMarks(didFinishLaunchingEnd: didFinishLaunchingTime, sceneConnectStart: sceneConnectStart))
-      case let .resume(resume): .resume(resume)
+        // The tracker above hands out one launch, but a process can hold more than one monitor
+        // after a `reset`, and the process launched once. Taken before the classification is read,
+        // because reading it compares the launch's page sample, which describes that one launch.
+        guard AppLaunchRuntime.takeLaunchRecord() else {
+          InternalLogger.debug("dropped a launch, because this process has already recorded one.")
+          return
+        }
+        start = .launch(classification(), AppLaunchMarks(didFinishLaunchingEnd: didFinishLaunchingTime, sceneConnectStart: sceneConnectStart))
+      case let .resume(resume):
+        start = .resume(resume)
       }
       guard let record = recorder.prepare(start) else { return }
 
