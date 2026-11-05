@@ -45,7 +45,7 @@ or
 
 ### Package traits
 
-Integrations that need a third-party package are behind [package traits](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0450-swiftpm-package-traits.md). No trait is enabled by default, so a consumer that enables none resolves and builds only opentelemetry-swift, `swift-protobuf` and `swift-atomics`. Swift 6.2 or later leaves the packages of disabled traits out of dependency resolution.
+Integrations that need a third-party package are behind [package traits](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0450-swiftpm-package-traits.md). No trait is enabled by default, so a consumer that enables none resolves and builds only opentelemetry-swift, `swift-protobuf` and `swift-atomics`. Swift 6.2.1 or later leaves the packages of disabled traits out of dependency resolution. Swift 6.2.0 builds correctly but still resolves every package, because of a SwiftPM bug fixed in 6.2.1.
 
 | Trait | Adds | Products |
 | --- | --- | --- |
@@ -66,7 +66,7 @@ Enable the traits for the products you use in your `Package.swift`:
 )
 ```
 
-An Xcode project enables traits on its package dependency instead. This was verified with Xcode 27.0, which stores them on the package reference in `project.pbxproj` (see `Examples/HackerNewsDemo`).
+An Xcode project enables traits on its package dependency instead, as `traits` on the package reference in `project.pbxproj`. Xcode 27.0 reads them from there (see `Examples/HackerNewsDemo`).
 
 #### Migrating from 2.x
 
@@ -75,11 +75,16 @@ Before 3.0.0 every integration was always available. If your build now fails, en
 | Error | Trait |
 | --- | --- |
 | no such module `GRPC` | `OTLPGRPC` |
+| no such module `NIO`, `NIOCore` or `NIOPosix` | `OTLPGRPC` if you use `OpenTelemetryProtocolExporter`, `Prometheus` if you use `PrometheusExporter` |
+| no such module `NIOHPACK` | `OTLPGRPC` |
+| no such module `NIOHTTP1` | `Prometheus` |
 | no such module `Logging` | `SwiftObservabilityAPIBridges` for `OTelSwiftLog`, `OTLPGRPC` for `OpenTelemetryProtocolExporter` |
 | no such module `Tracing` or `CoreMetrics` | `SwiftObservabilityAPIBridges` |
 | no such module `Thrift` | `Jaeger` |
 | no such module `Opentracing` | `OpenTracing` |
 | no such module `KSCrashRecording`, `KSCrashFilters`, `KSCrashDemangleFilter`, `KSCrashInstallations` or `KSCrashReportModel` | `CrashReporting` |
+
+`OpenTelemetryProtocolExporterHTTP` no longer depends on `swift-log`. If you use it and import `Logging` yourself, add `swift-log` to your own dependencies instead of enabling a trait.
 
 If you only import this package's modules, the compiler names the missing trait instead, for example "'JaegerSpanExporter' is unavailable: JaegerExporter requires the `Jaeger` package trait."
 

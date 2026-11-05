@@ -18,7 +18,7 @@ This example will export spans data simultaneously using [OTLP Exporter ](https:
 
     ```shell script
     # from this directory
-    swift run OTLPExporter
+    swift run --traits OTLPGRPC OTLPExporter
     ```
 
 3. Teardown the docker images
@@ -42,7 +42,7 @@ Note: It may take some time for the application metrics to appear on the Prometh
 
     ```shell script
     # from this directory
-    OTEL_RESOURCE_ATTRIBUTES="service.name=my-swift-app,service.version=v1.2.3" swift run OTLPExporter
+    OTEL_RESOURCE_ATTRIBUTES="service.name=my-swift-app,service.version=v1.2.3" swift run --traits OTLPGRPC OTLPExporter
     ```
 This will create a service and spans with the name `my-swift-app`
 
