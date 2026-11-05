@@ -21,7 +21,7 @@ groups:
       | Timestamp | Marks | W3C analog |
       | --- | --- | --- |
       | `processStart` | Process start, the time origin (`sysctl` `KERN_PROC_PID`, `kp_proc.p_starttime`) | `startTime` |
-      | `initializerStart` | The launch-environment C `constructor` function, `otel_app_launch_read_launch_environment`, ran. Not the `constructor` function that bounds `app.start.page_ins.pre_initializer` | none |
+      | `initializerStart` | The launch-environment C `constructor` function, `otel_app_launch_read_launch_environment`, ran. A different `constructor` from the one that takes the `__TEXT` page sample, and the order the two run in isn't defined | none |
       | `activationStart` | A prewarmed launch resumed. The same time as `initializerStart`, because Apple says a prewarm runs no application code | `activationStart` |
       | `didFinishLaunchingEnd` | `didFinishLaunchingNotification`, if the instrumentation was installed before it | `domContentLoadedEventEnd` |
       | `sceneConnectStart` | The first `UIScene.willConnectNotification` of the launch | none |
@@ -58,27 +58,27 @@ groups:
         requirement_level: required
       - ref: app.start.determined_by
         requirement_level: required
-      - ref: app.start.text_pages.sampled
+      - ref: app.start.pages.text.sampled
         requirement_level:
           conditionally_required: If the launch's pages could be sampled.
-      - ref: app.start.text_pages.total
+      - ref: app.start.pages.text.total
         requirement_level:
           conditionally_required: If the app's code could be measured.
-      - ref: app.start.text_pages.resident_at_end
+      - ref: app.start.pages.text.resident_at_end
         requirement_level:
           conditionally_required: If the launch's pages could be sampled.
-      - ref: app.start.text_pages.paged_in
+      - ref: app.start.pages.text.paged_in
         requirement_level:
           conditionally_required: If the launch's pages could be sampled.
-      - ref: app.start.text_pages.page_in_ratio
+      - ref: app.start.pages.text.page_in_ratio
         requirement_level:
           conditionally_required: If the launch's pages could be sampled.
       - ref: app.start.prewarm.cache_state
         requirement_level:
           conditionally_required: If `app.start.type` is `prewarmed` and the pages could be sampled.
-      - ref: app.start.page_ins.pre_initializer
+      - ref: app.start.page_ins.before_text_sample
         requirement_level: opt_in
-      - ref: app.start.page_ins.post_initializer
+      - ref: app.start.page_ins.after_text_sample
         requirement_level: opt_in
       - ref: app.start.pre_activation.duration
         requirement_level:
@@ -126,19 +126,19 @@ groups:
           conditionally_required: If the app entered the background earlier in this process.
       - ref: app.resume.page_ins
         requirement_level: opt_in
-      - ref: app.resume.text_pages.sampled
+      - ref: app.resume.pages.text.sampled
         requirement_level:
           conditionally_required: If the app's pages could be sampled when it entered the background.
-      - ref: app.resume.text_pages.total
+      - ref: app.resume.pages.text.total
         requirement_level:
           conditionally_required: If the app's code could be measured.
-      - ref: app.resume.text_pages.resident_at_end
+      - ref: app.resume.pages.text.resident_at_end
         requirement_level:
           conditionally_required: If the app's pages could be sampled when it entered the background.
-      - ref: app.resume.text_pages.paged_in
+      - ref: app.resume.pages.text.paged_in
         requirement_level:
           conditionally_required: If the app's pages could be sampled when it entered the background.
-      - ref: app.resume.text_pages.page_in_ratio
+      - ref: app.resume.pages.text.page_in_ratio
         requirement_level:
           conditionally_required: If the app's pages could be sampled when it entered the background.
   - id: span.app_start.pre_init

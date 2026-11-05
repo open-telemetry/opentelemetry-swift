@@ -27,20 +27,20 @@ extension FederatedSemanticConventions {
     /**
      The process's page-ins during the resume, which reveal pages evicted while it was suspended.
 
-     - Note: Counts the whole process, not the app's code, from the system telling the app it will enter the foreground to the end of the span. Not reported if the counter can't be read, or if it went backwards, which would mean it was reset.
+     - Note: Counts the whole process, not the app's code, from the system telling the app it will enter the foreground to the end of the span. Counts page-ins only, as `app.start.page_ins.before_text_sample` describes. Not reported if the counter can't be read, or if it went backwards, which would mean it was reset.
 
      - Requires: Value type should be `Int`
     */
     case resumePageIns = "app.resume.page_ins"
 
     /**
-     `app.resume.text_pages.paged_in` divided by `app.resume.text_pages.resident_at_end`, from 0 to 1.
+     `app.resume.pages.text.paged_in` divided by `app.resume.pages.text.resident_at_end`, from 0 to 1.
 
      - Note: Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds the app's executable code together with its constant data, and residency can only be measured per page, which belongs to the segment because sections aren't page-aligned.
 
      - Requires: Value type should be `Double`
     */
-    case resumeTextPagesPageInRatio = "app.resume.text_pages.page_in_ratio"
+    case resumePagesTextPageInRatio = "app.resume.pages.text.page_in_ratio"
 
     /**
      How many sampled pages of the app's code came back into memory between the app entering the background and the end of the resume, so how much of its own code the system had reclaimed while it was away.
@@ -49,7 +49,7 @@ extension FederatedSemanticConventions {
 
      - Requires: Value type should be `Int`
     */
-    case resumeTextPagesPagedIn = "app.resume.text_pages.paged_in"
+    case resumePagesTextPagedIn = "app.resume.pages.text.paged_in"
 
     /**
      How many sampled pages of the app's code were in memory at the end of the resume.
@@ -58,7 +58,7 @@ extension FederatedSemanticConventions {
 
      - Requires: Value type should be `Int`
     */
-    case resumeTextPagesResidentAtEnd = "app.resume.text_pages.resident_at_end"
+    case resumePagesTextResidentAtEnd = "app.resume.pages.text.resident_at_end"
 
     /**
      How many pages of the app's code were sampled, the same pages the launch sampled.
@@ -67,16 +67,16 @@ extension FederatedSemanticConventions {
 
      - Requires: Value type should be `Int`
     */
-    case resumeTextPagesSampled = "app.resume.text_pages.sampled"
+    case resumePagesTextSampled = "app.resume.pages.text.sampled"
 
     /**
      How many pages of the app's code could be sampled, whether or not the sample covers them.
 
-     - Note: Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds the app's executable code together with its constant data, and residency can only be measured per page, which belongs to the segment because sections aren't page-aligned. The pages of the `__TEXT` segments of the images in the app's bundle, less the first page of each, which holds the headers dyld has already read. Compared with `app.resume.text_pages.sampled` it says what share of the app's code the sample stands for, because the sample is capped: a large app is covered more thinly than a small one.
+     - Note: Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds the app's executable code together with its constant data, and residency can only be measured per page, which belongs to the segment because sections aren't page-aligned. The pages of the `__TEXT` segments of the images in the app's bundle, less the first page of each, which holds the headers dyld has already read. Compared with `app.resume.pages.text.sampled` it says what share of the app's code the sample stands for, because the sample is capped: a large app is covered more thinly than a small one.
 
      - Requires: Value type should be `Int`
     */
-    case resumeTextPagesTotal = "app.resume.text_pages.total"
+    case resumePagesTextTotal = "app.resume.pages.text.total"
 
     /**
      How much UI the resume had to rebuild.
@@ -109,20 +109,83 @@ extension FederatedSemanticConventions {
     case startOutcome = "app.start.outcome"
 
     /**
-     The process's page-ins from the page-sampling `constructor` function, `otel_app_launch_sample_pages_at_start`, to the end of the span.
+     The whole process's page-ins from the moment the `__TEXT` page sample's baseline was taken to the end of the span.
+
+     - Note: The window `app.start.pages.text.paged_in` measures, but for the whole process rather than the app's sampled code, so it's the larger of the two and the two aren't expected to agree. See `app.start.page_ins.before_text_sample` for which faults are counted.
 
      - Requires: Value type should be `Int`
     */
-    case startPageInsPostInitializer = "app.start.page_ins.post_initializer"
+    case startPageInsAfterTextSample = "app.start.page_ins.after_text_sample"
 
     /**
-     The process's page-ins from process start to the page-sampling `constructor` function, `otel_app_launch_sample_pages_at_start`.
+     The whole process's page-ins from process start to the moment the `__TEXT` page sample's baseline was taken, before `main()`.
 
-     - Note: Not the same `constructor` function as `initializerStart`, which is `otel_app_launch_read_launch_environment` in a separate module, and the order the two run in isn't defined. So this isn't the boundary `app.start.pre_init` ends at, even though both are an initializer.
+     - Note: Counts the whole process, not only the app's code, unlike the `app.start.pages.text`
+       attributes it shares its boundary with.
+
+       Counts page-ins, which are the faults that had to fetch a page from a backing store, or
+       `major` in the terms of `system.paging.fault.type`. Minor faults, such as zero-fill and
+       copy-on-write, aren't counted, and the process's total fault count and its
+       copy-on-write faults aren't reported at all. Each of those is a superset or a subset of
+       another, so reporting them side by side would invite summing them.
+
+       This is the window `app.start.pages.text.paged_in` can't see: a page of the app's code
+       fetched before the baseline was taken is already resident in that baseline, so it never
+       counts as paged in however much paging it took. This attribute says how much paging
+       happened there.
+
+       Not bounded by the same `constructor` function as `initializerStart`, which is
+       `otel_app_launch_read_launch_environment` in a separate module, and the order the two run
+       in isn't defined. So this isn't the boundary `app.start.pre_init` ends at.
 
      - Requires: Value type should be `Int`
     */
-    case startPageInsPreInitializer = "app.start.page_ins.pre_initializer"
+    case startPageInsBeforeTextSample = "app.start.page_ins.before_text_sample"
+
+    /**
+     The share of the sampled code that the launch paged in from disk (Apple's term for reading a page into memory): `app.start.pages.text.paged_in` divided by `app.start.pages.text.resident_at_end`, from 0 to 1. A launch is `cold` when this is at least the configured threshold, 0.5 by default. This is the raw measurement, reported so a consumer can apply its own threshold instead of the one the device used.
+
+     - Note: Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds the app's executable code together with its constant data, and residency can only be measured per page, which belongs to the segment because sections aren't page-aligned.
+
+     - Requires: Value type should be `Double`
+    */
+    case startPagesTextPageInRatio = "app.start.pages.text.page_in_ratio"
+
+    /**
+     How many of `app.start.pages.text.resident_at_end` weren't in the page cache when this library's initializer ran, which is after the initializers of images it depends on.
+
+     - Note: Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds the app's executable code together with its constant data, and residency can only be measured per page, which belongs to the segment because sections aren't page-aligned.
+
+     - Requires: Value type should be `Int`
+    */
+    case startPagesTextPagedIn = "app.start.pages.text.paged_in"
+
+    /**
+     How many sampled pages of the app's code were in the system's page cache when the app became active.
+
+     - Note: Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds the app's executable code together with its constant data, and residency can only be measured per page, which belongs to the segment because sections aren't page-aligned. `__TEXT` is sampled because it's read-only, so the kernel can discard its pages and re-read them, which is the behaviour this measures: https://developer.apple.com/library/archive/documentation/Performance/Conceptual/CodeFootprint/Articles/MachOOverview.html. Up to 256 pages evenly spaced through the `__TEXT` segments of the app's images are sampled with `mincore`, which reports the page cache, so this includes pages left by earlier launches and read ahead by the kernel that this launch didn't use.
+
+     - Requires: Value type should be `Int`
+    */
+    case startPagesTextResidentAtEnd = "app.start.pages.text.resident_at_end"
+
+    /**
+     How many pages of the app's code were sampled.
+
+     - Note: Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds the app's executable code together with its constant data, and residency can only be measured per page, which belongs to the segment because sections aren't page-aligned.
+
+     - Requires: Value type should be `Int`
+    */
+    case startPagesTextSampled = "app.start.pages.text.sampled"
+
+    /**
+     How many pages of the app's code could be sampled, whether or not the sample covers them.
+
+     - Note: Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds the app's executable code together with its constant data, and residency can only be measured per page, which belongs to the segment because sections aren't page-aligned. The pages of the `__TEXT` segments of the images in the app's bundle, less the first page of each, which holds the headers dyld has already read. Compared with `app.start.pages.text.sampled` it says what share of the app's code the sample stands for, because the sample is capped: a large app is covered more thinly than a small one.
+
+     - Requires: Value type should be `Int`
+    */
+    case startPagesTextTotal = "app.start.pages.text.total"
 
     /**
      Seconds from process start to `activationStart` on a prewarmed launch, which the span doesn't cover. Not part of the launch's duration.
@@ -153,54 +216,9 @@ extension FederatedSemanticConventions {
     case startRenderDuration = "app.start.render.duration"
 
     /**
-     The share of the sampled code that the launch paged in from disk (Apple's term for reading a page into memory): `app.start.text_pages.paged_in` divided by `app.start.text_pages.resident_at_end`, from 0 to 1. A launch is `cold` when this is at least the configured threshold, 0.5 by default. This is the raw measurement, reported so a consumer can apply its own threshold instead of the one the device used.
-
-     - Note: Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds the app's executable code together with its constant data, and residency can only be measured per page, which belongs to the segment because sections aren't page-aligned.
-
-     - Requires: Value type should be `Double`
-    */
-    case startTextPagesPageInRatio = "app.start.text_pages.page_in_ratio"
-
-    /**
-     How many of `app.start.text_pages.resident_at_end` weren't in the page cache when this library's initializer ran, which is after the initializers of images it depends on.
-
-     - Note: Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds the app's executable code together with its constant data, and residency can only be measured per page, which belongs to the segment because sections aren't page-aligned.
-
-     - Requires: Value type should be `Int`
-    */
-    case startTextPagesPagedIn = "app.start.text_pages.paged_in"
-
-    /**
-     How many sampled pages of the app's code were in the system's page cache when the app became active.
-
-     - Note: Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds the app's executable code together with its constant data, and residency can only be measured per page, which belongs to the segment because sections aren't page-aligned. `__TEXT` is sampled because it's read-only, so the kernel can discard its pages and re-read them, which is the behaviour this measures: https://developer.apple.com/library/archive/documentation/Performance/Conceptual/CodeFootprint/Articles/MachOOverview.html. Up to 256 pages evenly spaced through the `__TEXT` segments of the app's images are sampled with `mincore`, which reports the page cache, so this includes pages left by earlier launches and read ahead by the kernel that this launch didn't use.
-
-     - Requires: Value type should be `Int`
-    */
-    case startTextPagesResidentAtEnd = "app.start.text_pages.resident_at_end"
-
-    /**
-     How many pages of the app's code were sampled.
-
-     - Note: Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds the app's executable code together with its constant data, and residency can only be measured per page, which belongs to the segment because sections aren't page-aligned.
-
-     - Requires: Value type should be `Int`
-    */
-    case startTextPagesSampled = "app.start.text_pages.sampled"
-
-    /**
-     How many pages of the app's code could be sampled, whether or not the sample covers them.
-
-     - Note: Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds the app's executable code together with its constant data, and residency can only be measured per page, which belongs to the segment because sections aren't page-aligned. The pages of the `__TEXT` segments of the images in the app's bundle, less the first page of each, which holds the headers dyld has already read. Compared with `app.start.text_pages.sampled` it says what share of the app's code the sample stands for, because the sample is capped: a large app is covered more thinly than a small one.
-
-     - Requires: Value type should be `Int`
-    */
-    case startTextPagesTotal = "app.start.text_pages.total"
-
-    /**
      How the launch began, as `PerformanceNavigationTiming.type` describes a navigation.
 
-     - Note: `cold` and `warm` are decided on the device, by comparing `app.start.text_pages.page_in_ratio` with a threshold the app configures, `coldPageInRatio`, which is 0.5 by default. So this attribute carries the instrumentation's verdict rather than a property of the launch, and the threshold itself isn't reported. The measurements behind it are: a consumer that prefers a different line can recalculate from `app.start.text_pages.page_in_ratio` and ignore this attribute. That works only when `app.start.determined_by` is `page_sampling`, because a launch classified from `launch_history` reports no ratio. On a prewarmed launch this attribute is `prewarmed` whatever the ratio, and the same comparison is reported separately as `app.start.prewarm.cache_state`.
+     - Note: `cold` and `warm` are decided on the device, by comparing `app.start.pages.text.page_in_ratio` with a threshold the app configures, `coldPageInRatio`, which is 0.5 by default. So this attribute carries the instrumentation's verdict rather than a property of the launch, and the threshold itself isn't reported. The measurements behind it are: a consumer that prefers a different line can recalculate from `app.start.pages.text.page_in_ratio` and ignore this attribute. That works only when `app.start.determined_by` is `page_sampling`, because a launch classified from `launch_history` reports no ratio. On a prewarmed launch this attribute is `prewarmed` whatever the ratio, and the same comparison is reported separately as `app.start.prewarm.cache_state`.
 
      - Requires: Value should be one of ``StartTypeValues`` (of type `String`)
     */
@@ -258,10 +276,10 @@ extension FederatedSemanticConventions {
     */
     public struct StartDeterminedByValues: CustomStringConvertible, Sendable {
       
-      /// `app.start.text_pages.page_in_ratio` compared with the configured page-in threshold, 0.5 by default.
+      /// `app.start.pages.text.page_in_ratio` compared with the configured page-in threshold, 0.5 by default.
       public static let pageSampling = StartDeterminedByValues("page_sampling") 
       
-      /// The launch's pages couldn't be sampled, so the type was inferred from what changed since the previous launch.
+      /// The launch's pages couldn't be sampled, or fewer than 16 of them were resident when more than that were sampled, so no ratio could be compared and the type was inferred from what changed since the previous launch.
       public static let launchHistory = StartDeterminedByValues("launch_history") 
       
       /// The `ActivePrewarm` environment variable was `1` when the process started.
@@ -305,10 +323,10 @@ extension FederatedSemanticConventions {
     */
     public struct StartPrewarmCacheStateValues: CustomStringConvertible, Sendable {
       
-      /// `app.start.text_pages.page_in_ratio` is at least the configured threshold, 0.5 by default.
+      /// `app.start.pages.text.page_in_ratio` is at least the configured threshold, 0.5 by default.
       public static let cold = StartPrewarmCacheStateValues("cold") 
       
-      /// `app.start.text_pages.page_in_ratio` is less than the configured threshold, 0.5 by default.
+      /// `app.start.pages.text.page_in_ratio` is less than the configured threshold, 0.5 by default.
       public static let warm = StartPrewarmCacheStateValues("warm") 
 
       internal let value: String 
@@ -327,10 +345,10 @@ extension FederatedSemanticConventions {
     */
     public struct StartTypeValues: CustomStringConvertible, Sendable {
       
-      /// The launch had to page in the app's code from disk: `app.start.text_pages.page_in_ratio` was at least the configured threshold, 0.5 by default. If the code couldn't be sampled, the launch is classified from launch history instead.
+      /// The launch had to page in the app's code from disk: `app.start.pages.text.page_in_ratio` was at least the configured threshold, 0.5 by default. If the code couldn't be sampled, or too few of the sampled pages were resident to compare, the launch is classified from launch history instead.
       public static let cold = StartTypeValues("cold") 
       
-      /// The process was gone, but the app's code was already in memory: the page-in ratio was below the configured threshold. If the code couldn't be sampled, the launch is classified from launch history instead.
+      /// The process was gone, but the app's code was already in memory: the page-in ratio was below the configured threshold. If the code couldn't be sampled, or too few of the sampled pages were resident to compare, the launch is classified from launch history instead.
       public static let warm = StartTypeValues("warm") 
       
       /// The system started the process before the user launched the app.

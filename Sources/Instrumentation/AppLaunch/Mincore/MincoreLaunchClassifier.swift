@@ -22,10 +22,11 @@
     }
   }
 
-  /// The process's page-ins on either side of the `AppLaunchPageSampling` initializer.
+  /// The whole process's page-ins on either side of the moment the `AppLaunchPageSampling`
+  /// initializer took the `__TEXT` page sample's baseline.
   struct LaunchPageIns: Equatable, Sendable {
-    var preInitializer: Int
-    var postInitializer: Int
+    var beforeTextSample: Int
+    var afterTextSample: Int
   }
 
   protocol LaunchPageSampler: Sendable {
@@ -52,10 +53,10 @@
     }
 
     func readPageIns() -> LaunchPageIns? {
-      var preInitializer: Int32 = 0
-      var postInitializer: Int32 = 0
-      guard otel_app_launch_read_page_ins(&preInitializer, &postInitializer) else { return nil }
-      return LaunchPageIns(preInitializer: Int(preInitializer), postInitializer: Int(postInitializer))
+      var beforeTextSample: Int32 = 0
+      var afterTextSample: Int32 = 0
+      guard otel_app_launch_read_page_ins(&beforeTextSample, &afterTextSample) else { return nil }
+      return LaunchPageIns(beforeTextSample: Int(beforeTextSample), afterTextSample: Int(afterTextSample))
     }
 
     func readPageInsNow() -> Int? {
@@ -116,13 +117,13 @@
         let isCold = ratio >= coldPageInRatio
         let type: AppLaunchInstrumentationConfiguration.LaunchType = isPrewarmed ? .prewarmed : isCold ? .cold : .warm
         var attributes = Self.determinedBy(isPrewarmed ? .prewarmFlag : .pageSampling)
-        attributes[App.startTextPagesSampled.rawValue] = .int(sample.sampled)
+        attributes[App.startPagesTextSampled.rawValue] = .int(sample.sampled)
         if let total = pageSampler.readTextPageTotal() {
-          attributes[App.startTextPagesTotal.rawValue] = .int(total)
+          attributes[App.startPagesTextTotal.rawValue] = .int(total)
         }
-        attributes[App.startTextPagesResidentAtEnd.rawValue] = .int(sample.residentAtEnd)
-        attributes[App.startTextPagesPagedIn.rawValue] = .int(sample.pagedIn)
-        attributes[App.startTextPagesPageInRatio.rawValue] = .double(ratio)
+        attributes[App.startPagesTextResidentAtEnd.rawValue] = .int(sample.residentAtEnd)
+        attributes[App.startPagesTextPagedIn.rawValue] = .int(sample.pagedIn)
+        attributes[App.startPagesTextPageInRatio.rawValue] = .double(ratio)
         if isPrewarmed {
           let cacheState: App.StartPrewarmCacheStateValues = isCold ? .cold : .warm
           attributes[App.startPrewarmCacheState.rawValue] = .string(cacheState.description)

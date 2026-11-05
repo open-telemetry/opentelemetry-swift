@@ -104,6 +104,10 @@ Tests/IntegrationTests/.derivedData/
 Tests/IntegrationTests/.derivedData-*/
 Tests/IntegrationTests/.collector/
 
+# Python bytecode, from running the scripts in Scripts/
+__pycache__/
+*.pyc
+
 # oh-my-claudecode
 .omc/
 .claude/CLAUDE.md

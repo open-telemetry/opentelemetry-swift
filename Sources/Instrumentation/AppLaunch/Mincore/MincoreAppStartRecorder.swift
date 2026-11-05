@@ -95,8 +95,8 @@
         .startSpan()
       classification.attributes.forEach { root.setAttribute(key: $0.key, value: $0.value) }
       if let pageIns = pageSampler.readPageIns() {
-        root.setAttribute(key: App.startPageInsPreInitializer.rawValue, value: pageIns.preInitializer)
-        root.setAttribute(key: App.startPageInsPostInitializer.rawValue, value: pageIns.postInitializer)
+        root.setAttribute(key: App.startPageInsBeforeTextSample.rawValue, value: pageIns.beforeTextSample)
+        root.setAttribute(key: App.startPageInsAfterTextSample.rawValue, value: pageIns.afterTextSample)
       }
 
       if isPrewarmed {
@@ -158,16 +158,16 @@
       // A property of the binary rather than of this resume, so it doesn't depend on the baseline
       // below and is reported even when the app never entered the background.
       if let total = pageSampler.readTextPageTotal() {
-        root.setAttribute(key: App.resumeTextPagesTotal.rawValue, value: total)
+        root.setAttribute(key: App.resumePagesTextTotal.rawValue, value: total)
       }
       // Only the app's own code, unlike the page-in counter above, and only for a resume the app
       // entered the background before, since that's when the baseline is taken.
       if let sample = pageSampler.readBackgroundSample() {
-        root.setAttribute(key: App.resumeTextPagesSampled.rawValue, value: sample.sampled)
-        root.setAttribute(key: App.resumeTextPagesResidentAtEnd.rawValue, value: sample.residentAtEnd)
-        root.setAttribute(key: App.resumeTextPagesPagedIn.rawValue, value: sample.pagedIn)
+        root.setAttribute(key: App.resumePagesTextSampled.rawValue, value: sample.sampled)
+        root.setAttribute(key: App.resumePagesTextResidentAtEnd.rawValue, value: sample.residentAtEnd)
+        root.setAttribute(key: App.resumePagesTextPagedIn.rawValue, value: sample.pagedIn)
         if let ratio = sample.pageInRatio {
-          root.setAttribute(key: App.resumeTextPagesPageInRatio.rawValue, value: ratio)
+          root.setAttribute(key: App.resumePagesTextPageInRatio.rawValue, value: ratio)
         }
       }
       _ = recordPhase(tracer, Name.resumeSceneSetup, parent: root, start: resume.sceneConnectStart, end: endTime)

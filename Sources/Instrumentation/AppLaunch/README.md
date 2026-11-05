@@ -26,7 +26,7 @@ A cold or warm launch is timed from process start to the first frame displayed a
 
 `app.start.scene_setup` is floored at its parent's start, because UIKit connects a scene after `didFinishLaunching` and a child span must not begin before the span that holds it. `app.start.pre_init` isn't recorded for a prewarmed launch, which reports `app.start.pre_activation.duration` instead. A phase is only recorded if both of its timestamps are known, so `app.start.app_init` and `app.start.render` need the instrumentation installed before `didFinishLaunching` returns.
 
-The boundary between `app.start.pre_init` and `app.start.app_init` is when this library's `AppLaunchEnvironment` C `constructor` ran, which is somewhere inside the app's static-initializer sequence rather than at its start or its end. Where it falls depends on where dyld placed this library among the app's images, so the split between the two phases isn't purely a property of the app and moves if the link order changes. On the [one device tested](#accuracy-compared-with-instruments) `app.start.app_init` was within +1.3 to +2.4 ms of the matching Instruments period, so on that app the constructor ran close to the end of static runtime initialization. That is a property of that app's link order, not something the library guarantees. This is not the `constructor` that bounds `app.start.page_ins.pre_initializer`, which samples the app's pages.
+The boundary between `app.start.pre_init` and `app.start.app_init` is when this library's `AppLaunchEnvironment` C `constructor` ran, which is somewhere inside the app's static-initializer sequence rather than at its start or its end. Where it falls depends on where dyld placed this library among the app's images, so the split between the two phases isn't purely a property of the app and moves if the link order changes. On the [one device tested](#accuracy-compared-with-instruments) `app.start.app_init` was within +1.3 to +2.4 ms of the matching Instruments period, so on that app the constructor ran close to the end of static runtime initialization. That is a property of that app's link order, not something the library guarantees. This is a different `constructor` from the one that takes the `__TEXT` page sample and bounds `app.start.page_ins.before_text_sample`; the order the two run in isn't defined.
 
 `app.start.app_init` covers the app's remaining static initializers, `main()`, `UIApplicationMain`, UIKit's bootstrap, `willFinishLaunching` and `didFinishLaunching`. It is the longest of the three phases: in the four launches the [integration tests](../../../Tests/IntegrationTests/README.md) record it was 46% to 59% of the launch, against 18% to 28% for `app.start.pre_init`. What inside it is slow isn't recorded; see [Not recorded yet](#not-recorded-yet).
 
@@ -34,7 +34,7 @@ If the app became active and then left before its first frame, the span ends at 
 
 `app.resume.type` is `hot`, `scene_reconnect` or `background_launched`. A resume starts when its scene connected, if one did, because UIKit connects it first, and otherwise at `willEnterForeground`. `app.resume.page_ins` is the process's page-ins across the resume, read at `willEnterForeground` and differenced at the end of the span, which is `opt_in` and carries [the same caveats](#measuring-cold-and-warm) as the launch page-in counts.
 
-A resume also re-samples the pages the launch sampled, so it reports how much of the app's own code the system reclaimed while the app was away: `app.resume.text_pages.sampled`, `app.resume.text_pages.resident_at_end`, `app.resume.text_pages.paged_in` and `app.resume.text_pages.page_in_ratio`. The baseline is taken when the app enters the background, because reading it is one `mincore` call per sampled page and taking it on the way back would land inside the window being measured. A resume the app didn't enter the background before has no baseline, so a [`background_launched`](#resume) resume reports none of these. Unlike `app.resume.page_ins` these count only the app's code, which is the same measurement the launch's [`cold` and `warm`](#measuring-cold-and-warm) are decided from.
+A resume also re-samples the pages the launch sampled, so it reports how much of the app's own code the system reclaimed while the app was away: `app.resume.pages.text.sampled`, `app.resume.pages.text.resident_at_end`, `app.resume.pages.text.paged_in` and `app.resume.pages.text.page_in_ratio`. The baseline is taken when the app enters the background, because reading it is one `mincore` call per sampled page and taking it on the way back would land inside the window being measured. A resume the app didn't enter the background before has no baseline, so a [`background_launched`](#resume) resume reports none of these. Unlike `app.resume.page_ins` these count only the app's code, which is the same measurement the launch's [`cold` and `warm`](#measuring-cold-and-warm) are decided from.
 
 ### Measuring `cold` and `warm`
 
@@ -44,11 +44,11 @@ The library samples up to 256 pages evenly spaced through the `__TEXT` segments 
 
 | Attribute                                 | Meaning                                                      |
 | ----------------------------------------- | ------------------------------------------------------------ |
-| `app.start.text_pages.total`             | Pages of the app's code that could be sampled                |
-| `app.start.text_pages.sampled`           | Pages sampled, which is `total` capped at 256                |
-| `app.start.text_pages.resident_at_end` | Sampled pages in the page cache when the app became active   |
-| `app.start.text_pages.paged_in`        | Those not in it at this library's initializer                |
-| `app.start.text_pages.page_in_ratio`         | `paged_in` divided by `resident_at_end`, from 0 to 1         |
+| `app.start.pages.text.total`             | Pages of the app's code that could be sampled                |
+| `app.start.pages.text.sampled`           | Pages sampled, which is `total` capped at 256                |
+| `app.start.pages.text.resident_at_end` | Sampled pages in the page cache when the app became active   |
+| `app.start.pages.text.paged_in`        | Those not in it at this library's initializer                |
+| `app.start.pages.text.page_in_ratio`         | `paged_in` divided by `resident_at_end`, from 0 to 1         |
 
 `total` and `sampled` are both reported because the sample is capped at 256, so how much of the app it stands for varies by orders of magnitude. The demo app's device build has 413 samplable pages, which the sample covers 62% of. Across 150 iOS system apps the median is 6 pages, because their code lives in the shared cache rather than their bundles, so the sample is a census. Across 53 bundles in macOS `/Applications` the median is 10,830 pages, covered 2.4%, and Xcode's 158,554 are covered 0.16%. `total` is what says which case a reading comes from. A resume reports the same pair, since the total describes the binary rather than the window measured.
 
@@ -83,23 +83,23 @@ Each launch below was recorded by this library and by the Instruments App Launch
 
 Results on the iPhone 16 Pro Max, as the range across launches:
 
-| Measurement                                                | Cold launches (4)  | Warm launches (6) |
-| ---------------------------------------------------------- | ------------------ | ----------------- |
-| Launch type agreed with Instruments                        | 4 of 4             | 6 of 6            |
-| `app.start.text_pages.page_in_ratio`                          | 0.695 to 0.764     | 0 to 0.029        |
-| `app.start.text_pages.paged_in`                         | 125 to 159         | 0 to 5            |
-| Sampled pages Instruments saw read from disk               | 105 to 108         | 0 to 5            |
-| `app.start.text_pages.resident_at_end`                  | 174 to 220         | 165 to 256        |
-| Sampled pages Instruments saw the launch touch             | 144                | 141 to 147        |
-| `__TEXT` pages touched: estimate from the sample, minus actual | +0.2           | +0.2 to +0.3      |
-| `app.start` duration                                       | 1,292 to 1,808 ms  | 923 to 1,143 ms   |
-| Instruments launch duration                                | 1,169 to 1,719 ms  | 850 to 1,061 ms   |
-| `app.start` minus Instruments                              | +85 to +123 ms     | +40 to +82 ms     |
-| `app.start.pre_init` minus Instruments                     | +55 to +87 ms      | +35 to +58 ms     |
-| `app.start.app_init` minus Instruments                     | +1.3 to +2.4 ms    | +1.4 to +2.0 ms   |
-| `app.start.render` minus Instruments                       | +24 to +34 ms      | +3 to +31 ms      |
-| `app.start.page_ins.pre_initializer` minus Instruments     | +50 to +125        | +16 to +60        |
-| `app.start.page_ins.post_initializer` minus Instruments    | +62 to +2,981      | +11 to +17        |
+| Measurement                                                    | Cold launches (4)  | Warm launches (6) |
+| -------------------------------------------------------------- | ------------------ | ----------------- |
+| Launch type agreed with Instruments                            | 4 of 4             | 6 of 6            |
+| `app.start.pages.text.page_in_ratio`                           | 0.695 to 0.764     | 0 to 0.029        |
+| `app.start.pages.text.paged_in`                                | 125 to 159         | 0 to 5            |
+| Sampled pages Instruments saw read from disk                   | 105 to 108         | 0 to 5            |
+| `app.start.pages.text.resident_at_end`                         | 174 to 220         | 165 to 256        |
+| Sampled pages Instruments saw the launch touch                 | 144                | 141 to 147        |
+| `__TEXT` pages touched: estimate from the sample, minus actual | +0.2               | +0.2 to +0.3      |
+| `app.start` duration                                           | 1,292 to 1,808 ms  | 923 to 1,143 ms   |
+| Instruments launch duration                                    | 1,169 to 1,719 ms  | 850 to 1,061 ms   |
+| `app.start` minus Instruments                                  | +85 to +123 ms     | +40 to +82 ms     |
+| `app.start.pre_init` minus Instruments                         | +55 to +87 ms      | +35 to +58 ms     |
+| `app.start.app_init` minus Instruments                         | +1.3 to +2.4 ms    | +1.4 to +2.0 ms   |
+| `app.start.render` minus Instruments                           | +24 to +34 ms      | +3 to +31 ms      |
+| `app.start.page_ins.before_text_sample` minus Instruments      | +50 to +125        | +16 to +60        |
+| `app.start.page_ins.after_text_sample` minus Instruments       | +62 to +2,981      | +11 to +17        |
 
 - Three of the cold launches followed a reboot and one followed an install. The warm launches include ones right after an install.
 - The script calls a launch `warm` if most of the `__TEXT` pages it touched were cached before the first one was read from disk. Instruments doesn't report a launch type, so agreement means the two are consistent.
@@ -124,7 +124,7 @@ Scripts/compare-app-launch-accuracy.py --mode reboot --launches 3
 - Apple's [Mach-O overview](https://developer.apple.com/library/archive/documentation/Performance/Conceptual/CodeFootprint/Articles/MachOOverview.html) says `__TEXT` and `__DATA` are the only segments "of interest in relation to performance", which is why only `__TEXT` is sampled. That document is retired, describes 4 KB pages rather than the 16 KB ones these devices use, and never mentions `__LINKEDIT` or the dyld shared cache. On a launch after a reboot, `__TEXT` was 2 to 5% of the disk reads Instruments recorded for the demo app, the rest being system frameworks, `__LINKEDIT` and data segments. So these attributes say whether the app's own code was cached, not how much the launch read.
 - The sample is capped at 256 pages, which suits iOS but covers a large app thinly, and the risk there isn't sampling error: 256 pages hold the standard error on a proportion to 3.1% whatever the app's size, and the cold and warm clusters measured on a device were 22 standard errors apart. The risk is that thin coverage leaves few sampled pages resident, and a launch with fewer than 16 of them is classified from launch history instead, which it reports as `app.start.determined_by: launch_history`. No large app has been measured, so that's a prediction from the page counts, not an observation.
 - App Store builds haven't been tested. Encrypted `__TEXT` might not report residency the same way as a development build, so compare a TestFlight build before relying on the 0.5 threshold.
-- `app.start.page_ins.pre_initializer` and `app.start.page_ins.post_initializer` count the whole process, not the app's code, and are [higher than Instruments reports](#accuracy-compared-with-instruments) for a reason that isn't known. They also move by orders of magnitude between launches of the same binary: across the four launches the integration tests record, `pre_initializer` was 2, 111, 131 and 932, and `post_initializer` was 13, 102, 1,563 and 4,364. Both are `opt_in`, and are at most a rough comparison between launches, not a count of disk reads. `app.resume.page_ins` is the same counter over the resume window, so it carries the same caveats, and has never been compared with Instruments at all. `app.resume.text_pages.paged_in` measures the app's own code over the same window and doesn't have them, so prefer it. What drives it is memory pressure, not time suspended: on an iPhone 16 Pro Max, resumes after 25 and after 180 seconds suspended with nothing else running both reported 0, while a resume after 180 seconds suspended with Safari, Maps and Settings cycled through the foreground reported 302. Those three resumes took 460, 474 and 450 ms, so the pages counted didn't measurably slow any of them. The counter is task-wide, and there's no per-thread equivalent, so none of it can be attributed to work the first frame waited on.
+- `app.start.page_ins.before_text_sample` and `app.start.page_ins.after_text_sample` count the whole process, not the app's code, and are [higher than Instruments reports](#accuracy-compared-with-instruments) for a reason that isn't known. They also move by orders of magnitude between launches of the same binary: across the four launches the integration tests record, `before_text_sample` was 2, 111, 131 and 932, and `after_text_sample` was 13, 102, 1,563 and 4,364. Both are `opt_in`, and are at most a rough comparison between launches, not a count of disk reads. `app.resume.page_ins` is the same counter over the resume window, so it carries the same caveats, and has never been compared with Instruments at all. `app.resume.pages.text.paged_in` measures the app's own code over the same window and doesn't have them, so prefer it. What drives it is memory pressure, not time suspended: on an iPhone 16 Pro Max, resumes after 25 and after 180 seconds suspended with nothing else running both reported 0, while a resume after 180 seconds suspended with Safari, Maps and Settings cycled through the foreground reported 302. Those three resumes took 460, 474 and 450 ms, so the pages counted didn't measurably slow any of them. The counter is task-wide, and there's no per-thread equivalent, so none of it can be attributed to work the first frame waited on.
 
 ### Not recorded yet
 
@@ -195,7 +195,7 @@ MincoreLaunchInstrumentation.install(
 | ------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `launchTypes`       | `[.cold, .warm, .resume, .prewarmed]` | The [start types](#start-types) to record. Activations of other types don't produce spans, but are still tracked so that later ones are classified correctly. Leave out `.prewarmed` to drop [prewarmed](#prewarming) launches.                                                                |
 | `maxLaunchDuration` | `60`                                 | The longest launch, in seconds, that's recorded. Longer launches are [dropped](#dropped-starts). It's measured from process start, or from when app code first ran for a prewarmed launch. The default matches Datadog.                                                                        |
-| `coldPageInRatio`   | `0.5`                                | The share of sampled code a launch must page in from disk to be `cold` (`app.start.text_pages.page_in_ratio`), above 0 and at most 1. Apple describes cold and warm as a spectrum, so this is where the line is drawn. A value outside that range is reported as an error and replaced with the default. How high the ratio goes depends on the app, so check the ratios it reports before changing this.                  |
+| `coldPageInRatio`   | `0.5`                                | The share of sampled code a launch must page in from disk to be `cold` (`app.start.pages.text.page_in_ratio`), above 0 and at most 1. Apple describes cold and warm as a spectrum, so this is where the line is drawn. A value outside that range is reported as an error and replaced with the default. How high the ratio goes depends on the app, so check the ratios it reports before changing this.                  |
 
 Spans also get `session.id` and `session.previous_id` when the [Sessions](../Sessions/README.md) span processor is registered.
 
@@ -214,11 +214,11 @@ Apple's [Reducing your app's launch time](https://developer.apple.com/documentat
 
 Apple describes cold and warm launches as a spectrum, because how much the system still has cached depends on what else ran on the device. This library turns the spectrum into two types with its own threshold: a launch is `cold` when it paged in at least `coldPageInRatio` of the app's sampled code, which is [measured from the app's pages](#measuring-cold-and-warm). The threshold is configurable, because the ratios an app reports depend on the app.
 
-The line is drawn on the device, so `app.start.type` is this library's verdict, not a property of the launch. The measurements it came from are reported as well, so a backend that wants a different line can recalculate from `app.start.text_pages.page_in_ratio` and ignore `app.start.type`. Two things limit that: `coldPageInRatio` itself isn't reported, so a span doesn't say which line produced its label, and the ratio is only present when `app.start.determined_by` is `page_sampling`, because a launch that fell back to [launch history](#launch-history-fallback) has no ratio at all.
+The line is drawn on the device, so `app.start.type` is this library's verdict, not a property of the launch. The measurements it came from are reported as well, so a backend that wants a different line can recalculate from `app.start.pages.text.page_in_ratio` and ignore `app.start.type`. Two things limit that: `coldPageInRatio` itself isn't reported, so a span doesn't say which line produced its label, and the ratio is only present when `app.start.determined_by` is `page_sampling`, because a launch that fell back to [launch history](#launch-history-fallback) has no ratio at all.
 
 ### Launch history fallback
 
-When a launch can't be sampled, there is no page-in ratio, so it is classified from what changed since the previous launch, and `app.start.determined_by` is `launch_history`. These are the causes after which the system is unlikely to have the app's code in memory, so the launch would have to page it in. It is `cold` when any of them is true, and `warm` otherwise:
+When a launch can't be sampled, or when fewer than 16 of its sampled pages are resident at the end — too few for a ratio to mean anything, unless that's all the app has — no page-in ratio is reported, so the launch is classified from what changed since the previous launch, and `app.start.determined_by` is `launch_history`. A prewarmed launch is the exception: it reports `prewarm_flag` rather than falling back here, because the environment variable already names its type. These are the causes after which the system is unlikely to have the app's code in memory, so the launch would have to page it in. It is `cold` when any of them is true, and `warm` otherwise:
 
 - No previous launch is recorded, for example on the app's first launch after it's installed.
 - The device booted after the previous launch, detected from a change in the kernel's boot session ID (`sysctl` `kern.bootsessionuuid`). If either launch's boot session ID couldn't be read, a change in the kernel boot time (`sysctl` `KERN_BOOTTIME`) of more than 1 second is used instead; setting the system clock also moves the boot time, so in that case it's treated like a reboot.

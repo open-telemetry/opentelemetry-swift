@@ -38,7 +38,9 @@ static int sampledPageCount = 0;
 // Every samplable page of the app's code, not only the ones the sample covers, so a reader can
 // tell what share of the app's code the sample stands for.
 static int samplablePageCount = 0;
-static int pageInsAtInitializer = -1;
+// The page-in counter when the baseline below was taken, so a launch can be split at the same
+// boundary the sample is measured from. `-1` until the initializer runs.
+static int pageInsAtTextSample = -1;
 
 static int readPageIns(void) {
   task_events_info_data_t info;
@@ -63,6 +65,10 @@ static bool isResident(uintptr_t page, bool *resident) {
 // makes residency say something about the launch. A writable segment is copy-on-write, so its
 // pages are resident whether or not the launch read them. See
 // https://developer.apple.com/library/archive/documentation/Performance/Conceptual/CodeFootprint/Articles/MachOOverview.html
+// `__LINKEDIT` is read-only and file-backed too, so it could be sampled the same way, and the
+// schema leaves `app.start.pages.linkedit.*` open for it on request. It would need its own
+// sample and its own threshold rather than joining this one, because the cold and warm ratios
+// measured on device are a property of `__TEXT`.
 static bool textSegment(uint32_t image, uintptr_t *start, uint64_t *size) {
   const struct mach_header_64 *header = (const struct mach_header_64 *)_dyld_get_image_header(image);
   if (header == NULL || header->magic != MH_MAGIC_64) {
@@ -125,7 +131,7 @@ static uint64_t samplablePages(uint64_t size, uint64_t pageSize) {
 }
 
 __attribute__((constructor)) static void otel_app_launch_sample_pages_at_start(void) {
-  pageInsAtInitializer = readPageIns();
+  pageInsAtTextSample = readPageIns();
   const char *root = NULL;
   size_t rootLength = 0;
   if (!appImageRoot(&root, &rootLength)) {
@@ -228,13 +234,13 @@ bool otel_app_launch_read_background_page_sample(int *sampled, int *residentAtEn
   return readSampleAgainst(wasResidentAtBackground, sampled, residentAtEnd, pagedIn);
 }
 
-bool otel_app_launch_read_page_ins(int *preInitializer, int *postInitializer) {
+bool otel_app_launch_read_page_ins(int *beforeTextSample, int *afterTextSample) {
   int pageIns = readPageIns();
-  if (pageInsAtInitializer < 0 || pageIns < pageInsAtInitializer) {
+  if (pageInsAtTextSample < 0 || pageIns < pageInsAtTextSample) {
     return false;
   }
-  *preInitializer = pageInsAtInitializer;
-  *postInitializer = pageIns - pageInsAtInitializer;
+  *beforeTextSample = pageInsAtTextSample;
+  *afterTextSample = pageIns - pageInsAtTextSample;
   return true;
 }
 
@@ -267,7 +273,7 @@ bool otel_app_launch_read_background_page_sample(int *sampled, int *residentAtEn
   return false;
 }
 
-bool otel_app_launch_read_page_ins(int *preInitializer, int *postInitializer) {
+bool otel_app_launch_read_page_ins(int *beforeTextSample, int *afterTextSample) {
   return false;
 }
 
