@@ -70,7 +70,7 @@ An Xcode project enables traits on its package dependency instead. This was veri
 
 #### Migrating from 2.x
 
-Before 3.0.0 every integration was always available. If your build now fails, enable the trait for the module it can't find:
+Before 3.0.0 every integration was always available. If your build now fails, enable the trait for the module it can't find. Depending on the toolchain, the error reads "no such module" or "unable to resolve module dependency".
 
 | Error | Trait |
 | --- | --- |
