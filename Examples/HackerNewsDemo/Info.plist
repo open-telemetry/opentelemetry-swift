@@ -19,6 +19,19 @@
 			</array>
 		</dict>
 	</dict>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- The collector is reached over plain HTTP. This relaxes App Transport Security for
+		     private, link-local and .local addresses only, so a device can post to a collector
+		     on the same network. Internet HTTP stays blocked. -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<!-- iOS 14 and later prompt before the app connects to a local network address, which a
+	     collector on the Mac is. Without this string the prompt can't be shown and the
+	     connection fails. -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>HackerNewsDemo exports OpenTelemetry spans and logs to a collector on your local network.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>

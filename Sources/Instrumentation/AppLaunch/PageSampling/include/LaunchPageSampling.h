@@ -26,9 +26,11 @@ bool otel_app_launch_sample_pages_at_background(void);
 /// the background before, or if the pages can't be read.
 bool otel_app_launch_read_background_page_sample(int *sampled, int *residentAtEnd, int *pagedIn);
 
-/// The process's page-ins before this module's initializer ran, and since. Returns `false` if they
-/// can't be read, or on watchOS, where nothing is sampled.
-bool otel_app_launch_read_page_ins(int *preInitializer, int *postInitializer);
+/// The whole process's page-ins on either side of the moment this module's initializer took the
+/// `__TEXT` page sample's baseline, which is the boundary `otel_app_launch_read_page_sample`
+/// measures from. Counts page-ins only, not minor faults such as zero-fill or copy-on-write.
+/// Returns `false` if they can't be read, or on watchOS, where nothing is sampled.
+bool otel_app_launch_read_page_ins(int *beforeTextSample, int *afterTextSample);
 
 /// The process's page-ins so far, for measuring a window that this module didn't bound, such as a
 /// resume. Returns `false` if they can't be read, or on watchOS, where nothing is sampled.
