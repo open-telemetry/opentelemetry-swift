@@ -21,7 +21,7 @@ public class LoggerSdk: OpenTelemetryApi.Logger {
 
   @available(*, deprecated, message: "Use logRecordBuilder() and setEventName(_:) instead")
   public func eventBuilder(name: String) -> OpenTelemetryApi.EventBuilder {
-    var builder = LogRecordBuilderSdk(sharedState: sharedState, instrumentationScope: instrumentationScope, includeSpanContext: true)
+    var builder = LogRecordBuilderSdk(sharedState: sharedState, instrumentationScope: instrumentationScope, includeSpanContext: withTraceContext)
       .setEventName(name)
     
     // Backward compatibility: Add deprecated attributes
@@ -35,7 +35,7 @@ public class LoggerSdk: OpenTelemetryApi.Logger {
   }
 
   public func logRecordBuilder() -> OpenTelemetryApi.LogRecordBuilder {
-    return LogRecordBuilderSdk(sharedState: sharedState, instrumentationScope: instrumentationScope, includeSpanContext: true)
+    return LogRecordBuilderSdk(sharedState: sharedState, instrumentationScope: instrumentationScope, includeSpanContext: withTraceContext)
   }
 
   func withEventDomain(domain: String) -> LoggerSdk {
