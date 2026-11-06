@@ -5,29 +5,29 @@
 
 #if OTLPGRPC
 
-  import Foundation
-  import OpenTelemetryApi
-  import OpenTelemetrySdk
-  import OpenTelemetryProtocolExporterGrpc
-  import Logging
-  import GRPC
-  import NIO
+import Foundation
+import OpenTelemetryApi
+import OpenTelemetrySdk
+import OpenTelemetryProtocolExporterGrpc
+import Logging
+import GRPC
+import NIO
 
-  func configure() {
-    let configuration = ClientConnection.Configuration.default(target: .hostAndPort("localhost", 4317),
-                                                               eventLoopGroup: MultiThreadedEventLoopGroup(numberOfThreads: 1))
+func configure() {
+  let configuration = ClientConnection.Configuration.default(target: .hostAndPort("localhost", 4317),
+                                                             eventLoopGroup: MultiThreadedEventLoopGroup(numberOfThreads: 1))
 
-    OpenTelemetry.registerLoggerProvider(loggerProvider: LoggerProviderBuilder().with(processors: [
-      BatchLogRecordProcessor(logRecordExporter: OtlpLogExporter(channel: ClientConnection(configuration: configuration)))
-    ]).build())
-  }
+  OpenTelemetry.registerLoggerProvider(loggerProvider: LoggerProviderBuilder().with(processors: [
+    BatchLogRecordProcessor(logRecordExporter: OtlpLogExporter(channel: ClientConnection(configuration: configuration)))
+  ]).build())
+}
 
-  configure()
+configure()
 
-  let eventProvider = OpenTelemetry.instance.loggerProvider.loggerBuilder(instrumentationScopeName: "myScope").setEventDomain("device").build()
+let eventProvider = OpenTelemetry.instance.loggerProvider.loggerBuilder(instrumentationScopeName: "myScope").setEventDomain("device").build()
 
 #else
 
-  print("This example requires the OTLPGRPC package trait.")
+print("This example requires the OTLPGRPC package trait.")
 
 #endif

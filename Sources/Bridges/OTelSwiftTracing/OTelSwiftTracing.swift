@@ -1,358 +1,358 @@
 #if SwiftObservabilityAPIBridges
 
-  import Foundation
-  import OpenTelemetryApi
-  import ServiceContextModule
-  import Tracing
+import Foundation
+import OpenTelemetryApi
+import ServiceContextModule
+import Tracing
 
-  private enum OTelSpanContextKey: ServiceContextKey {
-      typealias Value = OpenTelemetryApi.SpanContext
-  }
+private enum OTelSpanContextKey: ServiceContextKey {
+    typealias Value = OpenTelemetryApi.SpanContext
+}
 
-  private final class OTelSpanRegistry: Sendable {
-      private let spans = Locked<[OpenTelemetryApi.SpanContext: OTelSpan]>(initialValue: [:])
+private final class OTelSpanRegistry: Sendable {
+    private let spans = Locked<[OpenTelemetryApi.SpanContext: OTelSpan]>(initialValue: [:])
 
-      func insert(_ span: OTelSpan) {
-          guard span.isRecording, let context = span.context.otelSpanContext else { return }
-          spans.locking { $0[context] = span }
-      }
+    func insert(_ span: OTelSpan) {
+        guard span.isRecording, let context = span.context.otelSpanContext else { return }
+        spans.locking { $0[context] = span }
+    }
 
-      func activeSpan(identifiedBy context: OpenTelemetryApi.SpanContext) -> OTelSpan? {
-          guard let span = spans.locking({ $0[context] }) else { return nil }
-          guard span.isRecording else {
-              remove(span)
-              return nil
-          }
-          return span
-      }
+    func activeSpan(identifiedBy context: OpenTelemetryApi.SpanContext) -> OTelSpan? {
+        guard let span = spans.locking({ $0[context] }) else { return nil }
+        guard span.isRecording else {
+            remove(span)
+            return nil
+        }
+        return span
+    }
 
-      func remove(_ span: OTelSpan) {
-          guard let context = span.context.otelSpanContext else { return }
-          spans.locking {
-              if $0[context] === span {
-                  $0[context] = nil
-              }
-          }
-      }
-  }
+    func remove(_ span: OTelSpan) {
+        guard let context = span.context.otelSpanContext else { return }
+        spans.locking {
+            if $0[context] === span {
+                $0[context] = nil
+            }
+        }
+    }
+}
 
-  extension ServiceContext {
-      var otelSpanContext: OpenTelemetryApi.SpanContext? {
-          get { self[OTelSpanContextKey.self] }
-          set { self[OTelSpanContextKey.self] = newValue }
-      }
-  }
+extension ServiceContext {
+    var otelSpanContext: OpenTelemetryApi.SpanContext? {
+        get { self[OTelSpanContextKey.self] }
+        set { self[OTelSpanContextKey.self] = newValue }
+    }
+}
 
-  /// A `swift-distributed-tracing` tracer which emits spans using OpenTelemetry Swift.
-  public struct OTelTracer: Tracing.Tracer, @unchecked Sendable {
-      public typealias Span = OTelSpan
+/// A `swift-distributed-tracing` tracer which emits spans using OpenTelemetry Swift.
+public struct OTelTracer: Tracing.Tracer, @unchecked Sendable {
+    public typealias Span = OTelSpan
 
-      private let tracerProvider: TracerProvider
-      private let propagator: TextMapPropagator
-      private let instrumentationName: String
-      private let instrumentationVersion: String
-      private let tracer: OpenTelemetryApi.Tracer
-      private let spans = OTelSpanRegistry()
+    private let tracerProvider: TracerProvider
+    private let propagator: TextMapPropagator
+    private let instrumentationName: String
+    private let instrumentationVersion: String
+    private let tracer: OpenTelemetryApi.Tracer
+    private let spans = OTelSpanRegistry()
 
-      public init(
-          tracerProvider: TracerProvider = OpenTelemetry.instance.tracerProvider,
-          propagator: TextMapPropagator = OpenTelemetry.instance.propagators.textMapPropagator,
-          instrumentationName: String = "OTelSwiftTracing",
-          instrumentationVersion: String = "1.0.0"
-      ) {
-          self.tracerProvider = tracerProvider
-          self.propagator = propagator
-          self.instrumentationName = instrumentationName
-          self.instrumentationVersion = instrumentationVersion
-          tracer = tracerProvider.get(
-              instrumentationName: instrumentationName,
-              instrumentationVersion: instrumentationVersion
-          )
-      }
+    public init(
+        tracerProvider: TracerProvider = OpenTelemetry.instance.tracerProvider,
+        propagator: TextMapPropagator = OpenTelemetry.instance.propagators.textMapPropagator,
+        instrumentationName: String = "OTelSwiftTracing",
+        instrumentationVersion: String = "1.0.0"
+    ) {
+        self.tracerProvider = tracerProvider
+        self.propagator = propagator
+        self.instrumentationName = instrumentationName
+        self.instrumentationVersion = instrumentationVersion
+        tracer = tracerProvider.get(
+            instrumentationName: instrumentationName,
+            instrumentationVersion: instrumentationVersion
+        )
+    }
 
-      public func startSpan<Instant: TracerInstant>(
-          _ operationName: String,
-          context: @autoclosure () -> ServiceContext,
-          ofKind kind: Tracing.SpanKind,
-          at instant: @autoclosure () -> Instant,
-          function: String,
-          file fileID: String,
-          line: UInt
-      ) -> OTelSpan {
-          let parentContext = context()
-          let spanBuilder = tracer.spanBuilder(spanName: operationName)
-              .setActive(true)
-              .setSpanKind(spanKind: Self.mapSpanKind(kind))
-              .setStartTime(time: Self.date(from: instant()))
+    public func startSpan<Instant: TracerInstant>(
+        _ operationName: String,
+        context: @autoclosure () -> ServiceContext,
+        ofKind kind: Tracing.SpanKind,
+        at instant: @autoclosure () -> Instant,
+        function: String,
+        file fileID: String,
+        line: UInt
+    ) -> OTelSpan {
+        let parentContext = context()
+        let spanBuilder = tracer.spanBuilder(spanName: operationName)
+            .setActive(true)
+            .setSpanKind(spanKind: Self.mapSpanKind(kind))
+            .setStartTime(time: Self.date(from: instant()))
 
-          if let parentSpanContext = parentContext.otelSpanContext, parentSpanContext.isValid {
-              _ = spanBuilder.setParent(parentSpanContext)
-          } else {
-              _ = spanBuilder.setNoParent()
-          }
+        if let parentSpanContext = parentContext.otelSpanContext, parentSpanContext.isValid {
+            _ = spanBuilder.setParent(parentSpanContext)
+        } else {
+            _ = spanBuilder.setNoParent()
+        }
 
-          let otelSpan = spanBuilder.startSpan()
+        let otelSpan = spanBuilder.startSpan()
 
-          var spanContext = parentContext
-          spanContext.otelSpanContext = otelSpan.context
-          let span = OTelSpan(otelSpan: otelSpan, context: spanContext) { [weak spans] span in
-              spans?.remove(span)
-          }
-          spans.insert(span)
-          return span
-      }
+        var spanContext = parentContext
+        spanContext.otelSpanContext = otelSpan.context
+        let span = OTelSpan(otelSpan: otelSpan, context: spanContext) { [weak spans] span in
+            spans?.remove(span)
+        }
+        spans.insert(span)
+        return span
+    }
 
-      /// Returns this tracer's recording span for the given context, if available.
-      ///
-      /// The registry is shared by tracer copies and strongly retains recording spans
-      /// until `end()` removes them. Prefer `withSpan`, which ends spans automatically,
-      /// or always end spans created with `startSpan`. Dropping a span without ending
-      /// it keeps it retained while the tracer or any copy is alive. Repeatedly
-      /// abandoning spans can cause unbounded memory growth.
-      public func activeSpan(identifiedBy context: ServiceContext) -> OTelSpan? {
-          guard let spanContext = context.otelSpanContext else { return nil }
-          return spans.activeSpan(identifiedBy: spanContext)
-      }
+    /// Returns this tracer's recording span for the given context, if available.
+    ///
+    /// The registry is shared by tracer copies and strongly retains recording spans
+    /// until `end()` removes them. Prefer `withSpan`, which ends spans automatically,
+    /// or always end spans created with `startSpan`. Dropping a span without ending
+    /// it keeps it retained while the tracer or any copy is alive. Repeatedly
+    /// abandoning spans can cause unbounded memory growth.
+    public func activeSpan(identifiedBy context: ServiceContext) -> OTelSpan? {
+        guard let spanContext = context.otelSpanContext else { return nil }
+        return spans.activeSpan(identifiedBy: spanContext)
+    }
 
-      @available(*, deprecated, message: "prefer withSpan")
-      public func startAnySpan<Instant: TracerInstant>(
-          _ operationName: String,
-          context: @autoclosure () -> ServiceContext,
-          ofKind kind: Tracing.SpanKind,
-          at instant: @autoclosure () -> Instant,
-          function: String,
-          file fileID: String,
-          line: UInt
-      ) -> any Tracing.Span {
-          startSpan(
-              operationName,
-              context: context(),
-              ofKind: kind,
-              at: instant(),
-              function: function,
-              file: fileID,
-              line: line
-          )
-      }
+    @available(*, deprecated, message: "prefer withSpan")
+    public func startAnySpan<Instant: TracerInstant>(
+        _ operationName: String,
+        context: @autoclosure () -> ServiceContext,
+        ofKind kind: Tracing.SpanKind,
+        at instant: @autoclosure () -> Instant,
+        function: String,
+        file fileID: String,
+        line: UInt
+    ) -> any Tracing.Span {
+        startSpan(
+            operationName,
+            context: context(),
+            ofKind: kind,
+            at: instant(),
+            function: function,
+            file: fileID,
+            line: line
+        )
+    }
 
-      @available(*, deprecated)
-      public func forceFlush() {
-          // Not available at the OpenTelemetryApi level.
-      }
+    @available(*, deprecated)
+    public func forceFlush() {
+        // Not available at the OpenTelemetryApi level.
+    }
 
-      public func extract<Carrier, Extract>(
-          _ carrier: Carrier,
-          into context: inout ServiceContext,
-          using extractor: Extract
-      ) where Extract: Extractor, Extract.Carrier == Carrier {
-          var headers: [String: String] = [:]
-          headers.reserveCapacity(propagator.fields.count)
-          for key in propagator.fields {
-              if let value = extractor.extract(key: key, from: carrier) {
-                  headers[key] = value
-              }
-          }
+    public func extract<Carrier, Extract>(
+        _ carrier: Carrier,
+        into context: inout ServiceContext,
+        using extractor: Extract
+    ) where Extract: Extractor, Extract.Carrier == Carrier {
+        var headers: [String: String] = [:]
+        headers.reserveCapacity(propagator.fields.count)
+        for key in propagator.fields {
+            if let value = extractor.extract(key: key, from: carrier) {
+                headers[key] = value
+            }
+        }
 
-          if let extracted = propagator.extract(carrier: headers, getter: DictionaryGetter()) {
-              context.otelSpanContext = extracted
-          }
-      }
+        if let extracted = propagator.extract(carrier: headers, getter: DictionaryGetter()) {
+            context.otelSpanContext = extracted
+        }
+    }
 
-      public func inject<Carrier, Inject>(
-          _ context: ServiceContext,
-          into carrier: inout Carrier,
-          using injector: Inject
-      ) where Inject: Injector, Inject.Carrier == Carrier {
-          guard let spanContext = context.otelSpanContext, spanContext.isValid else {
-              return
-          }
+    public func inject<Carrier, Inject>(
+        _ context: ServiceContext,
+        into carrier: inout Carrier,
+        using injector: Inject
+    ) where Inject: Injector, Inject.Carrier == Carrier {
+        guard let spanContext = context.otelSpanContext, spanContext.isValid else {
+            return
+        }
 
-          var headers: [String: String] = [:]
-          propagator.inject(spanContext: spanContext, carrier: &headers, setter: DictionarySetter())
-          for (key, value) in headers {
-              injector.inject(value, forKey: key, into: &carrier)
-          }
-      }
+        var headers: [String: String] = [:]
+        propagator.inject(spanContext: spanContext, carrier: &headers, setter: DictionarySetter())
+        for (key, value) in headers {
+            injector.inject(value, forKey: key, into: &carrier)
+        }
+    }
 
-      static func mapSpanKind(_ kind: Tracing.SpanKind) -> OpenTelemetryApi.SpanKind {
-          switch kind {
-          case .server:
-              return .server
-          case .client:
-              return .client
-          case .producer:
-              return .producer
-          case .consumer:
-              return .consumer
-          case .internal:
-              return .internal
-          }
-      }
+    static func mapSpanKind(_ kind: Tracing.SpanKind) -> OpenTelemetryApi.SpanKind {
+        switch kind {
+        case .server:
+            return .server
+        case .client:
+            return .client
+        case .producer:
+            return .producer
+        case .consumer:
+            return .consumer
+        case .internal:
+            return .internal
+        }
+    }
 
-      static func date(from instant: some TracerInstant) -> Date {
-          let seconds = Double(instant.nanosecondsSinceEpoch) / 1_000_000_000
-          return Date(timeIntervalSince1970: seconds)
-      }
+    static func date(from instant: some TracerInstant) -> Date {
+        let seconds = Double(instant.nanosecondsSinceEpoch) / 1_000_000_000
+        return Date(timeIntervalSince1970: seconds)
+    }
 
-      private struct DictionarySetter: Setter {
-          func set(carrier: inout [String: String], key: String, value: String) {
-              carrier[key] = value
-          }
-      }
+    private struct DictionarySetter: Setter {
+        func set(carrier: inout [String: String], key: String, value: String) {
+            carrier[key] = value
+        }
+    }
 
-      private struct DictionaryGetter: Getter {
-          func get(carrier: [String: String], key: String) -> [String]? {
-              guard let value = carrier[key] else { return nil }
-              return [value]
-          }
-      }
-  }
+    private struct DictionaryGetter: Getter {
+        func get(carrier: [String: String], key: String) -> [String]? {
+            guard let value = carrier[key] else { return nil }
+            return [value]
+        }
+    }
+}
 
 
-  public final class OTelSpan: Tracing.Span, @unchecked Sendable {
-      public let context: ServiceContext
+public final class OTelSpan: Tracing.Span, @unchecked Sendable {
+    public let context: ServiceContext
 
-      private let otelSpan: OpenTelemetryApi.Span
-      private let onEnd: (@Sendable (OTelSpan) -> Void)?
-      private let lock = NSLock()
-      private var storedAttributes: Tracing.SpanAttributes = [:]
+    private let otelSpan: OpenTelemetryApi.Span
+    private let onEnd: (@Sendable (OTelSpan) -> Void)?
+    private let lock = NSLock()
+    private var storedAttributes: Tracing.SpanAttributes = [:]
 
-      internal init(
-          otelSpan: OpenTelemetryApi.Span,
-          context: ServiceContext,
-          onEnd: (@Sendable (OTelSpan) -> Void)? = nil
-      ) {
-          self.otelSpan = otelSpan
-          self.context = context
-          self.onEnd = onEnd
-      }
+    internal init(
+        otelSpan: OpenTelemetryApi.Span,
+        context: ServiceContext,
+        onEnd: (@Sendable (OTelSpan) -> Void)? = nil
+    ) {
+        self.otelSpan = otelSpan
+        self.context = context
+        self.onEnd = onEnd
+    }
 
-      public var operationName: String {
-          get { otelSpan.name }
-          set { otelSpan.name = newValue }
-      }
+    public var operationName: String {
+        get { otelSpan.name }
+        set { otelSpan.name = newValue }
+    }
 
-      public var attributes: Tracing.SpanAttributes {
-          get {
-              lock.withLock {
-                  storedAttributes
-              }
-          }
-          set {
-              lock.withLock {
-                  storedAttributes = newValue
-                  otelSpan.setAttributes(Self.convertAttributes(newValue))
-              }
-          }
-      }
+    public var attributes: Tracing.SpanAttributes {
+        get {
+            lock.withLock {
+                storedAttributes
+            }
+        }
+        set {
+            lock.withLock {
+                storedAttributes = newValue
+                otelSpan.setAttributes(Self.convertAttributes(newValue))
+            }
+        }
+    }
 
-      public var isRecording: Bool {
-          otelSpan.isRecording
-      }
+    public var isRecording: Bool {
+        otelSpan.isRecording
+    }
 
-      public func setStatus(_ status: Tracing.SpanStatus) {
-          switch status.code {
-          case .ok:
-              otelSpan.status = .ok
-          case .error:
-              otelSpan.status = .error(description: status.message ?? "")
-          }
-      }
+    public func setStatus(_ status: Tracing.SpanStatus) {
+        switch status.code {
+        case .ok:
+            otelSpan.status = .ok
+        case .error:
+            otelSpan.status = .error(description: status.message ?? "")
+        }
+    }
 
-      public func addEvent(_ event: Tracing.SpanEvent) {
-          otelSpan.addEvent(
-              name: event.name,
-              attributes: Self.convertAttributes(event.attributes),
-              timestamp: Self.date(fromNanosecondsSinceEpoch: event.nanosecondsSinceEpoch)
-          )
-      }
+    public func addEvent(_ event: Tracing.SpanEvent) {
+        otelSpan.addEvent(
+            name: event.name,
+            attributes: Self.convertAttributes(event.attributes),
+            timestamp: Self.date(fromNanosecondsSinceEpoch: event.nanosecondsSinceEpoch)
+        )
+    }
 
-      public func recordError<Instant: TracerInstant>(
-          _ error: Error,
-          attributes: Tracing.SpanAttributes,
-          at instant: @autoclosure () -> Instant
-      ) {
-          otelSpan.recordException(
-              error,
-              attributes: Self.convertAttributes(attributes),
-              timestamp: Self.date(from: instant())
-          )
-      }
+    public func recordError<Instant: TracerInstant>(
+        _ error: Error,
+        attributes: Tracing.SpanAttributes,
+        at instant: @autoclosure () -> Instant
+    ) {
+        otelSpan.recordException(
+            error,
+            attributes: Self.convertAttributes(attributes),
+            timestamp: Self.date(from: instant())
+        )
+    }
 
-      public func addLink(_ link: Tracing.SpanLink) {
-          guard let spanContext = link.context.otelSpanContext, spanContext.isValid else {
-              return
-          }
-          otelSpan.addLink(
-              spanContext: spanContext,
-              attributes: Self.convertAttributes(link.attributes)
-          )
-      }
+    public func addLink(_ link: Tracing.SpanLink) {
+        guard let spanContext = link.context.otelSpanContext, spanContext.isValid else {
+            return
+        }
+        otelSpan.addLink(
+            spanContext: spanContext,
+            attributes: Self.convertAttributes(link.attributes)
+        )
+    }
 
-      public func end<Instant: TracerInstant>(at instant: @autoclosure () -> Instant) {
-          otelSpan.end(time: Self.date(from: instant()))
-          onEnd?(self)
-      }
+    public func end<Instant: TracerInstant>(at instant: @autoclosure () -> Instant) {
+        otelSpan.end(time: Self.date(from: instant()))
+        onEnd?(self)
+    }
 
-      static func convertAttributes(_ attributes: Tracing.SpanAttributes) -> [String:
-          AttributeValue]
-      {
-          var converted: [String: AttributeValue] = [:]
-          converted.reserveCapacity(attributes.count)
-          attributes.forEach { key, value in
-              if let convertedValue = Self.convertAttributeValue(value) {
-                  converted[key] = convertedValue
-              }
-          }
-          return converted
-      }
+    static func convertAttributes(_ attributes: Tracing.SpanAttributes) -> [String:
+        AttributeValue]
+    {
+        var converted: [String: AttributeValue] = [:]
+        converted.reserveCapacity(attributes.count)
+        attributes.forEach { key, value in
+            if let convertedValue = Self.convertAttributeValue(value) {
+                converted[key] = convertedValue
+            }
+        }
+        return converted
+    }
 
-      static func convertAttributeValue(_ value: Tracing.SpanAttribute) -> AttributeValue? {
-          switch value {
-          case .int32(let v):
-              return Int(exactly: v).map(AttributeValue.init) ?? .string(String(describing: v))
-          case .int64(let v):
-              return Int(exactly: v).map(AttributeValue.init) ?? .string(String(describing: v))
-          case .int32Array(let v):
-              return .array(
-                  AttributeArray(values: v.compactMap { Int(exactly: $0) }.map(AttributeValue.init))
-              )
-          case .int64Array(let v):
-              return .array(
-                  AttributeArray(values: v.compactMap { Int(exactly: $0) }.map(AttributeValue.init))
-              )
-          case .double(let v):
-              return .double(v)
-          case .doubleArray(let v):
-              return .array(AttributeArray(values: v.map(AttributeValue.init)))
-          case .bool(let v):
-              return .bool(v)
-          case .boolArray(let v):
-              return .array(AttributeArray(values: v.map(AttributeValue.init)))
-          case .string(let v):
-              return .string(v)
-          case .stringArray(let v):
-              return .array(AttributeArray(values: v.map(AttributeValue.init)))
-          case .stringConvertible(let v):
-              return .string(String(describing: v))
-          case .stringConvertibleArray(let v):
-              return .array(
-                  AttributeArray(values: v.map { AttributeValue.string(String(describing: $0)) })
-              )
-          default:
-              return nil
-          }
-      }
+    static func convertAttributeValue(_ value: Tracing.SpanAttribute) -> AttributeValue? {
+        switch value {
+        case .int32(let v):
+            return Int(exactly: v).map(AttributeValue.init) ?? .string(String(describing: v))
+        case .int64(let v):
+            return Int(exactly: v).map(AttributeValue.init) ?? .string(String(describing: v))
+        case .int32Array(let v):
+            return .array(
+                AttributeArray(values: v.compactMap { Int(exactly: $0) }.map(AttributeValue.init))
+            )
+        case .int64Array(let v):
+            return .array(
+                AttributeArray(values: v.compactMap { Int(exactly: $0) }.map(AttributeValue.init))
+            )
+        case .double(let v):
+            return .double(v)
+        case .doubleArray(let v):
+            return .array(AttributeArray(values: v.map(AttributeValue.init)))
+        case .bool(let v):
+            return .bool(v)
+        case .boolArray(let v):
+            return .array(AttributeArray(values: v.map(AttributeValue.init)))
+        case .string(let v):
+            return .string(v)
+        case .stringArray(let v):
+            return .array(AttributeArray(values: v.map(AttributeValue.init)))
+        case .stringConvertible(let v):
+            return .string(String(describing: v))
+        case .stringConvertibleArray(let v):
+            return .array(
+                AttributeArray(values: v.map { AttributeValue.string(String(describing: $0)) })
+            )
+        default:
+            return nil
+        }
+    }
 
-      static func date(from instant: some TracerInstant) -> Date {
-          let seconds = Double(instant.nanosecondsSinceEpoch) / 1_000_000_000
-          return Date(timeIntervalSince1970: seconds)
-      }
+    static func date(from instant: some TracerInstant) -> Date {
+        let seconds = Double(instant.nanosecondsSinceEpoch) / 1_000_000_000
+        return Date(timeIntervalSince1970: seconds)
+    }
 
-      static func date(fromNanosecondsSinceEpoch nanos: UInt64) -> Date {
-          let seconds = Double(nanos) / 1_000_000_000
-          return Date(timeIntervalSince1970: seconds)
-      }
-  }
+    static func date(fromNanosecondsSinceEpoch nanos: UInt64) -> Date {
+        let seconds = Double(nanos) / 1_000_000_000
+        return Date(timeIntervalSince1970: seconds)
+    }
+}
 
 #endif

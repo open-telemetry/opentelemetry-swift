@@ -1,151 +1,151 @@
 #if SwiftObservabilityAPIBridges
 
-  import Foundation
-  import OpenTelemetryApi
-  import Logging
+import Foundation
+import OpenTelemetryApi
+import Logging
 
-  // let the bridgename be the url of the package?
-  let bridgeName: String = "OTelSwiftLog"
-  let version: String = "1.0.0"
+// let the bridgename be the url of the package?
+let bridgeName: String = "OTelSwiftLog"
+let version: String = "1.0.0"
 
-  /// A  custom log handler to translate swift logs into otel logs
-  public struct OTelLogHandler: LogHandler, @unchecked Sendable {
-    /// Get or set the configured log level.
-    ///
-    /// - note: `LogHandler`s must treat the log level as a value type. This means that the change in metadata must
-    ///         only affect this very `LogHandler`. It is acceptable to provide some form of global log level override
-    ///         that means a change in log level on a particular `LogHandler` might not be reflected in any
-    ///        `LogHandler`.
-    public var logLevel: Logging.Logger.Level = .info
+/// A  custom log handler to translate swift logs into otel logs
+public struct OTelLogHandler: LogHandler, @unchecked Sendable {
+  /// Get or set the configured log level.
+  ///
+  /// - note: `LogHandler`s must treat the log level as a value type. This means that the change in metadata must
+  ///         only affect this very `LogHandler`. It is acceptable to provide some form of global log level override
+  ///         that means a change in log level on a particular `LogHandler` might not be reflected in any
+  ///        `LogHandler`.
+  public var logLevel: Logging.Logger.Level = .info
 
-    /// loggerProvider to use for the bridge.
-    private var loggerProvider: LoggerProvider
-    private var logger: OpenTelemetryApi.Logger
+  /// loggerProvider to use for the bridge.
+  private var loggerProvider: LoggerProvider
+  private var logger: OpenTelemetryApi.Logger
 
-    // Define metadata for this handler
-    public var metadata: Logging.Logger.Metadata = [:]
+  // Define metadata for this handler
+  public var metadata: Logging.Logger.Metadata = [:]
 
-    public var metadataProvider: Logging.Logger.MetadataProvider?
-    public subscript(metadataKey key: String) -> Logging.Logger.Metadata.Value? {
-      get {
-        return metadata[key]
-      }
-      set {
-        metadata[key] = newValue
-      }
+  public var metadataProvider: Logging.Logger.MetadataProvider?
+  public subscript(metadataKey key: String) -> Logging.Logger.Metadata.Value? {
+    get {
+      return metadata[key]
     }
-
-    /// create a new OtelLogHandler
-    ///  - Parameter loggerProvider: The logger provider to use in the bridge. Defaults to the global logger provider.
-    ///  - Parameter includeTraceContext : boolean flag used for the logger builder
-    ///  - Parameter attributes: attributes to apply to the logger builder
-    public init(loggerProvider: LoggerProvider = OpenTelemetry.instance.loggerProvider,
-                includeTraceContext: Bool = true,
-                attributes: [String: AttributeValue] = [String: AttributeValue]()) {
-      self.loggerProvider = loggerProvider
-      logger = self.loggerProvider.loggerBuilder(instrumentationScopeName: bridgeName)
-        .setInstrumentationVersion(version)
-        .setIncludeTraceContext(true)
-        .setAttributes(attributes)
-        .setIncludeTraceContext(includeTraceContext)
-        .build()
-    }
-
-    /// Implement `LogHandler.log(event:)` directly (the older
-    /// `log(level:message:metadata:source:file:function:line:)` is now just a
-    /// deprecated default shim on top of this).
-    public func log(event: Logging.LogEvent) {
-      // This converts log attributes to otel attributes
-      var otelattributes: [String: AttributeValue] = [
-        "source": AttributeValue.string(event.source),
-        "file": AttributeValue.string(event.file),
-        "function": AttributeValue.string(event.function),
-        "line": AttributeValue.int(Int(event.line))
-      ]
-
-      // Convert metadata from the struct property to AttributeValue and merge it with otelattributes
-      otelattributes.merge(convertMetadata(self.metadata)) { _, new in new }
-
-      if let providedMetadata = metadataProvider?.get() {
-        otelattributes.merge(convertMetadata(providedMetadata)) { _, new in new }
-      }
-
-      // Convert metadata from the event to AttributeValue and merge into otelattributes.
-      if let metadata = event.metadata {
-        otelattributes.merge(convertMetadata(metadata)) { _, new in new }
-      }
-
-      // Convert error from the event to AttributeValue and merge into otelattributes
-      if let error = event.error {
-        otelattributes[SemanticConventions.Exception.message.rawValue] = .string("\(error)")
-        otelattributes[SemanticConventions.Exception.type.rawValue] = .string(String(reflecting: type(of: error)))
-      }
-
-      // Build the log record and emit it
-      let record = logger.logRecordBuilder().setSeverity(convertSeverity(level: event.level))
-        .setBody(AttributeValue.string(event.message.description))
-        .setAttributes(otelattributes)
-
-      if let context = OpenTelemetry.instance.contextProvider.activeSpan?.context {
-        _ = record.setSpanContext(context)
-      }
-      record.emit()
+    set {
+      metadata[key] = newValue
     }
   }
 
-  func convertMetadata(_ metadata: Logging.Logger.Metadata) -> [String: AttributeValue] {
-    var convertedAttributes: [String: AttributeValue] = [:]
-
-    // Iterate over each key-value pair in the metadata dictionary
-    for (key, value) in metadata {
-      // Convert each value to AttributeValue
-      let attributeValue = convertToAttributeValue(value)
-
-      // Store the converted value with its corresponding key in the attributes dictionary
-      convertedAttributes[key] = attributeValue
-    }
-
-    return convertedAttributes
+  /// create a new OtelLogHandler
+  ///  - Parameter loggerProvider: The logger provider to use in the bridge. Defaults to the global logger provider.
+  ///  - Parameter includeTraceContext : boolean flag used for the logger builder
+  ///  - Parameter attributes: attributes to apply to the logger builder
+  public init(loggerProvider: LoggerProvider = OpenTelemetry.instance.loggerProvider,
+              includeTraceContext: Bool = true,
+              attributes: [String: AttributeValue] = [String: AttributeValue]()) {
+    self.loggerProvider = loggerProvider
+    logger = self.loggerProvider.loggerBuilder(instrumentationScopeName: bridgeName)
+      .setInstrumentationVersion(version)
+      .setIncludeTraceContext(true)
+      .setAttributes(attributes)
+      .setIncludeTraceContext(includeTraceContext)
+      .build()
   }
 
-  // Function to recursively convert nested dictionaries to AttributeValue
-  func convertToAttributeValue(_ value: Logging.Logger.Metadata.Value) -> AttributeValue {
-    switch value {
-    case let .dictionary(nestedDictionary):
-      // If value is a nested dictionary, recursively convert it
-      var nestedAttributes: [String: AttributeValue] = [:]
-      for (nestedKey, nestedValue) in nestedDictionary {
-        nestedAttributes[nestedKey] = convertToAttributeValue(nestedValue)
-      }
-      return AttributeValue.set(AttributeSet(labels: nestedAttributes))
-    case let .array(nestedArray):
-      // If value is a nested array, recursively convert it
-      let nestedValues = nestedArray.map { convertToAttributeValue($0) }
-      return AttributeValue.array(AttributeArray(values: nestedValues))
-    case let .string(str):
-      return AttributeValue(str)
-    case let .stringConvertible(strConvertable):
-      return AttributeValue(strConvertable.description)
+  /// Implement `LogHandler.log(event:)` directly (the older
+  /// `log(level:message:metadata:source:file:function:line:)` is now just a
+  /// deprecated default shim on top of this).
+  public func log(event: Logging.LogEvent) {
+    // This converts log attributes to otel attributes
+    var otelattributes: [String: AttributeValue] = [
+      "source": AttributeValue.string(event.source),
+      "file": AttributeValue.string(event.file),
+      "function": AttributeValue.string(event.function),
+      "line": AttributeValue.int(Int(event.line))
+    ]
+
+    // Convert metadata from the struct property to AttributeValue and merge it with otelattributes
+    otelattributes.merge(convertMetadata(self.metadata)) { _, new in new }
+
+    if let providedMetadata = metadataProvider?.get() {
+      otelattributes.merge(convertMetadata(providedMetadata)) { _, new in new }
     }
+
+    // Convert metadata from the event to AttributeValue and merge into otelattributes.
+    if let metadata = event.metadata {
+      otelattributes.merge(convertMetadata(metadata)) { _, new in new }
+    }
+
+    // Convert error from the event to AttributeValue and merge into otelattributes
+    if let error = event.error {
+      otelattributes[SemanticConventions.Exception.message.rawValue] = .string("\(error)")
+      otelattributes[SemanticConventions.Exception.type.rawValue] = .string(String(reflecting: type(of: error)))
+    }
+
+    // Build the log record and emit it
+    let record = logger.logRecordBuilder().setSeverity(convertSeverity(level: event.level))
+      .setBody(AttributeValue.string(event.message.description))
+      .setAttributes(otelattributes)
+
+    if let context = OpenTelemetry.instance.contextProvider.activeSpan?.context {
+      _ = record.setSpanContext(context)
+    }
+    record.emit()
+  }
+}
+
+func convertMetadata(_ metadata: Logging.Logger.Metadata) -> [String: AttributeValue] {
+  var convertedAttributes: [String: AttributeValue] = [:]
+
+  // Iterate over each key-value pair in the metadata dictionary
+  for (key, value) in metadata {
+    // Convert each value to AttributeValue
+    let attributeValue = convertToAttributeValue(value)
+
+    // Store the converted value with its corresponding key in the attributes dictionary
+    convertedAttributes[key] = attributeValue
   }
 
-  func convertSeverity(level: Logging.Logger.Level) -> OpenTelemetryApi.Severity {
-    switch level {
-    case .trace:
-      return OpenTelemetryApi.Severity.trace
-    case .debug:
-      return OpenTelemetryApi.Severity.debug
-    case .info:
-      return OpenTelemetryApi.Severity.info
-    case .notice:
-      return OpenTelemetryApi.Severity.info2
-    case .warning:
-      return OpenTelemetryApi.Severity.warn
-    case .error:
-      return OpenTelemetryApi.Severity.error
-    case .critical:
-      return OpenTelemetryApi.Severity.error2 // should this be fatal instead?
+  return convertedAttributes
+}
+
+// Function to recursively convert nested dictionaries to AttributeValue
+func convertToAttributeValue(_ value: Logging.Logger.Metadata.Value) -> AttributeValue {
+  switch value {
+  case let .dictionary(nestedDictionary):
+    // If value is a nested dictionary, recursively convert it
+    var nestedAttributes: [String: AttributeValue] = [:]
+    for (nestedKey, nestedValue) in nestedDictionary {
+      nestedAttributes[nestedKey] = convertToAttributeValue(nestedValue)
     }
+    return AttributeValue.set(AttributeSet(labels: nestedAttributes))
+  case let .array(nestedArray):
+    // If value is a nested array, recursively convert it
+    let nestedValues = nestedArray.map { convertToAttributeValue($0) }
+    return AttributeValue.array(AttributeArray(values: nestedValues))
+  case let .string(str):
+    return AttributeValue(str)
+  case let .stringConvertible(strConvertable):
+    return AttributeValue(strConvertable.description)
   }
+}
+
+func convertSeverity(level: Logging.Logger.Level) -> OpenTelemetryApi.Severity {
+  switch level {
+  case .trace:
+    return OpenTelemetryApi.Severity.trace
+  case .debug:
+    return OpenTelemetryApi.Severity.debug
+  case .info:
+    return OpenTelemetryApi.Severity.info
+  case .notice:
+    return OpenTelemetryApi.Severity.info2
+  case .warning:
+    return OpenTelemetryApi.Severity.warn
+  case .error:
+    return OpenTelemetryApi.Severity.error
+  case .critical:
+    return OpenTelemetryApi.Severity.error2 // should this be fatal instead?
+  }
+}
 
 #endif

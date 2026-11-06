@@ -5,18 +5,18 @@
 
 #if OpenTracing
 
-  import Foundation
-  import Opentracing
+import Foundation
+import Opentracing
 
-  enum TestUtils {
-    static func contextBaggageToDictionary(context: OTSpanContext) -> [String: String] {
-      var dictionary = [String: String]()
-      context.forEachBaggageItem { key, value -> Bool in
-        dictionary[key] = value
-        return true
-      }
-      return dictionary
+enum TestUtils {
+  static func contextBaggageToDictionary(context: OTSpanContext) -> [String: String] {
+    var dictionary = [String: String]()
+    context.forEachBaggageItem { key, value -> Bool in
+      dictionary[key] = value
+      return true
     }
+    return dictionary
   }
+}
 
 #endif

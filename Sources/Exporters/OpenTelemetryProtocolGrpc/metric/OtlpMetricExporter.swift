@@ -5,75 +5,75 @@
 
 #if OTLPGRPC
 
-  import Foundation
-  import GRPC
-  import Logging
-  import NIO
-  import NIOHPACK
-  import OpenTelemetryProtocolExporterCommon
-  import OpenTelemetrySdk
+import Foundation
+import GRPC
+import Logging
+import NIO
+import NIOHPACK
+import OpenTelemetryProtocolExporterCommon
+import OpenTelemetrySdk
 
-  public final class OtlpMetricExporter: MetricExporter {
-    public func getAggregationTemporality(for instrument: OpenTelemetrySdk.InstrumentType) -> OpenTelemetrySdk.AggregationTemporality {
-      return aggregationTemporalitySelector.getAggregationTemporality(for: instrument)
-    }
+public final class OtlpMetricExporter: MetricExporter {
+  public func getAggregationTemporality(for instrument: OpenTelemetrySdk.InstrumentType) -> OpenTelemetrySdk.AggregationTemporality {
+    return aggregationTemporalitySelector.getAggregationTemporality(for: instrument)
+  }
 
-    let channel: GRPCChannel
-    let metricClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient
-    let config: OtlpConfiguration
-    let callOptions: CallOptions
-    let envVarHeaders: [(String, String)]?
-    let aggregationTemporalitySelector: AggregationTemporalitySelector
-    let defaultAggregationSelector: DefaultAggregationSelector
+  let channel: GRPCChannel
+  let metricClient: Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient
+  let config: OtlpConfiguration
+  let callOptions: CallOptions
+  let envVarHeaders: [(String, String)]?
+  let aggregationTemporalitySelector: AggregationTemporalitySelector
+  let defaultAggregationSelector: DefaultAggregationSelector
 
-    public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration(), aggregationTemporalitySelector: AggregationTemporalitySelector = AggregationTemporality.alwaysCumulative(),
-                defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector.instance,
-                logger: Logging.Logger = Logging.Logger(label: "io.grpc", factory: { _ in SwiftLogNoOpLogHandler() }), envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
-      self.defaultAggregationSelector = defaultAggregationSelector
-      self.aggregationTemporalitySelector = aggregationTemporalitySelector
-      self.channel = channel
-      self.config = config
-      self.envVarHeaders = envVarHeaders
-      metricClient = Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient(channel: self.channel)
-      if let headers = envVarHeaders {
-        callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
-      } else if config.headersProvider == nil, let headers = config.headers {
-        callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
-      } else {
-        callOptions = CallOptions(logger: logger)
-      }
-    }
-
-    public func export(metrics: [OpenTelemetrySdk.MetricData]) -> OpenTelemetrySdk.ExportResult {
-      let exportRequest = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
-        $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(metricData: metrics)
-      }
-      var callOptions = makeOtlpGrpcCallOptions(
-        from: callOptions,
-        config: config,
-        envVarHeaders: envVarHeaders
-      )
-      if config.timeout > 0 {
-        callOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(config.timeout.toNanoseconds)))
-      }
-      let export = metricClient.export(exportRequest, callOptions: callOptions)
-      do {
-        _ = try export.response.wait()
-        return .success
-      } catch {
-        return .failure
-      }
-    }
-
-    public func flush() -> OpenTelemetrySdk.ExportResult {
-      return .success
-    }
-
-    public func shutdown() -> OpenTelemetrySdk.ExportResult {
-      _ = channel.close()
-
-      return .success
+  public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration(), aggregationTemporalitySelector: AggregationTemporalitySelector = AggregationTemporality.alwaysCumulative(),
+              defaultAggregationSelector: DefaultAggregationSelector = AggregationSelector.instance,
+              logger: Logging.Logger = Logging.Logger(label: "io.grpc", factory: { _ in SwiftLogNoOpLogHandler() }), envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+    self.defaultAggregationSelector = defaultAggregationSelector
+    self.aggregationTemporalitySelector = aggregationTemporalitySelector
+    self.channel = channel
+    self.config = config
+    self.envVarHeaders = envVarHeaders
+    metricClient = Opentelemetry_Proto_Collector_Metrics_V1_MetricsServiceNIOClient(channel: self.channel)
+    if let headers = envVarHeaders {
+      callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
+    } else if config.headersProvider == nil, let headers = config.headers {
+      callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
+    } else {
+      callOptions = CallOptions(logger: logger)
     }
   }
+
+  public func export(metrics: [OpenTelemetrySdk.MetricData]) -> OpenTelemetrySdk.ExportResult {
+    let exportRequest = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
+      $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(metricData: metrics)
+    }
+    var callOptions = makeOtlpGrpcCallOptions(
+      from: callOptions,
+      config: config,
+      envVarHeaders: envVarHeaders
+    )
+    if config.timeout > 0 {
+      callOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(config.timeout.toNanoseconds)))
+    }
+    let export = metricClient.export(exportRequest, callOptions: callOptions)
+    do {
+      _ = try export.response.wait()
+      return .success
+    } catch {
+      return .failure
+    }
+  }
+
+  public func flush() -> OpenTelemetrySdk.ExportResult {
+    return .success
+  }
+
+  public func shutdown() -> OpenTelemetrySdk.ExportResult {
+    _ = channel.close()
+
+    return .success
+  }
+}
 
 #endif

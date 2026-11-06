@@ -5,23 +5,23 @@
 
 #if OpenTracing
 
-  import Foundation
-  import OpenTelemetryApi
+import Foundation
+import OpenTelemetryApi
 
-  struct TelemetryInfo {
-    var tracer: Tracer
-    var baggageManager: BaggageManager
-    var propagators: ContextPropagators
-    var emptyBaggage: Baggage?
-    var spanContextTable: SpanContextShimTable
+struct TelemetryInfo {
+  var tracer: Tracer
+  var baggageManager: BaggageManager
+  var propagators: ContextPropagators
+  var emptyBaggage: Baggage?
+  var spanContextTable: SpanContextShimTable
 
-    init(tracer: Tracer, baggageManager: BaggageManager, propagators: ContextPropagators) {
-      self.tracer = tracer
-      self.baggageManager = baggageManager
-      self.propagators = propagators
-      emptyBaggage = baggageManager.baggageBuilder().build()
-      spanContextTable = SpanContextShimTable()
-    }
+  init(tracer: Tracer, baggageManager: BaggageManager, propagators: ContextPropagators) {
+    self.tracer = tracer
+    self.baggageManager = baggageManager
+    self.propagators = propagators
+    emptyBaggage = baggageManager.baggageBuilder().build()
+    spanContextTable = SpanContextShimTable()
   }
+}
 
 #endif

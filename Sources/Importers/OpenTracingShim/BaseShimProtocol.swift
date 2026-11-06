@@ -5,29 +5,29 @@
 
 #if OpenTracing
 
-  import Foundation
-  import OpenTelemetryApi
+import Foundation
+import OpenTelemetryApi
 
-  protocol BaseShimProtocol {
-    var telemetryInfo: TelemetryInfo { get }
+protocol BaseShimProtocol {
+  var telemetryInfo: TelemetryInfo { get }
+}
+
+extension BaseShimProtocol {
+  var tracer: Tracer {
+    return telemetryInfo.tracer
   }
 
-  extension BaseShimProtocol {
-    var tracer: Tracer {
-      return telemetryInfo.tracer
-    }
-
-    var spanContextTable: SpanContextShimTable {
-      return telemetryInfo.spanContextTable
-    }
-
-    var baggageManager: BaggageManager {
-      return telemetryInfo.baggageManager
-    }
-
-    var propagators: ContextPropagators {
-      return telemetryInfo.propagators
-    }
+  var spanContextTable: SpanContextShimTable {
+    return telemetryInfo.spanContextTable
   }
+
+  var baggageManager: BaggageManager {
+    return telemetryInfo.baggageManager
+  }
+
+  var propagators: ContextPropagators {
+    return telemetryInfo.propagators
+  }
+}
 
 #endif

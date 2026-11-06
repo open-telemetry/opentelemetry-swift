@@ -5,168 +5,168 @@
 
 #if SwiftObservabilityAPIBridges
 
-  import InMemoryExporter
-  import OpenTelemetryApi
-  import OpenTelemetrySdk
-  @testable import OTelSwiftTracing
-  import SharedTestUtils
-  import Tracing
-  import XCTest
+import InMemoryExporter
+import OpenTelemetryApi
+import OpenTelemetrySdk
+@testable import OTelSwiftTracing
+import SharedTestUtils
+import Tracing
+import XCTest
 
-  /// Stress tests for the swift-distributed-tracing bridge. They only run under
-  /// Thread Sanitizer (or with `OTEL_CONCURRENCY_TESTS=1`).
-  final class OTelSwiftTracingConcurrencyTests: XCTestCase {
-    private var exporter: InMemoryExporter!
-    private var processor: SimpleSpanProcessor!
-    private var tracer: OTelTracer!
+/// Stress tests for the swift-distributed-tracing bridge. They only run under
+/// Thread Sanitizer (or with `OTEL_CONCURRENCY_TESTS=1`).
+final class OTelSwiftTracingConcurrencyTests: XCTestCase {
+  private var exporter: InMemoryExporter!
+  private var processor: SimpleSpanProcessor!
+  private var tracer: OTelTracer!
 
-    override func setUpWithError() throws {
-      try ConcurrencyTesting.skipUnlessEnabled()
-      exporter = InMemoryExporter()
-      processor = SimpleSpanProcessor(spanExporter: exporter)
-      let provider = TracerProviderSdk(spanProcessors: [processor])
-      tracer = OTelTracer(tracerProvider: provider, propagator: W3CTraceContextPropagator())
-    }
+  override func setUpWithError() throws {
+    try ConcurrencyTesting.skipUnlessEnabled()
+    exporter = InMemoryExporter()
+    processor = SimpleSpanProcessor(spanExporter: exporter)
+    let provider = TracerProviderSdk(spanProcessors: [processor])
+    tracer = OTelTracer(tracerProvider: provider, propagator: W3CTraceContextPropagator())
+  }
 
-    override func tearDown() {
-      exporter?.shutdown()
-      exporter = nil
-      processor = nil
-      tracer = nil
-    }
+  override func tearDown() {
+    exporter?.shutdown()
+    exporter = nil
+    processor = nil
+    tracer = nil
+  }
 
-    func testStartAndEndSpansFromManyThreads() {
-      let tracer = self.tracer!
-      let threads = ConcurrencyTesting.defaultThreads
-      let iterations = ConcurrencyTesting.defaultIterations
+  func testStartAndEndSpansFromManyThreads() {
+    let tracer = self.tracer!
+    let threads = ConcurrencyTesting.defaultThreads
+    let iterations = ConcurrencyTesting.defaultIterations
 
-      ConcurrencyTesting.stress(threads: threads, iterations: iterations) { thread, iteration in
-        tracer.withSpan("span-\(thread)") { span in
-          span.attributes["thread"] = thread
-          span.attributes["iteration"] = iteration
-          span.addEvent(SpanEvent(name: "event"))
-          span.setStatus(SpanStatus(code: .ok))
-          _ = span.isRecording
-        }
-      }
-
-      _ = processor.forceFlush()
-      XCTAssertEqual(exporter.getFinishedSpanItems().count, threads * iterations)
-    }
-
-    func testMutateSharedSpanFromManyThreads() {
-      let span = tracer.startSpan("shared")
-      let threads = ConcurrencyTesting.defaultThreads
-
-      ConcurrencyTesting.stress(threads: threads) { thread, iteration in
-        span.attributes["thread-\(thread)"] = iteration
-        span.operationName = "renamed-\(thread)"
-        span.setStatus(SpanStatus(code: iteration.isMultiple(of: 2) ? .ok : .error))
-        span.addEvent(SpanEvent(name: "event-\(thread)"))
-        span.recordError(StressError.boom, attributes: ["thread": .int64(Int64(thread))])
-        _ = span.attributes
-        _ = span.operationName
+    ConcurrencyTesting.stress(threads: threads, iterations: iterations) { thread, iteration in
+      tracer.withSpan("span-\(thread)") { span in
+        span.attributes["thread"] = thread
+        span.attributes["iteration"] = iteration
+        span.addEvent(SpanEvent(name: "event"))
+        span.setStatus(SpanStatus(code: .ok))
         _ = span.isRecording
       }
-
-      span.end()
-      _ = processor.forceFlush()
-      let finished = exporter.getFinishedSpanItems()
-      XCTAssertEqual(finished.count, 1)
-      XCTAssertEqual(finished.first?.attributes.count, threads)
     }
 
-    func testEndRacesAttributeWritesAndEvents() {
-      let span = tracer.startSpan("racing-end")
+    _ = processor.forceFlush()
+    XCTAssertEqual(exporter.getFinishedSpanItems().count, threads * iterations)
+  }
 
-      ConcurrencyTesting.concurrently([
-        { span.end() },
-        { span.attributes = ["after": "end"] },
-        { span.addEvent(SpanEvent(name: "late")) },
-        { span.setStatus(SpanStatus(code: .error)) },
-        { span.operationName = "renamed" },
-        { _ = span.attributes }
-      ])
+  func testMutateSharedSpanFromManyThreads() {
+    let span = tracer.startSpan("shared")
+    let threads = ConcurrencyTesting.defaultThreads
 
-      _ = processor.forceFlush()
-      XCTAssertEqual(exporter.getFinishedSpanItems().count, 1)
+    ConcurrencyTesting.stress(threads: threads) { thread, iteration in
+      span.attributes["thread-\(thread)"] = iteration
+      span.operationName = "renamed-\(thread)"
+      span.setStatus(SpanStatus(code: iteration.isMultiple(of: 2) ? .ok : .error))
+      span.addEvent(SpanEvent(name: "event-\(thread)"))
+      span.recordError(StressError.boom, attributes: ["thread": .int64(Int64(thread))])
+      _ = span.attributes
+      _ = span.operationName
+      _ = span.isRecording
     }
 
-    func testConcurrentSpanLifetimesAreIndependent() {
-      let tracer = self.tracer!
-      ConcurrencyTesting.stress(iterations: 100) { _, _ in
-        var span: OTelSpan? = tracer.startSpan("concurrent")
-        weak var retainedSpan: OTelSpan?
-        retainedSpan = span
-        let context = span!.context
-        span = nil
-        XCTAssertNotNil(retainedSpan)
-        var active = tracer.activeSpan(identifiedBy: context)
-        XCTAssertTrue(active === retainedSpan)
-        active?.end()
-        XCTAssertNil(tracer.activeSpan(identifiedBy: context))
-        active = nil
-        XCTAssertNil(retainedSpan)
-      }
-    }
+    span.end()
+    _ = processor.forceFlush()
+    let finished = exporter.getFinishedSpanItems()
+    XCTAssertEqual(finished.count, 1)
+    XCTAssertEqual(finished.first?.attributes.count, threads)
+  }
 
-    func testLookupRacingSpanEnd() {
-      let tracer = self.tracer!
-      let span = tracer.startSpan("racing-end")
-      let context = span.context
-      ConcurrencyTesting.stress(iterations: 100) { _, iteration in
-        if iteration.isMultiple(of: 2) {
-          span.end()
-          XCTAssertNil(tracer.activeSpan(identifiedBy: context))
-        } else if let active = tracer.activeSpan(identifiedBy: context) {
-          XCTAssertTrue(active === span)
-        }
-      }
+  func testEndRacesAttributeWritesAndEvents() {
+    let span = tracer.startSpan("racing-end")
+
+    ConcurrencyTesting.concurrently([
+      { span.end() },
+      { span.attributes = ["after": "end"] },
+      { span.addEvent(SpanEvent(name: "late")) },
+      { span.setStatus(SpanStatus(code: .error)) },
+      { span.operationName = "renamed" },
+      { _ = span.attributes }
+    ])
+
+    _ = processor.forceFlush()
+    XCTAssertEqual(exporter.getFinishedSpanItems().count, 1)
+  }
+
+  func testConcurrentSpanLifetimesAreIndependent() {
+    let tracer = self.tracer!
+    ConcurrencyTesting.stress(iterations: 100) { _, _ in
+      var span: OTelSpan? = tracer.startSpan("concurrent")
+      weak var retainedSpan: OTelSpan?
+      retainedSpan = span
+      let context = span!.context
+      span = nil
+      XCTAssertNotNil(retainedSpan)
+      var active = tracer.activeSpan(identifiedBy: context)
+      XCTAssertTrue(active === retainedSpan)
+      active?.end()
       XCTAssertNil(tracer.activeSpan(identifiedBy: context))
+      active = nil
+      XCTAssertNil(retainedSpan)
     }
+  }
 
-    func testInjectAndExtractFromManyThreads() {
-      let tracer = self.tracer!
-      let parent = tracer.startSpan("parent")
-      defer { parent.end() }
-      let parentContext = parent.context
-      let expectedTraceId = parentContext.otelSpanContext?.traceId
-      let mismatches = ConcurrentCounter()
+  func testLookupRacingSpanEnd() {
+    let tracer = self.tracer!
+    let span = tracer.startSpan("racing-end")
+    let context = span.context
+    ConcurrencyTesting.stress(iterations: 100) { _, iteration in
+      if iteration.isMultiple(of: 2) {
+        span.end()
+        XCTAssertNil(tracer.activeSpan(identifiedBy: context))
+      } else if let active = tracer.activeSpan(identifiedBy: context) {
+        XCTAssertTrue(active === span)
+      }
+    }
+    XCTAssertNil(tracer.activeSpan(identifiedBy: context))
+  }
 
-      ConcurrencyTesting.stress { _, _ in
-        var carrier: [String: String] = [:]
-        tracer.inject(parentContext, into: &carrier, using: DictionaryInjector())
+  func testInjectAndExtractFromManyThreads() {
+    let tracer = self.tracer!
+    let parent = tracer.startSpan("parent")
+    defer { parent.end() }
+    let parentContext = parent.context
+    let expectedTraceId = parentContext.otelSpanContext?.traceId
+    let mismatches = ConcurrentCounter()
 
-        var extracted = ServiceContext.topLevel
-        tracer.extract(carrier, into: &extracted, using: DictionaryExtractor())
-        if extracted.otelSpanContext?.traceId != expectedTraceId {
-          mismatches.increment()
-        }
+    ConcurrencyTesting.stress { _, _ in
+      var carrier: [String: String] = [:]
+      tracer.inject(parentContext, into: &carrier, using: DictionaryInjector())
 
-        // Children created from the extracted context on many threads.
-        tracer.withSpan("child", context: extracted) { child in
-          child.attributes["child"] = true
-        }
+      var extracted = ServiceContext.topLevel
+      tracer.extract(carrier, into: &extracted, using: DictionaryExtractor())
+      if extracted.otelSpanContext?.traceId != expectedTraceId {
+        mismatches.increment()
       }
 
-      XCTAssertEqual(mismatches.value, 0)
+      // Children created from the extracted context on many threads.
+      tracer.withSpan("child", context: extracted) { child in
+        child.attributes["child"] = true
+      }
     }
-  }
 
-  private enum StressError: Error {
-    case boom
+    XCTAssertEqual(mismatches.value, 0)
   }
+}
 
-  private struct DictionaryInjector: Injector {
-    func inject(_ value: String, forKey key: String, into carrier: inout [String: String]) {
-      carrier[key] = value
-    }
-  }
+private enum StressError: Error {
+  case boom
+}
 
-  private struct DictionaryExtractor: Extractor {
-    func extract(key: String, from carrier: [String: String]) -> String? {
-      carrier[key]
-    }
+private struct DictionaryInjector: Injector {
+  func inject(_ value: String, forKey key: String, into carrier: inout [String: String]) {
+    carrier[key] = value
   }
+}
+
+private struct DictionaryExtractor: Extractor {
+  func extract(key: String, from carrier: [String: String]) -> String? {
+    carrier[key]
+  }
+}
 
 #endif

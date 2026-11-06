@@ -5,161 +5,161 @@
 
 #if Prometheus
 
-  import Foundation
-  #if canImport(FoundationNetworking)
-    import FoundationNetworking
-  #endif
-  import OpenTelemetryApi
-  import OpenTelemetrySdk
-  @testable import PrometheusExporter
-  import XCTest
+import Foundation
+#if canImport(FoundationNetworking)
+  import FoundationNetworking
+#endif
+import OpenTelemetryApi
+import OpenTelemetrySdk
+@testable import PrometheusExporter
+import XCTest
 
-  class PrometheusExporterTests: XCTestCase {
-    func testMetricsHttpServerAsync() {
-      checkMetricsHttpServer(startupDelay: 0)
+class PrometheusExporterTests: XCTestCase {
+  func testMetricsHttpServerAsync() {
+    checkMetricsHttpServer(startupDelay: 0)
+  }
+
+  func testMetricsHttpServerWithDelayedStartup() {
+    checkMetricsHttpServer(startupDelay: 1)
+  }
+
+  private func checkMetricsHttpServer(startupDelay: TimeInterval) {
+    let promOptions = PrometheusExporterOptions(url: "http://localhost:9184/metrics/")
+    let promExporter = PrometheusExporter(options: promOptions)
+    let metricsHttpServer = PrometheusExporterHttpServer(exporter: promExporter)
+
+    let listening = expectation(description: "Metrics server is listening")
+    let stopped = expectation(description: "Metrics server stopped")
+    let expec = expectation(description: "Get metrics from server")
+    let previousHandler = OpenTelemetry.instance.feedbackHandler
+    OpenTelemetry.registerFeedbackHandler { message in
+      if message.hasPrefix("Listening on ") {
+        listening.fulfill()
+      }
+    }
+    defer {
+      metricsHttpServer.stop()
+      XCTAssertEqual(XCTWaiter().wait(for: [stopped], timeout: 30), .completed)
+      OpenTelemetry.registerFeedbackHandler(previousHandler ?? { _ in })
     }
 
-    func testMetricsHttpServerWithDelayedStartup() {
-      checkMetricsHttpServer(startupDelay: 1)
-    }
-
-    private func checkMetricsHttpServer(startupDelay: TimeInterval) {
-      let promOptions = PrometheusExporterOptions(url: "http://localhost:9184/metrics/")
-      let promExporter = PrometheusExporter(options: promOptions)
-      let metricsHttpServer = PrometheusExporterHttpServer(exporter: promExporter)
-
-      let listening = expectation(description: "Metrics server is listening")
-      let stopped = expectation(description: "Metrics server stopped")
-      let expec = expectation(description: "Get metrics from server")
-      let previousHandler = OpenTelemetry.instance.feedbackHandler
-      OpenTelemetry.registerFeedbackHandler { message in
-        if message.hasPrefix("Listening on ") {
-          listening.fulfill()
-        }
-      }
-      defer {
-        metricsHttpServer.stop()
-        XCTAssertEqual(XCTWaiter().wait(for: [stopped], timeout: 30), .completed)
-        OpenTelemetry.registerFeedbackHandler(previousHandler ?? { _ in })
-      }
-
-      nonisolated(unsafe) let serverRef = metricsHttpServer
-      DispatchQueue.global(qos: .default).asyncAfter(deadline: .now() + startupDelay) {
-        defer { stopped.fulfill() }
-        do {
-          try serverRef.start()
-        } catch {
-          XCTFail("Failed to start metrics server: \(error)")
-          return
-        }
-      }
-
-      guard XCTWaiter().wait(for: [listening], timeout: 30) == .completed else {
-        XCTFail("Metrics server did not start listening")
+    nonisolated(unsafe) let serverRef = metricsHttpServer
+    DispatchQueue.global(qos: .default).asyncAfter(deadline: .now() + startupDelay) {
+      defer { stopped.fulfill() }
+      do {
+        try serverRef.start()
+      } catch {
+        XCTFail("Failed to start metrics server: \(error)")
         return
       }
-
-      let meterProvider = collectMetrics(exporter: promExporter)
-      defer { XCTAssertEqual(meterProvider.shutdown(), .success) }
-      // Collect before scraping instead of waiting for the periodic reader's timer.
-      XCTAssertEqual(meterProvider.forceFlush(), .success)
-      let url = URL(string: "http://localhost:9184/metrics/")!
-      nonisolated(unsafe) let selfRef = self
-      let task = URLSession.shared.dataTask(with: url) { data, response, error in
-        if error == nil, let data, let response = response as? HTTPURLResponse {
-          XCTAssert(response.statusCode == 200)
-          let responseText = String(decoding: data, as: UTF8.self)
-          print("Response from metric API is: \n\(responseText)")
-          selfRef.validateResponse(responseText: responseText)
-          // This is your file-variable:
-          // data
-          expec.fulfill()
-        } else {
-          XCTFail("Metrics request failed: \(String(describing: error)), response: \(String(describing: response))")
-          expec.fulfill()
-          return
-        }
-      }
-      task.resume()
-
-      let result = XCTWaiter().wait(for: [expec], timeout: 30)
-      if result != .completed {
-        print("Error: expectation not fulfilled (\(result))")
-        XCTFail()
-      }
     }
 
-    private func collectMetrics(exporter: any MetricExporter) -> MeterProviderSdk {
-      let meterProvider = MeterProviderSdk.builder()
-        .registerMetricReader(
-          reader: PeriodicMetricReaderBuilder(
-            exporter: exporter
-          )
-          .setInterval(timeInterval: 60)
-          .build()
-        )
-        .registerView(
-          selector: InstrumentSelector
-            .builder()
-            .setInstrument(name: "testHistogram")
-            .build(),
-          view: View.builder()
-            .withAggregation(
-              aggregation: ExplicitBucketHistogramAggregation(bucketBoundaries: [5, 10, 25])
-            ).build()
-        )
-        .registerView(
-          selector: InstrumentSelector.builder().setInstrument(name: "testCounter|testGauge").build(),
-          view: View.builder().build()
-        )
-        .build()
-      let meter = meterProvider.get(name: "scope1")
-
-      let testCounter = meter.counterBuilder(name: "testCounter").build()
-      let testGauge = meter.gaugeBuilder(name: "testGauge").build()
-      let testHistogram = meter.histogramBuilder(name: "testHistogram").build()
-      let labels1 = ["dim1": AttributeValue.string("value1"), "dim2": AttributeValue.string("value1")]
-      let labels2 = ["dim1": AttributeValue.string("value2"), "dim2": AttributeValue.string("value2")]
-      let labels3 = ["dim1": AttributeValue.string("value1")]
-
-      for _ in 0 ..< 10 {
-        testCounter.add(value: 100, attributes: labels1)
-        testCounter.add(value: 10, attributes: labels1)
-        testCounter.add(value: 200, attributes: labels2)
-        testCounter.add(value: 10, attributes: labels2)
-
-        testGauge.record(value: 500, attributes: labels1)
-
-        testHistogram.record(value: 8, attributes: labels3)
-        testHistogram.record(value: 20, attributes: labels3)
-        testHistogram.record(value: 30, attributes: labels3)
-      }
-      return meterProvider
+    guard XCTWaiter().wait(for: [listening], timeout: 30) == .completed else {
+      XCTFail("Metrics server did not start listening")
+      return
     }
 
-    private func validateResponse(responseText: String) {
-      // Validate counters.
-      XCTAssert(responseText.contains("TYPE testCounter counter"))
-      XCTAssert(responseText.contains("testCounter{dim1=\"value1\",dim2=\"value1\"}") || responseText.contains("testCounter{dim2=\"value1\",dim1=\"value1\"}"))
-      XCTAssert(responseText.contains("testCounter{dim1=\"value2\",dim2=\"value2\"}") || responseText.contains("testCounter{dim2=\"value2\",dim1=\"value2\"}"))
+    let meterProvider = collectMetrics(exporter: promExporter)
+    defer { XCTAssertEqual(meterProvider.shutdown(), .success) }
+    // Collect before scraping instead of waiting for the periodic reader's timer.
+    XCTAssertEqual(meterProvider.forceFlush(), .success)
+    let url = URL(string: "http://localhost:9184/metrics/")!
+    nonisolated(unsafe) let selfRef = self
+    let task = URLSession.shared.dataTask(with: url) { data, response, error in
+      if error == nil, let data, let response = response as? HTTPURLResponse {
+        XCTAssert(response.statusCode == 200)
+        let responseText = String(decoding: data, as: UTF8.self)
+        print("Response from metric API is: \n\(responseText)")
+        selfRef.validateResponse(responseText: responseText)
+        // This is your file-variable:
+        // data
+        expec.fulfill()
+      } else {
+        XCTFail("Metrics request failed: \(String(describing: error)), response: \(String(describing: response))")
+        expec.fulfill()
+        return
+      }
+    }
+    task.resume()
 
-      // Validate measure.
-      XCTAssert(responseText.contains("# TYPE testGauge gauge"))
-      XCTAssert(responseText.contains("testGauge{dim2=\"value1\",dim1=\"value1\"} 500") ||
-        responseText.contains("testGauge{dim1=\"value1\",dim2=\"value1\"} 500"))
-
-      // Validate histogram.
-      XCTAssert(responseText.contains("# TYPE testHistogram histogram"))
-      // sum is 58 = 8 + 20 + 30
-      XCTAssert(responseText.contains("testHistogram_sum{dim1=\"value1\"} 58"))
-      // count is 1 * 3
-      XCTAssert(responseText.contains("testHistogram_count{dim1=\"value1\"} 3"))
-      // validate le
-      XCTAssert(responseText.contains("testHistogram{dim1=\"value1\",le=\"5.000000\"} 0") || responseText.contains("testHistogram{le=\"5.000000\",dim1=\"value1\"} 0"))
-      XCTAssert(responseText.contains("testHistogram{dim1=\"value1\",le=\"10.000000\"} 1") || responseText.contains("testHistogram{le=\"10.000000\",dim1=\"value1\"} 1"))
-      XCTAssert(responseText.contains("testHistogram{dim1=\"value1\",le=\"25.000000\"} 1") || responseText.contains("testHistogram{le=\"25.000000\",dim1=\"value1\"} 1"))
-      XCTAssert(responseText.contains("testHistogram{dim1=\"value1\",le=\"+Inf\"} 1") || responseText.contains("testHistogram{le=\"+Inf\",dim1=\"value1\"} 1"))
+    let result = XCTWaiter().wait(for: [expec], timeout: 30)
+    if result != .completed {
+      print("Error: expectation not fulfilled (\(result))")
+      XCTFail()
     }
   }
+
+  private func collectMetrics(exporter: any MetricExporter) -> MeterProviderSdk {
+    let meterProvider = MeterProviderSdk.builder()
+      .registerMetricReader(
+        reader: PeriodicMetricReaderBuilder(
+          exporter: exporter
+        )
+        .setInterval(timeInterval: 60)
+        .build()
+      )
+      .registerView(
+        selector: InstrumentSelector
+          .builder()
+          .setInstrument(name: "testHistogram")
+          .build(),
+        view: View.builder()
+          .withAggregation(
+            aggregation: ExplicitBucketHistogramAggregation(bucketBoundaries: [5, 10, 25])
+          ).build()
+      )
+      .registerView(
+        selector: InstrumentSelector.builder().setInstrument(name: "testCounter|testGauge").build(),
+        view: View.builder().build()
+      )
+      .build()
+    let meter = meterProvider.get(name: "scope1")
+
+    let testCounter = meter.counterBuilder(name: "testCounter").build()
+    let testGauge = meter.gaugeBuilder(name: "testGauge").build()
+    let testHistogram = meter.histogramBuilder(name: "testHistogram").build()
+    let labels1 = ["dim1": AttributeValue.string("value1"), "dim2": AttributeValue.string("value1")]
+    let labels2 = ["dim1": AttributeValue.string("value2"), "dim2": AttributeValue.string("value2")]
+    let labels3 = ["dim1": AttributeValue.string("value1")]
+
+    for _ in 0 ..< 10 {
+      testCounter.add(value: 100, attributes: labels1)
+      testCounter.add(value: 10, attributes: labels1)
+      testCounter.add(value: 200, attributes: labels2)
+      testCounter.add(value: 10, attributes: labels2)
+
+      testGauge.record(value: 500, attributes: labels1)
+
+      testHistogram.record(value: 8, attributes: labels3)
+      testHistogram.record(value: 20, attributes: labels3)
+      testHistogram.record(value: 30, attributes: labels3)
+    }
+    return meterProvider
+  }
+
+  private func validateResponse(responseText: String) {
+    // Validate counters.
+    XCTAssert(responseText.contains("TYPE testCounter counter"))
+    XCTAssert(responseText.contains("testCounter{dim1=\"value1\",dim2=\"value1\"}") || responseText.contains("testCounter{dim2=\"value1\",dim1=\"value1\"}"))
+    XCTAssert(responseText.contains("testCounter{dim1=\"value2\",dim2=\"value2\"}") || responseText.contains("testCounter{dim2=\"value2\",dim1=\"value2\"}"))
+
+    // Validate measure.
+    XCTAssert(responseText.contains("# TYPE testGauge gauge"))
+    XCTAssert(responseText.contains("testGauge{dim2=\"value1\",dim1=\"value1\"} 500") ||
+      responseText.contains("testGauge{dim1=\"value1\",dim2=\"value1\"} 500"))
+
+    // Validate histogram.
+    XCTAssert(responseText.contains("# TYPE testHistogram histogram"))
+    // sum is 58 = 8 + 20 + 30
+    XCTAssert(responseText.contains("testHistogram_sum{dim1=\"value1\"} 58"))
+    // count is 1 * 3
+    XCTAssert(responseText.contains("testHistogram_count{dim1=\"value1\"} 3"))
+    // validate le
+    XCTAssert(responseText.contains("testHistogram{dim1=\"value1\",le=\"5.000000\"} 0") || responseText.contains("testHistogram{le=\"5.000000\",dim1=\"value1\"} 0"))
+    XCTAssert(responseText.contains("testHistogram{dim1=\"value1\",le=\"10.000000\"} 1") || responseText.contains("testHistogram{le=\"10.000000\",dim1=\"value1\"} 1"))
+    XCTAssert(responseText.contains("testHistogram{dim1=\"value1\",le=\"25.000000\"} 1") || responseText.contains("testHistogram{le=\"25.000000\",dim1=\"value1\"} 1"))
+    XCTAssert(responseText.contains("testHistogram{dim1=\"value1\",le=\"+Inf\"} 1") || responseText.contains("testHistogram{le=\"+Inf\",dim1=\"value1\"} 1"))
+  }
+}
 
 #endif

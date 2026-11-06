@@ -5,35 +5,35 @@
 
 #if OpenTracing
 
-  import Foundation
-  import OpenTelemetryApi
-  import OpenTelemetrySdk
-  import Opentracing
+import Foundation
+import OpenTelemetryApi
+import OpenTelemetrySdk
+import Opentracing
 
-  public final class TraceShim: @unchecked Sendable {
-    public static let instance = TraceShim()
+public final class TraceShim: @unchecked Sendable {
+  public static let instance = TraceShim()
 
-    public private(set) var otTracer: OTTracer
+  public private(set) var otTracer: OTTracer
 
-    private init() {
-      otTracer = TraceShim.createTracerShim()
-    }
-
-    public static func createTracerShim() -> OTTracer {
-      return TracerShim(telemetryInfo: TelemetryInfo(tracer: TraceShim.getTracer(tracerProvider: OpenTelemetry.instance.tracerProvider),
-                                                     baggageManager: OpenTelemetry.instance.baggageManager,
-                                                     propagators: OpenTelemetry.instance.propagators))
-    }
-
-    public static func createTracerShim(tracerProvider: TracerProvider, baggageManager: BaggageManager) -> OTTracer {
-      return TracerShim(telemetryInfo: TelemetryInfo(tracer: TraceShim.getTracer(tracerProvider: tracerProvider),
-                                                     baggageManager: baggageManager,
-                                                     propagators: OpenTelemetry.instance.propagators))
-    }
-
-    private static func getTracer(tracerProvider: TracerProvider) -> Tracer {
-      tracerProvider.get(instrumentationName: "opentracingshim")
-    }
+  private init() {
+    otTracer = TraceShim.createTracerShim()
   }
+
+  public static func createTracerShim() -> OTTracer {
+    return TracerShim(telemetryInfo: TelemetryInfo(tracer: TraceShim.getTracer(tracerProvider: OpenTelemetry.instance.tracerProvider),
+                                                   baggageManager: OpenTelemetry.instance.baggageManager,
+                                                   propagators: OpenTelemetry.instance.propagators))
+  }
+
+  public static func createTracerShim(tracerProvider: TracerProvider, baggageManager: BaggageManager) -> OTTracer {
+    return TracerShim(telemetryInfo: TelemetryInfo(tracer: TraceShim.getTracer(tracerProvider: tracerProvider),
+                                                   baggageManager: baggageManager,
+                                                   propagators: OpenTelemetry.instance.propagators))
+  }
+
+  private static func getTracer(tracerProvider: TracerProvider) -> Tracer {
+    tracerProvider.get(instrumentationName: "opentracingshim")
+  }
+}
 
 #endif
