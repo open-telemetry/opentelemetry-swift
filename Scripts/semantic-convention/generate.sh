@@ -4,6 +4,16 @@ set -e -x
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT_DIR="${SCRIPT_DIR}/../.."
 
+# --exclude-deprecated=true  deletes deprecated attributes (major release)
+# --exclude-deprecated=false keeps them, marked @available(*, deprecated) (minor release)
+EXCLUDE_DEPRECATED=true
+for arg in "$@"; do
+  case "$arg" in
+    --exclude-deprecated=true|--exclude-deprecated=false) EXCLUDE_DEPRECATED="${arg#*=}" ;;
+    *) echo "usage: $0 [--exclude-deprecated=true|false]" >&2; exit 1 ;;
+  esac
+done
+
 # freeze the spec & generator tools versions to make SemanticAttributes generation reproducible
 
 # repository: https://github.com/open-telemetry/semantic-conventions
@@ -37,6 +47,7 @@ docker run --rm \
   ./ \
   /output \
   -Doutput=/output/ \
+  -Dexclude_deprecated="$EXCLUDE_DEPRECATED" \
 
 cd "$ROOT_DIR"
 
