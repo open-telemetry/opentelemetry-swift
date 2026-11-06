@@ -35,6 +35,8 @@ jobs:
             # Run jobs if source code changed
             echo "$CHANGED_FILES" | grep -q "Sources/" && SHOULD_RUN=true
 
+            echo "$CHANGED_FILES" | grep -Eq '^(Tests/|Package\.resolved$|\.github/workflows/BuildAndTest\.yml$)' && SHOULD_RUN=true
+
             # Run if any dependency is updated in Package.swift
             if echo "$CHANGED_FILES" | grep -q "Package.swift"; then
               git diff origin/${GITHUB_BASE_REF} HEAD -- Package.swift | grep -q . && SHOULD_RUN=true
@@ -191,17 +193,31 @@ jobs:
       env:
         STEPS_VISIONOS_SIM_OUTPUTS_DESTINATION: ${{ steps.visionos-sim.outputs.destination }}
   linux:
+    name: Linux (Swift ${{ matrix.swift }})
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: ubuntu-latest
-    container: swift:6.4.2@sha256:119ff7d833ea622851b459513333bb4bda5ebb32b7acd05dd05077d5b0383129
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - swift: '6.2'
+            image: swift:6.2.4@sha256:e508ef1e4be68087f720de622b91cbf1e32799a7aa96134b35e6f1a1d656db7a
+          - swift: '6.3'
+            image: swift:6.3.3@sha256:1038d54c80063f5cdfabc4560990c30af64b5de8ebf28161deb22ca4ad5db866
+          - swift: '6.4'
+            image: swift:6.4.2@sha256:119ff7d833ea622851b459513333bb4bda5ebb32b7acd05dd05077d5b0383129
+    container: ${{ matrix.image }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Swift version
+        run: swift --version
       - name: Build tests for Linux
         run: swift build --build-tests
       - name: Run tests for Linux
+        timeout-minutes: 15
         run: swift test
   ThreadSanitizer:
     needs: should-run
