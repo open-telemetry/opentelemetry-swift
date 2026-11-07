@@ -10,17 +10,65 @@
     public class MetricKitInstrumentation: NSObject, MXMetricManagerSubscriber {
         public let configuration: MetricKitConfiguration
 
+        // Type erase the iOS 27-only backend to keep this class available on older OS versions.
+        private var metricManagerStream: AnyObject? = nil
+
+        @available(iOS, deprecated: 27.0, message: "Use init(enabledStateReportingDomains:) on iOS 27 and newer.")
         public override init() {
             self.configuration = MetricKitConfiguration()
             super.init()
+            #if compiler(>=6.4)
+                startMetricManagerIfAvailable()
+            #endif
         }
 
+        @available(iOS, deprecated: 27.0, message: "Use init(configuration:enabledStateReportingDomains:) on iOS 27 and newer.")
         public init(configuration: MetricKitConfiguration) {
             self.configuration = configuration
             super.init()
+            #if compiler(>=6.4)
+                startMetricManagerIfAvailable()
+            #endif
         }
 
+        #if compiler(>=6.4)
+            @available(iOS 27.0, macCatalyst 27.0, *)
+            public init(
+                configuration: MetricKitConfiguration = MetricKitConfiguration(),
+                enabledStateReportingDomains: Set<StateReportingDomain>
+            ) {
+                self.configuration = configuration
+                super.init()
+                startMetricManager(enabledStateReportingDomains: enabledStateReportingDomains)
+            }
+
+            @available(iOS 27.0, macCatalyst 27.0, *)
+            private func startMetricManager(
+                enabledStateReportingDomains: Set<StateReportingDomain>
+            ) {
+                let stream = MetricManagerStream(
+                    configuration: MetricKitConfigurationForReportStream(
+                        configuration: configuration
+                    ),
+                    enabledStateReportingDomains: enabledStateReportingDomains
+                )
+                metricManagerStream = stream
+                Task {
+                    await stream.start()
+                }
+            }
+
+            private func startMetricManagerIfAvailable() {
+                if #available(iOS 27.0, macCatalyst 27.0, *) {
+                    startMetricManager(enabledStateReportingDomains: [])
+                }
+            }
+        #endif
+
         public func didReceive(_ payloads: [MXMetricPayload]) {
+            if #available(iOS 27.0, macCatalyst 27.0, *) {
+                return
+            }
             for payload in payloads {
                 reportMetrics(payload: payload, configuration: configuration)
             }
@@ -28,6 +76,9 @@
 
         @available(iOS 14.0, macOS 12.0, macCatalyst 14.0, watchOS 7.0, *)
         public func didReceive(_ payloads: [MXDiagnosticPayload]) {
+            if #available(iOS 27.0, macCatalyst 27.0, *) {
+                return
+            }
             for payload in payloads {
                 reportDiagnostics(payload: payload, configuration: configuration)
             }
