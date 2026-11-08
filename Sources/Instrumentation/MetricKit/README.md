@@ -53,6 +53,17 @@ if #available(iOS 13.0, *) {
 | `tracer`                    | (a default tracer)  | Custom tracer for creating spans                                |
 | `useAppleStacktraceFormat`  | `false`             | Use Apple's native JSON format for stacktraces instead of OTel  |
 
+## Platform support
+
+| Runtime OS       | Built with the iOS 27 SDK or newer | Built with an older SDK |
+|------------------|------------------------------------|-------------------------|
+| Before iOS 27    | `MXMetricManagerSubscriber` callbacks | `MXMetricManagerSubscriber` callbacks |
+| iOS 27 and newer | `MetricManager` report streams     | `MXMetricManagerSubscriber` callbacks |
+| visionOS         | `MXMetricManagerSubscriber` callbacks | `MXMetricManagerSubscriber` callbacks |
+
+macOS, tvOS, and watchOS are not supported. `init(configuration:enabledStateReportingDomains:)`
+exists only when building with the iOS 27 SDK or newer, and requires iOS 27 at runtime.
+
 ## iOS 27 and newer
 
 `MetricKitInstrumentation` automatically uses Apple's asynchronous `MetricManager` report streams

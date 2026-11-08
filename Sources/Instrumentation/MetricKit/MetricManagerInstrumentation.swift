@@ -3,7 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if compiler(>=6.4) && canImport(MetricKit) && !os(tvOS) && !os(watchOS) && !os(visionOS)
+// iOS 27 and newer backend of MetricKitInstrumentation, built on MetricManager report streams.
+// See "Platform support" in README.md for details.
+//
+// StateReporting first ships in the SDKs that declare MetricManager, so importing it is the check
+// for whether this file can compile. It says nothing about the runtime OS, which the @available
+// annotations below cover.
+#if canImport(StateReporting) && canImport(MetricKit) && !os(tvOS) && !os(watchOS) && !os(visionOS)
 import Foundation
 import MetricKit
 import OpenTelemetryApi

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if compiler(>=6.4) && canImport(MetricKit) && !os(tvOS) && !os(watchOS) && !os(visionOS)
+#if canImport(StateReporting) && canImport(MetricKit) && !os(tvOS) && !os(watchOS) && !os(visionOS)
 import Foundation
 import MetricKit
 @testable import MetricKitInstrumentation
@@ -13,6 +13,8 @@ import XCTest
 
 @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, *)
 final class MetricManagerInstrumentationTests: XCTestCase {
+    // MetricKitInstrumentation is not compiled on macOS, so this test cannot build there.
+    #if !os(macOS)
     func testUnifiedInstrumentationSupportsLegacyRegistration() {
         let configuration = MetricKitConfiguration()
         let instrumentation = MetricKitInstrumentation(
@@ -24,6 +26,7 @@ final class MetricManagerInstrumentationTests: XCTestCase {
 
         XCTAssertTrue(instrumentation.configuration.tracer === configuration.tracer)
     }
+    #endif
 
     func testReportMetricsPreservesTheCompleteMetricReport() throws {
         let start = Date(timeIntervalSince1970: 1_800_000_000)

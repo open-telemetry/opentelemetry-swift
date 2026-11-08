@@ -1,3 +1,11 @@
+// Which code path delivers MetricKit reports depends on the OS the app runs on:
+//
+// - Before iOS 27, and on visionOS: the MXMetricManagerSubscriber callbacks in this file.
+// - iOS 27 and newer: MetricManager report streams, see MetricManagerInstrumentation.swift.
+//   The subscriber callbacks return early there so reports are not emitted twice.
+//
+// See "Platform support" in README.md for details.
+
 #if canImport(MetricKit) && !os(tvOS) && !os(macOS)
     import Foundation
     import MetricKit
@@ -13,25 +21,36 @@
         // Type erase the iOS 27-only backend to keep this class available on older OS versions.
         private var metricManagerStream: AnyObject? = nil
 
+        // MARK: - Initializers for all supported OS versions
+
         @available(iOS, deprecated: 27.0, message: "Use init(enabledStateReportingDomains:) on iOS 27 and newer.")
         public override init() {
             self.configuration = MetricKitConfiguration()
             super.init()
-            #if compiler(>=6.4)
-                startMetricManagerIfAvailable()
-            #endif
+            startMetricManagerIfAvailable()
         }
 
         @available(iOS, deprecated: 27.0, message: "Use init(configuration:enabledStateReportingDomains:) on iOS 27 and newer.")
         public init(configuration: MetricKitConfiguration) {
             self.configuration = configuration
             super.init()
-            #if compiler(>=6.4)
-                startMetricManagerIfAvailable()
+            startMetricManagerIfAvailable()
+        }
+
+        private func startMetricManagerIfAvailable() {
+            #if canImport(StateReporting) && !os(visionOS)
+                if #available(iOS 27.0, macCatalyst 27.0, *) {
+                    startMetricManager(enabledStateReportingDomains: [])
+                }
             #endif
         }
 
-        #if compiler(>=6.4)
+        // MARK: - iOS 27 and newer: MetricManager report streams
+
+        // StateReporting first ships in the SDKs that declare MetricManager, so importing it is
+        // the check for whether this code can compile. It says nothing about the runtime OS,
+        // which the @available and #available checks cover.
+        #if canImport(StateReporting) && !os(visionOS)
             @available(iOS 27.0, macCatalyst 27.0, *)
             public init(
                 configuration: MetricKitConfiguration = MetricKitConfiguration(),
@@ -57,13 +76,9 @@
                     await stream.start()
                 }
             }
-
-            private func startMetricManagerIfAvailable() {
-                if #available(iOS 27.0, macCatalyst 27.0, *) {
-                    startMetricManager(enabledStateReportingDomains: [])
-                }
-            }
         #endif
+
+        // MARK: - Before iOS 27: MXMetricManagerSubscriber callbacks
 
         public func didReceive(_ payloads: [MXMetricPayload]) {
             if #available(iOS 27.0, macCatalyst 27.0, *) {
