@@ -202,11 +202,11 @@ jobs:
       matrix:
         include:
           - swift: '6.2'
-            image: swift:6.2.4@sha256:e508ef1e4be68087f720de622b91cbf1e32799a7aa96134b35e6f1a1d656db7a
+            image: swift:6.2.4@sha256:3459518b2e723a7c363d0f8cfa44fc796c77ecd8c18e92fd10e6f92dd78c0b12
           - swift: '6.3'
-            image: swift:6.3.3@sha256:1038d54c80063f5cdfabc4560990c30af64b5de8ebf28161deb22ca4ad5db866
+            image: swift:6.3.3@sha256:1ba0416be43dc57ba6ff7d02114356cad1ab17364024b7669385e3fe41a224aa
           - swift: '6.4'
-            image: swift:6.4.2@sha256:119ff7d833ea622851b459513333bb4bda5ebb32b7acd05dd05077d5b0383129
+            image: swift:6.4.2@sha256:0384f00cf80f81064a907c249a0ad56a1648906f65075a95b1827e88de666e21
     container: ${{ matrix.image }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
