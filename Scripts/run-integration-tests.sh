@@ -36,6 +36,11 @@ APP_PROJECT="$PROJECT_ROOT/Examples/HackerNewsDemo/HackerNewsDemo.xcodeproj"
 APP_SCHEME="HackerNewsDemo"
 APP_BUNDLE_ID="io.opentelemetry.HackerNewsDemo"
 COMPLETION_MARKER="integration.test.complete"
+# Followed by `-<activations>`; see IntegrationTestScenario.readySpanName.
+READY_MARKER="integration.test.ready"
+# The variables a launch the system starts in the background reads from the
+# simulator's launchd environment, since it gets no launch arguments.
+BACKGROUND_LAUNCH_ENVIRONMENT="OTEL_EXPORTER_OTLP_ENDPOINT INTEGRATION_STATUS_BASE_URL INTEGRATION_LAUNCH"
 
 # Pinned collector release. Bump the version and both checksums together; the
 # checksums are the published <asset>.sha256 files from
@@ -78,11 +83,19 @@ pipe_output() {
   if command -v xcbeautify >/dev/null 2>&1; then xcbeautify; else cat; fi
 }
 
+clear_background_launch_environment() {
+  local name
+  for name in $BACKGROUND_LAUNCH_ENVIRONMENT; do
+    xcrun simctl spawn "$SIMULATOR_UDID" launchctl unsetenv "$name" >/dev/null 2>&1 || true
+  done
+}
+
 COLLECTOR_PID=""
 STATUS_PID=""
 cleanup() {
   log "Cleaning up"
   xcrun simctl terminate "$SIMULATOR_UDID" "$APP_BUNDLE_ID" >/dev/null 2>&1 || true
+  clear_background_launch_environment
   for pid in "$COLLECTOR_PID" "$STATUS_PID"; do
     if [[ -n "$pid" ]]; then
       kill "$pid" >/dev/null 2>&1 || true
@@ -194,6 +207,9 @@ xcrun simctl boot "$SIMULATOR_UDID" >/dev/null 2>&1 || true
 xcrun simctl bootstatus "$SIMULATOR_UDID" -b
 
 log "Installing $APP_BUNDLE_ID"
+# A previous run that was killed rather than exiting can have left these set, which would put
+# every launch below into the wrong scenario, so the state the simulator starts in is cleared.
+clear_background_launch_environment
 xcrun simctl terminate "$SIMULATOR_UDID" "$APP_BUNDLE_ID" >/dev/null 2>&1 || true
 xcrun simctl uninstall "$SIMULATOR_UDID" "$APP_BUNDLE_ID" >/dev/null 2>&1 || true
 xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
@@ -213,24 +229,107 @@ run_launch_into() {
   local tag="$1"; shift
   start_collector "$dir"
   log "Launch '$tag' ($*)"
+  case "$tag" in
+    app-start-resume)
+      launch_app "$tag" "$@"
+      wait_for_marker "$dir" "$READY_MARKER-1"
+      move_to_background_and_back 3 "$tag" "$@"
+      ;;
+    app-start-late-install)
+      launch_app "$tag" "$@"
+      wait_for_marker "$dir" "$READY_MARKER-1"
+      move_to_background_and_back 3 "$tag" "$@"
+      # The second activation blocks the main thread, so the app is moved to the
+      # background before its first frame. Wait for the block to end before
+      # bringing it back.
+      wait_for_marker "$dir" "$READY_MARKER-2"
+      move_to_background_and_back 6 "$tag" "$@"
+      ;;
+    app-start-background)
+      launch_app_in_background "$tag"
+      wait_for_marker "$dir" "$READY_MARKER-0"
+      clear_background_launch_environment
+      sleep 2
+      log "Bringing '$tag' to the foreground"
+      launch_app "$tag" "$@"
+      ;;
+    *)
+      launch_app "$tag" "$@"
+      ;;
+  esac
+
+  wait_for_marker "$dir" "$COMPLETION_MARKER"
+  # Logs are batched on a fixed 5s schedule; give the last batch time to land.
+  sleep 6
+  xcrun simctl terminate "$SIMULATOR_UDID" "$APP_BUNDLE_ID" >/dev/null 2>&1 || true
+  stop_collector
+}
+
+# launch_app <tag> [extra launch arguments...]
+launch_app() {
+  local tag="$1"; shift
   SIMCTL_CHILD_OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:$PORT" \
   SIMCTL_CHILD_INTEGRATION_STATUS_BASE_URL="http://localhost:$STATUS_PORT" \
     xcrun simctl launch "$SIMULATOR_UDID" "$APP_BUNDLE_ID" --integrationTestMode --integrationLaunch "$tag" "$@"
+}
 
+# launch_app_in_background <tag>
+# Has the system launch the app in the background, as for a background fetch,
+# by sending it a silent push.
+launch_app_in_background() {
+  local tag="$1"
+  local payload="$OUTPUT_DIR/silent-push.json"
+  # These are set in the simulator's own launchd environment, so every app launched there reads
+  # them, and `trap cleanup EXIT` doesn't run if this script is killed. Clearing them first makes a
+  # run after one that was killed self-healing rather than leaving the simulator in test mode.
+  clear_background_launch_environment
+  xcrun simctl spawn "$SIMULATOR_UDID" launchctl setenv OTEL_EXPORTER_OTLP_ENDPOINT "http://localhost:$PORT"
+  xcrun simctl spawn "$SIMULATOR_UDID" launchctl setenv INTEGRATION_STATUS_BASE_URL "http://localhost:$STATUS_PORT"
+  xcrun simctl spawn "$SIMULATOR_UDID" launchctl setenv INTEGRATION_LAUNCH "$tag"
+  echo '{"aps":{"content-available":1}}' >"$payload"
+  xcrun simctl push "$SIMULATOR_UDID" "$APP_BUNDLE_ID" "$payload" >/dev/null
+  rm -f "$payload"
+}
+
+# move_to_background_and_back <seconds in the background> <tag> [extra launch arguments...]
+# Opens Settings, then brings the app back. `simctl launch` of a running app
+# brings it to the foreground without starting a new process.
+move_to_background_and_back() {
+  local seconds="$1"; shift
+  log "Moving '$1' to the background and back"
+  xcrun simctl launch "$SIMULATOR_UDID" com.apple.Preferences >/dev/null
+  sleep "$seconds"
+  launch_app "$@"
+}
+
+# wait_for_marker <output directory> <span name>
+wait_for_marker() {
+  local dir="$1" marker="$2"
   local deadline=$((SECONDS + TIMEOUT))
-  until grep -aqs "$COMPLETION_MARKER" "$dir/traces.pb"; do
+  until grep -aqs "$marker" "$dir/traces.pb"; do
     if (( SECONDS >= deadline )); then
-      echo "Timed out waiting for '$COMPLETION_MARKER' in $dir/traces.pb" >&2
+      echo "Timed out waiting for '$marker' in $dir/traces.pb" >&2
       ls -la "$dir" >&2 || true
       cat "$dir/collector.log" >&2 || true
       exit 1
     fi
     sleep 1
   done
-  # Logs are batched on a fixed 5s schedule; give the last batch time to land.
-  sleep 6
-  xcrun simctl terminate "$SIMULATOR_UDID" "$APP_BUNDLE_ID" >/dev/null 2>&1 || true
-  stop_collector
+}
+
+# install_new_build
+# Reinstalls the app with its build number bumped, as an app update does. The
+# app's data container is kept, so its previous launch is still recorded.
+install_new_build() {
+  local copy
+  copy="$(mktemp -d)/$APP_SCHEME.app"
+  cp -R "$APP_PATH" "$copy"
+  local build
+  build="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$copy/Info.plist")"
+  /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $((build + 1))" "$copy/Info.plist"
+  log "Installing $APP_BUNDLE_ID build $((build + 1))"
+  xcrun simctl install "$SIMULATOR_UDID" "$copy"
+  rm -rf "$(dirname "$copy")"
 }
 
 # save_crash_reports <output subdirectory>
@@ -271,6 +370,22 @@ else
   run_launch_into symbolicated/crash crash --sessionTimeout 3600 --restorePersistedSession false
   run_launch_into symbolicated/crash-report crash-report --sessionTimeout 3600 --restorePersistedSession false --reportStyle symbolicated
   run_launch log-limits --sessionTimeout 3600 --restorePersistedSession false
+  # AppStart: a warm launch followed by a resume, a late installation with an
+  # interrupted activation, a background launch, and the cold first launch after
+  # an update. `main` above is the cold first launch after installation.
+  # Prewarming isn't covered: setting ActivePrewarm makes the system hold the
+  # process before main() until a real launch resumes it, which never comes.
+  run_launch app-start-resume
+  run_launch app-start-late-install
+  run_launch app-start-background
+  # Xcode inserts libraries ahead of the app in dyld's image list, so this launch has one too.
+  SIMCTL_CHILD_DYLD_INSERT_LIBRARIES="$(xcrun simctl getenv "$SIMULATOR_UDID" IPHONE_SIMULATOR_ROOT)/usr/lib/libLogRedirect.dylib" \
+    run_launch app-start-mincore
+  install_new_build
+  run_launch app-start-update
+  # Copies the same original build, so this reinstalls the build just launched.
+  install_new_build
+  run_launch app-start-reinstall
 fi
 
 log "Collected files"

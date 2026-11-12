@@ -1,0 +1,841 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#if canImport(Darwin) && ((canImport(UIKit) && !os(watchOS)) || canImport(AppKit))
+  @testable import AppLaunchInstrumentationCore
+  @testable import MincoreLaunchInstrumentation
+  import Foundation
+  import OpenTelemetryApi
+  import OpenTelemetrySdk
+  import XCTest
+
+  private final class CapturingMetricExporter: MetricExporter, @unchecked Sendable {
+    private let lock = NSLock()
+    private var _metrics: [MetricData] = []
+
+    var metrics: [MetricData] { lock.withLock { _metrics } }
+
+    func export(metrics: [MetricData]) -> ExportResult {
+      lock.withLock { _metrics.append(contentsOf: metrics) }
+      return .success
+    }
+
+    func flush() -> ExportResult { .success }
+    func shutdown() -> ExportResult { .success }
+    func getAggregationTemporality(for instrument: InstrumentType) -> AggregationTemporality { .cumulative }
+  }
+
+  /// A cumulative page-in counter, which reports each value once and then repeats the last.
+  private final class PageInCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _values: [Int]
+
+    init(_ values: [Int]) {
+      _values = values
+    }
+
+    func read() -> Int? {
+      lock.withLock { _values.count > 1 ? _values.removeFirst() : _values.first }
+    }
+  }
+
+  extension MincoreLaunchInstrumentationTests {
+    private func launchSpan() -> SpanData? {
+      finishedSpans().first { $0.name == "app.start" }
+    }
+
+    private func span(_ name: String) -> SpanData? {
+      finishedSpans().first { $0.name == name }
+    }
+
+    private func activate() {
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+    }
+
+    func testMincoreLaunchThatPagedInMostOfItsCodeIsCold() {
+      launchHistory = FakeLaunchHistory(previous: launchContext)
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 120))
+
+      activate()
+
+      let attributes = launchSpan()?.attributes
+      XCTAssertEqual(attributes?["app.start.type"], .string("cold"))
+      XCTAssertEqual(attributes?["app.start.pages.text.resident_at_end"], .int(128))
+      XCTAssertEqual(attributes?["app.start.pages.text.paged_in"], .int(120))
+      XCTAssertEqual(attributes?["app.start.pages.text.page_in_ratio"], .double(0.9375))
+    }
+
+    func testMincoreLaunchThatFoundItsCodeInMemoryIsWarm() {
+      // No launch history, so inference would have said `cold`.
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
+
+      activate()
+
+      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("warm"))
+      XCTAssertEqual(launchSpan()?.attributes["app.start.pages.text.page_in_ratio"], .double(0))
+    }
+
+    func testMincoreLaunchAtTheThresholdIsCold() {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 64))
+
+      activate()
+
+      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("cold"))
+    }
+
+    func testMincoreLaunchJustBelowTheThresholdIsWarm() {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 63))
+
+      activate()
+
+      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("warm"))
+    }
+
+    func testColdPageInRatioDefaultsToHalf() {
+      XCTAssertEqual(AppLaunchInstrumentationConfiguration().coldPageInRatio, 0.5)
+    }
+
+    func testLaunchBelowAConfiguredThresholdIsWarm() {
+      install(sample: LaunchPageSample(residentAtEnd: 100, pagedIn: 70),
+                     configuration: AppLaunchInstrumentationConfiguration(coldPageInRatio: 0.75))
+
+      activate()
+
+      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("warm"))
+      XCTAssertEqual(launchSpan()?.attributes["app.start.pages.text.page_in_ratio"], .double(0.7))
+    }
+
+    func testLaunchAtAConfiguredThresholdIsCold() {
+      install(sample: LaunchPageSample(residentAtEnd: 100, pagedIn: 25),
+                     configuration: AppLaunchInstrumentationConfiguration(coldPageInRatio: 0.25))
+
+      activate()
+
+      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("cold"))
+    }
+
+    func testPrewarmCacheStateUsesTheConfiguredThreshold() {
+      install(sample: LaunchPageSample(residentAtEnd: 100, pagedIn: 70),
+                     isActivePrewarm: true,
+                     configuration: AppLaunchInstrumentationConfiguration(launchTypes: [.prewarmed], coldPageInRatio: 0.75))
+
+      activate()
+
+      XCTAssertEqual(launchSpan()?.attributes["app.start.prewarm.cache_state"], .string("warm"))
+    }
+
+    func testColdPageInRatioOutOfRangeUsesTheDefault() {
+      let messages = captureFeedback()
+
+      for ratio in [0, -1, 1.5, Double.nan] {
+        let configuration = AppLaunchInstrumentationConfiguration(coldPageInRatio: ratio)
+
+        XCTAssertEqual(MincoreLaunchInstrumentation.validated(configuration).coldPageInRatio, 0.5)
+      }
+
+      XCTAssertEqual(messages.values.filter { $0.contains("coldPageInRatio") }.count, 4)
+    }
+
+    func testColdPageInRatioAtTheEndsOfItsRangeIsKept() {
+      for ratio in [0.01, 1] {
+        let configuration = AppLaunchInstrumentationConfiguration(coldPageInRatio: ratio)
+
+        XCTAssertEqual(MincoreLaunchInstrumentation.validated(configuration).coldPageInRatio, ratio)
+      }
+    }
+
+    func testMaxLaunchDurationNotAboveZeroUsesTheDefault() {
+      let messages = captureFeedback()
+
+      for duration in [0, -1, TimeInterval.nan] {
+        let configuration = AppLaunchInstrumentationConfiguration(maxLaunchDuration: duration)
+
+        XCTAssertEqual(MincoreLaunchInstrumentation.validated(configuration).maxLaunchDuration, 60,
+                       "every launch is longer than \(duration) seconds, so nothing would be recorded")
+      }
+
+      XCTAssertEqual(messages.values.filter { $0.contains("maxLaunchDuration") }.count, 3)
+    }
+
+    func testMaxLaunchDurationAboveZeroIsKept() {
+      for duration in [0.001, 60, 3_600, TimeInterval.infinity] {
+        let configuration = AppLaunchInstrumentationConfiguration(maxLaunchDuration: duration)
+
+        XCTAssertEqual(MincoreLaunchInstrumentation.validated(configuration).maxLaunchDuration, duration)
+      }
+    }
+
+    func testALaunchIsRecordedWithAMaxLaunchDurationThatWasCorrected() {
+      // `install(configuration:)` validates before building its dependencies, so this is the
+      // configuration a caller that passed 0 ends up installing with.
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0),
+              configuration: MincoreLaunchInstrumentation.validated(
+                AppLaunchInstrumentationConfiguration(maxLaunchDuration: 0)
+              ))
+
+      activate()
+
+      XCTAssertNotNil(launchSpan(), "the corrected default records the launch instead of dropping every one")
+    }
+
+    func testAMaxLaunchDurationOfZeroWouldDropEveryLaunch() {
+      // Why the value is corrected: without that, this is what a caller gets.
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0),
+              configuration: AppLaunchInstrumentationConfiguration(maxLaunchDuration: 0))
+
+      activate()
+
+      XCTAssertNil(launchSpan())
+    }
+
+    func testPrewarmedMincoreLaunchIsPrewarmedAndKeepsItsSample() {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 120), isActivePrewarm: true)
+
+      activate()
+
+      let attributes = launchSpan()?.attributes
+      XCTAssertEqual(attributes?["app.start.type"], .string("prewarmed"))
+      XCTAssertEqual(attributes?["app.start.determined_by"], .string("prewarm_flag"))
+      XCTAssertEqual(attributes?["app.start.pages.text.paged_in"], .int(120))
+    }
+
+    func testPrewarmedLaunchThatCantBeSampledIsStillPrewarmed() {
+      install(sample: nil, isActivePrewarm: true)
+
+      activate()
+
+      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("prewarmed"))
+      XCTAssertNil(launchSpan()?.attributes["app.start.pages.text.page_in_ratio"])
+    }
+
+    func testPrewarmedCanBeLeftOutOfLaunchTypes() {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0),
+                      isActivePrewarm: true,
+                      configuration: AppLaunchInstrumentationConfiguration(launchTypes: [.cold, .warm, .resume]))
+
+      activate()
+
+      XCTAssertTrue(finishedSpans().isEmpty)
+    }
+
+    func testLaunchThatCantBeSampledIsInferredWithoutSampleAttributes() {
+      launchHistory = FakeLaunchHistory(previous: launchContext)
+      let messages = captureFeedback()
+      OpenTelemetry.setDebugEnabled(true)
+      install(sample: nil)
+
+      activate()
+
+      let attributes = launchSpan()?.attributes
+      XCTAssertEqual(attributes?["app.start.type"], .string("warm"))
+      XCTAssertNil(attributes?["app.start.pages.text.resident_at_end"])
+      XCTAssertNil(attributes?["app.start.pages.text.paged_in"])
+      XCTAssertNil(attributes?["app.start.pages.text.page_in_ratio"])
+      XCTAssertTrue(messages.values.contains { $0.hasPrefix("[warn]") && $0.contains("inferred") })
+    }
+
+    func testLaunchWithNoResidentPagesIsInferred() {
+      launchHistory = FakeLaunchHistory(previous: launchContext)
+      install(sample: LaunchPageSample(residentAtEnd: 0, pagedIn: 0))
+
+      activate()
+
+      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("warm"))
+      XCTAssertNil(launchSpan()?.attributes["app.start.pages.text.page_in_ratio"])
+    }
+
+    func testLaunchWithTooFewResidentPagesIsInferred() {
+      // No launch history, so inference says `cold`, where the ratio of 0 would have said `warm`.
+      install(sample: LaunchPageSample(residentAtEnd: 3, pagedIn: 0))
+
+      activate()
+
+      let attributes = launchSpan()?.attributes
+      XCTAssertEqual(attributes?["app.start.type"], .string("cold"))
+      XCTAssertEqual(attributes?["app.start.determined_by"], .string("launch_history"))
+      XCTAssertNil(attributes?["app.start.pages.text.page_in_ratio"])
+      XCTAssertNil(attributes?["app.start.pages.text.sampled"])
+    }
+
+    func testLaunchWithTheMinimumResidentPagesIsMeasured() {
+      launchHistory = FakeLaunchHistory(previous: launchContext)
+      install(sample: LaunchPageSample(residentAtEnd: MincoreLaunchClassifier.minimumResidentPages, pagedIn: 16))
+
+      activate()
+
+      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("cold"))
+      XCTAssertEqual(launchSpan()?.attributes["app.start.determined_by"], .string("page_sampling"))
+    }
+
+    func testAppSmallerThanTheMinimumIsMeasured() {
+      launchHistory = FakeLaunchHistory(previous: launchContext)
+      install(sample: LaunchPageSample(residentAtEnd: 8, pagedIn: 8, sampled: 8))
+
+      activate()
+
+      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("cold"))
+      XCTAssertEqual(launchSpan()?.attributes["app.start.determined_by"], .string("page_sampling"))
+      XCTAssertEqual(launchSpan()?.attributes["app.start.pages.text.sampled"], .int(8))
+    }
+
+    func testPrewarmedLaunchWithTooFewResidentPagesIsStillPrewarmed() {
+      install(sample: LaunchPageSample(residentAtEnd: 3, pagedIn: 0), isActivePrewarm: true)
+
+      activate()
+
+      XCTAssertEqual(launchSpan()?.attributes["app.start.type"], .string("prewarmed"))
+      XCTAssertNil(launchSpan()?.attributes["app.start.prewarm.cache_state"])
+    }
+
+    func testLaunchRecordsHowManyPagesWereSampled() {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0, sampled: 200))
+
+      activate()
+
+      XCTAssertEqual(launchSpan()?.attributes["app.start.pages.text.sampled"], .int(200))
+    }
+
+    func testDefaultConfigurationRecordsEveryLaunchType() {
+      XCTAssertEqual(AppLaunchInstrumentationConfiguration().launchTypes, Set(AppLaunchInstrumentationConfiguration.LaunchType.allCases))
+      XCTAssertTrue(AppLaunchInstrumentationConfiguration().launchTypes.contains(.prewarmed))
+    }
+
+    func testValidatingAConfigurationKeepsItsOtherOptions() {
+      let configuration = MincoreLaunchInstrumentation.validated(
+        AppLaunchInstrumentationConfiguration(launchTypes: [.cold], maxLaunchDuration: 30, coldPageInRatio: 0)
+      )
+
+      XCTAssertEqual(configuration.launchTypes, [.cold])
+      XCTAssertEqual(configuration.maxLaunchDuration, 30)
+      XCTAssertEqual(configuration.coldPageInRatio, 0.5)
+    }
+
+    func testMincoreInstallStillUpdatesLaunchHistory() {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
+
+      XCTAssertEqual(launchHistory.exchangeCount, 1)
+    }
+
+    func testResumeHasNoSampleAttributes() {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
+      activate()
+
+      post(didEnterBackground)
+      post(willEnterForeground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame.addingTimeInterval(10))
+
+      let resume = finishedSpans().last
+      XCTAssertEqual(resume?.name, "app.resume")
+      XCTAssertEqual(resume?.attributes["app.resume.type"], .string("hot"))
+      XCTAssertNil(resume?.attributes["app.start.pages.text.page_in_ratio"])
+    }
+
+    func testResumeRecordsThePageInsBetweenItsStartAndEnd() {
+      // The counter is cumulative for the process, so 140 - 100 belongs to this resume.
+      let counter = PageInCounter([100, 140])
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0), pageInsNow: { counter.read() })
+      activate()
+
+      post(didEnterBackground)
+      post(willEnterForeground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame.addingTimeInterval(10))
+
+      XCTAssertEqual(span("app.resume")?.attributes["app.resume.page_ins"], .int(40))
+    }
+
+    func testTheLaunchSpanHasNoResumePageIns() {
+      let counter = PageInCounter([100, 140])
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0), pageInsNow: { counter.read() })
+      activate()
+
+      XCTAssertNil(launchSpan()?.attributes["app.resume.page_ins"],
+                   "the counter is only read when a resume starts")
+    }
+
+    func testAResumeHasNoPageInsWhenTheCounterCantBeRead() {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
+      activate()
+
+      post(didEnterBackground)
+      post(willEnterForeground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame.addingTimeInterval(10))
+
+      let resume = span("app.resume")
+      XCTAssertNotNil(resume, "the resume is still recorded")
+      XCTAssertNil(resume?.attributes["app.resume.page_ins"])
+    }
+
+    func testAPageInCounterThatWentBackwardsIsNotRecorded() {
+      // A counter can only go up, so a lower reading at the end means it was reset or misread.
+      let counter = PageInCounter([140, 100])
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0), pageInsNow: { counter.read() })
+      activate()
+
+      post(didEnterBackground)
+      post(willEnterForeground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame.addingTimeInterval(10))
+
+      let resume = span("app.resume")
+      XCTAssertNotNil(resume, "the resume is still recorded")
+      XCTAssertNil(resume?.attributes["app.resume.page_ins"],
+                   "a negative count would be worse than none")
+    }
+
+    func testResumeRecordsThePageSampleTakenWhenTheAppBackgrounded() {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0),
+              backgroundSample: LaunchPageSample(residentAtEnd: 200, pagedIn: 50))
+      activate()
+
+      post(didEnterBackground)
+      post(willEnterForeground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame.addingTimeInterval(10))
+
+      XCTAssertTrue(backgroundPageSample.didTake, "the baseline is taken when the app backgrounds")
+      let resume = span("app.resume")
+      XCTAssertEqual(resume?.attributes["app.resume.pages.text.sampled"], .int(256))
+      XCTAssertEqual(resume?.attributes["app.resume.pages.text.resident_at_end"], .int(200))
+      XCTAssertEqual(resume?.attributes["app.resume.pages.text.paged_in"], .int(50))
+      XCTAssertEqual(resume?.attributes["app.resume.pages.text.page_in_ratio"], .double(0.25))
+    }
+
+    func testAResumeTheAppDidNotEnterTheBackgroundBeforeHasNoPageSample() {
+      // A background launch's first foreground is a resume, and the app was never in the
+      // foreground to leave, so there's no baseline to measure against.
+      install(sample: nil, backgroundSample: LaunchPageSample(residentAtEnd: 200, pagedIn: 50),
+              isBackgroundLaunch: true)
+
+      post(willEnterForeground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertFalse(backgroundPageSample.didTake)
+      let resume = span("app.resume")
+      XCTAssertEqual(resume?.attributes["app.resume.type"], .string("background_launched"),
+                     "the resume is still recorded")
+      XCTAssertNil(resume?.attributes["app.resume.pages.text.paged_in"])
+      XCTAssertNil(resume?.attributes["app.resume.pages.text.page_in_ratio"])
+    }
+
+    func testTheLaunchSpanHasNoResumePageSample() {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0),
+              backgroundSample: LaunchPageSample(residentAtEnd: 200, pagedIn: 50))
+      activate()
+
+      XCTAssertNil(launchSpan()?.attributes["app.resume.pages.text.paged_in"],
+                   "a launch is measured against the initializer's baseline, not the background one")
+    }
+
+    func testAResumePageSampleWithNothingResidentHasNoRatio() {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0),
+              backgroundSample: LaunchPageSample(residentAtEnd: 0, pagedIn: 0))
+      activate()
+
+      post(didEnterBackground)
+      post(willEnterForeground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame.addingTimeInterval(10))
+
+      let resume = span("app.resume")
+      XCTAssertEqual(resume?.attributes["app.resume.pages.text.resident_at_end"], .int(0))
+      XCTAssertNil(resume?.attributes["app.resume.pages.text.page_in_ratio"],
+                   "nothing was in memory to compare, so a ratio would divide by zero")
+    }
+
+    func testLaunchIsARootSpanWithAChildSpanPerPhase() throws {
+      let didFinish = Date(timeIntervalSince1970: 1_002.1)
+      let sceneConnect = Date(timeIntervalSince1970: 1_002.2)
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 120))
+      post(didFinishLaunching, at: didFinish)
+      post(sceneWillConnect, at: sceneConnect)
+
+      post(didBecomeActive, at: becameActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      let root = try XCTUnwrap(launchSpan())
+      XCTAssertEqual(root.kind, .internal)
+      XCTAssertNil(root.parentSpanId)
+      XCTAssertEqual(root.instrumentationScope.name, "io.opentelemetry.lifecycle")
+      XCTAssertEqual(root.startTime, processStart)
+      XCTAssertEqual(root.endTime, firstFrame)
+      XCTAssertEqual(root.attributes["app.start.outcome"], .string("completed"))
+      XCTAssertEqual(root.attributes["app.start.determined_by"], .string("page_sampling"))
+      XCTAssertNil(root.attributes["start.type"])
+
+      let preInit = try XCTUnwrap(span("app.start.pre_init"))
+      let appInit = try XCTUnwrap(span("app.start.app_init"))
+      let render = try XCTUnwrap(span("app.start.render"))
+      let sceneSetup = try XCTUnwrap(span("app.start.scene_setup"))
+      XCTAssertEqual(preInit.parentSpanId, root.spanId)
+      XCTAssertEqual(appInit.parentSpanId, root.spanId)
+      XCTAssertEqual(render.parentSpanId, root.spanId)
+      XCTAssertEqual(sceneSetup.parentSpanId, render.spanId)
+      XCTAssertEqual(preInit.startTime, processStart)
+      XCTAssertEqual(preInit.endTime, appCodeStart)
+      XCTAssertEqual(appInit.startTime, appCodeStart)
+      XCTAssertEqual(appInit.endTime, didFinish)
+      XCTAssertEqual(render.startTime, didFinish)
+      XCTAssertEqual(render.endTime, firstFrame)
+      XCTAssertEqual(sceneSetup.startTime, sceneConnect)
+      XCTAssertEqual(sceneSetup.endTime, firstFrame)
+      XCTAssertTrue(appInit.attributes.isEmpty, "child spans have no attributes")
+
+      XCTAssertEqual(root.attributes["app.start.pre_init.duration"], .double(1))
+      XCTAssertEqual(root.attributes["app.start.app_init.duration"], .double(didFinish.timeIntervalSince(appCodeStart)))
+      XCTAssertEqual(root.attributes["app.start.render.duration"], .double(firstFrame.timeIntervalSince(didFinish)))
+    }
+
+    func testSceneSetupStartsWithItsParentWhenTheSceneConnectedFirst() throws {
+      // Documented UIKit order puts `willConnectTo` after `didFinishLaunching`, so this only
+      // happens if a clock step or an out-of-order notification says otherwise.
+      let sceneConnect = Date(timeIntervalSince1970: 1_001.5)
+      let didFinish = Date(timeIntervalSince1970: 1_002.1)
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 120))
+      post(sceneWillConnect, at: sceneConnect)
+      post(didFinishLaunching, at: didFinish)
+
+      post(didBecomeActive, at: becameActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      let render = try XCTUnwrap(span("app.start.render"))
+      let sceneSetup = try XCTUnwrap(span("app.start.scene_setup"))
+      XCTAssertEqual(render.startTime, didFinish)
+      XCTAssertEqual(sceneSetup.parentSpanId, render.spanId)
+      XCTAssertEqual(sceneSetup.startTime, didFinish, "a child span must not start before its parent")
+      XCTAssertEqual(sceneSetup.endTime, firstFrame)
+    }
+
+    func testPrewarmedLaunchStartsAtActivation() throws {
+      let didFinish = Date(timeIntervalSince1970: 1_002.1)
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 120), isActivePrewarm: true)
+      post(didFinishLaunching, at: didFinish)
+
+      post(didBecomeActive, at: becameActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      let root = try XCTUnwrap(launchSpan())
+      XCTAssertEqual(root.startTime, appCodeStart)
+      XCTAssertEqual(root.endTime, firstFrame)
+      XCTAssertEqual(root.attributes["app.start.pre_activation.duration"], .double(1))
+      XCTAssertEqual(root.attributes["app.start.prewarm.cache_state"], .string("cold"))
+      XCTAssertNil(span("app.start.pre_init"), "a phase before the span starts isn't recorded")
+      XCTAssertNil(root.attributes["app.start.pre_init.duration"])
+      XCTAssertEqual(span("app.start.app_init")?.startTime, appCodeStart)
+    }
+
+    func testPrewarmedLaunchThatFoundItsCodeInMemoryHasAWarmCache() {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0), isActivePrewarm: true)
+
+      activate()
+
+      XCTAssertEqual(launchSpan()?.attributes["app.start.prewarm.cache_state"], .string("warm"))
+    }
+
+    func testPhaseMissingATimestampIsNotRecorded() {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
+
+      activate()
+
+      XCTAssertEqual(Set(finishedSpans().map(\.name)), ["app.start", "app.start.pre_init"])
+      XCTAssertNil(launchSpan()?.attributes["app.start.app_init.duration"])
+      XCTAssertNil(launchSpan()?.attributes["app.start.render.duration"])
+    }
+
+    func testInferredLaunchSaysItWasDeterminedByLaunchHistory() {
+      install(sample: nil)
+
+      activate()
+
+      XCTAssertEqual(launchSpan()?.attributes["app.start.determined_by"], .string("launch_history"))
+    }
+
+    func testLaunchRecordsPageIns() {
+      install(sample: nil, pageIns: LaunchPageIns(beforeTextSample: 1_180, afterTextSample: 96))
+
+      activate()
+
+      XCTAssertEqual(launchSpan()?.attributes["app.start.page_ins.before_text_sample"], .int(1_180))
+      XCTAssertEqual(launchSpan()?.attributes["app.start.page_ins.after_text_sample"], .int(96))
+    }
+
+    func testLaunchAbandonedBeforeItsFirstFrameEndsWhenTheAppLeft() throws {
+      let left = Date(timeIntervalSince1970: 1_002.55)
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
+      post(sceneWillConnect, at: Date(timeIntervalSince1970: 1_002.2))
+      post(didBecomeActive, at: becameActive)
+
+      post(didEnterBackground, at: left)
+      firstFrameReader.displayFrame(at: firstFrame.addingTimeInterval(60))
+
+      let root = try XCTUnwrap(launchSpan())
+      XCTAssertEqual(root.attributes["app.start.outcome"], .string("abandoned"))
+      XCTAssertEqual(root.endTime, left)
+      XCTAssertEqual(finishedSpans().filter { $0.name == "app.start" }.count, 1)
+    }
+
+    func testCompletedLaunchIsNotAbandonedByLeavingLater() {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
+      activate()
+
+      post(didEnterBackground)
+
+      XCTAssertEqual(finishedSpans().filter { $0.name == "app.start" }.count, 1)
+      XCTAssertEqual(launchSpan()?.attributes["app.start.outcome"], .string("completed"))
+    }
+
+    func testHotResumeReportsItsTimeInTheBackground() throws {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
+      activate()
+      let left = firstFrame.addingTimeInterval(10)
+      let back = firstFrame.addingTimeInterval(14)
+      let end = firstFrame.addingTimeInterval(15)
+
+      post(didEnterBackground, at: left)
+      post(willEnterForeground, at: back)
+      post(didBecomeActive, at: back)
+      firstFrameReader.displayFrame(at: end)
+
+      let resume = try XCTUnwrap(span("app.resume"))
+      XCTAssertNil(resume.parentSpanId)
+      XCTAssertEqual(resume.startTime, back)
+      XCTAssertEqual(resume.endTime, end)
+      XCTAssertEqual(resume.attributes["app.resume.type"], .string("hot"))
+      XCTAssertEqual(resume.attributes["app.resume.outcome"], .string("completed"))
+      XCTAssertEqual(resume.attributes["app.resume.background.duration"], .double(4))
+      XCTAssertNil(span("app.resume.scene_setup"))
+    }
+
+    func testSceneReconnectStartsTheResumeWhenTheSceneConnected() throws {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
+      activate()
+      let connect = firstFrame.addingTimeInterval(13)
+      let foreground = firstFrame.addingTimeInterval(14)
+      let end = firstFrame.addingTimeInterval(15)
+
+      post(didEnterBackground, at: firstFrame.addingTimeInterval(10))
+      post(sceneWillConnect, at: connect)
+      post(willEnterForeground, at: foreground)
+      post(didBecomeActive, at: foreground)
+      firstFrameReader.displayFrame(at: end)
+
+      let resume = try XCTUnwrap(span("app.resume"))
+      let sceneSetup = try XCTUnwrap(span("app.resume.scene_setup"))
+      XCTAssertEqual(resume.startTime, connect)
+      XCTAssertEqual(resume.attributes["app.resume.type"], .string("scene_reconnect"))
+      XCTAssertEqual(sceneSetup.parentSpanId, resume.spanId)
+      XCTAssertEqual(sceneSetup.startTime, connect, "a child span must not start before its parent")
+      XCTAssertEqual(sceneSetup.endTime, end)
+    }
+
+    func testFirstForegroundAfterABackgroundLaunchIsBackgroundLaunched() {
+      install(sample: nil, isBackgroundLaunch: true)
+
+      post(willEnterForeground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      XCTAssertEqual(span("app.resume")?.attributes["app.resume.type"], .string("background_launched"))
+      XCTAssertNil(span("app.resume")?.attributes["app.resume.background.duration"])
+      XCTAssertNil(launchSpan())
+    }
+
+    func testAbandonedResumeIsRecorded() throws {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
+      activate()
+      let back = firstFrame.addingTimeInterval(14)
+      let left = firstFrame.addingTimeInterval(14.1)
+
+      post(didEnterBackground)
+      post(willEnterForeground, at: back)
+      post(didBecomeActive, at: back)
+      post(didEnterBackground, at: left)
+
+      let resume = try XCTUnwrap(span("app.resume"))
+      XCTAssertEqual(resume.attributes["app.resume.outcome"], .string("abandoned"))
+      XCTAssertEqual(resume.endTime, left)
+    }
+
+    func testOnlyCompletedStartsRecordADurationMetric() throws {
+      let exporter = CapturingMetricExporter()
+      let meterProvider = MeterProviderSdk.builder()
+        .registerMetricReader(reader: PeriodicMetricReaderBuilder(exporter: exporter).build())
+        .registerView(selector: InstrumentSelectorBuilder().build(), view: View.builder().build())
+        .build()
+      OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
+      defer { OpenTelemetry.registerMeterProvider(meterProvider: DefaultMeterProvider.instance) }
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
+
+      activate()
+      post(didEnterBackground)
+      post(willEnterForeground)
+      post(didBecomeActive)
+      post(didEnterBackground)
+      _ = meterProvider.forceFlush()
+
+      let names = Set(exporter.metrics.map(\.name))
+      XCTAssertTrue(names.contains("app.start.duration"))
+      XCTAssertFalse(names.contains("app.resume.duration"), "an abandoned resume has no metric value")
+    }
+
+    func testLaunchThatEndedBeforeItStartedIsDropped() throws {
+      let exporter = CapturingMetricExporter()
+      let meterProvider = MeterProviderSdk.builder()
+        .registerMetricReader(reader: PeriodicMetricReaderBuilder(exporter: exporter).build())
+        .registerView(selector: InstrumentSelectorBuilder().build(), view: View.builder().build())
+        .build()
+      OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
+      defer { OpenTelemetry.registerMeterProvider(meterProvider: DefaultMeterProvider.instance) }
+      let messages = captureFeedback()
+      OpenTelemetry.setDebugEnabled(true)
+      // The wall clock stepped backward after the process started, so process start is now later
+      // than the first frame and the duration would be negative.
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 120),
+              processStartTime: { Date(timeIntervalSince1970: 2_000) })
+
+      activate()
+      _ = meterProvider.forceFlush()
+
+      XCTAssertTrue(finishedSpans().isEmpty, "no span may end before it started")
+      XCTAssertFalse(Set(exporter.metrics.map(\.name)).contains("app.start.duration"),
+                     "a dropped launch records no duration")
+      XCTAssertTrue(messages.values.contains { $0.hasPrefix("[warn]") && $0.contains("ended before it started") },
+                    "\(messages.values)")
+    }
+
+    func testResumeThatEndedBeforeItStartedIsDropped() throws {
+      let exporter = CapturingMetricExporter()
+      let meterProvider = MeterProviderSdk.builder()
+        .registerMetricReader(reader: PeriodicMetricReaderBuilder(exporter: exporter).build())
+        .registerView(selector: InstrumentSelectorBuilder().build(), view: View.builder().build())
+        .build()
+      OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
+      defer { OpenTelemetry.registerMeterProvider(meterProvider: DefaultMeterProvider.instance) }
+      let messages = captureFeedback()
+      OpenTelemetry.setDebugEnabled(true)
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
+      activate()
+
+      // The wall clock stepped backward after the resume began, so its first frame is earlier.
+      post(didEnterBackground, at: firstFrame.addingTimeInterval(10))
+      post(willEnterForeground, at: Date(timeIntervalSince1970: 3_000))
+      post(didBecomeActive, at: Date(timeIntervalSince1970: 2_000))
+      firstFrameReader.displayFrame(at: Date(timeIntervalSince1970: 2_000.1))
+      _ = meterProvider.forceFlush()
+
+      XCTAssertNotNil(launchSpan(), "the launch before the step is still recorded")
+      XCTAssertNil(span("app.resume"), "no span may end before it started")
+      XCTAssertNil(span("app.resume.scene_setup"))
+      XCTAssertFalse(Set(exporter.metrics.map(\.name)).contains("app.resume.duration"),
+                     "a dropped resume records no duration")
+      XCTAssertTrue(messages.values.contains { $0.hasPrefix("[warn]") && $0.contains("ended before it started") },
+                    "\(messages.values)")
+    }
+
+    func testDurationMetricUsesTheLifecycleScope() throws {
+      let exporter = CapturingMetricExporter()
+      let meterProvider = MeterProviderSdk.builder()
+        .registerMetricReader(reader: PeriodicMetricReaderBuilder(exporter: exporter).build())
+        .registerView(selector: InstrumentSelectorBuilder().build(), view: View.builder().build())
+        .build()
+      OpenTelemetry.registerMeterProvider(meterProvider: meterProvider)
+      defer { OpenTelemetry.registerMeterProvider(meterProvider: DefaultMeterProvider.instance) }
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
+
+      activate()
+      _ = meterProvider.forceFlush()
+
+      let metric = try XCTUnwrap(exporter.metrics.first { $0.name == "app.start.duration" })
+      XCTAssertEqual(metric.instrumentationScopeInfo.name, "io.opentelemetry.lifecycle")
+    }
+
+    func testPageInRatio() {
+      XCTAssertEqual(LaunchPageSample(residentAtEnd: 4, pagedIn: 1).pageInRatio, 0.25)
+      XCTAssertNil(LaunchPageSample(residentAtEnd: 0, pagedIn: 0).pageInRatio)
+    }
+
+    // The test host decides what can be sampled: plain `xctest` is a single page, the header the
+    // sampler skips, so a sample may not exist here. The `app-start-mincore` integration launch
+    // covers the sampler in a real app.
+    func testKernelSamplerReadsPageIns() throws {
+      let pageIns = try XCTUnwrap(KernelLaunchPageSampler().readPageIns())
+
+      XCTAssertGreaterThanOrEqual(pageIns.beforeTextSample, 0)
+      XCTAssertGreaterThanOrEqual(pageIns.afterTextSample, 0)
+    }
+
+    // The test host's own page-ins are whatever the process happened to do, so this checks the
+    // cumulative reader against the pair that's already trusted instead of a fixed number.
+    func testKernelSamplerReadsTheCumulativePageInCounter() throws {
+      let sampler = KernelLaunchPageSampler()
+      // `beforeTextSample` plus `afterTextSample` is the total at the moment of that call.
+      let pair = try XCTUnwrap(sampler.readPageIns())
+      let now = try XCTUnwrap(sampler.readPageInsNow())
+      let later = try XCTUnwrap(sampler.readPageInsNow())
+
+      XCTAssertGreaterThanOrEqual(now, pair.beforeTextSample + pair.afterTextSample,
+                                  "a cumulative counter can't be behind a total read earlier")
+      XCTAssertGreaterThanOrEqual(later, now, "a cumulative counter can't go backwards")
+    }
+
+    func testKernelSamplerSampleIsConsistent() {
+      guard let sample = KernelLaunchPageSampler().readSample() else { return }
+
+      XCTAssertLessThanOrEqual(sample.residentAtEnd, 256)
+      XCTAssertLessThanOrEqual(sample.pagedIn, sample.residentAtEnd)
+      XCTAssertLessThanOrEqual(sample.residentAtEnd, sample.sampled)
+      XCTAssertLessThanOrEqual(sample.sampled, 256)
+    }
+
+    func testTheLaunchSpanRecordsHowManyTextPagesCouldBeSampled() {
+      // More pages than the sample covers, which is the point of reporting both: the sample stands
+      // for a share of the app's code, and only the total says what share.
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 96), textPageTotal: 1_024)
+      activate()
+
+      let launch = launchSpan()
+      XCTAssertEqual(launch?.attributes["app.start.pages.text.total"], .int(1_024))
+      XCTAssertEqual(launch?.attributes["app.start.pages.text.sampled"], .int(256),
+                     "the sample stays capped, so it doesn't follow the total")
+    }
+
+    func testAResumeRecordsTheTextPageTotalEvenWithoutABackgroundSample() {
+      // The total describes the binary, not the window being measured, so unlike `paged_in` it
+      // doesn't depend on a baseline taken when the app backgrounded.
+      install(sample: nil, backgroundSample: nil, textPageTotal: 1_024, isBackgroundLaunch: true)
+
+      post(willEnterForeground)
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      let resume = span("app.resume")
+      XCTAssertEqual(resume?.attributes["app.resume.pages.text.total"], .int(1_024))
+      XCTAssertNil(resume?.attributes["app.resume.pages.text.paged_in"],
+                   "no baseline was taken, so there's nothing to compare")
+    }
+
+    func testNoTextPageTotalIsRecordedWhenItCantBeRead() {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 96), textPageTotal: nil)
+      activate()
+
+      XCTAssertNil(launchSpan()?.attributes["app.start.pages.text.total"])
+      XCTAssertEqual(launchSpan()?.attributes["app.start.pages.text.sampled"], .int(256),
+                     "a missing total doesn't suppress the sample")
+    }
+
+    func testKernelSamplerReadsATextPageTotalNoSmallerThanTheSample() {
+      guard let total = KernelLaunchPageSampler().readTextPageTotal(),
+            let sample = KernelLaunchPageSampler().readSample() else { return }
+
+      XCTAssertGreaterThan(total, 0)
+      XCTAssertGreaterThanOrEqual(total, sample.sampled,
+                                  "the sample is drawn from the total, so it can't exceed it")
+    }
+  }
+#endif
