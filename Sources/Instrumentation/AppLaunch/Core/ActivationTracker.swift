@@ -46,11 +46,16 @@
     // Whether the process's role says the system started it in the background, and it hasn't
     // entered the foreground or background since.
     private var isUnconfirmedBackgroundLaunch: Bool
+    // Whether the process's role said the system started the app in the background, kept for the
+    // whole process so a resume before the first activation can tell a background launch from a
+    // launch the user left.
+    private let isBackgroundLaunch: Bool
     // Incremented whenever the app enters the background, so a first frame read that started
     // before then doesn't record an activation that spans the time in the background.
     private(set) var backgroundCount = 0
 
     init(isAppActive: Bool, isBackgroundLaunch: Bool) {
+      self.isBackgroundLaunch = isBackgroundLaunch
       hasHandledLaunch = isAppActive || isBackgroundLaunch
       hasBecomeActive = isAppActive
       isInForeground = isAppActive || !isBackgroundLaunch
@@ -81,7 +86,12 @@
       isUnconfirmedBackgroundLaunch = false
       if pendingResume == nil {
         let start = sceneConnectTime ?? time
-        let kind: ResumeKind = !hasBecomeActive ? .backgroundLaunched : sceneConnectTime != nil ? .sceneReconnect : .hot
+        // `background_launched` is only for a process the system started in the background. The
+        // other way to reach a resume before the first activation is a launch the user left before
+        // its first frame, which did enter the background, so its UI is built and a page baseline
+        // was taken: that's an ordinary resume.
+        let isSystemBackgroundLaunch = !hasBecomeActive && isBackgroundLaunch
+        let kind: ResumeKind = isSystemBackgroundLaunch ? .backgroundLaunched : sceneConnectTime != nil ? .sceneReconnect : .hot
         pendingResume = AppResume(start: start,
                                   kind: kind,
                                   sceneConnectStart: sceneConnectTime,

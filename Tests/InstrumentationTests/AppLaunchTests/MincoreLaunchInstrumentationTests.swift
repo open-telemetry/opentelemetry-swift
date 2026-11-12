@@ -69,25 +69,50 @@
 
   final class FakeFirstFrameReader: FirstFrameReader, @unchecked Sendable {
     private let lock = NSLock()
-    private var completions: [(Date) -> Void] = []
+    // Keyed by token, so cancelling one read leaves the others pending, as a display link does.
+    private var completions: [Int: (Date) -> Void] = [:]
+    private var lastToken = 0
     private var reads = 0
+    private var cancellations = 0
 
     var pendingCount: Int { lock.withLock { completions.count } }
     var readCount: Int { lock.withLock { reads } }
+    var cancelCount: Int { lock.withLock { cancellations } }
 
-    func readFirstFrame(_ completion: @escaping (Date) -> Void) {
-      lock.withLock {
+    func readFirstFrame(_ completion: @escaping (Date) -> Void) -> FirstFrameRead {
+      let token: Int = lock.withLock {
         reads += 1
-        completions.append(completion)
+        lastToken += 1
+        completions[lastToken] = completion
+        return lastToken
       }
+      return Read(reader: self, token: token)
     }
 
     func displayFrame(at date: Date) {
-      let pending: [(Date) -> Void] = lock.withLock {
+      let pending: [Int: (Date) -> Void] = lock.withLock {
         defer { completions.removeAll() }
         return completions
       }
-      pending.forEach { $0(date) }
+      pending.sorted { $0.key < $1.key }.forEach { $0.value(date) }
+    }
+
+    /// Like an invalidated display link: the completion is never called again. Counted whether or
+    /// not the read was still pending, since a cancelled read that already reported is a no-op.
+    private struct Read: FirstFrameRead {
+      let reader: FakeFirstFrameReader
+      let token: Int
+
+      func cancel() {
+        reader.cancel(token)
+      }
+    }
+
+    private func cancel(_ token: Int) {
+      lock.withLock {
+        cancellations += 1
+        completions[token] = nil
+      }
     }
   }
 
@@ -1106,6 +1131,20 @@
       let spans = rootSpans()
       XCTAssertEqual(spans.map { startType($0) }, [.string("resume")])
       XCTAssertEqual(spans.first?.startTime, enteredForeground)
+      XCTAssertEqual(spans.first?.attributes["app.resume.type"], .string("hot"),
+                     "the user left this launch, and the system didn't start the process in the background")
+    }
+
+    func testAResumeBeforeTheFirstActivationIsBackgroundLaunchedOnlyForABackgroundLaunch() {
+      install(isBackgroundLaunch: true)
+      let enteredForeground = Date(timeIntervalSince1970: 2_000)
+
+      post(didEnterBackground)
+      post(willEnterForeground, at: enteredForeground)
+      post(didBecomeActive, at: Date(timeIntervalSince1970: 2_000.2))
+      firstFrameReader.displayFrame(at: Date(timeIntervalSince1970: 2_000.3))
+
+      XCTAssertEqual(rootSpans().first?.attributes["app.resume.type"], .string("background_launched"))
     }
 
     func testSceneConnectingInBackgroundDoesNotStartResume() {
@@ -1191,6 +1230,39 @@
       XCTAssertEqual(spans.count, 1)
       XCTAssertEqual(spans.first?.attributes["app.start.outcome"], .string("abandoned"))
       XCTAssertEqual(spans.first?.endTime, becameActive, "the late frame must not end the launch")
+    }
+
+    func testEnteringBackgroundCancelsThePendingFirstFrameRead() {
+      install()
+
+      post(didBecomeActive)
+      XCTAssertEqual(firstFrameReader.pendingCount, 1)
+      post(didEnterBackground)
+
+      XCTAssertEqual(firstFrameReader.cancelCount, 1, "the frame it would report is from the next time the app returns")
+      XCTAssertEqual(firstFrameReader.pendingCount, 0)
+    }
+
+    func testStoppingCancelsThePendingFirstFrameRead() {
+      install()
+
+      post(didBecomeActive)
+      XCTAssertEqual(firstFrameReader.pendingCount, 1)
+      AppLaunchRuntime.reset()
+
+      XCTAssertEqual(firstFrameReader.cancelCount, 1)
+      XCTAssertEqual(firstFrameReader.pendingCount, 0)
+    }
+
+    func testACompletedFirstFrameReadIsNotCancelledLater() {
+      install()
+
+      post(didBecomeActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+      post(didEnterBackground)
+
+      XCTAssertEqual(firstFrameReader.cancelCount, 0, "the read reported, so there's nothing left to stop")
+      XCTAssertEqual(rootSpans().first?.attributes["app.start.outcome"], .string("completed"))
     }
 
     func testEnteringBackgroundBeforeFirstFrameAbandonsResume() {

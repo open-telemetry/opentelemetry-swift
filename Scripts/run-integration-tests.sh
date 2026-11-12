@@ -207,6 +207,9 @@ xcrun simctl boot "$SIMULATOR_UDID" >/dev/null 2>&1 || true
 xcrun simctl bootstatus "$SIMULATOR_UDID" -b
 
 log "Installing $APP_BUNDLE_ID"
+# A previous run that was killed rather than exiting can have left these set, which would put
+# every launch below into the wrong scenario, so the state the simulator starts in is cleared.
+clear_background_launch_environment
 xcrun simctl terminate "$SIMULATOR_UDID" "$APP_BUNDLE_ID" >/dev/null 2>&1 || true
 xcrun simctl uninstall "$SIMULATOR_UDID" "$APP_BUNDLE_ID" >/dev/null 2>&1 || true
 xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
@@ -276,6 +279,10 @@ launch_app() {
 launch_app_in_background() {
   local tag="$1"
   local payload="$OUTPUT_DIR/silent-push.json"
+  # These are set in the simulator's own launchd environment, so every app launched there reads
+  # them, and `trap cleanup EXIT` doesn't run if this script is killed. Clearing them first makes a
+  # run after one that was killed self-healing rather than leaving the simulator in test mode.
+  clear_background_launch_environment
   xcrun simctl spawn "$SIMULATOR_UDID" launchctl setenv OTEL_EXPORTER_OTLP_ENDPOINT "http://localhost:$PORT"
   xcrun simctl spawn "$SIMULATOR_UDID" launchctl setenv INTEGRATION_STATUS_BASE_URL "http://localhost:$STATUS_PORT"
   xcrun simctl spawn "$SIMULATOR_UDID" launchctl setenv INTEGRATION_LAUNCH "$tag"
