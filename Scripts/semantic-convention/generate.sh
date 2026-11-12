@@ -35,10 +35,16 @@ git fetch origin "$SPEC_VERSION"
 git reset --hard FETCH_HEAD
 cd ${SCRIPT_DIR}
 
+# weaver only writes files, so generate into a fresh folder and swap it in to drop stale ones
+OUT_DIR="${SCRIPT_DIR}/.weaver-out"
+ATTRIBUTES_DIR="${ROOT_DIR}/Sources/OpenTelemetryApi/Common/SemanticAttributes/Attributes"
+rm -rf "$OUT_DIR"
+mkdir "$OUT_DIR"
+
 docker run --rm \
   -v ${SCRIPT_DIR}/semantic-conventions/model:/source \
   -v ${SCRIPT_DIR}/templates:/templates \
-  -v ${ROOT_DIR}/Sources/OpenTelemetryApi/Common/SemanticAttributes:/output \
+  -v "$OUT_DIR":/output \
   otel/weaver:v$GENERATOR_VERSION \
   registry \
   generate \
@@ -48,6 +54,11 @@ docker run --rm \
   /output \
   -Doutput=/output/ \
   -Dexclude_deprecated="$EXCLUDE_DEPRECATED" \
+
+[ -d "$OUT_DIR/Attributes" ] || { echo "error: weaver produced no Attributes folder" >&2; exit 1; }
+rm -rf "$ATTRIBUTES_DIR"
+mv "$OUT_DIR/Attributes" "$ATTRIBUTES_DIR"
+rm -rf "$OUT_DIR"
 
 cd "$ROOT_DIR"
 
