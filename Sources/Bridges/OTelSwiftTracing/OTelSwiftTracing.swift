@@ -238,16 +238,30 @@ public final class OTelSpan: Tracing.Span, @unchecked Sendable {
         }
         set {
             lock.withLock {
-                // `setAttributes` only adds or updates keys, so keys the caller removed must be cleared explicitly.
-                storedAttributes.forEach { key, _ in
-                    if newValue[key] == nil {
-                        otelSpan.setAttribute(key: key, value: nil)
-                    }
-                }
+                let previous = storedAttributes
                 storedAttributes = newValue
-                otelSpan.setAttributes(Self.convertAttributes(newValue))
+                syncAttributes(replacing: previous)
             }
         }
+        // Holds the lock for the whole read-modify-write so `span.attributes[k] = v` is atomic across threads.
+        _modify {
+            lock.lock()
+            defer { lock.unlock() }
+            let previous = storedAttributes
+            yield &storedAttributes
+            syncAttributes(replacing: previous)
+        }
+    }
+
+    // Must be called with `lock` held.
+    private func syncAttributes(replacing previous: Tracing.SpanAttributes) {
+        // `setAttributes` only adds or updates keys, so keys the caller removed must be cleared explicitly.
+        previous.forEach { key, _ in
+            if storedAttributes[key] == nil {
+                otelSpan.setAttribute(key: key, value: nil)
+            }
+        }
+        otelSpan.setAttributes(Self.convertAttributes(storedAttributes))
     }
 
     public var isRecording: Bool {
