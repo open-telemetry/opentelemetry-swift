@@ -54,13 +54,22 @@ import OpenTelemetryApi
       AppLaunchRuntime.install(dependencies: dependencies)
     }
 
-    /// A threshold outside its range would make every launch the same type, so it's replaced with
+    /// A threshold outside its range would make every launch the same type, and a
+    /// `maxLaunchDuration` that isn't above 0 would drop every launch, so either is replaced with
     /// the default.
     static func validated(_ configuration: AppLaunchInstrumentationConfiguration) -> AppLaunchInstrumentationConfiguration {
+      let defaults = AppLaunchInstrumentationConfiguration()
       var validated = configuration
       if !(configuration.coldPageInRatio > 0 && configuration.coldPageInRatio <= 1) {
         InternalLogger.error("`coldPageInRatio` must be above 0 and at most 1, so the default is used.")
-        validated.coldPageInRatio = AppLaunchInstrumentationConfiguration().coldPageInRatio
+        validated.coldPageInRatio = defaults.coldPageInRatio
+      }
+      // Every launch is longer than 0 seconds, so a value of 0 or less records nothing at all, and
+      // the only sign of it would be a debug-only log per launch. `.infinity` is allowed, because
+      // it means every launch is recorded, and a `NaN` fails this comparison like a negative does.
+      if !(configuration.maxLaunchDuration > 0) {
+        InternalLogger.error("`maxLaunchDuration` must be a number of seconds above 0, so the default is used.")
+        validated.maxLaunchDuration = defaults.maxLaunchDuration
       }
       return validated
     }

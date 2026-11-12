@@ -37,8 +37,10 @@ repo work together inside a real iOS app. The flow is:
    - `app-start-late-install`: installs `MincoreLaunchInstrumentation` after the
      app first became active, so the launch must not be recorded. The second
      activation blocks the main thread while the runner opens Settings, so the
-     app is in the background before its first frame and that activation must
-     not be recorded either. The third must be a `resume`.
+     app is in the background before its first frame, and that activation must
+     not produce a resume that completed: it's either dropped or recorded with
+     `app.resume.outcome` of `abandoned`. The third must be a completed `hot`
+     `resume`.
    - `app-start-background`: the runner sends a silent push, so the system
      launches the app in the background (as for a background fetch) and
      connects its scene there, then brings it to the foreground. The first
@@ -47,9 +49,15 @@ repo work together inside a real iOS app. The flow is:
      collector endpoint and launch tag with `launchctl setenv` in the
      simulator.
    - `app-start-update`: the runner first reinstalls the app with its build
-     number bumped, as an app update does, so the launch must be `cold`.
+     number bumped, as an app update does, which is a cause the launch history
+     calls `cold`.
    - `app-start-reinstall`: the runner installs that same build again, so only
-     the install directory differs and the launch must still be `cold`.
+     the install directory differs, which the launch history also calls `cold`.
+     Neither launch is asserted to be `cold` outright: the simulator shares the
+     Mac's page cache, so these launches are usually classified by page
+     sampling instead, and the assertion checks the rule that actually applied
+     — the type follows the ratio under `page_sampling`, and is `cold` under
+     `launch_history`.
    - `app-start-mincore`: the simulator shares the Mac's page cache, so the
      launch type isn't predictable, but it must agree with the sampled pages on
      the span. The launch has a library inserted, as Xcode does, so the app
@@ -57,7 +65,12 @@ repo work together inside a real iOS app. The flow is:
    Every launch also records its process start (with the process's task role)
    and each scene connection, `willEnterForeground`, `didBecomeActive` and
    `didEnterBackground` as zero-length marker spans. The app records `app.start`,
-   so `AppStartTests` checks the `app-start-mincore` launch and the task roles.
+   so `AppStartTests` checks the whole span tree of the `app-start-mincore`
+   launch, the task roles, and the spans each launch above is for: the resume
+   after `app-start-resume`, the absent launch and single completed resume of
+   `app-start-late-install`, the `background_launched` resume of
+   `app-start-background`, and the one launch `app-start-update` and
+   `app-start-reinstall` each record.
    They compare each span's timestamps with the markers, following the span definition
    in `Sources/Instrumentation/SemanticConventions/model/swift/spans.yaml`.
    Attribute keys and values come from `FederatedSemanticConventions`, which is

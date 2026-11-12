@@ -22,6 +22,9 @@
     private var _didFinishLaunchingTime: Date?
     // Records the start that's waiting for its first frame as abandoned.
     private var _abandon: ((AppStartEnd) -> Void)?
+    // The first frame read that hasn't reported yet, so it can be stopped when its activation can
+    // no longer end at a first frame.
+    private var _pendingFirstFrameRead: FirstFrameRead?
 
     var configuration: AppLaunchInstrumentationConfiguration { dependencies.configuration }
 
@@ -57,14 +60,16 @@
     }
 
     func stop() {
-      let observers: [NSObjectProtocol] = lock.withLock {
+      let (observers, pendingRead): ([NSObjectProtocol], FirstFrameRead?) = lock.withLock {
         defer {
           _observers = []
+          _pendingFirstFrameRead = nil
           _isStopped = true
         }
-        return _observers
+        return (_observers, _pendingFirstFrameRead)
       }
       observers.forEach(dependencies.notificationCenter.removeObserver)
+      pendingRead?.cancel()
     }
 
     private func appDidFinishLaunching() {
@@ -93,10 +98,17 @@
 
     private func appDidEnterBackground() {
       let time = dependencies.now()
-      let (isBeforeFirstActivation, abandon) = lock.withLock {
-        defer { _abandon = nil }
-        return (_tracker.didEnterBackground(at: time), _abandon)
+      let (isBeforeFirstActivation, abandon, pendingRead) = lock.withLock {
+        defer {
+          _abandon = nil
+          _pendingFirstFrameRead = nil
+        }
+        return (_tracker.didEnterBackground(at: time), _abandon, _pendingFirstFrameRead)
       }
+      // The frame this read would report is from the next time the app returns, so the read is
+      // over whether or not it had started a start. Cancelled before the abandoned start is
+      // recorded, so the completion can't race it.
+      pendingRead?.cancel()
       abandon?(.abandoned(time))
       // Taken here rather than when the app returns, because it's one `mincore` call per sampled
       // page and that would land inside the window the resume is measured over.
@@ -135,16 +147,31 @@
         return
       }
       lock.withLock { _abandon = record }
-      firstFrameReader.readFirstFrame { [self] firstFrameTime in
+      let read = firstFrameReader.readFirstFrame { [self] firstFrameTime in
         // A display link pauses in the background, so if the app left the foreground before the
-        // first frame, the frame it reports is from the next time the app returned.
+        // first frame, the frame it reports is from the next time the app returned. The read is
+        // cancelled then, so this is the belt to that braces: a reader that reports anyway, or a
+        // cancellation that lost a race with a tick already in flight, is still dropped here.
         guard lock.withLock({ !_isStopped && _tracker.backgroundCount == backgroundCount }) else {
           InternalLogger.debug("dropped a \(start.launchType) start, because the app entered the background before the first frame.")
           return
         }
         // A start never ends before the app became active, whatever the reader reports.
-        lock.withLock { _abandon = nil }
+        lock.withLock {
+          _abandon = nil
+          _pendingFirstFrameRead = nil
+        }
         record(.firstFrame(max(firstFrameTime, didBecomeActiveTime)))
+      }
+      // A read that already completed, or an activation the app has left in the meantime, leaves
+      // nothing to cancel, and cancelling a finished read does nothing.
+      let isObsolete: Bool = lock.withLock {
+        guard !_isStopped, _tracker.backgroundCount == backgroundCount, _abandon != nil else { return true }
+        _pendingFirstFrameRead = read
+        return false
+      }
+      if isObsolete {
+        read.cancel()
       }
     }
   }

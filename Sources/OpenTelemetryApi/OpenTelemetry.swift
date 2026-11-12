@@ -93,12 +93,12 @@ public struct OpenTelemetry: Sendable {
     OpenTelemetryStorage.instance.setContextManager(contextManager)
   }
 
-  /// Register a function to be called when the library has warnings or informative messages to relay back to the developer
   /// Turns `InternalLogger`'s debug mode on or off.
   public static func setDebugEnabled(_ enabled: Bool) {
     OpenTelemetryStorage.instance.setDebugEnabled(enabled)
   }
 
+  /// Register a function to be called when the library has warnings or informative messages to relay back to the developer
   public static func registerFeedbackHandler(
     _ handler: @escaping (String) -> Void
   ) {
