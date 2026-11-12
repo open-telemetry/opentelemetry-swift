@@ -49,6 +49,12 @@ SCHEME = "HackerNewsDemo"
 BUNDLE_ID = "io.opentelemetry.HackerNewsDemo"
 LAUNCH_SPAN = "app.start"
 MAX_SAMPLED_PAGES = 256  # MAX_SAMPLED_PAGES in LaunchPageSampling.c.
+# Every iOS device Xcode still builds for is arm64, where getpagesize() is 16 KB, which is also what
+# the library's mincore sample uses. It isn't read from the trace: a virtual-memory event's size is
+# the size of that operation, which can cover several pages, so inferring it from one event can be
+# wrong by a multiple and would then skew every page count below. check_page_size() warns if the
+# trace disagrees.
+DEVICE_PAGE_SIZE = 16384
 COLD_RATIO = 0.5  # The default AppLaunchInstrumentationConfiguration.coldPageInRatio.
 
 DISK_READ = "File Backed Page In"
@@ -388,6 +394,17 @@ def sampled_pages(segments, page_size):
     return sampled
 
 
+def check_page_size(events):
+    """A virtual-memory operation covers whole pages, so every event size should be a multiple of
+    the page size. If one isn't, this isn't a 16 KB-page device and every page count below is
+    wrong."""
+    odd = [size for _, _, _, size in events if size and size % DEVICE_PAGE_SIZE]
+    if odd:
+        log("Warning: %d of %d virtual memory events aren't a multiple of the %d-byte page size "
+            "(smallest %d), so this device may not use %d-byte pages and the page counts are "
+            "unreliable" % (len(odd), len(events), DEVICE_PAGE_SIZE, min(odd), DEVICE_PAGE_SIZE))
+
+
 def analyze_trace(trace, app, directory):
     toc = export_toc(trace)
     pid = re.search(r'<process type="launched"[^>]*pid="(\d+)"', toc).group(1)
@@ -432,7 +449,8 @@ def analyze_trace(trace, app, directory):
     events.sort()
     if not events:
         log("Warning: the trace has no virtual memory events for the app, so every page count is zero")
-    page_size = next((size for _, _, _, size in events if size), 16384)
+    check_page_size(events)
+    page_size = DEVICE_PAGE_SIZE
 
     def in_text(address):
         return any(start <= address < start + size for start, size, _ in segments)

@@ -31,7 +31,9 @@ public struct AppLaunchInstrumentationConfiguration: Equatable, Sendable {
   /// The longest launch, in seconds, that's recorded. A longer launch wasn't waited through by the
   /// user, for example because a background launch wasn't detected. Like Datadog, it's
   /// measured from process start, or from when app code first ran for a prewarmed launch, and
-  /// the default is 60 seconds.
+  /// the default is 60 seconds. It must be above 0, since every launch is longer than that, and a
+  /// value that isn't is reported and replaced with the default. Use `.infinity` to record every
+  /// launch however long it was.
   public var maxLaunchDuration: TimeInterval
 
   /// The share of sampled code, `app.start.pages.text.page_in_ratio`, that a launch must page in from
@@ -45,9 +47,10 @@ public struct AppLaunchInstrumentationConfiguration: Equatable, Sendable {
   /// `app.start.pages.text.page_in_ratio` and the `paged_in`, `resident_at_end`, `sampled` and
   /// `total` counts behind it. A backend that prefers a different line can recalculate from those
   /// and ignore `app.start.type`. Two caveats: this threshold isn't reported, so a span doesn't say
-  /// which line produced its label, and the measurements are only present when
-  /// `app.start.determined_by` is `page_sampling` — a launch that fell back to `launch_history` has
-  /// no ratio to recalculate from.
+  /// which line produced its label, and a launch whose pages couldn't be sampled has no ratio to
+  /// recalculate from. Check for the attributes rather than filtering on `app.start.determined_by`:
+  /// a `launch_history` launch never has them, while a `prewarm_flag` launch carries them whenever
+  /// its pages were sampled, since the environment variable names its type either way.
   public var coldPageInRatio: Double
 
   /// - Parameter launchTypes: The launch types to record. By default all of them.

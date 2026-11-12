@@ -147,6 +147,50 @@
       }
     }
 
+    func testMaxLaunchDurationNotAboveZeroUsesTheDefault() {
+      let messages = captureFeedback()
+
+      for duration in [0, -1, TimeInterval.nan] {
+        let configuration = AppLaunchInstrumentationConfiguration(maxLaunchDuration: duration)
+
+        XCTAssertEqual(MincoreLaunchInstrumentation.validated(configuration).maxLaunchDuration, 60,
+                       "every launch is longer than \(duration) seconds, so nothing would be recorded")
+      }
+
+      XCTAssertEqual(messages.values.filter { $0.contains("maxLaunchDuration") }.count, 3)
+    }
+
+    func testMaxLaunchDurationAboveZeroIsKept() {
+      for duration in [0.001, 60, 3_600, TimeInterval.infinity] {
+        let configuration = AppLaunchInstrumentationConfiguration(maxLaunchDuration: duration)
+
+        XCTAssertEqual(MincoreLaunchInstrumentation.validated(configuration).maxLaunchDuration, duration)
+      }
+    }
+
+    func testALaunchIsRecordedWithAMaxLaunchDurationThatWasCorrected() {
+      // `install(configuration:)` validates before building its dependencies, so this is the
+      // configuration a caller that passed 0 ends up installing with.
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0),
+              configuration: MincoreLaunchInstrumentation.validated(
+                AppLaunchInstrumentationConfiguration(maxLaunchDuration: 0)
+              ))
+
+      activate()
+
+      XCTAssertNotNil(launchSpan(), "the corrected default records the launch instead of dropping every one")
+    }
+
+    func testAMaxLaunchDurationOfZeroWouldDropEveryLaunch() {
+      // Why the value is corrected: without that, this is what a caller gets.
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0),
+              configuration: AppLaunchInstrumentationConfiguration(maxLaunchDuration: 0))
+
+      activate()
+
+      XCTAssertNil(launchSpan())
+    }
+
     func testPrewarmedMincoreLaunchIsPrewarmedAndKeepsItsSample() {
       install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 120), isActivePrewarm: true)
 
