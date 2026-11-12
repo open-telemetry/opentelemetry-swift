@@ -36,7 +36,7 @@ This behaviour can be modified or augmented by using the optional callbacks defi
 
 ## Initialization cost
 
-Creating `URLSessionInstrumentation` searches every class loaded in the process for session delegate methods, so that delegates are instrumented before any request runs. The cost of that search grows with the number of classes an app links, and in large apps it has been measured in the hundreds of milliseconds. Because it happens during initialization, that time lands on whatever is waiting for it, usually app launch.
+Creating `URLSessionInstrumentation` searches every class loaded in the process for session delegate methods and instruments the classes it finds. The cost of that search grows with the number of classes an app links, and in large apps it has been measured in the hundreds of milliseconds. Because it happens during initialization, that time lands on whatever is waiting for it, usually app launch.
 
 If you know your session delegate classes, pass them and the search is skipped entirely:
 
@@ -48,8 +48,8 @@ URLSessionInstrumentation(
 )
 ```
 
-Only the delegate classes you list have their callbacks instrumented. Requests made with completion handlers or `async`/`await` are captured either way, since those are instrumented on `URLSession` itself rather than through the delegate.
+The list only decides which delegate classes are instrumented up front. A session delegate you leave out is instrumented the first time a task on its session is resumed, so its requests are still captured. Requests made with completion handlers or `async`/`await` are captured either way: completion handlers are wrapped when the task is created, and `async`/`await` requests are picked up when their task is resumed.
 
-List every delegate class your app uses. A delegate-driven request through a class you omit still starts a span when the task is created, but the callback that ends it (`urlSession(_:task:didCompleteWithError:)`) is only swizzled on listed classes, so the span is never ended and never exported.
+A delegate assigned to an individual task through `URLSessionTask.delegate` is not instrumented on resume. Requests using it still get a span that ends when the task completes, and `receivedResponse` or `receivedError` is still called, but without the response body, because that delegate's callbacks are not instrumented. List those classes if you record response bodies with `shouldRecordPayload`.
 
 Note that deferring the initialization to get it off the launch path is not equivalent: requests made before the instrumentation exists are not captured, so early network calls go missing instead.
