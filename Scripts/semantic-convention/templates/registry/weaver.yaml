@@ -1,5 +1,6 @@
 params:
   excluded_namespaces: []
+  exclude_deprecated: true
   stable_package_name: opentelemetry.semconv
 comment_formats:
   default:
@@ -11,7 +12,7 @@ templates:
   - pattern: SemanticAttributes.swift.j2
     filter: >
       semconv_grouped_attributes({
-        "exclude_deprecated": true,
+        "exclude_deprecated": $exclude_deprecated,
         "exclude_experimental": true,
         "exclude_root_namespace": $excluded_namespaces,
       })
