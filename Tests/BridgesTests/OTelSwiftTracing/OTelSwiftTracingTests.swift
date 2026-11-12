@@ -36,6 +36,23 @@ final class OTelSwiftTracingTests: XCTestCase {
     )
   }
 
+  func testSpanAttributeSetToNilIsRemovedFromExportedSpan() throws {
+    let (tracer, exporter, processor) = makeTracer()
+
+    tracer.withSpan("testSpan") { span in
+      span.attributes["removed"] = "value"
+      span.attributes["kept"] = "value"
+      span.attributes["removed"] = nil
+    }
+
+    processor.forceFlush()
+    let exportedSpan = try XCTUnwrap(exporter.getFinishedSpanItems().first)
+
+    XCTAssertEqual(exportedSpan.attributes.count, 1)
+    XCTAssertNil(exportedSpan.attributes["removed"])
+    XCTAssertEqual(exportedSpan.attributes["kept"], .string("value"))
+  }
+
   func testSpanExport() throws {
     let (tracer, exporter, processor) = makeTracer()
 

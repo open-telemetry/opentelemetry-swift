@@ -238,6 +238,12 @@ public final class OTelSpan: Tracing.Span, @unchecked Sendable {
         }
         set {
             lock.withLock {
+                // `setAttributes` only adds or updates keys, so keys the caller removed must be cleared explicitly.
+                storedAttributes.forEach { key, _ in
+                    if newValue[key] == nil {
+                        otelSpan.setAttribute(key: key, value: nil)
+                    }
+                }
                 storedAttributes = newValue
                 otelSpan.setAttributes(Self.convertAttributes(newValue))
             }
