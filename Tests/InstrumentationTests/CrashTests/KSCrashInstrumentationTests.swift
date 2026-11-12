@@ -192,11 +192,8 @@ final class KSCrashInstrumentationTests: XCTestCase {
     let session = Session(id: "notification-session", expireTime: Date(timeIntervalSinceNow: 1800))
     NotificationCenter.default.post(name: Notification.Name(SessionConstants.sessionEventNotification), object: session)
 
-    let expectation = XCTestExpectation(description: "Async crash context update")
-    DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 0.1) {
-      expectation.fulfill()
-    }
-    wait(for: [expectation], timeout: 1.0)
+    // The observer hops onto `queue`, so draining it makes the update visible.
+    KSCrashInstrumentation.queue.sync {}
 
     let userInfo = KSCrashInstrumentation.reporter.userInfo as? [String: String]
     XCTAssertEqual(userInfo?[SemanticConventions.Session.id.rawValue], "notification-session")
