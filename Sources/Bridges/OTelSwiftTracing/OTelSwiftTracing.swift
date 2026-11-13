@@ -261,7 +261,13 @@ public final class OTelSpan: Tracing.Span, @unchecked Sendable {
                 otelSpan.setAttribute(key: key, value: nil)
             }
         }
-        otelSpan.setAttributes(Self.convertAttributes(storedAttributes))
+        // Only send new or changed keys: `setAttribute` counts every call towards the span's attribute limit.
+        storedAttributes.forEach { key, value in
+            guard previous.get(key) != value, let converted = Self.convertAttributeValue(value) else {
+                return
+            }
+            otelSpan.setAttribute(key: key, value: converted)
+        }
     }
 
     public var isRecording: Bool {

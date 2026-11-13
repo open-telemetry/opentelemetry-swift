@@ -53,6 +53,25 @@ final class OTelSwiftTracingTests: XCTestCase {
     XCTAssertEqual(exportedSpan.attributes["kept"], .string("value"))
   }
 
+  func testRepeatedAttributeUpdatesDoNotExhaustAttributeLimit() throws {
+    let (tracer, exporter, processor) = makeTracer()
+
+    tracer.withSpan("testSpan") { span in
+      span.attributes = ["a": "1", "b": "2", "c": "3", "d": "4", "e": "5"]
+      for iteration in 0..<50 {
+        span.attributes["counter"] = iteration
+      }
+      span.attributes["late"] = "value"
+    }
+
+    processor.forceFlush()
+    let exportedSpan = try XCTUnwrap(exporter.getFinishedSpanItems().first)
+
+    XCTAssertEqual(exportedSpan.attributes.count, 7)
+    XCTAssertEqual(exportedSpan.attributes["counter"], .int(49))
+    XCTAssertEqual(exportedSpan.attributes["late"], .string("value"))
+  }
+
   func testSpanExport() throws {
     let (tracer, exporter, processor) = makeTracer()
 
