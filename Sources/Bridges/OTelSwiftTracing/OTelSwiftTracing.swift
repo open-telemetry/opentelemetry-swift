@@ -246,10 +246,13 @@ public final class OTelSpan: Tracing.Span, @unchecked Sendable {
         // Holds the lock for the whole read-modify-write so `span.attributes[k] = v` is atomic across threads.
         _modify {
             lock.lock()
-            defer { lock.unlock() }
             let previous = storedAttributes
+            // `defer` also runs when the caller throws mid-mutation, keeping the span in sync with the getter.
+            defer {
+                syncAttributes(replacing: previous)
+                lock.unlock()
+            }
             yield &storedAttributes
-            syncAttributes(replacing: previous)
         }
     }
 
