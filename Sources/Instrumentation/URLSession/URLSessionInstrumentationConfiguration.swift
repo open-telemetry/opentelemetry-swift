@@ -23,9 +23,29 @@ public enum HTTPSemanticConvention {
   case httpDup  // Emit both old and stable (migration period)
 }
 
+/// Controls which response payloads are retained by URLSession instrumentation.
+public enum ResponsePayloadRecordingMode {
+  /// Records payloads for every response.
+  case all
+
+  /// Records payloads only for HTTP responses with a status code from 400 through 599.
+  case httpErrorsOnly
+
+  func shouldRecordPayload(for response: URLResponse?) -> Bool {
+    switch self {
+    case .all:
+      return true
+    case .httpErrorsOnly:
+      guard let response = response as? HTTPURLResponse else { return false }
+      return (400 ... 599).contains(response.statusCode)
+    }
+  }
+}
+
 public struct URLSessionInstrumentationConfiguration {
   public init(shouldRecordPayload: ((URLSession) -> (Bool)?)? = nil,
               shouldRecordPayloadForRequest: ((URLRequest) -> (Bool)?)? = nil,
+              responsePayloadRecordingMode: ResponsePayloadRecordingMode = .all,
               shouldInstrument: ((URLRequest) -> (Bool)?)? = nil,
               nameSpan: ((URLRequest) -> (String)?)? = nil,
               spanCustomization: ((URLRequest, SpanBuilder) -> Void)? = nil,
@@ -41,6 +61,7 @@ public struct URLSessionInstrumentationConfiguration {
               semanticConvention: HTTPSemanticConvention = .old) {
     self.shouldRecordPayload = shouldRecordPayload
     self.shouldRecordPayloadForRequest = shouldRecordPayloadForRequest
+    self.responsePayloadRecordingMode = responsePayloadRecordingMode
     self.shouldInstrument = shouldInstrument
     self.shouldInjectTracingHeaders = shouldInjectTracingHeaders
     self.injectCustomHeaders = injectCustomHeaders
@@ -64,15 +85,9 @@ public struct URLSessionInstrumentationConfiguration {
   /// Implement this callback to filter which requests you want to instrument, all by default
   public var shouldInstrument: ((URLRequest) -> (Bool)?)?
 
-  /// Implement this callback if you want the instrumentation to record payload data, false by
-  /// default.
-  ///
-  /// It is the opt-in gate for the payload passed as `dataOrFile` to `receivedResponse` and
-  /// `receivedError`, on the session delegate and completion handler paths alike. Returning `false`,
-  /// or leaving this unimplemented, means those callbacks receive `nil` instead of the body.
-  ///
-  /// This does not affect the data delivered to the caller: a completion handler passed to
-  /// `dataTask(with:completionHandler:)` always receives its own data unchanged.
+  /// Implement this callback if you want the instrumentation callbacks to receive payload data,
+  /// false by default. This applies to both delegate-based and completion-handler requests and
+  /// does not affect the payload delivered to the application's own delegate or completion handler.
   public var shouldRecordPayload: ((URLSession) -> (Bool)?)?
 
   /// Implement this callback to decide payload recording per request rather than per session.
@@ -81,6 +96,11 @@ public struct URLSessionInstrumentationConfiguration {
   /// answer for all of them at once. This is consulted first, and `shouldRecordPayload` is used when
   /// it is not implemented or returns nil, so existing behaviour is unchanged.
   public var shouldRecordPayloadForRequest: ((URLRequest) -> (Bool)?)?
+
+  /// Controls whether all response payloads or only HTTP error payloads are passed to the
+  /// instrumentation callbacks after payload recording is enabled through `shouldRecordPayloadForRequest` or
+  /// `shouldRecordPayload`.
+  public var responsePayloadRecordingMode: ResponsePayloadRecordingMode
 
   /// Implement this callback to filter which requests you want to inject headers to follow the trace,
   /// also must implement it if you want to inject custom headers

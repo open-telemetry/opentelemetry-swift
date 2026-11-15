@@ -93,6 +93,30 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
+  final class PayloadSessionDelegate: NSObject, URLSessionDataDelegate, @unchecked Sendable {
+    let semaphore: DispatchSemaphore
+    private(set) var receivedData = Data()
+
+    init(semaphore: DispatchSemaphore) {
+      self.semaphore = semaphore
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask,
+                    didReceive response: URLResponse,
+                    completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+      completionHandler(.allow)
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+      receivedData.append(data)
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask,
+                    didCompleteWithError error: Error?) {
+      semaphore.signal()
+    }
+  }
+
   /// A minimal delegate that only implements didFinishCollecting.
   /// This tests that delegate classes are discovered even when they only implement
   /// urlSession(_:task:didFinishCollecting:) and no other delegate methods.
@@ -104,12 +128,11 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
-  nonisolated(unsafe) static var receivedDataOrFile: Any?
-
   nonisolated(unsafe) static var createdSpanIds = [String]()
 
   nonisolated(unsafe) static var requestCopy: URLRequest!
   nonisolated(unsafe) static var responseCopy: HTTPURLResponse!
+  nonisolated(unsafe) static var receivedDataOrFile: DataOrFile?
 
   nonisolated(unsafe) static var activeBaggage: Baggage!
   nonisolated(unsafe) static var customBaggage: Baggage!
@@ -195,6 +218,9 @@ class URLSessionInstrumentationTests: XCTestCase {
 
   override class func tearDown() {
     server.stop()
+    if customBaggage != nil {
+      OpenTelemetry.instance.contextProvider.removeContextForBaggage(customBaggage)
+    }
     customBaggage = nil
     OpenTelemetry.instance.contextProvider.removeContextForBaggage(activeBaggage)
   }
@@ -206,10 +232,11 @@ class URLSessionInstrumentationTests: XCTestCase {
     URLSessionInstrumentationTests.requestCopy = nil
     URLSessionInstrumentationTests.responseCopy = nil
     URLSessionInstrumentationTests.receivedDataOrFile = nil
-
     URLSessionInstrumentationTests.createdSpanIds.removeAll()
     XCTAssertEqual(0, URLSessionInstrumentationTests.instrumentation.startedRequestSpans.count)
     URLSessionInstrumentationTests.instrumentation.configuration.semanticConvention = .old
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = nil
+    URLSessionInstrumentationTests.instrumentation.configuration.responsePayloadRecordingMode = .all
   }
 
   override func tearDown() {
@@ -279,6 +306,46 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
+  public func testDefaultSpanNameStableConventionIsMethodOnly() {
+    URLSessionInstrumentationTests.instrumentation.configuration.semanticConvention = .stable
+
+    var postRequest = URLRequest(url: URL(string: "http://defaultName.com/post")!)
+    postRequest.httpMethod = "POST"
+    let requests = [
+      "get": URLRequest(url: URL(string: "http://defaultName.com")!),
+      "post": postRequest
+    ]
+
+    for (id, request) in requests {
+      URLSessionLogger.processAndLogRequest(request, sessionTaskId: id, instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
+    }
+
+    XCTAssertEqual(2, URLSessionLogger.runningSpans.count)
+    XCTAssertEqual("GET", URLSessionLogger.runningSpans["get"]?.name)
+    XCTAssertEqual("POST", URLSessionLogger.runningSpans["post"]?.name)
+  }
+
+  public func testDefaultSpanNameHttpDupConventionKeepsLegacyName() {
+    URLSessionInstrumentationTests.instrumentation.configuration.semanticConvention = .httpDup
+
+    let request = URLRequest(url: URL(string: "http://defaultName.com")!)
+
+    URLSessionLogger.processAndLogRequest(request, sessionTaskId: "id", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
+
+    XCTAssertEqual("HTTP GET", URLSessionLogger.runningSpans["id"]?.name)
+  }
+
+  public func testOverrideSpanNameStableConvention() {
+    URLSessionInstrumentationTests.instrumentation.configuration.semanticConvention = .stable
+
+    let request = URLRequest(url: URL(string: "http://google.com")!)
+
+    URLSessionLogger.processAndLogRequest(request, sessionTaskId: "id", instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.nameSpanCalled)
+    XCTAssertEqual("new name", URLSessionLogger.runningSpans["id"]?.name)
+  }
+
   public func testOverrideSpanCustomization() {
     let request = URLRequest(url: URL(string: "http://google.com")!)
 
@@ -325,6 +392,88 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertTrue(URLSessionInstrumentationTests.checker.shouldInjectTracingHeadersCalled)
     XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled)
     XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+  }
+
+  public func testCompletionHandlerHTTPErrorOnlyFiltersSuccessfulResponsePayload() {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    URLSessionInstrumentationTests.instrumentation.configuration.responsePayloadRecordingMode = .httpErrorsOnly
+    let request = URLRequest(url: URL(string: "http://localhost:33333/success")!)
+    nonisolated(unsafe) var callerReceivedBody: Data?
+
+    let task = URLSession.shared.dataTask(with: request) { data, _, _ in
+      callerReceivedBody = data
+      URLSessionInstrumentationTests.semaphore.signal()
+    }
+    task.resume()
+
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertNotNil(callerReceivedBody)
+    XCTAssertNil(URLSessionInstrumentationTests.receivedDataOrFile)
+  }
+
+  public func testCompletionHandlerHTTPErrorOnlyIncludesHTTPErrorResponsePayload() throws {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    URLSessionInstrumentationTests.instrumentation.configuration.responsePayloadRecordingMode = .httpErrorsOnly
+    let server = HttpTestServer(url: nil, config: HttpTestServerConfig())
+    try server.start()
+    defer { server.stop() }
+    let request = URLRequest(url: URL(string: "http://127.0.0.1:\(server.serverPort)/forbidden")!)
+    nonisolated(unsafe) var callerReceivedBody: Data?
+
+    let task = URLSession.shared.dataTask(with: request) { data, _, _ in
+      callerReceivedBody = data
+      URLSessionInstrumentationTests.semaphore.signal()
+    }
+    task.resume()
+
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertEqual(URLSessionInstrumentationTests.responseCopy.statusCode, 403)
+    XCTAssertNotNil(callerReceivedBody)
+    XCTAssertNotNil(URLSessionInstrumentationTests.receivedDataOrFile as? Data)
+  }
+
+  public func testDelegateHTTPErrorOnlyDoesNotBufferSuccessfulResponsePayload() throws {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    URLSessionInstrumentationTests.instrumentation.configuration.responsePayloadRecordingMode = .httpErrorsOnly
+    let server = HttpTestServer(url: nil, config: HttpTestServerConfig())
+    try server.start()
+    defer { server.stop() }
+    let expectedBody = Data("success response body".utf8)
+    let delegate = PayloadSessionDelegate(semaphore: URLSessionInstrumentationTests.semaphore)
+    let session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
+    let request = URLRequest(url: URL(string: "http://127.0.0.1:\(server.serverPort)/success-with-body")!)
+
+    session.dataTask(with: request).resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertEqual(delegate.receivedData, expectedBody)
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertEqual(URLSessionInstrumentationTests.responseCopy.statusCode, 200)
+    XCTAssertNil(URLSessionInstrumentationTests.receivedDataOrFile)
+  }
+
+  public func testDelegateHTTPErrorOnlyBuffersHTTPErrorResponsePayload() throws {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    URLSessionInstrumentationTests.instrumentation.configuration.responsePayloadRecordingMode = .httpErrorsOnly
+    let server = HttpTestServer(url: nil, config: HttpTestServerConfig())
+    try server.start()
+    defer { server.stop() }
+    let expectedBody = Data("forbidden response body".utf8)
+    let delegate = PayloadSessionDelegate(semaphore: URLSessionInstrumentationTests.semaphore)
+    let session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
+    let request = URLRequest(url: URL(string: "http://127.0.0.1:\(server.serverPort)/forbidden-with-body")!)
+
+    session.dataTask(with: request).resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertEqual(delegate.receivedData, expectedBody)
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertEqual(URLSessionInstrumentationTests.responseCopy.statusCode, 403)
+    XCTAssertEqual(URLSessionInstrumentationTests.receivedDataOrFile as? Data, expectedBody)
   }
 
   public func testConfigurationCallbacksCalledWhenForbidden() throws {
@@ -1319,6 +1468,40 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertEqual((URLSessionInstrumentationTests.receivedDataOrFile as? Data),
                    PayloadStubURLProtocol.body,
                    "recording was allowed for this request, so the body should reach receivedResponse")
+  }
+
+  /// A task with no session delegate and no completion handler has its span started by the factory
+  /// swizzle, and before the setState fallback there was nothing left to end it: the span stayed in
+  /// runningSpans for the lifetime of the process.
+  public func testSpanIsEndedWithoutADelegateOrCompletionHandler() {
+    let session = URLSession(configuration: .ephemeral)
+    let task = session.dataTask(with: URLRequest(url: URL(string: "http://localhost:33333/success")!))
+    task.resume()
+    wait(timeout: 5) { task.state == .completed }
+
+    let leaked = URLSessionInstrumentationTests.instrumentation.startedRequestSpans
+    XCTAssertTrue(leaked.isEmpty, "nothing ended the span: \(leaked.count) still running")
+  }
+
+  /// A session delegate implementing none of the instrumented selectors is never swizzled, so
+  /// nothing reports task completion for that session. The span started at resume is then never
+  /// ended and stays in `runningSpans` for the lifetime of the process.
+  final class OpaqueSessionDelegate: NSObject, URLSessionDelegate, @unchecked Sendable {
+    func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {}
+  }
+
+  public func testSpanIsEndedWhenSessionDelegateImplementsNoInstrumentedSelector() {
+    let session = URLSession(configuration: .ephemeral,
+                             delegate: OpaqueSessionDelegate(),
+                             delegateQueue: nil)
+    let task = session.dataTask(with: URLRequest(url: URL(string: "http://localhost:33333/success")!))
+    task.resume()
+
+    wait { task.state == .completed }
+
+    let leaked = URLSessionInstrumentationTests.instrumentation.startedRequestSpans
+    XCTAssertTrue(leaked.isEmpty,
+                  "the span started at resume was never ended: \(leaked.count) still running")
   }
 
   /// A WebSocket opening handshake is an HTTP request, so it stays instrumented.

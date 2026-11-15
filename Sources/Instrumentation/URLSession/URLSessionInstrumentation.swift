@@ -25,6 +25,8 @@ struct NetworkRequestState {
 }
 
 nonisolated(unsafe) private var idKey: Void?
+nonisolated(unsafe) private var completionHandlerKey: Void?
+nonisolated(unsafe) private var reportedKey: Void?
 
 public final class URLSessionInstrumentation: @unchecked Sendable {
   private var requestMap = [String: NetworkRequestState]()
@@ -43,6 +45,11 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     label: "io.opentelemetry.ddnetworkinstrumentation")
   private let configurationQueue = DispatchQueue(
       label: "io.opentelemetry.configuration")
+
+  /// Delegate classes already injected into, so that a class discovered by both the startup scan
+  /// and a resuming task is only instrumented once.
+  nonisolated(unsafe) private static var instrumentedDelegateClasses = Set<ObjectIdentifier>()
+  private static let instrumentedDelegateClassesLock = NSLock()
 
   /// Guards the one-time swizzling performed by `injectInNSURLClasses()`.
   ///
@@ -146,7 +153,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       }
 
       foundClasses.forEach { cls in
-        injectIntoDelegateClass(cls: cls)
+        instrumentDelegateClassIfNeeded(cls)
       }
     }
 
@@ -157,6 +164,23 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     injectIntoNSURLSessionAsyncDataAndDownloadTaskMethods()
     injectIntoNSURLSessionAsyncUploadTaskMethods()
     injectIntoNSURLSessionTaskResume()
+    injectIntoNSURLSessionTaskSetState()
+  }
+
+  /// Instruments `cls` unless it already has been. Injecting twice would report each task
+  /// completion once per installation.
+  ///
+  /// The lock is held across the injection, not just the bookkeeping: a caller that finds the class
+  /// already recorded must be able to rely on its callbacks being installed, otherwise a task
+  /// resuming concurrently could start before the delegate has been modified.
+  private func instrumentDelegateClassIfNeeded(_ cls: AnyClass) {
+    Self.instrumentedDelegateClassesLock.lock()
+    defer { Self.instrumentedDelegateClassesLock.unlock() }
+
+    guard Self.instrumentedDelegateClasses.insert(ObjectIdentifier(cls)).inserted else {
+      return
+    }
+    injectIntoDelegateClass(cls: cls)
   }
 
   private func injectIntoDelegateClass(cls: AnyClass) {
@@ -377,9 +401,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
           if completionBlock != nil {
             if objc_getAssociatedObject(argument, &idKey) == nil {
               let completionWrapper: (Any?, URLResponse?, Error?) -> Void = { object, response, error in
-                // Payload recording is opt-in and off by default. The caller still receives
-                // `object` below; only what is handed to the telemetry callbacks is withheld.
-                let payload = self.shouldRecordPayload(for: session, taskId: sessionTaskId) ? object : nil
+                let payload = self.shouldRecordPayload(for: session, taskId: sessionTaskId, response: response) ? object : nil
                 if error != nil {
                   let status = (response as? HTTPURLResponse)?.statusCode ?? 0
                   URLSessionLogger.logError(error!, dataOrFile: payload, statusCode: status,
@@ -414,6 +436,9 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
             }
           }
           self.setIdKey(value: sessionTaskId, for: task)
+          if completionBlock != nil {
+            self.markHasCompletionHandler(task)
+          }
           return task
         }
       let swizzledIMP = imp_implementationWithBlock(
@@ -449,9 +474,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
           var completionBlock = completion
           if objc_getAssociatedObject(argument, &idKey) == nil {
             let completionWrapper: (Any?, URLResponse?, Error?) -> Void = { object, response, error in
-              // Payload recording is opt-in and off by default. The caller still receives
-              // `object` below; only what is handed to the telemetry callbacks is withheld.
-              let payload = self.shouldRecordPayload(for: session, taskId: sessionTaskId) ? object : nil
+              let payload = self.shouldRecordPayload(for: session, taskId: sessionTaskId, response: response) ? object : nil
               if error != nil {
                 let status = (response as? HTTPURLResponse)?.statusCode ?? 0
                 URLSessionLogger.logError(error!, dataOrFile: payload, statusCode: status,
@@ -477,6 +500,9 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
                            completionBlock)
 
           self.setIdKey(value: sessionTaskId, for: task)
+          if completionBlock != nil {
+            self.markHasCompletionHandler(task)
+          }
           return task
         }
       let swizzledIMP = imp_implementationWithBlock(
@@ -503,6 +529,12 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       var originalIMP: IMP?
       let block: @convention(block) (URLSessionTask) -> Void = { anyTask in
         guard anyTask.responds(to: #selector(getter: URLSessionTask.currentRequest)) else { return }
+        // Instrumenting may assign a task delegate, which Foundation rejects once the task has
+        // resumed. Without this, a concurrent resume that loses the instrumentation claim would run
+        // the real resume while the claim holder is still between its state check and that
+        // assignment.
+        objc_sync_enter(anyTask)
+        defer { objc_sync_exit(anyTask) }
         self.urlSessionTaskWillResume(anyTask)
         guard anyTask.currentRequest != nil else { return }
         let key = String(theMethod.hashValue)
@@ -574,6 +606,16 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     let selector = #selector(
       URLSessionDataDelegate.urlSession(_:task:didCompleteWithError:))
     guard let original = class_getInstanceMethod(cls, selector) else {
+      // The method is optional and the delegate omits it, so nothing would report completion for
+      // its tasks. Add it, as injectTaskDidFinishCollectingMetricsIntoDelegateClass already does —
+      // that fallback only exists on newer platforms, so this is the one that covers the rest.
+      let block:
+        @convention(block) (Any, URLSession, URLSessionTask, Error?) -> Void = { _, session, task, error in
+          self.urlSession(session, task: task, didCompleteWithError: error)
+        }
+      let imp = imp_implementationWithBlock(
+        unsafeBitCast(block, to: AnyObject.self))
+      class_addMethod(cls, selector, imp, "v@:@@@")
       return
     }
     var originalIMP: IMP?
@@ -682,8 +724,8 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
 
   // URLSessionTask methods
   private func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-    guard shouldRecordPayload(for: session, taskId: objc_getAssociatedObject(dataTask, &idKey) as? String) else { return }
-    guard let taskId = objc_getAssociatedObject(dataTask, &idKey) as? String
+    guard let taskId = objc_getAssociatedObject(dataTask, &idKey) as? String,
+          shouldRecordPayload(for: session, taskId: taskId, response: dataTask.response)
     else {
       return
     }
@@ -702,8 +744,8 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
   private func urlSession(_ session: URLSession, dataTask: URLSessionDataTask,
                           didReceive response: URLResponse,
                           completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
-    guard shouldRecordPayload(for: session, taskId: objc_getAssociatedObject(dataTask, &idKey) as? String) else { return }
-    guard let taskId = objc_getAssociatedObject(dataTask, &idKey) as? String
+    guard let taskId = objc_getAssociatedObject(dataTask, &idKey) as? String,
+          shouldRecordPayload(for: session, taskId: taskId, response: response)
     else {
       return
     }
@@ -781,6 +823,12 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
   }
 
   private func urlSessionTaskWillResume(_ task: URLSessionTask) {
+    // A task whose completion has already been reported gets no second span: URLSession tasks are
+    // not restartable, so a later resume is the same logical request, not a new one.
+    guard objc_getAssociatedObject(task, &reportedKey) == nil else {
+      return
+    }
+
     // AV Asset Tasks cannot be auto instrumented, they dont include request attributes, skip them
     guard !Self.AVTaskClassList.contains(where: { task.isKind(of: $0) }) else {
       return
@@ -793,6 +841,14 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     }
 
     let taskId = idKeyForTask(task)
+
+    // A session delegate that implements none of the selectors scanned in injectInNSURLClasses is
+    // never discovered there, so without this nothing would report this task's completion and the
+    // span started below would never be ended.
+    if let sessionDelegate = (task.value(forKey: "session") as? URLSession)?.delegate {
+      instrumentDelegateClassIfNeeded(type(of: sessionDelegate))
+    }
+
     if let request = task.currentRequest {
       queue.sync {
         if requestMap[taskId] == nil {
@@ -894,17 +950,75 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     return id
   }
 
-  /// Whether the payload should be recorded, asking per request first and falling back to the
-  /// per-session callback.
-  private func shouldRecordPayload(for session: URLSession, taskId: String?) -> Bool {
-    let config = configuration
-    if let perRequest = config.shouldRecordPayloadForRequest,
-       let taskId,
-       let request = queue.sync(execute: { requestMap[taskId]?.request }),
-       let answer = perRequest(request) {
-      return answer
+  /// Marks a task whose completion handler reports the response itself, so the setState fallback
+  /// does not report it a second time with less data than the handler has.
+  private func markHasCompletionHandler(_ task: URLSessionTask) {
+    objc_setAssociatedObject(task, &completionHandlerKey, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+  }
+
+  /// Reports completion for tasks that nothing else reports.
+  ///
+  /// A task with no session delegate and no completion handler has its span started by the factory
+  /// swizzle and then never ended, because there is nothing left to observe its completion. Third
+  /// party networking layers hit the same gap. `setState:` is the one place every task passes
+  /// through on its way to `.completed`.
+  private func injectIntoNSURLSessionTaskSetState() {
+    typealias SetStateIMP = @convention(c) (AnyObject, Selector, URLSessionTask.State) -> Void
+    let selector = NSSelectorFromString("setState:")
+
+    var classesToSwizzle = [AnyClass]()
+    if class_getInstanceMethod(URLSessionTask.self, selector) != nil {
+      classesToSwizzle.append(URLSessionTask.self)
     }
-    return config.shouldRecordPayload?(session) ?? false
+    if let cfTask = NSClassFromString("__NSCFURLSessionTask"),
+       class_getInstanceMethod(cfTask, selector) != nil {
+      classesToSwizzle.append(cfTask)
+    }
+
+    classesToSwizzle.forEach { cls in
+      guard let method = class_getInstanceMethod(cls, selector) else {
+        return
+      }
+      let originalIMP = method_getImplementation(method)
+
+      let block: @convention(block) (AnyObject, URLSessionTask.State) -> Void = { anyTask, state in
+        unsafeBitCast(originalIMP, to: SetStateIMP.self)(anyTask, selector, state)
+
+        guard state == .completed, let task = anyTask as? URLSessionTask else {
+          return
+        }
+        self.reportCompletionIfUnreported(task)
+      }
+      let swizzledIMP = imp_implementationWithBlock(
+        unsafeBitCast(block, to: AnyObject.self))
+      method_setImplementation(method, swizzledIMP)
+    }
+  }
+
+  /// Ends the task's span if it is still running. A task already reported by a delegate or a
+  /// completion handler has had its span removed from `runningSpans`, so logging here is a no-op.
+  private func reportCompletionIfUnreported(_ task: URLSessionTask) {
+    guard let taskId = objc_getAssociatedObject(task, &idKey) as? String,
+          objc_getAssociatedObject(task, &completionHandlerKey) == nil else {
+      return
+    }
+
+    var requestState: NetworkRequestState?
+    queue.sync {
+      requestState = requestMap[taskId]
+      requestMap[taskId] = nil
+    }
+
+    objc_setAssociatedObject(task, &reportedKey, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+
+    if let error = task.error {
+      let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
+      URLSessionLogger.logError(error, dataOrFile: requestState?.dataProcessed, statusCode: status,
+                                instrumentation: self, sessionTaskId: taskId)
+    } else if let response = task.response {
+      URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed,
+                                   instrumentation: self, sessionTaskId: taskId)
+    }
   }
 
   private func setIdKey(value: String, for task: URLSessionTask) {
@@ -917,6 +1031,24 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       state = NetworkRequestState()
       requestMap[id] = state
     }
+  }
+
+  /// Whether the payload should be recorded. The per-request callback is asked first, falling back
+  /// to the per-session one, and `responsePayloadRecordingMode` then filters by response.
+  private func shouldRecordPayload(for session: URLSession, taskId: String?, response: URLResponse?) -> Bool {
+    let config = configuration
+    let enabled = perRequestPayloadDecision(config, taskId: taskId) ?? config.shouldRecordPayload?(session) ?? false
+    guard enabled else { return false }
+    return config.responsePayloadRecordingMode.shouldRecordPayload(for: response)
+  }
+
+  private func perRequestPayloadDecision(_ config: URLSessionInstrumentationConfiguration, taskId: String?) -> Bool? {
+    guard let decide = config.shouldRecordPayloadForRequest,
+          let taskId,
+          let request = queue.sync(execute: { requestMap[taskId]?.request }) else {
+      return nil
+    }
+    return decide(request)
   }
 }
 

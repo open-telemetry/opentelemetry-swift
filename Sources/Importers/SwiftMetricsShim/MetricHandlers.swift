@@ -32,67 +32,67 @@ final class SwiftCounterMetric: CounterHandler, SwiftMetric, @unchecked Sendable
 final class SwiftGaugeMetric: RecorderHandler, SwiftMetric, @unchecked Sendable {
   let metricName: String
   let metricType: MetricType = .gauge
-  var counter: DoubleGauge
+  let counter: Locked<DoubleGauge>
   let labels: [String: AttributeValue]
 
   required init(name: String,
                 labels: [String: String],
                 meter: any OpenTelemetryApi.Meter) {
     metricName = name
-    counter = meter.gaugeBuilder(name: name).build()
+    counter = .init(initialValue: meter.gaugeBuilder(name: name).build())
     self.labels = labels.mapValues { value in
       return AttributeValue.string(value)
     }
   }
 
   func record(_ value: Int64) {
-    counter.record(value: Double(value), attributes: labels)
+    counter.protectedValue.record(value: Double(value), attributes: labels)
   }
 
   func record(_ value: Double) {
-    counter.record(value: value, attributes: labels)
+    counter.protectedValue.record(value: value, attributes: labels)
   }
 }
 
 final class SwiftHistogramMetric: RecorderHandler, SwiftMetric, @unchecked Sendable {
   let metricName: String
   let metricType: MetricType = .histogram
-  var measure: DoubleHistogram
+  let measure: Locked<DoubleHistogram>
   let labels: [String: AttributeValue]
 
   required init(name: String, labels: [String: String], meter: any OpenTelemetryApi.Meter) {
     metricName = name
-    measure = meter.histogramBuilder(name: name).build()
+    measure = .init(initialValue: meter.histogramBuilder(name: name).build())
     self.labels = labels.mapValues { value in
       return AttributeValue.string(value)
     }
   }
 
   func record(_ value: Int64) {
-    measure.record(value: Double(value), attributes: labels)
+    measure.protectedValue.record(value: Double(value), attributes: labels)
   }
 
   func record(_ value: Double) {
-    measure.record(value: value, attributes: labels)
+    measure.protectedValue.record(value: value, attributes: labels)
   }
 }
 
 final class SwiftSummaryMetric: TimerHandler, SwiftMetric, @unchecked Sendable {
   let metricName: String
   let metricType: MetricType = .summary
-  var measure: DoubleCounter
+  let measure: Locked<DoubleCounter>
   let labels: [String: AttributeValue]
 
   required init(name: String, labels: [String: String], meter: any OpenTelemetryApi.Meter) {
     metricName = name
-    measure = meter.counterBuilder(name: name).ofDoubles().build()
+    measure = .init(initialValue: meter.counterBuilder(name: name).ofDoubles().build())
     self.labels = labels.mapValues { value in
       return AttributeValue.string(value)
     }
   }
 
   func recordNanoseconds(_ duration: Int64) {
-    measure.add(value: Double(duration), attributes: labels)
+    measure.protectedValue.add(value: Double(duration), attributes: labels)
   }
 }
 

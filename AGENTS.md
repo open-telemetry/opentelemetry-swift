@@ -60,6 +60,10 @@ and after.
   and fix errors at the root cause rather than suppressing them.
 - Only commit when the user asks you to commit.
 - Follow Conventional Commits for the subject line.
+- Do not add a `Co-authored-by:` trailer for an AI tool (for example
+  `Co-Authored-By: Claude <noreply@anthropic.com>`). EasyCLA can't match it
+  to a CLA signer, so the PR fails the CLA check. Mentioning AI assistance in
+  the PR description is fine.
 - Never `git push`, `git push --force`, or rewrite published history without
   explicit instruction.
 

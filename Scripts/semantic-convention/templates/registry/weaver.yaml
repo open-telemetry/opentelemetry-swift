@@ -1,0 +1,25 @@
+params:
+  excluded_namespaces: []
+  exclude_deprecated: true
+  stable_package_name: opentelemetry.semconv
+comment_formats:
+  default:
+    format: markdown
+whitespace_control:
+  trim_blocks: true
+  lstrip_blocks: true
+templates:
+  - pattern: SemanticAttributes.swift.j2
+    filter: >
+      semconv_grouped_attributes({
+        "exclude_deprecated": $exclude_deprecated,
+        "exclude_experimental": true,
+        "exclude_root_namespace": $excluded_namespaces,
+      })
+      | map({
+        root_namespace: .root_namespace,
+        attributes: .attributes,
+        output: $output + "Attributes/",
+      })
+    file_name: "{{ params.enum }}.swift"
+    application_mode: each
