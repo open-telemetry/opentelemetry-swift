@@ -14,7 +14,7 @@ import XCTest
 extension Optional {
   struct UnwrappingException: Error {}
 
-  func unwrapOrThrow(file: StaticString = #file, line: UInt = #line) throws -> Wrapped {
+  func unwrapOrThrow(file: StaticString = #filePath, line: UInt = #line) throws -> Wrapped {
     switch self {
     case let .some(unwrappedValue):
       return unwrappedValue

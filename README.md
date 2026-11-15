@@ -14,16 +14,31 @@ This package includes several libraries. The `OpenTelemetryApi` library includes
 
 Libraries that produce telemetry data should only depend on `OpenTelemetryApi`, and defer the choice of the SDK to the application developer. Applications may depend on `OpenTelemetrySdk` or another package that implements the API.
 
-### Adding the dependency
+### Requirements
 
-opentelemetry-swift is designed for Swift 5. To depend on the opentelemetry-swift package, you need to declare your dependencies in your `Package.swift`:
+The package manifests declare the following requirements. Individual libraries can have additional platform restrictions.
+
+| | Release 2.6.0 | `main` (unreleased) |
+| --- | --- | --- |
+| Swift tools version | 6.0 | 6.2 |
+| iOS | 13 | 15 |
+| macOS | 12 | 12 |
+| tvOS | 13 | 15 |
+| watchOS | 6 | 8 |
+| visionOS | 1 | 1 |
+
+See the manifests for [2.6.0](https://github.com/open-telemetry/opentelemetry-swift/blob/2.6.0/Package.swift) and [this branch](Package.swift). Dependencies may require a newer compiler than the manifest's tools version. CI tests the current branch with the toolchains in [BuildAndTest.yml](.github/workflows/BuildAndTest.yml).
+
+### Adding a released version
+
+For release 2.6.0, add these dependencies to your `Package.swift`. The API, SDK and `StdoutExporter` are provided by `opentelemetry-swift-core`; the other exporters and instrumentation are provided by `opentelemetry-swift`.
 
 ```swift
-.package(url: "https://github.com/open-telemetry/opentelemetry-swift", from: "2.2.0"),
-.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.2.0")
+.package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", from: "2.6.0"),
+.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.6.0")
 ```
 
-and to your application/library target, add `OpenTelemetryApi` or `OpenTelemetrySdk`to your `dependencies`, e.g. like this:
+Add the products your target uses. A library that only produces telemetry needs the API:
 
 ```swift
 .target(
@@ -33,34 +48,36 @@ and to your application/library target, add `OpenTelemetryApi` or `OpenTelemetry
     ])
 ```
 
-or
+An application that configures the SDK and exports over OTLP/HTTP can use:
 
 ```swift
 .target(
     name: "ExampleApp",
     dependencies: [
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
+        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
+        .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift")
     ])
 ```
 
-### Cocoapods
+### Trying unreleased changes
 
-As of version 1.11.0, OpenTelemetry-Swift support cocoapods. 
-Two pods are provided: 
+On `main`, the API and SDK have moved into this repository. Use a single package dependency, and select API/SDK products from `opentelemetry-swift` rather than `opentelemetry-swift-core`. Do not mix this setup with the released core package.
 
-- `OpenTelemetry-Swift-Api`
+```swift
+.package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", branch: "main")
+```
 
-- `OpenTelemetry-Swift-Sdk`
+```swift
+.target(
+    name: "ExampleApp",
+    dependencies: [
+        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift"),
+        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift"),
+        .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift")
+    ])
+```
 
-`OpenTelemetry-Swift-Api` is a dependency of `OpenTelemetry-Swift-Sdk`. 
-
-Most users will want to add the following to their pod file:
-
-`pod 'OpenTelemetry-Swift-Sdk'`
-
-This will add both the API and SDK. If you're only interesting in Adding the API add the following: 
-
-`pod 'OpenTelemetry-Swift-Api'`
+Use a [release](https://github.com/open-telemetry/opentelemetry-swift/releases) for applications that need versioned dependencies. `main` is for testing unreleased changes.
 
 ## Documentation
 
@@ -76,9 +93,9 @@ Official documentation for the library can be found in the official opentelemetr
 
 Tracing and Baggage are considered stable
 
-Logs are considered beta quality
+Logs are considered stable. 
 
-Metrics is implemented using an outdated spec, is fully functional but will change in the future
+Metrics is considered stable.
 
 ### Supported exporters and importers
 
@@ -96,15 +113,22 @@ Metrics is implemented using an outdated spec, is fully functional but will chan
 
 * Exporters: OpenTelemetry (OTLP) grpc/http
 
-> **_NOTE:_** OTLP exporters are supported both in GRPC and HTTP, only GRPC is production ready, HTTP is still experimental
 
 ### Instrumentation libraries
 
-* `URLSession`
-* `NetworkStatus`
-* `SDKResourceExtension`
-* `SignPostIntegration`
-* `SessionsEventInstrumentation`
+Add the products you need to your target and follow their setup instructions; adding a dependency alone does not enable instrumentation.
+
+| Product | Purpose | Availability |
+| --- | --- | --- |
+| [`URLSessionInstrumentation`](Sources/Instrumentation/URLSession/README.md) | HTTP request spans from `URLSession` | Apple platforms |
+| [`NetworkStatus`](Sources/Instrumentation/NetworkStatus) | Network connection attributes | Apple platforms |
+| [`ResourceExtension`](Sources/Instrumentation/SDKResourceExtension/README.md) | Application, device, OS and SDK resource attributes | Apple platforms |
+| [`SignPostIntegration`](Sources/Instrumentation/SignPostIntegration/README.md) | Connect spans to Apple signposts | Apple platforms; APIs differ by platform |
+| [`Sessions`](Sources/Instrumentation/Sessions/README.md) | Session lifecycle events and attribution for spans and logs | Apple platforms and Linux |
+| [`MetricKitInstrumentation`](Sources/Instrumentation/MetricKit/README.md) | MetricKit performance and diagnostic payloads | Where MetricKit is available; excludes macOS and tvOS |
+| [`Crash`](Sources/Instrumentation/Crash/README.md) | KSCrash crash reporting | Apple platforms; unreleased on `main`, not in 2.6.0 |
+
+The linked documentation follows this branch. For released behavior, use the documentation at your release tag.
 
 ### Third-party exporters
 In addition to the specified OpenTelemetry exporters, some third-party exporters have been contributed and can be found in the following repos: 
@@ -115,8 +139,8 @@ In addition to the specified OpenTelemetry exporters, some third-party exporters
 The package includes some example projects with basic functionality:
 
 * `Logging Tracer` -  Simple api implementation of a Tracer that logs every api call
-* `Network Tracer` -  Shows how to use the `URLSessionInstrumentation` instrumentation in your application
-* `Simple Exporter` - Shows the Jaeger an Stdout exporters in action using a MultiSpanExporter. Can be easily modified for other exporters
+* `Network Sample` - Shows how to use `URLSessionInstrumentation` in your application
+* `Simple Exporter` - Shows the Jaeger and Stdout exporters in action using a MultiSpanExporter. Can be easily modified for other exporters
 * `Prometheus Sample` - Shows the Prometheus exporter reporting metrics to a Prometheus instance
 * `OTLP Exporter` - Shows the OTLP exporter reporting traces to Zipkin and metrics to a Prometheus via the otel-collector
 
@@ -139,14 +163,16 @@ For more information about the maintainer role, see the [community repository](h
 
 ### Approvers
 
+- [Vishwan Aranha](https://github.com/aranhave), Grafana Labs
+- [Ben Joseph](https://github.com/benjoseph-grafana), Grafana Labs
 - [Vinod Vydier](https://github.com/vvydier), Independent
+- [Billy Zhou](https://github.com/williazz), Independent
 
 For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).
 
 ### Triager ([@open-telemetry/swift-triagers](https://github.com/orgs/open-telemetry/teams/swift-triagers))
 
 - [Alolita Sharma](https://github.com/alolita), Apple
-- [Billy Zhou](https://github.com/williazz), AWS
 
 For more information about the triager role, see the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#triager).
 

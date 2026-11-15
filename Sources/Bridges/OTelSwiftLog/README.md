@@ -68,3 +68,30 @@ logger.handler = otelLogHandler
 // Log messages with various log levels
 logger.debug("This is a debug message")
 ```
+
+4. Adding Metadata with a Metadata Provider:
+```swift
+import Foundation
+import Logging
+
+enum RequestContext {
+  @TaskLocal static var requestID: String?
+}
+
+// Metadata returned by the provider is added to every log record.
+// It overrides metadata set on the handler, and metadata passed at the
+// call site overrides both, matching swift-log's StreamLogHandler.
+var otelLogHandler = OTelLogHandler()
+otelLogHandler.metadataProvider = Logger.MetadataProvider {
+  guard let requestID = RequestContext.requestID else { return [:] }
+  return ["request.id": .string(requestID)]
+}
+
+var logger = Logger(label: "com.example.myapp")
+logger.handler = otelLogHandler
+
+RequestContext.$requestID.withValue("abc-123") {
+  // The log record includes the attribute request.id = abc-123
+  logger.info("Handling request")
+}
+```

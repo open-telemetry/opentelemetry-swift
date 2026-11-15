@@ -3,6 +3,8 @@ name: Build and Test
 on: 
   pull_request:
     types: [opened, synchronize]
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -23,8 +25,8 @@ jobs:
         run: |
           SHOULD_RUN=false
 
-          # github.base_ref is empty for workflow_dispatch runs; in that case,
-          # skip diff-based checks and run all jobs.
+          # github.base_ref is empty for push and workflow_dispatch runs; in
+          # that case, skip diff-based checks and run all jobs.
           if [ -z "${GITHUB_BASE_REF}" ]; then
             SHOULD_RUN=true
           else
@@ -32,6 +34,8 @@ jobs:
 
             # Run jobs if source code changed
             echo "$CHANGED_FILES" | grep -q "Sources/" && SHOULD_RUN=true
+
+            echo "$CHANGED_FILES" | grep -Eq '^(Tests/|Package\.resolved$|\.github/workflows/BuildAndTest\.yml$)' && SHOULD_RUN=true
 
             # Run if any dependency is updated in Package.swift
             if echo "$CHANGED_FILES" | grep -q "Package.swift"; then
@@ -53,7 +57,8 @@ jobs:
 
   SwiftLint:
     needs: should-run
-    if: ${{ needs.should-run.outputs.should-run == 'true' }}
+    # Lints only the files changed relative to github.base_ref, which is only set on pull_request.
+    if: ${{ github.event_name == 'pull_request' && needs.should-run.outputs.should-run == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -188,18 +193,48 @@ jobs:
       env:
         STEPS_VISIONOS_SIM_OUTPUTS_DESTINATION: ${{ steps.visionos-sim.outputs.destination }}
   linux:
+    name: Linux (Swift ${{ matrix.swift }})
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run == 'true' }}
     runs-on: ubuntu-latest
-    container: swift:6.3.3@sha256:56ef1be2c1ca36f4c52440357dc1fcdfdb5e113587134fcadeef57c225c71b54
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - swift: '6.2'
+            image: swift:6.2.4@sha256:3459518b2e723a7c363d0f8cfa44fc796c77ecd8c18e92fd10e6f92dd78c0b12
+          - swift: '6.3'
+            image: swift:6.3.3@sha256:1ba0416be43dc57ba6ff7d02114356cad1ab17364024b7669385e3fe41a224aa
+          - swift: '6.4'
+            image: swift:6.4.2@sha256:0384f00cf80f81064a907c249a0ad56a1648906f65075a95b1827e88de666e21
+    container: ${{ matrix.image }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Swift version
+        run: swift --version
       - name: Build tests for Linux
         run: swift build --build-tests
       - name: Run tests for Linux
+        timeout-minutes: 15
         run: swift test
+  ThreadSanitizer:
+    needs: should-run
+    if: ${{ needs.should-run.outputs.should-run == 'true' }}
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
+      with:
+        xcode-version: latest-stable
+    - name: Build and Test with Thread Sanitizer
+      run: swift test --sanitize=thread
+      env:
+        # Enables the concurrency stress tests (skipped in the other jobs).
+        OTEL_CONCURRENCY_TESTS: "1"
   required-status-checks:
     needs: 
       - FormattingLint
@@ -210,6 +245,7 @@ jobs:
       - watchOS
       - visionOS
       - linux
+      - ThreadSanitizer
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -222,7 +258,8 @@ jobs:
           ${{ needs.tvOS.result }} == 'failure' || \
           ${{ needs.watchOS.result }} == 'failure' || \
           ${{ needs.visionOS.result }} == 'failure' || \
-          ${{ needs.linux.result }} == 'failure' ]]; then
+          ${{ needs.linux.result }} == 'failure' || \
+          ${{ needs.ThreadSanitizer.result }} == 'failure' ]]; then
             echo "One or more required jobs failed. Failing the workflow."
             exit 1
           else

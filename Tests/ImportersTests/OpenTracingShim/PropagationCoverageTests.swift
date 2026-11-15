@@ -25,7 +25,11 @@ final class PropagationCoverageTests: XCTestCase {
     OpenTelemetry.registerTracerProvider(tracerProvider: savedTracerProvider)
     OpenTelemetry.registerPropagators(textPropagators: [savedPropagators.textMapPropagator],
                                       baggagePropagator: savedPropagators.textMapBaggagePropagator)
+    if OpenTelemetry.instance.contextProvider.activeBaggage != nil {
+      XCTAssert(false, "Test must clean baggage context")
+    }
     super.tearDown()
+    
   }
 
   func testExtractReturnsNilWhenContextInvalid() {
@@ -35,6 +39,9 @@ final class PropagationCoverageTests: XCTestCase {
                                       baggagePropagator: W3CBaggagePropagator())
     let baggage = DefaultBaggageManager.instance.baggageBuilder().build()
     OpenTelemetry.instance.contextProvider.setActiveBaggage(baggage)
+    defer {
+      OpenTelemetry.instance.contextProvider.removeContextForBaggage(baggage)
+    }
 
     let telemetryInfo = TelemetryInfo(tracer: tracerProvider.get(instrumentationName: "p"),
                                       baggageManager: OpenTelemetry.instance.baggageManager,

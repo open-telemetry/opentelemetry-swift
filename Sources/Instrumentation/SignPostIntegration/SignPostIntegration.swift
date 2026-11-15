@@ -10,14 +10,21 @@
   import OpenTelemetryApi
   import OpenTelemetrySdk
 
-  /// A span processor that decorates spans with the origin attribute
+  /// A span processor that emits signpost intervals for spans.
   @available(macOS 10.14, iOS 12.0, tvOS 12.0, *)
   public class SignPostIntegration: SpanProcessor {
     public let isStartRequired = true
     public let isEndRequired = true
-    public let osLog = OSLog(subsystem: "OpenTelemetry", category: .pointsOfInterest)
+    public let osLog: OSLog
 
-    public init() {}
+    public init() {
+      osLog = OSLog(subsystem: "OpenTelemetry", category: .pointsOfInterest)
+    }
+
+    /// Creates a processor that emits signposts to the supplied log.
+    public init(log: OSLog) {
+      osLog = log
+    }
 
     public func onStart(parentContext: SpanContext?, span: ReadableSpan) {
       let signpostID = OSSignpostID(log: osLog, object: self)
