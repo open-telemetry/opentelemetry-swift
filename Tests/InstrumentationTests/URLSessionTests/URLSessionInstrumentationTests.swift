@@ -1518,12 +1518,22 @@ class URLSessionInstrumentationTests: XCTestCase {
                  "precondition: the delegate starts without the method instrumenting it would add",
                  file: file, line: line)
 
+    // The callbacks run on a URLSession thread, after the span has been removed from the running
+    // spans. Waiting on this expectation orders their writes before the reads below.
+    let reported = expectation(description: "the task's completion is reported")
+
     let instrumentation = URLSessionInstrumentationTests.instrumentation!
     let original = instrumentation.configuration
     instrumentation.configuration = URLSessionInstrumentationConfiguration(
       createdRequest: { _, _ in URLSessionInstrumentationTests.checker.createdRequestCalled = true },
-      receivedResponse: { _, _, _ in URLSessionInstrumentationTests.checker.receivedResponseCalled = true },
-      receivedError: { _, _, _, _ in URLSessionInstrumentationTests.checker.receivedErrorCalled = true },
+      receivedResponse: { _, _, _ in
+        URLSessionInstrumentationTests.checker.receivedResponseCalled = true
+        reported.fulfill()
+      },
+      receivedError: { _, _, _, _ in
+        URLSessionInstrumentationTests.checker.receivedErrorCalled = true
+        reported.fulfill()
+      },
       ignoredClassPrefixes: [NSStringFromClass(cls)]
     )
     defer { instrumentation.configuration = original }
@@ -1533,13 +1543,7 @@ class URLSessionInstrumentationTests: XCTestCase {
     let task = session.dataTask(with: URLRequest(url: URL(string: url)!))
     task.resume()
 
-    // The state turns `.completed` before the setState: fallback reports the task, and the span is
-    // removed from the running spans before the callback runs, so wait for the callback.
-    wait {
-      task.state == .completed
-        && (URLSessionInstrumentationTests.checker.receivedResponseCalled
-          || URLSessionInstrumentationTests.checker.receivedErrorCalled)
-    }
+    wait(for: [reported], timeout: 5)
 
     XCTAssertNil(class_getInstanceMethod(cls, didComplete),
                  "resuming a task instrumented a delegate that ignoredClassPrefixes excludes",
