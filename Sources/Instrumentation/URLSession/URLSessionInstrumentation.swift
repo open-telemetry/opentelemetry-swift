@@ -191,13 +191,20 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     return found
   }
 
-  /// Instruments `cls` unless it already has been. Injecting twice would report each task
-  /// completion once per installation.
+  /// Instruments `cls` unless it already has been or is excluded. Injecting twice would report each
+  /// task completion once per installation.
+  ///
+  /// The exclusion is checked here rather than only in the startup scan because resuming a task
+  /// also instruments its session delegate, and that path must honour `ignoredClassPrefixes` too.
   ///
   /// The lock is held across the injection, not just the bookkeeping: a caller that finds the class
   /// already recorded must be able to rely on its callbacks being installed, otherwise a task
   /// resuming concurrently could start before the delegate has been modified.
   private func instrumentDelegateClassIfNeeded(_ cls: AnyClass) {
+    guard !Self.isExcludedFromInstrumentation(cls, ignoredPrefixes: configuration.ignoredClassPrefixes) else {
+      return
+    }
+
     Self.instrumentedDelegateClassesLock.lock()
     defer { Self.instrumentedDelegateClassesLock.unlock() }
 
@@ -867,8 +874,8 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     let taskId = idKeyForTask(task)
 
     // A session delegate that implements none of the selectors scanned in injectInNSURLClasses is
-    // never discovered there, so without this nothing would report this task's completion and the
-    // span started below would never be ended.
+    // never discovered there, so it is instrumented here instead. One excluded by
+    // ignoredClassPrefixes is skipped, and its task's span is ended by the setState: fallback.
     if let sessionDelegate = (task.value(forKey: "session") as? URLSession)?.delegate {
       instrumentDelegateClassIfNeeded(type(of: sessionDelegate))
     }

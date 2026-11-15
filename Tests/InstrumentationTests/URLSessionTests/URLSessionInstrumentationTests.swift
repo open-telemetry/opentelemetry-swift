@@ -1481,4 +1481,74 @@ class URLSessionInstrumentationTests: XCTestCase {
                   "a prefix that does not match must leave the class selected")
   }
 
+  /// Session delegates that implement none of the scanned selectors, so the startup scan never
+  /// selects them and only resuming a task could instrument them. One per test, so that one test
+  /// instrumenting its class cannot hide the result of the other.
+  final class IgnoredPrefixSuccessDelegate: NSObject, URLSessionDelegate, @unchecked Sendable {
+    func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {}
+  }
+
+  final class IgnoredPrefixErrorDelegate: NSObject, URLSessionDelegate, @unchecked Sendable {
+    func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {}
+  }
+
+  public func testResumeDoesNotInstrumentIgnoredDelegateOnSuccess() {
+    assertResumeLeavesIgnoredDelegateUninstrumented(delegate: IgnoredPrefixSuccessDelegate(),
+                                                    url: "http://localhost:33333/success")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertFalse(URLSessionInstrumentationTests.checker.receivedErrorCalled)
+  }
+
+  public func testResumeDoesNotInstrumentIgnoredDelegateOnError() {
+    assertResumeLeavesIgnoredDelegateUninstrumented(delegate: IgnoredPrefixErrorDelegate(),
+                                                    url: "http://localhost:33333/error")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedErrorCalled)
+  }
+
+  /// Resuming a task instruments its session delegate lazily. A delegate matching
+  /// `ignoredClassPrefixes` must be left alone on that path too, and the request's span must still
+  /// end, since the span is started before the delegate is considered.
+  private func assertResumeLeavesIgnoredDelegateUninstrumented(delegate: URLSessionDelegate & NSObject,
+                                                               url: String,
+                                                               file: StaticString = #filePath,
+                                                               line: UInt = #line) {
+    let cls: AnyClass = type(of: delegate)
+    let didComplete = #selector(URLSessionDataDelegate.urlSession(_:task:didCompleteWithError:))
+    XCTAssertNil(class_getInstanceMethod(cls, didComplete),
+                 "precondition: the delegate starts without the method instrumenting it would add",
+                 file: file, line: line)
+
+    let instrumentation = URLSessionInstrumentationTests.instrumentation!
+    let original = instrumentation.configuration
+    instrumentation.configuration = URLSessionInstrumentationConfiguration(
+      createdRequest: { _, _ in URLSessionInstrumentationTests.checker.createdRequestCalled = true },
+      receivedResponse: { _, _, _ in URLSessionInstrumentationTests.checker.receivedResponseCalled = true },
+      receivedError: { _, _, _, _ in URLSessionInstrumentationTests.checker.receivedErrorCalled = true },
+      ignoredClassPrefixes: [NSStringFromClass(cls)]
+    )
+    defer { instrumentation.configuration = original }
+
+    let session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
+    defer { session.finishTasksAndInvalidate() }
+    let task = session.dataTask(with: URLRequest(url: URL(string: url)!))
+    task.resume()
+
+    // The state turns `.completed` before the setState: fallback reports the task, and the span is
+    // removed from the running spans before the callback runs, so wait for the callback.
+    wait {
+      task.state == .completed
+        && (URLSessionInstrumentationTests.checker.receivedResponseCalled
+          || URLSessionInstrumentationTests.checker.receivedErrorCalled)
+    }
+
+    XCTAssertNil(class_getInstanceMethod(cls, didComplete),
+                 "resuming a task instrumented a delegate that ignoredClassPrefixes excludes",
+                 file: file, line: line)
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled,
+                  "the request should still be traced", file: file, line: line)
+    let leaked = instrumentation.startedRequestSpans
+    XCTAssertTrue(leaked.isEmpty,
+                  "nothing ended the span: \(leaked.count) still running", file: file, line: line)
+  }
+
 }
