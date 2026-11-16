@@ -38,7 +38,7 @@
         case .unsatisfied:
           self.connection = .unavailable
         @unknown default:
-          fatalError()
+          self.connection = .unavailable
         }
         self.lock.unlock()
       }
