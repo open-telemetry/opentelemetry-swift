@@ -14,6 +14,7 @@ import OpenTelemetrySdk
 struct NetworkRequestState {
   var request: URLRequest?
   var dataProcessed: Data?
+  var payloadExceededLimit = false
 
   mutating func setRequest(_ request: URLRequest) {
     self.request = request
@@ -401,7 +402,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
           if completionBlock != nil {
             if objc_getAssociatedObject(argument, &idKey) == nil {
               let completionWrapper: (Any?, URLResponse?, Error?) -> Void = { object, response, error in
-                let payload = self.shouldRecordPayload(for: session, taskId: sessionTaskId, response: response) ? object : nil
+                let payload = self.shouldRecordPayload(for: session, taskId: sessionTaskId, response: response) ? self.payloadWithinLimit(object) : nil
                 if error != nil {
                   let status = (response as? HTTPURLResponse)?.statusCode ?? 0
                   URLSessionLogger.logError(error!, dataOrFile: payload, statusCode: status,
@@ -474,7 +475,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
           var completionBlock = completion
           if objc_getAssociatedObject(argument, &idKey) == nil {
             let completionWrapper: (Any?, URLResponse?, Error?) -> Void = { object, response, error in
-              let payload = self.shouldRecordPayload(for: session, taskId: sessionTaskId, response: response) ? object : nil
+              let payload = self.shouldRecordPayload(for: session, taskId: sessionTaskId, response: response) ? self.payloadWithinLimit(object) : nil
               if error != nil {
                 let status = (response as? HTTPURLResponse)?.statusCode ?? 0
                 URLSessionLogger.logError(error!, dataOrFile: payload, statusCode: status,
@@ -730,9 +731,17 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       return
     }
     let dataCopy = data
+    let limit = configuration.maxRecordedPayloadSize
     queue.sync {
       if (requestMap[taskId]?.request) != nil {
         createRequestState(for: taskId)
+        guard requestMap[taskId]?.payloadExceededLimit != true else { return }
+        let recordedSize = (requestMap[taskId]?.dataProcessed?.count ?? 0) + dataCopy.count
+        if let limit, recordedSize > limit {
+          requestMap[taskId]?.dataProcessed = nil
+          requestMap[taskId]?.payloadExceededLimit = true
+          return
+        }
         if requestMap[taskId]?.dataProcessed == nil {
           requestMap[taskId]?.dataProcessed = Data()
         }
@@ -749,14 +758,19 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     else {
       return
     }
+    let expectedLength = response.expectedContentLength
+    let exceedsLimit = configuration.maxRecordedPayloadSize.map { expectedLength > Int64($0) } ?? false
     queue.sync {
       if (requestMap[taskId]?.request) != nil {
         createRequestState(for: taskId)
-        if response.expectedContentLength < 0 {
+        requestMap[taskId]?.payloadExceededLimit = exceedsLimit
+        if exceedsLimit {
+          requestMap[taskId]?.dataProcessed = nil
+        } else if expectedLength < 0 {
           requestMap[taskId]?.dataProcessed = Data()
         } else {
           requestMap[taskId]?.dataProcessed = Data(
-            capacity: Int(response.expectedContentLength))
+            capacity: Int(expectedLength))
         }
       }
     }
@@ -1040,6 +1054,15 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     let enabled = perRequestPayloadDecision(config, taskId: taskId) ?? config.shouldRecordPayload?(session) ?? false
     guard enabled else { return false }
     return config.responsePayloadRecordingMode.shouldRecordPayload(for: response)
+  }
+
+  private func payloadWithinLimit(_ object: Any?) -> Any? {
+    guard let limit = configuration.maxRecordedPayloadSize,
+          let data = object as? Data,
+          data.count > limit else {
+      return object
+    }
+    return nil
   }
 
   private func perRequestPayloadDecision(_ config: URLSessionInstrumentationConfiguration, taskId: String?) -> Bool? {

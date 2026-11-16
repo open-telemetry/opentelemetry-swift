@@ -33,6 +33,31 @@ final class PayloadStubURLProtocol: URLProtocol {
   override func stopLoading() {}
 }
 
+/// Declares a Content-Length far larger than the small body it actually sends, so tests can tell
+/// a decision made from the declared length apart from one made from the bytes received.
+final class LargeContentLengthStubURLProtocol: URLProtocol {
+  static let host = "large-content-length.stub"
+  static let body = Data("{\"message\":\"hello\"}".utf8)
+  static let declaredContentLength = 1_000_000
+
+  override class func canInit(with request: URLRequest) -> Bool {
+    request.url?.host == host
+  }
+
+  override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+  override func startLoading() {
+    let url = request.url ?? URL(string: "http://\(Self.host)/")!
+    let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil,
+                                   headerFields: ["Content-Length": String(Self.declaredContentLength)])!
+    client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+    client?.urlProtocol(self, didLoad: Self.body)
+    client?.urlProtocolDidFinishLoading(self)
+  }
+
+  override func stopLoading() {}
+}
+
 class URLSessionInstrumentationTests: XCTestCase {
   class Check {
     public var shouldRecordPayloadCalled: Bool = false
@@ -474,6 +499,99 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
     XCTAssertEqual(URLSessionInstrumentationTests.responseCopy.statusCode, 403)
     XCTAssertEqual(URLSessionInstrumentationTests.receivedDataOrFile as? Data, expectedBody)
+  }
+
+  public func testDelegateDoesNotRecordPayloadLargerThanMaxRecordedPayloadSize() throws {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = 8
+    defer { URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = nil }
+    let server = HttpTestServer(url: nil, config: HttpTestServerConfig())
+    try server.start()
+    defer { server.stop() }
+    let expectedBody = Data("success response body".utf8)
+    let delegate = PayloadSessionDelegate(semaphore: URLSessionInstrumentationTests.semaphore)
+    let session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
+    let request = URLRequest(url: URL(string: "http://127.0.0.1:\(server.serverPort)/success-with-body")!)
+
+    session.dataTask(with: request).resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertEqual(delegate.receivedData, expectedBody)
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertNil(URLSessionInstrumentationTests.receivedDataOrFile)
+  }
+
+  public func testDelegateRecordsPayloadWithinMaxRecordedPayloadSize() throws {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = 1024
+    defer { URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = nil }
+    let server = HttpTestServer(url: nil, config: HttpTestServerConfig())
+    try server.start()
+    defer { server.stop() }
+    let expectedBody = Data("success response body".utf8)
+    let delegate = PayloadSessionDelegate(semaphore: URLSessionInstrumentationTests.semaphore)
+    let session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
+    let request = URLRequest(url: URL(string: "http://127.0.0.1:\(server.serverPort)/success-with-body")!)
+
+    session.dataTask(with: request).resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertEqual(delegate.receivedData, expectedBody)
+    XCTAssertEqual(URLSessionInstrumentationTests.receivedDataOrFile as? Data, expectedBody)
+  }
+
+  public func testDelegateDoesNotRecordPayloadWhoseContentLengthExceedsMaxRecordedPayloadSize() {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = 1024
+    defer { URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = nil }
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.protocolClasses = [LargeContentLengthStubURLProtocol.self]
+    let delegate = PayloadSessionDelegate(semaphore: URLSessionInstrumentationTests.semaphore)
+    let session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
+    let url = URL(string: "http://\(LargeContentLengthStubURLProtocol.host)/body")!
+
+    session.dataTask(with: URLRequest(url: url)).resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertEqual(delegate.receivedData, LargeContentLengthStubURLProtocol.body)
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertNil(URLSessionInstrumentationTests.receivedDataOrFile)
+  }
+
+  public func testCompletionHandlerAppliesMaxRecordedPayloadSizeLikeTheDelegatePath() {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = 8
+    defer { URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = nil }
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.protocolClasses = [PayloadStubURLProtocol.self]
+    let session = URLSession(configuration: configuration)
+    let url = URL(string: "http://\(PayloadStubURLProtocol.host)/body")!
+    nonisolated(unsafe) var callerReceivedBody: Data?
+
+    session.dataTask(with: URLRequest(url: url)) { data, _, _ in
+      callerReceivedBody = data
+      URLSessionInstrumentationTests.semaphore.signal()
+    }.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertEqual(callerReceivedBody, PayloadStubURLProtocol.body)
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertNil(URLSessionInstrumentationTests.receivedDataOrFile)
+  }
+
+  public func testDownloadTaskFileURLIsNotAffectedByMaxRecordedPayloadSize() {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = 1
+    defer { URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = nil }
+    let request = URLRequest(url: URL(string: "http://localhost:33333/success")!)
+
+    URLSession.shared.downloadTask(with: request) { _, _, _ in
+      URLSessionInstrumentationTests.semaphore.signal()
+    }.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertNotNil(URLSessionInstrumentationTests.receivedDataOrFile as? URL)
   }
 
   public func testConfigurationCallbacksCalledWhenForbidden() throws {
