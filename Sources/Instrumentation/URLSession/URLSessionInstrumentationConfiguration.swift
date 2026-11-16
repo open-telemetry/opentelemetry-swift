@@ -44,6 +44,7 @@ public enum ResponsePayloadRecordingMode {
 
 public struct URLSessionInstrumentationConfiguration {
   public init(shouldRecordPayload: ((URLSession) -> (Bool)?)? = nil,
+              shouldRecordPayloadForRequest: ((URLRequest) -> (Bool)?)? = nil,
               responsePayloadRecordingMode: ResponsePayloadRecordingMode = .all,
               shouldInstrument: ((URLRequest) -> (Bool)?)? = nil,
               nameSpan: ((URLRequest) -> (String)?)? = nil,
@@ -60,6 +61,7 @@ public struct URLSessionInstrumentationConfiguration {
               ignoredClassPrefixes: [String]? = nil,
               semanticConvention: HTTPSemanticConvention = .old) {
     self.shouldRecordPayload = shouldRecordPayload
+    self.shouldRecordPayloadForRequest = shouldRecordPayloadForRequest
     self.responsePayloadRecordingMode = responsePayloadRecordingMode
     self.shouldInstrument = shouldInstrument
     self.shouldInjectTracingHeaders = shouldInjectTracingHeaders
@@ -90,8 +92,16 @@ public struct URLSessionInstrumentationConfiguration {
   /// does not affect the payload delivered to the application's own delegate or completion handler.
   public var shouldRecordPayload: ((URLSession) -> (Bool)?)?
 
+  /// Implement this callback to decide payload recording per request rather than per session.
+  ///
+  /// A session is usually shared across every call an app makes, so `shouldRecordPayload` can only
+  /// answer for all of them at once. This is consulted first, and `shouldRecordPayload` is used when
+  /// it is not implemented or returns nil, so existing behaviour is unchanged.
+  public var shouldRecordPayloadForRequest: ((URLRequest) -> (Bool)?)?
+
   /// Controls whether all response payloads or only HTTP error payloads are passed to the
-  /// instrumentation callbacks after payload recording is enabled through `shouldRecordPayload`.
+  /// instrumentation callbacks after payload recording is enabled through `shouldRecordPayloadForRequest` or
+  /// `shouldRecordPayload`.
   public var responsePayloadRecordingMode: ResponsePayloadRecordingMode
 
   /// Implement this callback to filter which requests you want to inject headers to follow the trace,

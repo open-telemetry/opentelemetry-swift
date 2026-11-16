@@ -238,9 +238,38 @@ public final class OTelSpan: Tracing.Span, @unchecked Sendable {
         }
         set {
             lock.withLock {
+                let previous = storedAttributes
                 storedAttributes = newValue
-                otelSpan.setAttributes(Self.convertAttributes(newValue))
+                syncAttributes(replacing: previous)
             }
+        }
+        // Holds the lock for the whole read-modify-write so `span.attributes[k] = v` is atomic across threads.
+        _modify {
+            lock.lock()
+            let previous = storedAttributes
+            // `defer` also runs when the caller throws mid-mutation, keeping the span in sync with the getter.
+            defer {
+                syncAttributes(replacing: previous)
+                lock.unlock()
+            }
+            yield &storedAttributes
+        }
+    }
+
+    // Must be called with `lock` held.
+    private func syncAttributes(replacing previous: Tracing.SpanAttributes) {
+        // `setAttributes` only adds or updates keys, so keys the caller removed must be cleared explicitly.
+        previous.forEach { key, _ in
+            if storedAttributes[key] == nil {
+                otelSpan.setAttribute(key: key, value: nil)
+            }
+        }
+        // Only send new or changed keys: `setAttribute` counts every call towards the span's attribute limit.
+        storedAttributes.forEach { key, value in
+            guard previous.get(key) != value, let converted = Self.convertAttributeValue(value) else {
+                return
+            }
+            otelSpan.setAttribute(key: key, value: converted)
         }
     }
 
