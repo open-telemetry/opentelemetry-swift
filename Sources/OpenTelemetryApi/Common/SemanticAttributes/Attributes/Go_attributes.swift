@@ -11,6 +11,49 @@ extension SemanticConventions {
   public enum Go: String {
 
     /**
+     The detailed state of the CPU.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Go.cpuDetailedState.rawValue] = "gc/pause"
+      attributes[SemanticConventions.Go.cpuDetailedState.rawValue] = "gc/mark/assist"
+      ```
+
+     - Note: Value SHOULD match the specific CPU class reported by the Go runtime under `/cpu/classes/...`. The list of possible values is subject to change with the Go version used.
+
+     - Requires: Value type should be `String`
+    */
+    case cpuDetailedState = "go.cpu.detailed_state"
+
+    /**
+     The state of the CPU.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Go.cpuState.rawValue] = .user
+      attributes[SemanticConventions.Go.cpuState.rawValue] = .gc
+      ```
+
+     - Requires: Value should be one of ``CpuStateValues`` (of type `String`)
+    */
+    case cpuState = "go.cpu.state"
+
+    /**
+     The detailed type of memory.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Go.memoryDetailedType.rawValue] = "heap/objects"
+      attributes[SemanticConventions.Go.memoryDetailedType.rawValue] = "heap/free"
+      ```
+
+     - Note: Value SHOULD match the specific memory class reported by the Go runtime under `/memory/classes/...`. The list of possible values is subject to change with the Go version used.
+
+     - Requires: Value type should be `String`
+    */
+    case memoryDetailedType = "go.memory.detailed_type"
+
+    /**
      The type of memory.
 
       - Examples:
@@ -22,6 +65,34 @@ extension SemanticConventions {
      - Requires: Value should be one of ``MemoryTypeValues`` (of type `String`)
     */
     case memoryType = "go.memory.type"
+
+    /** 
+      The state of the CPU.
+    */
+    public struct CpuStateValues: CustomStringConvertible, Sendable {
+      
+      /// CPU time spent running user Go code.
+      public static let user = CpuStateValues("user") 
+      
+      /// CPU time spent performing garbage collection tasks.
+      public static let gc = CpuStateValues("gc") 
+      
+      /// CPU time spent returning unused memory to the underlying platform.
+      public static let scavenge = CpuStateValues("scavenge") 
+      
+      /// Available CPU time not spent executing any Go or Go runtime code.
+      public static let idle = CpuStateValues("idle") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
 
     /** 
       The type of memory.

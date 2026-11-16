@@ -25,6 +25,18 @@ extension SemanticConventions {
     case brands = "browser.brands"
 
     /**
+     Absolute URL of the current browser document according to [RFC3986](https://www.rfc-editor.org/rfc/rfc3986).
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Browser.documentUrlFull.rawValue] = "https://www.example.com/search?q=OpenTelemetry#SemConv"
+      ```
+
+     - Requires: Value type should be `String`
+    */
+    case documentUrlFull = "browser.document.url.full"
+
+    /**
      Preferred language of the user using the browser
 
       - Examples:
@@ -66,5 +78,167 @@ extension SemanticConventions {
      - Requires: Value type should be `String`
     */
     case platform = "browser.platform"
+
+    /**
+     The delta between the current value and the last-reported value. See [delta](https://github.com/GoogleChrome/web-vitals?tab=readme-ov-file#report-only-the-delta-of-changes).
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Browser.webVitalDelta.rawValue] = 0.2
+      ```
+
+     - Requires: Value type should be `Double`
+    */
+    case webVitalDelta = "browser.web_vital.delta"
+
+    /**
+     A unique ID representing this particular metric instance.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Browser.webVitalId.rawValue] = "v3-1677874579383-6381583661209"
+      ```
+
+     - Requires: Value type should be `String`
+    */
+    case webVitalId = "browser.web_vital.id"
+
+    /**
+     Name of the web vital.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Browser.webVitalName.rawValue] = .cls
+      ```
+
+     - Requires: Value should be one of ``WebVitalNameValues`` (of type `String`)
+    */
+    case webVitalName = "browser.web_vital.name"
+
+    /**
+     The type of navigation, as reported by the [Navigation Timing API](https://developer.mozilla.org/docs/Web/API/PerformanceNavigationTiming/type), with additional values reported by the web-vitals library.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Browser.webVitalNavigationType.rawValue] = .navigate
+      ```
+
+     - Requires: Value should be one of ``WebVitalNavigationTypeValues`` (of type `String`)
+    */
+    case webVitalNavigationType = "browser.web_vital.navigation_type"
+
+    /**
+     The rating of the web vital value against the "good", "needs improvement", and "poor" thresholds defined for the metric.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Browser.webVitalRating.rawValue] = .good
+      ```
+
+     - Requires: Value should be one of ``WebVitalRatingValues`` (of type `String`)
+    */
+    case webVitalRating = "browser.web_vital.rating"
+
+    /**
+     Value of the web vital.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Browser.webVitalValue.rawValue] = 1.0
+      ```
+
+     - Requires: Value type should be `Double`
+    */
+    case webVitalValue = "browser.web_vital.value"
+
+    /** 
+      Name of the web vital.
+    */
+    public struct WebVitalNameValues: CustomStringConvertible, Sendable {
+      
+      /// Cumulative Layout Shift. See [cls](https://web.dev/articles/cls).
+      public static let cls = WebVitalNameValues("cls") 
+      
+      /// Largest Contentful Paint. See [lcp](https://web.dev/articles/lcp).
+      public static let lcp = WebVitalNameValues("lcp") 
+      
+      /// First Contentful Paint. See [fcp](https://web.dev/articles/fcp).
+      public static let fcp = WebVitalNameValues("fcp") 
+      
+      /// Interaction to Next Paint. See [inp](https://web.dev/articles/inp).
+      public static let inp = WebVitalNameValues("inp") 
+      
+      /// Time to First Byte. See [ttfb](https://web.dev/articles/ttfb).
+      public static let ttfb = WebVitalNameValues("ttfb") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
+
+    /** 
+      The type of navigation, as reported by the [Navigation Timing API](https://developer.mozilla.org/docs/Web/API/PerformanceNavigationTiming/type), with additional values reported by the web-vitals library.
+    */
+    public struct WebVitalNavigationTypeValues: CustomStringConvertible, Sendable {
+      
+      /// Navigation started by clicking a link, entering a URL, form submission, or a script operation.
+      public static let navigate = WebVitalNavigationTypeValues("navigate") 
+      
+      /// Navigation through a reload operation or a `Location.reload()` call.
+      public static let reload = WebVitalNavigationTypeValues("reload") 
+      
+      /// Navigation through the browser's history traversal (e.g. back/forward buttons).
+      public static let backForward = WebVitalNavigationTypeValues("back-forward") 
+      
+      /// Navigation restoring a page from the back/forward cache (bfcache).
+      public static let backForwardCache = WebVitalNavigationTypeValues("back-forward-cache") 
+      
+      /// Navigation to a page that was prerendered.
+      public static let prerender = WebVitalNavigationTypeValues("prerender") 
+      
+      /// Navigation restoring a page that was previously discarded by the browser.
+      public static let restore = WebVitalNavigationTypeValues("restore") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
+
+    /** 
+      The rating of the web vital value against the "good", "needs improvement", and "poor" thresholds defined for the metric.
+    */
+    public struct WebVitalRatingValues: CustomStringConvertible, Sendable {
+      
+      /// The metric value is within the "good" threshold.
+      public static let good = WebVitalRatingValues("good") 
+      
+      /// The metric value is within the "needs improvement" threshold.
+      public static let needsImprovement = WebVitalRatingValues("needs-improvement") 
+      
+      /// The metric value is within the "poor" threshold.
+      public static let poor = WebVitalRatingValues("poor") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
   }
 }

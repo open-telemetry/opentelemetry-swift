@@ -26,6 +26,64 @@ extension SemanticConventions {
     case bufferPoolName = "jvm.buffer.pool.name"
 
     /**
+     Name of the executor.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Jvm.executorName.rawValue] = "pool-1-thread-*"
+      attributes[SemanticConventions.Jvm.executorName.rawValue] = "ForkJoinPool.commonPool-worker-*"
+      attributes[SemanticConventions.Jvm.executorName.rawValue] = "orders-vt-*"
+      ```
+
+     - Note: The executor name SHOULD be low-cardinality. If `jvm.executor.owner.name` is present, the combination of `jvm.executor.owner.name` and `jvm.executor.name` SHOULD be unique within the instrumented application; otherwise, `jvm.executor.name` SHOULD be unique when an executor-specific name is available. If the executor implementation does not provide an explicit name, instrumentation SHOULD derive a name from available implementation-specific metadata, such as a normalized worker thread name. If no executor-specific name or metadata is available, instrumentation MAY use `unknown`. The `unknown` value does not identify an executor, and metrics from multiple executors using this value MAY be aggregated. Users requiring per-executor metric series SHOULD configure a distinct name through the executor's `ThreadFactory`. Instrumentations SHOULD document how the name is derived and how users can configure it. Once metric series registration for an executor has started, `jvm.executor.name` and `jvm.executor.owner.name` MUST remain stable for the lifetime of that registration. Instrumentations SHOULD determine these attributes before the first worker is registered. Instrumentations MUST NOT re-register cumulative metrics under a new attribute set or replay prior cumulative values under new attributes.
+
+     - Requires: Value type should be `String`
+    */
+    case executorName = "jvm.executor.name"
+
+    /**
+     Name of the logical component that owns the executor.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Jvm.executorOwnerName.rawValue] = "tomcat"
+      attributes[SemanticConventions.Jvm.executorOwnerName.rawValue] = "jetty"
+      attributes[SemanticConventions.Jvm.executorOwnerName.rawValue] = "netty"
+      ```
+
+     - Note: The executor owner name SHOULD be a low-cardinality identifier for the component that creates and configures the executor. It is neither the executor implementation type nor an OpenTelemetry instrumentation scope.
+
+     - Requires: Value type should be `String`
+    */
+    case executorOwnerName = "jvm.executor.owner.name"
+
+    /**
+     State of an executor thread.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Jvm.executorThreadState.rawValue] = .active
+      attributes[SemanticConventions.Jvm.executorThreadState.rawValue] = .idle
+      ```
+
+     - Requires: Value should be one of ``ExecutorThreadStateValues`` (of type `String`)
+    */
+    case executorThreadState = "jvm.executor.thread.state"
+
+    /**
+     The fully qualified class name of the executor implementation.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Jvm.executorType.rawValue] = "java.util.concurrent.ThreadPoolExecutor"
+      attributes[SemanticConventions.Jvm.executorType.rawValue] = "java.util.concurrent.ForkJoinPool"
+      ```
+
+     - Requires: Value type should be `String`
+    */
+    case executorType = "jvm.executor.type"
+
+    /**
      Name of the garbage collector action.
 
       - Examples:
@@ -118,6 +176,28 @@ extension SemanticConventions {
      - Requires: Value should be one of ``ThreadStateValues`` (of type `String`)
     */
     case threadState = "jvm.thread.state"
+
+    /** 
+      State of an executor thread.
+    */
+    public struct ExecutorThreadStateValues: CustomStringConvertible, Sendable {
+      
+      /// The thread is currently executing a task.
+      public static let active = ExecutorThreadStateValues("active") 
+      
+      /// The thread currently exists but is not executing a task.
+      public static let idle = ExecutorThreadStateValues("idle") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
 
     /** 
       The type of memory.

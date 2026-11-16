@@ -28,6 +28,8 @@ extension SemanticConventions {
       attributes[SemanticConventions.Exception.message.rawValue] = "Can't convert 'int' object to str implicitly"
       ```
 
+     - Note: > [!WARNING]> This attribute may contain sensitive information.
+
      - Requires: Value type should be `String`
     */
     case message = "exception.message"
@@ -53,6 +55,12 @@ extension SemanticConventions {
       attributes[SemanticConventions.Exception.type.rawValue] = "java.net.ConnectException"
       attributes[SemanticConventions.Exception.type.rawValue] = "OSError"
       ```
+
+     - Note: If the recorded exception type is a wrapper that is not meaningful for
+       failure classification, instrumentation MAY use the type of the inner
+       exception instead. For example, in Go, errors created with `fmt.Errorf`
+       using `%w` MAY be unwrapped when the wrapper type does not help
+       classify the failure.
 
      - Requires: Value type should be `String`
     */

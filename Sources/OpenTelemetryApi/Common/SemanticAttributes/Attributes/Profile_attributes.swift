@@ -62,6 +62,12 @@ extension SemanticConventions {
       
       /// [Rust](https://wikipedia.org/wiki/Rust_(programming_language))
       public static let rust = FrameTypeValues("rust") 
+      
+      /// [LuaJIT](https://en.wikipedia.org/wiki/LuaJIT)
+      public static let luajit = FrameTypeValues("luajit") 
+      
+      /// [CUDA](https://wikipedia.org/wiki/CUDA)
+      public static let cuda = FrameTypeValues("cuda") 
 
       internal let value: String 
 

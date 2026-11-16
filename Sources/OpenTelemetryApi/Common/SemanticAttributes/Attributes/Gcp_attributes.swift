@@ -252,6 +252,20 @@ extension SemanticConventions {
     case gceInstanceHostname = "gcp.gce.instance.hostname"
 
     /**
+     GCE instance labels, `<key>` being the label name and the value being the label value.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Gcp.gceInstanceLabels.rawValue] = "observability"
+      ```
+
+     - Note: For example, a GCE instance label `team` with value `observability` SHOULD be recorded as the `gcp.gce.instance.labels.team` attribute with value `"observability"`. The `<key>` MUST be the exact GCE instance label key.
+
+     - Requires: Value type should be `template[string]`
+    */
+    case gceInstanceLabels = "gcp.gce.instance.labels"
+
+    /**
      The instance name of a GCE instance. This is the value provided by `host.name`, the visible name of the instance in the Cloud Console UI, and the prefix for the default hostname of the instance as defined by the [default internal DNS name](https://cloud.google.com/compute/docs/internal-dns#instance-fully-qualified-domain-names).
 
       - Examples:
@@ -263,6 +277,93 @@ extension SemanticConventions {
      - Requires: Value type should be `String`
     */
     case gceInstanceName = "gcp.gce.instance.name"
+
+    /**
+     The name of the Instance Group Manager (IGM) that manages this VM, if any.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Gcp.gceInstanceGroupManagerName.rawValue] = "web-igm"
+      attributes[SemanticConventions.Gcp.gceInstanceGroupManagerName.rawValue] = "my-managed-group"
+      ```
+
+     - Requires: Value type should be `String`
+    */
+    case gceInstanceGroupManagerName = "gcp.gce.instance_group_manager.name"
+
+    /**
+     The region of a **regional** Instance Group Manager (e.g., `us-central1`). Set this **only** when the IGM is regional.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Gcp.gceInstanceGroupManagerRegion.rawValue] = "us-central1"
+      attributes[SemanticConventions.Gcp.gceInstanceGroupManagerRegion.rawValue] = "europe-west1"
+      ```
+
+     - Requires: Value type should be `String`
+    */
+    case gceInstanceGroupManagerRegion = "gcp.gce.instance_group_manager.region"
+
+    /**
+     The zone of a **zonal** Instance Group Manager (e.g., `us-central1-a`). Set this **only** when the IGM is zonal.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Gcp.gceInstanceGroupManagerZone.rawValue] = "us-central1-a"
+      attributes[SemanticConventions.Gcp.gceInstanceGroupManagerZone.rawValue] = "europe-west1-b"
+      ```
+
+     - Requires: Value type should be `String`
+    */
+    case gceInstanceGroupManagerZone = "gcp.gce.instance_group_manager.zone"
+
+    /**
+     The ack deadline in seconds set for the modify ack deadline request.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Gcp.pubsubMessageAckDeadline.rawValue] = 10
+      ```
+
+     - Requires: Value type should be `Int`
+    */
+    case pubsubMessageAckDeadline = "gcp.pubsub.message.ack_deadline"
+
+    /**
+     The ack ID for a given message.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Gcp.pubsubMessageAckId.rawValue] = "ack_id"
+      ```
+
+     - Requires: Value type should be `String`
+    */
+    case pubsubMessageAckId = "gcp.pubsub.message.ack_id"
+
+    /**
+     The delivery attempt for a given message.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Gcp.pubsubMessageDeliveryAttempt.rawValue] = 2
+      ```
+
+     - Requires: Value type should be `Int`
+    */
+    case pubsubMessageDeliveryAttempt = "gcp.pubsub.message.delivery_attempt"
+
+    /**
+     The ordering key for a given message. If the attribute is not present, the message does not have an ordering key.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Gcp.pubsubMessageOrderingKey.rawValue] = "ordering_key"
+      ```
+
+     - Requires: Value type should be `String`
+    */
+    case pubsubMessageOrderingKey = "gcp.pubsub.message.ordering_key"
 
     /** 
       Criticality of a service indicates its importance to the business.

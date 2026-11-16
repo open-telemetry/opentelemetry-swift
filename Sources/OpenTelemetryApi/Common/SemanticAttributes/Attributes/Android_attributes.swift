@@ -18,14 +18,14 @@ extension SemanticConventions {
       attributes[SemanticConventions.Android.appState.rawValue] = .created
       ```
 
-     - Note: The Android lifecycle states are defined in [Activity lifecycle callbacks](https://developer.android.com/guide/components/activities/activity-lifecycle#lc), and from which the `OS identifiers` are derived.
+     - Note: The Android lifecycle states are defined in [Activity lifecycle callbacks](https://developer.android.com/guide/components/activities/activity-lifecycle#lifecycle-callbacks), and from which the `OS identifiers` are derived.
 
      - Requires: Value should be one of ``AppStateValues`` (of type `String`)
     */
     case appState = "android.app.state"
 
     /**
-     Uniquely identifies the framework API revision offered by a version (`os.version`) of the android operating system. More information can be found in the [Android API levels documentation](https://developer.android.com/guide/topics/manifest/uses-sdk-element#ApiLevels).
+     Uniquely identifies the framework API revision offered by a version (`os.version`) of the Android operating system. More information can be found in the [Android API levels documentation](https://developer.android.com/guide/topics/manifest/uses-sdk-element#ApiLevels).
 
       - Examples:
       ```
