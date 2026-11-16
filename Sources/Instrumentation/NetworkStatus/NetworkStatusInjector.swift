@@ -10,6 +10,9 @@
   import Network
   import OpenTelemetryApi
 
+  // CTCarrier is deprecated since iOS 16; CTCarrier.h says it returns these placeholders "at some point in the future".
+  private let ctCarrierPlaceholderValues: Set<String> = ["--", "65535"]
+
   public class NetworkStatusInjector {
     private var netstat: NetworkStatus
 
@@ -19,29 +22,25 @@
 
     public func inject(span: Span) {
       let (type, subtype, carrier) = netstat.status()
-      span.setAttribute(key: SemanticAttributes.networkConnectionType.rawValue, value: AttributeValue.string(type))
+      span.setAttribute(key: SemanticConventions.Network.connectionType.rawValue, value: AttributeValue.string(type))
 
       if let subtype: String = subtype {
-        span.setAttribute(key: SemanticAttributes.networkConnectionSubtype.rawValue, value: AttributeValue.string(subtype))
+        span.setAttribute(key: SemanticConventions.Network.connectionSubtype.rawValue, value: AttributeValue.string(subtype))
       }
 
       if let carrierInfo: CTCarrier = carrier {
-        if let carrierName = carrierInfo.carrierName {
-          span.setAttribute(key: SemanticAttributes.networkCarrierName.rawValue, value: AttributeValue.string(carrierName))
-        }
-
-        if let isoCountryCode = carrierInfo.isoCountryCode {
-          span.setAttribute(key: SemanticAttributes.networkCarrierIcc.rawValue, value: AttributeValue.string(isoCountryCode))
-        }
-
-        if let mobileCountryCode = carrierInfo.mobileCountryCode {
-          span.setAttribute(key: SemanticAttributes.networkCarrierMcc.rawValue, value: AttributeValue.string(mobileCountryCode))
-        }
-
-        if let mobileNetworkCode = carrierInfo.mobileNetworkCode {
-          span.setAttribute(key: SemanticAttributes.networkCarrierMnc.rawValue, value: AttributeValue.string(mobileNetworkCode))
-        }
+        setCarrierAttribute(on: span, key: SemanticConventions.Network.carrierName.rawValue, value: carrierInfo.carrierName)
+        setCarrierAttribute(on: span, key: SemanticConventions.Network.carrierIcc.rawValue, value: carrierInfo.isoCountryCode)
+        setCarrierAttribute(on: span, key: SemanticConventions.Network.carrierMcc.rawValue, value: carrierInfo.mobileCountryCode)
+        setCarrierAttribute(on: span, key: SemanticConventions.Network.carrierMnc.rawValue, value: carrierInfo.mobileNetworkCode)
       }
+    }
+
+    private func setCarrierAttribute(on span: Span, key: String, value: String?) {
+      guard let value, !ctCarrierPlaceholderValues.contains(value) else {
+        return
+      }
+      span.setAttribute(key: key, value: AttributeValue.string(value))
     }
   }
 

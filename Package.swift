@@ -441,7 +441,8 @@ extension Package {
         .testTarget(
           name: "NetworkStatusTests",
           dependencies: [
-            "NetworkStatus"
+            "NetworkStatus",
+            "OpenTelemetrySdk",
           ],
           path: "Tests/InstrumentationTests/NetworkStatusTests"
         ),
