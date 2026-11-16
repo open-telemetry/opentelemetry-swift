@@ -886,9 +886,11 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     let taskId = idKeyForTask(task)
 
     // A session delegate that implements none of the selectors scanned in injectInNSURLClasses is
-    // never discovered there, so it is instrumented here instead. One excluded by
-    // ignoredClassPrefixes is skipped, and its task's span is ended by the setState: fallback.
-    if let sessionDelegate = (task.value(forKey: "session") as? URLSession)?.delegate {
+    // never discovered there, so it is instrumented here instead. Skipped for classes excluded by
+    // ignoredClassPrefixes, or for all of them when instrumentsSessionDelegatesOnResume is false;
+    // the setState: fallback then ends the span.
+    if configuration.instrumentsSessionDelegatesOnResume,
+       let sessionDelegate = (task.value(forKey: "session") as? URLSession)?.delegate {
       instrumentDelegateClassIfNeeded(type(of: sessionDelegate))
     }
 

@@ -2074,4 +2074,98 @@ class URLSessionInstrumentationTests: XCTestCase {
       return requestMap.map { Array($0.values) } ?? []
     }
   }
+
+  private static let didReceiveResponseSelector =
+    #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:completionHandler:))
+  private static let didReceiveDataSelector = #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:))
+  private static let respondsToSelector = #selector(NSObject.responds(to:))
+  private static let didCompleteSelector = #selector(URLSessionTaskDelegate.urlSession(_:task:didCompleteWithError:))
+  private static let didFinishCollectingSelector = #selector(URLSessionTaskDelegate.urlSession(_:task:didFinishCollecting:))
+
+  /// Builds a session delegate class at runtime, after the startup scan has run, so that only resuming
+  /// a task could instrument it. It implements the response and data callbacks and its own
+  /// `respondsToSelector:`, which instrumenting swizzles, and lacks the completion and metrics
+  /// callbacks, which instrumenting adds.
+  private func makeUnscannedSessionDelegateClass() -> AnyClass {
+    let name = "UnscannedSessionDelegate_\(UUID().uuidString.replacingOccurrences(of: "-", with: ""))"
+    let cls: AnyClass = objc_allocateClassPair(NSObject.self, name, 0)!
+    class_addProtocol(cls, objc_getProtocol("NSURLSessionDataDelegate")!)
+
+    let didReceiveResponse: @convention(block) (AnyObject, URLSession, URLSessionDataTask, URLResponse,
+                                                @escaping (URLSession.ResponseDisposition) -> Void) -> Void = { _, _, _, _, completion in
+      completion(.allow)
+    }
+    let didReceiveData: @convention(block) (AnyObject, URLSession, URLSessionDataTask, Data) -> Void = { _, _, _, _ in }
+    let respondsTo: @convention(block) (AnyObject, Selector) -> Bool = { object, selector in
+      class_respondsToSelector(object_getClass(object), selector)
+    }
+    class_addMethod(cls, Self.didReceiveResponseSelector,
+                    imp_implementationWithBlock(unsafeBitCast(didReceiveResponse, to: AnyObject.self)), "v@:@@@@?")
+    class_addMethod(cls, Self.didReceiveDataSelector,
+                    imp_implementationWithBlock(unsafeBitCast(didReceiveData, to: AnyObject.self)), "v@:@@@")
+    class_addMethod(cls, Self.respondsToSelector,
+                    imp_implementationWithBlock(unsafeBitCast(respondsTo, to: AnyObject.self)), "B@::")
+    objc_registerClassPair(cls)
+    return cls
+  }
+
+  private func implementations(of cls: AnyClass) -> [IMP?] {
+    [Self.didReceiveResponseSelector, Self.didReceiveDataSelector, Self.respondsToSelector].map {
+      class_getInstanceMethod(cls, $0).map(method_getImplementation)
+    }
+  }
+
+  private func resumeTask(withDelegateOf cls: AnyClass, instrumentsSessionDelegatesOnResume: Bool) {
+    // The callback runs on a URLSession thread, after the span has been removed from the running
+    // spans. Waiting on this expectation orders its writes before the caller's reads.
+    let reported = expectation(description: "the task's response is reported")
+
+    let instrumentation = URLSessionInstrumentationTests.instrumentation!
+    let original = instrumentation.configuration
+    var configuration = original
+    configuration.receivedResponse = { _, _, _ in reported.fulfill() }
+    configuration.instrumentsSessionDelegatesOnResume = instrumentsSessionDelegatesOnResume
+    instrumentation.configuration = configuration
+    defer { instrumentation.configuration = original }
+
+    let delegate = (cls as! NSObject.Type).init() as! URLSessionDataDelegate
+    let session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
+    defer { session.finishTasksAndInvalidate() }
+    session.dataTask(with: URLRequest(url: URL(string: "http://localhost:33333/success")!)).resume()
+
+    wait(for: [reported], timeout: 5)
+  }
+
+  public func testResumeInstrumentsUnscannedSessionDelegateByDefault() {
+    let cls = makeUnscannedSessionDelegateClass()
+    let before = implementations(of: cls)
+
+    resumeTask(withDelegateOf: cls, instrumentsSessionDelegatesOnResume: true)
+
+    let after = implementations(of: cls)
+    for index in before.indices {
+      XCTAssertNotEqual(before[index], after[index], "method \(index) should have been swizzled on resume")
+    }
+    XCTAssertNotNil(class_getInstanceMethod(cls, Self.didCompleteSelector),
+                    "didCompleteWithError should have been added on resume")
+    XCTAssertTrue(URLSessionInstrumentationTests.instrumentation.startedRequestSpans.isEmpty)
+  }
+
+  public func testResumeLeavesSessionDelegateUnmodifiedWhenOptedOut() {
+    let cls = makeUnscannedSessionDelegateClass()
+    let before = implementations(of: cls)
+
+    resumeTask(withDelegateOf: cls, instrumentsSessionDelegatesOnResume: false)
+
+    let after = implementations(of: cls)
+    for index in before.indices {
+      XCTAssertEqual(before[index], after[index], "method \(index) was swizzled on resume")
+    }
+    XCTAssertNil(class_getInstanceMethod(cls, Self.didCompleteSelector),
+                 "didCompleteWithError was added on resume")
+    XCTAssertNil(class_getInstanceMethod(cls, Self.didFinishCollectingSelector),
+                 "didFinishCollecting was added on resume")
+    let leaked = URLSessionInstrumentationTests.instrumentation.startedRequestSpans
+    XCTAssertTrue(leaked.isEmpty, "nothing ended the span: \(leaked.count) still running")
+  }
 }
