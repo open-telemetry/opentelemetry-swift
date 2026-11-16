@@ -911,24 +911,19 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
         }
       }
 
-      if #available(OSX 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *) {
-        guard Task.basePriority != nil else {
-          // If not inside a Task basePriority is nil
-          return
-        }
+      guard #available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *) else { return }
 
-        let instrumentedRequest = URLSessionLogger.processAndLogRequest(request,
-                                                                        sessionTaskId: taskId,
-                                                                        instrumentation: self,
-                                                                        shouldInjectHeaders: true)
-        if let instrumentedRequest {
-          task.setValue(instrumentedRequest, forKey: "currentRequest")
-        }
-        self.setIdKey(value: taskId, for: task)
+      let instrumentedRequest = URLSessionLogger.processAndLogRequest(request,
+                                                                      sessionTaskId: taskId,
+                                                                      instrumentation: self,
+                                                                      shouldInjectHeaders: true)
+      if let instrumentedRequest {
+        task.setValue(instrumentedRequest, forKey: "currentRequest")
+      }
+      self.setIdKey(value: taskId, for: task)
 
-        if task.delegate == nil, task.state == .suspended, (task.value(forKey: "session") as? URLSession)?.delegate == nil {
-          task.delegate = FakeDelegate()
-        }
+      if task.delegate == nil, task.state == .suspended, (task.value(forKey: "session") as? URLSession)?.delegate == nil {
+        task.delegate = FakeDelegate()
       }
     }
   }

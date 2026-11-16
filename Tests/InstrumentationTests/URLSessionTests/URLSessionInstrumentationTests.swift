@@ -1515,7 +1515,8 @@ class URLSessionInstrumentationTests: XCTestCase {
     let session = URLSession(configuration: .ephemeral)
     let task = session.webSocketTask(with: URLRequest(url: URL(string: "ws://localhost:33333/socket")!))
 
-    // urlSessionTaskWillResume only reaches the instrumentation from an async context.
+    // Resumed from an async context; the non-async path is covered by
+    // testWebSocketTaskResumedOutsideSwiftConcurrencyIsInstrumented.
     await Task { task.resume() }.value
     wait { URLSessionInstrumentationTests.checker.createdRequestCalled }
     task.cancel()
@@ -1525,6 +1526,47 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?
       .allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent],
                     "the handshake should still carry traceparent")
+  }
+
+  /// A task that no factory swizzle instruments, such as a WebSocket handshake, can only get its
+  /// span from resume. Resuming it from ordinary, non-async code must start that span too, and the
+  /// span must be ended once the task completes.
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testWebSocketTaskResumedOutsideSwiftConcurrencyIsInstrumented() {
+    let session = URLSession(configuration: .ephemeral)
+    assertResumeOutsideSwiftConcurrencyStartsAndEndsSpan(in: session)
+  }
+
+  /// Same as above for a session that has a delegate, which the async-context heuristic on
+  /// iOS 15/macOS 12 never treats as async.
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testWebSocketTaskOnDelegateSessionResumedOutsideSwiftConcurrencyIsInstrumented() {
+    let session = URLSession(configuration: .ephemeral, delegate: sessionDelegate, delegateQueue: nil)
+    assertResumeOutsideSwiftConcurrencyStartsAndEndsSpan(in: session)
+  }
+
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  private func assertResumeOutsideSwiftConcurrencyStartsAndEndsSpan(in session: URLSession,
+                                                                    file: StaticString = #filePath,
+                                                                    line: UInt = #line) {
+    let task = session.webSocketTask(with: URLRequest(url: URL(string: "ws://localhost:33333/socket")!))
+
+    task.resume()
+    wait { URLSessionInstrumentationTests.checker.createdRequestCalled }
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled,
+                  "a task resumed outside a Swift Task should still start a span", file: file, line: line)
+    XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?
+      .allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent],
+                    "the handshake should carry traceparent", file: file, line: line)
+
+    task.cancel()
+    wait { URLSessionInstrumentationTests.instrumentation.startedRequestSpans.isEmpty }
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedErrorCalled,
+                  "the cancelled task's completion should be reported", file: file, line: line)
+    XCTAssertTrue(URLSessionInstrumentationTests.instrumentation.startedRequestSpans.isEmpty,
+                  "the span started at resume should be ended", file: file, line: line)
   }
 
   /// Checking for an existing span and starting one must be atomic. Two threads resuming the same
