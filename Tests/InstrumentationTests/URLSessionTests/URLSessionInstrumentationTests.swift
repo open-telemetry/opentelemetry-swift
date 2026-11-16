@@ -1925,4 +1925,51 @@ class URLSessionInstrumentationTests: XCTestCase {
                   "nothing ended the span: \(leaked.count) still running", file: file, line: line)
   }
 
+  public func testDataTaskCompletionHandlerDoesNotLeakRequestState() {
+    assertNoRequestStateLeft { session, url, completion in
+      session.dataTask(with: URLRequest(url: url), completionHandler: completion)
+    }
+  }
+
+  public func testUploadTaskCompletionHandlerDoesNotLeakRequestState() {
+    assertNoRequestStateLeft { session, url, completion in
+      session.uploadTask(with: URLRequest(url: url), from: Data(), completionHandler: completion)
+    }
+  }
+
+  private func assertNoRequestStateLeft(
+    makeTask: (URLSession, URL, @escaping @Sendable (Data?, URLResponse?, Error?) -> Void) -> URLSessionTask,
+    file: StaticString = #filePath, line: UInt = #line
+  ) {
+    URLProtocol.registerClass(PayloadStubURLProtocol.self)
+    defer { URLProtocol.unregisterClass(PayloadStubURLProtocol.self) }
+
+    let url = URL(string: "http://\(PayloadStubURLProtocol.host)/\(UUID().uuidString)")!
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.protocolClasses = [PayloadStubURLProtocol.self]
+    let session = URLSession(configuration: configuration)
+
+    let task = makeTask(session, url) { _, _, _ in
+      URLSessionInstrumentationTests.semaphore.signal()
+    }
+    task.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+    wait { task.state == .completed }
+
+    let pending = pendingRequestStates(of: URLSessionInstrumentationTests.instrumentation)
+      .filter { $0.request?.url == url }
+    XCTAssertTrue(pending.isEmpty, "request state was never removed: \(pending.count) entry still held",
+                  file: file, line: line)
+  }
+
+  private func pendingRequestStates(of instrumentation: URLSessionInstrumentation) -> [NetworkRequestState] {
+    func child<T>(_ label: String) -> T? {
+      Mirror(reflecting: instrumentation).children.first { $0.label == label }?.value as? T
+    }
+    guard let queue: DispatchQueue = child("queue") else { return [] }
+    return queue.sync {
+      let requestMap: [String: NetworkRequestState]? = child("requestMap")
+      return requestMap.map { Array($0.values) } ?? []
+    }
+  }
 }
