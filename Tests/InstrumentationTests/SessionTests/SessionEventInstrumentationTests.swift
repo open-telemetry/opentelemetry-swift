@@ -55,6 +55,8 @@ final class SessionEventInstrumentationTests: XCTestCase {
     super.tearDown()
 
     SessionStore.teardown()
+    SessionEventInstrumentation.queue.removeAll()
+    SessionEventInstrumentation.isApplied = false
     OpenTelemetry.registerTracerProvider(tracerProvider: DefaultTracerProvider.instance)
     OpenTelemetry.registerLoggerProvider(loggerProvider: DefaultLoggerProvider.instance)
   }
@@ -387,8 +389,11 @@ final class SessionEventInstrumentationTests: XCTestCase {
       record.eventName == "session.start" &&
         record.attributes["session.id"] == AttributeValue.string(sessions[0].id)
     }
-    XCTAssertNotNil(firstStartRecord)
-    XCTAssertNil(firstStartRecord!.attributes["session.previous_id"])
+    guard let firstStartRecord else {
+      XCTFail("Expected a session.start event for the first session")
+      return
+    }
+    XCTAssertNil(firstStartRecord.attributes["session.previous_id"])
 
     // Verify session chain linking
     for i in 1 ..< sessions.count {
@@ -396,8 +401,11 @@ final class SessionEventInstrumentationTests: XCTestCase {
         record.eventName == "session.start" &&
           record.attributes["session.id"] == AttributeValue.string(sessions[i].id)
       }
-      XCTAssertNotNil(sessionStartRecord)
-      XCTAssertEqual(sessionStartRecord?.attributes["session.previous_id"], AttributeValue.string(sessions[i - 1].id))
+      guard let sessionStartRecord else {
+        XCTFail("Expected a session.start event for session \(i)")
+        continue
+      }
+      XCTAssertEqual(sessionStartRecord.attributes["session.previous_id"], AttributeValue.string(sessions[i - 1].id))
     }
   }
 
@@ -466,7 +474,7 @@ final class SessionEventInstrumentationTests: XCTestCase {
 
     XCTAssertTrue(SessionEventInstrumentation.isApplied)
     XCTAssertEqual(SessionEventInstrumentation.queue.count, 0)
-    
+
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, 1)
     XCTAssertEqual(logRecords[0].eventName, "session.start")

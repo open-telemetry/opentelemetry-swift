@@ -30,6 +30,13 @@ For a deeper discussion, see: https://github.com/open-telemetry/opentelemetry-sp
 
 Everyone is welcome to contribute code via GitHub Pull Requests (PRs).
 
+### Picking up an issue
+
+You don't need permission to work on an issue. If it has no assignee, go
+ahead and open a PR. There's no need to ask to be assigned first. Issues are
+only assigned in exceptional cases, usually to maintainers or approvers, and
+those decisions are made at the [Swift SIG meeting][otel-sigs].
+
 ### Fork the repo
 
 Fork the project on GitHub by clicking the `Fork` button at the top of the
@@ -79,6 +86,19 @@ To test from the command line you need `swift` version `5.0+`.
 ```sh
 swift test
 ```
+
+#### Integration tests
+
+Changes to instrumentations or the events they emit (new or renamed spans,
+log records, event names, or attributes under `Sources/Instrumentation`) must
+also update the integration tests in `Tests/IntegrationTests`, which run the
+`Examples/HackerNewsDemo` app in the iOS simulator against a local collector.
+See `Tests/IntegrationTests/README.md` and run:
+
+```sh
+make integ-tests-ios
+```
+
 ### Linting
 #### SwiftLint
 The SwiftLint Xcode plugin can be optionally enabled during development by using an environmental variable when opening the project from the commandline. 
@@ -187,6 +207,7 @@ Replace the generated files in `Sources/Exporters/OpenTelemetryProtocolCommon/pr
 [otel-github-workflow]: https://github.com/open-telemetry/community/blob/master/CONTRIBUTING.md#github-workflow
 [otel-lib-guidelines]: https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/library-guidelines.md
 [otel-specification]: https://github.com/open-telemetry/opentelemetry-specification
+[otel-sigs]: https://github.com/open-telemetry/community#special-interest-groups
 [grpc-swift]: https://github.com/grpc/grpc-swift
 [opentelemetry-proto]: https://github.com/open-telemetry/opentelemetry-proto
 [protoc]: https://grpc.io/docs/protoc-installation/

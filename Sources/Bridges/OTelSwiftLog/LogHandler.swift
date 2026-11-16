@@ -22,6 +22,8 @@ public struct OTelLogHandler: LogHandler, @unchecked Sendable {
 
   // Define metadata for this handler
   public var metadata: Logging.Logger.Metadata = [:]
+
+  public var metadataProvider: Logging.Logger.MetadataProvider?
   public subscript(metadataKey key: String) -> Logging.Logger.Metadata.Value? {
     get {
       return metadata[key]
@@ -35,7 +37,7 @@ public struct OTelLogHandler: LogHandler, @unchecked Sendable {
   ///  - Parameter loggerProvider: The logger provider to use in the bridge. Defaults to the global logger provider.
   ///  - Parameter includeTraceContext : boolean flag used for the logger builder
   ///  - Parameter attributes: attributes to apply to the logger builder
-  public init(loggerProvider: LoggerProvider = OpenTelemetryApi.DefaultLoggerProvider.instance,
+  public init(loggerProvider: LoggerProvider = OpenTelemetry.instance.loggerProvider,
               includeTraceContext: Bool = true,
               attributes: [String: AttributeValue] = [String: AttributeValue]()) {
     self.loggerProvider = loggerProvider
@@ -59,13 +61,17 @@ public struct OTelLogHandler: LogHandler, @unchecked Sendable {
       "line": AttributeValue.int(Int(event.line))
     ]
 
+    // Convert metadata from the struct property to AttributeValue and merge it with otelattributes
+    otelattributes.merge(convertMetadata(self.metadata)) { _, new in new }
+
+    if let providedMetadata = metadataProvider?.get() {
+      otelattributes.merge(convertMetadata(providedMetadata)) { _, new in new }
+    }
+
     // Convert metadata from the event to AttributeValue and merge into otelattributes.
     if let metadata = event.metadata {
       otelattributes.merge(convertMetadata(metadata)) { _, new in new }
     }
-
-    // Convert metadata from the struct property to AttributeValue and merge it with otelattributes
-    otelattributes.merge(convertMetadata(self.metadata)) { _, new in new }
 
     // Convert error from the event to AttributeValue and merge into otelattributes
     if let error = event.error {

@@ -38,6 +38,20 @@ final class OTelLogHandlerCoverageTests: XCTestCase {
     return (provider, processor)
   }
 
+  func testLogHandlerUsesRegisteredGlobalProviderByDefault() {
+    let savedProvider = OpenTelemetry.instance.loggerProvider
+    defer { OpenTelemetry.registerLoggerProvider(loggerProvider: savedProvider) }
+
+    let (provider, processor) = makeProvider()
+    OpenTelemetry.registerLoggerProvider(loggerProvider: provider)
+
+    let logger = Logger(label: "OTelSwiftLogTests-global") { _ in OTelLogHandler() }
+    logger.info("global-provider")
+
+    XCTAssertEqual(processor.records.count, 1)
+    XCTAssertEqual(processor.records.first?.body, .string("global-provider"))
+  }
+
   func testLogHandlerDefaultLogLevelIsInfo() {
     let handler = OTelLogHandler()
     XCTAssertEqual(handler.logLevel, .info)
@@ -88,7 +102,70 @@ final class OTelLogHandlerCoverageTests: XCTestCase {
 
     XCTAssertEqual(processor.records.first?.attributes["env"], .string("test"))
   }
-    
+
+  func testLogHandlerPerCallMetadataOverridesHandlerMetadata() {
+    let (provider, processor) = makeProvider()
+    var handler = OTelLogHandler(loggerProvider: provider)
+    handler.metadata = ["scope": "handler", "handler-only": "kept"]
+
+    let logger = Logger(label: "OTelSwiftLogTests-precedence") { _ in handler }
+    logger.info("msg", metadata: ["scope": "call", "call-only": "kept"])
+
+    let attributes = processor.records.first?.attributes
+    XCTAssertEqual(attributes?["scope"], .string("call"))
+    XCTAssertEqual(attributes?["handler-only"], .string("kept"))
+    XCTAssertEqual(attributes?["call-only"], .string("kept"))
+  }
+
+  func testLogHandlerAppliesMetadataProviderAsAttributes() {
+    let (provider, processor) = makeProvider()
+    var handler = OTelLogHandler(loggerProvider: provider)
+    handler.metadataProvider = Logger.MetadataProvider { ["k": "v"] }
+
+    let logger = Logger(label: "OTelSwiftLogTests-mp") { _ in handler }
+    logger.info("msg")
+
+    XCTAssertNotNil(handler.metadataProvider)
+    XCTAssertEqual(processor.records.first?.attributes["k"], .string("v"))
+  }
+
+  func testLoggerExposesHandlerMetadataProvider() {
+    let (provider, _) = makeProvider()
+    var handler = OTelLogHandler(loggerProvider: provider)
+    handler.metadataProvider = Logger.MetadataProvider { ["trace-tag": "from-provider"] }
+
+    let logger = Logger(label: "OTelSwiftLogTests-mp-logger") { _ in handler }
+
+    XCTAssertEqual(logger.metadataProvider?.get()["trace-tag"], "from-provider")
+  }
+
+  func testLogHandlerMetadataProviderOverridesHandlerMetadata() {
+    let (provider, processor) = makeProvider()
+    var handler = OTelLogHandler(loggerProvider: provider)
+    handler.metadata = ["request.id": "default", "handler-only": "kept"]
+    handler.metadataProvider = Logger.MetadataProvider { ["request.id": "abc-123", "provider-only": "kept"] }
+
+    let logger = Logger(label: "OTelSwiftLogTests-mp-collision") { _ in handler }
+    logger.info("msg")
+
+    let attributes = processor.records.first?.attributes
+    XCTAssertEqual(attributes?["request.id"], .string("abc-123"))
+    XCTAssertEqual(attributes?["handler-only"], .string("kept"))
+    XCTAssertEqual(attributes?["provider-only"], .string("kept"))
+  }
+
+  func testLogHandlerPerCallMetadataOverridesProviderAndHandlerMetadata() {
+    let (provider, processor) = makeProvider()
+    var handler = OTelLogHandler(loggerProvider: provider)
+    handler.metadata = ["k": "from-handler"]
+    handler.metadataProvider = Logger.MetadataProvider { ["k": "from-provider"] }
+
+    let logger = Logger(label: "OTelSwiftLogTests-mp-override") { _ in handler }
+    logger.info("msg", metadata: ["k": "from-call"])
+
+    XCTAssertEqual(processor.records.first?.attributes["k"], .string("from-call"))
+  }
+
   func testLogHandlerIncludesErrorParameterAsAttributes() {
     let (provider, processor) = makeProvider()
     let handler = OTelLogHandler(loggerProvider: provider)

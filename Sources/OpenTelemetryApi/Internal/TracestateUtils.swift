@@ -1,0 +1,121 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import Foundation
+
+enum TraceStateUtils {
+  private static let keyMaxSize = 256
+  private static let valueMaxSize = 256
+  private static let tenantIdMaxSize = 241
+  private static let systemIdMaxSize = 14
+  private static let maxKeyValuePairsCount = 32
+
+  /// Extracts traceState pairs from the given string and appends it to provided traceState list
+  /// - Parameters:
+  ///   - traceStateString: String with comma separated traceState key value pairs.
+  ///   - traceState: Array to set traceState pairs on.
+  static func appendTraceState(traceStateString: String, traceState: inout [TraceState.Entry]) -> Bool {
+    var names = Set<String>()
+
+    let optionalWhitespace = CharacterSet(charactersIn: " \t")
+
+    // traceState: rojo=00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01,congo=BleGNlZWRzIHRohbCBwbGVhc3VyZS4
+    let pair = traceStateString.components(separatedBy: ",")
+    for member in pair {
+      let member = member.trimmingCharacters(in: optionalWhitespace)
+      // Empty members and optional whitespace are permitted by the tracestate list grammar.
+      if member.isEmpty { continue }
+      if let entry = TraceStateUtils.parseKeyValue(pairString: member), !names.contains(entry.key) {
+        names.update(with: entry.key)
+        traceState.append(entry)
+      } else {
+        return false
+      }
+
+      if traceState.count == maxKeyValuePairsCount {
+        break
+      }
+    }
+    return true
+  }
+
+  /// Returns TraceState description as a string with the values
+  /// - Parameter traceState: the traceState to return description from
+  static func getString(traceState: TraceState) -> String {
+    let entries = traceState.entries
+    var result = ""
+
+    if entries.isEmpty {
+      return result
+    }
+
+    for entry in traceState.entries.prefix(maxKeyValuePairsCount) {
+      result += "\(entry.key)=\(entry.value),"
+    }
+    result.removeLast()
+    return result
+  }
+
+  /// Key is opaque string up to 256 characters printable. It MUST begin with a lowercase letter, and
+  /// can only contain lowercase letters a-z, digits 0-9, underscores _, dashes -, asterisks *, and
+  /// forward slashes /.  For multi-tenant vendor scenarios, an at sign (@) can be used to prefix the
+  /// vendor name.
+  static func validateKey(key: String) -> Bool {
+    let allowed = "abcdefghijklmnopqrstuvwxyz0123456789_-*/@"
+    let characterSet = CharacterSet(charactersIn: allowed)
+
+    if key.count > TraceStateUtils.keyMaxSize || key.isEmpty || key.unicodeScalars.first! > "z" {
+      return false
+    }
+    guard key.rangeOfCharacter(from: characterSet.inverted) == nil else {
+      return false
+    }
+
+    if key.firstIndex(of: "@") != key.lastIndex(of: "@") {
+      return false
+    }
+
+    return true
+  }
+
+  /// Value is opaque string up to 256 characters printable ASCII RFC0020 characters (i.e., the range
+  /// 0x20 to 0x7E) except comma , and =.
+  static func validateValue(value: String) -> Bool {
+    if value.count > TraceStateUtils.valueMaxSize || value.last == " " {
+      return false
+    }
+
+    for scalar in value.unicodeScalars {
+      if scalar.value < 0x20 || scalar.value > 0x7E || scalar == "," || scalar == "=" {
+        return false
+      }
+    }
+
+    return true
+  }
+
+  private static func parseKeyValue(pairString: String) -> TraceState.Entry? {
+    let pair = pairString.components(separatedBy: "=")
+    guard pair.count == 2, !pair[1].isEmpty else { return nil }
+
+    // Enforce the wire grammar here without changing the public Entry construction API.
+    let keyParts = pair[0].split(separator: "@", omittingEmptySubsequences: false)
+    let lowercase = UInt8(ascii: "a") ... UInt8(ascii: "z")
+    switch keyParts.count {
+    case 1:
+      guard let first = keyParts[0].utf8.first, lowercase.contains(first) else { return nil }
+    case 2:
+      guard let tenantFirst = keyParts[0].utf8.first,
+            lowercase.contains(tenantFirst) || (UInt8(ascii: "0") ... UInt8(ascii: "9")).contains(tenantFirst),
+            keyParts[0].utf8.count <= tenantIdMaxSize,
+            let systemFirst = keyParts[1].utf8.first, lowercase.contains(systemFirst),
+            keyParts[1].utf8.count <= systemIdMaxSize else { return nil }
+    default:
+      return nil
+    }
+
+    return TraceState.Entry(key: pair[0], value: pair[1])
+  }
+}

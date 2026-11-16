@@ -1,0 +1,1124 @@
+{
+  "uid": "hackernews-demo",
+  "title": "HackerNewsDemo",
+  "tags": [
+    "opentelemetry-swift"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 3,
+  "editable": true,
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "refresh": "10s",
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "label": "Service",
+        "type": "query",
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "query": {
+          "label": "service_name",
+          "stream": "",
+          "type": 1,
+          "refId": "LokiVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "current": {
+          "text": "HackerNewsDemo",
+          "value": "HackerNewsDemo"
+        },
+        "includeAll": false,
+        "multi": false
+      },
+      {
+        "name": "session",
+        "label": "Session",
+        "type": "query",
+        "datasource": {
+          "type": "tempo",
+          "uid": "tempo"
+        },
+        "query": {
+          "type": 1,
+          "label": "session.id",
+          "refId": "TempoDatasourceVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*",
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "allowCustomValue": true
+      },
+      {
+        "name": "trace",
+        "type": "textbox",
+        "hide": 2,
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        }
+      },
+      {
+        "name": "span",
+        "type": "textbox",
+        "hide": 2,
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        }
+      },
+      {
+        "name": "event",
+        "type": "textbox",
+        "hide": 2,
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        }
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "volkovlabs-echarts-panel",
+      "title": "Timeline",
+      "description": "Spans as bars and log records as markers, one lane per session. Click one to open its details on the right (Esc or click it again to close).",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 16
+      },
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Mixed --"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "queryType": "traceql",
+          "tableType": "spans",
+          "limit": 200,
+          "spss": 100,
+          "query": "{resource.service.name=\"$service\" && (span.session.id =~ \"${session:regex}\" || \"${session:regex}\" = \".*\")} | select(name, span.session.id, instrumentation:name)"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "queryType": "range",
+          "maxLines": 1000,
+          "expr": "{service_name=\"$service\", service_name=~\".+\"} | session_id =~ \"${session:regex}\""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "binary",
+            "alias": "start",
+            "replaceFields": false,
+            "binary": {
+              "left": {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Start time"
+                }
+              },
+              "operator": "+",
+              "right": {
+                "fixed": "0"
+              }
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "A"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "binary",
+            "alias": "durationMs",
+            "replaceFields": false,
+            "binary": {
+              "left": {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Duration"
+                }
+              },
+              "operator": "/",
+              "right": {
+                "fixed": "1000000"
+              }
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "A"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "binary",
+            "alias": "end",
+            "replaceFields": false,
+            "binary": {
+              "left": {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Start time"
+                }
+              },
+              "operator": "+",
+              "right": {
+                "matcher": {
+                  "id": "byName",
+                  "options": "durationMs"
+                }
+              }
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "A"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "reduceRow",
+            "alias": "text",
+            "replaceFields": false,
+            "reduce": {
+              "include": [
+                "Name"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "A"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "reduceRow",
+            "alias": "scope",
+            "replaceFields": false,
+            "reduce": {
+              "include": [
+                "instrumentation:name"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "A"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "reduceRow",
+            "alias": "session",
+            "replaceFields": false,
+            "reduce": {
+              "include": [
+                "session.id"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "A"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "reduceRow",
+            "alias": "traceId",
+            "replaceFields": false,
+            "reduce": {
+              "include": [
+                "traceIdHidden"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "A"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "reduceRow",
+            "alias": "key",
+            "replaceFields": false,
+            "reduce": {
+              "include": [
+                "spanID"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "A"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "labels",
+            "format": "auto",
+            "replace": false,
+            "keepTime": false
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "B"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "binary",
+            "alias": "start",
+            "replaceFields": false,
+            "binary": {
+              "left": {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Time"
+                }
+              },
+              "operator": "+",
+              "right": {
+                "fixed": "0"
+              }
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "B"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "binary",
+            "alias": "end",
+            "replaceFields": false,
+            "binary": {
+              "left": {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Time"
+                }
+              },
+              "operator": "+",
+              "right": {
+                "fixed": "0"
+              }
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "B"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "reduceRow",
+            "alias": "text",
+            "replaceFields": false,
+            "reduce": {
+              "include": [
+                "Line"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "B"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "reduceRow",
+            "alias": "scope",
+            "replaceFields": false,
+            "reduce": {
+              "include": [
+                "scope_name"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "B"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "reduceRow",
+            "alias": "session",
+            "replaceFields": false,
+            "reduce": {
+              "include": [
+                "session_id"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "B"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "reduceRow",
+            "alias": "key",
+            "replaceFields": false,
+            "reduce": {
+              "include": [
+                "id"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "B"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "reduceRow",
+            "alias": "eventName",
+            "replaceFields": false,
+            "reduce": {
+              "include": [
+                "event_name"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "B"
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "fields": {},
+            "conversions": [
+              {
+                "targetField": "text",
+                "destinationType": "string"
+              },
+              {
+                "targetField": "scope",
+                "destinationType": "string"
+              },
+              {
+                "targetField": "session",
+                "destinationType": "string"
+              },
+              {
+                "targetField": "traceId",
+                "destinationType": "string"
+              },
+              {
+                "targetField": "key",
+                "destinationType": "string"
+              },
+              {
+                "targetField": "eventName",
+                "destinationType": "string"
+              }
+            ]
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "start",
+                "end",
+                "text",
+                "scope",
+                "session",
+                "traceId",
+                "key",
+                "eventName"
+              ]
+            }
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "fields": {},
+            "conversions": [
+              {
+                "targetField": "start",
+                "destinationType": "time"
+              },
+              {
+                "targetField": "end",
+                "destinationType": "time"
+              }
+            ]
+          }
+        }
+      ],
+      "options": {
+        "renderer": "canvas",
+        "editorMode": "code",
+        "editor": {
+          "format": "auto"
+        },
+        "getOption": "// The Timeline's code is in grafana/timeline.js, which Grafana serves (see docker-compose.yaml).\n// The timestamp loads the current file on every refresh instead of a cached copy.\nreturn import(`/public/hackernews-demo/timeline.js?v=${Date.now()}`).then((m) => m.default(context));\n"
+      }
+    },
+    {
+      "id": 2,
+      "type": "table",
+      "title": "Events",
+      "description": "Every span and log record. Event is the span's name or the log record's event name (unnamed if it has none). Click an event to open its details on the right.",
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Mixed --"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 24,
+        "h": 18
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "queryType": "traceql",
+          "tableType": "spans",
+          "limit": 200,
+          "spss": 100,
+          "query": "{resource.service.name=\"$service\" && (span.session.id =~ \"${session:regex}\" || \"${session:regex}\" = \".*\")} | select(name, instrumentation:name, span.session.id)"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "queryType": "range",
+          "maxLines": 1000,
+          "expr": "{service_name=\"$service\", service_name=~\".+\"} | session_id =~ \"${session:regex}\""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "ev_time",
+            "replaceFields": false,
+            "mode": "binary",
+            "binary": {
+              "left": {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Start time"
+                }
+              },
+              "operator": "+",
+              "right": {
+                "fixed": "0"
+              }
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "A"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "ev_duration",
+            "replaceFields": false,
+            "mode": "binary",
+            "binary": {
+              "left": {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Duration"
+                }
+              },
+              "operator": "+",
+              "right": {
+                "fixed": "0"
+              }
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "A"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "binary",
+            "alias": "ev_type",
+            "replaceFields": false,
+            "binary": {
+              "left": {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Duration"
+                }
+              },
+              "operator": "*",
+              "right": {
+                "fixed": "0"
+              }
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "A"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "ev_event",
+            "replaceFields": false,
+            "mode": "reduceRow",
+            "reduce": {
+              "include": [
+                "Name"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "A"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "ev_scope",
+            "replaceFields": false,
+            "mode": "reduceRow",
+            "reduce": {
+              "include": [
+                "instrumentation:name"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "A"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "ev_session",
+            "replaceFields": false,
+            "mode": "reduceRow",
+            "reduce": {
+              "include": [
+                "session.id"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "A"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "ev_trace",
+            "replaceFields": false,
+            "mode": "reduceRow",
+            "reduce": {
+              "include": [
+                "traceIdHidden"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "A"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "ev_span",
+            "replaceFields": false,
+            "mode": "reduceRow",
+            "reduce": {
+              "include": [
+                "Span ID"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "A"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "labels",
+            "format": "auto",
+            "replace": false,
+            "keepTime": false
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "B"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "ev_time",
+            "replaceFields": false,
+            "mode": "binary",
+            "binary": {
+              "left": {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Time"
+                }
+              },
+              "operator": "+",
+              "right": {
+                "fixed": "0"
+              }
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "B"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "ev_event",
+            "replaceFields": false,
+            "mode": "reduceRow",
+            "reduce": {
+              "include": [
+                "event_name"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "B"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "ev_scope",
+            "replaceFields": false,
+            "mode": "reduceRow",
+            "reduce": {
+              "include": [
+                "scope_name"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "B"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "ev_session",
+            "replaceFields": false,
+            "mode": "reduceRow",
+            "reduce": {
+              "include": [
+                "session_id"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "B"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "ev_log",
+            "replaceFields": false,
+            "mode": "reduceRow",
+            "reduce": {
+              "include": [
+                "id"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "B"
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "fields": {},
+            "conversions": [
+              {
+                "targetField": "ev_event",
+                "destinationType": "string"
+              },
+              {
+                "targetField": "ev_scope",
+                "destinationType": "string"
+              },
+              {
+                "targetField": "ev_session",
+                "destinationType": "string"
+              },
+              {
+                "targetField": "ev_trace",
+                "destinationType": "string"
+              },
+              {
+                "targetField": "ev_span",
+                "destinationType": "string"
+              },
+              {
+                "targetField": "ev_log",
+                "destinationType": "string"
+              }
+            ]
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "ev_time",
+                "ev_type",
+                "ev_event",
+                "ev_scope",
+                "ev_duration",
+                "ev_session",
+                "ev_trace",
+                "ev_span",
+                "ev_log"
+              ]
+            }
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "fields": {},
+            "conversions": [
+              {
+                "targetField": "ev_time",
+                "destinationType": "time"
+              }
+            ]
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "ev_time",
+                "desc": false
+              }
+            ]
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "indexByName": {
+              "ev_time": 0,
+              "ev_type": 1,
+              "ev_event": 2,
+              "ev_scope": 3,
+              "ev_duration": 4,
+              "ev_session": 5,
+              "ev_trace": 6,
+              "ev_span": 7,
+              "ev_log": 8
+            },
+            "renameByName": {
+              "ev_time": "Time",
+              "ev_type": "Type",
+              "ev_event": "Event",
+              "ev_scope": "Scope",
+              "ev_duration": "Duration",
+              "ev_session": "Session",
+              "ev_trace": "TraceID",
+              "ev_span": "SpanID",
+              "ev_log": "LogID"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "Time",
+            "desc": false
+          }
+        ]
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Type"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "span",
+                        "index": 0
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "noValue",
+                "value": "log"
+              },
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Event"
+            },
+            "properties": [
+              {
+                "id": "noValue",
+                "value": "unnamed"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "null": {
+                        "text": "unnamed",
+                        "index": 0
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Show details",
+                    "url": "/d/${__dashboard.uid}/${__dashboard}?${__url_time_range}&${service:queryparam}&${session:queryparam}&var-trace=${__data.fields.TraceID}&var-span=${__data.fields.SpanID}&var-event=${__data.fields.LogID}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 200
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Duration"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ns"
+              },
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TraceID"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "SpanID"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LogID"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Session"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "null": {
+                        "text": "no session",
+                        "index": 0
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

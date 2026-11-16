@@ -25,6 +25,10 @@ public class ExporterMetrics {
   private var successAttrs: [String: AttributeValue] = [:]
   private var failedAttrs: [String: AttributeValue] = [:]
 
+  // `LongCounter.add` is a `mutating` protocol requirement, so calling it on a
+  // stored property from the caller thread and the HTTP callback thread at
+  // once is an exclusivity violation. Serialize all counter access.
+  private let lock = NSLock()
   private var seen: LongCounter?
   private var exported: LongCounter?
 
@@ -55,14 +59,20 @@ public class ExporterMetrics {
   }
 
   public func addSeen(value: Int) {
+    lock.lock()
+    defer { lock.unlock() }
     seen?.add(value: value, attributes: seenAttrs)
   }
 
   public func addSuccess(value: Int) {
+    lock.lock()
+    defer { lock.unlock() }
     exported?.add(value: value, attributes: successAttrs)
   }
 
   public func addFailed(value: Int) {
+    lock.lock()
+    defer { lock.unlock() }
     exported?.add(value: value, attributes: failedAttrs)
   }
 

@@ -24,6 +24,7 @@ public class DeviceResourceProvider: ResourceProvider {
 
     if let deviceId = deviceSource.identifier {
       attributes[SemanticConventions.Device.id.rawValue] = AttributeValue.string(deviceId)
+      attributes[SemanticConventions.App.installationId.rawValue] = AttributeValue.string(deviceId)
     }
 
     return attributes
