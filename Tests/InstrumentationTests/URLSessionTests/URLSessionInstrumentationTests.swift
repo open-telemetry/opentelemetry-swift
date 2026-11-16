@@ -1354,13 +1354,42 @@ class URLSessionInstrumentationTests: XCTestCase {
   /// two without keeping its own table of in-flight requests keyed by task.
   public func testReceivedResponseIsGivenTheOriginatingRequest() {
     let url = URL(string: "http://localhost:33333/success")!
+    let reported = expectReceivedResponseWithRequest()
     let session = URLSession(configuration: .default, delegate: sessionDelegate, delegateQueue: nil)
     let task = session.dataTask(with: URLRequest(url: url))
     task.resume()
     URLSessionInstrumentationTests.semaphore.wait()
+    wait(for: [reported], timeout: 5)
 
     XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
     XCTAssertEqual(URLSessionInstrumentationTests.receivedResponseRequest?.url, url)
+  }
+
+  /// A task with no delegate and no completion handler is reported by the setState fallback, which
+  /// must still be able to hand receivedResponseWithRequest the request.
+  public func testReceivedResponseIsGivenTheRequestWithoutADelegateOrCompletionHandler() {
+    let url = URL(string: "http://localhost:33333/success")!
+    let reported = expectReceivedResponseWithRequest()
+    let session = URLSession(configuration: .ephemeral)
+    defer { session.finishTasksAndInvalidate() }
+    session.dataTask(with: URLRequest(url: url)).resume()
+    wait(for: [reported], timeout: 5)
+
+    XCTAssertEqual(URLSessionInstrumentationTests.receivedResponseRequest?.url, url)
+  }
+
+  /// The response can be reported from a URLSession thread after the delegate has already been
+  /// called, so tests wait on this rather than on the delegate to read what the callback recorded.
+  private func expectReceivedResponseWithRequest() -> XCTestExpectation {
+    let reported = expectation(description: "receivedResponseWithRequest is called")
+    let instrumentation = URLSessionInstrumentationTests.instrumentation!
+    let original = instrumentation.configuration.receivedResponseWithRequest
+    instrumentation.configuration.receivedResponseWithRequest = { response, dataOrFile, span, request in
+      original?(response, dataOrFile, span, request)
+      reported.fulfill()
+    }
+    addTeardownBlock { instrumentation.configuration.receivedResponseWithRequest = original }
+    return reported
   }
 
   /// A task with no session delegate and no completion handler has its span started by the factory
