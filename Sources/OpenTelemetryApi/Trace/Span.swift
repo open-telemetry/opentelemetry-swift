@@ -220,14 +220,10 @@ public extension Span {
       key: SemanticConventions.Http.responseStatusCode,
       value: statusCode
     )
-    let newStatus: Status = switch statusCode {
-    case 200 ..< 400:
-      .ok
-    case 400 ..< 600:
-      .error(description: reasonPhrase)
-    default:
-      .unset
+    // Status stays unset for 1xx, 2xx and 3xx, as the HTTP semantic conventions require,
+    // so an error recorded later on the span is kept.
+    if (400 ..< 600).contains(statusCode) {
+      status = .error(description: reasonPhrase)
     }
-    status = newStatus
   }
 }

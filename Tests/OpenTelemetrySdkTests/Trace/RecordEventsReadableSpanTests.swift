@@ -148,6 +148,25 @@ class SpanSdkTest: XCTestCase {
     span.end()
   }
 
+  func testPutHttpStatusCodeLeavesSuccessUnset() {
+    let span = createTestSpan(kind: .client)
+    span.putHttpStatusCode(statusCode: 200, reasonPhrase: "OK")
+    XCTAssertEqual(span.toSpanData().status, Status.unset)
+    span.putHttpStatusCode(statusCode: 302, reasonPhrase: "Found")
+    XCTAssertEqual(span.toSpanData().status, Status.unset)
+    span.status = .error(description: "BadBody")
+    XCTAssertEqual(span.toSpanData().status, Status.error(description: "BadBody"))
+    span.end()
+  }
+
+  func testPutHttpStatusCodeSetsErrorForFailures() {
+    let span = createTestSpan(kind: .client)
+    span.putHttpStatusCode(statusCode: 503, reasonPhrase: "Service Unavailable")
+    XCTAssertEqual(span.toSpanData().status, Status.error(description: "Service Unavailable"))
+    XCTAssertEqual(span.toSpanData().attributes[SemanticConventions.Http.responseStatusCode.rawValue], AttributeValue.int(503))
+    span.end()
+  }
+
   func testGetSpanKind() {
     let span = createTestSpan(kind: .server)
     XCTAssertEqual(span.toSpanData().kind, SpanKind.server)
