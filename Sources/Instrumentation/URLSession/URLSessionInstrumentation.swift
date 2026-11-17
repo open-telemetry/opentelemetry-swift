@@ -823,9 +823,10 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
   }
 
   private func urlSessionTaskWillResume(_ task: URLSessionTask) {
-    // A task whose completion has already been reported gets no second span: URLSession tasks are
-    // not restartable, so a later resume is the same logical request, not a new one.
-    guard objc_getAssociatedObject(task, &reportedKey) == nil else {
+    // A completed task gets no second span: URLSession tasks are not restartable, so a later resume
+    // is the same logical request, not a new one. A completion-handler task never gets `reportedKey`,
+    // and a resume from inside a handler can run before `setState:` sets it, so check the state too.
+    guard task.state != .completed, objc_getAssociatedObject(task, &reportedKey) == nil else {
       return
     }
 
