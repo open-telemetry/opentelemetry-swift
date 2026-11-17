@@ -408,7 +408,8 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
                                             instrumentation: self, sessionTaskId: sessionTaskId)
                 } else {
                   if let response {
-                    URLSessionLogger.logResponse(response, dataOrFile: payload, instrumentation: self,
+                    URLSessionLogger.logResponse(response, dataOrFile: payload,
+                                                 request: self.request(forTaskId: sessionTaskId), instrumentation: self,
                                                  sessionTaskId: sessionTaskId)
                   }
                 }
@@ -481,7 +482,8 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
                                           instrumentation: self, sessionTaskId: sessionTaskId)
               } else {
                 if let response {
-                  URLSessionLogger.logResponse(response, dataOrFile: payload, instrumentation: self,
+                  URLSessionLogger.logResponse(response, dataOrFile: payload,
+                                               request: self.request(forTaskId: sessionTaskId), instrumentation: self,
                                                sessionTaskId: sessionTaskId)
                 }
               }
@@ -767,19 +769,17 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     guard let taskId = objc_getAssociatedObject(task, &idKey) as? String else {
       return
     }
-    var requestState: NetworkRequestState?
-    queue.sync {
-      requestState = requestMap[taskId]
-      if requestState != nil {
-        requestMap[taskId] = nil
-      }
-    }
+    // Cleared after logging rather than before: another path may be reporting the same task
+    // concurrently and still needs to read the request.
+    let requestState = queue.sync { requestMap[taskId] }
+    defer { queue.sync { requestMap[taskId] = nil } }
+
     if let error {
       let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
       URLSessionLogger.logError(error, dataOrFile: requestState?.dataProcessed, statusCode: status,
                                 instrumentation: self, sessionTaskId: taskId)
     } else if let response = task.response {
-      URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed,
+      URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed, request: requestState?.request,
                                    instrumentation: self, sessionTaskId: taskId)
     }
   }
@@ -798,18 +798,13 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     guard let taskId = objc_getAssociatedObject(task, &idKey) as? String else {
       return
     }
-    var requestState: NetworkRequestState?
-    queue.sync {
-      requestState = requestMap[taskId]
-
-      if requestState?.request != nil {
-        requestMap[taskId] = nil
-      }
-    }
-
+    let requestState = queue.sync { requestMap[taskId] }
     guard requestState?.request != nil else {
       return
     }
+    // Cleared after logging rather than before: another path may be reporting the same task
+    // concurrently and still needs to read the request.
+    defer { queue.sync { requestMap[taskId] = nil } }
 
     /// Code for instrumenting collection should be written here
     if let error = task.error {
@@ -817,7 +812,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       URLSessionLogger.logError(error, dataOrFile: requestState?.dataProcessed, statusCode: status,
                                 instrumentation: self, sessionTaskId: taskId)
     } else if let response = task.response {
-      URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed,
+      URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed, request: requestState?.request,
                                    instrumentation: self, sessionTaskId: taskId)
     }
   }
@@ -950,6 +945,11 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     return id
   }
 
+  /// The request recorded for `taskId`, while the task is still being tracked.
+  func request(forTaskId taskId: String) -> URLRequest? {
+    queue.sync { requestMap[taskId]?.request }
+  }
+
   /// Marks a task whose completion handler reports the response itself, so the setState fallback
   /// does not report it a second time with less data than the handler has.
   private func markHasCompletionHandler(_ task: URLSessionTask) {
@@ -1003,11 +1003,10 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       return
     }
 
-    var requestState: NetworkRequestState?
-    queue.sync {
-      requestState = requestMap[taskId]
-      requestMap[taskId] = nil
-    }
+    let requestState = queue.sync { requestMap[taskId] }
+    // Cleared after logging rather than before: another path may be reporting the same task
+    // concurrently and still needs to read the request.
+    defer { queue.sync { requestMap[taskId] = nil } }
 
     objc_setAssociatedObject(task, &reportedKey, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
 
@@ -1016,7 +1015,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       URLSessionLogger.logError(error, dataOrFile: requestState?.dataProcessed, statusCode: status,
                                 instrumentation: self, sessionTaskId: taskId)
     } else if let response = task.response {
-      URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed,
+      URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed, request: requestState?.request,
                                    instrumentation: self, sessionTaskId: taskId)
     }
   }
@@ -1080,7 +1079,7 @@ final class AsyncTaskDelegate: NSObject, URLSessionTaskDelegate, @unchecked Send
       URLSessionLogger.logError(error, dataOrFile: nil, statusCode: status,
                                 instrumentation: instrumentation, sessionTaskId: taskId)
     } else if let response = task.response {
-      URLSessionLogger.logResponse(response, dataOrFile: nil,
+      URLSessionLogger.logResponse(response, dataOrFile: nil, request: instrumentation.request(forTaskId: taskId),
                                    instrumentation: instrumentation, sessionTaskId: taskId)
     }
   }

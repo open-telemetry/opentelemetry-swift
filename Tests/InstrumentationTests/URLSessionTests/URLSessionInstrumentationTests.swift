@@ -128,6 +128,8 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
+  nonisolated(unsafe) static var receivedResponseRequest: URLRequest?
+
   nonisolated(unsafe) static var createdSpanIds = [String]()
 
   nonisolated(unsafe) static var requestCopy: URLRequest!
@@ -174,6 +176,9 @@ class URLSessionInstrumentationTests: XCTestCase {
                                                                responseCopy = response as? HTTPURLResponse
                                                                receivedDataOrFile = dataOrFile
                                                                checker.receivedResponseCalled = true
+                                                             },
+                                                             receivedResponseWithRequest: { _, _, _, request in
+                                                               receivedResponseRequest = request
                                                              },
                                                              receivedError: { _, _, _, _ in
                                                                URLSessionInstrumentationTests.checker.receivedErrorCalled = true
@@ -231,6 +236,7 @@ class URLSessionInstrumentationTests: XCTestCase {
     sessionDelegate = SessionDelegate(semaphore: URLSessionInstrumentationTests.semaphore)
     URLSessionInstrumentationTests.requestCopy = nil
     URLSessionInstrumentationTests.responseCopy = nil
+    URLSessionInstrumentationTests.receivedResponseRequest = nil
     URLSessionInstrumentationTests.receivedDataOrFile = nil
     URLSessionInstrumentationTests.createdSpanIds.removeAll()
     XCTAssertEqual(0, URLSessionInstrumentationTests.instrumentation.startedRequestSpans.count)
@@ -1381,6 +1387,48 @@ class URLSessionInstrumentationTests: XCTestCase {
     
     // The test passes if tasks completes without crashing.
     wait { task.state == .completed }
+  }
+
+  /// receivedResponse is given the request the response belongs to, so a consumer can correlate the
+  /// two without keeping its own table of in-flight requests keyed by task.
+  public func testReceivedResponseIsGivenTheOriginatingRequest() {
+    let url = URL(string: "http://localhost:33333/success")!
+    let reported = expectReceivedResponseWithRequest()
+    let session = URLSession(configuration: .default, delegate: sessionDelegate, delegateQueue: nil)
+    let task = session.dataTask(with: URLRequest(url: url))
+    task.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+    wait(for: [reported], timeout: 5)
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertEqual(URLSessionInstrumentationTests.receivedResponseRequest?.url, url)
+  }
+
+  /// A task with no delegate and no completion handler is reported by the setState fallback, which
+  /// must still be able to hand receivedResponseWithRequest the request.
+  public func testReceivedResponseIsGivenTheRequestWithoutADelegateOrCompletionHandler() {
+    let url = URL(string: "http://localhost:33333/success")!
+    let reported = expectReceivedResponseWithRequest()
+    let session = URLSession(configuration: .ephemeral)
+    defer { session.finishTasksAndInvalidate() }
+    session.dataTask(with: URLRequest(url: url)).resume()
+    wait(for: [reported], timeout: 5)
+
+    XCTAssertEqual(URLSessionInstrumentationTests.receivedResponseRequest?.url, url)
+  }
+
+  /// The response can be reported from a URLSession thread after the delegate has already been
+  /// called, so tests wait on this rather than on the delegate to read what the callback recorded.
+  private func expectReceivedResponseWithRequest() -> XCTestExpectation {
+    let reported = expectation(description: "receivedResponseWithRequest is called")
+    let instrumentation = URLSessionInstrumentationTests.instrumentation!
+    let original = instrumentation.configuration.receivedResponseWithRequest
+    instrumentation.configuration.receivedResponseWithRequest = { response, dataOrFile, span, request in
+      original?(response, dataOrFile, span, request)
+      reported.fulfill()
+    }
+    addTeardownBlock { instrumentation.configuration.receivedResponseWithRequest = original }
+    return reported
   }
 
   /// The per-request payload callback is asked with the request it is deciding about, so an app can

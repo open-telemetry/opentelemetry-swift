@@ -32,6 +32,8 @@ Payloads are not currently available for async/await requests: those report no p
 
 `receivedResponse: ((URLResponse, DataOrFile?, Span) -> Void)?`- Called after response is received,  it allows to add extra information to the Span
 
+`receivedResponseWithRequest: ((URLResponse, DataOrFile?, Span, URLRequest?) -> Void)?`- Like `receivedResponse`, and additionally given the request the response belongs to, for correlating the two. Both are called if both are implemented.
+
 `receivedError: ((Error, DataOrFile?, HTTPStatus, Span) -> Void)?` -  Called after an error is received,  it allows to add extra information to the Span
 
 `delegateClassesToInstrument: [AnyClass]?`: The session delegate classes to instrument. When this is `nil`, the instrumentation discovers them by examining **every class loaded in the process** at initialization, which is the default. Passing your delegate classes explicitly skips that search — see [Initialization cost](#initialization-cost) below.
