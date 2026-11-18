@@ -64,6 +64,19 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     "__NSCFURLProxySessionConnection"
   ]
 
+  /// Whether `cls` is excluded from delegate instrumentation, either by the built in exclude list
+  /// or by the caller's `ignoredClassPrefixes`.
+  static func isExcludedFromInstrumentation(_ cls: AnyClass, ignoredPrefixes: [String]?) -> Bool {
+    let name = NSStringFromClass(cls)
+    if excludeList.contains(name) {
+      return true
+    }
+    guard let ignoredPrefixes else {
+      return false
+    }
+    return ignoredPrefixes.contains { !$0.isEmpty && name.hasPrefix($0) }
+  }
+
   static let AVTaskClassList: [AnyClass] = [
     "__NSCFBackgroundAVAggregateAssetDownloadTask",
     "__NSCFBackgroundAVAssetDownloadTask",
@@ -125,37 +138,11 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     let classes =
       configuration.delegateClassesToInstrument
         ?? InstrumentationUtils.objc_getClassList()
-    let selectorsCount = selectors.count
-    DispatchQueue.concurrentPerform(iterations: classes.count) { iteration in
-      let theClass: AnyClass = classes[iteration]
-      guard theClass != Self.self else { return }
-      var selectorFound = false
-      var methodCount: UInt32 = 0
-      guard let methodList = class_copyMethodList(theClass, &methodCount) else {
-        return
-      }
-      defer { free(methodList) }
 
-      var foundClasses: [AnyClass] = []
-      for j in 0 ..< selectorsCount {
-        for i in 0 ..< Int(methodCount)
-          where method_getName(methodList[i]) == selectors[j] {
-          selectorFound = true
-          foundClasses.append(theClass)
-        }
-        if selectorFound {
-          break
-        }
-      }
-
-      foundClasses.removeAll { cls in
-        Self.excludeList.contains(NSStringFromClass(cls))
-      }
-
-      foundClasses.forEach { cls in
-        instrumentDelegateClassIfNeeded(cls)
-      }
-    }
+    Self.delegateClassesToInject(from: classes,
+                                 matching: selectors,
+                                 ignoredPrefixes: configuration.ignoredClassPrefixes)
+      .forEach { instrumentDelegateClassIfNeeded($0) }
 
     if #available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
       injectIntoNSURLSessionCreateTaskMethods()
@@ -167,13 +154,57 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     injectIntoNSURLSessionTaskSetState()
   }
 
-  /// Instruments `cls` unless it already has been. Injecting twice would report each task
-  /// completion once per installation.
+  /// The classes from `classes` that implement one of `selectors` and are not excluded.
+  ///
+  /// Separated from the injection so that the selection, including which classes the caller's
+  /// `ignoredClassPrefixes` removes, can be exercised without installing anything.
+  static func delegateClassesToInject(from classes: [AnyClass],
+                                      matching selectors: [Selector],
+                                      ignoredPrefixes: [String]?) -> [AnyClass] {
+    var found = [AnyClass]()
+    let foundLock = NSLock()
+
+    DispatchQueue.concurrentPerform(iterations: classes.count) { iteration in
+      let theClass: AnyClass = classes[iteration]
+      guard theClass != Self.self else { return }
+      // Checked before the method list is copied, so an excluded class costs nothing to skip.
+      guard !isExcludedFromInstrumentation(theClass, ignoredPrefixes: ignoredPrefixes) else {
+        return
+      }
+
+      var methodCount: UInt32 = 0
+      guard let methodList = class_copyMethodList(theClass, &methodCount) else {
+        return
+      }
+      defer { free(methodList) }
+
+      let implemented = UnsafeBufferPointer(start: methodList, count: Int(methodCount))
+      guard implemented.contains(where: { selectors.contains(method_getName($0)) }) else {
+        return
+      }
+
+      foundLock.lock()
+      found.append(theClass)
+      foundLock.unlock()
+    }
+
+    return found
+  }
+
+  /// Instruments `cls` unless it already has been or is excluded. Injecting twice would report each
+  /// task completion once per installation.
+  ///
+  /// The exclusion is checked here rather than only in the startup scan because resuming a task
+  /// also instruments its session delegate, and that path must honour `ignoredClassPrefixes` too.
   ///
   /// The lock is held across the injection, not just the bookkeeping: a caller that finds the class
   /// already recorded must be able to rely on its callbacks being installed, otherwise a task
   /// resuming concurrently could start before the delegate has been modified.
   private func instrumentDelegateClassIfNeeded(_ cls: AnyClass) {
+    guard !Self.isExcludedFromInstrumentation(cls, ignoredPrefixes: configuration.ignoredClassPrefixes) else {
+      return
+    }
+
     Self.instrumentedDelegateClassesLock.lock()
     defer { Self.instrumentedDelegateClassesLock.unlock() }
 
@@ -838,8 +869,8 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     let taskId = idKeyForTask(task)
 
     // A session delegate that implements none of the selectors scanned in injectInNSURLClasses is
-    // never discovered there, so without this nothing would report this task's completion and the
-    // span started below would never be ended.
+    // never discovered there, so it is instrumented here instead. One excluded by
+    // ignoredClassPrefixes is skipped, and its task's span is ended by the setState: fallback.
     if let sessionDelegate = (task.value(forKey: "session") as? URLSession)?.delegate {
       instrumentDelegateClassIfNeeded(type(of: sessionDelegate))
     }

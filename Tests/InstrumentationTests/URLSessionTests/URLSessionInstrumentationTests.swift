@@ -1604,4 +1604,129 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertEqual(count, 1, "two concurrent resumes must start a single span")
   }
 
+
+  /// `ignoredClassPrefixes` was stored but never read, so setting it excluded nothing.
+  ///
+  /// The scan runs once per process, during the first initializer, so it cannot be re-run from a
+  /// test with a different configuration. This exercises the exclusion decision itself, which is
+  /// what the scan consults for every class it considers.
+  public func testIgnoredClassPrefixesExcludeMatchingClasses() {
+    let cls: AnyClass = SessionDelegate.self
+    let name = NSStringFromClass(cls)
+    XCTAssertFalse(name.isEmpty)
+
+    XCTAssertFalse(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: nil),
+                   "nothing is excluded when no prefixes are given")
+    XCTAssertFalse(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: []),
+                   "an empty list excludes nothing")
+    XCTAssertFalse(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: ["NotAPrefixOfAnything"]),
+                   "a prefix that does not match leaves the class instrumented")
+    XCTAssertFalse(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: [""]),
+                   "an empty prefix must not exclude everything")
+
+    XCTAssertTrue(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: [String(name.prefix(6))]),
+                  "a matching prefix excludes the class")
+    XCTAssertTrue(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: ["NotAMatch", String(name.prefix(6))]),
+                  "any one of the prefixes matching is enough")
+  }
+
+
+
+  /// Covers the selection step the search performs, so that removing the exclusion check from it
+  /// fails here rather than only changing behaviour at runtime.
+  public func testScanOmitsClassesMatchingIgnoredPrefixes() {
+    let cls: AnyClass = SessionDelegate.self
+    let name = NSStringFromClass(cls)
+    let selectors = [#selector(URLSessionDataDelegate.urlSession(_:task:didCompleteWithError:))]
+
+    let selected = URLSessionInstrumentation.delegateClassesToInject(
+      from: [cls], matching: selectors, ignoredPrefixes: nil)
+    XCTAssertTrue(selected.contains { $0 === cls },
+                  "the class implements the selector, so the search should select it")
+
+    let withIgnoredPrefix = URLSessionInstrumentation.delegateClassesToInject(
+      from: [cls], matching: selectors, ignoredPrefixes: [String(name.prefix(6))])
+    XCTAssertTrue(withIgnoredPrefix.isEmpty,
+                  "a class matching an ignored prefix must not be selected")
+
+    let withUnrelatedPrefix = URLSessionInstrumentation.delegateClassesToInject(
+      from: [cls], matching: selectors, ignoredPrefixes: ["NotAPrefixOfAnything"])
+    XCTAssertTrue(withUnrelatedPrefix.contains { $0 === cls },
+                  "a prefix that does not match must leave the class selected")
+  }
+
+  /// Session delegates that implement none of the scanned selectors, so the startup scan never
+  /// selects them and only resuming a task could instrument them. One per test, so that one test
+  /// instrumenting its class cannot hide the result of the other.
+  final class IgnoredPrefixSuccessDelegate: NSObject, URLSessionDelegate, @unchecked Sendable {
+    func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {}
+  }
+
+  final class IgnoredPrefixErrorDelegate: NSObject, URLSessionDelegate, @unchecked Sendable {
+    func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {}
+  }
+
+  public func testResumeDoesNotInstrumentIgnoredDelegateOnSuccess() {
+    assertResumeLeavesIgnoredDelegateUninstrumented(delegate: IgnoredPrefixSuccessDelegate(),
+                                                    url: "http://localhost:33333/success")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertFalse(URLSessionInstrumentationTests.checker.receivedErrorCalled)
+  }
+
+  public func testResumeDoesNotInstrumentIgnoredDelegateOnError() {
+    assertResumeLeavesIgnoredDelegateUninstrumented(delegate: IgnoredPrefixErrorDelegate(),
+                                                    url: "http://localhost:33333/error")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedErrorCalled)
+  }
+
+  /// Resuming a task instruments its session delegate lazily. A delegate matching
+  /// `ignoredClassPrefixes` must be left alone on that path too, and the request's span must still
+  /// end, since the span is started before the delegate is considered.
+  private func assertResumeLeavesIgnoredDelegateUninstrumented(delegate: URLSessionDelegate & NSObject,
+                                                               url: String,
+                                                               file: StaticString = #filePath,
+                                                               line: UInt = #line) {
+    let cls: AnyClass = type(of: delegate)
+    let didComplete = #selector(URLSessionDataDelegate.urlSession(_:task:didCompleteWithError:))
+    XCTAssertNil(class_getInstanceMethod(cls, didComplete),
+                 "precondition: the delegate starts without the method instrumenting it would add",
+                 file: file, line: line)
+
+    // The callbacks run on a URLSession thread, after the span has been removed from the running
+    // spans. Waiting on this expectation orders their writes before the reads below.
+    let reported = expectation(description: "the task's completion is reported")
+
+    let instrumentation = URLSessionInstrumentationTests.instrumentation!
+    let original = instrumentation.configuration
+    instrumentation.configuration = URLSessionInstrumentationConfiguration(
+      createdRequest: { _, _ in URLSessionInstrumentationTests.checker.createdRequestCalled = true },
+      receivedResponse: { _, _, _ in
+        URLSessionInstrumentationTests.checker.receivedResponseCalled = true
+        reported.fulfill()
+      },
+      receivedError: { _, _, _, _ in
+        URLSessionInstrumentationTests.checker.receivedErrorCalled = true
+        reported.fulfill()
+      },
+      ignoredClassPrefixes: [NSStringFromClass(cls)]
+    )
+    defer { instrumentation.configuration = original }
+
+    let session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
+    defer { session.finishTasksAndInvalidate() }
+    let task = session.dataTask(with: URLRequest(url: URL(string: url)!))
+    task.resume()
+
+    wait(for: [reported], timeout: 5)
+
+    XCTAssertNil(class_getInstanceMethod(cls, didComplete),
+                 "resuming a task instrumented a delegate that ignoredClassPrefixes excludes",
+                 file: file, line: line)
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled,
+                  "the request should still be traced", file: file, line: line)
+    let leaked = instrumentation.startedRequestSpans
+    XCTAssertTrue(leaked.isEmpty,
+                  "nothing ended the span: \(leaked.count) still running", file: file, line: line)
+  }
+
 }
