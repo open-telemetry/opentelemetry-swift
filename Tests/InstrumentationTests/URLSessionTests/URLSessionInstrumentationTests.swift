@@ -9,6 +9,9 @@
 import XCTest
 import SharedTestUtils
 
+// Private URLSessionTask selector the instrumentation swizzles as its completion fallback.
+private let setStateSelector = NSSelectorFromString("setState:")
+
 /// Serves a fixed response body for one sentinel host, so tests can exercise the payload path.
 /// Scoped to that host so registering it cannot affect any other request in the process.
 final class PayloadStubURLProtocol: URLProtocol {
@@ -1668,6 +1671,81 @@ class URLSessionInstrumentationTests: XCTestCase {
     let leaked = URLSessionInstrumentationTests.instrumentation.startedRequestSpans
     XCTAssertTrue(leaked.isEmpty,
                   "the span started at resume was never ended: \(leaked.count) still running")
+  }
+
+  final class HoldInDidReceiveDataDelegate: NSObject, URLSessionDataDelegate, @unchecked Sendable {
+    let inDidReceiveData = DispatchSemaphore(value: 0)
+    let release = DispatchSemaphore(value: 0)
+    let completed = DispatchSemaphore(value: 0)
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+      inDidReceiveData.signal()
+      release.wait()
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask,
+                    didBecome downloadTask: URLSessionDownloadTask) {}
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+      guard !(task is SetStateInterleavingTask) else { return }
+      completed.signal()
+    }
+  }
+
+  /// The delegate completion path reads `response` right after taking the task's recorded state, so
+  /// the first read runs the setState: fallback inside that path's window.
+  final class SetStateInterleavingTask: URLSessionDownloadTask, @unchecked Sendable {
+    private var stubResponse: URLResponse?
+    private var interleaved = false
+
+    // URLSessionTask.init() is deprecated for real tasks; this fake is never resumed.
+    static func make(response: URLResponse) -> SetStateInterleavingTask? {
+      let task = (self as NSObject.Type).init() as? SetStateInterleavingTask
+      task?.stubResponse = response
+      return task
+    }
+
+    override var error: Error? { nil }
+
+    override var response: URLResponse? {
+      if !interleaved {
+        interleaved = true
+        typealias SetStateIMP = @convention(c) (AnyObject, Selector, URLSessionTask.State) -> Void
+        unsafeBitCast(method(for: setStateSelector), to: SetStateIMP.self)(self, setStateSelector, .completed)
+      }
+      return stubResponse
+    }
+  }
+
+  /// The setState fallback and the delegate callbacks report the same task from different queues.
+  /// Whichever one ends the span must end it with the payload the delegate path recorded.
+  public func testPayloadIsKeptWhenSetStateFallbackRunsInsideDelegateCompletion() throws {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    let server = HttpTestServer(url: nil, config: HttpTestServerConfig())
+    try server.start()
+    defer { server.stop() }
+    let url = try XCTUnwrap(URL(string: "http://127.0.0.1:\(server.serverPort)/success-with-body"))
+    let delegate = HoldInDidReceiveDataDelegate()
+    let session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
+    defer { session.finishTasksAndInvalidate() }
+    let task = session.dataTask(with: URLRequest(url: url))
+    task.resume()
+    XCTAssertEqual(delegate.inDidReceiveData.wait(timeout: .now() + 5), .success)
+
+    let response = try XCTUnwrap(HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil))
+    let interleavingTask = try XCTUnwrap(SetStateInterleavingTask.make(response: response))
+    // Called through the protocol so the calls go through the ObjC runtime and reach the swizzles.
+    let dispatched: URLSessionDataDelegate = delegate
+    dispatched.urlSession?(session, dataTask: task, didBecome: interleavingTask)
+    dispatched.urlSession?(session, task: interleavingTask, didCompleteWithError: nil)
+
+    delegate.release.signal()
+    XCTAssertEqual(delegate.completed.wait(timeout: .now() + 5), .success)
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertEqual(URLSessionInstrumentationTests.responseCopy?.statusCode, 200)
+    XCTAssertEqual(URLSessionInstrumentationTests.receivedDataOrFile as? Data, Data("success response body".utf8),
+                   "the span was ended without the payload the delegate path had recorded")
   }
 
   /// A WebSocket opening handshake is an HTTP request, so it stays instrumented.
