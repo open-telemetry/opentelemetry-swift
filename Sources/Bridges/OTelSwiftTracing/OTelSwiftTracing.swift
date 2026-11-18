@@ -35,7 +35,8 @@ private final class OTelSpanRegistry: Sendable {
 }
 
 extension ServiceContext {
-    var otelSpanContext: OpenTelemetryApi.SpanContext? {
+    /// The OpenTelemetry span context carried by this service context, if any.
+    public internal(set) var otelSpanContext: OpenTelemetryApi.SpanContext? {
         get { self[OTelSpanContextKey.self] }
         set { self[OTelSpanContextKey.self] = newValue }
     }
@@ -206,7 +207,6 @@ public struct OTelTracer: Tracing.Tracer, @unchecked Sendable {
     }
 }
 
-
 public final class OTelSpan: Tracing.Span, @unchecked Sendable {
     public let context: ServiceContext
 
@@ -321,9 +321,7 @@ public final class OTelSpan: Tracing.Span, @unchecked Sendable {
         onEnd?(self)
     }
 
-    static func convertAttributes(_ attributes: Tracing.SpanAttributes) -> [String:
-        AttributeValue]
-    {
+    static func convertAttributes(_ attributes: Tracing.SpanAttributes) -> [String: AttributeValue] {
         var converted: [String: AttributeValue] = [:]
         converted.reserveCapacity(attributes.count)
         attributes.forEach { key, value in
