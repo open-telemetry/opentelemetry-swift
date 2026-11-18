@@ -11,7 +11,7 @@ extension SemanticConventions {
   public enum Db: String {
 
     /**
-     The name of the connection pool; unique within the instrumented application. In case the connection pool implementation doesn't provide a name, instrumentation SHOULD use a combination of parameters that would make the name unique, for example, combining attributes `server.address`, `server.port`, and `db.namespace`, formatted as `server.address:server.port/db.namespace`. Instrumentations that generate connection pool name following different patterns SHOULD document it.
+     The name of the connection pool. If the connection pool does not have a name, instrumentation SHOULD use `db.namespace`; otherwise `server.address`, with `server.port` appended using `:` if set. When appending a port to an IPv6 address, instrumentation MUST enclose the address in square brackets. If `server.address` is not available, instrumentation SHOULD use `db.system.name`; otherwise the connection pool library name.
 
       - Examples:
       ```
@@ -50,8 +50,9 @@ extension SemanticConventions {
        when the database system supports query text with multiple collections
        in non-batch operations.
 
-       For batch operations, if the individual operations are known to have the same
-       collection name then that collection name SHOULD be used.
+       For batch operations, if the individual operations would all have the same
+       `db.collection.name` when executed as non-batch operations,
+       then that collection name SHOULD be used.
 
      - Requires: Value type should be `String`
     */
@@ -75,7 +76,7 @@ extension SemanticConventions {
     case namespace = "db.namespace"
 
     /**
-     The number of queries included in a batch operation.
+     The number of database operations included in a batch operation.
 
       - Examples:
       ```
@@ -84,7 +85,28 @@ extension SemanticConventions {
       attributes[SemanticConventions.Db.operationBatchSize.rawValue] = 4
       ```
 
-     - Note: Operations are only considered batches when they contain two or more operations, and so `db.operation.batch.size` SHOULD never be `1`.
+     - Note: Except for empty batch requests described below, a batch operation contains two
+       or more database operations explicitly submitted as separate operations in a single
+       client call, protocol message, or database command.
+
+       Requests to batch APIs that contain only one operation SHOULD be modeled as single
+       operations, not as batch operations.
+
+       A database call is not a batch operation solely because one operation accepts
+       multiple operands, such as keys, rows, documents, points, or other data elements,
+       including Redis [`MGET`](https://redis.io/docs/latest/commands/mget/) with
+       multiple keys.
+
+       In batch APIs that execute the same parameterized operation with parameter sets,
+       each parameter set represents one database operation for determining whether the
+       request is a batch operation. Requests with only one parameter set SHOULD be modeled
+       as single operations, not as batch operations.
+
+       `db.operation.batch.size` SHOULD be set to the number of operations in the batch.
+       It SHOULD NOT be set for non-batch operations.
+
+       A request to execute a batch operation with no operations SHOULD also be treated
+       as a batch operation, and `db.operation.batch.size` SHOULD be set to `0`.
 
      - Requires: Value type should be `Int`
     */
@@ -110,9 +132,10 @@ extension SemanticConventions {
        If spaces can occur in the operation name, multiple consecutive spaces
        SHOULD be normalized to a single space.
 
-       For batch operations, if the individual operations are known to have the same operation name
-       then that operation name SHOULD be used prepended by `BATCH `,
-       otherwise `db.operation.name` SHOULD be `BATCH` or some other database
+       For batch operations, if the individual operations would all have the same
+       `db.operation.name` when executed as non-batch operations,
+       then that operation name SHOULD be used prepended by `BATCH `.
+       Otherwise, `db.operation.name` SHOULD be `BATCH` or some other database
        system specific term if more applicable.
 
      - Requires: Value type should be `String`
@@ -154,7 +177,12 @@ extension SemanticConventions {
        up with the parameterized placeholders present in `db.query.text`.
 
        It is RECOMMENDED to capture the value as provided by the application
-       without attempting to do any case normalization.
+       without attempting to do any case normalization or sanitization.
+
+       Instrumentations SHOULD NOT capture `db.query.parameter.<key>` by default
+       since values may contain PII or sensitive details.
+       Application operators are expected to enable specific keys depending
+       on their privacy and security considerations.
 
        `db.query.parameter.<key>` SHOULD NOT be captured on batch operations.
 
@@ -186,8 +214,14 @@ extension SemanticConventions {
        Summary may be available to the instrumentation through
        instrumentation hooks or other means. If it is not available, instrumentations
        that support query parsing SHOULD generate a summary following
-       [Generating query summary](/docs/database/database-spans.md#generating-a-summary-of-the-query)
+       [Generating query summary](/docs/db/database-spans.md#generating-a-summary-of-the-query)
        section.
+
+       For batch operations, if the individual operations would all have the same
+       `db.query.summary` when executed as non-batch operations,
+       then that query summary SHOULD be used prepended by `BATCH `.
+       Otherwise, `db.query.summary` SHOULD be `BATCH` or some other database
+       system specific term if more applicable.
 
      - Requires: Value type should be `String`
     */
@@ -202,8 +236,8 @@ extension SemanticConventions {
       attributes[SemanticConventions.Db.queryText.rawValue] = "SET mykey ?"
       ```
 
-     - Note: For sanitization see [Sanitization of `db.query.text`](/docs/database/database-spans.md#sanitization-of-dbquerytext).
-       For batch operations, if the individual operations are known to have the same query text then that query text SHOULD be used, otherwise all of the individual query texts SHOULD be concatenated with separator `; ` or some other database system specific separator if more applicable.
+     - Note: For sanitization see [Sanitization of `db.query.text`](/docs/db/database-spans.md#sanitization-of-dbquerytext).
+       For batch operations, if the individual operations would all have the same `db.query.text` when executed as non-batch operations, then that query text SHOULD be used. Otherwise, all of the individual query texts SHOULD be concatenated with separator `; ` or some other database system specific separator if more applicable.
        Parameterized query text SHOULD NOT be sanitized. Even though parameterized query text can potentially have sensitive data, by using a parameterized query the user is giving a strong signal that any sensitive data will be passed as parameter values, and the benefit to observability of capturing the static part of the query text by default outweighs the risk.
 
      - Requires: Value type should be `String`
@@ -236,6 +270,7 @@ extension SemanticConventions {
       ```
 
      - Note: The status code returned by the database. Usually it represents an error code, but may also represent partial success, warning, or differentiate between various types of successful outcomes.
+       The value MAY use a standardized string representation of a numeric status code, if one exists, instead of the numeric code. The value MAY be a synthetic status provided by the client library rather than returned by the remote service.
        Semantic conventions for individual database systems SHOULD document what `db.response.status_code` means in the context of that system.
 
      - Requires: Value type should be `String`
@@ -253,8 +288,9 @@ extension SemanticConventions {
      - Note: It is RECOMMENDED to capture the value as provided by the application
        without attempting to do any case normalization.
 
-       For batch operations, if the individual operations are known to have the same
-       stored procedure name then that stored procedure name SHOULD be used.
+       For batch operations, if the individual operations would all have the same
+       `db.stored_procedure.name` when executed as non-batch operations,
+       then that stored procedure name SHOULD be used.
 
      - Requires: Value type should be `String`
     */
@@ -355,7 +391,7 @@ extension SemanticConventions {
       /// [HyperSQL Database](https://hsqldb.org/)
       public static let hsqldb = SystemNameValues("hsqldb") 
       
-      /// [IBM Db2](https://www.ibm.com/db2)
+      /// [IBM Db2](https://www.ibm.com/products/db2)
       public static let ibmDb2 = SystemNameValues("ibm.db2") 
       
       /// [IBM Informix](https://www.ibm.com/products/informix)

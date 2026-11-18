@@ -94,6 +94,31 @@ extension SemanticConventions {
     case cosmosdbResponseSubStatusCode = "azure.cosmosdb.response.sub_status_code"
 
     /**
+     The UTC epoch seconds at which the message has been accepted and stored in the entity.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Azure.eventhubsMessageEnqueuedTime.rawValue] = 1701393730
+      ```
+
+     - Requires: Value type should be `Int`
+    */
+    case eventhubsMessageEnqueuedTime = "azure.eventhubs.message.enqueued_time"
+
+    /**
+     The name of the Azure [resource group](https://learn.microsoft.com/azure/azure-resource-manager/management/manage-resource-groups-portal) the resource belongs to.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Azure.resourceGroupName.rawValue] = "my-resource-group"
+      attributes[SemanticConventions.Azure.resourceGroupName.rawValue] = "rg-myapp-prod"
+      ```
+
+     - Requires: Value type should be `String`
+    */
+    case resourceGroupName = "azure.resource_group.name"
+
+    /**
      [Azure Resource Provider Namespace](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-services-resource-providers) as recognized by the client.
 
       - Examples:
@@ -118,6 +143,37 @@ extension SemanticConventions {
      - Requires: Value type should be `String`
     */
     case serviceRequestId = "azure.service.request.id"
+
+    /**
+     Describes the [settlement type](https://learn.microsoft.com/azure/service-bus-messaging/message-transfers-locks-settlement#peeklock).
+
+     - Requires: Value should be one of ``ServicebusDispositionStatusValues`` (of type `String`)
+    */
+    case servicebusDispositionStatus = "azure.servicebus.disposition_status"
+
+    /**
+     Number of deliveries that have been attempted for this message.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Azure.servicebusMessageDeliveryCount.rawValue] = 2
+      ```
+
+     - Requires: Value type should be `Int`
+    */
+    case servicebusMessageDeliveryCount = "azure.servicebus.message.delivery_count"
+
+    /**
+     The UTC epoch seconds at which the message has been accepted and stored in the entity.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Azure.servicebusMessageEnqueuedTime.rawValue] = 1701393730
+      ```
+
+     - Requires: Value type should be `Int`
+    */
+    case servicebusMessageEnqueuedTime = "azure.servicebus.message.enqueued_time"
 
     /** 
       Cosmos client connection mode.
@@ -160,6 +216,34 @@ extension SemanticConventions {
       
       /// Consistent Prefix
       public static let consistentPrefix = CosmosdbConsistencyLevelValues("ConsistentPrefix") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
+
+    /** 
+      Describes the [settlement type](https://learn.microsoft.com/azure/service-bus-messaging/message-transfers-locks-settlement#peeklock).
+    */
+    public struct ServicebusDispositionStatusValues: CustomStringConvertible, Sendable {
+      
+      /// Message is completed
+      public static let complete = ServicebusDispositionStatusValues("complete") 
+      
+      /// Message is abandoned
+      public static let abandon = ServicebusDispositionStatusValues("abandon") 
+      
+      /// Message is sent to dead letter queue
+      public static let deadLetter = ServicebusDispositionStatusValues("dead_letter") 
+      
+      /// Message is deferred
+      public static let _defer = ServicebusDispositionStatusValues("defer") 
 
       internal let value: String 
 

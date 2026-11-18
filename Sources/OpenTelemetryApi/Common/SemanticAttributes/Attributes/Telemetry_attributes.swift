@@ -79,17 +79,44 @@ extension SemanticConventions {
       The language of the telemetry SDK.
     */
     public struct SdkLanguageValues: CustomStringConvertible, Sendable {
+      
+      /// [C++](https://opentelemetry.io/docs/languages/cpp/)
       public static let cpp = SdkLanguageValues("cpp") 
+      
+      /// [.NET](https://opentelemetry.io/docs/languages/dotnet/)
       public static let dotnet = SdkLanguageValues("dotnet") 
+      
+      /// [Erlang/Elixir](https://opentelemetry.io/docs/languages/erlang/)
       public static let erlang = SdkLanguageValues("erlang") 
+      
+      /// [Go](https://opentelemetry.io/docs/languages/go/)
       public static let go = SdkLanguageValues("go") 
+      
+      /// [Java](https://opentelemetry.io/docs/languages/java/)
       public static let java = SdkLanguageValues("java") 
+      
+      /// [Kotlin](https://opentelemetry.io/docs/languages/kotlin/)
+      public static let kotlin = SdkLanguageValues("kotlin") 
+      
+      /// [Node.js](https://opentelemetry.io/docs/languages/js/)
       public static let nodejs = SdkLanguageValues("nodejs") 
+      
+      /// [PHP](https://opentelemetry.io/docs/languages/php/)
       public static let php = SdkLanguageValues("php") 
+      
+      /// [Python](https://opentelemetry.io/docs/languages/python/)
       public static let python = SdkLanguageValues("python") 
+      
+      /// [Ruby](https://opentelemetry.io/docs/languages/ruby/)
       public static let ruby = SdkLanguageValues("ruby") 
+      
+      /// [Rust](https://opentelemetry.io/docs/languages/rust/)
       public static let rust = SdkLanguageValues("rust") 
+      
+      /// [Swift](https://opentelemetry.io/docs/languages/swift/)
       public static let swift = SdkLanguageValues("swift") 
+      
+      /// [Browser](https://opentelemetry.io/docs/languages/js/)
       public static let webjs = SdkLanguageValues("webjs") 
 
       internal let value: String 

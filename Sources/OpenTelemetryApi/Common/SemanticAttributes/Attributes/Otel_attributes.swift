@@ -54,6 +54,21 @@ extension SemanticConventions {
     case componentType = "otel.component.type"
 
     /**
+     Identifies the class / type of event.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Otel.eventName.rawValue] = "browser.mouse.click"
+      attributes[SemanticConventions.Otel.eventName.rawValue] = "device.app.lifecycle"
+      ```
+
+     - Note: This attribute SHOULD be used by non-OTLP exporters when destination does not support `EventName` or equivalent field. This attribute MAY be used by applications using existing logging libraries so that it can be used to set the `EventName` field by Collector or SDK components.
+
+     - Requires: Value type should be `String`
+    */
+    case eventName = "otel.event.name"
+
+    /**
      The name of the instrumentation scope - (`InstrumentationScope.Name` in OTLP).
 
       - Examples:
@@ -127,16 +142,16 @@ extension SemanticConventions {
     */
     public struct ComponentTypeValues: CustomStringConvertible, Sendable {
       
-      /// The builtin SDK batching span processor
+      /// The built-in SDK batching span processor
       public static let batchingSpanProcessor = ComponentTypeValues("batching_span_processor") 
       
-      /// The builtin SDK simple span processor
+      /// The built-in SDK simple span processor
       public static let simpleSpanProcessor = ComponentTypeValues("simple_span_processor") 
       
-      /// The builtin SDK batching log record processor
+      /// The built-in SDK batching log record processor
       public static let batchingLogProcessor = ComponentTypeValues("batching_log_processor") 
       
-      /// The builtin SDK simple log record processor
+      /// The built-in SDK simple log record processor
       public static let simpleLogProcessor = ComponentTypeValues("simple_log_processor") 
       
       /// OTLP span exporter over gRPC with protobuf serialization
@@ -160,7 +175,7 @@ extension SemanticConventions {
       /// OTLP log record exporter over HTTP with JSON serialization
       public static let otlpHttpJsonLogExporter = ComponentTypeValues("otlp_http_json_log_exporter") 
       
-      /// The builtin SDK periodically exporting metric reader
+      /// The built-in SDK periodically exporting metric reader
       public static let periodicMetricReader = ComponentTypeValues("periodic_metric_reader") 
       
       /// OTLP metric exporter over gRPC with protobuf serialization

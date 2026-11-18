@@ -18,7 +18,7 @@ extension SemanticConventions {
       attributes[SemanticConventions.Graphql.document.rawValue] = "query findBookById { bookById(id: ?) { name } }"
       ```
 
-     - Note: The value may be sanitized to exclude sensitive information.
+     - Note: If instrumentation can reliably identify and redact sensitive information it SHOULD do it.
 
      - Requires: Value type should be `String`
     */

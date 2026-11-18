@@ -557,7 +557,7 @@ extension SemanticConventions {
       /// Identity user updated.
       public static let update = IdentityUserUpdateTypeValues("update") 
       
-      /// Identity user name updated.
+      /// Identity username updated.
       public static let userName = IdentityUserUpdateTypeValues("user_name") 
       
       /// Identity user password added.

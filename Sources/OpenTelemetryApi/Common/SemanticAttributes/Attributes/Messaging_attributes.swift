@@ -70,8 +70,8 @@ extension SemanticConventions {
       attributes[SemanticConventions.Messaging.destinationName.rawValue] = "MyTopic"
       ```
 
-     - Note: Destination name SHOULD uniquely identify a specific queue, topic or other entity within the broker. If
-       the broker doesn't have such notion, the destination name SHOULD uniquely identify the broker.
+     - Note: SHOULD uniquely identify a specific queue, topic or other entity within the broker. If
+       the broker doesn't have such notion, it SHOULD uniquely identify the broker.
 
      - Requires: Value type should be `String`
     */
@@ -111,7 +111,7 @@ extension SemanticConventions {
       attributes[SemanticConventions.Messaging.destinationTemplate.rawValue] = "/customers/{customerId}"
       ```
 
-     - Note: Destination names could be constructed from templates. An example would be a destination name involving a user name or product id. Although the destination name in this case is of high cardinality, the underlying template is of low cardinality and can be effectively used for grouping and aggregation.
+     - Note: Destination names could be constructed from templates. An example would be a destination name involving a username or product ID. Although the destination name in this case is of high cardinality, the underlying template is of low cardinality and can be effectively used for grouping and aggregation.
 
      - Requires: Value type should be `String`
     */
@@ -123,99 +123,6 @@ extension SemanticConventions {
      - Requires: Value type should be `Bool`
     */
     case destinationTemporary = "messaging.destination.temporary"
-
-    /**
-     The UTC epoch seconds at which the message has been accepted and stored in the entity.
-
-      - Examples:
-      ```
-      attributes[SemanticConventions.Messaging.eventhubsMessageEnqueuedTime.rawValue] = 1701393730
-      ```
-
-     - Requires: Value type should be `Int`
-    */
-    case eventhubsMessageEnqueuedTime = "messaging.eventhubs.message.enqueued_time"
-
-    /**
-     The ack deadline in seconds set for the modify ack deadline request.
-
-      - Examples:
-      ```
-      attributes[SemanticConventions.Messaging.gcpPubsubMessageAckDeadline.rawValue] = 10
-      ```
-
-     - Requires: Value type should be `Int`
-    */
-    case gcpPubsubMessageAckDeadline = "messaging.gcp_pubsub.message.ack_deadline"
-
-    /**
-     The ack id for a given message.
-
-      - Examples:
-      ```
-      attributes[SemanticConventions.Messaging.gcpPubsubMessageAckId.rawValue] = "ack_id"
-      ```
-
-     - Requires: Value type should be `String`
-    */
-    case gcpPubsubMessageAckId = "messaging.gcp_pubsub.message.ack_id"
-
-    /**
-     The delivery attempt for a given message.
-
-      - Examples:
-      ```
-      attributes[SemanticConventions.Messaging.gcpPubsubMessageDeliveryAttempt.rawValue] = 2
-      ```
-
-     - Requires: Value type should be `Int`
-    */
-    case gcpPubsubMessageDeliveryAttempt = "messaging.gcp_pubsub.message.delivery_attempt"
-
-    /**
-     The ordering key for a given message. If the attribute is not present, the message does not have an ordering key.
-
-      - Examples:
-      ```
-      attributes[SemanticConventions.Messaging.gcpPubsubMessageOrderingKey.rawValue] = "ordering_key"
-      ```
-
-     - Requires: Value type should be `String`
-    */
-    case gcpPubsubMessageOrderingKey = "messaging.gcp_pubsub.message.ordering_key"
-
-    /**
-     Message keys in Kafka are used for grouping alike messages to ensure they're processed on the same partition. They differ from `messaging.message.id` in that they're not unique. If the key is `null`, the attribute MUST NOT be set.
-
-      - Examples:
-      ```
-      attributes[SemanticConventions.Messaging.kafkaMessageKey.rawValue] = "myKey"
-      ```
-
-     - Note: If the key type is not string, it's string representation has to be supplied for the attribute. If the key has no unambiguous, canonical string form, don't include its value.
-
-     - Requires: Value type should be `String`
-    */
-    case kafkaMessageKey = "messaging.kafka.message.key"
-
-    /**
-     A boolean that is true if the message is a tombstone.
-
-     - Requires: Value type should be `Bool`
-    */
-    case kafkaMessageTombstone = "messaging.kafka.message.tombstone"
-
-    /**
-     The offset of a record in the corresponding Kafka partition.
-
-      - Examples:
-      ```
-      attributes[SemanticConventions.Messaging.kafkaOffset.rawValue] = 42
-      ```
-
-     - Requires: Value type should be `Int`
-    */
-    case kafkaOffset = "messaging.kafka.offset"
 
     /**
      The size of the message body in bytes.
@@ -295,154 +202,13 @@ extension SemanticConventions {
     case operationType = "messaging.operation.type"
 
     /**
-     RabbitMQ message routing key.
-
-      - Examples:
-      ```
-      attributes[SemanticConventions.Messaging.rabbitmqDestinationRoutingKey.rawValue] = "myKey"
-      ```
-
-     - Requires: Value type should be `String`
-    */
-    case rabbitmqDestinationRoutingKey = "messaging.rabbitmq.destination.routing_key"
-
-    /**
-     RabbitMQ message delivery tag
-
-      - Examples:
-      ```
-      attributes[SemanticConventions.Messaging.rabbitmqMessageDeliveryTag.rawValue] = 123
-      ```
-
-     - Requires: Value type should be `Int`
-    */
-    case rabbitmqMessageDeliveryTag = "messaging.rabbitmq.message.delivery_tag"
-
-    /**
-     Model of message consumption. This only applies to consumer spans.
-
-     - Requires: Value should be one of ``RocketmqConsumptionModelValues`` (of type `String`)
-    */
-    case rocketmqConsumptionModel = "messaging.rocketmq.consumption_model"
-
-    /**
-     The delay time level for delay message, which determines the message delay time.
-
-      - Examples:
-      ```
-      attributes[SemanticConventions.Messaging.rocketmqMessageDelayTimeLevel.rawValue] = 3
-      ```
-
-     - Requires: Value type should be `Int`
-    */
-    case rocketmqMessageDelayTimeLevel = "messaging.rocketmq.message.delay_time_level"
-
-    /**
-     The timestamp in milliseconds that the delay message is expected to be delivered to consumer.
-
-      - Examples:
-      ```
-      attributes[SemanticConventions.Messaging.rocketmqMessageDeliveryTimestamp.rawValue] = 1665987217045
-      ```
-
-     - Requires: Value type should be `Int`
-    */
-    case rocketmqMessageDeliveryTimestamp = "messaging.rocketmq.message.delivery_timestamp"
-
-    /**
-     It is essential for FIFO message. Messages that belong to the same message group are always processed one by one within the same consumer group.
-
-      - Examples:
-      ```
-      attributes[SemanticConventions.Messaging.rocketmqMessageGroup.rawValue] = "myMessageGroup"
-      ```
-
-     - Requires: Value type should be `String`
-    */
-    case rocketmqMessageGroup = "messaging.rocketmq.message.group"
-
-    /**
-     Key(s) of message, another way to mark message besides message id.
-
-      - Examples:
-      ```
-      attributes[SemanticConventions.Messaging.rocketmqMessageKeys.rawValue] = ["keyA", "keyB"]
-      ```
-
-     - Requires: Value type should be `[String]`
-    */
-    case rocketmqMessageKeys = "messaging.rocketmq.message.keys"
-
-    /**
-     The secondary classifier of message besides topic.
-
-      - Examples:
-      ```
-      attributes[SemanticConventions.Messaging.rocketmqMessageTag.rawValue] = "tagA"
-      ```
-
-     - Requires: Value type should be `String`
-    */
-    case rocketmqMessageTag = "messaging.rocketmq.message.tag"
-
-    /**
-     Type of message.
-
-     - Requires: Value should be one of ``RocketmqMessageTypeValues`` (of type `String`)
-    */
-    case rocketmqMessageType = "messaging.rocketmq.message.type"
-
-    /**
-     Namespace of RocketMQ resources, resources in different namespaces are individual.
-
-      - Examples:
-      ```
-      attributes[SemanticConventions.Messaging.rocketmqNamespace.rawValue] = "myNamespace"
-      ```
-
-     - Requires: Value type should be `String`
-    */
-    case rocketmqNamespace = "messaging.rocketmq.namespace"
-
-    /**
-     Describes the [settlement type](https://learn.microsoft.com/azure/service-bus-messaging/message-transfers-locks-settlement#peeklock).
-
-     - Requires: Value should be one of ``ServicebusDispositionStatusValues`` (of type `String`)
-    */
-    case servicebusDispositionStatus = "messaging.servicebus.disposition_status"
-
-    /**
-     Number of deliveries that have been attempted for this message.
-
-      - Examples:
-      ```
-      attributes[SemanticConventions.Messaging.servicebusMessageDeliveryCount.rawValue] = 2
-      ```
-
-     - Requires: Value type should be `Int`
-    */
-    case servicebusMessageDeliveryCount = "messaging.servicebus.message.delivery_count"
-
-    /**
-     The UTC epoch seconds at which the message has been accepted and stored in the entity.
-
-      - Examples:
-      ```
-      attributes[SemanticConventions.Messaging.servicebusMessageEnqueuedTime.rawValue] = 1701393730
-      ```
-
-     - Requires: Value type should be `Int`
-    */
-    case servicebusMessageEnqueuedTime = "messaging.servicebus.message.enqueued_time"
-
-    /**
      The messaging system as identified by the client instrumentation.
 
-     - Note: The actual messaging system may differ from the one known by the client. For example, when using Kafka client libraries to communicate with Azure Event Hubs, the `messaging.system` is set to `kafka` based on the instrumentation's best knowledge.
+     - Note: The actual messaging system may differ from the one known by the client. For example, when using Kafka client libraries to communicate with Azure Event Hubs, the `messaging.system.name` is set to `kafka` based on the instrumentation's best knowledge.
 
-     - Requires: Value should be one of ``SystemValues`` (of type `String`)
+     - Requires: Value should be one of ``SystemNameValues`` (of type `String`)
     */
-    case system = "messaging.system"
+    case systemName = "messaging.system.name"
 
     /** 
       A string identifying the type of the messaging operation.
@@ -476,123 +242,45 @@ extension SemanticConventions {
     }
 
     /** 
-      Model of message consumption. This only applies to consumer spans.
-    */
-    public struct RocketmqConsumptionModelValues: CustomStringConvertible, Sendable {
-      
-      /// Clustering consumption model
-      public static let clustering = RocketmqConsumptionModelValues("clustering") 
-      
-      /// Broadcasting consumption model
-      public static let broadcasting = RocketmqConsumptionModelValues("broadcasting") 
-
-      internal let value: String 
-
-      public init(_ customValue: String) {
-        self.value = customValue
-      }
-
-      public var description: String { 
-        return value
-      }
-    }
-
-    /** 
-      Type of message.
-    */
-    public struct RocketmqMessageTypeValues: CustomStringConvertible, Sendable {
-      
-      /// Normal message
-      public static let normal = RocketmqMessageTypeValues("normal") 
-      
-      /// FIFO message
-      public static let fifo = RocketmqMessageTypeValues("fifo") 
-      
-      /// Delay message
-      public static let delay = RocketmqMessageTypeValues("delay") 
-      
-      /// Transaction message
-      public static let transaction = RocketmqMessageTypeValues("transaction") 
-
-      internal let value: String 
-
-      public init(_ customValue: String) {
-        self.value = customValue
-      }
-
-      public var description: String { 
-        return value
-      }
-    }
-
-    /** 
-      Describes the [settlement type](https://learn.microsoft.com/azure/service-bus-messaging/message-transfers-locks-settlement#peeklock).
-    */
-    public struct ServicebusDispositionStatusValues: CustomStringConvertible, Sendable {
-      
-      /// Message is completed
-      public static let complete = ServicebusDispositionStatusValues("complete") 
-      
-      /// Message is abandoned
-      public static let abandon = ServicebusDispositionStatusValues("abandon") 
-      
-      /// Message is sent to dead letter queue
-      public static let deadLetter = ServicebusDispositionStatusValues("dead_letter") 
-      
-      /// Message is deferred
-      public static let _defer = ServicebusDispositionStatusValues("defer") 
-
-      internal let value: String 
-
-      public init(_ customValue: String) {
-        self.value = customValue
-      }
-
-      public var description: String { 
-        return value
-      }
-    }
-
-    /** 
       The messaging system as identified by the client instrumentation.
     */
-    public struct SystemValues: CustomStringConvertible, Sendable {
+    public struct SystemNameValues: CustomStringConvertible, Sendable {
       
       /// Apache ActiveMQ
-      public static let activemq = SystemValues("activemq") 
+      public static let activemq = SystemNameValues("activemq") 
       
       /// Amazon Simple Notification Service (SNS)
-      public static let awsSns = SystemValues("aws.sns") 
+      public static let awsSns = SystemNameValues("aws.sns") 
       
       /// Amazon Simple Queue Service (SQS)
-      public static let awsSqs = SystemValues("aws_sqs") 
+      public static let awsSqs = SystemNameValues("aws.sqs") 
       
       /// Azure Event Grid
-      public static let eventgrid = SystemValues("eventgrid") 
+      public static let azureEventgrid = SystemNameValues("azure.eventgrid") 
       
       /// Azure Event Hubs
-      public static let eventhubs = SystemValues("eventhubs") 
+      public static let azureEventhubs = SystemNameValues("azure.eventhubs") 
       
       /// Azure Service Bus
-      public static let servicebus = SystemValues("servicebus") 
+      public static let azureServicebus = SystemNameValues("azure.servicebus") 
       
       /// Google Cloud Pub/Sub
-      public static let gcpPubsub = SystemValues("gcp_pubsub") 
+      public static let gcpPubsub = SystemNameValues("gcp.pubsub") 
       
       /// Java Message Service
-      public static let jms = SystemValues("jms") 
+      public static let jms = SystemNameValues("jms") 
       
       /// Apache Kafka
-      public static let kafka = SystemValues("kafka") 
+      public static let kafka = SystemNameValues("kafka") 
       
       /// RabbitMQ
-      public static let rabbitmq = SystemValues("rabbitmq") 
+      public static let rabbitmq = SystemNameValues("rabbitmq") 
       
       /// Apache RocketMQ
-      public static let rocketmq = SystemValues("rocketmq") 
+      public static let rocketmq = SystemNameValues("rocketmq") 
       
       /// Apache Pulsar
-      public static let pulsar = SystemValues("pulsar") 
+      public static let pulsar = SystemNameValues("pulsar") 
 
       internal let value: String 
 

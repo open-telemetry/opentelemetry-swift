@@ -58,6 +58,21 @@ extension SemanticConventions {
     case clusterUid = "k8s.cluster.uid"
 
     /**
+     The type of file system component for ephemeral storage.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.containerEphemeralStorageFsType.rawValue] = .rootfs
+      attributes[SemanticConventions.K8s.containerEphemeralStorageFsType.rawValue] = .logs
+      ```
+
+     - Note: Eviction decisions based on ephemeral-storage resource limits are made based on the total container usage.
+
+     - Requires: Value should be one of ``ContainerEphemeralStorageFsTypeValues`` (of type `String`)
+    */
+    case containerEphemeralStorageFsType = "k8s.container.ephemeral_storage.fs_type"
+
+    /**
      The name of the Container from Pod specification, must be unique within a Pod. Container runtime usually uses different globally unique name (`container.name`).
 
       - Examples:
@@ -90,7 +105,7 @@ extension SemanticConventions {
     case containerStatusLastTerminatedReason = "k8s.container.status.last_terminated_reason"
 
     /**
-     The reason for the container state. Corresponds to the `reason` field of the: [K8s ContainerStateWaiting](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#containerstatewaiting-v1-core) or [K8s ContainerStateTerminated](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#containerstateterminated-v1-core)
+     The reason for the container state. Corresponds to the `reason` field of the: [K8s ContainerStateWaiting](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.34/#containerstatewaiting-v1-core) or [K8s ContainerStateTerminated](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.34/#containerstateterminated-v1-core)
 
       - Examples:
       ```
@@ -110,7 +125,7 @@ extension SemanticConventions {
     case containerStatusReason = "k8s.container.status.reason"
 
     /**
-     The state of the container. [K8s ContainerState](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#containerstate-v1-core)
+     The state of the container. [K8s ContainerState](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.34/#containerstate-v1-core)
 
       - Examples:
       ```
@@ -198,9 +213,9 @@ extension SemanticConventions {
 
      - Note: Examples:
 
-       - A label `replicas` with value `1` SHOULD be recorded
+       - An annotation `replicas` with value `1` SHOULD be recorded
          as the `k8s.daemonset.annotation.replicas` attribute with value `"1"`.
-       - A label `data` with empty string value SHOULD be recorded as
+       - An annotation `data` with empty string value SHOULD be recorded as
          the `k8s.daemonset.annotation.data` attribute with value `""`.
 
      - Requires: Value type should be `template[string]`
@@ -220,7 +235,7 @@ extension SemanticConventions {
 
        - A label `app` with value `guestbook` SHOULD be recorded
          as the `k8s.daemonset.label.app` attribute with value `"guestbook"`.
-       - A label `data` with empty string value SHOULD be recorded as
+       - A label `injected` with empty string value SHOULD be recorded as
          the `k8s.daemonset.label.injected` attribute with value `""`.
 
      - Requires: Value type should be `template[string]`
@@ -262,9 +277,9 @@ extension SemanticConventions {
 
      - Note: Examples:
 
-       - A label `replicas` with value `1` SHOULD be recorded
+       - An annotation `replicas` with value `1` SHOULD be recorded
          as the `k8s.deployment.annotation.replicas` attribute with value `"1"`.
-       - A label `data` with empty string value SHOULD be recorded as
+       - An annotation `data` with empty string value SHOULD be recorded as
          the `k8s.deployment.annotation.data` attribute with value `""`.
 
      - Requires: Value type should be `template[string]`
@@ -282,7 +297,7 @@ extension SemanticConventions {
 
      - Note: Examples:
 
-       - A label `replicas` with value `0` SHOULD be recorded
+       - A label `app` with value `guestbook` SHOULD be recorded
          as the `k8s.deployment.label.app` attribute with value `"guestbook"`.
        - A label `injected` with empty string value SHOULD be recorded as
          the `k8s.deployment.label.injected` attribute with value `""`.
@@ -422,9 +437,9 @@ extension SemanticConventions {
 
      - Note: Examples:
 
-       - A label `number` with value `1` SHOULD be recorded
+       - An annotation `number` with value `1` SHOULD be recorded
          as the `k8s.job.annotation.number` attribute with value `"1"`.
-       - A label `data` with empty string value SHOULD be recorded as
+       - An annotation `data` with empty string value SHOULD be recorded as
          the `k8s.job.annotation.data` attribute with value `""`.
 
      - Requires: Value type should be `template[string]`
@@ -444,7 +459,7 @@ extension SemanticConventions {
 
        - A label `jobtype` with value `ci` SHOULD be recorded
          as the `k8s.job.label.jobtype` attribute with value `"ci"`.
-       - A label `data` with empty string value SHOULD be recorded as
+       - A label `automated` with empty string value SHOULD be recorded as
          the `k8s.job.label.automated` attribute with value `""`.
 
      - Requires: Value type should be `template[string]`
@@ -486,9 +501,9 @@ extension SemanticConventions {
 
      - Note: Examples:
 
-       - A label `ttl` with value `0` SHOULD be recorded
+       - An annotation `ttl` with value `0` SHOULD be recorded
          as the `k8s.namespace.annotation.ttl` attribute with value `"0"`.
-       - A label `data` with empty string value SHOULD be recorded as
+       - An annotation `data` with empty string value SHOULD be recorded as
          the `k8s.namespace.annotation.data` attribute with value `""`.
 
      - Requires: Value type should be `template[string]`
@@ -537,7 +552,7 @@ extension SemanticConventions {
       ```
 
      - Note: This attribute aligns with the `phase` field of the
-       [K8s NamespaceStatus](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#namespacestatus-v1-core)
+       [K8s NamespaceStatus](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.34/#namespacestatus-v1-core)
 
      - Requires: Value should be one of ``NamespacePhaseValues`` (of type `String`)
     */
@@ -574,7 +589,7 @@ extension SemanticConventions {
       ```
 
      - Note: This attribute aligns with the `status` field of the
-       [NodeCondition](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#nodecondition-v1-core)
+       [NodeCondition](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.34/#nodecondition-v1-core)
 
      - Requires: Value should be one of ``NodeConditionStatusValues`` (of type `String`)
     */
@@ -590,10 +605,10 @@ extension SemanticConventions {
       ```
 
      - Note: K8s Node conditions as described
-       by [K8s documentation](https://v1-32.docs.kubernetes.io/docs/reference/node/node-status/#condition).
+       by [K8s documentation](https://kubernetes.io/docs/reference/node/node-status/#condition).
 
        This attribute aligns with the `type` field of the
-       [NodeCondition](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#nodecondition-v1-core)
+       [NodeCondition](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.34/#nodecondition-v1-core)
 
        The set of possible values is not limited to those listed here. Managed Kubernetes environments,
        or custom controllers MAY introduce additional node condition types.
@@ -636,6 +651,21 @@ extension SemanticConventions {
     case nodeName = "k8s.node.name"
 
     /**
+     The name of the system container running on the K8s Node.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.nodeSystemContainerName.rawValue] = "kubelet"
+      attributes[SemanticConventions.K8s.nodeSystemContainerName.rawValue] = "runtime"
+      attributes[SemanticConventions.K8s.nodeSystemContainerName.rawValue] = "pods"
+      attributes[SemanticConventions.K8s.nodeSystemContainerName.rawValue] = "misc"
+      ```
+
+     - Requires: Value type should be `String`
+    */
+    case nodeSystemContainerName = "k8s.node.system_container.name"
+
+    /**
      The UID of the Node.
 
       - Examples:
@@ -646,6 +676,187 @@ extension SemanticConventions {
      - Requires: Value type should be `String`
     */
     case nodeUid = "k8s.node.uid"
+
+    /**
+     The annotation placed on the PersistentVolume, the `<key>` being the annotation name, the value being the annotation value, even if the value is empty.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.persistentvolumeAnnotation.rawValue] = "kubernetes.io/aws-ebs"
+      attributes[SemanticConventions.K8s.persistentvolumeAnnotation.rawValue] = ""
+      ```
+
+     - Note: Examples:
+
+       - An annotation `pv.kubernetes.io/provisioned-by` with value `kubernetes.io/aws-ebs` SHOULD be recorded as
+         the `k8s.persistentvolume.annotation.pv.kubernetes.io/provisioned-by` attribute with value `"kubernetes.io/aws-ebs"`.
+       - An annotation `data` with empty string value SHOULD be recorded as
+         the `k8s.persistentvolume.annotation.data` attribute with value `""`.
+
+     - Requires: Value type should be `template[string]`
+    */
+    case persistentvolumeAnnotation = "k8s.persistentvolume.annotation"
+
+    /**
+     The label placed on the PersistentVolume, the `<key>` being the label name, the value being the label value, even if the value is empty.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.persistentvolumeLabel.rawValue] = "ssd"
+      attributes[SemanticConventions.K8s.persistentvolumeLabel.rawValue] = ""
+      ```
+
+     - Note: Examples:
+
+       - A label `type` with value `ssd` SHOULD be recorded as
+         the `k8s.persistentvolume.label.type` attribute with value `"ssd"`.
+       - A label `data` with empty string value SHOULD be recorded as
+         the `k8s.persistentvolume.label.data` attribute with value `""`.
+
+     - Requires: Value type should be `template[string]`
+    */
+    case persistentvolumeLabel = "k8s.persistentvolume.label"
+
+    /**
+     The name of the PersistentVolume.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.persistentvolumeName.rawValue] = "pv-data-01"
+      ```
+
+     - Requires: Value type should be `String`
+    */
+    case persistentvolumeName = "k8s.persistentvolume.name"
+
+    /**
+     The reclaim policy of the PersistentVolume.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.persistentvolumeReclaimPolicy.rawValue] = .Delete
+      attributes[SemanticConventions.K8s.persistentvolumeReclaimPolicy.rawValue] = .Retain
+      attributes[SemanticConventions.K8s.persistentvolumeReclaimPolicy.rawValue] = .Recycle
+      ```
+
+     - Note: This attribute aligns with the `persistentVolumeReclaimPolicy` field of the
+       [K8s PersistentVolumeSpec](https://kubernetes.io/docs/reference/kubernetes-api/config-and-storage-resources/persistent-volume-v1/#PersistentVolumeSpec).
+
+     - Requires: Value should be one of ``PersistentvolumeReclaimPolicyValues`` (of type `String`)
+    */
+    case persistentvolumeReclaimPolicy = "k8s.persistentvolume.reclaim_policy"
+
+    /**
+     The phase of the PersistentVolume.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.persistentvolumeStatusPhase.rawValue] = .Pending
+      attributes[SemanticConventions.K8s.persistentvolumeStatusPhase.rawValue] = .Available
+      attributes[SemanticConventions.K8s.persistentvolumeStatusPhase.rawValue] = .Bound
+      attributes[SemanticConventions.K8s.persistentvolumeStatusPhase.rawValue] = .Released
+      attributes[SemanticConventions.K8s.persistentvolumeStatusPhase.rawValue] = .Failed
+      ```
+
+     - Note: This attribute aligns with the `phase` field of the
+       [K8s PersistentVolumeStatus](https://kubernetes.io/docs/reference/kubernetes-api/config-and-storage-resources/persistent-volume-v1/#PersistentVolumeStatus).
+
+     - Requires: Value should be one of ``PersistentvolumeStatusPhaseValues`` (of type `String`)
+    */
+    case persistentvolumeStatusPhase = "k8s.persistentvolume.status.phase"
+
+    /**
+     The UID of the PersistentVolume.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.persistentvolumeUid.rawValue] = "275ecb36-5aa8-4c2a-9c47-d8bb681b9aff"
+      ```
+
+     - Requires: Value type should be `String`
+    */
+    case persistentvolumeUid = "k8s.persistentvolume.uid"
+
+    /**
+     The annotation placed on the PersistentVolumeClaim, the `<key>` being the annotation name, the value being the annotation value, even if the value is empty.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.persistentvolumeclaimAnnotation.rawValue] = "kubernetes.io/aws-ebs"
+      attributes[SemanticConventions.K8s.persistentvolumeclaimAnnotation.rawValue] = ""
+      ```
+
+     - Note: Examples:
+
+       - An annotation `volume.beta.kubernetes.io/storage-provisioner` with value `kubernetes.io/aws-ebs` SHOULD be recorded as
+         the `k8s.persistentvolumeclaim.annotation.volume.beta.kubernetes.io/storage-provisioner` attribute with value `"kubernetes.io/aws-ebs"`.
+       - An annotation `data` with empty string value SHOULD be recorded as
+         the `k8s.persistentvolumeclaim.annotation.data` attribute with value `""`.
+
+     - Requires: Value type should be `template[string]`
+    */
+    case persistentvolumeclaimAnnotation = "k8s.persistentvolumeclaim.annotation"
+
+    /**
+     The label placed on the PersistentVolumeClaim, the `<key>` being the label name, the value being the label value, even if the value is empty.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.persistentvolumeclaimLabel.rawValue] = "my-app"
+      attributes[SemanticConventions.K8s.persistentvolumeclaimLabel.rawValue] = ""
+      ```
+
+     - Note: Examples:
+
+       - A label `app` with value `my-app` SHOULD be recorded as
+         the `k8s.persistentvolumeclaim.label.app` attribute with value `"my-app"`.
+       - A label `data` with empty string value SHOULD be recorded as
+         the `k8s.persistentvolumeclaim.label.data` attribute with value `""`.
+
+     - Requires: Value type should be `template[string]`
+    */
+    case persistentvolumeclaimLabel = "k8s.persistentvolumeclaim.label"
+
+    /**
+     The name of the PersistentVolumeClaim.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.persistentvolumeclaimName.rawValue] = "pvc-data-01"
+      ```
+
+     - Requires: Value type should be `String`
+    */
+    case persistentvolumeclaimName = "k8s.persistentvolumeclaim.name"
+
+    /**
+     The phase of the PersistentVolumeClaim.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.persistentvolumeclaimStatusPhase.rawValue] = .Pending
+      attributes[SemanticConventions.K8s.persistentvolumeclaimStatusPhase.rawValue] = .Bound
+      attributes[SemanticConventions.K8s.persistentvolumeclaimStatusPhase.rawValue] = .Lost
+      ```
+
+     - Note: This attribute aligns with the `phase` field of the
+       [K8s PersistentVolumeClaimStatus](https://kubernetes.io/docs/reference/kubernetes-api/config-and-storage-resources/persistent-volume-claim-v1/#PersistentVolumeClaimStatus).
+
+     - Requires: Value should be one of ``PersistentvolumeclaimStatusPhaseValues`` (of type `String`)
+    */
+    case persistentvolumeclaimStatusPhase = "k8s.persistentvolumeclaim.status.phase"
+
+    /**
+     The UID of the PersistentVolumeClaim.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.persistentvolumeclaimUid.rawValue] = "275ecb36-5aa8-4c2a-9c47-d8bb681b9aff"
+      ```
+
+     - Requires: Value type should be `String`
+    */
+    case persistentvolumeclaimUid = "k8s.persistentvolumeclaim.uid"
 
     /**
      The annotation placed on the Pod, the `<key>` being the annotation name, the value being the annotation value.
@@ -669,6 +880,40 @@ extension SemanticConventions {
      - Requires: Value type should be `template[string]`
     */
     case podAnnotation = "k8s.pod.annotation"
+
+    /**
+     Specifies the hostname of the Pod.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.podHostname.rawValue] = "collector-gateway"
+      ```
+
+     - Note: The K8s Pod spec has an optional hostname field, which can be used to specify a hostname.
+       Refer to [K8s docs](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-hostname-and-subdomain-field)
+       for more information about this field.
+
+       This attribute aligns with the `hostname` field of the
+       [K8s PodSpec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.34/#podspec-v1-core).
+
+     - Requires: Value type should be `String`
+    */
+    case podHostname = "k8s.pod.hostname"
+
+    /**
+     IP address allocated to the Pod.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.podIp.rawValue] = "172.18.0.2"
+      ```
+
+     - Note: This attribute aligns with the `podIP` field of the
+       [K8s PodStatus](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.34/#podstatus-v1-core).
+
+     - Requires: Value type should be `String`
+    */
+    case podIp = "k8s.pod.ip"
 
     /**
      The label placed on the Pod, the `<key>` being the label name, the value being the label value.
@@ -704,6 +949,25 @@ extension SemanticConventions {
      - Requires: Value type should be `String`
     */
     case podName = "k8s.pod.name"
+
+    /**
+     The start timestamp of the Pod.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.podStartTime.rawValue] = "2025-12-04T08:41:03Z"
+      ```
+
+     - Note: Date and time at which the object was acknowledged by the Kubelet.
+       This is before the Kubelet pulled the container image(s) for the pod.
+
+       This attribute aligns with the `startTime` field of the
+       [K8s PodStatus](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.34/#podstatus-v1-core),
+       in ISO 8601 (RFC 3339 compatible) format.
+
+     - Requires: Value type should be `String`
+    */
+    case podStartTime = "k8s.pod.start_time"
 
     /**
      The phase for the pod. Corresponds to the `phase` field of the: [K8s PodStatus](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/#podstatus-v1-core)
@@ -754,9 +1018,9 @@ extension SemanticConventions {
 
      - Note: Examples:
 
-       - A label `replicas` with value `0` SHOULD be recorded
+       - An annotation `replicas` with value `0` SHOULD be recorded
          as the `k8s.replicaset.annotation.replicas` attribute with value `"0"`.
-       - A label `data` with empty string value SHOULD be recorded as
+       - An annotation `data` with empty string value SHOULD be recorded as
          the `k8s.replicaset.annotation.data` attribute with value `""`.
 
      - Requires: Value type should be `template[string]`
@@ -870,6 +1134,210 @@ extension SemanticConventions {
     case resourcequotaUid = "k8s.resourcequota.uid"
 
     /**
+     The annotation placed on the Service, the `<key>` being the annotation name, the value being the annotation value, even if the value is empty.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.serviceAnnotation.rawValue] = "true"
+      attributes[SemanticConventions.K8s.serviceAnnotation.rawValue] = ""
+      ```
+
+     - Note: Examples:
+
+       - An annotation `prometheus.io/scrape` with value `true` SHOULD be recorded as
+         the `k8s.service.annotation.prometheus.io/scrape` attribute with value `"true"`.
+       - An annotation `data` with empty string value SHOULD be recorded as
+         the `k8s.service.annotation.data` attribute with value `""`.
+
+     - Requires: Value type should be `template[string]`
+    */
+    case serviceAnnotation = "k8s.service.annotation"
+
+    /**
+     The address type of the service endpoint.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.serviceEndpointAddressType.rawValue] = .IPv4
+      attributes[SemanticConventions.K8s.serviceEndpointAddressType.rawValue] = .IPv6
+      ```
+
+     - Note: The network address family or type of the endpoint.
+       This attribute aligns with the `addressType` field of the
+       [K8s EndpointSlice](https://kubernetes.io/docs/reference/kubernetes-api/service-resources/endpoint-slice-v1/).
+       It is used to differentiate metrics when a Service is backed by multiple address types
+       (e.g., in dual-stack clusters).
+
+     - Requires: Value should be one of ``ServiceEndpointAddressTypeValues`` (of type `String`)
+    */
+    case serviceEndpointAddressType = "k8s.service.endpoint.address_type"
+
+    /**
+     The condition of the service endpoint.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.serviceEndpointCondition.rawValue] = .ready
+      attributes[SemanticConventions.K8s.serviceEndpointCondition.rawValue] = .serving
+      attributes[SemanticConventions.K8s.serviceEndpointCondition.rawValue] = .terminating
+      ```
+
+     - Note: The current operational condition of the service endpoint.
+       An endpoint can have multiple conditions set at once (e.g., both `serving` and `terminating` during rollout).
+       This attribute aligns with the condition fields in the [K8s EndpointSlice](https://kubernetes.io/docs/reference/kubernetes-api/service-resources/endpoint-slice-v1/).
+
+     - Requires: Value should be one of ``ServiceEndpointConditionValues`` (of type `String`)
+    */
+    case serviceEndpointCondition = "k8s.service.endpoint.condition"
+
+    /**
+     The zone of the service endpoint.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.serviceEndpointZone.rawValue] = "us-east-1a"
+      attributes[SemanticConventions.K8s.serviceEndpointZone.rawValue] = "us-west-2b"
+      attributes[SemanticConventions.K8s.serviceEndpointZone.rawValue] = "zone-a"
+      attributes[SemanticConventions.K8s.serviceEndpointZone.rawValue] = ""
+      ```
+
+     - Note: The zone where the endpoint is located, typically corresponding to a failure domain.
+       This attribute aligns with the `zone` field of endpoints in the
+       [K8s EndpointSlice](https://kubernetes.io/docs/reference/kubernetes-api/service-resources/endpoint-slice-v1/).
+       It enables zone-aware monitoring of service endpoint distribution and supports
+       features like [Topology Aware Routing](https://kubernetes.io/docs/concepts/services-networking/topology-aware-routing/).
+
+       If the zone is not populated (e.g., nodes without the `topology.kubernetes.io/zone` label),
+       the attribute value will be an empty string.
+
+     - Requires: Value type should be `String`
+    */
+    case serviceEndpointZone = "k8s.service.endpoint.zone"
+
+    /**
+     The label placed on the Service, the `<key>` being the label name, the value being the label value, even if the value is empty.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.serviceLabel.rawValue] = "my-service"
+      attributes[SemanticConventions.K8s.serviceLabel.rawValue] = ""
+      ```
+
+     - Note: Examples:
+
+       - A label `app` with value `my-service` SHOULD be recorded as
+         the `k8s.service.label.app` attribute with value `"my-service"`.
+       - A label `data` with empty string value SHOULD be recorded as
+         the `k8s.service.label.data` attribute with value `""`.
+
+     - Requires: Value type should be `template[string]`
+    */
+    case serviceLabel = "k8s.service.label"
+
+    /**
+     The name of the Service.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.serviceName.rawValue] = "my-service"
+      ```
+
+     - Requires: Value type should be `String`
+    */
+    case serviceName = "k8s.service.name"
+
+    /**
+     Whether the Service publishes not-ready endpoints.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.servicePublishNotReadyAddresses.rawValue] = true
+      attributes[SemanticConventions.K8s.servicePublishNotReadyAddresses.rawValue] = false
+      ```
+
+     - Note: Whether the Service is configured to publish endpoints before the pods are ready.
+       This attribute is typically used to indicate that a Service (such as a headless
+       Service for a StatefulSet) allows peer discovery before pods pass their readiness probes.
+       It aligns with the `publishNotReadyAddresses` field of the
+       [K8s ServiceSpec](https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/#ServiceSpec).
+
+     - Requires: Value type should be `Bool`
+    */
+    case servicePublishNotReadyAddresses = "k8s.service.publish_not_ready_addresses"
+
+    /**
+     The selector key-value pair placed on the Service, the `<key>` being the selector key, the value being the selector value.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.serviceSelector.rawValue] = "my-app"
+      attributes[SemanticConventions.K8s.serviceSelector.rawValue] = "v1"
+      ```
+
+     - Note: These selectors are used to correlate with pod labels. Each selector key-value pair becomes a separate attribute.
+
+       Examples:
+
+       - A selector `app=my-app` SHOULD be recorded as
+         the `k8s.service.selector.app` attribute with value `"my-app"`.
+       - A selector `version=v1` SHOULD be recorded as
+         the `k8s.service.selector.version` attribute with value `"v1"`.
+
+     - Requires: Value type should be `template[string]`
+    */
+    case serviceSelector = "k8s.service.selector"
+
+    /**
+     The traffic distribution policy for the Service.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.serviceTrafficDistribution.rawValue] = "PreferSameZone"
+      attributes[SemanticConventions.K8s.serviceTrafficDistribution.rawValue] = "PreferSameNode"
+      ```
+
+     - Note: Specifies how traffic is distributed to endpoints for this Service.
+       This attribute aligns with the `trafficDistribution` field of the
+       [K8s ServiceSpec](https://kubernetes.io/docs/reference/networking/virtual-ips/#traffic-distribution).
+       Known values include `PreferSameZone` (prefer endpoints in the same zone as the client) and
+       `PreferSameNode` (prefer endpoints on the same node, fallback to same zone, then cluster-wide).
+       If this field is not set on the Service, the attribute SHOULD NOT be emitted.
+       When not set, Kubernetes distributes traffic evenly across all endpoints cluster-wide.
+
+     - Requires: Value type should be `String`
+    */
+    case serviceTrafficDistribution = "k8s.service.traffic_distribution"
+
+    /**
+     The type of the Kubernetes Service.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.serviceType.rawValue] = .ClusterIP
+      attributes[SemanticConventions.K8s.serviceType.rawValue] = .NodePort
+      attributes[SemanticConventions.K8s.serviceType.rawValue] = .LoadBalancer
+      ```
+
+     - Note: This attribute aligns with the `type` field of the
+       [K8s ServiceSpec](https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/#ServiceSpec).
+
+     - Requires: Value should be one of ``ServiceTypeValues`` (of type `String`)
+    */
+    case serviceType = "k8s.service.type"
+
+    /**
+     The UID of the Service.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.K8s.serviceUid.rawValue] = "275ecb36-5aa8-4c2a-9c47-d8bb681b9aff"
+      ```
+
+     - Requires: Value type should be `String`
+    */
+    case serviceUid = "k8s.service.uid"
+
+    /**
      The annotation placed on the StatefulSet, the `<key>` being the annotation name, the value being the annotation value, even if the value is empty.
 
       - Examples:
@@ -880,9 +1348,9 @@ extension SemanticConventions {
 
      - Note: Examples:
 
-       - A label `replicas` with value `1` SHOULD be recorded
+       - An annotation `replicas` with value `1` SHOULD be recorded
          as the `k8s.statefulset.annotation.replicas` attribute with value `"1"`.
-       - A label `data` with empty string value SHOULD be recorded as
+       - An annotation `data` with empty string value SHOULD be recorded as
          the `k8s.statefulset.annotation.data` attribute with value `""`.
 
      - Requires: Value type should be `template[string]`
@@ -900,7 +1368,7 @@ extension SemanticConventions {
 
      - Note: Examples:
 
-       - A label `replicas` with value `0` SHOULD be recorded
+       - A label `app` with value `guestbook` SHOULD be recorded
          as the `k8s.statefulset.label.app` attribute with value `"guestbook"`.
        - A label `injected` with empty string value SHOULD be recorded as
          the `k8s.statefulset.label.injected` attribute with value `""`.
@@ -934,7 +1402,7 @@ extension SemanticConventions {
     case statefulsetUid = "k8s.statefulset.uid"
 
     /**
-     The name of K8s [StorageClass](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#storageclass-v1-storage-k8s-io) object.
+     The name of K8s [StorageClass](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.34/#storageclass-v1-storage-k8s-io) object.
 
       - Examples:
       ```
@@ -971,7 +1439,29 @@ extension SemanticConventions {
     case volumeType = "k8s.volume.type"
 
     /** 
-      The reason for the container state. Corresponds to the `reason` field of the: [K8s ContainerStateWaiting](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#containerstatewaiting-v1-core) or [K8s ContainerStateTerminated](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#containerstateterminated-v1-core)
+      The type of file system component for ephemeral storage.
+    */
+    public struct ContainerEphemeralStorageFsTypeValues: CustomStringConvertible, Sendable {
+      
+      /// For the container's writable layer usage.
+      public static let rootfs = ContainerEphemeralStorageFsTypeValues("rootfs") 
+      
+      /// For the container's log files usage (stdout/stderr).
+      public static let logs = ContainerEphemeralStorageFsTypeValues("logs") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
+
+    /** 
+      The reason for the container state. Corresponds to the `reason` field of the: [K8s ContainerStateWaiting](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.34/#containerstatewaiting-v1-core) or [K8s ContainerStateTerminated](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.34/#containerstateterminated-v1-core)
     */
     public struct ContainerStatusReasonValues: CustomStringConvertible, Sendable {
       
@@ -1014,7 +1504,7 @@ extension SemanticConventions {
     }
 
     /** 
-      The state of the container. [K8s ContainerState](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#containerstate-v1-core)
+      The state of the container. [K8s ContainerState](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.34/#containerstate-v1-core)
     */
     public struct ContainerStatusStateValues: CustomStringConvertible, Sendable {
       
@@ -1111,6 +1601,87 @@ extension SemanticConventions {
     }
 
     /** 
+      The reclaim policy of the PersistentVolume.
+    */
+    public struct PersistentvolumeReclaimPolicyValues: CustomStringConvertible, Sendable {
+      
+      /// The volume will be deleted when released from its claim.
+      public static let delete = PersistentvolumeReclaimPolicyValues("Delete") 
+      
+      /// The volume will be recycled (basic scrub) when released from its claim.
+      public static let recycle = PersistentvolumeReclaimPolicyValues("Recycle") 
+      
+      /// The volume will be retained when released from its claim.
+      public static let retain = PersistentvolumeReclaimPolicyValues("Retain") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
+
+    /** 
+      The phase of the PersistentVolume.
+    */
+    public struct PersistentvolumeStatusPhaseValues: CustomStringConvertible, Sendable {
+      
+      /// The volume is available and not yet bound to a claim.
+      public static let available = PersistentvolumeStatusPhaseValues("Available") 
+      
+      /// The volume is bound to a claim.
+      public static let bound = PersistentvolumeStatusPhaseValues("Bound") 
+      
+      /// The volume has failed its automatic reclamation.
+      public static let failed = PersistentvolumeStatusPhaseValues("Failed") 
+      
+      /// The volume is being provisioned.
+      public static let pending = PersistentvolumeStatusPhaseValues("Pending") 
+      
+      /// The claim has been deleted but the volume is not yet available.
+      public static let released = PersistentvolumeStatusPhaseValues("Released") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
+
+    /** 
+      The phase of the PersistentVolumeClaim.
+    */
+    public struct PersistentvolumeclaimStatusPhaseValues: CustomStringConvertible, Sendable {
+      
+      /// The claim is bound to a volume.
+      public static let bound = PersistentvolumeclaimStatusPhaseValues("Bound") 
+      
+      /// The claim has lost its underlying volume (the volume does not exist anymore).
+      public static let lost = PersistentvolumeclaimStatusPhaseValues("Lost") 
+      
+      /// The claim has not yet been bound to a volume.
+      public static let pending = PersistentvolumeclaimStatusPhaseValues("Pending") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
+
+    /** 
       The phase for the pod. Corresponds to the `phase` field of the: [K8s PodStatus](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.33/#podstatus-v1-core)
     */
     public struct PodStatusPhaseValues: CustomStringConvertible, Sendable {
@@ -1173,26 +1744,104 @@ extension SemanticConventions {
     }
 
     /** 
+      The address type of the service endpoint.
+    */
+    public struct ServiceEndpointAddressTypeValues: CustomStringConvertible, Sendable {
+      
+      /// IPv4 address type
+      public static let ipv4 = ServiceEndpointAddressTypeValues("IPv4") 
+      
+      /// IPv6 address type
+      public static let ipv6 = ServiceEndpointAddressTypeValues("IPv6") 
+      
+      /// FQDN address type
+      public static let fqdn = ServiceEndpointAddressTypeValues("FQDN") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
+
+    /** 
+      The condition of the service endpoint.
+    */
+    public struct ServiceEndpointConditionValues: CustomStringConvertible, Sendable {
+      
+      /// The endpoint is ready to receive new connections.
+      public static let ready = ServiceEndpointConditionValues("ready") 
+      
+      /// The endpoint is currently handling traffic.
+      public static let serving = ServiceEndpointConditionValues("serving") 
+      
+      /// The endpoint is in the process of shutting down.
+      public static let terminating = ServiceEndpointConditionValues("terminating") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
+
+    /** 
+      The type of the Kubernetes Service.
+    */
+    public struct ServiceTypeValues: CustomStringConvertible, Sendable {
+      
+      /// ClusterIP service type
+      public static let clusterIp = ServiceTypeValues("ClusterIP") 
+      
+      /// NodePort service type
+      public static let nodePort = ServiceTypeValues("NodePort") 
+      
+      /// LoadBalancer service type
+      public static let loadBalancer = ServiceTypeValues("LoadBalancer") 
+      
+      /// ExternalName service type
+      public static let externalName = ServiceTypeValues("ExternalName") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
+
+    /** 
       The type of the K8s volume.
     */
     public struct VolumeTypeValues: CustomStringConvertible, Sendable {
       
-      /// A [persistentVolumeClaim](https://v1-30.docs.kubernetes.io/docs/concepts/storage/volumes/#persistentvolumeclaim) volume
+      /// A [persistentVolumeClaim](https://kubernetes.io/docs/concepts/storage/volumes/#persistentvolumeclaim) volume
       public static let persistentVolumeClaim = VolumeTypeValues("persistentVolumeClaim") 
       
-      /// A [configMap](https://v1-30.docs.kubernetes.io/docs/concepts/storage/volumes/#configmap) volume
+      /// A [configMap](https://kubernetes.io/docs/concepts/storage/volumes/#configmap) volume
       public static let configMap = VolumeTypeValues("configMap") 
       
-      /// A [downwardAPI](https://v1-30.docs.kubernetes.io/docs/concepts/storage/volumes/#downwardapi) volume
+      /// A [downwardAPI](https://kubernetes.io/docs/concepts/storage/volumes/#downwardapi) volume
       public static let downwardApi = VolumeTypeValues("downwardAPI") 
       
-      /// An [emptyDir](https://v1-30.docs.kubernetes.io/docs/concepts/storage/volumes/#emptydir) volume
+      /// An [emptyDir](https://kubernetes.io/docs/concepts/storage/volumes/#emptydir) volume
       public static let emptyDir = VolumeTypeValues("emptyDir") 
       
-      /// A [secret](https://v1-30.docs.kubernetes.io/docs/concepts/storage/volumes/#secret) volume
+      /// A [secret](https://kubernetes.io/docs/concepts/storage/volumes/#secret) volume
       public static let secret = VolumeTypeValues("secret") 
       
-      /// A [local](https://v1-30.docs.kubernetes.io/docs/concepts/storage/volumes/#local) volume
+      /// A [local](https://kubernetes.io/docs/concepts/storage/volumes/#local) volume
       public static let local = VolumeTypeValues("local") 
 
       internal let value: String 

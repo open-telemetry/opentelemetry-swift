@@ -97,7 +97,7 @@ extension SemanticConventions {
       /// DragonFly BSD
       public static let dragonflybsd = TypeValues("dragonflybsd") 
       
-      /// HP-UX (Hewlett Packard Unix)
+      /// HP-UX (Hewlett Packard UNIX)
       public static let hpux = TypeValues("hpux") 
       
       /// AIX (Advanced Interactive eXecutive)

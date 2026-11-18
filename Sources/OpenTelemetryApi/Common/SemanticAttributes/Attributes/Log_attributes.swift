@@ -11,7 +11,7 @@ extension SemanticConventions {
   public enum Log: String {
 
     /**
-     The basename of the file.
+     The basename of the file to which the log record was emitted.
 
       - Examples:
       ```
@@ -23,7 +23,7 @@ extension SemanticConventions {
     case fileName = "log.file.name"
 
     /**
-     The basename of the file, with symlinks resolved.
+     The basename of the file to which the log record was emitted, with symlinks resolved.
 
       - Examples:
       ```
@@ -35,7 +35,7 @@ extension SemanticConventions {
     case fileNameResolved = "log.file.name_resolved"
 
     /**
-     The full path to the file.
+     The full path to the file to which the log record was emitted.
 
       - Examples:
       ```
@@ -47,7 +47,7 @@ extension SemanticConventions {
     case filePath = "log.file.path"
 
     /**
-     The full path to the file, with symlinks resolved.
+     The full path to the file to which the log record was emitted, with symlinks resolved.
 
       - Examples:
       ```
@@ -59,7 +59,7 @@ extension SemanticConventions {
     case filePathResolved = "log.file.path_resolved"
 
     /**
-     The stream associated with the log. See below for a list of well-known values.
+     The stream the log record was emitted to.
 
      - Requires: Value should be one of ``IostreamValues`` (of type `String`)
     */
@@ -88,15 +88,15 @@ extension SemanticConventions {
       attributes[SemanticConventions.Log.recordUid.rawValue] = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
       ```
 
-     - Note: If an id is provided, other log records with the same id will be considered duplicates and can be removed safely. This means, that two distinguishable log records MUST have different values.
-       The id MAY be an [Universally Unique Lexicographically Sortable Identifier (ULID)](https://github.com/ulid/spec), but other identifiers (e.g. UUID) may be used as needed.
+     - Note: If an ID is provided, other log records with the same ID will be considered duplicates and can be removed safely. This means, that two distinguishable log records MUST have different values.
+       The ID MAY be an [Universally Unique Lexicographically Sortable Identifier (ULID)](https://github.com/ulid/spec), but other identifiers (e.g. UUID) may be used as needed.
 
      - Requires: Value type should be `String`
     */
     case recordUid = "log.record.uid"
 
     /** 
-      The stream associated with the log. See below for a list of well-known values.
+      The stream the log record was emitted to.
     */
     public struct IostreamValues: CustomStringConvertible, Sendable {
       

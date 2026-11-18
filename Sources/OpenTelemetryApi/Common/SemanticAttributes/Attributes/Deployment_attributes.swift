@@ -15,8 +15,8 @@ extension SemanticConventions {
 
       - Examples:
       ```
-      attributes[SemanticConventions.Deployment.environmentName.rawValue] = "staging"
-      attributes[SemanticConventions.Deployment.environmentName.rawValue] = "production"
+      attributes[SemanticConventions.Deployment.environmentName.rawValue] = .staging
+      attributes[SemanticConventions.Deployment.environmentName.rawValue] = .production
       ```
 
      - Note: `deployment.environment.name` does not affect the uniqueness constraints defined through
@@ -27,12 +27,12 @@ extension SemanticConventions {
        - `service.name=frontend`, `deployment.environment.name=production`
        - `service.name=frontend`, `deployment.environment.name=staging`.
 
-     - Requires: Value type should be `String`
+     - Requires: Value should be one of ``EnvironmentNameValues`` (of type `String`)
     */
     case environmentName = "deployment.environment.name"
 
     /**
-     The id of the deployment.
+     The ID of the deployment.
 
       - Examples:
       ```
@@ -62,6 +62,34 @@ extension SemanticConventions {
      - Requires: Value should be one of ``StatusValues`` (of type `String`)
     */
     case status = "deployment.status"
+
+    /** 
+      Name of the [deployment environment](https://wikipedia.org/wiki/Deployment_environment) (aka deployment tier).
+    */
+    public struct EnvironmentNameValues: CustomStringConvertible, Sendable {
+      
+      /// Production environment
+      public static let production = EnvironmentNameValues("production") 
+      
+      /// Staging environment
+      public static let staging = EnvironmentNameValues("staging") 
+      
+      /// Testing environment
+      public static let test = EnvironmentNameValues("test") 
+      
+      /// Development environment
+      public static let development = EnvironmentNameValues("development") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
 
     /** 
       The status of the deployment.

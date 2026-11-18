@@ -23,6 +23,19 @@ extension SemanticConventions {
     case contextId = "feature_flag.context.id"
 
     /**
+     A message providing more detail about an error that occurred during feature flag evaluation in human-readable form.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.FeatureFlag.errorMessage.rawValue] = "Unexpected input type: string"
+      attributes[SemanticConventions.FeatureFlag.errorMessage.rawValue] = "The user has exceeded their storage quota"
+      ```
+
+     - Requires: Value type should be `String`
+    */
+    case errorMessage = "feature_flag.error.message"
+
+    /**
      The lookup key of the feature flag.
 
       - Examples:

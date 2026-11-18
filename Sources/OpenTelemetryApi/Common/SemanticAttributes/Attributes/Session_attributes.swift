@@ -11,7 +11,7 @@ extension SemanticConventions {
   public enum Session: String {
 
     /**
-     A unique id to identify a session.
+     A unique ID to identify a session.
 
       - Examples:
       ```

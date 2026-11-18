@@ -47,7 +47,7 @@ extension SemanticConventions {
       attributes[SemanticConventions.Cicd.pipelineResult.rawValue] = .success
       attributes[SemanticConventions.Cicd.pipelineResult.rawValue] = .failure
       attributes[SemanticConventions.Cicd.pipelineResult.rawValue] = .timeout
-      attributes[SemanticConventions.Cicd.pipelineResult.rawValue] = .skipped
+      attributes[SemanticConventions.Cicd.pipelineResult.rawValue] = .skip
       ```
 
      - Requires: Value should be one of ``PipelineResultValues`` (of type `String`)
@@ -115,6 +115,8 @@ extension SemanticConventions {
       attributes[SemanticConventions.Cicd.pipelineTaskRunId.rawValue] = "12097"
       ```
 
+     - Note: For a given pipeline run and task, the `cicd.pipeline.task.run.id` MUST be unique within that run. For the same task across different runs of the same pipeline, the `cicd.pipeline.task.run.id` MAY remain the same, enabling correlation of `cicd.pipeline.task.run.result` values across multiple pipeline runs.
+
      - Requires: Value type should be `String`
     */
     case pipelineTaskRunId = "cicd.pipeline.task.run.id"
@@ -127,7 +129,7 @@ extension SemanticConventions {
       attributes[SemanticConventions.Cicd.pipelineTaskRunResult.rawValue] = .success
       attributes[SemanticConventions.Cicd.pipelineTaskRunResult.rawValue] = .failure
       attributes[SemanticConventions.Cicd.pipelineTaskRunResult.rawValue] = .timeout
-      attributes[SemanticConventions.Cicd.pipelineTaskRunResult.rawValue] = .skipped
+      attributes[SemanticConventions.Cicd.pipelineTaskRunResult.rawValue] = .skip
       ```
 
      - Requires: Value should be one of ``PipelineTaskRunResultValues`` (of type `String`)
@@ -161,7 +163,7 @@ extension SemanticConventions {
     case pipelineTaskType = "cicd.pipeline.task.type"
 
     /**
-     The name of a component of the CICD system.
+     The name of a component of the CI/CD system.
 
       - Examples:
       ```
@@ -175,7 +177,7 @@ extension SemanticConventions {
     case systemComponent = "cicd.system.component"
 
     /**
-     The unique identifier of a worker within a CICD system.
+     The unique identifier of a worker within a CI/CD system.
 
       - Examples:
       ```
@@ -189,7 +191,7 @@ extension SemanticConventions {
     case workerId = "cicd.worker.id"
 
     /**
-     The name of a worker within a CICD system.
+     The name of a worker within a CI/CD system.
 
       - Examples:
       ```
@@ -203,13 +205,13 @@ extension SemanticConventions {
     case workerName = "cicd.worker.name"
 
     /**
-     The state of a CICD worker / agent.
+     The state of a CI/CD worker / agent.
 
       - Examples:
       ```
-      attributes[SemanticConventions.Cicd.workerState.rawValue] = .idle
+      attributes[SemanticConventions.Cicd.workerState.rawValue] = .available
       attributes[SemanticConventions.Cicd.workerState.rawValue] = .busy
-      attributes[SemanticConventions.Cicd.workerState.rawValue] = .down
+      attributes[SemanticConventions.Cicd.workerState.rawValue] = .offline
       ```
 
      - Requires: Value should be one of ``WorkerStateValues`` (of type `String`)
@@ -264,7 +266,7 @@ extension SemanticConventions {
       /// The pipeline run did not finish successfully, eg. due to a compile error or a failing test. Such failures are usually detected by non-zero exit codes of the tools executed in the pipeline run.
       public static let failure = PipelineResultValues("failure") 
       
-      /// The pipeline run failed due to an error in the CICD system, eg. due to the worker being killed.
+      /// The pipeline run failed due to an error in the CI/CD system, eg. due to the worker being killed.
       public static let error = PipelineResultValues("error") 
       
       /// A timeout caused the pipeline run to be interrupted.
@@ -323,7 +325,7 @@ extension SemanticConventions {
       /// The task run did not finish successfully, eg. due to a compile error or a failing test. Such failures are usually detected by non-zero exit codes of the tools executed in the task run.
       public static let failure = PipelineTaskRunResultValues("failure") 
       
-      /// The task run failed due to an error in the CICD system, eg. due to the worker being killed.
+      /// The task run failed due to an error in the CI/CD system, eg. due to the worker being killed.
       public static let error = PipelineTaskRunResultValues("error") 
       
       /// A timeout caused the task run to be interrupted.
@@ -372,17 +374,17 @@ extension SemanticConventions {
     }
 
     /** 
-      The state of a CICD worker / agent.
+      The state of a CI/CD worker / agent.
     */
     public struct WorkerStateValues: CustomStringConvertible, Sendable {
       
-      /// The worker is not performing work for the CICD system. It is available to the CICD system to perform work on (online / idle).
+      /// The worker is not performing work for the CI/CD system. It is available to the CI/CD system to perform work on (online / idle).
       public static let available = WorkerStateValues("available") 
       
-      /// The worker is performing work for the CICD system.
+      /// The worker is performing work for the CI/CD system.
       public static let busy = WorkerStateValues("busy") 
       
-      /// The worker is not available to the CICD system (disconnected / down).
+      /// The worker is not available to the CI/CD system (disconnected / down).
       public static let offline = WorkerStateValues("offline") 
 
       internal let value: String 

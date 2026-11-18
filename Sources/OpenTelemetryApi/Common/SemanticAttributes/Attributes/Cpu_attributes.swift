@@ -11,12 +11,14 @@ extension SemanticConventions {
   public enum Cpu: String {
 
     /**
-     The logical CPU number [0..n-1]
+     The identifier of a logical execution target (CPU) as seen by the operating system, in the range [0..n-1].
 
       - Examples:
       ```
       attributes[SemanticConventions.Cpu.logicalNumber.rawValue] = 1
       ```
+
+     - Note: On systems with simultaneous multithreading (SMT) enabled — such as Intel Hyper-Threading or AMD SMT — this value will usually differ from the physical core number, because each core presents multiple logical CPUs for the system to use.
 
      - Requires: Value type should be `Int`
     */
@@ -60,9 +62,6 @@ extension SemanticConventions {
       
       /// Steal
       public static let steal = ModeValues("steal") 
-      
-      /// Kernel
-      public static let kernel = ModeValues("kernel") 
 
       internal let value: String 
 

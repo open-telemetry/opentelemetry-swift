@@ -13,7 +13,7 @@ import Foundation
 ///  and BaggageManager.
 ///  The telemetry objects are lazy-loaded singletons resolved via ServiceLoader mechanism.
 public struct OpenTelemetry: Sendable {
-  public static let version = "v1.38.0"
+  public static let version = "v1.45.0"
 
   public static let instance = OpenTelemetry()
 
