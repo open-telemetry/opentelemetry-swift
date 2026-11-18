@@ -46,6 +46,7 @@ public struct URLSessionInstrumentationConfiguration {
   public init(shouldRecordPayload: ((URLSession) -> (Bool)?)? = nil,
               shouldRecordPayloadForRequest: ((URLRequest) -> (Bool)?)? = nil,
               responsePayloadRecordingMode: ResponsePayloadRecordingMode = .all,
+              maxRecordedPayloadSize: Int? = nil,
               shouldInstrument: ((URLRequest) -> (Bool)?)? = nil,
               nameSpan: ((URLRequest) -> (String)?)? = nil,
               spanCustomization: ((URLRequest, SpanBuilder) -> Void)? = nil,
@@ -63,6 +64,7 @@ public struct URLSessionInstrumentationConfiguration {
     self.shouldRecordPayload = shouldRecordPayload
     self.shouldRecordPayloadForRequest = shouldRecordPayloadForRequest
     self.responsePayloadRecordingMode = responsePayloadRecordingMode
+    self.maxRecordedPayloadSize = maxRecordedPayloadSize
     self.shouldInstrument = shouldInstrument
     self.shouldInjectTracingHeaders = shouldInjectTracingHeaders
     self.injectCustomHeaders = injectCustomHeaders
@@ -103,6 +105,17 @@ public struct URLSessionInstrumentationConfiguration {
   /// instrumentation callbacks after payload recording is enabled through `shouldRecordPayloadForRequest` or
   /// `shouldRecordPayload`.
   public var responsePayloadRecordingMode: ResponsePayloadRecordingMode
+
+  /// Upper bound, in bytes, on a response payload passed to `receivedResponse` and `receivedError`.
+  /// `nil`, the default, leaves payloads unbounded.
+  ///
+  /// A payload larger than the limit is dropped rather than truncated, and the callbacks receive `nil`.
+  /// For delegate-based requests the instrumentation stops buffering as soon as the limit is crossed, or
+  /// up front when the response declares a `Content-Length` above it, so its memory stays within the limit.
+  /// For completion-handler requests URLSession has already built the whole body, so the limit only keeps
+  /// the callbacks consistent with the delegate path. Download file URLs are passed through unchanged.
+  /// It does not affect the payload delivered to the application's own delegate or completion handler.
+  public var maxRecordedPayloadSize: Int?
 
   /// Implement this callback to filter which requests you want to inject headers to follow the trace,
   /// also must implement it if you want to inject custom headers

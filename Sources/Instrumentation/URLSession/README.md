@@ -20,6 +20,8 @@ Payloads are not currently available for async/await requests: those report no p
 
 `responsePayloadRecordingMode: ResponsePayloadRecordingMode`: After payload recording is enabled through `shouldRecordPayloadForRequest` or `shouldRecordPayload`, pass all response payloads (`.all`, the default) or only HTTP `400...599` response payloads (`.httpErrorsOnly`) to the instrumentation callbacks.
 
+`maxRecordedPayloadSize: Int?`: Upper bound, in bytes, on a response payload passed to the instrumentation callbacks, unbounded (`nil`) by default. A larger payload is dropped, not truncated, and the callbacks receive `nil`. For delegate-based requests the instrumentation stops buffering once the limit is crossed, or does not start when the response declares a `Content-Length` above it, which bounds the memory it holds per request. For completion-handler requests URLSession has already built the whole body, so the limit there only keeps the callbacks consistent with the delegate path. Download file URLs are passed through unchanged. It does not affect the payload delivered to the application's own delegate or completion handler.
+
 `shouldInjectTracingHeaders: ((URLRequest) -> (Bool)?)?`: Allows filtering which requests you want to inject headers to follow the trace, true by default. You must also return true if you want to inject custom headers.
 
 `injectCustomHeaders: ((inout URLRequest, Span?) -> Void)?`: Implement this callback to inject custom headers or modify the request in any other way
