@@ -16,17 +16,12 @@ import WatchKit
 
 enum InstrumentationUtils {
     static func objc_getClassList() -> [AnyClass] {
-        let expectedClassCount = ObjectiveC.objc_getClassList(nil, 0)
-        let allClasses = UnsafeMutablePointer<AnyClass>.allocate(capacity: Int(expectedClassCount))
-        let autoreleasingAllClasses = AutoreleasingUnsafeMutablePointer<AnyClass>(allClasses)
-        let actualClassCount: Int32 = ObjectiveC.objc_getClassList(autoreleasingAllClasses, expectedClassCount)
-        
-        var classes = [AnyClass]()
-        for i in 0 ..< actualClassCount {
-            classes.append(allClasses[Int(i)])
+        var classCount: UInt32 = 0
+        guard let classList = ObjectiveC.objc_copyClassList(&classCount) else {
+            return []
         }
-        allClasses.deallocate()
-        return classes
+        defer { free(UnsafeMutableRawPointer(classList)) }
+        return Array(UnsafeBufferPointer(start: classList, count: Int(classCount)))
     }
     
     static func objc_getSafeClassList(ignoredPrefixes: [String]? = nil) -> [AnyClass] {
