@@ -42,7 +42,8 @@ public class SpanSdk: ReadableSpan, @unchecked Sendable {
     get { lock.withReaderLock { internalStatus } }
     set {
       lock.withWriterLock {
-        if !internalEnd {
+        // Ok is final and an attempt to set Unset is ignored, as the specification requires.
+        if !internalEnd, !internalStatus.isOk, newValue != .unset {
           internalStatus = newValue
         }
       }

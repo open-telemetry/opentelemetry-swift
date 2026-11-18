@@ -125,13 +125,46 @@ class SpanSdkTest: XCTestCase {
     let span = createTestSpan(kind: .consumer)
     testClock.advanceMillis(millisPerSecond)
     XCTAssertEqual(span.toSpanData().status, Status.unset)
-    span.status = .ok
-    XCTAssertEqual(span.toSpanData().status, Status.ok)
     span.status = .error(description: "GenericError")
     XCTAssertTrue(span.toSpanData().status.isError)
     span.end()
     span.status = .ok
     XCTAssertTrue(span.toSpanData().status.isError)
+  }
+
+  func testSetStatusFollowsPrecedence() {
+    let span = createTestSpan(kind: .consumer)
+    span.status = .error(description: "GenericError")
+    span.status = .unset
+    XCTAssertEqual(span.toSpanData().status, Status.error(description: "GenericError"))
+    span.status = .error(description: "LaterError")
+    XCTAssertEqual(span.toSpanData().status, Status.error(description: "LaterError"))
+    span.status = .ok
+    XCTAssertEqual(span.toSpanData().status, Status.ok)
+    span.status = .error(description: "GenericError")
+    XCTAssertEqual(span.toSpanData().status, Status.ok)
+    span.status = .unset
+    XCTAssertEqual(span.toSpanData().status, Status.ok)
+    span.end()
+  }
+
+  func testPutHttpStatusCodeLeavesSuccessUnset() {
+    let span = createTestSpan(kind: .client)
+    span.putHttpStatusCode(statusCode: 200, reasonPhrase: "OK")
+    XCTAssertEqual(span.toSpanData().status, Status.unset)
+    span.putHttpStatusCode(statusCode: 302, reasonPhrase: "Found")
+    XCTAssertEqual(span.toSpanData().status, Status.unset)
+    span.status = .error(description: "BadBody")
+    XCTAssertEqual(span.toSpanData().status, Status.error(description: "BadBody"))
+    span.end()
+  }
+
+  func testPutHttpStatusCodeSetsErrorForFailures() {
+    let span = createTestSpan(kind: .client)
+    span.putHttpStatusCode(statusCode: 503, reasonPhrase: "Service Unavailable")
+    XCTAssertEqual(span.toSpanData().status, Status.error(description: "Service Unavailable"))
+    XCTAssertEqual(span.toSpanData().attributes[SemanticConventions.Http.responseStatusCode.rawValue], AttributeValue.int(503))
+    span.end()
   }
 
   func testGetSpanKind() {
