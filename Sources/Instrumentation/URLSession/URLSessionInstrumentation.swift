@@ -433,6 +433,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
           if completionBlock != nil {
             if objc_getAssociatedObject(argument, &idKey) == nil {
               let completionWrapper: (Any?, URLResponse?, Error?) -> Void = { object, response, error in
+                defer { self.removeRequestState(forTaskId: sessionTaskId) }
                 let payload = self.shouldRecordPayload(for: session, taskId: sessionTaskId, response: response) ? self.payloadWithinLimit(object) : nil
                 if error != nil {
                   let status = (response as? HTTPURLResponse)?.statusCode ?? 0
@@ -507,6 +508,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
           var completionBlock = completion
           if objc_getAssociatedObject(argument, &idKey) == nil {
             let completionWrapper: (Any?, URLResponse?, Error?) -> Void = { object, response, error in
+              defer { self.removeRequestState(forTaskId: sessionTaskId) }
               let payload = self.shouldRecordPayload(for: session, taskId: sessionTaskId, response: response) ? self.payloadWithinLimit(object) : nil
               if error != nil {
                 let status = (response as? HTTPURLResponse)?.statusCode ?? 0
@@ -989,6 +991,10 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
   /// The request recorded for `taskId`, while the task is still being tracked.
   func request(forTaskId taskId: String) -> URLRequest? {
     queue.sync { requestMap[taskId]?.request }
+  }
+
+  private func removeRequestState(forTaskId taskId: String) {
+    queue.sync { requestMap[taskId] = nil }
   }
 
   /// Marks a task whose completion handler reports the response itself, so the setState fallback
