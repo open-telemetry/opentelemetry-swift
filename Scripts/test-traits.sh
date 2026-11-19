@@ -41,6 +41,9 @@ swift build --build-tests --disable-default-traits
 log "No traits: test"
 swift test --disable-default-traits
 
+log "No traits: check gRPC constructor diagnostics"
+bash Scripts/check-trait-diagnostics.sh
+
 log "All traits: build with tests"
 swift build --build-tests --enable-all-traits
 
