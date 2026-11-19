@@ -9,6 +9,58 @@
 import XCTest
 import SharedTestUtils
 
+// Private URLSessionTask selector the instrumentation swizzles as its completion fallback.
+private let setStateSelector = NSSelectorFromString("setState:")
+
+/// Serves a fixed response body for one sentinel host, so tests can exercise the payload path.
+/// Scoped to that host so registering it cannot affect any other request in the process.
+final class PayloadStubURLProtocol: URLProtocol {
+  static let host = "payload.stub"
+  nonisolated(unsafe) static var body = Data("{\"message\":\"hello\"}".utf8)
+
+  override class func canInit(with request: URLRequest) -> Bool {
+    request.url?.host == host
+  }
+
+  override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+  override func startLoading() {
+    let url = request.url ?? URL(string: "http://\(Self.host)/")!
+    let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil,
+                                   headerFields: ["Content-Type": "application/json"])!
+    client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+    client?.urlProtocol(self, didLoad: Self.body)
+    client?.urlProtocolDidFinishLoading(self)
+  }
+
+  override func stopLoading() {}
+}
+
+/// Declares a Content-Length far larger than the small body it actually sends, so tests can tell
+/// a decision made from the declared length apart from one made from the bytes received.
+final class LargeContentLengthStubURLProtocol: URLProtocol {
+  static let host = "large-content-length.stub"
+  static let body = Data("{\"message\":\"hello\"}".utf8)
+  static let declaredContentLength = 1_000_000
+
+  override class func canInit(with request: URLRequest) -> Bool {
+    request.url?.host == host
+  }
+
+  override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+  override func startLoading() {
+    let url = request.url ?? URL(string: "http://\(Self.host)/")!
+    let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil,
+                                   headerFields: ["Content-Length": String(Self.declaredContentLength)])!
+    client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+    client?.urlProtocol(self, didLoad: Self.body)
+    client?.urlProtocolDidFinishLoading(self)
+  }
+
+  override func stopLoading() {}
+}
+
 class URLSessionInstrumentationTests: XCTestCase {
   class Check {
     public var shouldRecordPayloadCalled: Bool = false
@@ -32,6 +84,21 @@ class URLSessionInstrumentationTests: XCTestCase {
     func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {
       semaphore.signal()
     }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+      semaphore.signal()
+    }
+  }
+
+  /// Implements didReceive, so the instrumentation's payload path runs for this session.
+  final class DataReceivingDelegate: NSObject, URLSessionDelegate, URLSessionDataDelegate, @unchecked Sendable {
+    let semaphore: DispatchSemaphore
+
+    init(semaphore: DispatchSemaphore) {
+      self.semaphore = semaphore
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {}
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
       semaphore.signal()
@@ -89,6 +156,8 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
+  nonisolated(unsafe) static var receivedResponseRequest: URLRequest?
+
   nonisolated(unsafe) static var createdSpanIds = [String]()
 
   nonisolated(unsafe) static var requestCopy: URLRequest!
@@ -135,6 +204,9 @@ class URLSessionInstrumentationTests: XCTestCase {
                                                                responseCopy = response as? HTTPURLResponse
                                                                receivedDataOrFile = dataOrFile
                                                                checker.receivedResponseCalled = true
+                                                             },
+                                                             receivedResponseWithRequest: { _, _, _, request in
+                                                               receivedResponseRequest = request
                                                              },
                                                              receivedError: { _, _, _, _ in
                                                                URLSessionInstrumentationTests.checker.receivedErrorCalled = true
@@ -192,6 +264,7 @@ class URLSessionInstrumentationTests: XCTestCase {
     sessionDelegate = SessionDelegate(semaphore: URLSessionInstrumentationTests.semaphore)
     URLSessionInstrumentationTests.requestCopy = nil
     URLSessionInstrumentationTests.responseCopy = nil
+    URLSessionInstrumentationTests.receivedResponseRequest = nil
     URLSessionInstrumentationTests.receivedDataOrFile = nil
     URLSessionInstrumentationTests.createdSpanIds.removeAll()
     XCTAssertEqual(0, URLSessionInstrumentationTests.instrumentation.startedRequestSpans.count)
@@ -435,6 +508,99 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
     XCTAssertEqual(URLSessionInstrumentationTests.responseCopy.statusCode, 403)
     XCTAssertEqual(URLSessionInstrumentationTests.receivedDataOrFile as? Data, expectedBody)
+  }
+
+  public func testDelegateDoesNotRecordPayloadLargerThanMaxRecordedPayloadSize() throws {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = 8
+    defer { URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = nil }
+    let server = HttpTestServer(url: nil, config: HttpTestServerConfig())
+    try server.start()
+    defer { server.stop() }
+    let expectedBody = Data("success response body".utf8)
+    let delegate = PayloadSessionDelegate(semaphore: URLSessionInstrumentationTests.semaphore)
+    let session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
+    let request = URLRequest(url: URL(string: "http://127.0.0.1:\(server.serverPort)/success-with-body")!)
+
+    session.dataTask(with: request).resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertEqual(delegate.receivedData, expectedBody)
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertNil(URLSessionInstrumentationTests.receivedDataOrFile)
+  }
+
+  public func testDelegateRecordsPayloadWithinMaxRecordedPayloadSize() throws {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = 1024
+    defer { URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = nil }
+    let server = HttpTestServer(url: nil, config: HttpTestServerConfig())
+    try server.start()
+    defer { server.stop() }
+    let expectedBody = Data("success response body".utf8)
+    let delegate = PayloadSessionDelegate(semaphore: URLSessionInstrumentationTests.semaphore)
+    let session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
+    let request = URLRequest(url: URL(string: "http://127.0.0.1:\(server.serverPort)/success-with-body")!)
+
+    session.dataTask(with: request).resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertEqual(delegate.receivedData, expectedBody)
+    XCTAssertEqual(URLSessionInstrumentationTests.receivedDataOrFile as? Data, expectedBody)
+  }
+
+  public func testDelegateDoesNotRecordPayloadWhoseContentLengthExceedsMaxRecordedPayloadSize() {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = 1024
+    defer { URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = nil }
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.protocolClasses = [LargeContentLengthStubURLProtocol.self]
+    let delegate = PayloadSessionDelegate(semaphore: URLSessionInstrumentationTests.semaphore)
+    let session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
+    let url = URL(string: "http://\(LargeContentLengthStubURLProtocol.host)/body")!
+
+    session.dataTask(with: URLRequest(url: url)).resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertEqual(delegate.receivedData, LargeContentLengthStubURLProtocol.body)
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertNil(URLSessionInstrumentationTests.receivedDataOrFile)
+  }
+
+  public func testCompletionHandlerAppliesMaxRecordedPayloadSizeLikeTheDelegatePath() {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = 8
+    defer { URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = nil }
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.protocolClasses = [PayloadStubURLProtocol.self]
+    let session = URLSession(configuration: configuration)
+    let url = URL(string: "http://\(PayloadStubURLProtocol.host)/body")!
+    nonisolated(unsafe) var callerReceivedBody: Data?
+
+    session.dataTask(with: URLRequest(url: url)) { data, _, _ in
+      callerReceivedBody = data
+      URLSessionInstrumentationTests.semaphore.signal()
+    }.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertEqual(callerReceivedBody, PayloadStubURLProtocol.body)
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertNil(URLSessionInstrumentationTests.receivedDataOrFile)
+  }
+
+  public func testDownloadTaskFileURLIsNotAffectedByMaxRecordedPayloadSize() {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = 1
+    defer { URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = nil }
+    let request = URLRequest(url: URL(string: "http://localhost:33333/success")!)
+
+    URLSession.shared.downloadTask(with: request) { _, _, _ in
+      URLSessionInstrumentationTests.semaphore.signal()
+    }.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertNotNil(URLSessionInstrumentationTests.receivedDataOrFile as? URL)
   }
 
   public func testConfigurationCallbacksCalledWhenForbidden() throws {
@@ -1344,6 +1510,135 @@ class URLSessionInstrumentationTests: XCTestCase {
     wait { task.state == .completed }
   }
 
+  /// receivedResponse is given the request the response belongs to, so a consumer can correlate the
+  /// two without keeping its own table of in-flight requests keyed by task.
+  public func testReceivedResponseIsGivenTheOriginatingRequest() {
+    let url = URL(string: "http://localhost:33333/success")!
+    let reported = expectReceivedResponseWithRequest()
+    let session = URLSession(configuration: .default, delegate: sessionDelegate, delegateQueue: nil)
+    let task = session.dataTask(with: URLRequest(url: url))
+    task.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+    wait(for: [reported], timeout: 5)
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertEqual(URLSessionInstrumentationTests.receivedResponseRequest?.url, url)
+  }
+
+  /// A task with no delegate and no completion handler is reported by the setState fallback, which
+  /// must still be able to hand receivedResponseWithRequest the request.
+  public func testReceivedResponseIsGivenTheRequestWithoutADelegateOrCompletionHandler() {
+    let url = URL(string: "http://localhost:33333/success")!
+    let reported = expectReceivedResponseWithRequest()
+    let session = URLSession(configuration: .ephemeral)
+    defer { session.finishTasksAndInvalidate() }
+    session.dataTask(with: URLRequest(url: url)).resume()
+    wait(for: [reported], timeout: 5)
+
+    XCTAssertEqual(URLSessionInstrumentationTests.receivedResponseRequest?.url, url)
+  }
+
+  /// The response can be reported from a URLSession thread after the delegate has already been
+  /// called, so tests wait on this rather than on the delegate to read what the callback recorded.
+  private func expectReceivedResponseWithRequest() -> XCTestExpectation {
+    let reported = expectation(description: "receivedResponseWithRequest is called")
+    let instrumentation = URLSessionInstrumentationTests.instrumentation!
+    let original = instrumentation.configuration.receivedResponseWithRequest
+    instrumentation.configuration.receivedResponseWithRequest = { response, dataOrFile, span, request in
+      original?(response, dataOrFile, span, request)
+      reported.fulfill()
+    }
+    addTeardownBlock { instrumentation.configuration.receivedResponseWithRequest = original }
+    return reported
+  }
+
+  /// The per-request payload callback is asked with the request it is deciding about, so an app can
+  /// record payloads for some endpoints without turning it on for the whole session.
+  public func testPerRequestPayloadCallbackIsAskedWithTheRequest() {
+    URLProtocol.registerClass(PayloadStubURLProtocol.self)
+    defer { URLProtocol.unregisterClass(PayloadStubURLProtocol.self) }
+
+    let url = URL(string: "http://\(PayloadStubURLProtocol.host)/body")!
+    nonisolated(unsafe) var askedFor = [URL]()
+    let askedLock = NSLock()
+
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayloadForRequest = { request in
+      if let requestURL = request.url {
+        askedLock.withLock { askedFor.append(requestURL) }
+      }
+      return true
+    }
+    defer {
+      URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayloadForRequest = nil
+    }
+
+    let delegate = DataReceivingDelegate(semaphore: URLSessionInstrumentationTests.semaphore)
+    let configuration = URLSessionConfiguration.default
+    configuration.protocolClasses = [PayloadStubURLProtocol.self]
+    let session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
+    let task = session.dataTask(with: URLRequest(url: url))
+    task.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    let observed = askedLock.withLock { askedFor }
+    XCTAssertEqual(observed.first, url, "the callback should be asked about the request being sent")
+  }
+
+  /// `shouldRecordPayload` defaults to off and the session-delegate path honours it, but the
+  /// completion handler path handed the response body to `receivedResponse` regardless. An app that
+  /// never opted in still received response bodies in its telemetry callback.
+  public func testCompletionHandlerHonoursShouldRecordPayload() {
+    let url = URL(string: "http://localhost:33333/success")!
+    nonisolated(unsafe) var callerReceivedBody: Data?
+
+    let task = URLSession.shared.dataTask(with: URLRequest(url: url)) { data, _, _ in
+      callerReceivedBody = data
+      URLSessionInstrumentationTests.semaphore.signal()
+    }
+    task.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertNotNil(callerReceivedBody, "the caller's completion handler must still get its data")
+    XCTAssertNil(URLSessionInstrumentationTests.receivedDataOrFile,
+                 "payload recording is disabled, so no body should reach receivedResponse")
+  }
+
+
+  /// The completion handler paths go through the same gate as the session delegate path, so the
+  /// per-request callback decides for them too rather than being silently ignored.
+  public func testCompletionHandlerHonoursPerRequestPayloadCallback() {
+    let url = URL(string: "http://\(PayloadStubURLProtocol.host)/body")!
+    nonisolated(unsafe) var askedFor = [URL]()
+    let askedLock = NSLock()
+
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayloadForRequest = { request in
+      if let requestURL = request.url {
+        askedLock.withLock { askedFor.append(requestURL) }
+      }
+      return true
+    }
+    defer {
+      URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayloadForRequest = nil
+    }
+
+    let configuration = URLSessionConfiguration.default
+    configuration.protocolClasses = [PayloadStubURLProtocol.self]
+    let session = URLSession(configuration: configuration)
+
+    let task = session.dataTask(with: URLRequest(url: url)) { _, _, _ in
+      URLSessionInstrumentationTests.semaphore.signal()
+    }
+    task.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertEqual(askedLock.withLock { askedFor }.first, url,
+                   "the per-request callback should decide for completion handler tasks too")
+    XCTAssertEqual((URLSessionInstrumentationTests.receivedDataOrFile as? Data),
+                   PayloadStubURLProtocol.body,
+                   "recording was allowed for this request, so the body should reach receivedResponse")
+  }
+
   /// A task with no session delegate and no completion handler has its span started by the factory
   /// swizzle, and before the setState fallback there was nothing left to end it: the span stayed in
   /// runningSpans for the lifetime of the process.
@@ -1378,6 +1673,81 @@ class URLSessionInstrumentationTests: XCTestCase {
                   "the span started at resume was never ended: \(leaked.count) still running")
   }
 
+  final class HoldInDidReceiveDataDelegate: NSObject, URLSessionDataDelegate, @unchecked Sendable {
+    let inDidReceiveData = DispatchSemaphore(value: 0)
+    let release = DispatchSemaphore(value: 0)
+    let completed = DispatchSemaphore(value: 0)
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+      inDidReceiveData.signal()
+      release.wait()
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask,
+                    didBecome downloadTask: URLSessionDownloadTask) {}
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+      guard !(task is SetStateInterleavingTask) else { return }
+      completed.signal()
+    }
+  }
+
+  /// The delegate completion path reads `response` right after taking the task's recorded state, so
+  /// the first read runs the setState: fallback inside that path's window.
+  final class SetStateInterleavingTask: URLSessionDownloadTask, @unchecked Sendable {
+    private var stubResponse: URLResponse?
+    private var interleaved = false
+
+    // URLSessionTask.init() is deprecated for real tasks; this fake is never resumed.
+    static func make(response: URLResponse) -> SetStateInterleavingTask? {
+      let task = (self as NSObject.Type).init() as? SetStateInterleavingTask
+      task?.stubResponse = response
+      return task
+    }
+
+    override var error: Error? { nil }
+
+    override var response: URLResponse? {
+      if !interleaved {
+        interleaved = true
+        typealias SetStateIMP = @convention(c) (AnyObject, Selector, URLSessionTask.State) -> Void
+        unsafeBitCast(method(for: setStateSelector), to: SetStateIMP.self)(self, setStateSelector, .completed)
+      }
+      return stubResponse
+    }
+  }
+
+  /// The setState fallback and the delegate callbacks report the same task from different queues.
+  /// Whichever one ends the span must end it with the payload the delegate path recorded.
+  public func testPayloadIsKeptWhenSetStateFallbackRunsInsideDelegateCompletion() throws {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    let server = HttpTestServer(url: nil, config: HttpTestServerConfig())
+    try server.start()
+    defer { server.stop() }
+    let url = try XCTUnwrap(URL(string: "http://127.0.0.1:\(server.serverPort)/success-with-body"))
+    let delegate = HoldInDidReceiveDataDelegate()
+    let session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
+    defer { session.finishTasksAndInvalidate() }
+    let task = session.dataTask(with: URLRequest(url: url))
+    task.resume()
+    XCTAssertEqual(delegate.inDidReceiveData.wait(timeout: .now() + 5), .success)
+
+    let response = try XCTUnwrap(HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil))
+    let interleavingTask = try XCTUnwrap(SetStateInterleavingTask.make(response: response))
+    // Called through the protocol so the calls go through the ObjC runtime and reach the swizzles.
+    let dispatched: URLSessionDataDelegate = delegate
+    dispatched.urlSession?(session, dataTask: task, didBecome: interleavingTask)
+    dispatched.urlSession?(session, task: interleavingTask, didCompleteWithError: nil)
+
+    delegate.release.signal()
+    XCTAssertEqual(delegate.completed.wait(timeout: .now() + 5), .success)
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertEqual(URLSessionInstrumentationTests.responseCopy?.statusCode, 200)
+    XCTAssertEqual(URLSessionInstrumentationTests.receivedDataOrFile as? Data, Data("success response body".utf8),
+                   "the span was ended without the payload the delegate path had recorded")
+  }
+
   /// A WebSocket opening handshake is an HTTP request, so it stays instrumented.
   ///
   /// The two overloads differ: `webSocketTask(with: URL)` is rewritten by Foundation to `http`,
@@ -1389,7 +1759,8 @@ class URLSessionInstrumentationTests: XCTestCase {
     let session = URLSession(configuration: .ephemeral)
     let task = session.webSocketTask(with: URLRequest(url: URL(string: "ws://localhost:33333/socket")!))
 
-    // urlSessionTaskWillResume only reaches the instrumentation from an async context.
+    // Resumed from an async context; the non-async path is covered by
+    // testWebSocketTaskResumedOutsideSwiftConcurrencyIsInstrumented.
     await Task { task.resume() }.value
     wait { URLSessionInstrumentationTests.checker.createdRequestCalled }
     task.cancel()
@@ -1399,6 +1770,107 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?
       .allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent],
                     "the handshake should still carry traceparent")
+  }
+
+  /// A task that no factory swizzle instruments, such as a WebSocket handshake, can only get its
+  /// span from resume. Resuming it from ordinary, non-async code must start that span too, and the
+  /// span must be ended once the task completes.
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testWebSocketTaskResumedOutsideSwiftConcurrencyIsInstrumented() {
+    let session = URLSession(configuration: .ephemeral)
+    assertResumeOutsideSwiftConcurrencyStartsAndEndsSpan(in: session)
+  }
+
+  /// Same as above for a session that has a delegate, which the async-context heuristic on
+  /// iOS 15/macOS 12 never treats as async.
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testWebSocketTaskOnDelegateSessionResumedOutsideSwiftConcurrencyIsInstrumented() {
+    let session = URLSession(configuration: .ephemeral, delegate: sessionDelegate, delegateQueue: nil)
+    assertResumeOutsideSwiftConcurrencyStartsAndEndsSpan(in: session)
+  }
+
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  private func assertResumeOutsideSwiftConcurrencyStartsAndEndsSpan(in session: URLSession,
+                                                                    file: StaticString = #filePath,
+                                                                    line: UInt = #line) {
+    let task = session.webSocketTask(with: URLRequest(url: URL(string: "ws://localhost:33333/socket")!))
+
+    task.resume()
+    wait { URLSessionInstrumentationTests.checker.createdRequestCalled }
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled,
+                  "a task resumed outside a Swift Task should still start a span", file: file, line: line)
+    XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?
+      .allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent],
+                    "the handshake should carry traceparent", file: file, line: line)
+
+    task.cancel()
+    wait { URLSessionInstrumentationTests.instrumentation.startedRequestSpans.isEmpty }
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedErrorCalled,
+                  "the cancelled task's completion should be reported", file: file, line: line)
+    XCTAssertTrue(URLSessionInstrumentationTests.instrumentation.startedRequestSpans.isEmpty,
+                  "the span started at resume should be ended", file: file, line: line)
+  }
+
+  /// A completion-handler task reports its own completion, so the setState fallback skips it. A
+  /// later resume of the finished task must not start a span that nothing will ever end.
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testResumingCompletedDataTaskWithCompletionHandlerStartsNoSpan() {
+    let url = URL(string: "http://localhost:33333/success")!
+    let task = URLSession.shared.dataTask(with: URLRequest(url: url)) { _, _, _ in
+      URLSessionInstrumentationTests.semaphore.signal()
+    }
+    assertResumingCompletedTaskStartsNoSpan(task)
+  }
+
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testResumingCompletedUploadTaskWithCompletionHandlerStartsNoSpan() {
+    var request = URLRequest(url: URL(string: "http://localhost:33333/success")!)
+    request.httpMethod = "POST"
+    let task = URLSession.shared.uploadTask(with: request, from: Data("body".utf8)) { _, _, _ in
+      URLSessionInstrumentationTests.semaphore.signal()
+    }
+    assertResumingCompletedTaskStartsNoSpan(task)
+  }
+
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  private func assertResumingCompletedTaskStartsNoSpan(_ task: URLSessionTask,
+                                                       file: StaticString = #filePath,
+                                                       line: UInt = #line) {
+    task.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+    wait { task.state == .completed && URLSessionInstrumentationTests.instrumentation.startedRequestSpans.isEmpty }
+    let requestsBeforeResume = URLSessionInstrumentationTests.checker.createdRequestCount
+
+    task.resume()
+
+    XCTAssertEqual(URLSessionInstrumentationTests.checker.createdRequestCount, requestsBeforeResume,
+                   "resuming a completed task should not start another span", file: file, line: line)
+    XCTAssertTrue(URLSessionInstrumentationTests.instrumentation.startedRequestSpans.isEmpty,
+                  "no span should be left running after resuming a completed task", file: file, line: line)
+  }
+
+  /// The completion handler can run before the `setState:` swizzle has finished, so a resume from
+  /// inside the handler must not start a span either.
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testResumingTaskFromItsOwnCompletionHandlerStartsNoSpan() {
+    let url = URL(string: "http://localhost:33333/success")!
+    nonisolated(unsafe) var task: URLSessionTask?
+    nonisolated(unsafe) var requestsBeforeResume = 0
+    task = URLSession.shared.dataTask(with: URLRequest(url: url)) { _, _, _ in
+      requestsBeforeResume = URLSessionInstrumentationTests.checker.createdRequestCount
+      task?.resume()
+      URLSessionInstrumentationTests.semaphore.signal()
+    }
+    task?.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertEqual(URLSessionInstrumentationTests.checker.createdRequestCount, requestsBeforeResume,
+                   "resuming a task from its completion handler should not start another span")
+    wait { URLSessionInstrumentationTests.instrumentation.startedRequestSpans.isEmpty }
+    XCTAssertTrue(URLSessionInstrumentationTests.instrumentation.startedRequestSpans.isEmpty,
+                  "no span should be left running after resuming from the completion handler")
   }
 
   /// Checking for an existing span and starting one must be atomic. Two threads resuming the same
@@ -1430,4 +1902,176 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertEqual(count, 1, "two concurrent resumes must start a single span")
   }
 
+
+  /// `ignoredClassPrefixes` was stored but never read, so setting it excluded nothing.
+  ///
+  /// The scan runs once per process, during the first initializer, so it cannot be re-run from a
+  /// test with a different configuration. This exercises the exclusion decision itself, which is
+  /// what the scan consults for every class it considers.
+  public func testIgnoredClassPrefixesExcludeMatchingClasses() {
+    let cls: AnyClass = SessionDelegate.self
+    let name = NSStringFromClass(cls)
+    XCTAssertFalse(name.isEmpty)
+
+    XCTAssertFalse(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: nil),
+                   "nothing is excluded when no prefixes are given")
+    XCTAssertFalse(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: []),
+                   "an empty list excludes nothing")
+    XCTAssertFalse(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: ["NotAPrefixOfAnything"]),
+                   "a prefix that does not match leaves the class instrumented")
+    XCTAssertFalse(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: [""]),
+                   "an empty prefix must not exclude everything")
+
+    XCTAssertTrue(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: [String(name.prefix(6))]),
+                  "a matching prefix excludes the class")
+    XCTAssertTrue(URLSessionInstrumentation.isExcludedFromInstrumentation(cls, ignoredPrefixes: ["NotAMatch", String(name.prefix(6))]),
+                  "any one of the prefixes matching is enough")
+  }
+
+
+
+  /// Covers the selection step the search performs, so that removing the exclusion check from it
+  /// fails here rather than only changing behaviour at runtime.
+  public func testScanOmitsClassesMatchingIgnoredPrefixes() {
+    let cls: AnyClass = SessionDelegate.self
+    let name = NSStringFromClass(cls)
+    let selectors = [#selector(URLSessionDataDelegate.urlSession(_:task:didCompleteWithError:))]
+
+    let selected = URLSessionInstrumentation.delegateClassesToInject(
+      from: [cls], matching: selectors, ignoredPrefixes: nil)
+    XCTAssertTrue(selected.contains { $0 === cls },
+                  "the class implements the selector, so the search should select it")
+
+    let withIgnoredPrefix = URLSessionInstrumentation.delegateClassesToInject(
+      from: [cls], matching: selectors, ignoredPrefixes: [String(name.prefix(6))])
+    XCTAssertTrue(withIgnoredPrefix.isEmpty,
+                  "a class matching an ignored prefix must not be selected")
+
+    let withUnrelatedPrefix = URLSessionInstrumentation.delegateClassesToInject(
+      from: [cls], matching: selectors, ignoredPrefixes: ["NotAPrefixOfAnything"])
+    XCTAssertTrue(withUnrelatedPrefix.contains { $0 === cls },
+                  "a prefix that does not match must leave the class selected")
+  }
+
+  /// Session delegates that implement none of the scanned selectors, so the startup scan never
+  /// selects them and only resuming a task could instrument them. One per test, so that one test
+  /// instrumenting its class cannot hide the result of the other.
+  final class IgnoredPrefixSuccessDelegate: NSObject, URLSessionDelegate, @unchecked Sendable {
+    func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {}
+  }
+
+  final class IgnoredPrefixErrorDelegate: NSObject, URLSessionDelegate, @unchecked Sendable {
+    func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {}
+  }
+
+  public func testResumeDoesNotInstrumentIgnoredDelegateOnSuccess() {
+    assertResumeLeavesIgnoredDelegateUninstrumented(delegate: IgnoredPrefixSuccessDelegate(),
+                                                    url: "http://localhost:33333/success")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertFalse(URLSessionInstrumentationTests.checker.receivedErrorCalled)
+  }
+
+  public func testResumeDoesNotInstrumentIgnoredDelegateOnError() {
+    assertResumeLeavesIgnoredDelegateUninstrumented(delegate: IgnoredPrefixErrorDelegate(),
+                                                    url: "http://localhost:33333/error")
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedErrorCalled)
+  }
+
+  /// Resuming a task instruments its session delegate lazily. A delegate matching
+  /// `ignoredClassPrefixes` must be left alone on that path too, and the request's span must still
+  /// end, since the span is started before the delegate is considered.
+  private func assertResumeLeavesIgnoredDelegateUninstrumented(delegate: URLSessionDelegate & NSObject,
+                                                               url: String,
+                                                               file: StaticString = #filePath,
+                                                               line: UInt = #line) {
+    let cls: AnyClass = type(of: delegate)
+    let didComplete = #selector(URLSessionDataDelegate.urlSession(_:task:didCompleteWithError:))
+    XCTAssertNil(class_getInstanceMethod(cls, didComplete),
+                 "precondition: the delegate starts without the method instrumenting it would add",
+                 file: file, line: line)
+
+    // The callbacks run on a URLSession thread, after the span has been removed from the running
+    // spans. Waiting on this expectation orders their writes before the reads below.
+    let reported = expectation(description: "the task's completion is reported")
+
+    let instrumentation = URLSessionInstrumentationTests.instrumentation!
+    let original = instrumentation.configuration
+    instrumentation.configuration = URLSessionInstrumentationConfiguration(
+      createdRequest: { _, _ in URLSessionInstrumentationTests.checker.createdRequestCalled = true },
+      receivedResponse: { _, _, _ in
+        URLSessionInstrumentationTests.checker.receivedResponseCalled = true
+        reported.fulfill()
+      },
+      receivedError: { _, _, _, _ in
+        URLSessionInstrumentationTests.checker.receivedErrorCalled = true
+        reported.fulfill()
+      },
+      ignoredClassPrefixes: [NSStringFromClass(cls)]
+    )
+    defer { instrumentation.configuration = original }
+
+    let session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
+    defer { session.finishTasksAndInvalidate() }
+    let task = session.dataTask(with: URLRequest(url: URL(string: url)!))
+    task.resume()
+
+    wait(for: [reported], timeout: 5)
+
+    XCTAssertNil(class_getInstanceMethod(cls, didComplete),
+                 "resuming a task instrumented a delegate that ignoredClassPrefixes excludes",
+                 file: file, line: line)
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled,
+                  "the request should still be traced", file: file, line: line)
+    let leaked = instrumentation.startedRequestSpans
+    XCTAssertTrue(leaked.isEmpty,
+                  "nothing ended the span: \(leaked.count) still running", file: file, line: line)
+  }
+
+  public func testDataTaskCompletionHandlerDoesNotLeakRequestState() {
+    assertNoRequestStateLeft { session, url, completion in
+      session.dataTask(with: URLRequest(url: url), completionHandler: completion)
+    }
+  }
+
+  public func testUploadTaskCompletionHandlerDoesNotLeakRequestState() {
+    assertNoRequestStateLeft { session, url, completion in
+      session.uploadTask(with: URLRequest(url: url), from: Data(), completionHandler: completion)
+    }
+  }
+
+  private func assertNoRequestStateLeft(
+    makeTask: (URLSession, URL, @escaping @Sendable (Data?, URLResponse?, Error?) -> Void) -> URLSessionTask,
+    file: StaticString = #filePath, line: UInt = #line
+  ) {
+    URLProtocol.registerClass(PayloadStubURLProtocol.self)
+    defer { URLProtocol.unregisterClass(PayloadStubURLProtocol.self) }
+
+    let url = URL(string: "http://\(PayloadStubURLProtocol.host)/\(UUID().uuidString)")!
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.protocolClasses = [PayloadStubURLProtocol.self]
+    let session = URLSession(configuration: configuration)
+
+    let task = makeTask(session, url) { _, _, _ in
+      URLSessionInstrumentationTests.semaphore.signal()
+    }
+    task.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+    wait { task.state == .completed }
+
+    let pending = pendingRequestStates(of: URLSessionInstrumentationTests.instrumentation)
+      .filter { $0.request?.url == url }
+    XCTAssertTrue(pending.isEmpty, "request state was never removed: \(pending.count) entry still held",
+                  file: file, line: line)
+  }
+
+  private func pendingRequestStates(of instrumentation: URLSessionInstrumentation) -> [NetworkRequestState] {
+    func child<T>(_ label: String) -> T? {
+      Mirror(reflecting: instrumentation).children.first { $0.label == label }?.value as? T
+    }
+    guard let queue: DispatchQueue = child("queue") else { return [] }
+    return queue.sync {
+      let requestMap: [String: NetworkRequestState]? = child("requestMap")
+      return requestMap.map { Array($0.values) } ?? []
+    }
+  }
 }

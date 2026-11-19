@@ -88,7 +88,7 @@ extension SemanticConventions {
       attributes[SemanticConventions.File.extension.rawValue] = "gz"
       ```
 
-     - Note: When the file name has multiple extensions (example.tar.gz), only the last one should be captured ("gz", not "tar.gz").
+     - Note: When the filename has multiple extensions (example.tar.gz), only the last one should be captured ("gz", not "tar.gz").
 
      - Requires: Value type should be `String`
     */
@@ -103,7 +103,7 @@ extension SemanticConventions {
       ```
 
      - Note: On Linux, a resource fork is used to store additional data with a filesystem object. A file always has at least one fork for the data portion, and additional forks may exist.
-       On NTFS, this is analogous to an Alternate Data Stream (ADS), and the default data stream for a file is just called $DATA. Zone.Identifier is commonly used by Windows to track contents downloaded from the Internet. An ADS is typically of the form: C:\path\to\filename.extension:some_fork_name, and some_fork_name is the value that should populate `fork_name`. `filename.extension` should populate `file.name`, and `extension` should populate `file.extension`. The full path, `file.path`, will include the fork name.
+       On NTFS, this is analogous to an Alternate Data Stream (ADS), and the default data stream for a file is just called $DATA. Zone.Identifier is commonly used by Windows to track contents downloaded from the internet. An ADS is typically of the form: C:\path\to\filename.extension:some_fork_name, and some_fork_name is the value that should populate `fork_name`. `filename.extension` should populate `file.name`, and `extension` should populate `file.extension`. The full path, `file.path`, will include the fork name.
 
      - Requires: Value type should be `String`
     */
@@ -144,6 +144,49 @@ extension SemanticConventions {
      - Requires: Value type should be `String`
     */
     case inode = "file.inode"
+
+    /**
+     The lock mechanism such as noted by [POSIX](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fcntl.html)
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.File.lockMechanism.rawValue] = "POSIX"
+      attributes[SemanticConventions.File.lockMechanism.rawValue] = "FLOCK"
+      attributes[SemanticConventions.File.lockMechanism.rawValue] = "DELEG"
+      attributes[SemanticConventions.File.lockMechanism.rawValue] = "LEASE"
+      ```
+
+     - Requires: Value type should be `String`
+    */
+    case lockMechanism = "file.lock.mechanism"
+
+    /**
+     Mode of lock or operation such as documented by [POSIX](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fcntl.html)
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.File.lockMode.rawValue] = "ADVISORY"
+      attributes[SemanticConventions.File.lockMode.rawValue] = "MANDATORY"
+      attributes[SemanticConventions.File.lockMode.rawValue] = "BREAKING"
+      attributes[SemanticConventions.File.lockMode.rawValue] = "ACTIVE"
+      attributes[SemanticConventions.File.lockMode.rawValue] = "BREAKER"
+      ```
+
+     - Requires: Value type should be `String`
+    */
+    case lockMode = "file.lock.mode"
+
+    /**
+     The lock type as represented by i.e. [POSIX](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fcntl.html)'s l_type.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.File.lockType.rawValue] = .read
+      ```
+
+     - Requires: Value should be one of ``LockTypeValues`` (of type `String`)
+    */
+    case lockType = "file.lock.type"
 
     /**
      Mode of the file in octal representation.
@@ -206,7 +249,7 @@ extension SemanticConventions {
     case ownerName = "file.owner.name"
 
     /**
-     Full path to the file, including the file name. It should include the drive letter, when appropriate.
+     Full path to the file, including the filename. It should include the drive letter, when appropriate.
 
       - Examples:
       ```
@@ -238,5 +281,23 @@ extension SemanticConventions {
      - Requires: Value type should be `String`
     */
     case symbolicLinkTargetPath = "file.symbolic_link.target_path"
+
+    /** 
+      The lock type as represented by i.e. [POSIX](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fcntl.html)'s l_type.
+    */
+    public struct LockTypeValues: CustomStringConvertible, Sendable {
+      public static let read = LockTypeValues("read") 
+      public static let write = LockTypeValues("write") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
   }
 }

@@ -99,15 +99,15 @@ let package = Package(
   traits: Set(packageTraits + [.default(enabledTraits: enableAllTraits ? Set(packageTraits.map(\.name)) : [])]),
   dependencies: [
     .package(url: "https://github.com/apple/swift-atomics.git", from: "1.3.1"),
-    .package(url: "https://github.com/apple/swift-nio.git", from: "2.104.0"),
+    .package(url: "https://github.com/apple/swift-nio.git", from: "2.105.0"),
     .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.27.6"),
     .package(
       url: "https://github.com/apple/swift-protobuf.git",
-      from: "1.39.0"
+      from: "1.41.0"
     ),
-    .package(url: "https://github.com/apple/swift-log.git", from: "1.16.2"),
-    .package(url: "https://github.com/apple/swift-metrics.git", from: "2.13.0"),
-    .package(url: "https://github.com/apple/swift-distributed-tracing.git", from: "1.7.3")
+    .package(url: "https://github.com/apple/swift-log.git", from: "1.17.2"),
+    .package(url: "https://github.com/apple/swift-metrics.git", from: "2.13.1"),
+    .package(url: "https://github.com/apple/swift-distributed-tracing.git", from: "1.7.4")
   ],
   targets: [
     .target(
@@ -531,7 +531,8 @@ extension Package {
         .testTarget(
           name: "NetworkStatusTests",
           dependencies: [
-            "NetworkStatus"
+            "NetworkStatus",
+            "OpenTelemetrySdk",
           ],
           path: "Tests/InstrumentationTests/NetworkStatusTests"
         ),

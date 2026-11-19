@@ -73,7 +73,7 @@ extension SemanticConventions {
     case connectionState = "network.connection.state"
 
     /**
-     This describes more details regarding the connection.type. It may be the type of cell technology connection, but it could be used for describing details about a wifi connection.
+     This describes more details regarding the connection.type. It may be the type of cell technology connection, but it could be used for describing details about a Wi-Fi connection.
 
       - Examples:
       ```
@@ -110,7 +110,7 @@ extension SemanticConventions {
     case interfaceName = "network.interface.name"
 
     /**
-     The network IO operation direction.
+     The direction of traffic from the perspective of the observing host's physical or virtual network interface. It should not be used to represent the logical direction of a stateful connection or network flow.
 
       - Examples:
       ```
@@ -122,7 +122,7 @@ extension SemanticConventions {
     case ioDirection = "network.io.direction"
 
     /**
-     Local address of the network connection - IP address or Unix domain socket name.
+     Local address of the network connection - IP address or UNIX domain socket name.
 
       - Examples:
       ```
@@ -133,6 +133,53 @@ extension SemanticConventions {
      - Requires: Value type should be `String`
     */
     case localAddress = "network.local.address"
+
+    /**
+     The [Autonomous System Number (ASN)](https://www.iana.org/assignments/as-numbers/as-numbers.xhtml) associated with the local IP address.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Network.localAsNumber.rawValue] = 64496
+      attributes[SemanticConventions.Network.localAsNumber.rawValue] = 15169
+      ```
+
+     - Note: This attribute SHOULD only be set when the local address is an IP address and the ASN is available from routing, enrichment, or lookup data. The value SHOULD be represented as an integer without the `AS` prefix.
+
+     - Requires: Value type should be `Int`
+    */
+    case localAsNumber = "network.local.as.number"
+
+    /**
+     The name of the organization associated with the autonomous system of the local IP address.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Network.localAsOrganization.rawValue] = "Example Networks Inc."
+      attributes[SemanticConventions.Network.localAsOrganization.rawValue] = "Google LLC"
+      ```
+
+     - Note: This attribute SHOULD only be set when `network.local.as.number` is set and the organization name is available. The value SHOULD be the organization name as provided by the lookup or enrichment source, not the AS name or short code.
+
+     - Requires: Value type should be `String`
+    */
+    case localAsOrganization = "network.local.as.organization"
+
+    /**
+     Local Media Access Control (MAC) address of the network connection.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Network.localMacAddress.rawValue] = "00-00-5E-00-53-23"
+      ```
+
+     - Note: MAC addresses MUST be represented in [IEEE RA hexadecimal form](https://standards.ieee.org/wp-content/uploads/import/documents/tutorials/eui.pdf):
+       as hyphen-separated octets in uppercase hexadecimal form from most to least significant.
+
+       > [!WARNING]> This attribute may contain sensitive (PII) information.
+
+     - Requires: Value type should be `String`
+    */
+    case localMacAddress = "network.local.mac.address"
 
     /**
      Local port number of the network connection.
@@ -147,7 +194,42 @@ extension SemanticConventions {
     case localPort = "network.local.port"
 
     /**
-     Peer address of the network connection - IP address or Unix domain socket name.
+     The IP prefix associated with the local IP address, in CIDR notation.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Network.localPrefix.rawValue] = "192.0.2.0/24"
+      attributes[SemanticConventions.Network.localPrefix.rawValue] = "2001:db8::/32"
+      ```
+
+     - Note: > [!WARNING]> This attribute may contain sensitive (PII) information. A `/32`>  IPv4 prefix
+       > or `/128`>  IPv6 prefix preserves the complete endpoint IP address.
+       > Using CIDR notation does not guarantee that the data is anonymous.
+
+       The value MUST be an IPv4 or IPv6 network prefix in CIDR notation, as defined in
+       [RFC 4632](https://www.rfc-editor.org/rfc/rfc4632.html) for IPv4 and
+       [RFC 4291](https://www.rfc-editor.org/rfc/rfc4291.html#section-2.3) for IPv6.
+       IPv4 prefixes MUST use a dotted-decimal address followed by `/` and a decimal
+       prefix length from 0 to 32. IPv6 prefixes MUST use the canonical address text
+       representation defined in [RFC 5952](https://www.rfc-editor.org/rfc/rfc5952.html),
+       followed by `/` and a decimal prefix length from 0 to 128. All host bits in
+       the address MUST be set to zero. The value MUST NOT contain a domain name,
+       UNIX domain socket name, or IPv6 zone identifier.
+
+       Instrumentation or Collector receivers that populate this attribute MUST
+       convert native representations, such as an address and subnet mask or an
+       address and prefix length, to equivalent CIDR notation before emitting it.
+
+       This attribute MAY be set whether or not `network.local.address` is set. If
+       `network.local.address` is also set to an IP address, it MUST use the same IP version
+       and be contained in this prefix.
+
+     - Requires: Value type should be `String`
+    */
+    case localPrefix = "network.local.prefix"
+
+    /**
+     Peer address of the network connection - IP address or UNIX domain socket name.
 
       - Examples:
       ```
@@ -160,6 +242,53 @@ extension SemanticConventions {
     case peerAddress = "network.peer.address"
 
     /**
+     The [Autonomous System Number (ASN)](https://www.iana.org/assignments/as-numbers/as-numbers.xhtml) associated with the peer IP address.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Network.peerAsNumber.rawValue] = 64496
+      attributes[SemanticConventions.Network.peerAsNumber.rawValue] = 15169
+      ```
+
+     - Note: This attribute SHOULD only be set when the peer address is an IP address and the ASN is available from routing, enrichment, or lookup data. The value SHOULD be represented as an integer without the `AS` prefix.
+
+     - Requires: Value type should be `Int`
+    */
+    case peerAsNumber = "network.peer.as.number"
+
+    /**
+     The name of the organization associated with the autonomous system of the peer IP address.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Network.peerAsOrganization.rawValue] = "Example Networks Inc."
+      attributes[SemanticConventions.Network.peerAsOrganization.rawValue] = "Google LLC"
+      ```
+
+     - Note: This attribute SHOULD only be set when `network.peer.as.number` is set and the organization name is available. The value SHOULD be the organization name as provided by the lookup or enrichment source, not the AS name or short code.
+
+     - Requires: Value type should be `String`
+    */
+    case peerAsOrganization = "network.peer.as.organization"
+
+    /**
+     Peer Media Access Control (MAC) address of the network connection.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Network.peerMacAddress.rawValue] = "00-00-5E-00-53-23"
+      ```
+
+     - Note: MAC addresses MUST be represented in [IEEE RA hexadecimal form](https://standards.ieee.org/wp-content/uploads/import/documents/tutorials/eui.pdf):
+       as hyphen-separated octets in uppercase hexadecimal form from most to least significant.
+
+       > [!WARNING]> This attribute may contain sensitive (PII) information.
+
+     - Requires: Value type should be `String`
+    */
+    case peerMacAddress = "network.peer.mac.address"
+
+    /**
      Peer port number of the network connection.
 
       - Examples:
@@ -170,6 +299,41 @@ extension SemanticConventions {
      - Requires: Value type should be `Int`
     */
     case peerPort = "network.peer.port"
+
+    /**
+     The IP prefix associated with the peer IP address, in CIDR notation.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Network.peerPrefix.rawValue] = "192.0.2.0/24"
+      attributes[SemanticConventions.Network.peerPrefix.rawValue] = "2001:db8::/32"
+      ```
+
+     - Note: > [!WARNING]> This attribute may contain sensitive (PII) information. A `/32`>  IPv4 prefix
+       > or `/128`>  IPv6 prefix preserves the complete endpoint IP address.
+       > Using CIDR notation does not guarantee that the data is anonymous.
+
+       The value MUST be an IPv4 or IPv6 network prefix in CIDR notation, as defined in
+       [RFC 4632](https://www.rfc-editor.org/rfc/rfc4632.html) for IPv4 and
+       [RFC 4291](https://www.rfc-editor.org/rfc/rfc4291.html#section-2.3) for IPv6.
+       IPv4 prefixes MUST use a dotted-decimal address followed by `/` and a decimal
+       prefix length from 0 to 32. IPv6 prefixes MUST use the canonical address text
+       representation defined in [RFC 5952](https://www.rfc-editor.org/rfc/rfc5952.html),
+       followed by `/` and a decimal prefix length from 0 to 128. All host bits in
+       the address MUST be set to zero. The value MUST NOT contain a domain name,
+       UNIX domain socket name, or IPv6 zone identifier.
+
+       Instrumentation or Collector receivers that populate this attribute MUST
+       convert native representations, such as an address and subnet mask or an
+       address and prefix length, to equivalent CIDR notation before emitting it.
+
+       This attribute MAY be set whether or not `network.peer.address` is set. If
+       `network.peer.address` is also set to an IP address, it MUST use the same IP version
+       and be contained in this prefix.
+
+     - Requires: Value type should be `String`
+    */
+    case peerPrefix = "network.peer.prefix"
 
     /**
      [OSI application layer](https://wikipedia.org/wiki/Application_layer) or non-OSI equivalent.
@@ -264,7 +428,7 @@ extension SemanticConventions {
     }
 
     /** 
-      This describes more details regarding the connection.type. It may be the type of cell technology connection, but it could be used for describing details about a wifi connection.
+      This describes more details regarding the connection.type. It may be the type of cell technology connection, but it could be used for describing details about a Wi-Fi connection.
     */
     public struct ConnectionSubtypeValues: CustomStringConvertible, Sendable {
       
@@ -346,6 +510,8 @@ extension SemanticConventions {
       The internet connection type.
     */
     public struct ConnectionTypeValues: CustomStringConvertible, Sendable {
+      
+      /// Wi-Fi
       public static let wifi = ConnectionTypeValues("wifi") 
       public static let wired = ConnectionTypeValues("wired") 
       public static let cell = ConnectionTypeValues("cell") 
@@ -364,7 +530,7 @@ extension SemanticConventions {
     }
 
     /** 
-      The network IO operation direction.
+      The direction of traffic from the perspective of the observing host's physical or virtual network interface. It should not be used to represent the logical direction of a stateful connection or network flow.
     */
     public struct IoDirectionValues: CustomStringConvertible, Sendable {
       public static let transmit = IoDirectionValues("transmit") 
@@ -395,7 +561,7 @@ extension SemanticConventions {
       /// Named or anonymous pipe.
       public static let pipe = TransportValues("pipe") 
       
-      /// Unix domain socket
+      /// UNIX domain socket
       public static let unix = TransportValues("unix") 
       
       /// QUIC

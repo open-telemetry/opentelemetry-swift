@@ -44,7 +44,9 @@ public enum ResponsePayloadRecordingMode {
 
 public struct URLSessionInstrumentationConfiguration {
   public init(shouldRecordPayload: ((URLSession) -> (Bool)?)? = nil,
+              shouldRecordPayloadForRequest: ((URLRequest) -> (Bool)?)? = nil,
               responsePayloadRecordingMode: ResponsePayloadRecordingMode = .all,
+              maxRecordedPayloadSize: Int? = nil,
               shouldInstrument: ((URLRequest) -> (Bool)?)? = nil,
               nameSpan: ((URLRequest) -> (String)?)? = nil,
               spanCustomization: ((URLRequest, SpanBuilder) -> Void)? = nil,
@@ -52,6 +54,7 @@ public struct URLSessionInstrumentationConfiguration {
               injectCustomHeaders: ((inout URLRequest, Span?) -> Void)? = nil,
               createdRequest: ((URLRequest, Span) -> Void)? = nil,
               receivedResponse: ((URLResponse, DataOrFile?, Span) -> Void)? = nil,
+              receivedResponseWithRequest: ((URLResponse, DataOrFile?, Span, URLRequest?) -> Void)? = nil,
               receivedError: ((Error, DataOrFile?, HTTPStatus, Span) -> Void)? = nil,
               delegateClassesToInstrument: [AnyClass]? = nil,
               baggageProvider: ((inout URLRequest, Span?) -> (Baggage)?)? = nil,
@@ -59,7 +62,9 @@ public struct URLSessionInstrumentationConfiguration {
               ignoredClassPrefixes: [String]? = nil,
               semanticConvention: HTTPSemanticConvention = .old) {
     self.shouldRecordPayload = shouldRecordPayload
+    self.shouldRecordPayloadForRequest = shouldRecordPayloadForRequest
     self.responsePayloadRecordingMode = responsePayloadRecordingMode
+    self.maxRecordedPayloadSize = maxRecordedPayloadSize
     self.shouldInstrument = shouldInstrument
     self.shouldInjectTracingHeaders = shouldInjectTracingHeaders
     self.injectCustomHeaders = injectCustomHeaders
@@ -67,6 +72,7 @@ public struct URLSessionInstrumentationConfiguration {
     self.spanCustomization = spanCustomization
     self.createdRequest = createdRequest
     self.receivedResponse = receivedResponse
+    self.receivedResponseWithRequest = receivedResponseWithRequest
     self.receivedError = receivedError
     self.delegateClassesToInstrument = delegateClassesToInstrument
     self.baggageProvider = baggageProvider
@@ -88,9 +94,28 @@ public struct URLSessionInstrumentationConfiguration {
   /// does not affect the payload delivered to the application's own delegate or completion handler.
   public var shouldRecordPayload: ((URLSession) -> (Bool)?)?
 
+  /// Implement this callback to decide payload recording per request rather than per session.
+  ///
+  /// A session is usually shared across every call an app makes, so `shouldRecordPayload` can only
+  /// answer for all of them at once. This is consulted first, and `shouldRecordPayload` is used when
+  /// it is not implemented or returns nil, so existing behaviour is unchanged.
+  public var shouldRecordPayloadForRequest: ((URLRequest) -> (Bool)?)?
+
   /// Controls whether all response payloads or only HTTP error payloads are passed to the
-  /// instrumentation callbacks after payload recording is enabled through `shouldRecordPayload`.
+  /// instrumentation callbacks after payload recording is enabled through `shouldRecordPayloadForRequest` or
+  /// `shouldRecordPayload`.
   public var responsePayloadRecordingMode: ResponsePayloadRecordingMode
+
+  /// Upper bound, in bytes, on a response payload passed to `receivedResponse` and `receivedError`.
+  /// `nil`, the default, leaves payloads unbounded.
+  ///
+  /// A payload larger than the limit is dropped rather than truncated, and the callbacks receive `nil`.
+  /// For delegate-based requests the instrumentation stops buffering as soon as the limit is crossed, or
+  /// up front when the response declares a `Content-Length` above it, so its memory stays within the limit.
+  /// For completion-handler requests URLSession has already built the whole body, so the limit only keeps
+  /// the callbacks consistent with the delegate path. Download file URLs are passed through unchanged.
+  /// It does not affect the payload delivered to the application's own delegate or completion handler.
+  public var maxRecordedPayloadSize: Int?
 
   /// Implement this callback to filter which requests you want to inject headers to follow the trace,
   /// also must implement it if you want to inject custom headers
@@ -112,6 +137,14 @@ public struct URLSessionInstrumentationConfiguration {
 
   ///  Called before the span is ended, it allows to add extra information to the Span
   public var receivedResponse: ((URLResponse, DataOrFile?, Span) -> Void)?
+
+  ///  Called before the span is ended, like `receivedResponse`, and additionally given the request
+  ///  the response belongs to where it is still known.
+  ///
+  ///  Use this instead of `receivedResponse` when a response has to be correlated with what was
+  ///  sent, rather than keeping a side table of in flight requests. Both are called if both are
+  ///  implemented.
+  public var receivedResponseWithRequest: ((URLResponse, DataOrFile?, Span, URLRequest?) -> Void)?
 
   ///  Called before the span is ended, it allows to add extra information to the Span
   public var receivedError: ((Error, DataOrFile?, HTTPStatus, Span) -> Void)?

@@ -11,7 +11,7 @@ extension SemanticConventions {
   public enum Hw: String {
 
     /**
-     Design capacity in Watts-hours or Amper-hours
+     Design capacity in Watts-hours or Ampere-hours
 
       - Examples:
       ```

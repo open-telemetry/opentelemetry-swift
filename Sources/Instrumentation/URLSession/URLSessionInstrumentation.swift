@@ -14,6 +14,7 @@ import OpenTelemetrySdk
 struct NetworkRequestState {
   var request: URLRequest?
   var dataProcessed: Data?
+  var payloadExceededLimit = false
 
   mutating func setRequest(_ request: URLRequest) {
     self.request = request
@@ -63,6 +64,19 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
   static let excludeList: [String] = [
     "__NSCFURLProxySessionConnection"
   ]
+
+  /// Whether `cls` is excluded from delegate instrumentation, either by the built in exclude list
+  /// or by the caller's `ignoredClassPrefixes`.
+  static func isExcludedFromInstrumentation(_ cls: AnyClass, ignoredPrefixes: [String]?) -> Bool {
+    let name = NSStringFromClass(cls)
+    if excludeList.contains(name) {
+      return true
+    }
+    guard let ignoredPrefixes else {
+      return false
+    }
+    return ignoredPrefixes.contains { !$0.isEmpty && name.hasPrefix($0) }
+  }
 
   static let AVTaskClassList: [AnyClass] = [
     "__NSCFBackgroundAVAggregateAssetDownloadTask",
@@ -125,37 +139,11 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     let classes =
       configuration.delegateClassesToInstrument
         ?? InstrumentationUtils.objc_getClassList()
-    let selectorsCount = selectors.count
-    DispatchQueue.concurrentPerform(iterations: classes.count) { iteration in
-      let theClass: AnyClass = classes[iteration]
-      guard theClass != Self.self else { return }
-      var selectorFound = false
-      var methodCount: UInt32 = 0
-      guard let methodList = class_copyMethodList(theClass, &methodCount) else {
-        return
-      }
-      defer { free(methodList) }
 
-      var foundClasses: [AnyClass] = []
-      for j in 0 ..< selectorsCount {
-        for i in 0 ..< Int(methodCount)
-          where method_getName(methodList[i]) == selectors[j] {
-          selectorFound = true
-          foundClasses.append(theClass)
-        }
-        if selectorFound {
-          break
-        }
-      }
-
-      foundClasses.removeAll { cls in
-        Self.excludeList.contains(NSStringFromClass(cls))
-      }
-
-      foundClasses.forEach { cls in
-        instrumentDelegateClassIfNeeded(cls)
-      }
-    }
+    Self.delegateClassesToInject(from: classes,
+                                 matching: selectors,
+                                 ignoredPrefixes: configuration.ignoredClassPrefixes)
+      .forEach { instrumentDelegateClassIfNeeded($0) }
 
     if #available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
       injectIntoNSURLSessionCreateTaskMethods()
@@ -167,13 +155,57 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     injectIntoNSURLSessionTaskSetState()
   }
 
-  /// Instruments `cls` unless it already has been. Injecting twice would report each task
-  /// completion once per installation.
+  /// The classes from `classes` that implement one of `selectors` and are not excluded.
+  ///
+  /// Separated from the injection so that the selection, including which classes the caller's
+  /// `ignoredClassPrefixes` removes, can be exercised without installing anything.
+  static func delegateClassesToInject(from classes: [AnyClass],
+                                      matching selectors: [Selector],
+                                      ignoredPrefixes: [String]?) -> [AnyClass] {
+    var found = [AnyClass]()
+    let foundLock = NSLock()
+
+    DispatchQueue.concurrentPerform(iterations: classes.count) { iteration in
+      let theClass: AnyClass = classes[iteration]
+      guard theClass != Self.self else { return }
+      // Checked before the method list is copied, so an excluded class costs nothing to skip.
+      guard !isExcludedFromInstrumentation(theClass, ignoredPrefixes: ignoredPrefixes) else {
+        return
+      }
+
+      var methodCount: UInt32 = 0
+      guard let methodList = class_copyMethodList(theClass, &methodCount) else {
+        return
+      }
+      defer { free(methodList) }
+
+      let implemented = UnsafeBufferPointer(start: methodList, count: Int(methodCount))
+      guard implemented.contains(where: { selectors.contains(method_getName($0)) }) else {
+        return
+      }
+
+      foundLock.lock()
+      found.append(theClass)
+      foundLock.unlock()
+    }
+
+    return found
+  }
+
+  /// Instruments `cls` unless it already has been or is excluded. Injecting twice would report each
+  /// task completion once per installation.
+  ///
+  /// The exclusion is checked here rather than only in the startup scan because resuming a task
+  /// also instruments its session delegate, and that path must honour `ignoredClassPrefixes` too.
   ///
   /// The lock is held across the injection, not just the bookkeeping: a caller that finds the class
   /// already recorded must be able to rely on its callbacks being installed, otherwise a task
   /// resuming concurrently could start before the delegate has been modified.
   private func instrumentDelegateClassIfNeeded(_ cls: AnyClass) {
+    guard !Self.isExcludedFromInstrumentation(cls, ignoredPrefixes: configuration.ignoredClassPrefixes) else {
+      return
+    }
+
     Self.instrumentedDelegateClassesLock.lock()
     defer { Self.instrumentedDelegateClassesLock.unlock() }
 
@@ -401,14 +433,16 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
           if completionBlock != nil {
             if objc_getAssociatedObject(argument, &idKey) == nil {
               let completionWrapper: (Any?, URLResponse?, Error?) -> Void = { object, response, error in
-                let payload = self.shouldRecordPayload(for: session, response: response) ? object : nil
+                defer { self.removeRequestState(forTaskId: sessionTaskId) }
+                let payload = self.shouldRecordPayload(for: session, taskId: sessionTaskId, response: response) ? self.payloadWithinLimit(object) : nil
                 if error != nil {
                   let status = (response as? HTTPURLResponse)?.statusCode ?? 0
                   URLSessionLogger.logError(error!, dataOrFile: payload, statusCode: status,
                                             instrumentation: self, sessionTaskId: sessionTaskId)
                 } else {
                   if let response {
-                    URLSessionLogger.logResponse(response, dataOrFile: payload, instrumentation: self,
+                    URLSessionLogger.logResponse(response, dataOrFile: payload,
+                                                 request: self.request(forTaskId: sessionTaskId), instrumentation: self,
                                                  sessionTaskId: sessionTaskId)
                   }
                 }
@@ -474,14 +508,16 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
           var completionBlock = completion
           if objc_getAssociatedObject(argument, &idKey) == nil {
             let completionWrapper: (Any?, URLResponse?, Error?) -> Void = { object, response, error in
-              let payload = self.shouldRecordPayload(for: session, response: response) ? object : nil
+              defer { self.removeRequestState(forTaskId: sessionTaskId) }
+              let payload = self.shouldRecordPayload(for: session, taskId: sessionTaskId, response: response) ? self.payloadWithinLimit(object) : nil
               if error != nil {
                 let status = (response as? HTTPURLResponse)?.statusCode ?? 0
                 URLSessionLogger.logError(error!, dataOrFile: payload, statusCode: status,
                                           instrumentation: self, sessionTaskId: sessionTaskId)
               } else {
                 if let response {
-                  URLSessionLogger.logResponse(response, dataOrFile: payload, instrumentation: self,
+                  URLSessionLogger.logResponse(response, dataOrFile: payload,
+                                               request: self.request(forTaskId: sessionTaskId), instrumentation: self,
                                                sessionTaskId: sessionTaskId)
                 }
               }
@@ -724,15 +760,23 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
 
   // URLSessionTask methods
   private func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-    guard shouldRecordPayload(for: session, response: dataTask.response) else { return }
-    guard let taskId = objc_getAssociatedObject(dataTask, &idKey) as? String
+    guard let taskId = objc_getAssociatedObject(dataTask, &idKey) as? String,
+          shouldRecordPayload(for: session, taskId: taskId, response: dataTask.response)
     else {
       return
     }
     let dataCopy = data
+    let limit = configuration.maxRecordedPayloadSize
     queue.sync {
       if (requestMap[taskId]?.request) != nil {
         createRequestState(for: taskId)
+        guard requestMap[taskId]?.payloadExceededLimit != true else { return }
+        let recordedSize = (requestMap[taskId]?.dataProcessed?.count ?? 0) + dataCopy.count
+        if let limit, recordedSize > limit {
+          requestMap[taskId]?.dataProcessed = nil
+          requestMap[taskId]?.payloadExceededLimit = true
+          return
+        }
         if requestMap[taskId]?.dataProcessed == nil {
           requestMap[taskId]?.dataProcessed = Data()
         }
@@ -744,19 +788,24 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
   private func urlSession(_ session: URLSession, dataTask: URLSessionDataTask,
                           didReceive response: URLResponse,
                           completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
-    guard shouldRecordPayload(for: session, response: response) else { return }
-    guard let taskId = objc_getAssociatedObject(dataTask, &idKey) as? String
+    guard let taskId = objc_getAssociatedObject(dataTask, &idKey) as? String,
+          shouldRecordPayload(for: session, taskId: taskId, response: response)
     else {
       return
     }
+    let expectedLength = response.expectedContentLength
+    let exceedsLimit = configuration.maxRecordedPayloadSize.map { expectedLength > Int64($0) } ?? false
     queue.sync {
       if (requestMap[taskId]?.request) != nil {
         createRequestState(for: taskId)
-        if response.expectedContentLength < 0 {
+        requestMap[taskId]?.payloadExceededLimit = exceedsLimit
+        if exceedsLimit {
+          requestMap[taskId]?.dataProcessed = nil
+        } else if expectedLength < 0 {
           requestMap[taskId]?.dataProcessed = Data()
         } else {
           requestMap[taskId]?.dataProcessed = Data(
-            capacity: Int(response.expectedContentLength))
+            capacity: Int(expectedLength))
         }
       }
     }
@@ -767,19 +816,17 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     guard let taskId = objc_getAssociatedObject(task, &idKey) as? String else {
       return
     }
-    var requestState: NetworkRequestState?
-    queue.sync {
-      requestState = requestMap[taskId]
-      if requestState != nil {
-        requestMap[taskId] = nil
-      }
-    }
+    // Cleared after logging rather than before: another path may be reporting the same task
+    // concurrently and still needs to read the request.
+    let requestState = queue.sync { requestMap[taskId] }
+    defer { queue.sync { requestMap[taskId] = nil } }
+
     if let error {
       let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
       URLSessionLogger.logError(error, dataOrFile: requestState?.dataProcessed, statusCode: status,
                                 instrumentation: self, sessionTaskId: taskId)
     } else if let response = task.response {
-      URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed,
+      URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed, request: requestState?.request,
                                    instrumentation: self, sessionTaskId: taskId)
     }
   }
@@ -798,18 +845,13 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     guard let taskId = objc_getAssociatedObject(task, &idKey) as? String else {
       return
     }
-    var requestState: NetworkRequestState?
-    queue.sync {
-      requestState = requestMap[taskId]
-
-      if requestState?.request != nil {
-        requestMap[taskId] = nil
-      }
-    }
-
+    let requestState = queue.sync { requestMap[taskId] }
     guard requestState?.request != nil else {
       return
     }
+    // Cleared after logging rather than before: another path may be reporting the same task
+    // concurrently and still needs to read the request.
+    defer { queue.sync { requestMap[taskId] = nil } }
 
     /// Code for instrumenting collection should be written here
     if let error = task.error {
@@ -817,15 +859,16 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       URLSessionLogger.logError(error, dataOrFile: requestState?.dataProcessed, statusCode: status,
                                 instrumentation: self, sessionTaskId: taskId)
     } else if let response = task.response {
-      URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed,
+      URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed, request: requestState?.request,
                                    instrumentation: self, sessionTaskId: taskId)
     }
   }
 
   private func urlSessionTaskWillResume(_ task: URLSessionTask) {
-    // A task whose completion has already been reported gets no second span: URLSession tasks are
-    // not restartable, so a later resume is the same logical request, not a new one.
-    guard objc_getAssociatedObject(task, &reportedKey) == nil else {
+    // A completed task gets no second span: URLSession tasks are not restartable, so a later resume
+    // is the same logical request, not a new one. A completion-handler task never gets `reportedKey`,
+    // and a resume from inside a handler can run before `setState:` sets it, so check the state too.
+    guard task.state != .completed, objc_getAssociatedObject(task, &reportedKey) == nil else {
       return
     }
 
@@ -843,8 +886,8 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     let taskId = idKeyForTask(task)
 
     // A session delegate that implements none of the selectors scanned in injectInNSURLClasses is
-    // never discovered there, so without this nothing would report this task's completion and the
-    // span started below would never be ended.
+    // never discovered there, so it is instrumented here instead. One excluded by
+    // ignoredClassPrefixes is skipped, and its task's span is ended by the setState: fallback.
     if let sessionDelegate = (task.value(forKey: "session") as? URLSession)?.delegate {
       instrumentDelegateClassIfNeeded(type(of: sessionDelegate))
     }
@@ -911,24 +954,19 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
         }
       }
 
-      if #available(OSX 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *) {
-        guard Task.basePriority != nil else {
-          // If not inside a Task basePriority is nil
-          return
-        }
+      guard #available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *) else { return }
 
-        let instrumentedRequest = URLSessionLogger.processAndLogRequest(request,
-                                                                        sessionTaskId: taskId,
-                                                                        instrumentation: self,
-                                                                        shouldInjectHeaders: true)
-        if let instrumentedRequest {
-          task.setValue(instrumentedRequest, forKey: "currentRequest")
-        }
-        self.setIdKey(value: taskId, for: task)
+      let instrumentedRequest = URLSessionLogger.processAndLogRequest(request,
+                                                                      sessionTaskId: taskId,
+                                                                      instrumentation: self,
+                                                                      shouldInjectHeaders: true)
+      if let instrumentedRequest {
+        task.setValue(instrumentedRequest, forKey: "currentRequest")
+      }
+      self.setIdKey(value: taskId, for: task)
 
-        if task.delegate == nil, task.state == .suspended, (task.value(forKey: "session") as? URLSession)?.delegate == nil {
-          task.delegate = FakeDelegate()
-        }
+      if task.delegate == nil, task.state == .suspended, (task.value(forKey: "session") as? URLSession)?.delegate == nil {
+        task.delegate = FakeDelegate()
       }
     }
   }
@@ -948,6 +986,15 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     let id = UUID().uuidString
     objc_setAssociatedObject(task, &idKey, id, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     return id
+  }
+
+  /// The request recorded for `taskId`, while the task is still being tracked.
+  func request(forTaskId taskId: String) -> URLRequest? {
+    queue.sync { requestMap[taskId]?.request }
+  }
+
+  private func removeRequestState(forTaskId taskId: String) {
+    queue.sync { requestMap[taskId] = nil }
   }
 
   /// Marks a task whose completion handler reports the response itself, so the setState fallback
@@ -1003,11 +1050,10 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       return
     }
 
-    var requestState: NetworkRequestState?
-    queue.sync {
-      requestState = requestMap[taskId]
-      requestMap[taskId] = nil
-    }
+    let requestState = queue.sync { requestMap[taskId] }
+    // Cleared after logging rather than before: another path may be reporting the same task
+    // concurrently and still needs to read the request.
+    defer { queue.sync { requestMap[taskId] = nil } }
 
     objc_setAssociatedObject(task, &reportedKey, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
 
@@ -1016,7 +1062,7 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       URLSessionLogger.logError(error, dataOrFile: requestState?.dataProcessed, statusCode: status,
                                 instrumentation: self, sessionTaskId: taskId)
     } else if let response = task.response {
-      URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed,
+      URLSessionLogger.logResponse(response, dataOrFile: requestState?.dataProcessed, request: requestState?.request,
                                    instrumentation: self, sessionTaskId: taskId)
     }
   }
@@ -1033,10 +1079,31 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     }
   }
 
-  private func shouldRecordPayload(for session: URLSession, response: URLResponse?) -> Bool {
-    let configuration = configuration
-    guard configuration.shouldRecordPayload?(session) ?? false else { return false }
-    return configuration.responsePayloadRecordingMode.shouldRecordPayload(for: response)
+  /// Whether the payload should be recorded. The per-request callback is asked first, falling back
+  /// to the per-session one, and `responsePayloadRecordingMode` then filters by response.
+  private func shouldRecordPayload(for session: URLSession, taskId: String?, response: URLResponse?) -> Bool {
+    let config = configuration
+    let enabled = perRequestPayloadDecision(config, taskId: taskId) ?? config.shouldRecordPayload?(session) ?? false
+    guard enabled else { return false }
+    return config.responsePayloadRecordingMode.shouldRecordPayload(for: response)
+  }
+
+  private func payloadWithinLimit(_ object: Any?) -> Any? {
+    guard let limit = configuration.maxRecordedPayloadSize,
+          let data = object as? Data,
+          data.count > limit else {
+      return object
+    }
+    return nil
+  }
+
+  private func perRequestPayloadDecision(_ config: URLSessionInstrumentationConfiguration, taskId: String?) -> Bool? {
+    guard let decide = config.shouldRecordPayloadForRequest,
+          let taskId,
+          let request = queue.sync(execute: { requestMap[taskId]?.request }) else {
+      return nil
+    }
+    return decide(request)
   }
 }
 
@@ -1068,7 +1135,7 @@ final class AsyncTaskDelegate: NSObject, URLSessionTaskDelegate, @unchecked Send
       URLSessionLogger.logError(error, dataOrFile: nil, statusCode: status,
                                 instrumentation: instrumentation, sessionTaskId: taskId)
     } else if let response = task.response {
-      URLSessionLogger.logResponse(response, dataOrFile: nil,
+      URLSessionLogger.logResponse(response, dataOrFile: nil, request: instrumentation.request(forTaskId: taskId),
                                    instrumentation: instrumentation, sessionTaskId: taskId)
     }
   }

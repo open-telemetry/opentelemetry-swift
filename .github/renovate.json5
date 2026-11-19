@@ -7,6 +7,14 @@
   "ignoreDeps": [
      "open-telemetry/opentelemetry-swift-core"
   ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/workflows/BuildAndTest\\.yml$/"],
+      "matchStrings": ["image: (?<depName>swift):(?<currentValue>\\d+\\.\\d+\\.\\d+)@(?<currentDigest>sha256:[a-f0-9]+)"],
+      "datasourceTemplate": "docker"
+    }
+  ],
   "packageRules": [
     {
       "groupName": "all patch versions",
@@ -16,6 +24,20 @@
     {
       "matchUpdateTypes": ["minor", "major"],
       "schedule": ["before 8am on Monday"]
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": [".github/workflows/BuildAndTest.yml"],
+      "matchPackageNames": ["swift"],
+      "separateMinorPatch": true
+    },
+    {
+      "description": "Keep the Swift compatibility matrix on its selected minor versions",
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": [".github/workflows/BuildAndTest.yml"],
+      "matchPackageNames": ["swift"],
+      "matchUpdateTypes": ["minor", "major"],
+      "enabled": false
     }
   ],
   "labels": [

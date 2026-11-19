@@ -209,7 +209,8 @@ class URLSessionLogger {
   }
 
   /// This methods ends a Span when a response arrives
-  static func logResponse(_ response: URLResponse, dataOrFile: Any?, instrumentation: URLSessionInstrumentation, sessionTaskId: String) {
+  static func logResponse(_ response: URLResponse, dataOrFile: Any?, request: URLRequest?,
+                          instrumentation: URLSessionInstrumentation, sessionTaskId: String) {
     var span: Span!
     runningSpansQueue.sync {
       span = runningSpans.removeValue(forKey: sessionTaskId)
@@ -241,6 +242,7 @@ class URLSessionLogger {
     }
 
     instrumentation.configuration.receivedResponse?(response, dataOrFile, span)
+    instrumentation.configuration.receivedResponseWithRequest?(response, dataOrFile, span, request)
     span.end()
   }
 

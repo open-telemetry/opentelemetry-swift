@@ -20,11 +20,19 @@ extension SemanticConventions {
     /**
      The name of the space type of heap memory.
 
-     - Note: Value can be retrieved from value `space_name` of [`v8.getHeapSpaceStatistics()`](https://nodejs.org/api/v8.html#v8getheapspacestatistics)
+     - Note: Value can be retrieved from value `space_name` of [`v8.getHeapSpaceStatistics()`](https://nodejs.org/api/v8.html#v8getheapspacestatistics).
+       The set of reported spaces depends on the V8 version the runtime embeds.
 
      - Requires: Value should be one of ``HeapSpaceNameValues`` (of type `String`)
     */
     case heapSpaceName = "v8js.heap.space.name"
+
+    /**
+     The type of resource keeping the event loop active.
+
+     - Requires: Value should be one of ``ResourceTypeValues`` (of type `String`)
+    */
+    case resourceType = "v8js.resource.type"
 
     /** 
       The type of garbage collection.
@@ -73,6 +81,64 @@ extension SemanticConventions {
       
       /// Large object memory space.
       public static let largeObjectSpace = HeapSpaceNameValues("large_object_space") 
+      
+      /// Read-only memory space, holding immutable objects created at startup.
+      public static let readOnlySpace = HeapSpaceNameValues("read_only_space") 
+      
+      /// Memory space for objects shared across isolates (e.g. shared strings and structs).
+      public static let sharedSpace = HeapSpaceNameValues("shared_space") 
+      
+      /// Memory space for trusted objects kept outside the V8 sandbox (e.g. bytecode).
+      public static let trustedSpace = HeapSpaceNameValues("trusted_space") 
+      
+      /// Shared variant of the trusted memory space.
+      public static let sharedTrustedSpace = HeapSpaceNameValues("shared_trusted_space") 
+      
+      /// Large object space for young-generation objects.
+      public static let newLargeObjectSpace = HeapSpaceNameValues("new_large_object_space") 
+      
+      /// Large object space for code objects.
+      public static let codeLargeObjectSpace = HeapSpaceNameValues("code_large_object_space") 
+      
+      /// Large object space for shared objects.
+      public static let sharedLargeObjectSpace = HeapSpaceNameValues("shared_large_object_space") 
+      
+      /// Large object space for shared trusted objects.
+      public static let sharedTrustedLargeObjectSpace = HeapSpaceNameValues("shared_trusted_large_object_space") 
+      
+      /// Large object space for trusted objects.
+      public static let trustedLargeObjectSpace = HeapSpaceNameValues("trusted_large_object_space") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
+
+    /** 
+      The type of resource keeping the event loop active.
+    */
+    public struct ResourceTypeValues: CustomStringConvertible, Sendable {
+      
+      /// Active `setImmediate` callbacks.
+      public static let immediate = ResourceTypeValues("Immediate") 
+      
+      /// Active TCP Servers.
+      public static let tcpserverwrap = ResourceTypeValues("TCPServerWrap") 
+      
+      /// Active TCP connections.
+      public static let tcpwrap = ResourceTypeValues("TCPWrap") 
+      
+      /// Active `setTimeout` or `setInterval` timers.
+      public static let timeout = ResourceTypeValues("Timeout") 
+      
+      /// Active Terminal I/O (stdin/stdout).
+      public static let ttywrap = ResourceTypeValues("TTYWrap") 
 
       internal let value: String 
 

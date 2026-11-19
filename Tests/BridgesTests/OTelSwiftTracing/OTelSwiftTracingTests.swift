@@ -4,11 +4,27 @@ import XCTest
 import InMemoryExporter
 import OpenTelemetryApi
 import OpenTelemetrySdk
+import OTelSwiftTracing
 import Tracing
 
-@testable import OTelSwiftTracing
-
 final class OTelSwiftTracingTests: XCTestCase {
+  func testCurrentServiceContextExposesSpanIdentifiersAndFlags() throws {
+    let (tracer, exporter, processor) = makeTracer()
+    var currentContext: OpenTelemetryApi.SpanContext?
+
+    try tracer.withSpan("testSpan") { _ in
+      currentContext = try XCTUnwrap(ServiceContext.current?.otelSpanContext)
+    }
+
+    processor.forceFlush()
+    let context = try XCTUnwrap(currentContext)
+    let exportedSpan = try XCTUnwrap(exporter.getFinishedSpanItems().first)
+    XCTAssertTrue(context.isValid)
+    XCTAssertEqual(context.traceId, exportedSpan.traceId)
+    XCTAssertEqual(context.spanId, exportedSpan.spanId)
+    XCTAssertEqual(context.traceFlags, exportedSpan.traceFlags)
+  }
+
   func testSpanAttributes() throws {
     let (tracer, exporter, processor) = makeTracer()
 
@@ -36,6 +52,63 @@ final class OTelSwiftTracingTests: XCTestCase {
       exportedSpan.attributes["stringArray"],
       .array(AttributeArray(values: [.string("a"), .string("b")]))
     )
+  }
+
+  func testSpanAttributeSetToNilIsRemovedFromExportedSpan() throws {
+    let (tracer, exporter, processor) = makeTracer()
+
+    tracer.withSpan("testSpan") { span in
+      span.attributes["removed"] = "value"
+      span.attributes["kept"] = "value"
+      span.attributes["removed"] = nil
+    }
+
+    processor.forceFlush()
+    let exportedSpan = try XCTUnwrap(exporter.getFinishedSpanItems().first)
+
+    XCTAssertEqual(exportedSpan.attributes.count, 1)
+    XCTAssertNil(exportedSpan.attributes["removed"])
+    XCTAssertEqual(exportedSpan.attributes["kept"], .string("value"))
+  }
+
+  func testRepeatedAttributeUpdatesDoNotExhaustAttributeLimit() throws {
+    let (tracer, exporter, processor) = makeTracer()
+
+    tracer.withSpan("testSpan") { span in
+      span.attributes = ["a": "1", "b": "2", "c": "3", "d": "4", "e": "5"]
+      for iteration in 0..<50 {
+        span.attributes["counter"] = iteration
+      }
+      span.attributes["late"] = "value"
+    }
+
+    processor.forceFlush()
+    let exportedSpan = try XCTUnwrap(exporter.getFinishedSpanItems().first)
+
+    XCTAssertEqual(exportedSpan.attributes.count, 7)
+    XCTAssertEqual(exportedSpan.attributes["counter"], .int(49))
+    XCTAssertEqual(exportedSpan.attributes["late"], .string("value"))
+  }
+
+  func testAttributesChangedInPlaceBeforeThrowAreExported() throws {
+    struct Failure: Error {}
+    func mutateThenThrow(_ attributes: inout SpanAttributes) throws {
+      attributes["added"] = "value"
+      attributes["removed"] = nil
+      throw Failure()
+    }
+    let (tracer, exporter, processor) = makeTracer()
+
+    tracer.withSpan("testSpan") { span in
+      span.attributes["removed"] = "value"
+      try? mutateThenThrow(&span.attributes)
+    }
+
+    processor.forceFlush()
+    let exportedSpan = try XCTUnwrap(exporter.getFinishedSpanItems().first)
+
+    XCTAssertEqual(exportedSpan.attributes["added"], .string("value"))
+    XCTAssertNil(exportedSpan.attributes["removed"])
   }
 
   func testSpanExport() throws {

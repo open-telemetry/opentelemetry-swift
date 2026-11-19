@@ -19,7 +19,7 @@ extension SemanticConventions {
       attributes[SemanticConventions.UserAgent.name.rawValue] = "YourApp"
       ```
 
-     - Note: [Example](https://www.whatsmyua.info) of extracting browser's name from original string. In the case of using a user-agent for non-browser products, such as microservices with multiple names/versions inside the `user_agent.original`, the most significant name SHOULD be selected. In such a scenario it should align with `user_agent.version`
+     - Note: [Example](https://uaparser.dev/#demo) of extracting browser's name from original string. In the case of using a user-agent for non-browser products, such as microservices with multiple names/versions inside the `user_agent.original`, the most significant name SHOULD be selected. In such a scenario it should align with `user_agent.version`
 
      - Requires: Value type should be `String`
     */
@@ -88,7 +88,7 @@ extension SemanticConventions {
       attributes[SemanticConventions.UserAgent.version.rawValue] = "1.0.0"
       ```
 
-     - Note: [Example](https://www.whatsmyua.info) of extracting browser's version from original string. In the case of using a user-agent for non-browser products, such as microservices with multiple names/versions inside the `user_agent.original`, the most significant version SHOULD be selected. In such a scenario it should align with `user_agent.name`
+     - Note: [Example](https://uaparser.dev/#demo) of extracting browser's version from original string. In the case of using a user-agent for non-browser products, such as microservices with multiple names/versions inside the `user_agent.original`, the most significant version SHOULD be selected. In such a scenario it should align with `user_agent.name`
 
      - Requires: Value type should be `String`
     */

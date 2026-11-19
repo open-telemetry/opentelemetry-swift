@@ -52,6 +52,8 @@ check_mode() {
   log "$label: OK"
 }
 
+# Test the consumer defaults, regardless of the contributor's all-traits setup.
+unset OTEL_SWIFT_ENABLE_ALL_TRAITS
 unset TRAIT_PRUNING_TRAITS
 check_mode "default traits" \
   "grpc-swift swift-nio swift-nio-http2 swift-nio-ssl swift-nio-transport-services swift-nio-extras thrift-swift opentracing-objc kscrash swift-log swift-metrics swift-distributed-tracing" \

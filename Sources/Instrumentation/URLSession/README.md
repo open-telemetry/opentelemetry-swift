@@ -14,7 +14,13 @@ This behaviour can be modified or augmented by using the optional callbacks defi
 
 `shouldRecordPayload: ((URLSession) -> (Bool)?)?`: Return true to allow response payloads to be passed to the instrumentation callbacks, false by default. This applies to both delegate-based and completion-handler requests. Apps that rely on response bodies in `receivedResponse` or `receivedError` must set `shouldRecordPayload: { _ in true }`. It does not affect the payload delivered to the application's own delegate or completion handler.
 
-`responsePayloadRecordingMode: ResponsePayloadRecordingMode`: After payload recording is enabled through `shouldRecordPayload`, pass all response payloads (`.all`, the default) or only HTTP `400...599` response payloads (`.httpErrorsOnly`) to the instrumentation callbacks.
+`shouldRecordPayloadForRequest: ((URLRequest) -> (Bool)?)?`: Decide payload recording per request rather than per session, which is useful when one session serves endpoints that should be treated differently. Asked first, falling back to `shouldRecordPayload` when it is not implemented or returns nil.
+
+Payloads are not currently available for async/await requests: those report no payload regardless of these settings (see #1165).
+
+`responsePayloadRecordingMode: ResponsePayloadRecordingMode`: After payload recording is enabled through `shouldRecordPayloadForRequest` or `shouldRecordPayload`, pass all response payloads (`.all`, the default) or only HTTP `400...599` response payloads (`.httpErrorsOnly`) to the instrumentation callbacks.
+
+`maxRecordedPayloadSize: Int?`: Upper bound, in bytes, on a response payload passed to the instrumentation callbacks, unbounded (`nil`) by default. A larger payload is dropped, not truncated, and the callbacks receive `nil`. For delegate-based requests the instrumentation stops buffering once the limit is crossed, or does not start when the response declares a `Content-Length` above it, which bounds the memory it holds per request. For completion-handler requests URLSession has already built the whole body, so the limit there only keeps the callbacks consistent with the delegate path. Download file URLs are passed through unchanged. It does not affect the payload delivered to the application's own delegate or completion handler.
 
 `shouldInjectTracingHeaders: ((URLRequest) -> (Bool)?)?`: Allows filtering which requests you want to inject headers to follow the trace, true by default. You must also return true if you want to inject custom headers.
 
@@ -28,6 +34,30 @@ This behaviour can be modified or augmented by using the optional callbacks defi
 
 `receivedResponse: ((URLResponse, DataOrFile?, Span) -> Void)?`- Called after response is received,  it allows to add extra information to the Span
 
+`receivedResponseWithRequest: ((URLResponse, DataOrFile?, Span, URLRequest?) -> Void)?`- Like `receivedResponse`, and additionally given the request the response belongs to, for correlating the two. Both are called if both are implemented.
+
 `receivedError: ((Error, DataOrFile?, HTTPStatus, Span) -> Void)?` -  Called after an error is received,  it allows to add extra information to the Span
 
+`delegateClassesToInstrument: [AnyClass]?`: The session delegate classes to instrument. When this is `nil`, the instrumentation discovers them by examining **every class loaded in the process** at initialization, which is the default. Passing your delegate classes explicitly skips that search — see [Initialization cost](#initialization-cost) below.
+
 `baggageProvider: ((inout URLRequest, Span) -> (Baggage)?)?`: Provides baggage instance for instrumented requests that is merged with active baggage. The callback receives URLRequest and Span parameters to create dynamic baggage based on request context. The resulting baggage is injected into request headers using the configured propagator.
+
+## Initialization cost
+
+Creating `URLSessionInstrumentation` searches every class loaded in the process for session delegate methods and instruments the classes it finds. The cost of that search grows with the number of classes an app links, and in large apps it has been measured in the hundreds of milliseconds. Because it happens during initialization, that time lands on whatever is waiting for it, usually app launch.
+
+If you know your session delegate classes, pass them and the search is skipped entirely:
+
+```swift
+URLSessionInstrumentation(
+  configuration: URLSessionInstrumentationConfiguration(
+    delegateClassesToInstrument: [MyAPIClientDelegate.self, MyUploadDelegate.self]
+  )
+)
+```
+
+The list only decides which delegate classes are instrumented up front. A session delegate you leave out is instrumented the first time a task on its session is resumed, so its requests are still captured. Requests made with completion handlers or `async`/`await` are captured either way: completion handlers are wrapped when the task is created, and `async`/`await` requests are picked up when their task is resumed.
+
+A delegate assigned to an individual task through `URLSessionTask.delegate` is not instrumented on resume. Requests using it still get a span that ends when the task completes, and `receivedResponse` or `receivedError` is still called, but without the response body, because that delegate's callbacks are not instrumented. List those classes if you record response bodies with `shouldRecordPayload`.
+
+Note that deferring the initialization to get it off the launch path is not equivalent: requests made before the instrumentation exists are not captured, so early network calls go missing instead.

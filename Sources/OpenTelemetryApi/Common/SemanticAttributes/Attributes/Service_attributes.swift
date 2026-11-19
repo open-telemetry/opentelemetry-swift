@@ -11,6 +11,56 @@ extension SemanticConventions {
   public enum Service: String {
 
     /**
+     The operational criticality of the service.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Service.criticality.rawValue] = .critical
+      attributes[SemanticConventions.Service.criticality.rawValue] = .high
+      attributes[SemanticConventions.Service.criticality.rawValue] = .medium
+      attributes[SemanticConventions.Service.criticality.rawValue] = .low
+      ```
+
+     - Note: Application developers are encouraged to set `service.criticality` to express the operational importance of their services. Telemetry consumers MAY use this attribute to optimize telemetry collection or improve user experience.
+
+     - Requires: Value should be one of ``CriticalityValues`` (of type `String`)
+    */
+    case criticality = "service.criticality"
+
+    /**
+     Identifier of the cost center associated with the service instance.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Service.instanceCostCenterId.rawValue] = "94002"
+      attributes[SemanticConventions.Service.instanceCostCenterId.rawValue] = "111111111111"
+      attributes[SemanticConventions.Service.instanceCostCenterId.rawValue] = "cc-eng-402"
+      attributes[SemanticConventions.Service.instanceCostCenterId.rawValue] = "acc-83921"
+      ```
+
+     - Note: The cost center identifier enables tracking and attribution of service resource costs to organizational units, billing accounts, or teams. It is typically a string identifier such as a billing account ID, cost allocation code, or internal accounting ID.
+
+     - Requires: Value type should be `String`
+    */
+    case instanceCostCenterId = "service.instance.cost_center.id"
+
+    /**
+     Name of the cost center associated with the service instance.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Service.instanceCostCenterName.rawValue] = "engineering-platform"
+      attributes[SemanticConventions.Service.instanceCostCenterName.rawValue] = "marketing-campaigns"
+      attributes[SemanticConventions.Service.instanceCostCenterName.rawValue] = "research-and-development"
+      ```
+
+     - Note: A human-readable name of the cost center, department, or organizational unit responsible for the service instance costs.
+
+     - Requires: Value type should be `String`
+    */
+    case instanceCostCenterName = "service.instance.cost_center.name"
+
+    /**
      The string ID of the service instance.
 
       - Examples:
@@ -57,7 +107,8 @@ extension SemanticConventions {
       attributes[SemanticConventions.Service.name.rawValue] = "shoppingcart"
       ```
 
-     - Note: MUST be the same for all instances of horizontally scaled services. If the value was not specified, SDKs MUST fallback to `unknown_service:` concatenated with [`process.executable.name`](process.md), e.g. `unknown_service:bash`. If `process.executable.name` is not available, the value MUST be set to `unknown_service`.
+     - Note: MUST be the same for all instances of horizontally scaled services. If the value was not specified, SDKs MUST fallback to `unknown_service:` concatenated with the process executable name, e.g. `unknown_service:bash`. If the process executable name is not available, the value MUST be set to `unknown_service`.
+       The process executable name is the name of the process executable, the same value as described by the [`process.executable.name`](process.md) resource attribute.
 
      - Requires: Value type should be `String`
     */
@@ -78,7 +129,7 @@ extension SemanticConventions {
     case namespace = "service.namespace"
 
     /**
-     The version string of the service API or implementation. The format is not defined by these conventions.
+     The version string of the service component. The format is not defined by these conventions.
 
       - Examples:
       ```
@@ -89,5 +140,33 @@ extension SemanticConventions {
      - Requires: Value type should be `String`
     */
     case version = "service.version"
+
+    /** 
+      The operational criticality of the service.
+    */
+    public struct CriticalityValues: CustomStringConvertible, Sendable {
+      
+      /// Service is business-critical; downtime directly impacts revenue, user experience, or core functionality.
+      public static let critical = CriticalityValues("critical") 
+      
+      /// Service is important but has degradation tolerance or fallback mechanisms.
+      public static let high = CriticalityValues("high") 
+      
+      /// Service provides supplementary functionality; degradation has limited user impact.
+      public static let medium = CriticalityValues("medium") 
+      
+      /// Service is non-essential to core operations; used for background tasks or internal tools.
+      public static let low = CriticalityValues("low") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
   }
 }

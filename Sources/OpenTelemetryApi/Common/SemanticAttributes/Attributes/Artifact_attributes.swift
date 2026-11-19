@@ -38,7 +38,7 @@ extension SemanticConventions {
     case attestationHash = "artifact.attestation.hash"
 
     /**
-     The id of the build [software attestation](https://slsa.dev/attestation-model).
+     The ID of the build [software attestation](https://slsa.dev/attestation-model).
 
       - Examples:
       ```
@@ -50,7 +50,7 @@ extension SemanticConventions {
     case attestationId = "artifact.attestation.id"
 
     /**
-     The human readable file name of the artifact, typically generated during build and release processes. Often includes the package name and version in the file name.
+     The human readable filename of the artifact, typically generated during build and release processes. Often includes the package name and version in the filename.
 
       - Examples:
       ```
@@ -60,7 +60,7 @@ extension SemanticConventions {
       attributes[SemanticConventions.Artifact.filename.rawValue] = "file-name-package.tar.gz"
       ```
 
-     - Note: This file name can also act as the [Package Name](https://slsa.dev/spec/v1.0/terminology#package-model)
+     - Note: This filename can also act as the [Package Name](https://slsa.dev/spec/v1.0/terminology#package-model)
        in cases where the package ecosystem maps accordingly.
        Additionally, the artifact [can be published](https://slsa.dev/spec/v1.0/terminology#software-supply-chain)
        for others, but that is not a guarantee.

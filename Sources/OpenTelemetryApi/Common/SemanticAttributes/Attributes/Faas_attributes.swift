@@ -98,7 +98,19 @@ extension SemanticConventions {
 
      - Requires: Value type should be `String`
     */
-    case invocationId = "faas.invocation_id"
+    case invocationId = "faas.invocation.id"
+
+    /**
+     A string containing the function invocation time in the [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format expressed in [UTC](https://www.w3.org/TR/NOTE-datetime).
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Faas.invocationStartTime.rawValue] = "2020-01-23T13:47:06Z"
+      ```
+
+     - Requires: Value type should be `String`
+    */
+    case invocationStartTime = "faas.invocation.start_time"
 
     /**
      The name of the invoked function.
@@ -180,18 +192,6 @@ extension SemanticConventions {
      - Requires: Value type should be `String`
     */
     case name = "faas.name"
-
-    /**
-     A string containing the function invocation time in the [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format expressed in [UTC](https://www.w3.org/TR/NOTE-datetime).
-
-      - Examples:
-      ```
-      attributes[SemanticConventions.Faas.time.rawValue] = "2020-01-23T13:47:06Z"
-      ```
-
-     - Requires: Value type should be `String`
-    */
-    case time = "faas.time"
 
     /**
      Type of the trigger which caused this function invocation.

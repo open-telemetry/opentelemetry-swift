@@ -11,16 +11,18 @@ extension SemanticConventions {
   public enum System: String {
 
     /**
-     The device identifier
+     The OS level identifier for a device, such as disk, partition or network interface.
 
       - Examples:
       ```
-      attributes[SemanticConventions.System.device.rawValue] = "(identifier)"
+      attributes[SemanticConventions.System.deviceName.rawValue] = "/dev/sda"
+      attributes[SemanticConventions.System.deviceName.rawValue] = "eth0"
+      attributes[SemanticConventions.System.deviceName.rawValue] = "\network-drive"
       ```
 
      - Requires: Value type should be `String`
     */
-    case device = "system.device"
+    case deviceName = "system.device.name"
 
     /**
      The filesystem mode
@@ -71,12 +73,38 @@ extension SemanticConventions {
     case fileType = "system.filesystem.type"
 
     /**
+     The Linux HugePages memory state
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.System.memoryLinuxHugepagesState.rawValue] = .free
+      attributes[SemanticConventions.System.memoryLinuxHugepagesState.rawValue] = .used
+      ```
+
+     - Requires: Value should be one of ``MemoryLinuxHugepagesStateValues`` (of type `String`)
+    */
+    case memoryLinuxHugepagesState = "system.memory.linux.hugepages.state"
+
+    /**
+     The Linux Slab memory state
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.System.memoryLinuxSlabState.rawValue] = .reclaimable
+      attributes[SemanticConventions.System.memoryLinuxSlabState.rawValue] = .unreclaimable
+      ```
+
+     - Requires: Value should be one of ``MemoryLinuxSlabStateValues`` (of type `String`)
+    */
+    case memoryLinuxSlabState = "system.memory.linux.slab.state"
+
+    /**
      The memory state
 
       - Examples:
       ```
-      attributes[SemanticConventions.System.memoryState.rawValue] = .free
-      attributes[SemanticConventions.System.memoryState.rawValue] = .cached
+      attributes[SemanticConventions.System.memoryState.rawValue] = .used
+      attributes[SemanticConventions.System.memoryState.rawValue] = .available
       ```
 
      - Requires: Value should be one of ``MemoryStateValues`` (of type `String`)
@@ -161,15 +189,51 @@ extension SemanticConventions {
     }
 
     /** 
+      The Linux HugePages memory state
+    */
+    public struct MemoryLinuxHugepagesStateValues: CustomStringConvertible, Sendable {
+      public static let free = MemoryLinuxHugepagesStateValues("free") 
+      public static let used = MemoryLinuxHugepagesStateValues("used") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
+
+    /** 
+      The Linux Slab memory state
+    */
+    public struct MemoryLinuxSlabStateValues: CustomStringConvertible, Sendable {
+      public static let reclaimable = MemoryLinuxSlabStateValues("reclaimable") 
+      public static let unreclaimable = MemoryLinuxSlabStateValues("unreclaimable") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
+
+    /** 
       The memory state
     */
     public struct MemoryStateValues: CustomStringConvertible, Sendable {
       
       /// Actual used virtual memory in bytes.
       public static let used = MemoryStateValues("used") 
-      public static let free = MemoryStateValues("free") 
-      public static let buffers = MemoryStateValues("buffers") 
-      public static let cached = MemoryStateValues("cached") 
+      
+      /// An estimate of how much memory is available for starting new applications, without causing swapping.
+      public static let available = MemoryStateValues("available") 
 
       internal let value: String 
 

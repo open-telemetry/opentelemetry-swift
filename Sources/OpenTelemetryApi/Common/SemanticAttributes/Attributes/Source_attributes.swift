@@ -11,20 +11,67 @@ extension SemanticConventions {
   public enum Source: String {
 
     /**
-     Source address - domain name if available without reverse DNS lookup; otherwise, IP address or Unix domain socket name.
+     Source address as observed at the point of instrumentation - typically an IP address, or a UNIX domain socket name; a domain name only when the sender was addressed by name (for example a peer-to-peer node dialed by hostname), never obtained via reverse DNS lookup.
 
       - Examples:
       ```
-      attributes[SemanticConventions.Source.address.rawValue] = "source.example.com"
       attributes[SemanticConventions.Source.address.rawValue] = "10.1.2.80"
+      attributes[SemanticConventions.Source.address.rawValue] = "source.example.com"
       attributes[SemanticConventions.Source.address.rawValue] = "/tmp/my.sock"
       ```
 
-     - Note: When observed from the destination side, and when communicating through an intermediary, `source.address` SHOULD represent the source address behind any intermediaries, for example proxies, if it's available.
+     - Note: `source.address` SHOULD be the sender address as observed at the point of instrumentation, for example the source of the packet, flow, or exchange seen on the wire or socket. Instrumentation SHOULD capture the available address and SHOULD NOT try to resolve the address behind intermediaries such as proxies or load balancers, or perform a reverse DNS lookup to obtain a domain name.
 
      - Requires: Value type should be `String`
     */
     case address = "source.address"
+
+    /**
+     The [Autonomous System Number (ASN)](https://www.iana.org/assignments/as-numbers/as-numbers.xhtml) associated with the source IP address.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Source.asNumber.rawValue] = 64496
+      attributes[SemanticConventions.Source.asNumber.rawValue] = 15169
+      ```
+
+     - Note: This attribute SHOULD only be set when the source address is an IP address and the ASN is available from routing, enrichment, or lookup data. The value SHOULD be represented as an integer without the `AS` prefix.
+
+     - Requires: Value type should be `Int`
+    */
+    case asNumber = "source.as.number"
+
+    /**
+     The name of the organization associated with the autonomous system of the source IP address.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Source.asOrganization.rawValue] = "Example Networks Inc."
+      attributes[SemanticConventions.Source.asOrganization.rawValue] = "Google LLC"
+      ```
+
+     - Note: This attribute SHOULD only be set when `source.as.number` is set and the organization name is available. The value SHOULD be the organization name as provided by the lookup or enrichment source, not the AS name or short code.
+
+     - Requires: Value type should be `String`
+    */
+    case asOrganization = "source.as.organization"
+
+    /**
+     Source Media Access Control (MAC) address.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Source.macAddress.rawValue] = "00-00-5E-00-53-23"
+      ```
+
+     - Note: MAC addresses MUST be represented in [IEEE RA hexadecimal form](https://standards.ieee.org/wp-content/uploads/import/documents/tutorials/eui.pdf):
+       as hyphen-separated octets in uppercase hexadecimal form from most to least significant.
+
+       > [!WARNING]> This attribute may contain sensitive (PII) information.
+
+     - Requires: Value type should be `String`
+    */
+    case macAddress = "source.mac.address"
 
     /**
      Source port number
@@ -38,5 +85,40 @@ extension SemanticConventions {
      - Requires: Value type should be `Int`
     */
     case port = "source.port"
+
+    /**
+     The IP prefix associated with the source IP address, in CIDR notation.
+
+      - Examples:
+      ```
+      attributes[SemanticConventions.Source.prefix.rawValue] = "192.0.2.0/24"
+      attributes[SemanticConventions.Source.prefix.rawValue] = "2001:db8::/32"
+      ```
+
+     - Note: > [!WARNING]> This attribute may contain sensitive (PII) information. A `/32`>  IPv4 prefix
+       > or `/128`>  IPv6 prefix preserves the complete endpoint IP address.
+       > Using CIDR notation does not guarantee that the data is anonymous.
+
+       The value MUST be an IPv4 or IPv6 network prefix in CIDR notation, as defined in
+       [RFC 4632](https://www.rfc-editor.org/rfc/rfc4632.html) for IPv4 and
+       [RFC 4291](https://www.rfc-editor.org/rfc/rfc4291.html#section-2.3) for IPv6.
+       IPv4 prefixes MUST use a dotted-decimal address followed by `/` and a decimal
+       prefix length from 0 to 32. IPv6 prefixes MUST use the canonical address text
+       representation defined in [RFC 5952](https://www.rfc-editor.org/rfc/rfc5952.html),
+       followed by `/` and a decimal prefix length from 0 to 128. All host bits in
+       the address MUST be set to zero. The value MUST NOT contain a domain name,
+       UNIX domain socket name, or IPv6 zone identifier.
+
+       Instrumentation or Collector receivers that populate this attribute MUST
+       convert native representations, such as an address and subnet mask or an
+       address and prefix length, to equivalent CIDR notation before emitting it.
+
+       This attribute MAY be set whether or not `source.address` is set. If
+       `source.address` is also set to an IP address, it MUST use the same IP version
+       and be contained in this prefix.
+
+     - Requires: Value type should be `String`
+    */
+    case prefix = "source.prefix"
   }
 }

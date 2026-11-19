@@ -17,7 +17,10 @@ extension SemanticConventions {
       ```
       attributes[SemanticConventions.Cloud.accountId.rawValue] = "111111111111"
       attributes[SemanticConventions.Cloud.accountId.rawValue] = "opentelemetry"
+      attributes[SemanticConventions.Cloud.accountId.rawValue] = "22222222-2222-2222-2222-222222222222"
       ```
+
+     - Note: For Azure, this is the subscription ID.
 
      - Requires: Value type should be `String`
     */
@@ -105,6 +108,9 @@ extension SemanticConventions {
     */
     public struct PlatformValues: CustomStringConvertible, Sendable {
       
+      /// Akamai Cloud Compute
+      public static let akamaiCloudCompute = PlatformValues("akamai_cloud.compute") 
+      
       /// Alibaba Cloud Elastic Compute Service
       public static let alibabaCloudEcs = PlatformValues("alibaba_cloud_ecs") 
       
@@ -156,6 +162,9 @@ extension SemanticConventions {
       /// Azure Red Hat OpenShift
       public static let azureOpenshift = PlatformValues("azure.openshift") 
       
+      /// Google Vertex AI Agent Engine
+      public static let gcpAgentEngine = PlatformValues("gcp.agent_engine") 
+      
       /// Google Bare Metal Solution (BMS)
       public static let gcpBareMetalSolution = PlatformValues("gcp_bare_metal_solution") 
       
@@ -177,6 +186,9 @@ extension SemanticConventions {
       /// Red Hat OpenShift on Google Cloud
       public static let gcpOpenshift = PlatformValues("gcp_openshift") 
       
+      /// Server on Hetzner Cloud
+      public static let hetznerCloudServer = PlatformValues("hetzner.cloud_server") 
+      
       /// Red Hat OpenShift on IBM Cloud
       public static let ibmCloudOpenshift = PlatformValues("ibm_cloud_openshift") 
       
@@ -186,6 +198,9 @@ extension SemanticConventions {
       /// Kubernetes Engine (OKE) on Oracle Cloud Infrastructure (OCI)
       public static let oracleCloudOke = PlatformValues("oracle_cloud_oke") 
       
+      /// Compute on Scaleway Cloud
+      public static let scalewayCloudCompute = PlatformValues("scaleway_cloud_compute") 
+      
       /// Tencent Cloud Cloud Virtual Machine (CVM)
       public static let tencentCloudCvm = PlatformValues("tencent_cloud_cvm") 
       
@@ -194,6 +209,9 @@ extension SemanticConventions {
       
       /// Tencent Cloud Serverless Cloud Function (SCF)
       public static let tencentCloudScf = PlatformValues("tencent_cloud_scf") 
+      
+      /// Vultr Cloud Compute
+      public static let vultrCloudCompute = PlatformValues("vultr.cloud_compute") 
 
       internal let value: String 
 
@@ -211,6 +229,9 @@ extension SemanticConventions {
     */
     public struct ProviderValues: CustomStringConvertible, Sendable {
       
+      /// Akamai Cloud
+      public static let akamaiCloud = ProviderValues("akamai_cloud") 
+      
       /// Alibaba Cloud
       public static let alibabaCloud = ProviderValues("alibaba_cloud") 
       
@@ -226,14 +247,23 @@ extension SemanticConventions {
       /// Heroku Platform as a Service
       public static let heroku = ProviderValues("heroku") 
       
+      /// Hetzner
+      public static let hetzner = ProviderValues("hetzner") 
+      
       /// IBM Cloud
       public static let ibmCloud = ProviderValues("ibm_cloud") 
       
       /// Oracle Cloud Infrastructure (OCI)
       public static let oracleCloud = ProviderValues("oracle_cloud") 
       
+      /// Scaleway Cloud
+      public static let scalewayCloud = ProviderValues("scaleway_cloud") 
+      
       /// Tencent Cloud
       public static let tencentCloud = ProviderValues("tencent_cloud") 
+      
+      /// Vultr
+      public static let vultr = ProviderValues("vultr") 
 
       internal let value: String 
 
