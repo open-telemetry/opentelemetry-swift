@@ -20,6 +20,12 @@ enum Scenario {
   static let heartbeatSpanName = "integration.test.heartbeat"
   static let probeSpanName = "integration.test.probe"
   static let launchAttributeKey = "integration.test.launch"
+  static let processStartSpanName = "integration.test.process-start"
+  static let sceneConnectSpanName = "integration.test.scene-will-connect"
+  static let foregroundSpanName = "integration.test.will-enter-foreground"
+  static let activeSpanName = "integration.test.did-become-active"
+  static let backgroundSpanName = "integration.test.did-enter-background"
+  static let taskRoleAttributeKey = "integration.test.task-role"
 
   // One entry per app launch made by Scripts/run-integration-tests.sh.
   enum Launch: String {
@@ -31,6 +37,12 @@ enum Scenario {
     case crash
     case crashReport = "crash-report"
     case logLimits = "log-limits"
+    case appStartResume = "app-start-resume"
+    case appStartLateInstall = "app-start-late-install"
+    case appStartBackground = "app-start-background"
+    case appStartUpdate = "app-start-update"
+    case appStartReinstall = "app-start-reinstall"
+    case appStartMincore = "app-start-mincore"
   }
 
   // Session config the runner passes to each launch.

@@ -178,6 +178,18 @@ let package = Package(
       exclude: ["README.md"]
     ),
     .target(
+      name: "InstrumentationCommon",
+      dependencies: [
+        "OpenTelemetryApi"
+      ],
+      path: "Sources/Instrumentation/Common"
+    ),
+    .target(
+      name: "InstrumentationSemanticConventions",
+      path: "Sources/Instrumentation/SemanticConventions",
+      exclude: ["README.md", "generate.sh", "model", "templates"]
+    ),
+    .target(
       name: "SharedTestUtils",
       dependencies: [
         "OpenTelemetryApi",
@@ -392,6 +404,10 @@ extension Package {
           targets: ["MetricKitInstrumentation"]
         ),
         .library(name: "Crash", targets: ["Crash"]),
+        .library(
+          name: "MincoreLaunchInstrumentation",
+          targets: ["MincoreLaunchInstrumentation"]
+        ),
       ])
       targets.append(contentsOf: [
         .target(
@@ -586,6 +602,7 @@ extension Package {
             "OpenTelemetryApi",
             "OpenTelemetrySdk",
             "Sessions",
+            "InstrumentationCommon",
             .product(name: "Installations", package: "KSCrash"),
             .product(name: "Filters", package: "KSCrash"),
             .product(name: "DemangleFilter", package: "KSCrash"),
@@ -603,6 +620,45 @@ extension Package {
             "OpenTelemetrySdk",
           ],
           path: "Tests/InstrumentationTests/CrashTests"
+        ),
+        .target(
+          name: "AppLaunchEnvironment",
+          path: "Sources/Instrumentation/AppLaunch/LaunchEnvironment"
+        ),
+        .target(
+          name: "AppLaunchPageSampling",
+          path: "Sources/Instrumentation/AppLaunch/PageSampling"
+        ),
+        .target(
+          name: "AppLaunchInstrumentationCore",
+          dependencies: [
+            "OpenTelemetryApi",
+            "InstrumentationSemanticConventions",
+            "AppLaunchEnvironment",
+          ],
+          path: "Sources/Instrumentation/AppLaunch/Core"
+        ),
+        .target(
+          name: "MincoreLaunchInstrumentation",
+          dependencies: [
+            "OpenTelemetryApi",
+            "InstrumentationCommon",
+            "InstrumentationSemanticConventions",
+            "AppLaunchInstrumentationCore",
+            "AppLaunchPageSampling",
+          ],
+          path: "Sources/Instrumentation/AppLaunch/Mincore"
+        ),
+        .testTarget(
+          name: "AppLaunchInstrumentationTests",
+          dependencies: [
+            "AppLaunchInstrumentationCore",
+            "MincoreLaunchInstrumentation",
+            "InMemoryExporter",
+            "OpenTelemetrySdk",
+            "SharedTestUtils",
+          ],
+          path: "Tests/InstrumentationTests/AppLaunchTests"
         ),
       ])
     #endif
