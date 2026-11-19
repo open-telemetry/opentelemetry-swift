@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if canImport(MetricKit) && !os(tvOS) && !os(macOS)
+#if canImport(MetricKit) && !os(tvOS)
     import Foundation
     import MetricKit
     import OpenTelemetryApi
