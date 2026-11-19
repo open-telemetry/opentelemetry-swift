@@ -2,11 +2,27 @@ import XCTest
 import InMemoryExporter
 import OpenTelemetryApi
 import OpenTelemetrySdk
+import OTelSwiftTracing
 import Tracing
 
-@testable import OTelSwiftTracing
-
 final class OTelSwiftTracingTests: XCTestCase {
+  func testCurrentServiceContextExposesSpanIdentifiersAndFlags() throws {
+    let (tracer, exporter, processor) = makeTracer()
+    var currentContext: OpenTelemetryApi.SpanContext?
+
+    try tracer.withSpan("testSpan") { _ in
+      currentContext = try XCTUnwrap(ServiceContext.current?.otelSpanContext)
+    }
+
+    processor.forceFlush()
+    let context = try XCTUnwrap(currentContext)
+    let exportedSpan = try XCTUnwrap(exporter.getFinishedSpanItems().first)
+    XCTAssertTrue(context.isValid)
+    XCTAssertEqual(context.traceId, exportedSpan.traceId)
+    XCTAssertEqual(context.spanId, exportedSpan.spanId)
+    XCTAssertEqual(context.traceFlags, exportedSpan.traceFlags)
+  }
+
   func testSpanAttributes() throws {
     let (tracer, exporter, processor) = makeTracer()
 
