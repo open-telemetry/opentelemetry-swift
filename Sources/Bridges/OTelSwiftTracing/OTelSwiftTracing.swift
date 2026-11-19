@@ -1,3 +1,5 @@
+#if SwiftObservabilityAPIBridges
+
 import Foundation
 import OpenTelemetryApi
 import ServiceContextModule
@@ -379,3 +381,5 @@ public final class OTelSpan: Tracing.Span, @unchecked Sendable {
         return Date(timeIntervalSince1970: seconds)
     }
 }
+
+#endif

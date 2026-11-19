@@ -4,7 +4,6 @@
 //
 
 import Foundation
-import Logging
 import OpenTelemetryApi
 import OpenTelemetryProtocolExporterCommon
 @testable import OpenTelemetryProtocolExporterHttp

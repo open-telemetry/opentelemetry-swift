@@ -35,7 +35,7 @@ jobs:
 
       # Build the Swift package
       - name: Build Swift package
-        run: swift build
+        run: swift build --enable-all-traits
         
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3

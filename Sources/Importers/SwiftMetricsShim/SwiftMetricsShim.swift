@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if SwiftObservabilityAPIBridges
+
 import CoreMetrics
 import OpenTelemetryApi
 
@@ -98,3 +100,5 @@ public final class OpenTelemetrySwiftMetrics: MetricsFactory, @unchecked Sendabl
     }
   }
 }
+
+#endif

@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if Prometheus
+
 import Foundation
 #if canImport(FoundationNetworking)
   import FoundationNetworking
@@ -159,3 +161,5 @@ class PrometheusExporterTests: XCTestCase {
     XCTAssert(responseText.contains("testHistogram{dim1=\"value1\",le=\"+Inf\"} 1") || responseText.contains("testHistogram{le=\"+Inf\",dim1=\"value1\"} 1"))
   }
 }
+
+#endif

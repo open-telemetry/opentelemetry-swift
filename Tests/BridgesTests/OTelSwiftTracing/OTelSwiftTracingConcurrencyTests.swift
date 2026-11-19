@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if SwiftObservabilityAPIBridges
+
 import InMemoryExporter
 import OpenTelemetryApi
 import OpenTelemetrySdk
@@ -166,3 +168,5 @@ private struct DictionaryExtractor: Extractor {
     carrier[key]
   }
 }
+
+#endif

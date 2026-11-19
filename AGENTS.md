@@ -45,6 +45,10 @@ regression even if the suite "passes". SwiftPM's Linux test discovery in
 particular is fragile around actor isolation — verify the test count before
 and after.
 
+Run tests with `swift test --enable-all-traits`. Without it, the package
+traits are off and every optional integration's tests are compiled out, so
+the count is lower and the code behind traits is never tested.
+
 ## Scope discipline
 
 - A bug fix does not need surrounding cleanup. Do not refactor adjacent code
@@ -56,8 +60,9 @@ and after.
 
 ## Before committing
 
-- Build the package. This repo uses SwiftPM; run `swift build --build-tests`
-  and fix errors at the root cause rather than suppressing them.
+- Build the package. This repo uses SwiftPM; run
+  `swift build --build-tests --enable-all-traits` and fix errors at the root
+  cause rather than suppressing them.
 - Only commit when the user asks you to commit.
 - Follow Conventional Commits for the subject line.
 - Do not add a `Co-authored-by:` trailer for an AI tool (for example

@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
+#if OTLPGRPC
+
 import Foundation
 import GRPC
 import Logging
@@ -73,3 +75,5 @@ public final class OtlpMetricExporter: MetricExporter {
     return .success
   }
 }
+
+#endif

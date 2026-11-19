@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if OpenTracing
+
 import Foundation
 import OpenTelemetryApi
 
@@ -21,3 +23,5 @@ struct TelemetryInfo {
     spanContextTable = SpanContextShimTable()
   }
 }
+
+#endif

@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if OpenTracing
+
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
@@ -33,3 +35,5 @@ public final class TraceShim: @unchecked Sendable {
     tracerProvider.get(instrumentationName: "opentracingshim")
   }
 }
+
+#endif

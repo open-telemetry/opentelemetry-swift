@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if Prometheus
+
 import Foundation
 
 struct PrometheusMetric {
@@ -101,3 +103,5 @@ extension String {
     return components(separatedBy: characterSet).joined(separator: replacementString)
   }
 }
+
+#endif

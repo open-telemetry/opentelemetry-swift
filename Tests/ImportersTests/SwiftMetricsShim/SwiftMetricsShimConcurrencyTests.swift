@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if SwiftObservabilityAPIBridges
+
 @testable import CoreMetrics
 import OpenTelemetryApi
 @testable import OpenTelemetrySdk
@@ -225,3 +227,5 @@ final class SwiftMetricsShimConcurrencyTests: XCTestCase {
     XCTAssertEqual(guarded, counter.value)
   }
 }
+
+#endif

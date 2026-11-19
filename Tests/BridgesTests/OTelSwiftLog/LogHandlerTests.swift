@@ -1,3 +1,5 @@
+#if SwiftObservabilityAPIBridges
+
 import XCTest
 import Logging
 import OpenTelemetryApi
@@ -62,3 +64,5 @@ final class OTelLogHandlerTests: XCTestCase {
     XCTAssertEqual(convertSeverity(level: .critical), OpenTelemetryApi.Severity.error2)
   }
 }
+
+#endif

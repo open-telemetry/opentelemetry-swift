@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if Jaeger
+
 import Foundation
 
 /// This code was adapted from Quinn “The Eskimo!” sample code at https://forums.developer.apple.com/thread/99494
@@ -65,3 +67,5 @@ extension sockaddr_storage {
     }
   }
 }
+
+#endif

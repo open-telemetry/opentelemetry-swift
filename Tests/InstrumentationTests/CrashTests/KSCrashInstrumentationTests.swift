@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if CrashReporting
+
 import XCTest
 import OpenTelemetrySdk
 import OpenTelemetryApi
@@ -281,3 +283,5 @@ class MockLogRecordBuilder: LogRecordBuilder {
 
   func emit() {}
 }
+
+#endif

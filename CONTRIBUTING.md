@@ -69,23 +69,35 @@ For more detailed information on this workflow read the
 
 ### Build
 
-Open `Package.swift` in Xcode and follow normal development process.
+The optional integrations are behind package traits that are off by default
+(see the README's "Package traits" section). Enable all of them during
+development, or the gated code only compiles to stubs and its tests are skipped.
 
-To build from the command line you need `swift` version `5.0+`.
+Open `Package.swift` in Xcode with every trait enabled and follow normal development process:
 
 ```sh
-swift build
+OTEL_SWIFT_ENABLE_ALL_TRAITS=1 open Package.swift
+```
+
+Xcode must be completely closed before running the above command.
+
+To build from the command line you need `swift` version `6.2+`.
+
+```sh
+swift build --build-tests --enable-all-traits
 ```
 
 ### Test
 
-Open `Package.swift` in Xcode and follow normal testing process.
+Open `Package.swift` in Xcode as above and follow normal testing process.
 
-To test from the command line you need `swift` version `5.0+`.
+To test from the command line you need `swift` version `6.2+`.
 
 ```sh
-swift test
+swift test --enable-all-traits
 ```
+
+`Scripts/test-traits.sh` builds every trait on its own and with no traits, as CI does.
 
 #### Integration tests
 

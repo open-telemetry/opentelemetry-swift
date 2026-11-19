@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if OpenTracing
+
 import Foundation
 import OpenTelemetryApi
 
@@ -52,3 +54,5 @@ public class SpanContextShimTable {
     }
   }
 }
+
+#endif

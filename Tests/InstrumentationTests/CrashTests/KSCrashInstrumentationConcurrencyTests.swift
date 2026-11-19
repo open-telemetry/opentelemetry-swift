@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if CrashReporting
+
 import Foundation
 import OpenTelemetryApi
 @testable import Crash
@@ -75,3 +77,5 @@ extension KSCrashInstrumentationTests {
     XCTAssertEqual(userInfo?[SemanticConventions.Session.previousId.rawValue], latest.previousId)
   }
 }
+
+#endif

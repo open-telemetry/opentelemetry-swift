@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if Prometheus
+
 import Foundation
 import NIO
 import NIOHTTP1
@@ -124,3 +126,5 @@ public class PrometheusExporterHttpServer {
     }
   }
 }
+
+#endif

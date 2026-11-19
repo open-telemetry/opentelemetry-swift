@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if OpenTracing
+
 import Foundation
 import OpenTelemetryApi
 import Opentracing
@@ -147,3 +149,5 @@ public class SpanShim: OTSpan, BaseShimProtocol {
     return attributes
   }
 }
+
+#endif

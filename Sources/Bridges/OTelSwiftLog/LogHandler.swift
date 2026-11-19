@@ -1,3 +1,5 @@
+#if SwiftObservabilityAPIBridges
+
 import Foundation
 import OpenTelemetryApi
 import Logging
@@ -145,3 +147,5 @@ func convertSeverity(level: Logging.Logger.Level) -> OpenTelemetryApi.Severity {
     return OpenTelemetryApi.Severity.error2 // should this be fatal instead?
   }
 }
+
+#endif

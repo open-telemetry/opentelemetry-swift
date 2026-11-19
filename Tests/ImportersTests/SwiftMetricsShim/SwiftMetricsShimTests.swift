@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if SwiftObservabilityAPIBridges
+
 @testable import OpenTelemetryApi
 @testable import OpenTelemetrySdk
 @testable import CoreMetrics
@@ -177,3 +179,5 @@ class SwiftMetricsShimTests: XCTestCase {
     XCTAssertNil(data.attributes["label_one"])
   }
 }
+
+#endif

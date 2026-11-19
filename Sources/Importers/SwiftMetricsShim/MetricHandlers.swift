@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if SwiftObservabilityAPIBridges
+
 import CoreMetrics
 import OpenTelemetryApi
 
@@ -113,3 +115,5 @@ struct MetricKey: Hashable {
   let name: String
   let type: MetricType
 }
+
+#endif

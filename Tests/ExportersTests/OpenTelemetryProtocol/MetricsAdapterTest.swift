@@ -5,7 +5,9 @@
 
 import XCTest
 import OpenTelemetryApi
+#if OTLPGRPC
 @testable import OpenTelemetryProtocolExporterGrpc
+#endif
 @testable import OpenTelemetryProtocolExporterCommon
 @testable import OpenTelemetrySdk
 

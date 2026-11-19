@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if Prometheus
+
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
@@ -92,3 +94,9 @@ metricsHttpServer.stop()
 
 print("Metrics server shutdown.")
 print("Press Enter key to exit.")
+
+#else
+
+print("This example requires the Prometheus package trait.")
+
+#endif

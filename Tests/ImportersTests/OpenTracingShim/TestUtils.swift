@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if OpenTracing
+
 import Foundation
 import Opentracing
 
@@ -16,3 +18,5 @@ enum TestUtils {
     return dictionary
   }
 }
+
+#endif

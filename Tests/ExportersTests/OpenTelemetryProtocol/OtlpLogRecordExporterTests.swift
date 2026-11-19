@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
+#if OTLPGRPC
+
 import Foundation
 import GRPC
 import Logging
@@ -183,3 +185,5 @@ class FakeLogCollector: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceProvide
   var receivedAuthorizationHeaders = [String?]()
   var returnedStatus = GRPCStatus.ok
 }
+
+#endif

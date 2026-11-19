@@ -1,3 +1,5 @@
+#if SwiftObservabilityAPIBridges
+
 import XCTest
 import OpenTelemetryApi
 import Tracing
@@ -92,3 +94,5 @@ private struct TestInstant: TracerInstant {
     lhs.nanosecondsSinceEpoch < rhs.nanosecondsSinceEpoch
   }
 }
+
+#endif

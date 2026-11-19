@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if OTLPGRPC
+
 import OpenTelemetryApi
 @testable import OpenTelemetryProtocolExporterGrpc
 import OpenTelemetrySdk
@@ -55,3 +57,5 @@ final class OtlpTraceJsonExporterConcurrencyTests: XCTestCase {
     XCTAssertTrue(exporter.getExportedSpans().isEmpty)
   }
 }
+
+#endif

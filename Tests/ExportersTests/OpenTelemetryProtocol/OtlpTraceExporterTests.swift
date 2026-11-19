@@ -4,6 +4,14 @@
  */
 
 import Foundation
+
+extension String: @retroactive Error {}
+extension Swift.String: @retroactive LocalizedError {
+  public var errorDescription: String? { return self }
+}
+
+#if OTLPGRPC
+
 import GRPC
 import Logging
 import NIO
@@ -12,11 +20,6 @@ import OpenTelemetryProtocolExporterCommon
 @testable import OpenTelemetryProtocolExporterGrpc
 @testable import OpenTelemetrySdk
 import XCTest
-
-extension String: @retroactive Error {}
-extension Swift.String: @retroactive LocalizedError {
-  public var errorDescription: String? { return self }
-}
 
 class OtlpTraceExporterTests: XCTestCase {
   let traceId = "00000000000000000000000000abc123"
@@ -342,3 +345,5 @@ class FakeCollector: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceProvider
     return context.eventLoop.makeSucceededFuture(returnedResponse)
   }
 }
+
+#endif

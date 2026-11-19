@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if OpenTracing
+
 @testable import OpenTracingShim
 import XCTest
 
@@ -89,3 +91,5 @@ final class OpenTracingShimLocksCoverageTests: XCTestCase {
     XCTAssertThrowsError(try rw.withWriterLock { () throws -> Int in throw MyError() })
   }
 }
+
+#endif

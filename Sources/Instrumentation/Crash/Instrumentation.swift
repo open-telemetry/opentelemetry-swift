@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if CrashReporting
+
 import Foundation
 import OpenTelemetryApi
 
@@ -21,3 +23,5 @@ open class Instrumentation {
     OpenTelemetry.instance.tracerProvider.get(instrumentationName: scope)
   }
 }
+
+#endif

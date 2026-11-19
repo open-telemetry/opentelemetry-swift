@@ -31,6 +31,8 @@
 //
 // ===----------------------------------------------------------------------===//
 
+#if SwiftObservabilityAPIBridges
+
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
   import Darwin
 #elseif canImport(Glibc)
@@ -226,3 +228,5 @@ public final class Locked<Value> : @unchecked Sendable {
         try lock.withLock { try block(&internalValue) }
     }
 }
+
+#endif

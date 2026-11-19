@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if OpenTracing
+
 import OpenTelemetryApi
 import OpenTelemetrySdk
 import Opentracing
@@ -44,3 +46,5 @@ class TracerShimTests: XCTestCase {
     XCTAssertEqual(map.count, 0)
   }
 }
+
+#endif

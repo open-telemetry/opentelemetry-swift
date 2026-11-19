@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if Prometheus
+
 import Foundation
 import OpenTelemetrySdk
 
@@ -201,3 +203,5 @@ public enum PrometheusExporterExtensions {
     return prometheusMetric.write(timeStamp: timeStamp)
   }
 }
+
+#endif

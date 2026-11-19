@@ -79,6 +79,51 @@ On `main`, the API and SDK have moved into this repository. Use a single package
 
 Use a [release](https://github.com/open-telemetry/opentelemetry-swift/releases) for applications that need versioned dependencies. `main` is for testing unreleased changes.
 
+### Package traits
+
+Integrations that need a third-party package are behind [package traits](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0450-swiftpm-package-traits.md). No trait is enabled by default, so a consumer that enables none resolves and builds only opentelemetry-swift, `swift-protobuf` and `swift-atomics`. Swift 6.2.1 or later leaves the packages of disabled traits out of dependency resolution. Swift 6.2.0 builds correctly but still resolves every package, because of a SwiftPM bug fixed in 6.2.1.
+
+| Trait | Adds | Products |
+| --- | --- | --- |
+| `OTLPGRPC` | The OTLP exporter over gRPC | `OpenTelemetryProtocolExporter` |
+| `Prometheus` | The Prometheus exporter | `PrometheusExporter` |
+| `SwiftObservabilityAPIBridges` | Bridges for the Swift Log, Swift Metrics, and Swift Distributed Tracing APIs | `OTelSwiftLog`, `OTelSwiftTracing`, `SwiftMetricsShim` |
+| `Jaeger` | The Jaeger exporter | `JaegerExporter` |
+| `OpenTracing` | The experimental OpenTracing shim | `OpenTracingShim-experimental` |
+| `CrashReporting` | Crash reporting | `Crash` |
+
+Enable the traits for the products you use in your `Package.swift`:
+
+```swift
+.package(
+  url: "https://github.com/open-telemetry/opentelemetry-swift.git",
+  from: "3.0.0",
+  traits: ["OTLPGRPC", "SwiftObservabilityAPIBridges"]
+)
+```
+
+An Xcode project enables traits on its package dependency instead, as `traits` on the package reference in `project.pbxproj`. Xcode 27.0 reads them from there (see `Examples/HackerNewsDemo`).
+
+#### Migrating from 2.x
+
+Before 3.0.0 every integration was always available. If your build now fails, enable the trait for the module it can't find. Depending on the toolchain, the error reads "no such module" or "unable to resolve module dependency".
+
+| Error | Trait |
+| --- | --- |
+| no such module `GRPC` | `OTLPGRPC` |
+| no such module `NIO`, `NIOCore` or `NIOPosix` | `OTLPGRPC` if you use `OpenTelemetryProtocolExporter`, `Prometheus` if you use `PrometheusExporter` |
+| no such module `NIOHPACK` | `OTLPGRPC` |
+| no such module `NIOHTTP1` | `Prometheus` |
+| no such module `Logging` | `SwiftObservabilityAPIBridges` for `OTelSwiftLog`, `OTLPGRPC` for `OpenTelemetryProtocolExporter` |
+| no such module `Tracing` or `CoreMetrics` | `SwiftObservabilityAPIBridges` |
+| no such module `Thrift` | `Jaeger` |
+| no such module `Opentracing` | `OpenTracing` |
+| no such module `KSCrashRecording`, `KSCrashFilters`, `KSCrashDemangleFilter`, `KSCrashInstallations` or `KSCrashReportModel` | `CrashReporting` |
+
+`OpenTelemetryProtocolExporterHTTP` no longer depends on `swift-log`. If you use it and import `Logging` yourself, add `swift-log` to your own dependencies instead of enabling a trait.
+
+If you only import this package's modules, the compiler names the missing trait instead, for example "'JaegerSpanExporter' is unavailable: JaegerExporter requires the `Jaeger` package trait."
+
 ## Documentation
 
 Official documentation for the library can be found in the official opentelemetry [documentation  page](https://opentelemetry.io/docs/instrumentation/swift/), including:

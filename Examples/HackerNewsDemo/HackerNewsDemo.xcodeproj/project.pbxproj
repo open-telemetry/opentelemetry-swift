@@ -373,6 +373,9 @@
 		5E6803F12E1306FC00D1DBD3 /* XCLocalSwiftPackageReference "../.." */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../..;
+			traits = (
+				CrashReporting,
+			);
 		};
 /* End XCLocalSwiftPackageReference section */
 

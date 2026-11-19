@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if OpenTracing
+
 import OpenTelemetryApi
 @testable import OpenTelemetrySdk
 @testable import OpenTracingShim
@@ -223,3 +225,5 @@ final class SpanShimCoverageTests: XCTestCase {
     XCTAssertEqual(attrs["bool"], .bool(false))
   }
 }
+
+#endif

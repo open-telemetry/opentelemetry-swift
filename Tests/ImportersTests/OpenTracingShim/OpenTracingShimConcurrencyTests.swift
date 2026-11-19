@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if OpenTracing
+
 @testable import OpenTelemetryApi
 @testable import OpenTelemetrySdk
 @testable import OpenTracingShim
@@ -150,3 +152,5 @@ final class OpenTracingShimConcurrencyTests: XCTestCase {
     XCTAssertEqual(guarded, writes.value)
   }
 }
+
+#endif

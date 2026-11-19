@@ -31,6 +31,8 @@
 //
 // ===----------------------------------------------------------------------===//
 
+#if OpenTracing
+
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
   import Darwin
 #elseif canImport(Glibc)
@@ -200,3 +202,5 @@ extension ReadWriteLock {
     try withWriterLock(body)
   }
 }
+
+#endif

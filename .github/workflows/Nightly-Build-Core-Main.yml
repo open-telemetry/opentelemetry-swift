@@ -23,7 +23,7 @@ jobs:
         with:
           xcode-version: latest-stable
       - name: Build and Test for macOS
-        run: swift test
+        run: swift test --enable-all-traits
 
   iOS:
     runs-on: macos-latest
@@ -148,6 +148,6 @@ jobs:
         run: |
           sed 's|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "[^"]*")|.package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", .branch("main"))|' Package.swift > Package.swift.tmp && mv Package.swift.tmp Package.swift
       - name: Build tests for Linux
-        run: swift build --build-tests
+        run: swift build --build-tests --enable-all-traits
       - name: Run tests for Linux
-        run: swift test
+        run: swift test --enable-all-traits

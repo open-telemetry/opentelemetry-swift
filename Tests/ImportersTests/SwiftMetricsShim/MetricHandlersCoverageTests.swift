@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if SwiftObservabilityAPIBridges
+
 import OpenTelemetryApi
 @testable import OpenTelemetrySdk
 @testable import SwiftMetricsShim
@@ -62,3 +64,5 @@ final class MetricHandlersCoverageTests: XCTestCase {
     XCTAssertEqual(a.hashValue, b.hashValue)
   }
 }
+
+#endif

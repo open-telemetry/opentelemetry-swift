@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if CrashReporting
+
 import Foundation
 import XCTest
 @testable import Crash
@@ -224,3 +226,5 @@ final class CrashSummaryTests: XCTestCase {
     XCTAssertNil(CrashSummary(reportJSON: Data("not json".utf8), diagnosis: nil))
   }
 }
+
+#endif

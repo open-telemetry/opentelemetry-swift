@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if CrashReporting
+
 import Foundation
 import KSCrashReportModel
 
@@ -123,3 +125,5 @@ struct CrashSummary: Equatable {
     return trimmed
   }
 }
+
+#endif

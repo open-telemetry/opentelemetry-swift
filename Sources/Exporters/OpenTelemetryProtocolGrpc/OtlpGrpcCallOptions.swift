@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if OTLPGRPC
+
 import GRPC
 import NIOHPACK
 import OpenTelemetryProtocolExporterCommon
@@ -21,3 +23,5 @@ func makeOtlpGrpcCallOptions(from baseCallOptions: CallOptions,
   callOptions.customMetadata = HPACKHeaders(headers)
   return callOptions
 }
+
+#endif

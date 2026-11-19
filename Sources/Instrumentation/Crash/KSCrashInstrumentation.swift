@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if CrashReporting
+
 import Foundation
 import OpenTelemetryApi
 
@@ -287,3 +289,5 @@ public class KSCrashInstrumentation: Instrumentation {
     return mutatedAttributes
   }
 }
+
+#endif

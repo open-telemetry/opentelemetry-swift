@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if OTLPGRPC
+
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
@@ -64,3 +66,5 @@ public final class OtlpTraceJsonExporter: SpanExporter, @unchecked Sendable {
     }
   }
 }
+
+#endif

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if os(macOS)
+#if Jaeger && os(macOS)
 
   import Foundation
   import JaegerExporter
@@ -75,5 +75,9 @@
   sleep(1)
   childSpan()
   sleep(1)
+
+#elseif os(macOS)
+
+  print("This example requires the Jaeger package trait.")
 
 #endif

@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if SwiftObservabilityAPIBridges
+
 @testable import SwiftMetricsShim
 import XCTest
 
@@ -82,3 +84,5 @@ final class SwiftMetricsShimLocksCoverageTests: XCTestCase {
     XCTAssertEqual(locked.protectedValue, 15)
   }
 }
+
+#endif

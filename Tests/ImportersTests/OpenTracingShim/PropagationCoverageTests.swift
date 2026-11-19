@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if OpenTracing
+
 import OpenTelemetryApi
 @testable import OpenTelemetrySdk
 @testable import OpenTracingShim
@@ -84,3 +86,5 @@ final class PropagationCoverageTests: XCTestCase {
     XCTAssertNil(getter.get(carrier: [:], key: "k"))
   }
 }
+
+#endif

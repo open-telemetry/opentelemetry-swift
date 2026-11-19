@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if Prometheus
+
 import OpenTelemetryApi
 @testable import OpenTelemetrySdk
 @testable import PrometheusExporter
@@ -233,3 +235,5 @@ final class PrometheusExporterExtensionsCoverageTests: XCTestCase {
     XCTAssertFalse(out.contains("mismatched-gauge{"))
   }
 }
+
+#endif

@@ -5,7 +5,7 @@
 
 // LoggerProviderSdk's witness tables are not linked into OTelSwiftLogTests on
 // watchOS (see LogHandlerCoverageTests), so keep these off watchOS too.
-#if !os(watchOS)
+#if SwiftObservabilityAPIBridges && !os(watchOS)
 
   import Logging
   @testable import OpenTelemetryApi

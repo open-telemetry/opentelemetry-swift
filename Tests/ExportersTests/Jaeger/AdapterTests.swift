@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if !os(watchOS) && !os(visionOS)
+#if Jaeger && !os(watchOS) && !os(visionOS)
 
   import Foundation
 

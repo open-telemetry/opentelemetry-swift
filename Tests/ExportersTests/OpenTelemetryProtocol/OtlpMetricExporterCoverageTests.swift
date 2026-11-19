@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if OTLPGRPC
+
 import Foundation
 import GRPC
 import Logging
@@ -153,3 +155,5 @@ private final class FakeMetricCollector: Opentelemetry_Proto_Collector_Metrics_V
     return context.eventLoop.makeSucceededFuture(response)
   }
 }
+
+#endif

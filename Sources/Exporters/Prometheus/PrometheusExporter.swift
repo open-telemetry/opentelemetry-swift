@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if Prometheus
+
 import Foundation
 import NIOConcurrencyHelpers
 import OpenTelemetrySdk
@@ -58,3 +60,5 @@ public struct PrometheusExporterOptions: Sendable {
     self.url = url
   }
 }
+
+#endif

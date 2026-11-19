@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if CrashReporting
+
 import Foundation
 import XCTest
 @testable import Crash
@@ -201,3 +203,5 @@ private struct SplitMix64: RandomNumberGenerator {
     return z ^ (z >> 31)
   }
 }
+
+#endif

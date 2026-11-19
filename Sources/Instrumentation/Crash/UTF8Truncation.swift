@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if CrashReporting
+
 import Foundation
 
 /// Byte-bounded truncation for attribute values whose size is capped in UTF-8 bytes.
@@ -29,3 +31,5 @@ enum UTF8Truncation {
     return String(string[..<end])
   }
 }
+
+#endif

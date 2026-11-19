@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
+#if OTLPGRPC
+
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
@@ -23,3 +25,9 @@ func configure() {
 configure()
 
 let eventProvider = OpenTelemetry.instance.loggerProvider.loggerBuilder(instrumentationScopeName: "myScope").setEventDomain("device").build()
+
+#else
+
+print("This example requires the OTLPGRPC package trait.")
+
+#endif

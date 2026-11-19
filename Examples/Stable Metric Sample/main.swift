@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
+#if OTLPGRPC
+
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
@@ -104,3 +106,9 @@ var gauge = meter.gaugeBuilder(name: "Gauge").buildWithCallback { _ in
 
 // gauge
 // gauge.record(value: 1.0, attributes: ["test": AttributeValue.bool(true)])
+
+#else
+
+print("This example requires the OTLPGRPC package trait.")
+
+#endif

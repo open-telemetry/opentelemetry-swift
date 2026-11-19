@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if OpenTracing
+
 import OpenTelemetryApi
 import OpenTelemetrySdk
 import Opentracing
@@ -25,3 +27,5 @@ class TraceShimTests: XCTestCase {
     XCTAssert(baggageManager === tracerShim.baggageManager)
   }
 }
+
+#endif

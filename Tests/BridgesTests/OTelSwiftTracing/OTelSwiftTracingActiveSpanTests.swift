@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if SwiftObservabilityAPIBridges
+
 @testable import Instrumentation
 import OpenTelemetryApi
 import OpenTelemetrySdk
@@ -185,3 +187,5 @@ private final class CapturingSpanProcessor: SpanProcessor {
   func shutdown(explicitTimeout: TimeInterval?) {}
   func forceFlush(timeout: TimeInterval?) {}
 }
+
+#endif

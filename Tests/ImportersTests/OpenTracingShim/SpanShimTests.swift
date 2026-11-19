@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if OpenTracing
+
 import OpenTelemetryApi
 @testable import OpenTelemetrySdk
 @testable import OpenTracingShim
@@ -92,3 +94,5 @@ class SpanShimTests: XCTestCase {
     parentSpan.finish()
   }
 }
+
+#endif

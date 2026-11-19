@@ -1,3 +1,5 @@
+#if SwiftObservabilityAPIBridges
+
 import XCTest
 import InMemoryExporter
 import OpenTelemetryApi
@@ -236,3 +238,5 @@ private struct DictionaryExtractor: Extractor {
     carrier[key]
   }
 }
+
+#endif

@@ -35,6 +35,8 @@ jobs:
             # Run jobs if source code changed
             echo "$CHANGED_FILES" | grep -q "Sources/" && SHOULD_RUN=true
 
+            # Run if the trait matrix or pruning check changed
+            echo "$CHANGED_FILES" | grep -q "^Scripts/" && SHOULD_RUN=true
             echo "$CHANGED_FILES" | grep -Eq '^(Tests/|Package\.resolved$|\.github/workflows/BuildAndTest\.yml$)' && SHOULD_RUN=true
 
             # Run if any dependency is updated in Package.swift
@@ -81,7 +83,7 @@ jobs:
       with:
         xcode-version: latest-stable
     - name: Build and Test for macOS
-      run: swift test --enable-code-coverage
+      run: swift test --enable-all-traits --enable-code-coverage
     - name: Upload Code coverage
       run: |
         curl -Os https://uploader.codecov.io/latest/macos/codecov
@@ -215,10 +217,10 @@ jobs:
       - name: Swift version
         run: swift --version
       - name: Build tests for Linux
-        run: swift build --build-tests
+        run: swift build --build-tests --enable-all-traits
       - name: Run tests for Linux
         timeout-minutes: 15
-        run: swift test
+        run: swift test --enable-all-traits
   ThreadSanitizer:
     needs: should-run
     if: ${{ needs.should-run.outputs.should-run == 'true' }}
@@ -231,10 +233,44 @@ jobs:
       with:
         xcode-version: latest-stable
     - name: Build and Test with Thread Sanitizer
-      run: swift test --sanitize=thread
+      run: swift test --enable-all-traits --sanitize=thread
       env:
         # Enables the concurrency stress tests (skipped in the other jobs).
         OTEL_CONCURRENCY_TESTS: "1"
+  Traits-macOS:
+    needs: should-run
+    if: ${{ needs.should-run.outputs.should-run == 'true' }}
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
+      with:
+        xcode-version: latest-stable
+    - name: Build every trait configuration
+      run: ./Scripts/test-traits.sh
+    - name: Check that disabled traits drop their dependencies
+      env:
+        OTEL_SWIFT_ENABLE_ALL_TRAITS: "1"
+      run: ./Scripts/check-trait-pruning.sh
+  Traits-linux:
+    needs: should-run
+    if: ${{ needs.should-run.outputs.should-run == 'true' }}
+    runs-on: ubuntu-latest
+    container: swift:6.4.2@sha256:119ff7d833ea622851b459513333bb4bda5ebb32b7acd05dd05077d5b0383129
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install jq
+        run: apt-get update && apt-get install -y jq
+      - name: Build every trait configuration
+        run: ./Scripts/test-traits.sh
+      - name: Check that disabled traits drop their dependencies
+        env:
+          OTEL_SWIFT_ENABLE_ALL_TRAITS: "1"
+        run: ./Scripts/check-trait-pruning.sh
   required-status-checks:
     needs: 
       - FormattingLint
@@ -246,6 +282,8 @@ jobs:
       - visionOS
       - linux
       - ThreadSanitizer
+      - Traits-macOS
+      - Traits-linux
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -259,7 +297,9 @@ jobs:
           ${{ needs.watchOS.result }} == 'failure' || \
           ${{ needs.visionOS.result }} == 'failure' || \
           ${{ needs.linux.result }} == 'failure' || \
-          ${{ needs.ThreadSanitizer.result }} == 'failure' ]]; then
+          ${{ needs.ThreadSanitizer.result }} == 'failure' || \
+          ${{ needs.Traits-macOS.result }} == 'failure' || \
+          ${{ needs.Traits-linux.result }} == 'failure' ]]; then
             echo "One or more required jobs failed. Failing the workflow."
             exit 1
           else

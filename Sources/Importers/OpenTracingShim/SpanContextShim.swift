@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if OpenTracing
+
 import Foundation
 import OpenTelemetryApi
 import Opentracing
@@ -59,3 +61,5 @@ extension SpanContextShim: Equatable {
     }
   }
 }
+
+#endif
