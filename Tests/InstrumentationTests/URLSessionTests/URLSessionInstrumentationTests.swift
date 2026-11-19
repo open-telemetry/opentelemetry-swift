@@ -1759,7 +1759,8 @@ class URLSessionInstrumentationTests: XCTestCase {
     let session = URLSession(configuration: .ephemeral)
     let task = session.webSocketTask(with: URLRequest(url: URL(string: "ws://localhost:33333/socket")!))
 
-    // urlSessionTaskWillResume only reaches the instrumentation from an async context.
+    // Resumed from an async context; the non-async path is covered by
+    // testWebSocketTaskResumedOutsideSwiftConcurrencyIsInstrumented.
     await Task { task.resume() }.value
     wait { URLSessionInstrumentationTests.checker.createdRequestCalled }
     task.cancel()
@@ -1769,6 +1770,107 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?
       .allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent],
                     "the handshake should still carry traceparent")
+  }
+
+  /// A task that no factory swizzle instruments, such as a WebSocket handshake, can only get its
+  /// span from resume. Resuming it from ordinary, non-async code must start that span too, and the
+  /// span must be ended once the task completes.
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testWebSocketTaskResumedOutsideSwiftConcurrencyIsInstrumented() {
+    let session = URLSession(configuration: .ephemeral)
+    assertResumeOutsideSwiftConcurrencyStartsAndEndsSpan(in: session)
+  }
+
+  /// Same as above for a session that has a delegate, which the async-context heuristic on
+  /// iOS 15/macOS 12 never treats as async.
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testWebSocketTaskOnDelegateSessionResumedOutsideSwiftConcurrencyIsInstrumented() {
+    let session = URLSession(configuration: .ephemeral, delegate: sessionDelegate, delegateQueue: nil)
+    assertResumeOutsideSwiftConcurrencyStartsAndEndsSpan(in: session)
+  }
+
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  private func assertResumeOutsideSwiftConcurrencyStartsAndEndsSpan(in session: URLSession,
+                                                                    file: StaticString = #filePath,
+                                                                    line: UInt = #line) {
+    let task = session.webSocketTask(with: URLRequest(url: URL(string: "ws://localhost:33333/socket")!))
+
+    task.resume()
+    wait { URLSessionInstrumentationTests.checker.createdRequestCalled }
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.createdRequestCalled,
+                  "a task resumed outside a Swift Task should still start a span", file: file, line: line)
+    XCTAssertNotNil(URLSessionInstrumentationTests.requestCopy?
+      .allHTTPHeaderFields?[W3CTraceContextPropagator.traceparent],
+                    "the handshake should carry traceparent", file: file, line: line)
+
+    task.cancel()
+    wait { URLSessionInstrumentationTests.instrumentation.startedRequestSpans.isEmpty }
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedErrorCalled,
+                  "the cancelled task's completion should be reported", file: file, line: line)
+    XCTAssertTrue(URLSessionInstrumentationTests.instrumentation.startedRequestSpans.isEmpty,
+                  "the span started at resume should be ended", file: file, line: line)
+  }
+
+  /// A completion-handler task reports its own completion, so the setState fallback skips it. A
+  /// later resume of the finished task must not start a span that nothing will ever end.
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testResumingCompletedDataTaskWithCompletionHandlerStartsNoSpan() {
+    let url = URL(string: "http://localhost:33333/success")!
+    let task = URLSession.shared.dataTask(with: URLRequest(url: url)) { _, _, _ in
+      URLSessionInstrumentationTests.semaphore.signal()
+    }
+    assertResumingCompletedTaskStartsNoSpan(task)
+  }
+
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testResumingCompletedUploadTaskWithCompletionHandlerStartsNoSpan() {
+    var request = URLRequest(url: URL(string: "http://localhost:33333/success")!)
+    request.httpMethod = "POST"
+    let task = URLSession.shared.uploadTask(with: request, from: Data("body".utf8)) { _, _, _ in
+      URLSessionInstrumentationTests.semaphore.signal()
+    }
+    assertResumingCompletedTaskStartsNoSpan(task)
+  }
+
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  private func assertResumingCompletedTaskStartsNoSpan(_ task: URLSessionTask,
+                                                       file: StaticString = #filePath,
+                                                       line: UInt = #line) {
+    task.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+    wait { task.state == .completed && URLSessionInstrumentationTests.instrumentation.startedRequestSpans.isEmpty }
+    let requestsBeforeResume = URLSessionInstrumentationTests.checker.createdRequestCount
+
+    task.resume()
+
+    XCTAssertEqual(URLSessionInstrumentationTests.checker.createdRequestCount, requestsBeforeResume,
+                   "resuming a completed task should not start another span", file: file, line: line)
+    XCTAssertTrue(URLSessionInstrumentationTests.instrumentation.startedRequestSpans.isEmpty,
+                  "no span should be left running after resuming a completed task", file: file, line: line)
+  }
+
+  /// The completion handler can run before the `setState:` swizzle has finished, so a resume from
+  /// inside the handler must not start a span either.
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testResumingTaskFromItsOwnCompletionHandlerStartsNoSpan() {
+    let url = URL(string: "http://localhost:33333/success")!
+    nonisolated(unsafe) var task: URLSessionTask?
+    nonisolated(unsafe) var requestsBeforeResume = 0
+    task = URLSession.shared.dataTask(with: URLRequest(url: url)) { _, _, _ in
+      requestsBeforeResume = URLSessionInstrumentationTests.checker.createdRequestCount
+      task?.resume()
+      URLSessionInstrumentationTests.semaphore.signal()
+    }
+    task?.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertEqual(URLSessionInstrumentationTests.checker.createdRequestCount, requestsBeforeResume,
+                   "resuming a task from its completion handler should not start another span")
+    wait { URLSessionInstrumentationTests.instrumentation.startedRequestSpans.isEmpty }
+    XCTAssertTrue(URLSessionInstrumentationTests.instrumentation.startedRequestSpans.isEmpty,
+                  "no span should be left running after resuming from the completion handler")
   }
 
   /// Checking for an existing span and starting one must be atomic. Two threads resuming the same

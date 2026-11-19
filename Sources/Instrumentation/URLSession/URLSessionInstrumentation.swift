@@ -863,9 +863,10 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
   }
 
   private func urlSessionTaskWillResume(_ task: URLSessionTask) {
-    // A task whose completion has already been reported gets no second span: URLSession tasks are
-    // not restartable, so a later resume is the same logical request, not a new one.
-    guard objc_getAssociatedObject(task, &reportedKey) == nil else {
+    // A completed task gets no second span: URLSession tasks are not restartable, so a later resume
+    // is the same logical request, not a new one. A completion-handler task never gets `reportedKey`,
+    // and a resume from inside a handler can run before `setState:` sets it, so check the state too.
+    guard task.state != .completed, objc_getAssociatedObject(task, &reportedKey) == nil else {
       return
     }
 
@@ -951,24 +952,19 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
         }
       }
 
-      if #available(OSX 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *) {
-        guard Task.basePriority != nil else {
-          // If not inside a Task basePriority is nil
-          return
-        }
+      guard #available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *) else { return }
 
-        let instrumentedRequest = URLSessionLogger.processAndLogRequest(request,
-                                                                        sessionTaskId: taskId,
-                                                                        instrumentation: self,
-                                                                        shouldInjectHeaders: true)
-        if let instrumentedRequest {
-          task.setValue(instrumentedRequest, forKey: "currentRequest")
-        }
-        self.setIdKey(value: taskId, for: task)
+      let instrumentedRequest = URLSessionLogger.processAndLogRequest(request,
+                                                                      sessionTaskId: taskId,
+                                                                      instrumentation: self,
+                                                                      shouldInjectHeaders: true)
+      if let instrumentedRequest {
+        task.setValue(instrumentedRequest, forKey: "currentRequest")
+      }
+      self.setIdKey(value: taskId, for: task)
 
-        if task.delegate == nil, task.state == .suspended, (task.value(forKey: "session") as? URLSession)?.delegate == nil {
-          task.delegate = FakeDelegate()
-        }
+      if task.delegate == nil, task.state == .suspended, (task.value(forKey: "session") as? URLSession)?.delegate == nil {
+        task.delegate = FakeDelegate()
       }
     }
   }
