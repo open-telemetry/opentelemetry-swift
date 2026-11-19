@@ -1,8 +1,10 @@
 // Which code path delivers MetricKit reports depends on the OS the app runs on:
 //
-// - Before iOS 27, and on visionOS: the MXMetricManagerSubscriber callbacks in this file.
-// - iOS 27 and newer: MetricManager report streams, see MetricManagerInstrumentation.swift.
-//   The subscriber callbacks return early there so reports are not emitted twice.
+// - Before iOS 27, on visionOS, or when built with an SDK older than iOS 27: the
+//   MXMetricManagerSubscriber callbacks in this file.
+// - iOS 27 and Mac Catalyst 27 and newer: MetricManager report streams, see
+//   MetricManagerInstrumentation.swift. The subscriber callbacks return early while a stream is
+//   running so reports are not emitted twice.
 //
 // See "Platform support" in README.md for details.
 
@@ -81,7 +83,7 @@
         // MARK: - Before iOS 27: MXMetricManagerSubscriber callbacks
 
         public func didReceive(_ payloads: [MXMetricPayload]) {
-            if #available(iOS 27.0, macCatalyst 27.0, *) {
+            if metricManagerStream != nil {
                 return
             }
             for payload in payloads {
@@ -91,7 +93,7 @@
 
         @available(iOS 14.0, macOS 12.0, macCatalyst 14.0, watchOS 7.0, *)
         public func didReceive(_ payloads: [MXDiagnosticPayload]) {
-            if #available(iOS 27.0, macCatalyst 27.0, *) {
+            if metricManagerStream != nil {
                 return
             }
             for payload in payloads {
