@@ -110,6 +110,9 @@ let package = Package(
     .package(url: "https://github.com/apple/swift-atomics.git", from: "1.3.1"),
     .package(url: "https://github.com/apple/swift-nio.git", from: "2.105.0"),
     .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.27.6"),
+    .package(url: "https://github.com/grpc/grpc-swift-2.git", from: "2.4.4"),
+    .package(url: "https://github.com/grpc/grpc-swift-nio-transport.git", from: "2.13.1"),
+    .package(url: "https://github.com/grpc/grpc-swift-protobuf.git", from: "2.5.0"),
     .package(
       url: "https://github.com/apple/swift-protobuf.git",
       from: "1.41.0"
@@ -220,6 +223,21 @@ let package = Package(
       dependencies: [
         "OpenTelemetrySdk",
         "OpenTelemetryProtocolExporterCommon",
+        .product(
+          name: "GRPCCore",
+          package: "grpc-swift-2",
+          condition: .whenTrait(PackageTraitName.otlpGRPC)
+        ),
+        .product(
+          name: "GRPCNIOTransportHTTP2",
+          package: "grpc-swift-nio-transport",
+          condition: .whenTrait(PackageTraitName.otlpGRPC)
+        ),
+        .product(
+          name: "GRPCProtobuf",
+          package: "grpc-swift-protobuf",
+          condition: .whenTrait(PackageTraitName.otlpGRPC)
+        ),
       ],
       path: "Sources/Exporters/OpenTelemetryProtocolGrpc"
     ),
@@ -350,6 +368,21 @@ let package = Package(
         "OpenTelemetryProtocolExporterGrpc",
         "OpenTelemetryProtocolExporterHttp",
         "SharedTestUtils",
+        .product(
+          name: "GRPCCore",
+          package: "grpc-swift-2",
+          condition: .whenTrait(PackageTraitName.otlpGRPC)
+        ),
+        .product(
+          name: "GRPCNIOTransportHTTP2",
+          package: "grpc-swift-nio-transport",
+          condition: .whenTrait(PackageTraitName.otlpGRPC)
+        ),
+        .product(
+          name: "GRPCProtobuf",
+          package: "grpc-swift-protobuf",
+          condition: .whenTrait(PackageTraitName.otlpGRPC)
+        ),
       ],
       path: "Tests/ExportersTests/OpenTelemetryProtocol"
     ),
