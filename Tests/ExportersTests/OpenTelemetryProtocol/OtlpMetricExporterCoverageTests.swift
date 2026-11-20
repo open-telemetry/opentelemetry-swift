@@ -140,15 +140,34 @@ final class OtlpMetricExporterCoverageTests: XCTestCase {
     let metricExporter = OtlpMetricExporter(client: client, envVarHeaders: nil)
 
     await traceExporter.shutdown(explicitTimeout: nil)
+    let traceResult = await traceExporter.export(spans: [makeSpan()], explicitTimeout: nil)
     let result = await metricExporter.export(metrics: [sampleMetric()])
 
+    XCTAssertEqual(traceResult, .failure)
     XCTAssertEqual(result, .success)
     XCTAssertFalse(fakeCollector.receivedMetrics.isEmpty)
     XCTAssertEqual(traceCollector.requestCount, 0)
 
     client.beginGracefulShutdown()
-    try await runTask.value
+    let runResult = await runTask.result
     await sharedServer.stop()
+    try runResult.get()
+  }
+
+  private func makeSpan() -> SpanData {
+    let start = Date()
+    var span = SpanData(traceId: TraceId(fromHexString: "00000000000000000000000000abc123"),
+                        spanId: SpanId(fromHexString: "0000000000def456"),
+                        name: "GET /api/endpoint",
+                        kind: SpanKind.server,
+                        startTime: start,
+                        endTime: start.addingTimeInterval(0.9))
+    span.settingHasEnded(true)
+    span.settingTotalRecordedEvents(0)
+    span.settingLinks([SpanData.Link]())
+    span.settingTotalRecordedLinks(0)
+    span.settingStatus(.ok)
+    return span
   }
 }
 

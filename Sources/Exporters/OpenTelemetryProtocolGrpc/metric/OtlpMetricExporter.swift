@@ -116,7 +116,6 @@ public final class OtlpMetricExporter: MetricExporter, Sendable {
     }
   }
 
-  /// Don't call this from Swift concurrency. Use the async overload instead.
   public func flush() -> ExportResult {
     .success
   }
@@ -125,7 +124,6 @@ public final class OtlpMetricExporter: MetricExporter, Sendable {
     .success
   }
 
-  /// Don't call this from Swift concurrency. Use the async overload instead.
   public func shutdown() -> ExportResult {
     connection.shutdown()
     return .success

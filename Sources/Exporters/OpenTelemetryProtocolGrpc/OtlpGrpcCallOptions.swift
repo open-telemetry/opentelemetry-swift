@@ -9,7 +9,7 @@ import Foundation
 import GRPCCore
 import OpenTelemetryProtocolExporterCommon
 
-private let maximumDeadlineSeconds = TimeInterval(Int32.max)
+let maximumDeadlineSeconds = TimeInterval(Int32.max)
 
 /// Builds the metadata for an export call, reading dynamic headers immediately before the call.
 ///

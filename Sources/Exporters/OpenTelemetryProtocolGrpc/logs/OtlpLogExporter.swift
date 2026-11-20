@@ -91,7 +91,6 @@ public final class OtlpLogExporter: LogRecordExporter, Sendable {
     }
   }
 
-  /// Don't call this from Swift concurrency. Use the async overload instead.
   public func shutdown(explicitTimeout: TimeInterval? = nil) {
     connection.shutdown()
   }
@@ -100,7 +99,6 @@ public final class OtlpLogExporter: LogRecordExporter, Sendable {
     await connection.shutdown(timeout: explicitTimeout)
   }
 
-  /// Don't call this from Swift concurrency. Use the async overload instead.
   public func forceFlush(explicitTimeout: TimeInterval? = nil) -> ExportResult {
     .success
   }

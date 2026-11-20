@@ -9,6 +9,7 @@ import Foundation
 import GRPCCore
 import GRPCNIOTransportHTTP2
 import OpenTelemetryApi
+import OpenTelemetryProtocolExporterCommon
 @testable import OpenTelemetryProtocolExporterGrpc
 @testable import OpenTelemetrySdk
 import Synchronization
@@ -33,16 +34,54 @@ final class OtlpGrpcConnectionTests: XCTestCase {
     let exportedBeforeShutdown = await exporter.export(spans: [makeSpan()], explicitTimeout: nil)
     XCTAssertEqual(exportedBeforeShutdown, .success)
 
-    await exporter.shutdown()
+    let start = Date()
+    await exporter.shutdown(explicitTimeout: 1)
+    let firstShutdownElapsed = Date().timeIntervalSince(start)
+    XCTAssertLessThan(firstShutdownElapsed, 1, "The client stopped on its own instead of at the timeout")
     XCTAssertTrue(exporter.connection.isShutdown)
     let exportedAfterShutdown = await exporter.export(spans: [makeSpan()], explicitTimeout: nil)
     XCTAssertEqual(exportedAfterShutdown, .failure)
 
-    let start = Date()
+    let secondShutdownStart = Date()
     await exporter.connection.shutdown(timeout: 1)
-    let elapsed = Date().timeIntervalSince(start)
+    let elapsed = Date().timeIntervalSince(secondShutdownStart)
     XCTAssertLessThan(elapsed, 2)
     XCTAssertLessThan(elapsed, 1, "The client stopped on its own instead of at the timeout")
+  }
+
+  func testShutdownWithNonFiniteTimeoutWaitsForClientToStop() async throws {
+    for timeout in [TimeInterval.infinity, -TimeInterval.infinity, TimeInterval.nan, TimeInterval.greatestFiniteMagnitude] {
+      let exporter = try OtlpTraceExporter(transport: server.makeClientTransport(), envVarHeaders: nil)
+      let exported = await exporter.export(spans: [makeSpan()], explicitTimeout: nil)
+      XCTAssertEqual(exported, .success)
+
+      await exporter.shutdown(explicitTimeout: timeout)
+
+      XCTAssertTrue(exporter.connection.isShutdown, "Timeout \(timeout)")
+    }
+  }
+
+  func testShutdownTimeoutCancelsClientWhileCallIsInFlight() async throws {
+    let blockingCollector = BlockingTraceCollector()
+    let blockedServer = try await OtlpGrpcTestServer(service: blockingCollector)
+    let exporter = try OtlpTraceExporter(transport: blockedServer.makeClientTransport(), envVarHeaders: nil)
+    let span = makeSpan()
+    let export = Task { await exporter.export(spans: [span], explicitTimeout: 0) }
+    await blockingCollector.waitForRequest()
+
+    let timeout: TimeInterval = 0.5
+    let start = Date()
+    await exporter.connection.shutdown(timeout: timeout)
+    let elapsed = Date().timeIntervalSince(start)
+
+    blockingCollector.release()
+    let exportResult = await export.value
+    await blockedServer.stop()
+
+    XCTAssertGreaterThanOrEqual(elapsed, timeout * 0.9, "The shutdown returned before the timeout")
+    XCTAssertLessThan(elapsed, timeout + 20, "The shutdown did not return at the timeout")
+    XCTAssertTrue(exporter.connection.isShutdown)
+    XCTAssertEqual(exportResult, .failure)
   }
 
   func testCallerOwnedClientKeepsRunningAfterShutdown() async throws {
@@ -103,6 +142,38 @@ final class OtlpGrpcConnectionTests: XCTestCase {
     span.settingTotalRecordedLinks(0)
     span.settingStatus(.ok)
     return span
+  }
+}
+
+@available(macOS 15, iOS 18, tvOS 18, watchOS 11, visionOS 2, *)
+private final class BlockingTraceCollector: Opentelemetry_Proto_Collector_Trace_V1_TraceService.ServiceProtocol, Sendable {
+  private let received: AsyncStream<Void>
+  private let receivedContinuation: AsyncStream<Void>.Continuation
+  private let gate: AsyncStream<Void>
+  private let gateContinuation: AsyncStream<Void>.Continuation
+
+  init() {
+    (received, receivedContinuation) = AsyncStream.makeStream()
+    (gate, gateContinuation) = AsyncStream.makeStream()
+  }
+
+  func export(
+    request: ServerRequest<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest>,
+    context: ServerContext
+  ) async throws -> ServerResponse<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse> {
+    receivedContinuation.yield()
+    for await _ in gate {}
+    return ServerResponse(message: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse())
+  }
+
+  func waitForRequest() async {
+    for await _ in received {
+      return
+    }
+  }
+
+  func release() {
+    gateContinuation.finish()
   }
 }
 
