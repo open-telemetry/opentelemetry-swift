@@ -3,80 +3,52 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import Foundation
-
-extension String: @retroactive Error {}
-extension Swift.String: @retroactive LocalizedError {
-  public var errorDescription: String? { return self }
-}
-
 #if OTLPGRPC
 
-import GRPC
-import Logging
-import NIO
+import Foundation
+import GRPCCore
+import GRPCNIOTransportHTTP2
 import OpenTelemetryApi
 import OpenTelemetryProtocolExporterCommon
 @testable import OpenTelemetryProtocolExporterGrpc
 @testable import OpenTelemetrySdk
+import Synchronization
 import XCTest
 
-class OtlpTraceExporterTests: XCTestCase {
+@available(macOS 15, iOS 18, tvOS 18, watchOS 11, visionOS 2, *)
+final class OtlpTraceExporterTests: XCTestCase {
   let traceId = "00000000000000000000000000abc123"
   let spanId = "0000000000def456"
 
-  var fakeCollector: FakeCollector!
-  var server: EventLoopFuture<Server>!
-  var channel: ClientConnection!
+  var fakeCollector: FakeTraceCollector!
+  var server: OtlpGrpcTestServer<FakeTraceCollector>!
 
-  let channelGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-  let serverGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-
-  override func setUp() {
-    fakeCollector = FakeCollector()
-    server = startServer()
-    channel = startChannel()
+  override func setUp() async throws {
+    fakeCollector = FakeTraceCollector()
+    server = try await OtlpGrpcTestServer(service: fakeCollector)
   }
 
-  override func tearDown() {
-    try! serverGroup.syncShutdownGracefully()
-    try! channelGroup.syncShutdownGracefully()
+  override func tearDown() async throws {
+    await server.stop()
   }
 
-  func testExport() {
+  func testExport() throws {
     let span = generateFakeSpan()
-    let exporter = OtlpTraceExporter(channel: channel)
+    let exporter = try makeExporter()
     let result = exporter.export(spans: [span])
     XCTAssertEqual(result, SpanExporterResultCode.success)
     XCTAssertEqual(fakeCollector.receivedSpans, SpanAdapter.toProtoResourceSpans(spanDataList: [span]))
     exporter.shutdown()
   }
 
-  func testImplicitGrpcLoggingConfig() throws {
-    let exporter = OtlpTraceExporter(channel: channel)
-    let logger = exporter.callOptions.logger
-    XCTAssertEqual(logger.label, "io.grpc")
-  }
-
-  func testExplicitGrpcLoggingConfig() throws {
-    let exporter = OtlpTraceExporter(channel: channel, logger: Logger(label: "my.grpc.logger"))
-    let logger = exporter.callOptions.logger
-    XCTAssertEqual(logger.label, "my.grpc.logger")
-  }
-
   func verifyUserAgentIsSet(exporter: OtlpTraceExporter) {
-    let callOptions = exporter.callOptions
-    let customMetadata = callOptions.customMetadata
-    let userAgent = Headers.getUserAgentHeader()
-    if customMetadata.contains(name: Constants.HTTP.userAgent), customMetadata.first(name: Constants.HTTP.userAgent) == userAgent {
-      return
-    }
-
-    XCTFail("User-Agent header was not set correctly")
+    XCTAssertEqual(exporter.export(spans: [generateFakeSpan()]), .success)
+    XCTAssertEqual(fakeCollector.receivedUserAgentHeaders, [Headers.getUserAgentHeader()])
   }
 
   func testConfigHeadersIsNil_whenDefaultInitCalled() throws {
-    let exporter = OtlpTraceExporter(channel: channel)
+    let exporter = try makeExporter()
+    defer { exporter.shutdown() }
     XCTAssertNil(exporter.config.headers)
 
     verifyUserAgentIsSet(exporter: exporter)
@@ -84,26 +56,27 @@ class OtlpTraceExporterTests: XCTestCase {
 
   func testConfigHeadersAreSet_whenInitCalledWithCustomConfig() throws {
     let config = OtlpConfiguration(timeout: TimeInterval(10), headers: [("FOO", "BAR")])
-    let exporter = OtlpTraceExporter(channel: channel, config: config)
+    let exporter = try makeExporter(config: config, envVarHeaders: nil)
+    defer { exporter.shutdown() }
     XCTAssertNotNil(exporter.config.headers)
     XCTAssertEqual(exporter.config.headers?[0].0, "FOO")
     XCTAssertEqual(exporter.config.headers?[0].1, "BAR")
-    XCTAssertEqual("BAR", exporter.callOptions.customMetadata.first(name: "FOO"))
 
     verifyUserAgentIsSet(exporter: exporter)
+    XCTAssertEqual(fakeCollector.receivedHeaders("FOO"), ["BAR"])
   }
 
   func testConfigHeadersAreSet_whenInitCalledWithExplicitHeaders() throws {
-    let exporter = OtlpTraceExporter(channel: channel, envVarHeaders: [("FOO", "BAR")])
+    let exporter = try makeExporter(envVarHeaders: [("FOO", "BAR")])
+    defer { exporter.shutdown() }
     XCTAssertNil(exporter.config.headers)
-    XCTAssertEqual("BAR", exporter.callOptions.customMetadata.first(name: "FOO"))
 
     verifyUserAgentIsSet(exporter: exporter)
+    XCTAssertEqual(fakeCollector.receivedHeaders("FOO"), ["BAR"])
   }
 
-  func testStaticConfigHeadersReachCollector() {
-    let exporter = OtlpTraceExporter(
-      channel: channel,
+  func testStaticConfigHeadersReachCollector() throws {
+    let exporter = try makeExporter(
       config: OtlpConfiguration(headers: [("authorization", "Bearer static")]),
       envVarHeaders: nil
     )
@@ -114,10 +87,9 @@ class OtlpTraceExporterTests: XCTestCase {
     XCTAssertEqual(fakeCollector.receivedAuthorizationHeaders, ["Bearer static"])
   }
 
-  func testHeadersProviderIsEvaluatedForEveryExport() {
+  func testHeadersProviderIsEvaluatedForEveryExport() throws {
     let provider = MutableHeadersProvider([("authorization", "Bearer first")])
-    let exporter = OtlpTraceExporter(
-      channel: channel,
+    let exporter = try makeExporter(
       config: OtlpConfiguration(
         headers: [
           ("x-static-header", "static-value"),
@@ -142,10 +114,9 @@ class OtlpTraceExporterTests: XCTestCase {
     XCTAssertEqual(provider.callCount, 2)
   }
 
-  func testEnvVarHeadersTakePrecedenceOverHeadersProvider() {
+  func testEnvVarHeadersTakePrecedenceOverHeadersProvider() throws {
     let provider = MutableHeadersProvider([("authorization", "Bearer provider")])
-    let exporter = OtlpTraceExporter(
-      channel: channel,
+    let exporter = try makeExporter(
       config: OtlpConfiguration(headersProvider: provider.currentHeaders),
       envVarHeaders: [("authorization", "Bearer environment")]
     )
@@ -157,42 +128,40 @@ class OtlpTraceExporterTests: XCTestCase {
     XCTAssertEqual(provider.callCount, 0)
   }
 
-  func testExportMultipleSpans() {
+  func testExportMultipleSpans() throws {
     var spans = [SpanData]()
     for _ in 0 ..< 10 {
       spans.append(generateFakeSpan())
     }
-    let exporter = OtlpTraceExporter(channel: channel)
+    let exporter = try makeExporter()
     let result = exporter.export(spans: spans)
     XCTAssertEqual(result, SpanExporterResultCode.success)
     XCTAssertEqual(fakeCollector.receivedSpans, SpanAdapter.toProtoResourceSpans(spanDataList: spans))
     exporter.shutdown()
   }
 
-  func testExportAfterShutdown() {
+  func testExportAfterShutdown() throws {
     let span = generateFakeSpan()
-    let exporter = OtlpTraceExporter(channel: channel)
+    let exporter = try makeExporter()
     exporter.shutdown()
     let result = exporter.export(spans: [span])
     XCTAssertEqual(result, SpanExporterResultCode.failure)
   }
 
-  func testExportCancelled() {
-    fakeCollector.returnedStatus = GRPCStatus(code: .cancelled, message: nil)
-    let exporter = OtlpTraceExporter(channel: channel)
+  func testExportCancelled() throws {
+    fakeCollector.setError(RPCError(code: .cancelled, message: ""))
+    let exporter = try makeExporter()
     let span = generateFakeSpan()
     let result = exporter.export(spans: [span])
     XCTAssertEqual(result, SpanExporterResultCode.failure)
     exporter.shutdown()
   }
 
-  func testExportFailureIsReported() {
-    let expectedStatus = GRPCStatus(code: .unavailable, message: "collector unavailable")
-    fakeCollector.returnedStatus = expectedStatus
+  func testExportFailureIsReported() throws {
+    fakeCollector.setError(RPCError(code: .unavailable, message: "collector unavailable"))
+    let exporter = try makeExporter()
+    defer { exporter.shutdown() }
     withFeedbackRecorder { recorder in
-      let exporter = OtlpTraceExporter(channel: channel)
-      defer { exporter.shutdown() }
-
       let result = exporter.export(spans: [generateFakeSpan()])
 
       XCTAssertEqual(result, .failure)
@@ -205,17 +174,16 @@ class OtlpTraceExporterTests: XCTestCase {
     }
   }
 
-  func testRejectedSpansAreReported() {
-    fakeCollector.returnedResponse = .with {
+  func testRejectedSpansAreReported() throws {
+    fakeCollector.setResponse(.with {
       $0.partialSuccess = .with {
         $0.rejectedSpans = 2
         $0.errorMessage = "invalid span data"
       }
-    }
+    })
+    let exporter = try makeExporter()
+    defer { exporter.shutdown() }
     withFeedbackRecorder { recorder in
-      let exporter = OtlpTraceExporter(channel: channel)
-      defer { exporter.shutdown() }
-
       let result = exporter.export(spans: [generateFakeSpan()])
 
       XCTAssertEqual(result, .success)
@@ -225,16 +193,15 @@ class OtlpTraceExporterTests: XCTestCase {
     }
   }
 
-  func testPartialSuccessWarningIsReported() {
-    fakeCollector.returnedResponse = .with {
+  func testPartialSuccessWarningIsReported() throws {
+    fakeCollector.setResponse(.with {
       $0.partialSuccess = .with {
         $0.errorMessage = "consider reducing the batch size"
       }
-    }
+    })
+    let exporter = try makeExporter()
+    defer { exporter.shutdown() }
     withFeedbackRecorder { recorder in
-      let exporter = OtlpTraceExporter(channel: channel)
-      defer { exporter.shutdown() }
-
       let result = exporter.export(spans: [generateFakeSpan()])
 
       XCTAssertEqual(result, .success)
@@ -244,19 +211,91 @@ class OtlpTraceExporterTests: XCTestCase {
     }
   }
 
-  func testEmptyPartialSuccessIsNotReported() {
-    fakeCollector.returnedResponse = .with {
+  func testEmptyPartialSuccessIsNotReported() throws {
+    fakeCollector.setResponse(.with {
       $0.partialSuccess = Opentelemetry_Proto_Collector_Trace_V1_ExportTracePartialSuccess()
-    }
+    })
+    let exporter = try makeExporter()
+    defer { exporter.shutdown() }
     withFeedbackRecorder { recorder in
-      let exporter = OtlpTraceExporter(channel: channel)
-      defer { exporter.shutdown() }
-
       let result = exporter.export(spans: [generateFakeSpan()])
 
       XCTAssertEqual(result, .success)
       XCTAssertTrue(recorder.messages.isEmpty)
     }
+  }
+
+  func testExportWithUnstartedClientFailsWithinTimeout() throws {
+    let client = try GRPCClient(transport: server.makeClientTransport())
+    let exporter = OtlpTraceExporter(
+      client: client,
+      config: OtlpConfiguration(timeout: 0.5),
+      envVarHeaders: nil
+    )
+    defer { client.beginGracefulShutdown() }
+
+    let start = Date()
+    let result = exporter.export(spans: [generateFakeSpan()])
+    let elapsed = Date().timeIntervalSince(start)
+
+    XCTAssertEqual(result, .failure)
+    XCTAssertLessThan(elapsed, 3)
+    XCTAssertEqual(fakeCollector.requestCount, 0)
+  }
+
+  func testConcurrentSyncExportsAllComplete() throws {
+    let exporter = try makeExporter()
+    defer { exporter.shutdown() }
+    let span = generateFakeSpan()
+    let results = ExportResults()
+
+    DispatchQueue.concurrentPerform(iterations: 8) { _ in
+      results.append(exporter.export(spans: [span]))
+    }
+
+    XCTAssertEqual(results.all, Array(repeating: SpanExporterResultCode.success, count: 8))
+    XCTAssertEqual(fakeCollector.requestCount, 8)
+  }
+
+  func testGzipExportSucceedsOverLoopback() async throws {
+    let gzipCollector = FakeTraceCollector()
+    let gzipServer = try await OtlpGrpcTestServer(service: gzipCollector, compression: .all)
+    let exporter = try OtlpTraceExporter(
+      transport: gzipServer.makeClientTransport(compression: .all),
+      config: OtlpConfiguration(compression: .gzip),
+      envVarHeaders: nil
+    )
+
+    let span = generateFakeSpan()
+    let result = await exporter.export(spans: [span], explicitTimeout: nil)
+
+    XCTAssertEqual(result, .success)
+    XCTAssertEqual(gzipCollector.receivedSpans, SpanAdapter.toProtoResourceSpans(spanDataList: [span]))
+    XCTAssertEqual(gzipCollector.receivedHeaders("grpc-encoding"), ["gzip"])
+    await exporter.shutdown(explicitTimeout: 1)
+    await gzipServer.stop()
+  }
+
+  func testAsyncExportSucceeds() async throws {
+    let exporter = try makeExporter()
+    let span = generateFakeSpan()
+
+    let result = await exporter.export(spans: [span], explicitTimeout: nil)
+
+    XCTAssertEqual(result, .success)
+    XCTAssertEqual(fakeCollector.receivedSpans, SpanAdapter.toProtoResourceSpans(spanDataList: [span]))
+    await exporter.shutdown(explicitTimeout: 1)
+  }
+
+  private func makeExporter(
+    config: OtlpConfiguration = OtlpConfiguration(),
+    envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes
+  ) throws -> OtlpTraceExporter {
+    try OtlpTraceExporter(
+      transport: server.makeClientTransport(),
+      config: config,
+      envVarHeaders: envVarHeaders
+    )
   }
 
   private func withFeedbackRecorder(_ operation: (FeedbackRecorder) -> Void) {
@@ -288,24 +327,6 @@ class OtlpTraceExporterTests: XCTestCase {
 
     return testData
   }
-
-  func startServer() -> EventLoopFuture<Server> {
-    // Start the server and print its address once it has started.
-    let server = Server.insecure(group: serverGroup)
-      .withServiceProviders([fakeCollector])
-      .bind(host: "localhost", port: 4317)
-
-    server.map(\.channel.localAddress).whenSuccess { address in
-      print("server started on port \(address!.port!)")
-    }
-    return server
-  }
-
-  func startChannel() -> ClientConnection {
-    let channel = ClientConnection.insecure(group: channelGroup)
-      .connect(host: "localhost", port: 4317)
-    return channel
-  }
 }
 
 private final class FeedbackRecorder: @unchecked Sendable {
@@ -325,24 +346,79 @@ private final class FeedbackRecorder: @unchecked Sendable {
   }
 }
 
-class FakeCollector: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceProvider {
-  var receivedSpans = [Opentelemetry_Proto_Trace_V1_ResourceSpans]()
-  var receivedAuthorizationHeaders = [String?]()
-  var receivedStaticHeaders = [String?]()
-  var receivedUserAgentHeaders = [String?]()
-  var returnedStatus = GRPCStatus.ok
-  var returnedResponse = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse()
-  var interceptors: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceServerInterceptorFactoryProtocol?
+@available(macOS 15, iOS 18, tvOS 18, watchOS 11, visionOS 2, *)
+private final class ExportResults: Sendable {
+  private let results = Mutex<[SpanExporterResultCode]>([])
 
-  func export(request: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest, context: StatusOnlyCallContext) -> EventLoopFuture<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse> {
-    receivedSpans.append(contentsOf: request.resourceSpans)
-    receivedAuthorizationHeaders.append(context.headers.first(name: "authorization"))
-    receivedStaticHeaders.append(context.headers.first(name: "x-static-header"))
-    receivedUserAgentHeaders.append(context.headers.first(name: Constants.HTTP.userAgent))
-    if returnedStatus != GRPCStatus.ok {
-      return context.eventLoop.makeFailedFuture(returnedStatus)
+  var all: [SpanExporterResultCode] {
+    results.withLock { $0 }
+  }
+
+  func append(_ result: SpanExporterResultCode) {
+    results.withLock { $0.append(result) }
+  }
+}
+
+@available(macOS 15, iOS 18, tvOS 18, watchOS 11, visionOS 2, *)
+final class FakeTraceCollector: Opentelemetry_Proto_Collector_Trace_V1_TraceService.ServiceProtocol, Sendable {
+  private struct State {
+    var receivedSpans = [Opentelemetry_Proto_Trace_V1_ResourceSpans]()
+    var receivedMetadata = [Metadata]()
+    var returnedError: RPCError?
+    var returnedResponse = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse()
+  }
+
+  private let state = Mutex(State())
+
+  func export(
+    request: ServerRequest<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest>,
+    context: ServerContext
+  ) async throws -> ServerResponse<Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse> {
+    let outcome = state.withLock { state in
+      state.receivedSpans.append(contentsOf: request.message.resourceSpans)
+      state.receivedMetadata.append(request.metadata)
+      return (state.returnedError, state.returnedResponse)
     }
-    return context.eventLoop.makeSucceededFuture(returnedResponse)
+    if let error = outcome.0 {
+      throw error
+    }
+    return ServerResponse(message: outcome.1)
+  }
+
+  var receivedSpans: [Opentelemetry_Proto_Trace_V1_ResourceSpans] {
+    state.withLock { $0.receivedSpans }
+  }
+
+  var requestCount: Int {
+    state.withLock { $0.receivedMetadata.count }
+  }
+
+  var receivedAuthorizationHeaders: [String?] {
+    receivedFirstHeaders("authorization")
+  }
+
+  var receivedStaticHeaders: [String?] {
+    receivedFirstHeaders("x-static-header")
+  }
+
+  var receivedUserAgentHeaders: [String?] {
+    receivedFirstHeaders(Constants.HTTP.userAgent)
+  }
+
+  func receivedHeaders(_ name: String) -> [String] {
+    state.withLock { $0.receivedMetadata.flatMap { Array($0[stringValues: name]) } }
+  }
+
+  func setError(_ error: RPCError?) {
+    state.withLock { $0.returnedError = error }
+  }
+
+  func setResponse(_ response: Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse) {
+    state.withLock { $0.returnedResponse = response }
+  }
+
+  private func receivedFirstHeaders(_ name: String) -> [String?] {
+    state.withLock { $0.receivedMetadata.map { Array($0[stringValues: name]).first } }
   }
 }
 
