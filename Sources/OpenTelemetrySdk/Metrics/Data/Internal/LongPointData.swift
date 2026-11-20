@@ -17,7 +17,7 @@ public class LongPointData: PointData, Codable, @unchecked Sendable {
     case exemplars
   }
 
-  init(startEpochNanos: UInt64, endEpochNanos: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], value: Int) {
+  public init(startEpochNanos: UInt64, endEpochNanos: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], value: Int) {
     self.value = value
     super.init(startEpochNanos: startEpochNanos, endEpochNanos: endEpochNanos, attributes: attributes, exemplars: exemplars)
   }

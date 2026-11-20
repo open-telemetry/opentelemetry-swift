@@ -31,7 +31,7 @@ public class HistogramPointData: PointData, Codable, @unchecked Sendable {
     case exemplars
   }
 
-  init(startEpochNanos: UInt64, endEpochNanos: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], sum: Double, count: UInt64, min: Double, max: Double, boundaries: [Double], counts: [Int], hasMin: Bool, hasMax: Bool) {
+  public init(startEpochNanos: UInt64, endEpochNanos: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], sum: Double, count: UInt64, min: Double, max: Double, boundaries: [Double], counts: [Int], hasMin: Bool, hasMax: Bool) {
     self.sum = sum
     self.count = count
     self.min = min
