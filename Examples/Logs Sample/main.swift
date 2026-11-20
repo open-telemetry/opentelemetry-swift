@@ -9,7 +9,6 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterGrpc
-import Logging
 import GRPCCore
 import GRPCNIOTransportHTTP2
 

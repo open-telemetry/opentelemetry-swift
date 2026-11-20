@@ -51,6 +51,8 @@
 
     // One client serves every exporter. The exporters only send through it, so the
     // example runs the client's connections itself and shuts it down when it is done.
+    // The task is detached because a plain `Task` would inherit the main actor, which the
+    // code below never yields, so the client would not run until the example ends.
     let client = GRPCClient(
       transport: try makeCollectorTransport(
         host: collectorHost,
@@ -58,7 +60,7 @@
         transport: collectorTransport
       )
     )
-    let clientTask = Task { try await client.runConnections() }
+    let clientTask = Task.detached { try await client.runConnections() }
 
     let otlpTraceExporter = OtlpTraceExporter(client: client)
     let stdoutExporter = StdoutSpanExporter()
