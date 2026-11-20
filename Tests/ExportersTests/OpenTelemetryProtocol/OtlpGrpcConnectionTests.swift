@@ -50,14 +50,17 @@ final class OtlpGrpcConnectionTests: XCTestCase {
   }
 
   func testShutdownWithNonFiniteTimeoutWaitsForClientToStop() async throws {
-    for timeout in [TimeInterval.infinity, -TimeInterval.infinity, TimeInterval.nan, TimeInterval.greatestFiniteMagnitude] {
+    for timeout in [TimeInterval.infinity, -TimeInterval.infinity, TimeInterval.nan, TimeInterval.greatestFiniteMagnitude, -TimeInterval.greatestFiniteMagnitude, -1e30] {
       let exporter = try OtlpTraceExporter(transport: server.makeClientTransport(), envVarHeaders: nil)
       let exported = await exporter.export(spans: [makeSpan()], explicitTimeout: nil)
       XCTAssertEqual(exported, .success)
 
+      let start = Date()
       await exporter.shutdown(explicitTimeout: timeout)
+      let elapsed = Date().timeIntervalSince(start)
 
       XCTAssertTrue(exporter.connection.isShutdown, "Timeout \(timeout)")
+      XCTAssertLessThan(elapsed, 5, "Timeout \(timeout)")
     }
   }
 

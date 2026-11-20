@@ -73,11 +73,12 @@ final class OtlpGrpcConnection: Sendable {
   /// Shuts down, then waits for an owned client to stop its connections.
   ///
   /// If the client is still running after `timeout`, its connections are cancelled.
-  /// A `nil`, non-finite or very large timeout waits for in-flight calls to finish.
+  /// A `nil`, NaN or very large timeout waits for in-flight calls to finish.
+  /// A zero or negative timeout cancels the connections at once.
   func shutdown(timeout: TimeInterval?) async {
     shutdown()
     guard let runTask else { return }
-    guard let timeout, timeout.isFinite, timeout < maximumDeadlineSeconds else {
+    guard let timeout, !timeout.isNaN, timeout < maximumDeadlineSeconds else {
       await runTask.value
       return
     }
@@ -87,7 +88,7 @@ final class OtlpGrpcConnection: Sendable {
       let resume: @Sendable () -> Void = { pending.resume() }
       let timer = Task {
         do {
-          try await Task.sleep(for: .seconds(timeout))
+          try await Task.sleep(for: .seconds(max(0, timeout)))
         } catch {
           return
         }
