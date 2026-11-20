@@ -66,6 +66,9 @@ public final class OtlpTraceExporter: SpanExporter, Sendable {
               envVarHeaders: envVarHeaders)
   }
 
+  /// Blocks the calling thread until the export finishes.
+  ///
+  /// Don't call this from Swift concurrency. Use the async overload instead.
   public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
     otlpGrpcBlocking { await self.export(spans: spans, explicitTimeout: explicitTimeout) }
   }
@@ -92,6 +95,7 @@ public final class OtlpTraceExporter: SpanExporter, Sendable {
     }
   }
 
+  /// Don't call this from Swift concurrency. Use the async overload instead.
   public func flush(explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
     return .success
   }
@@ -100,6 +104,7 @@ public final class OtlpTraceExporter: SpanExporter, Sendable {
     return .success
   }
 
+  /// Don't call this from Swift concurrency. Use the async overload instead.
   public func shutdown(explicitTimeout: TimeInterval? = nil) {
     connection.shutdown()
   }
