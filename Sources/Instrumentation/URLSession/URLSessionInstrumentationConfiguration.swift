@@ -60,7 +60,8 @@ public struct URLSessionInstrumentationConfiguration {
               baggageProvider: ((inout URLRequest, Span?) -> (Baggage)?)? = nil,
               tracer: Tracer? = nil,
               ignoredClassPrefixes: [String]? = nil,
-              semanticConvention: HTTPSemanticConvention = .old) {
+              semanticConvention: HTTPSemanticConvention = .old,
+              instrumentsSessionDelegatesOnResume: Bool = true) {
     self.shouldRecordPayload = shouldRecordPayload
     self.shouldRecordPayloadForRequest = shouldRecordPayloadForRequest
     self.responsePayloadRecordingMode = responsePayloadRecordingMode
@@ -80,6 +81,7 @@ public struct URLSessionInstrumentationConfiguration {
       OpenTelemetry.instance.tracerProvider.get(instrumentationName: "NSURLSession", instrumentationVersion: "1.0.0")
     self.ignoredClassPrefixes = ignoredClassPrefixes
     self.semanticConvention = semanticConvention
+    self.instrumentsSessionDelegatesOnResume = instrumentsSessionDelegatesOnResume
   }
 
   public var tracer: Tracer
@@ -149,7 +151,10 @@ public struct URLSessionInstrumentationConfiguration {
   ///  Called before the span is ended, it allows to add extra information to the Span
   public var receivedError: ((Error, DataOrFile?, HTTPStatus, Span) -> Void)?
 
-  ///  The array of URLSession delegate classes that will be instrumented by the library, will autodetect if nil is passed.
+  /// The session delegate classes instrumented when the instrumentation is created. When `nil`, every class
+  /// loaded in the process is searched for session delegate methods instead. A session delegate that is not
+  /// instrumented here is instrumented when a task on its session resumes, unless
+  /// `instrumentsSessionDelegatesOnResume` is `false`.
   public var delegateClassesToInstrument: [AnyClass]?
 
   /// Provides a baggage instance for instrumented requests that is merged with active baggage (if any).
@@ -168,4 +173,12 @@ public struct URLSessionInstrumentationConfiguration {
 
   /// Which HTTP semantic conventions to emit
   public var semanticConvention: HTTPSemanticConvention
+
+  /// Whether resuming a task instruments its session delegate's class when that class was not instrumented
+  /// at creation, `true` by default. Instrumenting swizzles the class's delegate methods and adds
+  /// `urlSession(_:task:didCompleteWithError:)` and `urlSession(_:task:didFinishCollecting:)` when it lacks
+  /// them. Set it to `false` to leave every other class unmodified. Requests on their sessions are still
+  /// traced and their spans still end, but `receivedResponse` and `receivedError` get no response body
+  /// for them.
+  public var instrumentsSessionDelegatesOnResume: Bool
 }

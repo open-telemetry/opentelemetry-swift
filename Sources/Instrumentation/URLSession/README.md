@@ -40,6 +40,8 @@ Payloads are not currently available for async/await requests: those report no p
 
 `delegateClassesToInstrument: [AnyClass]?`: The session delegate classes to instrument. When this is `nil`, the instrumentation discovers them by examining **every class loaded in the process** at initialization, which is the default. Passing your delegate classes explicitly skips that search — see [Initialization cost](#initialization-cost) below.
 
+`instrumentsSessionDelegatesOnResume: Bool`: Whether resuming a task instruments its session delegate's class when that class was not instrumented at initialization, `true` by default. Set it to `false` to leave delegate classes you did not list unmodified — see [Initialization cost](#initialization-cost) below.
+
 `baggageProvider: ((inout URLRequest, Span) -> (Baggage)?)?`: Provides baggage instance for instrumented requests that is merged with active baggage. The callback receives URLRequest and Span parameters to create dynamic baggage based on request context. The resulting baggage is injected into request headers using the configured propagator.
 
 ## Initialization cost
@@ -56,7 +58,7 @@ URLSessionInstrumentation(
 )
 ```
 
-The list only decides which delegate classes are instrumented up front. A session delegate you leave out is instrumented the first time a task on its session is resumed, so its requests are still captured. Requests made with completion handlers or `async`/`await` are captured either way: completion handlers are wrapped when the task is created, and `async`/`await` requests are picked up when their task is resumed.
+The list only decides which delegate classes are instrumented up front. By default, a session delegate you leave out is instrumented the first time a task on its session is resumed, so its requests are still captured. Instrumenting swizzles the class's delegate methods and adds `urlSession(_:task:didCompleteWithError:)` and `urlSession(_:task:didFinishCollecting:)` if it lacks them. To keep the instrumentation off classes you did not list, such as those of other networking libraries, pass `instrumentsSessionDelegatesOnResume: false`. Requests on those sessions are still traced and their spans still end, but `receivedResponse` and `receivedError` get no response body for them. Requests made with completion handlers or `async`/`await` are captured either way: completion handlers are wrapped when the task is created, and `async`/`await` requests are picked up when their task is resumed.
 
 A delegate assigned to an individual task through `URLSessionTask.delegate` is not instrumented on resume. Requests using it still get a span that ends when the task completes, and `receivedResponse` or `receivedError` is still called, but without the response body, because that delegate's callbacks are not instrumented. List those classes if you record response bodies with `shouldRecordPayload`.
 
