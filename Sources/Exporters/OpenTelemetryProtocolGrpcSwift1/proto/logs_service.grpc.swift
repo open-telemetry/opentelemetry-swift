@@ -6,7 +6,7 @@
 // Source: opentelemetry/proto/collector/logs/v1/logs_service.proto
 //
 
-#if OTLPGRPC
+#if OTLPGRPCSwift1
 
 import GRPC
 import NIO

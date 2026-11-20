@@ -3,13 +3,13 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#if OTLPGRPC
+#if OTLPGRPCSwift1
 
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterCommon
-import OpenTelemetryProtocolExporterGrpc
+import OpenTelemetryProtocolExporterGrpcSwift1
 import StdoutExporter
 import GRPC
 import NIO
@@ -109,6 +109,6 @@ var gauge = meter.gaugeBuilder(name: "Gauge").buildWithCallback { _ in
 
 #else
 
-print("This example requires the OTLPGRPC package trait.")
+print("This example requires the OTLPGRPCSwift1 package trait.")
 
 #endif

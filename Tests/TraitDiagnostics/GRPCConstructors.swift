@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import OpenTelemetryProtocolExporterGrpc
+import OpenTelemetryProtocolExporterGrpcSwift1
 
 /// The disabled trait must explain how to enable gRPC without requiring GRPCChannel.
 func checkExporters(channel: Any) {

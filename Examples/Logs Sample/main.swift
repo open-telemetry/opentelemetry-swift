@@ -3,12 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#if OTLPGRPC
+#if OTLPGRPCSwift1
 
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
-import OpenTelemetryProtocolExporterGrpc
+import OpenTelemetryProtocolExporterGrpcSwift1
 import Logging
 import GRPC
 import NIO
@@ -28,6 +28,6 @@ let eventProvider = OpenTelemetry.instance.loggerProvider.loggerBuilder(instrume
 
 #else
 
-print("This example requires the OTLPGRPC package trait.")
+print("This example requires the OTLPGRPCSwift1 package trait.")
 
 #endif

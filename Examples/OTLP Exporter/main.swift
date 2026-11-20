@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if OTLPGRPC && os(macOS)
+#if OTLPGRPCSwift1 && os(macOS)
 
   import Foundation
   import GRPC
   import NIO
   import OpenTelemetryApi
-  import OpenTelemetryProtocolExporterGrpc
+  import OpenTelemetryProtocolExporterGrpcSwift1
   import OpenTelemetrySdk
   import ResourceExtension
   import SignPostIntegration
@@ -150,6 +150,6 @@ var exampleObserver = meter.gaugeBuilder(
 
 #elseif os(macOS)
 
-  print("This example requires the OTLPGRPC package trait.")
+  print("This example requires the OTLPGRPCSwift1 package trait.")
 
 #endif

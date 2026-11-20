@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#if OTLPGRPC
+#if OTLPGRPCSwift1
 
 import Foundation
 import GRPC
@@ -13,6 +13,7 @@ import NIOHPACK
 import OpenTelemetryProtocolExporterCommon
 import OpenTelemetrySdk
 
+@available(*, deprecated, message: "Built on grpc-swift 1, which is in maintenance mode. Use OpenTelemetryProtocolExporter with the `OTLPGRPC` trait (iOS 18, macOS 15, tvOS 18, watchOS 11, visionOS 2 and later). This exporter will be removed in 4.0.")
 public final class OtlpMetricExporter: MetricExporter {
   public func getAggregationTemporality(for instrument: OpenTelemetrySdk.InstrumentType) -> OpenTelemetrySdk.AggregationTemporality {
     return aggregationTemporalitySelector.getAggregationTemporality(for: instrument)

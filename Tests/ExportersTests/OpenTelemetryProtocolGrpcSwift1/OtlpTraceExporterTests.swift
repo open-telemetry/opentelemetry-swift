@@ -10,14 +10,14 @@ extension Swift.String: @retroactive LocalizedError {
   public var errorDescription: String? { return self }
 }
 
-#if OTLPGRPC
+#if OTLPGRPCSwift1
 
 import GRPC
 import Logging
 import NIO
 import OpenTelemetryApi
 import OpenTelemetryProtocolExporterCommon
-@testable import OpenTelemetryProtocolExporterGrpc
+@testable import OpenTelemetryProtocolExporterGrpcSwift1
 @testable import OpenTelemetrySdk
 import XCTest
 

@@ -6,6 +6,7 @@ import PackageDescription
 
 enum PackageTraitName {
   static let otlpGRPC = "OTLPGRPC"
+  static let otlpGRPCSwift1 = "OTLPGRPCSwift1"
   static let prometheus = "Prometheus"
   static let swiftObservabilityAPIBridges = "SwiftObservabilityAPIBridges"
   static let jaeger = "Jaeger"
@@ -17,6 +18,10 @@ let packageTraits: [Trait] = [
   .trait(
     name: PackageTraitName.otlpGRPC,
     description: "Adds the OTLP exporter over gRPC."
+  ),
+  .trait(
+    name: PackageTraitName.otlpGRPCSwift1,
+    description: "Adds the deprecated OTLP exporter over gRPC built on grpc-swift 1, for iOS 15–17 / macOS 12–14. Removed in 4.0."
   ),
   .trait(
     name: PackageTraitName.prometheus,
@@ -78,6 +83,10 @@ let package = Package(
     .library(
       name: "OpenTelemetryProtocolExporter",
       targets: ["OpenTelemetryProtocolExporterGrpc"]
+    ),
+    .library(
+      name: "OpenTelemetryProtocolExporterGrpcSwift1",
+      targets: ["OpenTelemetryProtocolExporterGrpcSwift1"]
     ),
     .library(
       name: "OpenTelemetryProtocolExporterHTTP",
@@ -211,18 +220,26 @@ let package = Package(
       dependencies: [
         "OpenTelemetrySdk",
         "OpenTelemetryProtocolExporterCommon",
+      ],
+      path: "Sources/Exporters/OpenTelemetryProtocolGrpc"
+    ),
+    .target(
+      name: "OpenTelemetryProtocolExporterGrpcSwift1",
+      dependencies: [
+        "OpenTelemetrySdk",
+        "OpenTelemetryProtocolExporterCommon",
         .product(
           name: "GRPC",
           package: "grpc-swift",
-          condition: .whenTrait(PackageTraitName.otlpGRPC)
+          condition: .whenTrait(PackageTraitName.otlpGRPCSwift1)
         ),
         .product(
           name: "Logging",
           package: "swift-log",
-          condition: .whenTrait(PackageTraitName.otlpGRPC)
+          condition: .whenTrait(PackageTraitName.otlpGRPCSwift1)
         ),
       ],
-      path: "Sources/Exporters/OpenTelemetryProtocolGrpc"
+      path: "Sources/Exporters/OpenTelemetryProtocolGrpcSwift1"
     ),
     .target(
       name: "InMemoryExporter",
@@ -337,6 +354,29 @@ let package = Package(
       path: "Tests/ExportersTests/OpenTelemetryProtocol"
     ),
     .testTarget(
+      name: "OpenTelemetryProtocolExporterGrpcSwift1Tests",
+      dependencies: [
+        "OpenTelemetryProtocolExporterGrpcSwift1",
+        "SharedTestUtils",
+        .product(
+          name: "GRPC",
+          package: "grpc-swift",
+          condition: .whenTrait(PackageTraitName.otlpGRPCSwift1)
+        ),
+        .product(
+          name: "NIO",
+          package: "swift-nio",
+          condition: .whenTrait(PackageTraitName.otlpGRPCSwift1)
+        ),
+        .product(
+          name: "Logging",
+          package: "swift-log",
+          condition: .whenTrait(PackageTraitName.otlpGRPCSwift1)
+        ),
+      ],
+      path: "Tests/ExportersTests/OpenTelemetryProtocolGrpcSwift1"
+    ),
+    .testTarget(
       name: "InMemoryExporterTests",
       dependencies: [
         "InMemoryExporter",
@@ -389,11 +429,11 @@ let package = Package(
       name: "LogsSample",
       dependencies: [
         "OpenTelemetrySdk",
-        "OpenTelemetryProtocolExporterGrpc",
+        "OpenTelemetryProtocolExporterGrpcSwift1",
         .product(
           name: "GRPC",
           package: "grpc-swift",
-          condition: .whenTrait(PackageTraitName.otlpGRPC)
+          condition: .whenTrait(PackageTraitName.otlpGRPCSwift1)
         ),
       ],
       path: "Examples/Logs Sample"
@@ -402,7 +442,7 @@ let package = Package(
       name: "StableMetricSample",
       dependencies: [
         "OpenTelemetrySdk",
-        "OpenTelemetryProtocolExporterGrpc",
+        "OpenTelemetryProtocolExporterGrpcSwift1",
         "StdoutExporter",
       ],
       path: "Examples/Stable Metric Sample",
@@ -581,17 +621,17 @@ extension Package {
           name: "OTLPExporter",
           dependencies: [
             "OpenTelemetrySdk",
-            "OpenTelemetryProtocolExporterGrpc",
+            "OpenTelemetryProtocolExporterGrpcSwift1",
             "StdoutExporter",
             .product(
               name: "GRPC",
               package: "grpc-swift",
-              condition: .whenTrait(PackageTraitName.otlpGRPC)
+              condition: .whenTrait(PackageTraitName.otlpGRPCSwift1)
             ),
             .product(
               name: "NIO",
               package: "swift-nio",
-              condition: .whenTrait(PackageTraitName.otlpGRPC)
+              condition: .whenTrait(PackageTraitName.otlpGRPCSwift1)
             ),
             "ZipkinExporter",
             "ResourceExtension",

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-#if OTLPGRPC
+#if OTLPGRPCSwift1
 
 import Foundation
 import GRPC
@@ -11,7 +11,7 @@ import Logging
 import NIO
 import OpenTelemetryApi
 import OpenTelemetryProtocolExporterCommon
-@testable import OpenTelemetryProtocolExporterGrpc
+@testable import OpenTelemetryProtocolExporterGrpcSwift1
 @testable import OpenTelemetrySdk
 import XCTest
 

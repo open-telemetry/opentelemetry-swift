@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if OTLPGRPC
+#if OTLPGRPCSwift1
 
 import GRPC
 import NIOHPACK
