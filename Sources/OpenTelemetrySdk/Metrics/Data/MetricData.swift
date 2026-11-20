@@ -45,7 +45,7 @@ public struct MetricData: Equatable, Codable, Sendable {
     public private(set) var points: [PointData]
     public private(set) var aggregationTemporality: AggregationTemporality
 
-    init(aggregationTemporality: AggregationTemporality, points: [PointData]) {
+    public init(aggregationTemporality: AggregationTemporality, points: [PointData]) {
       self.aggregationTemporality = aggregationTemporality
       self.points = points
     }
@@ -155,7 +155,7 @@ public struct MetricData: Equatable, Codable, Sendable {
     }
   }
 
-  init(
+  public init(
     resource: Resource,
     instrumentationScopeInfo: InstrumentationScopeInfo,
     name: String,
@@ -201,7 +201,7 @@ extension MetricData {
     )
   }
 
-  static func createDoubleGauge(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, data: GaugeData) -> MetricData {
+  public static func createDoubleGauge(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, data: GaugeData) -> MetricData {
     MetricData(
       resource: resource,
       instrumentationScopeInfo: instrumentationScopeInfo,
@@ -214,7 +214,7 @@ extension MetricData {
     )
   }
 
-  static func createLongGauge(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, data: GaugeData) -> MetricData {
+  public static func createLongGauge(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, data: GaugeData) -> MetricData {
     MetricData(
       resource: resource,
       instrumentationScopeInfo: instrumentationScopeInfo,
@@ -227,7 +227,7 @@ extension MetricData {
     )
   }
 
-  static func createDoubleSum(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, isMonotonic: Bool, data: SumData) -> MetricData {
+  public static func createDoubleSum(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, isMonotonic: Bool, data: SumData) -> MetricData {
     MetricData(
       resource: resource,
       instrumentationScopeInfo: instrumentationScopeInfo,
@@ -240,7 +240,7 @@ extension MetricData {
     )
   }
 
-  static func createLongSum(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, isMonotonic: Bool, data: SumData) -> MetricData {
+  public static func createLongSum(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, isMonotonic: Bool, data: SumData) -> MetricData {
     MetricData(
       resource: resource,
       instrumentationScopeInfo: instrumentationScopeInfo,
@@ -253,7 +253,7 @@ extension MetricData {
     )
   }
 
-  static func createHistogram(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, data: HistogramData) -> MetricData {
+  public static func createHistogram(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, data: HistogramData) -> MetricData {
     MetricData(
       resource: resource,
       instrumentationScopeInfo: instrumentationScopeInfo,
@@ -283,7 +283,7 @@ extension MetricData {
 public typealias StableHistogramData = HistogramData
 
 public class HistogramData: MetricData.Data, @unchecked Sendable {
-  init(aggregationTemporality: AggregationTemporality, points: [HistogramPointData]) {
+  public init(aggregationTemporality: AggregationTemporality, points: [HistogramPointData]) {
     super.init(aggregationTemporality: aggregationTemporality, points: points)
   }
 }
@@ -301,7 +301,7 @@ public class ExponentialHistogramData: MetricData.Data, @unchecked Sendable {
 public typealias StableGaugeData = GaugeData
 
 public class GaugeData: MetricData.Data, @unchecked Sendable {
-  override init(aggregationTemporality: AggregationTemporality, points: [PointData]) {
+  override public init(aggregationTemporality: AggregationTemporality, points: [PointData]) {
     super.init(aggregationTemporality: aggregationTemporality, points: points)
   }
 }
@@ -310,7 +310,7 @@ public class GaugeData: MetricData.Data, @unchecked Sendable {
 public typealias StableSumData = SumData
 
 public class SumData: MetricData.Data, @unchecked Sendable {
-  override init(aggregationTemporality: AggregationTemporality, points: [PointData]) {
+  override public init(aggregationTemporality: AggregationTemporality, points: [PointData]) {
     super.init(aggregationTemporality: aggregationTemporality, points: points)
   }
 }
