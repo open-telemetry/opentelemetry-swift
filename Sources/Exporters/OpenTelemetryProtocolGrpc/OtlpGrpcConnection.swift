@@ -75,9 +75,18 @@ final class OtlpGrpcConnection: Sendable {
   /// If the client is still running after `timeout`, its connections are cancelled.
   /// A `nil`, NaN or very large timeout waits for in-flight calls to finish.
   /// A zero or negative timeout cancels the connections at once.
+  /// Cancelling the calling task also cancels the connections, so the wait ends promptly.
   func shutdown(timeout: TimeInterval?) async {
     shutdown()
     guard let runTask else { return }
+    await withTaskCancellationHandler {
+      await waitForRunTask(runTask, timeout: timeout)
+    } onCancel: {
+      runTask.cancel()
+    }
+  }
+
+  private func waitForRunTask(_ runTask: Task<Void, Never>, timeout: TimeInterval?) async {
     guard let timeout, !timeout.isNaN, timeout < maximumDeadlineSeconds else {
       await runTask.value
       return

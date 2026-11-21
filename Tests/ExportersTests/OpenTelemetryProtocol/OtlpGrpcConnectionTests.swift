@@ -87,6 +87,47 @@ final class OtlpGrpcConnectionTests: XCTestCase {
     XCTAssertEqual(exportResult, .failure)
   }
 
+  func testCancellingShutdownWaitCancelsConnections() async throws {
+    for cancelBeforeWait in [false, true] {
+      try await assertCancellingShutdownWaitCancelsConnections(timeout: nil, cancelBeforeWait: cancelBeforeWait)
+      try await assertCancellingShutdownWaitCancelsConnections(timeout: 60, cancelBeforeWait: cancelBeforeWait)
+    }
+  }
+
+  private func assertCancellingShutdownWaitCancelsConnections(timeout: TimeInterval?,
+                                                              cancelBeforeWait: Bool) async throws {
+    let scenario = "timeout \(String(describing: timeout)), cancelled before the wait: \(cancelBeforeWait)"
+    let blockingCollector = BlockingTraceCollector()
+    let blockedServer = try await OtlpGrpcTestServer(service: blockingCollector)
+    let exporter = try OtlpTraceExporter(transport: blockedServer.makeClientTransport(), config: OtlpConfiguration(timeout: 0), envVarHeaders: nil)
+    let span = makeSpan()
+    let export = Task { await exporter.export(spans: [span], explicitTimeout: nil) }
+    await blockingCollector.waitForRequest()
+
+    let shutdownFinished = expectation(description: "Cancelled shutdown returned, \(scenario)")
+    let shutdown = Task {
+      if cancelBeforeWait {
+        while !Task.isCancelled {
+          await Task.yield()
+        }
+      }
+      await exporter.shutdown(explicitTimeout: timeout)
+      shutdownFinished.fulfill()
+    }
+    if !cancelBeforeWait {
+      try await Task.sleep(for: .milliseconds(200))
+    }
+    shutdown.cancel()
+    await fulfillment(of: [shutdownFinished], timeout: 20)
+
+    blockingCollector.release()
+    let exportResult = await export.value
+    await blockedServer.stop()
+
+    XCTAssertTrue(exporter.connection.isShutdown)
+    XCTAssertEqual(exportResult, .failure, scenario)
+  }
+
   func testCallerOwnedClientKeepsRunningAfterShutdown() async throws {
     let client = try GRPCClient(transport: server.makeClientTransport())
     let runFinished = Mutex(false)
