@@ -49,7 +49,7 @@ private final class BlockingResult<T: Sendable>: Sendable {
 
 /// Runs `operation` to completion and blocks the calling thread until it finishes.
 ///
-/// The exporter protocols are synchronous, while grpc-swift 2 is async only. `operation` runs on
+/// The exporter protocols are synchronous, while grpc-swift-2 is async only. `operation` runs on
 /// ``otlpGrpcTaskExecutor``, so callers that block every cooperative thread, such as a processor
 /// exporting inline from async code, can't starve it.
 ///

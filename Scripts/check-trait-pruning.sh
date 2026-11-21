@@ -9,8 +9,8 @@ set -euo pipefail
 #
 # - default traits: none of the optional integrations' packages may appear;
 # - only the Prometheus trait: swift-nio appears, the other traits' packages don't;
-# - only the OTLPGRPC trait: the grpc-swift 2 packages appear, grpc-swift 1 doesn't;
-# - only the OTLPGRPCSwift1 trait: grpc-swift 1 appears, the grpc-swift 2 packages don't.
+# - only the OTLPGRPC trait: the grpc-swift-2 packages appear, grpc-swift 1 doesn't;
+# - only the OTLPGRPCSwift1 trait: grpc-swift 1 appears, the grpc-swift-2 packages don't.
 #
 # Usage: Scripts/check-trait-pruning.sh
 

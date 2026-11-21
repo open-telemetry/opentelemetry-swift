@@ -191,7 +191,7 @@ do
 done
 ```
 
-##### Generating the grpc-swift 2 stubs
+##### Generating the grpc-swift-2 stubs
 
 The stubs in `OpenTelemetryProtocolGrpc/proto` come from `protoc-gen-grpc-swift-2`, which is part of [grpc-swift-protobuf]. Build the plugin from a clone at the version in `Package.swift`:
 

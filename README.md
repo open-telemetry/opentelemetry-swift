@@ -85,7 +85,7 @@ Integrations that need a third-party package are behind [package traits](https:/
 
 | Trait | Adds | Products |
 | --- | --- | --- |
-| `OTLPGRPC` (iOS 18, macOS 15, tvOS 18, watchOS 11, visionOS 2) | The OTLP exporter over gRPC, built on grpc-swift 2 | `OpenTelemetryProtocolExporter` |
+| `OTLPGRPC` (iOS 18, macOS 15, tvOS 18, watchOS 11, visionOS 2) | The OTLP exporter over gRPC, built on grpc-swift-2 | `OpenTelemetryProtocolExporter` |
 | `OTLPGRPCSwift1` | The deprecated OTLP exporter over gRPC, built on grpc-swift 1, for iOS 15–17 / macOS 12–14. Removed in 4.0. | `OpenTelemetryProtocolExporterGrpcSwift1` |
 | `Prometheus` | The Prometheus exporter | `PrometheusExporter` |
 | `SwiftObservabilityAPIBridges` | Bridges for the Swift Log, Swift Metrics, and Swift Distributed Tracing APIs | `OTelSwiftLog`, `OTelSwiftTracing`, `SwiftMetricsShim` |
@@ -128,7 +128,7 @@ If you only import this package's modules, the compiler names the missing trait 
 
 #### Migrating the OTLP gRPC exporter to 3.0
 
-With `OTLPGRPC`, `OpenTelemetryProtocolExporter` is built on grpc-swift 2 and needs at least iOS 18, macOS 15, tvOS 18, watchOS 11 or visionOS 2. `OtlpTraceExporter`, `OtlpMetricExporter` and `OtlpLogExporter` no longer take a grpc-swift 1 `channel:`:
+With `OTLPGRPC`, `OpenTelemetryProtocolExporter` is built on grpc-swift-2 and needs at least iOS 18, macOS 15, tvOS 18, watchOS 11 or visionOS 2. `OtlpTraceExporter`, `OtlpMetricExporter` and `OtlpLogExporter` no longer take a grpc-swift 1 `channel:`:
 
 - Pass a `GRPCClient` you run yourself with `client:`, so several exporters can share it. Call `runConnections()` before exporting. Shutting down an exporter doesn't stop the client.
 - Or pass a `ClientTransport` with `transport:`. The exporter then owns the client, runs it and stops it on shutdown.
