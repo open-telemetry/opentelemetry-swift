@@ -93,9 +93,13 @@ public final class OtlpMetricExporter: MetricExporter, Sendable {
 
   /// Blocks the calling thread until the export finishes.
   ///
-  /// Don't call this from Swift concurrency. Use the async overload instead.
+  /// Calling this from Swift concurrency doesn't deadlock the cooperative thread pool, but it still
+  /// blocks a cooperative thread for the whole export, so prefer the async overload there.
   public func export(metrics: [MetricData]) -> ExportResult {
-    otlpGrpcBlocking { await self.export(metrics: metrics) }
+    otlpGrpcBlocking(timeout: otlpGrpcExportTimeout(config: config, explicitTimeout: nil),
+                     whenCalledFromExecutor: .failure) {
+      await self.export(metrics: metrics)
+    }
   }
 
   public func export(metrics: [MetricData]) async -> ExportResult {

@@ -15,14 +15,14 @@ final class OtlpGrpcTestServer<Service: RegistrableRPCService>: Sendable {
   private let server: GRPCServer<HTTP2ServerTransport.Posix>
   private let serveTask: Task<Void, Never>
 
-  init(service: Service, compression: CompressionAlgorithmSet = .none) async throws {
+  init(service: Service, compression: CompressionAlgorithmSet = .none, executorPreference: (any TaskExecutor)? = nil) async throws {
     let transport = HTTP2ServerTransport.Posix(
       address: .ipv4(host: "127.0.0.1", port: 0),
       transportSecurity: .plaintext,
       config: .defaults { $0.compression.enabledAlgorithms = compression }
     )
     let server = GRPCServer(transport: transport, services: [service])
-    let serveTask = Task { _ = try? await server.serve() }
+    let serveTask = Task(executorPreference: executorPreference) { _ = try? await server.serve() }
     guard let port = try await transport.listeningAddress.ipv4?.port else {
       serveTask.cancel()
       throw RPCError(code: .unavailable, message: "The test server did not bind an IPv4 address.")

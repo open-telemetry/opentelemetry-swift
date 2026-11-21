@@ -68,9 +68,13 @@ public final class OtlpTraceExporter: SpanExporter, Sendable {
 
   /// Blocks the calling thread until the export finishes.
   ///
-  /// Don't call this from Swift concurrency. Use the async overload instead.
+  /// Calling this from Swift concurrency doesn't deadlock the cooperative thread pool, but it still
+  /// blocks a cooperative thread for the whole export, so prefer the async overload there.
   public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
-    otlpGrpcBlocking { await self.export(spans: spans, explicitTimeout: explicitTimeout) }
+    otlpGrpcBlocking(timeout: otlpGrpcExportTimeout(config: config, explicitTimeout: explicitTimeout),
+                     whenCalledFromExecutor: .failure) {
+      await self.export(spans: spans, explicitTimeout: explicitTimeout)
+    }
   }
 
   public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) async -> SpanExporterResultCode {

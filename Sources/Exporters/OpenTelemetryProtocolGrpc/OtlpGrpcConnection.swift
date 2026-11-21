@@ -43,7 +43,7 @@ final class OtlpGrpcConnection: Sendable {
     self.ownsClient = ownsClient
     beginGracefulShutdown = { client.beginGracefulShutdown() }
     if ownsClient {
-      runTask = Task { try? await client.runConnections() }
+      runTask = Task(executorPreference: otlpGrpcTaskExecutor) { try? await client.runConnections() }
     } else {
       runTask = nil
     }

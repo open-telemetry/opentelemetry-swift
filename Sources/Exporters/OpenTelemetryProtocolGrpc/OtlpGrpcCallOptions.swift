@@ -25,6 +25,17 @@ func makeOtlpGrpcMetadata(config: OtlpConfiguration,
   return metadata
 }
 
+/// The timeout of an export call, or `nil` for no deadline.
+///
+/// A timeout that is zero or negative sets no deadline.
+func otlpGrpcExportTimeout(config: OtlpConfiguration, explicitTimeout: TimeInterval?) -> TimeInterval? {
+  let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+  guard timeout > 0, timeout < maximumDeadlineSeconds else {
+    return nil
+  }
+  return timeout
+}
+
 /// Builds the call options for an export call.
 ///
 /// A timeout that is zero or negative sets no deadline.
@@ -32,8 +43,7 @@ func makeOtlpGrpcMetadata(config: OtlpConfiguration,
 func makeOtlpGrpcCallOptions(config: OtlpConfiguration,
                              explicitTimeout: TimeInterval?) -> CallOptions {
   var options = CallOptions.defaults
-  let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
-  if timeout > 0, timeout < maximumDeadlineSeconds {
+  if let timeout = otlpGrpcExportTimeout(config: config, explicitTimeout: explicitTimeout) {
     options.timeout = .seconds(timeout)
   }
   switch config.compression {

@@ -68,9 +68,13 @@ public final class OtlpLogExporter: LogRecordExporter, Sendable {
 
   /// Blocks the calling thread until the export finishes.
   ///
-  /// Don't call this from Swift concurrency. Use the async overload instead.
+  /// Calling this from Swift concurrency doesn't deadlock the cooperative thread pool, but it still
+  /// blocks a cooperative thread for the whole export, so prefer the async overload there.
   public func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval? = nil) -> ExportResult {
-    otlpGrpcBlocking { await self.export(logRecords: logRecords, explicitTimeout: explicitTimeout) }
+    otlpGrpcBlocking(timeout: otlpGrpcExportTimeout(config: config, explicitTimeout: explicitTimeout),
+                     whenCalledFromExecutor: .failure) {
+      await self.export(logRecords: logRecords, explicitTimeout: explicitTimeout)
+    }
   }
 
   public func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval? = nil) async -> ExportResult {
