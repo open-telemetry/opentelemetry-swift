@@ -1538,7 +1538,68 @@ class URLSessionInstrumentationTests: XCTestCase {
     return span.toSpanData().attributes
   }
 
+  private func responseSpanData(statusCode: Int,
+                                semanticConvention: HTTPSemanticConvention,
+                                taskId: String) throws -> SpanData {
+    let previous = URLSessionInstrumentationTests.instrumentation.configuration.semanticConvention
+    defer { URLSessionInstrumentationTests.instrumentation.configuration.semanticConvention = previous }
+    URLSessionInstrumentationTests.instrumentation.configuration.semanticConvention = semanticConvention
+
+    let request = URLRequest(url: URL(string: "http://example.com/path")!)
+    URLSessionLogger.processAndLogRequest(
+      request,
+      sessionTaskId: taskId,
+      instrumentation: URLSessionInstrumentationTests.instrumentation,
+      shouldInjectHeaders: false
+    )
+    let span = try XCTUnwrap(URLSessionLogger.runningSpans[taskId] as? SpanSdk)
+    let response = try XCTUnwrap(
+      HTTPURLResponse(url: request.url!, statusCode: statusCode, httpVersion: nil, headerFields: nil)
+    )
+    URLSessionLogger.logResponse(
+      response,
+      dataOrFile: nil,
+      request: request,
+      instrumentation: URLSessionInstrumentationTests.instrumentation,
+      sessionTaskId: taskId
+    )
+    return span.toSpanData()
+  }
+
+  public func testStableSemanticConvention200HasNoErrorType() throws {
+    let data = try responseSpanData(statusCode: 200, semanticConvention: .stable, taskId: "stable-200")
+
+    XCTAssertEqual(data.status, .unset)
+    XCTAssertEqual(data.attributes["http.response.status_code"]?.description, "200")
+    XCTAssertNil(data.attributes["error.type"])
+  }
+
+  public func testStableSemanticConvention404RecordsErrorType() throws {
+    let data = try responseSpanData(statusCode: 404, semanticConvention: .stable, taskId: "stable-404")
+
+    XCTAssertEqual(data.status, .error(description: ""))
+    XCTAssertEqual(data.attributes["http.response.status_code"]?.description, "404")
+    XCTAssertEqual(data.attributes["error.type"]?.description, "404")
+  }
+
+  public func testStableSemanticConvention500RecordsErrorType() throws {
+    let data = try responseSpanData(statusCode: 500, semanticConvention: .stable, taskId: "stable-500")
+
+    XCTAssertEqual(data.status, .error(description: ""))
+    XCTAssertEqual(data.attributes["http.response.status_code"]?.description, "500")
+    XCTAssertEqual(data.attributes["error.type"]?.description, "500")
+  }
+
+  public func testOldSemanticConvention404KeepsStatusDescription() throws {
+    let data = try responseSpanData(statusCode: 404, semanticConvention: .old, taskId: "old-404")
+
+    XCTAssertEqual(data.status, .error(description: "404"))
+    XCTAssertEqual(data.attributes["http.status_code"]?.description, "404")
+    XCTAssertNil(data.attributes["error.type"])
+  }
+
   // MARK: - Background session tests
+
   @available(macOS 10.15, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
   public func testBackgroundSession_ShouldNotCrashWhenAssigningDelegate() async throws {
     let request = URLRequest(url: URL(string: "http://localhost:33333/success")!)
