@@ -54,7 +54,7 @@ final class OtlpGrpcBlockingTests: XCTestCase {
 
     for _ in 0 ..< concurrentExports {
       let span = makeSpan()
-      Task {
+      Task { @Sendable in
         let result = exportBlocking(exporter, span)
         results.withLock { $0.append(result) }
         allFinished.fulfill()
@@ -227,7 +227,7 @@ final class OtlpGrpcBlockingTests: XCTestCase {
                                              body: @escaping @Sendable () -> Void) -> Int {
     let barrier = Mutex((arrived: 0, released: false))
     for _ in 0 ..< taskCount {
-      Task(priority: .medium) {
+      Task(priority: .medium) { @Sendable in
         barrier.withLock { $0.arrived += 1 }
         while !barrier.withLock({ $0.released }) {
           usleep(1000)

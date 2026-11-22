@@ -16,7 +16,14 @@ check_diagnostics() {
   local build_path
   build_path="$(swift build --disable-default-traits --show-bin-path)"
 
+  # C modules of dependencies, such as Atomics' _AtomicsShims on Linux, are found only through their include directories.
+  local clang_includes=()
+  while IFS= read -r module_map; do
+    clang_includes+=(-Xcc "-I$(dirname "$module_map")")
+  done < <(find .build/checkouts -path '*/include/module.modulemap')
+
   if swiftc -typecheck -I "$build_path/Modules" -I "$build_path" \
+    ${clang_includes[@]+"${clang_includes[@]}"} \
     "$source" >"$DIAGNOSTICS" 2>&1; then
     echo "error: gRPC exporters compiled without the $trait trait" >&2
     exit 1
