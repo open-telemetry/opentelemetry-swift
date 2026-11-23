@@ -13,6 +13,7 @@
     public private(set) var networkMonitor: NetworkMonitorProtocol
 
     private let lock = NSLock()
+    private let refreshLock = NSLock()
     private var cachedServiceId: String?
     private var cachedRadioTech: [String: String]?
     private var cachedProviders: [String: CTCarrier]?
@@ -26,8 +27,6 @@
       networkMonitor = monitor
       networkInfo = info
 
-      refreshCachedState()
-
       if #available(iOS 13.0, *) {
         let proxy = NetworkInfoDelegateProxy { [weak self] in
           self?.refreshCachedState()
@@ -35,6 +34,8 @@
         networkInfo.delegate = proxy
         delegateProxy = proxy
       }
+
+      refreshCachedState()
     }
 
     public func status() -> (String, String?, CTCarrier?) {
@@ -64,7 +65,10 @@
     }
 
     /// Snapshots the current `CTTelephonyNetworkInfo` state into the cached properties.
+    /// Serialised, because the delegate and the radio notification can fire together on different queues.
     fileprivate func refreshCachedState() {
+      refreshLock.lock()
+      defer { refreshLock.unlock() }
       let serviceId = networkInfo.dataServiceIdentifier
       let radioTech = networkInfo.serviceCurrentRadioAccessTechnology
       let providers = networkInfo.serviceSubscriberCellularProviders
@@ -110,22 +114,26 @@
     }
   }
 
-  /// Forwards `CTTelephonyNetworkInfoDelegate` callbacks to a closure.
+  /// Forwards `CTTelephonyNetworkInfoDelegate` callbacks and radio technology changes to a closure.
+  /// The delegate reports only data-service switches; radio changes arrive as a notification.
   @available(iOS 13.0, *)
   private class NetworkInfoDelegateProxy: NSObject, CTTelephonyNetworkInfoDelegate {
     private let onUpdate: () -> Void
 
     init(onUpdate: @escaping () -> Void) {
       self.onUpdate = onUpdate
+      super.init()
+      NotificationCenter.default.addObserver(self,
+                                             selector: #selector(radioAccessTechnologyDidChange(_:)),
+                                             name: .CTServiceRadioAccessTechnologyDidChange,
+                                             object: nil)
     }
 
     func dataServiceIdentifierDidChange(_ identifier: String) {
       onUpdate()
     }
 
-    func serviceCurrentRadioAccessTechnologyDidChange(
-      _ serviceCurrentRadioAccessTechnology: [String: String]
-    ) {
+    @objc private func radioAccessTechnologyDidChange(_ notification: Notification) {
       onUpdate()
     }
   }

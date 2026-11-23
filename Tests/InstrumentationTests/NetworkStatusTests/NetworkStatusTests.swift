@@ -84,6 +84,56 @@
     }
   }
 
+  class MutableCTTelephonyNetworkInfo: CTTelephonyNetworkInfo {
+    private let lock = NSLock()
+    private var serviceId: String?
+    private var radioTech: [String: String]?
+    private var activeReads = 0
+    private(set) var maxConcurrentReads = 0
+    private(set) var totalReads = 0
+    private let carrier = MockCTCarrier(carrierName: "TestCarrier", isoCountryCode: "US", mobileCountryCode: "310", mobileNetworkCode: "410")
+
+    init(serviceId: String?, radioTech: [String: String]?) {
+      self.serviceId = serviceId
+      self.radioTech = radioTech
+      super.init()
+    }
+
+    func set(serviceId: String?, radioTech: [String: String]?) {
+      lock.lock()
+      defer { lock.unlock() }
+      self.serviceId = serviceId
+      self.radioTech = radioTech
+    }
+
+    override var dataServiceIdentifier: String? {
+      read { serviceId }
+    }
+
+    override var serviceCurrentRadioAccessTechnology: [String: String]? {
+      read { radioTech }
+    }
+
+    override var serviceSubscriberCellularProviders: [String: CTCarrier]? {
+      read { serviceId.map { [$0: carrier] } }
+    }
+
+    private func read<T>(_ value: () -> T) -> T {
+      lock.lock()
+      activeReads += 1
+      totalReads += 1
+      maxConcurrentReads = max(maxConcurrentReads, activeReads)
+      lock.unlock()
+      usleep(200)
+      lock.lock()
+      defer {
+        activeReads -= 1
+        lock.unlock()
+      }
+      return value()
+    }
+  }
+
   final class InstrumentorTests: XCTestCase {
     func test() {
       let wifi_status = NetworkStatus(with: MockNetworkMonitor(connection: .wifi))
@@ -161,6 +211,42 @@
         XCTAssertEqual("LTE", subtype)
         XCTAssertEqual("TestCarrier", carrier?.carrierName)
       }
+    }
+
+    func testCellularSubtypeFollowsRadioTechnologyChangeNotification() {
+      let info = MutableCTTelephonyNetworkInfo(serviceId: "service1",
+                                               radioTech: ["service1": "CTRadioAccessTechnologyLTE"])
+      let netStatus = NetworkStatus(with: MockNetworkMonitor(connection: .cellular), info: info)
+      XCTAssertEqual("LTE", netStatus.status().1)
+
+      info.set(serviceId: "service1", radioTech: ["service1": "CTRadioAccessTechnologyNR"])
+      NotificationCenter.default.post(name: .CTServiceRadioAccessTechnologyDidChange, object: "service1")
+
+      XCTAssertEqual("NR", netStatus.status().1)
+    }
+
+    func testConcurrentRefreshesNeverReadTelephonyInfoConcurrently() throws {
+      let info = MutableCTTelephonyNetworkInfo(serviceId: "service1",
+                                               radioTech: ["service1": "CTRadioAccessTechnologyLTE"])
+      let netStatus = NetworkStatus(with: MockNetworkMonitor(connection: .cellular), info: info)
+      let delegate = try XCTUnwrap(info.delegate)
+      let readsBefore = info.totalReads
+      let iterations = 64
+      let refreshes = (0 ..< iterations).filter { $0 % 3 != 2 }.count
+
+      DispatchQueue.concurrentPerform(iterations: iterations) { index in
+        switch index % 3 {
+        case 0:
+          delegate.dataServiceIdentifierDidChange?("service1")
+        case 1:
+          NotificationCenter.default.post(name: .CTServiceRadioAccessTechnologyDidChange, object: "service1")
+        default:
+          _ = netStatus.status()
+        }
+      }
+
+      XCTAssertGreaterThanOrEqual(info.totalReads - readsBefore, refreshes * 3)
+      XCTAssertEqual(1, info.maxConcurrentReads)
     }
   }
 
