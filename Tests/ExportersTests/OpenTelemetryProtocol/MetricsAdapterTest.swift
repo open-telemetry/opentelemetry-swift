@@ -160,6 +160,26 @@ final class MetricsAdapterTest: XCTestCase {
     XCTAssertEqual(value?.first?.count, UInt64(count))
   }
 
+  func testToProtoMetricLeavesHistogramMinAndMaxUnsetWhenFlagsAreFalse() throws {
+    let point = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], sum: 15, count: 3, min: 0, max: 0, boundaries: [5], counts: [2, 1], hasMin: false, hasMax: false)
+    let metricData = MetricData.createHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: HistogramData(aggregationTemporality: .delta, points: [point]))
+
+    let protoPoint = try XCTUnwrap(MetricsAdapter.toProtoMetric(metricData: metricData)?.histogram.dataPoints.first)
+
+    XCTAssertFalse(protoPoint.hasMin)
+    XCTAssertFalse(protoPoint.hasMax)
+  }
+
+  func testToProtoMetricSetsHistogramMinAndMaxWhenFlagsAreTrue() throws {
+    let point = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], sum: 15, count: 3, min: 1, max: 10, boundaries: [5], counts: [2, 1], hasMin: true, hasMax: true)
+    let metricData = MetricData.createHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: HistogramData(aggregationTemporality: .delta, points: [point]))
+
+    let protoPoint = try XCTUnwrap(MetricsAdapter.toProtoMetric(metricData: metricData)?.histogram.dataPoints.first)
+
+    XCTAssertEqual(protoPoint.min, 1)
+    XCTAssertEqual(protoPoint.max, 10)
+  }
+
   func testToProtoResourceMetricsWithExponentialHistogram() throws {
     let positivieBuckets = DoubleBase2ExponentialHistogramBuckets(scale: 20, maxBuckets: 160)
     positivieBuckets.downscale(by: 20)

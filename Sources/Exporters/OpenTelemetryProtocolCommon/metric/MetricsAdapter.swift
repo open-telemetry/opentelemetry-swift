@@ -109,8 +109,12 @@ public enum MetricsAdapter {
         injectPointData(protoHistogramPoint: &protoDataPoint, pointData: histogramData)
         protoDataPoint.sum = Double(histogramData.sum)
         protoDataPoint.count = UInt64(histogramData.count)
-        protoDataPoint.max = Double(histogramData.max)
-        protoDataPoint.min = Double(histogramData.min)
+        if histogramData.hasMax {
+          protoDataPoint.max = Double(histogramData.max)
+        }
+        if histogramData.hasMin {
+          protoDataPoint.min = Double(histogramData.min)
+        }
         protoDataPoint.explicitBounds = histogramData.boundaries.map { Double($0) }
         protoDataPoint.bucketCounts = histogramData.counts.map { UInt64($0) }
         protoMetric.histogram.aggregationTemporality = metricData.data.aggregationTemporality.convertToProtoEnum()
