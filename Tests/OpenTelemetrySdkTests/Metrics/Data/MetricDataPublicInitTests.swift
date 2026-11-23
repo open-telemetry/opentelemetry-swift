@@ -39,7 +39,8 @@ final class MetricDataPublicInitTests: XCTestCase {
       description: "description",
       unit: "1",
       isMonotonic: true,
-      data: SumData(aggregationTemporality: .delta, points: [point])
+      aggregationTemporality: .delta,
+      points: [point]
     )
 
     let collected = PrecomputedMetricProducer(metrics: [metric]).collectAllMetrics()
@@ -78,7 +79,8 @@ final class MetricDataPublicInitTests: XCTestCase {
       description: "description",
       unit: "1",
       isMonotonic: false,
-      data: SumData(aggregationTemporality: .cumulative, points: [longPoint])
+      aggregationTemporality: .cumulative,
+      points: [longPoint]
     )
     let longGauge = MetricData.createLongGauge(
       resource: resource,
@@ -86,7 +88,8 @@ final class MetricDataPublicInitTests: XCTestCase {
       name: "long_gauge",
       description: "description",
       unit: "1",
-      data: GaugeData(aggregationTemporality: .cumulative, points: [longPoint])
+      aggregationTemporality: .cumulative,
+      points: [longPoint]
     )
     let doubleGauge = MetricData.createDoubleGauge(
       resource: resource,
@@ -94,7 +97,8 @@ final class MetricDataPublicInitTests: XCTestCase {
       name: "double_gauge",
       description: "description",
       unit: "1",
-      data: GaugeData(aggregationTemporality: .cumulative, points: [doublePoint])
+      aggregationTemporality: .cumulative,
+      points: [doublePoint]
     )
 
     XCTAssertEqual(longSum.type, .LongSum)
@@ -127,7 +131,8 @@ final class MetricDataPublicInitTests: XCTestCase {
       name: "histogram",
       description: "description",
       unit: "ms",
-      data: HistogramData(aggregationTemporality: .delta, points: [point])
+      aggregationTemporality: .delta,
+      points: [point]
     )
 
     XCTAssertEqual(metric.type, .Histogram)
@@ -136,21 +141,5 @@ final class MetricDataPublicInitTests: XCTestCase {
     XCTAssertEqual(collectedPoint.endEpochNanos, endEpochNanos)
     XCTAssertEqual(collectedPoint.counts, [2, 1])
     XCTAssertEqual(collectedPoint.sum, 15.0)
-  }
-
-  func testMetricDataInitializerAcceptsCustomData() {
-    let metric = MetricData(
-      resource: resource,
-      instrumentationScopeInfo: scope,
-      name: "custom",
-      description: "description",
-      unit: "1",
-      type: .DoubleGauge,
-      isMonotonic: false,
-      data: MetricData.Data(aggregationTemporality: .cumulative, points: [])
-    )
-
-    XCTAssertEqual(metric.name, "custom")
-    XCTAssertTrue(metric.data.points.isEmpty)
   }
 }
