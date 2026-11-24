@@ -70,7 +70,8 @@ public class HistogramPointData: PointData, Codable, @unchecked Sendable {
     count = try values.decode(UInt64.self, forKey: .count)
     hasMin = try values.decode(Bool.self, forKey: .hasMin)
     hasMax = try values.decode(Bool.self, forKey: .hasMax)
-    hasSum = try values.decode(Bool.self, forKey: .hasSum)
+    // Payloads saved before hasSum existed always carried a real sum, so a missing key means true.
+    hasSum = try values.decodeIfPresent(Bool.self, forKey: .hasSum) ?? true
     min = try values.decode(Double.self, forKey: .min)
     max = try values.decode(Double.self, forKey: .max)
     boundaries = try values.decode([Double].self, forKey: .boundaries)
