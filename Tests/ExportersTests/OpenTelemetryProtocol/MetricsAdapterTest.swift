@@ -198,6 +198,15 @@ final class MetricsAdapterTest: XCTestCase {
     XCTAssertEqual(protoPoint.sum, 15)
   }
 
+  func testToProtoMetricSkipsHistogramPointWhenBucketCountsDoNotMatchBoundaries() throws {
+    let point = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], sum: 15, count: 3, min: 1, max: 10, boundaries: [5, 10], counts: [2, 1], hasMin: true, hasMax: true, hasSum: true)
+    let metricData = MetricData.createHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: HistogramData(aggregationTemporality: .delta, points: [point]))
+
+    let protoMetric = try XCTUnwrap(MetricsAdapter.toProtoMetric(metricData: metricData))
+
+    XCTAssertTrue(protoMetric.histogram.dataPoints.isEmpty)
+  }
+
   func testToProtoMetricSkipsHistogramPointWithNegativeBucketCount() throws {
     let point = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], sum: 15, count: 3, min: 1, max: 10, boundaries: [5], counts: [2, 1], hasMin: true, hasMax: true, hasSum: true)
     point.counts = [2, -1]

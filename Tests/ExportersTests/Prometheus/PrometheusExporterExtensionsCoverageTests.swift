@@ -147,6 +147,15 @@ final class PrometheusExporterExtensionsCoverageTests: XCTestCase {
     XCTAssertTrue(out.contains("le=\"+Inf\""))
   }
 
+  func testWriteHistogramSkipsPointWhenBucketCountsDoNotMatchBoundaries() {
+    let metric = makeHistogramMetric()
+    let point = metric.data.points.first as! HistogramPointData
+    point.counts = [1, 1]
+    let exporter = exporterWith([[metric]])
+    let out = PrometheusExporterExtensions.writeMetricsCollection(exporter: exporter)
+    XCTAssertFalse(out.contains("hist_bucket"))
+  }
+
   func testWriteSummaryProducesSummaryLines() {
     let exporter = exporterWith([[makeSummaryMetric()]])
     let out = PrometheusExporterExtensions.writeMetricsCollection(exporter: exporter)

@@ -103,6 +103,7 @@ public enum MetricsAdapter {
         protoMetric.summary.dataPoints.append(protoDataPoint)
       case .Histogram:
         guard let histogramData = $0 as? HistogramPointData,
+              histogramData.counts.count == histogramData.boundaries.count + 1,
               histogramData.counts.allSatisfy({ $0 >= 0 }) else {
           break
         }

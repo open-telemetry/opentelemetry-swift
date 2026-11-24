@@ -82,7 +82,8 @@ public enum PrometheusExporterExtensions {
               doubleValue: Double(gauge.value)
             )
         case .Histogram:
-          guard let histogram = metricData as? HistogramPointData else { break }
+          guard let histogram = metricData as? HistogramPointData,
+                histogram.counts.count == histogram.boundaries.count + 1 else { break }
           let count = histogram.count
           let sum = histogram.sum
           let bucketsBoundaries = histogram.boundaries
