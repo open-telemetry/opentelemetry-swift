@@ -84,6 +84,13 @@ class URLSessionLogger {
     }
   }
 
+  private static let defaultPortsByScheme = ["http": 80, "https": 443, "ws": 80, "wss": 443]
+
+  private static func effectivePort(of url: URL) -> Int? {
+    guard url.host != nil else { return nil }
+    return url.port ?? url.scheme.flatMap { defaultPortsByScheme[$0.lowercased()] }
+  }
+
   /// This methods creates a Span for a request, and optionally injects tracing headers, returns a  new request if it was needed to create a new one to add the tracing headers
   @discardableResult static func processAndLogRequest(_ request: URLRequest, sessionTaskId: String, instrumentation: URLSessionInstrumentation, shouldInjectHeaders: Bool) -> URLRequest? {
     // Schemes such as file:, data: and app-specific URLProtocol schemes would otherwise get a span
@@ -158,13 +165,11 @@ class URLSessionLogger {
       }
     }
 
-    if let port = request.url?.port {
-      if useOld {
-        attributes[LegacyHTTPAttributes.netPeerPort.rawValue] = AttributeValue.int(port)
-      }
-      if useStable {
-        attributes[SemanticConventions.Server.port.rawValue] = AttributeValue.int(port)
-      }
+    if useOld, let port = request.url?.port {
+      attributes[LegacyHTTPAttributes.netPeerPort.rawValue] = AttributeValue.int(port)
+    }
+    if useStable, let port = request.url.flatMap(effectivePort) {
+      attributes[SemanticConventions.Server.port.rawValue] = AttributeValue.int(port)
     }
 
     if let bodySize = request.httpBody?.count {
