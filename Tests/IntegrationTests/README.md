@@ -13,6 +13,10 @@ repo work together inside a real iOS app. The flow is:
      against the status server's `/status/{200,404,500}` endpoints, and a session
      expiry via a 2s session timeout, plus whatever the `Sessions` and
      `ResourceExtension` instrumentations add.
+   - `main-stable`: the `main` scenario again with
+     `--httpSemanticConvention stable`, so `NetworkSpanTests` can assert the
+     stable HTTP attributes and `error.type` for 404/500 against the old-mode
+     `main` launch.
    - `max-lifetime`: continuous spans with `maxLifetime: 3`, so the session
      must roll over without ever going idle.
    - `restore-first` / `restore-second`: `restorePersistedSession: true`, so
