@@ -102,7 +102,8 @@ public enum MetricsAdapter {
         }
         protoMetric.summary.dataPoints.append(protoDataPoint)
       case .Histogram:
-        guard let histogramData = $0 as? HistogramPointData else {
+        guard let histogramData = $0 as? HistogramPointData,
+              histogramData.counts.allSatisfy({ $0 >= 0 }) else {
           break
         }
         var protoDataPoint = Opentelemetry_Proto_Metrics_V1_HistogramDataPoint()
