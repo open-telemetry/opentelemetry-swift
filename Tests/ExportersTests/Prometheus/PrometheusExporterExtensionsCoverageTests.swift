@@ -156,6 +156,16 @@ final class PrometheusExporterExtensionsCoverageTests: XCTestCase {
     XCTAssertFalse(out.contains("hist_bucket"))
   }
 
+  func testWriteHistogramLeavesOutSumWhenHasSumIsFalse() {
+    let metric = makeHistogramMetric()
+    let point = metric.data.points.first as! HistogramPointData
+    point.hasSum = false
+    let exporter = exporterWith([[metric]])
+    let out = PrometheusExporterExtensions.writeMetricsCollection(exporter: exporter)
+    XCTAssertFalse(out.contains("hist_sum"))
+    XCTAssertTrue(out.contains("hist_count"))
+  }
+
   func testWriteSummaryProducesSummaryLines() {
     let exporter = exporterWith([[makeSummaryMetric()]])
     let out = PrometheusExporterExtensions.writeMetricsCollection(exporter: exporter)
