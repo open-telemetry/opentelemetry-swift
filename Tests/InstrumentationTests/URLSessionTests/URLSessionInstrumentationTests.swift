@@ -1486,6 +1486,58 @@ class URLSessionInstrumentationTests: XCTestCase {
     XCTAssertEqual(attributes["url.scheme"]?.description, "http")
   }
 
+  public func testStableSemanticConvention_ImplicitHttpPort_UsesDefault80() throws {
+    let attributes = try startedSpanAttributes(url: "http://example.com/path", semanticConvention: .stable)
+
+    XCTAssertEqual(attributes["server.port"], AttributeValue.int(80))
+  }
+
+  public func testStableSemanticConvention_ImplicitHttpsPort_UsesDefault443() throws {
+    let attributes = try startedSpanAttributes(url: "https://example.com/path", semanticConvention: .stable)
+
+    XCTAssertEqual(attributes["server.port"], AttributeValue.int(443))
+  }
+
+  public func testStableSemanticConvention_ExplicitHttpsPort_IsPreserved() throws {
+    let attributes = try startedSpanAttributes(url: "https://example.com:8443/path", semanticConvention: .stable)
+
+    XCTAssertEqual(attributes["server.port"], AttributeValue.int(8443))
+  }
+
+  public func testStableSemanticConvention_ImplicitWebSocketPorts_UseDefaults() throws {
+    let wsAttributes = try startedSpanAttributes(url: "ws://example.com/socket", semanticConvention: .stable)
+    let wssAttributes = try startedSpanAttributes(url: "wss://example.com/socket", semanticConvention: .stable)
+
+    XCTAssertEqual(wsAttributes["server.port"], AttributeValue.int(80))
+    XCTAssertEqual(wssAttributes["server.port"], AttributeValue.int(443))
+  }
+
+  public func testStableSemanticConvention_HostlessUrl_OmitsServerPort() throws {
+    let attributes = try startedSpanAttributes(url: "http:path", semanticConvention: .stable)
+
+    XCTAssertNil(attributes["server.address"])
+    XCTAssertNil(attributes["server.port"])
+  }
+
+  public func testHttpDupSemanticConvention_ImplicitPort_SetsServerPortOnly() throws {
+    let attributes = try startedSpanAttributes(url: "https://example.com/path", semanticConvention: .httpDup)
+
+    XCTAssertEqual(attributes["server.port"], AttributeValue.int(443))
+    XCTAssertNil(attributes["net.peer.port"])
+  }
+
+  private func startedSpanAttributes(url: String, semanticConvention: HTTPSemanticConvention) throws -> [String: AttributeValue] {
+    URLSessionInstrumentationTests.instrumentation.configuration.semanticConvention = semanticConvention
+    let request = URLRequest(url: try XCTUnwrap(URL(string: url)))
+    let sessionTaskId = UUID().uuidString
+
+    URLSessionLogger.processAndLogRequest(request, sessionTaskId: sessionTaskId, instrumentation: URLSessionInstrumentationTests.instrumentation, shouldInjectHeaders: true)
+
+    let runningSpan = URLSessionLogger.runningSpansQueue.sync { URLSessionLogger.runningSpans[sessionTaskId] }
+    let span = try XCTUnwrap(runningSpan as? SpanSdk)
+    return span.toSpanData().attributes
+  }
+
   // MARK: - Background session tests
   @available(macOS 10.15, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
   public func testBackgroundSession_ShouldNotCrashWhenAssigningDelegate() async throws {
