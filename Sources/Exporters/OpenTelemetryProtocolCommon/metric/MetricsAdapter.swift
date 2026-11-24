@@ -103,7 +103,7 @@ public enum MetricsAdapter {
         protoMetric.summary.dataPoints.append(protoDataPoint)
       case .Histogram:
         guard let histogramData = $0 as? HistogramPointData,
-              histogramData.counts.count == histogramData.boundaries.count + 1,
+              hasValidBucketLayout(histogramData),
               histogramData.counts.allSatisfy({ $0 >= 0 }) else {
           break
         }
@@ -152,6 +152,14 @@ public enum MetricsAdapter {
       }
     }
     return protoMetric
+  }
+
+  // OTLP allows a point with neither bucket counts nor bounds; otherwise there is one more count than bounds.
+  private static func hasValidBucketLayout(_ histogramData: HistogramPointData) -> Bool {
+    if histogramData.counts.isEmpty, histogramData.boundaries.isEmpty {
+      return true
+    }
+    return histogramData.counts.count == histogramData.boundaries.count + 1
   }
 
   static func injectPointData(protoExponentialHistogramPoint protoPoint: inout Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint, pointData: PointData) {

@@ -207,6 +207,29 @@ final class MetricsAdapterTest: XCTestCase {
     XCTAssertTrue(protoMetric.histogram.dataPoints.isEmpty)
   }
 
+  func testToProtoMetricKeepsHistogramPointWithoutBuckets() throws {
+    let point = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], sum: 15, count: 3, min: 1, max: 10, boundaries: [], counts: [], hasMin: true, hasMax: true, hasSum: true)
+    let metricData = MetricData.createHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: HistogramData(aggregationTemporality: .delta, points: [point]))
+
+    let protoMetric = try XCTUnwrap(MetricsAdapter.toProtoMetric(metricData: metricData))
+
+    let protoPoint = try XCTUnwrap(protoMetric.histogram.dataPoints.first)
+    XCTAssertEqual(protoMetric.histogram.dataPoints.count, 1)
+    XCTAssertEqual(protoPoint.count, 3)
+    XCTAssertEqual(protoPoint.sum, 15)
+    XCTAssertTrue(protoPoint.bucketCounts.isEmpty)
+    XCTAssertTrue(protoPoint.explicitBounds.isEmpty)
+  }
+
+  func testToProtoMetricSkipsHistogramPointWithBoundariesButNoBucketCounts() throws {
+    let point = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], sum: 15, count: 3, min: 1, max: 10, boundaries: [5, 10], counts: [], hasMin: true, hasMax: true, hasSum: true)
+    let metricData = MetricData.createHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: HistogramData(aggregationTemporality: .delta, points: [point]))
+
+    let protoMetric = try XCTUnwrap(MetricsAdapter.toProtoMetric(metricData: metricData))
+
+    XCTAssertTrue(protoMetric.histogram.dataPoints.isEmpty)
+  }
+
   func testToProtoMetricSkipsHistogramPointWithNegativeBucketCount() throws {
     let point = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], sum: 15, count: 3, min: 1, max: 10, boundaries: [5], counts: [2, 1], hasMin: true, hasMax: true, hasSum: true)
     point.counts = [2, -1]
