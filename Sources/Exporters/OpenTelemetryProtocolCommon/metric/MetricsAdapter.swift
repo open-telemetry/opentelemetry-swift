@@ -108,7 +108,9 @@ public enum MetricsAdapter {
         }
         var protoDataPoint = Opentelemetry_Proto_Metrics_V1_HistogramDataPoint()
         injectPointData(protoHistogramPoint: &protoDataPoint, pointData: histogramData)
-        protoDataPoint.sum = Double(histogramData.sum)
+        if histogramData.hasSum {
+          protoDataPoint.sum = Double(histogramData.sum)
+        }
         protoDataPoint.count = UInt64(histogramData.count)
         if histogramData.hasMax {
           protoDataPoint.max = Double(histogramData.max)

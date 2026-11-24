@@ -37,7 +37,7 @@ public class DoubleExplicitBucketHistogramAggregator: Aggregator {
       defer {
         lock.unlock()
       }
-      let pointData = HistogramPointData(startEpochNanos: startEpochNano, endEpochNanos: endEpochNano, attributes: attributes, exemplars: exemplars, sum: sum, count: count, min: min, max: max, boundaries: boundaries, counts: counts, hasMin: count > 0, hasMax: count > 0)
+      let pointData = HistogramPointData(startEpochNanos: startEpochNano, endEpochNanos: endEpochNano, attributes: attributes, exemplars: exemplars, sum: sum, count: count, min: min, max: max, boundaries: boundaries, counts: counts, hasMin: count > 0, hasMax: count > 0, hasSum: true)
 
       if reset {
         sum = 0

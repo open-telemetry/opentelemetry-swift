@@ -122,7 +122,8 @@ final class MetricDataPublicInitTests: XCTestCase {
       boundaries: [5.0],
       counts: [2, 1],
       hasMin: true,
-      hasMax: true
+      hasMax: true,
+      hasSum: true
     )
 
     let metric = MetricData.createHistogram(

@@ -118,7 +118,7 @@ final class MetricsAdapterCoverageTests: XCTestCase {
                                 boundaries: [0.5],
                                 counts: [1, 1],
                                 hasMin: true,
-                                hasMax: true)
+                                hasMax: true, hasSum: true)
     let histogramData = HistogramData(aggregationTemporality: .cumulative, points: [hp])
     let data = MetricData.createHistogram(resource: resource,
                                           instrumentationScopeInfo: scope,
@@ -145,7 +145,7 @@ final class MetricsAdapterCoverageTests: XCTestCase {
                                 min: 3.0, max: 3.0,
                                 boundaries: [5],
                                 counts: [1, 0],
-                                hasMin: true, hasMax: true)
+                                hasMin: true, hasMax: true, hasSum: true)
     let hd = HistogramData(aggregationTemporality: .cumulative, points: [hp])
     let md = MetricData.createHistogram(resource: resource,
                                         instrumentationScopeInfo: scope,
@@ -171,7 +171,7 @@ final class MetricsAdapterCoverageTests: XCTestCase {
                                 sum: 1.0, count: 1,
                                 min: 1.0, max: 1.0,
                                 boundaries: [2], counts: [1, 0],
-                                hasMin: true, hasMax: true)
+                                hasMin: true, hasMax: true, hasSum: true)
     let md = MetricData.createHistogram(resource: resource,
                                         instrumentationScopeInfo: scope,
                                         name: "h-span-ctx", description: "", unit: "",

@@ -83,7 +83,7 @@ final class PrometheusExporterExtensionsCoverageTests: XCTestCase {
                                 min: 1, max: 5,
                                 boundaries: [2, 4],
                                 counts: [1, 1, 1],
-                                hasMin: true, hasMax: true)
+                                hasMin: true, hasMax: true, hasSum: true)
     return MetricData.createHistogram(resource: resource,
                                       instrumentationScopeInfo: scope,
                                       name: "hist",
@@ -185,7 +185,7 @@ final class PrometheusExporterExtensionsCoverageTests: XCTestCase {
                                 min: 1, max: 5,
                                 boundaries: [2, 4],
                                 counts: [1, 1, 1],
-                                hasMin: true, hasMax: true)
+                                hasMin: true, hasMax: true, hasSum: true)
     let metric = MetricData(resource: resource,
                             instrumentationScopeInfo: scope,
                             name: "exp_hist",
