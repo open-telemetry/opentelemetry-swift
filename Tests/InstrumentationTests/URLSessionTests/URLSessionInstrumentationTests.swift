@@ -145,6 +145,53 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
+  /// Receives the data callbacks that ForwardingDelegateProxy forwards to it.
+  final class ForwardedDataDelegate: NSObject, URLSessionDataDelegate, @unchecked Sendable {
+    private(set) var receivedData = Data()
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask,
+                    didReceive response: URLResponse,
+                    completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+      completionHandler(.allow)
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+      receivedData.append(data)
+    }
+  }
+
+  /// Implements completion itself and forwards every other callback its target handles, the way
+  /// delegate proxies installed by networking and analytics libraries do.
+  final class ForwardingDelegateProxy: NSObject, URLSessionDataDelegate, @unchecked Sendable {
+    let target: NSObject
+    let semaphore: DispatchSemaphore
+
+    init(target: NSObject, semaphore: DispatchSemaphore) {
+      self.target = target
+      self.semaphore = semaphore
+    }
+
+    override func responds(to aSelector: Selector!) -> Bool {
+      super.responds(to: aSelector) || target.responds(to: aSelector)
+    }
+
+    override func forwardingTarget(for aSelector: Selector!) -> Any? {
+      target.responds(to: aSelector) ? target : super.forwardingTarget(for: aSelector)
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+      semaphore.signal()
+    }
+  }
+
+  /// Implements none of the selectors the startup scan looks for, so it is only instrumented when a
+  /// task on its session resumes.
+  class LazilyInstrumentedDelegate: NSObject, URLSessionDelegate, @unchecked Sendable {
+    func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {}
+  }
+
+  final class LazilyInstrumentedDelegateSubclass: LazilyInstrumentedDelegate, @unchecked Sendable {}
+
   /// A minimal delegate that only implements didFinishCollecting.
   /// This tests that delegate classes are discovered even when they only implement
   /// urlSession(_:task:didFinishCollecting:) and no other delegate methods.
@@ -547,6 +594,87 @@ class URLSessionInstrumentationTests: XCTestCase {
 
     XCTAssertEqual(delegate.receivedData, expectedBody)
     XCTAssertEqual(URLSessionInstrumentationTests.receivedDataOrFile as? Data, expectedBody)
+  }
+
+  public func testDelegateWithoutDidReceiveDataRecordsPayload() throws {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    let server = HttpTestServer(url: nil, config: HttpTestServerConfig())
+    try server.start()
+    defer { server.stop() }
+    let expectedBody = Data("success response body".utf8)
+    let session = URLSession(configuration: .ephemeral, delegate: sessionDelegate, delegateQueue: nil)
+    let request = URLRequest(url: URL(string: "http://127.0.0.1:\(server.serverPort)/success-with-body")!)
+
+    session.dataTask(with: request).resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertEqual(URLSessionInstrumentationTests.receivedDataOrFile as? Data, expectedBody)
+  }
+
+  public func testDelegateWithoutDidReceiveDataAppliesMaxRecordedPayloadSize() throws {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = 8
+    defer { URLSessionInstrumentationTests.instrumentation.configuration.maxRecordedPayloadSize = nil }
+    let server = HttpTestServer(url: nil, config: HttpTestServerConfig())
+    try server.start()
+    defer { server.stop() }
+    let session = URLSession(configuration: .ephemeral, delegate: sessionDelegate, delegateQueue: nil)
+    let request = URLRequest(url: URL(string: "http://127.0.0.1:\(server.serverPort)/success-with-body")!)
+
+    session.dataTask(with: request).resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertTrue(URLSessionInstrumentationTests.checker.receivedResponseCalled)
+    XCTAssertNil(URLSessionInstrumentationTests.receivedDataOrFile)
+  }
+
+  public func testForwardingDelegateProxyStillForwardsReceivedData() throws {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    let server = HttpTestServer(url: nil, config: HttpTestServerConfig())
+    try server.start()
+    defer { server.stop() }
+    let expectedBody = Data("success response body".utf8)
+    let target = ForwardedDataDelegate()
+    let proxy = ForwardingDelegateProxy(target: target, semaphore: URLSessionInstrumentationTests.semaphore)
+    let session = URLSession(configuration: .ephemeral, delegate: proxy, delegateQueue: nil)
+    let request = URLRequest(url: URL(string: "http://127.0.0.1:\(server.serverPort)/success-with-body")!)
+
+    session.dataTask(with: request).resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+
+    XCTAssertEqual(target.receivedData, expectedBody)
+    XCTAssertEqual(URLSessionInstrumentationTests.receivedDataOrFile as? Data, expectedBody)
+  }
+
+  public func testSubclassOfInstrumentedDelegateRecordsPayloadOnce() throws {
+    URLSessionInstrumentationTests.instrumentation.configuration.shouldRecordPayload = { _ in true }
+    let server = HttpTestServer(url: nil, config: HttpTestServerConfig())
+    try server.start()
+    defer { server.stop() }
+    let expectedBody = Data("success response body".utf8)
+    let url = URL(string: "http://127.0.0.1:\(server.serverPort)/success-with-body")!
+
+    for delegate in [LazilyInstrumentedDelegate(), LazilyInstrumentedDelegateSubclass()] {
+      URLSessionInstrumentationTests.checker.receivedResponseCalled = false
+      URLSessionInstrumentationTests.receivedDataOrFile = nil
+      let session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
+      session.dataTask(with: URLRequest(url: url)).resume()
+      let completed = expectation(for: NSPredicate { _, _ in
+        URLSessionInstrumentationTests.checker.receivedResponseCalled
+      }, evaluatedWith: nil)
+      wait(for: [completed], timeout: 5)
+
+      XCTAssertEqual(URLSessionInstrumentationTests.receivedDataOrFile as? Data, expectedBody,
+                     "\(type(of: delegate))")
+    }
+  }
+
+  public func testInstrumentationTaskDelegatesDoNotGainDidReceiveData() {
+    let selector = #selector(URLSessionDataDelegate.urlSession(_:dataTask:didReceive:))
+
+    XCTAssertFalse(FakeDelegate.instancesRespond(to: selector))
+    XCTAssertFalse(AsyncTaskDelegate.instancesRespond(to: selector))
   }
 
   public func testDelegateDoesNotRecordPayloadWhoseContentLengthExceedsMaxRecordedPayloadSize() {

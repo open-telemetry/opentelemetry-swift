@@ -28,6 +28,10 @@ struct NetworkRequestState {
 nonisolated(unsafe) private var idKey: Void?
 nonisolated(unsafe) private var completionHandlerKey: Void?
 nonisolated(unsafe) private var reportedKey: Void?
+nonisolated(unsafe) private var recordingReceivedDataKey: Void?
+
+// forwardInvocation: is unavailable in Swift, so its selector cannot be written with #selector.
+private let forwardInvocationSelector = NSSelectorFromString("forwardInvocation:")
 
 public final class URLSessionInstrumentation: @unchecked Sendable {
   private var requestMap = [String: NetworkRequestState]()
@@ -590,13 +594,35 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     let selector = #selector(
       URLSessionDataDelegate.urlSession(_:dataTask:didReceive:))
     guard let original = class_getInstanceMethod(cls, selector) else {
+      // The method is optional and the delegate omits it, so nothing would accumulate the response
+      // body for payload recording. Add it, as injectTaskDidCompleteWithErrorIntoDelegateClass does.
+      guard Self.canAddTaskDidReceiveData(to: cls) else { return }
+      let block:
+        @convention(block) (Any, URLSession, URLSessionDataTask, Data) -> Void = { _, session, dataTask, data in
+          guard objc_getAssociatedObject(dataTask, &recordingReceivedDataKey) == nil else { return }
+          self.urlSession(session, dataTask: dataTask, didReceive: data)
+        }
+      let imp = imp_implementationWithBlock(
+        unsafeBitCast(block, to: AnyObject.self))
+      class_addMethod(cls, selector, imp, "v@:@@@")
       return
     }
     var originalIMP: IMP?
     let block:
       @convention(block) (Any, URLSession, URLSessionDataTask, Data) -> Void = { object, session, dataTask, data in
-        if objc_getAssociatedObject(session, &idKey) == nil {
-          self.urlSession(session, dataTask: dataTask, didReceive: data)
+        // A class that inherits an already instrumented method wraps it again, so this can run nested
+        // inside another instrumented call for the same chunk. Only the outermost call records it.
+        let isOutermostCall = objc_getAssociatedObject(dataTask, &recordingReceivedDataKey) == nil
+        if isOutermostCall {
+          if objc_getAssociatedObject(session, &idKey) == nil {
+            self.urlSession(session, dataTask: dataTask, didReceive: data)
+          }
+          objc_setAssociatedObject(dataTask, &recordingReceivedDataKey, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+        defer {
+          if isOutermostCall {
+            objc_setAssociatedObject(dataTask, &recordingReceivedDataKey, nil, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+          }
         }
         let key = String(selector.hashValue)
         objc_setAssociatedObject(session, key, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
@@ -608,6 +634,26 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
     let swizzledIMP = imp_implementationWithBlock(
       unsafeBitCast(block, to: AnyObject.self))
     originalIMP = method_setImplementation(original, swizzledIMP)
+  }
+
+  /// Whether `urlSession(_:dataTask:didReceive:)` may be added to a delegate class that lacks it.
+  ///
+  /// Not for the instrumentation's own task delegates, which never consume response data, nor for a
+  /// class that may forward messages: an added method would intercept the data its forwarding
+  /// target is meant to receive.
+  private static func canAddTaskDidReceiveData(to cls: AnyClass) -> Bool {
+    let ownTaskDelegates: [AnyClass] = [FakeDelegate.self, AsyncTaskDelegate.self]
+    guard !ownTaskDelegates.contains(where: { ObjectIdentifier($0) == ObjectIdentifier(cls) }) else {
+      return false
+    }
+    let forwardingSelectors = [
+      #selector(NSObject.responds(to:)),
+      #selector(NSObject.forwardingTarget(for:)),
+      forwardInvocationSelector
+    ]
+    return forwardingSelectors.allSatisfy {
+      class_getMethodImplementation(cls, $0) == class_getMethodImplementation(NSObject.self, $0)
+    }
   }
 
   private func injectTaskDidReceiveResponseIntoDelegateClass(cls: AnyClass) {
