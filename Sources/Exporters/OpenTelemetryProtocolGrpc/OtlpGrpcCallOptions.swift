@@ -25,9 +25,10 @@ func makeOtlpGrpcMetadata(config: OtlpConfiguration,
   return metadata
 }
 
-/// The timeout of an export call, or `nil` for no deadline.
+/// The timeout of an export call, or `nil` to set no deadline of its own.
 ///
-/// A timeout that is zero or negative sets no deadline.
+/// A timeout that is zero or negative sets no exporter deadline, so only a timeout the
+/// transport configures applies.
 func otlpGrpcExportTimeout(config: OtlpConfiguration, explicitTimeout: TimeInterval?) -> TimeInterval? {
   let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
   guard timeout > 0, timeout < maximumDeadlineSeconds else {
@@ -38,7 +39,8 @@ func otlpGrpcExportTimeout(config: OtlpConfiguration, explicitTimeout: TimeInter
 
 /// Builds the call options for an export call.
 ///
-/// A timeout that is zero or negative sets no deadline.
+/// A timeout that is zero or negative sets no exporter deadline, so only a timeout the
+/// transport configures applies.
 @available(macOS 15, iOS 18, tvOS 18, watchOS 11, visionOS 2, *)
 func makeOtlpGrpcCallOptions(config: OtlpConfiguration,
                              explicitTimeout: TimeInterval?) -> CallOptions {

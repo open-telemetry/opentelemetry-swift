@@ -68,23 +68,34 @@ public final class OtlpTraceExporter: SpanExporter, Sendable {
 
   /// Blocks the calling thread until the export finishes.
   ///
-  /// Calling this from Swift concurrency doesn't deadlock the cooperative thread pool, but it still
-  /// blocks a cooperative thread for the whole export, so prefer the async overload there.
+  /// When the exporter owns its client, calling this from Swift concurrency doesn't deadlock the
+  /// cooperative thread pool, but it still blocks a cooperative thread for the whole export, so
+  /// prefer the async overload there. A client you run yourself only connects where you run
+  /// `runConnections()`. If that's the cooperative pool and blocked callers saturate it, exports
+  /// fail at their timeout, or hang without one.
   public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
-    otlpGrpcBlocking(timeout: otlpGrpcExportTimeout(config: config, explicitTimeout: explicitTimeout),
-                     whenCalledFromExecutor: .failure) {
-      await self.export(spans: spans, explicitTimeout: explicitTimeout)
+    let metadata = makeOtlpGrpcMetadata(config: config, envVarHeaders: envVarHeaders)
+    return otlpGrpcBlocking(timeout: otlpGrpcExportTimeout(config: config, explicitTimeout: explicitTimeout),
+                            whenCalledFromExecutor: .failure) {
+      await self.export(spans: spans, explicitTimeout: explicitTimeout, metadata: metadata)
     }
   }
 
   public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) async -> SpanExporterResultCode {
+    await export(spans: spans,
+                 explicitTimeout: explicitTimeout,
+                 metadata: makeOtlpGrpcMetadata(config: config, envVarHeaders: envVarHeaders))
+  }
+
+  private func export(spans: [SpanData],
+                      explicitTimeout: TimeInterval?,
+                      metadata: Metadata) async -> SpanExporterResultCode {
     guard !connection.isShutdown else {
       return .failure
     }
     let exportRequest = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
       $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
     }
-    let metadata = makeOtlpGrpcMetadata(config: config, envVarHeaders: envVarHeaders)
     let options = makeOtlpGrpcCallOptions(config: config, explicitTimeout: explicitTimeout)
     do {
       let response = try await traceClient.export(exportRequest, metadata: metadata, options: options)

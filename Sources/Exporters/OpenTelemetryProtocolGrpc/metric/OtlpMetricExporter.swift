@@ -93,23 +93,30 @@ public final class OtlpMetricExporter: MetricExporter, Sendable {
 
   /// Blocks the calling thread until the export finishes.
   ///
-  /// Calling this from Swift concurrency doesn't deadlock the cooperative thread pool, but it still
-  /// blocks a cooperative thread for the whole export, so prefer the async overload there.
+  /// When the exporter owns its client, calling this from Swift concurrency doesn't deadlock the
+  /// cooperative thread pool, but it still blocks a cooperative thread for the whole export, so
+  /// prefer the async overload there. A client you run yourself only connects where you run
+  /// `runConnections()`. If that's the cooperative pool and blocked callers saturate it, exports
+  /// fail at their timeout, or hang without one.
   public func export(metrics: [MetricData]) -> ExportResult {
-    otlpGrpcBlocking(timeout: otlpGrpcExportTimeout(config: config, explicitTimeout: nil),
-                     whenCalledFromExecutor: .failure) {
-      await self.export(metrics: metrics)
+    let metadata = makeOtlpGrpcMetadata(config: config, envVarHeaders: envVarHeaders)
+    return otlpGrpcBlocking(timeout: otlpGrpcExportTimeout(config: config, explicitTimeout: nil),
+                            whenCalledFromExecutor: .failure) {
+      await self.export(metrics: metrics, metadata: metadata)
     }
   }
 
   public func export(metrics: [MetricData]) async -> ExportResult {
+    await export(metrics: metrics, metadata: makeOtlpGrpcMetadata(config: config, envVarHeaders: envVarHeaders))
+  }
+
+  private func export(metrics: [MetricData], metadata: Metadata) async -> ExportResult {
     guard !connection.isShutdown else {
       return .failure
     }
     let exportRequest = Opentelemetry_Proto_Collector_Metrics_V1_ExportMetricsServiceRequest.with {
       $0.resourceMetrics = MetricsAdapter.toProtoResourceMetrics(metricData: metrics)
     }
-    let metadata = makeOtlpGrpcMetadata(config: config, envVarHeaders: envVarHeaders)
     let options = makeOtlpGrpcCallOptions(config: config, explicitTimeout: nil)
     do {
       _ = try await metricClient.export(exportRequest, metadata: metadata, options: options)

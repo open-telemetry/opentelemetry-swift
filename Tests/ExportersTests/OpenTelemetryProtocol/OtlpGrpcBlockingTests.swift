@@ -208,6 +208,59 @@ final class OtlpGrpcBlockingTests: XCTestCase {
     }
   }
 
+  /// Every exporter's sync exports share one serial executor. A headers provider that blocks must
+  /// only hold up its own caller, so it has to run before the export enters that executor.
+  func testBlockingHeadersProviderDoesNotHoldUpOtherExportersSyncExports() throws {
+    let fakeCollector = FakeTraceCollector()
+    let server = try XCTUnwrap(runBlockingTestStep {
+      try await OtlpGrpcTestServer(service: fakeCollector, executorPreference: serverExecutor)
+    })
+    let providerEntered = DispatchSemaphore(value: 0)
+    let providerGate = DispatchSemaphore(value: 0)
+    let blockingConfig = OtlpConfiguration(headersProvider: {
+      providerEntered.signal()
+      providerGate.wait()
+      return nil
+    })
+    let blockedExporter = try OtlpTraceExporter(transport: server.makeClientTransport(),
+                                                config: blockingConfig,
+                                                envVarHeaders: nil)
+    let otherExporter = try OtlpTraceExporter(transport: server.makeClientTransport(), envVarHeaders: nil)
+    let blockedResult = Mutex<SpanExporterResultCode?>(nil)
+    let otherResult = Mutex<SpanExporterResultCode?>(nil)
+    let blockedFinished = DispatchSemaphore(value: 0)
+    let otherFinished = DispatchSemaphore(value: 0)
+
+    Thread { [span = makeSpan()] in
+      let result = exportBlocking(blockedExporter, span)
+      blockedResult.withLock { $0 = result }
+      blockedFinished.signal()
+    }.start()
+    let providerWaitResult = providerEntered.wait(timeout: .now() + 20)
+    Thread { [span = makeSpan()] in
+      let result = exportBlocking(otherExporter, span)
+      otherResult.withLock { $0 = result }
+      otherFinished.signal()
+    }.start()
+
+    let otherWaitResult = otherFinished.wait(timeout: .now() + 5)
+    providerGate.signal()
+    let blockedWaitResult = blockedFinished.wait(timeout: .now() + 20)
+    let lateOtherWaitResult = otherWaitResult == .success ? .success : otherFinished.wait(timeout: .now() + 20)
+
+    XCTAssertEqual(providerWaitResult, .success)
+    XCTAssertEqual(otherWaitResult, .success, "The other exporter waited for the blocking headers provider")
+    XCTAssertEqual(otherResult.withLock { $0 }, .success)
+    XCTAssertEqual(blockedWaitResult, .success)
+    XCTAssertEqual(blockedResult.withLock { $0 }, .success)
+    XCTAssertEqual(fakeCollector.requestCount, 2)
+    if blockedWaitResult == .success, lateOtherWaitResult == .success {
+      blockedExporter.shutdown()
+      otherExporter.shutdown()
+      runBlockingTestStep { await server.stop() }
+    }
+  }
+
   /// More tasks than the cooperative pool can have threads, with room to spare in case the pool is
   /// sized from a different processor count than `activeProcessorCount`.
   private var saturatingTaskCount: Int {

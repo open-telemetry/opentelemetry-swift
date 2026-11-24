@@ -68,23 +68,34 @@ public final class OtlpLogExporter: LogRecordExporter, Sendable {
 
   /// Blocks the calling thread until the export finishes.
   ///
-  /// Calling this from Swift concurrency doesn't deadlock the cooperative thread pool, but it still
-  /// blocks a cooperative thread for the whole export, so prefer the async overload there.
+  /// When the exporter owns its client, calling this from Swift concurrency doesn't deadlock the
+  /// cooperative thread pool, but it still blocks a cooperative thread for the whole export, so
+  /// prefer the async overload there. A client you run yourself only connects where you run
+  /// `runConnections()`. If that's the cooperative pool and blocked callers saturate it, exports
+  /// fail at their timeout, or hang without one.
   public func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval? = nil) -> ExportResult {
-    otlpGrpcBlocking(timeout: otlpGrpcExportTimeout(config: config, explicitTimeout: explicitTimeout),
-                     whenCalledFromExecutor: .failure) {
-      await self.export(logRecords: logRecords, explicitTimeout: explicitTimeout)
+    let metadata = makeOtlpGrpcMetadata(config: config, envVarHeaders: envVarHeaders)
+    return otlpGrpcBlocking(timeout: otlpGrpcExportTimeout(config: config, explicitTimeout: explicitTimeout),
+                            whenCalledFromExecutor: .failure) {
+      await self.export(logRecords: logRecords, explicitTimeout: explicitTimeout, metadata: metadata)
     }
   }
 
   public func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval? = nil) async -> ExportResult {
+    await export(logRecords: logRecords,
+                 explicitTimeout: explicitTimeout,
+                 metadata: makeOtlpGrpcMetadata(config: config, envVarHeaders: envVarHeaders))
+  }
+
+  private func export(logRecords: [ReadableLogRecord],
+                      explicitTimeout: TimeInterval?,
+                      metadata: Metadata) async -> ExportResult {
     guard !connection.isShutdown else {
       return .failure
     }
     let logRequest = Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest.with { request in
       request.resourceLogs = LogRecordAdapter.toProtoResourceRecordLog(logRecordList: logRecords)
     }
-    let metadata = makeOtlpGrpcMetadata(config: config, envVarHeaders: envVarHeaders)
     let options = makeOtlpGrpcCallOptions(config: config, explicitTimeout: explicitTimeout)
     do {
       _ = try await logClient.export(logRequest, metadata: metadata, options: options)
