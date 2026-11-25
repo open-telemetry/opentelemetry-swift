@@ -81,6 +81,20 @@ class ApiBuilderUnitAndDescriptionTests: XCTestCase {
     }
   }
 
+  func testUnitAndDescriptionSetThroughApiSurviveChangingValueType() {
+    let descriptors = [
+      describe(meter.counterBuilder(name: "doubleCounter")).ofDoubles().build().instrumentDescriptor,
+      describe(meter.upDownCounterBuilder(name: "doubleUpDown")).ofDoubles().build().instrumentDescriptor,
+      describe(meter.histogramBuilder(name: "longHistogram")).ofLongs().build().instrumentDescriptor,
+      describe(meter.gaugeBuilder(name: "longGauge")).ofLongs().build().instrumentDescriptor
+    ]
+
+    for descriptor in descriptors {
+      XCTAssertEqual(descriptor.unit, "s", descriptor.name)
+      XCTAssertEqual(descriptor.description, "description", descriptor.name)
+    }
+  }
+
   func testAsynchronousInstrumentsKeepUnitAndDescriptionSetThroughApi() {
     let instruments: [Any] = [
       describe(meter.counterBuilder(name: "longCounter")).buildWithCallback { $0.record(value: 1) },
