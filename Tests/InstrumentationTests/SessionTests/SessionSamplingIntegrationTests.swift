@@ -110,12 +110,13 @@ final class SessionSamplingIntegrationTests: XCTestCase {
           XCTAssertTrue(child.context.isValid)
           XCTAssertFalse(child.context.isSampled)
           XCTAssertFalse(child.context.isRemote)
+          XCTAssertTrue(child.context.traceFlags.random)
           XCTAssertEqual(child.context.traceId, parent.context.traceId)
           XCTAssertNotEqual(child.context.spanId, parent.context.spanId)
           var carrier = [String: String]()
           W3CTraceContextPropagator().inject(spanContext: child.context, carrier: &carrier,
                                              setter: SamplingTraceContextSetter())
-          XCTAssertEqual(carrier["traceparent"], "00-\(parent.context.traceId.hexString)-\(child.context.spanId.hexString)-00")
+          XCTAssertEqual(carrier["traceparent"], "00-\(parent.context.traceId.hexString)-\(child.context.spanId.hexString)-02")
 
           OpenTelemetry.instance.contextProvider.withActiveSpan(child) {
             XCTAssertTrue(sessions.resetSession().samplingDecision.isSampled)
