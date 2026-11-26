@@ -227,6 +227,11 @@ bool otel_app_launch_sample_pages_at_background(void) {
   return true;
 }
 
+// `pagedIn` is the difference between the baseline taken at backgrounding and residency now, not
+// everything the system reclaimed while the app was away: a page resident at backgrounding that was
+// reclaimed and read back during the resume is resident in both snapshots and counts for nothing.
+// The baseline is taken at backgrounding rather than when the app returns because reading it is one
+// `mincore` call per sampled page, which would land inside the window the resume is measured over.
 bool otel_app_launch_read_background_page_sample(int *sampled, int *residentAtEnd, int *pagedIn) {
   if (!hasBackgroundSample) {
     return false;
