@@ -15,6 +15,11 @@ import OpenTelemetryApi
   /// Linking this library runs `mincore` before `main()`, so unlike a configuration option it can't
   /// be turned off at runtime.
   ///
+  /// Experimental. The span names, the attribute names and the classification thresholds can change
+  /// in any release, because the conventions it emits are at `development` stability. Its accuracy
+  /// was measured on one app on one device, and not on an App Store build, so read the known limits
+  /// in the module's README before relying on the numbers.
+  ///
   /// Supported on iOS, iPadOS, tvOS, visionOS, Mac Catalyst and macOS. On watchOS this does nothing.
   public class MincoreLaunchInstrumentation: Instrumentation {
     typealias Dependencies = AppLaunchRuntime.Dependencies
@@ -77,16 +82,21 @@ import OpenTelemetryApi
 #else
   /// Does nothing, because this platform isn't supported, so code shared with a supported platform
   /// doesn't need its own check. Supported on iOS, iPadOS, tvOS, visionOS, Mac Catalyst and macOS.
+  ///
+  /// Experimental, as on the platforms it supports: the names it records there can change in any
+  /// release.
   public class MincoreLaunchInstrumentation: Instrumentation {
     private static let instrumentationScope = "io.opentelemetry.lifecycle"
 
     /// Always `false`.
     public static var isInstalled: Bool { false }
 
+    /// Records nothing, so `configuration` is ignored.
     public init(configuration: AppLaunchInstrumentationConfiguration = .init()) {
       super.init(scope: Self.instrumentationScope)
     }
 
+    /// Does nothing on this platform.
     public static func install(configuration: AppLaunchInstrumentationConfiguration = .init()) {}
   }
 #endif

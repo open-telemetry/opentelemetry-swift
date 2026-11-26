@@ -45,7 +45,9 @@ public struct EnvVarHeaders {
     var labels = [(String, String)]()
 
     rawEnvLabels.split(separator: labelListSplitter).forEach {
-      let split = $0.split(separator: labelKeyValueSplitter)
+      // Only the first `=` separates the key from the value, so a value may
+      // contain one: base64 credentials are often padded with it.
+      let split = $0.split(separator: labelKeyValueSplitter, maxSplits: 1)
       if split.count != 2 {
         return
       }
@@ -56,8 +58,16 @@ public struct EnvVarHeaders {
       let value = split[1].trimmingCharacters(in: .whitespaces)
       guard isValue(baggage: value) else { return }
 
-      labels.append((key, value))
+      labels.append((key, percentDecoded(value)))
     }
     return labels.count > 0 ? labels : nil
+  }
+
+  /// Percent-decodes a baggage value, as the W3C Baggage format this variable
+  /// follows requires: a code point outside `baggage-octet`, such as the space
+  /// in `Authorization=Basic%20Y3JlZA`, is carried percent-encoded. A value
+  /// that isn't valid percent-encoding is kept as it is.
+  private static func percentDecoded(_ value: String) -> String {
+    value.removingPercentEncoding ?? value
   }
 }
