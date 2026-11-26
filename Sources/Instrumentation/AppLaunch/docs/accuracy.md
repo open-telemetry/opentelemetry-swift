@@ -6,7 +6,7 @@
 | --- | -: | -: | -: | --- |
 | Launch duration | 1,181 ± 278 ms | 1,102 ± 267 ms | +79 ± 21 ms | Boundary placement. Slope 1.039 ± 0.024, R² = 0.9957, so no proportional error. |
 | &nbsp;&nbsp;`app.start.pre_init` | 524 ± 71 ms | 471 ± 63 ms | +53 ± 15 ms | Instruments' clock starts 54 ms after the kernel's process start. |
-| &nbsp;&nbsp;`app.start.app_init` | 536 ± 243 ms | 534 ± 243 ms | +1.9 ± 0.4 ms | Static initialization ends 1.9 ms after this library's constructor. |
+| &nbsp;&nbsp;`app.start.app_init` | 536 ± 243 ms | 534 ± 243 ms | +1.9 ± 0.4 ms | The app's static initializers finish 1.9 ms after this library's own. |
 | &nbsp;&nbsp;`app.start.render` | 121 ± 56 ms | 97 ± 51 ms | +25 ± 9 ms | 2.95 display refresh periods. The display sets the floor. |
 | `paged_in`, 6 warm | 0 to 5 pages | 0 to 5 pages | 0, exactly | Nothing to read, so the two agree to the page. |
 | `paged_in`, 4 cold | 143 ± 16 pages | 107 ± 2 pages | +36 ± 17 pages | Kernel read-ahead, which `mincore` counts and a fault trace does not. |
@@ -23,7 +23,7 @@ The Time Profile template's App Life Cycle timeline divides activity during app 
 
 | Apple's division              | Instruments period                             | This module                                                                                              |
 | ----------------------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Process initialization        | `Initializing - Static Runtime Initialization` | `app.start.pre_init`, which ends at the `AppLaunchEnvironment` constructor and not at the end of the period |
+| Process initialization        | `Initializing - Static Runtime Initialization` | `app.start.pre_init`, which ends at this library's static initializer and not at the end of the period |
 | UIKit initialization          | `Launching - UIKit Initialization`             | No span. Part of `app.start.app_init`                                                                     |
 | —                             | the period named for `didFinishLaunching`      | Only its end, as the boundary between `app.start.app_init` and `app.start.render`                         |
 | UIKit initial scene rendering | —                                              | `app.start.scene_setup`, approximated from `UIScene.willConnectNotification` and never compared with Instruments |
@@ -34,7 +34,7 @@ Two of the four divisions have no span of their own: UIKit initialization sits i
 
 ### Where the phase boundary falls
 
-This library's `AppLaunchEnvironment` C `constructor` marks the boundary between `app.start.pre_init` and `app.start.app_init`. It runs somewhere inside the app's static-initializer sequence rather than at its start or its end. Where it falls depends on where dyld placed this library among the app's images, so the split between the two phases moves with the link order and is not a property of the app alone.
+The boundary between `app.start.pre_init` and `app.start.app_init` is one of the app's static initializers: this library's own, the C `constructor` function `otel_app_launch_read_launch_environment`. It runs somewhere inside the app's static-initializer sequence rather than at its start or its end. Where it falls depends on where dyld placed this library among the app's images, so the split between the two phases moves with the link order and is not a property of the app alone.
 
 On the [one device tested](#accuracy-compared-with-instruments), `app.start.app_init` ran within +1.3 to +2.4 ms of the matching Instruments period, so on that app the constructor ran close to the end of static runtime initialization. That reflects that app's link order; the library guarantees nothing about it.
 
@@ -113,7 +113,7 @@ Three boundaries sit in different places. Writing b1, b2 and b3 for the gaps, th
 | Boundary | Library | Instruments | Gap | Enters |
 | --- | --- | --- | -: | --- |
 | Start | kernel process start | trace t0 | **b1** +54 ± 15 ms | `pre_init` |
-| First phase end | this library's constructor | end of static runtime initialization | **b2** +1.9 ± 0.4 ms | `pre_init` and `app_init`, with opposite signs |
+| First phase end | this library's static initializer | the app's last static initializer | **b2** +1.9 ± 0.4 ms | `pre_init` and `app_init`, with opposite signs |
 | `didFinishLaunching` | same event | same event | 0 | — |
 | End | display-link second tick | end of initial frame rendering | **b3** +25 ± 9 ms | `render` |
 
@@ -121,7 +121,7 @@ Three boundaries sit in different places. Writing b1, b2 and b3 for the gaps, th
 
 b2 cancels. The constructor runs inside static initialization, so it shortens `pre_init` and lengthens `app_init` by the same 1.9 ms, leaving the total untouched. The total offset is therefore b1 + b3 = 79.0 ms, which is the measured offset to the tenth of a millisecond.
 
-That makes the `app_init` figure a measurement rather than an agreement. `app.start.app_init` does not merely come within +1.9 ± 0.4 ms of Instruments; that number **is** b2, the interval between this library's constructor and the end of static runtime initialization in this app. The script says as much at line 429: the two "compare differently defined boundaries", and the trace cannot say where the constructor ran. Its tightness, SD 0.4 ms across ten launches, says the constructor sits at a stable point in the link order, not that the two instruments agree.
+That makes the `app_init` figure a measurement rather than an agreement. `app.start.app_init` does not merely come within +1.9 ± 0.4 ms of Instruments; that number **is** b2, the interval between this library's static initializer and the app's last one. The script says as much at line 429: the two "compare differently defined boundaries", and the trace cannot say where this library's initializer ran. Its tightness, SD 0.4 ms across ten launches, says that initializer sits at a stable point in the link order, not that the two instruments agree.
 
 b1 is larger on cold launches: 68 ± 7 ms against 46 ± 3 ms warm (Welch t = 2.77, p < 0.05). More pre-main disk work happens before Instruments' first attributable event when nothing is cached.
 
@@ -207,7 +207,7 @@ The analysis above reads those files, so re-running it on a new device needs no 
 1. The library's launch duration equals the Instruments duration plus an offset, with no detectable proportional error: slope 1.039 ± 0.024, R² = 0.9957, n = 10.
 2. That offset is +79 ms, 95% CI +64 to +94, and decomposes exactly into two boundary gaps: +54 ms between the kernel's process start and the trace's clock, and +25 ms between Instruments' frame period and the display link. A third gap, the constructor against the end of static initialization, cancels.
 3. Durations compare between launches on one device to about ±21 ms, 1 SD. They do not compare with Instruments in absolute terms unless the offset is subtracted.
-4. `app.start.app_init` differs by +1.9 ± 0.4 ms, which measures where this library's constructor sits inside static runtime initialization rather than any disagreement between the instruments.
+4. `app.start.app_init` differs by +1.9 ± 0.4 ms, which measures where this library's static initializer sits among the app's rather than any disagreement between the instruments.
 5. Cold and warm separate by 23 binomial standard errors, so the classification is not marginal. The trace-derived comparator agrees on all ten launches, but it saturates at 0 and 1 and applies the same 0.5 constant, so that agreement tests the direction of the classification rather than the threshold. Where the threshold sits inside the empty interval is unconstrained.
 6. Every figure above rests on 10 launches, one app, one device, one OS version, and no partly cached launch. They characterise this configuration, not the method.
 

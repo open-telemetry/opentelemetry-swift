@@ -6,7 +6,7 @@ The **`MincoreLaunchInstrumentation`** class records how long the app takes to b
 
 A process records at most one launch, so there is at most one `app.start` span per process. The start types follow Apple's definitions rather than Android's.
 
-![Timeline of the app.start and app.resume spans. One bar spans process start to the first frame displayed. Below it three phase bars divide the same interval: app.start.pre_init ends at the AppLaunchEnvironment constructor, app.start.app_init ends at didFinishLaunching, and app.start.render ends at the first frame. app.start.scene_setup sits under app.start.render and starts at UIScene.willConnectNotification. A second row shows a prewarmed launch, whose span starts where app code first ran, with app.start.pre_activation.duration recorded outside it. A third row shows a resume, running from willEnterForeground, or from UIScene.willConnectNotification when the system discarded the scene, to the first frame, with an app.resume.scene_setup child and app.resume.background_duration recorded outside it.](img/app-start-timeline.svg)
+![Timeline of the app.start and app.resume spans. One bar spans process start to the first frame displayed. Below it three phase bars divide the same interval: app.start.pre_init ends where the app runs this library's static initializer, app.start.app_init ends at didFinishLaunching, and app.start.render ends at the first frame. app.start.scene_setup sits under app.start.render and starts at UIScene.willConnectNotification. A second row shows a prewarmed launch, whose span starts where app code first ran, with app.start.pre_activation.duration recorded outside it. A third row shows a resume, running from willEnterForeground, or from UIScene.willConnectNotification when the system discarded the scene, to the first frame, with an app.resume.scene_setup child and app.resume.background_duration recorded outside it.](img/app-start-timeline.svg)
 
 ## Setup
 
@@ -49,10 +49,26 @@ An `app.start` span runs from process start to the first frame displayed after t
 
 | Child span              | Parent             | Runs from                                                            | To                                 |
 | ----------------------- | ------------------ | -------------------------------------------------------------------- | ---------------------------------- |
-| `app.start.pre_init`    | `app.start`        | Process start                                                        | `AppLaunchEnvironment` constructor |
-| `app.start.app_init`    | `app.start`        | `AppLaunchEnvironment` constructor                                   | `didFinishLaunching` end           |
+| `app.start.pre_init`    | `app.start`        | Process start                                                        | This library's static initializer  |
+| `app.start.app_init`    | `app.start`        | This library's static initializer                                    | `didFinishLaunching` end           |
 | `app.start.render`      | `app.start`        | `didFinishLaunching` end                                             | End of `app.start`                 |
 | `app.start.scene_setup` | `app.start.render` | First scene connecting, or `didFinishLaunching` end if that was later | End of `app.start`                 |
+
+The boundary between `app.start.pre_init` and `app.start.app_init` is one of the app's static initializers. Before it the app is being loaded rather than running: dyld maps the executable, loads the libraries it depends on, binds their symbols, and starts running static initializers. This library stamps the time from its own, so where the split falls follows the link order and marks no step in the app's launch. See [What each phase holds](docs/lifecycle.md#what-each-phase-holds).
+
+Not every type carries every phase. A prewarmed process began before the user launched the app, so it reports the time before that as `app.start.pre_activation.duration` outside the span instead of as a `pre_init` child. A resume has no phases at all, because the app's code was already loaded and its UI already built.
+
+| Duration field                       | `cold` | `warm` | `prewarmed` | `app.resume`       |
+| ------------------------------------ | :----: | :----: | :---------: | :----------------: |
+| `app.start.pre_activation.duration`  |   —    |   —    |      ✓      |         —          |
+| `app.start.pre_init.duration`        |   ✓    |   ✓    |      —      |         —          |
+| `app.start.app_init.duration`        |   ✓    |   ✓    |      ✓      |         —          |
+| `app.start.render.duration`          |   ✓    |   ✓    |      ✓      |         —          |
+| `app.start.scene_setup`              |   ✓    |   ✓    |      ✓      |         —          |
+| `app.resume.background.duration`     |   —    |   —    |      —      |         ✓          |
+| `app.resume.scene_setup`             |   —    |   —    |      —      | `scene_reconnect`  |
+
+See [What the breakdown means](docs/lifecycle.md#what-the-breakdown-means) for where the time goes in each type.
 
 An `app.resume` span runs from `willEnterForeground`, or from `UIScene.willConnectNotification` when the system discarded the app's scene, to the first frame after the app becomes active. See [When a span is emitted](docs/lifecycle.md) for the lifecycle rules and the cases the library records nothing for.
 

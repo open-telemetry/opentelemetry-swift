@@ -6,6 +6,42 @@ Which lifecycle events start and end each span, and the cases `MincoreLaunchInst
 
 `app.start.scene_setup` starts no earlier than its parent, because UIKit connects a scene after `didFinishLaunching` and a child span must not begin before the span that holds it. A prewarmed launch reports `app.start.pre_activation.duration` in place of `app.start.pre_init`. Each phase needs both of its timestamps, so `app.start.app_init` and `app.start.render` require the instrumentation installed before `didFinishLaunching` returns.
 
+### What each phase holds
+
+<dl>
+<dt><code>app.start.pre_activation.duration</code>, prewarmed only</dt>
+<dd>Process start to the first timestamp app code recorded. Reported as an attribute rather than a child span, because the span itself starts at the end of it: the system created the process before the user asked for the app, so the time belongs to the system, not to the launch the user waited through.</dd>
+<dt><code>app.start.pre_init</code></dt>
+<dd>Process start to this library's static initializer. The app is being loaded rather than running: dyld maps the executable, loads the libraries it depends on, binds their symbols, and runs the static initializers the link order placed before this one. The app's own launch code has not started.</dd>
+<dt><code>app.start.app_init</code></dt>
+<dd>This library's static initializer to the end of <code>didFinishLaunching</code>. The app finishes running its remaining static initializers, then runs its own launch code. This is the phase an app controls most directly.</dd>
+<dt><code>app.start.render</code></dt>
+<dd>The end of <code>didFinishLaunching</code> to the first frame. Building the first screen and drawing it.</dd>
+<dt><code>app.start.scene_setup</code>, inside <code>render</code></dt>
+<dd>The first scene connecting to the first frame. The part of rendering that waits on UIKit handing the app a scene, rather than on the app's own drawing.</dd>
+<dt><code>app.resume.background.duration</code></dt>
+<dd>How long the app sat in the background before this resume, ending where the span starts. Context for the resume rather than part of it, which is why a resume reports no phases: the process was alive and its UI built the whole time.</dd>
+<dt><code>app.resume.scene_setup</code>, <code>scene_reconnect</code> only</dt>
+<dd>The discarded scene reconnecting. Absent from a <code>hot</code> resume, which never lost its scene.</dd>
+</dl>
+
+### What the breakdown means
+
+Which phase carries the cost is not obvious from the type's name. Across the ten launches measured on [one device](accuracy.md#apparatus-and-procedure), with medians rather than means because one cold launch ran long:
+
+| Phase          | Cold median | Warm median | Difference |
+| -------------- | ----------: | ----------: | ---------: |
+| `pre_init`     |      509 ms |      512 ms |      −2 ms |
+| `app_init`     |      674 ms |      396 ms |    +278 ms |
+| `render`       |      181 ms |       86 ms |     +95 ms |
+| `app.start`    |    1,354 ms |      986 ms |    +368 ms |
+
+**A cold launch does not spend its extra time in `pre_init`.** That phase is the same either way, and its cold and warm ranges overlap completely, 474 to 653 ms against 425 to 596 ms. The cost lands in `app_init` and `render`, and the `render` ranges do not overlap at all: 172 to 203 ms cold against 54 to 91 ms warm.
+
+The reason is that paging costs time when code runs, not when dyld maps it. Mapping a segment is cheap and lazy; the page faults arrive as the app executes its launch work and builds its first screen, which happens after this library's static initializer has already closed `pre_init`. So `app.start.pages.text.page_in_ratio` tells you the launch read the app's code from disk, and `app_init` and `render` tell you what that cost.
+
+Treat these numbers as the shape to expect, not as thresholds. They come from one app on one device, with four cold launches and six warm, and an app that does more or less work before `didFinishLaunching` returns will divide the same total differently.
+
 ## `resume`
 
 

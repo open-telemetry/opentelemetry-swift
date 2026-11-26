@@ -70,7 +70,7 @@ A launch is `prewarmed` when the `ActivePrewarm` environment variable read `1` a
 
 Like Sentry and Datadog, the library relies on that signal alone. A prewarmed launch without `ActivePrewarm` starts at process start, so it runs longer than `maxLaunchDuration` and the library drops it.
 
-Prewarming is independent of caching, so `app.start.prewarm.cache_state` reports whether the app's code was `cold` or `warm` on a launch the library sampled. A prewarmed launch's span starts when the `AppLaunchEnvironment` constructor ran, the earliest timestamp app code records, rather than at process start.
+Prewarming is independent of caching, so `app.start.prewarm.cache_state` reports whether the app's code was `cold` or `warm` on a launch the library sampled. A prewarmed launch's span starts when this library's static initializer ran, the earliest timestamp app code records, rather than at process start.
 
 The constructor time serves as a start time because Apple's [About the app launch sequence](https://developer.apple.com/documentation/uikit/about-the-app-launch-sequence) says prewarming "creates your process and loads the libraries your app links against, then suspends your process without allowing any application code to run". Earlier versions of that page said prewarming runs the launch sequence up to `UIApplicationMain`, which would include the constructor. On a system that does that, the span runs longer than `maxLaunchDuration` and the library drops it.
 
