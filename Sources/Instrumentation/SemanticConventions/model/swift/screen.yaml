@@ -1,0 +1,85 @@
+groups:
+  - id: registry.swift.app_screen
+    type: attribute_group
+    brief: >
+      The screen attributes, recorded by `ScreenInstrumentation`.
+    stability: development
+    attributes:
+      - id: app.navigation.destination.name
+        type: string
+        stability: development
+        brief: >
+          The name of the screen a navigation reached.
+        examples: ["HackerNewsViewController", "Settings"]
+        note: >
+          Carries the same value as `app.screen.name` on the
+          `app.navigation.complete` event, which is what OpenTelemetry Android's
+          registry does. The event repeats it so that an application running
+          without `ScreenLogRecordProcessor`, which is what stamps
+          `app.screen.name`, still reports where the navigation went.
+      - id: app.screen.previous.name
+        type: string
+        stability: development
+        brief: >
+          The name of the screen that was visible before this one.
+        examples: ["HackerNewsViewController", "Settings"]
+        note: >
+          Absent on the first navigation of the process, because no screen
+          preceded it. A screen the user returns to reports the screen they
+          came back from, so a pop and a push look the same here.
+      - id: app.screen.type
+        type:
+          members:
+            - id: uikit
+              value: "uikit"
+              stability: development
+              brief: >
+                A `UIViewController` that UIKit presented, detected by swizzling
+                `viewDidLoad` and `viewDidAppear`.
+            - id: swiftui
+              value: "swiftui"
+              stability: development
+              brief: >
+                A SwiftUI view the application marked with `otelScreen(_:)`.
+        stability: development
+        brief: >
+          The UI framework that drew the screen.
+        note: >
+          The two paths differ in what they can see, so a consumer comparing
+          screens needs to tell them apart. A `uikit` screen is named from its
+          view controller's class and is detected without the application's
+          help; a `swiftui` screen is named by the application, and its times
+          come from `onAppear`, which SwiftUI calls when the view joins the
+          hierarchy rather than when a frame carrying it is displayed. Neither
+          upstream nor OpenTelemetry Android defines this attribute.
+  - id: event.app.navigation.complete
+    type: event
+    name: app.navigation.complete
+    stability: development
+    brief: >
+      A navigation to a screen finished, so that screen is now the current one.
+    note: |
+      **Event name** MUST be `app.navigation.complete`.
+
+      **Instrumentation scope** MUST be `io.opentelemetry.screen.uikit` for a
+      `uikit` screen and `io.opentelemetry.screen.swiftui` for a `swiftui` one.
+
+      Recorded when the current screen changes, which is the first
+      `viewDidAppear` of a `UIViewController` or the `onAppear` of a view
+      marked with `otelScreen(_:)`. Navigating to the screen that is already
+      current records nothing, so a redisplay of the same screen is not a
+      navigation. The name follows OpenTelemetry Android, which records one
+      event per completed navigation rather than a pair of screen-start and
+      screen-end events.
+
+      The timestamp is the moment the screen appeared. The event has no
+      duration: `app.screen.time_to_first_appear` measures how long the screen
+      took to arrive.
+    attributes:
+      - ref: app.navigation.destination.name
+        requirement_level: required
+      - ref: app.screen.type
+        requirement_level: required
+      - ref: app.screen.previous.name
+        requirement_level:
+          conditionally_required: If a screen was current before this one.

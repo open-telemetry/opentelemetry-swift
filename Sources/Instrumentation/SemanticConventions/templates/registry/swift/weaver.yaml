@@ -30,3 +30,12 @@ templates:
         brief: .brief,
       })
     application_mode: single
+  - pattern: EventNames.swift.j2
+    filter: >
+      .groups
+      | map(select(.type == "event"))
+      | map({
+        name: .name,
+        brief: .brief,
+      })
+    application_mode: single

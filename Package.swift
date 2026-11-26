@@ -92,6 +92,9 @@ let package = Package(
       targets: ["BaggagePropagationProcessor"]
     ),
     .library(name: "Sessions", targets: ["Sessions"]),
+    .library(name: "ScreenInstrumentation", targets: ["ScreenInstrumentation"]),
+    .library(name: "ScreenInstrumentationUIKit", targets: ["ScreenInstrumentationUIKit"]),
+    .library(name: "ScreenInstrumentationSwiftUI", targets: ["ScreenInstrumentationSwiftUI"]),
     .executable(name: "ConcurrencyContext", targets: ["ConcurrencyContext"]),
     .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
     .executable(name: "StableMetricSample", targets: ["StableMetricSample"]),
@@ -266,6 +269,36 @@ let package = Package(
       path: "Sources/Instrumentation/Common"
     ),
     .target(
+      name: "ScreenInstrumentation",
+      dependencies: [
+        "InstrumentationSemanticConventions",
+        "OpenTelemetryApi",
+        "OpenTelemetrySdk",
+      ],
+      path: "Sources/Instrumentation/Screen",
+      exclude: ["README.md", "docs", "img"]
+    ),
+    .target(
+      name: "ScreenInstrumentationUIKit",
+      dependencies: [
+        "ScreenInstrumentation",
+        "InstrumentationSemanticConventions",
+        "OpenTelemetryApi",
+        "OpenTelemetrySdk",
+      ],
+      path: "Sources/Instrumentation/ScreenUIKit"
+    ),
+    .target(
+      name: "ScreenInstrumentationSwiftUI",
+      dependencies: [
+        "ScreenInstrumentation",
+        "InstrumentationSemanticConventions",
+        "OpenTelemetryApi",
+        "OpenTelemetrySdk",
+      ],
+      path: "Sources/Instrumentation/ScreenSwiftUI"
+    ),
+    .target(
       name: "InstrumentationSemanticConventions",
       path: "Sources/Instrumentation/SemanticConventions",
       exclude: ["README.md", "generate.sh", "model", "templates"]
@@ -276,6 +309,18 @@ let package = Package(
         "OpenTelemetryApi",
         "OpenTelemetrySdk",
       ]
+    ),
+    .testTarget(
+      name: "ScreenTests",
+      dependencies: [
+        "SharedTestUtils",
+        "InstrumentationSemanticConventions",
+        "ScreenInstrumentation",
+        "ScreenInstrumentationUIKit",
+        "ScreenInstrumentationSwiftUI",
+        "OpenTelemetrySdk",
+      ],
+      path: "Tests/InstrumentationTests/ScreenTests"
     ),
     .testTarget(
       name: "OpenTelemetryApiTests",

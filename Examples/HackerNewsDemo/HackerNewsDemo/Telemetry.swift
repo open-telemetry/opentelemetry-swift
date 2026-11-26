@@ -11,6 +11,8 @@ import OpenTelemetryProtocolExporterCommon
 import OpenTelemetryProtocolExporterHttp
 import OpenTelemetrySdk
 import ResourceExtension
+import ScreenInstrumentation
+import ScreenInstrumentationUIKit
 import Sessions
 import URLSessionInstrumentation
 
@@ -90,6 +92,7 @@ enum TelemetryConfig {
 enum Telemetry {
   nonisolated(unsafe) private static var urlSessionInstrumentation: URLSessionInstrumentation?
 
+  @MainActor
   static func start() {
     OpenTelemetry.setDebugEnabled(true)
 
@@ -112,6 +115,7 @@ enum Telemetry {
       TracerProviderBuilder()
         .with(resource: resource)
         .add(spanProcessor: SessionSpanProcessor())
+        .add(spanProcessor: ScreenSpanProcessor())
         .add(spanProcessor: BatchSpanProcessor(spanExporter: spanExporter))
         .build()
     )
@@ -122,7 +126,10 @@ enum Telemetry {
       LoggerProviderBuilder()
         .with(resource: resource)
         .with(processors: [
-          SessionLogRecordProcessor(nextProcessor: BatchLogRecordProcessor(logRecordExporter: logExporter))
+          SessionLogRecordProcessor(nextProcessor:
+            ScreenLogRecordProcessor(
+              nextProcessor: BatchLogRecordProcessor(logRecordExporter: logExporter)
+            ))
         ])
         .build()
     )
@@ -134,6 +141,11 @@ enum Telemetry {
     if !IntegrationTestScenario.installsAppLaunchLate {
       MincoreLaunchInstrumentation.install()
     }
+
+    // Installed after the providers are registered, because the first screen appears right
+    // after this returns. Swizzling UIViewController reports the UIKit screens; the Settings
+    // tab is SwiftUI and reports itself through .otelScreen in SettingsView.
+    ScreenInstrumentationUIKit.install()
 
     // Installed after the session manager and logger provider are registered:
     // crashes from the previous run are reported on install, and each crash

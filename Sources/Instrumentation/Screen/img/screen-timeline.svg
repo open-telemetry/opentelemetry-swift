@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="392" viewBox="0 0 860 392" role="img">
+  <rect x="0" y="0" width="860" height="392" fill="#ffffff"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#1b1b1b">
+
+    <text x="20" y="26" font-size="13" fill="#444444">One <tspan font-family="ui-monospace, SFMono-Regular, Menlo, monospace">app.screen.time_to_first_appear</tspan> span per screen instance</text>
+
+    <text x="150" y="62" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11">uikit</text>
+    <rect x="200" y="48" width="250" height="20" fill="#dce9f7" stroke="#4a7fb5"/>
+    <line x1="200" y1="40" x2="200" y2="76" stroke="#4a7fb5"/>
+    <line x1="450" y1="40" x2="450" y2="76" stroke="#4a7fb5"/>
+    <text x="200" y="90" text-anchor="middle" font-size="11" fill="#555555">viewDidLoad</text>
+    <text x="450" y="90" text-anchor="middle" font-size="11" fill="#555555">viewDidAppear</text>
+
+    <text x="150" y="124" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11">swiftui</text>
+    <rect x="200" y="110" width="186" height="20" fill="#dce9f7" stroke="#4a7fb5"/>
+    <line x1="200" y1="102" x2="200" y2="138" stroke="#4a7fb5"/>
+    <line x1="386" y1="102" x2="386" y2="138" stroke="#4a7fb5"/>
+    <text x="200" y="152" text-anchor="middle" font-size="11" fill="#555555">state created</text>
+    <text x="386" y="152" text-anchor="middle" font-size="11" fill="#555555">first onAppear</text>
+
+    <line x1="20" y1="180" x2="840" y2="180" stroke="#dddddd"/>
+    <text x="20" y="206" font-size="13" fill="#444444">The current screen across a push and a pop back</text>
+
+    <rect x="20" y="226" width="220" height="56" fill="#f7f7f7" stroke="#9a9a9a"/>
+    <text x="34" y="248" font-size="11">current <tspan font-family="ui-monospace, SFMono-Regular, Menlo, monospace">Stories</tspan></text>
+    <text x="34" y="268" font-size="11" fill="#666666">previous <tspan font-family="ui-monospace, SFMono-Regular, Menlo, monospace">nil</tspan></text>
+
+    <rect x="320" y="226" width="220" height="56" fill="#f7f7f7" stroke="#9a9a9a"/>
+    <text x="334" y="248" font-size="11">current <tspan font-family="ui-monospace, SFMono-Regular, Menlo, monospace">Comments</tspan></text>
+    <text x="334" y="268" font-size="11" fill="#666666">previous <tspan font-family="ui-monospace, SFMono-Regular, Menlo, monospace">Stories</tspan></text>
+
+    <rect x="620" y="226" width="220" height="56" fill="#cfe8d4" stroke="#4b9460"/>
+    <text x="634" y="248" font-size="11">current <tspan font-family="ui-monospace, SFMono-Regular, Menlo, monospace">Stories</tspan></text>
+    <text x="634" y="268" font-size="11" fill="#666666">previous <tspan font-family="ui-monospace, SFMono-Regular, Menlo, monospace">Comments</tspan></text>
+
+    <line x1="240" y1="254" x2="312" y2="254" stroke="#1b1b1b"/>
+    <path d="M320 254 l-8 -4 v8 z" fill="#1b1b1b"/>
+    <text x="276" y="246" text-anchor="middle" font-size="11">push</text>
+    <line x1="540" y1="254" x2="612" y2="254" stroke="#4b9460" stroke-width="1.5"/>
+    <path d="M620 254 l-8 -4 v8 z" fill="#4b9460"/>
+    <text x="576" y="246" text-anchor="middle" font-size="11" fill="#4b9460">pop back</text>
+
+    <text x="276" y="300" text-anchor="middle" font-size="10" fill="#555555">app.navigation.complete</text>
+    <text x="576" y="300" text-anchor="middle" font-size="10" fill="#4b9460">app.navigation.complete</text>
+
+    <text x="20" y="338" font-size="11" fill="#555555">The pop emits an event because <tspan font-family="ui-monospace, SFMono-Regular, Menlo, monospace">viewDidAppear</tspan> fires again on the screen returned to.</text>
+    <text x="20" y="358" font-size="11" fill="#555555"><tspan font-family="ui-monospace, SFMono-Regular, Menlo, monospace">viewDidLoad</tspan> does not: a view controller loads once, so tracking it would miss every pop.</text>
+    <text x="20" y="378" font-size="11" fill="#555555">Returning to a screen records no second <tspan font-family="ui-monospace, SFMono-Regular, Menlo, monospace">time_to_first_appear</tspan> span.</text>
+  </g>
+</svg>

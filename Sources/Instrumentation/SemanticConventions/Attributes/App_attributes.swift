@@ -11,6 +11,21 @@ extension FederatedSemanticConventions {
   public enum App: String, CaseIterable {
 
     /**
+     The name of the screen a navigation reached.
+
+      - Examples:
+      ```
+      attributes[FederatedSemanticConventions.App.navigationDestinationName.rawValue] = "HackerNewsViewController"
+      attributes[FederatedSemanticConventions.App.navigationDestinationName.rawValue] = "Settings"
+      ```
+
+     - Note: Carries the same value as `app.screen.name` on the `app.navigation.complete` event, which is what OpenTelemetry Android's registry does. The event repeats it so that an application running without `ScreenLogRecordProcessor`, which is what stamps `app.screen.name`, still reports where the navigation went.
+
+     - Requires: Value type should be `String`
+    */
+    case navigationDestinationName = "app.navigation.destination.name"
+
+    /**
      Seconds from when the app last entered the background to the start of the resume.
 
      - Requires: Value type should be `Double`
@@ -84,6 +99,30 @@ extension FederatedSemanticConventions {
      - Requires: Value should be one of ``ResumeTypeValues`` (of type `String`)
     */
     case resumeType = "app.resume.type"
+
+    /**
+     The name of the screen that was visible before this one.
+
+      - Examples:
+      ```
+      attributes[FederatedSemanticConventions.App.screenPreviousName.rawValue] = "HackerNewsViewController"
+      attributes[FederatedSemanticConventions.App.screenPreviousName.rawValue] = "Settings"
+      ```
+
+     - Note: Absent on the first navigation of the process, because no screen preceded it. A screen the user returns to reports the screen they came back from, so a pop and a push look the same here.
+
+     - Requires: Value type should be `String`
+    */
+    case screenPreviousName = "app.screen.previous.name"
+
+    /**
+     The UI framework that drew the screen.
+
+     - Note: The two paths differ in what they can see, so a consumer comparing screens needs to tell them apart. A `uikit` screen is named from its view controller's class and is detected without the application's help; a `swiftui` screen is named by the application, and its times come from `onAppear`, which SwiftUI calls when the view joins the hierarchy rather than when a frame carrying it is displayed. Neither upstream nor OpenTelemetry Android defines this attribute.
+
+     - Requires: Value should be one of ``ScreenTypeValues`` (of type `String`)
+    */
+    case screenType = "app.screen.type"
 
     /**
      The duration of `app.start.app_init` in seconds.
@@ -259,6 +298,28 @@ extension FederatedSemanticConventions {
       
       /// The process started in the background and had never been active.
       public static let backgroundLaunched = ResumeTypeValues("background_launched") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
+
+    /** 
+      The UI framework that drew the screen.
+    */
+    public struct ScreenTypeValues: CustomStringConvertible, Sendable {
+      
+      /// A `UIViewController` that UIKit presented, detected by swizzling `viewDidLoad` and `viewDidAppear`.
+      public static let uikit = ScreenTypeValues("uikit") 
+      
+      /// A SwiftUI view the application marked with `otelScreen(_:)`.
+      public static let swiftui = ScreenTypeValues("swiftui") 
 
       internal let value: String 
 

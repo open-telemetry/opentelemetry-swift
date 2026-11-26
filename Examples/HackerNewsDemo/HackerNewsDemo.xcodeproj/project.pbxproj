@@ -10,6 +10,9 @@
 		DB286F482EC3007300F39808 /* OpenTelemetryProtocolExporterHTTP in Frameworks */ = {isa = PBXBuildFile; productRef = DB286F472EC3007300F39808 /* OpenTelemetryProtocolExporterHTTP */; };
 		DB286F4A2EC3007300F39808 /* URLSessionInstrumentation in Frameworks */ = {isa = PBXBuildFile; productRef = DB286F492EC3007300F39808 /* URLSessionInstrumentation */; };
 		DB286F4C2EC3007300F39808 /* Sessions in Frameworks */ = {isa = PBXBuildFile; productRef = DB286F4B2EC3007300F39808 /* Sessions */; };
+		DD0000012EC3007300F39808 /* ScreenInstrumentation in Frameworks */ = {isa = PBXBuildFile; productRef = DD0000022EC3007300F39808 /* ScreenInstrumentation */; };
+		DD0000032EC3007300F39808 /* ScreenInstrumentationUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = DD0000042EC3007300F39808 /* ScreenInstrumentationUIKit */; };
+		DD0000052EC3007300F39808 /* ScreenInstrumentationSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = DD0000062EC3007300F39808 /* ScreenInstrumentationSwiftUI */; };
 		DB286F4E2EC3007300F39808 /* ResourceExtension in Frameworks */ = {isa = PBXBuildFile; productRef = DB286F4D2EC3007300F39808 /* ResourceExtension */; };
 		DB286F502EC3007300F39808 /* Crash in Frameworks */ = {isa = PBXBuildFile; productRef = DB286F4F2EC3007300F39808 /* Crash */; };
 		DB286F542EC3007300F39808 /* MincoreLaunchInstrumentation in Frameworks */ = {isa = PBXBuildFile; productRef = DB286F532EC3007300F39808 /* MincoreLaunchInstrumentation */; };
@@ -35,6 +38,9 @@
 				DB286F482EC3007300F39808 /* OpenTelemetryProtocolExporterHTTP in Frameworks */,
 				DB286F4A2EC3007300F39808 /* URLSessionInstrumentation in Frameworks */,
 				DB286F4C2EC3007300F39808 /* Sessions in Frameworks */,
+				DD0000012EC3007300F39808 /* ScreenInstrumentation in Frameworks */,
+				DD0000032EC3007300F39808 /* ScreenInstrumentationUIKit in Frameworks */,
+				DD0000052EC3007300F39808 /* ScreenInstrumentationSwiftUI in Frameworks */,
 				DB286F4E2EC3007300F39808 /* ResourceExtension in Frameworks */,
 				DB286F502EC3007300F39808 /* Crash in Frameworks */,
 				DB286F542EC3007300F39808 /* MincoreLaunchInstrumentation in Frameworks */,
@@ -91,6 +97,9 @@
 				DB286F472EC3007300F39808 /* OpenTelemetryProtocolExporterHTTP */,
 				DB286F492EC3007300F39808 /* URLSessionInstrumentation */,
 				DB286F4B2EC3007300F39808 /* Sessions */,
+				DD0000022EC3007300F39808 /* ScreenInstrumentation */,
+				DD0000042EC3007300F39808 /* ScreenInstrumentationUIKit */,
+				DD0000062EC3007300F39808 /* ScreenInstrumentationSwiftUI */,
 				DB286F4D2EC3007300F39808 /* ResourceExtension */,
 				DB286F4F2EC3007300F39808 /* Crash */,
 				DB286F532EC3007300F39808 /* MincoreLaunchInstrumentation */,
@@ -397,6 +406,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 5E6803F12E1306FC00D1DBD3 /* XCLocalSwiftPackageReference "../.." */;
 			productName = Sessions;
+		};
+		DD0000022EC3007300F39808 /* ScreenInstrumentation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5E6803F12E1306FC00D1DBD3 /* XCLocalSwiftPackageReference "../.." */;
+			productName = ScreenInstrumentation;
+		};
+		DD0000042EC3007300F39808 /* ScreenInstrumentationUIKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5E6803F12E1306FC00D1DBD3 /* XCLocalSwiftPackageReference "../.." */;
+			productName = ScreenInstrumentationUIKit;
+		};
+		DD0000062EC3007300F39808 /* ScreenInstrumentationSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5E6803F12E1306FC00D1DBD3 /* XCLocalSwiftPackageReference "../.." */;
+			productName = ScreenInstrumentationSwiftUI;
 		};
 		DB286F4D2EC3007300F39808 /* ResourceExtension */ = {
 			isa = XCSwiftPackageProductDependency;

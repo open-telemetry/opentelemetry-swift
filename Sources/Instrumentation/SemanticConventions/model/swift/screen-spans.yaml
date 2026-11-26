@@ -1,0 +1,38 @@
+groups:
+  - id: span.app_screen.time_to_first_appear
+    type: span
+    annotations:
+      span_name: app.screen.time_to_first_appear
+    span_kind: internal
+    stability: development
+    brief: >
+      A screen's time to first appear, from the screen's creation to the first
+      time it appeared.
+    note: |
+      **Span name** MUST be `app.screen.time_to_first_appear`.
+
+      **Span kind** MUST be `INTERNAL`.
+
+      **Instrumentation scope** MUST be `io.opentelemetry.screen.uikit` for a
+      `uikit` screen and `io.opentelemetry.screen.swiftui` for a `swiftui` one.
+
+      One span per screen instance, not per appearance: a screen the user
+      returns to records nothing the second time.
+
+      | `app.screen.type` | Start timestamp | End timestamp |
+      | --- | --- | --- |
+      | `uikit` | The view controller's `viewDidLoad` | Its first `viewDidAppear` |
+      | `swiftui` | SwiftUI created the view's state | Its first `onAppear` |
+
+      The span measures the screen's own work only when the screen is created
+      to be shown. UIKit loads a view controller the first time something asks
+      for its view, which a parent can do long before it presents it, and a view
+      controller can load and never appear. Such a screen reports a long span
+      or none at all, and no attribute distinguishes it, so a consumer should
+      read the distribution rather than a single span.
+
+      A screen never appearing records nothing, so an abandoned navigation is
+      invisible here.
+    attributes:
+      - ref: app.screen.type
+        requirement_level: required
