@@ -6,7 +6,7 @@ The **`MincoreLaunchInstrumentation`** class records how long the app takes to b
 
 A process records at most one launch, so there is at most one `app.start` span per process. The start types follow Apple's definitions rather than Android's.
 
-![Timeline of an app.start span. One bar spans process start to the first frame displayed. Below it three phase bars divide the same interval: app.start.pre_init ends at the AppLaunchEnvironment constructor, app.start.app_init ends at didFinishLaunching, and app.start.render ends at the first frame. app.start.scene_setup sits under app.start.render and starts at UIScene.willConnectNotification. A second row shows a prewarmed launch, whose span starts where app code first ran, with app.start.pre_activation.duration recorded outside it.](img/app-start-timeline.svg)
+![Timeline of the app.start and app.resume spans. One bar spans process start to the first frame displayed. Below it three phase bars divide the same interval: app.start.pre_init ends at the AppLaunchEnvironment constructor, app.start.app_init ends at didFinishLaunching, and app.start.render ends at the first frame. app.start.scene_setup sits under app.start.render and starts at UIScene.willConnectNotification. A second row shows a prewarmed launch, whose span starts where app code first ran, with app.start.pre_activation.duration recorded outside it. A third row shows a resume, running from willEnterForeground, or from UIScene.willConnectNotification when the system discarded the scene, to the first frame, with an app.resume.scene_setup child and app.resume.background_duration recorded outside it.](img/app-start-timeline.svg)
 
 ## Setup
 
@@ -64,6 +64,8 @@ Apple's [Reducing your app's launch time](https://developer.apple.com/documentat
 
 Apple's wording covers the frameworks and daemons the app depends on, but the sample reaches only the app's own images, so the app's code alone decides the type. See [How the launch type is decided](docs/classification.md).
 
+![Two-part diagram. Part one shows an image's segments — __TEXT, __DATA_CONST, __DATA and __LINKEDIT — with __TEXT highlighted as the only one sampled, because it holds read-only code the kernel discards and re-reads, although a cold launch reads all four from disk, and expands it into a strip of up to 256 evenly spaced sampled pages. Part two shows those pages as cells at two moments, at the library's constructor and when the app became active, for a cold launch and a warm one. In the cold launch 70 pages were already resident and 170 paged in, giving a ratio of 0.71; in the warm launch 233 were already resident and 7 paged in, giving 0.03. A scale at the bottom marks both ratios either side of the 0.5 coldPageInRatio threshold.](img/text-page-sampling.svg)
+
 The `app.start.type` attribute can have the following values, each given with Apple's term for it.
 
 <dl>
@@ -92,18 +94,18 @@ The `app.resume.type` attribute can have the following values. Each describes a 
 
 ## Platform support
 
-| Platform       | Status      | What the library records                                                |
-| -------------- | ----------- | ----------------------------------------------------------------------- |
-| iOS            | Development | Every type. The only platform tested end to end                         |
-| iPadOS         | Untested    | The same as iOS                                                         |
-| visionOS       | Untested    | Every type, with `prewarmed` only where the system sets `ActivePrewarm`  |
-| Mac Catalyst   | Untested    | The same as visionOS                                                    |
-| tvOS           | Untested    | The same, except that it reads no background launch from the process's role |
-| macOS          | Untested    | Launches only, ending at the first `NSApplication.didBecomeActiveNotification`, because macOS has neither `CADisplayLink` nor a background state |
-| watchOS        | Unsupported | Nothing. The API compiles, so shared code needs no check                |
-| Linux, Windows | Unsupported | Nothing. The product is not built, so it cannot be a dependency         |
+| Platform       | Status      | Tested on            | What the library records                                           |
+| -------------- | ----------- | -------------------- | ------------------------------------------------------------------ |
+| iOS            | Development | Device and simulator | Every type                                                         |
+| iPadOS         | Untested    | Neither              | The same as iOS                                                    |
+| visionOS       | Untested    | Neither              | Every type, with `prewarmed` only where the system sets `ActivePrewarm` |
+| Mac Catalyst   | Untested    | Neither              | The same as visionOS                                               |
+| tvOS           | Untested    | Neither              | The same, except that it reads no background launch from the process's role |
+| macOS          | Untested    | Neither, and it has no simulator | Launches only, ending at the first `NSApplication.didBecomeActiveNotification`, because macOS has neither `CADisplayLink` nor a background state |
+| watchOS        | Unsupported | —                    | Nothing. The API compiles, so shared code needs no check           |
+| Linux, Windows | Unsupported | —                    | Nothing. The product is not built, so it cannot be a dependency    |
 
-`Untested` means nobody has collected telemetry from that platform, so the row describes what the code would record. See [What has been verified](docs/accuracy.md#what-has-been-verified).
+`Untested` means nobody has collected telemetry from that platform, so the row describes what the code would record. A simulator reads the Mac's page cache, so it exercises the lifecycle but says nothing about `cold` and `warm`, and it cannot produce a `prewarmed` launch: only the device run supports the thresholds. See [What has been verified](docs/accuracy.md#what-has-been-verified).
 
 ## See also
 
