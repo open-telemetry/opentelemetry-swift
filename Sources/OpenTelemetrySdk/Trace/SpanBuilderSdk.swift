@@ -105,9 +105,10 @@ class SpanBuilderSdk: SpanBuilder {
   }
 
   func prepareSpan() -> Span {
+    let idGenerator = tracerSharedState.idGenerator
     var parentContext = getParentContext(parentType: parentType, explicitParent: parent, remoteParent: remoteParent)
     let traceId: TraceId
-    let spanId = tracerSharedState.idGenerator.generateSpanId()
+    let spanId = idGenerator.generateSpanId()
     var traceState = TraceState()
     let isRandom: Bool
 
@@ -116,8 +117,8 @@ class SpanBuilderSdk: SpanBuilder {
       traceState = parentContext!.traceState
       isRandom = parentContext!.traceFlags.random
     } else {
-      traceId = tracerSharedState.idGenerator.generateTraceId()
-      isRandom = tracerSharedState.idGenerator.generatesRandomTraceIds
+      traceId = idGenerator.generateTraceId()
+      isRandom = idGenerator.generatesRandomTraceIds
       parentContext = nil
     }
 

@@ -36,7 +36,7 @@ final class SpanBuilderSdkTraceFlagsTests: XCTestCase {
   }
 
   func testCustomIdGeneratorDefaultsToNonRandom() {
-    XCTAssertFalse(DeterministicIdGenerator().generatesRandomTraceIds)
+    XCTAssertFalse(LegacyIdGenerator().generatesRandomTraceIds)
   }
 
   func testRootSpanSetsRandomFlagWithRandomIdGenerator() {
@@ -48,7 +48,7 @@ final class SpanBuilderSdkTraceFlagsTests: XCTestCase {
   }
 
   func testRootSpanOmitsRandomFlagForCustomIdGenerator() {
-    let span = makeTracer(idGenerator: DeterministicIdGenerator())
+    let span = makeTracer(idGenerator: LegacyIdGenerator())
       .spanBuilder(spanName: "root").startSpan()
 
     XCTAssertTrue(span.context.traceFlags.sampled)
@@ -57,7 +57,7 @@ final class SpanBuilderSdkTraceFlagsTests: XCTestCase {
   }
 
   func testRootSpanHonoursRandomCapableCustomIdGenerator() {
-    let span = makeTracer(idGenerator: DeterministicIdGenerator(generatesRandomTraceIds: true))
+    let span = makeTracer(idGenerator: RandomCapableIdGenerator())
       .spanBuilder(spanName: "root").startSpan()
 
     XCTAssertTrue(span.context.traceFlags.random)
@@ -112,10 +112,39 @@ final class SpanBuilderSdkTraceFlagsTests: XCTestCase {
     child.end()
     parent.end()
   }
+
+  func testGeneratorReplacedDuringTraceIdGenerationKeepsRandomFlagConsistent() {
+    let first = SwappingIdGenerator(generatesRandomTraceIds: true)
+    let provider = TracerProviderBuilder()
+      .with(idGenerator: first)
+      .with(sampler: Samplers.alwaysOn)
+      .build()
+    first.onGenerateTraceId = {
+      provider.updateActiveIdGenerator(SwappingIdGenerator(generatesRandomTraceIds: false))
+    }
+
+    let span = provider.get(instrumentationName: "trace-flags-test")
+      .spanBuilder(spanName: "root").startSpan()
+
+    XCTAssertTrue(span.context.traceFlags.random)
+    span.end()
+  }
 }
 
-private struct DeterministicIdGenerator: IdGenerator {
-  var generatesRandomTraceIds = false
+/// A generator written before `generatesRandomTraceIds` existed. It intentionally
+/// omits the property so the test exercises the protocol extension's default.
+private struct LegacyIdGenerator: IdGenerator {
+  func generateSpanId() -> SpanId {
+    SpanId(id: 10)
+  }
+
+  func generateTraceId() -> TraceId {
+    TraceId(idHi: 20, idLo: 30)
+  }
+}
+
+private struct RandomCapableIdGenerator: IdGenerator {
+  var generatesRandomTraceIds = true
 
   func generateSpanId() -> SpanId {
     SpanId(id: 10)
@@ -123,5 +152,23 @@ private struct DeterministicIdGenerator: IdGenerator {
 
   func generateTraceId() -> TraceId {
     TraceId(idHi: 20, idLo: 30)
+  }
+}
+
+private final class SwappingIdGenerator: IdGenerator {
+  let generatesRandomTraceIds: Bool
+  var onGenerateTraceId: (() -> Void)?
+
+  init(generatesRandomTraceIds: Bool) {
+    self.generatesRandomTraceIds = generatesRandomTraceIds
+  }
+
+  func generateSpanId() -> SpanId {
+    SpanId(id: 10)
+  }
+
+  func generateTraceId() -> TraceId {
+    onGenerateTraceId?()
+    return TraceId(idHi: 20, idLo: 30)
   }
 }
