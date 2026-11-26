@@ -918,6 +918,14 @@ public final class URLSessionInstrumentation: @unchecked Sendable {
       return
     }
 
+    // `reportedKey` is set only by the `setState:` fallback, so a completion a delegate or a
+    // completion handler reported leaves it unset while the span is already ended and gone from
+    // `runningSpans`. A task that carries a response or an error has run, whatever reported it, so
+    // this is the same invariant read off the task instead of off the bookkeeping.
+    guard task.response == nil, task.error == nil else {
+      return
+    }
+
     // AV Asset Tasks cannot be auto instrumented, they dont include request attributes, skip them
     guard !Self.AVTaskClassList.contains(where: { task.isKind(of: $0) }) else {
       return
