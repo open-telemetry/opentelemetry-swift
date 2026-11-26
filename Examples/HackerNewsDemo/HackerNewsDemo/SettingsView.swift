@@ -320,6 +320,7 @@ struct UserIdEditorView: View {
       }
       .padding(.horizontal, 16)
       .navigationTitle("Edit User ID")
+      .otelScreen("Edit User ID")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .navigationBarLeading) {
@@ -385,6 +386,7 @@ struct SessionConfigEditorView: View {
         RestartNoteSection()
       }
       .navigationTitle("Session Config")
+      .otelScreen("Session Config")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .navigationBarLeading) {
@@ -458,6 +460,7 @@ struct OTelConfigEditorView: View {
         RestartNoteSection()
       }
       .navigationTitle("OTel Config")
+      .otelScreen("OTel Config")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .navigationBarLeading) {
@@ -785,6 +788,7 @@ struct HangPickerView: View {
         Spacer()
       }
       .navigationTitle("Trigger App Hang")
+      .otelScreen("Trigger App Hang")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .navigationBarLeading) {
@@ -941,6 +945,7 @@ struct CrashPickerView: View {
         Spacer()
       }
       .navigationTitle("Trigger App Crash")
+      .otelScreen("Trigger App Crash")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .navigationBarLeading) {
@@ -1214,6 +1219,7 @@ struct TelemetryGeneratorView: View {
       }
       .padding(.horizontal, 16)
       .navigationTitle("Load Test")
+      .otelScreen("Load Test")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .navigationBarLeading) {
@@ -1466,6 +1472,7 @@ struct CustomTelemetryView: View {
         }
       }
       .navigationTitle("Custom Span / Log")
+      .otelScreen("Custom Span / Log")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .navigationBarLeading) {
@@ -1597,6 +1604,7 @@ struct CpuTestView: View {
       }
       .padding(.horizontal, 16)
       .navigationTitle("CPU Test")
+      .otelScreen("CPU Test")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .navigationBarLeading) {
@@ -1760,6 +1768,7 @@ struct MemoryTestView: View {
       }
       .padding(.horizontal, 16)
       .navigationTitle("Memory Test")
+      .otelScreen("Memory Test")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .navigationBarLeading) {
