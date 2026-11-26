@@ -61,17 +61,35 @@ final class LargeContentLengthStubURLProtocol: URLProtocol {
   override func stopLoading() {}
 }
 
+/// Lock-protected storage for state the instrumentation callbacks write from URLSession's threads
+/// while the test thread reads or resets it. A task that outlives its test can call back during the
+/// next test's `setUp()`, so unsynchronized access is a data race under ThreadSanitizer.
+@propertyWrapper
+final class TestLocked<Value>: @unchecked Sendable {
+  private let storage: Locked<Value>
+
+  init(wrappedValue: Value) {
+    storage = Locked(initialValue: wrappedValue)
+  }
+
+  var wrappedValue: Value {
+    get { storage.protectedValue }
+    set { storage.protectedValue = newValue }
+    _modify { yield &storage.protectedValue }
+  }
+}
+
 class URLSessionInstrumentationTests: XCTestCase {
-  class Check {
-    public var shouldRecordPayloadCalled: Bool = false
-    public var shouldInstrumentCalled: Bool = false
-    public var nameSpanCalled: Bool = false
-    public var spanCustomizationCalled: Bool = false
-    public var shouldInjectTracingHeadersCalled: Bool = false
-    public var createdRequestCalled: Bool = false
-    public var createdRequestCount: Int = 0
-    public var receivedResponseCalled: Bool = false
-    public var receivedErrorCalled: Bool = false
+  final class Check: @unchecked Sendable {
+    @TestLocked public var shouldRecordPayloadCalled: Bool = false
+    @TestLocked public var shouldInstrumentCalled: Bool = false
+    @TestLocked public var nameSpanCalled: Bool = false
+    @TestLocked public var spanCustomizationCalled: Bool = false
+    @TestLocked public var shouldInjectTracingHeadersCalled: Bool = false
+    @TestLocked public var createdRequestCalled: Bool = false
+    @TestLocked public var createdRequestCount: Int = 0
+    @TestLocked public var receivedResponseCalled: Bool = false
+    @TestLocked public var receivedErrorCalled: Bool = false
   }
 
   final class SessionDelegate: NSObject, URLSessionDelegate, URLSessionDataDelegate, @unchecked Sendable {
@@ -203,16 +221,46 @@ class URLSessionInstrumentationTests: XCTestCase {
     }
   }
 
-  nonisolated(unsafe) static var receivedResponseRequest: URLRequest?
+  // The state the configuration callbacks below touch is lock-protected, since a callback can run
+  // on a URLSession thread while the test thread reads or resets it.
+  private static let lockedReceivedResponseRequest = TestLocked<URLRequest?>(wrappedValue: nil)
+  static var receivedResponseRequest: URLRequest? {
+    get { lockedReceivedResponseRequest.wrappedValue }
+    set { lockedReceivedResponseRequest.wrappedValue = newValue }
+  }
 
-  nonisolated(unsafe) static var createdSpanIds = [String]()
+  private static let lockedCreatedSpanIds = TestLocked(wrappedValue: [String]())
+  static var createdSpanIds: [String] {
+    get { lockedCreatedSpanIds.wrappedValue }
+    set { lockedCreatedSpanIds.wrappedValue = newValue }
+    _modify { yield &lockedCreatedSpanIds.wrappedValue }
+  }
 
-  nonisolated(unsafe) static var requestCopy: URLRequest!
-  nonisolated(unsafe) static var responseCopy: HTTPURLResponse!
-  nonisolated(unsafe) static var receivedDataOrFile: DataOrFile?
+  private static let lockedRequestCopy = TestLocked<URLRequest?>(wrappedValue: nil)
+  static var requestCopy: URLRequest! {
+    get { lockedRequestCopy.wrappedValue }
+    set { lockedRequestCopy.wrappedValue = newValue }
+  }
+
+  private static let lockedResponseCopy = TestLocked<HTTPURLResponse?>(wrappedValue: nil)
+  static var responseCopy: HTTPURLResponse! {
+    get { lockedResponseCopy.wrappedValue }
+    set { lockedResponseCopy.wrappedValue = newValue }
+  }
+
+  private static let lockedReceivedDataOrFile = TestLocked<DataOrFile?>(wrappedValue: nil)
+  static var receivedDataOrFile: DataOrFile? {
+    get { lockedReceivedDataOrFile.wrappedValue }
+    set { lockedReceivedDataOrFile.wrappedValue = newValue }
+  }
 
   nonisolated(unsafe) static var activeBaggage: Baggage!
-  nonisolated(unsafe) static var customBaggage: Baggage!
+
+  private static let lockedCustomBaggage = TestLocked<Baggage?>(wrappedValue: nil)
+  static var customBaggage: Baggage! {
+    get { lockedCustomBaggage.wrappedValue }
+    set { lockedCustomBaggage.wrappedValue = newValue }
+  }
 
   nonisolated(unsafe) static var config = URLSessionInstrumentationConfiguration(shouldRecordPayload: nil,
                                                              shouldInstrument: { req in
@@ -262,8 +310,17 @@ class URLSessionInstrumentationTests: XCTestCase {
                                                                customBaggage
                                                              })
 
-  nonisolated(unsafe) static var checker = Check()
-  nonisolated(unsafe) static var semaphore: DispatchSemaphore!
+  private static let lockedChecker = TestLocked(wrappedValue: Check())
+  static var checker: Check {
+    get { lockedChecker.wrappedValue }
+    set { lockedChecker.wrappedValue = newValue }
+  }
+
+  private static let lockedSemaphore = TestLocked<DispatchSemaphore?>(wrappedValue: nil)
+  static var semaphore: DispatchSemaphore! {
+    get { lockedSemaphore.wrappedValue }
+    set { lockedSemaphore.wrappedValue = newValue }
+  }
   var sessionDelegate: SessionDelegate!
   nonisolated(unsafe) static var instrumentation: URLSessionInstrumentation!
 
