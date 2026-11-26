@@ -31,6 +31,12 @@ final class AppStartTests: XCTestCase {
   // Timestamps the app and the instrumentation read from the same clock or kernel value, but
   // convert separately.
   private static let clockTolerance: UInt64 = 1_000_000
+  // Timestamps two observers of the same lifecycle notification read. They run one after the other
+  // on the main thread and each does real work in between — the instrumentation reads the
+  // process's page-ins, the app starts and ends a marker span — so the gap is scheduling rather
+  // than conversion, and a loaded CI simulator stretches it. Which event a start is pinned to is
+  // decided by the bound on the other side, not by this number.
+  private static let notificationTolerance = nanosecondsPerSecond / 10
 
   // Every launch whose output is complete. `crash` dies right after its completion marker.
   private static let launches: [Scenario.Launch] = [
@@ -61,6 +67,21 @@ final class AppStartTests: XCTestCase {
                             file: StaticString = #filePath, line: UInt = #line) {
     let difference = actual > expected ? actual - expected : expected - actual
     XCTAssertLessThanOrEqual(difference, tolerance, message, file: file, line: line)
+  }
+
+  /// A resume starts when the app enters the foreground, so before it becomes active. The gap to
+  /// the app's own marker is bounded loosely, and the activation bounds it on the other side, so a
+  /// resume pinned to `didBecomeActive` or to the first frame fails whatever the simulator's load.
+  private func assertStartsAtForeground(_ span: ProtoSpan, in launch: Scenario.Launch,
+                                        file: StaticString = #filePath, line: UInt = #line) throws {
+    let foreground = try XCTUnwrap(markers(Scenario.foregroundSpanName, in: launch).last,
+                                   "\(launch): no willEnterForeground marker", file: file, line: line)
+    let active = try XCTUnwrap(markers(Scenario.activeSpanName, in: launch).last,
+                               "\(launch): no didBecomeActive marker", file: file, line: line)
+    assertDiffer(span.startTimeUnixNano, from: foreground, byAtMost: Self.notificationTolerance,
+                 "\(launch): a resume starts when the app enters the foreground", file: file, line: line)
+    XCTAssertLessThanOrEqual(span.startTimeUnixNano, active,
+                             "\(launch): a resume starts before the app becomes active", file: file, line: line)
   }
 
   private func roots(_ name: String, in launch: Scenario.Launch) -> [ProtoSpan] {
@@ -177,8 +198,7 @@ final class AppStartTests: XCTestCase {
                    "the scene stayed connected while the app was in the background")
     XCTAssertEqual(resume.attributes.string(App.resumeOutcome.rawValue), App.ResumeOutcomeValues.completed.description)
     // No scene connects when the app comes back, so the resume starts at `willEnterForeground`.
-    assertDiffer(resume.startTimeUnixNano, from: try XCTUnwrap(markers(Scenario.foregroundSpanName, in: launch).last),
-                 byAtMost: Self.clockTolerance, "\(launch): a resume starts when the app enters the foreground")
+    try assertStartsAtForeground(resume, in: launch)
     assertEndsAtFirstFrame(resume, activation: try XCTUnwrap(markers(Scenario.activeSpanName, in: launch).last), in: launch)
     XCTAssertNotNil(resume.attributes.double(App.resumeBackgroundDuration.rawValue),
                     "the app was in the background before this resume")
@@ -212,8 +232,7 @@ final class AppStartTests: XCTestCase {
     XCTAssertEqual(completed.count, 1, "only the third activation reached a first frame")
     let resume = try XCTUnwrap(completed.first)
     XCTAssertEqual(resume.attributes.string(App.resumeType.rawValue), App.ResumeTypeValues.hot.description)
-    assertDiffer(resume.startTimeUnixNano, from: try XCTUnwrap(markers(Scenario.foregroundSpanName, in: launch).last),
-                 byAtMost: Self.clockTolerance, "\(launch): a resume starts when the app enters the foreground")
+    try assertStartsAtForeground(resume, in: launch)
     assertEndsAtFirstFrame(resume, activation: try XCTUnwrap(markers(Scenario.activeSpanName, in: launch).last), in: launch)
     // The interrupted activation is either not recorded or recorded as abandoned, never as a
     // resume that completed, and it must not end at the frame the next activation displayed.
@@ -239,8 +258,7 @@ final class AppStartTests: XCTestCase {
     XCTAssertEqual(resume.attributes.string(App.resumeOutcome.rawValue), App.ResumeOutcomeValues.completed.description)
     // The scene connected in the background seconds earlier, and the runner waits for the ready
     // marker before bringing the app forward, so the resume starts at `willEnterForeground`.
-    assertDiffer(resume.startTimeUnixNano, from: try XCTUnwrap(markers(Scenario.foregroundSpanName, in: launch).last),
-                 byAtMost: Self.clockTolerance, "\(launch): a resume starts when the app enters the foreground")
+    try assertStartsAtForeground(resume, in: launch)
     assertEndsAtFirstFrame(resume, activation: try XCTUnwrap(markers(Scenario.activeSpanName, in: launch).last), in: launch)
     // The app was never in the foreground to leave, so no page baseline was taken and it was never
     // in the background for a measured length of time.
