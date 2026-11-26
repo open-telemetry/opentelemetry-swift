@@ -111,3 +111,6 @@ __pycache__/
 # oh-my-claudecode
 .omc/
 .claude/CLAUDE.md
+
+# Revyl device-cloud harness, configured per developer
+.revyl/
