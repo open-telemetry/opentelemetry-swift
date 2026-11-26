@@ -26,6 +26,15 @@
     // no longer end at a first frame.
     private var _pendingFirstFrameRead: FirstFrameRead?
 
+    /// What happened when an activation tried to publish its abandonment callback.
+    private enum Publication {
+      case published
+      /// The app entered the background while the start was being prepared, at this time.
+      case interrupted(Date)
+      /// The monitor was stopped, so the start is recorded nowhere.
+      case dropped
+    }
+
     var configuration: AppLaunchInstrumentationConfiguration { dependencies.configuration }
 
     init(dependencies: AppLaunchRuntime.Dependencies,
@@ -146,21 +155,50 @@
         record(.firstFrame(didBecomeActiveTime))
         return
       }
-      lock.withLock { _abandon = record }
+      // Publishing the callback and checking that the activation is still the current one happen
+      // under one lock. An app that left the foreground while the start was being prepared found
+      // no callback to abandon, so without this the assignment would leave a stale one for the
+      // next background event to finalize with the wrong time, or for the next activation to
+      // overwrite and lose.
+      let publication: Publication = lock.withLock {
+        guard !_isStopped else { return .dropped }
+        guard _tracker.backgroundCount == backgroundCount else {
+          return .interrupted(_tracker.lastBackgroundTime ?? didBecomeActiveTime)
+        }
+        _abandon = record
+        return .published
+      }
+      switch publication {
+      case .dropped:
+        return
+      case let .interrupted(time):
+        InternalLogger.debug("recorded a \(start.launchType) start as abandoned, because the app entered the background while it was being prepared.")
+        record(.abandoned(time))
+        return
+      case .published:
+        break
+      }
+
       let read = firstFrameReader.readFirstFrame { [self] firstFrameTime in
         // A display link pauses in the background, so if the app left the foreground before the
         // first frame, the frame it reports is from the next time the app returned. The read is
         // cancelled then, so this is the belt to that braces: a reader that reports anyway, or a
         // cancellation that lost a race with a tick already in flight, is still dropped here.
-        guard lock.withLock({ !_isStopped && _tracker.backgroundCount == backgroundCount }) else {
+        //
+        // Taking the callback is how this read claims the activation, and it happens in the same
+        // critical section as the check. A background event that takes it first records the start
+        // as abandoned, so this one must not also record it as completed.
+        let didClaim: Bool = lock.withLock {
+          guard !_isStopped, _tracker.backgroundCount == backgroundCount, _abandon != nil else { return false }
+          _abandon = nil
+          _pendingFirstFrameRead = nil
+          return true
+        }
+        guard didClaim else {
           InternalLogger.debug("dropped a \(start.launchType) start, because the app entered the background before the first frame.")
           return
         }
         // A start never ends before the app became active, whatever the reader reports.
-        lock.withLock {
-          _abandon = nil
-          _pendingFirstFrameRead = nil
-        }
         record(.firstFrame(max(firstFrameTime, didBecomeActiveTime)))
       }
       // A read that already completed, or an activation the app has left in the meantime, leaves

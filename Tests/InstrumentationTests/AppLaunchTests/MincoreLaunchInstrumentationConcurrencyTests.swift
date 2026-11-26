@@ -109,10 +109,16 @@
       }
       firstFrameReader.displayFrame(at: firstFrame)
 
-      // Every span comes from a first frame read, and reads interrupted by a background event are
-      // dropped, so there can't be more spans than reads.
+      // A start that reached a first frame comes from a read, and a read interrupted by a
+      // background event is dropped, so there can't be more completed starts than reads. A start
+      // the app left before its first frame is recorded as abandoned, with no read behind it.
       XCTAssertGreaterThanOrEqual(firstFrameReader.readCount, 1)
-      XCTAssertLessThanOrEqual(rootSpans().count, firstFrameReader.readCount)
+      let outcomes = rootSpans().map { $0.attributes["app.start.outcome"] ?? $0.attributes["app.resume.outcome"] }
+      XCTAssertLessThanOrEqual(outcomes.filter { $0 == .string("completed") }.count, firstFrameReader.readCount)
+      XCTAssertFalse(outcomes.contains(nil), "every root records an outcome")
+
+      // The process launched once, however many activations raced.
+      XCTAssertLessThanOrEqual(rootSpans().filter { $0.name == "app.start" }.count, 1)
     }
   }
 #endif

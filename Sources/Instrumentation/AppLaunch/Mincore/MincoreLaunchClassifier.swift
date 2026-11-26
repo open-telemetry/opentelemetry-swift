@@ -107,11 +107,17 @@
               sample.residentAtEnd >= min(Self.minimumResidentPages, sample.sampled),
               let ratio = sample.pageInRatio else {
           InternalLogger.warn("couldn't sample the launch's pages, so the launch type is inferred.")
+          var attributes = Self.determinedBy(isPrewarmed ? .prewarmFlag : .launchHistory)
+          // A property of the binary rather than of this launch, so it's reported whenever the
+          // code can be measured, whatever the sample came back with.
+          if let total = pageSampler.readTextPageTotal() {
+            attributes[App.startPagesTextTotal.rawValue] = .int(total)
+          }
           if isPrewarmed {
-            return LaunchClassification(type: .prewarmed, attributes: Self.determinedBy(.prewarmFlag))
+            return LaunchClassification(type: .prewarmed, attributes: attributes)
           }
           var classification = inferred()
-          classification.attributes = Self.determinedBy(.launchHistory)
+          classification.attributes = attributes
           return classification
         }
         let isCold = ratio >= coldPageInRatio

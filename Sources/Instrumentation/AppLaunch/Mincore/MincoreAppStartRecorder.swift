@@ -103,7 +103,10 @@
         if let initializerTime {
           root.setAttribute(key: App.startPreActivationDuration.rawValue, value: initializerTime.timeIntervalSince(processStartTime))
         }
-      } else if let preInit = recordPhase(tracer, Name.preInit, parent: root, start: processStartTime, end: initializerTime) {
+      } else if let preInit = recordPhase(tracer, Name.preInit, parent: root, start: processStartTime, end: initializerTime, limit: endTime) {
+        // Bounded by the root's end, as `app_init` is: a backward clock step can put the
+        // initializer after the first frame while leaving the root's duration positive, and a
+        // child that outlasts its parent is worse than one cut short.
         root.setAttribute(key: App.startPreInitDuration.rawValue, value: preInit)
       }
       if let appInit = recordPhase(tracer, Name.appInit, parent: root, start: initializerTime, end: marks.didFinishLaunchingEnd, limit: endTime) {

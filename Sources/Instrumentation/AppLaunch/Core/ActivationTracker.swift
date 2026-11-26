@@ -37,7 +37,9 @@
     // The resume that hasn't reached `didBecomeActive` yet.
     private var pendingResume: AppResume?
     private var hasBecomeActive: Bool
-    private var lastBackgroundTime: Date?
+    // When the app last entered the background, so a start prepared across that event can be
+    // finalized at the moment it was interrupted.
+    private(set) var lastBackgroundTime: Date?
     // When the launch's first scene connected.
     private var launchSceneConnectTime: Date?
     // When a scene connected while the app was in the background, until the main thread finishes
