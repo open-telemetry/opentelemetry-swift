@@ -5,6 +5,9 @@
 
 import Foundation
 
+/// What `MincoreLaunchInstrumentation` records, and where it draws the line between a cold and a
+/// warm launch. Pass it to `install(configuration:)`; the defaults record every launch type.
+/// Only the first `install` call takes effect, so a later one's configuration is ignored.
 public struct AppLaunchInstrumentationConfiguration: Equatable, Sendable {
   /// The kind of activation an `app.start` or `app.resume` span describes.
   public enum LaunchType: CaseIterable, Sendable {
@@ -53,7 +56,12 @@ public struct AppLaunchInstrumentationConfiguration: Equatable, Sendable {
   /// its pages were sampled, since the environment variable names its type either way.
   public var coldPageInRatio: Double
 
-  /// - Parameter launchTypes: The launch types to record. By default all of them.
+  /// - Parameters:
+  ///   - launchTypes: The launch types to record. By default all of them.
+  ///   - maxLaunchDuration: The longest launch, in seconds, that's recorded. It must be above 0,
+  ///     and `.infinity` records every launch however long it was.
+  ///   - coldPageInRatio: The share of sampled code a launch must page in from disk to be `cold`,
+  ///     above 0 and at most 1.
   public init(launchTypes: Set<LaunchType> = Set(LaunchType.allCases),
               maxLaunchDuration: TimeInterval = 60,
               coldPageInRatio: Double = 0.5) {

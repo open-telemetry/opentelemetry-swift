@@ -45,4 +45,38 @@ class EnvVarHeadersTests: XCTestCase {
     let capturedAttributes = EnvVarHeaders.attributes(for: "key=value with whitespace")
     XCTAssertNil(capturedAttributes)
   }
+
+  // The W3C Baggage format this variable follows carries a space percent-encoded,
+  // which is how an `Authorization: Basic <credentials>` header is passed.
+  func test_valueIsPercentDecoded_whenRawValueCarriesAnEncodedSpace() throws {
+    let capturedAttributes = try XCTUnwrap(EnvVarHeaders.attributes(for: "Authorization=Basic%20Y3JlZGVudGlhbHM"))
+    XCTAssertEqual(capturedAttributes.count, 1)
+    XCTAssertEqual(capturedAttributes[0].0, "Authorization")
+    XCTAssertEqual(capturedAttributes[0].1, "Basic Y3JlZGVudGlhbHM")
+  }
+
+  func test_valueKeepsItsPadding_whenRawValueEndsWithBase64Padding() throws {
+    let capturedAttributes = try XCTUnwrap(EnvVarHeaders.attributes(for: "Authorization=Basic%20Y3JlZGVudGlhbA=="))
+    XCTAssertEqual(capturedAttributes.count, 1)
+    XCTAssertEqual(capturedAttributes[0].0, "Authorization")
+    XCTAssertEqual(capturedAttributes[0].1, "Basic Y3JlZGVudGlhbA==")
+  }
+
+  func test_valueIsPercentDecoded_whenRawValueEncodesItsEqualsSigns() throws {
+    let capturedAttributes = try XCTUnwrap(EnvVarHeaders.attributes(for: "Authorization=Basic%20Y3JlZGVudGlhbA%3D%3D"))
+    XCTAssertEqual(capturedAttributes[0].1, "Basic Y3JlZGVudGlhbA==")
+  }
+
+  func test_valueIsKeptAsItIs_whenRawValueIsNotValidPercentEncoding() throws {
+    let capturedAttributes = try XCTUnwrap(EnvVarHeaders.attributes(for: "key=100%-sure"))
+    XCTAssertEqual(capturedAttributes[0].1, "100%-sure")
+  }
+
+  func test_attributesContainBothPairs_whenOneValueCarriesAnEncodedSpace() throws {
+    let capturedAttributes = try XCTUnwrap(EnvVarHeaders.attributes(for: "Authorization=Bearer%20abc,X-Scope-OrgID=42"))
+    XCTAssertEqual(capturedAttributes.count, 2)
+    XCTAssertEqual(capturedAttributes[0].1, "Bearer abc")
+    XCTAssertEqual(capturedAttributes[1].0, "X-Scope-OrgID")
+    XCTAssertEqual(capturedAttributes[1].1, "42")
+  }
 }
