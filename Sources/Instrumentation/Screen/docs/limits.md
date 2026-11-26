@@ -6,7 +6,9 @@ What this instrumentation does not see, and how to run its tests so a failure is
 
 <dl>
 <dt>A dismissed sheet leaves the screen behind</dt>
-<dd>A <code>.pageSheet</code> or <code>.formSheet</code> going away does not fire <code>viewDidAppear(_:)</code> on the presenting view controller, so the tracker keeps reporting the sheet. Tracking <code>viewDidDisappear</code> would fix it, but needs a stack of visible screens, because split views and multiple windows show more than one screen at a time.</dd>
+<dd>Dismissing a sheet does not report the screen underneath, so the tracker keeps naming the sheet. In UIKit a <code>.pageSheet</code> or <code>.formSheet</code> going away fires no <code>viewDidAppear(_:)</code> on the presenting view controller; in SwiftUI the presenting view's <code>onAppear</code> does not run again either. Tracking the disappearance would fix it, but needs a stack of visible screens, because split views and multiple windows show more than one screen at a time, and because SwiftUI does not order one view's <code>onDisappear</code> against the next view's <code>onAppear</code>.
+
+The demo app shows this: open any sheet from Settings and close it, and <code>Current Screen</code> still reads the sheet.</dd>
 <dt>Work started before a screen appears belongs to the previous screen</dt>
 <dd>A request made from <code>viewDidLoad</code> or <code>viewWillAppear</code> carries the screen the user is still looking at. That is accurate about what was on screen and wrong about what caused the request.</dd>
 <dt>A subclass that skips <code>super.viewDidAppear(_:)</code> is invisible</dt>
