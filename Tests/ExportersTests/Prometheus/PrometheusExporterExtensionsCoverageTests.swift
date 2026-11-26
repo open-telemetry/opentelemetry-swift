@@ -83,7 +83,7 @@ final class PrometheusExporterExtensionsCoverageTests: XCTestCase {
                                 min: 1, max: 5,
                                 boundaries: [2, 4],
                                 counts: [1, 1, 1],
-                                hasMin: true, hasMax: true)
+                                hasMin: true, hasMax: true, hasSum: true)
     return MetricData.createHistogram(resource: resource,
                                       instrumentationScopeInfo: scope,
                                       name: "hist",
@@ -147,6 +147,50 @@ final class PrometheusExporterExtensionsCoverageTests: XCTestCase {
     XCTAssertTrue(out.contains("le=\"+Inf\""))
   }
 
+  func testWriteHistogramSkipsPointWhenBucketCountsDoNotMatchBoundaries() {
+    let metric = makeHistogramMetric()
+    let point = metric.data.points.first as! HistogramPointData
+    point.counts = [1, 1]
+    let exporter = exporterWith([[metric]])
+    let out = PrometheusExporterExtensions.writeMetricsCollection(exporter: exporter)
+    XCTAssertFalse(out.contains("hist_bucket"))
+  }
+
+  func testWriteHistogramWithoutBucketsWritesCountAsInfBucket() throws {
+    let metric = makeHistogramMetric()
+    let point = metric.data.points.first as! HistogramPointData
+    point.boundaries = []
+    point.counts = []
+    let exporter = exporterWith([[metric]])
+    let out = PrometheusExporterExtensions.writeMetricsCollection(exporter: exporter)
+    XCTAssertTrue(out.contains("hist_sum"))
+    XCTAssertTrue(out.contains("hist_count"))
+    let bucketLines = out.split(separator: "\n").filter { $0.contains("le=\"") }
+    XCTAssertEqual(bucketLines.count, 1)
+    let infBucketLine = try XCTUnwrap(bucketLines.first)
+    XCTAssertTrue(infBucketLine.contains("le=\"+Inf\""))
+    XCTAssertTrue(infBucketLine.contains(" 3.0"))
+  }
+
+  func testWriteHistogramSkipsPointWithBoundariesButNoBucketCounts() {
+    let metric = makeHistogramMetric()
+    let point = metric.data.points.first as! HistogramPointData
+    point.counts = []
+    let exporter = exporterWith([[metric]])
+    let out = PrometheusExporterExtensions.writeMetricsCollection(exporter: exporter)
+    XCTAssertFalse(out.contains("le=\""))
+  }
+
+  func testWriteHistogramLeavesOutSumWhenHasSumIsFalse() {
+    let metric = makeHistogramMetric()
+    let point = metric.data.points.first as! HistogramPointData
+    point.hasSum = false
+    let exporter = exporterWith([[metric]])
+    let out = PrometheusExporterExtensions.writeMetricsCollection(exporter: exporter)
+    XCTAssertFalse(out.contains("hist_sum"))
+    XCTAssertTrue(out.contains("hist_count"))
+  }
+
   func testWriteSummaryProducesSummaryLines() {
     let exporter = exporterWith([[makeSummaryMetric()]])
     let out = PrometheusExporterExtensions.writeMetricsCollection(exporter: exporter)
@@ -185,7 +229,7 @@ final class PrometheusExporterExtensionsCoverageTests: XCTestCase {
                                 min: 1, max: 5,
                                 boundaries: [2, 4],
                                 counts: [1, 1, 1],
-                                hasMin: true, hasMax: true)
+                                hasMin: true, hasMax: true, hasSum: true)
     let metric = MetricData(resource: resource,
                             instrumentationScopeInfo: scope,
                             name: "exp_hist",

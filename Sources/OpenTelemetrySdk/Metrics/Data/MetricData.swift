@@ -279,6 +279,28 @@ extension MetricData {
   }
 }
 
+public extension MetricData {
+  static func createDoubleGauge(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, aggregationTemporality: AggregationTemporality, points: [DoublePointData]) -> MetricData {
+    createDoubleGauge(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: description, unit: unit, data: GaugeData(aggregationTemporality: aggregationTemporality, points: points))
+  }
+
+  static func createLongGauge(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, aggregationTemporality: AggregationTemporality, points: [LongPointData]) -> MetricData {
+    createLongGauge(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: description, unit: unit, data: GaugeData(aggregationTemporality: aggregationTemporality, points: points))
+  }
+
+  static func createDoubleSum(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, isMonotonic: Bool, aggregationTemporality: AggregationTemporality, points: [DoublePointData]) -> MetricData {
+    createDoubleSum(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: description, unit: unit, isMonotonic: isMonotonic, data: SumData(aggregationTemporality: aggregationTemporality, points: points))
+  }
+
+  static func createLongSum(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, isMonotonic: Bool, aggregationTemporality: AggregationTemporality, points: [LongPointData]) -> MetricData {
+    createLongSum(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: description, unit: unit, isMonotonic: isMonotonic, data: SumData(aggregationTemporality: aggregationTemporality, points: points))
+  }
+
+  static func createHistogram(resource: Resource, instrumentationScopeInfo: InstrumentationScopeInfo, name: String, description: String, unit: String, aggregationTemporality: AggregationTemporality, points: [HistogramPointData]) -> MetricData {
+    createHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: description, unit: unit, data: HistogramData(aggregationTemporality: aggregationTemporality, points: points))
+  }
+}
+
 @available(*, deprecated, renamed: "HistogramData")
 public typealias StableHistogramData = HistogramData
 

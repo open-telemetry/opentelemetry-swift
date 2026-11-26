@@ -96,8 +96,8 @@ class DoubleExplicitBucketHistogramAggregatorTests: XCTestCase {
     let aggregator = DoubleExplicitBucketHistogramAggregator(boundaries: [1.0, 2.0, 3.0], reservoirSupplier: { NoopExemplarReservoir() })
 
     // Create some dummy PointData objects
-    let previousCumulative = HistogramPointData(startEpochNanos: 0, endEpochNanos: 100, attributes: [:], exemplars: [], sum: 10.0, count: 1, min: 5.0, max: 5.0, boundaries: [], counts: [], hasMin: true, hasMax: true)
-    let currentCumulative = HistogramPointData(startEpochNanos: 0, endEpochNanos: 200, attributes: [:], exemplars: [], sum: 20.0, count: 2, min: 3.0, max: 7.0, boundaries: [], counts: [], hasMin: true, hasMax: true)
+    let previousCumulative = HistogramPointData(startEpochNanos: 0, endEpochNanos: 100, attributes: [:], exemplars: [], sum: 10.0, count: 1, min: 5.0, max: 5.0, boundaries: [], counts: [], hasMin: true, hasMax: true, hasSum: true)
+    let currentCumulative = HistogramPointData(startEpochNanos: 0, endEpochNanos: 200, attributes: [:], exemplars: [], sum: 20.0, count: 2, min: 3.0, max: 7.0, boundaries: [], counts: [], hasMin: true, hasMax: true, hasSum: true)
 
     // Verify that the diff() method throws the expected error
     XCTAssertThrowsError(try aggregator.diff(previousCumulative: previousCumulative, currentCumulative: currentCumulative))

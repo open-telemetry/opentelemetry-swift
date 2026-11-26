@@ -102,15 +102,23 @@ public enum MetricsAdapter {
         }
         protoMetric.summary.dataPoints.append(protoDataPoint)
       case .Histogram:
-        guard let histogramData = $0 as? HistogramPointData else {
+        guard let histogramData = $0 as? HistogramPointData,
+              hasValidBucketLayout(histogramData),
+              histogramData.counts.allSatisfy({ $0 >= 0 }) else {
           break
         }
         var protoDataPoint = Opentelemetry_Proto_Metrics_V1_HistogramDataPoint()
         injectPointData(protoHistogramPoint: &protoDataPoint, pointData: histogramData)
-        protoDataPoint.sum = Double(histogramData.sum)
+        if histogramData.hasSum {
+          protoDataPoint.sum = Double(histogramData.sum)
+        }
         protoDataPoint.count = UInt64(histogramData.count)
-        protoDataPoint.max = Double(histogramData.max)
-        protoDataPoint.min = Double(histogramData.min)
+        if histogramData.hasMax {
+          protoDataPoint.max = Double(histogramData.max)
+        }
+        if histogramData.hasMin {
+          protoDataPoint.min = Double(histogramData.min)
+        }
         protoDataPoint.explicitBounds = histogramData.boundaries.map { Double($0) }
         protoDataPoint.bucketCounts = histogramData.counts.map { UInt64($0) }
         protoMetric.histogram.aggregationTemporality = metricData.data.aggregationTemporality.convertToProtoEnum()
@@ -144,6 +152,14 @@ public enum MetricsAdapter {
       }
     }
     return protoMetric
+  }
+
+  // OTLP allows a point with neither bucket counts nor bounds; otherwise there is one more count than bounds.
+  private static func hasValidBucketLayout(_ histogramData: HistogramPointData) -> Bool {
+    if histogramData.counts.isEmpty, histogramData.boundaries.isEmpty {
+      return true
+    }
+    return histogramData.counts.count == histogramData.boundaries.count + 1
   }
 
   static func injectPointData(protoExponentialHistogramPoint protoPoint: inout Opentelemetry_Proto_Metrics_V1_ExponentialHistogramDataPoint, pointData: PointData) {

@@ -133,7 +133,7 @@ final class MetricsAdapterTest: XCTestCase {
     let max: Double = -1
     let count = Int.random(in: 1 ... 100)
     let counts = Array(repeating: 0, count: boundaries.count + 1)
-    let histogramPointData = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [ExemplarData](), sum: sum, count: UInt64(count), min: min, max: max, boundaries: boundaries, counts: counts, hasMin: count > 0, hasMax: count > 0)
+    let histogramPointData = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [ExemplarData](), sum: sum, count: UInt64(count), min: min, max: max, boundaries: boundaries, counts: counts, hasMin: count > 0, hasMax: count > 0, hasSum: true)
     let points = [histogramPointData]
     let histogramData = HistogramData(
       aggregationTemporality: .cumulative,
@@ -158,6 +158,86 @@ final class MetricsAdapterTest: XCTestCase {
 
     XCTAssertEqual(value?.first?.sum, sum)
     XCTAssertEqual(value?.first?.count, UInt64(count))
+  }
+
+  func testToProtoMetricLeavesHistogramMinAndMaxUnsetWhenFlagsAreFalse() throws {
+    let point = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], sum: 15, count: 3, min: 0, max: 0, boundaries: [5], counts: [2, 1], hasMin: false, hasMax: false, hasSum: true)
+    let metricData = MetricData.createHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: HistogramData(aggregationTemporality: .delta, points: [point]))
+
+    let protoPoint = try XCTUnwrap(MetricsAdapter.toProtoMetric(metricData: metricData)?.histogram.dataPoints.first)
+
+    XCTAssertFalse(protoPoint.hasMin)
+    XCTAssertFalse(protoPoint.hasMax)
+  }
+
+  func testToProtoMetricSetsHistogramMinAndMaxWhenFlagsAreTrue() throws {
+    let point = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], sum: 15, count: 3, min: 1, max: 10, boundaries: [5], counts: [2, 1], hasMin: true, hasMax: true, hasSum: true)
+    let metricData = MetricData.createHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: HistogramData(aggregationTemporality: .delta, points: [point]))
+
+    let protoPoint = try XCTUnwrap(MetricsAdapter.toProtoMetric(metricData: metricData)?.histogram.dataPoints.first)
+
+    XCTAssertEqual(protoPoint.min, 1)
+    XCTAssertEqual(protoPoint.max, 10)
+  }
+
+  func testToProtoMetricLeavesHistogramSumUnsetWhenHasSumIsFalse() throws {
+    let point = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], sum: 0, count: 3, min: 0, max: 0, boundaries: [5], counts: [2, 1], hasMin: false, hasMax: false, hasSum: false)
+    let metricData = MetricData.createHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: HistogramData(aggregationTemporality: .delta, points: [point]))
+
+    let protoPoint = try XCTUnwrap(MetricsAdapter.toProtoMetric(metricData: metricData)?.histogram.dataPoints.first)
+
+    XCTAssertFalse(protoPoint.hasSum)
+  }
+
+  func testToProtoMetricSetsHistogramSumWhenHasSumIsTrue() throws {
+    let point = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], sum: 15, count: 3, min: 1, max: 10, boundaries: [5], counts: [2, 1], hasMin: true, hasMax: true, hasSum: true)
+    let metricData = MetricData.createHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: HistogramData(aggregationTemporality: .delta, points: [point]))
+
+    let protoPoint = try XCTUnwrap(MetricsAdapter.toProtoMetric(metricData: metricData)?.histogram.dataPoints.first)
+
+    XCTAssertEqual(protoPoint.sum, 15)
+  }
+
+  func testToProtoMetricSkipsHistogramPointWhenBucketCountsDoNotMatchBoundaries() throws {
+    let point = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], sum: 15, count: 3, min: 1, max: 10, boundaries: [5, 10], counts: [2, 1], hasMin: true, hasMax: true, hasSum: true)
+    let metricData = MetricData.createHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: HistogramData(aggregationTemporality: .delta, points: [point]))
+
+    let protoMetric = try XCTUnwrap(MetricsAdapter.toProtoMetric(metricData: metricData))
+
+    XCTAssertTrue(protoMetric.histogram.dataPoints.isEmpty)
+  }
+
+  func testToProtoMetricKeepsHistogramPointWithoutBuckets() throws {
+    let point = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], sum: 15, count: 3, min: 1, max: 10, boundaries: [], counts: [], hasMin: true, hasMax: true, hasSum: true)
+    let metricData = MetricData.createHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: HistogramData(aggregationTemporality: .delta, points: [point]))
+
+    let protoMetric = try XCTUnwrap(MetricsAdapter.toProtoMetric(metricData: metricData))
+
+    let protoPoint = try XCTUnwrap(protoMetric.histogram.dataPoints.first)
+    XCTAssertEqual(protoMetric.histogram.dataPoints.count, 1)
+    XCTAssertEqual(protoPoint.count, 3)
+    XCTAssertEqual(protoPoint.sum, 15)
+    XCTAssertTrue(protoPoint.bucketCounts.isEmpty)
+    XCTAssertTrue(protoPoint.explicitBounds.isEmpty)
+  }
+
+  func testToProtoMetricSkipsHistogramPointWithBoundariesButNoBucketCounts() throws {
+    let point = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], sum: 15, count: 3, min: 1, max: 10, boundaries: [5, 10], counts: [], hasMin: true, hasMax: true, hasSum: true)
+    let metricData = MetricData.createHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: HistogramData(aggregationTemporality: .delta, points: [point]))
+
+    let protoMetric = try XCTUnwrap(MetricsAdapter.toProtoMetric(metricData: metricData))
+
+    XCTAssertTrue(protoMetric.histogram.dataPoints.isEmpty)
+  }
+
+  func testToProtoMetricSkipsHistogramPointWithNegativeBucketCount() throws {
+    let point = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [], sum: 15, count: 3, min: 1, max: 10, boundaries: [5], counts: [2, 1], hasMin: true, hasMax: true, hasSum: true)
+    point.counts = [2, -1]
+    let metricData = MetricData.createHistogram(resource: resource, instrumentationScopeInfo: instrumentationScopeInfo, name: name, description: testCaseDescription, unit: unit, data: HistogramData(aggregationTemporality: .delta, points: [point]))
+
+    let protoMetric = try XCTUnwrap(MetricsAdapter.toProtoMetric(metricData: metricData))
+
+    XCTAssertTrue(protoMetric.histogram.dataPoints.isEmpty)
   }
 
   func testToProtoResourceMetricsWithExponentialHistogram() throws {

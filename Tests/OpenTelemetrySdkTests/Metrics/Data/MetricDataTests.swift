@@ -92,7 +92,7 @@ class MetricDataTests: XCTestCase {
     let count = 0
     let counts = Array(repeating: 0, count: boundaries.count + 1)
 
-    let histogramPointData = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [ExemplarData](), sum: sum, count: UInt64(count), min: min, max: max, boundaries: boundaries, counts: counts, hasMin: count > 0, hasMax: count > 0)
+    let histogramPointData = HistogramPointData(startEpochNanos: 0, endEpochNanos: 1, attributes: [:], exemplars: [ExemplarData](), sum: sum, count: UInt64(count), min: min, max: max, boundaries: boundaries, counts: counts, hasMin: count > 0, hasMax: count > 0, hasSum: true)
 
     let points = [histogramPointData]
     let histogramData = HistogramData(
@@ -402,7 +402,8 @@ class MetricDataTests: XCTestCase {
       boundaries: [1.0, 2.0, 3.0],
       counts: [1, 1, 1, 1],
       hasMin: true,
-      hasMax: true
+      hasMax: true,
+      hasSum: true
     )
     let metricData = MetricData.createHistogram(
       resource: resource,

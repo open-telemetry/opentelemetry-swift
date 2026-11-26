@@ -54,7 +54,8 @@ class PointDataTests: XCTestCase {
       boundaries: [1, 3, 5, 8],
       counts: [1, 1, 1, 1],
       hasMin: true,
-      hasMax: true
+      hasMax: true,
+      hasSum: true
     )
 
     let encoder = JSONEncoder()
@@ -65,6 +66,33 @@ class PointDataTests: XCTestCase {
     } catch {
       XCTFail(error.localizedDescription)
     }
+  }
+
+  func testHistogramPointDataDecodesPayloadWithoutHasSumAsHavingSum() throws {
+    let origin = HistogramPointData(
+      startEpochNanos: 1,
+      endEpochNanos: 2,
+      attributes: ["hello": AttributeValue.string("world")],
+      exemplars: [DoubleExemplarData(value: 1.2, epochNanos: 1, filteredAttributes: ["hello": AttributeValue.string("world")])],
+      sum: 22.22,
+      count: 15,
+      min: 1,
+      max: 100,
+      boundaries: [1, 3, 5, 8],
+      counts: [1, 1, 1, 1, 11],
+      hasMin: true,
+      hasMax: true,
+      hasSum: true
+    )
+    var payload = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(origin)) as? [String: Any])
+    XCTAssertNotNil(payload.removeValue(forKey: "hasSum"))
+    let previousSdkPayload = try JSONSerialization.data(withJSONObject: payload)
+
+    let decoded = try JSONDecoder().decode(HistogramPointData.self, from: previousSdkPayload)
+
+    XCTAssertTrue(decoded.hasSum)
+    XCTAssertEqual(decoded.sum, 22.22)
+    XCTAssertEqual(decoded, origin)
   }
 
   func testExponentialHistogramPointDataCodable() {

@@ -82,7 +82,8 @@ public enum PrometheusExporterExtensions {
               doubleValue: Double(gauge.value)
             )
         case .Histogram:
-          guard let histogram = metricData as? HistogramPointData else { break }
+          guard let histogram = metricData as? HistogramPointData,
+                hasValidBucketLayout(histogram) else { break }
           let count = histogram.count
           let sum = histogram.sum
           let bucketsBoundaries = histogram.boundaries
@@ -95,7 +96,7 @@ public enum PrometheusExporterExtensions {
                 value.description
               },
               metricName: metric.name,
-              sum: Double(sum),
+              sum: histogram.hasSum ? Double(sum) : nil,
               count: Int(count),
               bucketsBoundaries: bucketsBoundaries,
               bucketsCounts: bucketsCounts
@@ -183,11 +184,21 @@ public enum PrometheusExporterExtensions {
     return prometheusMetric.write(timeStamp: timeStamp)
   }
 
-  private static func writeHistogram(prometheusMetric: PrometheusMetric, timeStamp: String, labels: [String: String], metricName: String, sum: Double, count: Int, bucketsBoundaries: [Double], bucketsCounts: [Int]) -> String {
+  // A point may carry neither bucket counts nor bounds; otherwise there is one more count than bounds.
+  private static func hasValidBucketLayout(_ histogram: HistogramPointData) -> Bool {
+    if histogram.counts.isEmpty, histogram.boundaries.isEmpty {
+      return true
+    }
+    return histogram.counts.count == histogram.boundaries.count + 1
+  }
+
+  private static func writeHistogram(prometheusMetric: PrometheusMetric, timeStamp: String, labels: [String: String], metricName: String, sum: Double?, count: Int, bucketsBoundaries: [Double], bucketsCounts: [Int]) -> String {
     var prometheusMetric = prometheusMetric
     prometheusMetric.type = prometheusHistogramType
     labels.forEach {
-      prometheusMetric.values.append(PrometheusValue(name: metricName + prometheusHistogramSumPostFix, labels: [$0.key: $0.value], value: sum))
+      if let sum {
+        prometheusMetric.values.append(PrometheusValue(name: metricName + prometheusHistogramSumPostFix, labels: [$0.key: $0.value], value: sum))
+      }
       prometheusMetric.values.append(PrometheusValue(name: metricName + prometheusHistogramCountPostFix, labels: [$0.key: $0.value], value: Double(count)))
       for i in 0 ..< bucketsBoundaries.count {
         prometheusMetric.values.append(PrometheusValue(name: metricName,
@@ -198,7 +209,7 @@ public enum PrometheusExporterExtensions {
       prometheusMetric.values.append(PrometheusValue(name: metricName,
                                                      labels: [$0.key: $0.value,
                                                               prometheusHistogramLeLabelName: "+Inf"],
-                                                     value: Double(bucketsCounts[bucketsBoundaries.count])))
+                                                     value: Double(bucketsCounts.isEmpty ? count : bucketsCounts[bucketsBoundaries.count])))
     }
     return prometheusMetric.write(timeStamp: timeStamp)
   }

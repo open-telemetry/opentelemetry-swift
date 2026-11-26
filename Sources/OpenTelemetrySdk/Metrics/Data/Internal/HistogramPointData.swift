@@ -15,6 +15,7 @@ public class HistogramPointData: PointData, Codable, @unchecked Sendable {
   public var counts: [Int]
   public var hasMin: Bool
   public var hasMax: Bool
+  public var hasSum: Bool
 
   enum CodingKeys: String, CodingKey {
     case sum
@@ -25,13 +26,14 @@ public class HistogramPointData: PointData, Codable, @unchecked Sendable {
     case count
     case hasMin
     case hasMax
+    case hasSum
     case startEpochNanos
     case endEpochNanos
     case attributes
     case exemplars
   }
 
-  init(startEpochNanos: UInt64, endEpochNanos: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], sum: Double, count: UInt64, min: Double, max: Double, boundaries: [Double], counts: [Int], hasMin: Bool, hasMax: Bool) {
+  public init(startEpochNanos: UInt64, endEpochNanos: UInt64, attributes: [String: AttributeValue], exemplars: [ExemplarData], sum: Double, count: UInt64, min: Double, max: Double, boundaries: [Double], counts: [Int], hasMin: Bool, hasMax: Bool, hasSum: Bool) {
     self.sum = sum
     self.count = count
     self.min = min
@@ -40,6 +42,7 @@ public class HistogramPointData: PointData, Codable, @unchecked Sendable {
     self.counts = counts
     self.hasMin = hasMin
     self.hasMax = hasMax
+    self.hasSum = hasSum
     super.init(startEpochNanos: startEpochNanos, endEpochNanos: endEpochNanos, attributes: attributes, exemplars: exemplars)
   }
 
@@ -53,6 +56,7 @@ public class HistogramPointData: PointData, Codable, @unchecked Sendable {
     try container.encode(boundaries, forKey: .boundaries)
     try container.encode(hasMin, forKey: .hasMin)
     try container.encode(hasMax, forKey: .hasMax)
+    try container.encode(hasSum, forKey: .hasSum)
     try container.encode(attributes, forKey: .attributes)
     try container.encode(endEpochNanos, forKey: .endEpochNanos)
     try container.encode(startEpochNanos, forKey: .startEpochNanos)
@@ -66,6 +70,8 @@ public class HistogramPointData: PointData, Codable, @unchecked Sendable {
     count = try values.decode(UInt64.self, forKey: .count)
     hasMin = try values.decode(Bool.self, forKey: .hasMin)
     hasMax = try values.decode(Bool.self, forKey: .hasMax)
+    // Payloads saved before hasSum existed always carried a real sum, so a missing key means true.
+    hasSum = try values.decodeIfPresent(Bool.self, forKey: .hasSum) ?? true
     min = try values.decode(Double.self, forKey: .min)
     max = try values.decode(Double.self, forKey: .max)
     boundaries = try values.decode([Double].self, forKey: .boundaries)
