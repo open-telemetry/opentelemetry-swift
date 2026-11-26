@@ -1,6 +1,6 @@
 # Accuracy and limits
 
-What these measurements were checked against, how far they can be trusted, and what they leave out. See the [App Launch README](../README.md) for the spans themselves.
+What these measurements were checked against, how far they can be trusted, and what they leave out. The headline: the library's launch duration tracks the Instruments App Launch template with a slope of 1.039 ± 0.024 and an offset of +79 ms, measured over 10 launches on one device. See the [App Launch README](../README.md) for the spans themselves.
 
 ## Apple's launch phases
 
@@ -30,47 +30,133 @@ A second `constructor` takes the `__TEXT` page sample and bounds `app.start.page
 
 ## Accuracy compared with Instruments
 
+### Apparatus and procedure
 
-This library and the Instruments App Launch template recorded each launch below at the same time, through [`Scripts/compare-app-launch-accuracy.py`](../../../../Scripts/compare-app-launch-accuracy.py). Every run used a Release build of the demo app signed for development, so these numbers cover no App Store encryption, and Instruments slows the launch it records.
+One iPhone 16 Pro Max (`iPhone17,2`, 120 Hz ProMotion display) running iOS 26.6.2, with a Release build of the demo app signed for development. Its `__TEXT` held 261 pages of 16 KB in a single image, of which the sample covered 256, or 98%.
 
-| Device                             | OS           | `__TEXT` pages | Cold | Warm | Partly cached |
-| ---------------------------------- | ------------ | -------------- | ---- | ---- | ------------- |
-| iPhone 16 Pro Max (`iPhone17,2`)   | iOS 26.6.2   | 261            | 4    | 6    | Not tested    |
+[`Scripts/compare-app-launch-accuracy.py`](../../../../Scripts/compare-app-launch-accuracy.py) records each launch twice at once: this library writes a span, and the Instruments App Launch template writes a trace through `xctrace`. The script pairs them, and installs the app once before each run, so the first launch of a run follows an install. Ten launches were recorded: three after a reboot, three after a reinstall, two after the run's install, and two repeats.
 
-`__TEXT` pages is the count the trace reported for the app, which held one image at the time of these runs. The app has grown since; see [Known limits](#known-limits).
+Instruments slows the launch it records. Both instruments measure the same slowed launch, so that cancels in the paired difference.
 
-Results on the iPhone 16 Pro Max, given as the range across launches:
+The two instruments do not define the launch identically. The library starts at process start, read from the kernel's process table; Instruments starts at the first event it attributes to the process. The analysis below measures that difference rather than assuming it away.
 
-| Measurement                                                    | Cold launches (4)  | Warm launches (6) |
-| -------------------------------------------------------------- | ------------------ | ----------------- |
-| Launch type agreed with Instruments                            | 4 of 4             | 6 of 6            |
-| `app.start.pages.text.page_in_ratio`                           | 0.695 to 0.764     | 0 to 0.029        |
-| `app.start.pages.text.paged_in`                                | 125 to 159         | 0 to 5            |
-| Sampled pages Instruments saw read from disk                   | 105 to 108         | 0 to 5            |
-| `app.start.pages.text.resident_at_end`                         | 174 to 220         | 165 to 256        |
-| Sampled pages Instruments saw the launch touch                 | 144                | 141 to 147        |
-| `__TEXT` pages touched: estimate from the sample, minus actual | +0.2               | +0.2 to +0.3      |
-| `app.start` duration                                           | 1,292 to 1,808 ms  | 923 to 1,143 ms   |
-| Instruments launch duration                                    | 1,169 to 1,719 ms  | 850 to 1,061 ms   |
-| `app.start` minus Instruments                                  | +85 to +123 ms     | +40 to +82 ms     |
-| `app.start.pre_init` minus Instruments                         | +55 to +87 ms      | +35 to +58 ms     |
-| `app.start.app_init` minus Instruments                         | +1.3 to +2.4 ms    | +1.4 to +2.0 ms   |
-| `app.start.render` minus Instruments                           | +24 to +34 ms      | +3 to +31 ms      |
-| `app.start.page_ins.before_text_sample` minus Instruments      | +50 to +125        | +16 to +60        |
-| `app.start.page_ins.after_text_sample` minus Instruments       | +62 to +2,981      | +11 to +17        |
+### Raw data
 
-- Three cold launches followed a reboot and one followed an install. The warm launches include launches right after an install.
-- The script calls a launch `warm` when the cache already held most of the `__TEXT` pages it touched before the first page came from disk. Instruments reports no launch type, so agreement here means the two readings are consistent.
-- `paged_in` matched Instruments exactly on warm launches. It runs higher on cold launches, because it counts pages the launch never faulted on, which fits the kernel reading ahead.
-- `resident_at_end` has no equivalent in Instruments, which sees this process's faults rather than the page cache.
-- Instruments marks phases differently from these spans, so the phase differences show no winner.
+Durations in milliseconds, page counts in 16 KB pages. The span columns are `app.start.pages.text.page_in_ratio` (ratio), `app.start.pages.text.resident_at_end` (resident) and `app.start.pages.text.paged_in` (paged_in); `disk reads` is the sampled pages Instruments saw read from disk.
 
-These results cover no partly cached launch, where `coldPageInRatio` matters most, and no app with more than 256 pages of `__TEXT`, which this one barely reaches. To add a device, run the script with each `--mode` on it and add a row:
+| # | Type | Condition | xctrace | library | difference | ratio | resident | paged_in | disk reads |
+| -: | --- | --- | -: | -: | -: | -: | -: | -: | -: |
+| 1 | cold | after install | 1169 | 1292 | +122 | 0.764 | 208 | 159 | 105 |
+| 2 | cold | after reboot | 1719 | 1808 | +89 | 0.718 | 174 | 125 | 108 |
+| 3 | cold | after reboot | 1272 | 1357 | +85 | 0.705 | 190 | 134 | 108 |
+| 4 | cold | after reboot | 1261 | 1350 | +89 | 0.695 | 220 | 153 | 108 |
+| 5 | warm | after install | 901 | 941 | +40 | 0.029 | 170 | 5 | 5 |
+| 6 | warm | after reinstall | 1061 | 1143 | +82 | 0.000 | 256 | 0 | 0 |
+| 7 | warm | after reinstall | 850 | 923 | +73 | 0.000 | 165 | 0 | 0 |
+| 8 | warm | after reinstall | 968 | 1036 | +68 | 0.000 | 165 | 0 | 0 |
+| 9 | warm | repeat | 860 | 934 | +74 | 0.000 | 243 | 0 | 0 |
+| 10 | warm | repeat | 963 | 1031 | +68 | 0.000 | 170 | 0 | 0 |
+
+### Duration agreement
+
+The library reads longer than Instruments on all ten launches (Figure 1). Taking the paired difference as the measurement:
+
+| Set | n | Bias (ms) | SD (ms) | 95% CI of the mean | 95% limits of agreement |
+| --- | -: | -: | -: | --- | --- |
+| All | 10 | +79 | 21 | [+64, +94] | [+38, +120] |
+| Cold | 4 | +96 | 18 | [+68, +124] | [+62, +131] |
+| Warm | 6 | +68 | 14 | [+52, +83] | [+39, +96] |
+
+The cold offset exceeds the warm one by 29 ms (Welch t = 2.72, df = 5.6, p < 0.05). A cold launch reads more from disk before this library's initializer runs, and that time falls inside the library's span but outside the Instruments period.
+
+Regressing the library's duration on the Instruments duration across all ten launches gives
+
+> library = (36 ± 27) ms + (1.039 ± 0.024) × xctrace,  R² = 0.9957, residual SD = 19 ms, n = 10
+
+The slope's 95% interval is [0.984, 1.095], which contains 1, and the intercept's is [-27, 99] ms, which contains 0. The library tracks Instruments with no detectable proportional error: a launch twice as long reads twice as long, to the resolution of ten points. Plotting the difference against the mean of the two instruments gives r = +0.53 (t = +1.76 on 8 df), which also falls short of significance.
+
+![Panel A plots the library's launch duration against the Instruments duration for ten launches, with a fitted line of slope 1.039 lying just above the identity line. Panel B is a Bland-Altman plot of the difference against the mean, with a bias of plus 79 milliseconds and limits of agreement at plus 38 and plus 120 milliseconds.](../img/accuracy-agreement.svg)
+
+
+These data cannot separate a constant offset from a small proportional one. A pure offset of 79 ms and a 4% proportional term fit about equally well at n = 10. Separating them needs launches spanning a wider range than the 0.85 s to 1.72 s recorded here.
+
+### Where the offset comes from
+
+Each phase is measured against its matching Instruments period, and the three biases sum to the total (Figure 3, panel A).
+
+| Phase | Bias (ms) | SD (ms) | Share of the offset |
+| --- | -: | -: | -: |
+| `app.start.pre_init` | +53 | 15 | 67% |
+| `app.start.app_init` | +1.9 | 0.4 | 2% |
+| `app.start.render` | +25 | 9 | 31% |
+
+![Panel A splits the 79 millisecond offset into 53 milliseconds of pre-init, 2 of app-init and 25 of render. Panel B plots the render offset for each launch in display refresh periods, clustering at 2.95 periods with a scatter of 1.05 periods and one outlier near 0.4.](../img/accuracy-offset.svg)
+
+
+Two thirds sits in `app.start.pre_init`, whose start is the definitional difference above. `app.start.app_init` agrees to +1.9 ± 0.4 ms, a 0.3% difference on a 0.6 s phase: the closest agreement in the data, and the evidence that the `AppLaunchEnvironment` constructor runs near the end of static runtime initialization in this app. The remaining third sits in `app.start.render`.
+
+### The end timestamp is quantised by the display
+
+`app.start.render` reads +25 ± 9 ms against Instruments. One refresh period on a 120 Hz display is 8.33 ms, so that offset is **2.95 refresh periods, with a scatter of 1.05 periods**. A scatter of one period, rather than some unrelated figure, identifies the display refresh as the dominant term instead of measurement noise (Figure 3, panel B). The library cannot resolve the end of a launch more finely than the screen changes.
+
+One period of the offset is structural: `DisplayLinkFirstFrameReader` ends on the second tick, because a frame committed before a refresh is displayed at the next one. The rest is the frame being drawn.
+
+Launch 6 is the exception at +3.1 ms, 0.4 periods, and it carries the largest regression residual at −31 ms. One outlier in ten supports no conclusion beyond a first frame that landed earlier against the refresh cycle.
+
+### Page counting
+
+On all six warm launches `paged_in` equalled the Instruments count exactly: bias 0.0 pages, SD 0.0. On the four cold launches it ran +36 ± 17 pages high, range +17 to +54.
+
+The two count different things. `mincore` reports the page cache; Instruments reports the faults this process took. A page the kernel reads ahead is resident without the process faulting on it, so the library counts it and Instruments does not. Exact agreement on warm launches, where there is no read-ahead, supports that reading: with nothing to read, the two instruments agree to the page.
+
+### Launch classification
+
+| Set | n | Mean ratio | SD | Range |
+| --- | -: | -: | -: | --- |
+| Cold | 4 | 0.721 | 0.031 | 0.695 to 0.764 |
+| Warm | 6 | 0.005 | 0.012 | 0.000 to 0.029 |
+
+![Ten launches plotted on the page-in ratio axis. Six warm launches cluster at 0.005 and four cold launches at 0.721, with no launch anywhere between 0.03 and 0.70. The 0.5 threshold sits inside that empty interval, and the gap between the clusters spans 23 binomial standard errors.](../img/accuracy-classification.svg)
+
+
+The clusters stand 0.716 apart (Figure 2), which is 34 pooled standard deviations, or 23 binomial standard errors at n = 256. The 0.5 threshold sits 7.2 cold-cluster SD below the cold mean. All ten launches agreed with Instruments.
+
+No launch fell between 0.03 and 0.70. These data therefore leave the threshold unconstrained across that interval: 0.5 is defensible, and so is any value from about 0.1 to 0.6. Only a partly cached launch would constrain it, and none was recorded.
+
+### Reproducing this
+
+Run the script with each `--mode` on a device and add its rows to the raw data above. Each mode
+installs the app first; `reboot` empties the page cache, which is the only way to force a cold
+launch, and asks you to unlock the device after each reboot.
 
 ```sh
 Scripts/compare-app-launch-accuracy.py --mode warm --launches 3
+Scripts/compare-app-launch-accuracy.py --mode fresh-install --launches 3
 Scripts/compare-app-launch-accuracy.py --mode reboot --launches 3
 ```
+
+Each run writes its traces, spans and a `report.json` under `.build/app-launch-accuracy/<run>/`.
+The analysis above reads those files, so re-running it on a new device needs no transcription.
+
+### Uncertainty budget
+
+| Term | Magnitude | Kind |
+| --- | -: | --- |
+| Start-point definition, process table against first traced event | ≈ +53 ms | systematic |
+| Second-tick rule in the display-link read | +8.3 ms | systematic |
+| Display refresh quantisation at 120 Hz | 8.3 ms wide, SD 2.4 ms | random |
+| Scatter of the total difference | SD 21 ms | random |
+| Ratio quantisation, 1 / `resident_at_end` | 0.004 to 0.006 | random |
+| Binomial sampling error on the ratio, n = 256, p = 0.5 | 0.031 | random |
+
+### Conclusions
+
+1. The library's launch duration equals the Instruments duration plus an offset, with no detectable proportional error: slope 1.039 ± 0.024, R² = 0.9957, n = 10.
+2. That offset is +79 ms, 95% CI +64 to +94, and is larger cold (+96 ms) than warm (+68 ms). Two thirds of it is the start-point definition and one third the display-quantised end.
+3. Durations compare between launches on one device to about ±21 ms, 1 SD. They do not compare with Instruments in absolute terms unless the offset is subtracted.
+4. `app.start.app_init` agrees to +1.9 ± 0.4 ms and is the phase to trust.
+5. Cold and warm separate by 23 binomial standard errors, so the classification is not marginal. Where the threshold sits inside the empty interval is unconstrained.
+6. Every figure above rests on 10 launches, one app, one device, one OS version, and no partly cached launch. They characterise this configuration, not the method.
 
 ## What has been verified
 

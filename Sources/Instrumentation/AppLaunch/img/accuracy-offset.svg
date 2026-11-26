@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 360" width="940" height="360" role="img" aria-label="Panel A splits the 79 millisecond offset into 53 milliseconds of pre-init, 2 of app-init and 25 of render. Panel B plots the render offset for each launch in display refresh periods, clustering at 2.95 periods with a scatter of 1.05 periods and one outlier near 0.4.">
+  <rect x="0" y="0" width="940" height="360" fill="#ffffff"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" fill="#1b2733">
+    <text x="20" y="26" font-size="14" font-weight="600">Figure 3. Where the offset comes from</text>
+    <text x="20" y="44" font-size="10.5" fill="#55606b">Two thirds is the start-point definition. Most of the rest is the display refresh, which sets the floor on resolving a launch's end.</text>
+        <rect x="90.0" y="92" width="505.6" height="38" fill="#4a6fa5" fill-opacity="0.78" stroke="#4a6fa5" stroke-width="1"/>
+    <text x="342.8" y="115" font-size="11" fill="#ffffff" font-weight="600" text-anchor="middle">+53 ms</text>
+    <text x="342.8" y="146" font-family="SF Mono, Menlo, Consolas, monospace" font-size="9.5" fill="#33414e" text-anchor="middle">app.start.pre_init</text>
+    <rect x="595.6" y="92" width="18.0" height="38" fill="#7fa05a" fill-opacity="0.78" stroke="#7fa05a" stroke-width="1"/>
+    <path d="M604.6 130 v14" stroke="#7fa05a" stroke-width="1"/><text x="604.6" y="156" font-family="SF Mono, Menlo, Consolas, monospace" font-size="9.5" fill="#33414e" text-anchor="middle">app.start.app_init  +1.9 ms</text>
+    <rect x="613.6" y="92" width="236.4" height="38" fill="#c08a3e" fill-opacity="0.78" stroke="#c08a3e" stroke-width="1"/>
+    <text x="731.8" y="115" font-size="11" fill="#ffffff" font-weight="600" text-anchor="middle">+25 ms</text>
+    <text x="731.8" y="146" font-family="SF Mono, Menlo, Consolas, monospace" font-size="9.5" fill="#33414e" text-anchor="middle">app.start.render</text>
+    <text x="90" y="82" font-size="10.5" fill="#55606b">A. The +79 ms offset, split by phase</text>
+    <text x="850" y="82" font-size="10.5" fill="#55606b" text-anchor="end">total +79 ms</text>
+    <text x="90" y="190" font-size="10.5" fill="#55606b">B. The render offset measured in display refresh periods (8.33 ms at 120 Hz)</text>
+    <line x1="90.0" y1="206" x2="90.0" y2="260" stroke="#dde3e9" stroke-width="1"/>
+    <text x="90.0" y="276" font-size="9.5" fill="#6b7580" text-anchor="middle">0</text>
+    <line x1="242.0" y1="206" x2="242.0" y2="260" stroke="#dde3e9" stroke-width="1"/>
+    <text x="242.0" y="276" font-size="9.5" fill="#6b7580" text-anchor="middle">1</text>
+    <line x1="394.0" y1="206" x2="394.0" y2="260" stroke="#dde3e9" stroke-width="1"/>
+    <text x="394.0" y="276" font-size="9.5" fill="#6b7580" text-anchor="middle">2</text>
+    <line x1="546.0" y1="206" x2="546.0" y2="260" stroke="#dde3e9" stroke-width="1"/>
+    <text x="546.0" y="276" font-size="9.5" fill="#6b7580" text-anchor="middle">3</text>
+    <line x1="698.0" y1="206" x2="698.0" y2="260" stroke="#dde3e9" stroke-width="1"/>
+    <text x="698.0" y="276" font-size="9.5" fill="#6b7580" text-anchor="middle">4</text>
+    <line x1="850.0" y1="206" x2="850.0" y2="260" stroke="#dde3e9" stroke-width="1"/>
+    <text x="850.0" y="276" font-size="9.5" fill="#6b7580" text-anchor="middle">5</text>
+    <text x="470.0" y="294" font-size="10.5" fill="#33414e" text-anchor="middle">refresh periods</text>
+    <rect x="379.5" y="206" width="318.0" height="54" fill="#c08a3e" fill-opacity="0.13"/>
+    <line x1="538.5" y1="206" x2="538.5" y2="260" stroke="#c08a3e" stroke-width="1.8"/>
+    <text x="538.5" y="203" font-size="10" font-weight="600" fill="#9c7430" text-anchor="middle">mean 2.95 ± 1.05</text>
+    <circle cx="706.8" cy="233" r="5" fill="#c0392b" fill-opacity="0.72" stroke="#c0392b" stroke-width="1.3"/>
+    <circle cx="660.4" cy="233" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="505.5" cy="233" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="636.5" cy="233" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="538.0" cy="233" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="146.9" cy="233" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="443.0" cy="233" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="527.0" cy="233" r="5" fill="#c0392b" fill-opacity="0.72" stroke="#c0392b" stroke-width="1.3"/>
+    <circle cx="592.9" cy="233" r="5" fill="#c0392b" fill-opacity="0.72" stroke="#c0392b" stroke-width="1.3"/>
+    <circle cx="628.1" cy="233" r="5" fill="#c0392b" fill-opacity="0.72" stroke="#c0392b" stroke-width="1.3"/>
+    <circle cx="100" cy="330" r="4.5" fill="#c0392b" fill-opacity="0.72" stroke="#c0392b"/><text x="110" y="333" font-size="10" fill="#33414e">cold</text>
+    <circle cx="160" cy="330" r="4.5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5"/><text x="170" y="333" font-size="10" fill="#33414e">warm</text>
+    <text x="20" y="352" font-size="9.5" fill="#55606b">A scatter of one refresh period identifies the display, not measurement noise, as the dominant term in the render offset.</text>
+  </g>
+</svg>
