@@ -150,6 +150,24 @@
     }
   }
 
+  /// Runs a block while it prepares a start, so a test can land a lifecycle event inside the window
+  /// between the activation being taken and its abandonment callback being published.
+  final class InterruptingRecorder: AppStartRecording, @unchecked Sendable {
+    private let wrapped: AppStartRecording
+    private let duringPrepare: @Sendable () -> Void
+
+    init(wrapping wrapped: AppStartRecording, duringPrepare: @escaping @Sendable () -> Void) {
+      self.wrapped = wrapped
+      self.duringPrepare = duringPrepare
+    }
+
+    func prepare(_ start: AppStart) -> ((AppStartEnd) -> Void)? {
+      let record = wrapped.prepare(start)
+      duringPrepare()
+      return record
+    }
+  }
+
   /// Holds the blocks the instrumentation runs after the current event, until the test runs them.
   final class FakeEventQueue: @unchecked Sendable {
     private let lock = NSLock()
@@ -294,6 +312,24 @@
           configuration: configuration
         )
       )
+    }
+
+    /// Installs with a recorder that enters the background while it prepares a start, so the start
+    /// is interrupted inside the window between the activation being taken and its abandonment
+    /// callback being published.
+    func installInterruptedWhilePreparing(sample: LaunchPageSample?, background: Date) {
+      var dependencies = makeDependencies(sample: sample)
+      let makeRecorder = dependencies.makeRecorder
+      let center = notificationCenter!
+      let name = didEnterBackground
+      let clock = clock!
+      dependencies.makeRecorder = {
+        InterruptingRecorder(wrapping: makeRecorder($0)) {
+          clock.now = background
+          center.post(name: name, object: nil)
+        }
+      }
+      MincoreLaunchInstrumentation.install(dependencies: dependencies)
     }
 
     /// A monitor observing activations, built the way `AppLaunchRuntime.install` builds one, so a

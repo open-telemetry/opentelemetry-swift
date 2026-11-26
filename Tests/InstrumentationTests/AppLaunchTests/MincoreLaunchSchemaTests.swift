@@ -237,6 +237,37 @@
       XCTAssertTrue(messages.values.contains { $0.hasPrefix("[warn]") && $0.contains("inferred") })
     }
 
+    func testLaunchThatCantBeSampledStillRecordsItsTotalPageCount() {
+      launchHistory = FakeLaunchHistory(previous: launchContext)
+      install(sample: nil, textPageTotal: 900)
+
+      activate()
+
+      let attributes = launchSpan()?.attributes
+      XCTAssertEqual(attributes?["app.start.determined_by"], .string("launch_history"))
+      XCTAssertEqual(attributes?["app.start.pages.text.total"], .int(900),
+                     "the total is a property of the binary, not of the sample")
+      XCTAssertNil(attributes?["app.start.pages.text.sampled"])
+    }
+
+    func testPrewarmedLaunchThatCantBeSampledStillRecordsItsTotalPageCount() {
+      install(sample: nil, textPageTotal: 900, isActivePrewarm: true)
+
+      activate()
+
+      let attributes = launchSpan()?.attributes
+      XCTAssertEqual(attributes?["app.start.determined_by"], .string("prewarm_flag"))
+      XCTAssertEqual(attributes?["app.start.pages.text.total"], .int(900))
+    }
+
+    func testLaunchWithTooFewResidentPagesStillRecordsItsTotalPageCount() {
+      install(sample: LaunchPageSample(residentAtEnd: 3, pagedIn: 0), textPageTotal: 900)
+
+      activate()
+
+      XCTAssertEqual(launchSpan()?.attributes["app.start.pages.text.total"], .int(900))
+    }
+
     func testLaunchWithNoResidentPagesIsInferred() {
       launchHistory = FakeLaunchHistory(previous: launchContext)
       install(sample: LaunchPageSample(residentAtEnd: 0, pagedIn: 0))
@@ -565,6 +596,24 @@
       XCTAssertEqual(launchSpan()?.attributes["app.start.page_ins.after_text_sample"], .int(96))
     }
 
+    /// A backward clock step between process start and the first frame can leave the launch's
+    /// duration positive while putting the initializer after the end, and a phase that outlasts
+    /// its parent is worse than one cut short.
+    func testPreInitEndsNoLaterThanTheLaunchItIsPartOf() throws {
+      install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0),
+              earliestAppCodeTime: Date(timeIntervalSince1970: 1_001))
+      let end = Date(timeIntervalSince1970: 1_000.5)
+
+      post(didBecomeActive, at: Date(timeIntervalSince1970: 1_000.4))
+      firstFrameReader.displayFrame(at: end)
+
+      let root = try XCTUnwrap(launchSpan())
+      let preInit = try XCTUnwrap(span("app.start.pre_init"))
+      XCTAssertEqual(root.endTime, end)
+      XCTAssertEqual(preInit.endTime, end)
+      XCTAssertEqual(root.attributes["app.start.pre_init.duration"], .double(0.5))
+    }
+
     func testLaunchAbandonedBeforeItsFirstFrameEndsWhenTheAppLeft() throws {
       let left = Date(timeIntervalSince1970: 1_002.55)
       install(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0))
@@ -578,6 +627,38 @@
       XCTAssertEqual(root.attributes["app.start.outcome"], .string("abandoned"))
       XCTAssertEqual(root.endTime, left)
       XCTAssertEqual(finishedSpans().filter { $0.name == "app.start" }.count, 1)
+    }
+
+    /// The app can leave the foreground while a start is still being prepared, which is before
+    /// there is an abandonment callback to take. The activation is finished here instead, at the
+    /// moment it was interrupted, so no stale callback is left for the next background event to
+    /// finalize with the wrong time or for the next activation to overwrite.
+    func testStartInterruptedWhileItIsPreparedIsAbandonedWhenTheAppLeft() throws {
+      let left = Date(timeIntervalSince1970: 1_002.4)
+      installInterruptedWhilePreparing(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0), background: left)
+
+      post(didBecomeActive, at: becameActive)
+      firstFrameReader.displayFrame(at: firstFrame)
+
+      let root = try XCTUnwrap(launchSpan())
+      XCTAssertEqual(finishedSpans().filter { $0.name == "app.start" }.count, 1)
+      XCTAssertEqual(root.attributes["app.start.outcome"], .string("abandoned"))
+      XCTAssertEqual(root.endTime, left)
+    }
+
+    /// The same window, with the next background event arriving afterwards. The interrupted start
+    /// is already recorded, so that event has nothing left to record.
+    func testStartInterruptedWhileItIsPreparedIsNotRecordedAgainOnTheNextBackground() throws {
+      let left = Date(timeIntervalSince1970: 1_002.4)
+      installInterruptedWhilePreparing(sample: LaunchPageSample(residentAtEnd: 128, pagedIn: 0), background: left)
+      post(didBecomeActive, at: becameActive)
+
+      post(willEnterForeground, at: Date(timeIntervalSince1970: 1_010))
+      post(didEnterBackground, at: Date(timeIntervalSince1970: 1_011))
+
+      let starts = finishedSpans().filter { $0.name == "app.start" }
+      XCTAssertEqual(starts.count, 1)
+      XCTAssertEqual(starts.first?.endTime, left, "the first background event is the one that ended it")
     }
 
     func testCompletedLaunchIsNotAbandonedByLeavingLater() {
