@@ -14,11 +14,13 @@ import Foundation
 /// Every line names the module it came from, read from the caller's `#fileID`, so a message
 /// doesn't repeat it: `[warn] MincoreLaunchInstrumentation: couldn't sample the launch's pages.`
 ///
-/// Messages go to `OpenTelemetry.instance.feedbackHandler`. Without one they go to the unified log
-/// on Apple platforms, under the `io.opentelemetry.swift` subsystem with the module as the
-/// category, so `log stream` and Console can filter them, and to `print` on platforms that have no
-/// unified log. Only errors are logged unless `OpenTelemetry.setDebugEnabled(true)` was called, in
-/// which case every level is. A message that isn't logged is never built.
+/// Messages go to a handler registered with `OpenTelemetry.registerFeedbackHandler`. Without one
+/// they go to the unified log on Apple platforms, under the `io.opentelemetry.swift` subsystem with
+/// the module as the category, so `log stream` and Console can filter them, and to `print` on
+/// platforms that have no unified log. The default `OpenTelemetry.instance.feedbackHandler` is not
+/// used, because it would drop the subsystem, the category and the level. Only errors are logged
+/// unless `OpenTelemetry.setDebugEnabled(true)` was called, in which case every level is. A message
+/// that isn't logged is never built.
 ///
 /// The handler is the app's code, so don't log while holding a lock it could need.
 public enum InternalLogger {
@@ -49,7 +51,7 @@ public enum InternalLogger {
     guard level == .error || OpenTelemetry.instance.isDebugEnabled else { return }
     let module = moduleName(fileID)
     let text = message()
-    if let feedbackHandler = OpenTelemetry.instance.feedbackHandler {
+    if let feedbackHandler = OpenTelemetry.instance.registeredFeedbackHandler {
       feedbackHandler("[\(level.rawValue)] \(module): \(text)")
       return
     }
