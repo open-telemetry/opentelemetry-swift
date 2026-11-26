@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 450" width="940" height="450" role="img" aria-label="Panel A draws the library's span and the Instruments life-cycle periods on one wall clock. Instruments starts 55 milliseconds after the kernel's process start and its frame period ends 25 milliseconds before the display link reports, while the didFinishLaunching boundary is shared. The constructor boundary differs by under 2 milliseconds. Panel B plots that 25 millisecond end offset per launch in display refresh periods, clustering at 2.95 periods with a scatter of 1.05 periods.">
+  <rect x="0" y="0" width="940" height="450" fill="#ffffff"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" fill="#1b2733">
+    <text x="20" y="26" font-size="14" font-weight="600">Figure 3. Why the library reads +79 ms longer</text>
+    <text x="20" y="44" font-size="10.5" fill="#55606b">Three boundaries differ. b1 and b3 add to the total; b2 cancels, shortening pre_init and lengthening app_init by the same amount.</text>
+    <text x="20" y="60" font-size="10.5" fill="#55606b">b1 + b3 = 79 ms, the measured offset.</text>
+        <text x="150" y="84" font-size="10.5" fill="#55606b">A. Where each instrument puts the boundaries, drawn to scale on one wall clock</text>
+    <rect x="150.0" y="152" width="310.5" height="26" fill="#4a6fa5" fill-opacity="0.75" stroke="#4a6fa5" stroke-width="1"/>
+    <text x="305.2" y="169" font-size="9.5" fill="#ffffff" font-weight="600" text-anchor="middle">pre_init</text>
+    <rect x="460.5" y="152" width="317.6" height="26" fill="#7fa05a" fill-opacity="0.75" stroke="#7fa05a" stroke-width="1"/>
+    <text x="619.3" y="169" font-size="9.5" fill="#ffffff" font-weight="600" text-anchor="middle">app_init</text>
+    <rect x="778.1" y="152" width="71.9" height="26" fill="#c08a3e" fill-opacity="0.75" stroke="#c08a3e" stroke-width="1"/>
+    <text x="814.1" y="169" font-size="9.5" fill="#ffffff" font-weight="600" text-anchor="middle">render</text>
+    <rect x="182.3" y="206" width="279.3" height="26" fill="#4a6fa5" fill-opacity="0.32" stroke="#4a6fa5" stroke-width="1"/>
+    <rect x="461.6" y="206" width="316.5" height="26" fill="#7fa05a" fill-opacity="0.32" stroke="#7fa05a" stroke-width="1"/>
+    <rect x="778.1" y="206" width="57.3" height="26" fill="#c08a3e" fill-opacity="0.32" stroke="#c08a3e" stroke-width="1"/>
+    <text x="138" y="169" font-size="10" fill="#33414e" text-anchor="end" font-weight="600">library span</text>
+    <text x="138" y="219" font-size="10" fill="#33414e" text-anchor="end" font-weight="600">Instruments</text>
+    <text x="138" y="231" font-size="9" fill="#8b98a5" text-anchor="end">life-cycle periods</text>
+    <line x1="150.0" y1="152" x2="150.0" y2="232" stroke="#1b2733" stroke-width="1" stroke-dasharray="3 2"/>
+    <line x1="182.3" y1="152" x2="182.3" y2="232" stroke="#9c7430" stroke-width="1" stroke-dasharray="3 2"/>
+    <line x1="460.5" y1="152" x2="460.5" y2="232" stroke="#1b2733" stroke-width="1" stroke-dasharray="3 2"/>
+    <line x1="835.4" y1="152" x2="835.4" y2="232" stroke="#9c7430" stroke-width="1" stroke-dasharray="3 2"/>
+    <line x1="850.0" y1="152" x2="850.0" y2="232" stroke="#1b2733" stroke-width="1" stroke-dasharray="3 2"/>
+    <line x1="778.1" y1="146" x2="778.1" y2="232" stroke="#1b2733" stroke-width="1.4"/>
+    <text x="771.1" y="142" font-size="9.5" fill="#1b2733" text-anchor="end" font-weight="600">didFinishLaunching, the one shared boundary</text>
+    <path d="M150.0 118 H182.3 M150.0 114 v8 M182.3 114 v8" stroke="#9c7430" stroke-width="1.4" fill="none"/>
+    <text x="166.1" y="109" font-size="10" fill="#9c7430" text-anchor="middle" font-weight="600">b1  +54 ± 15 ms</text>
+    <text x="166.1" y="136" font-size="9" fill="#6b7580" text-anchor="middle">process start → trace t0</text>
+    <path d="M835.4 118 H850.0 M835.4 114 v8 M850.0 114 v8" stroke="#9c7430" stroke-width="1.4" fill="none"/>
+    <text x="842.7" y="109" font-size="10" fill="#9c7430" text-anchor="middle" font-weight="600">b3  +25 ± 9 ms</text>
+    <text x="842.7" y="136" font-size="9" fill="#6b7580" text-anchor="middle">trace frame end → display link</text>
+    <text x="460.5" y="254" font-size="10" fill="#9c7430" text-anchor="middle" font-weight="600">b2  +1.9 ± 0.4 ms</text>
+    <text x="460.5" y="267" font-size="9" fill="#6b7580" text-anchor="middle">constructor → end of static init, under 2 ms so invisible at this scale</text>
+    <text x="150" y="304" font-size="10.5" fill="#55606b">B. b3 in display refresh periods (8.33 ms at 120 Hz)</text>
+    <line x1="150.0" y1="320" x2="150.0" y2="366" stroke="#dde3e9" stroke-width="1"/>
+    <text x="150.0" y="382" font-size="9.5" fill="#6b7580" text-anchor="middle">0</text>
+    <line x1="290.0" y1="320" x2="290.0" y2="366" stroke="#dde3e9" stroke-width="1"/>
+    <text x="290.0" y="382" font-size="9.5" fill="#6b7580" text-anchor="middle">1</text>
+    <line x1="430.0" y1="320" x2="430.0" y2="366" stroke="#dde3e9" stroke-width="1"/>
+    <text x="430.0" y="382" font-size="9.5" fill="#6b7580" text-anchor="middle">2</text>
+    <line x1="570.0" y1="320" x2="570.0" y2="366" stroke="#dde3e9" stroke-width="1"/>
+    <text x="570.0" y="382" font-size="9.5" fill="#6b7580" text-anchor="middle">3</text>
+    <line x1="710.0" y1="320" x2="710.0" y2="366" stroke="#dde3e9" stroke-width="1"/>
+    <text x="710.0" y="382" font-size="9.5" fill="#6b7580" text-anchor="middle">4</text>
+    <line x1="850.0" y1="320" x2="850.0" y2="366" stroke="#dde3e9" stroke-width="1"/>
+    <text x="850.0" y="382" font-size="9.5" fill="#6b7580" text-anchor="middle">5</text>
+    <text x="500.0" y="400" font-size="10.5" fill="#33414e" text-anchor="middle">refresh periods</text>
+    <rect x="416.6" y="320" width="292.9" height="46" fill="#c08a3e" fill-opacity="0.13"/>
+    <line x1="563.1" y1="320" x2="563.1" y2="366" stroke="#c08a3e" stroke-width="1.8"/>
+    <text x="563.1" y="317" font-size="10" font-weight="600" fill="#9c7430" text-anchor="middle">2.95 ± 1.05</text>
+    <circle cx="718.1" cy="343" r="5" fill="#c0392b" fill-opacity="0.72" stroke="#c0392b" stroke-width="1.3"/>
+    <circle cx="675.3" cy="343" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="532.7" cy="343" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="653.3" cy="343" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="562.6" cy="343" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="202.4" cy="343" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="475.1" cy="343" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="552.5" cy="343" r="5" fill="#c0392b" fill-opacity="0.72" stroke="#c0392b" stroke-width="1.3"/>
+    <circle cx="613.2" cy="343" r="5" fill="#c0392b" fill-opacity="0.72" stroke="#c0392b" stroke-width="1.3"/>
+    <circle cx="645.6" cy="343" r="5" fill="#c0392b" fill-opacity="0.72" stroke="#c0392b" stroke-width="1.3"/>
+    <circle cx="150" cy="420" r="4.5" fill="#c0392b" fill-opacity="0.72" stroke="#c0392b"/><text x="160" y="423" font-size="10" fill="#33414e">cold</text>
+    <circle cx="208" cy="420" r="4.5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5"/><text x="218" y="423" font-size="10" fill="#33414e">warm</text>
+    <text x="20" y="442" font-size="9.5" fill="#55606b">Phase widths are the measured means over ten launches. A scatter of one refresh period identifies the display, not measurement noise, as the dominant term in b3.</text>
+  </g>
+</svg>

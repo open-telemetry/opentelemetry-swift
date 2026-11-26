@@ -40,6 +40,16 @@ extension Array where Element == Opentelemetry_Proto_Common_V1_KeyValue {
     guard case let .intValue(value)? = self[key]?.value else { return nil }
     return value
   }
+
+  func double(_ key: String) -> Double? {
+    guard case let .doubleValue(value)? = self[key]?.value else { return nil }
+    return value
+  }
+
+  func bool(_ key: String) -> Bool? {
+    guard case let .boolValue(value)? = self[key]?.value else { return nil }
+    return value
+  }
 }
 
 // Loads the files produced by a run of Scripts/run-integration-tests.sh: the

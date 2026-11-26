@@ -3,9 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import MincoreLaunchInstrumentation
 import Crash
 import Foundation
 import OpenTelemetryApi
+import OpenTelemetryProtocolExporterCommon
 import OpenTelemetryProtocolExporterHttp
 import OpenTelemetrySdk
 import ResourceExtension
@@ -15,15 +17,37 @@ import URLSessionInstrumentation
 enum TelemetryConfig {
   static let defaultServiceName = "HackerNewsDemo"
   static let serviceVersion = "1.0.0"
-  // Overridable so the integration test runner can point the app at a
-  // collector on a different port: `SIMCTL_CHILD_OTEL_EXPORTER_OTLP_ENDPOINT`.
+
+  /// Reads one OTLP setting by its standard name.
+  ///
+  /// The environment comes first, which is how the integration test runner
+  /// points the app at a local collector:
+  /// `SIMCTL_CHILD_OTEL_EXPORTER_OTLP_ENDPOINT`. A harness that drives a
+  /// device it does not own, such as a cloud simulator, cannot set the
+  /// environment of an app the system launches, so the launch arguments come
+  /// second: iOS registers every `-name value` pair in `UserDefaults`.
+  static func setting(_ name: String) -> String? {
+    if let value = ProcessInfo.processInfo.environment[name], !value.isEmpty {
+      return value
+    }
+    guard let value = UserDefaults.standard.string(forKey: name), !value.isEmpty else {
+      return nil
+    }
+    return value
+  }
+
   static let collectorBaseURL: URL = {
-    if let value = ProcessInfo.processInfo.environment["OTEL_EXPORTER_OTLP_ENDPOINT"],
-       let url = URL(string: value) {
+    if let value = setting("OTEL_EXPORTER_OTLP_ENDPOINT"), let url = URL(string: value) {
       return url
     }
     return URL(string: "http://localhost:4318")!
   }()
+
+  /// The headers every export carries, as `OTEL_EXPORTER_OTLP_HEADERS`. A
+  /// hosted OTLP endpoint authenticates with them, so without them the
+  /// exporters only reach a collector the app can trust.
+  static let exporterHeaders: [(String, String)]? =
+    EnvVarHeaders.attributes(for: setting("OTEL_EXPORTER_OTLP_HEADERS"))
 
   static let defaultTracesEndpoint = collectorBaseURL.appendingPathComponent("v1/traces")
   static let defaultLogsEndpoint = collectorBaseURL.appendingPathComponent("v1/logs")
@@ -32,7 +56,8 @@ enum TelemetryConfig {
   // test mode where the runner controls the endpoints. Like the session
   // config, they are read once at startup.
   static var serviceName: String {
-    IntegrationTestScenario.isEnabled ? defaultServiceName : (OTelConfigStore.serviceName ?? defaultServiceName)
+    if IntegrationTestScenario.isEnabled { return defaultServiceName }
+    return OTelConfigStore.serviceName ?? setting("OTEL_SERVICE_NAME") ?? defaultServiceName
   }
 
   static var tracesEndpoint: URL {
@@ -66,6 +91,8 @@ enum Telemetry {
   nonisolated(unsafe) private static var urlSessionInstrumentation: URLSessionInstrumentation?
 
   static func start() {
+    OpenTelemetry.setDebugEnabled(true)
+
     let resource = DefaultResources().get().merging(other: Resource(attributes: [
       ResourceAttributes.serviceName.rawValue: .string(TelemetryConfig.serviceName),
       ResourceAttributes.serviceVersion.rawValue: .string(TelemetryConfig.serviceVersion)
@@ -79,7 +106,8 @@ enum Telemetry {
     let tracesEndpoint = TelemetryConfig.tracesEndpoint
     let logsEndpoint = TelemetryConfig.logsEndpoint
 
-    let spanExporter = OtlpHttpTraceExporter(endpoint: tracesEndpoint)
+    let spanExporter = OtlpHttpTraceExporter(endpoint: tracesEndpoint,
+                                             envVarHeaders: TelemetryConfig.exporterHeaders)
     OpenTelemetry.registerTracerProvider(tracerProvider:
       TracerProviderBuilder()
         .with(resource: resource)
@@ -88,7 +116,8 @@ enum Telemetry {
         .build()
     )
 
-    let logExporter = OtlpHttpLogExporter(endpoint: logsEndpoint)
+    let logExporter = OtlpHttpLogExporter(endpoint: logsEndpoint,
+                                          envVarHeaders: TelemetryConfig.exporterHeaders)
     OpenTelemetry.registerLoggerProvider(loggerProvider:
       LoggerProviderBuilder()
         .with(resource: resource)
@@ -99,6 +128,12 @@ enum Telemetry {
     )
 
     SessionEventInstrumentation.install()
+
+    // Installed in didFinishLaunching, before the app first becomes active, so it sees the
+    // activation that ends the cold start.
+    if !IntegrationTestScenario.installsAppLaunchLate {
+      MincoreLaunchInstrumentation.install()
+    }
 
     // Installed after the session manager and logger provider are registered:
     // crashes from the previous run are reported on install, and each crash
@@ -115,7 +150,6 @@ enum Telemetry {
       semanticConvention: TelemetryConfig.httpSemanticConvention
     ))
 
-    // TODO: no app startup instrumentation
     // TODO: no app hang instrumentation
     // TODO: no UIKit/SwiftUI view instrumentation
     // TODO: no user ID manager; see UserIdStore

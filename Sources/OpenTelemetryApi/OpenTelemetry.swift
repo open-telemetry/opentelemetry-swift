@@ -52,6 +52,18 @@ public struct OpenTelemetry: Sendable {
     OpenTelemetryStorage.instance.feedbackHandler
   }
 
+  /// Only a handler the app registered with `registerFeedbackHandler`. `InternalLogger` routes to
+  /// this rather than to `feedbackHandler`, whose default carries neither the message's level nor
+  /// the module it came from, so without a registered handler it logs to the unified log itself.
+  var registeredFeedbackHandler: ((String) -> Void)? {
+    OpenTelemetryStorage.instance.registeredFeedbackHandler
+  }
+
+  /// Whether `InternalLogger` logs every level instead of only errors. Off by default.
+  public var isDebugEnabled: Bool {
+    OpenTelemetryStorage.instance.isDebugEnabled
+  }
+
   private init() {}
 
   @available(*, deprecated, renamed: "registerMeterProvider")
@@ -86,6 +98,11 @@ public struct OpenTelemetry: Sendable {
 
   public static func registerContextManager(contextManager: ContextManager) {
     OpenTelemetryStorage.instance.setContextManager(contextManager)
+  }
+
+  /// Turns `InternalLogger`'s debug mode on or off.
+  public static func setDebugEnabled(_ enabled: Bool) {
+    OpenTelemetryStorage.instance.setDebugEnabled(enabled)
   }
 
   /// Register a function to be called when the library has warnings or informative messages to relay back to the developer
@@ -124,7 +141,11 @@ private final class OpenTelemetryStorage: @unchecked Sendable {
   private var _baggageManager: BaggageManager
   private var _propagators: ContextPropagators
   private var _contextProvider: OpenTelemetryContextProvider
+  // The handler the app registered, if any.
   private var _feedbackHandler: ((String) -> Void)?
+  // Where feedback goes until then. Immutable, so it's read without the lock.
+  private let _defaultFeedbackHandler: ((String) -> Void)?
+  private var _isDebugEnabled = false
 
   private init() {
     _meterProvider = DefaultMeterProvider.instance
@@ -145,9 +166,11 @@ private final class OpenTelemetryStorage: @unchecked Sendable {
     _contextProvider = OpenTelemetryContextProvider(contextManager: manager)
 
     #if canImport(os.log)
-      _feedbackHandler = { message in
+      _defaultFeedbackHandler = { message in
         os_log("%{public}s", message)
       }
+    #else
+      _defaultFeedbackHandler = nil
     #endif
   }
 
@@ -178,7 +201,15 @@ private final class OpenTelemetryStorage: @unchecked Sendable {
   }
 
   var feedbackHandler: ((String) -> Void)? {
+    lock.withReaderLock { _feedbackHandler } ?? _defaultFeedbackHandler
+  }
+
+  var registeredFeedbackHandler: ((String) -> Void)? {
     lock.withReaderLock { _feedbackHandler }
+  }
+
+  var isDebugEnabled: Bool {
+    lock.withReaderLock { _isDebugEnabled }
   }
 
   // MARK: - Thread-safe write accessors
@@ -213,5 +244,9 @@ private final class OpenTelemetryStorage: @unchecked Sendable {
 
   func setFeedbackHandler(_ handler: @escaping (String) -> Void) {
     lock.withWriterLock { _feedbackHandler = handler }
+  }
+
+  func setDebugEnabled(_ enabled: Bool) {
+    lock.withWriterLock { _isDebugEnabled = enabled }
   }
 }

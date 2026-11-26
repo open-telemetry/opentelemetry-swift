@@ -1039,6 +1039,28 @@ class URLSessionInstrumentationTests: XCTestCase {
                    "repeated resume must reuse the existing span, not start another")
   }
 
+  /// The same invariant once the request has finished. A completion a delegate or a completion
+  /// handler reported leaves `reportedKey` unset, and the first span is already ended and gone from
+  /// `runningSpans`, so nothing but the task's own state stops a later resume from starting a
+  /// second span for a request that already happened. Which of the two cases a timed test lands on
+  /// depends on how fast the request finishes, so both are covered.
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  public func testResumeAfterTheRequestFinishedDoesNotStartASecondSpan() throws {
+    let url = URL(string: "http://localhost:33333/success")!
+    let request = URLRequest(url: url)
+    let session = URLSession(configuration: .ephemeral)
+
+    let task = session.dataTask(with: request) { _, _, _ in
+      URLSessionInstrumentationTests.semaphore.signal()
+    }
+    task.resume()
+    URLSessionInstrumentationTests.semaphore.wait()
+    task.resume()
+
+    XCTAssertEqual(URLSessionInstrumentationTests.checker.createdRequestCount, 1,
+                   "a task that has already run gets no second span")
+  }
+
   public func testDownloadTaskWithUrlBlock() {
     let url = URL(string: "http://localhost:33333/success")!
 

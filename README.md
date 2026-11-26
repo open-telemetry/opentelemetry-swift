@@ -172,6 +172,7 @@ Add the products you need to your target and follow their setup instructions; ad
 | [`Sessions`](Sources/Instrumentation/Sessions/README.md) | Session lifecycle events and attribution for spans and logs | Apple platforms and Linux |
 | [`MetricKitInstrumentation`](Sources/Instrumentation/MetricKit/README.md) | MetricKit performance and diagnostic payloads | Where MetricKit is available; excludes macOS and tvOS |
 | [`Crash`](Sources/Instrumentation/Crash/README.md) | KSCrash crash reporting | Apple platforms; unreleased on `main`, not in 2.6.0 |
+| [`MincoreLaunchInstrumentation`](Sources/Instrumentation/AppLaunch/README.md) | App launch and resume spans, with `cold` and `warm` measured from code-page residency | Apple platforms except watchOS; experimental, unreleased on `main` |
 
 The linked documentation follows this branch. For released behavior, use the documentation at your release tag.
 

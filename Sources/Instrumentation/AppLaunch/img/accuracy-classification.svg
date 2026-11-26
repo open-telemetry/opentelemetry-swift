@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 390" width="940" height="390" role="img" aria-label="Two strips on one axis compare the library's page-in ratio with the ratio derived from the Instruments trace. The library reads 0.721 on cold launches and 0.005 on warm ones. The trace measure saturates, reading exactly 1.000 on every cold launch and 0.000 on five of six warm ones. Both leave a wide empty interval around the 0.5 threshold.">
+  <rect x="0" y="0" width="813.0" height="390" fill="#ffffff"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" fill="#1b2733">
+    <text x="20" y="26" font-size="14" font-weight="600">Figure 2. The two launch-type measures, n = 10</text>
+    <text x="20" y="44" font-size="10.5" fill="#55606b">The measures share a threshold but not a denominator, so they separate the same launches without agreeing numerically.</text>
+    <text x="20" y="60" font-size="10.5" fill="#55606b">Instruments reports no launch type of its own; the comparison script derives the lower row from the trace's virtual-memory events.</text>
+        <rect x="233.9" y="118" width="426.3" height="64" fill="#f2f4f6"/>
+    <text x="447.0" y="132" font-size="9.5" fill="#8b98a5" text-anchor="middle">no launch observed, 0.03 to 0.70</text>
+    <rect x="279.4" y="200" width="575.6" height="64" fill="#f2f4f6"/>
+    <text x="567.2" y="214" font-size="9.5" fill="#8b98a5" text-anchor="middle">no launch observed, 0.10 to 1.00</text>
+    <line x1="535.0" y1="104" x2="535.0" y2="305" stroke="#9c7430" stroke-width="1.6" stroke-dasharray="5 3"/>
+    <text x="535.0" y="98" font-size="10" font-weight="600" fill="#9c7430" text-anchor="middle">threshold 0.5, the same constant on both sides</text>
+    <line x1="215.0" y1="150" x2="855.0" y2="150" stroke="#dde3e9" stroke-width="1"/>
+    <text x="203" y="146" font-family="SF Mono, Menlo, Consolas, monospace" font-size="9.5" fill="#33414e" text-anchor="end">library  page_in_ratio</text>
+    <text x="203" y="159" font-size="9" fill="#8b98a5" text-anchor="end">paged_in / resident_at_end</text>
+    <circle cx="704.3" cy="150" r="5" fill="#c0392b" fill-opacity="0.72" stroke="#c0392b" stroke-width="1.3"/>
+    <circle cx="215.0" cy="150" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="215.0" cy="139" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="215.0" cy="128" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="215.0" cy="117" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="233.9" cy="150" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="215.0" cy="106" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="674.8" cy="150" r="5" fill="#c0392b" fill-opacity="0.72" stroke="#c0392b" stroke-width="1.3"/>
+    <circle cx="666.4" cy="150" r="5" fill="#c0392b" fill-opacity="0.72" stroke="#c0392b" stroke-width="1.3"/>
+    <circle cx="660.1" cy="139" r="5" fill="#c0392b" fill-opacity="0.72" stroke="#c0392b" stroke-width="1.3"/>
+    <line x1="215.0" y1="232" x2="855.0" y2="232" stroke="#dde3e9" stroke-width="1"/>
+    <text x="203" y="228" font-family="SF Mono, Menlo, Consolas, monospace" font-size="9.5" fill="#33414e" text-anchor="end">trace  1 − pre_cached / touched</text>
+    <text x="203" y="241" font-size="9" fill="#8b98a5" text-anchor="end">pre_cached / touched, complemented</text>
+    <circle cx="855.0" cy="232" r="5" fill="#c0392b" fill-opacity="0.72" stroke="#c0392b" stroke-width="1.3"/>
+    <circle cx="215.0" cy="232" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="215.0" cy="221" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="215.0" cy="210" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="215.0" cy="199" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="279.4" cy="232" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="215.0" cy="188" r="5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5" stroke-width="1.3"/>
+    <circle cx="855.0" cy="221" r="5" fill="#c0392b" fill-opacity="0.72" stroke="#c0392b" stroke-width="1.3"/>
+    <circle cx="855.0" cy="210" r="5" fill="#c0392b" fill-opacity="0.72" stroke="#c0392b" stroke-width="1.3"/>
+    <circle cx="855.0" cy="199" r="5" fill="#c0392b" fill-opacity="0.72" stroke="#c0392b" stroke-width="1.3"/>
+    <text x="676.4" y="176" font-size="9.5" fill="#c0392b" text-anchor="middle" font-weight="600">0.721 ± 0.031</text>
+    <text x="218.1" y="176" font-size="9.5" fill="#3b6ea5" text-anchor="middle" font-weight="600">0.005 ± 0.012</text>
+    <text x="855.0" y="258" font-size="9.5" fill="#c0392b" text-anchor="middle" font-weight="600">1.000 ± 0.000</text>
+    <text x="225.7" y="258" font-size="9.5" fill="#3b6ea5" text-anchor="middle" font-weight="600">0.017 ± 0.041</text>
+    <line x1="215.0" y1="300" x2="855.0" y2="300" stroke="#8b98a5" stroke-width="1.2"/>
+    <line x1="215.0" y1="300" x2="215.0" y2="305" stroke="#8b98a5" stroke-width="1"/>
+    <text x="215.0" y="318" font-size="9.5" fill="#6b7580" text-anchor="middle">0.0</text>
+    <line x1="279.0" y1="300" x2="279.0" y2="305" stroke="#8b98a5" stroke-width="1"/>
+    <text x="279.0" y="318" font-size="9.5" fill="#6b7580" text-anchor="middle">0.1</text>
+    <line x1="343.0" y1="300" x2="343.0" y2="305" stroke="#8b98a5" stroke-width="1"/>
+    <text x="343.0" y="318" font-size="9.5" fill="#6b7580" text-anchor="middle">0.2</text>
+    <line x1="407.0" y1="300" x2="407.0" y2="305" stroke="#8b98a5" stroke-width="1"/>
+    <text x="407.0" y="318" font-size="9.5" fill="#6b7580" text-anchor="middle">0.3</text>
+    <line x1="471.0" y1="300" x2="471.0" y2="305" stroke="#8b98a5" stroke-width="1"/>
+    <text x="471.0" y="318" font-size="9.5" fill="#6b7580" text-anchor="middle">0.4</text>
+    <line x1="535.0" y1="300" x2="535.0" y2="305" stroke="#8b98a5" stroke-width="1"/>
+    <text x="535.0" y="318" font-size="9.5" fill="#6b7580" text-anchor="middle">0.5</text>
+    <line x1="599.0" y1="300" x2="599.0" y2="305" stroke="#8b98a5" stroke-width="1"/>
+    <text x="599.0" y="318" font-size="9.5" fill="#6b7580" text-anchor="middle">0.6</text>
+    <line x1="663.0" y1="300" x2="663.0" y2="305" stroke="#8b98a5" stroke-width="1"/>
+    <text x="663.0" y="318" font-size="9.5" fill="#6b7580" text-anchor="middle">0.7</text>
+    <line x1="727.0" y1="300" x2="727.0" y2="305" stroke="#8b98a5" stroke-width="1"/>
+    <text x="727.0" y="318" font-size="9.5" fill="#6b7580" text-anchor="middle">0.8</text>
+    <line x1="791.0" y1="300" x2="791.0" y2="305" stroke="#8b98a5" stroke-width="1"/>
+    <text x="791.0" y="318" font-size="9.5" fill="#6b7580" text-anchor="middle">0.9</text>
+    <line x1="855.0" y1="300" x2="855.0" y2="305" stroke="#8b98a5" stroke-width="1"/>
+    <text x="855.0" y="318" font-size="9.5" fill="#6b7580" text-anchor="middle">1.0</text>
+    <text x="535.0" y="336" font-size="10.5" fill="#33414e" text-anchor="middle">fraction of __TEXT pages read during the launch</text>
+    <circle cx="215.0" cy="352" r="4.5" fill="#c0392b" fill-opacity="0.72" stroke="#c0392b"/><text x="223.6" y="355" font-size="10" fill="#33414e">cold (n = 4)</text>
+    <circle cx="292.8" cy="352" r="4.5" fill="#3b6ea5" fill-opacity="0.72" stroke="#3b6ea5"/><text x="301.5" y="355" font-size="10" fill="#33414e">warm (n = 6)</text>
+    <text x="20" y="382" font-size="9.5" fill="#55606b">The trace measure is effectively binary, so the ten launches agreeing tests the direction of the classification, not where the threshold sits.</text>
+  </g>
+</svg>
