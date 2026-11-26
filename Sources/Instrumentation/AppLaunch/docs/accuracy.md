@@ -1,6 +1,20 @@
 # Accuracy and limits
 
-What these measurements were checked against, how far they can be trusted, and what they leave out. The headline: the library's launch duration tracks the Instruments App Launch template with a slope of 1.039 ± 0.024 and an offset of +79 ms, measured over 10 launches on one device. See the [App Launch README](../README.md) for the spans themselves.
+**The library measures the same launches Instruments does: three differently placed boundaries account for every millisecond of the +79 ms by which it reads longer, and none of the difference is measurement error.**
+
+| Measurement | `MincoreLaunchInstrumentation` | `xctrace` | Difference | What the difference is |
+| --- | -: | -: | -: | --- |
+| Launch duration | 1,181 ± 278 ms | 1,102 ± 267 ms | +79 ± 21 ms | Boundary placement. Slope 1.039 ± 0.024, R² = 0.9957, so no proportional error. |
+| &nbsp;&nbsp;`app.start.pre_init` | 524 ± 71 ms | 471 ± 63 ms | +53 ± 15 ms | Instruments' clock starts 54 ms after the kernel's process start. |
+| &nbsp;&nbsp;`app.start.app_init` | 536 ± 243 ms | 534 ± 243 ms | +1.9 ± 0.4 ms | Static initialization ends 1.9 ms after this library's constructor. |
+| &nbsp;&nbsp;`app.start.render` | 121 ± 56 ms | 97 ± 51 ms | +25 ± 9 ms | 2.95 display refresh periods. The display sets the floor. |
+| `paged_in`, 6 warm | 0 to 5 pages | 0 to 5 pages | 0, exactly | Nothing to read, so the two agree to the page. |
+| `paged_in`, 4 cold | 143 ± 16 pages | 107 ± 2 pages | +36 ± 17 pages | Kernel read-ahead, which `mincore` counts and a fault trace does not. |
+| Cold / warm ratio | 0.721 / 0.005 | 1.000 / 0.017 | 10 of 10 agree | Different denominators. The comparator saturates and reuses the same 0.5 constant. |
+
+The ± on each instrument is the spread across launches, which is real variation between launches rather than uncertainty; the ± on the difference is the spread of the paired difference, which is the measurement. `xctrace` figures come from the Instruments App Launch template, except the cold/warm ratio, which Instruments does not report and the comparison script [derives from the trace](#what-the-comparison-is-against-1).
+
+Ten launches on one iPhone, each recorded by both instruments at once. [Method](#apparatus-and-procedure) · [raw data](#raw-data) · [conclusions](#conclusions) · [known limits](#known-limits). See the [App Launch README](../README.md) for the spans themselves.
 
 ## Apple's launch phases
 
@@ -80,24 +94,40 @@ The slope's 95% interval is [0.984, 1.095], which contains 1, and the intercept'
 
 These data cannot separate a constant offset from a small proportional one. A pure offset of 79 ms and a 4% proportional term fit about equally well at n = 10. Separating them needs launches spanning a wider range than the 0.85 s to 1.72 s recorded here.
 
+#### What the comparison is against
+
+Unlike the launch type below, the durations compare against Instruments' own measurements. The script reads the App Launch template's named life-cycle periods for the launched pid and takes their edges, in [`compare-app-launch-accuracy.py:433`](../../../../Scripts/compare-app-launch-accuracy.py):
+
+```python
+initializer_end = static_init[1] + static_init[2]   # "Initializing - Static Runtime Initialization"
+did_finish_end  = did_finish[1] + did_finish[2]     # the period naming didFinishLaunching
+frame_end       = frame[1] + frame[2]               # "Launching - Initial Frame Rendering"
+```
+
+`xctrace record --launch` starts the process itself, so the trace's clock begins when Instruments first attributes an event to it, not at the kernel's process start. That makes the comparator independent, and it also makes the boundaries differ.
+
 ### Where the offset comes from
 
-Each phase is measured against its matching Instruments period, and the three biases sum to the total (Figure 3, panel A).
+Three boundaries sit in different places. Writing b1, b2 and b3 for the gaps, the phase differences follow:
 
-| Phase | Bias (ms) | SD (ms) | Share of the offset |
-| --- | -: | -: | -: |
-| `app.start.pre_init` | +53 | 15 | 67% |
-| `app.start.app_init` | +1.9 | 0.4 | 2% |
-| `app.start.render` | +25 | 9 | 31% |
+| Boundary | Library | Instruments | Gap | Enters |
+| --- | --- | --- | -: | --- |
+| Start | kernel process start | trace t0 | **b1** +54 ± 15 ms | `pre_init` |
+| First phase end | this library's constructor | end of static runtime initialization | **b2** +1.9 ± 0.4 ms | `pre_init` and `app_init`, with opposite signs |
+| `didFinishLaunching` | same event | same event | 0 | — |
+| End | display-link second tick | end of initial frame rendering | **b3** +25 ± 9 ms | `render` |
 
-![Panel A splits the 79 millisecond offset into 53 milliseconds of pre-init, 2 of app-init and 25 of render. Panel B plots the render offset for each launch in display refresh periods, clustering at 2.95 periods with a scatter of 1.05 periods and one outlier near 0.4.](../img/accuracy-offset.svg)
+![Panel A draws the library's span and the Instruments life-cycle periods on one wall clock. Instruments starts 54 milliseconds after the kernel's process start and its frame period ends 25 milliseconds before the display link reports, while the didFinishLaunching boundary is shared. The constructor boundary differs by under 2 milliseconds. Panel B plots that 25 millisecond end offset per launch in display refresh periods, clustering at 2.95 periods with a scatter of 1.05 periods.](../img/accuracy-offset.svg)
 
+b2 cancels. The constructor runs inside static initialization, so it shortens `pre_init` and lengthens `app_init` by the same 1.9 ms, leaving the total untouched. The total offset is therefore b1 + b3 = 79.0 ms, which is the measured offset to the tenth of a millisecond.
 
-Two thirds sits in `app.start.pre_init`, whose start is the definitional difference above. `app.start.app_init` agrees to +1.9 ± 0.4 ms, a 0.3% difference on a 0.6 s phase: the closest agreement in the data, and the evidence that the `AppLaunchEnvironment` constructor runs near the end of static runtime initialization in this app. The remaining third sits in `app.start.render`.
+That makes the `app_init` figure a measurement rather than an agreement. `app.start.app_init` does not merely come within +1.9 ± 0.4 ms of Instruments; that number **is** b2, the interval between this library's constructor and the end of static runtime initialization in this app. The script says as much at line 429: the two "compare differently defined boundaries", and the trace cannot say where the constructor ran. Its tightness, SD 0.4 ms across ten launches, says the constructor sits at a stable point in the link order, not that the two instruments agree.
+
+b1 is larger on cold launches: 68 ± 7 ms against 46 ± 3 ms warm (Welch t = 2.77, p < 0.05). More pre-main disk work happens before Instruments' first attributable event when nothing is cached.
 
 ### The end timestamp is quantised by the display
 
-`app.start.render` reads +25 ± 9 ms against Instruments. One refresh period on a 120 Hz display is 8.33 ms, so that offset is **2.95 refresh periods, with a scatter of 1.05 periods**. A scatter of one period, rather than some unrelated figure, identifies the display refresh as the dominant term instead of measurement noise (Figure 3, panel B). The library cannot resolve the end of a launch more finely than the screen changes.
+b3 reads +25 ± 9 ms. One refresh period on a 120 Hz display is 8.33 ms, so that offset is **2.95 refresh periods, with a scatter of 1.05 periods**. A scatter of one period, rather than some unrelated figure, identifies the display refresh as the dominant term instead of measurement noise (Figure 3, panel B). The library cannot resolve the end of a launch more finely than the screen changes.
 
 One period of the offset is structural: `DisplayLinkFirstFrameReader` ends on the second tick, because a frame committed before a refresh is displayed at the next one. The rest is the frame being drawn.
 
@@ -111,17 +141,40 @@ The two count different things. `mincore` reports the page cache; Instruments re
 
 ### Launch classification
 
+The library's ratio separates cleanly:
+
 | Set | n | Mean ratio | SD | Range |
 | --- | -: | -: | -: | --- |
 | Cold | 4 | 0.721 | 0.031 | 0.695 to 0.764 |
 | Warm | 6 | 0.005 | 0.012 | 0.000 to 0.029 |
 
-![Ten launches plotted on the page-in ratio axis. Six warm launches cluster at 0.005 and four cold launches at 0.721, with no launch anywhere between 0.03 and 0.70. The 0.5 threshold sits inside that empty interval, and the gap between the clusters spans 23 binomial standard errors.](../img/accuracy-classification.svg)
-
-
-The clusters stand 0.716 apart (Figure 2), which is 34 pooled standard deviations, or 23 binomial standard errors at n = 256. The 0.5 threshold sits 7.2 cold-cluster SD below the cold mean. All ten launches agreed with Instruments.
+The clusters stand 0.716 apart, which is 34 pooled standard deviations, or 23 binomial standard errors at n = 256. The 0.5 threshold sits 7.2 cold-cluster SD below the cold mean.
 
 No launch fell between 0.03 and 0.70. These data therefore leave the threshold unconstrained across that interval: 0.5 is defensible, and so is any value from about 0.1 to 0.6. Only a partly cached launch would constrain it, and none was recorded.
+
+#### What the comparison is against
+
+Instruments reports no cold or warm label of its own. The comparison script derives one from the trace's virtual-memory events, in [`compare-app-launch-accuracy.py:490`](../../../../Scripts/compare-app-launch-accuracy.py):
+
+```python
+pre_cached = {page(event[2]) for event in hits if event[0] < first_read}
+"launch_type": "warm" if len(pre_cached) >= COLD_RATIO * max(len(touched), 1) else "cold",
+```
+
+`pre_cached` counts the `__TEXT` pages the trace saw hit in the cache before the launch's first disk read, and `touched` counts every `__TEXT` page the launch touched. `COLD_RATIO` is 0.5, the same constant as `coldPageInRatio`. Complemented, the trace's measure is the fraction of touched pages that were **not** already cached, which is what the library's ratio also tries to express.
+
+![Two strips on one axis compare the library's page-in ratio with the ratio derived from the Instruments trace. The library reads 0.721 on cold launches and 0.005 on warm ones. The trace measure saturates, reading exactly 1.000 on every cold launch and 0.000 on five of six warm ones. Both leave a wide empty interval around the 0.5 threshold.](../img/accuracy-classification.svg)
+
+| Set | Library `page_in_ratio` | Trace 1 − `pre_cached` / `touched` |
+| --- | -: | -: |
+| Cold | 0.721 ± 0.031 | 1.000 ± 0.000 |
+| Warm | 0.005 ± 0.012 | 0.017 ± 0.041 |
+
+The two agree on all ten launches and correlate at r = 0.998, but neither figure means what it appears to mean.
+
+They do not measure the same fraction. The library divides by `resident_at_end`, which counts pages resident when the app became active whether or not the launch touched them; the trace divides by `touched`, which counts only the pages the launch reached. On a cold launch the trace saw 146 touched pages and the library 174 to 220 resident, so the library's ratio is held below 1 by pages the launch never touched. That is why cold reads 0.721 against the trace's 1.000, and the gap is structural, not error.
+
+The trace's measure is also close to binary. It read exactly 1.000 on all four cold launches and exactly 0.000 on five of the six warm ones, with a single intermediate value of 0.101. A measure that saturates cannot locate a threshold, and the correlation of 0.998 reflects only that both measures put the same launches at opposite ends. Ten launches agreeing therefore tests the direction of the classification, not the value of `coldPageInRatio`.
 
 ### Reproducing this
 
@@ -152,10 +205,10 @@ The analysis above reads those files, so re-running it on a new device needs no 
 ### Conclusions
 
 1. The library's launch duration equals the Instruments duration plus an offset, with no detectable proportional error: slope 1.039 ± 0.024, R² = 0.9957, n = 10.
-2. That offset is +79 ms, 95% CI +64 to +94, and is larger cold (+96 ms) than warm (+68 ms). Two thirds of it is the start-point definition and one third the display-quantised end.
+2. That offset is +79 ms, 95% CI +64 to +94, and decomposes exactly into two boundary gaps: +54 ms between the kernel's process start and the trace's clock, and +25 ms between Instruments' frame period and the display link. A third gap, the constructor against the end of static initialization, cancels.
 3. Durations compare between launches on one device to about ±21 ms, 1 SD. They do not compare with Instruments in absolute terms unless the offset is subtracted.
-4. `app.start.app_init` agrees to +1.9 ± 0.4 ms and is the phase to trust.
-5. Cold and warm separate by 23 binomial standard errors, so the classification is not marginal. Where the threshold sits inside the empty interval is unconstrained.
+4. `app.start.app_init` differs by +1.9 ± 0.4 ms, which measures where this library's constructor sits inside static runtime initialization rather than any disagreement between the instruments.
+5. Cold and warm separate by 23 binomial standard errors, so the classification is not marginal. The trace-derived comparator agrees on all ten launches, but it saturates at 0 and 1 and applies the same 0.5 constant, so that agreement tests the direction of the classification rather than the threshold. Where the threshold sits inside the empty interval is unconstrained.
 6. Every figure above rests on 10 launches, one app, one device, one OS version, and no partly cached launch. They characterise this configuration, not the method.
 
 ## What has been verified
@@ -164,7 +217,7 @@ A platform marked `Untested` in the [platform support table](../README.md#platfo
 
 Only iOS has run end to end.
 
-- On the device, `Scripts/compare-app-launch-accuracy.py` recorded 4 cold and 6 warm launches against Instruments. See [Accuracy compared with Instruments](#accuracy-compared-with-instruments).
+- On the device, `Scripts/compare-app-launch-accuracy.py` recorded 4 cold and 6 warm launches against a launch type the script derives from the Instruments trace, Instruments reporting none itself. See [Accuracy compared with Instruments](#accuracy-compared-with-instruments).
 - On an iPhone simulator, the [integration tests](../../../../Tests/IntegrationTests/README.md) record a launch, a resume, a background launch and a late install. They cover neither `prewarmed`, which the simulator cannot produce, nor the [launch history fallback](classification.md#launch-history-fallback), which has unit tests only: every launch they record reports `app.start.determined_by` as `page_sampling`.
 - The simulator reads the Mac's page cache, so the launch types it reports say nothing about a device. Only the device run above supports the `cold` and `warm` thresholds.
 
