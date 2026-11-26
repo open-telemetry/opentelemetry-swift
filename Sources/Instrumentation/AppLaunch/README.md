@@ -34,7 +34,7 @@ If the app became active and then left before its first frame, the span ends at 
 
 `app.resume.type` is `hot`, `scene_reconnect` or `background_launched`. `background_launched` is only for a process the system started in the background, which the process's role says before `main()`. A launch the user left before its first frame also resumes before the app was ever active, but it entered the background with its UI built, so it's `hot`, or `scene_reconnect` if its scene was discarded. A resume starts when its scene connected, if one did, because UIKit connects it first, and otherwise at `willEnterForeground`. `app.resume.page_ins` is the process's page-ins across the resume, read at `willEnterForeground` and differenced at the end of the span, which is `opt_in` and carries [the same caveats](#measuring-cold-and-warm) as the launch page-in counts.
 
-A resume also re-samples the pages the launch sampled, so it reports how much of the app's own code the system reclaimed while the app was away: `app.resume.pages.text.sampled`, `app.resume.pages.text.resident_at_end`, `app.resume.pages.text.paged_in` and `app.resume.pages.text.page_in_ratio`. The baseline is taken when the app enters the background, because reading it is one `mincore` call per sampled page and taking it on the way back would land inside the window being measured. A resume the app didn't enter the background before has no baseline, so a [`background_launched`](#resume) resume reports none of these. Unlike `app.resume.page_ins` these count only the app's code, which is the same measurement the launch's [`cold` and `warm`](#measuring-cold-and-warm) are decided from.
+A resume also re-samples the pages the launch sampled, so it reports how much of the app's own code came back into memory while the app was away: `app.resume.pages.text.sampled`, `app.resume.pages.text.resident_at_end`, `app.resume.pages.text.paged_in` and `app.resume.pages.text.page_in_ratio`. The baseline is taken when the app enters the background, because reading it is one `mincore` call per sampled page and taking it on the way back would land inside the window being measured. So `paged_in` is the difference between two snapshots rather than everything the system reclaimed: a page resident when the app left, reclaimed while it was suspended and read back during the resume is resident in both and counts for nothing. A resume the app didn't enter the background before has no baseline, so a [`background_launched`](#resume) resume reports none of these. Unlike `app.resume.page_ins` these count only the app's code, which is the same measurement the launch's [`cold` and `warm`](#measuring-cold-and-warm) are decided from.
 
 ### Measuring `cold` and `warm`
 
@@ -162,7 +162,7 @@ Only errors are logged by default. To see why a start was or wasn't recorded, tu
 OpenTelemetry.setDebugEnabled(true)
 ```
 
-Messages go to `OpenTelemetry.instance.feedbackHandler` if one is registered. Without a handler they go to the unified log on Apple platforms, under the `io.opentelemetry.swift` subsystem with the module that logged them as the category, so a device build can be read with:
+Messages go to a handler registered with `OpenTelemetry.registerFeedbackHandler`. Without a handler they go to the unified log on Apple platforms, under the `io.opentelemetry.swift` subsystem with the module that logged them as the category, so a device build can be read with:
 
 ```sh
 log stream --predicate 'subsystem == "io.opentelemetry.swift"' --level debug

@@ -43,9 +43,9 @@ extension FederatedSemanticConventions {
     case resumePagesTextPageInRatio = "app.resume.pages.text.page_in_ratio"
 
     /**
-     How many sampled pages of the app's code came back into memory between the app entering the background and the end of the resume, so how much of its own code the system had reclaimed while it was away.
+     How many sampled pages of the app's code were in memory at the end of the resume but not when the app entered the background.
 
-     - Note: Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds the app's executable code together with its constant data, and residency can only be measured per page, which belongs to the segment because sections aren't page-aligned. Unlike `app.resume.page_ins`, this counts only the app's code, so it isn't affected by the rest of what the process read. It's recorded only for a resume the app entered the background before, because that's when the baseline is taken.
+     - Note: Named for the `__TEXT` segment, in capitals, not the `__text` section inside it: `__TEXT` holds the app's executable code together with its constant data, and residency can only be measured per page, which belongs to the segment because sections aren't page-aligned. Unlike `app.resume.page_ins`, this counts only the app's code, so it isn't affected by the rest of what the process read. It's recorded only for a resume the app entered the background before, because that's when the baseline is taken. It's the difference between two residency snapshots, not everything the system reclaimed while the app was away: a page resident when the app left, reclaimed while it was suspended and read back during the resume is resident in both snapshots, so it counts for nothing. The baseline is taken when the app enters the background rather than when it returns because reading it costs one `mincore` call per sampled page, which would land inside the window the resume is measured over.
 
      - Requires: Value type should be `Int`
     */
