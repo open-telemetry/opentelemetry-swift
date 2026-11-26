@@ -271,6 +271,9 @@ else
   run_launch_into symbolicated/crash crash --sessionTimeout 3600 --restorePersistedSession false
   run_launch_into symbolicated/crash-report crash-report --sessionTimeout 3600 --restorePersistedSession false --reportStyle symbolicated
   run_launch log-limits --sessionTimeout 3600 --restorePersistedSession false
+  # Same 200/404/500 requests as `main`, with stable HTTP semantic conventions.
+  # Last so the persisted-session and crash launches keep their order.
+  run_launch main-stable --sessionTimeout 2 --restorePersistedSession false --httpSemanticConvention stable
 fi
 
 log "Collected files"

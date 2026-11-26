@@ -10,6 +10,7 @@ import OpenTelemetryApi
 import OpenTelemetryProtocolExporterHttp
 import OpenTelemetrySdk
 import Sessions
+import URLSessionInstrumentation
 
 // Driven by Scripts/run-integration-tests.sh. When the app is launched with
 // `--integrationTestMode` it produces a fixed set of telemetry against the local
@@ -25,6 +26,9 @@ enum IntegrationTestScenario {
   static let sessionTimeoutArgument = "--sessionTimeout"
   static let maxLifetimeArgument = "--maxLifetime"
   static let restorePersistedSessionArgument = "--restorePersistedSession"
+  // Optional: which HTTP semantic conventions URLSession instrumentation emits.
+  // One of `old` (the instrumentation default), `stable` or `httpDup`.
+  static let httpSemanticConventionArgument = "--httpSemanticConvention"
   // Optional for the crash launch: one of `CrashType`'s raw values. Without it the launch calls
   // fatalError with a fixed message.
   static let crashTypeArgument = "--crashType"
@@ -58,6 +62,9 @@ enum IntegrationTestScenario {
   enum Launch: String {
     // Fresh install. Exercises spans, logs, network and session expiry.
     case main
+    // Same scenario as `main`, but with stable HTTP semantic conventions so the
+    // 200/404/500 requests can be asserted with stable keys and error.type.
+    case mainStable = "main-stable"
     // Continuous activity with a short max lifetime: the session must roll
     // over even though it never goes idle.
     case maxLifetime = "max-lifetime"
@@ -102,6 +109,14 @@ enum IntegrationTestScenario {
     value(after: launchTagArgument).flatMap(Launch.init(rawValue:)) ?? .main
   }
 
+  static var httpSemanticConvention: HTTPSemanticConvention {
+    switch value(after: httpSemanticConventionArgument) {
+    case "stable": return .stable
+    case "httpDup", "http-dup": return .httpDup
+    default: return .old
+    }
+  }
+
   static var sessionConfig: SessionConfig {
     let builder = SessionConfig.builder()
       .with(sessionTimeout: value(after: sessionTimeoutArgument).flatMap(TimeInterval.init) ?? sessionTimeout)
@@ -134,7 +149,7 @@ enum IntegrationTestScenario {
   static func run() {
     let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: scope)
     switch launch {
-    case .main:
+    case .main, .mainStable:
       runMain(tracer: tracer)
     case .maxLifetime:
       DispatchQueue.global().async {
