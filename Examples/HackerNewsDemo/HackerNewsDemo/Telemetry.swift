@@ -54,6 +54,12 @@ enum TelemetryConfig {
   static var crashConfig: KSCrashInstrumentationConfig {
     IntegrationTestScenario.isEnabled ? IntegrationTestScenario.crashConfig : .default
   }
+
+  // The demo itself keeps the instrumentation default; integration launches
+  // choose it with `--httpSemanticConvention`.
+  static var httpSemanticConvention: HTTPSemanticConvention {
+    IntegrationTestScenario.isEnabled ? IntegrationTestScenario.httpSemanticConvention : .old
+  }
 }
 
 enum Telemetry {
@@ -105,7 +111,8 @@ enum Telemetry {
       shouldInstrument: { request in
         guard let url = request.url else { return true }
         return url != tracesEndpoint && url != logsEndpoint
-      }
+      },
+      semanticConvention: TelemetryConfig.httpSemanticConvention
     ))
 
     // TODO: no app startup instrumentation

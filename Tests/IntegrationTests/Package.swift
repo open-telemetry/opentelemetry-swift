@@ -14,7 +14,7 @@ let package = Package(
   ],
   dependencies: [
     .package(name: "opentelemetry-swift", path: "../.."),
-    .package(url: "https://github.com/apple/swift-nio.git", from: "2.105.1")
+    .package(url: "https://github.com/apple/swift-nio.git", from: "2.105.2")
   ],
   targets: [
     .executableTarget(

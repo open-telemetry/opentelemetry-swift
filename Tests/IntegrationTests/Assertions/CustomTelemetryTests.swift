@@ -24,6 +24,7 @@ enum Scenario {
   // One entry per app launch made by Scripts/run-integration-tests.sh.
   enum Launch: String {
     case main
+    case mainStable = "main-stable"
     case maxLifetime = "max-lifetime"
     case restoreFirst = "restore-first"
     case restoreSecond = "restore-second"

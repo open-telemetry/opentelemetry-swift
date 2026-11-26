@@ -237,8 +237,12 @@ class URLSessionLogger {
     if useStable {
       span.setAttribute(key: SemanticConventions.Http.responseStatusCode.rawValue,
                         value: AttributeValue.int(statusCode))
+      if statusCode >= 400 {
+        span.setAttribute(key: SemanticConventions.Error.type.rawValue,
+                          value: AttributeValue.string(String(statusCode)))
+      }
     }
-    span.status = statusForStatusCode(code: statusCode)
+    span.status = statusForStatusCode(code: statusCode, omitDescription: useStable)
 
     if let contentLengthHeader = httpResponse.allHeaderFields["Content-Length"] as? String,
        let contentLength = Int(contentLengthHeader) {
@@ -294,12 +298,12 @@ class URLSessionLogger {
   }
   #endif
 
-  private static func statusForStatusCode(code: Int) -> Status {
+  private static func statusForStatusCode(code: Int, omitDescription: Bool = false) -> Status {
     switch code {
     case 100 ... 399:
       return .unset
     default:
-      return .error(description: String(code))
+      return .error(description: omitDescription ? "" : String(code))
     }
   }
 
