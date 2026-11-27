@@ -105,16 +105,20 @@ class SpanBuilderSdk: SpanBuilder {
   }
 
   func prepareSpan() -> Span {
+    let idGenerator = tracerSharedState.idGenerator
     var parentContext = getParentContext(parentType: parentType, explicitParent: parent, remoteParent: remoteParent)
     let traceId: TraceId
-    let spanId = tracerSharedState.idGenerator.generateSpanId()
+    let spanId = idGenerator.generateSpanId()
     var traceState = TraceState()
+    let isRandom: Bool
 
     if parentContext?.isValid ?? false {
       traceId = parentContext!.traceId
       traceState = parentContext!.traceState
+      isRandom = parentContext!.traceFlags.random
     } else {
-      traceId = tracerSharedState.idGenerator.generateTraceId()
+      traceId = idGenerator.generateTraceId()
+      isRandom = idGenerator.generatesRandomTraceIds
       parentContext = nil
     }
 
@@ -127,7 +131,8 @@ class SpanBuilderSdk: SpanBuilder {
 
     let spanContext = SpanContext.create(traceId: traceId,
                                          spanId: spanId,
-                                         traceFlags: TraceFlags().settingIsSampled(samplingDecision.isSampled),
+                                         traceFlags: TraceFlags().settingIsSampled(samplingDecision.isSampled)
+                                           .settingIsRandom(isRandom),
                                          traceState: traceState)
 
     if !samplingDecision.isSampled {

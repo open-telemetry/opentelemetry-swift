@@ -9,6 +9,10 @@ import OpenTelemetryApi
 public struct RandomIdGenerator: IdGenerator {
   public init() {}
 
+  public var generatesRandomTraceIds: Bool {
+    true
+  }
+
   public func generateSpanId() -> SpanId {
     var id: UInt64
     repeat {
