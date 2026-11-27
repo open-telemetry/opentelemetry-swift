@@ -6,65 +6,99 @@
 #if OTLPGRPC
 
 import Foundation
-import GRPC
-import Logging
-import NIO
-import NIOHPACK
+import GRPCCore
 import OpenTelemetryApi
 import OpenTelemetryProtocolExporterCommon
 import OpenTelemetrySdk
 
-public final class OtlpTraceExporter: SpanExporter, @unchecked Sendable {
-  let channel: GRPCChannel
-  let traceClient: Opentelemetry_Proto_Collector_Trace_V1_TraceServiceNIOClient
+@available(macOS 15, iOS 18, tvOS 18, watchOS 11, visionOS 2, *)
+public final class OtlpTraceExporter: SpanExporter, Sendable {
   let config: OtlpConfiguration
-  // Immutable base options captured at init. `export` derives a per-call copy
-  // with the desired timeLimit rather than mutating a shared instance field,
-  // so concurrent calls cannot race on `callOptions`.
-  let callOptions: CallOptions
   let envVarHeaders: [(String, String)]?
+  let connection: OtlpGrpcConnection
+  private let traceClient: any OtlpGrpcServiceClient<
+    Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest,
+    Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceResponse
+  >
 
-  public init(channel: GRPCChannel, config: OtlpConfiguration = OtlpConfiguration(), logger: Logging.Logger = Logging.Logger(label: "io.grpc", factory: { _ in SwiftLogNoOpLogHandler() }), envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
-    self.channel = channel
-    traceClient = Opentelemetry_Proto_Collector_Trace_V1_TraceServiceNIOClient(channel: channel)
+  init(client: GRPCClient<some ClientTransport>,
+       ownsClient: Bool,
+       config: OtlpConfiguration,
+       envVarHeaders: [(String, String)]?) {
     self.config = config
     self.envVarHeaders = envVarHeaders
-    let userAgentHeader = (Constants.HTTP.userAgent, Headers.getUserAgentHeader())
-    if let headers = envVarHeaders {
-      var updatedHeaders = headers
-      updatedHeaders.append(userAgentHeader)
-      callOptions = CallOptions(customMetadata: HPACKHeaders(updatedHeaders), logger: logger)
-    } else if config.headersProvider == nil, let headers = config.headers {
-      var updatedHeaders = headers
-      updatedHeaders.append(userAgentHeader)
-      callOptions = CallOptions(customMetadata: HPACKHeaders(updatedHeaders), logger: logger)
-    } else {
-      var headers = [(String, String)]()
-      headers.append(userAgentHeader)
-      callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
+    connection = OtlpGrpcConnection(client: client, ownsClient: ownsClient)
+    traceClient = Opentelemetry_Proto_Collector_Trace_V1_TraceService.Client(wrapping: client)
+  }
+
+  /// Creates an exporter that sends spans through a client you manage.
+  ///
+  /// You run the client, so shutting down the exporter doesn't stop it: the exporter only
+  /// stops sending. Call `runConnections()` on the client before exporting, and stop it
+  /// yourself once you no longer need it.
+  ///
+  /// Compression only applies if the client's transport enables the algorithm.
+  /// - Parameters:
+  ///   - client: The gRPC client to send spans through.
+  ///   - config: Exporter configuration.
+  ///   - envVarHeaders: Extra header key-values. They replace the configuration's headers.
+  public convenience init(client: GRPCClient<some ClientTransport>,
+                          config: OtlpConfiguration = OtlpConfiguration(),
+                          envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+    self.init(client: client, ownsClient: false, config: config, envVarHeaders: envVarHeaders)
+  }
+
+  /// Creates an exporter that owns its gRPC client.
+  ///
+  /// The exporter runs the client's connections and stops them when it shuts down.
+  ///
+  /// Compression only applies if the transport enables the algorithm.
+  /// - Parameters:
+  ///   - transport: The transport to send spans over.
+  ///   - config: Exporter configuration.
+  ///   - envVarHeaders: Extra header key-values. They replace the configuration's headers.
+  public convenience init(transport: some ClientTransport,
+                          config: OtlpConfiguration = OtlpConfiguration(),
+                          envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+    self.init(client: GRPCClient(transport: transport),
+              ownsClient: true,
+              config: config,
+              envVarHeaders: envVarHeaders)
+  }
+
+  /// Blocks the calling thread until the export finishes.
+  ///
+  /// When the exporter owns its client, calling this from Swift concurrency doesn't deadlock the
+  /// cooperative thread pool, but it still blocks a cooperative thread for the whole export, so
+  /// prefer the async overload there. A client you run yourself only connects where you run
+  /// `runConnections()`. If that's the cooperative pool and blocked callers saturate it, exports
+  /// fail at their timeout, or hang without one.
+  public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
+    let metadata = makeOtlpGrpcMetadata(config: config, envVarHeaders: envVarHeaders)
+    return otlpGrpcBlocking(timeout: otlpGrpcExportTimeout(config: config, explicitTimeout: explicitTimeout),
+                            whenCalledFromExecutor: .failure) {
+      await self.export(spans: spans, explicitTimeout: explicitTimeout, metadata: metadata)
     }
   }
 
-  public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) -> SpanExporterResultCode {
+  public func export(spans: [SpanData], explicitTimeout: TimeInterval? = nil) async -> SpanExporterResultCode {
+    await export(spans: spans,
+                 explicitTimeout: explicitTimeout,
+                 metadata: makeOtlpGrpcMetadata(config: config, envVarHeaders: envVarHeaders))
+  }
+
+  private func export(spans: [SpanData],
+                      explicitTimeout: TimeInterval?,
+                      metadata: Metadata) async -> SpanExporterResultCode {
+    guard !connection.isShutdown else {
+      return .failure
+    }
     let exportRequest = Opentelemetry_Proto_Collector_Trace_V1_ExportTraceServiceRequest.with {
       $0.resourceSpans = SpanAdapter.toProtoResourceSpans(spanDataList: spans)
     }
-    let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
-    var perCallOptions = makeOtlpGrpcCallOptions(
-      from: callOptions,
-      config: config,
-      envVarHeaders: envVarHeaders,
-      additionalHeaders: [(Constants.HTTP.userAgent, Headers.getUserAgentHeader())]
-    )
-    if timeout > 0 {
-      perCallOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(timeout.toNanoseconds)))
-    }
-
-    let export = traceClient.export(exportRequest, callOptions: perCallOptions)
-
+    let options = makeOtlpGrpcCallOptions(config: config, explicitTimeout: explicitTimeout)
     do {
-      // wait() on the response to stop the program from exiting before the response is received.
-      let response = try export.response.wait()
+      let response = try await traceClient.export(exportRequest, metadata: metadata, options: options)
       if response.hasPartialSuccess {
         reportPartialSuccess(response.partialSuccess)
       }
@@ -80,8 +114,16 @@ public final class OtlpTraceExporter: SpanExporter, @unchecked Sendable {
     return .success
   }
 
+  public func flush(explicitTimeout: TimeInterval? = nil) async -> SpanExporterResultCode {
+    return .success
+  }
+
   public func shutdown(explicitTimeout: TimeInterval? = nil) {
-    _ = channel.close()
+    connection.shutdown()
+  }
+
+  public func shutdown(explicitTimeout: TimeInterval? = nil) async {
+    await connection.shutdown(timeout: explicitTimeout)
   }
 
   private func reportPartialSuccess(

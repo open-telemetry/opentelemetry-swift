@@ -8,7 +8,9 @@ set -euo pipefail
 # it and reads the resolved package identities from `swift package show-dependencies`:
 #
 # - default traits: none of the optional integrations' packages may appear;
-# - only the Prometheus trait: swift-nio appears, the other traits' packages don't.
+# - only the Prometheus trait: swift-nio appears, the other traits' packages don't;
+# - only the OTLPGRPC trait: the grpc-swift-2 packages appear, grpc-swift 1 doesn't;
+# - only the OTLPGRPCSwift1 trait: grpc-swift 1 appears, the grpc-swift-2 packages don't.
 #
 # Usage: Scripts/check-trait-pruning.sh
 
@@ -56,10 +58,20 @@ check_mode() {
 unset OTEL_SWIFT_ENABLE_ALL_TRAITS
 unset TRAIT_PRUNING_TRAITS
 check_mode "default traits" \
-  "grpc-swift swift-nio swift-nio-http2 swift-nio-ssl swift-nio-transport-services swift-nio-extras thrift-swift opentracing-objc kscrash swift-log swift-metrics swift-distributed-tracing" \
+  "grpc-swift grpc-swift-2 grpc-swift-nio-transport grpc-swift-protobuf swift-nio swift-nio-http2 swift-nio-ssl swift-nio-transport-services swift-nio-extras thrift-swift opentracing-objc kscrash swift-log swift-metrics swift-distributed-tracing" \
   "swift-protobuf"
 
 export TRAIT_PRUNING_TRAITS=Prometheus
 check_mode "Prometheus trait" \
-  "grpc-swift thrift-swift kscrash" \
+  "grpc-swift grpc-swift-2 grpc-swift-nio-transport grpc-swift-protobuf thrift-swift kscrash" \
   "swift-nio"
+
+export TRAIT_PRUNING_TRAITS=OTLPGRPC
+check_mode "OTLPGRPC trait" \
+  "grpc-swift thrift-swift kscrash" \
+  "grpc-swift-2 grpc-swift-nio-transport grpc-swift-protobuf"
+
+export TRAIT_PRUNING_TRAITS=OTLPGRPCSwift1
+check_mode "OTLPGRPCSwift1 trait" \
+  "grpc-swift-2 grpc-swift-nio-transport grpc-swift-protobuf" \
+  "grpc-swift"

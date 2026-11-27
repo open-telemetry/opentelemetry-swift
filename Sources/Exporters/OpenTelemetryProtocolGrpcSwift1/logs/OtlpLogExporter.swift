@@ -1,0 +1,82 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#if OTLPGRPCSwift1
+
+import Foundation
+import GRPC
+import Logging
+import NIO
+import NIOHPACK
+import OpenTelemetryApi
+import OpenTelemetryProtocolExporterCommon
+import OpenTelemetrySdk
+
+@available(*, deprecated, message: "Built on grpc-swift 1, which is in maintenance mode. Use OpenTelemetryProtocolExporter with the `OTLPGRPC` trait (iOS 18, macOS 15, tvOS 18, watchOS 11, visionOS 2 and later). This exporter will be removed in 4.0.")
+public final class OtlpLogExporter: LogRecordExporter {
+  let channel: GRPCChannel
+  let logClient: Opentelemetry_Proto_Collector_Logs_V1_LogsServiceNIOClient
+  let config: OtlpConfiguration
+  let callOptions: CallOptions
+  let envVarHeaders: [(String, String)]?
+
+  public init(channel: GRPCChannel,
+              config: OtlpConfiguration = OtlpConfiguration(),
+              logger: Logging.Logger = Logging.Logger(label: "io.grpc", factory: { _ in SwiftLogNoOpLogHandler() }),
+              envVarHeaders: [(String, String)]? = EnvVarHeaders.attributes) {
+    self.channel = channel
+    logClient = Opentelemetry_Proto_Collector_Logs_V1_LogsServiceNIOClient(channel: channel)
+    self.config = config
+    self.envVarHeaders = envVarHeaders
+    let userAgentHeader = (Constants.HTTP.userAgent, Headers.getUserAgentHeader())
+    if let headers = envVarHeaders {
+      var updatedHeaders = headers
+      updatedHeaders.append(userAgentHeader)
+      callOptions = CallOptions(customMetadata: HPACKHeaders(updatedHeaders), logger: logger)
+    } else if config.headersProvider == nil, let headers = config.headers {
+      var updatedHeaders = headers
+      updatedHeaders.append(userAgentHeader)
+      callOptions = CallOptions(customMetadata: HPACKHeaders(updatedHeaders), logger: logger)
+    } else {
+      var headers = [(String, String)]()
+      headers.append(userAgentHeader)
+      callOptions = CallOptions(customMetadata: HPACKHeaders(headers), logger: logger)
+    }
+  }
+
+  public func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval? = nil) -> ExportResult {
+    let logRequest = Opentelemetry_Proto_Collector_Logs_V1_ExportLogsServiceRequest.with { request in
+      request.resourceLogs = LogRecordAdapter.toProtoResourceRecordLog(logRecordList: logRecords)
+    }
+    let timeout = min(explicitTimeout ?? TimeInterval.greatestFiniteMagnitude, config.timeout)
+    var callOptions = makeOtlpGrpcCallOptions(
+      from: callOptions,
+      config: config,
+      envVarHeaders: envVarHeaders,
+      additionalHeaders: [(Constants.HTTP.userAgent, Headers.getUserAgentHeader())]
+    )
+    if timeout > 0 {
+      callOptions.timeLimit = TimeLimit.timeout(TimeAmount.nanoseconds(Int64(timeout.toNanoseconds)))
+    }
+
+    let export = logClient.export(logRequest, callOptions: callOptions)
+    do {
+      _ = try export.response.wait()
+      return .success
+    } catch {
+      return .failure
+    }
+  }
+
+  public func shutdown(explicitTimeout: TimeInterval? = nil) {
+    _ = channel.close()
+  }
+
+  public func forceFlush(explicitTimeout: TimeInterval? = nil) -> ExportResult {
+    .success
+  }
+}
+
+#endif

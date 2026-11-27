@@ -85,7 +85,8 @@ Integrations that need a third-party package are behind [package traits](https:/
 
 | Trait | Adds | Products |
 | --- | --- | --- |
-| `OTLPGRPC` | The OTLP exporter over gRPC | `OpenTelemetryProtocolExporter` |
+| `OTLPGRPC` (iOS 18, macOS 15, tvOS 18, watchOS 11, visionOS 2) | The OTLP exporter over gRPC, built on grpc-swift-2 | `OpenTelemetryProtocolExporter` |
+| `OTLPGRPCSwift1` | The deprecated OTLP exporter over gRPC, built on grpc-swift 1, for iOS 15–17 / macOS 12–14. Removed in 4.0. | `OpenTelemetryProtocolExporterGrpcSwift1` |
 | `Prometheus` | The Prometheus exporter | `PrometheusExporter` |
 | `SwiftObservabilityAPIBridges` | Bridges for the Swift Log, Swift Metrics, and Swift Distributed Tracing APIs | `OTelSwiftLog`, `OTelSwiftTracing`, `SwiftMetricsShim` |
 | `Jaeger` | The Jaeger exporter | `JaegerExporter` |
@@ -110,11 +111,12 @@ Before 3.0.0 every integration was always available. If your build now fails, en
 
 | Error | Trait |
 | --- | --- |
-| no such module `GRPC` | `OTLPGRPC` |
-| no such module `NIO`, `NIOCore` or `NIOPosix` | `OTLPGRPC` if you use `OpenTelemetryProtocolExporter`, `Prometheus` if you use `PrometheusExporter` |
-| no such module `NIOHPACK` | `OTLPGRPC` |
+| no such module `GRPCCore`, `GRPCNIOTransportHTTP2` or `GRPCProtobuf` | `OTLPGRPC` |
+| no such module `GRPC` | `OTLPGRPCSwift1` |
+| no such module `NIO`, `NIOCore` or `NIOPosix` | `OTLPGRPCSwift1` if you use the grpc-swift 1 exporter, `Prometheus` if you use `PrometheusExporter` |
+| no such module `NIOHPACK` | `OTLPGRPCSwift1` |
 | no such module `NIOHTTP1` | `Prometheus` |
-| no such module `Logging` | `SwiftObservabilityAPIBridges` for `OTelSwiftLog`, `OTLPGRPC` for `OpenTelemetryProtocolExporter` |
+| no such module `Logging` | `SwiftObservabilityAPIBridges` for `OTelSwiftLog`, `OTLPGRPCSwift1` for the grpc-swift 1 exporter |
 | no such module `Tracing` or `CoreMetrics` | `SwiftObservabilityAPIBridges` |
 | no such module `Thrift` | `Jaeger` |
 | no such module `Opentracing` | `OpenTracing` |
@@ -123,6 +125,31 @@ Before 3.0.0 every integration was always available. If your build now fails, en
 `OpenTelemetryProtocolExporterHTTP` no longer depends on `swift-log`. If you use it and import `Logging` yourself, add `swift-log` to your own dependencies instead of enabling a trait.
 
 If you only import this package's modules, the compiler names the missing trait instead, for example "'JaegerSpanExporter' is unavailable: JaegerExporter requires the `Jaeger` package trait."
+
+#### Migrating the OTLP gRPC exporter to 3.0
+
+With `OTLPGRPC`, `OpenTelemetryProtocolExporter` is built on grpc-swift-2 and needs at least iOS 18, macOS 15, tvOS 18, watchOS 11 or visionOS 2. `OtlpTraceExporter`, `OtlpMetricExporter` and `OtlpLogExporter` no longer take a grpc-swift 1 `channel:`:
+
+- Pass a `GRPCClient` you run yourself with `client:`, so several exporters can share it. Call `runConnections()` before exporting. Shutting down an exporter doesn't stop the client.
+- Or pass a `ClientTransport` with `transport:`. The exporter then owns the client, runs it and stops it on shutdown.
+- The `logger:` parameter is removed.
+- `OtlpConfiguration.compression` only takes effect when the transport enables the algorithm. Enable gzip in the transport's `compression.enabledAlgorithms`, as in the snippet below.
+
+```swift
+// 2.x
+let channel = ClientConnection.insecure(group: group).connect(host: "localhost", port: 4317)
+let exporter = OtlpTraceExporter(channel: channel)
+
+// 3.0
+let transport = try HTTP2ClientTransport.Posix(
+  target: .dns(host: "localhost", port: 4317),
+  transportSecurity: .plaintext,
+  config: .defaults { $0.compression = .init(algorithm: .none, enabledAlgorithms: .gzip) }
+)
+let exporter = OtlpTraceExporter(transport: transport)
+```
+
+To stay on grpc-swift 1, enable `OTLPGRPCSwift1` instead of `OTLPGRPC` and import `OpenTelemetryProtocolExporterGrpcSwift1`. It keeps the `channel:` initializers and is deprecated.
 
 ## Documentation
 

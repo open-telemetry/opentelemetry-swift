@@ -5,23 +5,42 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 unset OTEL_SWIFT_ENABLE_ALL_TRAITS
 
-swift build --disable-default-traits --target OpenTelemetryProtocolExporterGrpc
-BUILD_PATH="$(swift build --disable-default-traits --show-bin-path)"
 DIAGNOSTICS="$(mktemp)"
 trap 'rm -f "$DIAGNOSTICS"' EXIT
 
-if swiftc -typecheck -I "$BUILD_PATH/Modules" -I "$BUILD_PATH" \
-  Tests/TraitDiagnostics/GRPCConstructors.swift >"$DIAGNOSTICS" 2>&1; then
-  echo "error: gRPC exporters compiled without the OTLPGRPC trait" >&2
-  exit 1
-fi
+# check_diagnostics <module> <product> <trait> <source> <label>
+check_diagnostics() {
+  local module="$1" product="$2" trait="$3" source="$4" label="$5"
 
-for exporter in OtlpTraceExporter OtlpMetricExporter OtlpLogExporter; do
-  if ! grep -Fq "error: '$exporter' is unavailable: OpenTelemetryProtocolExporter requires the \`OTLPGRPC\` package trait." "$DIAGNOSTICS"; then
-    cat "$DIAGNOSTICS" >&2
-    echo "error: $exporter(channel:) did not explain the missing trait" >&2
+  swift build --disable-default-traits --target "$module"
+  local build_path
+  build_path="$(swift build --disable-default-traits --show-bin-path)"
+
+  # C modules of dependencies, such as Atomics' _AtomicsShims on Linux, are found only through their include directories.
+  local clang_includes=()
+  while IFS= read -r module_map; do
+    clang_includes+=(-Xcc "-I$(dirname "$module_map")")
+  done < <(find .build/checkouts -path '*/include/module.modulemap')
+
+  if swiftc -typecheck -I "$build_path/Modules" -I "$build_path" \
+    ${clang_includes[@]+"${clang_includes[@]}"} \
+    "$source" >"$DIAGNOSTICS" 2>&1; then
+    echo "error: gRPC exporters compiled without the $trait trait" >&2
     exit 1
   fi
-done
+
+  for exporter in OtlpTraceExporter OtlpMetricExporter OtlpLogExporter; do
+    if ! grep -Fq "error: '$exporter' is unavailable: $product requires the \`$trait\` package trait." "$DIAGNOSTICS"; then
+      cat "$DIAGNOSTICS" >&2
+      echo "error: $exporter($label) did not explain the missing trait" >&2
+      exit 1
+    fi
+  done
+}
+
+check_diagnostics OpenTelemetryProtocolExporterGrpc OpenTelemetryProtocolExporter OTLPGRPC \
+  Tests/TraitDiagnostics/GRPCConstructors.swift "client: or transport:"
+check_diagnostics OpenTelemetryProtocolExporterGrpcSwift1 OpenTelemetryProtocolExporterGrpcSwift1 OTLPGRPCSwift1 \
+  Tests/TraitDiagnostics/GRPCSwift1Constructors.swift "channel:"
 
 echo "gRPC constructor diagnostics passed"

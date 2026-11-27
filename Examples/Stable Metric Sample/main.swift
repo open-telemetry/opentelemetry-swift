@@ -11,9 +11,8 @@ import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterCommon
 import OpenTelemetryProtocolExporterGrpc
 import StdoutExporter
-import GRPC
-import NIO
-import NIOHPACK
+import GRPCCore
+import GRPCNIOTransportHTTP2
 
 /*
  Stable metrics is the working name for the otel-swift implementation of the current OpenTelemetry metrics specification.
@@ -34,10 +33,12 @@ import NIOHPACK
 /*
  Basic configuration for metrics
  */
-func basicConfiguration() {
-  let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-  let exporterChannel = ClientConnection.insecure(group: group)
-    .connect(host: "localhost", port: 8200)
+@available(macOS 15, iOS 18, tvOS 18, watchOS 11, visionOS 2, *)
+func basicConfiguration() throws {
+  let transport = try HTTP2ClientTransport.Posix(
+    target: .dns(host: "localhost", port: 8200),
+    transportSecurity: .plaintext
+  )
 
   // register view will process all instruments using `.*` regex
 
@@ -49,7 +50,7 @@ meterProvider: MeterProviderSdk.builder()
   )
   .registerMetricReader(
     reader: PeriodicMetricReaderBuilder(
-      exporter: OtlpMetricExporter(channel: exporterChannel)
+      exporter: OtlpMetricExporter(transport: transport)
     )
     .build()
   )
@@ -58,10 +59,6 @@ meterProvider: MeterProviderSdk.builder()
 }
 
 func complexViewConfiguration() {
-  let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-  _ = ClientConnection.insecure(group: group)
-    .connect(host: "localhost", port: 8200)
-
   // The example registers a View that re-configures the Gauge instrument into a sum instrument named "GaugeSum"
 
   OpenTelemetry.registerMeterProvider(
@@ -89,7 +86,11 @@ func complexViewConfiguration() {
   )
 }
 
-basicConfiguration()
+if #available(macOS 15, iOS 18, tvOS 18, watchOS 11, visionOS 2, *) {
+  try basicConfiguration()
+} else {
+  print("This example requires macOS 15, iOS 18, tvOS 18, watchOS 11 or visionOS 2.")
+}
 
 // creating a new meter & instrument
 let meter = OpenTelemetry.instance.meterProvider.meterBuilder(name: "MyMeter").build()

@@ -177,7 +177,7 @@ $ protoc --version  # Ensure compiler version is 3+
 
 ##### Generating otlp protobuf files
 
-Clone [opentelemetry-proto]
+Clone [opentelemetry-proto] at the tag the checked-in files were generated from (currently `v1.5.0`).
 
 From within opentelemetry-proto:
 
@@ -189,17 +189,69 @@ for file in "${PROTO_FILES[@]}"
 do
   protoc --swift_opt=Visibility=Public --swift_out=./out ${file}
 done
+```
 
+##### Generating the grpc-swift-2 stubs
+
+The stubs in `OpenTelemetryProtocolGrpc/proto` come from `protoc-gen-grpc-swift-2`, which is part of [grpc-swift-protobuf]. Build the plugin from a clone at the version in `Package.swift`:
+
+```shell
+git clone --depth 1 --branch 2.5.0 https://github.com/grpc/grpc-swift-protobuf.git
+cd grpc-swift-protobuf
+swift build -c release --product protoc-gen-grpc-swift-2
+```
+
+The stubs live in `OpenTelemetryProtocolGrpc`, while the messages live in `OpenTelemetryProtocolExporterCommon`. Map the message protos to that module so the generated code imports it. Don't map the `*_service.proto` files: the plugin skips the import for a file that maps to the module it generates into.
+
+```shell
+cat > module_mappings.asciipb <<'EOF'
+mapping {
+  module_name: "OpenTelemetryProtocolExporterCommon"
+  proto_file_path: [
+    "opentelemetry/proto/common/v1/common.proto",
+    "opentelemetry/proto/resource/v1/resource.proto",
+    "opentelemetry/proto/trace/v1/trace.proto",
+    "opentelemetry/proto/metrics/v1/metrics.proto",
+    "opentelemetry/proto/logs/v1/logs.proto"
+  ]
+}
+EOF
+```
+
+From within opentelemetry-proto:
+
+```shell
+PLUGIN=<path to grpc-swift-protobuf>/.build/release/protoc-gen-grpc-swift-2
+for service in trace metrics logs
+do
+  protoc --plugin=protoc-gen-grpc-swift-2=$PLUGIN --grpc-swift-2_out=./out \
+    --grpc-swift-2_opt=Visibility=Internal,Client=true,Server=true,FileNaming=DropPath,ProtoPathModuleMappings=<path to>/module_mappings.asciipb \
+    opentelemetry/proto/collector/${service}/v1/${service}_service.proto
+done
+```
+
+Wrap the contents of each generated file, after the header comment, in `#if OTLPGRPC` and `#endif`.
+
+Replace the generated files in `Sources/Exporters/OpenTelemetryProtocolCommon/proto` & `Sources/Exporters/OpenTelemetryProtocolGrpc/proto`:
+###### `OpenTelemetryProtocolGrpc/proto` file list
+`logs_service.grpc.swift`
+`metrics_service.grpc.swift`
+`trace_service.grpc.swift`
+
+##### grpc-swift 1 (deprecated, `OpenTelemetryProtocolGrpcSwift1/proto`)
+
+The `OTLPGRPCSwift1` trait still builds on grpc-swift 1, using the stubs in `Sources/Exporters/OpenTelemetryProtocolGrpcSwift1/proto`. Generate them from within opentelemetry-proto with the `protoc-gen-grpc-swift` plugin from [grpc-swift] (`brew install swift-protobuf grpc-swift`):
+
+```shell
 # genearate GRPC swift proto files
 protoc --swift_opt=Visibility=Public --grpc-swift_opt=Visibility=Public  --swift_out=./out --grpc-swift_out=./out opentelemetry/proto/collector/trace/v1/trace_service.proto
 protoc --swift_opt=Visibility=Public --grpc-swift_opt=Visibility=Public --swift_out=./out --grpc-swift_out=./out opentelemetry/proto/collector/metrics/v1/metrics_service.proto
 protoc --swift_opt=Visibility=Public --grpc-swift_opt=Visibility=Public --swift_out=./out --grpc-swift_out=./out opentelemetry/proto/collector/logs/v1/logs_service.proto
 ```
 
-Replace the generated files in `Sources/Exporters/OpenTelemetryProtocolCommon/proto` & `Sources/Exporters/OpenTelemetryGrpc/proto`:
-###### `OpenTelemetryProtocolGrpc/proto` file list
+###### `OpenTelemetryProtocolGrpcSwift1/proto` file list
 `logs_service.grpc.swift`
-`metrics_serivce.grpc.swift`
+`metrics_service.grpc.swift`
 `trace_service.grpc.swift`
 
 ###### `OpenTelemetryProtocolCommon/proto`
@@ -221,6 +273,7 @@ Replace the generated files in `Sources/Exporters/OpenTelemetryProtocolCommon/pr
 [otel-specification]: https://github.com/open-telemetry/opentelemetry-specification
 [otel-sigs]: https://github.com/open-telemetry/community#special-interest-groups
 [grpc-swift]: https://github.com/grpc/grpc-swift
+[grpc-swift-protobuf]: https://github.com/grpc/grpc-swift-protobuf
 [opentelemetry-proto]: https://github.com/open-telemetry/opentelemetry-proto
 [protoc]: https://grpc.io/docs/protoc-installation/
 [build-tools]: https://github.com/open-telemetry/build-tools

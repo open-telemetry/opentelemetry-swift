@@ -6,6 +6,7 @@ import PackageDescription
 
 enum PackageTraitName {
   static let otlpGRPC = "OTLPGRPC"
+  static let otlpGRPCSwift1 = "OTLPGRPCSwift1"
   static let prometheus = "Prometheus"
   static let swiftObservabilityAPIBridges = "SwiftObservabilityAPIBridges"
   static let jaeger = "Jaeger"
@@ -17,6 +18,10 @@ let packageTraits: [Trait] = [
   .trait(
     name: PackageTraitName.otlpGRPC,
     description: "Adds the OTLP exporter over gRPC."
+  ),
+  .trait(
+    name: PackageTraitName.otlpGRPCSwift1,
+    description: "Adds the deprecated OTLP exporter over gRPC built on grpc-swift 1, for iOS 15–17 / macOS 12–14. Removed in 4.0."
   ),
   .trait(
     name: PackageTraitName.prometheus,
@@ -80,6 +85,10 @@ let package = Package(
       targets: ["OpenTelemetryProtocolExporterGrpc"]
     ),
     .library(
+      name: "OpenTelemetryProtocolExporterGrpcSwift1",
+      targets: ["OpenTelemetryProtocolExporterGrpcSwift1"]
+    ),
+    .library(
       name: "OpenTelemetryProtocolExporterHTTP",
       targets: ["OpenTelemetryProtocolExporterHttp"]
     ),
@@ -101,6 +110,9 @@ let package = Package(
     .package(url: "https://github.com/apple/swift-atomics.git", from: "1.3.1"),
     .package(url: "https://github.com/apple/swift-nio.git", from: "2.105.2"),
     .package(url: "https://github.com/grpc/grpc-swift.git", exact: "1.27.6"),
+    .package(url: "https://github.com/grpc/grpc-swift-2.git", from: "2.4.4"),
+    .package(url: "https://github.com/grpc/grpc-swift-nio-transport.git", from: "2.13.1"),
+    .package(url: "https://github.com/grpc/grpc-swift-protobuf.git", from: "2.5.0"),
     .package(
       url: "https://github.com/apple/swift-protobuf.git",
       from: "1.41.0"
@@ -212,17 +224,40 @@ let package = Package(
         "OpenTelemetrySdk",
         "OpenTelemetryProtocolExporterCommon",
         .product(
-          name: "GRPC",
-          package: "grpc-swift",
+          name: "GRPCCore",
+          package: "grpc-swift-2",
           condition: .whenTrait(PackageTraitName.otlpGRPC)
         ),
         .product(
-          name: "Logging",
-          package: "swift-log",
+          name: "GRPCNIOTransportHTTP2",
+          package: "grpc-swift-nio-transport",
+          condition: .whenTrait(PackageTraitName.otlpGRPC)
+        ),
+        .product(
+          name: "GRPCProtobuf",
+          package: "grpc-swift-protobuf",
           condition: .whenTrait(PackageTraitName.otlpGRPC)
         ),
       ],
       path: "Sources/Exporters/OpenTelemetryProtocolGrpc"
+    ),
+    .target(
+      name: "OpenTelemetryProtocolExporterGrpcSwift1",
+      dependencies: [
+        "OpenTelemetrySdk",
+        "OpenTelemetryProtocolExporterCommon",
+        .product(
+          name: "GRPC",
+          package: "grpc-swift",
+          condition: .whenTrait(PackageTraitName.otlpGRPCSwift1)
+        ),
+        .product(
+          name: "Logging",
+          package: "swift-log",
+          condition: .whenTrait(PackageTraitName.otlpGRPCSwift1)
+        ),
+      ],
+      path: "Sources/Exporters/OpenTelemetryProtocolGrpcSwift1"
     ),
     .target(
       name: "InMemoryExporter",
@@ -345,8 +380,46 @@ let package = Package(
         "OpenTelemetryProtocolExporterGrpc",
         "OpenTelemetryProtocolExporterHttp",
         "SharedTestUtils",
+        .product(
+          name: "GRPCCore",
+          package: "grpc-swift-2",
+          condition: .whenTrait(PackageTraitName.otlpGRPC)
+        ),
+        .product(
+          name: "GRPCNIOTransportHTTP2",
+          package: "grpc-swift-nio-transport",
+          condition: .whenTrait(PackageTraitName.otlpGRPC)
+        ),
+        .product(
+          name: "GRPCProtobuf",
+          package: "grpc-swift-protobuf",
+          condition: .whenTrait(PackageTraitName.otlpGRPC)
+        ),
       ],
       path: "Tests/ExportersTests/OpenTelemetryProtocol"
+    ),
+    .testTarget(
+      name: "OpenTelemetryProtocolExporterGrpcSwift1Tests",
+      dependencies: [
+        "OpenTelemetryProtocolExporterGrpcSwift1",
+        "SharedTestUtils",
+        .product(
+          name: "GRPC",
+          package: "grpc-swift",
+          condition: .whenTrait(PackageTraitName.otlpGRPCSwift1)
+        ),
+        .product(
+          name: "NIO",
+          package: "swift-nio",
+          condition: .whenTrait(PackageTraitName.otlpGRPCSwift1)
+        ),
+        .product(
+          name: "Logging",
+          package: "swift-log",
+          condition: .whenTrait(PackageTraitName.otlpGRPCSwift1)
+        ),
+      ],
+      path: "Tests/ExportersTests/OpenTelemetryProtocolGrpcSwift1"
     ),
     .testTarget(
       name: "InMemoryExporterTests",
@@ -403,8 +476,13 @@ let package = Package(
         "OpenTelemetrySdk",
         "OpenTelemetryProtocolExporterGrpc",
         .product(
-          name: "GRPC",
-          package: "grpc-swift",
+          name: "GRPCCore",
+          package: "grpc-swift-2",
+          condition: .whenTrait(PackageTraitName.otlpGRPC)
+        ),
+        .product(
+          name: "GRPCNIOTransportHTTP2",
+          package: "grpc-swift-nio-transport",
           condition: .whenTrait(PackageTraitName.otlpGRPC)
         ),
       ],
@@ -416,6 +494,16 @@ let package = Package(
         "OpenTelemetrySdk",
         "OpenTelemetryProtocolExporterGrpc",
         "StdoutExporter",
+        .product(
+          name: "GRPCCore",
+          package: "grpc-swift-2",
+          condition: .whenTrait(PackageTraitName.otlpGRPC)
+        ),
+        .product(
+          name: "GRPCNIOTransportHTTP2",
+          package: "grpc-swift-nio-transport",
+          condition: .whenTrait(PackageTraitName.otlpGRPC)
+        ),
       ],
       path: "Examples/Stable Metric Sample",
       exclude: ["README.md"]
@@ -600,13 +688,13 @@ extension Package {
             "OpenTelemetryProtocolExporterGrpc",
             "StdoutExporter",
             .product(
-              name: "GRPC",
-              package: "grpc-swift",
+              name: "GRPCCore",
+              package: "grpc-swift-2",
               condition: .whenTrait(PackageTraitName.otlpGRPC)
             ),
             .product(
-              name: "NIO",
-              package: "swift-nio",
+              name: "GRPCNIOTransportHTTP2",
+              package: "grpc-swift-nio-transport",
               condition: .whenTrait(PackageTraitName.otlpGRPC)
             ),
             "ZipkinExporter",

@@ -4,6 +4,8 @@ This example shows how to use [OTLP Exporter](https://github.com/open-telemetry/
 
 This example will export spans data simultaneously using [OTLP Exporter ](https://github.com/open-telemetry/opentelemetry-swift/tree/main/Sources/Exporters/OpenTelemetryProtocol) and grpc. It will use [proto format](https://github.com/open-telemetry/opentelemetry-proto).
 
+The OTLP gRPC exporter is built on grpc-swift-2, so the example needs the `OTLPGRPC` package trait and macOS 15 or later. It creates one `GRPCClient`, runs it in a `Task`, and shares it between the trace and metric exporters with `init(client:)`. The example shuts the client down when it finishes.
+
 
 ## Run the Application
 
@@ -49,7 +51,8 @@ This will create a service and spans with the name `my-swift-app`
 ## Connect with TLS
 
 The checked-in example uses plaintext so it can connect to the local collector from the Docker
-setup above. To connect to a TLS-enabled collector, update the collector settings in `main.swift`:
+setup above. To connect to a TLS-enabled collector, update the collector settings in `main.swift`.
+The transport is then created with `transportSecurity: .tls`:
 
 ```swift
 let collectorHost = "collector.example.com"
