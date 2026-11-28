@@ -39,6 +39,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
   var window: UIWindow?
+  var screenStackBarWindow: UIWindow?
 
   func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
     guard let windowScene = scene as? UIWindowScene else { return }
@@ -65,6 +66,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     window?.rootViewController = tabBarController
     window?.makeKeyAndVisible()
+    screenStackBarWindow = ScreenStackBarWindow(windowScene: windowScene)
     print("SceneDelegate: Window setup complete")
   }
 }

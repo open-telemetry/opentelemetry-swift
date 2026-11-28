@@ -14,6 +14,7 @@ import ResourceExtension
 import ScreenInstrumentation
 import ScreenInstrumentationUIKit
 import Sessions
+import UIKit
 import URLSessionInstrumentation
 
 enum TelemetryConfig {
@@ -78,6 +79,24 @@ enum TelemetryConfig {
     IntegrationTestScenario.isEnabled ? IntegrationTestScenario.sessionConfig : SessionConfigStore.load()
   }
 
+  // The UIKit front end reads these at install, so edits made in Settings are persisted by
+  // ScreenConfigStore and applied on next launch.
+  static var screenConfig: ScreenConfigStore.Values {
+    IntegrationTestScenario.isEnabled ? ScreenConfigStore.Values() : ScreenConfigStore.load()
+  }
+
+  static var screenTracker: ScreenTracker {
+    ScreenTracker(recordsTimeToFirstDraw: screenConfig.recordsTimeToFirstDraw,
+                  tracksNavigation: screenConfig.tracksNavigation)
+  }
+
+  static var screenUIKitConfig: ScreenUIKitConfig {
+    let config = screenConfig
+    return ScreenUIKitConfig(bundle: config.uikitBundle.bundle,
+                             recordsTimeToFirstDraw: config.uikitRecordsTimeToFirstDraw.value,
+                             tracksHostingControllers: config.tracksHostingControllers)
+  }
+
   static var crashConfig: KSCrashInstrumentationConfig {
     IntegrationTestScenario.isEnabled ? IntegrationTestScenario.crashConfig : .default
   }
@@ -109,27 +128,32 @@ enum Telemetry {
     let tracesEndpoint = TelemetryConfig.tracesEndpoint
     let logsEndpoint = TelemetryConfig.logsEndpoint
 
+    let screenConfig = TelemetryConfig.screenConfig
     let spanExporter = OtlpHttpTraceExporter(endpoint: tracesEndpoint,
                                              envVarHeaders: TelemetryConfig.exporterHeaders)
+    var tracerProviderBuilder = TracerProviderBuilder()
+      .with(resource: resource)
+      .add(spanProcessor: SessionSpanProcessor())
+    if screenConfig.stampsSpans {
+      tracerProviderBuilder = tracerProviderBuilder.add(spanProcessor: ScreenSpanProcessor())
+    }
     OpenTelemetry.registerTracerProvider(tracerProvider:
-      TracerProviderBuilder()
-        .with(resource: resource)
-        .add(spanProcessor: SessionSpanProcessor())
-        .add(spanProcessor: ScreenSpanProcessor())
+      tracerProviderBuilder
         .add(spanProcessor: BatchSpanProcessor(spanExporter: spanExporter))
         .build()
     )
 
     let logExporter = OtlpHttpLogExporter(endpoint: logsEndpoint,
                                           envVarHeaders: TelemetryConfig.exporterHeaders)
+    let logBatchProcessor = BatchLogRecordProcessor(logRecordExporter: logExporter)
     OpenTelemetry.registerLoggerProvider(loggerProvider:
       LoggerProviderBuilder()
         .with(resource: resource)
         .with(processors: [
-          SessionLogRecordProcessor(nextProcessor:
-            ScreenLogRecordProcessor(
-              nextProcessor: BatchLogRecordProcessor(logRecordExporter: logExporter)
-            ))
+          SessionLogRecordProcessor(nextProcessor: screenConfig.stampsLogs
+            ? ScreenLogRecordProcessor(nextProcessor: logBatchProcessor)
+            : logBatchProcessor),
+          ScreenStackLogRecordProcessor()
         ])
         .build()
     )
@@ -145,7 +169,8 @@ enum Telemetry {
     // Installed after the providers are registered, because the first screen appears right
     // after this returns. Swizzling UIViewController reports the UIKit screens; the Settings
     // tab is SwiftUI and reports itself through .otelScreen in SettingsView.
-    ScreenInstrumentationUIKit.install()
+    ScreenInstrumentationUIKit.install(config: TelemetryConfig.screenUIKitConfig,
+                                       screenTracker: TelemetryConfig.screenTracker)
 
     // Installed after the session manager and logger provider are registered:
     // crashes from the previous run are reported on install, and each crash
@@ -234,6 +259,84 @@ enum SessionConfigStore {
       defaults.removeObject(forKey: maxLifetimeKey)
     }
     defaults.set(restorePersistedSession, forKey: restoreKey)
+  }
+}
+
+// Screen settings edited from the Settings tab. Read once at startup by
+// TelemetryConfig.screenTracker and TelemetryConfig.screenUIKitConfig.
+enum ScreenConfigStore {
+  private static let key = "HackerNewsDemo.screen.config"
+
+  /// Which bundle's view controllers the UIKit front end reports.
+  enum UIKitBundle: String, Codable, CaseIterable {
+    case main
+    case uikit
+
+    var bundle: Bundle {
+      switch self {
+      case .main: .main
+      case .uikit: Bundle(for: UIViewController.self)
+      }
+    }
+
+    var label: String {
+      switch self {
+      case .main: "App"
+      case .uikit: "UIKit"
+      }
+    }
+  }
+
+  /// An optional override: `inherit` keeps the tracker's own value.
+  enum Override: String, Codable, CaseIterable {
+    case inherit
+    case on
+    case off
+
+    var value: Bool? {
+      switch self {
+      case .inherit: nil
+      case .on: true
+      case .off: false
+      }
+    }
+  }
+
+  struct Values: Codable, Equatable {
+    var tracksNavigation = true
+    var recordsTimeToFirstDraw = true
+    var uikitBundle = UIKitBundle.main
+    var uikitRecordsTimeToFirstDraw = Override.inherit
+    var tracksHostingControllers = false
+    var stampsSpans = true
+    var stampsLogs = true
+
+    init() {}
+
+    // Decodes field by field so a value saved before a field existed keeps its default.
+    init(from decoder: Decoder) throws {
+      let container = try decoder.container(keyedBy: CodingKeys.self)
+      let defaults = Values()
+      tracksNavigation = try container.decodeIfPresent(Bool.self, forKey: .tracksNavigation) ?? defaults.tracksNavigation
+      recordsTimeToFirstDraw = try container.decodeIfPresent(Bool.self, forKey: .recordsTimeToFirstDraw) ?? defaults.recordsTimeToFirstDraw
+      uikitBundle = try container.decodeIfPresent(UIKitBundle.self, forKey: .uikitBundle) ?? defaults.uikitBundle
+      uikitRecordsTimeToFirstDraw = try container.decodeIfPresent(Override.self, forKey: .uikitRecordsTimeToFirstDraw) ?? defaults.uikitRecordsTimeToFirstDraw
+      tracksHostingControllers = try container.decodeIfPresent(Bool.self, forKey: .tracksHostingControllers) ?? defaults.tracksHostingControllers
+      stampsSpans = try container.decodeIfPresent(Bool.self, forKey: .stampsSpans) ?? defaults.stampsSpans
+      stampsLogs = try container.decodeIfPresent(Bool.self, forKey: .stampsLogs) ?? defaults.stampsLogs
+    }
+  }
+
+  static func load() -> Values {
+    guard let data = UserDefaults.standard.data(forKey: key),
+          let values = try? JSONDecoder().decode(Values.self, from: data) else {
+      return Values()
+    }
+    return values
+  }
+
+  static func save(_ values: Values) {
+    UserDefaults.standard.set(try? JSONEncoder().encode(values), forKey: key)
   }
 }
 
