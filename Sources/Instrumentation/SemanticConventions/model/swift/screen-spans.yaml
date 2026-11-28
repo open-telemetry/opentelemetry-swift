@@ -14,7 +14,8 @@ groups:
       **Span kind** MUST be `INTERNAL`.
 
       **Instrumentation scope** MUST be `io.opentelemetry.screen.uikit` for a
-      `uikit` screen and `io.opentelemetry.screen.swiftui` for a `swiftui` one.
+      `uikit` screen, `io.opentelemetry.screen.swiftui` for a `swiftui` one,
+      and `io.opentelemetry.screen` for a `manual` one.
 
       One span per screen instance, not per appearance: a screen the user
       returns to records nothing the second time.

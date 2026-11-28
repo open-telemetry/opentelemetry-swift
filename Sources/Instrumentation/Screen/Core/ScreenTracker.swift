@@ -13,7 +13,7 @@ import Sessions
 /// One tracker serves the whole process. The UIKit and SwiftUI instrumentations feed it, and
 /// `ScreenSpanProcessor` and `ScreenLogRecordProcessor` read it to stamp `app.screen.name` on
 /// every span and log record. Applications that navigate by neither path call
-/// `setCurrent(screen:type:)` themselves.
+/// `setCurrent(screen:)` themselves, which reports the screen as `manual`.
 ///
 /// A change does three things, in this order: it records the transition, it emits one
 /// `app.navigation.complete` event, and it posts `ScreenChangeNotification`. Setting the same
@@ -74,12 +74,13 @@ public final class ScreenTracker: @unchecked Sendable {
   ///
   /// - Parameters:
   ///   - screen: The new screen name. Ignored when it already is the current screen.
-  ///   - type: The UI framework that drew it.
+  ///   - type: What reported it. Defaults to `.manual`, for a screen the application reports
+  ///     itself; the UIKit and SwiftUI front ends pass their own type.
   ///   - timestamp: When the screen appeared. Defaults to now.
   ///   - logger: Where to emit `app.navigation.complete`. Defaults to the scope for `type`.
   ///   - attributes: Extra attributes for the event.
   public func setCurrent(screen: String,
-                         type: ScreenType,
+                         type: ScreenType = .manual,
                          timestamp: Date = Date(),
                          logger: Logger? = nil,
                          attributes: [String: AttributeValue] = [:]) {
@@ -139,13 +140,11 @@ public final class ScreenTracker: @unchecked Sendable {
   }
 
   static func logger(for type: ScreenType) -> Logger {
-    let scope = type == .uikit ? ScreenConstants.uiKitScope : ScreenConstants.swiftUIScope
-    return OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: scope)
+    OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: type.scope)
   }
 
   static func tracer(for type: ScreenType) -> Tracer {
-    let scope = type == .uikit ? ScreenConstants.uiKitScope : ScreenConstants.swiftUIScope
-    return OpenTelemetry.instance.tracerProvider.get(instrumentationName: scope)
+    OpenTelemetry.instance.tracerProvider.get(instrumentationName: type.scope)
   }
 
   /// Records one `app.screen.time_to_first_draw` span, from a screen's creation to the first

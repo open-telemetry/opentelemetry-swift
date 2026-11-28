@@ -39,11 +39,19 @@ final class ScreenSemanticConventionsTests: XCTestCase {
   func testScreenTypeValuesMatchTheRegistry() {
     XCTAssertEqual(ScreenType.uikit.attributeValue, "uikit")
     XCTAssertEqual(ScreenType.swiftui.attributeValue, "swiftui")
-    XCTAssertEqual(ScreenType.allCases.map(\.attributeValue), ["uikit", "swiftui"])
+    XCTAssertEqual(ScreenType.manual.attributeValue, "manual")
+    XCTAssertEqual(ScreenType.allCases.map(\.attributeValue), ["uikit", "swiftui", "manual"])
   }
 
   func testInstrumentationScopes() {
     XCTAssertEqual(ScreenConstants.uiKitScope, "io.opentelemetry.screen.uikit")
     XCTAssertEqual(ScreenConstants.swiftUIScope, "io.opentelemetry.screen.swiftui")
+    XCTAssertEqual(ScreenConstants.manualScope, "io.opentelemetry.screen")
+  }
+
+  func testEachTypeReportsUnderItsOwnScope() {
+    XCTAssertEqual(ScreenType.uikit.scope, ScreenConstants.uiKitScope)
+    XCTAssertEqual(ScreenType.swiftui.scope, ScreenConstants.swiftUIScope)
+    XCTAssertEqual(ScreenType.manual.scope, ScreenConstants.manualScope)
   }
 }

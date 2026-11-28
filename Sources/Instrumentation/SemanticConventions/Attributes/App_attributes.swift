@@ -336,6 +336,9 @@ extension FederatedSemanticConventions {
       
       /// A SwiftUI view the application marked with `otelScreen(_:)`.
       public static let swiftui = ScreenTypeValues("swiftui") 
+      
+      /// A screen the application reported itself through `setCurrent`.
+      public static let manual = ScreenTypeValues("manual") 
 
       internal let value: String 
 

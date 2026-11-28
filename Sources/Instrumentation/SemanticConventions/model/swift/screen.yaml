@@ -55,6 +55,11 @@ groups:
               stability: development
               brief: >
                 A SwiftUI view the application marked with `otelScreen(_:)`.
+            - id: manual
+              value: "manual"
+              stability: development
+              brief: >
+                A screen the application reported itself through `setCurrent`.
         stability: development
         brief: >
           The UI framework that drew the screen.
@@ -75,7 +80,8 @@ groups:
       **Event name** MUST be `app.navigation.complete`.
 
       **Instrumentation scope** MUST be `io.opentelemetry.screen.uikit` for a
-      `uikit` screen and `io.opentelemetry.screen.swiftui` for a `swiftui` one.
+      `uikit` screen, `io.opentelemetry.screen.swiftui` for a `swiftui` one,
+      and `io.opentelemetry.screen` for a `manual` one.
 
       Recorded when the current screen changes, which is the first
       `viewDidAppear` of a `UIViewController` or the `onAppear` of a view

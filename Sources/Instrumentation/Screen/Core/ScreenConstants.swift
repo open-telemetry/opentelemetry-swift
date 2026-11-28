@@ -18,6 +18,9 @@ public enum ScreenConstants {
   /// Instrumentation scope for screens traced through the SwiftUI modifiers.
   public static let swiftUIScope = "io.opentelemetry.screen.swiftui"
 
+  /// Instrumentation scope for screens the application reports itself through `setCurrent`.
+  public static let manualScope = "io.opentelemetry.screen"
+
   /// Notification posted when the current screen changes. The object is the new screen name.
   public static let screenChangeNotification = "ScreenTracker.ScreenChange"
 }

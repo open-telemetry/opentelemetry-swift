@@ -51,6 +51,38 @@ final class ScreenTrackerTests: XCTestCase {
 
   // MARK: - app.navigation.complete
 
+  func testSetCurrentWithoutATypeReportsAManualScreen() {
+    tracker.setCurrent(screen: "Checkout")
+
+    XCTAssertEqual(tracker.currentScreen, "Checkout")
+    let event = navigationEvents().first
+    XCTAssertEqual(ScreenTestFixtures.string(event?.attributes[FederatedSemanticConventions.App.screenType.rawValue]), "manual")
+    XCTAssertEqual(ScreenTestFixtures.string(event?.attributes[FederatedSemanticConventions.App.navigationDestinationName.rawValue]),
+                   "Checkout")
+    XCTAssertEqual(event?.instrumentationScopeInfo.name, "io.opentelemetry.screen")
+  }
+
+  func testEachTypeEmitsUnderItsOwnScope() {
+    tracker.setCurrent(screen: "Stories", type: .uikit)
+    tracker.setCurrent(screen: "Settings", type: .swiftui)
+    tracker.setCurrent(screen: "Checkout", type: .manual)
+
+    XCTAssertEqual(navigationEvents().map(\.instrumentationScopeInfo.name),
+                   ["io.opentelemetry.screen.uikit", "io.opentelemetry.screen.swiftui", "io.opentelemetry.screen"])
+  }
+
+  func testManualTimeToFirstDrawUsesTheManualScope() {
+    let loaded = Date()
+    tracker.recordTimeToFirstDraw(screen: "Checkout",
+                                  type: .manual,
+                                  loadTime: loaded,
+                                  drawTime: loaded.addingTimeInterval(0.1))
+
+    let span = spans.spans.first { $0.name == FederatedSemanticConventions.SpanName.appScreenTimeToFirstDraw.rawValue }
+    XCTAssertEqual(span?.instrumentationScope.name, "io.opentelemetry.screen")
+    XCTAssertEqual(ScreenTestFixtures.string(span?.attributes[FederatedSemanticConventions.App.screenType.rawValue]), "manual")
+  }
+
   func testEmitsOneEventPerChange() {
     tracker.setCurrent(screen: "Stories", type: .uikit)
     tracker.setCurrent(screen: "Stories", type: .uikit)

@@ -138,6 +138,15 @@ final class NavigationSequenceTests: XCTestCase {
     XCTAssertEqual(previousNames, [nil] + destinations.dropLast())
   }
 
+  func testManualNavigationTakesTheNextNumber() {
+    let tracker = makeTracker()
+    tracker.setCurrent(screen: "Stories", type: .uikit)
+    tracker.setCurrent(screen: "Checkout")
+    tracker.setCurrent(screen: "Settings", type: .swiftui)
+
+    XCTAssertEqual(sequences(), [1, 2, 3])
+  }
+
   // MARK: - Helpers
 
   private func makeTracker() -> ScreenTracker {

@@ -76,7 +76,7 @@ OpenTelemetry.registerLoggerProvider(loggerProvider: loggerProvider)
 
 // 3. Install a front end, or report screens yourself.
 let tracker = ScreenTrackerProvider.getInstance()
-tracker.setCurrent(screen: "Checkout", type: .uikit)
+tracker.setCurrent(screen: "Checkout") // a manual screen
 print(tracker.currentScreen ?? "nil") // "Checkout"
 ```
 
@@ -99,7 +99,7 @@ Put `ScreenSpanProcessor` before the exporter, and wrap the exporter in `ScreenL
 
 <dl>
 <dt><code>setCurrent(screen:type:timestamp:logger:attributes:)</code></dt>
-<dd>Sets the current screen, emits <code>app.navigation.complete</code>, and posts <code>ScreenChangeNotification</code>. Does nothing if the screen is already current. Call it for screens no front end reports.</dd>
+<dd>Sets the current screen, emits <code>app.navigation.complete</code>, and posts <code>ScreenChangeNotification</code>. Does nothing if the screen is already current. Call it for screens no front end reports, such as a game's scenes or a custom container. <code>type</code> defaults to <code>.manual</code>, so <code>setCurrent(screen: "Checkout")</code> reports a <code>manual</code> screen under the <code>io.opentelemetry.screen</code> scope; the front ends pass <code>.uikit</code> or <code>.swiftui</code>. A manual screen counts in <code>app.navigation.sequence</code> like any other.</dd>
 <dt><code>recordTimeToFirstDraw(screen:type:loadTime:drawTime:attributes:)</code></dt>
 <dd>Records one span from <code>loadTime</code> to <code>drawTime</code>, unless <code>recordsTimeToFirstDraw</code> is <code>false</code>. Call it once per screen instance.</dd>
 </dl>
@@ -116,7 +116,7 @@ One log record per navigation, shaped as in [OpenTelemetry Android](https://gith
 <dt>Event name</dt>
 <dd><code>app.navigation.complete</code>.</dd>
 <dt>Instrumentation scope</dt>
-<dd><code>io.opentelemetry.screen.uikit</code> for a UIKit screen, <code>io.opentelemetry.screen.swiftui</code> for a SwiftUI one. A <code>logger</code> passed to <code>setCurrent</code> overrides it.</dd>
+<dd><code>io.opentelemetry.screen.uikit</code> for a UIKit screen, <code>io.opentelemetry.screen.swiftui</code> for a SwiftUI one, <code>io.opentelemetry.screen</code> for a manual one. A <code>logger</code> passed to <code>setCurrent</code> overrides it.</dd>
 <dt>Timestamp</dt>
 <dd>When the screen became current: <code>viewDidAppear(_:)</code> for UIKit, <code>onAppear</code> for SwiftUI, or the <code>timestamp</code> passed to <code>setCurrent</code>.</dd>
 </dl>
@@ -129,7 +129,7 @@ One log record per navigation, shaped as in [OpenTelemetry Android](https://gith
 <dt><code>app.screen.previous.name</code> <em>Conditionally required</em></dt>
 <dd>The screen left. Absent on the first navigation, which has no screen before it.</dd>
 <dt><code>app.screen.type</code> <em>Required</em></dt>
-<dd><code>uikit</code> or <code>swiftui</code>.</dd>
+<dd><code>uikit</code>, <code>swiftui</code>, or <code>manual</code> for a screen the app reported through <code>setCurrent</code>.</dd>
 <dt><code>app.navigation.sequence</code> <em>Required</em></dt>
 <dd>The navigation's position within the session, starting at 1. Read from the tracker's <code>SessionManager</code>, the shared one unless given another; give <code>SessionLogRecordProcessor</code> the same one so <code>session.id</code> matches. Persisted in <code>UserDefaults</code> under one key, which a new session overwrites.</dd>
 <dt><code>app.screen.name</code> <em>Optional</em></dt>
@@ -142,7 +142,7 @@ One log record per navigation, shaped as in [OpenTelemetry Android](https://gith
 
 ### `app.screen.time_to_first_draw`
 
-One span per screen instance, with no children. A returning screen records nothing; so does a screen that never appears, or one whose app enters the background before its first frame.
+One span per screen instance, with no children. A returning screen records nothing; so does a screen that never appears. If the app enters the background before the first frame, the read is cancelled and the screen's next appearance measures again, from the same load time.
 
 #### Span properties
 
@@ -152,7 +152,7 @@ One span per screen instance, with no children. A returning screen records nothi
 <dt>Kind</dt>
 <dd><code>INTERNAL</code>.</dd>
 <dt>Instrumentation scope</dt>
-<dd><code>io.opentelemetry.screen.uikit</code> for a UIKit screen, <code>io.opentelemetry.screen.swiftui</code> for a SwiftUI one.</dd>
+<dd><code>io.opentelemetry.screen.uikit</code> for a UIKit screen, <code>io.opentelemetry.screen.swiftui</code> for a SwiftUI one, <code>io.opentelemetry.screen</code> for one the app records itself with <code>recordTimeToFirstDraw</code>.</dd>
 <dt>Start time</dt>
 <dd>UIKit: <code>viewDidLoad</code>. SwiftUI: when the parent's <code>body</code> builds the <code>ScreenTraceView</code> value.</dd>
 <dt>End time</dt>
@@ -165,9 +165,9 @@ One span per screen instance, with no children. A returning screen records nothi
 <dt><code>app.screen.name</code> <em>Required</em></dt>
 <dd>UIKit: the class name, or <code>customScreenName</code>. SwiftUI: the <code>otelScreen</code> name.</dd>
 <dt><code>app.screen.type</code> <em>Required</em></dt>
-<dd><code>uikit</code> or <code>swiftui</code>.</dd>
+<dd><code>uikit</code>, <code>swiftui</code>, or <code>manual</code>.</dd>
 <dt>Custom attributes <em>Optional</em></dt>
-<dd>SwiftUI only, from <code>otelScreen(_:attributes:)</code>.</dd>
+<dd>From <code>otelScreen(_:attributes:)</code> or the <code>attributes</code> passed to <code>recordTimeToFirstDraw</code>. UIKit adds none.</dd>
 </dl>
 
 Both front ends end the span at the first frame displayed, read from the display link, so UIKit and SwiftUI durations compare. The first frame is the second display-link refresh after the read starts: a frame committed before one refresh is displayed at the next. [App Launch](../AppLaunch/README.md) reads `app.start`'s end the same way, with the same code. See [UIKit](UIKit/README.md#appscreentime_to_first_draw) and [SwiftUI](SwiftUI/README.md#appscreentime_to_first_draw) for the lifecycle inside each.
