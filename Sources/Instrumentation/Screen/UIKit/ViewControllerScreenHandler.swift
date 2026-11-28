@@ -24,19 +24,23 @@
     }
   }
 
+  /// SwiftUI's `UIHostingController` is generic and public API offers no non-generic base to
+  /// test against, so a hosting controller is recognised by its class name.
+  private let hostingControllerClassName = "UIHostingController"
+
   /// A first-draw read that has not reported yet.
   private final class PendingDraw {
+    let state: ScreenTrackingState
     var read: FirstFrameRead?
     var isDone = false
-  }
-
-    let state: ScreenTrackingState
-  /// Turns view controller lifecycle calls into screen changes and
-  /// `app.screen.time_to_first_draw` spans.
 
     init(state: ScreenTrackingState) {
       self.state = state
     }
+  }
+
+  /// Turns view controller lifecycle calls into screen changes and
+  /// `app.screen.time_to_first_draw` spans.
   ///
   /// The swizzled methods do nothing but call in here, so the whole decision — whether to track
   /// the screen, what to call it, what to record — is testable without swizzling anything.
@@ -124,11 +128,11 @@
       pendingDraws.removeAll()
       for draw in draws {
         draw.read?.cancel()
+        draw.state.didStartFirstDraw = false
       }
     }
 
     /// Whether to report `viewController` at all.
-        draw.state.didStartFirstDraw = false
     ///
     /// A view controller that adopts `ScreenTrackingCustomization` decides for itself. Otherwise
     /// the class must come from the configured bundle itself, not a framework embedded in it,
@@ -172,7 +176,7 @@
     static func isHostingController(_ viewControllerClass: AnyClass) -> Bool {
       var current: AnyClass? = viewControllerClass
       while let candidate = current {
-        if String(describing: candidate).hasPrefix("UIHostingController") {
+        if String(describing: candidate).hasPrefix(hostingControllerClassName) {
           return true
         }
         current = class_getSuperclass(candidate)
