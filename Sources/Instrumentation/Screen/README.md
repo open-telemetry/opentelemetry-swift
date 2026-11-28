@@ -80,7 +80,7 @@ tracker.setCurrent(screen: "Checkout", type: .uikit)
 print(tracker.currentScreen ?? "nil") // "Checkout"
 ```
 
-Put `ScreenSpanProcessor` before the exporter, and wrap the exporter in `ScreenLogRecordProcessor`, so the attribute is set before batching. Both processors read the shared tracker unless given one. See [Setup](docs/setup.md).
+Put `ScreenSpanProcessor` before the exporter, and wrap the exporter in `ScreenLogRecordProcessor`, so the attribute is set before batching. Both processors read the shared tracker at each span or log record unless given one, so a tracker registered later still reaches them. See [Setup](docs/setup.md).
 
 ## Instance properties
 

@@ -50,6 +50,19 @@ final class ScreenSpanProcessorTests: XCTestCase {
 
     XCTAssertEqual(ScreenTestFixtures.string(span.capturedAttributes[screenNameKey]), "Comments")
   }
+
+  func testReadsATrackerRegisteredAfterInit() {
+    let original = ScreenTrackerProvider.getInstance()
+    defer { ScreenTrackerProvider.register(screenTracker: original) }
+    let processor = ScreenSpanProcessor()
+    ScreenTrackerProvider.register(screenTracker: tracker)
+    tracker.setCurrent(screen: "Stories", type: .uikit)
+    let span = StubReadableSpan()
+
+    processor.onStart(parentContext: nil, span: span)
+
+    XCTAssertEqual(ScreenTestFixtures.string(span.capturedAttributes[screenNameKey]), "Stories")
+  }
 }
 
 final class ScreenLogRecordProcessorTests: XCTestCase {
@@ -89,6 +102,18 @@ final class ScreenLogRecordProcessorTests: XCTestCase {
     processor.onEmit(logRecord: ScreenTestFixtures.logRecord(attributes: [screenNameKey: .string("Comments")]))
 
     XCTAssertEqual(ScreenTestFixtures.string(next.records.first?.attributes[screenNameKey]), "Comments")
+  }
+
+  func testReadsATrackerRegisteredAfterInit() {
+    let original = ScreenTrackerProvider.getInstance()
+    defer { ScreenTrackerProvider.register(screenTracker: original) }
+    let sharedProcessor = ScreenLogRecordProcessor(nextProcessor: next)
+    ScreenTrackerProvider.register(screenTracker: tracker)
+    tracker.setCurrent(screen: "Stories", type: .uikit)
+
+    sharedProcessor.onEmit(logRecord: ScreenTestFixtures.logRecord())
+
+    XCTAssertEqual(ScreenTestFixtures.string(next.records.first?.attributes[screenNameKey]), "Stories")
   }
 
   func testForwardsShutdownAndFlush() {

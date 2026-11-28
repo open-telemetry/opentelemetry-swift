@@ -17,11 +17,16 @@ public class ScreenSpanProcessor: SpanProcessor {
   public var isStartRequired = true
   public var isEndRequired = false
 
-  private let screenTracker: ScreenTracker
+  private let injectedTracker: ScreenTracker?
 
-  /// - Parameter screenTracker: The tracker to read. Defaults to the shared one.
+  private var screenTracker: ScreenTracker {
+    injectedTracker ?? ScreenTrackerProvider.getInstance()
+  }
+
+  /// - Parameter screenTracker: The tracker to read. Defaults to the shared one, read at each
+  ///   span start.
   public init(screenTracker: ScreenTracker? = nil) {
-    self.screenTracker = screenTracker ?? ScreenTrackerProvider.getInstance()
+    injectedTracker = screenTracker
   }
 
   public func onStart(parentContext: SpanContext?, span: ReadableSpan) {

@@ -14,15 +14,19 @@ import OpenTelemetrySdk
 /// left alone: a crash report replayed from the previous run names the screen that crashed, not
 /// the one visible now.
 public class ScreenLogRecordProcessor: LogRecordProcessor {
-  private let screenTracker: ScreenTracker
+  private let injectedTracker: ScreenTracker?
   private let nextProcessor: LogRecordProcessor
+
+  private var screenTracker: ScreenTracker {
+    injectedTracker ?? ScreenTrackerProvider.getInstance()
+  }
 
   /// - Parameters:
   ///   - nextProcessor: The processor to forward to.
-  ///   - screenTracker: The tracker to read. Defaults to the shared one.
+  ///   - screenTracker: The tracker to read. Defaults to the shared one, read at each emit.
   public init(nextProcessor: LogRecordProcessor, screenTracker: ScreenTracker? = nil) {
     self.nextProcessor = nextProcessor
-    self.screenTracker = screenTracker ?? ScreenTrackerProvider.getInstance()
+    injectedTracker = screenTracker
   }
 
   public func onEmit(logRecord: ReadableLogRecord) {
