@@ -111,6 +111,33 @@ final class NavigationSequenceTests: XCTestCase {
     XCTAssertEqual(events.map { sequence($0) }, [1, 1])
   }
 
+  func testConcurrentChangesNumberTransitionsInOrder() {
+    let tracker = makeTracker()
+    let names = (0 ..< 200).map { "Screen\($0)" }
+    let group = DispatchGroup()
+    for name in names {
+      DispatchQueue.global().async(group: group) {
+        tracker.setCurrent(screen: name, type: .uikit)
+      }
+    }
+    group.wait()
+
+    let events = logs.records
+      .filter { $0.eventName == FederatedSemanticConventions.EventName.appNavigationComplete.rawValue }
+      .sorted { (sequence($0) ?? 0) < (sequence($1) ?? 0) }
+    let expectedSequences: [Int?] = Array(1 ... names.count)
+    XCTAssertEqual(events.map { sequence($0) }, expectedSequences)
+
+    // Read in sequence order, each event leaves the screen the one before it entered.
+    let destinations = events.map {
+      ScreenTestFixtures.string($0.attributes[FederatedSemanticConventions.App.navigationDestinationName.rawValue])
+    }
+    let previousNames = events.map {
+      ScreenTestFixtures.string($0.attributes[FederatedSemanticConventions.App.screenPreviousName.rawValue])
+    }
+    XCTAssertEqual(previousNames, [nil] + destinations.dropLast())
+  }
+
   // MARK: - Helpers
 
   private func makeTracker() -> ScreenTracker {

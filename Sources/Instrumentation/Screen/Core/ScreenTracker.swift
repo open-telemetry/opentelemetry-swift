@@ -26,6 +26,10 @@ import Sessions
 public final class ScreenTracker: @unchecked Sendable {
   /// Guards `_currentScreen` and `_previousScreen` so a transition is atomic.
   private let lock = NSLock()
+  /// Serializes a transition with the number it takes, so numbers rise in transition order.
+  /// Recursive because the session read and the `UserDefaults` write run while it is held, and
+  /// either can call observers on this thread that set the screen again.
+  private let transitionLock = NSRecursiveLock()
   private var _currentScreen: String?
   private var _previousScreen: String?
   private var _recordsTimeToFirstDraw: Bool
@@ -79,22 +83,26 @@ public final class ScreenTracker: @unchecked Sendable {
                          timestamp: Date = Date(),
                          logger: Logger? = nil,
                          attributes: [String: AttributeValue] = [:]) {
-    let transition: (changed: Bool, previous: String?) = lock.withLock {
-      guard _currentScreen != screen else { return (false, nil) }
-      _previousScreen = _currentScreen
-      _currentScreen = screen
-      return (true, _previousScreen)
-    }
-    guard transition.changed else { return }
+    let numbered: (previous: String?, sequence: Int)? = transitionLock.withLock {
+      let transition: (changed: Bool, previous: String?) = lock.withLock {
+        guard _currentScreen != screen else { return (false, nil) }
+        _previousScreen = _currentScreen
+        _currentScreen = screen
+        return (true, _previousScreen)
+      }
+      guard transition.changed else { return nil }
 
-    // Read outside `lock`: starting a session emits events that `ScreenLogRecordProcessor`
-    // stamps by reading `currentScreen`, which takes `lock`.
-    let session = (sessionManager ?? SessionManagerProvider.getInstance()).getSession()
-    let sequence = navigationSequence.next(sessionId: session.id)
+      // Read outside `lock`: starting a session emits events that `ScreenLogRecordProcessor`
+      // stamps by reading `currentScreen`, which takes `lock`. Taking the number outside it
+      // keeps the `UserDefaults` write, and the observers it notifies, off `lock` too.
+      let session = (sessionManager ?? SessionManagerProvider.getInstance()).getSession()
+      return (transition.previous, navigationSequence.next(sessionId: session.id))
+    }
+    guard let numbered else { return }
 
     emitNavigationComplete(screen: screen,
-                           previousScreen: transition.previous,
-                           sequence: sequence,
+                           previousScreen: numbered.previous,
+                           sequence: numbered.sequence,
                            type: type,
                            timestamp: timestamp,
                            logger: logger ?? Self.logger(for: type),
