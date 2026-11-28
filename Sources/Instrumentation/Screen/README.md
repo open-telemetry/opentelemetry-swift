@@ -17,7 +17,41 @@ Each front end documents its own lifecycle. iOS is the primary platform.
 
 A navigation is a change of the current screen. Each one emits an [`app.navigation.complete`](#appnavigationcomplete) event naming the screen reached and the screen left. In order, the events trace the user's path; the gaps between them give the time spent on each screen. A pop back counts like any other move. Setting the current screen to itself emits nothing, so a redisplay is not a navigation.
 
+The front ends follow the navigation stack, so the current screen is the one on top. Dismissing a sheet makes the screen beneath it current again, though the presenter appears afresh in neither UIKit nor SwiftUI. When a front end can tell how the user got there, the event says so in `app.navigation.type`. Navigation tracking is on by default; `ScreenTracker(tracksNavigation: false)` turns it off.
+
 Each event carries `app.navigation.sequence`, its position within the session: 1, 2, 3 and so on. A gap in the numbers within one `session.id` means events were lost. The count persists with the session's identifier, so it continues after a restart that resumes the session, and starts again at 1 in a new one.
+
+### Navigation types
+
+`app.navigation.type` takes one of these values, and is absent when the front end cannot tell. They extend the W3C Navigation API's `push`, `replace` and `traverse`, which cannot tell a back step from a jump, a sheet from a push, or a tab change from either.
+
+| Value | What happened | Stack |
+| --- | --- | --- |
+| `initial` | The first screen of the process appeared | `[] → [a]` |
+| `push` | A new screen went on top | `[a] → [a, b]` |
+| `pop` | The top screen left, revealing the one beneath | `[a, b] → [a]` |
+| `pop_to` | Several screens left at once, revealing an earlier one | `[a, b, c] → [a]` |
+| `replace` | The top screen was swapped; the rest stayed | `[a, b] → [a, c]` |
+| `reset` | Every screen was replaced | `[a, b] → [x]` |
+| `modal` | A sheet or full-screen cover was shown | `[a] → [a, sheet]` |
+| `dismiss` | A sheet or cover was dismissed, revealing its presenter | `[a, sheet] → [a]` |
+| `switch` | An existing screen became current and nothing left, such as a tab change | `[a, b] → [b, a]` |
+
+Each front end detects a different set. ✓ means detected; a blank means the event carries no type.
+
+| Value | UIKit | SwiftUI | SwiftUI with opt-in modifiers | `setCurrent` |
+| --- | :-: | :-: | :-: | :-: |
+| `initial` | ✓ | ✓ | ✓ | ✓ |
+| `push` | ✓ | ✓ | ✓ | if passed |
+| `pop` | ✓ | ✓ | ✓ | if passed |
+| `pop_to` | ✓ | ✓ | ✓ | if passed |
+| `replace` | ✓ | | ✓, with `.id(route)` | if passed |
+| `reset` | ✓ | | ✓, with `.id(route)` | if passed |
+| `modal` | ✓ | reported as `push` | ✓ | if passed |
+| `dismiss` | ✓ | reported as `pop` | ✓ | if passed |
+| `switch` | ✓ | | ✓ | if passed |
+
+See [UIKit](UIKit/README.md#navigation-types) and [SwiftUI](SwiftUI/README.md#navigation-types) for how each detects them and what each misses.
 
 ### Time to first draw
 
@@ -93,13 +127,15 @@ Put `ScreenSpanProcessor` before the exporter, and wrap the exporter in `ScreenL
 <dd>The screen before <code>currentScreen</code>, or <code>nil</code>.</dd>
 <dt><code>recordsTimeToFirstDraw</code></dt>
 <dd>Whether screens record <code>app.screen.time_to_first_draw</code>. Defaults to <code>true</code>. Applies to both front ends. Set it before the first screen appears.</dd>
+<dt><code>tracksNavigation</code></dt>
+<dd>Whether the front ends follow the navigation stack and report <code>app.navigation.type</code>. Defaults to <code>true</code>. Turned off, the current screen is the last one to appear, a dismissed sheet leaves its name behind, and no event carries a type. The UIKit front end reads it at install, so set it before installing.</dd>
 </dl>
 
 ## Instance methods
 
 <dl>
-<dt><code>setCurrent(screen:type:timestamp:logger:attributes:)</code></dt>
-<dd>Sets the current screen, emits <code>app.navigation.complete</code>, and posts <code>ScreenChangeNotification</code>. Does nothing if the screen is already current. Call it for screens no front end reports, such as a game's scenes or a custom container. <code>type</code> defaults to <code>.manual</code>, so <code>setCurrent(screen: "Checkout")</code> reports a <code>manual</code> screen under the <code>io.opentelemetry.screen</code> scope; the front ends pass <code>.uikit</code> or <code>.swiftui</code>. A manual screen counts in <code>app.navigation.sequence</code> like any other.</dd>
+<dt><code>setCurrent(screen:type:navigation:timestamp:logger:attributes:)</code></dt>
+<dd>Sets the current screen, emits <code>app.navigation.complete</code>, and posts <code>ScreenChangeNotification</code>. Does nothing if the screen is already current and no <code>navigation</code> is given; with one, the event is emitted anyway, because a push of a second instance of the same screen is still a navigation. Pass <code>navigation</code> when the app knows how the user got there. Call it for screens no front end reports, such as a game's scenes or a custom container. <code>type</code> defaults to <code>.manual</code>, so <code>setCurrent(screen: "Checkout")</code> reports a <code>manual</code> screen under the <code>io.opentelemetry.screen</code> scope; the front ends pass <code>.uikit</code> or <code>.swiftui</code>. A manual screen counts in <code>app.navigation.sequence</code> like any other.</dd>
 <dt><code>recordTimeToFirstDraw(screen:type:loadTime:drawTime:attributes:)</code></dt>
 <dd>Records one span from <code>loadTime</code> to <code>drawTime</code>, unless <code>recordsTimeToFirstDraw</code> is <code>false</code>. Call it once per screen instance.</dd>
 </dl>
@@ -130,6 +166,8 @@ One log record per navigation, shaped as in [OpenTelemetry Android](https://gith
 <dd>The screen left. Absent on the first navigation, which has no screen before it.</dd>
 <dt><code>app.screen.type</code> <em>Required</em></dt>
 <dd><code>uikit</code>, <code>swiftui</code>, or <code>manual</code> for a screen the app reported through <code>setCurrent</code>.</dd>
+<dt><code>app.navigation.type</code> <em>Conditionally required</em></dt>
+<dd>How the user got there, from the <a href="#navigation-types">navigation types</a>. <code>initial</code> on the first navigation of the process, whatever reported it. Absent when the front end cannot tell, and on every event when <code>tracksNavigation</code> is off.</dd>
 <dt><code>app.navigation.sequence</code> <em>Required</em></dt>
 <dd>The navigation's position within the session, starting at 1. Read from the tracker's <code>SessionManager</code>, the shared one unless given another; give <code>SessionLogRecordProcessor</code> the same one so <code>session.id</code> matches. Persisted in <code>UserDefaults</code> under one key, which a new session overwrites.</dd>
 <dt><code>app.screen.name</code> <em>Optional</em></dt>
@@ -183,6 +221,7 @@ All names are generated: `app.screen.name` as `SemanticConventions.App.screenNam
 | `app.navigation.destination.name` | Attribute | [`screen.yaml`](../SemanticConventions/model/swift/screen.yaml), from OpenTelemetry Android                |
 | `app.screen.previous.name`        | Attribute | [`screen.yaml`](../SemanticConventions/model/swift/screen.yaml), from OpenTelemetry Android                |
 | `app.navigation.sequence`         | Attribute | [`screen.yaml`](../SemanticConventions/model/swift/screen.yaml), Swift only                                |
+| `app.navigation.type`             | Attribute | [`screen.yaml`](../SemanticConventions/model/swift/screen.yaml), Swift only; values extend the W3C Navigation API's `navigationType` |
 | `app.screen.type`                 | Attribute | [`screen.yaml`](../SemanticConventions/model/swift/screen.yaml), Swift only                                |
 | `app.screen.time_to_first_draw`   | Span      | [`screen-spans.yaml`](../SemanticConventions/model/swift/screen-spans.yaml), Swift only                    |
 

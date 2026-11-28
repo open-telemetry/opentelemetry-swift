@@ -15,6 +15,8 @@ import OpenTelemetryApi
 
   private final class StoriesViewController: UIViewController {}
 
+  private final class CommentsViewController: UIViewController {}
+
   private final class NamedViewController: UIViewController, ScreenTrackingCustomization {
     var customScreenName: String? { "Login" }
   }
@@ -281,6 +283,202 @@ import OpenTelemetryApi
       XCTAssertEqual(timeToFirstDrawSpans().count, 1)
       XCTAssertEqual(timeToFirstDrawSpans().first?.startTime, loaded)
       XCTAssertEqual(timeToFirstDrawSpans().first?.endTime, loaded.addingTimeInterval(5))
+    }
+
+    // MARK: - Navigation type
+
+    @MainActor
+    func testAContainerCallLabelsTheScreenItLeadsTo() {
+      let handler = makeHandler()
+      let comments = CommentsViewController()
+
+      handler.recordNavigation(.push, target: comments, in: nil)
+      handler.onViewDidAppear(comments)
+
+      XCTAssertEqual(navigationTypes(), ["push"])
+    }
+
+    @MainActor
+    func testATargetThatContainsTheScreenLabelsIt() {
+      let handler = makeHandler()
+      let comments = CommentsViewController()
+      let flow = UINavigationController(rootViewController: comments)
+
+      handler.recordNavigation(.modal, target: flow, in: nil)
+      handler.onViewDidAppear(comments)
+
+      XCTAssertEqual(navigationTypes(), ["modal"])
+    }
+
+    @MainActor
+    func testACallForAnotherScreenLeavesThisOneUnlabelled() {
+      let handler = makeHandler()
+      tracker.setCurrent(screen: "Settings", type: .swiftui)
+
+      handler.recordNavigation(.push, target: CommentsViewController(), in: nil)
+      handler.onViewDidAppear(StoriesViewController())
+
+      XCTAssertEqual(navigationTypes(), ["initial", nil])
+    }
+
+    @MainActor
+    func testACancelledTransitionLeavesNoLabel() throws {
+      let handler = makeHandler()
+      let stories = StoriesViewController()
+
+      tracker.setCurrent(screen: "Settings", type: .swiftui)
+      let pending = handler.recordNavigation(.pop, target: stories, in: nil)
+      handler.discard(try XCTUnwrap(pending))
+      handler.onViewDidAppear(stories)
+
+      XCTAssertEqual(navigationTypes(), ["initial", nil])
+    }
+
+    @MainActor
+    func testEachCallLabelsOneAppearance() {
+      let handler = makeHandler()
+      let stories = StoriesViewController()
+      let comments = CommentsViewController()
+
+      handler.recordNavigation(.push, target: comments, in: nil)
+      handler.onViewDidAppear(stories)
+      handler.onViewDidAppear(comments)
+      handler.onViewDidAppear(stories)
+
+      XCTAssertEqual(navigationTypes(), ["initial", "push", nil])
+    }
+
+    @MainActor
+    func testTheCurrentScreenAppearingAgainReportsNothing() {
+      // A cancelled interactive pop or swipe-down calls viewDidAppear again on the screen the user
+      // never left.
+      let handler = makeHandler()
+      let comments = CommentsViewController()
+
+      handler.onViewDidAppear(comments)
+      handler.onViewDidAppear(comments)
+
+      XCTAssertEqual(navigationEvents().count, 1)
+    }
+
+    @MainActor
+    func testASecondInstanceOfTheCurrentScreenIsStillANavigation() {
+      let handler = makeHandler()
+      let first = CommentsViewController()
+      let second = CommentsViewController()
+
+      handler.onViewDidAppear(first)
+      handler.recordNavigation(.push, target: second, in: nil)
+      handler.onViewDidAppear(second)
+
+      XCTAssertEqual(navigationTypes(), ["initial", "push"])
+      XCTAssertEqual(ScreenTestFixtures.string(navigationEvents().last?.attributes[FederatedSemanticConventions.App.screenPreviousName.rawValue]),
+                     "CommentsViewController")
+    }
+
+    @MainActor
+    func testACallOnAContainerOffScreenIsIgnored() {
+      // A container builds its first stack before it is in a window; that is set-up, not
+      // navigation.
+      let handler = makeHandler()
+
+      XCTAssertNil(handler.recordNavigation(.push, target: CommentsViewController(), in: UINavigationController()))
+    }
+
+    @MainActor
+    func testTurningNavigationOffDropsTheType() {
+      tracker = ScreenTracker(tracksNavigation: false)
+      let handler = makeHandler()
+      let comments = CommentsViewController()
+
+      XCTAssertNil(handler.recordNavigation(.push, target: comments, in: nil))
+      handler.onViewDidAppear(comments)
+
+      XCTAssertEqual(navigationTypes(), [nil])
+      XCTAssertEqual(tracker.currentScreen, "CommentsViewController")
+    }
+
+    @MainActor
+    func testSettingTheStackClassifiesTheChange() {
+      let root = StoriesViewController()
+      let middle = CommentsViewController()
+      let top = CommentsViewController()
+      let other = CommentsViewController()
+
+      XCTAssertEqual(ViewControllerScreenHandler.navigation(replacing: [root], with: [root, middle]), .push)
+      XCTAssertEqual(ViewControllerScreenHandler.navigation(replacing: [root, middle], with: [root]), .pop)
+      XCTAssertEqual(ViewControllerScreenHandler.navigation(replacing: [root, middle, top], with: [root]), .popTo)
+      XCTAssertEqual(ViewControllerScreenHandler.navigation(replacing: [root, middle], with: [root, other]), .replace)
+      XCTAssertEqual(ViewControllerScreenHandler.navigation(replacing: [root, middle], with: [other]), .reset)
+      XCTAssertNil(ViewControllerScreenHandler.navigation(replacing: [root, middle], with: [other, middle]))
+      XCTAssertNil(ViewControllerScreenHandler.navigation(replacing: [root], with: []))
+    }
+
+    @MainActor
+    func testPoppingLevelsClassifiesTheChange() {
+      XCTAssertNil(ViewControllerScreenHandler.navigation(poppingLevels: 0))
+      XCTAssertEqual(ViewControllerScreenHandler.navigation(poppingLevels: 1), .pop)
+      XCTAssertEqual(ViewControllerScreenHandler.navigation(poppingLevels: 3), .popTo)
+    }
+
+    @MainActor
+    func testTheVisibleLeafFollowsNavigationAndTabContainers() {
+      let stories = StoriesViewController()
+      let comments = CommentsViewController()
+      let navigation = UINavigationController(rootViewController: stories)
+      navigation.pushViewController(comments, animated: false)
+      let settings = StoriesViewController()
+      let tabs = UITabBarController()
+      tabs.viewControllers = [navigation, settings]
+      tabs.selectedIndex = 0
+
+      XCTAssertTrue(ViewControllerScreenHandler.visibleLeaf(from: tabs, excluding: nil) === comments)
+      tabs.selectedIndex = 1
+      XCTAssertTrue(ViewControllerScreenHandler.visibleLeaf(from: tabs, excluding: nil) === settings)
+    }
+
+    @MainActor
+    func testADismissedPresentationReturnsToTheScreenBeforeIt() {
+      // An unanimated dismissal can finish before viewDidDisappear, and a SwiftUI presenter gets
+      // no callback, so the screen recorded at presentation is where the dismissal returns.
+      let handler = makeHandler()
+      tracker.setCurrent(screen: "Settings", type: .swiftui)
+      let login = CommentsViewController()
+      let flow = UINavigationController(rootViewController: login)
+
+      handler.recordPresentation(of: flow, by: UIViewController())
+      handler.recordNavigation(.modal, target: flow, in: nil)
+      handler.onViewDidAppear(login)
+      handler.onViewDidDisappear(login)
+
+      XCTAssertEqual(navigationTypes(), ["initial", "modal", "dismiss"])
+      XCTAssertEqual(tracker.currentScreen, "Settings")
+      XCTAssertEqual(tracker.currentScreenType, .swiftui)
+      XCTAssertEqual(ScreenTestFixtures.string(navigationEvents().last?.attributes[FederatedSemanticConventions.App.screenType.rawValue]),
+                     "swiftui")
+    }
+
+    @MainActor
+    func testAScreenThatDisappearsWithoutADismissalReportsNothing() {
+      let handler = makeHandler()
+      let comments = CommentsViewController()
+
+      handler.onViewDidAppear(comments)
+      handler.onViewDidDisappear(comments)
+
+      XCTAssertEqual(navigationEvents().count, 1)
+      XCTAssertEqual(tracker.currentScreen, "CommentsViewController")
+    }
+
+    @MainActor
+    func testAScreenWithNoFlagsAndNoCallHasNoInferredType() {
+      XCTAssertNil(ViewControllerScreenHandler.inferredNavigation(for: StoriesViewController()))
+    }
+
+    private func navigationTypes() -> [String?] {
+      navigationEvents().map {
+        ScreenTestFixtures.string($0.attributes[FederatedSemanticConventions.App.navigationType.rawValue])
+      }
     }
 
     private func navigationEvents() -> [ReadableLogRecord] {

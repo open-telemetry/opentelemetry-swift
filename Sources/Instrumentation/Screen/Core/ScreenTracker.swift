@@ -17,8 +17,10 @@ import Sessions
 ///
 /// A change does three things, in this order: it records the transition, it emits one
 /// `app.navigation.complete` event, and it posts `ScreenChangeNotification`. Setting the same
-/// name again does nothing, so a screen that reappears without an intervening screen produces no
-/// second event.
+/// name again without a navigation type does nothing, so a screen that reappears without an
+/// intervening screen produces no second event. A front end that knows the kind of navigation
+/// passes it, and the event is emitted even when the name repeats, because a push of a second
+/// instance of the same screen is still a navigation.
 ///
 /// Each event carries `app.navigation.sequence`, its position within the current session. The
 /// tracker reads the session from the same `SessionManager` that `SessionLogRecordProcessor`
@@ -32,21 +34,27 @@ public final class ScreenTracker: @unchecked Sendable {
   private let transitionLock = NSRecursiveLock()
   private var _currentScreen: String?
   private var _previousScreen: String?
+  private var _currentScreenType: ScreenType?
   private var _recordsTimeToFirstDraw: Bool
+  private var _tracksNavigation: Bool
   private let sessionManager: SessionManager?
   private let navigationSequence: NavigationSequence
 
   /// - Parameters:
   ///   - recordsTimeToFirstDraw: Whether `recordTimeToFirstDraw` records a span.
   ///     Defaults to `true`.
+  ///   - tracksNavigation: Whether the front ends follow the navigation stack and report
+  ///     `app.navigation.type`. Defaults to `true`.
   ///   - sessionManager: The session that numbers navigations. Defaults to
   ///     `SessionManagerProvider.getInstance()`, read at each navigation.
   ///   - userDefaults: Where the navigation count persists across restarts. Defaults to
   ///     `.standard`. The tracker writes one key there.
   public init(recordsTimeToFirstDraw: Bool = true,
+              tracksNavigation: Bool = true,
               sessionManager: SessionManager? = nil,
               userDefaults: UserDefaults = .standard) {
     _recordsTimeToFirstDraw = recordsTimeToFirstDraw
+    _tracksNavigation = tracksNavigation
     self.sessionManager = sessionManager
     navigationSequence = NavigationSequence(defaults: userDefaults)
   }
@@ -60,9 +68,24 @@ public final class ScreenTracker: @unchecked Sendable {
     set { lock.withLock { _recordsTimeToFirstDraw = newValue } }
   }
 
+  /// Whether the front ends follow the navigation stack and report `app.navigation.type`.
+  ///
+  /// On by default. Turned off, the current screen is the last one to appear, a dismissed sheet
+  /// leaves its name behind, and no event carries a navigation type. The UIKit front end reads
+  /// this at install, so set it before installing.
+  public var tracksNavigation: Bool {
+    get { lock.withLock { _tracksNavigation } }
+    set { lock.withLock { _tracksNavigation = newValue } }
+  }
+
   /// The screen the user is looking at, or `nil` before the first screen appears.
   public var currentScreen: String? {
     lock.withLock { _currentScreen }
+  }
+
+  /// What reported `currentScreen`, or `nil` before the first screen appears.
+  public var currentScreenType: ScreenType? {
+    lock.withLock { _currentScreenType }
   }
 
   /// The screen that was visible before `currentScreen`.
@@ -76,20 +99,26 @@ public final class ScreenTracker: @unchecked Sendable {
   ///   - screen: The new screen name. Ignored when it already is the current screen.
   ///   - type: What reported it. Defaults to `.manual`, for a screen the application reports
   ///     itself; the UIKit and SwiftUI front ends pass their own type.
+  ///   - navigation: How the user got there, when known. Ignored when `tracksNavigation` is
+  ///     off. With a value, the event is emitted even if `screen` is already current.
   ///   - timestamp: When the screen appeared. Defaults to now.
   ///   - logger: Where to emit `app.navigation.complete`. Defaults to the scope for `type`.
   ///   - attributes: Extra attributes for the event.
   public func setCurrent(screen: String,
                          type: ScreenType = .manual,
+                         navigation: NavigationType? = nil,
                          timestamp: Date = Date(),
                          logger: Logger? = nil,
                          attributes: [String: AttributeValue] = [:]) {
-    let numbered: (previous: String?, sequence: Int)? = transitionLock.withLock {
-      let transition: (changed: Bool, previous: String?) = lock.withLock {
-        guard _currentScreen != screen else { return (false, nil) }
+    let numbered: (previous: String?, sequence: Int, navigation: NavigationType?)? = transitionLock.withLock {
+      let transition: (changed: Bool, previous: String?, navigation: NavigationType?) = lock.withLock {
+        // The first screen of the process is `initial` unless the caller says otherwise.
+        let navigation = _tracksNavigation ? navigation ?? (_currentScreen == nil ? .initial : nil) : nil
+        guard _currentScreen != screen || navigation != nil else { return (false, nil, nil) }
         _previousScreen = _currentScreen
         _currentScreen = screen
-        return (true, _previousScreen)
+        _currentScreenType = type
+        return (true, _previousScreen, navigation)
       }
       guard transition.changed else { return nil }
 
@@ -97,13 +126,14 @@ public final class ScreenTracker: @unchecked Sendable {
       // stamps by reading `currentScreen`, which takes `lock`. Taking the number outside it
       // keeps the `UserDefaults` write, and the observers it notifies, off `lock` too.
       let session = (sessionManager ?? SessionManagerProvider.getInstance()).getSession()
-      return (transition.previous, navigationSequence.next(sessionId: session.id))
+      return (transition.previous, navigationSequence.next(sessionId: session.id), transition.navigation)
     }
     guard let numbered else { return }
 
     emitNavigationComplete(screen: screen,
                            previousScreen: numbered.previous,
                            sequence: numbered.sequence,
+                           navigation: numbered.navigation,
                            type: type,
                            timestamp: timestamp,
                            logger: logger ?? Self.logger(for: type),
@@ -120,6 +150,7 @@ public final class ScreenTracker: @unchecked Sendable {
   private func emitNavigationComplete(screen: String,
                                       previousScreen: String?,
                                       sequence: Int,
+                                      navigation: NavigationType?,
                                       type: ScreenType,
                                       timestamp: Date,
                                       logger: Logger,
@@ -130,6 +161,9 @@ public final class ScreenTracker: @unchecked Sendable {
     eventAttributes[FederatedSemanticConventions.App.navigationSequence.rawValue] = .int(sequence)
     if let previousScreen {
       eventAttributes[FederatedSemanticConventions.App.screenPreviousName.rawValue] = .string(previousScreen)
+    }
+    if let navigation {
+      eventAttributes[FederatedSemanticConventions.App.navigationType.rawValue] = .string(navigation.attributeValue)
     }
 
     logger.logRecordBuilder()

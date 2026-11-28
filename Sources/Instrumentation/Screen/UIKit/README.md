@@ -2,7 +2,7 @@
 
 Status: experimental. Shared names and processors: [Screen README](../README.md).
 
-The **`ScreenInstrumentationUIKit`** module reports every `UIViewController` as a screen. It swizzles `viewDidLoad`, `viewWillAppear(_:)` and `viewDidAppear(_:)` and names each screen after its class. Each appearance sets the current screen. Each instance records one `app.screen.time_to_first_draw` span, from `viewDidLoad` to the first frame displayed after its first `viewWillAppear(_:)`.
+The **`ScreenInstrumentationUIKit`** module reports every `UIViewController` as a screen. It swizzles `viewDidLoad`, `viewWillAppear(_:)` and `viewDidAppear(_:)` and names each screen after its class. Each appearance sets the current screen, and a dismissed sheet makes the screen beneath it current again. With navigation tracking on, the default, it also swizzles `viewDidDisappear(_:)` and the container calls that navigate, and reports each event's [navigation type](#navigation-types). Each instance records one `app.screen.time_to_first_draw` span, from `viewDidLoad` to the first frame displayed after its first `viewWillAppear(_:)`.
 
 The span ends at the first frame, before the transition animation finishes.
 
@@ -99,11 +99,36 @@ Apple documents this order in [Displaying and managing views with a view control
 
 The span excludes work that finishes after the first frame, such as a request that fills the screen. A view controller loaded before `install()` reports the screen change but no span.
 
+### Navigation types
+
+The type comes from the container call that caused the navigation, not from the appearance flags. The flags alone read a replace or reset as a push, a pop to root as a pop, and a cancelled edge-swipe as a push. Each call is held until the screen it leads to appears, and dropped if its transition is cancelled: both an edge-swipe pop and a swipe-down call `pop` or `dismiss` as the gesture starts, before the user commits.
+
+| Value | Detected from |
+| --- | --- |
+| `initial` | The first screen of the process, labelled by the tracker |
+| `push` | `pushViewController(_:animated:)`; `setViewControllers(_:animated:)` that keeps the stack and adds to it |
+| `pop` | `popViewController(animated:)`; a pop to root or to a view controller one level down; `setViewControllers` that drops the top |
+| `pop_to` | `popToRootViewController(animated:)` or `popToViewController(_:animated:)` across several levels; `setViewControllers` that drops several |
+| `replace` | `setViewControllers` that swaps only the top |
+| `reset` | `setViewControllers` that replaces the whole stack; a new `UIWindow.rootViewController` |
+| `modal` | `present(_:animated:completion:)` |
+| `dismiss` | The current screen's `viewDidDisappear(_:)` while it, or a container holding it, is being dismissed. The revealed screen is found by walking down from the window's root: presentations, skipping the one going away, then the top of each navigation controller and the selection of each tab bar controller |
+| `switch` | The `selectedIndex` and `selectedViewController` setters of `UITabBarController`; code that sets `selectedIndex` bypasses the other |
+
+A screen that appears with no matching call gets `modal` if UIKit flags it as being presented, `push` if it flags it as moving to a parent, and no type otherwise. A screen that is already current and appears again reports nothing, which covers a cancelled interactive pop or swipe-down. Calls on a container not yet in a window are ignored: a container builds its first stack before it shows.
+
+<dl>
+<dt>Gaps</dt>
+<dd>Custom containers that neither use these calls nor forward appearance callbacks report screens with no type, or not at all. A subclass that skips <code>super</code> is invisible. With several windows or scenes, a dismissal walks the presenter's window only. Unverified: iPad, popovers, nested sheets, split views, page view controllers, and <code>show</code> or <code>showDetailViewController</code>. SwiftUI's private containers call the same methods, but their calls never match a UIKit screen, so they label nothing; the SwiftUI front end reports those screens.</dd>
+<dt>Opting out</dt>
+<dd><code>ScreenTracker(tracksNavigation: false)</code>, set before <code>install</code>, leaves <code>viewDidDisappear(_:)</code> and the container calls unswizzled. The current screen is then the last one to appear, and events carry no type.</dd>
+</dl>
+
 ## Instance methods
 
 <dl>
 <dt><code>ScreenInstrumentationUIKit.install(config:screenTracker:)</code> <em>Static</em></dt>
-<dd>Swizzles once per process; later calls return. Registers <code>screenTracker</code> as shared if given. Call on the main thread after registering providers. To avoid swizzling, do not link the module.</dd>
+<dd>Swizzles once per process; later calls return. Always swizzles <code>viewDidLoad</code>, <code>viewWillAppear(_:)</code> and <code>viewDidAppear(_:)</code>; when the tracker's <code>tracksNavigation</code> is on, also <code>viewDidDisappear(_:)</code>, <code>present(_:animated:completion:)</code>, the push, pop and <code>setViewControllers</code> calls of <code>UINavigationController</code>, both selection setters of <code>UITabBarController</code>, and <code>UIWindow.rootViewController</code>. Registers <code>screenTracker</code> as shared if given. Call on the main thread after registering providers. To avoid swizzling, do not link the module.</dd>
 </dl>
 
 ## Specifications

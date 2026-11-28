@@ -17,6 +17,68 @@ groups:
           registry does. The event repeats it so that an application running
           without `ScreenLogRecordProcessor`, which is what stamps
           `app.screen.name`, still reports where the navigation went.
+      - id: app.navigation.type
+        type:
+          members:
+            - id: initial
+              value: "initial"
+              stability: development
+              brief: >
+                The first screen of the process; nothing was current before it.
+            - id: push
+              value: "push"
+              stability: development
+              brief: >
+                A new screen was added on top of the current one.
+            - id: pop
+              value: "pop"
+              stability: development
+              brief: >
+                The current screen was removed, revealing the one directly beneath it.
+            - id: pop_to
+              value: "pop_to"
+              stability: development
+              brief: >
+                Several screens were removed at once, revealing an earlier one, such as a pop to the root.
+            - id: replace
+              value: "replace"
+              stability: development
+              brief: >
+                The current screen was swapped for a new one; the screens beneath it stayed.
+            - id: reset
+              value: "reset"
+              stability: development
+              brief: >
+                Every screen was replaced, leaving the new one alone, such as after logout or a root swap.
+            - id: modal
+              value: "modal"
+              stability: development
+              brief: >
+                A screen was presented modally over the current one, such as a sheet or a full-screen cover.
+            - id: dismiss
+              value: "dismiss"
+              stability: development
+              brief: >
+                A presented screen was dismissed, revealing the screen that presented it.
+            - id: switch
+              value: "switch"
+              stability: development
+              brief: >
+                An existing screen became current without any screen being removed, such as a tab change.
+        stability: development
+        brief: >
+          How the navigation reached its destination.
+        examples: ["push", "pop"]
+        note: >
+          Set only when the instrumentation can tell. The UIKit front end reads
+          it from the container call that caused the navigation, such as
+          `pushViewController` or `dismiss`. The SwiftUI front end infers push,
+          pop and pop_to from the views' lifecycle, and the rest from modifiers
+          the application opts into. The values extend the `push`, `replace`
+          and `traverse` of the W3C Navigation API's `navigationType`, which
+          does not tell a back step from a jump, a sheet from a push, or a tab
+          change from either. Neither upstream nor OpenTelemetry Android
+          defines this attribute.
       - id: app.navigation.sequence
         type: int
         stability: development
@@ -40,7 +102,7 @@ groups:
         note: >
           Absent on the first navigation of the process, because no screen
           preceded it. A screen the user returns to reports the screen they
-          came back from, so a pop and a push look the same here.
+          came back from; `app.navigation.type` tells a pop from a push.
       - id: app.screen.type
         type:
           members:
@@ -85,9 +147,11 @@ groups:
 
       Recorded when the current screen changes, which is the first
       `viewDidAppear` of a `UIViewController` or the `onAppear` of a view
-      marked with `otelScreen(_:)`. Navigating to the screen that is already
-      current records nothing, so a redisplay of the same screen is not a
-      navigation. The name follows OpenTelemetry Android, which records one
+      marked with `otelScreen(_:)`, or when a removed screen reveals the one
+      beneath it, such as a dismissed sheet. Navigating to the screen that is
+      already current records nothing, so a redisplay of the same screen is
+      not a navigation, unless the instrumentation knows its type: a push of a
+      second instance of the same screen is still a navigation. The name follows OpenTelemetry Android, which records one
       event per completed navigation rather than a pair of screen-start and
       screen-end events.
 
@@ -104,3 +168,6 @@ groups:
           conditionally_required: If a screen was current before this one.
       - ref: app.navigation.sequence
         requirement_level: required
+      - ref: app.navigation.type
+        requirement_level:
+          conditionally_required: If the instrumentation can determine how the navigation happened.

@@ -43,6 +43,12 @@ final class ScreenSemanticConventionsTests: XCTestCase {
     XCTAssertEqual(ScreenType.allCases.map(\.attributeValue), ["uikit", "swiftui", "manual"])
   }
 
+  func testNavigationTypeValuesMatchTheRegistry() {
+    XCTAssertEqual(FederatedSemanticConventions.App.navigationType.rawValue, "app.navigation.type")
+    XCTAssertEqual(NavigationType.allCases.map(\.attributeValue),
+                   ["initial", "push", "pop", "pop_to", "replace", "reset", "modal", "dismiss", "switch"])
+  }
+
   func testInstrumentationScopes() {
     XCTAssertEqual(ScreenConstants.uiKitScope, "io.opentelemetry.screen.uikit")
     XCTAssertEqual(ScreenConstants.swiftUIScope, "io.opentelemetry.screen.swiftui")

@@ -51,6 +51,56 @@ final class ScreenTrackerTests: XCTestCase {
 
   // MARK: - app.navigation.complete
 
+  func testEventCarriesTheNavigationType() {
+    tracker.setCurrent(screen: "Stories", type: .uikit)
+    tracker.setCurrent(screen: "Comments", type: .uikit, navigation: .push)
+
+    XCTAssertEqual(ScreenTestFixtures.string(navigationEvents().first?.attributes[FederatedSemanticConventions.App.navigationType.rawValue]),
+                   "initial")
+    XCTAssertEqual(ScreenTestFixtures.string(navigationEvents().last?.attributes[FederatedSemanticConventions.App.navigationType.rawValue]),
+                   "push")
+  }
+
+  func testTheFirstScreenOfTheProcessIsInitial() {
+    tracker.setCurrent(screen: "Checkout")
+    tracker.setCurrent(screen: "Receipt")
+
+    XCTAssertEqual(navigationEvents().map { ScreenTestFixtures.string($0.attributes[FederatedSemanticConventions.App.navigationType.rawValue]) },
+                   ["initial", nil])
+  }
+
+  func testAGivenTypeOverridesInitial() {
+    tracker.setCurrent(screen: "Login", type: .uikit, navigation: .modal)
+
+    XCTAssertEqual(ScreenTestFixtures.string(navigationEvents().first?.attributes[FederatedSemanticConventions.App.navigationType.rawValue]),
+                   "modal")
+  }
+
+  func testTurningNavigationOffDropsInitial() {
+    tracker = ScreenTracker(tracksNavigation: false)
+    tracker.setCurrent(screen: "Checkout")
+
+    XCTAssertNil(navigationEvents().first?.attributes[FederatedSemanticConventions.App.navigationType.rawValue])
+  }
+
+  func testANavigationToTheSameNameIsStillReported() {
+    tracker.setCurrent(screen: "Comments", type: .uikit)
+    tracker.setCurrent(screen: "Comments", type: .uikit)
+    tracker.setCurrent(screen: "Comments", type: .uikit, navigation: .push)
+
+    XCTAssertEqual(navigationEvents().count, 2)
+    XCTAssertEqual(tracker.previousScreen, "Comments")
+  }
+
+  func testTurningNavigationOffDropsTheTypeAndTheRepeat() {
+    tracker = ScreenTracker(tracksNavigation: false)
+    tracker.setCurrent(screen: "Comments", type: .uikit, navigation: .push)
+    tracker.setCurrent(screen: "Comments", type: .uikit, navigation: .push)
+
+    XCTAssertEqual(navigationEvents().count, 1)
+    XCTAssertNil(navigationEvents().first?.attributes[FederatedSemanticConventions.App.navigationType.rawValue])
+  }
+
   func testSetCurrentWithoutATypeReportsAManualScreen() {
     tracker.setCurrent(screen: "Checkout")
 

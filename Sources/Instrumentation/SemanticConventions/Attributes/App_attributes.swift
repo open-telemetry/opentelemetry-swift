@@ -42,6 +42,21 @@ extension FederatedSemanticConventions {
     case navigationSequence = "app.navigation.sequence"
 
     /**
+     How the navigation reached its destination.
+
+      - Examples:
+      ```
+      attributes[FederatedSemanticConventions.App.navigationType.rawValue] = "push"
+      attributes[FederatedSemanticConventions.App.navigationType.rawValue] = "pop"
+      ```
+
+     - Note: Set only when the instrumentation can tell. The UIKit front end reads it from the container call that caused the navigation, such as `pushViewController` or `dismiss`. The SwiftUI front end infers push, pop and pop_to from the views' lifecycle, and the rest from modifiers the application opts into. The values extend the `push`, `replace` and `traverse` of the W3C Navigation API's `navigationType`, which does not tell a back step from a jump, a sheet from a push, or a tab change from either. Neither upstream nor OpenTelemetry Android defines this attribute.
+
+     - Requires: Value should be one of ``NavigationTypeValues`` (of type `String`)
+    */
+    case navigationType = "app.navigation.type"
+
+    /**
      Seconds from when the app last entered the background to the start of the resume.
 
      - Requires: Value type should be `Double`
@@ -125,7 +140,7 @@ extension FederatedSemanticConventions {
       attributes[FederatedSemanticConventions.App.screenPreviousName.rawValue] = "Settings"
       ```
 
-     - Note: Absent on the first navigation of the process, because no screen preceded it. A screen the user returns to reports the screen they came back from, so a pop and a push look the same here.
+     - Note: Absent on the first navigation of the process, because no screen preceded it. A screen the user returns to reports the screen they came back from; `app.navigation.type` tells a pop from a push.
 
      - Requires: Value type should be `String`
     */
@@ -314,6 +329,48 @@ extension FederatedSemanticConventions {
       
       /// The process started in the background and had never been active.
       public static let backgroundLaunched = ResumeTypeValues("background_launched") 
+
+      internal let value: String 
+
+      public init(_ customValue: String) {
+        self.value = customValue
+      }
+
+      public var description: String { 
+        return value
+      }
+    }
+
+    /** 
+      How the navigation reached its destination.
+    */
+    public struct NavigationTypeValues: CustomStringConvertible, Sendable {
+      /// The first screen of the process; nothing was current before it.
+      public static let initial = NavigationTypeValues("initial") 
+      
+      /// A new screen was added on top of the current one.
+      public static let push = NavigationTypeValues("push") 
+      
+      /// The current screen was removed, revealing the one directly beneath it.
+      public static let pop = NavigationTypeValues("pop") 
+      
+      /// Several screens were removed at once, revealing an earlier one, such as a pop to the root.
+      public static let popTo = NavigationTypeValues("pop_to") 
+      
+      /// The current screen was swapped for a new one; the screens beneath it stayed.
+      public static let replace = NavigationTypeValues("replace") 
+      
+      /// Every screen was replaced, leaving the new one alone, such as after logout or a root swap.
+      public static let reset = NavigationTypeValues("reset") 
+      
+      /// A screen was presented modally over the current one, such as a sheet or a full-screen cover.
+      public static let modal = NavigationTypeValues("modal") 
+      
+      /// A presented screen was dismissed, revealing the screen that presented it.
+      public static let dismiss = NavigationTypeValues("dismiss") 
+      
+      /// An existing screen became current without any screen being removed, such as a tab change.
+      public static let `switch` = NavigationTypeValues("switch") 
 
       internal let value: String 
 

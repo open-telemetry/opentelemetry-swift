@@ -42,7 +42,7 @@
       #endif
     }
 
-    /// Reports the screen, then waits for its first draw.
+    /// Reports the screen to the stack, then waits for its first draw.
     ///
     /// SwiftUI can call `onAppear` again for the same identity, so the span is reported once
     /// while the screen change is not: coming back to a screen is a navigation. `onAppear`
@@ -51,12 +51,10 @@
                           attributes: [String: AttributeValue],
                           now: Date = Date(),
                           screenTracker: ScreenTracker? = nil,
-                          firstFrameReader: FirstFrameReader? = ScreenTraceState.defaultFirstFrameReader) {
+                          firstFrameReader: FirstFrameReader? = ScreenTraceState.defaultFirstFrameReader,
+                          stack: SwiftUIScreenStack = .shared) {
       let tracker = screenTracker ?? ScreenTrackerProvider.getInstance()
-      tracker.setCurrent(screen: screen,
-                         type: .swiftui,
-                         timestamp: now,
-                         attributes: attributes)
+      stack.appear(self, screen: screen, attributes: attributes, now: now, tracker: tracker)
 
       guard !didStartFirstDraw else { return }
       didStartFirstDraw = true
@@ -86,6 +84,13 @@
       }
     }
 
+    /// Reports to the stack that the view disappeared, which may reveal the screen beneath it.
+    func reportDisappearance(now: Date = Date(),
+                             screenTracker: ScreenTracker? = nil,
+                             stack: SwiftUIScreenStack = .shared) {
+      stack.disappear(self, now: now, tracker: screenTracker ?? ScreenTrackerProvider.getInstance())
+    }
+
     /// Drops a read still waiting for a frame. A display link pauses in the background, so a read
     /// left running would end at a frame drawn after the user came back. The screen's next
     /// appearance measures again.
@@ -97,9 +102,10 @@
     }
   }
 
-  /// Reports its content as a screen: an `app.navigation.complete` event when it appears, and one
-  /// `app.screen.time_to_first_draw` span measuring from the view's creation to the first frame
-  /// that displayed it.
+  /// Reports its content as a screen: an `app.navigation.complete` event when it becomes the
+  /// current screen, and one `app.screen.time_to_first_draw` span measuring from the view's
+  /// creation to the first frame that displayed it. With navigation tracking on, its disappearance
+  /// can make the screen beneath it current again, such as when a sheet is dismissed.
   ///
   /// Use the `otelScreen(_:attributes:)` modifier instead unless you need the wrapper form.
   ///
@@ -129,6 +135,9 @@
       content()
         .onAppear {
           state.reportAppearance(screen: screenName, attributes: attributes)
+        }
+        .onDisappear {
+          state.reportDisappearance()
         }
       #if canImport(UIKit) && !os(watchOS)
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in

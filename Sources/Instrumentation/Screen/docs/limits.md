@@ -5,10 +5,10 @@ What this instrumentation does not see, and how to run its tests so a failure is
 ## Known gaps
 
 <dl>
-<dt>A dismissed sheet leaves the screen behind</dt>
-<dd>Dismissing a sheet does not report the screen underneath, so the tracker keeps naming the sheet. In UIKit a <code>.pageSheet</code> or <code>.formSheet</code> going away fires no <code>viewDidAppear(_:)</code> on the presenting view controller; in SwiftUI the presenting view's <code>onAppear</code> does not run again either. Tracking the disappearance would fix it, but needs a stack of visible screens, because split views and multiple windows show more than one screen at a time, and because SwiftUI does not order one view's <code>onDisappear</code> against the next view's <code>onAppear</code>.
-
-The demo app shows this: open any sheet from Settings and close it, and <code>Current Screen</code> still reads the sheet.</dd>
+<dt>Navigation types are partial in SwiftUI</dt>
+<dd>Without the opt-in modifiers, SwiftUI reports a sheet as a push, its dismissal as a pop, and a tab switch, replace or reset with no type. See each front end's navigation types for what it detects and misses: <a href="../UIKit/README.md#navigation-types">UIKit</a>, <a href="../SwiftUI/README.md#navigation-types">SwiftUI</a>.</dd>
+<dt>With navigation tracking off, a dismissed sheet leaves the screen behind</dt>
+<dd>The presenter gets no new <code>viewDidAppear(_:)</code> or <code>onAppear</code> when a sheet goes away, so <code>ScreenTracker(tracksNavigation: false)</code> keeps naming the sheet. With tracking on, the default, each front end finds the revealed screen itself.</dd>
 <dt>Work started before a screen appears belongs to the previous screen</dt>
 <dd>A request made from <code>viewDidLoad</code> or <code>viewWillAppear</code> carries the screen the user is still looking at. That is accurate about what was on screen and wrong about what caused the request.</dd>
 <dt>A subclass that skips <code>super.viewDidAppear(_:)</code> is invisible</dt>
@@ -22,10 +22,10 @@ The demo app shows this: open any sheet from Settings and close it, and <code>Cu
 The UIKit tests drive a real `UIViewController`, so they run on the main actor.
 
 ```sh
-arch -arm64 swift test --enable-all-traits --filter Screen  # 47 tests; macOS skips the UIKit suite
+arch -arm64 swift test --enable-all-traits --filter Screen  # 75 tests; macOS skips the UIKit suite
 arch -arm64 xcodebuild test -scheme opentelemetry-swift-Package \
   -destination 'platform=iOS Simulator,name=iPhone 18 Pro' -only-testing:ScreenTests
-                                                  # 66 tests
+                                                  # 109 tests
 ```
 
 The two counts differ by the UIKit-only tests, and that difference is the point: `swift test` runs on macOS, where `canImport(UIKit)` is false, so every UIKit path and its tests compile out. A green macOS run says nothing about lifecycle behaviour. Run the simulator suite as well for any change touching it.

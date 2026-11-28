@@ -54,7 +54,7 @@ public enum ScreenInstrumentationUIKit {
 
     #if canImport(UIKit) && !os(watchOS)
       let handler = ViewControllerScreenHandler(config: config, screenTracker: tracker)
-      UIViewController.installScreenTracking(handler: handler)
+      UIViewController.installScreenTracking(handler: handler, tracksNavigation: tracker.tracksNavigation)
     #else
       _ = tracker
     #endif
