@@ -83,7 +83,7 @@ Apple documents this order in [Displaying and managing views with a view control
 <dt>First frame</dt>
 <dd>Changes made in <code>viewWillAppear(_:)</code> and <code>viewIsAppearing(_:)</code> "become visible to the user at the same time", in one transaction. A <code>CADisplayLink</code> started in <code>viewWillAppear(_:)</code> ignores its first refresh, when that transaction renders, and ends the span at the second, when it is displayed.</dd>
 <dt>Background</dt>
-<dd>A display link pauses in the background. Entering the background before the first frame cancels the read, and the screen records no span.</dd>
+<dd>A display link pauses in the background. Entering the background before the first frame cancels the read; the screen's next appearance measures again, from the same load time.</dd>
 <dt>Transition animation (future scope)</dt>
 <dd>Not measured. A possible UIKit-only <code>app.screen.transition</code> span would run from <code>viewWillAppear(_:)</code> to <code>viewDidAppear(_:)</code>, for animated, non-interactive transitions only. It cannot be a child of <code>time_to_first_draw</code>, which ends where the transition begins. UIKit fixes most of its length, so dropped frames during it would say more than its duration. SwiftUI has no public transition-end callback to match.</dd>
 <dt>Navigation event timing</dt>

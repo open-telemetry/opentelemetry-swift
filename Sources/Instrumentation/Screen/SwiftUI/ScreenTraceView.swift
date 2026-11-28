@@ -87,10 +87,13 @@
     }
 
     /// Drops a read still waiting for a frame. A display link pauses in the background, so a read
-    /// left running would end at a frame drawn after the user came back.
+    /// left running would end at a frame drawn after the user came back. The screen's next
+    /// appearance measures again.
     func cancelPendingDraw() {
-      pendingDraw?.cancel()
-      pendingDraw = nil
+      guard let pendingDraw else { return }
+      pendingDraw.cancel()
+      self.pendingDraw = nil
+      didStartFirstDraw = false
     }
   }
 

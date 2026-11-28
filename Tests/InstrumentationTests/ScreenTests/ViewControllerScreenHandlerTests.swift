@@ -266,6 +266,23 @@ import OpenTelemetryApi
       XCTAssertTrue(timeToFirstDrawSpans().isEmpty)
     }
 
+    @MainActor
+    func testAScreenBackgroundedBeforeItsFirstDrawMeasuresOnItsNextAppearance() {
+      let handler = makeHandler()
+      let loaded = Date(timeIntervalSince1970: 1_700_000_000)
+      let viewController = StoriesViewController()
+
+      handler.onViewDidLoad(viewController, now: loaded)
+      handler.onViewWillAppear(viewController)
+      notificationCenter.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+      handler.onViewWillAppear(viewController)
+      frames.fire(at: loaded.addingTimeInterval(5))
+
+      XCTAssertEqual(timeToFirstDrawSpans().count, 1)
+      XCTAssertEqual(timeToFirstDrawSpans().first?.startTime, loaded)
+      XCTAssertEqual(timeToFirstDrawSpans().first?.endTime, loaded.addingTimeInterval(5))
+    }
+
     private func navigationEvents() -> [ReadableLogRecord] {
       logs.records.filter { $0.eventName == FederatedSemanticConventions.EventName.appNavigationComplete.rawValue }
     }

@@ -30,8 +30,13 @@
     var isDone = false
   }
 
+    let state: ScreenTrackingState
   /// Turns view controller lifecycle calls into screen changes and
   /// `app.screen.time_to_first_draw` spans.
+
+    init(state: ScreenTrackingState) {
+      self.state = state
+    }
   ///
   /// The swizzled methods do nothing but call in here, so the whole decision — whether to track
   /// the screen, what to call it, what to record — is testable without swizzling anything.
@@ -89,7 +94,7 @@
       let screen = screenName(viewController)
       let loadTime = state.loadTime
       let tracker = screenTracker
-      let pending = PendingDraw()
+      let pending = PendingDraw(state: state)
       let key = ObjectIdentifier(pending)
       let read = firstFrameReader.readFirstFrame { [weak self] drawTime in
         pending.isDone = true
@@ -112,7 +117,8 @@
     }
 
     /// Drops every read still waiting for a frame. A display link pauses in the background, so a
-    /// read left running would end at a frame drawn after the user came back.
+    /// read left running would end at a frame drawn after the user came back. The screen's next
+    /// appearance measures again.
     func cancelPendingDraws() {
       let draws = pendingDraws.values
       pendingDraws.removeAll()
@@ -122,6 +128,7 @@
     }
 
     /// Whether to report `viewController` at all.
+        draw.state.didStartFirstDraw = false
     ///
     /// A view controller that adopts `ScreenTrackingCustomization` decides for itself. Otherwise
     /// the class must come from the configured bundle itself, not a framework embedded in it,

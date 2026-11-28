@@ -50,7 +50,7 @@ SwiftUI has no public callback between building a view and `onAppear`, so the sp
 <dt>First frame</dt>
 <dd>Apple guarantees that <code>onAppear</code> completes before the first rendered frame, though the exact moment "depends on the specific view type". A <code>CADisplayLink</code> started in <code>onAppear</code> ignores its first refresh, when that frame renders, and ends the span at the second, when it is displayed.</dd>
 <dt>Background</dt>
-<dd>Entering the background before the first frame cancels the read, and the view records no span.</dd>
+<dd>Entering the background before the first frame cancels the read; the view's next appearance measures again, from the same load time.</dd>
 </dl>
 
 [state]: https://developer.apple.com/documentation/swiftui/state

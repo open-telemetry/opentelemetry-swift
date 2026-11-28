@@ -113,6 +113,32 @@ import OpenTelemetryApi
       XCTAssertEqual(tracker.currentScreen, "Settings")
     }
 
+    func testAScreenBackgroundedBeforeItsFirstDrawMeasuresOnItsNextAppearance() {
+      let loaded = Date(timeIntervalSince1970: 1_700_000_000)
+      let state = ScreenTraceState(loadTime: loaded)
+
+      state.reportAppearance(screen: "Settings", attributes: [:], screenTracker: tracker, firstFrameReader: frames)
+      state.cancelPendingDraw()
+      state.reportAppearance(screen: "Settings", attributes: [:], screenTracker: tracker, firstFrameReader: frames)
+      frames.fire(at: loaded.addingTimeInterval(5))
+
+      XCTAssertEqual(timeToFirstDrawSpans().count, 1)
+      XCTAssertEqual(timeToFirstDrawSpans().first?.startTime, loaded)
+      XCTAssertEqual(timeToFirstDrawSpans().first?.endTime, loaded.addingTimeInterval(5))
+    }
+
+    func testBackgroundingAfterTheFirstDrawReportsNoSecondSpan() {
+      let state = ScreenTraceState()
+
+      state.reportAppearance(screen: "Settings", attributes: [:], screenTracker: tracker, firstFrameReader: frames)
+      frames.fire(at: Date())
+      state.cancelPendingDraw()
+      state.reportAppearance(screen: "Settings", attributes: [:], screenTracker: tracker, firstFrameReader: frames)
+      frames.fire(at: Date())
+
+      XCTAssertEqual(timeToFirstDrawSpans().count, 1)
+    }
+
     private func navigationEvents() -> [ReadableLogRecord] {
       logs.records.filter { $0.eventName == FederatedSemanticConventions.EventName.appNavigationComplete.rawValue }
     }
