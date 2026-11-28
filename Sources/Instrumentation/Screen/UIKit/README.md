@@ -24,7 +24,7 @@ ScreenInstrumentationUIKit.install()
 <dt><code>bundle</code></dt>
 <dd>The bundle whose classes are tracked. Defaults to <code>.main</code>, which excludes framework view controllers.</dd>
 <dt><code>recordsTimeToFirstDraw</code></dt>
-<dd>Applied to the shared tracker, so it governs SwiftUI too. Defaults to <code>true</code>.</dd>
+<dd>When set, overrides the tracker's <code>recordsTimeToFirstDraw</code>, so it governs SwiftUI too. Defaults to <code>nil</code>, which keeps the tracker's setting.</dd>
 <dt><code>tracksHostingControllers</code></dt>
 <dd>Reports <code>UIHostingController</code>s as UIKit screens. Defaults to <code>false</code>; <a href="../SwiftUI/README.md"><code>otelScreen</code></a> names them better.</dd>
 </dl>
