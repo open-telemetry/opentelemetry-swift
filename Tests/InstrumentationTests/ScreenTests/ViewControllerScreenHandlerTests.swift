@@ -94,6 +94,18 @@ import OpenTelemetryApi
     }
 
     @MainActor
+    func testSkipsAViewControllerFromABundleNestedInTheConfiguredOne() throws {
+      // The test bundle sits inside its parent directory the way App.app/Frameworks/X.framework
+      // sits inside App.app.
+      let testBundlePath = Bundle(for: ViewControllerScreenHandlerTests.self).bundlePath
+      let parentPath = (testBundlePath as NSString).deletingLastPathComponent
+      let parent = try XCTUnwrap(Bundle(path: parentPath))
+      let handler = makeHandler(ScreenUIKitConfig(bundle: parent))
+
+      XCTAssertFalse(handler.tracksScreen(StoriesViewController()))
+    }
+
+    @MainActor
     func testSkipsAViewControllerThatOptsOut() {
       let handler = makeHandler()
       XCTAssertFalse(handler.tracksScreen(SilentViewController()))

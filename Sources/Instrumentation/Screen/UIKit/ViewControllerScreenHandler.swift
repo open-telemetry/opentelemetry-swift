@@ -124,10 +124,11 @@
     /// Whether to report `viewController` at all.
     ///
     /// A view controller that adopts `ScreenTrackingCustomization` decides for itself. Otherwise
-    /// the class must come from the configured bundle, which keeps `UINavigationController`,
-    /// `UITabBarController` and the rest of the frameworks' plumbing out of the data. A SwiftUI
-    /// hosting controller is excluded unless `tracksHostingControllers` is on, because the
-    /// `.otelScreen` modifier already names what it hosts.
+    /// the class must come from the configured bundle itself, not a framework embedded in it,
+    /// which keeps `UINavigationController`, `UITabBarController` and the rest of the frameworks'
+    /// plumbing out of the data. A SwiftUI hosting controller is excluded unless
+    /// `tracksHostingControllers` is on, because the `.otelScreen` modifier already names what it
+    /// hosts.
     func tracksScreen(_ viewController: UIViewController) -> Bool {
       if let customized = viewController as? ScreenTrackingCustomization {
         return customized.tracksScreen
@@ -136,7 +137,7 @@
       if !config.tracksHostingControllers, Self.isHostingController(viewControllerClass) {
         return false
       }
-      return Bundle(for: viewControllerClass).bundlePath.hasPrefix(config.bundle.bundlePath)
+      return Bundle(for: viewControllerClass).bundlePath == config.bundle.bundlePath
     }
 
     /// The name to report for `viewController`.
