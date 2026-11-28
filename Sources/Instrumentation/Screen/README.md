@@ -11,6 +11,14 @@ This module imports neither UIKit nor SwiftUI. A front end feeds it; link only t
 
 Each front end documents its own lifecycle. iOS is the primary platform.
 
+A user's journey, as events and spans:
+
+![A user journey across two sessions. On screen: Stories, Comments, Stories in session a2b7, then Settings in session 9f1c after a timeout. Events: four app.navigation.complete records numbered 1, 2, 3, then 1 again in the new session, each naming the destination and the previous screen. Spans: time_to_first_draw for Stories, Comments and Settings, and none for the pop back.](img/screen-navigation.svg)
+
+One push, close up: where the event and the span end for each front end.
+
+![Two rows for one push. UIKit: the span runs from viewDidLoad through viewWillAppear to the first frame; the push transition follows, and the event fires at viewDidAppear. SwiftUI: the span runs from ScreenTraceView built to the first frame, and the event fires at onAppear, inside the span.](img/screen-push-timing.svg)
+
 ## Concepts
 
 ### Navigation
@@ -59,7 +67,7 @@ Time to first draw measures how long one screen instance took to arrive: from lo
 
 ### How the two differ
 
-![A user journey across two sessions. On screen: Stories, Comments, Stories in session a2b7, then Settings in session 9f1c after a timeout. Events: four app.navigation.complete records numbered 1, 2, 3, then 1 again in the new session, each naming the destination and the previous screen. Spans: time_to_first_draw for Stories, Comments and Settings, and none for the pop back.](img/screen-navigation.svg)
+The first diagram above shows the difference over a journey: four navigations, three spans.
 
 |                                    | `app.navigation.complete`  | `app.screen.time_to_first_draw` |
 | ---------------------------------- | -------------------------- | ------------------------------- |
@@ -76,9 +84,7 @@ Time to first draw measures how long one screen instance took to arrive: from lo
 | Position in the session            | ✓                          | —                               |
 | Trace sampling                     | Does not apply             | Applies                         |
 
-The timestamps differ too. Even on a first appearance, the event and the end of the span fall at different moments, in a different order for each front end:
-
-![Two rows for one push. UIKit: the span runs from viewDidLoad through viewWillAppear to the first frame; the push transition follows, and the event fires at viewDidAppear. SwiftUI: the span runs from ScreenTraceView built to the first frame, and the event fires at onAppear, inside the span.](img/screen-push-timing.svg)
+The timestamps differ too, as the second diagram above shows. Even on a first appearance, the event and the end of the span fall at different moments, in a different order for each front end:
 
 - **UIKit** ends the span at the first frame after `viewWillAppear(_:)`, then emits the event at `viewDidAppear(_:)`, after the push transition.
 - **SwiftUI** emits the event at `onAppear`, then ends the span at the next frame. On macOS and watchOS, which have no display link, both fall at `onAppear`.
