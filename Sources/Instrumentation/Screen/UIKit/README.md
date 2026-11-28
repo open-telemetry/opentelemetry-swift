@@ -6,7 +6,7 @@ The **`ScreenInstrumentationUIKit`** module reports every `UIViewController` as 
 
 The span ends at the first frame, before the transition animation finishes.
 
-![The view controller lifecycle. init and loadView fall outside the span. The span runs from viewDidLoad to the first frame across two stretches: the rest of viewDidLoad and the wait to be shown; appearance callbacks and first layout. The transition animation and viewDidAppear fall after it.](img/uikit-lifecycle.svg)
+![The view controller lifecycle. init and loadView fall outside the span. The span runs from viewDidLoad to the first frame across two stretches: the rest of viewDidLoad and the wait to be shown; appearance callbacks, first layout, render and display. The transition animation and viewDidAppear fall after it.](img/uikit-lifecycle.svg)
 
 Register the [processors](../docs/setup.md), then install on the main thread:
 

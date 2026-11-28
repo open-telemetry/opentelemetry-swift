@@ -22,10 +22,10 @@ The demo app shows this: open any sheet from Settings and close it, and <code>Cu
 The UIKit tests drive a real `UIViewController`, so they run on the main actor.
 
 ```sh
-arch -arm64 swift test --filter Screen            # 42 tests; macOS skips the UIKit suite
+arch -arm64 swift test --enable-all-traits --filter Screen  # 47 tests; macOS skips the UIKit suite
 arch -arm64 xcodebuild test -scheme opentelemetry-swift-Package \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:ScreenTests
-                                                  # 59 tests
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' -only-testing:ScreenTests
+                                                  # 66 tests
 ```
 
 The two counts differ by the UIKit-only tests, and that difference is the point: `swift test` runs on macOS, where `canImport(UIKit)` is false, so every UIKit path and its tests compile out. A green macOS run says nothing about lifecycle behaviour. Run the simulator suite as well for any change touching it.
