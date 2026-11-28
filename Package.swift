@@ -275,8 +275,7 @@ let package = Package(
         "OpenTelemetryApi",
         "OpenTelemetrySdk",
       ],
-      path: "Sources/Instrumentation/Screen",
-      exclude: ["README.md", "docs", "img"]
+      path: "Sources/Instrumentation/Screen/Core"
     ),
     .target(
       name: "ScreenInstrumentationUIKit",
@@ -286,7 +285,7 @@ let package = Package(
         "OpenTelemetryApi",
         "OpenTelemetrySdk",
       ],
-      path: "Sources/Instrumentation/ScreenUIKit"
+      path: "Sources/Instrumentation/Screen/UIKit"
     ),
     .target(
       name: "ScreenInstrumentationSwiftUI",
@@ -296,7 +295,7 @@ let package = Package(
         "OpenTelemetryApi",
         "OpenTelemetrySdk",
       ],
-      path: "Sources/Instrumentation/ScreenSwiftUI"
+      path: "Sources/Instrumentation/Screen/SwiftUI"
     ),
     .target(
       name: "InstrumentationSemanticConventions",
