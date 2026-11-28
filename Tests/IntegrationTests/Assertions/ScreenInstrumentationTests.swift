@@ -27,9 +27,9 @@ final class ScreenInstrumentationTests: XCTestCase {
     }
   }
 
-  private var timeToFirstAppearSpans: [ExportedSpan] {
+  private var timeToFirstDrawSpans: [ExportedSpan] {
     OTLPOutput.spans.filter {
-      $0.span.name == FederatedSemanticConventions.SpanName.appScreenTimeToFirstAppear.rawValue
+      $0.span.name == FederatedSemanticConventions.SpanName.appScreenTimeToFirstDraw.rawValue
     }
   }
 
@@ -62,8 +62,8 @@ final class ScreenInstrumentationTests: XCTestCase {
       event.record.attributes[FederatedSemanticConventions.App.screenPreviousName.rawValue])
   }
 
-  func testFirstScreenRecordsTimeToFirstAppear() throws {
-    let span = try XCTUnwrap(timeToFirstAppearSpans.first)
+  func testFirstScreenRecordsTimeToFirstDraw() throws {
+    let span = try XCTUnwrap(timeToFirstDrawSpans.first)
     XCTAssertEqual(span.scope.name, ScreenConstants.swiftUIScope)
     XCTAssertEqual(span.span.kind, .internal)
     XCTAssertEqual(span.span.attributes.string(SemanticConventions.App.screenName.rawValue),
@@ -74,8 +74,8 @@ final class ScreenInstrumentationTests: XCTestCase {
   }
 
   /// One span per screen instance, so the launch records exactly one however long it runs.
-  func testTimeToFirstAppearIsRecordedOncePerScreen() {
-    XCTAssertEqual(timeToFirstAppearSpans.count, 1)
+  func testTimeToFirstDrawIsRecordedOncePerScreen() {
+    XCTAssertEqual(timeToFirstDrawSpans.count, 1)
   }
 
   /// `ScreenSpanProcessor` stamps the current screen on every span that starts after a screen

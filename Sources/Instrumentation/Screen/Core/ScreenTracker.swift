@@ -6,6 +6,7 @@
 import Foundation
 import InstrumentationSemanticConventions
 import OpenTelemetryApi
+import Sessions
 
 /// Holds the name of the screen the user is looking at, and reports each change.
 ///
@@ -18,26 +19,41 @@ import OpenTelemetryApi
 /// `app.navigation.complete` event, and it posts `ScreenChangeNotification`. Setting the same
 /// name again does nothing, so a screen that reappears without an intervening screen produces no
 /// second event.
+///
+/// Each event carries `app.navigation.sequence`, its position within the current session. The
+/// tracker reads the session from the same `SessionManager` that `SessionLogRecordProcessor`
+/// stamps `session.id` from, so the two agree.
 public final class ScreenTracker: @unchecked Sendable {
   /// Guards `_currentScreen` and `_previousScreen` so a transition is atomic.
   private let lock = NSLock()
   private var _currentScreen: String?
   private var _previousScreen: String?
-  private var _recordsTimeToFirstAppear: Bool
+  private var _recordsTimeToFirstDraw: Bool
+  private let sessionManager: SessionManager?
+  private let navigationSequence: NavigationSequence
 
-  /// - Parameter recordsTimeToFirstAppear: Whether `recordTimeToFirstAppear` records a span.
-  ///   Defaults to `true`.
-  public init(recordsTimeToFirstAppear: Bool = true) {
-    _recordsTimeToFirstAppear = recordsTimeToFirstAppear
+  /// - Parameters:
+  ///   - recordsTimeToFirstDraw: Whether `recordTimeToFirstDraw` records a span.
+  ///     Defaults to `true`.
+  ///   - sessionManager: The session that numbers navigations. Defaults to
+  ///     `SessionManagerProvider.getInstance()`, read at each navigation.
+  ///   - userDefaults: Where the navigation count persists across restarts. Defaults to
+  ///     `.standard`. The tracker writes one key there.
+  public init(recordsTimeToFirstDraw: Bool = true,
+              sessionManager: SessionManager? = nil,
+              userDefaults: UserDefaults = .standard) {
+    _recordsTimeToFirstDraw = recordsTimeToFirstDraw
+    self.sessionManager = sessionManager
+    navigationSequence = NavigationSequence(defaults: userDefaults)
   }
 
-  /// Whether a screen records an `app.screen.time_to_first_appear` span.
+  /// Whether a screen records an `app.screen.time_to_first_draw` span.
   ///
   /// The tracker holds this rather than either front end, so turning it off reaches UIKit and
   /// SwiftUI alike. Set it before the first screen appears.
-  public var recordsTimeToFirstAppear: Bool {
-    get { lock.withLock { _recordsTimeToFirstAppear } }
-    set { lock.withLock { _recordsTimeToFirstAppear = newValue } }
+  public var recordsTimeToFirstDraw: Bool {
+    get { lock.withLock { _recordsTimeToFirstDraw } }
+    set { lock.withLock { _recordsTimeToFirstDraw = newValue } }
   }
 
   /// The screen the user is looking at, or `nil` before the first screen appears.
@@ -71,8 +87,14 @@ public final class ScreenTracker: @unchecked Sendable {
     }
     guard transition.changed else { return }
 
+    // Read outside `lock`: starting a session emits events that `ScreenLogRecordProcessor`
+    // stamps by reading `currentScreen`, which takes `lock`.
+    let session = (sessionManager ?? SessionManagerProvider.getInstance()).getSession()
+    let sequence = navigationSequence.next(sessionId: session.id)
+
     emitNavigationComplete(screen: screen,
                            previousScreen: transition.previous,
+                           sequence: sequence,
                            type: type,
                            timestamp: timestamp,
                            logger: logger ?? Self.logger(for: type),
@@ -88,6 +110,7 @@ public final class ScreenTracker: @unchecked Sendable {
   /// still gets the destination name.
   private func emitNavigationComplete(screen: String,
                                       previousScreen: String?,
+                                      sequence: Int,
                                       type: ScreenType,
                                       timestamp: Date,
                                       logger: Logger,
@@ -95,6 +118,7 @@ public final class ScreenTracker: @unchecked Sendable {
     var eventAttributes = attributes
     eventAttributes[FederatedSemanticConventions.App.navigationDestinationName.rawValue] = .string(screen)
     eventAttributes[FederatedSemanticConventions.App.screenType.rawValue] = .string(type.attributeValue)
+    eventAttributes[FederatedSemanticConventions.App.navigationSequence.rawValue] = .int(sequence)
     if let previousScreen {
       eventAttributes[FederatedSemanticConventions.App.screenPreviousName.rawValue] = .string(previousScreen)
     }
@@ -116,21 +140,21 @@ public final class ScreenTracker: @unchecked Sendable {
     return OpenTelemetry.instance.tracerProvider.get(instrumentationName: scope)
   }
 
-  /// Records one `app.screen.time_to_first_appear` span, from a screen's creation to its first
-  /// appearance.
+  /// Records one `app.screen.time_to_first_draw` span, from a screen's creation to the first
+  /// frame that displayed it.
   ///
   /// The caller owns the "first" part: it must call this once per screen instance. UIKit keeps
   /// that flag on the view controller, SwiftUI in `@State`, so two windows showing the same
   /// screen each report their own span.
-  public func recordTimeToFirstAppear(screen: String,
-                                      type: ScreenType,
-                                      loadTime: Date,
-                                      appearTime: Date,
-                                      attributes: [String: AttributeValue] = [:]) {
-    guard recordsTimeToFirstAppear else { return }
+  public func recordTimeToFirstDraw(screen: String,
+                                    type: ScreenType,
+                                    loadTime: Date,
+                                    drawTime: Date,
+                                    attributes: [String: AttributeValue] = [:]) {
+    guard recordsTimeToFirstDraw else { return }
 
     let builder = Self.tracer(for: type)
-      .spanBuilder(spanName: FederatedSemanticConventions.SpanName.appScreenTimeToFirstAppear.rawValue)
+      .spanBuilder(spanName: FederatedSemanticConventions.SpanName.appScreenTimeToFirstDraw.rawValue)
       .setStartTime(time: loadTime)
       .setAttribute(key: SemanticConventions.App.screenName.rawValue, value: screen)
       .setAttribute(key: FederatedSemanticConventions.App.screenType.rawValue, value: type.attributeValue)
@@ -139,6 +163,6 @@ public final class ScreenTracker: @unchecked Sendable {
       builder.setAttribute(key: key, value: value)
     }
 
-    builder.startSpan().end(time: appearTime)
+    builder.startSpan().end(time: drawTime)
   }
 }

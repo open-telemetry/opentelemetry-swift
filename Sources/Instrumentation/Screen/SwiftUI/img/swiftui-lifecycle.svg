@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 214" width="940" height="214" role="img" aria-label="The app.screen.time_to_first_draw span over the SwiftUI view lifecycle">
+  <rect x="0" y="0" width="940" height="214" fill="#ffffff"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" fill="#1b2733">
+    <text x="20" y="26" font-size="15" font-weight="600"><tspan font-family="SF Mono, Menlo, Consolas, monospace" font-weight="600">app.screen.time_to_first_draw</tspan> over the SwiftUI view lifecycle</text>
+    <text x="20" y="44" font-size="11" fill="#55606b">The shaded stretches are lifecycle steps inside the one span, not child spans. Widths are not to scale.</text>
+    <!-- SwiftUI -->
+
+    <g font-size="10.5" fill="#33414e" text-anchor="middle">
+      <text x="250" y="82"><tspan font-family="SF Mono, Menlo, Consolas, monospace">ScreenTraceView</tspan> value built</text>
+      <text x="610" y="82">first <tspan font-family="SF Mono, Menlo, Consolas, monospace">onAppear</tspan></text>
+      <text x="740" y="82">first frame</text>
+      <text x="860" y="82">transition ends</text>
+    </g>
+    <g stroke="#c3ccd5" stroke-width="1" stroke-dasharray="2 3">
+      <line x1="250" y1="88" x2="250" y2="102"/>
+      <line x1="610" y1="88" x2="610" y2="102"/>
+      <line x1="740" y1="88" x2="740" y2="102"/>
+      <line x1="860" y1="88" x2="860" y2="102"/>
+    </g>
+
+    <rect x="250" y="102" width="360" height="32" rx="3" fill="#e4ecf6" stroke="#4a6fa5" stroke-width="1.25"/>
+    <text x="430" y="123" font-family="SF Mono, Menlo, Consolas, monospace" font-size="12" font-weight="600" text-anchor="middle">app.screen.time_to_first_draw</text>
+    <rect x="610" y="102" width="250" height="32" rx="3" fill="#ffffff" stroke="#8b98a5" stroke-width="1.25" stroke-dasharray="4 3"/>
+    <text x="735" y="122" font-size="10.5" fill="#55606b" text-anchor="middle">rendering and transition, outside the span</text>
+
+    <rect x="250" y="140" width="360" height="34" rx="3" fill="#c6dcf0" stroke="#3b6ea5" stroke-width="1"/>
+    <g font-size="10.5" text-anchor="middle">
+      <text x="430" y="154">waiting to be inserted, then the content's</text>
+      <text x="430" y="167">body and layout, in SwiftUI's own order</text>
+    </g>
+
+
+  </g>
+</svg>

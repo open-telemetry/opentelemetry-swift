@@ -4,56 +4,99 @@
  */
 
 #if canImport(SwiftUI)
+  import Combine
   import Foundation
+  import InstrumentationCommon
   import ScreenInstrumentation
   import OpenTelemetryApi
   import SwiftUI
+  #if canImport(UIKit) && !os(watchOS)
+    import UIKit
+  #endif
 
   /// What the instrumentation remembers about one SwiftUI view identity, and what it does when
   /// that view appears.
   ///
-  /// A class, so `onAppear` can record the first appearance without invalidating the view the
-  /// way a mutated value in `@State` would. It also holds the reporting itself, which lets the
-  /// tests exercise it without rendering anything.
+  /// A class, so `onAppear` can start the first draw without invalidating the view the way a
+  /// mutated value in `@State` would. It also holds the reporting itself, which lets the tests
+  /// exercise it without rendering anything.
   final class ScreenTraceState: @unchecked Sendable {
-    /// When SwiftUI created the storage for this view identity, which starts the time to first
-    /// appear. SwiftUI keeps the first instance it makes for an identity, so repeated
-    /// initializations of the view struct do not move this.
+    /// When the `ScreenTraceView` value SwiftUI kept for this identity was built, which starts the
+    /// time to first draw. `@State` builds a new instance with every view value, and SwiftUI keeps
+    /// the one from the value it inserts, so later rebuilds do not move this.
     let loadTime: Date
-    private var didReportFirstAppear = false
+    private var didStartFirstDraw = false
+    private var pendingDraw: FirstFrameRead?
 
     init(loadTime: Date = Date()) {
       self.loadTime = loadTime
     }
 
-    /// Reports the screen, then its first appearance.
+    /// The reader that ends the span, or `nil` where no display link exists, which ends it at
+    /// `onAppear` instead.
+    static var defaultFirstFrameReader: FirstFrameReader? {
+      #if canImport(UIKit) && !os(watchOS)
+        DisplayLinkFirstFrameReader()
+      #else
+        nil
+      #endif
+    }
+
+    /// Reports the screen, then waits for its first draw.
     ///
     /// SwiftUI can call `onAppear` again for the same identity, so the span is reported once
-    /// while the screen change is not: coming back to a screen is a navigation.
+    /// while the screen change is not: coming back to a screen is a navigation. `onAppear`
+    /// completes before the first rendered frame, so the span ends at the next frame displayed.
     func reportAppearance(screen: String,
                           attributes: [String: AttributeValue],
                           now: Date = Date(),
-                          screenTracker: ScreenTracker? = nil) {
+                          screenTracker: ScreenTracker? = nil,
+                          firstFrameReader: FirstFrameReader? = ScreenTraceState.defaultFirstFrameReader) {
       let tracker = screenTracker ?? ScreenTrackerProvider.getInstance()
       tracker.setCurrent(screen: screen,
                          type: .swiftui,
                          timestamp: now,
                          attributes: attributes)
 
-      guard !didReportFirstAppear else { return }
-      didReportFirstAppear = true
+      guard !didStartFirstDraw else { return }
+      didStartFirstDraw = true
 
-      tracker.recordTimeToFirstAppear(screen: screen,
+      let loadTime = loadTime
+      guard let firstFrameReader else {
+        tracker.recordTimeToFirstDraw(screen: screen,
                                       type: .swiftui,
                                       loadTime: loadTime,
-                                      appearTime: now,
+                                      drawTime: now,
                                       attributes: attributes)
+        return
+      }
+
+      var isDone = false
+      let read = firstFrameReader.readFirstFrame { [weak self] drawTime in
+        isDone = true
+        self?.pendingDraw = nil
+        tracker.recordTimeToFirstDraw(screen: screen,
+                                      type: .swiftui,
+                                      loadTime: loadTime,
+                                      drawTime: drawTime,
+                                      attributes: attributes)
+      }
+      if !isDone {
+        pendingDraw = read
+      }
+    }
+
+    /// Drops a read still waiting for a frame. A display link pauses in the background, so a read
+    /// left running would end at a frame drawn after the user came back.
+    func cancelPendingDraw() {
+      pendingDraw?.cancel()
+      pendingDraw = nil
     }
   }
 
   /// Reports its content as a screen: an `app.navigation.complete` event when it appears, and one
-  /// `app.screen.time_to_first_appear` span measuring from the view's creation to that first
-  /// appearance.
+  /// `app.screen.time_to_first_draw` span measuring from the view's creation to the first frame
+  /// that displayed it.
   ///
   /// Use the `otelScreen(_:attributes:)` modifier instead unless you need the wrapper form.
   ///
@@ -80,9 +123,15 @@
     }
 
     public var body: some SwiftUI.View {
-      content().onAppear {
-        state.reportAppearance(screen: screenName, attributes: attributes)
-      }
+      content()
+        .onAppear {
+          state.reportAppearance(screen: screenName, attributes: attributes)
+        }
+      #if canImport(UIKit) && !os(watchOS)
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
+          state.cancelPendingDraw()
+        }
+      #endif
     }
   }
 #endif

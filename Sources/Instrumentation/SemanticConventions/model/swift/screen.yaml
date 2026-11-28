@@ -17,6 +17,20 @@ groups:
           registry does. The event repeats it so that an application running
           without `ScreenLogRecordProcessor`, which is what stamps
           `app.screen.name`, still reports where the navigation went.
+      - id: app.navigation.sequence
+        type: int
+        stability: development
+        brief: >
+          The position of this navigation within the session, starting at 1.
+        examples: [1, 2, 3]
+        note: >
+          Counts `app.navigation.complete` events per `session.id`, so a
+          consumer can order a user's journey and detect lost events: a gap in
+          the numbers within one session means events were dropped. The count
+          is persisted with the session's identifier, so it continues across an
+          app restart that resumes the same session, and starts again at 1 when
+          the session changes. Neither upstream nor OpenTelemetry Android
+          defines this attribute.
       - id: app.screen.previous.name
         type: string
         stability: development
@@ -35,7 +49,7 @@ groups:
               stability: development
               brief: >
                 A `UIViewController` that UIKit presented, detected by swizzling
-                `viewDidLoad` and `viewDidAppear`.
+                `viewDidLoad`, `viewWillAppear` and `viewDidAppear`.
             - id: swiftui
               value: "swiftui"
               stability: development
@@ -48,9 +62,8 @@ groups:
           The two paths differ in what they can see, so a consumer comparing
           screens needs to tell them apart. A `uikit` screen is named from its
           view controller's class and is detected without the application's
-          help; a `swiftui` screen is named by the application, and its times
-          come from `onAppear`, which SwiftUI calls when the view joins the
-          hierarchy rather than when a frame carrying it is displayed. Neither
+          help; a `swiftui` screen is named by the application, and its span
+          starts when SwiftUI builds the view rather than when it loads. Neither
           upstream nor OpenTelemetry Android defines this attribute.
   - id: event.app.navigation.complete
     type: event
@@ -73,7 +86,7 @@ groups:
       screen-end events.
 
       The timestamp is the moment the screen appeared. The event has no
-      duration: `app.screen.time_to_first_appear` measures how long the screen
+      duration: `app.screen.time_to_first_draw` measures how long the screen
       took to arrive.
     attributes:
       - ref: app.navigation.destination.name
@@ -83,3 +96,5 @@ groups:
       - ref: app.screen.previous.name
         requirement_level:
           conditionally_required: If a screen was current before this one.
+      - ref: app.navigation.sequence
+        requirement_level: required

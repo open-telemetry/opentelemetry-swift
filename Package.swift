@@ -274,6 +274,7 @@ let package = Package(
         "InstrumentationSemanticConventions",
         "OpenTelemetryApi",
         "OpenTelemetrySdk",
+        "Sessions",
       ],
       path: "Sources/Instrumentation/Screen/Core"
     ),
@@ -281,21 +282,25 @@ let package = Package(
       name: "ScreenInstrumentationUIKit",
       dependencies: [
         "ScreenInstrumentation",
+        "InstrumentationCommon",
         "InstrumentationSemanticConventions",
         "OpenTelemetryApi",
         "OpenTelemetrySdk",
       ],
-      path: "Sources/Instrumentation/Screen/UIKit"
+      path: "Sources/Instrumentation/Screen/UIKit",
+      exclude: ["README.md", "img"]
     ),
     .target(
       name: "ScreenInstrumentationSwiftUI",
       dependencies: [
         "ScreenInstrumentation",
+        "InstrumentationCommon",
         "InstrumentationSemanticConventions",
         "OpenTelemetryApi",
         "OpenTelemetrySdk",
       ],
-      path: "Sources/Instrumentation/Screen/SwiftUI"
+      path: "Sources/Instrumentation/Screen/SwiftUI",
+      exclude: ["README.md", "img"]
     ),
     .target(
       name: "InstrumentationSemanticConventions",
@@ -313,11 +318,13 @@ let package = Package(
       name: "ScreenTests",
       dependencies: [
         "SharedTestUtils",
+        "InstrumentationCommon",
         "InstrumentationSemanticConventions",
         "ScreenInstrumentation",
         "ScreenInstrumentationUIKit",
         "ScreenInstrumentationSwiftUI",
         "OpenTelemetrySdk",
+        "Sessions",
       ],
       path: "Tests/InstrumentationTests/ScreenTests"
     ),
@@ -792,6 +799,7 @@ extension Package {
           name: "AppLaunchInstrumentationCore",
           dependencies: [
             "OpenTelemetryApi",
+            "InstrumentationCommon",
             "InstrumentationSemanticConventions",
             "AppLaunchEnvironment",
           ],
@@ -812,6 +820,7 @@ extension Package {
           name: "AppLaunchInstrumentationTests",
           dependencies: [
             "AppLaunchInstrumentationCore",
+            "InstrumentationCommon",
             "MincoreLaunchInstrumentation",
             "InMemoryExporter",
             "OpenTelemetrySdk",

@@ -26,6 +26,22 @@ extension FederatedSemanticConventions {
     case navigationDestinationName = "app.navigation.destination.name"
 
     /**
+     The position of this navigation within the session, starting at 1.
+
+      - Examples:
+      ```
+      attributes[FederatedSemanticConventions.App.navigationSequence.rawValue] = 1
+      attributes[FederatedSemanticConventions.App.navigationSequence.rawValue] = 2
+      attributes[FederatedSemanticConventions.App.navigationSequence.rawValue] = 3
+      ```
+
+     - Note: Counts `app.navigation.complete` events per `session.id`, so a consumer can order a user's journey and detect lost events: a gap in the numbers within one session means events were dropped. The count is persisted with the session's identifier, so it continues across an app restart that resumes the same session, and starts again at 1 when the session changes. Neither upstream nor OpenTelemetry Android defines this attribute.
+
+     - Requires: Value type should be `Int`
+    */
+    case navigationSequence = "app.navigation.sequence"
+
+    /**
      Seconds from when the app last entered the background to the start of the resume.
 
      - Requires: Value type should be `Double`
@@ -118,7 +134,7 @@ extension FederatedSemanticConventions {
     /**
      The UI framework that drew the screen.
 
-     - Note: The two paths differ in what they can see, so a consumer comparing screens needs to tell them apart. A `uikit` screen is named from its view controller's class and is detected without the application's help; a `swiftui` screen is named by the application, and its times come from `onAppear`, which SwiftUI calls when the view joins the hierarchy rather than when a frame carrying it is displayed. Neither upstream nor OpenTelemetry Android defines this attribute.
+     - Note: The two paths differ in what they can see, so a consumer comparing screens needs to tell them apart. A `uikit` screen is named from its view controller's class and is detected without the application's help; a `swiftui` screen is named by the application, and its span starts when SwiftUI builds the view rather than when it loads. Neither upstream nor OpenTelemetry Android defines this attribute.
 
      - Requires: Value should be one of ``ScreenTypeValues`` (of type `String`)
     */
@@ -315,7 +331,7 @@ extension FederatedSemanticConventions {
     */
     public struct ScreenTypeValues: CustomStringConvertible, Sendable {
       
-      /// A `UIViewController` that UIKit presented, detected by swizzling `viewDidLoad` and `viewDidAppear`.
+      /// A `UIViewController` that UIKit presented, detected by swizzling `viewDidLoad`, `viewWillAppear` and `viewDidAppear`.
       public static let uikit = ScreenTypeValues("uikit") 
       
       /// A SwiftUI view the application marked with `otelScreen(_:)`.

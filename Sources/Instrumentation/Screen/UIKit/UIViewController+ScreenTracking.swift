@@ -30,7 +30,7 @@
     /// The handler the swizzled methods call. Set once by `install`, read on the main thread.
     private static var screenHandler: ViewControllerScreenHandler?
 
-    /// Exchanges `viewDidLoad` and `viewDidAppear(_:)` with the shims below.
+    /// Exchanges `viewDidLoad`, `viewWillAppear(_:)` and `viewDidAppear(_:)` with the shims below.
     ///
     /// Exchanging on `UIViewController` itself covers every view controller at once. A subclass
     /// that overrides a method reaches the shim through its `super` call, so a subclass that
@@ -38,6 +38,7 @@
     static func installScreenTracking(handler: ViewControllerScreenHandler) {
       screenHandler = handler
       exchange(#selector(UIViewController.viewDidLoad), with: #selector(UIViewController.otelTraceViewDidLoad))
+      exchange(#selector(UIViewController.viewWillAppear(_:)), with: #selector(UIViewController.otelTraceViewWillAppear(_:)))
       exchange(#selector(UIViewController.viewDidAppear(_:)), with: #selector(UIViewController.otelTraceViewDidAppear(_:)))
     }
 
@@ -58,6 +59,11 @@
     @objc dynamic func otelTraceViewDidLoad() {
       UIViewController.screenHandler?.onViewDidLoad(self)
       otelTraceViewDidLoad() // The original viewDidLoad, after the exchange.
+    }
+
+    @objc dynamic func otelTraceViewWillAppear(_ animated: Bool) {
+      UIViewController.screenHandler?.onViewWillAppear(self)
+      otelTraceViewWillAppear(animated) // The original viewWillAppear, after the exchange.
     }
 
     @objc dynamic func otelTraceViewDidAppear(_ animated: Bool) {

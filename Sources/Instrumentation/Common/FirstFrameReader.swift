@@ -7,14 +7,14 @@
   import Foundation
 
   /// A first frame read that hasn't reported yet, so its owner can stop it.
-  protocol FirstFrameRead: Sendable {
+  package protocol FirstFrameRead: Sendable {
     /// Stops the read and releases what it holds. The completion is never called afterwards, and
     /// cancelling a read that already completed does nothing.
     func cancel()
   }
 
   /// Reports when the next frame is displayed.
-  protocol FirstFrameReader: Sendable {
+  package protocol FirstFrameReader: Sendable {
     /// Starts a read, and returns a handle its owner cancels when the activation it was started
     /// for can no longer end at a first frame, for example because the app left the foreground.
     @discardableResult
@@ -26,9 +26,11 @@
 
     /// Reads the next frame with a `CADisplayLink` on the main run loop, which it invalidates once
     /// the frame is displayed, or when the read is cancelled.
-    struct DisplayLinkFirstFrameReader: FirstFrameReader {
+    package struct DisplayLinkFirstFrameReader: FirstFrameReader {
+      package init() {}
+
       @discardableResult
-      func readFirstFrame(_ completion: @escaping (Date) -> Void) -> FirstFrameRead {
+      package func readFirstFrame(_ completion: @escaping (Date) -> Void) -> FirstFrameRead {
         let target = DisplayLinkTarget(completion: completion)
         let link = CADisplayLink(target: target, selector: #selector(DisplayLinkTarget.tick(_:)))
         link.add(to: .main, forMode: .common)

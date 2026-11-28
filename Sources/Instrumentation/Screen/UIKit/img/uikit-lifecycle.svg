@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 214" width="940" height="214" role="img" aria-label="The app.screen.time_to_first_draw span over the UIKit view controller lifecycle">
+  <rect x="0" y="0" width="940" height="214" fill="#ffffff"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" fill="#1b2733">
+    <text x="20" y="26" font-size="15" font-weight="600"><tspan font-family="SF Mono, Menlo, Consolas, monospace" font-weight="600">app.screen.time_to_first_draw</tspan> over the view controller lifecycle</text>
+    <text x="20" y="44" font-size="11" fill="#55606b">The shaded stretches are lifecycle steps inside the one span, not child spans. Widths are not to scale.</text>
+    <!-- UIKit -->
+
+    <g font-size="10.5" fill="#33414e" text-anchor="middle" font-family="SF Mono, Menlo, Consolas, monospace">
+      <text x="90" y="82">init</text>
+      <text x="170" y="82">loadView</text>
+      <text x="250" y="82">viewDidLoad</text>
+      <text x="460" y="82">viewWillAppear</text>
+      <text x="650" y="82">viewDidLayoutSubviews</text>
+      <text x="860" y="82">viewDidAppear</text>
+    </g>
+    <g stroke="#c3ccd5" stroke-width="1" stroke-dasharray="2 3">
+      <line x1="90" y1="88" x2="90" y2="102"/>
+      <line x1="170" y1="88" x2="170" y2="102"/>
+      <line x1="250" y1="88" x2="250" y2="102"/>
+      <line x1="460" y1="88" x2="460" y2="150"/>
+      <line x1="650" y1="88" x2="650" y2="150"/>
+      <line x1="860" y1="88" x2="860" y2="102"/>
+    </g>
+
+    <rect x="90" y="102" width="160" height="32" rx="3" fill="#ffffff" stroke="#8b98a5" stroke-width="1.25" stroke-dasharray="4 3"/>
+    <text x="170" y="122" font-size="10.5" fill="#55606b" text-anchor="middle">outside the span</text>
+    <rect x="250" y="102" width="610" height="32" rx="3" fill="#e4ecf6" stroke="#4a6fa5" stroke-width="1.25"/>
+    <text x="555" y="123" font-family="SF Mono, Menlo, Consolas, monospace" font-size="12" font-weight="600" text-anchor="middle">app.screen.time_to_first_draw</text>
+
+    <rect x="250" y="140" width="210" height="34" rx="3" fill="#d6e6f4" stroke="#3b6ea5" stroke-width="1"/>
+    <rect x="460" y="140" width="190" height="34" rx="3" fill="#c6dcf0" stroke="#3b6ea5" stroke-width="1"/>
+    <rect x="650" y="140" width="210" height="34" rx="3" fill="#b6d2ec" stroke="#3b6ea5" stroke-width="1"/>
+    <g font-size="10.5" text-anchor="middle">
+      <text x="355" y="154">rest of viewDidLoad,</text>
+      <text x="355" y="167">then waiting to be shown</text>
+      <text x="555" y="154">appearance callbacks</text>
+      <text x="555" y="167">and first layout</text>
+      <text x="755" y="154">transition animation,</text>
+      <text x="755" y="167">when animated</text>
+    </g>
+
+
+  </g>
+</svg>

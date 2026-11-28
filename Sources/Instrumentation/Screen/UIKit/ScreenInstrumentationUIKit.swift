@@ -48,7 +48,7 @@ public enum ScreenInstrumentationUIKit {
       ScreenTrackerProvider.register(screenTracker: screenTracker)
     }
     let tracker = screenTracker ?? ScreenTrackerProvider.getInstance()
-    tracker.recordsTimeToFirstAppear = config.recordsTimeToFirstAppear
+    tracker.recordsTimeToFirstDraw = config.recordsTimeToFirstDraw
 
     #if canImport(UIKit) && !os(watchOS)
       let handler = ViewControllerScreenHandler(config: config, screenTracker: tracker)

@@ -5,6 +5,7 @@
 
 #if canImport(Darwin) && ((canImport(UIKit) && !os(watchOS)) || canImport(AppKit))
   import Foundation
+  import InstrumentationCommon
   #if canImport(UIKit)
     import UIKit
   #else

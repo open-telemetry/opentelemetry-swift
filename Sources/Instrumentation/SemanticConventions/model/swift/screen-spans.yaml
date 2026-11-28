@@ -1,15 +1,15 @@
 groups:
-  - id: span.app_screen.time_to_first_appear
+  - id: span.app_screen.time_to_first_draw
     type: span
     annotations:
-      span_name: app.screen.time_to_first_appear
+      span_name: app.screen.time_to_first_draw
     span_kind: internal
     stability: development
     brief: >
-      A screen's time to first appear, from the screen's creation to the first
-      time it appeared.
+      A screen's time to first draw, from the screen's creation to the first
+      frame displayed.
     note: |
-      **Span name** MUST be `app.screen.time_to_first_appear`.
+      **Span name** MUST be `app.screen.time_to_first_draw`.
 
       **Span kind** MUST be `INTERNAL`.
 
@@ -21,8 +21,16 @@ groups:
 
       | `app.screen.type` | Start timestamp | End timestamp |
       | --- | --- | --- |
-      | `uikit` | The view controller's `viewDidLoad` | Its first `viewDidAppear` |
-      | `swiftui` | SwiftUI created the view's state | Its first `onAppear` |
+      | `uikit` | The view controller's `viewDidLoad` | The first frame displayed after its first `viewWillAppear` |
+      | `swiftui` | SwiftUI created the view's state | The first frame displayed after its first `onAppear` |
+
+      The end is read from the display link: the second refresh after the
+      start of the read, when a frame committed in the first is displayed.
+      Neither end includes the transition animation. Where no display link
+      exists, on macOS and watchOS, a `swiftui` span ends at `onAppear`.
+
+      An app that enters the background before the first frame records
+      nothing for that screen.
 
       The span measures the screen's own work only when the screen is created
       to be shown. UIKit loads a view controller the first time something asks

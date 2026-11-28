@@ -5,6 +5,7 @@
 
 #if canImport(UIKit) && !os(watchOS)
   import Foundation
+  import InstrumentationCommon
   import ScreenInstrumentation
   import OpenTelemetryApi
   import UIKit
@@ -12,19 +13,25 @@
   /// What the instrumentation remembers about one view controller instance.
   ///
   /// Per instance, not per class: two windows showing the same screen each measure their own
-  /// first appearance.
+  /// first draw.
   final class ScreenTrackingState {
-    /// When `viewDidLoad` ran, which starts the time to first appear.
+    /// When `viewDidLoad` ran, which starts the time to first draw.
     let loadTime: Date
-    var didReportFirstAppear = false
+    var didStartFirstDraw = false
 
     init(loadTime: Date) {
       self.loadTime = loadTime
     }
   }
 
+  /// A first-draw read that has not reported yet.
+  private final class PendingDraw {
+    var read: FirstFrameRead?
+    var isDone = false
+  }
+
   /// Turns view controller lifecycle calls into screen changes and
-  /// `app.screen.time_to_first_appear` spans.
+  /// `app.screen.time_to_first_draw` spans.
   ///
   /// The swizzled methods do nothing but call in here, so the whole decision — whether to track
   /// the screen, what to call it, what to record — is testable without swizzling anything.
@@ -32,13 +39,31 @@
   final class ViewControllerScreenHandler {
     private let config: ScreenUIKitConfig
     private let screenTracker: ScreenTracker
+    private let firstFrameReader: FirstFrameReader
+    private var pendingDraws: [ObjectIdentifier: PendingDraw] = [:]
+    private var backgroundObserver: NSObjectProtocol?
 
-    init(config: ScreenUIKitConfig, screenTracker: ScreenTracker) {
+    /// - Parameters:
+    ///   - firstFrameReader: Reports the frame that first displays a screen.
+    ///   - notificationCenter: Where to observe the app entering the background, which cancels
+    ///     reads still waiting for a frame.
+    init(config: ScreenUIKitConfig,
+         screenTracker: ScreenTracker,
+         firstFrameReader: FirstFrameReader = DisplayLinkFirstFrameReader(),
+         notificationCenter: NotificationCenter = .default) {
       self.config = config
       self.screenTracker = screenTracker
+      self.firstFrameReader = firstFrameReader
+      backgroundObserver = notificationCenter.addObserver(
+        forName: UIApplication.didEnterBackgroundNotification,
+        object: nil,
+        queue: .main
+      ) { [weak self] _ in
+        MainActor.assumeIsolated { self?.cancelPendingDraws() }
+      }
     }
 
-    /// Records when the screen was created, which starts the time to first appear.
+    /// Records when the screen was created, which starts the time to first draw.
     ///
     /// The current screen is not changed here. A view controller can load long before it
     /// appears, and loads without ever appearing, so loading is not evidence that the user is
@@ -49,26 +74,51 @@
       viewController.screenTrackingState = ScreenTrackingState(loadTime: now)
     }
 
-    /// Reports the screen as current, then records its first appearance.
+    /// Starts waiting for the frame that first displays the screen.
+    ///
+    /// UIKit calls `viewWillAppear(_:)` before it configures the transition's animations, in the
+    /// same transaction as the first layout, so the next frame displayed is the screen's first.
+    func onViewWillAppear(_ viewController: UIViewController) {
+      // A view controller that loaded before install() has no state, so it has no load time and
+      // no measurable first draw.
+      guard tracksScreen(viewController),
+            let state = viewController.screenTrackingState,
+            !state.didStartFirstDraw else { return }
+      state.didStartFirstDraw = true
+
+      let screen = screenName(viewController)
+      let loadTime = state.loadTime
+      let tracker = screenTracker
+      let pending = PendingDraw()
+      let key = ObjectIdentifier(pending)
+      let read = firstFrameReader.readFirstFrame { [weak self] drawTime in
+        pending.isDone = true
+        MainActor.assumeIsolated { _ = self?.pendingDraws.removeValue(forKey: key) }
+        tracker.recordTimeToFirstDraw(screen: screen,
+                                      type: .uikit,
+                                      loadTime: loadTime,
+                                      drawTime: drawTime)
+      }
+      guard !pending.isDone else { return }
+      pending.read = read
+      pendingDraws[key] = pending
+    }
+
+    /// Reports the screen as current.
     func onViewDidAppear(_ viewController: UIViewController, now: Date = Date()) {
       guard tracksScreen(viewController) else { return }
-      let screen = screenName(viewController)
 
-      // Before the span, so ScreenSpanProcessor stamps the span with this screen rather than the
-      // one the user just left.
-      screenTracker.setCurrent(screen: screen, type: .uikit, timestamp: now)
+      screenTracker.setCurrent(screen: screenName(viewController), type: .uikit, timestamp: now)
+    }
 
-
-      // A view controller that loaded before install() has no state, so it has no load time and
-      // no measurable first appearance. It still reports the screen change above.
-      guard let state = viewController.screenTrackingState,
-            !state.didReportFirstAppear else { return }
-      state.didReportFirstAppear = true
-
-      screenTracker.recordTimeToFirstAppear(screen: screen,
-                                            type: .uikit,
-                                            loadTime: state.loadTime,
-                                            appearTime: now)
+    /// Drops every read still waiting for a frame. A display link pauses in the background, so a
+    /// read left running would end at a frame drawn after the user came back.
+    func cancelPendingDraws() {
+      let draws = pendingDraws.values
+      pendingDraws.removeAll()
+      for draw in draws {
+        draw.read?.cancel()
+      }
     }
 
     /// Whether to report `viewController` at all.

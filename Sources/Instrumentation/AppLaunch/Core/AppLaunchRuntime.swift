@@ -5,6 +5,7 @@
 
 #if canImport(Darwin) && ((canImport(UIKit) && !os(watchOS)) || canImport(AppKit))
   import Foundation
+  import InstrumentationCommon
   import OpenTelemetryApi
 
   /// Installs and resets the activation monitor. There's one per process.

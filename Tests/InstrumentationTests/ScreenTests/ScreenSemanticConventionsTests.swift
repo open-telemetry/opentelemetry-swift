@@ -23,9 +23,9 @@ final class ScreenSemanticConventionsTests: XCTestCase {
                    "app.navigation.complete")
   }
 
-  func testTimeToFirstAppearSpanName() {
-    XCTAssertEqual(FederatedSemanticConventions.SpanName.appScreenTimeToFirstAppear.rawValue,
-                   "app.screen.time_to_first_appear")
+  func testTimeToFirstDrawSpanName() {
+    XCTAssertEqual(FederatedSemanticConventions.SpanName.appScreenTimeToFirstDraw.rawValue,
+                   "app.screen.time_to_first_draw")
   }
 
   func testAttributeNames() {

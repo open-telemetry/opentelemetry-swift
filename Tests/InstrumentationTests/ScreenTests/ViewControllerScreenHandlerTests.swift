@@ -9,6 +9,7 @@ import OpenTelemetryApi
   @testable import OpenTelemetrySdk
   @testable import ScreenInstrumentation
 @testable import ScreenInstrumentationUIKit
+  import InstrumentationCommon
   import UIKit
   import XCTest
 
@@ -33,6 +34,8 @@ import OpenTelemetryApi
     private var tracker: ScreenTracker!
     private var logs: RecordingLogRecordProcessor!
     private var spans: RecordingSpanProcessor!
+    private var frames: FakeFirstFrameReader!
+    private var notificationCenter: NotificationCenter!
 
     override func setUp() {
       super.setUp()
@@ -40,6 +43,8 @@ import OpenTelemetryApi
       spans = providers.spans
       logs = providers.logs
       tracker = ScreenTracker()
+      frames = FakeFirstFrameReader()
+      notificationCenter = NotificationCenter()
     }
 
     /// The test bundle, not the app bundle: that is where these view controllers live.
@@ -47,7 +52,9 @@ import OpenTelemetryApi
     private func makeHandler(_ config: ScreenUIKitConfig? = nil) -> ViewControllerScreenHandler {
       ViewControllerScreenHandler(
         config: config ?? ScreenUIKitConfig(bundle: Bundle(for: ViewControllerScreenHandlerTests.self)),
-        screenTracker: tracker
+        screenTracker: tracker,
+        firstFrameReader: frames,
+        notificationCenter: notificationCenter
       )
     }
 
@@ -122,21 +129,24 @@ import OpenTelemetryApi
     }
 
     @MainActor
-    func testAppearingReportsTheScreenAndItsTiming() {
+    func testAppearingReportsTheScreenAndItsFirstDraw() {
       let handler = makeHandler()
       let loaded = Date(timeIntervalSince1970: 1_700_000_000)
       let viewController = StoriesViewController()
 
       handler.onViewDidLoad(viewController, now: loaded)
-      handler.onViewDidAppear(viewController, now: loaded.addingTimeInterval(0.2))
+      handler.onViewWillAppear(viewController)
+      frames.fire(at: loaded.addingTimeInterval(0.1))
+      handler.onViewDidAppear(viewController, now: loaded.addingTimeInterval(0.4))
 
       XCTAssertEqual(tracker.currentScreen, "StoriesViewController")
       XCTAssertEqual(navigationEvents().count, 1)
 
-      let span = timeToFirstAppearSpans().first
-      guard let span else { return XCTFail("expected a time_to_first_appear span") }
+      let span = timeToFirstDrawSpans().first
+      guard let span else { return XCTFail("expected a time_to_first_draw span") }
       XCTAssertEqual(span.startTime, loaded)
-      XCTAssertEqual(span.endTime, loaded.addingTimeInterval(0.2))
+      // The first frame, not viewDidAppear, which waits for the transition animation.
+      XCTAssertEqual(span.endTime, loaded.addingTimeInterval(0.1))
       XCTAssertEqual(ScreenTestFixtures.string(span.attributes[SemanticConventions.App.screenName.rawValue]),
                      "StoriesViewController")
       XCTAssertEqual(ScreenTestFixtures.string(span.attributes[FederatedSemanticConventions.App.screenType.rawValue]), "uikit")
@@ -147,11 +157,15 @@ import OpenTelemetryApi
       let handler = makeHandler()
       let viewController = StoriesViewController()
       handler.onViewDidLoad(viewController)
+      handler.onViewWillAppear(viewController)
+      frames.fire(at: Date())
       handler.onViewDidAppear(viewController)
       tracker.setCurrent(screen: "Comments", type: .uikit)
+      handler.onViewWillAppear(viewController)
+      frames.fire(at: Date())
       handler.onViewDidAppear(viewController)
 
-      XCTAssertEqual(timeToFirstAppearSpans().count, 1)
+      XCTAssertEqual(timeToFirstDrawSpans().count, 1)
       // Going back to the screen is still a navigation.
       XCTAssertEqual(navigationEvents().count, 3)
       XCTAssertEqual(tracker.currentScreen, "StoriesViewController")
@@ -162,11 +176,13 @@ import OpenTelemetryApi
       let handler = makeHandler()
       let viewController = StoriesViewController()
 
+      handler.onViewWillAppear(viewController)
+      frames.fire(at: Date())
       handler.onViewDidAppear(viewController)
 
       XCTAssertEqual(tracker.currentScreen, "StoriesViewController")
       XCTAssertEqual(navigationEvents().count, 1)
-      XCTAssertTrue(timeToFirstAppearSpans().isEmpty)
+      XCTAssertTrue(timeToFirstDrawSpans().isEmpty)
     }
 
     @MainActor
@@ -175,33 +191,75 @@ import OpenTelemetryApi
       let viewController = SilentViewController()
 
       handler.onViewDidLoad(viewController)
+      handler.onViewWillAppear(viewController)
+      frames.fire(at: Date())
       handler.onViewDidAppear(viewController)
 
       XCTAssertNil(tracker.currentScreen)
       XCTAssertTrue(navigationEvents().isEmpty)
-      XCTAssertTrue(timeToFirstAppearSpans().isEmpty)
+      XCTAssertTrue(timeToFirstDrawSpans().isEmpty)
     }
 
     @MainActor
     func testTimingCanBeTurnedOffWithoutLosingTheScreen() {
       // The tracker owns this, so turning it off reaches SwiftUI screens too.
-      tracker.recordsTimeToFirstAppear = false
+      tracker.recordsTimeToFirstDraw = false
       let handler = makeHandler()
       let viewController = StoriesViewController()
 
       handler.onViewDidLoad(viewController)
+      handler.onViewWillAppear(viewController)
+      frames.fire(at: Date())
       handler.onViewDidAppear(viewController)
 
       XCTAssertEqual(tracker.currentScreen, "StoriesViewController")
-      XCTAssertTrue(timeToFirstAppearSpans().isEmpty)
+      XCTAssertTrue(timeToFirstDrawSpans().isEmpty)
+    }
+
+    @MainActor
+    func testNoSpanUntilTheFirstFrameIsDisplayed() {
+      let handler = makeHandler()
+      let viewController = StoriesViewController()
+
+      handler.onViewDidLoad(viewController)
+      handler.onViewWillAppear(viewController)
+
+      XCTAssertTrue(timeToFirstDrawSpans().isEmpty)
+      XCTAssertEqual(frames.pendingCount, 1)
+    }
+
+    @MainActor
+    func testAppearingTwiceBeforeTheFrameStartsOneRead() {
+      let handler = makeHandler()
+      let viewController = StoriesViewController()
+
+      handler.onViewDidLoad(viewController)
+      handler.onViewWillAppear(viewController)
+      handler.onViewWillAppear(viewController)
+
+      XCTAssertEqual(frames.pendingCount, 1)
+    }
+
+    @MainActor
+    func testEnteringTheBackgroundCancelsAPendingDraw() {
+      let handler = makeHandler()
+      let viewController = StoriesViewController()
+
+      handler.onViewDidLoad(viewController)
+      handler.onViewWillAppear(viewController)
+      notificationCenter.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+      frames.fire(at: Date())
+
+      XCTAssertEqual(frames.cancelledCount, 1)
+      XCTAssertTrue(timeToFirstDrawSpans().isEmpty)
     }
 
     private func navigationEvents() -> [ReadableLogRecord] {
       logs.records.filter { $0.eventName == FederatedSemanticConventions.EventName.appNavigationComplete.rawValue }
     }
 
-    private func timeToFirstAppearSpans() -> [SpanData] {
-      spans.spans.filter { $0.name == FederatedSemanticConventions.SpanName.appScreenTimeToFirstAppear.rawValue }
+    private func timeToFirstDrawSpans() -> [SpanData] {
+      spans.spans.filter { $0.name == FederatedSemanticConventions.SpanName.appScreenTimeToFirstDraw.rawValue }
     }
   }
 #endif

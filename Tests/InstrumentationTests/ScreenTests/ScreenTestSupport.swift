@@ -147,3 +147,45 @@ enum ScreenTestFixtures {
     return string
   }
 }
+
+#if canImport(Darwin)
+  import InstrumentationCommon
+
+  /// Holds each read until the test fires it, standing in for the display link.
+  final class FakeFirstFrameReader: FirstFrameReader, @unchecked Sendable {
+    private let lock = NSLock()
+    private var completions: [UUID: (Date) -> Void] = [:]
+    private var _cancelledCount = 0
+
+    var pendingCount: Int { lock.withLock { completions.count } }
+    var cancelledCount: Int { lock.withLock { _cancelledCount } }
+
+    func readFirstFrame(_ completion: @escaping (Date) -> Void) -> FirstFrameRead {
+      let id = UUID()
+      lock.withLock { completions[id] = completion }
+      return Read(reader: self, id: id)
+    }
+
+    /// Reports `time` as the next displayed frame to every pending read.
+    func fire(at time: Date) {
+      let pending = lock.withLock {
+        defer { completions.removeAll() }
+        return Array(completions.values)
+      }
+      pending.forEach { $0(time) }
+    }
+
+    private func cancel(_ id: UUID) {
+      lock.withLock {
+        if completions.removeValue(forKey: id) != nil { _cancelledCount += 1 }
+      }
+    }
+
+    private struct Read: FirstFrameRead {
+      let reader: FakeFirstFrameReader
+      let id: UUID
+
+      func cancel() { reader.cancel(id) }
+    }
+  }
+#endif

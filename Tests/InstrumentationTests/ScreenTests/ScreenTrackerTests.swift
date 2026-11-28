@@ -117,35 +117,35 @@ final class ScreenTrackerTests: XCTestCase {
     wait(for: [received], timeout: 1)
   }
 
-  // MARK: - app.screen.time_to_first_appear
+  // MARK: - app.screen.time_to_first_draw
 
-  func testRecordsTimeToFirstAppear() {
+  func testRecordsTimeToFirstDraw() {
     let loaded = Date(timeIntervalSince1970: 1_700_000_000)
-    let appeared = loaded.addingTimeInterval(0.25)
+    let drawn = loaded.addingTimeInterval(0.25)
 
-    tracker.recordTimeToFirstAppear(screen: "Stories",
-                                    type: .uikit,
-                                    loadTime: loaded,
-                                    appearTime: appeared)
+    tracker.recordTimeToFirstDraw(screen: "Stories",
+                                  type: .uikit,
+                                  loadTime: loaded,
+                                  drawTime: drawn)
 
-    let span = spans.spans.first { $0.name == FederatedSemanticConventions.SpanName.appScreenTimeToFirstAppear.rawValue }
-    guard let span else { return XCTFail("expected a time_to_first_appear span") }
+    let span = spans.spans.first { $0.name == FederatedSemanticConventions.SpanName.appScreenTimeToFirstDraw.rawValue }
+    guard let span else { return XCTFail("expected a time_to_first_draw span") }
     XCTAssertEqual(span.startTime, loaded)
-    XCTAssertEqual(span.endTime, appeared)
+    XCTAssertEqual(span.endTime, drawn)
     XCTAssertEqual(ScreenTestFixtures.string(span.attributes[SemanticConventions.App.screenName.rawValue]),
                    "Stories")
     XCTAssertEqual(ScreenTestFixtures.string(span.attributes[FederatedSemanticConventions.App.screenType.rawValue]), "uikit")
   }
 
-  func testTimeToFirstAppearCarriesExtraAttributes() {
+  func testTimeToFirstDrawCarriesExtraAttributes() {
     let loaded = Date()
-    tracker.recordTimeToFirstAppear(screen: "Settings",
-                                    type: .swiftui,
-                                    loadTime: loaded,
-                                    appearTime: loaded.addingTimeInterval(0.01),
-                                    attributes: ["tab": .string("settings")])
+    tracker.recordTimeToFirstDraw(screen: "Settings",
+                                  type: .swiftui,
+                                  loadTime: loaded,
+                                  drawTime: loaded.addingTimeInterval(0.01),
+                                  attributes: ["tab": .string("settings")])
 
-    let span = spans.spans.first { $0.name == FederatedSemanticConventions.SpanName.appScreenTimeToFirstAppear.rawValue }
+    let span = spans.spans.first { $0.name == FederatedSemanticConventions.SpanName.appScreenTimeToFirstDraw.rawValue }
     XCTAssertEqual(ScreenTestFixtures.string(span?.attributes["tab"]), "settings")
   }
 

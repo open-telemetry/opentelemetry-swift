@@ -11,9 +11,9 @@ public struct ScreenUIKitConfig: Sendable {
   /// bundle, which keeps the frameworks' own view controllers out of the data.
   public var bundle: Bundle
 
-  /// Whether a screen records an `app.screen.time_to_first_appear` span. Applied to the tracker
+  /// Whether a screen records an `app.screen.time_to_first_draw` span. Applied to the tracker
   /// at install, so it reaches SwiftUI screens too.
-  public var recordsTimeToFirstAppear: Bool
+  public var recordsTimeToFirstDraw: Bool
 
   /// Whether to report SwiftUI hosting controllers as UIKit screens. Off by default: the
   /// `.otelScreen` modifier names what a hosting controller hosts, and reporting both gives one
@@ -22,10 +22,10 @@ public struct ScreenUIKitConfig: Sendable {
   public var tracksHostingControllers: Bool
 
   public init(bundle: Bundle = .main,
-              recordsTimeToFirstAppear: Bool = true,
+              recordsTimeToFirstDraw: Bool = true,
               tracksHostingControllers: Bool = false) {
     self.bundle = bundle
-    self.recordsTimeToFirstAppear = recordsTimeToFirstAppear
+    self.recordsTimeToFirstDraw = recordsTimeToFirstDraw
     self.tracksHostingControllers = tracksHostingControllers
   }
 
