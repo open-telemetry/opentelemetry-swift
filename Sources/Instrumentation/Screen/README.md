@@ -17,7 +17,7 @@ Each front end documents its own lifecycle. iOS is the primary platform.
 
 A navigation is a change of the current screen. Each one emits an [`app.navigation.complete`](#appnavigationcomplete) event naming the screen reached and the screen left. In order, the events trace the user's path; the gaps between them give the time spent on each screen. A pop back counts like any other move. Setting the current screen to itself emits nothing, so a redisplay is not a navigation.
 
-The front ends follow the navigation stack, so the current screen is the one on top. Dismissing a sheet makes the screen beneath it current again, though the presenter appears afresh in neither UIKit nor SwiftUI. When a front end can tell how the user got there, the event says so in `app.navigation.type`. Navigation tracking is on by default; `ScreenTracker(tracksNavigation: false)` turns it off.
+The front ends follow the navigation stack, so the current screen is the one on top. A dismissed sheet makes the screen beneath it current again, even though neither UIKit nor SwiftUI tells the presenter it reappeared. When a front end can tell how the user got there, the event says so in `app.navigation.type`. Navigation tracking is on by default; `ScreenTracker(tracksNavigation: false)` turns it off.
 
 Each event carries `app.navigation.sequence`, its position within the session: 1, 2, 3 and so on. A gap in the numbers within one `session.id` means events were lost. The count persists with the session's identifier, so it continues after a restart that resumes the session, and starts again at 1 in a new one.
 
@@ -25,31 +25,31 @@ Each event carries `app.navigation.sequence`, its position within the session: 1
 
 `app.navigation.type` takes one of these values, and is absent when the front end cannot tell. They extend the W3C Navigation API's `push`, `replace` and `traverse`, which cannot tell a back step from a jump, a sheet from a push, or a tab change from either.
 
-| Value | What happened | Stack |
-| --- | --- | --- |
-| `initial` | The first screen of the process appeared | `[] → [a]` |
-| `push` | A new screen went on top | `[a] → [a, b]` |
-| `pop` | The top screen left, revealing the one beneath | `[a, b] → [a]` |
-| `pop_to` | Several screens left at once, revealing an earlier one | `[a, b, c] → [a]` |
-| `replace` | The top screen was swapped; the rest stayed | `[a, b] → [a, c]` |
-| `reset` | Every screen was replaced | `[a, b] → [x]` |
-| `modal` | A sheet or full-screen cover was shown | `[a] → [a, sheet]` |
-| `dismiss` | A sheet or cover was dismissed, revealing its presenter | `[a, sheet] → [a]` |
-| `switch` | An existing screen became current and nothing left, such as a tab change | `[a, b] → [b, a]` |
+| Value     | What happened                                                            | Stack              |
+| --------- | ------------------------------------------------------------------------ | ------------------ |
+| `initial` | The first screen of the process appeared                                 | `[] → [a]`         |
+| `push`    | A new screen went on top                                                 | `[a] → [a, b]`     |
+| `pop`     | The top screen left, revealing the one beneath                           | `[a, b] → [a]`     |
+| `pop_to`  | Several screens left at once, revealing an earlier one                   | `[a, b, c] → [a]`  |
+| `replace` | The top screen was swapped; the rest stayed                              | `[a, b] → [a, c]`  |
+| `reset`   | Every screen was replaced                                                | `[a, b] → [x]`     |
+| `modal`   | A sheet or full-screen cover was shown                                   | `[a] → [a, sheet]` |
+| `dismiss` | A sheet or cover was dismissed, revealing its presenter                  | `[a, sheet] → [a]` |
+| `switch`  | An existing screen became current and nothing left, such as a tab change | `[a, b] → [b, a]`  |
 
 Each front end detects a different set. ✓ means detected; a blank means the event carries no type.
 
-| Value | UIKit | SwiftUI | SwiftUI with opt-in modifiers | `setCurrent` |
-| --- | :-: | :-: | :-: | :-: |
-| `initial` | ✓ | ✓ | ✓ | ✓ |
-| `push` | ✓ | ✓ | ✓ | if passed |
-| `pop` | ✓ | ✓ | ✓ | if passed |
-| `pop_to` | ✓ | ✓ | ✓ | if passed |
-| `replace` | ✓ | | ✓, with `.id(route)` | if passed |
-| `reset` | ✓ | | ✓, with `.id(route)` | if passed |
-| `modal` | ✓ | reported as `push` | ✓ | if passed |
-| `dismiss` | ✓ | reported as `pop` | ✓ | if passed |
-| `switch` | ✓ | | ✓ | if passed |
+| Value     | UIKit | SwiftUI            | SwiftUI with opt-in modifiers | `setCurrent` |
+| --------- | :---: | :----------------: | :---------------------------: | :----------: |
+| `initial` | ✓     | ✓                  | ✓                             | ✓            |
+| `push`    | ✓     | ✓                  | ✓                             | if passed    |
+| `pop`     | ✓     | ✓                  | ✓                             | if passed    |
+| `pop_to`  | ✓     | ✓                  | ✓                             | if passed    |
+| `replace` | ✓     |                    | ✓, with `.id(route)`          | if passed    |
+| `reset`   | ✓     |                    | ✓, with `.id(route)`          | if passed    |
+| `modal`   | ✓     | reported as `push` | ✓                             | if passed    |
+| `dismiss` | ✓     | reported as `pop`  | ✓                             | if passed    |
+| `switch`  | ✓     |                    | ✓                             | if passed    |
 
 See [UIKit](UIKit/README.md#navigation-types) and [SwiftUI](SwiftUI/README.md#navigation-types) for how each detects them and what each misses.
 
@@ -61,20 +61,20 @@ Time to first draw measures how long one screen instance took to arrive: from lo
 
 ![A user journey across two sessions. On screen: Stories, Comments, Stories in session a2b7, then Settings in session 9f1c after a timeout. Events: four app.navigation.complete records numbered 1, 2, 3, then 1 again in the new session, each naming the destination and the previous screen. Spans: time_to_first_draw for Stories, Comments and Settings, and none for the pop back.](img/screen-navigation.svg)
 
-|                                     | `app.navigation.complete`  | `app.screen.time_to_first_draw` |
-| ----------------------------------- | -------------------------- | ------------------------------- |
-| Signal                              | Log record                 | Span                            |
-| Answers                             | Where did the user go?     | How fast did the screen arrive? |
-| Recorded when                       | The current screen changes | A screen instance first draws   |
-| First appearance of a screen        | ✓                          | ✓                               |
-| Pop back to a screen                | ✓                          | —                               |
-| New instance of the current screen  | —                          | ✓                               |
-| `setCurrent` without a front end    | ✓                          | —                               |
-| `recordsTimeToFirstDraw = false`    | ✓                          | —                               |
-| Duration                            | —                          | ✓                               |
-| Previous screen                     | ✓                          | —                               |
-| Position in the session             | ✓                          | —                               |
-| Trace sampling                      | Does not apply             | Applies                         |
+|                                    | `app.navigation.complete`  | `app.screen.time_to_first_draw` |
+| ---------------------------------- | -------------------------- | ------------------------------- |
+| Signal                             | Log record                 | Span                            |
+| Answers                            | Where did the user go?     | How fast did the screen arrive? |
+| Recorded when                      | The current screen changes | A screen instance first draws   |
+| First appearance of a screen       | ✓                          | ✓                               |
+| Pop back to a screen               | ✓                          | —                               |
+| New instance of the current screen | ✓, when the type is known  | ✓                               |
+| `setCurrent` without a front end   | ✓                          | —                               |
+| `recordsTimeToFirstDraw = false`   | ✓                          | —                               |
+| Duration                           | —                          | ✓                               |
+| Previous screen                    | ✓                          | —                               |
+| Position in the session            | ✓                          | —                               |
+| Trace sampling                     | Does not apply             | Applies                         |
 
 The timestamps differ too. Even on a first appearance, the event and the end of the span fall at different moments, in a different order for each front end:
 
@@ -123,6 +123,8 @@ Put `ScreenSpanProcessor` before the exporter, and wrap the exporter in `ScreenL
 <dl>
 <dt><code>currentScreen</code> <em>Read only</em></dt>
 <dd>The screen the user sees, or <code>nil</code> before the first appears.</dd>
+<dt><code>currentScreenType</code> <em>Read only</em></dt>
+<dd>What reported <code>currentScreen</code>: <code>.uikit</code>, <code>.swiftui</code> or <code>.manual</code>, or <code>nil</code> before the first screen appears.</dd>
 <dt><code>previousScreen</code> <em>Read only</em></dt>
 <dd>The screen before <code>currentScreen</code>, or <code>nil</code>.</dd>
 <dt><code>recordsTimeToFirstDraw</code></dt>
@@ -144,7 +146,7 @@ Put `ScreenSpanProcessor` before the exporter, and wrap the exporter in `ScreenL
 
 ### `app.navigation.complete`
 
-One log record per navigation, shaped as in [OpenTelemetry Android](https://github.com/open-telemetry/opentelemetry-android/blob/main/semconv/model/android/events.yaml). A pop back emits one; setting the current screen to itself emits none.
+One log record per navigation, shaped as in [OpenTelemetry Android](https://github.com/open-telemetry/opentelemetry-android/blob/main/semconv/model/android/events.yaml). A pop back emits one. Setting the current screen to itself emits none, unless the navigation type is known.
 
 #### Event properties
 
@@ -154,7 +156,7 @@ One log record per navigation, shaped as in [OpenTelemetry Android](https://gith
 <dt>Instrumentation scope</dt>
 <dd><code>io.opentelemetry.screen.uikit</code> for a UIKit screen, <code>io.opentelemetry.screen.swiftui</code> for a SwiftUI one, <code>io.opentelemetry.screen</code> for a manual one. A <code>logger</code> passed to <code>setCurrent</code> overrides it.</dd>
 <dt>Timestamp</dt>
-<dd>When the screen became current: <code>viewDidAppear(_:)</code> for UIKit, <code>onAppear</code> for SwiftUI, or the <code>timestamp</code> passed to <code>setCurrent</code>.</dd>
+<dd>When the screen became current. UIKit: <code>viewDidAppear(_:)</code>, or the dismissed screen's <code>viewDidDisappear(_:)</code> for a dismissal. SwiftUI: <code>onAppear</code> for a new screen, or the removed screen's <code>onDisappear</code> for a pop. Manual: the <code>timestamp</code> passed to <code>setCurrent</code>.</dd>
 </dl>
 
 #### Attributes
@@ -214,16 +216,16 @@ Both front ends end the span at the first frame displayed, read from the display
 
 All names are generated: `app.screen.name` as `SemanticConventions.App.screenName`, the rest as `FederatedSemanticConventions`.
 
-| Name                              | Kind      | Specification                                                                                              |
-| --------------------------------- | --------- | ---------------------------------------------------------------------------------------------------------- |
-| `app.screen.name`                 | Attribute | [OpenTelemetry semantic conventions](https://opentelemetry.io/docs/specs/semconv/registry/attributes/app/) |
-| `app.navigation.complete`         | Event     | [`screen.yaml`](../SemanticConventions/model/swift/screen.yaml), from OpenTelemetry Android                |
-| `app.navigation.destination.name` | Attribute | [`screen.yaml`](../SemanticConventions/model/swift/screen.yaml), from OpenTelemetry Android                |
-| `app.screen.previous.name`        | Attribute | [`screen.yaml`](../SemanticConventions/model/swift/screen.yaml), from OpenTelemetry Android                |
-| `app.navigation.sequence`         | Attribute | [`screen.yaml`](../SemanticConventions/model/swift/screen.yaml), Swift only                                |
+| Name                              | Kind      | Specification                                                                                                                        |
+| --------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `app.screen.name`                 | Attribute | [OpenTelemetry semantic conventions](https://opentelemetry.io/docs/specs/semconv/registry/attributes/app/)                           |
+| `app.navigation.complete`         | Event     | [`screen.yaml`](../SemanticConventions/model/swift/screen.yaml), from OpenTelemetry Android                                          |
+| `app.navigation.destination.name` | Attribute | [`screen.yaml`](../SemanticConventions/model/swift/screen.yaml), from OpenTelemetry Android                                          |
+| `app.screen.previous.name`        | Attribute | [`screen.yaml`](../SemanticConventions/model/swift/screen.yaml), from OpenTelemetry Android                                          |
+| `app.navigation.sequence`         | Attribute | [`screen.yaml`](../SemanticConventions/model/swift/screen.yaml), Swift only                                                          |
 | `app.navigation.type`             | Attribute | [`screen.yaml`](../SemanticConventions/model/swift/screen.yaml), Swift only; values extend the W3C Navigation API's `navigationType` |
-| `app.screen.type`                 | Attribute | [`screen.yaml`](../SemanticConventions/model/swift/screen.yaml), Swift only                                |
-| `app.screen.time_to_first_draw`   | Span      | [`screen-spans.yaml`](../SemanticConventions/model/swift/screen-spans.yaml), Swift only                    |
+| `app.screen.type`                 | Attribute | [`screen.yaml`](../SemanticConventions/model/swift/screen.yaml), Swift only                                                          |
+| `app.screen.time_to_first_draw`   | Span      | [`screen-spans.yaml`](../SemanticConventions/model/swift/screen-spans.yaml), Swift only                                              |
 
 The module uses the current names, not the deprecated `screen.name` and `last.screen.name`.
 
@@ -246,4 +248,5 @@ Minimums: iOS 15, macOS 12, tvOS 15, watchOS 8, visionOS 1.
 - [App Launch Instrumentation](../AppLaunch/README.md): the first screen's span overlaps `app.start`
 - [Sessions](../Sessions/README.md): the other processors that stamp every span and log record
 - [OpenTelemetry Android screen conventions](https://github.com/open-telemetry/opentelemetry-android/blob/main/semconv/model/android/registry.yaml)
+- [`NavigateEvent.navigationType`](https://developer.mozilla.org/docs/Web/API/NavigateEvent/navigationType): the W3C values `app.navigation.type` extends
 - [`PerformanceNavigationTiming`](https://developer.mozilla.org/en-US/docs/Web/API/PerformanceNavigationTiming): the model for this page's layout

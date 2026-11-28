@@ -30,6 +30,12 @@ Put `ScreenSpanProcessor` before the exporter, and wrap the exporter in `ScreenL
 
 Then install [UIKit](../UIKit/README.md), mark [SwiftUI](../SwiftUI/README.md) screens, or both. Mixed apps leave `tracksHostingControllers` off to avoid reporting a view twice.
 
+Navigation tracking is on by default. To turn it off, register a tracker before installing a front end:
+
+```swift
+ScreenTrackerProvider.register(screenTracker: ScreenTracker(tracksNavigation: false))
+```
+
 ## Reading the current screen
 
 ```swift

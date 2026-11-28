@@ -34,6 +34,13 @@ Annotate each test method with `@MainActor`, never the `XCTestCase` subclass. A 
 
 ## Integration coverage
 
-`Tests/IntegrationTests/Assertions/ScreenInstrumentationTests.swift` asserts against the exported OTLP of the `main` launch, so it checks that these names survive serialization. It needs no scenario of its own, because a screen appears on every launch.
+Two suites assert against the exported OTLP, so they check that these names survive serialization.
 
-It covers the SwiftUI path only. Integration test mode runs offline, so the demo app replaces the stories list with a bare `UIViewController` in a disabled tab and starts on the Settings tab, whose `SettingsHostingController` is excluded as a hosting controller. The unit tests cover the UIKit path by driving real view controllers. Covering it end to end needs a launch that enables the home tab and pushes a view controller.
+<dl>
+<dt><code>ScreenInstrumentationTests</code>, against the <code>main</code> launch</dt>
+<dd>The first screen's event, span and stamped attributes. Integration test mode runs offline, so the demo starts on the SwiftUI Settings tab, and this suite covers the SwiftUI path only.</dd>
+<dt><code>ScreenNavigationTests</code>, against the <code>screen-navigation</code> launch</dt>
+<dd>One event per step, with its destination, navigation type and screen type, in sequence order. The launch presents a UIKit flow as a page sheet over Settings and steps it through modal, push, pop_to, pop, replace, reset and dismiss, then presents a SwiftUI <code>NavigationStack</code> and steps it through push, pop_to, pop, replace, reset, and a sheet's modal and dismiss. It also checks that the sequence numbers run unbroken in one session, and that each event names the screen it left.</dd>
+</dl>
+
+Neither covers interactive gestures, tab switches or iPad. The unit tests cover those paths with fakes.

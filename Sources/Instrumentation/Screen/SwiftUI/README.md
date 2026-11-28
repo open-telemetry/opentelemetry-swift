@@ -34,15 +34,15 @@ SettingsView()
 
 SwiftUI has no public callback between building a view and `onAppear`, so the span cannot be divided there, and those rows follow no documented order.
 
-| Lifecycle step                           | In span | Time spent on                                 | Source                                                                                       |
-| ---------------------------------------- | :-----: | --------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Parent's `body` builds `ScreenTraceView` | Start   | Creating the `@State` that holds the start    | [`State`][state]: "always instantiates its default value when SwiftUI instantiates the view" |
-| Insertion into the view graph            | ✓       | Waiting to be shown                           | Not documented                                                                               |
-| Content `body`                           | ✓       | Evaluating the screen's views                 | Not documented                                                                               |
-| Layout                                   | ✓       | Sizing and placing views                      | Not documented                                                                               |
-| `onAppear`                               | ✓       | Sets the current screen; the draw read starts | [`onAppear(perform:)`][onAppear]: "completes before the first rendered frame appears"        |
-| First frame                              | End     | Rendering and displaying the view             | [`onAppear(perform:)`][onAppear]: as above; read from the display link                       |
-| Transition animation                     | —       | Push or presentation animation                | Not documented                                                                               |
+| Lifecycle step                           | In span | Time spent on                              | Source                                                                                       |
+| ---------------------------------------- | :-----: | ------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| Parent's `body` builds `ScreenTraceView` | Start   | Creating the `@State` that holds the start | [`State`][state]: "always instantiates its default value when SwiftUI instantiates the view" |
+| Insertion into the view graph            | ✓       | Waiting to be shown                        | Not documented                                                                               |
+| Content `body`                           | ✓       | Evaluating the screen's views              | Not documented                                                                               |
+| Layout                                   | ✓       | Sizing and placing views                   | Not documented                                                                               |
+| `onAppear`                               | ✓       | Reports a new screen; the draw read starts | [`onAppear(perform:)`][onAppear]: "completes before the first rendered frame appears"        |
+| First frame                              | End     | Rendering and displaying the view          | [`onAppear(perform:)`][onAppear]: as above; read from the display link                       |
+| Transition animation                     | —       | Push or presentation animation             | Not documented                                                                               |
 
 <dl>
 <dt>Early start</dt>
@@ -62,17 +62,17 @@ A returning screen sets the current screen but records no span. A recreated view
 
 SwiftUI reports no navigation, only each view's `onAppear` and `onDisappear`, so this front end reads the stack from two facts measured on iOS 18.5 and 27. A covered view keeps its `@State`; a removed view's state is freed in the same moment as its own `onDisappear`. And that `onDisappear` arrives well after the revealed view's `onAppear`: about half a second on a pop. So a brand-new screen reports a push at once, while a screen that reappears waits for the removal. 0.1 seconds after each `onDisappear`, the number of screens freed tells a pop from a pop to an earlier screen. A main-loop turn is not long enough.
 
-| Value | Automatic | With an opt-in modifier |
-| --- | --- | --- |
-| `initial` | The first screen of the process, labelled by the tracker | Same |
-| `push` | A screen appears that was not on the stack | `otelNavigationPath(_:)` sees the path grow |
-| `pop` | One screen is freed, revealing another | The path loses its last element |
-| `pop_to` | Several screens are freed at once | The path loses several elements |
-| `replace` | Not detected | The path swaps its last element; needs `.id(route)` on each destination |
-| `reset` | Not detected | The path is replaced; needs `.id(route)` on each destination |
-| `modal` | Reported as `push` | `otelModal(_:)` sees `true`, or `otelModal(item:)` an item |
-| `dismiss` | Reported as `pop` | `otelModal(_:)` sees `false`, or `otelModal(item:)` `nil` |
-| `switch` | Not detected; the screen changes with no type | `otelTabSelection(_:)` sees a new selection |
+| Value     | Automatic                                                | With an opt-in modifier                                                 |
+| --------- | -------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `initial` | The first screen of the process, labelled by the tracker | Same                                                                    |
+| `push`    | A screen appears that was not on the stack               | `otelNavigationPath(_:)` sees the path grow                             |
+| `pop`     | One screen is freed, revealing another                   | The path loses its last element                                         |
+| `pop_to`  | Several screens are freed at once                        | The path loses several elements                                         |
+| `replace` | Not detected                                             | The path swaps its last element; needs `.id(route)` on each destination |
+| `reset`   | Not detected                                             | The path is replaced; needs `.id(route)` on each destination            |
+| `modal`   | Reported as `push`                                       | `otelModal(_:)` sees `true`, or `otelModal(item:)` an item              |
+| `dismiss` | Reported as `pop`                                        | `otelModal(_:)` sees `false`, or `otelModal(item:)` `nil`               |
+| `switch`  | Not detected; the screen changes with no type            | `otelTabSelection(_:)` sees a new selection                             |
 
 ```swift
 NavigationStack(path: $path) {
@@ -90,7 +90,7 @@ Each modifier watches the value with `onChange`, which sees every change, whethe
 
 <dl>
 <dt>Gaps</dt>
-<dd>Without the modifiers: replace, reset, tab switches and split-view selection go undetected, and a replace or reset whose destination keeps its view type fires no callbacks at all, so the current screen goes stale. Pushing several screens in one step reports the wrong top. A list row marked as a screen reports a false screen each time it scrolls into view. A pop is reported about half a second after the revealed screen appears. Unverified: iPad and regular-width split views, <code>NavigationPath</code>, and real devices.</dd>
+<dd>Without the modifiers: replace, reset, tab switches and split-view selection go undetected, and a replace or reset whose destination keeps its view type fires no callbacks at all, so the current screen goes stale. Pushing several screens in one step reports the wrong top. A SwiftUI screen presented by UIKit, such as a <code>UIHostingController</code> passed to <code>present</code>, reports <code>push</code>, not <code>modal</code>. A list row marked as a screen reports a false screen each time it scrolls into view. A pop is reported about half a second after the revealed screen appears. Unverified: iPad and regular-width split views, <code>NavigationPath</code>, and real devices.</dd>
 <dt>Opting out</dt>
 <dd><code>ScreenTracker(tracksNavigation: false)</code> reports every appearance as the current screen, ignores disappearances, and drops the type, as before navigation tracking.</dd>
 </dl>
@@ -99,7 +99,7 @@ Each modifier watches the value with `onChange`, which sees every change, whethe
 
 <dl>
 <dt><code>View.otelScreen(_:attributes:)</code></dt>
-<dd>Reports the view as a screen with the given name and attributes. Use a stable name. Apply it to screens, not rows: any appearance sets the current screen.</dd>
+<dd>Reports the view as a screen with the given name and attributes. Use a stable name. Apply it to screens, not rows: any appearance can make the view current.</dd>
 <dt><code>ScreenTraceView(_:attributes:content:)</code></dt>
 <dd>The same, as a wrapper view.</dd>
 <dt><code>View.otelNavigationPath(_:)</code></dt>
@@ -112,11 +112,12 @@ Each modifier watches the value with `onChange`, which sees every change, whethe
 
 ## Specifications
 
-| Name                            | Kind      | Specification                                                                                 |
-| ------------------------------- | --------- | --------------------------------------------------------------------------------------------- |
-| `app.screen.type` = `swiftui`   | Attribute | [`screen.yaml`](../../SemanticConventions/model/swift/screen.yaml)                            |
-| `app.screen.time_to_first_draw` | Span      | [`screen-spans.yaml`](../../SemanticConventions/model/swift/screen-spans.yaml), `swiftui` row |
-| `app.navigation.complete`       | Event     | [`screen.yaml`](../../SemanticConventions/model/swift/screen.yaml)                            |
+| Name                            | Kind      | Specification                                                                                                 |
+| ------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------- |
+| `app.screen.type` = `swiftui`   | Attribute | [`screen.yaml`](../../SemanticConventions/model/swift/screen.yaml)                                            |
+| `app.screen.time_to_first_draw` | Span      | [`screen-spans.yaml`](../../SemanticConventions/model/swift/screen-spans.yaml), `swiftui` row                 |
+| `app.navigation.complete`       | Event     | [`screen.yaml`](../../SemanticConventions/model/swift/screen.yaml)                                            |
+| `app.navigation.type`           | Attribute | [`screen.yaml`](../../SemanticConventions/model/swift/screen.yaml); see [Navigation types](#navigation-types) |
 
 ## Compatibility
 

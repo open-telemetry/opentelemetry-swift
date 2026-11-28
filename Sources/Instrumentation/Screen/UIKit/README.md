@@ -87,7 +87,7 @@ Apple documents this order in [Displaying and managing views with a view control
 <dt>Transition animation (future scope)</dt>
 <dd>Not measured. A possible UIKit-only <code>app.screen.transition</code> span would run from <code>viewWillAppear(_:)</code> to <code>viewDidAppear(_:)</code>, for animated, non-interactive transitions only. It cannot be a child of <code>time_to_first_draw</code>, which ends where the transition begins. UIKit fixes most of its length, so dropped frames during it would say more than its duration. SwiftUI has no public transition-end callback to match.</dd>
 <dt>Navigation event timing</dt>
-<dd><code>app.navigation.complete</code> fires at <code>viewDidAppear(_:)</code>, after the transition, so a cancelled interactive pop never changes the screen. SwiftUI fires it at <code>onAppear</code>, before the first frame. The spans align; the event timestamps do not.</dd>
+<dd><code>app.navigation.complete</code> fires at <code>viewDidAppear(_:)</code>, after the transition, so a cancelled interactive pop never changes the screen. A dismissal fires at the dismissed screen's <code>viewDidDisappear(_:)</code>. SwiftUI fires at <code>onAppear</code>, before the first frame, or at the removed screen's <code>onDisappear</code> for a pop. The spans align; the event timestamps do not.</dd>
 </dl>
 
 [seq]: https://developer.apple.com/documentation/uikit/displaying-and-managing-views-with-a-view-controller#Prepare-your-views-to-appear-onscreen
@@ -103,17 +103,19 @@ The span excludes work that finishes after the first frame, such as a request th
 
 The type comes from the container call that caused the navigation, not from the appearance flags. The flags alone read a replace or reset as a push, a pop to root as a pop, and a cancelled edge-swipe as a push. Each call is held until the screen it leads to appears, and dropped if its transition is cancelled: both an edge-swipe pop and a swipe-down call `pop` or `dismiss` as the gesture starts, before the user commits.
 
-| Value | Detected from |
-| --- | --- |
-| `initial` | The first screen of the process, labelled by the tracker |
-| `push` | `pushViewController(_:animated:)`; `setViewControllers(_:animated:)` that keeps the stack and adds to it |
-| `pop` | `popViewController(animated:)`; a pop to root or to a view controller one level down; `setViewControllers` that drops the top |
-| `pop_to` | `popToRootViewController(animated:)` or `popToViewController(_:animated:)` across several levels; `setViewControllers` that drops several |
-| `replace` | `setViewControllers` that swaps only the top |
-| `reset` | `setViewControllers` that replaces the whole stack; a new `UIWindow.rootViewController` |
-| `modal` | `present(_:animated:completion:)` |
-| `dismiss` | The current screen's `viewDidDisappear(_:)` while it, or a container holding it, is being dismissed. The revealed screen is found by walking down from the window's root: presentations, skipping the one going away, then the top of each navigation controller and the selection of each tab bar controller |
-| `switch` | The `selectedIndex` and `selectedViewController` setters of `UITabBarController`; code that sets `selectedIndex` bypasses the other |
+| Value     | Detected from                                                                                                                             |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `initial` | The first screen of the process, labelled by the tracker                                                                                  |
+| `push`    | `pushViewController(_:animated:)`; `setViewControllers(_:animated:)` that keeps the stack and adds to it                                  |
+| `pop`     | `popViewController(animated:)`; a pop to root or to a view controller one level down; `setViewControllers` that drops the top             |
+| `pop_to`  | `popToRootViewController(animated:)` or `popToViewController(_:animated:)` across several levels; `setViewControllers` that drops several |
+| `replace` | `setViewControllers` that swaps only the top                                                                                              |
+| `reset`   | `setViewControllers` that replaces the whole stack; a new `UIWindow.rootViewController`                                                   |
+| `modal`   | `present(_:animated:completion:)`                                                                                                         |
+| `dismiss` | The current screen's `viewDidDisappear(_:)` while it, or a container holding it, is being dismissed                                       |
+| `switch`  | The `selectedIndex` and `selectedViewController` setters of `UITabBarController`; code that sets `selectedIndex` bypasses the other       |
+
+A dismissal reveals the screen found by walking down from the presenter's window: presentations, skipping the one going away, then the top of each navigation controller and the selection of each tab bar controller. When that screen is SwiftUI's, which this front end does not track, the dismissal returns to the screen that was current when the presentation began.
 
 A screen that appears with no matching call gets `modal` if UIKit flags it as being presented, `push` if it flags it as moving to a parent, and no type otherwise. A screen that is already current and appears again reports nothing, which covers a cancelled interactive pop or swipe-down. Calls on a container not yet in a window are ignored: a container builds its first stack before it shows.
 
@@ -133,23 +135,24 @@ A screen that appears with no matching call gets `modal` if UIKit flags it as be
 
 ## Specifications
 
-| Name                            | Kind      | Specification                                                                               |
-| ------------------------------- | --------- | ------------------------------------------------------------------------------------------- |
-| `app.screen.type` = `uikit`     | Attribute | [`screen.yaml`](../../SemanticConventions/model/swift/screen.yaml)                          |
-| `app.screen.time_to_first_draw` | Span      | [`screen-spans.yaml`](../../SemanticConventions/model/swift/screen-spans.yaml), `uikit` row |
-| `app.navigation.complete`       | Event     | [`screen.yaml`](../../SemanticConventions/model/swift/screen.yaml)                          |
+| Name                            | Kind      | Specification                                                                                                 |
+| ------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------- |
+| `app.screen.type` = `uikit`     | Attribute | [`screen.yaml`](../../SemanticConventions/model/swift/screen.yaml)                                            |
+| `app.screen.time_to_first_draw` | Span      | [`screen-spans.yaml`](../../SemanticConventions/model/swift/screen-spans.yaml), `uikit` row                   |
+| `app.navigation.complete`       | Event     | [`screen.yaml`](../../SemanticConventions/model/swift/screen.yaml)                                            |
+| `app.navigation.type`           | Attribute | [`screen.yaml`](../../SemanticConventions/model/swift/screen.yaml); see [Navigation types](#navigation-types) |
 
 ## Compatibility
 
-| Platform       | Minimum | Records               | Tested on       |
-| -------------- | ------- | --------------------- | --------------- |
-| iOS            | 15      | Every view controller | Simulator       |
-| iPadOS         | 15      | As iOS                | —               |
-| Mac Catalyst   | —       | As iOS                | —               |
-| tvOS           | 15      | As iOS                | —               |
-| visionOS       | 1       | As iOS                | —               |
-| macOS, watchOS | 12, 8   | Nothing               | Unit tests only |
-| Linux, Windows | —       | Nothing               | —               |
+| Platform       | Minimum | Records               | Tested on                    |
+| -------------- | ------- | --------------------- | ---------------------------- |
+| iOS            | 15      | Every view controller | Simulator, integration tests |
+| iPadOS         | 15      | As iOS                | —                            |
+| Mac Catalyst   | —       | As iOS                | —                            |
+| tvOS           | 15      | As iOS                | —                            |
+| visionOS       | 1       | As iOS                | —                            |
+| macOS, watchOS | 12, 8   | Nothing               | Unit tests only              |
+| Linux, Windows | —       | Nothing               | —                            |
 
 Untested rows describe the code, not observed telemetry. `install` compiles everywhere. `swift test` on macOS compiles the UIKit paths out; run the [simulator suite](../docs/limits.md#running-the-tests).
 
@@ -157,6 +160,6 @@ Untested rows describe the code, not observed telemetry. `install` compiles ever
 
 - [Screen Instrumentation](../README.md)
 - [SwiftUI screens](../SwiftUI/README.md)
-- [Limits and testing](../docs/limits.md): sheets, skipped `super` calls, multiple windows
+- [Limits and testing](../docs/limits.md): skipped `super` calls, multiple windows
 - [View controller lifecycle](https://developer.apple.com/documentation/uikit/uiviewcontroller#Responding-to-view-related-events)
 - [`viewIsAppearing(_:)`](https://developer.apple.com/documentation/uikit/uiviewcontroller/viewisappearing(_:))
