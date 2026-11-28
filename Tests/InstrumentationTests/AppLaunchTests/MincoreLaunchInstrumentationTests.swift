@@ -9,6 +9,7 @@
   import Foundation
   import os.log
   import InMemoryExporter
+  import InstrumentationCommon
   import OpenTelemetryApi
   import OpenTelemetrySdk
   import XCTest

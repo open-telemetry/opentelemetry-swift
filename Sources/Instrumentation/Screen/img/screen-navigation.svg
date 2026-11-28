@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 320" width="940" height="320" role="img" aria-label="A user journey across two sessions: numbered navigation events and time to first draw spans">
+  <rect x="0" y="0" width="940" height="320" fill="#ffffff"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" fill="#1b2733">
+    <text x="20" y="26" font-size="15" font-weight="600">A user journey across two sessions</text>
+    <text x="20" y="44" font-size="11" fill="#55606b">Four navigations, three spans. Widths are not to scale; the close-up below shows where each timestamp falls.</text>
+
+    <!-- Sessions -->
+    <g stroke="#8b98a5" stroke-width="1" fill="none">
+      <path d="M200 76 v-6 h536 v6"/>
+      <path d="M744 76 v-6 h176 v6"/>
+    </g>
+    <g font-size="10.5" fill="#55606b">
+      <text x="204" y="64">session <tspan font-family="SF Mono, Menlo, Consolas, monospace">a2b7</tspan></text>
+      <text x="748" y="64">session <tspan font-family="SF Mono, Menlo, Consolas, monospace">9f1c</tspan></text>
+    </g>
+
+    <!-- Lane labels -->
+    <g font-size="11" font-weight="600">
+      <text x="20" y="116">On screen</text>
+      <text x="20" y="160">Events</text>
+      <text x="20" y="246">Spans</text>
+    </g>
+    <g font-size="10" fill="#55606b">
+      <text x="20" y="174">logs, all kept</text>
+      <text x="20" y="260">traces, sampled</text>
+    </g>
+
+    <!-- Transitions -->
+    <g font-size="10.5" fill="#33414e">
+      <text x="204" y="92">launch</text>
+      <text x="384" y="92">push</text>
+      <text x="564" y="92">pop back</text>
+      <text x="744" y="92">push, after timeout</text>
+    </g>
+
+    <!-- On screen -->
+    <g fill="#f7f7f7" stroke="#9a9a9a">
+      <rect x="200" y="98" width="180" height="28" rx="3"/>
+      <rect x="380" y="98" width="180" height="28" rx="3"/>
+      <rect x="560" y="98" width="180" height="28" rx="3"/>
+      <rect x="740" y="98" width="180" height="28" rx="3"/>
+    </g>
+    <g font-size="11" text-anchor="middle" font-family="SF Mono, Menlo, Consolas, monospace">
+      <text x="290" y="116">Stories</text>
+      <text x="470" y="116">Comments</text>
+      <text x="650" y="116">Stories</text>
+      <text x="830" y="116">Settings</text>
+    </g>
+    <g stroke="#c3ccd5" stroke-width="1" stroke-dasharray="2 3">
+      <line x1="200" y1="126" x2="200" y2="266"/>
+      <line x1="380" y1="126" x2="380" y2="266"/>
+      <line x1="560" y1="126" x2="560" y2="266"/>
+      <line x1="740" y1="126" x2="740" y2="266"/>
+    </g>
+
+    <!-- Events, numbered within each session -->
+    <g fill="#4b9460">
+      <circle cx="200" cy="156" r="9"/>
+      <circle cx="380" cy="156" r="9"/>
+      <circle cx="560" cy="156" r="9"/>
+      <circle cx="740" cy="156" r="9"/>
+    </g>
+    <g font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">
+      <text x="200" y="160">1</text>
+      <text x="380" y="160">2</text>
+      <text x="560" y="160">3</text>
+      <text x="740" y="160">1</text>
+    </g>
+    <g font-size="10" font-family="SF Mono, Menlo, Consolas, monospace">
+      <text x="214" y="160" fill="#4b9460">app.navigation.complete</text>
+      <text x="214" y="178">sequence 1</text>
+      <text x="214" y="192">destination Stories</text>
+      <text x="214" y="206" fill="#55606b">previous (absent)</text>
+      <text x="394" y="160" fill="#4b9460">app.navigation.complete</text>
+      <text x="394" y="178">sequence 2</text>
+      <text x="394" y="192">destination Comments</text>
+      <text x="394" y="206" fill="#55606b">previous Stories</text>
+      <text x="574" y="160" fill="#4b9460">app.navigation.complete</text>
+      <text x="574" y="178">sequence 3</text>
+      <text x="574" y="192">destination Stories</text>
+      <text x="574" y="206" fill="#55606b">previous Comments</text>
+      <text x="754" y="160" fill="#4b9460">app.navigation.complete</text>
+      <text x="754" y="178">sequence 1</text>
+      <text x="754" y="192">destination Settings</text>
+      <text x="754" y="206" fill="#55606b">previous Stories</text>
+    </g>
+
+    <!-- Spans -->
+    <g fill="#e4ecf6" stroke="#4a6fa5" stroke-width="1.25">
+      <rect x="164" y="230" width="36" height="26" rx="3"/>
+      <rect x="344" y="230" width="36" height="26" rx="3"/>
+      <rect x="704" y="230" width="36" height="26" rx="3"/>
+    </g>
+    <g font-size="10" font-family="SF Mono, Menlo, Consolas, monospace">
+      <text x="208" y="240" fill="#4a6fa5">time_to_first_draw</text>
+      <text x="208" y="254">Stories</text>
+      <text x="388" y="240" fill="#4a6fa5">time_to_first_draw</text>
+      <text x="388" y="254">Comments</text>
+      <text x="748" y="240" fill="#4a6fa5">time_to_first_draw</text>
+      <text x="748" y="254">Settings</text>
+    </g>
+    <text x="568" y="247" font-size="10.5" fill="#55606b">no span: already drawn</text>
+
+    <text x="20" y="290" font-size="11" fill="#55606b">Group events by <tspan font-family="SF Mono, Menlo, Consolas, monospace">session.id</tspan> and order by <tspan font-family="SF Mono, Menlo, Consolas, monospace">sequence</tspan> to rebuild the journey. A gap, such as 1, 3, means an event was lost.</text>
+    <text x="20" y="306" font-size="11" fill="#55606b">Spans can't rebuild it: they miss the return to <tspan font-family="SF Mono, Menlo, Consolas, monospace">Stories</tspan>, and sampling drops some of the rest.</text>
+  </g>
+</svg>

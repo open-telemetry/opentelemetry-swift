@@ -30,12 +30,14 @@ let package = Package(
     // HTTP exporter product. AppStartTests checks the AppStart spans with the
     // constants generated from the federated semantic conventions in
     // InstrumentationSemanticConventions, reached through the app launch
-    // instrumentation product.
+    // instrumentation product. ScreenInstrumentationTests checks the screen
+    // telemetry against ScreenConstants and ScreenType.
     .testTarget(
       name: "IntegrationTests",
       dependencies: [
         .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
-        .product(name: "MincoreLaunchInstrumentation", package: "opentelemetry-swift")
+        .product(name: "MincoreLaunchInstrumentation", package: "opentelemetry-swift"),
+        .product(name: "ScreenInstrumentation", package: "opentelemetry-swift")
       ],
       path: "Assertions"
     )

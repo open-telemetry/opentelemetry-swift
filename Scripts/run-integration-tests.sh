@@ -370,6 +370,8 @@ else
   run_launch_into symbolicated/crash crash --sessionTimeout 3600 --restorePersistedSession false
   run_launch_into symbolicated/crash-report crash-report --sessionTimeout 3600 --restorePersistedSession false --reportStyle symbolicated
   run_launch log-limits --sessionTimeout 3600 --restorePersistedSession false
+  # One session for the whole walk, so its navigation sequence numbers run unbroken.
+  run_launch screen-navigation --sessionTimeout 3600 --restorePersistedSession false
   # Same 200/404/500 requests as `main`, with stable HTTP semantic conventions.
   # Last so the persisted-session and crash launches keep their order, and
   # before the AppStart launches below, which reinstall the app.

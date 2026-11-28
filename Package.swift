@@ -92,6 +92,9 @@ let package = Package(
       targets: ["BaggagePropagationProcessor"]
     ),
     .library(name: "Sessions", targets: ["Sessions"]),
+    .library(name: "ScreenInstrumentation", targets: ["ScreenInstrumentation"]),
+    .library(name: "ScreenInstrumentationUIKit", targets: ["ScreenInstrumentationUIKit"]),
+    .library(name: "ScreenInstrumentationSwiftUI", targets: ["ScreenInstrumentationSwiftUI"]),
     .executable(name: "ConcurrencyContext", targets: ["ConcurrencyContext"]),
     .executable(name: "loggingTracer", targets: ["LoggingTracer"]),
     .executable(name: "StableMetricSample", targets: ["StableMetricSample"]),
@@ -266,6 +269,40 @@ let package = Package(
       path: "Sources/Instrumentation/Common"
     ),
     .target(
+      name: "ScreenInstrumentation",
+      dependencies: [
+        "InstrumentationSemanticConventions",
+        "OpenTelemetryApi",
+        "OpenTelemetrySdk",
+        "Sessions",
+      ],
+      path: "Sources/Instrumentation/Screen/Core"
+    ),
+    .target(
+      name: "ScreenInstrumentationUIKit",
+      dependencies: [
+        "ScreenInstrumentation",
+        "InstrumentationCommon",
+        "InstrumentationSemanticConventions",
+        "OpenTelemetryApi",
+        "OpenTelemetrySdk",
+      ],
+      path: "Sources/Instrumentation/Screen/UIKit",
+      exclude: ["README.md", "img"]
+    ),
+    .target(
+      name: "ScreenInstrumentationSwiftUI",
+      dependencies: [
+        "ScreenInstrumentation",
+        "InstrumentationCommon",
+        "InstrumentationSemanticConventions",
+        "OpenTelemetryApi",
+        "OpenTelemetrySdk",
+      ],
+      path: "Sources/Instrumentation/Screen/SwiftUI",
+      exclude: ["README.md", "img"]
+    ),
+    .target(
       name: "InstrumentationSemanticConventions",
       path: "Sources/Instrumentation/SemanticConventions",
       exclude: ["README.md", "generate.sh", "model", "templates"]
@@ -276,6 +313,20 @@ let package = Package(
         "OpenTelemetryApi",
         "OpenTelemetrySdk",
       ]
+    ),
+    .testTarget(
+      name: "ScreenTests",
+      dependencies: [
+        "SharedTestUtils",
+        "InstrumentationCommon",
+        "InstrumentationSemanticConventions",
+        "ScreenInstrumentation",
+        "ScreenInstrumentationUIKit",
+        "ScreenInstrumentationSwiftUI",
+        "OpenTelemetrySdk",
+        "Sessions",
+      ],
+      path: "Tests/InstrumentationTests/ScreenTests"
     ),
     .testTarget(
       name: "OpenTelemetryApiTests",
@@ -748,6 +799,7 @@ extension Package {
           name: "AppLaunchInstrumentationCore",
           dependencies: [
             "OpenTelemetryApi",
+            "InstrumentationCommon",
             "InstrumentationSemanticConventions",
             "AppLaunchEnvironment",
           ],
@@ -768,6 +820,7 @@ extension Package {
           name: "AppLaunchInstrumentationTests",
           dependencies: [
             "AppLaunchInstrumentationCore",
+            "InstrumentationCommon",
             "MincoreLaunchInstrumentation",
             "InMemoryExporter",
             "OpenTelemetrySdk",

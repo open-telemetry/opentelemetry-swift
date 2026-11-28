@@ -17,6 +17,9 @@ extension FederatedSemanticConventions {
     /// A scene connecting during a resume, to the first frame displayed.
     case appResumeSceneSetup = "app.resume.scene_setup"
 
+    /// A screen's time to first draw, from the screen's creation to the first frame displayed.
+    case appScreenTimeToFirstDraw = "app.screen.time_to_first_draw"
+
     /// The app launch span, from when the launch began to the first frame displayed.
     case appStart = "app.start"
 

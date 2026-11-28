@@ -10,7 +10,9 @@ import KSCrashFilters
 import OpenTelemetryApi
 import OpenTelemetryProtocolExporterHttp
 import OpenTelemetrySdk
+import ScreenInstrumentationSwiftUI
 import Sessions
+import SwiftUI
 import UIKit
 import URLSessionInstrumentation
 
@@ -126,6 +128,10 @@ enum IntegrationTestScenario {
     // The simulator shares the Mac's page cache, so the type isn't predictable, but it must agree
     // with the span's sampled pages.
     case appStartMincore = "app-start-mincore"
+    // Drives a UIKit flow presented over the SwiftUI Settings tab, then a SwiftUI navigation stack
+    // presented over it, through every navigation type each front end detects. See
+    // ScreenNavigationScenario for the steps.
+    case screenNavigation = "screen-navigation"
   }
 
   // Default session timeout for the main launch: short enough that the
@@ -245,6 +251,10 @@ enum IntegrationTestScenario {
       }
     case .appStartBackground:
       signalReady(tracer: tracer, activations: 0)
+    case .screenNavigation:
+      DispatchQueue.main.asyncAfter(deadline: .now() + firstFrameWait) {
+        ScreenNavigationScenario.run { complete(tracer: tracer) }
+      }
     case .appStartResume, .appStartLateInstall, .appStartUpdate, .appStartReinstall, .appStartMincore:
       // Completed from `recordLifecycle` once the expected activations have been displayed.
       break
@@ -430,5 +440,100 @@ enum IntegrationTestScenario {
     let span = builder.startSpan()
     span.setAttribute(key: launchAttributeKey, value: launch.rawValue)
     return span
+  }
+}
+
+// Drives one navigation of each type, one step at a time, far enough apart for the SwiftUI front
+// end to decide each pop. Keep the steps in sync with
+// Tests/IntegrationTests/Assertions/ScreenNavigationTests.swift.
+enum ScreenNavigationScenario {
+  static let stepInterval: TimeInterval = 1.5
+  static let swiftUIStep = Notification.Name("HackerNewsDemo.ScreenNavigationStep")
+
+  @MainActor
+  static func run(completion: @escaping () -> Void) {
+    guard let root = UIApplication.shared.connectedScenes
+      .compactMap({ ($0 as? UIWindowScene)?.keyWindow?.rootViewController }).first else {
+      completion()
+      return
+    }
+
+    let list = NavProbeListViewController()
+    let flow = UINavigationController(rootViewController: list)
+    flow.modalPresentationStyle = .pageSheet
+    let swiftUISteps: [NavProbeView.Step] = [
+      .path([.detail]), .path([.detail, .author]), .path([]), .path([.detail]), .path([]),
+      .path([.detail]), .path([.author]), .path([.author, .detail]), .path([.login]),
+      .sheet(true), .sheet(false),
+    ]
+    let steps: [() -> Void] = [
+      // UIKit, presented over the SwiftUI Settings tab.
+      { root.present(flow, animated: false) },
+      { flow.pushViewController(NavProbeDetailViewController(), animated: false) },
+      { flow.pushViewController(NavProbeAuthorViewController(), animated: false) },
+      { flow.popToRootViewController(animated: false) },
+      { flow.pushViewController(NavProbeDetailViewController(), animated: false) },
+      { flow.popViewController(animated: false) },
+      { flow.pushViewController(NavProbeDetailViewController(), animated: false) },
+      { flow.setViewControllers([list, NavProbeAuthorViewController()], animated: false) },
+      { flow.setViewControllers([NavProbeLoginViewController()], animated: false) },
+      { flow.dismiss(animated: false) },
+      // SwiftUI, presented over Settings again.
+      { root.present(UIHostingController(rootView: NavProbeView()), animated: false) },
+    ] + swiftUISteps.map { step in
+      { NotificationCenter.default.post(name: swiftUIStep, object: step) }
+    }
+
+    for (index, step) in steps.enumerated() {
+      DispatchQueue.main.asyncAfter(deadline: .now() + stepInterval * Double(index), execute: step)
+    }
+    DispatchQueue.main.asyncAfter(deadline: .now() + stepInterval * Double(steps.count + 1)) {
+      completion()
+    }
+  }
+}
+
+final class NavProbeListViewController: UIViewController {}
+final class NavProbeDetailViewController: UIViewController {}
+final class NavProbeAuthorViewController: UIViewController {}
+final class NavProbeLoginViewController: UIViewController {}
+
+struct NavProbeView: SwiftUI.View {
+  enum Route: String, Hashable {
+    case detail = "Probe Detail"
+    case author = "Probe Author"
+    case login = "Probe Login"
+  }
+
+  enum Step {
+    case path([Route])
+    case sheet(Bool)
+  }
+
+  @State private var path: [Route] = []
+  @State private var showsSheet = false
+
+  var body: some SwiftUI.View {
+    NavigationStack(path: $path) {
+      Text("Probe List")
+        .otelScreen("Probe List")
+        .navigationDestination(for: Route.self) { route in
+          Text(route.rawValue)
+            .otelScreen(route.rawValue)
+            .id(route)
+        }
+    }
+    .otelNavigationPath(path)
+    .sheet(isPresented: $showsSheet) {
+      Text("Probe Sheet").otelScreen("Probe Sheet")
+    }
+    .otelModal(showsSheet)
+    .onReceive(NotificationCenter.default.publisher(for: ScreenNavigationScenario.swiftUIStep)) { notification in
+      switch notification.object as? Step {
+      case let .path(newPath): path = newPath
+      case let .sheet(isPresented): showsSheet = isPresented
+      case nil: break
+      }
+    }
   }
 }

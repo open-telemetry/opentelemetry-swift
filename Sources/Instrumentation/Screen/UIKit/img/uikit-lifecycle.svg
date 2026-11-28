@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 214" width="940" height="214" role="img" aria-label="The app.screen.time_to_first_draw span over the UIKit view controller lifecycle: from viewDidLoad to the first frame after viewWillAppear, before the transition and viewDidAppear">
+  <rect x="0" y="0" width="940" height="214" fill="#ffffff"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" fill="#1b2733">
+    <text x="20" y="26" font-size="15" font-weight="600"><tspan font-family="SF Mono, Menlo, Consolas, monospace" font-weight="600">app.screen.time_to_first_draw</tspan> over the view controller lifecycle</text>
+    <text x="20" y="44" font-size="11" fill="#55606b">The shaded stretches are lifecycle steps inside the one span, not child spans. Widths are not to scale.</text>
+    <text x="90" y="82" font-size="10.5" fill="#33414e" text-anchor="middle"><tspan font-family="SF Mono, Menlo, Consolas, monospace">init</tspan></text>
+    <line x1="90" y1="88" x2="90" y2="102" stroke="#c3ccd5" stroke-dasharray="2 3"/>
+    <text x="170" y="82" font-size="10.5" fill="#33414e" text-anchor="middle"><tspan font-family="SF Mono, Menlo, Consolas, monospace">loadView</tspan></text>
+    <line x1="170" y1="88" x2="170" y2="102" stroke="#c3ccd5" stroke-dasharray="2 3"/>
+    <text x="250" y="82" font-size="10.5" fill="#33414e" text-anchor="middle"><tspan font-family="SF Mono, Menlo, Consolas, monospace">viewDidLoad</tspan></text>
+    <line x1="250" y1="88" x2="250" y2="102" stroke="#c3ccd5" stroke-dasharray="2 3"/>
+    <text x="470" y="82" font-size="10.5" fill="#33414e" text-anchor="middle"><tspan font-family="SF Mono, Menlo, Consolas, monospace">viewWillAppear</tspan></text>
+    <line x1="470" y1="88" x2="470" y2="150" stroke="#c3ccd5" stroke-dasharray="2 3"/>
+    <text x="680" y="82" font-size="10.5" fill="#33414e" text-anchor="middle">first frame</text>
+    <line x1="680" y1="88" x2="680" y2="102" stroke="#c3ccd5" stroke-dasharray="2 3"/>
+    <text x="870" y="82" font-size="10.5" fill="#33414e" text-anchor="middle"><tspan font-family="SF Mono, Menlo, Consolas, monospace">viewDidAppear</tspan></text>
+    <line x1="870" y1="88" x2="870" y2="102" stroke="#c3ccd5" stroke-dasharray="2 3"/>
+    <rect x="90" y="102" width="160" height="32" rx="3" fill="#ffffff" stroke="#8b98a5" stroke-width="1.25" stroke-dasharray="4 3"/>
+    <text x="170" y="122" font-size="10.5" fill="#55606b" text-anchor="middle">outside the span</text>
+    <rect x="250" y="102" width="430" height="32" rx="3" fill="#e4ecf6" stroke="#4a6fa5" stroke-width="1.25"/>
+    <text x="465" y="123" font-size="12" fill="#1b2733" text-anchor="middle" font-weight="600" font-family="SF Mono, Menlo, Consolas, monospace">app.screen.time_to_first_draw</text>
+    <rect x="680" y="102" width="190" height="32" rx="3" fill="#ffffff" stroke="#8b98a5" stroke-width="1.25" stroke-dasharray="4 3"/>
+    <text x="775" y="122" font-size="10.5" fill="#55606b" text-anchor="middle">transition, outside the span</text>
+    <rect x="250" y="140" width="220" height="34" rx="3" fill="#d6e6f4" stroke="#3b6ea5" stroke-width="1.25"/>
+    <rect x="470" y="140" width="210" height="34" rx="3" fill="#c6dcf0" stroke="#3b6ea5" stroke-width="1.25"/>
+    <text x="360" y="154" font-size="10.5" fill="#1b2733" text-anchor="middle">rest of viewDidLoad,</text>
+    <text x="360" y="167" font-size="10.5" fill="#1b2733" text-anchor="middle">then waiting to be shown</text>
+    <text x="575" y="154" font-size="10.5" fill="#1b2733" text-anchor="middle">appearance callbacks, first</text>
+    <text x="575" y="167" font-size="10.5" fill="#1b2733" text-anchor="middle">layout, render, display</text>
+    <text x="470" y="196" font-size="9.5" fill="#55606b" text-anchor="middle">the draw read starts here</text>
+  </g>
+</svg>

@@ -5,6 +5,7 @@
 
 #if canImport(Darwin) && ((canImport(UIKit) && !os(watchOS)) || canImport(AppKit))
   import Foundation
+  import InstrumentationCommon
   import OpenTelemetryApi
 
   /// Feeds the app's lifecycle notifications to an `ActivationTracker`, and hands each activation to

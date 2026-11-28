@@ -4,11 +4,14 @@
  */
 
 import SwiftUI
+import ScreenInstrumentation
+import ScreenInstrumentationSwiftUI
 import Sessions
 import OpenTelemetryApi
 
 struct SettingsView: View {
   @State private var sessionData: [(String, String)] = []
+  @ObservedObject private var screenStack = ScreenStackModel.shared
   @State private var configData: [(String, String)] = []
   @State private var troubleshootingData: [(String, String)] = []
   @State private var showingToast = false
@@ -16,6 +19,7 @@ struct SettingsView: View {
   @State private var showingCrashPicker = false
   @State private var showingUserIdEditor = false
   @State private var showingSessionConfigEditor = false
+  @State private var showingScreenConfigEditor = false
   @State private var showingOTelConfigEditor = false
   @State private var showingTelemetryGenerator = false
   @State private var showingCustomTelemetry = false
@@ -69,6 +73,16 @@ struct SettingsView: View {
           } else {
             SettingsRow(title: item.0, value: item.1, isCopyable: item.0 != "Session Expiry")
           }
+        }
+      }
+
+      Section("Screens") {
+        EditableRow(title: "Screen Config", value: screenConfigSummary, help: "Tap to edit navigation tracking, time to first draw and hosting controller tracking") {
+          showingScreenConfigEditor = true
+        }
+        Toggle(isOn: $screenStack.isBarEnabled) {
+          Text("Show Navigation Stack")
+            .font(.system(.caption, design: .monospaced, weight: .medium))
         }
       }
 
@@ -134,6 +148,9 @@ struct SettingsView: View {
     .sheet(isPresented: $showingSessionConfigEditor) {
       SessionConfigEditorView()
     }
+    .sheet(isPresented: $showingScreenConfigEditor) {
+      ScreenConfigEditorView()
+    }
     .sheet(isPresented: $showingOTelConfigEditor) {
       OTelConfigEditorView()
     }
@@ -167,6 +184,9 @@ struct SettingsView: View {
     .overlay(
       ToastView(isShowing: $showingToast)
     )
+    // The SwiftUI half of the screen instrumentation. UIKit detection skips hosting
+    // controllers by default, so this modifier is what reports the Settings tab.
+    .otelScreen("Settings")
   }
 
   private func loadSessionData() {
@@ -208,6 +228,21 @@ struct SettingsView: View {
       ("Current Session", currentSession.id),
       ("Session Expiry", "\(Int(timeToExpiry)) seconds")
     ]
+  }
+
+  // Shows the values that will be used on the next launch, since the UIKit front end reads
+  // them at install.
+  private var screenConfigSummary: String {
+    let config = ScreenConfigStore.load()
+    func onOff(_ value: Bool) -> String { value ? "on" : "off" }
+    return [
+      "nav \(onOff(config.tracksNavigation))",
+      "ttfd \(onOff(config.recordsTimeToFirstDraw))",
+      "uikit \(config.uikitBundle.label)",
+      "hosting \(onOff(config.tracksHostingControllers))",
+      "spans \(onOff(config.stampsSpans))",
+      "logs \(onOff(config.stampsLogs))"
+    ].joined(separator: " / ")
   }
 
   // Shows the values that will be used on the next launch, since a
@@ -296,6 +331,7 @@ struct UserIdEditorView: View {
       }
       .padding(.horizontal, 16)
       .navigationTitle("Edit User ID")
+      .otelScreen("Edit User ID")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .navigationBarLeading) {
@@ -361,6 +397,7 @@ struct SessionConfigEditorView: View {
         RestartNoteSection()
       }
       .navigationTitle("Session Config")
+      .otelScreen("Session Config")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .navigationBarLeading) {
@@ -387,6 +424,105 @@ struct SessionConfigEditorView: View {
         }
         restorePersistedSession = config.restorePersistedSession
       }
+    }
+  }
+}
+
+struct ScreenConfigEditorView: View {
+  @Environment(\.dismiss) private var dismiss
+  @State private var config = ScreenConfigStore.Values()
+
+  var body: some View {
+    NavigationView {
+      Form {
+        Section {
+          ConfigToggle(title: "Track navigation", isOn: $config.tracksNavigation)
+          ConfigToggle(title: "Record time to first draw", isOn: $config.recordsTimeToFirstDraw)
+        } header: {
+          Text("ScreenTracker")
+        } footer: {
+          Text("Track navigation follows the stack and reports app.navigation.type; when off, the current screen is the last one to appear. Time to first draw records an app.screen.time_to_first_draw span per screen.")
+            .font(.system(.caption2, design: .monospaced))
+        }
+
+        Section {
+          Picker(selection: $config.uikitBundle) {
+            ForEach(ScreenConfigStore.UIKitBundle.allCases, id: \.self) { bundle in
+              Text(bundle.label).tag(bundle)
+            }
+          } label: {
+            ConfigLabel("Bundle")
+          }
+          Picker(selection: $config.uikitRecordsTimeToFirstDraw) {
+            ForEach(ScreenConfigStore.Override.allCases, id: \.self) { value in
+              Text(value.rawValue).tag(value)
+            }
+          } label: {
+            ConfigLabel("Time to first draw")
+          }
+          ConfigToggle(title: "Track hosting controllers", isOn: $config.tracksHostingControllers)
+        } header: {
+          Text("ScreenUIKitConfig")
+        } footer: {
+          Text("Bundle picks whose view controllers count: the app's, or UIKit's own (share sheets, alerts). Time to first draw overrides the tracker's setting unless inherit. Hosting controllers reports SwiftUI hosts by class name, so Settings reports both SettingsHostingController and Settings.")
+            .font(.system(.caption2, design: .monospaced))
+        }
+
+        Section {
+          ConfigToggle(title: "ScreenSpanProcessor", isOn: $config.stampsSpans)
+          ConfigToggle(title: "ScreenLogRecordProcessor", isOn: $config.stampsLogs)
+        } header: {
+          Text("Processors")
+        } footer: {
+          Text("Each stamps app.screen.name on every span or log record. The navigation stack bar works either way.")
+            .font(.system(.caption2, design: .monospaced))
+        }
+
+        RestartNoteSection()
+      }
+      .navigationTitle("Screen Config")
+      .otelScreen("Screen Config")
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .navigationBarLeading) {
+          Button("Cancel") {
+            dismiss()
+          }
+        }
+        ToolbarItem(placement: .navigationBarTrailing) {
+          Button("Save") {
+            ScreenConfigStore.save(config)
+            dismiss()
+          }
+        }
+      }
+      .onAppear {
+        config = ScreenConfigStore.load()
+      }
+    }
+  }
+}
+
+private struct ConfigLabel: View {
+  let title: String
+
+  init(_ title: String) {
+    self.title = title
+  }
+
+  var body: some View {
+    Text(title)
+      .font(.system(.caption, design: .monospaced, weight: .medium))
+  }
+}
+
+private struct ConfigToggle: View {
+  let title: String
+  @Binding var isOn: Bool
+
+  var body: some View {
+    Toggle(isOn: $isOn) {
+      ConfigLabel(title)
     }
   }
 }
@@ -434,6 +570,7 @@ struct OTelConfigEditorView: View {
         RestartNoteSection()
       }
       .navigationTitle("OTel Config")
+      .otelScreen("OTel Config")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .navigationBarLeading) {
@@ -761,6 +898,7 @@ struct HangPickerView: View {
         Spacer()
       }
       .navigationTitle("Trigger App Hang")
+      .otelScreen("Trigger App Hang")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .navigationBarLeading) {
@@ -917,6 +1055,7 @@ struct CrashPickerView: View {
         Spacer()
       }
       .navigationTitle("Trigger App Crash")
+      .otelScreen("Trigger App Crash")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .navigationBarLeading) {
@@ -1190,6 +1329,7 @@ struct TelemetryGeneratorView: View {
       }
       .padding(.horizontal, 16)
       .navigationTitle("Load Test")
+      .otelScreen("Load Test")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .navigationBarLeading) {
@@ -1442,6 +1582,7 @@ struct CustomTelemetryView: View {
         }
       }
       .navigationTitle("Custom Span / Log")
+      .otelScreen("Custom Span / Log")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .navigationBarLeading) {
@@ -1573,6 +1714,7 @@ struct CpuTestView: View {
       }
       .padding(.horizontal, 16)
       .navigationTitle("CPU Test")
+      .otelScreen("CPU Test")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .navigationBarLeading) {
@@ -1736,6 +1878,7 @@ struct MemoryTestView: View {
       }
       .padding(.horizontal, 16)
       .navigationTitle("Memory Test")
+      .otelScreen("Memory Test")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .navigationBarLeading) {
