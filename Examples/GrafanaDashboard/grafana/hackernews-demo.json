@@ -126,9 +126,21 @@
           },
           "queryType": "traceql",
           "tableType": "spans",
+          "limit": 1000,
+          "spss": 100,
+          "query": "{resource.service.name=\"$service\" && instrumentation:name != \"NSURLSession\" && (span.session.id =~ \"${session:regex}\" || \"${session:regex}\" = \".*\")} | select(name, span.session.id, instrumentation:name)"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "queryType": "traceql",
+          "tableType": "spans",
           "limit": 200,
           "spss": 100,
-          "query": "{resource.service.name=\"$service\" && (span.session.id =~ \"${session:regex}\" || \"${session:regex}\" = \".*\")} | select(name, span.session.id, instrumentation:name)"
+          "query": "{resource.service.name=\"$service\" && instrumentation:name = \"NSURLSession\" && (span.session.id =~ \"${session:regex}\" || \"${session:regex}\" = \".*\")} | select(name, span.session.id, instrumentation:name)"
         },
         {
           "refId": "B",
@@ -305,6 +317,171 @@
           "filter": {
             "id": "byRefId",
             "options": "A"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "binary",
+            "alias": "start",
+            "replaceFields": false,
+            "binary": {
+              "left": {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Start time"
+                }
+              },
+              "operator": "+",
+              "right": {
+                "fixed": "0"
+              }
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "C"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "binary",
+            "alias": "durationMs",
+            "replaceFields": false,
+            "binary": {
+              "left": {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Duration"
+                }
+              },
+              "operator": "/",
+              "right": {
+                "fixed": "1000000"
+              }
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "C"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "binary",
+            "alias": "end",
+            "replaceFields": false,
+            "binary": {
+              "left": {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Start time"
+                }
+              },
+              "operator": "+",
+              "right": {
+                "matcher": {
+                  "id": "byName",
+                  "options": "durationMs"
+                }
+              }
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "C"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "reduceRow",
+            "alias": "text",
+            "replaceFields": false,
+            "reduce": {
+              "include": [
+                "Name"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "C"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "reduceRow",
+            "alias": "scope",
+            "replaceFields": false,
+            "reduce": {
+              "include": [
+                "instrumentation:name"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "C"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "reduceRow",
+            "alias": "session",
+            "replaceFields": false,
+            "reduce": {
+              "include": [
+                "session.id"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "C"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "reduceRow",
+            "alias": "traceId",
+            "replaceFields": false,
+            "reduce": {
+              "include": [
+                "traceIdHidden"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "C"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "reduceRow",
+            "alias": "key",
+            "replaceFields": false,
+            "reduce": {
+              "include": [
+                "spanID"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "C"
           }
         },
         {
@@ -561,9 +738,21 @@
           },
           "queryType": "traceql",
           "tableType": "spans",
+          "limit": 1000,
+          "spss": 100,
+          "query": "{resource.service.name=\"$service\" && instrumentation:name != \"NSURLSession\" && (span.session.id =~ \"${session:regex}\" || \"${session:regex}\" = \".*\")} | select(name, instrumentation:name, span.session.id)"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "queryType": "traceql",
+          "tableType": "spans",
           "limit": 200,
           "spss": 100,
-          "query": "{resource.service.name=\"$service\" && (span.session.id =~ \"${session:regex}\" || \"${session:regex}\" = \".*\")} | select(name, instrumentation:name, span.session.id)"
+          "query": "{resource.service.name=\"$service\" && instrumentation:name = \"NSURLSession\" && (span.session.id =~ \"${session:regex}\" || \"${session:regex}\" = \".*\")} | select(name, instrumentation:name, span.session.id)"
         },
         {
           "refId": "B",
@@ -737,6 +926,168 @@
           "filter": {
             "id": "byRefId",
             "options": "A"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "ev_time",
+            "replaceFields": false,
+            "mode": "binary",
+            "binary": {
+              "left": {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Start time"
+                }
+              },
+              "operator": "+",
+              "right": {
+                "fixed": "0"
+              }
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "C"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "ev_duration",
+            "replaceFields": false,
+            "mode": "binary",
+            "binary": {
+              "left": {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Duration"
+                }
+              },
+              "operator": "+",
+              "right": {
+                "fixed": "0"
+              }
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "C"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "binary",
+            "alias": "ev_type",
+            "replaceFields": false,
+            "binary": {
+              "left": {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Duration"
+                }
+              },
+              "operator": "*",
+              "right": {
+                "fixed": "0"
+              }
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "C"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "ev_event",
+            "replaceFields": false,
+            "mode": "reduceRow",
+            "reduce": {
+              "include": [
+                "Name"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "C"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "ev_scope",
+            "replaceFields": false,
+            "mode": "reduceRow",
+            "reduce": {
+              "include": [
+                "instrumentation:name"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "C"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "ev_session",
+            "replaceFields": false,
+            "mode": "reduceRow",
+            "reduce": {
+              "include": [
+                "session.id"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "C"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "ev_trace",
+            "replaceFields": false,
+            "mode": "reduceRow",
+            "reduce": {
+              "include": [
+                "traceIdHidden"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "C"
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "ev_span",
+            "replaceFields": false,
+            "mode": "reduceRow",
+            "reduce": {
+              "include": [
+                "Span ID"
+              ],
+              "reducer": "firstNotNull"
+            }
+          },
+          "filter": {
+            "id": "byRefId",
+            "options": "C"
           }
         },
         {
